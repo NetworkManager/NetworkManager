@@ -974,6 +974,7 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 			ovs_interface->name = g_strdup (name);
 			ovs_interface->type = g_strdup (type);
 			ovs_interface->connection_uuid = _connection_uuid_from_external_ids (external_ids);
+			g_hash_table_insert (priv->interfaces, g_strdup (key), ovs_interface);
 			if (old) {
 				_LOGT ("changed an '%s' interface: %s%s%s", type, ovs_interface->name,
 				       ovs_interface->connection_uuid ? ", " : "",
@@ -998,7 +999,6 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				               ovs_interface->connection_uuid,
 				               json_string_value (error));
 			}
-			g_hash_table_insert (priv->interfaces, g_strdup (key), ovs_interface);
 		}
 	}
 
@@ -1035,6 +1035,7 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 			ovs_port->connection_uuid = _connection_uuid_from_external_ids (external_ids);
 			ovs_port->interfaces = g_ptr_array_new_with_free_func (g_free);
 			_uuids_to_array (ovs_port->interfaces, items);
+			g_hash_table_insert (priv->ports, g_strdup (key), ovs_port);
 			if (old) {
 				_LOGT ("changed a port: %s%s%s", ovs_port->name,
 				       ovs_port->connection_uuid ? ", " : "",
@@ -1046,7 +1047,6 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				g_signal_emit (self, signals[DEVICE_ADDED], 0,
 				               ovs_port->name, NM_DEVICE_TYPE_OVS_PORT);
 			}
-			g_hash_table_insert (priv->ports, g_strdup (key), ovs_port);
 		}
 	}
 
@@ -1083,6 +1083,7 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 			ovs_bridge->connection_uuid = _connection_uuid_from_external_ids (external_ids);
 			ovs_bridge->ports = g_ptr_array_new_with_free_func (g_free);
 			_uuids_to_array (ovs_bridge->ports, items);
+			g_hash_table_insert (priv->bridges, g_strdup (key), ovs_bridge);
 			if (old) {
 				_LOGT ("changed a bridge: %s%s%s", ovs_bridge->name,
 				       ovs_bridge->connection_uuid ? ", " : "",
@@ -1094,7 +1095,6 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				g_signal_emit (self, signals[DEVICE_ADDED], 0,
 				               ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE);
 			}
-			g_hash_table_insert (priv->bridges, g_strdup (key), ovs_bridge);
 		}
 	}
 
