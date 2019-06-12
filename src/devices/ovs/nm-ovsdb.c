@@ -59,7 +59,6 @@ typedef struct {
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
-	DEVICE_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -976,8 +975,6 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				_LOGT ("changed an '%s' interface: %s%s%s", type, ovs_interface->name,
 				       ovs_interface->connection_uuid ? ", " : "",
 				       ovs_interface->connection_uuid ?: "");
-				g_signal_emit (self, signals[DEVICE_CHANGED], 0,
-				               "ovs-interface", ovs_interface->name);
 			} else {
 				_LOGT ("added an '%s' interface: %s%s%s",
 				       ovs_interface->type, ovs_interface->name,
@@ -1031,8 +1028,6 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				_LOGT ("changed a port: %s%s%s", ovs_port->name,
 				       ovs_port->connection_uuid ? ", " : "",
 				       ovs_port->connection_uuid ?: "");
-				g_signal_emit (self, signals[DEVICE_CHANGED], 0,
-				               NM_SETTING_OVS_PORT_SETTING_NAME, ovs_port->name);
 			} else {
 				_LOGT ("added a port: %s%s%s", ovs_port->name,
 				       ovs_port->connection_uuid ? ", " : "",
@@ -1081,8 +1076,6 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				_LOGT ("changed a bridge: %s%s%s", ovs_bridge->name,
 				       ovs_bridge->connection_uuid ? ", " : "",
 				       ovs_bridge->connection_uuid ?: "");
-				g_signal_emit (self, signals[DEVICE_CHANGED], 0,
-				               NM_SETTING_OVS_BRIDGE_SETTING_NAME, ovs_bridge->name);
 			} else {
 				_LOGT ("added a bridge: %s%s%s", ovs_bridge->name,
 				       ovs_bridge->connection_uuid ? ", " : "",
@@ -1644,13 +1637,6 @@ nm_ovsdb_class_init (NMOvsdbClass *klass)
 
 	signals[DEVICE_REMOVED] =
 		g_signal_new (NM_OVSDB_DEVICE_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
-
-	signals[DEVICE_CHANGED] =
-		g_signal_new (NM_OVSDB_DEVICE_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              0, NULL, NULL, NULL,
