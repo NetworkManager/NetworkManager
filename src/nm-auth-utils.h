@@ -24,6 +24,8 @@
 
 #include "nm-auth-manager.h"
 
+/*****************************************************************************/
+
 typedef struct NMAuthChain NMAuthChain;
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
@@ -64,6 +66,25 @@ void nm_auth_chain_add_call_unsafe (NMAuthChain *chain,
 void nm_auth_chain_destroy (NMAuthChain *chain);
 
 NMAuthSubject *nm_auth_chain_get_subject (NMAuthChain *self);
+
+/*****************************************************************************/
+
+struct CList;
+
+static inline NMAuthChain *
+nm_auth_chain_parent_lst_entry (struct CList *parent_lst_self)
+{
+	return (NMAuthChain *) ((void *) parent_lst_self);
+}
+
+static inline struct CList *
+nm_auth_chain_parent_lst_list (NMAuthChain *self)
+{
+	return (struct CList *) ((void *) self);
+}
+
+/*****************************************************************************/
+
 
 /* Caller must free returned error description */
 gboolean nm_auth_is_subject_in_acl (NMConnection *connection,

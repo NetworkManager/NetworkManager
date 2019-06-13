@@ -1689,6 +1689,97 @@ nm_connection_normalize (NMConnection *connection,
 	return TRUE;
 }
 
+gboolean
+_nm_connection_ensure_normalized (NMConnection *connection,
+                                  gboolean allow_modify,
+                                  const char *enforce_uuid,
+                                  NMConnection **out_connection_clone,
+                                  GError **error)
+{
+	gs_unref_object NMConnection *connection_clone = NULL;
+	gs_free_error GError *local = NULL;
+	NMSettingVerifyResult vresult;
+
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (out_connection_clone && !*out_connection_clone);
+	nm_assert (!enforce_uuid || nm_utils_is_uuid (enforce_uuid));
+
+	vresult = _nm_connection_verify (connection, &local);
+	if (vresult != NM_SETTING_VERIFY_SUCCESS) {
+		if (!NM_IN_SET (vresult, NM_SETTING_VERIFY_NORMALIZABLE,
+		                         NM_SETTING_VERIFY_NORMALIZABLE_ERROR)) {
+			g_propagate_error (error, g_steal_pointer (&local));
+			return FALSE;
+		}
+		if (!allow_modify) {
+			connection_clone = nm_simple_connection_new_clone (connection);
+			connection = connection_clone;
+		}
+		if (!nm_connection_normalize (connection, NULL, NULL, error)) {
+			nm_assert_not_reached ();
+			return FALSE;
+		}
+	}
+
+	if (enforce_uuid) {
+		if (!nm_streq (enforce_uuid, nm_connection_get_uuid (connection))) {
+			NMSettingConnection *s_con;
+
+			if (   !allow_modify
+			    && !connection_clone) {
+				connection_clone = nm_simple_connection_new_clone (connection);
+				connection = connection_clone;
+			}
+			s_con = nm_connection_get_setting_connection (connection);
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_UUID,
+			              enforce_uuid,
+			              NULL);
+		}
+	}
+
+	if (connection_clone)
+		*out_connection_clone = g_steal_pointer (&connection_clone);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+#if NM_MORE_ASSERTS
+static void
+_nmtst_connection_unchanging_changed_cb (NMConnection *connection, gpointer user_data)
+{
+	nm_assert_not_reached ();
+}
+
+static void
+_nmtst_connection_unchanging_secrets_updated_cb (NMConnection *connection, const char *setting_name, gpointer user_data)
+{
+	nm_assert_not_reached ();
+}
+
+void
+nmtst_connection_assert_unchanging (NMConnection *connection)
+{
+	nm_assert (NM_IS_CONNECTION (connection));
+
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  G_CALLBACK (_nmtst_connection_unchanging_changed_cb),
+	                  NULL);
+	g_signal_connect (connection,
+	                  NM_CONNECTION_SECRETS_CLEARED,
+	                  G_CALLBACK (_nmtst_connection_unchanging_changed_cb),
+	                  NULL);
+	g_signal_connect (connection,
+	                  NM_CONNECTION_SECRETS_UPDATED,
+	                  G_CALLBACK (_nmtst_connection_unchanging_secrets_updated_cb),
+	                  NULL);
+}
+#endif
+
+/*****************************************************************************/
+
 /**
  * nm_connection_update_secrets:
  * @connection: the #NMConnection
@@ -3158,13 +3249,13 @@ nm_connection_default_init (NMConnectionInterface *iface)
 	 */
 	signals[SECRETS_UPDATED] =
 	    g_signal_new (NM_CONNECTION_SECRETS_UPDATED,
-	                 NM_TYPE_CONNECTION,
-	                 G_SIGNAL_RUN_FIRST,
-	                 G_STRUCT_OFFSET (NMConnectionInterface, secrets_updated),
-	                 NULL, NULL,
-	                 g_cclosure_marshal_VOID__STRING,
-	                 G_TYPE_NONE, 1,
-	                 G_TYPE_STRING);
+	                  NM_TYPE_CONNECTION,
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMConnectionInterface, secrets_updated),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__STRING,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_STRING);
 
 	/**
 	 * NMConnection::secrets-cleared:
@@ -3175,12 +3266,12 @@ nm_connection_default_init (NMConnectionInterface *iface)
 	 */
 	signals[SECRETS_CLEARED] =
 	    g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
-	                 NM_TYPE_CONNECTION,
-	                 G_SIGNAL_RUN_FIRST,
-	                 G_STRUCT_OFFSET (NMConnectionInterface, secrets_cleared),
-	                 NULL, NULL,
-	                 g_cclosure_marshal_VOID__VOID,
-	                 G_TYPE_NONE, 0);
+	                  NM_TYPE_CONNECTION,
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMConnectionInterface, secrets_cleared),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 
 	/**
 	 * NMConnection::changed:
@@ -3192,10 +3283,10 @@ nm_connection_default_init (NMConnectionInterface *iface)
 	 */
 	signals[CHANGED] =
 	    g_signal_new (NM_CONNECTION_CHANGED,
-	                 NM_TYPE_CONNECTION,
-	                 G_SIGNAL_RUN_FIRST,
-	                 G_STRUCT_OFFSET (NMConnectionInterface, changed),
-	                 NULL, NULL,
-	                 g_cclosure_marshal_VOID__VOID,
-	                 G_TYPE_NONE, 0);
+	                  NM_TYPE_CONNECTION,
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMConnectionInterface, changed),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 }

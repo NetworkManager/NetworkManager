@@ -755,13 +755,6 @@ _get_secrets_info_free (NMSettingsConnectionCallId *call_id)
 	g_slice_free (NMSettingsConnectionCallId, call_id);
 }
 
-static gboolean
-supports_secrets (NMSettingsConnection *self, const char *setting_name)
-{
-	/* All secrets supported */
-	return TRUE;
-}
-
 typedef struct {
 	NMSettingSecretFlags required;
 	NMSettingSecretFlags forbidden;
@@ -2997,8 +2990,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *klass)
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-
-	klass->supports_secrets = supports_secrets;
 
 	obj_properties[PROP_UNSAVED] =
 	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",

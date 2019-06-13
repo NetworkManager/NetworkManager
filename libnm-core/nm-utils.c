@@ -955,43 +955,51 @@ _nm_utils_bytes_from_dbus (GVariant *dbus_value,
 	g_value_take_boxed (prop_value, bytes);
 }
 
+/*****************************************************************************/
+
 GSList *
 _nm_utils_strv_to_slist (char **strv, gboolean deep_copy)
 {
-	int i;
 	GSList *list = NULL;
+	gsize i;
 
-	if (strv) {
-		if (deep_copy) {
-			for (i = 0; strv[i]; i++)
-				list = g_slist_prepend (list, g_strdup (strv[i]));
-		} else {
-			for (i = 0; strv[i]; i++)
-				list = g_slist_prepend (list, strv[i]);
-		}
+	if (!strv)
+		return NULL;
+
+	if (deep_copy) {
+		for (i = 0; strv[i]; i++)
+			list = g_slist_prepend (list, g_strdup (strv[i]));
+	} else {
+		for (i = 0; strv[i]; i++)
+			list = g_slist_prepend (list, strv[i]);
 	}
-
 	return g_slist_reverse (list);
 }
 
 char **
-_nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy)
+_nm_utils_slist_to_strv (const GSList *slist, gboolean deep_copy)
 {
-	GSList *iter;
+	const GSList *iter;
 	char **strv;
-	int len, i;
+	guint len, i;
 
-	len = g_slist_length (slist);
-	if (!len)
+	if (!slist)
 		return NULL;
+
+	len = g_slist_length ((GSList *) slist);
+
 	strv = g_new (char *, len + 1);
 
 	if (deep_copy) {
-		for (i = 0, iter = slist; iter; iter = iter->next, i++)
+		for (i = 0, iter = slist; iter; iter = iter->next, i++) {
+			nm_assert (iter->data);
 			strv[i] = g_strdup (iter->data);
+		}
 	} else {
-		for (i = 0, iter = slist; iter; iter = iter->next, i++)
+		for (i = 0, iter = slist; iter; iter = iter->next, i++) {
+			nm_assert (iter->data);
 			strv[i] = iter->data;
+		}
 	}
 	strv[i] = NULL;
 
@@ -1002,9 +1010,11 @@ GPtrArray *
 _nm_utils_strv_to_ptrarray (char **strv)
 {
 	GPtrArray *ptrarray;
-	int i;
+	gsize i, l;
 
-	ptrarray = g_ptr_array_new_with_free_func (g_free);
+	l = NM_PTRARRAY_LEN (strv);
+
+	ptrarray = g_ptr_array_new_full (l, g_free);
 
 	if (strv) {
 		for (i = 0; strv[i]; i++)
@@ -1015,10 +1025,10 @@ _nm_utils_strv_to_ptrarray (char **strv)
 }
 
 char **
-_nm_utils_ptrarray_to_strv (GPtrArray *ptrarray)
+_nm_utils_ptrarray_to_strv (const GPtrArray *ptrarray)
 {
 	char **strv;
-	int i;
+	guint i;
 
 	if (!ptrarray)
 		return g_new0 (char *, 1);
@@ -1031,6 +1041,8 @@ _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray)
 
 	return strv;
 }
+
+/*****************************************************************************/
 
 static gboolean
 device_supports_ap_ciphers (guint32 dev_caps,
@@ -4713,11 +4725,14 @@ nm_utils_iface_valid_name (const char *name)
 
 /**
  * nm_utils_is_uuid:
- * @str: a string that might be a UUID
+ * @str: (allow-none): a string that might be a UUID
  *
  * Checks if @str is a UUID
  *
  * Returns: %TRUE if @str is a UUID, %FALSE if not
+ *
+ * In older versions, nm_utils_is_uuid() did not accept %NULL as @str
+ * argument. Don't pass %NULL if you run against older versions of libnm.
  */
 gboolean
 nm_utils_is_uuid (const char *str)
@@ -4725,7 +4740,8 @@ nm_utils_is_uuid (const char *str)
 	const char *p = str;
 	int num_dashes = 0;
 
-	g_return_val_if_fail (str, FALSE);
+	if (!p)
+		return FALSE;
 
 	while (*p) {
 		if (*p == '-')
@@ -6030,6 +6046,33 @@ _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
 			pvid_found = TRUE;
 		}
 	}
+
+	return TRUE;
+}
+
+gboolean
+nm_utils_connection_is_adhoc_wpa (NMConnection *connection)
+{
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	const char *key_mgmt;
+	const char *mode;
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	if (!s_wifi)
+		return FALSE;
+
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC))
+		return FALSE;
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wsec)
+		return FALSE;
+
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+	if (!nm_streq0 (key_mgmt, "wpa-none"))
+		return FALSE;
 
 	return TRUE;
 }

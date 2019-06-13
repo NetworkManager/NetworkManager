@@ -57,16 +57,6 @@ G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SETTINGS_CO
 
 /*****************************************************************************/
 
-static gboolean
-supports_secrets (NMSettingsConnection *connection, const char *setting_name)
-{
-	_LOGI ("supports_secrets() for setting_name: '%s'", setting_name);
-
-	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
-}
-
-/*****************************************************************************/
-
 static void
 nm_ifupdown_connection_init (NMIfupdownConnection *connection)
 {
@@ -98,8 +88,4 @@ nm_ifupdown_connection_new (if_block *block)
 static void
 nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connection_class)
 {
-	NMSettingsConnectionClass *connection_class = NM_SETTINGS_CONNECTION_CLASS (ifupdown_connection_class);
-
-	connection_class->supports_secrets = supports_secrets;
 }
-

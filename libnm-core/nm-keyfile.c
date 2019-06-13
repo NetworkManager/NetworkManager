@@ -363,6 +363,53 @@ read_field (char **current, const char **out_err_str, const char *characters, co
 	}
 }
 
+/*****************************************************************************/
+
+#define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
+#define NM_OPENCONNECT_KEY_GATEWAY     "gateway"
+#define NM_OPENCONNECT_KEY_COOKIE      "cookie"
+#define NM_OPENCONNECT_KEY_GWCERT      "gwcert"
+#define NM_OPENCONNECT_KEY_XMLCONFIG   "xmlconfig"
+#define NM_OPENCONNECT_KEY_LASTHOST    "lasthost"
+#define NM_OPENCONNECT_KEY_AUTOCONNECT "autoconnect"
+#define NM_OPENCONNECT_KEY_CERTSIGS    "certsigs"
+
+static void
+openconnect_fix_secret_flags (NMSetting *setting)
+{
+	NMSettingVpn *s_vpn;
+	NMSettingSecretFlags flags;
+
+	/* Huge hack.  There were some openconnect changes that needed to happen
+	 * pretty late, too late to get into distros.  Migration has already
+	 * happened for many people, and their secret flags are wrong.  But we
+	 * don't want to requrie re-migration, so we have to fix it up here. Ugh.
+	 */
+
+	if (!NM_IS_SETTING_VPN (setting))
+		return;
+
+	s_vpn = NM_SETTING_VPN (setting);
+
+	if (!nm_streq0 (nm_setting_vpn_get_service_type (s_vpn), NM_DBUS_SERVICE_OPENCONNECT))
+		return;
+
+	/* These are different for every login session, and should not be stored */
+	flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GATEWAY, flags, NULL);
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_COOKIE, flags, NULL);
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GWCERT, flags, NULL);
+
+	/* These are purely internal data for the auth-dialog, and should be stored */
+	flags = 0;
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_XMLCONFIG, flags, NULL);
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_LASTHOST, flags, NULL);
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_AUTOCONNECT, flags, NULL);
+	nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_CERTSIGS, flags, NULL);
+}
+
+/*****************************************************************************/
+
 #define IP_ADDRESS_CHARS "0123456789abcdefABCDEF:.%"
 #define DIGITS "0123456789"
 #define DELIMITERS "/;,"
@@ -1024,6 +1071,7 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 					nm_setting_bond_add_option (NM_SETTING_BOND (setting), name, value);
 			}
 		}
+		openconnect_fix_secret_flags (setting);
 		return;
 	}
 

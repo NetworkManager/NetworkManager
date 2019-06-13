@@ -201,7 +201,22 @@ typedef enum {
 
 NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
 
+gboolean _nm_connection_ensure_normalized (NMConnection *connection,
+                                           gboolean allow_modify,
+                                           const char *enforce_uuid,
+                                           NMConnection **out_connection_clone,
+                                           GError **error);
+
 gboolean _nm_connection_remove_setting (NMConnection *connection, GType setting_type);
+
+#if NM_MORE_ASSERTS
+void nmtst_connection_assert_unchanging (NMConnection *connection);
+#else
+static inline void
+nmtst_connection_assert_unchanging (NMConnection *connection)
+{
+}
+#endif
 
 NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
                                                    NMSettingParseFlags parse_flags,
@@ -276,10 +291,10 @@ GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 gssize _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer needle);
 
 GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
-char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
+char **     _nm_utils_slist_to_strv (const GSList *slist, gboolean deep_copy);
 
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
-char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
+char **     _nm_utils_ptrarray_to_strv (const GPtrArray *ptrarray);
 
 gboolean _nm_utils_check_file (const char *filename,
                                gint64 check_owner,
@@ -814,5 +829,7 @@ gboolean nm_utils_base64secret_normalize (const char *base64_key,
 void _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
                                       GString *string,
                                       gboolean leading_space);
+
+gboolean nm_utils_connection_is_adhoc_wpa (NMConnection *connection);
 
 #endif
