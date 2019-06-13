@@ -114,7 +114,11 @@ typedef struct {
 
 	NMConfig *config;
 
+	NMHostnameManager *hostname_manager;
+
 	CList auth_lst_head;
+
+	NMSKeyfilePlugin *keyfile_plugin;
 
 	GSList *plugins;
 
@@ -124,10 +128,9 @@ typedef struct {
 	CList connections_lst_head;
 
 	NMSettingsConnection **connections_cached_list;
+
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
-
-	NMHostnameManager *hostname_manager;
 
 	NMSettingsConnection *startup_complete_blocked_by;
 
@@ -1339,17 +1342,18 @@ add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 static void
 add_plugin_keyfile (NMSettings *self)
 {
-	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	keyfile_plugin = nms_keyfile_plugin_new ();
-	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), "keyfile", NULL);
+	if (priv->keyfile_plugin)
+		return;
+	priv->keyfile_plugin = nms_keyfile_plugin_new ();
+	add_plugin (self, NM_SETTINGS_PLUGIN (priv->keyfile_plugin), "keyfile", NULL);
 }
 
 static gboolean
 load_plugins (NMSettings *self, const char **plugins, GError **error)
 {
 	const char **iter;
-	gboolean keyfile_added = FALSE;
 	gboolean success = TRUE;
 	gboolean add_ibft = FALSE;
 	gboolean has_no_ibft;
@@ -1382,10 +1386,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		/* keyfile plugin is built-in now */
 		if (nm_streq (pname, "keyfile")) {
-			if (!keyfile_added) {
-				add_plugin_keyfile (self);
-				keyfile_added = TRUE;
-			}
+			add_plugin_keyfile (self);
 			continue;
 		}
 
@@ -1414,7 +1415,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	}
 
 	/* If keyfile plugin was not among configured plugins, add it as the last one */
-	if (!keyfile_added && success)
+	if (success)
 		add_plugin_keyfile (self);
 
 	return success;
@@ -1963,6 +1964,8 @@ finalize (GObject *object)
 		priv->plugins = g_slist_delete_link (priv->plugins, iter);
 		g_signal_handlers_disconnect_by_data (plugin, self);
 	}
+
+	g_clear_object (&priv->keyfile_plugin);
 
 	g_clear_object (&priv->agent_mgr);
 
