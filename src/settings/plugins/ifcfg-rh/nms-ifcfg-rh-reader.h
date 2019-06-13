@@ -17,8 +17,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef __READER_H__
-#define __READER_H__
+#ifndef __NMS_IFCFG_RH_READER_H__
+#define __NMS_IFCFG_RH_READER_H__
 
 #include "nm-connection.h"
 
@@ -27,12 +27,10 @@ NMConnection *connection_from_file (const char *filename,
                                     GError **error,
                                     gboolean *out_ignore_error);
 
-guint devtimeout_from_file (const char *filename);
-
 NMConnection *nmtst_connection_from_file (const char *filename,
                                           const char *network_file,
                                           const char *test_type,
                                           char **out_unhandled,
                                           GError **error);
 
-#endif  /* __READER_H__ */
+#endif  /* __NMS_IFCFG_RH_READER_H__ */

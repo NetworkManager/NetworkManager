@@ -35,7 +35,7 @@ libnms_ifcfg_rh_core = static_library(
   dependencies: deps,
 )
 
-sources = [dbus_sources] + core_sources + files('nms-ifcfg-rh-connection.c', 'nms-ifcfg-rh-plugin.c')
+sources = [dbus_sources] + core_sources + files('nms-ifcfg-rh-storage.c', 'nms-ifcfg-rh-plugin.c')
 
 libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',

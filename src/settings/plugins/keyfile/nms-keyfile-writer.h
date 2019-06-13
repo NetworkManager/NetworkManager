@@ -27,8 +27,12 @@ typedef gboolean (*NMSKeyfileWriterAllowFilenameCb) (const char *check_filename,
                                                      gpointer allow_filename_user_data);
 
 gboolean nms_keyfile_writer_connection (NMConnection *connection,
-                                        gboolean save_to_disk,
+                                        gboolean is_nm_generated,
+                                        gboolean is_volatile,
+                                        const char *keyfile_dir,
+                                        const char *profile_dir,
                                         const char *existing_path,
+                                        gboolean existing_path_read_only,
                                         gboolean force_rename,
                                         NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                                         gpointer allow_filename_user_data,

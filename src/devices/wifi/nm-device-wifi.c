@@ -1760,9 +1760,10 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 	}
 	if (secrets) {
 		if (nm_settings_connection_new_secrets (nm_act_request_get_settings_connection (req),
-		                                         nm_act_request_get_applied_connection (req),
-		                                         NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-		                                         secrets, &error)) {
+		                                        nm_act_request_get_applied_connection (req),
+		                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+		                                        secrets,
+		                                        &error)) {
 			wifi_secrets_cancel (self);
 			nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
 		} else {

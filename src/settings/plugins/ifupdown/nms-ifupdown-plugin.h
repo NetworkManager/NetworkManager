@@ -19,21 +19,21 @@
  * (C) Copyright 2008 Canonical Ltd.
  */
 
-#ifndef _PLUGIN_H_
-#define _PLUGIN_H_
+#ifndef __NMS_IFUPDOWN_PLUGIN_H__
+#define __NMS_IFUPDOWN_PLUGIN_H__
 
 #define PLUGIN_NAME "ifupdown"
 
-#define SETTINGS_TYPE_PLUGIN_IFUPDOWN            (settings_plugin_ifupdown_get_type ())
-#define SETTINGS_PLUGIN_IFUPDOWN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdown))
-#define SETTINGS_PLUGIN_IFUPDOWN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdownClass))
-#define SETTINGS_IS_PLUGIN_IFUPDOWN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_IFUPDOWN))
-#define SETTINGS_IS_PLUGIN_IFUPDOWN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_IFUPDOWN))
-#define SETTINGS_PLUGIN_IFUPDOWN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdownClass))
+#define NMS_TYPE_IFUPDOWN_PLUGIN            (nms_ifupdown_plugin_get_type ())
+#define NMS_IFUPDOWN_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_IFUPDOWN_PLUGIN, NMSIfupdownPlugin))
+#define NMS_IFUPDOWN_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_IFUPDOWN_PLUGIN, NMSIfupdownPluginClass))
+#define NMS_IS_IFUPDOWN_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_IFUPDOWN_PLUGIN))
+#define NMS_IS_IFUPDOWN_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_IFUPDOWN_PLUGIN))
+#define NMS_IFUPDOWN_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_IFUPDOWN_PLUGIN, NMSIfupdownPluginClass))
 
-typedef struct _SettingsPluginIfupdown SettingsPluginIfupdown;
-typedef struct _SettingsPluginIfupdownClass SettingsPluginIfupdownClass;
+typedef struct _NMSIfupdownPlugin NMSIfupdownPlugin;
+typedef struct _NMSIfupdownPluginClass NMSIfupdownPluginClass;
 
-GType settings_plugin_ifupdown_get_type (void);
+GType nms_ifupdown_plugin_get_type (void);
 
-#endif /* _PLUGIN_H_ */
+#endif /* __NMS_IFUPDOWN_PLUGIN_H__ */

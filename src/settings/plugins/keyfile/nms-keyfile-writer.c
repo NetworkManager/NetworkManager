@@ -168,6 +168,8 @@ _handler_write (NMConnection *connection,
 
 static gboolean
 _internal_write_connection (NMConnection *connection,
+                            gboolean is_nm_generated,
+                            gboolean is_volatile,
                             const char *keyfile_dir,
                             const char *profile_dir,
                             gboolean with_extension,
@@ -212,6 +214,21 @@ _internal_write_connection (NMConnection *connection,
 	kf_file = nm_keyfile_write (connection, _handler_write, &info, error);
 	if (!kf_file)
 		return FALSE;
+
+	if (is_nm_generated) {
+		g_key_file_set_boolean (kf_file,
+		                        NM_KEYFILE_GROUP_NMMETA,
+		                        NM_KEYFILE_KEY_NMMETA_NM_GENERATED,
+		                        TRUE);
+	}
+
+	if (is_volatile) {
+		g_key_file_set_boolean (kf_file,
+		                        NM_KEYFILE_GROUP_NMMETA,
+		                        NM_KEYFILE_KEY_NMMETA_VOLATILE,
+		                        TRUE);
+	}
+
 	kf_content_buf = g_key_file_to_data (kf_file, &kf_content_len, error);
 	if (!kf_content_buf)
 		return FALSE;
@@ -337,8 +354,12 @@ _internal_write_connection (NMConnection *connection,
 
 gboolean
 nms_keyfile_writer_connection (NMConnection *connection,
-                               gboolean save_to_disk,
+                               gboolean is_nm_generated,
+                               gboolean is_volatile,
+                               const char *keyfile_dir,
+                               const char *profile_dir,
                                const char *existing_path,
+                               gboolean existing_path_read_only,
                                gboolean force_rename,
                                NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                                gpointer allow_filename_user_data,
@@ -347,21 +368,16 @@ nms_keyfile_writer_connection (NMConnection *connection,
                                gboolean *out_reread_same,
                                GError **error)
 {
-	const char *keyfile_dir;
-
-	if (save_to_disk)
-		keyfile_dir = nms_keyfile_utils_get_path ();
-	else
-		keyfile_dir = NM_KEYFILE_PATH_NAME_RUN;
-
 	return _internal_write_connection (connection,
+	                                   is_nm_generated,
+	                                   is_volatile,
 	                                   keyfile_dir,
-	                                   nms_keyfile_utils_get_path (),
+	                                   profile_dir,
 	                                   TRUE,
 	                                   0,
 	                                   0,
 	                                   existing_path,
-	                                   FALSE,
+	                                   existing_path_read_only,
 	                                   force_rename,
 	                                   allow_filename_cb,
 	                                   allow_filename_user_data,
@@ -382,6 +398,8 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
                                     GError **error)
 {
 	return _internal_write_connection (connection,
+	                                   FALSE,
+	                                   FALSE,
 	                                   keyfile_dir,
 	                                   keyfile_dir,
 	                                   FALSE,

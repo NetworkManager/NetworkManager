@@ -30,8 +30,13 @@ NMConnection *nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
                                                gboolean verbose,
                                                GError **error);
 
+struct stat;
+
 NMConnection *nms_keyfile_reader_from_file (const char *full_filename,
                                             const char *profile_dir,
+                                            struct stat *out_stat,
+                                            NMTernary *out_is_nm_generated,
+                                            NMTernary *out_is_volatile,
                                             GError **error);
 
 #endif /* __NMS_KEYFILE_READER_H__ */

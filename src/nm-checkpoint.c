@@ -217,19 +217,35 @@ restore_and_activate_connection (NMCheckpoint *self,
 	gs_unref_object NMAuthSubject *subject = NULL;
 	GError *local_error = NULL;
 	gboolean need_update, need_activation;
+	NMSettingsConnectionPersistMode persist_mode;
+	NMSettingsConnectionIntFlags sett_flags;
+	NMSettingsConnectionIntFlags sett_mask;
 
 	connection = find_settings_connection (self,
 	                                       dev_checkpoint,
 	                                       &need_update,
 	                                       &need_activation);
+
+	/* FIXME: we need to ensure to re-create/update the profile for the
+	 *   same settings plugin. E.g. if it was a keyfile in /run or /etc,
+	 *   it must be again. If it was previously handled by a certain settings plugin,
+	 *   so it must again.
+	 *
+	 * FIXME: preserve and restore the right settings flags (volatile, nm-generated). */
+	sett_flags = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
+	sett_mask = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
+
 	if (connection) {
 		if (need_update) {
 			_LOGD ("rollback: updating connection %s",
 			       nm_settings_connection_get_uuid (connection));
+			persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
 			nm_settings_connection_update (connection,
 			                               dev_checkpoint->settings_connection,
-			                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-			                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+			                               persist_mode,
+			                               sett_flags,
+			                               sett_mask,
+			                               NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
 			                               "checkpoint-rollback",
 			                               NULL);
 		}
@@ -238,11 +254,13 @@ restore_and_activate_connection (NMCheckpoint *self,
 		_LOGD ("rollback: adding connection %s again",
 		       nm_connection_get_uuid (dev_checkpoint->settings_connection));
 
-		connection = nm_settings_add_connection (NM_SETTINGS_GET,
-		                                         dev_checkpoint->settings_connection,
-		                                         TRUE,
-		                                         &local_error);
-		if (!connection) {
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		if (!nm_settings_add_connection (NM_SETTINGS_GET,
+		                                 dev_checkpoint->settings_connection,
+		                                 persist_mode,
+		                                 sett_flags,
+		                                 &connection,
+		                                 &local_error)) {
 			_LOGD ("rollback: connection add failure: %s", local_error->message);
 			g_clear_error (&local_error);
 			return FALSE;
@@ -428,7 +446,7 @@ next_dev:
 			                            nm_settings_connection_get_uuid (con))) {
 				_LOGD ("rollback: deleting new connection %s",
 				       nm_settings_connection_get_uuid (con));
-				nm_settings_connection_delete (con, NULL);
+				nm_settings_connection_delete (con, FALSE);
 			}
 		}
 	}

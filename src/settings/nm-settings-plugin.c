@@ -22,12 +22,14 @@
 
 #include "nm-settings-plugin.h"
 
+#include "nm-utils.h"
+#include "nm-core-internal.h"
+
 #include "nm-settings-connection.h"
 
 /*****************************************************************************/
 
 enum {
-	CONNECTION_ADDED,
 	UNMANAGED_SPECS_CHANGED,
 	UNRECOGNIZED_SPECS_CHANGED,
 
@@ -41,103 +43,200 @@ G_DEFINE_TYPE (NMSettingsPlugin, nm_settings_plugin, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 GSList *
-nm_settings_plugin_get_connections (NMSettingsPlugin *self)
-{
-	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), NULL);
-
-	if (NM_SETTINGS_PLUGIN_GET_CLASS (self)->get_connections)
-		return NM_SETTINGS_PLUGIN_GET_CLASS (self)->get_connections (self);
-	return NULL;
-}
-
-gboolean
-nm_settings_plugin_load_connection (NMSettingsPlugin *self,
-                                    const char *filename)
-{
-	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), FALSE);
-
-	if (NM_SETTINGS_PLUGIN_GET_CLASS (self)->load_connection)
-		return NM_SETTINGS_PLUGIN_GET_CLASS (self)->load_connection (self, filename);
-	return FALSE;
-}
-
-void
-nm_settings_plugin_reload_connections (NMSettingsPlugin *self)
-{
-	g_return_if_fail (NM_IS_SETTINGS_PLUGIN (self));
-
-	if (NM_SETTINGS_PLUGIN_GET_CLASS (self)->reload_connections)
-		NM_SETTINGS_PLUGIN_GET_CLASS (self)->reload_connections (self);
-}
-
-GSList *
 nm_settings_plugin_get_unmanaged_specs (NMSettingsPlugin *self)
 {
+	NMSettingsPluginClass *klass;
+
 	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), NULL);
 
-	if (NM_SETTINGS_PLUGIN_GET_CLASS (self)->get_unmanaged_specs)
-		return NM_SETTINGS_PLUGIN_GET_CLASS (self)->get_unmanaged_specs (self);
-	return NULL;
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+	if (!klass->get_unmanaged_specs)
+		return NULL;
+	return klass->get_unmanaged_specs (self);
 }
 
 GSList *
 nm_settings_plugin_get_unrecognized_specs (NMSettingsPlugin *self)
 {
+	NMSettingsPluginClass *klass;
+
 	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), NULL);
 
-	if (NM_SETTINGS_PLUGIN_GET_CLASS (self)->get_unrecognized_specs)
-		return NM_SETTINGS_PLUGIN_GET_CLASS (self)->get_unrecognized_specs (self);
-	return NULL;
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+	if (!klass->get_unrecognized_specs)
+		return NULL;
+	return klass->get_unrecognized_specs (self);
 }
 
-/**
- * nm_settings_plugin_add_connection:
- * @self: the #NMSettingsPlugin
- * @connection: the source connection to create a plugin-specific
- * #NMSettingsConnection from
- * @save_to_disk: %TRUE to save the connection to disk immediately, %FALSE to
- * not save to disk
- * @error: on return, a location to store any errors that may occur
- *
- * Creates a new #NMSettingsConnection for the given source @connection.  If the
- * plugin cannot handle the given connection type, it should return %NULL and
- * set @error.  The plugin owns the returned object and the caller must reference
- * the object if it wishes to continue using it.
- *
- * Returns: the new #NMSettingsConnection or %NULL
- */
-NMSettingsConnection *
+void
+nm_settings_plugin_reload_connections (NMSettingsPlugin *self,
+                                       NMSettingsPluginConnectionLoadCallback callback,
+                                       gpointer user_data)
+{
+	NMSettingsPluginClass *klass;
+
+	g_return_if_fail (NM_IS_SETTINGS_PLUGIN (self));
+	g_return_if_fail (callback);
+
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+	if (klass->reload_connections)
+		klass->reload_connections (self, callback, user_data);
+}
+
+NMSettingsPluginConnectionLoadEntry *
+nm_settings_plugin_create_connection_load_entries (const char *const*filenames,
+                                                   gsize *out_len)
+{
+	NMSettingsPluginConnectionLoadEntry *entries;
+	gsize len;
+	gsize i;
+
+	len = NM_PTRARRAY_LEN (filenames);
+	if (len == 0) {
+		*out_len = 0;
+		return NULL;
+	}
+
+	entries = g_new (NMSettingsPluginConnectionLoadEntry, len);
+	for (i = 0; i < len; i++) {
+		entries[i] = (NMSettingsPluginConnectionLoadEntry) {
+			.filename = filenames[i],
+			.error    = NULL,
+			.handled  = FALSE,
+		};
+	}
+
+	*out_len = len;
+	return entries;
+}
+
+void
+nm_settings_plugin_load_connections (NMSettingsPlugin *self,
+                                     NMSettingsPluginConnectionLoadEntry *entries,
+                                     gsize n_entries,
+                                     NMSettingsPluginConnectionLoadCallback callback,
+                                     gpointer user_data)
+{
+	NMSettingsPluginClass *klass;
+
+	g_return_if_fail (NM_IS_SETTINGS_PLUGIN (self));
+
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+	if (klass->load_connections)
+		klass->load_connections (self, entries, n_entries, callback, user_data);
+}
+
+void
+nm_settings_plugin_load_connections_done (NMSettingsPlugin *self)
+{
+	NMSettingsPluginClass *klass;
+
+	g_return_if_fail (NM_IS_SETTINGS_PLUGIN (self));
+
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+	if (klass->load_connections_done)
+		klass->load_connections_done (self);
+}
+
+gboolean
 nm_settings_plugin_add_connection (NMSettingsPlugin *self,
                                    NMConnection *connection,
-                                   gboolean save_to_disk,
+                                   NMSettingsStorage **out_storage,
+                                   NMConnection **out_connection,
                                    GError **error)
 {
 	NMSettingsPluginClass *klass;
 
-	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+#if NM_MORE_ASSERTS > 5
+	nm_assert (nm_connection_verify (connection, NULL));
+#endif
+
+	NM_SET_OUT (out_storage, NULL);
+	NM_SET_OUT (out_connection, NULL);
 
 	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
 	if (!klass->add_connection) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
-		                     "Plugin does not support adding connections");
-		return NULL;
+		                     "settings plugin does not support adding connections");
+		return FALSE;
+	}
+	return klass->add_connection (self,
+	                              connection,
+	                              out_storage,
+	                              out_connection,
+	                              error);
+}
+
+gboolean
+nm_settings_plugin_update_connection (NMSettingsPlugin *self,
+                                      NMSettingsStorage *storage,
+                                      NMConnection *connection,
+                                      NMSettingsStorage **out_storage,
+                                      NMConnection **out_connection,
+                                      GError **error)
+{
+	NMSettingsPluginClass *klass = NULL;
+
+	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_STORAGE (storage), FALSE);
+	g_return_val_if_fail (nm_settings_storage_get_plugin (storage) == self, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+#if NM_MORE_ASSERTS > 5
+	nm_assert (nm_connection_verify (connection, NULL));
+	nm_assert (nm_streq (nm_connection_get_uuid (connection), nm_settings_storage_get_uuid (storage)));
+#endif
+
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+
+	NM_SET_OUT (out_storage, NULL);
+	NM_SET_OUT (out_connection, NULL);
+
+	if (!klass->update_connection) {
+		g_set_error (error,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_NOT_SUPPORTED,
+		             "settings plugin does not support modifying connections");
+		return FALSE;
+	}
+	return klass->update_connection (self,
+	                                 storage,
+	                                 connection,
+	                                 out_storage,
+	                                 out_connection,
+	                                 error);
+}
+
+gboolean
+nm_settings_plugin_delete_connection (NMSettingsPlugin *self,
+                                      NMSettingsStorage *storage,
+                                      GError **error)
+{
+	NMSettingsPluginClass *klass = NULL;
+
+	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_STORAGE (storage), FALSE);
+	g_return_val_if_fail (nm_settings_storage_get_plugin (storage) == self, FALSE);
+
+	klass = NM_SETTINGS_PLUGIN_GET_CLASS (self);
+
+	if (!klass->delete_connection) {
+		g_set_error (error,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_NOT_SUPPORTED,
+		             "settings plugin does not support deleting connections");
+		return FALSE;
 	}
 
-	return klass->add_connection (self, connection, save_to_disk, error);
+	return klass->delete_connection (self,
+	                                 storage,
+	                                 error);
 }
 
 /*****************************************************************************/
-
-void
-_nm_settings_plugin_emit_signal_connection_added (NMSettingsPlugin *self,
-                                                  NMSettingsConnection *sett_conn)
-{
-	nm_assert (NM_IS_SETTINGS_PLUGIN (self));
-	nm_assert (NM_IS_SETTINGS_CONNECTION (sett_conn));
-
-	g_signal_emit (self, signals[CONNECTION_ADDED], 0, sett_conn);
-}
 
 void
 _nm_settings_plugin_emit_signal_unmanaged_specs_changed (NMSettingsPlugin *self)
@@ -166,15 +265,6 @@ static void
 nm_settings_plugin_class_init (NMSettingsPluginClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	signals[CONNECTION_ADDED] =
-	    g_signal_new (NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__OBJECT,
-	                  G_TYPE_NONE, 1,
-	                  NM_TYPE_SETTINGS_CONNECTION);
 
 	signals[UNMANAGED_SPECS_CHANGED] =
 	    g_signal_new (NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED,

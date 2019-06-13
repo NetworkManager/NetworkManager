@@ -20,19 +20,19 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
-#ifndef _PLUGIN_H_
-#define _PLUGIN_H_
+#ifndef __NMS_IFCFG_RH_PLUGIN_H__
+#define __NMS_IFCFG_RH_PLUGIN_H__
 
-#define SETTINGS_TYPE_PLUGIN_IFCFG            (settings_plugin_ifcfg_get_type ())
-#define SETTINGS_PLUGIN_IFCFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfg))
-#define SETTINGS_PLUGIN_IFCFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgClass))
-#define SETTINGS_IS_PLUGIN_IFCFG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_IFCFG))
-#define SETTINGS_IS_PLUGIN_IFCFG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_IFCFG))
-#define SETTINGS_PLUGIN_IFCFG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgClass))
+#define NMS_TYPE_IFCFG_RH_PLUGIN            (nms_ifcfg_rh_plugin_get_type ())
+#define NMS_IFCFG_RH_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_IFCFG_RH_PLUGIN, NMSIfcfgRHPlugin))
+#define NMS_IFCFG_RH_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_IFCFG_RH_PLUGIN, NMSIfcfgRHPluginClass))
+#define NMS_IS_IFCFG_RH_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_IFCFG_RH_PLUGIN))
+#define NMS_IS_IFCFG_RH_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_IFCFG_RH_PLUGIN))
+#define NMS_IFCFG_RH_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_IFCFG_RH_PLUGIN, NMSIfcfgRHPluginClass))
 
-typedef struct _SettingsPluginIfcfg SettingsPluginIfcfg;
-typedef struct _SettingsPluginIfcfgClass SettingsPluginIfcfgClass;
+typedef struct _NMSIfcfgRHPlugin NMSIfcfgRHPlugin;
+typedef struct _NMSIfcfgRHPluginClass NMSIfcfgRHPluginClass;
 
-GType settings_plugin_ifcfg_get_type (void);
+GType nms_ifcfg_rh_plugin_get_type (void);
 
-#endif /* _PLUGIN_H_ */
+#endif /* __NMS_IFCFG_RH_PLUGIN_H__ */

@@ -30,6 +30,29 @@
 
 /*****************************************************************************/
 
+#define _connection_from_if_block(block) \
+	({ \
+		NMConnection *_con; \
+		if_block *_block = (block); \
+		GError *_local = NULL; \
+		\
+		g_assert (_block); \
+		_con = ifupdown_new_connection_from_if_block (_block, FALSE, &_local); \
+		nmtst_assert_success (NM_IS_CONNECTION (_con), _local); \
+		nmtst_assert_connection_verifies_without_normalization (_con); \
+		_con; \
+	})
+
+#define _connection_first_from_parser(parser) \
+	({ \
+		if_parser *_parser = (parser); \
+		\
+		g_assert (_parser); \
+		_connection_from_if_block (ifparser_getfirst (_parser)); \
+	})
+
+/*****************************************************************************/
+
 typedef struct {
 	char *key;
 	char *data;
@@ -452,26 +475,14 @@ test16_missing_newline (void)
 static void
 test17_read_static_ipv4 (void)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingWired *s_wired;
-	GError *error = NULL;
-	gboolean success;
 	NMIPAddress *ip4_addr;
-	if_block *block = NULL;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test17-wired-static-verify-ip4");
 
-	block = ifparser_getfirst (parser);
-	connection = nm_simple_connection_new();
-	g_assert (connection);
-
-	ifupdown_update_connection_from_if_block (connection, block, &error);
-	g_assert_no_error (error);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_first_from_parser (parser);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -500,32 +511,19 @@ test17_read_static_ipv4 (void)
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip4), ==, 2);
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 0), ==, "example.com");
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 1), ==, "foo.example.com");
-
-	g_object_unref (connection);
 }
 
 static void
 test18_read_static_ipv6 (void)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip6;
 	NMSettingWired *s_wired;
-	GError *error = NULL;
-	gboolean success;
 	NMIPAddress *ip6_addr;
-	if_block *block = NULL;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test18-wired-static-verify-ip6");
 
-	block = ifparser_getfirst (parser);
-	connection = nm_simple_connection_new();
-	g_assert (connection);
-	ifupdown_update_connection_from_if_block (connection, block, &error);
-	g_assert_no_error (error);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_first_from_parser (parser);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -554,30 +552,17 @@ test18_read_static_ipv6 (void)
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip6), ==, 2);
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 0), ==, "example.com");
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 1), ==, "foo.example.com");
-
-	g_object_unref (connection);
 }
 
 static void
 test19_read_static_ipv4_plen (void)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingIPConfig *s_ip4;
-	GError *error = NULL;
 	NMIPAddress *ip4_addr;
-	if_block *block = NULL;
-	gboolean success;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test19-wired-static-verify-ip4-plen");
 
-	block = ifparser_getfirst (parser);
-	connection = nm_simple_connection_new();
-	g_assert (connection);
-	ifupdown_update_connection_from_if_block (connection, block, &error);
-	g_assert_no_error (error);
-
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	connection = _connection_first_from_parser (parser);
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -588,8 +573,6 @@ test19_read_static_ipv4_plen (void)
 	g_assert (ip4_addr != NULL);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "10.0.0.3");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
-
-	g_object_unref (connection);
 }
 
 static void
@@ -670,4 +653,3 @@ main (int argc, char **argv)
 
 	return g_test_run ();
 }
-

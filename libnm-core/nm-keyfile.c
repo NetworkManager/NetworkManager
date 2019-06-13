@@ -3537,7 +3537,9 @@ nm_keyfile_read (GKeyFile *keyfile,
 			vpn_secrets = TRUE;
 		} else if (NM_STR_HAS_PREFIX (groups[i], NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER))
 			_read_setting_wireguard_peer (&info);
-		else
+		else if (nm_streq (groups[i], NM_KEYFILE_GROUP_NMMETA)) {
+			/* pass */
+		} else
 			_read_setting (&info);
 
 		info.group = NULL;

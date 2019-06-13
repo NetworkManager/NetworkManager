@@ -15,7 +15,6 @@ libnms_ifupdown_core = static_library(
 )
 
 sources = files(
-  'nms-ifupdown-connection.c',
   'nms-ifupdown-plugin.c',
 )
 

@@ -56,9 +56,7 @@
         does not start the network connection unless (1) device is idle and able
         to connect to the network described by the new connection, and (2) the
         connection is allowed to be started automatically. Use the 'Save' method
-        on the connection to save these changes to disk. Note that unsaved changes
-        will be lost if the connection is reloaded from disk (either automatically
-        on file change or due to an explicit ReloadConnections call).
+        on the connection to save these changes to disk.
     -->
     <method name="AddConnectionUnsaved">
       <arg name="connection" type="a{sa{sv}}" direction="in"/>

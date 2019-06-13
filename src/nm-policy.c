@@ -1846,8 +1846,7 @@ device_state_changed (NMDevice *device,
 				}
 			}
 
-			/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-			nm_connection_clear_secrets (nm_settings_connection_get_connection (sett_conn));
+			nm_settings_connection_clear_secrets (sett_conn, FALSE, FALSE);
 		}
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
@@ -1858,9 +1857,7 @@ device_state_changed (NMDevice *device,
 			/* And clear secrets so they will always be requested from the
 			 * settings service when the next connection is made.
 			 */
-
-			/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-			nm_connection_clear_secrets (nm_settings_connection_get_connection (sett_conn));
+			nm_settings_connection_clear_secrets (sett_conn, FALSE, FALSE);
 		}
 
 		/* Add device's new IPv4 and IPv6 configs to DNS */
@@ -2399,13 +2396,14 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 static void
 connection_updated (NMSettings *settings,
                     NMSettingsConnection *connection,
-                    gboolean by_user,
+                    guint update_reason_u,
                     gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
+	NMSettingsConnectionUpdateReason update_reason = update_reason_u;
 
-	if (by_user) {
+	if (NM_FLAGS_HAS (update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL)) {
 		const CList *tmp_lst;
 		NMDevice *device;
 
@@ -2414,9 +2412,6 @@ connection_updated (NMSettings *settings,
 			if (nm_device_get_settings_connection (device) == connection)
 				nm_device_reapply_settings_immediately (device);
 		}
-
-		/* Reset auto retries back to default since connection was updated */
-		nm_settings_connection_autoconnect_retries_reset (connection);
 	}
 
 	schedule_activate_all (self);

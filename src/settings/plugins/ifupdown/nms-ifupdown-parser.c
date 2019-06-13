@@ -651,22 +651,21 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 	return TRUE;
 }
 
-gboolean
-ifupdown_update_connection_from_if_block (NMConnection *connection,
-                                          if_block *block,
-                                          GError **error)
+NMConnection *
+ifupdown_new_connection_from_if_block (if_block *block,
+                                       gboolean autoconnect,
+                                       GError **error)
 {
+	gs_unref_object NMConnection *connection = NULL;
 	const char *type;
 	gs_free char *idstr = NULL;
 	gs_free char *uuid = NULL;
 	NMSettingConnection *s_con;
-	gboolean success = FALSE;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con) {
-		s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-		nm_connection_add_setting (connection, NM_SETTING (s_con));
-	}
+	connection = nm_simple_connection_new ();
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	type = _ifupdownplugin_guess_connection_type (block);
 	idstr = g_strconcat ("Ifupdown (", block->name, ")", NULL);
@@ -678,10 +677,10 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 	              NM_SETTING_CONNECTION_ID, idstr,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_READ_ONLY, TRUE,
-	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, (gboolean) (!!autoconnect),
 	              NULL);
 
-	_LOGI ("update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",
+	_LOGD ("update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",
 	       block->name, type, idstr, nm_setting_connection_get_uuid (s_con));
 
 	if (nm_streq (type, NM_SETTING_WIRED_SETTING_NAME))
@@ -691,13 +690,16 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 		update_wireless_security_setting_from_if_block (connection, block);
 	}
 
-	if (ifparser_haskey (block, "inet6"))
-		success = update_ip6_setting_from_if_block (connection, block, error);
-	else
-		success = update_ip4_setting_from_if_block (connection, block, error);
+	if (ifparser_haskey (block, "inet6")) {
+		if (!update_ip6_setting_from_if_block (connection, block, error))
+			return FALSE;
+	} else {
+		if (!update_ip4_setting_from_if_block (connection, block, error))
+			return FALSE;
+	}
 
-	if (success == TRUE)
-		success = nm_connection_verify (connection, error);
+	if (!nm_connection_normalize (connection, NULL, NULL, error))
+		return NULL;
 
-	return success;
+	return g_steal_pointer (&connection);
 }

@@ -28,6 +28,32 @@
 
 #include "nms-ifcfg-rh-common.h"
 
+/*****************************************************************************/
+
+gboolean
+nms_ifcfg_rh_util_parse_unhandled_spec (const char *unhandled_spec,
+                                        const char **out_unmanaged_spec,
+                                        const char **out_unrecognized_spec)
+{
+	if (unhandled_spec) {
+		if (NM_STR_HAS_PREFIX (unhandled_spec, "unmanaged:")) {
+			NM_SET_OUT (out_unmanaged_spec, &unhandled_spec[NM_STRLEN ("unmanaged:")]);
+			NM_SET_OUT (out_unrecognized_spec, NULL);
+			return TRUE;
+		}
+		if (NM_STR_HAS_PREFIX (unhandled_spec, "unrecognized:")) {
+			NM_SET_OUT (out_unmanaged_spec, NULL);
+			NM_SET_OUT (out_unrecognized_spec, &unhandled_spec[NM_STRLEN ("unrecognized:")]);
+			return TRUE;
+		}
+	}
+	NM_SET_OUT (out_unmanaged_spec, NULL);
+	NM_SET_OUT (out_unrecognized_spec, NULL);
+	return FALSE;
+}
+
+/*****************************************************************************/
+
 /*
  * Check ';[a-fA-F0-9]{8}' file suffix used for temporary files by rpm when
  * installing packages.

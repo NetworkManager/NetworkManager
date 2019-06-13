@@ -94,7 +94,8 @@ typedef struct {
 				struct {
 					GDBusMethodInvocation *invocation;
 					NMConnection *connection;
-					NMSettingsConnectionPersistMode persist;
+					NMSettingsConnectionPersistMode persist_mode;
+					bool is_volatile:1;
 				} add_and_activate;
 			};
 		} ac_auth;
@@ -378,7 +379,8 @@ static void _add_and_activate_auth_done (NMManager *self,
                                          NMActiveConnection *active,
                                          NMConnection *connection,
                                          GDBusMethodInvocation *invocation,
-                                         NMSettingsConnectionPersistMode persist,
+                                         NMSettingsConnectionPersistMode persist_mode,
+                                         gboolean is_volatile,
                                          gboolean success,
                                          const char *error_desc);
 static void _activation_auth_done (NMManager *self,
@@ -495,7 +497,8 @@ _async_op_data_new_ac_auth_add_and_activate (NMManager *self,
                                              NMActiveConnection *active_take,
                                              GDBusMethodInvocation *invocation_take,
                                              NMConnection *connection_take,
-                                             NMSettingsConnectionPersistMode persist)
+                                             NMSettingsConnectionPersistMode persist_mode,
+                                             gboolean is_volatile)
 {
 	AsyncOpData *async_op_data;
 
@@ -508,7 +511,8 @@ _async_op_data_new_ac_auth_add_and_activate (NMManager *self,
 	async_op_data->ac_auth.active = active_take;
 	async_op_data->ac_auth.add_and_activate.invocation = invocation_take;
 	async_op_data->ac_auth.add_and_activate.connection = connection_take;
-	async_op_data->ac_auth.add_and_activate.persist = persist;
+	async_op_data->ac_auth.add_and_activate.persist_mode = persist_mode;
+	async_op_data->ac_auth.add_and_activate.is_volatile = is_volatile;
 	c_list_link_tail (&NM_MANAGER_GET_PRIVATE (self)->async_op_lst_head, &async_op_data->async_op_lst);
 	return async_op_data;
 }
@@ -550,7 +554,8 @@ _async_op_complete_ac_auth_cb (NMActiveConnection *active,
 		                             async_op_data->ac_auth.active,
 		                             async_op_data->ac_auth.add_and_activate.connection,
 		                             async_op_data->ac_auth.add_and_activate.invocation,
-		                             async_op_data->ac_auth.add_and_activate.persist,
+		                             async_op_data->ac_auth.add_and_activate.persist_mode,
+		                             async_op_data->ac_auth.add_and_activate.is_volatile,
 		                             success,
 		                             error_desc);
 		g_object_unref (async_op_data->ac_auth.add_and_activate.connection);
@@ -831,7 +836,7 @@ _delete_volatile_connection_do (NMManager *self,
 
 	_LOGD (LOGD_DEVICE, "volatile connection disconnected. Deleting connection '%s' (%s)",
 	       nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
-	nm_settings_connection_delete (connection, NULL);
+	nm_settings_connection_delete (connection, FALSE);
 }
 
 /* Returns: whether to notify D-Bus of the removal or not */
@@ -2140,7 +2145,7 @@ connection_added_cb (NMSettings *settings,
 static void
 connection_updated_cb (NMSettings *settings,
                        NMSettingsConnection *sett_conn,
-                       gboolean by_user,
+                       guint update_reason_u,
                        NMManager *self)
 {
 	connection_changed_on_idle (self, sett_conn);
@@ -2660,8 +2665,13 @@ get_existing_connection (NMManager *self,
 
 	nm_device_assume_state_reset (device);
 
-	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
-	if (!added) {
+	if (!nm_settings_add_connection (priv->settings,
+	                                 connection,
+	                                 NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                                 | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
+	                                 &added,
+	                                 &error)) {
 		_LOG2W (LOGD_SETTINGS, device, "assume: failure to save generated connection '%s': %s",
 		       nm_connection_get_id (connection),
 		       error->message);
@@ -2669,10 +2679,6 @@ get_existing_connection (NMManager *self,
 		return NULL;
 	}
 
-	nm_settings_connection_set_flags (added,
-	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED |
-	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
-	                                  TRUE);
 	NM_SET_OUT (out_generated, TRUE);
 	return added;
 }
@@ -2774,7 +2780,7 @@ recheck_assume_connection (NMManager *self,
 
 			if (generated) {
 				_LOG2D (LOGD_DEVICE, device, "assume: deleting generated connection after assuming failed");
-				nm_settings_connection_delete (sett_conn, NULL);
+				nm_settings_connection_delete (sett_conn, FALSE);
 			} else {
 				if (nm_device_sys_iface_state_get (device) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
 					nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
@@ -5315,14 +5321,11 @@ activation_add_done (NMSettings *settings,
 	NMManager *self;
 	gs_unref_object NMActiveConnection *active = NULL;
 	gs_free_error GError *local = NULL;
-	gpointer persist_ptr;
-	NMSettingsConnectionPersistMode persist;
 	gpointer async_op_type_ptr;
 	AsyncOpType async_op_type;
 	GVariant *result_floating;
 
-	nm_utils_user_data_unpack (user_data, &self, &active, &persist_ptr, &async_op_type_ptr);
-	persist = GPOINTER_TO_INT (persist_ptr);
+	nm_utils_user_data_unpack (user_data, &self, &active, &async_op_type_ptr);
 	async_op_type = GPOINTER_TO_INT (async_op_type_ptr);
 
 	if (error)
@@ -5330,17 +5333,8 @@ activation_add_done (NMSettings *settings,
 
 	nm_active_connection_set_settings_connection (active, new_connection);
 
-	if (!_internal_activate_generic (self, active, &local)) {
-		error = local;
+	if (!_internal_activate_generic (self, active, &local))
 		goto fail;
-	}
-
-	nm_settings_connection_update (new_connection,
-	                               NULL,
-	                               persist,
-	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
-	                               "add-and-activate",
-	                               NULL);
 
 	if (async_op_type == ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE) {
 		result_floating = g_variant_new ("(oo)",
@@ -5363,13 +5357,17 @@ activation_add_done (NMSettings *settings,
 	return;
 
 fail:
-	nm_assert (error);
+	if (local) {
+		nm_assert (!error);
+		error = local;
+	} else
+		nm_assert (error);
 
 	nm_active_connection_set_state_fail (active,
 	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
 	                                     error->message);
 	if (new_connection)
-		nm_settings_connection_delete (new_connection, NULL);
+		nm_settings_connection_delete (new_connection, FALSE);
 	g_dbus_method_invocation_return_gerror (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 	                            NULL,
@@ -5385,7 +5383,8 @@ _add_and_activate_auth_done (NMManager *self,
                              NMActiveConnection *active,
                              NMConnection *connection,
                              GDBusMethodInvocation *invocation,
-                             NMSettingsConnectionPersistMode persist,
+                             NMSettingsConnectionPersistMode persist_mode,
+                             gboolean is_volatile,
                              gboolean success,
                              const char *error_desc)
 {
@@ -5413,13 +5412,15 @@ _add_and_activate_auth_done (NMManager *self,
 	 * shutdown. */
 	nm_settings_add_connection_dbus (priv->settings,
 	                                 connection,
-	                                 FALSE,
+	                                 persist_mode,
+	                                 (  is_volatile
+	                                  ? NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                                  : NM_SETTINGS_CONNECTION_INT_FLAGS_NONE),
 	                                 nm_active_connection_get_subject (active),
 	                                 invocation,
 	                                 activation_add_done,
 	                                 nm_utils_user_data_pack (self,
 	                                                          g_object_ref (active),
-	                                                          GINT_TO_POINTER (persist),
 	                                                          GINT_TO_POINTER (async_op_type)));
 }
 
@@ -5445,7 +5446,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	const char *device_path;
 	const char *specific_object_path;
 	gs_free NMConnection **conns = NULL;
-	NMSettingsConnectionPersistMode persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	NMSettingsConnectionPersistMode persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	gboolean is_volatile = FALSE;
 	gboolean bind_dbus_client = FALSE;
 	AsyncOpType async_op_type;
 
@@ -5474,13 +5476,17 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 			    && g_variant_is_of_type (option_value, G_VARIANT_TYPE_STRING)) {
 				s = g_variant_get_string (option_value, NULL);
 
-				if (nm_streq (s, "volatile"))
-					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY;
-				else if (nm_streq (s, "memory"))
-					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
-				else if (nm_streq (s, "disk"))
-					persist = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
-				else {
+				is_volatile = FALSE;
+				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+
+				if (nm_streq (s, "volatile")) {
+					persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
+					is_volatile = TRUE;
+				} else if (nm_streq (s, "memory"))
+					persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
+				else if (nm_streq (s, "disk")) {
+					/* pass */
+				} else {
 					error = g_error_new_literal (NM_MANAGER_ERROR,
 					                             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
 					                             "Option \"persist\" must be one of \"volatile\", \"memory\" or \"disk\"");
@@ -5599,7 +5605,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	                                                                             active,
 	                                                                             invocation,
 	                                                                             incompl_conn,
-	                                                                             persist));
+	                                                                             persist_mode,
+	                                                                             is_volatile));
 
 	/* we passed the pointers on to _async_op_data_new_ac_auth_add_and_activate() */
 	g_steal_pointer (&incompl_conn);
@@ -6549,8 +6556,9 @@ nm_manager_start (NMManager *self, GError **error)
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i;
 
-	if (!nm_settings_start (priv->settings, error))
-		return FALSE;
+	nm_device_factory_manager_load_factories (_register_device_factory, self);
+
+	nm_device_factory_manager_for_each_factory (start_factory, NULL);
 
 	/* Set initial radio enabled/disabled state */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
@@ -6573,16 +6581,15 @@ nm_manager_start (NMManager *self, GError **error)
 		manager_update_radio_enabled (self, rstate, enabled);
 	}
 
-	/* Log overall networking status - enabled/disabled */
 	_LOGI (LOGD_CORE, "Networking is %s by state file",
 	       priv->net_enabled ? "enabled" : "disabled");
 
 	system_unmanaged_devices_changed_cb (priv->settings, NULL, self);
+
 	hostname_changed_cb (priv->hostname_manager, NULL, self);
 
-	/* Start device factories */
-	nm_device_factory_manager_load_factories (_register_device_factory, self);
-	nm_device_factory_manager_for_each_factory (start_factory, NULL);
+	if (!nm_settings_start (priv->settings, error))
+		return FALSE;
 
 	nm_platform_process_events (priv->platform);
 
@@ -6596,10 +6603,11 @@ nm_manager_start (NMManager *self, GError **error)
 	/* Load VPN plugins */
 	priv->vpn_manager = g_object_ref (nm_vpn_manager_get ());
 
-	/* Connections added before the manager is started do not emit
-	 * connection-added signals thus devices have to be created manually.
-	 */
 	_LOGD (LOGD_CORE, "creating virtual devices...");
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
+	                  G_CALLBACK (connection_added_cb), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
+	                  G_CALLBACK (connection_updated_cb), self);
 	connections = nm_settings_get_connections_clone (priv->settings, NULL,
 	                                                 NULL, NULL,
 	                                                 nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
@@ -7334,10 +7342,6 @@ constructed (GObject *object)
 	                  G_CALLBACK (settings_startup_complete_changed), self);
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (connection_added_cb), self);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
-	                  G_CALLBACK (connection_updated_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_FLAGS_CHANGED, G_CALLBACK (connection_flags_changed), self);
 
 	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());

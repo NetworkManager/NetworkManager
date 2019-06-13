@@ -24,23 +24,26 @@
 
 #include "nms-ifcfg-rh-plugin.h"
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <gmodule.h>
+#include <unistd.h>
 
+#include "nm-std-aux/c-list-util.h"
+#include "nm-glib-aux/nm-c-list.h"
+#include "nm-glib-aux/nm-io-utils.h"
 #include "nm-std-aux/nm-dbus-compat.h"
-#include "nm-setting-connection.h"
-#include "settings/nm-settings-plugin.h"
+#include "nm-utils.h"
+#include "nm-core-internal.h"
 #include "nm-config.h"
+#include "settings/nm-settings-plugin.h"
+#include "settings/nm-settings-utils.h"
 #include "NetworkManagerUtils.h"
 
-#include "nms-ifcfg-rh-connection.h"
+#include "nms-ifcfg-rh-storage.h"
 #include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-utils.h"
 #include "nms-ifcfg-rh-reader.h"
 #include "nms-ifcfg-rh-writer.h"
-#include "nms-ifcfg-rh-utils.h"
-#include "shvar.h"
 
 #define IFCFGRH1_BUS_NAME                               "com.redhat.ifcfgrh1"
 #define IFCFGRH1_OBJECT_PATH                            "/com/redhat/ifcfgrh1"
@@ -59,23 +62,25 @@ typedef struct {
 		guint regist_id;
 	} dbus;
 
-	GHashTable *connections;  /* uuid::connection */
+	NMSettUtilStorages storages;
 
-	bool initialized:1;
-} SettingsPluginIfcfgPrivate;
+	GHashTable *unmanaged_specs;
+	GHashTable *unrecognized_specs;
 
-struct _SettingsPluginIfcfg {
+} NMSIfcfgRHPluginPrivate;
+
+struct _NMSIfcfgRHPlugin {
 	NMSettingsPlugin parent;
-	SettingsPluginIfcfgPrivate _priv;
+	NMSIfcfgRHPluginPrivate _priv;
 };
 
-struct _SettingsPluginIfcfgClass {
+struct _NMSIfcfgRHPluginClass {
 	NMSettingsPluginClass parent;
 };
 
-G_DEFINE_TYPE (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_SETTINGS_PLUGIN)
+G_DEFINE_TYPE (NMSIfcfgRHPlugin, nms_ifcfg_rh_plugin, NM_TYPE_SETTINGS_PLUGIN)
 
-#define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfcfg, SETTINGS_IS_PLUGIN_IFCFG)
+#define NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSIfcfgRHPlugin, NMS_IS_IFCFG_RH_PLUGIN, NMSettingsPlugin)
 
 /*****************************************************************************/
 
@@ -90,531 +95,811 @@ G_DEFINE_TYPE (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_SETTINGS_PLUG
 
 /*****************************************************************************/
 
-static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
-                                             NMConnection *source,
-                                             const char *full_path,
-                                             NMIfcfgConnection *connection,
-                                             gboolean protect_existing_connection,
-                                             GHashTable *protected_connections,
-                                             GError **error);
+static void _unhandled_specs_reset (NMSIfcfgRHPlugin *self);
+
+static void _unhandled_specs_merge_storages (NMSIfcfgRHPlugin *self,
+                                             NMSettUtilStorages *storages);
 
 /*****************************************************************************/
 
 static void
-connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
+nm_assert_self (NMSIfcfgRHPlugin *self, gboolean unhandled_specs_consistent)
 {
-	g_hash_table_remove (SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) user_data)->connections,
-	                     nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (obj)));
-}
+	nm_assert (NMS_IS_IFCFG_RH_PLUGIN (self));
 
-static void
-remove_connection (SettingsPluginIfcfg *self, NMIfcfgConnection *connection)
-{
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
-	gboolean unmanaged, unrecognized;
+#if NM_MORE_ASSERTS > 5
+	{
+		NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+		NMSIfcfgRHStorage *storage;
+		gsize n_uuid;
+		gs_unref_hashtable GHashTable *h_unmanaged = NULL;
+		gs_unref_hashtable GHashTable *h_unrecognized = NULL;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (connection != NULL);
+		nm_assert (g_hash_table_size (priv->storages.idx_by_filename) == c_list_length (&priv->storages._storage_lst_head));
 
-	_LOGI ("remove "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection));
+		h_unmanaged = g_hash_table_new (nm_str_hash, g_str_equal);
+		h_unrecognized = g_hash_table_new (nm_str_hash, g_str_equal);
 
-	unmanaged = !!nm_ifcfg_connection_get_unmanaged_spec (connection);
-	unrecognized = !!nm_ifcfg_connection_get_unrecognized_spec (connection);
+		n_uuid = 0;
 
-	g_object_ref (connection);
-	g_hash_table_remove (priv->connections, nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection)));
-	if (!unmanaged && !unrecognized)
-		nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
-	g_object_unref (connection);
+		c_list_for_each_entry (storage, &priv->storages._storage_lst_head, parent._storage_lst) {
+			const char *uuid;
+			const char *filename;
 
-	/* Emit changes _after_ removing the connection */
-	if (unmanaged)
-		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-	if (unrecognized)
-		_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
-}
+			filename = nms_ifcfg_rh_storage_get_filename (storage);
 
-static NMIfcfgConnection *
-find_by_path (SettingsPluginIfcfg *self, const char *path)
-{
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMSettingsConnection *candidate = NULL;
+			nm_assert (filename && NM_STR_HAS_PREFIX (filename, IFCFG_DIR"/"));
 
-	g_return_val_if_fail (path != NULL, NULL);
+			uuid = nms_ifcfg_rh_storage_get_uuid_opt (storage);
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (path, nm_settings_connection_get_filename (candidate)) == 0)
-			return NM_IFCFG_CONNECTION (candidate);
-	}
-	return NULL;
-}
+			nm_assert ((!!uuid) + (!!storage->unmanaged_spec) + (!!storage->unrecognized_spec) == 1);
 
-static NMIfcfgConnection *
-update_connection (SettingsPluginIfcfg *self,
-                   NMConnection *source,
-                   const char *full_path,
-                   NMIfcfgConnection *connection,
-                   gboolean protect_existing_connection,
-                   GHashTable *protected_connections,
-                   GError **error)
-{
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
-	NMIfcfgConnection *connection_new;
-	NMIfcfgConnection *connection_by_uuid;
-	GError *local = NULL;
-	const char *new_unmanaged = NULL, *old_unmanaged = NULL;
-	const char *new_unrecognized = NULL, *old_unrecognized = NULL;
-	gboolean unmanaged_changed = FALSE, unrecognized_changed = FALSE;
-	const char *uuid;
-	gboolean ignore_error = FALSE;
+			nm_assert (storage == nm_sett_util_storages_lookup_by_filename (&priv->storages, filename));
 
-	g_return_val_if_fail (!source || NM_IS_CONNECTION (source), NULL);
-	g_return_val_if_fail (full_path || source, NULL);
+			if (uuid) {
+				NMSettUtilStorageByUuidHead *sbuh;
+				NMSettUtilStorageByUuidHead *sbuh2;
 
-	if (full_path)
-		_LOGD ("loading from file \"%s\"...", full_path);
+				if (storage->connection)
+					nm_assert (nm_streq0 (nm_connection_get_uuid (storage->connection), uuid));
 
-	/* Create a NMIfcfgConnection instance, either by reading from @full_path or
-	 * based on @source. */
-	connection_new = nm_ifcfg_connection_new (source, full_path, &local, &ignore_error);
-	if (!connection_new) {
-		/* Unexpected failure. Probably the file is invalid? */
-		if (   connection
-		    && !protect_existing_connection
-		    && (!protected_connections || !g_hash_table_contains (protected_connections, connection)))
-			remove_connection (self, connection);
-		if (!source) {
-			_NMLOG (ignore_error ? LOGL_DEBUG : LOGL_WARN,
-			        "loading \"%s\" fails: %s", full_path, local ? local->message : "(unknown reason)");
+				if (!g_hash_table_lookup_extended (priv->storages.idx_by_uuid, &uuid, (gpointer *) &sbuh, (gpointer *) &sbuh2))
+					nm_assert_not_reached ();
+
+				nm_assert (sbuh);
+				nm_assert (nm_streq (uuid, sbuh->uuid));
+				nm_assert (sbuh == sbuh2);
+				nm_assert (c_list_contains (&sbuh->_storage_by_uuid_lst_head, &storage->parent._storage_by_uuid_lst));
+
+				if (c_list_first (&sbuh->_storage_by_uuid_lst_head) == &storage->parent._storage_by_uuid_lst)
+					n_uuid++;
+			} else if (storage->unmanaged_spec) {
+				nm_assert (strlen (storage->unmanaged_spec) > 0);
+				g_hash_table_add (h_unmanaged, storage->unmanaged_spec);
+			} else if (storage->unrecognized_spec) {
+				nm_assert (strlen (storage->unrecognized_spec) > 0);
+				g_hash_table_add (h_unrecognized, storage->unrecognized_spec);
+			} else
+				nm_assert_not_reached ();
+
+			nm_assert (!storage->connection);
 		}
-		g_propagate_error (error, local);
+
+		nm_assert (g_hash_table_size (priv->storages.idx_by_uuid) == n_uuid);
+
+		if (unhandled_specs_consistent) {
+			nm_assert (nm_utils_hashtable_same_keys (h_unmanaged, priv->unmanaged_specs));
+			nm_assert (nm_utils_hashtable_same_keys (h_unrecognized, priv->unrecognized_specs));
+		}
+	}
+#endif
+}
+
+/*****************************************************************************/
+
+static NMSIfcfgRHStorage *
+_load_file (NMSIfcfgRHPlugin *self,
+            const char *filename,
+            GError **error)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	gs_free_error GError *load_error = NULL;
+	gs_free char *unhandled_spec = NULL;
+	gboolean load_error_ignore;
+	struct stat st;
+
+	if (stat (filename, &st) != 0) {
+		int errsv = errno;
+
+		if (error) {
+			nm_utils_error_set_errno (error, errsv,
+			                          "failure to stat file \%s\": %s",
+			                          filename);
+		} else
+			_LOGT ("load[%s]: failure to stat file: %s", filename, nm_strerror_native (errsv));
 		return NULL;
 	}
 
-	uuid = nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection_new));
-	connection_by_uuid = g_hash_table_lookup (priv->connections, uuid);
+	connection = connection_from_file (filename,
+	                                   &unhandled_spec,
+	                                   &load_error,
+	                                   &load_error_ignore);
+	if (load_error) {
+		if (error) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    "failure to read file \"%s\": %s",
+			                    filename, load_error->message);
+		} else {
+			_NMLOG (load_error_ignore ? LOGL_TRACE : LOGL_WARN,
+			        "load[%s]: failure to read file: %s", filename, load_error->message);
+		}
+		return NULL;
+	}
 
-	if (   connection
-	    && connection != connection_by_uuid) {
+	if (unhandled_spec) {
+		const char *unmanaged_spec;
+		const char *unrecognized_spec;
 
-		if (   (protect_existing_connection && connection_by_uuid != NULL)
-		    || (protected_connections && g_hash_table_contains (protected_connections, connection))) {
-			NMIfcfgConnection *conflicting = (protect_existing_connection && connection_by_uuid != NULL) ? connection_by_uuid : connection;
-
-			if (source)
-				_LOGW ("cannot update protected connection "NM_IFCFG_CONNECTION_LOG_FMT" due to conflicting UUID %s", NM_IFCFG_CONNECTION_LOG_ARG (conflicting), uuid);
-			else
-				_LOGW ("cannot load %s due to conflicting UUID for "NM_IFCFG_CONNECTION_LOG_FMT, full_path, NM_IFCFG_CONNECTION_LOG_ARG (conflicting));
-			g_object_unref (connection_new);
-			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			                     "Cannot update protected connection due to conflicting UUID");
+		if (!nms_ifcfg_rh_util_parse_unhandled_spec (unhandled_spec,
+		                                             &unmanaged_spec,
+		                                             &unrecognized_spec)) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    "invalid unhandled spec \"%s\"",
+			                    unhandled_spec);
+			nm_assert_not_reached ();
 			return NULL;
 		}
-
-		/* The new connection has a different UUID then the original one that we
-		 * are about to update. Remove @connection. */
-		remove_connection (self, connection);
+		return nms_ifcfg_rh_storage_new_unhandled (self,
+		                                           filename,
+		                                           unmanaged_spec,
+		                                           unrecognized_spec);
 	}
 
-	/* Check if the found connection with the same UUID is not protected from updating. */
-	if (   connection_by_uuid
-	    && (   (!connection && protect_existing_connection)
-	        || (protected_connections && g_hash_table_contains (protected_connections, connection_by_uuid)))) {
-		if (source)
-			_LOGW ("cannot update connection due to conflicting UUID for "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_by_uuid));
-		else
-			_LOGW ("cannot load %s due to conflicting UUID for "NM_IFCFG_CONNECTION_LOG_FMT, full_path, NM_IFCFG_CONNECTION_LOG_ARG (connection_by_uuid));
-		g_object_unref (connection_new);
-		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		                      "Skip updating protected connection during reload");
-		return NULL;
-	}
-
-	/* Evaluate unmanaged/unrecognized flags. */
-	if (connection_by_uuid)
-		old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (connection_by_uuid);
-	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (connection_new);
-	unmanaged_changed = g_strcmp0 (old_unmanaged, new_unmanaged);
-
-	if (connection_by_uuid)
-		old_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (connection_by_uuid);
-	new_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (connection_new);
-	unrecognized_changed = g_strcmp0 (old_unrecognized, new_unrecognized);
-
-	if (connection_by_uuid) {
-		const char *old_path;
-
-		old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid));
-
-		if (   !unmanaged_changed
-		    && !unrecognized_changed
-		    && nm_connection_compare (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_by_uuid)),
-		                              nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_new)),
-		                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
-		                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
-			if (   old_path
-			    && !nm_streq0 (old_path, full_path)) {
-				_LOGI ("rename \"%s\" to "NM_IFCFG_CONNECTION_LOG_FMT" without other changes",
-				       nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid)),
-				       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-			}
-		} else {
-
-			/*******************************************************
-			 * UPDATE
-			 *******************************************************/
-
-			if (source)
-				_LOGI ("update "NM_IFCFG_CONNECTION_LOG_FMT" from %s", NM_IFCFG_CONNECTION_LOG_ARG (connection_new), NM_IFCFG_CONNECTION_LOG_PATH (old_path));
-			else if (nm_streq0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
-				_LOGI ("update "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-			else if (old_path)
-				_LOGI ("rename \"%s\" to "NM_IFCFG_CONNECTION_LOG_FMT, old_path, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-			else
-				_LOGI ("update and persist "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-
-			g_object_set (connection_by_uuid,
-			              NM_IFCFG_CONNECTION_UNMANAGED_SPEC, new_unmanaged,
-			              NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, new_unrecognized,
-			              NULL);
-
-			if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (connection_by_uuid),
-			                                    nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection_new)),
-			                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED,
-			                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-			                                    "ifcfg-update",
-			                                    &local)) {
-				/* Shouldn't ever get here as 'connection_new' was verified by the reader already
-				 * and the UUID did not change. */
-				g_assert_not_reached ();
-			}
-			g_assert_no_error (local);
-
-			if (new_unmanaged || new_unrecognized) {
-				if (!old_unmanaged && !old_unrecognized) {
-					/* ref connection first, because we put it into priv->connections below.
-					 * Emitting signal-removed might otherwise delete it. */
-					g_object_ref (connection_by_uuid);
-
-					/* Unexport the connection by telling the settings service it's
-					 * been removed.
-					 */
-					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection_by_uuid));
-
-					/* signal_remove() will end up removing the connection from our hash,
-					 * so add it back now.
-					 */
-					g_hash_table_insert (priv->connections,
-					                     g_strdup (nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (connection_by_uuid))),
-					                     connection_by_uuid /* we took reference above and pass it on */);
-				}
-			} else {
-				if (old_unmanaged /* && !new_unmanaged */) {
-					_LOGI ("Managing connection "NM_IFCFG_CONNECTION_LOG_FMT" and its device because NM_CONTROLLED was true.",
-					       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-					_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
-					                                                  NM_SETTINGS_CONNECTION (connection_by_uuid));
-				} else if (old_unrecognized /* && !new_unrecognized */) {
-					_LOGI ("Managing connection "NM_IFCFG_CONNECTION_LOG_FMT" because it is now a recognized type.",
-					       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-					_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
-					                                                  NM_SETTINGS_CONNECTION (connection_by_uuid));
-				}
-			}
-
-			if (unmanaged_changed)
-				_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-			if (unrecognized_changed)
-				_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
-		}
-		nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (connection_by_uuid), full_path);
-		g_object_unref (connection_new);
-		return connection_by_uuid;
-	} else {
-
-		/*******************************************************
-		 * ADD
-		 *******************************************************/
-
-		if (source)
-			_LOGI ("add connection "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-		else
-			_LOGI ("new connection "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-		g_hash_table_insert (priv->connections,
-		                     g_strdup (uuid),
-		                     connection_new /* take reference */);
-
-		g_signal_connect (connection_new, NM_SETTINGS_CONNECTION_REMOVED,
-		                  G_CALLBACK (connection_removed_cb),
-		                  self);
-
-		if (nm_ifcfg_connection_get_unmanaged_spec (connection_new)) {
-			_LOGI ("Ignoring connection "NM_IFCFG_CONNECTION_LOG_FMT" due to NM_CONTROLLED=no. Unmanaged: %s.",
-			       NM_IFCFG_CONNECTION_LOG_ARG (connection_new),
-			       nm_ifcfg_connection_get_unmanaged_spec (connection_new));
-		} else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
-			_LOGW ("Ignoring connection "NM_IFCFG_CONNECTION_LOG_FMT" of unrecognized type.", NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-
-		if (!source) {
-			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
-			 * Otherwise, we were called by add_connection() which does not expect the signal. */
-			if (nm_ifcfg_connection_get_unmanaged_spec (connection_new))
-				_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
-			else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
-				_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
-			else {
-				_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
-				                                                  NM_SETTINGS_CONNECTION (connection_new));
-			}
-		}
-		return connection_new;
-	}
-}
-
-static GHashTable *
-_paths_from_connections (GHashTable *connections)
-{
-	GHashTableIter iter;
-	NMIfcfgConnection *connection;
-	GHashTable *paths = g_hash_table_new (nm_str_hash, g_str_equal);
-
-	g_hash_table_iter_init (&iter, connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
-		const char *path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
-
-		if (path)
-			g_hash_table_add (paths, (void *) path);
-	}
-	return paths;
-}
-
-static int
-_sort_paths (const char **f1, const char **f2, GHashTable *paths)
-{
-	struct stat st;
-	gboolean c1, c2;
-	gint64 m1, m2;
-
-	c1 = !!g_hash_table_contains (paths, *f1);
-	c2 = !!g_hash_table_contains (paths, *f2);
-	if (c1 != c2)
-		return c1 ? -1 : 1;
-
-	m1 = stat (*f1, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
-	m2 = stat (*f2, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
-	if (m1 != m2)
-		return m1 > m2 ? -1 : 1;
-
-	return strcmp (*f1, *f2);
+	return nms_ifcfg_rh_storage_new_connection (self,
+	                                            filename,
+	                                            g_steal_pointer (&connection),
+	                                            &st.st_mtim);
 }
 
 static void
-read_connections (SettingsPluginIfcfg *plugin)
+_load_dir (NMSIfcfgRHPlugin *self,
+           NMSettUtilStorages *storages)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	gs_unref_hashtable GHashTable *dupl_filenames = NULL;
+	gs_free_error GError *local = NULL;
+	const char *f_filename;
 	GDir *dir;
-	GError *err = NULL;
-	const char *item;
-	GHashTable *alive_connections;
-	GHashTableIter iter;
-	NMIfcfgConnection *connection;
-	GPtrArray *dead_connections = NULL;
-	guint i;
-	GPtrArray *filenames;
-	GHashTable *paths;
 
-	dir = g_dir_open (IFCFG_DIR, 0, &err);
+	dir = g_dir_open (IFCFG_DIR, 0, &local);
 	if (!dir) {
-		_LOGW ("Could not read directory '%s': %s", IFCFG_DIR, err->message);
-		g_error_free (err);
+		_LOGT ("Could not read directory '%s': %s", IFCFG_DIR, local->message);
 		return;
 	}
 
-	alive_connections = g_hash_table_new (nm_direct_hash, NULL);
+	dupl_filenames = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
 
-	filenames = g_ptr_array_new_with_free_func (g_free);
-	while ((item = g_dir_read_name (dir))) {
-		char *full_path, *real_path;
+	while ((f_filename = g_dir_read_name (dir))) {
+		gs_free char *full_path = NULL;
+		NMSIfcfgRHStorage *storage;
+		char *full_filename;
 
-		full_path = g_build_filename (IFCFG_DIR, item, NULL);
-		real_path = utils_detect_ifcfg_path (full_path, TRUE);
+		full_path = g_build_filename (IFCFG_DIR, f_filename, NULL);
+		full_filename = utils_detect_ifcfg_path (full_path, TRUE);
+		if (!full_filename)
+			continue;
 
-		if (real_path)
-			g_ptr_array_add (filenames, real_path);
-		g_free (full_path);
+		if (!g_hash_table_add (dupl_filenames, full_filename))
+			continue;
+
+		nm_assert (!nm_sett_util_storages_lookup_by_filename (storages, full_filename));
+
+		storage = _load_file (self,
+		                      full_filename,
+		                      NULL);
+		if (storage)
+			nm_sett_util_storages_add_take (storages, storage);
 	}
 	g_dir_close (dir);
+}
 
-	/* While reloading, we don't replace connections that we already loaded while
-	 * iterating over the files.
+static void
+_storages_consolidate (NMSIfcfgRHPlugin *self,
+                       NMSettUtilStorages *storages_new,
+                       gboolean replace_all,
+                       GHashTable *storages_replaced,
+                       NMSettingsPluginConnectionLoadCallback callback,
+                       gpointer user_data)
+{
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	CList lst_conn_info_deleted = C_LIST_INIT (lst_conn_info_deleted);
+	gs_unref_ptrarray GPtrArray *storages_modified = NULL;
+	CList storages_deleted;
+	NMSIfcfgRHStorage *storage_safe;
+	NMSIfcfgRHStorage *storage_new;
+	NMSIfcfgRHStorage *storage_old;
+	NMSIfcfgRHStorage *storage;
+	guint i;
+
+	/* when we reload all files, we must signal add/update/modify of profiles one-by-one.
+	 * NMSettings then goes ahead and emits further signals and a lot of things happen.
 	 *
-	 * To have sensible, reproducible behavior, sort the paths by last modification
-	 * time preferring older files.
-	 */
-	paths = _paths_from_connections (priv->connections);
-	g_ptr_array_sort_with_data (filenames, (GCompareDataFunc) _sort_paths, paths);
-	g_hash_table_destroy (paths);
+	 * So, first, emit an update of the unmanaged/unrecognized specs that contains *all*
+	 * the unmanaged/unrecognized devices from before and after. Since both unmanaged/unrecognized
+	 * specs have the meaning of "not doing something", it makes sense that we temporarily
+	 * disable that action for the sum of before and after. */
+	_unhandled_specs_merge_storages (self, storages_new);
 
-	for (i = 0; i < filenames->len; i++) {
-		connection = update_connection (plugin, NULL, filenames->pdata[i], NULL, FALSE, alive_connections, NULL);
-		if (connection)
-			g_hash_table_add (alive_connections, connection);
+	storages_modified = g_ptr_array_new_with_free_func (g_object_unref);
+	c_list_init (&storages_deleted);
+
+	c_list_for_each_entry (storage_old, &priv->storages._storage_lst_head, parent._storage_lst)
+		storage_old->dirty = TRUE;
+
+	c_list_for_each_entry_safe (storage_new, storage_safe, &storages_new->_storage_lst_head, parent._storage_lst) {
+		storage_old = nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_ifcfg_rh_storage_get_filename (storage_new));
+
+		nm_sett_util_storages_steal (storages_new, storage_new);
+
+		if (   !storage_old
+		    || !nms_ifcfg_rh_storage_equal_type (storage_new, storage_old)) {
+			if (storage_old) {
+				nm_sett_util_storages_steal (&priv->storages, storage_old);
+				if (nms_ifcfg_rh_storage_get_uuid_opt (storage_old))
+					c_list_link_tail (&storages_deleted, &storage_old->parent._storage_lst);
+				else
+					nms_ifcfg_rh_storage_destroy (storage_old);
+			}
+			storage_new->dirty = FALSE;
+			nm_sett_util_storages_add_take (&priv->storages, storage_new);
+			g_ptr_array_add (storages_modified, g_object_ref (storage_new));
+			continue;
+		}
+
+		storage_old->dirty = FALSE;
+		nms_ifcfg_rh_storage_copy_content (storage_old, storage_new);
+		nms_ifcfg_rh_storage_destroy (storage_new);
+		g_ptr_array_add (storages_modified, g_object_ref (storage_old));
 	}
-	g_ptr_array_free (filenames, TRUE);
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
-		if (   !g_hash_table_contains (alive_connections, connection)
-		    && nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection))) {
-			if (!dead_connections)
-				dead_connections = g_ptr_array_new ();
-			g_ptr_array_add (dead_connections, connection);
+	c_list_for_each_entry_safe (storage_old, storage_safe, &priv->storages._storage_lst_head, parent._storage_lst) {
+		if (!storage_old->dirty)
+			continue;
+		if (   replace_all
+		    || (   storages_replaced
+		        && g_hash_table_contains (storages_replaced, storage_old))) {
+			nm_sett_util_storages_steal (&priv->storages, storage_old);
+			if (nms_ifcfg_rh_storage_get_uuid_opt (storage_old))
+				c_list_link_tail (&storages_deleted, &storage_old->parent._storage_lst);
+			else
+				nms_ifcfg_rh_storage_destroy (storage_old);
 		}
 	}
-	g_hash_table_destroy (alive_connections);
 
-	if (dead_connections) {
-		for (i = 0; i < dead_connections->len; i++)
-			remove_connection (plugin, dead_connections->pdata[i]);
-		g_ptr_array_free (dead_connections, TRUE);
+	/* raise events. */
+
+	for (i = 0; i < storages_modified->len; i++) {
+		storage = storages_modified->pdata[i];
+		storage->dirty = TRUE;
+	}
+
+	for (i = 0; i < storages_modified->len; i++) {
+		gs_unref_object NMConnection *connection = NULL;
+		storage = storages_modified->pdata[i];
+
+		if (!storage->dirty) {
+			/* the entry is no longer dirty. In the meantime we already emited
+			 * another signal for it. */
+			continue;
+		}
+		storage->dirty = FALSE;
+		if (storage != nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_ifcfg_rh_storage_get_filename (storage))) {
+			/* hm? The profile was deleted in the meantime? That is only possible
+			 * if the signal handler called again into the plugin. In any case, the event
+			 * was already emitted. Skip. */
+			continue;
+		}
+
+		connection = nms_ifcfg_rh_storage_steal_connection (storage);
+		if (!connection) {
+			nm_assert (!nms_ifcfg_rh_storage_get_uuid_opt (storage));
+			continue;
+		}
+
+		nm_assert (NM_IS_CONNECTION (connection));
+		nm_assert (nms_ifcfg_rh_storage_get_uuid_opt (storage));
+		callback (NM_SETTINGS_PLUGIN (self),
+		          NM_SETTINGS_STORAGE (storage),
+		          connection,
+		          user_data);
+	}
+
+	while ((storage = c_list_first_entry (&storages_deleted, NMSIfcfgRHStorage, parent._storage_lst))) {
+		c_list_unlink (&storage->parent._storage_lst);
+		callback (NM_SETTINGS_PLUGIN (self),
+		          NM_SETTINGS_STORAGE (storage),
+		          NULL,
+		          user_data);
+		nms_ifcfg_rh_storage_destroy (storage);
 	}
 }
 
-static GSList *
-get_connections (NMSettingsPlugin *config)
+/*****************************************************************************/
+
+static void
+load_connections (NMSettingsPlugin *plugin,
+                  NMSettingsPluginConnectionLoadEntry *entries,
+                  gsize n_entries,
+                  NMSettingsPluginConnectionLoadCallback callback,
+                  gpointer user_data)
 {
-	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	GSList *list = NULL;
-	GHashTableIter iter;
-	NMIfcfgConnection *connection;
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (plugin);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	nm_auto_clear_sett_util_storages NMSettUtilStorages storages_new = NM_SETT_UTIL_STORAGES_INIT (storages_new, nms_ifcfg_rh_storage_destroy);
+	gs_unref_hashtable GHashTable *dupl_filenames = NULL;
+	gs_unref_hashtable GHashTable *storages_replaced = NULL;
+	gs_unref_hashtable GHashTable *loaded_uuids = NULL;
+	const char *loaded_uuid;
+	GHashTableIter h_iter;
+	gsize i;
 
-	if (!priv->initialized) {
-		read_connections (plugin);
-		priv->initialized = TRUE;
+	if (n_entries == 0)
+		return;
+
+	dupl_filenames = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+
+	loaded_uuids = g_hash_table_new (nm_str_hash, g_str_equal);
+
+	storages_replaced = g_hash_table_new_full (nm_direct_hash, NULL, g_object_unref, NULL);
+
+	for (i = 0; i < n_entries; i++) {
+		NMSettingsPluginConnectionLoadEntry *const entry = &entries[i];
+		gs_free_error GError *local = NULL;
+		const char *full_filename;
+		const char *uuid;
+		gs_free char *full_filename_keep = NULL;
+		NMSettingsPluginConnectionLoadEntry *dupl_content_entry;
+		gs_unref_object NMSIfcfgRHStorage *storage = NULL;
+
+		if (entry->handled)
+			continue;
+
+		if (entry->filename[0] != '/')
+			continue;
+
+		full_filename_keep = utils_detect_ifcfg_path (entry->filename, FALSE);
+
+		if (!full_filename_keep) {
+			if (nm_utils_file_is_in_path (entry->filename, IFCFG_DIR)) {
+				nm_utils_error_set (&entry->error,
+				                    NM_UTILS_ERROR_UNKNOWN,
+				                    ("path is not a valid name for an ifcfg-rh file"));
+				entry->handled = TRUE;
+			}
+			continue;
+		}
+
+		if ((dupl_content_entry = g_hash_table_lookup (dupl_filenames, full_filename_keep))) {
+			/* we already visited this file. */
+			entry->handled = dupl_content_entry->handled;
+			if (dupl_content_entry->error) {
+				g_set_error_literal (&entry->error,
+				                     dupl_content_entry->error->domain,
+				                     dupl_content_entry->error->code,
+				                     dupl_content_entry->error->message);
+			}
+			continue;
+		}
+
+		entry->handled = TRUE;
+
+		full_filename = full_filename_keep;
+		if (!g_hash_table_insert (dupl_filenames, g_steal_pointer (&full_filename_keep), entry))
+			nm_assert_not_reached ();
+
+		storage = _load_file (self,
+		                      full_filename,
+		                      &local);
+		if (!storage) {
+			if (nm_utils_file_stat (full_filename, NULL) == -ENOENT) {
+				NMSIfcfgRHStorage *storage2;
+
+				/* the file does not exist. We take that as indication to unload the file
+				 * that was previously loaded... */
+				storage2 = nm_sett_util_storages_lookup_by_filename (&priv->storages, full_filename);
+				if (storage2)
+					g_hash_table_add (storages_replaced, g_object_ref (storage2));
+				continue;
+			}
+			g_propagate_error (&entry->error, g_steal_pointer (&local));
+			continue;
+		}
+
+		uuid = nms_ifcfg_rh_storage_get_uuid_opt (storage);
+		if (uuid)
+			g_hash_table_add (loaded_uuids, (char *) uuid);
+
+		nm_sett_util_storages_add_take (&storages_new, g_steal_pointer (&storage));
 	}
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		if (   !nm_ifcfg_connection_get_unmanaged_spec (connection)
-		    && !nm_ifcfg_connection_get_unrecognized_spec (connection))
-			list = g_slist_prepend (list, connection);
+	/* now we visit all UUIDs that are about to change... */
+	g_hash_table_iter_init (&h_iter, loaded_uuids);
+	while (g_hash_table_iter_next (&h_iter, (gpointer *) &loaded_uuid, NULL)) {
+		NMSIfcfgRHStorage *storage;
+		NMSettUtilStorageByUuidHead *sbuh;
+
+		sbuh = nm_sett_util_storages_lookup_by_uuid (&priv->storages, loaded_uuid);
+		if (!sbuh)
+			continue;
+
+		c_list_for_each_entry (storage, &sbuh->_storage_by_uuid_lst_head, parent._storage_by_uuid_lst) {
+			const char *full_filename = nms_ifcfg_rh_storage_get_filename (storage);
+			gs_unref_object NMSIfcfgRHStorage *storage_new = NULL;
+			gs_free_error GError *local = NULL;
+
+			if (g_hash_table_contains (dupl_filenames, full_filename)) {
+				/* already re-loaded. */
+				continue;
+			}
+
+			/* @storage has a UUID that was just loaded from disk, but we have an entry in cache.
+			 * Reload that file too despite not being told to do so. The reason is to get
+			 * the latest file timestamp so that we get the priorities right. */
+
+			storage_new = _load_file (self,
+			                          full_filename,
+			                          &local);
+			if (   storage_new
+			    && !nm_streq0 (loaded_uuid, nms_ifcfg_rh_storage_get_uuid_opt (storage_new))) {
+				/* the file now references a different UUID. We are not told to reload
+				 * that file, so this means the existing storage (with the previous
+				 * filename and UUID tuple) is no longer valid. */
+				g_clear_object (&storage_new);
+			}
+
+			g_hash_table_add (storages_replaced, g_object_ref (storage));
+			if (storage_new)
+				nm_sett_util_storages_add_take (&storages_new, g_steal_pointer (&storage_new));
+		}
 	}
 
-	return list;
+	nm_clear_pointer (&loaded_uuids, g_hash_table_destroy);
+	nm_clear_pointer (&dupl_filenames, g_hash_table_destroy);
+
+	_storages_consolidate (self,
+	                       &storages_new,
+	                       FALSE,
+	                       storages_replaced,
+	                       callback,
+	                       user_data);
+}
+
+static void
+reload_connections (NMSettingsPlugin *plugin,
+                    NMSettingsPluginConnectionLoadCallback callback,
+                    gpointer user_data)
+{
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (plugin);
+	nm_auto_clear_sett_util_storages NMSettUtilStorages storages_new = NM_SETT_UTIL_STORAGES_INIT (storages_new, nms_ifcfg_rh_storage_destroy);
+
+	nm_assert_self (self, TRUE);
+
+	_load_dir (self, &storages_new);
+
+	_storages_consolidate (self,
+	                       &storages_new,
+	                       TRUE,
+	                       NULL,
+	                       callback,
+	                       user_data);
+
+	nm_assert_self (self, FALSE);
+}
+
+static void
+load_connections_done (NMSettingsPlugin *plugin)
+{
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (plugin);
+
+	/* at the beginning of a load, we emit a change signal for unmanaged/unrecognized
+	 * specs that contain the sum of before and after (_unhandled_specs_merge_storages()).
+	 *
+	 * The idea is that while we emit signals about changes to connection, we have
+	 * the sum of all unmanaged/unrecognized devices from before and after.
+	 *
+	 * This if triggered at the end, to reset the specs. */
+	_unhandled_specs_reset (self);
+
+	nm_assert_self (self, TRUE);
+}
+
+/*****************************************************************************/
+
+static gboolean
+add_connection (NMSettingsPlugin *plugin,
+                NMConnection *connection,
+                NMSettingsStorage **out_storage,
+                NMConnection **out_connection,
+                GError **error)
+{
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (plugin);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	gs_unref_object NMSIfcfgRHStorage *storage = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	gs_free char *full_filename = NULL;
+	GError *local = NULL;
+	gboolean reread_same;
+	struct timespec mtime;
+
+	nm_assert_self (self, TRUE);
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (out_storage && !*out_storage);
+	nm_assert (out_connection && !*out_connection);
+
+	if (!nms_ifcfg_rh_writer_write_connection (connection,
+	                                           IFCFG_DIR,
+	                                           NULL,
+	                                           nm_sett_util_allow_filename_cb,
+	                                           NM_SETT_UTIL_ALLOW_FILENAME_DATA (&priv->storages, NULL),
+	                                           &full_filename,
+	                                           &reread,
+	                                           &reread_same,
+	                                           &local)) {
+		_LOGT ("commit: %s (%s): failed to add: %s",
+		       nm_connection_get_uuid (connection),
+		       nm_connection_get_id (connection),
+		       local->message);
+		g_propagate_error (error, local);
+		return FALSE;
+	}
+
+	if (   !reread
+	    || reread_same)
+		nm_g_object_ref_set (&reread, connection);
+
+	nm_assert (full_filename && full_filename[0] == '/');
+
+	_LOGT ("commit: %s (%s) added as \"%s\"",
+	       nm_connection_get_uuid (reread),
+	       nm_connection_get_id (reread),
+	       full_filename);
+
+	storage = nms_ifcfg_rh_storage_new_connection (self,
+	                                               full_filename,
+	                                               g_steal_pointer (&reread),
+	                                               nm_sett_util_stat_mtime (full_filename, FALSE, &mtime));
+
+	nm_sett_util_storages_add_take (&priv->storages, g_object_ref (storage));
+
+	*out_connection = nms_ifcfg_rh_storage_steal_connection (storage);
+	*out_storage = NM_SETTINGS_STORAGE (g_steal_pointer (&storage));
+
+	nm_assert_self (self, TRUE);
+
+	return TRUE;
 }
 
 static gboolean
-load_connection (NMSettingsPlugin *config,
-                 const char *filename)
+update_connection (NMSettingsPlugin *plugin,
+                   NMSettingsStorage *storage_x,
+                   NMConnection *connection,
+                   NMSettingsStorage **out_storage,
+                   NMConnection **out_connection,
+                   GError **error)
 {
-	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
-	NMIfcfgConnection *connection;
-	char *ifcfg_path;
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (plugin);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	NMSIfcfgRHStorage *storage = NMS_IFCFG_RH_STORAGE (storage_x);
+	const char *full_filename;
+	const char *uuid;
+	GError *local = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same;
+	struct timespec mtime;
 
-	if (!nm_utils_file_is_in_path (filename, IFCFG_DIR))
+	nm_assert_self (self, TRUE);
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (NMS_IS_IFCFG_RH_STORAGE (storage));
+	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
+	nm_assert (!error || !*error);
+
+	uuid = nms_ifcfg_rh_storage_get_uuid_opt (storage);
+
+	nm_assert (uuid && nm_streq0 (uuid, nm_connection_get_uuid (connection)));
+
+	full_filename = nms_ifcfg_rh_storage_get_filename (storage);
+
+	nm_assert (full_filename);
+	nm_assert (storage == nm_sett_util_storages_lookup_by_filename (&priv->storages, full_filename));
+
+	if (!nms_ifcfg_rh_writer_write_connection (connection,
+	                                           IFCFG_DIR,
+	                                           full_filename,
+	                                           nm_sett_util_allow_filename_cb,
+	                                           NM_SETT_UTIL_ALLOW_FILENAME_DATA (&priv->storages, full_filename),
+	                                           NULL,
+	                                           &reread,
+	                                           &reread_same,
+	                                           &local)) {
+		_LOGT ("commit: failure to write %s (%s) to \"%s\": %s",
+		       nm_connection_get_uuid (connection),
+		       nm_connection_get_id (connection),
+		       full_filename,
+		       local->message);
+		g_propagate_error (error, local);
 		return FALSE;
+	}
 
-	/* get the real ifcfg-path. This allows us to properly
-	 * handle load command using a route-* file etc. */
-	ifcfg_path = utils_detect_ifcfg_path (filename, FALSE);
-	if (!ifcfg_path)
-		return FALSE;
+	if (   !reread
+	    || reread_same)
+		nm_g_object_ref_set (&reread, connection);
 
-	connection = find_by_path (plugin, ifcfg_path);
-	update_connection (plugin, NULL, ifcfg_path, connection, TRUE, NULL, NULL);
-	if (!connection)
-		connection = find_by_path (plugin, ifcfg_path);
+	_LOGT ("commit: \"%s\": profile %s (%s) written",
+	       full_filename,
+	       uuid,
+	       nm_connection_get_id (connection));
 
-	g_free (ifcfg_path);
-	return (connection != NULL);
+	storage->stat_mtime = *nm_sett_util_stat_mtime (full_filename, FALSE, &mtime);
+
+	*out_storage = NM_SETTINGS_STORAGE (g_object_ref (storage));
+	*out_connection = g_steal_pointer (&reread);
+
+	nm_assert_self (self, TRUE);
+
+	return TRUE;
+}
+
+static gboolean
+delete_connection (NMSettingsPlugin *plugin,
+                   NMSettingsStorage *storage_x,
+                   GError **error)
+{
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (plugin);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	NMSIfcfgRHStorage *storage = NMS_IFCFG_RH_STORAGE (storage_x);
+	const char *operation_message;
+	const char *full_filename;
+
+	nm_assert_self (self, TRUE);
+	nm_assert (!error || !*error);
+	nm_assert (NMS_IS_IFCFG_RH_STORAGE (storage));
+
+	full_filename = nms_ifcfg_rh_storage_get_filename (storage);
+	nm_assert (full_filename);
+
+	nm_assert (nms_ifcfg_rh_storage_get_uuid_opt (storage));
+
+	nm_assert (storage == nm_sett_util_storages_lookup_by_filename (&priv->storages, full_filename));
+
+	{
+		gs_free char *keyfile = utils_get_keys_path (full_filename);
+		gs_free char *routefile = utils_get_route_path (full_filename);
+		gs_free char *route6file = utils_get_route6_path (full_filename);
+		const char *const files[] = { full_filename, keyfile, routefile, route6file };
+		gboolean any_deleted = FALSE;
+		gboolean any_failure = FALSE;
+		int i;
+
+		for (i = 0; i < G_N_ELEMENTS (files); i++) {
+			int errsv;
+
+			if (unlink (files[i]) == 0) {
+				any_deleted = TRUE;
+				continue;
+			}
+			errsv = errno;
+			if (errsv == ENOENT)
+				continue;
+
+			_LOGW ("commit: failure to delete file \"%s\": %s",
+			       files[i],
+			       nm_strerror_native (errsv));
+			any_failure = TRUE;
+		}
+		if (any_failure)
+			operation_message = "failed to delete files from disk";
+		else if (any_deleted)
+			operation_message = "deleted from disk";
+		else
+			operation_message = "does not exist on disk";
+	}
+
+	_LOGT ("commit: deleted \"%s\", profile %s (%s)",
+	       full_filename,
+	       nms_ifcfg_rh_storage_get_uuid_opt (storage),
+	       operation_message);
+
+	nm_sett_util_storages_steal (&priv->storages, storage);
+	nms_ifcfg_rh_storage_destroy (storage);
+
+	nm_assert_self (self, TRUE);
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+_unhandled_specs_reset (NMSIfcfgRHPlugin *self)
+{
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	gs_unref_hashtable GHashTable *unmanaged_specs = NULL;
+	gs_unref_hashtable GHashTable *unrecognized_specs = NULL;
+	NMSIfcfgRHStorage *storage;
+
+	unmanaged_specs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+	unrecognized_specs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+
+	c_list_for_each_entry (storage, &priv->storages._storage_lst_head, parent._storage_lst) {
+		if (storage->unmanaged_spec)
+			g_hash_table_add (unmanaged_specs, g_strdup (storage->unmanaged_spec));
+		if (storage->unrecognized_spec)
+			g_hash_table_add (unrecognized_specs, g_strdup (storage->unrecognized_spec));
+	}
+
+	if (!nm_utils_hashtable_same_keys (unmanaged_specs, priv->unmanaged_specs)) {
+		g_hash_table_unref (priv->unmanaged_specs);
+		priv->unmanaged_specs = g_steal_pointer (&unmanaged_specs);
+	}
+	if (!nm_utils_hashtable_same_keys (unrecognized_specs, priv->unrecognized_specs)) {
+		g_hash_table_unref (priv->unrecognized_specs);
+		priv->unrecognized_specs = g_steal_pointer (&unrecognized_specs);
+	}
+
+	if (!unmanaged_specs)
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
+	if (!unrecognized_specs)
+		_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static void
-reload_connections (NMSettingsPlugin *config)
+_unhandled_specs_merge_storages (NMSIfcfgRHPlugin *self,
+                                 NMSettUtilStorages *storages)
 {
-	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	gboolean unmanaged_changed = FALSE;
+	gboolean unrecognized_changed = FALSE;
+	NMSIfcfgRHStorage *storage;
 
-	read_connections (plugin);
+	c_list_for_each_entry (storage, &storages->_storage_lst_head, parent._storage_lst) {
+		if (   storage->unmanaged_spec
+		    && !g_hash_table_contains (priv->unmanaged_specs, storage->unmanaged_spec)) {
+			unmanaged_changed = TRUE;
+			g_hash_table_add (priv->unmanaged_specs, g_strdup (storage->unmanaged_spec));
+		}
+		if (   storage->unrecognized_spec
+		    && !g_hash_table_contains (priv->unrecognized_specs, storage->unrecognized_spec)) {
+			unrecognized_changed = TRUE;
+			g_hash_table_add (priv->unrecognized_specs, g_strdup (storage->unrecognized_spec));
+		}
+	}
+
+	if (unmanaged_changed)
+		_nm_settings_plugin_emit_signal_unmanaged_specs_changed (NM_SETTINGS_PLUGIN (self));
+	if (unrecognized_changed)
+		_nm_settings_plugin_emit_signal_unrecognized_specs_changed (NM_SETTINGS_PLUGIN (self));
 }
 
 static GSList *
-get_unhandled_specs (NMSettingsPlugin *config,
-                     const char *property)
+_unhandled_specs_from_hashtable (GHashTable *hash)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) config);
-	GSList *list = NULL, *list_iter;
-	GHashTableIter iter;
-	gpointer connection;
-	char *spec;
-	gboolean found;
+	gs_free const char **keys = NULL;
+	GSList *list = NULL;
+	guint i, l;
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &connection)) {
-		g_object_get (connection, property, &spec, NULL);
-		if (spec) {
-			/* Ignore duplicates */
-			for (list_iter = list, found = FALSE; list_iter; list_iter = g_slist_next (list_iter)) {
-				if (g_str_equal (list_iter->data, spec)) {
-					found = TRUE;
-					break;
-				}
-			}
-			if (found)
-				g_free (spec);
-			else
-				list = g_slist_prepend (list, spec);
-		}
+	keys = nm_utils_strdict_get_keys (hash, TRUE, &l);
+	for (i = l; i > 0; ) {
+		i--;
+		list = g_slist_prepend (list, g_strdup (keys[i]));
 	}
 	return list;
 }
 
 static GSList *
-get_unmanaged_specs (NMSettingsPlugin *config)
+get_unmanaged_specs (NMSettingsPlugin *plugin)
 {
-	return get_unhandled_specs (config, NM_IFCFG_CONNECTION_UNMANAGED_SPEC);
+	return _unhandled_specs_from_hashtable (NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (plugin)->unmanaged_specs);
 }
 
 static GSList *
-get_unrecognized_specs (NMSettingsPlugin *config)
+get_unrecognized_specs (NMSettingsPlugin *plugin)
 {
-	return get_unhandled_specs (config, NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC);
+	return _unhandled_specs_from_hashtable (NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (plugin)->unrecognized_specs);
 }
 
-static NMSettingsConnection *
-add_connection (NMSettingsPlugin *config,
-                NMConnection *connection,
-                gboolean save_to_disk,
-                GError **error)
-{
-	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (config);
-	gs_free char *path = NULL;
-	gs_unref_object NMConnection *reread = NULL;
-
-	if (save_to_disk) {
-		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, NULL, NULL, &path, &reread, NULL, error))
-			return NULL;
-	} else {
-		if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
-			return NULL;
-	}
-	return NM_SETTINGS_CONNECTION (update_connection (self, reread ?: connection, path, NULL, FALSE, NULL, error));
-}
+/*****************************************************************************/
 
 static void
-impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
+impl_ifcfgrh_get_ifcfg_details (NMSIfcfgRHPlugin *self,
                                 GDBusMethodInvocation *context,
                                 const char *in_ifcfg)
 {
-	NMIfcfgConnection *connection;
-	NMSettingConnection *s_con;
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
+	gs_free char *ifcfg_path = NULL;
+	NMSIfcfgRHStorage *storage;
 	const char *uuid;
 	const char *path;
-	gs_free char *ifcfg_path = NULL;
 
-	if (!g_path_is_absolute (in_ifcfg)) {
+	if (in_ifcfg[0] != '/') {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,
 		                                       NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -631,10 +916,8 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	connection = find_by_path (plugin, ifcfg_path);
-	if (   !connection
-	    || nm_ifcfg_connection_get_unmanaged_spec (connection)
-	    || nm_ifcfg_connection_get_unrecognized_spec (connection)) {
+	storage = nm_sett_util_storages_lookup_by_filename (&priv->storages, ifcfg_path);
+	if (!storage) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,
 		                                       NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -642,25 +925,23 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (connection)));
-	if (!s_con) {
-		g_dbus_method_invocation_return_error (context,
-		                                       NM_SETTINGS_ERROR,
-		                                       NM_SETTINGS_ERROR_FAILED,
-		                                       "unable to retrieve the connection setting");
-		return;
-	}
-
-	uuid = nm_setting_connection_get_uuid (s_con);
+	uuid = nms_ifcfg_rh_storage_get_uuid_opt (storage);
 	if (!uuid) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,
-		                                       NM_SETTINGS_ERROR_FAILED,
-		                                       "unable to get the UUID");
+		                                       NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                                       "ifcfg file '%s' not managed by NetworkManager", in_ifcfg);
 		return;
 	}
 
-	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
+	/* It is ugly that the ifcfg-rh plugin needs to call back into NMSettings this
+	 * way.
+	 * There are alternatives (like invoking a signal), but they are all significant
+	 * extra code (and performance overhead). So the quick and dirty solution here
+	 * is likely to be simpler than getting this right (also from point of readability!).
+	 */
+	path = nm_settings_get_dbus_path_for_uuid (nm_settings_get (), uuid);
+
 	if (!path) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,
@@ -676,9 +957,9 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 /*****************************************************************************/
 
 static void
-_dbus_clear (SettingsPluginIfcfg *self)
+_dbus_clear (NMSIfcfgRHPlugin *self)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 	guint id;
 
 	nm_clear_g_signal_handler (priv->dbus.connection, &priv->dbus.signal_id);
@@ -700,7 +981,7 @@ _dbus_connection_closed (GDBusConnection *connection,
                          gpointer         user_data)
 {
 	_LOGW ("dbus: %s bus closed", IFCFGRH1_BUS_NAME);
-	_dbus_clear (SETTINGS_PLUGIN_IFCFG (user_data));
+	_dbus_clear (NMS_IFCFG_RH_PLUGIN (user_data));
 
 	/* Retry or recover? */
 }
@@ -715,21 +996,23 @@ _method_call (GDBusConnection *connection,
               GDBusMethodInvocation *invocation,
               gpointer user_data)
 {
-	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (user_data);
-	const char *ifcfg;
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (user_data);
 
-	if (   !nm_streq (interface_name, IFCFGRH1_IFACE1_NAME)
-	    || !nm_streq (method_name, IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS)) {
-		g_dbus_method_invocation_return_error (invocation,
-		                                       G_DBUS_ERROR,
-		                                       G_DBUS_ERROR_UNKNOWN_METHOD,
-		                                       "Unknown method %s",
-		                                       method_name);
-		return;
+	if (nm_streq (interface_name, IFCFGRH1_IFACE1_NAME)) {
+		if (nm_streq (method_name, IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS)) {
+			const char *ifcfg;
+
+			g_variant_get (parameters, "(&s)", &ifcfg);
+			impl_ifcfgrh_get_ifcfg_details (self, invocation, ifcfg);
+			return;
+		}
 	}
 
-	g_variant_get (parameters, "(&s)", &ifcfg);
-	impl_ifcfgrh_get_ifcfg_details (self, invocation, ifcfg);
+	g_dbus_method_invocation_return_error (invocation,
+	                                       G_DBUS_ERROR,
+	                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+	                                       "Unknown method %s",
+	                                       method_name);
 }
 
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
@@ -754,8 +1037,8 @@ _dbus_request_name_done (GObject *source_object,
                          gpointer user_data)
 {
 	GDBusConnection *connection = G_DBUS_CONNECTION (source_object);
-	SettingsPluginIfcfg *self;
-	SettingsPluginIfcfgPrivate *priv;
+	NMSIfcfgRHPlugin *self;
+	NMSIfcfgRHPluginPrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 	guint32 result;
@@ -764,8 +1047,8 @@ _dbus_request_name_done (GObject *source_object,
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	self = SETTINGS_PLUGIN_IFCFG (user_data);
-	priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	self = NMS_IFCFG_RH_PLUGIN (user_data);
+	priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 
 	g_clear_object (&priv->dbus.cancellable);
 
@@ -812,8 +1095,8 @@ _dbus_create_done (GObject *source_object,
                    GAsyncResult *res,
                    gpointer user_data)
 {
-	SettingsPluginIfcfg *self;
-	SettingsPluginIfcfgPrivate *priv;
+	NMSIfcfgRHPlugin *self;
+	NMSIfcfgRHPluginPrivate *priv;
 	gs_free_error GError *error = NULL;
 	GDBusConnection *connection;
 
@@ -821,8 +1104,8 @@ _dbus_create_done (GObject *source_object,
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	self = SETTINGS_PLUGIN_IFCFG (user_data);
-	priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	self = NMS_IFCFG_RH_PLUGIN (user_data);
+	priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 
 	g_clear_object (&priv->dbus.cancellable);
 
@@ -856,9 +1139,9 @@ _dbus_create_done (GObject *source_object,
 }
 
 static void
-_dbus_setup (SettingsPluginIfcfg *self)
+_dbus_setup (NMSIfcfgRHPlugin *self)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 	gs_free char *address = NULL;
 	gs_free_error GError *error = NULL;
 
@@ -886,9 +1169,9 @@ config_changed_cb (NMConfig *config,
                    NMConfigData *config_data,
                    NMConfigChangeFlags changes,
                    NMConfigData *old_data,
-                   SettingsPluginIfcfg *self)
+                   NMSIfcfgRHPlugin *self)
 {
-	SettingsPluginIfcfgPrivate *priv;
+	NMSIfcfgRHPluginPrivate *priv;
 
 	/* If the dbus connection for some reason is borked the D-Bus service
 	 * won't be offered.
@@ -900,7 +1183,7 @@ config_changed_cb (NMConfig *config,
 	                            | NM_CONFIG_CHANGE_CAUSE_SIGUSR1))
 		return;
 
-	priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 	if (   !priv->dbus.connection
 	    && !priv->dbus.cancellable)
 		_dbus_setup (self);
@@ -909,23 +1192,26 @@ config_changed_cb (NMConfig *config,
 /*****************************************************************************/
 
 static void
-settings_plugin_ifcfg_init (SettingsPluginIfcfg *plugin)
+nms_ifcfg_rh_plugin_init (NMSIfcfgRHPlugin *self)
 {
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) plugin);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 
-	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->config = g_object_ref (nm_config_get ());
+
+	priv->unmanaged_specs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+	priv->unrecognized_specs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+
+	priv->storages = (NMSettUtilStorages) NM_SETT_UTIL_STORAGES_INIT (priv->storages, nms_ifcfg_rh_storage_destroy);
 }
 
 static void
 constructed (GObject *object)
 {
-	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (object);
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (object);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 
-	G_OBJECT_CLASS (settings_plugin_ifcfg_parent_class)->constructed (object);
+	G_OBJECT_CLASS (nms_ifcfg_rh_plugin_parent_class)->constructed (object);
 
-	priv->config = nm_config_get ();
-	g_object_add_weak_pointer ((GObject *) priv->config, (gpointer *) &priv->config);
 	g_signal_connect (priv->config,
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (config_changed_cb),
@@ -937,40 +1223,44 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (object);
-	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN (object);
+	NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE (self);
 
-	if (priv->config) {
-		g_object_remove_weak_pointer ((GObject *) priv->config, (gpointer *) &priv->config);
+	if (priv->config)
 		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
-		priv->config = NULL;
-	}
 
+	/* FIXME(shutdown) we need a stop method so that we can unregistering the D-Bus service
+	 * when NMSettings is shutting down, and not when the instance gets destroyed. */
 	_dbus_clear (self);
 
-	if (priv->connections) {
-		g_hash_table_destroy (priv->connections);
-		priv->connections = NULL;
-	}
+	nm_sett_util_storages_clear (&priv->storages);
 
-	G_OBJECT_CLASS (settings_plugin_ifcfg_parent_class)->dispose (object);
+	g_clear_object (&priv->config);
+
+	G_OBJECT_CLASS (nms_ifcfg_rh_plugin_parent_class)->dispose (object);
+
+	nm_clear_pointer (&priv->unmanaged_specs, g_hash_table_destroy);
+	nm_clear_pointer (&priv->unrecognized_specs, g_hash_table_destroy);
 }
 
 static void
-settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *klass)
+nms_ifcfg_rh_plugin_class_init (NMSIfcfgRHPluginClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS (klass);
 
 	object_class->constructed = constructed;
-	object_class->dispose = dispose;
+	object_class->dispose     = dispose;
 
-	plugin_class->get_connections = get_connections;
-	plugin_class->add_connection = add_connection;
-	plugin_class->load_connection = load_connection;
-	plugin_class->reload_connections = reload_connections;
-	plugin_class->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_class->plugin_name            = "ifcfg-rh";
+	plugin_class->get_unmanaged_specs    = get_unmanaged_specs;
 	plugin_class->get_unrecognized_specs = get_unrecognized_specs;
+	plugin_class->reload_connections     = reload_connections;
+	plugin_class->load_connections       = load_connections;
+	plugin_class->load_connections_done  = load_connections_done;
+	plugin_class->add_connection         = add_connection;
+	plugin_class->update_connection      = update_connection;
+	plugin_class->delete_connection      = delete_connection;
 }
 
 /*****************************************************************************/
@@ -978,5 +1268,5 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *klass)
 G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return g_object_new (SETTINGS_TYPE_PLUGIN_IFCFG, NULL);
+	return g_object_new (NMS_TYPE_IFCFG_RH_PLUGIN, NULL);
 }
