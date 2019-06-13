@@ -483,6 +483,7 @@ _c_public_ NDhcp4ClientProbe *n_dhcp4_client_probe_free(NDhcp4ClientProbe *probe
         if (probe == probe->client->current_probe)
                 probe->client->current_probe = NULL;
 
+        n_dhcp4_client_lease_unref(probe->current_lease);
         n_dhcp4_c_connection_deinit(&probe->connection);
         n_dhcp4_client_unref(probe->client);
         n_dhcp4_client_probe_config_free(probe->config);
