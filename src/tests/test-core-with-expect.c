@@ -384,7 +384,12 @@ test_nm_utils_kill_child (void)
 		err = waitpid (child_pid, &exit_status, 0);
 	} while (err == -1 && errno == EINTR);
 	g_assert (err == child_pid);
-	g_assert (WIFEXITED (exit_status) && WEXITSTATUS(exit_status) == 0);
+	if (WIFEXITED (exit_status))
+		g_assert_cmpint (WEXITSTATUS (exit_status), ==, 0);
+	else {
+		g_assert_cmpint (exit_status, ==, 0);
+		g_assert_not_reached ();
+	}
 }
 
 /*****************************************************************************/
