@@ -84,6 +84,7 @@ int n_dhcp4_c_connection_init(NDhcp4CConnection *connection,
  */
 void n_dhcp4_c_connection_deinit(NDhcp4CConnection *connection) {
         n_dhcp4_c_connection_close(connection);
+        n_dhcp4_outgoing_free(connection->request);
         *connection = (NDhcp4CConnection)N_DHCP4_C_CONNECTION_NULL(*connection);
 }
 
