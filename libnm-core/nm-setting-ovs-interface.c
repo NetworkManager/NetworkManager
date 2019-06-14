@@ -83,11 +83,11 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
                                                  gboolean *out_modified,
                                                  GError **error)
 {
-	gboolean has_patch;
 	const char *type;
+	const char *type_from_setting = NULL;
+	const char *type_setting = NULL;
 	const char *connection_type;
 	gboolean is_ovs_connection_type;
-	gboolean missing_patch_setting = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 	if (normalize) {
@@ -101,10 +101,7 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 	type = self ? self->type : NULL;
 
 	if (   type
-	    && !NM_IN_STRSET (type,
-	                      "internal",
-	                      "system",
-	                      "patch")) {
+	    && !NM_IN_STRSET (type, "internal", "system", "patch", "dpdk")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -163,9 +160,26 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 		is_ovs_connection_type = FALSE;
 	}
 
-	has_patch = !!nm_connection_get_setting_by_name (connection, NM_SETTING_OVS_PATCH_SETTING_NAME);
+	if (nm_connection_get_setting_by_name (connection, NM_SETTING_OVS_PATCH_SETTING_NAME)) {
+		type_from_setting = "patch";
+		type_setting = NM_SETTING_OVS_PATCH_SETTING_NAME;
+	}
 
-	if (has_patch) {
+	if (nm_connection_get_setting_by_name (connection, NM_SETTING_OVS_DPDK_SETTING_NAME)) {
+		if (type_from_setting) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("A connection can not have both '%s' and '%s' settings at the same time"),
+			             NM_SETTING_OVS_DPDK_SETTING_NAME,
+			             type_setting);
+			return FALSE;
+		}
+		type_from_setting = "dpdk";
+		type_setting = NM_SETTING_OVS_DPDK_SETTING_NAME;
+	}
+
+	if (type_from_setting) {
 		if (!is_ovs_connection_type) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -176,20 +190,22 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_OVS_INTERFACE_SETTING_NAME, NM_SETTING_OVS_INTERFACE_TYPE);
 			return FALSE;
 		}
+
 		if (type) {
-			if (!nm_streq (type, "patch")) {
+			if (!nm_streq (type, type_from_setting)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				             _("A connection with '%s' setting needs to be of 'patch' interface type, not '%s'"),
-				             NM_SETTING_OVS_PATCH_SETTING_NAME,
+				             _("A connection with '%s' setting needs to be of '%s' interface type, not '%s'"),
+				             type_setting,
+				             type_from_setting,
 				             type);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_OVS_INTERFACE_SETTING_NAME, NM_SETTING_OVS_INTERFACE_TYPE);
 				return FALSE;
 			}
 			return TRUE;
 		}
-		type = "patch";
+		type = type_from_setting;
 		goto normalize;
 	} else {
 		if (nm_streq0 (type, "patch")) {
@@ -224,8 +240,6 @@ normalize:
 			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			             _("Missing ovs interface type"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_OVS_INTERFACE_SETTING_NAME, NM_SETTING_OVS_INTERFACE_TYPE);
-		}
-		if (missing_patch_setting) {
 		}
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
@@ -375,7 +389,7 @@ nm_setting_ovs_interface_class_init (NMSettingOvsInterfaceClass *klass)
 	/**
 	 * NMSettingOvsInterface:type:
 	 *
-	 * The interface type. Either "internal", or empty.
+	 * The interface type. Either "internal", "system", "patch", "dpdk", or empty.
 	 *
 	 * Since: 1.10
 	 **/

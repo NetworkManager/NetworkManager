@@ -46,6 +46,7 @@
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
+#include "nm-setting-ovs-dpdk.h"
 #include "nm-setting-ovs-patch.h"
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ppp.h"
@@ -303,6 +304,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
 		.setting_name =             NM_SETTING_OVS_BRIDGE_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_ovs_bridge_get_type,
+	},
+	[NM_META_SETTING_TYPE_OVS_DPDK] = {
+		.meta_type =                NM_META_SETTING_TYPE_OVS_DPDK,
+		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
+		.setting_name =             NM_SETTING_OVS_DPDK_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_ovs_dpdk_get_type,
 	},
 	[NM_META_SETTING_TYPE_OVS_INTERFACE] = {
 		.meta_type =                NM_META_SETTING_TYPE_OVS_INTERFACE,

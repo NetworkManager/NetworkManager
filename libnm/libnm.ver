@@ -1615,4 +1615,7 @@ global:
 	nm_device_modem_get_device_id;
 	nm_device_modem_get_operator_code;
 	nm_setting_ethtool_get_optnames;
+	nm_setting_ovs_dpdk_get_devargs;
+	nm_setting_ovs_dpdk_get_type;
+	nm_setting_ovs_dpdk_new;
 } libnm_1_18_0;

@@ -216,6 +216,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
     <xi:include href="xml/nm-setting-ovs-bridge.xml"/>
     <xi:include href="xml/nm-setting-ovs-interface.xml"/>
+    <xi:include href="xml/nm-setting-ovs-dpdk.xml"/>
     <xi:include href="xml/nm-setting-ovs-patch.xml"/>
     <xi:include href="xml/nm-setting-ovs-port.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
