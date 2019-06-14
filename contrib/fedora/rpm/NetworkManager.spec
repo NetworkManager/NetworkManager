@@ -25,6 +25,7 @@
 %global obsoletes_ppp_plugin     1:1.5.3
 
 %global systemd_dir %{_prefix}/lib/systemd/system
+%global sysctl_dir %{_prefix}/lib/sysctl.d
 %global nmlibdir %{_prefix}/lib/%{name}
 %global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
 
@@ -136,6 +137,7 @@ Source1: NetworkManager.conf
 Source2: 00-server.conf
 Source4: 20-connectivity-fedora.conf
 Source5: 20-connectivity-redhat.conf
+Source6: 70-nm-connectivity.conf
 
 #Patch1: 0001-some.patch
 
@@ -716,6 +718,8 @@ cp %{SOURCE4} %{buildroot}%{nmlibdir}/conf.d/
 
 %if %{with connectivity_redhat}
 cp %{SOURCE5} %{buildroot}%{nmlibdir}/conf.d/
+mkdir -p %{buildroot}%{_sysctldir}
+cp %{SOURCE6} %{buildroot}%{_sysctldir}
 %endif
 
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
@@ -943,6 +947,7 @@ fi
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/20-connectivity-redhat.conf
+%{_sysctldir}/70-nm-connectivity.conf
 %endif
 
 
