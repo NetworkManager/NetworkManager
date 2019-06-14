@@ -5786,11 +5786,11 @@ _nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
 
 	flags = nm_team_link_watcher_get_flags (watcher);
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE)
-		json_object_set_new (json_element, "validate_active", json_string ("true"));
+		json_object_set_new (json_element, "validate_active", json_true ());
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
-		json_object_set_new (json_element, "validate_inactive", json_string ("true"));
+		json_object_set_new (json_element, "validate_inactive", json_true ());
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
-		json_object_set_new (json_element, "send_always", json_string ("true"));
+		json_object_set_new (json_element, "send_always", json_true ());
 
 	return json_element;
 
