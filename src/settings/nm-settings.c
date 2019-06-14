@@ -245,14 +245,13 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 	return priv->unmanaged_specs;
 }
 
-static void
+static gboolean
 update_specs (NMSettings *self, GSList **specs_ptr,
               GSList * (*get_specs_func) (NMSettingsPlugin *))
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *new = NULL;
 	GSList *iter;
-
-	g_slist_free_full (g_steal_pointer (specs_ptr), g_free);
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		GSList *specs;
@@ -262,15 +261,25 @@ update_specs (NMSettings *self, GSList **specs_ptr,
 			GSList *s = specs;
 
 			specs = g_slist_remove_link (specs, s);
-			if (nm_utils_g_slist_find_str (*specs_ptr, s->data)) {
+			if (nm_utils_g_slist_find_str (new, s->data)) {
 				g_free (s->data);
 				g_slist_free_1 (s);
 				continue;
 			}
-			s->next = *specs_ptr;
-			*specs_ptr = s;
+			s->next = new;
+			new = s;
 		}
 	}
+
+	if (nm_utils_g_slist_strlist_cmp (new, *specs_ptr) == 0) {
+		g_slist_free_full (new, g_free);
+		return FALSE;
+	}
+
+	g_slist_free_full (*specs_ptr, g_free);
+	*specs_ptr = new;
+	return TRUE;
+
 }
 
 static void
@@ -280,9 +289,9 @@ unmanaged_specs_changed (NMSettingsPlugin *config,
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	update_specs (self, &priv->unmanaged_specs,
-	              nm_settings_plugin_get_unmanaged_specs);
-	_notify (self, PROP_UNMANAGED_SPECS);
+	if (update_specs (self, &priv->unmanaged_specs,
+	                  nm_settings_plugin_get_unmanaged_specs))
+		_notify (self, PROP_UNMANAGED_SPECS);
 }
 
 static void
