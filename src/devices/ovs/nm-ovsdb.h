@@ -27,9 +27,9 @@
 #define NM_IS_OVSDB_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_OVSDB))
 #define NM_OVSDB_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_OVSDB, NMOvsdbClass))
 
-#define NM_OVSDB_DEVICE_ADDED   "device-added"
-#define NM_OVSDB_DEVICE_REMOVED "device-removed"
-#define NM_OVSDB_DEVICE_CHANGED "device-changed"
+#define NM_OVSDB_DEVICE_ADDED      "device-added"
+#define NM_OVSDB_DEVICE_REMOVED    "device-removed"
+#define NM_OVSDB_INTERFACE_FAILED  "interface-failed"
 
 typedef struct _NMOvsdb NMOvsdb;
 typedef struct _NMOvsdbClass NMOvsdbClass;
