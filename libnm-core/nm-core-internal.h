@@ -204,7 +204,8 @@ NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **
 
 gboolean _nm_connection_ensure_normalized (NMConnection *connection,
                                            gboolean allow_modify,
-                                           const char *enforce_uuid,
+                                           const char *expected_uuid,
+                                           gboolean coerce_uuid,
                                            NMConnection **out_connection_clone,
                                            GError **error);
 

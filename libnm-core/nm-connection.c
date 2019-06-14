@@ -1585,6 +1585,77 @@ nm_connection_verify_secrets (NMConnection *connection, GError **error)
 	return TRUE;
 }
 
+static gboolean
+_connection_normalize (NMConnection *connection,
+                       GHashTable *parameters,
+                       gboolean *modified,
+                       GError **error)
+{
+	NMSettingVerifyResult success;
+	gboolean was_modified;
+
+#if NM_MORE_ASSERTS > 10
+	/* only call this _nm_connection_verify() confirms that the connection
+	 * requires normalization and is normalizable. */
+	nm_assert (NM_IN_SET (_nm_connection_verify (connection, NULL),
+	                      NM_SETTING_VERIFY_NORMALIZABLE,
+	                      NM_SETTING_VERIFY_NORMALIZABLE_ERROR));
+#endif
+
+	/* Try to perform all kind of normalizations on the settings to fix it.
+	 * We only do this, after verifying that the connection contains no un-normalizable
+	 * errors, because in that case we rather fail without touching the settings. */
+
+	was_modified = FALSE;
+
+	was_modified |= _normalize_connection_uuid (connection);
+	was_modified |= _normalize_connection_type (connection);
+	was_modified |= _normalize_connection_slave_type (connection);
+	was_modified |= _normalize_required_settings (connection, parameters);
+	was_modified |= _normalize_invalid_slave_port_settings (connection, parameters);
+	was_modified |= _normalize_ip_config (connection, parameters);
+	was_modified |= _normalize_ethernet_link_neg (connection);
+	was_modified |= _normalize_infiniband_mtu (connection, parameters);
+	was_modified |= _normalize_bond_mode (connection, parameters);
+	was_modified |= _normalize_bond_options (connection, parameters);
+	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
+	was_modified |= _normalize_macsec (connection, parameters);
+	was_modified |= _normalize_team_config (connection, parameters);
+	was_modified |= _normalize_team_port_config (connection, parameters);
+	was_modified |= _normalize_bluetooth_type (connection, parameters);
+	was_modified |= _normalize_ovs_interface_type (connection, parameters);
+	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
+	was_modified |= _normalize_sriov_vf_order (connection, parameters);
+	was_modified |= _normalize_bridge_vlan_order (connection, parameters);
+	was_modified |= _normalize_bridge_port_vlan_order (connection, parameters);
+
+	was_modified = !!was_modified;
+
+	/* Verify anew */
+	success = _nm_connection_verify (connection, error);
+
+	NM_SET_OUT (modified, was_modified);
+
+	if (success != NM_SETTING_VERIFY_SUCCESS) {
+		/* we would expect, that after normalization, the connection can be verified.
+		 * Also treat NM_SETTING_VERIFY_NORMALIZABLE as failure, because there is something
+		 * odd going on. */
+		if (error && !*error) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_FAILED,
+			                     _("Unexpected failure to normalize the connection"));
+		}
+		g_warning ("connection did not verify after normalization: %s", error ? (*error)->message : "??");
+		g_return_val_if_reached (FALSE);
+	}
+
+	/* we would expect, that the connection was modified during normalization. */
+	g_return_val_if_fail (was_modified, TRUE);
+
+	return TRUE;
+}
+
 /**
  * nm_connection_normalize:
  * @connection: the #NMConnection to normalize
@@ -1615,84 +1686,46 @@ nm_connection_normalize (NMConnection *connection,
                          GError **error)
 {
 	NMSettingVerifyResult success;
-	gboolean was_modified = FALSE;
-	GError *normalizable_error = NULL;
+	gs_free_error GError *normalizable_error = NULL;
 
 	success = _nm_connection_verify (connection, &normalizable_error);
 
-	if (success == NM_SETTING_VERIFY_ERROR ||
-	    success == NM_SETTING_VERIFY_SUCCESS) {
-		if (normalizable_error)
-			g_propagate_error (error, normalizable_error);
-		if (modified)
-			*modified = FALSE;
-		if (success == NM_SETTING_VERIFY_ERROR && error && !*error) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_FAILED,
-			                     _("Unexpected failure to verify the connection"));
-			g_return_val_if_reached (FALSE);
+	if (!NM_IN_SET (success,
+	                NM_SETTING_VERIFY_NORMALIZABLE,
+	                NM_SETTING_VERIFY_NORMALIZABLE_ERROR)) {
+		if (normalizable_error) {
+			nm_assert (success == NM_SETTING_VERIFY_ERROR);
+			g_propagate_error (error, g_steal_pointer (&normalizable_error));
+		} else
+			nm_assert (success == NM_SETTING_VERIFY_SUCCESS);
+
+		NM_SET_OUT (modified, FALSE);
+
+		if (success != NM_SETTING_VERIFY_SUCCESS) {
+			if (   error
+			    && !*error) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_FAILED,
+				                     _("Unexpected failure to verify the connection"));
+				return FALSE;
+			}
+			return FALSE;
 		}
-		return success == NM_SETTING_VERIFY_SUCCESS;
-	}
-	g_assert (success == NM_SETTING_VERIFY_NORMALIZABLE || success == NM_SETTING_VERIFY_NORMALIZABLE_ERROR);
-	g_clear_error (&normalizable_error);
 
-	/* Try to perform all kind of normalizations on the settings to fix it.
-	 * We only do this, after verifying that the connection contains no un-normalizable
-	 * errors, because in that case we rather fail without touching the settings. */
-
-	was_modified |= _normalize_connection_uuid (connection);
-	was_modified |= _normalize_connection_type (connection);
-	was_modified |= _normalize_connection_slave_type (connection);
-	was_modified |= _normalize_required_settings (connection, parameters);
-	was_modified |= _normalize_invalid_slave_port_settings (connection, parameters);
-	was_modified |= _normalize_ip_config (connection, parameters);
-	was_modified |= _normalize_ethernet_link_neg (connection);
-	was_modified |= _normalize_infiniband_mtu (connection, parameters);
-	was_modified |= _normalize_bond_mode (connection, parameters);
-	was_modified |= _normalize_bond_options (connection, parameters);
-	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
-	was_modified |= _normalize_macsec (connection, parameters);
-	was_modified |= _normalize_team_config (connection, parameters);
-	was_modified |= _normalize_team_port_config (connection, parameters);
-	was_modified |= _normalize_bluetooth_type (connection, parameters);
-	was_modified |= _normalize_ovs_interface_type (connection, parameters);
-	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
-	was_modified |= _normalize_sriov_vf_order (connection, parameters);
-	was_modified |= _normalize_bridge_vlan_order (connection, parameters);
-	was_modified |= _normalize_bridge_port_vlan_order (connection, parameters);
-
-	/* Verify anew. */
-	success = _nm_connection_verify (connection, error);
-
-	if (modified)
-		*modified = was_modified;
-
-	if (success != NM_SETTING_VERIFY_SUCCESS) {
-		/* we would expect, that after normalization, the connection can be verified.
-		 * Also treat NM_SETTING_VERIFY_NORMALIZABLE as failure, because there is something
-		 * odd going on. */
-		if (error && !*error) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_FAILED,
-			                     _("Unexpected failure to normalize the connection"));
-		}
-		g_warning ("connection did not verify after normalization: %s", error ? (*error)->message : "??");
-		g_return_val_if_reached (FALSE);
+		if (error && *error)
+			return FALSE;
+		return TRUE;
 	}
 
-	/* we would expect, that the connection was modified during normalization. */
-	g_return_val_if_fail (was_modified, TRUE);
-
-	return TRUE;
+	return _connection_normalize (connection, parameters, modified, error);
 }
 
 gboolean
 _nm_connection_ensure_normalized (NMConnection *connection,
                                   gboolean allow_modify,
-                                  const char *enforce_uuid,
+                                  const char *expected_uuid,
+                                  gboolean coerce_uuid,
                                   NMConnection **out_connection_clone,
                                   GError **error)
 {
@@ -1701,8 +1734,21 @@ _nm_connection_ensure_normalized (NMConnection *connection,
 	NMSettingVerifyResult vresult;
 
 	nm_assert (NM_IS_CONNECTION (connection));
-	nm_assert (out_connection_clone && !*out_connection_clone);
-	nm_assert (!enforce_uuid || nm_utils_is_uuid (enforce_uuid));
+	nm_assert (!out_connection_clone || !*out_connection_clone);
+	nm_assert (!expected_uuid || nm_utils_is_uuid (expected_uuid));
+
+	if (expected_uuid) {
+		if (nm_streq0 (expected_uuid, nm_connection_get_uuid (connection)))
+			expected_uuid = NULL;
+		else if (   !coerce_uuid
+		         || (!allow_modify && !out_connection_clone)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("unexpected uuid %s instead of %s"),
+			             nm_connection_get_uuid (connection),
+			             expected_uuid);
+			return FALSE;
+		}
+	}
 
 	vresult = _nm_connection_verify (connection, &local);
 	if (vresult != NM_SETTING_VERIFY_SUCCESS) {
@@ -1712,34 +1758,36 @@ _nm_connection_ensure_normalized (NMConnection *connection,
 			return FALSE;
 		}
 		if (!allow_modify) {
+			if (!out_connection_clone) {
+				/* even NM_SETTING_VERIFY_NORMALIZABLE is treated as an error. We could normalize,
+				 * but are not allowed to (and no out argument is provided for cloning).  */
+				g_propagate_error (error, g_steal_pointer (&local));
+				return FALSE;
+			}
 			connection_clone = nm_simple_connection_new_clone (connection);
 			connection = connection_clone;
 		}
-		if (!nm_connection_normalize (connection, NULL, NULL, error)) {
-			nm_assert_not_reached ();
-			return FALSE;
-		}
+		if (!_connection_normalize (connection, NULL, NULL, error))
+			g_return_val_if_reached (FALSE);
 	}
 
-	if (enforce_uuid) {
-		if (!nm_streq (enforce_uuid, nm_connection_get_uuid (connection))) {
-			NMSettingConnection *s_con;
+	if (expected_uuid) {
+		NMSettingConnection *s_con;
 
-			if (   !allow_modify
-			    && !connection_clone) {
-				connection_clone = nm_simple_connection_new_clone (connection);
-				connection = connection_clone;
-			}
-			s_con = nm_connection_get_setting_connection (connection);
-			g_object_set (s_con,
-			              NM_SETTING_CONNECTION_UUID,
-			              enforce_uuid,
-			              NULL);
+		if (   !allow_modify
+		    && !connection_clone) {
+			nm_assert (out_connection_clone);
+			connection_clone = nm_simple_connection_new_clone (connection);
+			connection = connection_clone;
 		}
+		s_con = nm_connection_get_setting_connection (connection);
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_UUID,
+		              expected_uuid,
+		              NULL);
 	}
 
-	if (connection_clone)
-		*out_connection_clone = g_steal_pointer (&connection_clone);
+	NM_SET_OUT (out_connection_clone, g_steal_pointer (&connection_clone));
 	return TRUE;
 }
 
