@@ -240,7 +240,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	/* Set master up */
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, master, NULL));
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, master));
-	accept_signals (master_changed, 1, 2);
+	accept_signals (master_changed, 1, 3);
 
 	g_signal_handlers_disconnect_by_func (NM_PLATFORM_GET, G_CALLBACK (test_link_changed_signal_cb), &test_link_changed_signal_arg1);
 	g_signal_handlers_disconnect_by_func (NM_PLATFORM_GET, G_CALLBACK (test_link_changed_signal_cb), &test_link_changed_signal_arg2);
