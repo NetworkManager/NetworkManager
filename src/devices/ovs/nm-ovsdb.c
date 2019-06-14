@@ -1577,12 +1577,12 @@ nm_ovsdb_class_init (NMOvsdbClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[DEVICE_REMOVED] =
 		g_signal_new (NM_OVSDB_DEVICE_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
 }
