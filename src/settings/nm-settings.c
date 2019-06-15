@@ -1360,9 +1360,9 @@ add_plugin_keyfile (NMSettings *self)
 }
 
 static gboolean
-load_plugins (NMSettings *self, const char **plugins, GError **error)
+load_plugins (NMSettings *self, const char *const*plugins, GError **error)
 {
-	const char **iter;
+	const char *const*iter;
 	gboolean success = TRUE;
 	gboolean add_ibft = FALSE;
 	gboolean has_no_ibft;
@@ -1411,12 +1411,11 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		if (!success)
 			break;
 
-		if (add_ibft && nm_streq (pname, "ifcfg-rh")) {
+		if (   add_ibft
+		    && nm_streq (pname, "ifcfg-rh")) {
 			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
 			 * Enable "ibft" by default after "ifcfg-rh". */
-			pname = "ibft";
 			add_ibft = FALSE;
-
 			success = add_plugin_load_file (self, "ibft", error);
 			if (!success)
 				break;
@@ -1849,7 +1848,7 @@ nm_settings_start (NMSettings *self, GError **error)
 	/* Load the plugins; fail if a plugin is not found. */
 	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (priv->config), TRUE);
 
-	if (!load_plugins (self, (const char **) plugins, error))
+	if (!load_plugins (self, (const char *const*) plugins, error))
 		return FALSE;
 
 	load_connections (self);
