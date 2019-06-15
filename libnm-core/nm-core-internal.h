@@ -806,6 +806,18 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
 
 /*****************************************************************************/
 
+static inline gboolean
+_nm_connection_serialize_secrets (NMConnectionSerializationFlags flags,
+                                  NMSettingSecretFlags secret_flags)
+{
+	if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
+		return FALSE;
+	if (   NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)
+	    && !NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+		return FALSE;
+	return TRUE;
+}
+
 void _nm_connection_clear_secrets_by_secret_flags (NMConnection *self,
                                                    NMSettingSecretFlags filter_flags);
 

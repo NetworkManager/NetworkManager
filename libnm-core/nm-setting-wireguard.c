@@ -1490,7 +1490,7 @@ _peers_dbus_only_synth (const NMSettInfoSetting *sett_info,
 		    && peer->endpoint)
 			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_ENDPOINT, g_variant_new_string (nm_sock_addr_endpoint_get_endpoint (peer->endpoint)));
 
-		if (   !NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS)
+		if (   _nm_connection_serialize_secrets (flags, peer->preshared_key_flags)
 		    && peer->preshared_key)
 			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, g_variant_new_string (peer->preshared_key));
 
