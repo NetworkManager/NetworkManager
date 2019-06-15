@@ -806,6 +806,9 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes (NMSetting8021xCKScheme scheme,
 
 /*****************************************************************************/
 
+void _nm_connection_clear_secrets_by_secret_flags (NMConnection *self,
+                                                   NMSettingSecretFlags filter_flags);
+
 GVariant *_nm_connection_for_each_secret (NMConnection *self,
                                           GVariant *secrets,
                                           gboolean remove_non_secrets,

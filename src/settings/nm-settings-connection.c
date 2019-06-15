@@ -312,25 +312,6 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 
 /*****************************************************************************/
 
-static gboolean
-secrets_filter_cb (NMSetting *setting,
-                   const char *secret,
-                   NMSettingSecretFlags flags,
-                   gpointer user_data)
-{
-	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
-
-	/* Returns TRUE to remove the secret */
-
-	/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
-	if (   (flags == NM_SETTING_SECRET_FLAG_NONE)
-	    && (filter_flags == NM_SETTING_SECRET_FLAG_NONE))
-		return FALSE;
-
-	/* Otherwise if the secret has at least one of the desired flags keep it */
-	return (flags & filter_flags) ? FALSE : TRUE;
-}
-
 static void
 update_system_secrets_cache (NMSettingsConnection *self)
 {
@@ -341,16 +322,14 @@ update_system_secrets_cache (NMSettingsConnection *self)
 	priv->system_secrets = nm_simple_connection_new_clone (nm_settings_connection_get_connection (self));
 
 	/* Clear out non-system-owned and not-saved secrets */
-	nm_connection_clear_secrets_with_flags (priv->system_secrets,
-	                                        secrets_filter_cb,
-	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_NONE));
+	_nm_connection_clear_secrets_by_secret_flags (priv->system_secrets,
+	                                              NM_SETTING_SECRET_FLAG_NONE);
 }
 
 static void
 update_agent_secrets_cache (NMSettingsConnection *self, NMConnection *new)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMSettingSecretFlags filter_flags = NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_AGENT_OWNED;
 
 	if (priv->agent_secrets)
 		g_object_unref (priv->agent_secrets);
@@ -358,9 +337,9 @@ update_agent_secrets_cache (NMSettingsConnection *self, NMConnection *new)
 	                                                      ?: nm_settings_connection_get_connection (self));
 
 	/* Clear out non-system-owned secrets */
-	nm_connection_clear_secrets_with_flags (priv->agent_secrets,
-	                                        secrets_filter_cb,
-	                                        GUINT_TO_POINTER (filter_flags));
+	_nm_connection_clear_secrets_by_secret_flags (priv->agent_secrets,
+	                                                NM_SETTING_SECRET_FLAG_NOT_SAVED
+	                                              | NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 }
 
 static void
@@ -549,9 +528,8 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	/* Save agent-owned secrets from the new connection for later use */
 	if (new_connection) {
 		simple = nm_simple_connection_new_clone (new_connection);
-		nm_connection_clear_secrets_with_flags (simple,
-		                                        secrets_filter_cb,
-		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		_nm_connection_clear_secrets_by_secret_flags (simple,
+		                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 		new_agent_secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 		g_clear_object (&simple);
 	}
@@ -576,9 +554,8 @@ nm_settings_connection_update (NMSettingsConnection *self,
 		 * the connection returned by plugins, as plugins return only what was
 		 * reread from the file. */
 		simple = nm_simple_connection_new_clone (nm_settings_connection_get_connection (self));
-		nm_connection_clear_secrets_with_flags (simple,
-		                                        secrets_filter_cb,
-		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		_nm_connection_clear_secrets_by_secret_flags (simple,
+		                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 		con_agent_secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
 		nm_connection_replace_settings_from_connection (nm_settings_connection_get_connection (self), replace_connection);
@@ -1637,9 +1614,8 @@ update_auth_cb (NMSettingsConnection *self,
 		 * Only send secrets to agents of the same UID that called update too.
 		 */
 		for_agent = nm_simple_connection_new_clone (nm_settings_connection_get_connection (self));
-		nm_connection_clear_secrets_with_flags (for_agent,
-		                                        secrets_filter_cb,
-		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		_nm_connection_clear_secrets_by_secret_flags (for_agent,
+		                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 		nm_agent_manager_save_secrets (info->agent_mgr,
 		                               nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 		                               for_agent,

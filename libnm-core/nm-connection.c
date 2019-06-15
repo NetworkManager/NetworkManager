@@ -2050,6 +2050,52 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
 }
 
+static gboolean
+_clear_secrets_by_secret_flags_cb (NMSetting *setting,
+                                   const char *secret,
+                                   NMSettingSecretFlags flags,
+                                   gpointer user_data)
+{
+	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
+	gboolean remove_secret;
+
+	if (filter_flags == NM_SETTING_SECRET_FLAG_NONE) {
+		/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
+		remove_secret = (flags != NM_SETTING_SECRET_FLAG_NONE);
+	} else {
+		/* Otherwise if the secret has at least one of the desired flags keep it */
+		remove_secret = !NM_FLAGS_ANY (flags, filter_flags);
+	}
+
+	return remove_secret;
+}
+
+/**
+ * _nm_connection_clear_secrets_by_secret_flags:
+ * @self: the #NMConnection to filter (will be modified)
+ * @filter_flags: the secret flags to control whether to drop/remove
+ *   a secret or to keep it. The meaning of the filter flags is to
+ *   preseve the secrets. The secrets that have matching (see below)
+ *   flags are kept, the others are dropped.
+ *
+ * Removes/drops secrets from @self according to @filter_flags.
+ * If @filter_flags is %NM_SETTING_SECRET_NONE, then only secrets that
+ * have %NM_SETTING_SECRET_NONE flags are kept.
+ * Otherwise, only secrets with secret flags are kept that have at least
+ * one of the filter flags.
+ */
+void
+_nm_connection_clear_secrets_by_secret_flags (NMConnection *self,
+                                              NMSettingSecretFlags filter_flags)
+{
+	nm_connection_clear_secrets_with_flags (self,
+	                                        _clear_secrets_by_secret_flags_cb,
+	                                        GUINT_TO_POINTER (filter_flags));
+}
+
+/*****************************************************************************/
+
+
 /*****************************************************************************/
 
 /* Returns always a non-NULL, floating variant that must
