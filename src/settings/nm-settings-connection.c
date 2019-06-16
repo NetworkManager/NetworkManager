@@ -482,7 +482,6 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	gboolean replaced = FALSE;
 	gs_free char *logmsg_change = NULL;
 	GError *local = NULL;
-	gs_unref_object NMConnection *simple = NULL;
 	gs_unref_variant GVariant *con_agent_secrets = NULL;
 	gs_unref_variant GVariant *new_agent_secrets = NULL;
 
@@ -527,11 +526,8 @@ nm_settings_connection_update (NMSettingsConnection *self,
 
 	/* Save agent-owned secrets from the new connection for later use */
 	if (new_connection) {
-		simple = nm_simple_connection_new_clone (new_connection);
-		_nm_connection_clear_secrets_by_secret_flags (simple,
-		                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-		new_agent_secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-		g_clear_object (&simple);
+		new_agent_secrets = nm_connection_to_dbus (new_connection,   NM_CONNECTION_SERIALIZE_ONLY_SECRETS
+		                                                           | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
 	}
 
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
@@ -553,10 +549,9 @@ nm_settings_connection_update (NMSettingsConnection *self,
 		/* Make a copy of agent-owned secrets because they won't be present in
 		 * the connection returned by plugins, as plugins return only what was
 		 * reread from the file. */
-		simple = nm_simple_connection_new_clone (nm_settings_connection_get_connection (self));
-		_nm_connection_clear_secrets_by_secret_flags (simple,
-		                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-		con_agent_secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		con_agent_secrets = nm_connection_to_dbus (nm_settings_connection_get_connection (self),
+		                                             NM_CONNECTION_SERIALIZE_ONLY_SECRETS
+		                                           | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
 
 		nm_connection_replace_settings_from_connection (nm_settings_connection_get_connection (self), replace_connection);
 

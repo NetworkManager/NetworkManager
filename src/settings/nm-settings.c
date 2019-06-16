@@ -589,16 +589,14 @@ nm_settings_add_connection (NMSettings *self,
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 		GError *add_error = NULL;
-		gs_unref_object NMConnection *simple = NULL;
 		gs_unref_variant GVariant *secrets = NULL;
 
 		/* Make a copy of agent-owned secrets because they won't be present in
 		 * the connection returned by plugins, as plugins return only what was
 		 * reread from the file. */
-		simple = nm_simple_connection_new_clone (connection);
-		_nm_connection_clear_secrets_by_secret_flags (simple,
-		                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-		secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		secrets = nm_connection_to_dbus (connection,
+		                                   NM_CONNECTION_SERIALIZE_ONLY_SECRETS
+		                                 | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
 
 		added = nm_settings_plugin_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
