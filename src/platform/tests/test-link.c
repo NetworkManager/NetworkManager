@@ -286,7 +286,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, master));
 	accept_signals (link_changed, 1, 3);
 	/* NM running, can cause additional change of addrgenmode */
-	accept_signals (master_changed, 0, 2);
+	accept_signals (master_changed, 0, 3);
 
 	/* Enslave again
 	 *
