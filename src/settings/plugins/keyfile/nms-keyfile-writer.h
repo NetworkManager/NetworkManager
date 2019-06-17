@@ -23,10 +23,15 @@
 
 #include "nm-connection.h"
 
+typedef gboolean (*NMSKeyfileWriterAllowFilenameCb) (const char *check_filename,
+                                                     gpointer allow_filename_user_data);
+
 gboolean nms_keyfile_writer_connection (NMConnection *connection,
                                         gboolean save_to_disk,
                                         const char *existing_path,
                                         gboolean force_rename,
+                                        NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
+                                        gpointer allow_filename_user_data,
                                         char **out_path,
                                         NMConnection **out_reread,
                                         gboolean *out_reread_same,

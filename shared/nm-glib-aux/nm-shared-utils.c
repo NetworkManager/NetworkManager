@@ -2709,6 +2709,25 @@ nm_utils_g_slist_find_str (const GSList *list,
 	return NULL;
 }
 
+/**
+ * nm_utils_g_slist_strlist_cmp:
+ * @a: the left #GSList of strings
+ * @b: the right #GSList of strings to compare.
+ *
+ * Compares two string lists. The data elements are compared with
+ * strcmp(), alloing %NULL elements.
+ *
+ * Returns: 0, 1, or -1, depending on how the lists compare.
+ */
+int
+nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b)
+{
+	for (; a && b; a = a->next, b = b->next)
+		NM_CMP_DIRECT_STRCMP0 (a->data, b->data);
+	NM_CMP_SELF (a, b);
+	return 0;
+}
+
 /*****************************************************************************/
 
 gpointer

@@ -176,6 +176,8 @@ _internal_write_connection (NMConnection *connection,
                             const char *existing_path,
                             gboolean existing_path_read_only,
                             gboolean force_rename,
+                            NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
+                            gpointer allow_filename_user_data,
                             char **out_path,
                             NMConnection **out_reread,
                             gboolean *out_reread_same,
@@ -190,27 +192,20 @@ _internal_write_connection (NMConnection *connection,
 	GError *local_err = NULL;
 	int errsv;
 	gboolean rename;
+	int i_path;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
+
+	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
 
 	rename =    force_rename
 	         || existing_path_read_only
 	         || (   existing_path
 	             && !nm_utils_file_is_in_path (existing_path, keyfile_dir));
 
-	switch (_nm_connection_verify (connection, error)) {
-	case NM_SETTING_VERIFY_NORMALIZABLE:
-		nm_assert_not_reached ();
-		/* fall-through */
-	case NM_SETTING_VERIFY_SUCCESS:
-		break;
-	default:
-		g_return_val_if_reached (FALSE);
-	}
-
 	id = nm_connection_get_id (connection);
-	g_assert (id && *id);
+	nm_assert (id && *id);
 
 	info.keyfile_dir = keyfile_dir;
 
@@ -224,64 +219,59 @@ _internal_write_connection (NMConnection *connection,
 	if (!g_file_test (keyfile_dir, G_FILE_TEST_IS_DIR))
 		(void) g_mkdir_with_parents (keyfile_dir, 0755);
 
-	/* If we have existing file path, use it. Else generate one from
-	 * connection's ID.
-	 */
-	if (   existing_path
-	    && !rename)
-		path = g_strdup (existing_path);
-	else {
-		gs_free char *filename_escaped = NULL;
+	for (i_path = -2; i_path < 10000; i_path++) {
+		gs_free char *path_candidate = NULL;
+		gboolean is_existing_path;
 
-		filename_escaped = nm_keyfile_utils_create_filename (id, with_extension);
-		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
-	}
+		if (i_path == -2) {
+			if (   !existing_path
+			    || rename)
+				continue;
+			path_candidate = g_strdup (existing_path);
+		} else if (i_path == -1) {
+			gs_free char *filename_escaped = NULL;
 
-	/* If a file with this path already exists (but isn't the existing path
-	 * of the connection) then we need another name.  Multiple connections
-	 * can have the same ID (ie if two connections with the same ID are visible
-	 * to different users) but of course can't have the same path.  Yeah,
-	 * there's a race here, but there's not a lot we can do about it, and
-	 * we shouldn't get more than one connection with the same UUID either.
-	 */
-	if (   !nm_streq0 (path, existing_path)
-	    && g_file_test (path, G_FILE_TEST_EXISTS)) {
-		guint i;
-		gboolean name_found = FALSE;
-
-		/* A keyfile with this connection's ID already exists. Pick another name. */
-		for (i = 0; i < 100; i++) {
+			filename_escaped = nm_keyfile_utils_create_filename (id, with_extension);
+			path_candidate = g_build_filename (keyfile_dir, filename_escaped, NULL);
+		} else {
 			gs_free char *filename_escaped = NULL;
 			gs_free char *filename = NULL;
 
-			if (i == 0)
+			if (i_path == 0)
 				filename = g_strdup_printf ("%s-%s", id, nm_connection_get_uuid (connection));
 			else
-				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
+				filename = g_strdup_printf ("%s-%s-%d", id, nm_connection_get_uuid (connection), i_path);
 
 			filename_escaped = nm_keyfile_utils_create_filename (filename, with_extension);
 
-			g_free (path);
-			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
+			path_candidate = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
+		}
 
-			if (   nm_streq0 (path, existing_path)
-			    || !g_file_test (path, G_FILE_TEST_EXISTS)) {
-				name_found = TRUE;
-				break;
-			}
+		is_existing_path =    existing_path
+		                   && nm_streq (existing_path, path_candidate);
+
+		if (   is_existing_path
+		    && rename)
+			continue;
+
+		if (   allow_filename_cb
+		    && !allow_filename_cb (path_candidate, allow_filename_user_data))
+			continue;
+
+		if (!is_existing_path) {
+			if (g_file_test (path_candidate, G_FILE_TEST_EXISTS))
+				continue;
 		}
-		if (!name_found) {
-			if (existing_path_read_only || !existing_path) {
-				/* this really should not happen, we tried hard to find an unused name... bail out. */
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				                    "could not find suitable keyfile file name (%s already used)", path);
-				return FALSE;
-			}
-			/* Both our preferred path based on connection id and id-uuid are taken.
-			 * Fallback to @existing_path */
-			g_free (path);
-			path = g_strdup (existing_path);
-		}
+
+		path = g_steal_pointer (&path_candidate);
+		break;
+	}
+
+	if (!path) {
+		/* this really should not happen, we tried hard to find an unused name... bail out. */
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		                    "could not find suitable keyfile file name (%s already used)", path);
+		return FALSE;
 	}
 
 	nm_utils_file_set_contents (path, kf_content_buf, kf_content_len, 0600, &local_err);
@@ -350,6 +340,8 @@ nms_keyfile_writer_connection (NMConnection *connection,
                                gboolean save_to_disk,
                                const char *existing_path,
                                gboolean force_rename,
+                               NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
+                               gpointer allow_filename_user_data,
                                char **out_path,
                                NMConnection **out_reread,
                                gboolean *out_reread_same,
@@ -371,6 +363,8 @@ nms_keyfile_writer_connection (NMConnection *connection,
 	                                   existing_path,
 	                                   FALSE,
 	                                   force_rename,
+	                                   allow_filename_cb,
+	                                   allow_filename_user_data,
 	                                   out_path,
 	                                   out_reread,
 	                                   out_reread_same,
@@ -396,6 +390,8 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
 	                                   NULL,
 	                                   FALSE,
 	                                   FALSE,
+	                                   NULL,
+	                                   NULL,
 	                                   out_path,
 	                                   out_reread,
 	                                   out_reread_same,

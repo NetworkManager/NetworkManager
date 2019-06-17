@@ -981,6 +981,8 @@ nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 GSList *nm_utils_g_slist_find_str (const GSList *list,
                                    const char *needle);
 
+int nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b);
+
 /*****************************************************************************/
 
 gssize nm_utils_ptrarray_find_binary_search (gconstpointer *list,

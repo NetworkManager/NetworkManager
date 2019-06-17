@@ -114,7 +114,11 @@ typedef struct {
 
 	NMConfig *config;
 
+	NMHostnameManager *hostname_manager;
+
 	CList auth_lst_head;
+
+	NMSKeyfilePlugin *keyfile_plugin;
 
 	GSList *plugins;
 
@@ -124,10 +128,9 @@ typedef struct {
 	CList connections_lst_head;
 
 	NMSettingsConnection **connections_cached_list;
+
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
-
-	NMHostnameManager *hostname_manager;
 
 	NMSettingsConnection *startup_complete_blocked_by;
 
@@ -242,14 +245,13 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 	return priv->unmanaged_specs;
 }
 
-static void
+static gboolean
 update_specs (NMSettings *self, GSList **specs_ptr,
               GSList * (*get_specs_func) (NMSettingsPlugin *))
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *new = NULL;
 	GSList *iter;
-
-	g_slist_free_full (g_steal_pointer (specs_ptr), g_free);
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		GSList *specs;
@@ -259,15 +261,25 @@ update_specs (NMSettings *self, GSList **specs_ptr,
 			GSList *s = specs;
 
 			specs = g_slist_remove_link (specs, s);
-			if (nm_utils_g_slist_find_str (*specs_ptr, s->data)) {
+			if (nm_utils_g_slist_find_str (new, s->data)) {
 				g_free (s->data);
 				g_slist_free_1 (s);
 				continue;
 			}
-			s->next = *specs_ptr;
-			*specs_ptr = s;
+			s->next = new;
+			new = s;
 		}
 	}
+
+	if (nm_utils_g_slist_strlist_cmp (new, *specs_ptr) == 0) {
+		g_slist_free_full (new, g_free);
+		return FALSE;
+	}
+
+	g_slist_free_full (*specs_ptr, g_free);
+	*specs_ptr = new;
+	return TRUE;
+
 }
 
 static void
@@ -277,9 +289,9 @@ unmanaged_specs_changed (NMSettingsPlugin *config,
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	update_specs (self, &priv->unmanaged_specs,
-	              nm_settings_plugin_get_unmanaged_specs);
-	_notify (self, PROP_UNMANAGED_SPECS);
+	if (update_specs (self, &priv->unmanaged_specs,
+	                  nm_settings_plugin_get_unmanaged_specs))
+		_notify (self, PROP_UNMANAGED_SPECS);
 }
 
 static void
@@ -527,25 +539,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *sett_conn)
 
 /*****************************************************************************/
 
-static gboolean
-secrets_filter_cb (NMSetting *setting,
-                   const char *secret,
-                   NMSettingSecretFlags flags,
-                   gpointer user_data)
-{
-	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
-
-	/* Returns TRUE to remove the secret */
-
-	/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
-	if (   (flags == NM_SETTING_SECRET_FLAG_NONE)
-	    && (filter_flags == NM_SETTING_SECRET_FLAG_NONE))
-		return FALSE;
-
-	/* Otherwise if the secret has at least one of the desired flags keep it */
-	return (flags & filter_flags) ? FALSE : TRUE;
-}
-
 /**
  * nm_settings_add_connection:
  * @self: the #NMSettings object
@@ -596,17 +589,14 @@ nm_settings_add_connection (NMSettings *self,
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 		GError *add_error = NULL;
-		gs_unref_object NMConnection *simple = NULL;
 		gs_unref_variant GVariant *secrets = NULL;
 
 		/* Make a copy of agent-owned secrets because they won't be present in
 		 * the connection returned by plugins, as plugins return only what was
 		 * reread from the file. */
-		simple = nm_simple_connection_new_clone (connection);
-		nm_connection_clear_secrets_with_flags (simple,
-		                                        secrets_filter_cb,
-		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-		secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		secrets = nm_connection_to_dbus (connection,
+		                                   NM_CONNECTION_SERIALIZE_ONLY_SECRETS
+		                                 | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
 
 		added = nm_settings_plugin_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
@@ -645,9 +635,8 @@ send_agent_owned_secrets (NMSettings *self,
 	 * Only send secrets to agents of the same UID that called update too.
 	 */
 	for_agent = nm_simple_connection_new_clone (nm_settings_connection_get_connection (sett_conn));
-	nm_connection_clear_secrets_with_flags (for_agent,
-	                                        secrets_filter_cb,
-	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+	_nm_connection_clear_secrets_by_secret_flags (for_agent,
+	                                              NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	nm_agent_manager_save_secrets (priv->agent_mgr,
 	                               nm_dbus_object_get_path (NM_DBUS_OBJECT (sett_conn)),
 	                               for_agent,
@@ -1339,17 +1328,18 @@ add_plugin_load_file (NMSettings *self, const char *pname, GError **error)
 static void
 add_plugin_keyfile (NMSettings *self)
 {
-	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	keyfile_plugin = nms_keyfile_plugin_new ();
-	add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin), "keyfile", NULL);
+	if (priv->keyfile_plugin)
+		return;
+	priv->keyfile_plugin = nms_keyfile_plugin_new ();
+	add_plugin (self, NM_SETTINGS_PLUGIN (priv->keyfile_plugin), "keyfile", NULL);
 }
 
 static gboolean
-load_plugins (NMSettings *self, const char **plugins, GError **error)
+load_plugins (NMSettings *self, const char *const*plugins, GError **error)
 {
-	const char **iter;
-	gboolean keyfile_added = FALSE;
+	const char *const*iter;
 	gboolean success = TRUE;
 	gboolean add_ibft = FALSE;
 	gboolean has_no_ibft;
@@ -1382,10 +1372,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		/* keyfile plugin is built-in now */
 		if (nm_streq (pname, "keyfile")) {
-			if (!keyfile_added) {
-				add_plugin_keyfile (self);
-				keyfile_added = TRUE;
-			}
+			add_plugin_keyfile (self);
 			continue;
 		}
 
@@ -1401,12 +1388,11 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		if (!success)
 			break;
 
-		if (add_ibft && nm_streq (pname, "ifcfg-rh")) {
+		if (   add_ibft
+		    && nm_streq (pname, "ifcfg-rh")) {
 			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
 			 * Enable "ibft" by default after "ifcfg-rh". */
-			pname = "ibft";
 			add_ibft = FALSE;
-
 			success = add_plugin_load_file (self, "ibft", error);
 			if (!success)
 				break;
@@ -1414,7 +1400,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	}
 
 	/* If keyfile plugin was not among configured plugins, add it as the last one */
-	if (!keyfile_added && success)
+	if (success)
 		add_plugin_keyfile (self);
 
 	return success;
@@ -1839,7 +1825,7 @@ nm_settings_start (NMSettings *self, GError **error)
 	/* Load the plugins; fail if a plugin is not found. */
 	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (priv->config), TRUE);
 
-	if (!load_plugins (self, (const char **) plugins, error))
+	if (!load_plugins (self, (const char *const*) plugins, error))
 		return FALSE;
 
 	load_connections (self);
@@ -1963,6 +1949,8 @@ finalize (GObject *object)
 		priv->plugins = g_slist_delete_link (priv->plugins, iter);
 		g_signal_handlers_disconnect_by_data (plugin, self);
 	}
+
+	g_clear_object (&priv->keyfile_plugin);
 
 	g_clear_object (&priv->agent_mgr);
 

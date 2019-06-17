@@ -68,6 +68,8 @@ commit_changes (NMSettingsConnection *connection,
 	                                    nm_settings_connection_get_filename (connection),
 	                                    NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
 	                                                                 | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),
+	                                    NULL,
+	                                    NULL,
 	                                    &path,
 	                                    &reread,
 	                                    &reread_same,
