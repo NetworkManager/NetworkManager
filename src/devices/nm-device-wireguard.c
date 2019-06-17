@@ -1301,7 +1301,7 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 
 	route_metric = nm_device_get_route_metric (NM_DEVICE (self), addr_family);
 
-	route_table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (NM_DEVICE (self), addr_family, TRUE));
+	route_table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (NM_DEVICE (self), addr_family));
 
 	n_peers = nm_setting_wireguard_get_peers_len (s_wg);
 	for (i = 0; i < n_peers; i++) {
