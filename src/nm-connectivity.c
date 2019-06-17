@@ -26,6 +26,7 @@
 #if WITH_CONCHECK
 #include <curl/curl.h>
 #endif
+#include <linux/rtnetlink.h>
 
 #include "c-list/src/c-list.h"
 #include "nm-core-internal.h"
@@ -103,6 +104,7 @@ struct _NMConnectivityCheckHandle {
 	guint timeout_id;
 
 	NMConnectivityState completed_state;
+	const char *completed_reason;
 
 	bool fail_reason_no_dbus_connection:1;
 };
@@ -671,7 +673,9 @@ _idle_cb (gpointer user_data)
 		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		             "no D-Bus connection");
 		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "no D-Bus connection");
-	} else
+	} else if (cb_data->completed_reason)
+		cb_data_complete (cb_data, cb_data->completed_state, cb_data->completed_reason);
+	else
 		cb_data_complete (cb_data, NM_CONNECTIVITY_FAKE, "fake result");
 	return G_SOURCE_REMOVE;
 }
@@ -799,9 +803,78 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 
 #define SD_RESOLVED_DNS ((guint64) (1LL << 0))
 
+static NMConnectivityState
+check_platform_config (NMConnectivity *self,
+                       NMPlatform *platform,
+                       int ifindex,
+                       int addr_family,
+                       const char **reason)
+{
+	const NMDedupMultiHeadEntry *addresses;
+	const NMDedupMultiHeadEntry *routes;
+
+	if (!nm_platform_link_is_connected (platform, ifindex)) {
+		NM_SET_OUT (reason, "no carrier");
+		return NM_CONNECTIVITY_NONE;
+	}
+
+	addresses = nm_platform_lookup_object (platform,
+	                                         addr_family == AF_INET
+	                                       ? NMP_OBJECT_TYPE_IP4_ADDRESS
+	                                       : NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                                       ifindex);
+	if (!addresses || addresses->len == 0) {
+		NM_SET_OUT (reason, "no IP address configured");
+		return NM_CONNECTIVITY_NONE;
+	}
+
+	routes = nm_platform_lookup_object (platform,
+	                                      addr_family == AF_INET
+	                                    ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                    : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                    ifindex);
+	if (!routes || routes->len == 0) {
+		NM_SET_OUT (reason, "no IP route configured");
+		return NM_CONNECTIVITY_NONE;
+	}
+
+	switch (addr_family) {
+	case AF_INET: {
+		const NMPlatformIP4Route *route;
+		gboolean found_global = FALSE;
+		NMDedupMultiIter iter;
+		const NMPObject *plobj;
+
+		/* For IPv4 also require a route with global scope. */
+		nmp_cache_iter_for_each (&iter, routes, &plobj) {
+			route = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
+			if (nm_platform_route_scope_inv (route->scope_inv) == RT_SCOPE_UNIVERSE) {
+				found_global = TRUE;
+				break;
+			}
+		}
+
+		if (!found_global) {
+			NM_SET_OUT (reason, "no global route configured");
+			return NM_CONNECTIVITY_LIMITED;
+		}
+		break;
+	}
+	case AF_INET6:
+		/* Route scopes aren't meaningful for IPv6 so any route is fine. */
+		break;
+	default:
+		g_return_val_if_reached (FALSE);
+	}
+
+	NM_SET_OUT (reason, NULL);
+	return NM_CONNECTIVITY_UNKNOWN;
+}
+
 NMConnectivityCheckHandle *
 nm_connectivity_check_start (NMConnectivity *self,
                              int addr_family,
+                             NMPlatform *platform,
                              int ifindex,
                              const char *iface,
                              NMConnectivityCheckCallback callback,
@@ -836,8 +909,24 @@ nm_connectivity_check_start (NMConnectivity *self,
 	    && priv->enabled
 	    && priv->uri_valid) {
 		gboolean has_systemd_resolved;
+		NMConnectivityState state;
+		const char *reason;
 
 		cb_data->concheck.ch_ifindex = ifindex;
+
+		state = check_platform_config (self,
+		                               platform,
+		                               ifindex,
+		                               addr_family,
+		                               &reason);
+		nm_assert ((state == NM_CONNECTIVITY_UNKNOWN) == !reason);
+		if (state != NM_CONNECTIVITY_UNKNOWN) {
+			_LOG2D ("skip connectivity check due to %s", reason);
+			cb_data->completed_state = state;
+			cb_data->completed_reason = reason;
+			cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
+			return cb_data;
+		}
 
 		/* note that we pick up support for systemd-resolved right away when we need it.
 		 * We don't need to remember the setting, because we can (cheaply) check anew
