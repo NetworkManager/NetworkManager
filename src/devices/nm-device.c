@@ -2875,14 +2875,6 @@ concheck_update_state (NMDevice *self,
 				state = NM_CONNECTIVITY_LIMITED;
 		} else
 			state = NM_CONNECTIVITY_NONE;
-	} else if (state == NM_CONNECTIVITY_LIMITED) {
-		/* NMConnectivity cannot distinguish between NONE and LIMITED connectivity. In both
-		 * cases, it just failed to fetch the URL.
-		 *
-		 * NMDevice coerces a LIMITED state to NONE here, if the logical state of the device
-		 * is disconnected. */
-		if (priv->state <= NM_DEVICE_STATE_DISCONNECTED)
-			state = NM_CONNECTIVITY_NONE;
 	}
 
 	if (priv->concheck_x[IS_IPv4].state == state) {
