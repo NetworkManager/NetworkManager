@@ -869,6 +869,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), NULL);
 	g_return_val_if_fail (callback, NULL);
+	nm_assert (!platform || NM_IS_PLATFORM (platform));
 
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
@@ -897,18 +898,20 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 		cb_data->concheck.ch_ifindex = ifindex;
 
-		state = check_platform_config (self,
-		                               platform,
-		                               ifindex,
-		                               addr_family,
-		                               &reason);
-		nm_assert ((state == NM_CONNECTIVITY_UNKNOWN) == !reason);
-		if (state != NM_CONNECTIVITY_UNKNOWN) {
-			_LOG2D ("skip connectivity check due to %s", reason);
-			cb_data->completed_state = state;
-			cb_data->completed_reason = reason;
-			cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
-			return cb_data;
+		if (platform) {
+			state = check_platform_config (self,
+			                               platform,
+			                               ifindex,
+			                               addr_family,
+			                               &reason);
+			nm_assert ((state == NM_CONNECTIVITY_UNKNOWN) == !reason);
+			if (state != NM_CONNECTIVITY_UNKNOWN) {
+				_LOG2D ("skip connectivity check due to %s", reason);
+				cb_data->completed_state = state;
+				cb_data->completed_reason = reason;
+				cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
+				return cb_data;
+			}
 		}
 
 		/* note that we pick up support for systemd-resolved right away when we need it.
