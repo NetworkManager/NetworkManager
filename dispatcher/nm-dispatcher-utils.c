@@ -534,7 +534,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		_items_add_key0 (items, NULL, "DEVICE_IP_IFACE", ip_iface);
 	}
 
-	/* Device it's aren't valid if the device isn't activated */
+	/* Device items aren't valid if the device isn't activated */
 	if (   iface
 	    && dev_state == NM_DEVICE_STATE_ACTIVATED) {
 		construct_proxy_items (items, device_proxy_props, NULL);
