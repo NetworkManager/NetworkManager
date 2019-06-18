@@ -106,8 +106,6 @@ struct _NMConnectivityCheckHandle {
 
 	NMConnectivityState completed_state;
 	const char *completed_reason;
-
-	bool fail_reason_no_dbus_connection:1;
 };
 
 enum {
@@ -659,17 +657,10 @@ _idle_cb (gpointer user_data)
 
 	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
 	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->handles_lst_head, &cb_data->handles_lst));
+	nm_assert (cb_data->completed_reason);
 
 	cb_data->timeout_id = 0;
-	if (!cb_data->ifspec) {
-		/* the invocation was with an invalid ifname. It is a fail. */
-		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "missing interface");
-	} else if (cb_data->fail_reason_no_dbus_connection)
-		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "no D-Bus connection");
-	else if (cb_data->completed_reason)
-		cb_data_complete (cb_data, cb_data->completed_state, cb_data->completed_reason);
-	else
-		cb_data_complete (cb_data, NM_CONNECTIVITY_FAKE, "fake result");
+	cb_data_complete (cb_data, cb_data->completed_state, cb_data->completed_reason);
 	return G_SOURCE_REMOVE;
 }
 
@@ -939,7 +930,8 @@ nm_connectivity_check_start (NMConnectivity *self,
 				 *
 				 * Anyway, something is very odd, just fail connectivity check. */
 				_LOG2D ("start fake request (fail due to no D-Bus connection)");
-				cb_data->fail_reason_no_dbus_connection = TRUE;
+				cb_data->completed_state = NM_CONNECTIVITY_ERROR;
+				cb_data->completed_reason = "no D-Bus connection";
 				cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
 				return cb_data;
 			}
@@ -975,7 +967,14 @@ nm_connectivity_check_start (NMConnectivity *self,
 	}
 #endif
 
-	_LOG2D ("start fake request");
+	if (!cb_data->ifspec) {
+		cb_data->completed_state = NM_CONNECTIVITY_ERROR;
+		cb_data->completed_reason = "missing interface";
+	} else {
+		cb_data->completed_state = NM_CONNECTIVITY_FAKE;
+		cb_data->completed_reason = "fake result";
+	}
+	_LOG2D ("start fake request (%s)", cb_data->completed_reason);
 	cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
 
 	return cb_data;
