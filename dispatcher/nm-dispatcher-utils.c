@@ -381,6 +381,8 @@ construct_device_dhcp_items (GPtrArray *items, int addr_family, GVariant *dhcp_c
 	const char *key;
 	GVariant *val;
 	char four_or_six;
+	gboolean found_unknown_245 = FALSE;
+	gs_unref_variant GVariant *private_245_val = NULL;
 
 	if (!dhcp_config)
 		return;
@@ -402,9 +404,42 @@ construct_device_dhcp_items (GPtrArray *items, int addr_family, GVariant *dhcp_c
 				                   four_or_six,
 				                   ucased,
 				                   g_variant_get_string (val, NULL));
+
+				/* MS Azure sends the server endpoint in the dhcp private
+				 * option 245. cloud-init searches the Azure server endpoint
+				 * value looking for the standard dhclient label used for
+				 * that option, which is "unknown_245".
+				 * The 11-dhclient script shipped with Fedora and RHEL dhcp
+				 * package converts our dispatcher environment vars to the
+				 * dhclient ones (new_<some_option>) and calls dhclient hook
+				 * scripts.
+				 * Let's make cloud-init happy and let's duplicate the dhcp
+				 * option 245 with the legacy name of the default dhclient
+				 * label also when using the internal client.
+				 * Note however that the dhclient plugin will have unknown_
+				 * labels represented as ascii string when possible, falling
+				 * back to hex string otherwise.
+				 * private_ labels instead are always in hex string format.
+				 * This shouldn't affect the MS Azure server endpoint value,
+				 * as it usually belongs to the 240.0.0.0/4 network and so
+				 * is always represented as an hex string. Moreover, cloudinit
+				 * code checks just for an hex value in unknown_245.
+				 */
+				if (addr_family == AF_INET) {
+					if (nm_streq (key, "private_245"))
+						private_245_val = g_variant_ref (val);
+					else if (nm_streq (key, "unknown_245"))
+						found_unknown_245 = true;
+				}
 			}
 		}
 		g_variant_unref (val);
+	}
+
+	if (private_245_val != NULL && !found_unknown_245) {
+		_items_add_printf (items,
+		                   "DHCP4_UNKNOWN_245=%s",
+		                   g_variant_get_string (private_245_val, NULL));
 	}
 }
 
