@@ -661,19 +661,11 @@ _idle_cb (gpointer user_data)
 
 	cb_data->timeout_id = 0;
 	if (!cb_data->ifspec) {
-		gs_free_error GError *error = NULL;
-
 		/* the invocation was with an invalid ifname. It is a fail. */
-		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             "no interface specified for connectivity check");
 		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "missing interface");
-	} else if (cb_data->fail_reason_no_dbus_connection) {
-		gs_free_error GError *error = NULL;
-
-		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             "no D-Bus connection");
+	} else if (cb_data->fail_reason_no_dbus_connection)
 		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "no D-Bus connection");
-	} else if (cb_data->completed_reason)
+	else if (cb_data->completed_reason)
 		cb_data_complete (cb_data, cb_data->completed_state, cb_data->completed_reason);
 	else
 		cb_data_complete (cb_data, NM_CONNECTIVITY_FAKE, "fake result");
