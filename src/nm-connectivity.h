@@ -73,6 +73,7 @@ typedef void (*NMConnectivityCheckCallback) (NMConnectivity *self,
 
 NMConnectivityCheckHandle *nm_connectivity_check_start (NMConnectivity *self,
                                                         int family,
+                                                        NMPlatform *platform,
                                                         int ifindex,
                                                         const char *iface,
                                                         NMConnectivityCheckCallback callback,

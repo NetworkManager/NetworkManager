@@ -2852,6 +2852,7 @@ concheck_update_state (NMDevice *self,
 	                             NM_CONNECTIVITY_PORTAL,
 	                             NM_CONNECTIVITY_FULL,
 	                             NM_CONNECTIVITY_FAKE,
+	                             NM_CONNECTIVITY_NONE,
 	                             NM_CONNECTIVITY_ERROR));
 
 	if (state == NM_CONNECTIVITY_ERROR) {
@@ -2873,14 +2874,6 @@ concheck_update_state (NMDevice *self,
 			else
 				state = NM_CONNECTIVITY_LIMITED;
 		} else
-			state = NM_CONNECTIVITY_NONE;
-	} else if (state == NM_CONNECTIVITY_LIMITED) {
-		/* NMConnectivity cannot distinguish between NONE and LIMITED connectivity. In both
-		 * cases, it just failed to fetch the URL.
-		 *
-		 * NMDevice coerces a LIMITED state to NONE here, if the logical state of the device
-		 * is disconnected. */
-		if (priv->state <= NM_DEVICE_STATE_DISCONNECTED)
 			state = NM_CONNECTIVITY_NONE;
 	}
 
@@ -3167,6 +3160,7 @@ concheck_start (NMDevice *self,
 
 	handle->c_handle = nm_connectivity_check_start (concheck_get_mgr (self),
 	                                                handle->addr_family,
+	                                                nm_device_get_platform (self),
 	                                                nm_device_get_ip_ifindex (self),
 	                                                nm_device_get_ip_iface (self),
 	                                                concheck_cb,
