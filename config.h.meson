@@ -212,9 +212,6 @@
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
 
-/* Whether compilation of ibft setting plugin is enabled */
-#mesondefine WITH_SETTINGS_PLUGIN_IBFT
-
 /* Define if you have iwd support */
 #mesondefine WITH_IWD
 

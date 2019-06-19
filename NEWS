@@ -23,6 +23,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Rework parsing team JSON config in libnm and stricter validate settings.
   With this NetworkManager rejects settings that it considers invalid while
   still allowing setting arbitrary JSON config directly.
+* Drop ibft settings plugin. This functionality is now covered by using
+  nm-initrd-generator from initrd to pre-generate in-memory profiles.
 
 =============================================
 NetworkManager-1.18

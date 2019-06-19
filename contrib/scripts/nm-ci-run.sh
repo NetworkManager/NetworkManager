@@ -163,7 +163,6 @@ run_autotools() {
             --with-resolvconf=/bin/nowhere/resolvconf \
             \
             --enable-ifcfg-rh=yes \
-            --enable-config-plugin-ibft=yes \
             --enable-ifupdown=yes \
             \
             #end
@@ -240,7 +239,6 @@ run_meson() {
         -D resolvconf=/bin/nowhere/resolvconf \
         \
         -D ifcfg_rh=false \
-        -D ibft=true \
         -D ifupdown=true \
         \
         #end

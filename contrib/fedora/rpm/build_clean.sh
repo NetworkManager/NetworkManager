@@ -150,7 +150,6 @@ if [[ $NO_DIST != 1 ]]; then
         --enable-introspection \
         --enable-ifcfg-rh \
         --enable-ifupdown \
-        --enable-config-plugin-ibft \
         --with-config-logging-backend-default=syslog \
         --with-libaudit=yes-disabled-by-default \
         --enable-polkit=yes \
