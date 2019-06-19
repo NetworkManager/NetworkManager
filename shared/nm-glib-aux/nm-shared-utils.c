@@ -2906,10 +2906,13 @@ nm_utils_memeqzero (gconstpointer data, gsize length)
  *   be returned and must be freed by the caller.
  *   If not %NULL, the buffer must already be preallocated and contain
  *   at least (@length*2+1) or (@length*3) bytes, depending on the delimiter.
+ *   If @length is zero, then of course at least one byte will be allocated
+ *   or @out (if given) must contain at least room for the trailing NUL byte.
  *
  * Returns: the binary value converted to a hex string. If @out is given,
  *   this always returns @out. If @out is %NULL, a newly allocated string
- *   is returned.
+ *   is returned. This never returns %NULL, for buffers of length zero
+ *   an empty string is returend.
  */
 char *
 nm_utils_bin2hexstr_full (gconstpointer addr,
@@ -2925,9 +2928,11 @@ nm_utils_bin2hexstr_full (gconstpointer addr,
 	if (out)
 		out0 = out;
 	else {
-		out0 = out = g_new (char, delimiter == '\0'
-		                          ? length * 2 + 1
-		                          : length * 3);
+		out0 = out = g_new (char, length == 0
+		                          ? 1u
+		                          : (  delimiter == '\0'
+		                             ? length * 2u + 1u
+		                             : length * 3u));
 	}
 
 	/* @out must contain at least @length*3 bytes if @delimiter is set,
