@@ -427,6 +427,87 @@ test_strstrip_avoid_copy (void)
 	_do_strstrip_avoid_copy (" 01234567890 ");
 	_do_strstrip_avoid_copy (" 012345678901 ");
 }
+
+/*****************************************************************************/
+
+static void
+test_nm_utils_bin2hexstr (void)
+{
+	int n_run;
+
+	for (n_run = 0; n_run < 100; n_run++) {
+		guint8 buf[100];
+		guint8 buf2[G_N_ELEMENTS (buf) + 1];
+		gsize len = nmtst_get_rand_uint32 () % (G_N_ELEMENTS (buf) + 1);
+		char strbuf1[G_N_ELEMENTS (buf) * 3];
+		gboolean allocate = nmtst_get_rand_bool ();
+		char delimiter = nmtst_get_rand_bool () ? ':' : '\0';
+		gboolean upper_case = nmtst_get_rand_bool ();
+		gsize expected_strlen;
+		char *str_hex;
+		gsize required_len;
+		gboolean outlen_set;
+		gsize outlen;
+		guint8 *bin2;
+
+		nmtst_rand_buf (NULL, buf, len);
+
+		if (len == 0)
+			expected_strlen = 0;
+		else if (delimiter != '\0')
+			expected_strlen = (len * 3u) - 1;
+		else
+			expected_strlen = len * 2u;
+
+		g_assert_cmpint (expected_strlen, <, G_N_ELEMENTS (strbuf1));
+
+		str_hex = nm_utils_bin2hexstr_full (buf, len, delimiter, upper_case, !allocate ? strbuf1 : NULL);
+
+		g_assert (str_hex);
+		if (!allocate)
+			g_assert (str_hex == strbuf1);
+		g_assert_cmpint (strlen (str_hex), ==, expected_strlen);
+
+		g_assert (NM_STRCHAR_ALL (str_hex, ch,    (ch >= '0' && ch <= '9')
+		                                       || ch == delimiter
+		                                       || (  upper_case
+		                                           ? (ch >= 'A' && ch <= 'F')
+		                                           : (ch >= 'a' && ch <= 'f'))));
+
+		required_len = nmtst_get_rand_bool () ? len : 0u;
+
+		outlen_set = required_len == 0 || nmtst_get_rand_bool ();
+
+		memset (buf2, 0, sizeof (buf2));
+
+		bin2 = nm_utils_hexstr2bin_full (str_hex,
+		                                 nmtst_get_rand_bool (),
+		                                 delimiter != '\0' && nmtst_get_rand_bool (),
+		                                   delimiter != '\0'
+		                                 ? nmtst_rand_select ((const char *) ":", ":-")
+		                                 : nmtst_rand_select ((const char *) ":", ":-", "", NULL),
+		                                 required_len,
+		                                 buf2,
+		                                 len,
+		                                 outlen_set ? &outlen : NULL);
+		if (len > 0) {
+			g_assert (bin2);
+			g_assert (bin2 == buf2);
+		} else
+			g_assert (!bin2);
+
+		if (outlen_set)
+			g_assert_cmpint (outlen, ==, len);
+
+		g_assert_cmpmem (buf, len, buf2, len);
+
+		g_assert (buf2[len] == '\0');
+
+		if (allocate)
+			g_free (str_hex);
+	}
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -444,6 +525,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_unaligned", test_unaligned);
 	g_test_add_func ("/general/test_strv_cmp", test_strv_cmp);
 	g_test_add_func ("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);
+	g_test_add_func ("/general/test_nm_utils_bin2hexstr", test_nm_utils_bin2hexstr);
 
 	return g_test_run ();
 }
