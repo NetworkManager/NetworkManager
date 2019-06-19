@@ -79,12 +79,6 @@ G_DEFINE_TYPE (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_SETTINGS_PLUG
 
 /*****************************************************************************/
 
-static SettingsPluginIfcfg *settings_plugin_ifcfg_get (void);
-
-NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfcfg, settings_plugin_ifcfg_get, SETTINGS_TYPE_PLUGIN_IFCFG);
-
-/*****************************************************************************/
-
 #define _NMLOG_DOMAIN  LOGD_SETTINGS
 #define _NMLOG(level, ...) \
     G_STMT_START { \
@@ -984,5 +978,5 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *klass)
 G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return NM_SETTINGS_PLUGIN (g_object_ref (settings_plugin_ifcfg_get ()));
+	return g_object_new (SETTINGS_TYPE_PLUGIN_IFCFG, NULL);
 }

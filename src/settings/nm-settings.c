@@ -1255,6 +1255,10 @@ add_plugin (NMSettings *self,
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
 
+	nm_shutdown_wait_obj_register_full (G_OBJECT (plugin),
+	                                    g_strdup_printf ("%s-settings-plugin", pname),
+	                                    TRUE);
+
 	_LOGI ("Loaded settings plugin: %s (%s%s%s)",
 	       pname,
 	       NM_PRINT_FMT_QUOTED (path, "\"", path, "\"", "internal"));

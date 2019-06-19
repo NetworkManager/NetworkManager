@@ -75,11 +75,6 @@ G_DEFINE_TYPE (SettingsPluginIfupdown, settings_plugin_ifupdown, NM_TYPE_SETTING
 
 /*****************************************************************************/
 
-static SettingsPluginIfupdown *settings_plugin_ifupdown_get (void);
-NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfupdown, settings_plugin_ifupdown_get, SETTINGS_TYPE_PLUGIN_IFUPDOWN);
-
-/*****************************************************************************/
-
 #define _NMLOG_PREFIX_NAME      "ifupdown"
 #define _NMLOG_DOMAIN           LOGD_SETTINGS
 #define _NMLOG(level, ...) \
@@ -339,5 +334,5 @@ settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *klass)
 G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return NM_SETTINGS_PLUGIN (g_object_ref (settings_plugin_ifupdown_get ()));
+	return g_object_new (SETTINGS_TYPE_PLUGIN_IFUPDOWN, NULL);
 }
