@@ -2064,8 +2064,14 @@ static void
 connection_changed (NMManager *self,
                     NMSettingsConnection *sett_conn)
 {
+	NMConnection *connection;
 	NMDevice *device;
-	NMConnection *connection = nm_settings_connection_get_connection (sett_conn);
+
+	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (sett_conn),
+	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
+		return;
+
+	connection = nm_settings_connection_get_connection (sett_conn);
 
 	if (!nm_connection_is_virtual (connection))
 		return;
@@ -2094,8 +2100,7 @@ connection_updated_cb (NMSettings *settings,
                        gboolean by_user,
                        NMManager *self)
 {
-	if (by_user)
-		connection_changed (self, sett_conn);
+	connection_changed (self, sett_conn);
 }
 
 /*****************************************************************************/
