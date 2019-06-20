@@ -817,13 +817,13 @@ _delete_volatile_connection_do (NMManager *self,
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
+	if (!nm_settings_has_connection (priv->settings, connection))
+		return;
 	if (active_connection_find (self,
 	                            connection,
 	                            NULL,
 	                            NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
 	                            NULL))
-		return;
-	if (!nm_settings_has_connection (priv->settings, connection))
 		return;
 
 	_LOGD (LOGD_DEVICE, "volatile connection disconnected. Deleting connection '%s' (%s)",
