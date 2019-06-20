@@ -2799,6 +2799,7 @@ concheck_update_state (NMDevice *self, int addr_family,
 	                             NM_CONNECTIVITY_PORTAL,
 	                             NM_CONNECTIVITY_FULL,
 	                             NM_CONNECTIVITY_FAKE,
+	                             NM_CONNECTIVITY_NONE,
 	                             NM_CONNECTIVITY_ERROR));
 
 	if (state == NM_CONNECTIVITY_ERROR) {
@@ -3117,6 +3118,7 @@ concheck_start (NMDevice *self,
 
 	handle->c_handle = nm_connectivity_check_start (concheck_get_mgr (self),
 	                                                handle->addr_family,
+	                                                nm_device_get_platform (self),
 	                                                nm_device_get_ip_ifindex (self),
 	                                                nm_device_get_ip_iface (self),
 	                                                concheck_cb,
