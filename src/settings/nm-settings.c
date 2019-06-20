@@ -720,7 +720,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	g_return_if_fail (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	/* Connection must be valid, of course */
-	if (!nm_connection_verify (connection, &tmp_error)) {
+	if (_nm_connection_verify (connection, &tmp_error) != NM_SETTING_VERIFY_SUCCESS) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "The connection was invalid: %s",

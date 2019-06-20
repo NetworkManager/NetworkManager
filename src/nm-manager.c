@@ -5517,6 +5517,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 			goto error;
 	}
 
+	nm_assert (_nm_connection_verify (incompl_conn, NULL) == NM_SETTING_VERIFY_SUCCESS);
+
 	active = _new_active_connection (self,
 	                                 is_vpn,
 	                                 NULL,

@@ -5753,7 +5753,7 @@ nm_device_complete_connection (NMDevice *self,
 	                                 error))
 		return FALSE;
 
-	if (!nm_connection_verify (connection, error))
+	if (!nm_connection_normalize (connection, NULL, NULL, error))
 		return FALSE;
 
 	return nm_device_check_connection_compatible (self, connection, error);
