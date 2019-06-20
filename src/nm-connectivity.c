@@ -27,6 +27,7 @@
 #if WITH_CONCHECK
 #include <curl/curl.h>
 #endif
+#include <linux/rtnetlink.h>
 
 #include "c-list/src/c-list.h"
 #include "nm-core-internal.h"
@@ -104,8 +105,7 @@ struct _NMConnectivityCheckHandle {
 	guint timeout_id;
 
 	NMConnectivityState completed_state;
-
-	bool fail_reason_no_dbus_connection:1;
+	const char *completed_reason;
 };
 
 enum {
@@ -657,23 +657,10 @@ _idle_cb (gpointer user_data)
 
 	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
 	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->handles_lst_head, &cb_data->handles_lst));
+	nm_assert (cb_data->completed_reason);
 
 	cb_data->timeout_id = 0;
-	if (!cb_data->ifspec) {
-		gs_free_error GError *error = NULL;
-
-		/* the invocation was with an invalid ifname. It is a fail. */
-		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             "no interface specified for connectivity check");
-		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "missing interface");
-	} else if (cb_data->fail_reason_no_dbus_connection) {
-		gs_free_error GError *error = NULL;
-
-		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             "no D-Bus connection");
-		cb_data_complete (cb_data, NM_CONNECTIVITY_ERROR, "no D-Bus connection");
-	} else
-		cb_data_complete (cb_data, NM_CONNECTIVITY_FAKE, "fake result");
+	cb_data_complete (cb_data, cb_data->completed_state, cb_data->completed_reason);
 	return G_SOURCE_REMOVE;
 }
 
@@ -800,9 +787,78 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 
 #define SD_RESOLVED_DNS ((guint64) (1LL << 0))
 
+static NMConnectivityState
+check_platform_config (NMConnectivity *self,
+                       NMPlatform *platform,
+                       int ifindex,
+                       int addr_family,
+                       const char **reason)
+{
+	const NMDedupMultiHeadEntry *addresses;
+	const NMDedupMultiHeadEntry *routes;
+
+	if (!nm_platform_link_is_connected (platform, ifindex)) {
+		NM_SET_OUT (reason, "no carrier");
+		return NM_CONNECTIVITY_NONE;
+	}
+
+	addresses = nm_platform_lookup_object (platform,
+	                                         addr_family == AF_INET
+	                                       ? NMP_OBJECT_TYPE_IP4_ADDRESS
+	                                       : NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                                       ifindex);
+	if (!addresses || addresses->len == 0) {
+		NM_SET_OUT (reason, "no IP address configured");
+		return NM_CONNECTIVITY_NONE;
+	}
+
+	routes = nm_platform_lookup_object (platform,
+	                                      addr_family == AF_INET
+	                                    ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                    : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                    ifindex);
+	if (!routes || routes->len == 0) {
+		NM_SET_OUT (reason, "no IP route configured");
+		return NM_CONNECTIVITY_NONE;
+	}
+
+	switch (addr_family) {
+	case AF_INET: {
+		const NMPlatformIP4Route *route;
+		gboolean found_global = FALSE;
+		NMDedupMultiIter iter;
+		const NMPObject *plobj;
+
+		/* For IPv4 also require a route with global scope. */
+		nmp_cache_iter_for_each (&iter, routes, &plobj) {
+			route = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
+			if (nm_platform_route_scope_inv (route->scope_inv) == RT_SCOPE_UNIVERSE) {
+				found_global = TRUE;
+				break;
+			}
+		}
+
+		if (!found_global) {
+			NM_SET_OUT (reason, "no global route configured");
+			return NM_CONNECTIVITY_LIMITED;
+		}
+		break;
+	}
+	case AF_INET6:
+		/* Route scopes aren't meaningful for IPv6 so any route is fine. */
+		break;
+	default:
+		g_return_val_if_reached (FALSE);
+	}
+
+	NM_SET_OUT (reason, NULL);
+	return NM_CONNECTIVITY_UNKNOWN;
+}
+
 NMConnectivityCheckHandle *
 nm_connectivity_check_start (NMConnectivity *self,
                              int addr_family,
+                             NMPlatform *platform,
                              int ifindex,
                              const char *iface,
                              NMConnectivityCheckCallback callback,
@@ -814,6 +870,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 
 	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), NULL);
 	g_return_val_if_fail (callback, NULL);
+	nm_assert (!platform || NM_IS_PLATFORM (platform));
 
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
@@ -837,8 +894,26 @@ nm_connectivity_check_start (NMConnectivity *self,
 	    && priv->enabled
 	    && priv->uri_valid) {
 		gboolean has_systemd_resolved;
+		NMConnectivityState state;
+		const char *reason;
 
 		cb_data->concheck.ch_ifindex = ifindex;
+
+		if (platform) {
+			state = check_platform_config (self,
+			                               platform,
+			                               ifindex,
+			                               addr_family,
+			                               &reason);
+			nm_assert ((state == NM_CONNECTIVITY_UNKNOWN) == !reason);
+			if (state != NM_CONNECTIVITY_UNKNOWN) {
+				_LOG2D ("skip connectivity check due to %s", reason);
+				cb_data->completed_state = state;
+				cb_data->completed_reason = reason;
+				cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
+				return cb_data;
+			}
+		}
 
 		/* note that we pick up support for systemd-resolved right away when we need it.
 		 * We don't need to remember the setting, because we can (cheaply) check anew
@@ -869,7 +944,8 @@ nm_connectivity_check_start (NMConnectivity *self,
 				 *
 				 * Anyway, something is very odd, just fail connectivity check. */
 				_LOG2D ("start fake request (fail due to no D-Bus connection)");
-				cb_data->fail_reason_no_dbus_connection = TRUE;
+				cb_data->completed_state = NM_CONNECTIVITY_ERROR;
+				cb_data->completed_reason = "no D-Bus connection";
 				cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
 				return cb_data;
 			}
@@ -905,7 +981,14 @@ nm_connectivity_check_start (NMConnectivity *self,
 	}
 #endif
 
-	_LOG2D ("start fake request");
+	if (!cb_data->ifspec) {
+		cb_data->completed_state = NM_CONNECTIVITY_ERROR;
+		cb_data->completed_reason = "missing interface";
+	} else {
+		cb_data->completed_state = NM_CONNECTIVITY_FAKE;
+		cb_data->completed_reason = "fake result";
+	}
+	_LOG2D ("start fake request (%s)", cb_data->completed_reason);
 	cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
 
 	return cb_data;
