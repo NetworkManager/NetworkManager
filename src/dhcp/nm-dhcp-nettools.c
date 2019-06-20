@@ -40,6 +40,7 @@
 #include "platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "n-dhcp4/src/n-dhcp4.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 
@@ -97,6 +98,7 @@ G_DEFINE_TYPE (NMDhcpNettools, nm_dhcp_nettools, NM_TYPE_DHCP_CLIENT)
 #define DHCP_OPTION_IP_ADDRESS_LEASE_TIME             51
 #define DHCP_OPTION_SERVER_IDENTIFIER                 54
 #define DHCP_OPTION_CLIENT_IDENTIFIER                 61
+#define DHCP_OPTION_CLIENT_FQDN                       81
 #define DHCP_OPTION_DOMAIN_SEARCH_LIST               119
 #define DHCP_OPTION_CLASSLESS_STATIC_ROUTE           121
 #define DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE   249
@@ -105,6 +107,15 @@ G_DEFINE_TYPE (NMDhcpNettools, nm_dhcp_nettools, NM_TYPE_DHCP_CLIENT)
 /* Internal values */
 #define DHCP_OPTION_IP_ADDRESS       1024
 #define DHCP_OPTION_EXPIRY           1025
+
+#define DHCP_MAX_FQDN_LENGTH 255
+
+enum {
+	DHCP_FQDN_FLAG_S = (1 << 0),
+	DHCP_FQDN_FLAG_O = (1 << 1),
+	DHCP_FQDN_FLAG_E = (1 << 2),
+	DHCP_FQDN_FLAG_N = (1 << 3),
+};
 
 enum {
 	NM_IN_ADDR_CLASS_A,
@@ -1244,14 +1255,40 @@ ip4_start (NMDhcpClient *client,
 
 	hostname = nm_dhcp_client_get_hostname (client);
 	if (hostname) {
-		/* XXX: select hostname/FQDN */
-		r = n_dhcp4_client_probe_config_append_option (config,
-		                                               DHCP_OPTION_HOST_NAME,
-		                                               hostname,
-		                                               strlen (hostname));
-		if (r) {
-			nm_utils_error_set_errno (error, r, "failed to set DHCP hostname: %s");
-			return FALSE;
+		if (nm_dhcp_client_get_use_fqdn (client)) {
+			uint8_t buffer[3 + DHCP_MAX_FQDN_LENGTH];
+
+			buffer[0] = DHCP_FQDN_FLAG_S | /* Request server to perform A RR DNS updates */
+			            DHCP_FQDN_FLAG_E;  /* Canonical wire format */
+			buffer[1] = 0;                 /* RCODE1 (deprecated) */
+			buffer[2] = 0;                 /* RCODE2 (deprecated) */
+
+			r = nm_sd_dns_name_to_wire_format (hostname,
+			                                   buffer + 3,
+			                                   sizeof (buffer) - 3,
+			                                   FALSE);
+			if (r < 0) {
+				nm_utils_error_set_errno (error, r, "failed to convert DHCP FQDN: %s");
+				return FALSE;
+			}
+
+			r = n_dhcp4_client_probe_config_append_option (config,
+			                                               DHCP_OPTION_CLIENT_FQDN,
+			                                               buffer,
+			                                               3 + r);
+			if (r) {
+				nm_utils_error_set_errno (error, r, "failed to set DHCP FQDN: %s");
+				return FALSE;
+			}
+		} else {
+			r = n_dhcp4_client_probe_config_append_option (config,
+			                                               DHCP_OPTION_HOST_NAME,
+			                                               hostname,
+			                                               strlen (hostname));
+			if (r) {
+				nm_utils_error_set_errno (error, r, "failed to set DHCP hostname: %s");
+				return FALSE;
+			}
 		}
 	}
 
