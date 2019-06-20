@@ -1323,17 +1323,8 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
         <term><varname>ibft</varname>, <varname>no-ibft</varname></term>
         <listitem>
           <para>
-            This plugin allows to read iBFT configuration (iSCSI Boot Firmware Table).
-            The configuration is read using <filename>/sbin/iscsiadm</filename>. Users are
-            expected to configure iBFT connections via the firmware interfaces.
-            If ibft support is available, it is automatically enabled after
-            <literal>ifcfg-rh</literal>. This can be disabled by <literal>no-ibft</literal>.
-            You can also explicitly specify <literal>ibft</literal> to load the
-            plugin without <literal>ifcfg-rh</literal> or to change the plugin order.
-          </para>
-          <para>
-            Note that ibft plugin uses <filename>/sbin/iscsiadm</filename> and thus requires
-            CAP_SYS_ADMIN capability.
+            These plugins are deprecated and their selection has no effect.
+            This is now handled by nm-initrd-generator.
           </para>
         </listitem>
       </varlistentry>

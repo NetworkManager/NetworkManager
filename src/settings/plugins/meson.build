@@ -1,7 +1,3 @@
-if enable_ibft
-  subdir('ibft')
-endif
-
 if enable_ifcfg_rh
   subdir('ifcfg-rh')
 endif

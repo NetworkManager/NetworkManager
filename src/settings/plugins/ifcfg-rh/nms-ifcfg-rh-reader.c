@@ -5704,7 +5704,7 @@ connection_from_file_full (const char *filename,
 		return g_steal_pointer (&connection);
 	}
 
-	/* iBFT is handled by the iBFT settings plugin */
+	/* iBFT is handled by nm-initrd-generator during boot. */
 	bootproto = svGetValueStr_cp (main_ifcfg, "BOOTPROTO");
 	if (bootproto && !g_ascii_strcasecmp (bootproto, "ibft")) {
 		NM_SET_OUT (out_ignore_error, TRUE);

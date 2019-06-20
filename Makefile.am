@@ -141,7 +141,6 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-wext=no \
 	--enable-ifcfg-rh \
 	--enable-ifupdown \
-	--enable-config-plugin-ibft \
 	--disable-dependency-tracking \
 	$(NULL)
 
@@ -2713,76 +2712,6 @@ EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem \
 	\
 	src/settings/plugins/keyfile/tests/meson.build
-
-###############################################################################
-# src/settings/plugins/ibft
-###############################################################################
-
-if CONFIG_PLUGIN_IBFT
-
-core_plugins += src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
-
-noinst_LTLIBRARIES += src/settings/plugins/ibft/libnms-ibft-core.la
-
-src_settings_plugins_ibft_libnms_ibft_core_la_CPPFLAGS = $(src_cppflags_base)
-
-src_settings_plugins_ibft_libnms_ibft_core_la_SOURCES = \
-	src/settings/plugins/ibft/nms-ibft-reader.c \
-	src/settings/plugins/ibft/nms-ibft-reader.h
-
-$(src_settings_plugins_ibft_libnms_ibft_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_SOURCES = \
-	src/settings/plugins/ibft/nms-ibft-plugin.c \
-	src/settings/plugins/ibft/nms-ibft-plugin.h \
-	src/settings/plugins/ibft/nms-ibft-connection.c \
-	src/settings/plugins/ibft/nms-ibft-connection.h
-
-src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_CPPFLAGS = $(src_cppflags_base)
-
-src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LDFLAGS = \
-	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
-
-src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LIBADD = \
-	src/settings/plugins/ibft/libnms-ibft-core.la
-
-$(src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-check_programs += src/settings/plugins/ibft/tests/test-ibft
-
-src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = $(src_cppflags_base_test)
-
-src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
-	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS) \
-	$(SANITIZER_EXEC_LDFLAGS)
-
-src_settings_plugins_ibft_tests_test_ibft_LDADD = \
-	src/settings/plugins/ibft/libnms-ibft-core.la \
-	src/libNetworkManagerTest.la
-
-$(src_settings_plugins_ibft_tests_test_ibft_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-check-local-symbols-settings-ibft: src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
-	$(call check_so_symbols,$(builddir)/src/settings/plugins/ibft/.libs/libnm-settings-plugin-ibft.so)
-
-check_local += check-local-symbols-settings-ibft
-
-endif
-
-EXTRA_DIST += \
-	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
-	src/settings/plugins/ibft/tests/iscsiadm-test-static \
-	src/settings/plugins/ibft/tests/iscsiadm-test-bad-ipaddr \
-	src/settings/plugins/ibft/tests/iscsiadm-test-bad-gateway \
-	src/settings/plugins/ibft/tests/iscsiadm-test-bad-dns1 \
-	src/settings/plugins/ibft/tests/iscsiadm-test-bad-dns2 \
-	src/settings/plugins/ibft/tests/iscsiadm-test-bad-entry \
-	src/settings/plugins/ibft/tests/iscsiadm-test-bad-record \
-	src/settings/plugins/ibft/tests/iscsiadm-test-vlan \
-	src/settings/plugins/ibft/meson.build \
-	src/settings/plugins/ibft/tests/meson.build
 
 ###############################################################################
 # src/settings/plugins/ifcfg-rh

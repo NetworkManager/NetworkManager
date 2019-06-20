@@ -106,13 +106,7 @@
 %global dns_rc_manager_default file
 %endif
 
-%if 0%{?rhel}
-%global config_plugins_default ifcfg-rh,ibft
-%global ibft_enabled yes
-%else
 %global config_plugins_default ifcfg-rh
-%global ibft_enabled no
-%endif
 
 %if 0%{?fedora}
 # Altough eBPF would be available on Fedora's kernel, it seems
@@ -573,11 +567,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dtests=yes \
 	-Dvalgrind=no \
 	-Difcfg_rh=true \
-%if %{ibft_enabled} != yes
-	-Dibft=false \
-%else
-	-Dibft=true \
-%endif
 	-Difupdown=false \
 %if %{with ppp}
 	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
@@ -695,7 +684,6 @@ intltoolize --automake --copy --force
 %endif
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
-	--enable-config-plugin-ibft=%{ibft_enabled} \
 	--enable-ifupdown=no \
 %if %{with ppp}
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \

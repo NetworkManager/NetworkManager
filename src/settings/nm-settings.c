@@ -1341,16 +1341,6 @@ load_plugins (NMSettings *self, const char *const*plugins, GError **error)
 {
 	const char *const*iter;
 	gboolean success = TRUE;
-	gboolean add_ibft = FALSE;
-	gboolean has_no_ibft;
-	gssize idx_no_ibft, idx_ibft;
-
-	idx_ibft    = nm_utils_strv_find_first ((char **) plugins, -1, "ibft");
-	idx_no_ibft = nm_utils_strv_find_first ((char **) plugins, -1, "no-ibft");
-	has_no_ibft = idx_no_ibft >= 0 && idx_no_ibft > idx_ibft;
-#if WITH_SETTINGS_PLUGIN_IBFT
-	add_ibft = idx_no_ibft < 0 && idx_ibft < 0;
-#endif
 
 	for (iter = plugins; iter && *iter; iter++) {
 		const char *pname = *iter;
@@ -1360,15 +1350,10 @@ load_plugins (NMSettings *self, const char *const*plugins, GError **error)
 			continue;
 		}
 
-		if (NM_IN_STRSET (pname, "ifcfg-suse", "ifnet")) {
+		if (NM_IN_STRSET (pname, "ifcfg-suse", "ifnet", "ibft", "no-ibft")) {
 			_LOGW ("skipping deprecated plugin %s", pname);
 			continue;
 		}
-
-		if (nm_streq (pname, "no-ibft"))
-			continue;
-		if (has_no_ibft && nm_streq (pname, "ibft"))
-			continue;
 
 		/* keyfile plugin is built-in now */
 		if (nm_streq (pname, "keyfile")) {
@@ -1387,16 +1372,6 @@ load_plugins (NMSettings *self, const char *const*plugins, GError **error)
 		success = add_plugin_load_file (self, pname, error);
 		if (!success)
 			break;
-
-		if (   add_ibft
-		    && nm_streq (pname, "ifcfg-rh")) {
-			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
-			 * Enable "ibft" by default after "ifcfg-rh". */
-			add_ibft = FALSE;
-			success = add_plugin_load_file (self, "ibft", error);
-			if (!success)
-				break;
-		}
 	}
 
 	/* If keyfile plugin was not among configured plugins, add it as the last one */

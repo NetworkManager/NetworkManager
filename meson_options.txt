@@ -41,7 +41,6 @@ option('ebpf', type: 'combo', choices : ['auto', 'true', 'false'], description: 
 
 # configuration plugins
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
-option('ibft',     type: 'boolean', value: false, description: 'enable ibft configuration plugin')
 option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL)')
 option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
 

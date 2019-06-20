@@ -232,7 +232,6 @@ test-*.trs
 /src/platform/tests/test-platform-general
 /src/platform/tests/test-route-fake
 /src/platform/tests/test-route-linux
-/src/settings/plugins/ibft/tests/test-ibft
 /src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.[ch]
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifupdown/tests/test-ifupdown
@@ -334,6 +333,7 @@ test-*.trs
 /src/platform/tests/platform
 /src/platform/tests/test-general
 /src/rdisc/
+/src/settings/plugins/ibft/tests/test-ibft
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet
 /src/settings/plugins/keyfile/tests/test-keyfile
