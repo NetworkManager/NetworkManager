@@ -2100,27 +2100,17 @@ connection_updated_cb (NMSettings *settings,
 
 /*****************************************************************************/
 
-typedef struct {
-	CList delete_volatile_connection_lst;
-	NMSettingsConnection *connection;
-} DeleteVolatileConnectionData;
-
 static void
 _delete_volatile_connection_all (NMManager *self, gboolean do_delete)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	CList *lst;
-	DeleteVolatileConnectionData *data;
+	NMCListElem *elem;
 
-	while ((lst = c_list_first (&priv->delete_volatile_connection_lst_head))) {
+	while ((elem = c_list_first_entry (&priv->delete_volatile_connection_lst_head, NMCListElem, lst))) {
 		gs_unref_object NMSettingsConnection *connection = NULL;
 
-		data = c_list_entry (lst,
-		                     DeleteVolatileConnectionData,
-		                     delete_volatile_connection_lst);
-		connection = data->connection;
-		c_list_unlink_stale (&data->delete_volatile_connection_lst);
-		g_slice_free (DeleteVolatileConnectionData, data);
+		connection = elem->data;
+		nm_c_list_elem_free (elem);
 
 		if (do_delete)
 			_delete_volatile_connection_do (self, connection);
@@ -2145,7 +2135,6 @@ connection_flags_changed (NMSettings *settings,
 {
 	NMManager *self = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	DeleteVolatileConnectionData *data;
 
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
@@ -2157,9 +2146,8 @@ connection_flags_changed (NMSettings *settings,
 		return;
 	}
 
-	data = g_slice_new (DeleteVolatileConnectionData);
-	data->connection = g_object_ref (connection);
-	c_list_link_tail (&priv->delete_volatile_connection_lst_head, &data->delete_volatile_connection_lst);
+	c_list_link_tail (&priv->delete_volatile_connection_lst_head,
+	                  &nm_c_list_elem_new_stale (g_object_ref (connection))->lst);
 	if (!priv->delete_volatile_connection_idle_id)
 		priv->delete_volatile_connection_idle_id = g_idle_add (_delete_volatile_connection_cb, self);
 }
