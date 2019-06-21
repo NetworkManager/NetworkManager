@@ -1806,23 +1806,36 @@ _nmtst_connection_unchanging_secrets_updated_cb (NMConnection *connection, const
 	nm_assert_not_reached ();
 }
 
+const char _nmtst_connection_unchanging_user_data = 0;
+
 void
 nmtst_connection_assert_unchanging (NMConnection *connection)
 {
 	nm_assert (NM_IS_CONNECTION (connection));
 
+	if (g_signal_handler_find (connection,
+	                           G_SIGNAL_MATCH_DATA,
+	                           0,
+	                           0,
+	                           NULL,
+	                           NULL,
+	                           (gpointer) &_nmtst_connection_unchanging_user_data) != 0) {
+		/* avoid connecting the assertion handler multiple times. */
+		return;
+	}
+
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  G_CALLBACK (_nmtst_connection_unchanging_changed_cb),
-	                  NULL);
+	                  (gpointer) &_nmtst_connection_unchanging_user_data);
 	g_signal_connect (connection,
 	                  NM_CONNECTION_SECRETS_CLEARED,
 	                  G_CALLBACK (_nmtst_connection_unchanging_changed_cb),
-	                  NULL);
+	                  (gpointer) &_nmtst_connection_unchanging_user_data);
 	g_signal_connect (connection,
 	                  NM_CONNECTION_SECRETS_UPDATED,
 	                  G_CALLBACK (_nmtst_connection_unchanging_secrets_updated_cb),
-	                  NULL);
+	                  (gpointer) &_nmtst_connection_unchanging_user_data);
 }
 #endif
 
