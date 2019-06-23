@@ -966,6 +966,9 @@ nm_utils_strdict_get_keys (const GHashTable *hash,
 	                                                    out_length);
 }
 
+gboolean nm_utils_hashtable_same_keys (const GHashTable *a,
+                                       const GHashTable *b);
+
 char **nm_utils_strv_make_deep_copied (const char **strv);
 
 char **nm_utils_strv_make_deep_copied_n (const char **strv, gsize len);
