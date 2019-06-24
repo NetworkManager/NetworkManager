@@ -436,3 +436,26 @@ nm_utils_file_set_contents (const char *filename,
 
 	return TRUE;
 }
+
+/**
+ * nm_utils_file_stat:
+ * @filename: the filename to stat.
+ * @out_st: (allow-none) (out): if given, this will be passed to stat().
+ *
+ * Just wraps stat() and gives the errno number as function result instead
+ * of setting the errno (though, errno is also set). It's only for convenience
+ * with
+ *
+ *    if (nm_utils_file_stat (filename, NULL) == -ENOENT) {
+ *    }
+ *
+ * Returns: 0 on success a negative errno on failure. */
+int
+nm_utils_file_stat (const char *filename, struct stat *out_st)
+{
+	struct stat st;
+
+	if (stat (filename, out_st ?: &st) != 0)
+		return -NM_ERRNO_NATIVE (errno);
+	return 0;
+}
