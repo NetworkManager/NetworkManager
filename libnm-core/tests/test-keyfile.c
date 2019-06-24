@@ -35,6 +35,7 @@
 #define TEST_CERT_DIR              NM_BUILD_SRCDIR"/libnm-core/tests/certs"
 #define TEST_WIRED_TLS_CA_CERT     TEST_CERT_DIR"/test-ca-cert.pem"
 #define TEST_WIRED_TLS_PRIVKEY     TEST_CERT_DIR"/test-key-and-cert.pem"
+#define TEST_WIRED_TLS_TPM2KEY     TEST_CERT_DIR"/test-tpm2wrapped-key.pem"
 
 /*****************************************************************************/
 
@@ -377,15 +378,15 @@ _test_8021x_cert_check_blob_full (NMConnection *con, const void *data, gsize len
 #define _test_8021x_cert_check_blob(con, data) _test_8021x_cert_check_blob_full(con, data, NM_STRLEN (data))
 
 static void
-test_8021x_cert (void)
+_test_8021x_cert_from_files (const char *cert, const char *key)
 {
 	NMSetting8021x *s_8021x;
 	gs_unref_object NMConnection *con = nmtst_create_minimal_connection ("test-cert", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	GError *error = NULL;
 	gboolean success;
 	NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH;
-	gs_free char *full_TEST_WIRED_TLS_CA_CERT = nmtst_file_resolve_relative_path (TEST_WIRED_TLS_CA_CERT, NULL);
-	gs_free char *full_TEST_WIRED_TLS_PRIVKEY = nmtst_file_resolve_relative_path (TEST_WIRED_TLS_PRIVKEY, NULL);
+	gs_free char *full_TEST_WIRED_TLS_CA_CERT = nmtst_file_resolve_relative_path (cert, NULL);
+	gs_free char *full_TEST_WIRED_TLS_PRIVKEY = nmtst_file_resolve_relative_path (key, NULL);
 
 	/* test writing/reading of certificates of NMSetting8021x */
 
@@ -442,6 +443,18 @@ test_8021x_cert (void)
 	_test_8021x_cert_check_blob (con, "data:;base64,file://a");
 	_test_8021x_cert_check_blob (con, "123");
 
+}
+
+static void
+test_8021x_cert (void)
+{
+	_test_8021x_cert_from_files (TEST_WIRED_TLS_CA_CERT, TEST_WIRED_TLS_PRIVKEY);
+}
+
+static void
+test_8021x_cert_tpm2key (void)
+{
+	_test_8021x_cert_from_files (TEST_WIRED_TLS_CA_CERT, TEST_WIRED_TLS_TPM2KEY);
 }
 
 /*****************************************************************************/
@@ -850,6 +863,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/core/keyfile/encode_key", test_encode_key);
 	g_test_add_func ("/core/keyfile/test_8021x_cert", test_8021x_cert);
+	g_test_add_func ("/core/keyfile/test_8021x_cert_tpm2key", test_8021x_cert_tpm2key);
 	g_test_add_func ("/core/keyfile/test_8021x_cert_read", test_8021x_cert_read);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/valid", test_team_conf_read_valid);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/invalid", test_team_conf_read_invalid);
