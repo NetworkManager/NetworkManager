@@ -594,7 +594,7 @@ add_connection (NMSettingsPlugin *config,
 	gs_unref_object NMConnection *reread = NULL;
 
 	if (save_to_disk) {
-		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, &path, &reread, NULL, error))
+		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, NULL, NULL, &path, &reread, NULL, error))
 			return NULL;
 	} else {
 		if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))

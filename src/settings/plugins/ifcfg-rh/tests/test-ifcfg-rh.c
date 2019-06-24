@@ -238,7 +238,7 @@ _assert_expected_content (NMConnection *connection, const char *filename, const 
 		g_assert (_ifcfg_dir && _ifcfg_dir[0]); \
 		g_assert (_filename && _filename[0]); \
 		\
-		_success = nms_ifcfg_rh_writer_write_connection (_connection, _ifcfg_dir, _filename, NULL, _out_reread, _out_reread_same, &_error); \
+		_success = nms_ifcfg_rh_writer_write_connection (_connection, _ifcfg_dir, _filename, NULL, NULL, NULL, _out_reread, _out_reread_same, &_error); \
 		nmtst_assert_success (_success, _error); \
 		_assert_expected_content (_connection, _filename, _expected); \
 	} G_STMT_END
@@ -319,6 +319,8 @@ _writer_new_connection_reread (NMConnection *connection,
 	success = nms_ifcfg_rh_writer_write_connection (con_verified,
 	                                                ifcfg_dir,
 	                                                NULL,
+	                                                NULL,
+	                                                NULL,
 	                                                &filename,
 	                                                reread,
 	                                                out_reread_same,
@@ -393,6 +395,8 @@ _writer_new_connection_fail (NMConnection *connection,
 
 	success = nms_ifcfg_rh_writer_write_connection (connection_normalized,
 	                                                ifcfg_dir,
+	                                                NULL,
+	                                                NULL,
 	                                                NULL,
 	                                                &filename,
 	                                                &reread,
