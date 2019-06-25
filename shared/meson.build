@@ -275,11 +275,13 @@ libnm_systemd_shared = static_library(
     'systemd/src/basic/tmpfile-util.c',
     'systemd/src/basic/utf8.c',
     'systemd/src/basic/util.c',
+    'systemd/src/shared/dns-domain.c',
     'systemd/nm-sd-utils-shared.c',
   ),
   include_directories: include_directories(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
+    'systemd/src/shared',
   ),
   dependencies: shared_nm_glib_aux_dep,
   c_args: [
@@ -292,6 +294,7 @@ libnm_systemd_shared_dep = declare_dependency(
   include_directories: include_directories(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
+    'systemd/src/shared',
   ),
   dependencies: [
     shared_nm_glib_aux_dep,

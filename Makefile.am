@@ -1659,6 +1659,7 @@ libsystemd_cppflags = \
 	-I$(srcdir)/shared/systemd/ \
 	-I$(srcdir)/shared/systemd/sd-adapt-shared \
 	-I$(srcdir)/shared/systemd/src/basic \
+	-I$(srcdir)/shared/systemd/src/shared \
 	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -1802,6 +1803,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/utf8.h \
 	shared/systemd/src/basic/util.c \
 	shared/systemd/src/basic/util.h \
+	shared/systemd/src/shared/dns-domain.c \
+	shared/systemd/src/shared/dns-domain.h \
 	$(NULL)
 
 shared_systemd_libnm_systemd_shared_la_LIBADD = \
@@ -1818,7 +1821,6 @@ src_libnm_systemd_core_la_cppflags = \
 	-I$(srcdir)/src \
 	-I$(srcdir)/src/systemd/sd-adapt-core \
 	-I$(srcdir)/src/systemd/src/systemd \
-	-I$(srcdir)/src/systemd/src/shared \
 	-I$(srcdir)/src/systemd/src/libsystemd-network \
 	-I$(srcdir)/src/systemd/src/libsystemd/sd-event \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
@@ -1879,8 +1881,6 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/src/libsystemd/sd-id128/id128-util.c \
 	src/systemd/src/libsystemd/sd-id128/id128-util.h \
 	src/systemd/src/libsystemd/sd-id128/sd-id128.c \
-	src/systemd/src/shared/dns-domain.c \
-	src/systemd/src/shared/dns-domain.h \
 	src/systemd/src/systemd/_sd-common.h \
 	src/systemd/src/systemd/sd-dhcp-client.h \
 	src/systemd/src/systemd/sd-dhcp-lease.h \
