@@ -309,9 +309,9 @@ gboolean nm_logging_syslog_enabled (void);
 #define __NMLOG_DEFAULT_WITH_ADDR(level, domain, prefix, ...) \
 	G_STMT_START { \
 		nm_log ((level), (domain), NULL, NULL, \
-		        "%s[%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        "%s["NM_HASH_OBFUSCATE_PTR_FMT"]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
 		        (prefix), \
-		        (self) \
+		        NM_HASH_OBFUSCATE_PTR (self) \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
 

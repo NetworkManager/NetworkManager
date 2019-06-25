@@ -152,7 +152,7 @@ G_DEFINE_TYPE (NMSettingsConnection, nm_settings_connection, NM_TYPE_DBUS_OBJECT
             const char *__uuid = (self) ? nm_settings_connection_get_uuid (self) : NULL; \
             \
             if (self) { \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ?: ""); \
+                g_snprintf (__prefix, sizeof (__prefix), "%s["NM_HASH_OBFUSCATE_PTR_FMT"%s%s]", _NMLOG_PREFIX_NAME, NM_HASH_OBFUSCATE_PTR (self), __uuid ? "," : "", __uuid ?: ""); \
                 __p_prefix = __prefix; \
             } \
             _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, __uuid, \
