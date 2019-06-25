@@ -72,13 +72,6 @@ G_DEFINE_TYPE (NMDhcpNettools, nm_dhcp_nettools, NM_TYPE_DHCP_CLIENT)
 #define DHCP_MAX_FQDN_LENGTH 255
 
 enum {
-	DHCP_FQDN_FLAG_S = (1 << 0),
-	DHCP_FQDN_FLAG_O = (1 << 1),
-	DHCP_FQDN_FLAG_E = (1 << 2),
-	DHCP_FQDN_FLAG_N = (1 << 3),
-};
-
-enum {
 	NM_IN_ADDR_CLASS_A,
 	NM_IN_ADDR_CLASS_B,
 	NM_IN_ADDR_CLASS_C,
@@ -1220,6 +1213,22 @@ decline (NMDhcpClient *client,
 	return TRUE;
 }
 
+static guint8
+fqdn_flags_to_wire (NMDhcpHostnameFlags flags)
+{
+	guint r = 0;
+
+	/* RFC 4702 section 2.1 */
+	if (flags & NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE)
+		r |= (1 << 0);
+	if (flags & NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED)
+		r |= (1 << 2);
+	if (flags & NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE)
+		r |= (1 << 3);
+
+	return r;
+}
+
 static gboolean
 ip4_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
@@ -1289,26 +1298,38 @@ ip4_start (NMDhcpClient *client,
 	hostname = nm_dhcp_client_get_hostname (client);
 	if (hostname) {
 		if (nm_dhcp_client_get_use_fqdn (client)) {
-			uint8_t buffer[3 + DHCP_MAX_FQDN_LENGTH];
+			uint8_t buffer[255];
+			NMDhcpHostnameFlags flags;
+			size_t fqdn_len;
 
-			buffer[0] = DHCP_FQDN_FLAG_S | /* Request server to perform A RR DNS updates */
-			            DHCP_FQDN_FLAG_E;  /* Canonical wire format */
-			buffer[1] = 0;                 /* RCODE1 (deprecated) */
-			buffer[2] = 0;                 /* RCODE2 (deprecated) */
+			flags = nm_dhcp_client_get_hostname_flags (client);
+			buffer[0] = fqdn_flags_to_wire (flags);
+			buffer[1] = 0;   /* RCODE1 (deprecated) */
+			buffer[2] = 0;   /* RCODE2 (deprecated) */
 
-			r = nm_sd_dns_name_to_wire_format (hostname,
-			                                   buffer + 3,
-			                                   sizeof (buffer) - 3,
-			                                   FALSE);
-			if (r < 0) {
-				nm_utils_error_set_errno (error, r, "failed to convert DHCP FQDN: %s");
-				return FALSE;
+			if (flags & NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED) {
+				r = nm_sd_dns_name_to_wire_format (hostname,
+				                                   buffer + 3,
+				                                   sizeof (buffer) - 3,
+				                                   FALSE);
+				if (r <= 0) {
+					nm_utils_error_set_errno (error, r, "failed to convert DHCP FQDN: %s");
+					return FALSE;
+				}
+				fqdn_len = r;
+			} else {
+				fqdn_len = strlen (hostname);
+				if (fqdn_len > sizeof (buffer) - 3) {
+					nm_utils_error_set (error, r, "failed to set DHCP FQDN: name too long");
+					return FALSE;
+				}
+				memcpy (buffer + 3, hostname, fqdn_len);
 			}
 
 			r = n_dhcp4_client_probe_config_append_option (config,
 			                                               NM_DHCP_OPTION_DHCP4_CLIENT_FQDN,
 			                                               buffer,
-			                                               3 + r);
+			                                               3 + fqdn_len);
 			if (r) {
 				nm_utils_error_set_errno (error, r, "failed to set DHCP FQDN: %s");
 				return FALSE;
