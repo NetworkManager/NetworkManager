@@ -7264,15 +7264,23 @@ ip_config_merge_and_apply (NMDevice *self,
 	}
 
 	if (!IS_IPv4) {
+		const NMPlatformLink *link;
 		NMUtilsIPv6IfaceId iid;
+		NMPlatform *platform;
+		int ifindex;
 
 		if (   commit
 		    && priv->ndisc_started
 		    && ip6_addr_gen_token
 		    && nm_utils_ipv6_interface_identifier_get_from_token (&iid, ip6_addr_gen_token)) {
-			nm_platform_link_set_ipv6_token (nm_device_get_platform (self),
-			                                 nm_device_get_ip_ifindex (self),
-			                                 iid);
+			platform = nm_device_get_platform (self);
+			ifindex = nm_device_get_ip_ifindex (self);
+			link = nm_platform_link_get (platform, ifindex);
+
+			if (link && link->inet6_token.id == iid.id)
+				_LOGT (LOGD_DEVICE | LOGD_IP6, "token %s already set", ip6_addr_gen_token);
+			else
+				nm_platform_link_set_ipv6_token (platform, ifindex, iid);
 		}
 	}
 
