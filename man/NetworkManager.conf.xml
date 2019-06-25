@@ -717,6 +717,10 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, it defaults to "ifname".</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.dhcp-hostname-flags</varname></term>
+          <listitem><para>If left unspecified, the value 3 (fqdn-encoded,fqdn-serv-update) is used.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.dhcp-timeout</varname></term>
           <listitem><para>If left unspecified, the default value for
            the interface type is used.</para></listitem>
@@ -743,6 +747,10 @@ ipv6.ip6-privacy=0
         <varlistentry>
           <term><varname>ipv6.dhcp-iaid</varname></term>
           <listitem><para>If left unspecified, it defaults to "ifname".</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ipv6.dhcp-hostname-flags</varname></term>
+          <listitem><para>If left unspecified, the value 1 (fqdn-serv-update) is used.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.dhcp-timeout</varname></term>

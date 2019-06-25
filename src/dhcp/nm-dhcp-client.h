@@ -36,6 +36,7 @@
 #define NM_DHCP_CLIENT_UUID             "uuid"
 #define NM_DHCP_CLIENT_IAID             "iaid"
 #define NM_DHCP_CLIENT_IAID_EXPLICIT    "iaid-explicit"
+#define NM_DHCP_CLIENT_HOSTNAME_FLAGS   "hostname-flags"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -139,6 +140,8 @@ gboolean nm_dhcp_client_get_iaid_explicit (NMDhcpClient *self);
 GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);
+
+NMDhcpHostnameFlags nm_dhcp_client_get_hostname_flags (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_get_info_only (NMDhcpClient *self);
 
