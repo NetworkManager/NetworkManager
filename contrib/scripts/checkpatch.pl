@@ -206,7 +206,7 @@ if (defined $indent) {
 		or (defined $tabs_before_spaces and defined $this_tabs_before_spaces
 			and $this_tabs_before_spaces != $tabs_before_spaces);
 }
-$indent = $this_indent;
+$indent = $this_indent if $_ ne '';
 
 # Further on we process stuff without comments.
 $_ = $line;
