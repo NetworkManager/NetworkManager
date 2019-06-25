@@ -1160,6 +1160,30 @@ nm_g_object_unref (gpointer obj)
 #define nm_clear_g_object(pp) \
 	nm_clear_pointer (pp, g_object_unref)
 
+/**
+ * nm_clear_error:
+ * @err: a pointer to pointer to a #GError.
+ *
+ * This is like g_clear_error(). The only difference is
+ * that this is an inline function.
+ */
+static inline void
+nm_clear_error (GError **err)
+{
+	if (err && *err) {
+		g_error_free (*err);
+		*err = NULL;
+	}
+}
+
+/* Patch g_clear_error() to use nm_clear_error(), which is inlineable
+ * and visible to the compiler. For example gs_free_error attribute only
+ * frees the error after checking that it's not %NULL. So, in many cases
+ * the compiler knows that gs_free_error has no effect and can optimize
+ * the call away. By making g_clear_error() inlineable, we give the compiler
+ * more chance to detect that the function actually has no effect. */
+#define g_clear_error(ptr) nm_clear_error(ptr)
+
 static inline gboolean
 nm_clear_g_source (guint *id)
 {
