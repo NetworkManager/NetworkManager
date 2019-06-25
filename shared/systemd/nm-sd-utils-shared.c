@@ -24,6 +24,7 @@
 
 #include "path-util.h"
 #include "hexdecoct.h"
+#include "dns-domain.h"
 
 /*****************************************************************************/
 
@@ -82,4 +83,12 @@ nm_sd_utils_unbase64mem (const char *p,
                          size_t *len)
 {
 	return unbase64mem_full (p, l, secure, (void **) mem, len);
+}
+
+int nm_sd_dns_name_to_wire_format (const char *domain,
+                                   guint8 *buffer,
+                                   size_t len,
+                                   gboolean canonical)
+{
+	return dns_name_to_wire_format (domain, buffer, len, canonical);
 }
