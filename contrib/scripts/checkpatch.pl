@@ -204,7 +204,7 @@ if (defined $indent) {
 	complain ("Bad indentation")
 		if $this_indent =~ /^$indent\t+ +/
 		or (defined $tabs_before_spaces and defined $this_tabs_before_spaces
-			and $this_tabs_before_spaces < $tabs_before_spaces);
+			and $this_tabs_before_spaces != $tabs_before_spaces);
 }
 $indent = $this_indent;
 
