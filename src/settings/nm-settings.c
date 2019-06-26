@@ -720,7 +720,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	g_return_if_fail (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	/* Connection must be valid, of course */
-	if (!nm_connection_verify (connection, &tmp_error)) {
+	if (_nm_connection_verify (connection, &tmp_error) != NM_SETTING_VERIFY_SUCCESS) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "The connection was invalid: %s",
@@ -1254,6 +1254,10 @@ add_plugin (NMSettings *self,
 	nm_assert (!g_slist_find (priv->plugins, plugin));
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
+
+	nm_shutdown_wait_obj_register_full (G_OBJECT (plugin),
+	                                    g_strdup_printf ("%s-settings-plugin", pname),
+	                                    TRUE);
 
 	_LOGI ("Loaded settings plugin: %s (%s%s%s)",
 	       pname,

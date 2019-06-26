@@ -59,4 +59,8 @@ gboolean nm_utils_file_set_contents (const char *filename,
                                      mode_t mode,
                                      GError **error);
 
+struct stat;
+
+int nm_utils_file_stat (const char *filename, struct stat *out_st);
+
 #endif /* __NM_IO_UTILS_H__ */

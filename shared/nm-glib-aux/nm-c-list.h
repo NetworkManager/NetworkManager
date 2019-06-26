@@ -101,12 +101,24 @@ nm_c_list_elem_find_first (CList *head, gconstpointer needle)
 
 /*****************************************************************************/
 
+/**
+ * nm_c_list_move_before:
+ * @lst: the list element to which @elem will be prepended.
+ * @elem: the list element to move.
+ *
+ * This unlinks @elem from the current list and linkes it before
+ * @lst. This is like c_list_link_before(), except that @elem must
+ * be initialized and linked. Note that @elem may be linked in @lst
+ * or in another list. In both cases it gets moved.
+ *
+ * Returns: %TRUE if there were any changes. %FALSE if elem was already
+ *   linked at the right place.
+ */
 static inline gboolean
 nm_c_list_move_before (CList *lst, CList *elem)
 {
 	nm_assert (lst);
 	nm_assert (elem);
-	nm_assert (c_list_contains (lst, elem));
 
 	if (   lst != elem
 	    && lst->prev != elem) {
@@ -118,12 +130,24 @@ nm_c_list_move_before (CList *lst, CList *elem)
 }
 #define nm_c_list_move_tail(lst, elem) nm_c_list_move_before (lst, elem)
 
+/**
+ * nm_c_list_move_after:
+ * @lst: the list element to which @elem will be prepended.
+ * @elem: the list element to move.
+ *
+ * This unlinks @elem from the current list and linkes it after
+ * @lst. This is like c_list_link_after(), except that @elem must
+ * be initialized and linked. Note that @elem may be linked in @lst
+ * or in another list. In both cases it gets moved.
+ *
+ * Returns: %TRUE if there were any changes. %FALSE if elem was already
+ *   linked at the right place.
+ */
 static inline gboolean
 nm_c_list_move_after (CList *lst, CList *elem)
 {
 	nm_assert (lst);
 	nm_assert (elem);
-	nm_assert (c_list_contains (lst, elem));
 
 	if (   lst != elem
 	    && lst->next != elem) {

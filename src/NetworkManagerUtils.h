@@ -89,10 +89,11 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform (const NMIPRoutingRule *ru
 
 typedef struct _NMShutdownWaitObjHandle NMShutdownWaitObjHandle;
 
-NMShutdownWaitObjHandle *_nm_shutdown_wait_obj_register (GObject *watched_obj,
-                                                        const char *msg_reason);
+NMShutdownWaitObjHandle *nm_shutdown_wait_obj_register_full (GObject *watched_obj,
+                                                             char *msg_reason,
+                                                             gboolean free_msg_reason);
 
-#define nm_shutdown_wait_obj_register(watched_obj, msg_reason) _nm_shutdown_wait_obj_register((watched_obj), (""msg_reason""))
+#define nm_shutdown_wait_obj_register(watched_obj, msg_reason) nm_shutdown_wait_obj_register_full((watched_obj), (""msg_reason""), FALSE)
 
 void nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle);
 

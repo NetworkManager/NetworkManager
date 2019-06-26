@@ -817,13 +817,13 @@ _delete_volatile_connection_do (NMManager *self,
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
+	if (!nm_settings_has_connection (priv->settings, connection))
+		return;
 	if (active_connection_find (self,
 	                            connection,
 	                            NULL,
 	                            NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
 	                            NULL))
-		return;
-	if (!nm_settings_has_connection (priv->settings, connection))
 		return;
 
 	_LOGD (LOGD_DEVICE, "volatile connection disconnected. Deleting connection '%s' (%s)",
@@ -2064,8 +2064,14 @@ static void
 connection_changed (NMManager *self,
                     NMSettingsConnection *sett_conn)
 {
+	NMConnection *connection;
 	NMDevice *device;
-	NMConnection *connection = nm_settings_connection_get_connection (sett_conn);
+
+	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (sett_conn),
+	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
+		return;
+
+	connection = nm_settings_connection_get_connection (sett_conn);
 
 	if (!nm_connection_is_virtual (connection))
 		return;
@@ -2094,33 +2100,22 @@ connection_updated_cb (NMSettings *settings,
                        gboolean by_user,
                        NMManager *self)
 {
-	if (by_user)
-		connection_changed (self, sett_conn);
+	connection_changed (self, sett_conn);
 }
 
 /*****************************************************************************/
-
-typedef struct {
-	CList delete_volatile_connection_lst;
-	NMSettingsConnection *connection;
-} DeleteVolatileConnectionData;
 
 static void
 _delete_volatile_connection_all (NMManager *self, gboolean do_delete)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	CList *lst;
-	DeleteVolatileConnectionData *data;
+	NMCListElem *elem;
 
-	while ((lst = c_list_first (&priv->delete_volatile_connection_lst_head))) {
+	while ((elem = c_list_first_entry (&priv->delete_volatile_connection_lst_head, NMCListElem, lst))) {
 		gs_unref_object NMSettingsConnection *connection = NULL;
 
-		data = c_list_entry (lst,
-		                     DeleteVolatileConnectionData,
-		                     delete_volatile_connection_lst);
-		connection = data->connection;
-		c_list_unlink_stale (&data->delete_volatile_connection_lst);
-		g_slice_free (DeleteVolatileConnectionData, data);
+		connection = elem->data;
+		nm_c_list_elem_free (elem);
 
 		if (do_delete)
 			_delete_volatile_connection_do (self, connection);
@@ -2145,7 +2140,6 @@ connection_flags_changed (NMSettings *settings,
 {
 	NMManager *self = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	DeleteVolatileConnectionData *data;
 
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
@@ -2157,9 +2151,8 @@ connection_flags_changed (NMSettings *settings,
 		return;
 	}
 
-	data = g_slice_new (DeleteVolatileConnectionData);
-	data->connection = g_object_ref (connection);
-	c_list_link_tail (&priv->delete_volatile_connection_lst_head, &data->delete_volatile_connection_lst);
+	c_list_link_tail (&priv->delete_volatile_connection_lst_head,
+	                  &nm_c_list_elem_new_stale (g_object_ref (connection))->lst);
 	if (!priv->delete_volatile_connection_idle_id)
 		priv->delete_volatile_connection_idle_id = g_idle_add (_delete_volatile_connection_cb, self);
 }
@@ -5528,6 +5521,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 		                                    &error))
 			goto error;
 	}
+
+	nm_assert (_nm_connection_verify (incompl_conn, NULL) == NM_SETTING_VERIFY_SUCCESS);
 
 	active = _new_active_connection (self,
 	                                 is_vpn,

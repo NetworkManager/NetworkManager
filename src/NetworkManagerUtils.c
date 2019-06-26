@@ -959,7 +959,8 @@ nm_ip_routing_rule_to_platform (const NMIPRoutingRule *rule,
 struct _NMShutdownWaitObjHandle {
 	CList lst;
 	GObject *watched_obj;
-	const char *msg_reason;
+	char *msg_reason;
+	bool free_msg_reason:1;
 };
 
 static CList _shutdown_waitobj_lst_head;
@@ -968,6 +969,8 @@ static void
 _shutdown_waitobj_unregister (NMShutdownWaitObjHandle *handle)
 {
 	c_list_unlink_stale (&handle->lst);
+	if (handle->free_msg_reason)
+		g_free (handle->msg_reason);
 	g_slice_free (NMShutdownWaitObjHandle, handle);
 
 	/* FIXME(shutdown): check whether the object list is empty, and
@@ -986,13 +989,14 @@ _shutdown_waitobj_cb (gpointer user_data,
 }
 
 /**
- * _nm_shutdown_wait_obj_register:
+ * nm_shutdown_wait_obj_register_full:
  * @watched_obj: the object to watch. Takes a weak reference on the object
  *   to be notified when it gets destroyed.
- * @msg_reason: a reason message, for debugging and logging purposes. It
- *   must be a static string. Or at least, be alive at least as long as
- *   @watched_obj. So, theoretically, if you need a dynamic @msg_reason,
- *   you could attach it to @watched_obj's user-data.
+ * @msg_reason: a reason message, for debugging and logging purposes.
+ * @free_msg_reason: if %TRUE, then ownership of @msg_reason will be taken
+ *   and the string will be freed with g_free() afterwards. If %FALSE,
+ *   the caller must ensure that @msg_reason string outlives the watched
+ *   objects (e.g. being a static strings).
  *
  * Keep track of @watched_obj until it gets destroyed. During shutdown,
  * we wait until all watched objects are destroyed. This is useful, if
@@ -1009,8 +1013,9 @@ _shutdown_waitobj_cb (gpointer user_data,
  *   once it gets destroyed.
  */
 NMShutdownWaitObjHandle *
-_nm_shutdown_wait_obj_register (GObject *watched_obj,
-                                const char *msg_reason)
+nm_shutdown_wait_obj_register_full (GObject *watched_obj,
+                                    char *msg_reason,
+                                    gboolean free_msg_reason)
 {
 	NMShutdownWaitObjHandle *handle;
 
@@ -1020,11 +1025,14 @@ _nm_shutdown_wait_obj_register (GObject *watched_obj,
 		c_list_init (&_shutdown_waitobj_lst_head);
 
 	handle = g_slice_new (NMShutdownWaitObjHandle);
-	handle->watched_obj = watched_obj;
-	/* we don't clone the string. We require the caller to use pass a static message.
-	 * If he really cannot do that, he should attach the string to the watched_obj
-	 * as user-data. */
-	handle->msg_reason = msg_reason;
+	*handle = (NMShutdownWaitObjHandle) {
+		/* depending on @free_msg_reason, we take ownership of @msg_reason.
+		 * In either case, we just reference the string without cloning
+		 * it. */
+		.watched_obj     = watched_obj,
+		.msg_reason      = msg_reason,
+		.free_msg_reason = free_msg_reason,
+	};
 	c_list_link_tail (&_shutdown_waitobj_lst_head, &handle->lst);
 	g_object_weak_ref (watched_obj, _shutdown_waitobj_cb, handle);
 	return handle;

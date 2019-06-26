@@ -79,12 +79,6 @@ G_DEFINE_TYPE (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_SETTINGS_PLUG
 
 /*****************************************************************************/
 
-static SettingsPluginIfcfg *settings_plugin_ifcfg_get (void);
-
-NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfcfg, settings_plugin_ifcfg_get, SETTINGS_TYPE_PLUGIN_IFCFG);
-
-/*****************************************************************************/
-
 #define _NMLOG_DOMAIN  LOGD_SETTINGS
 #define _NMLOG(level, ...) \
     G_STMT_START { \
@@ -600,7 +594,7 @@ add_connection (NMSettingsPlugin *config,
 	gs_unref_object NMConnection *reread = NULL;
 
 	if (save_to_disk) {
-		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, &path, &reread, NULL, error))
+		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, NULL, NULL, &path, &reread, NULL, error))
 			return NULL;
 	} else {
 		if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
@@ -984,5 +978,5 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *klass)
 G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return NM_SETTINGS_PLUGIN (g_object_ref (settings_plugin_ifcfg_get ()));
+	return g_object_new (SETTINGS_TYPE_PLUGIN_IFCFG, NULL);
 }

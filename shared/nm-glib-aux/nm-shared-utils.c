@@ -2282,6 +2282,35 @@ nm_utils_hash_keys_to_array (GHashTable *hash,
 	return keys;
 }
 
+gboolean
+nm_utils_hashtable_same_keys (const GHashTable *a,
+                              const GHashTable *b)
+{
+	GHashTableIter h;
+	const char *k;
+
+	if (a == b)
+		return TRUE;
+	if (!a || !b)
+		return FALSE;
+	if (g_hash_table_size ((GHashTable *) a) != g_hash_table_size ((GHashTable *) b))
+		return FALSE;
+
+	g_hash_table_iter_init (&h, (GHashTable *) a);
+	while (g_hash_table_iter_next (&h, (gpointer) &k, NULL)) {
+		if (!g_hash_table_contains ((GHashTable *) b, k))
+			return FALSE;
+	}
+
+#if NM_MORE_ASSERTS > 5
+	g_hash_table_iter_init (&h, (GHashTable *) b);
+	while (g_hash_table_iter_next (&h, (gpointer) &k, NULL))
+		nm_assert (g_hash_table_contains ((GHashTable *) a, k));
+#endif
+
+	return TRUE;
+}
+
 char **
 nm_utils_strv_make_deep_copied (const char **strv)
 {

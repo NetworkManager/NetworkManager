@@ -3024,6 +3024,8 @@ static gboolean
 do_write_construct (NMConnection *connection,
                     const char *ifcfg_dir,
                     const char *filename,
+                    NMSIfcfgRHWriterAllowFilenameCb allow_filename_cb,
+                    gpointer allow_filename_user_data,
                     shvarFile **out_ifcfg,
                     GHashTable **out_blobs,
                     GHashTable **out_secrets,
@@ -3067,30 +3069,31 @@ do_write_construct (NMConnection *connection,
 
 		ifcfg_name = g_strdup (filename);
 	} else if (ifcfg_dir) {
-		char *escaped;
+		gs_free char *escaped = NULL;
+		int i_path;
 
 		escaped = escape_id (nm_setting_connection_get_id (s_con));
-		ifcfg_name = g_strdup_printf ("%s/ifcfg-%s", ifcfg_dir, escaped);
 
-		/* If a file with this path already exists then we need another name.
-		 * Multiple connections can have the same ID (ie if two connections with
-		 * the same ID are visible to different users) but of course can't have
-		 * the same path.
-		 */
-		if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS)) {
-			guint32 idx = 0;
+		for (i_path = 0; i_path < 10000; i_path++) {
+			gs_free char *path_candidate = NULL;
 
-			nm_clear_g_free (&ifcfg_name);
-			while (idx++ < 500) {
-				ifcfg_name = g_strdup_printf ("%s/ifcfg-%s-%u", ifcfg_dir, escaped, idx);
-				if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS) == FALSE)
-					break;
-				nm_clear_g_free (&ifcfg_name);
-			}
+			if (i_path == 0)
+				path_candidate = g_strdup_printf ("%s/ifcfg-%s", ifcfg_dir, escaped);
+			else
+				path_candidate = g_strdup_printf ("%s/ifcfg-%s-%d", ifcfg_dir, escaped, i_path);
+
+			if (   allow_filename_cb
+			    && !allow_filename_cb (path_candidate, allow_filename_user_data))
+				continue;
+
+			if (g_file_test (path_candidate, G_FILE_TEST_EXISTS))
+				continue;
+
+			ifcfg_name = g_steal_pointer (&path_candidate);
+			break;
 		}
-		g_free (escaped);
 
-		if (ifcfg_name == NULL) {
+		if (!ifcfg_name) {
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			                     "Failed to find usable ifcfg file name");
 			return FALSE;
@@ -3377,6 +3380,8 @@ gboolean
 nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
                                       const char *ifcfg_dir,
                                       const char *filename,
+                                      NMSIfcfgRHWriterAllowFilenameCb allow_filename_cb,
+                                      gpointer allow_filename_user_data,
                                       char **out_filename,
                                       NMConnection **out_reread,
                                       gboolean *out_reread_same,
@@ -3396,6 +3401,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	if (!do_write_construct (connection,
 	                         ifcfg_dir,
 	                         filename,
+	                         allow_filename_cb,
+	                         allow_filename_user_data,
 	                         &ifcfg,
 	                         &blobs,
 	                         &secrets,

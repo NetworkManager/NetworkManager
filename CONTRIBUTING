@@ -55,51 +55,66 @@ There are different kind of assertions. Use the one that is appropriate.
 1) g_return_*() from glib. This is usually enabled in release builds and
   can be disabled with G_DISABLE_CHECKS define. This uses g_log() with
   G_LOG_LEVEL_CRITICAL level (which allows the program to continue,
-  until G_DEBUG=fatal-criticals or G_DEBUG=fatal-warnings is set). As such,
-  this is the preferred way for assertions that are commonly enabled.
+  unless G_DEBUG=fatal-criticals or G_DEBUG=fatal-warnings is set). As such,
+  this is usually the preferred way for assertions that are supposed to be
+  enabled by default.
 
-  Make a mild attempt to work around such assertion failure, but don't try
-  to hard. A failure of g_return_*() assertion might allow the process
-  to continue, but there is no guarantee.
+  Optimally, after a g_return_*() failure the program can still continue. This is
+  also the reason why g_return_*() is preferable over g_assert().
+  For example, that is often not given for functions that return a GError, because
+  g_return_*() will return failure without setting the error output. That often leads
+  to a crash immidiately after, because the caller requires the GError to be set.
+  Make a reasonable effort so that an assertion failure may allow the process
+  to proceed. But don't put too much effort in it. After all, it's an assertion
+  failure that is not supposed to happen either way.
 
 2) nm_assert() from NetworkManager. This is disabled by default in release
   builds, but enabled if you build --with-more-assertions. See "WITH_MORE_ASSERTS"
   define. This is preferred for assertions that are expensive to check or
-  nor necessary to check frequently (stuff that is really not expected to
-  fail). Use this deliberately and assume it's not present in production builds.
+  nor necessary to check frequently. It's also for conditions that can easily
+  verified to be true and where future refactoring is unlikley to break that
+  condition.
+  Use this deliberately and assume it is removed from production builds.
 
 3) g_assert() from glib. This is used in unit tests and commonly enabled
   in release builds. It can be disabled with G_DISABLE_ASSERT assert
   define. Since this results in a hard crash on assertion failure, you
-  should almost always prefer g_return_*() over this (except unit tests).
+  should almost always prefer g_return_*() over this (except in unit tests).
 
 4) assert() from <assert.h>. It is usually enabled in release builds and
   can be disabled with NDEBUG define. Don't use it in NetworkManager,
   it's basically like g_assert().
 
-5) g_log() from glib. These are always compiled in, depending on the levels
+5) g_log() from glib. These are always compiled in, depending on the logging level
   these are assertions too. G_LOG_LEVEL_ERROR aborts the program, G_LOG_LEVEL_CRITICAL
   logs a critical warning (like g_return_*(), see G_DEBUG=fatal-criticals)
   and G_LOG_LEVEL_WARNING logs a warning (see G_DEBUG=fatal-warnings).
   G_LOG_LEVEL_DEBUG level is usually not printed, unless G_MESSAGES_DEBUG environment
   is set.
-  In general, avoid using g_log() in NetworkManager. We have nm-logging instead.
+  In general, avoid using g_log() in NetworkManager. We have nm-logging instead
+  which logs to syslog/systemd-journald.
   From a library like libnm it might make sense to log warnings (if someting
   is really wrong) or debug messages. But better don't. If it's important,
   find a way to report the notification via the API to the caller. If it's
   not important, keep silent.
+  In particular, don't use levels G_LOG_LEVEL_CRITICAL and G_LOG_LEVEL_WARNING because
+  these are effectively assertions and we want to run with G_DEBUG=fatal-warnings.
 
 6) g_warn_if_*() from glib. These are always compiled in and log a G_LOG_LEVEL_WARNING
   warning. Don't use this.
 
 7) G_TYPE_CHECK_INSTANCE_CAST() from glib. Unless building with "WITH_MORE_ASSERTS",
-  we disable G_DISABLE_CAST_CHECKS. This means, cast macros like NM_DEVICE(ptr)
-  translate to plain C pointer casts. Use the cast macros deliberately, in production
-  code they are cheap, with debugging enabled they assert that the pointer is valid.
+  we set G_DISABLE_CAST_CHECKS. This means, cast macros like NM_DEVICE(ptr)
+  translate to plain C pointer casts. Use such cast macros deliberately, in production
+  code they are cheap, with more asserts enabled the check that the pointer type is
+  suitable.
 
-Of course, every assertion failure is a bug, and they must not have side effects.
+Of course, every assertion failure is a bug, and calling it must have no side effects.
+
 Theoretically, you are welcome to disable G_DISABLE_CHECKS and G_DISABLE_ASSERT
 in production builds. In practice, nobody tests such a configuration, so beware.
 
-For testing, you also want to run NetworkManager with G_DEBUG=fatal-warnings
-to crash un critical and warn g_log() messages.
+For testing, you also want to run NetworkManager with environment variable
+G_DEBUG=fatal-warnings to crash upon G_LOG_LEVEL_CRITICAL and G_LOG_LEVEL_WARNING
+g_log() message. NetworkManager won't use these levels for regular logging
+but for assertions.

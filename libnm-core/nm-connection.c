@@ -1806,23 +1806,36 @@ _nmtst_connection_unchanging_secrets_updated_cb (NMConnection *connection, const
 	nm_assert_not_reached ();
 }
 
+const char _nmtst_connection_unchanging_user_data = 0;
+
 void
 nmtst_connection_assert_unchanging (NMConnection *connection)
 {
 	nm_assert (NM_IS_CONNECTION (connection));
 
+	if (g_signal_handler_find (connection,
+	                           G_SIGNAL_MATCH_DATA,
+	                           0,
+	                           0,
+	                           NULL,
+	                           NULL,
+	                           (gpointer) &_nmtst_connection_unchanging_user_data) != 0) {
+		/* avoid connecting the assertion handler multiple times. */
+		return;
+	}
+
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  G_CALLBACK (_nmtst_connection_unchanging_changed_cb),
-	                  NULL);
+	                  (gpointer) &_nmtst_connection_unchanging_user_data);
 	g_signal_connect (connection,
 	                  NM_CONNECTION_SECRETS_CLEARED,
 	                  G_CALLBACK (_nmtst_connection_unchanging_changed_cb),
-	                  NULL);
+	                  (gpointer) &_nmtst_connection_unchanging_user_data);
 	g_signal_connect (connection,
 	                  NM_CONNECTION_SECRETS_UPDATED,
 	                  G_CALLBACK (_nmtst_connection_unchanging_secrets_updated_cb),
-	                  NULL);
+	                  (gpointer) &_nmtst_connection_unchanging_user_data);
 }
 #endif
 
@@ -1853,7 +1866,8 @@ nm_connection_update_secrets (NMConnection *connection,
                               GError **error)
 {
 	NMSetting *setting;
-	gboolean success = TRUE, updated = FALSE;
+	gboolean success = TRUE;
+	gboolean updated = FALSE;
 	GVariant *setting_dict = NULL;
 	GVariantIter iter;
 	const char *key;
@@ -1861,13 +1875,13 @@ nm_connection_update_secrets (NMConnection *connection,
 	int success_detail;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (   g_variant_is_of_type (secrets, NM_VARIANT_TYPE_SETTING)
-	                      || g_variant_is_of_type (secrets, NM_VARIANT_TYPE_CONNECTION), FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
 
 	full_connection = g_variant_is_of_type (secrets, NM_VARIANT_TYPE_CONNECTION);
-	g_return_val_if_fail (setting_name != NULL || full_connection, FALSE);
+
+	g_return_val_if_fail (   full_connection
+	                      || g_variant_is_of_type (secrets, NM_VARIANT_TYPE_SETTING), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (setting_name || full_connection, FALSE);
 
 	/* Empty @secrets means success */
 	if (g_variant_n_children (secrets) == 0)
@@ -1902,8 +1916,10 @@ nm_connection_update_secrets (NMConnection *connection,
 
 		g_clear_pointer (&setting_dict, g_variant_unref);
 
-		if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR)
+		if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR) {
+			nm_assert (!error || *error);
 			return FALSE;
+		}
 		if (success_detail == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
 			updated = TRUE;
 	} else {
@@ -1923,17 +1939,27 @@ nm_connection_update_secrets (NMConnection *connection,
 		/* Update each setting with any secrets from the connection dictionary */
 		g_variant_iter_init (&iter, secrets);
 		while (g_variant_iter_next (&iter, "{&s@a{sv}}", &key, &setting_dict)) {
+			gs_free_error GError *local = NULL;
+
 			/* Update the secrets for this setting */
 			setting = nm_connection_get_setting_by_name (connection, key);
 
 			g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
-			success_detail = _nm_setting_update_secrets (setting, setting_dict, error);
+			success_detail = _nm_setting_update_secrets (setting, setting_dict, error ? &local : NULL);
 			g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
 
 			g_variant_unref (setting_dict);
 
 			if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR) {
-				success = FALSE;
+				if (success) {
+					if (error) {
+						nm_assert (local);
+						g_propagate_error (error, g_steal_pointer (&local));
+						error = NULL;
+					} else
+						nm_assert (!local);
+					success = FALSE;
+				}
 				break;
 			}
 			if (success_detail == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
