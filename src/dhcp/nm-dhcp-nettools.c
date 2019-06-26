@@ -1235,10 +1235,10 @@ ip4_start (NMDhcpClient *client,
 	}
 
 	/*
-	 * XXX
+	 * FIXME:
 	 * Select, or configure, a reasonable start delay, to protect poor servers beeing flooded.
 	 */
-	n_dhcp4_client_probe_config_set_start_delay (config, 500);
+	n_dhcp4_client_probe_config_set_start_delay (config, 1);
 
 	if (last_ip4_address) {
 		inet_pton (AF_INET, last_ip4_address, &last_addr);
