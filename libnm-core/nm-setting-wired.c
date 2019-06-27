@@ -930,7 +930,8 @@ _override_autoneg_get (const NMSettInfoSetting *sett_info,
                        guint property_idx,
                        NMConnection *connection,
                        NMSetting *setting,
-                       NMConnectionSerializationFlags flags)
+                       NMConnectionSerializationFlags flags,
+                       const NMConnectionSerializationOptions *options)
 {
 	return g_variant_new_boolean (nm_setting_wired_get_auto_negotiate ((NMSettingWired *) setting));
 }

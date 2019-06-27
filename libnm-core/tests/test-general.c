@@ -1855,7 +1855,7 @@ test_setting_to_dbus_all (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
 
-	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 
 	/* Make sure all keys are there */
 	g_assert (_variant_contains (dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
@@ -1875,7 +1875,7 @@ test_setting_to_dbus_no_secrets (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-no-secrets");
 
-	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_NO_SECRETS, NULL);
 
 	/* Make sure non-secret keys are there */
 	g_assert (_variant_contains (dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
@@ -1897,7 +1897,7 @@ test_setting_to_dbus_only_secrets (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-only-secrets");
 
-	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS, NULL);
 
 	/* Make sure non-secret keys are not there */
 	g_assert (!_variant_contains (dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
@@ -1928,7 +1928,7 @@ test_setting_to_dbus_transform (void)
 
 	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
 
-	dict = _nm_setting_to_dbus (s_wired, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (s_wired, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	g_assert (dict != NULL);
 
 	val = g_variant_lookup_value (dict, NM_SETTING_WIRED_MAC_ADDRESS, G_VARIANT_TYPE_BYTESTRING);
@@ -1957,7 +1957,7 @@ test_setting_to_dbus_enum (void)
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 	              NULL);
 
-	dict = _nm_setting_to_dbus (s_ip6, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (s_ip6, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	g_assert (dict != NULL);
 
 	val = g_variant_lookup_value (dict, NM_SETTING_IP6_CONFIG_IP6_PRIVACY, G_VARIANT_TYPE_INT32);
@@ -1976,7 +1976,7 @@ test_setting_to_dbus_enum (void)
 	                                                           NM_SETTING_SECRET_FLAG_NOT_SAVED),
 	              NULL);
 
-	dict = _nm_setting_to_dbus (s_wsec, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (s_wsec, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	g_assert (dict != NULL);
 
 	val = g_variant_lookup_value (dict, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, G_VARIANT_TYPE_UINT32);
@@ -1999,7 +1999,7 @@ test_setting_to_dbus_enum (void)
 	              NM_SETTING_SERIAL_PARITY, NM_SETTING_SERIAL_PARITY_ODD,
 	              NULL);
 
-	dict = _nm_setting_to_dbus (s_serial, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (s_serial, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	g_assert (dict != NULL);
 
 	val = g_variant_lookup_value (dict, NM_SETTING_SERIAL_PARITY, G_VARIANT_TYPE_BYTE);
@@ -2114,7 +2114,7 @@ test_setting_new_from_dbus (void)
 	GVariant *dict;
 
 	s_wsec = make_test_wsec_setting ("setting-new-from-dbus");
-	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	g_object_unref (s_wsec);
 
 	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NM_SETTING_PARSE_FLAGS_NONE, NULL);

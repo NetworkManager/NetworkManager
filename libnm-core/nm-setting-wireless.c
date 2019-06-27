@@ -957,7 +957,8 @@ nm_setting_wireless_get_security (const NMSettInfoSetting *sett_info,
                                   guint property_idx,
                                   NMConnection *connection,
                                   NMSetting *setting,
-                                  NMConnectionSerializationFlags flags)
+                                  NMConnectionSerializationFlags flags,
+                                  const NMConnectionSerializationOptions *options)
 {
 	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
 		return NULL;

@@ -87,7 +87,8 @@ GVariant *_nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSet
                                                              guint property_idx,
                                                              NMConnection *connection,
                                                              NMSetting *setting,
-                                                             NMConnectionSerializationFlags flags);
+                                                             NMConnectionSerializationFlags flags,
+                                                             const NMConnectionSerializationOptions *options);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           NMConnection *connection,
@@ -106,7 +107,8 @@ gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **o
 
 GVariant   *_nm_setting_to_dbus       (NMSetting *setting,
                                        NMConnection *connection,
-                                       NMConnectionSerializationFlags flags);
+                                       NMConnectionSerializationFlags flags,
+                                       const NMConnectionSerializationOptions *options);
 
 NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        GVariant *setting_dict,

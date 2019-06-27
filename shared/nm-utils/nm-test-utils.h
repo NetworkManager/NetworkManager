@@ -1992,7 +1992,7 @@ nmtst_assert_setting_dbus_roundtrip (gconstpointer /* const NMSetting * */ setti
 
 	g_assert (NM_IS_SETTING (setting));
 
-	variant = _nm_setting_to_dbus ((NMSetting *) setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	variant = _nm_setting_to_dbus ((NMSetting *) setting, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	setting2 = nmtst_assert_setting_dbus_new (G_OBJECT_TYPE (setting), variant);
 	nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
 }

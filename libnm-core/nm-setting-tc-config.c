@@ -1487,7 +1487,8 @@ tc_qdiscs_get (const NMSettInfoSetting *sett_info,
                guint property_idx,
                NMConnection *connection,
                NMSetting *setting,
-               NMConnectionSerializationFlags flags)
+               NMConnectionSerializationFlags flags,
+               const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
@@ -1672,7 +1673,8 @@ tc_tfilters_get (const NMSettInfoSetting *sett_info,
                 guint property_idx,
                 NMConnection *connection,
                 NMSetting *setting,
-                NMConnectionSerializationFlags flags)
+                NMConnectionSerializationFlags flags,
+                const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 

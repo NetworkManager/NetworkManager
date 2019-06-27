@@ -905,7 +905,8 @@ vfs_to_dbus (const NMSettInfoSetting *sett_info,
              guint property_idx,
              NMConnection *connection,
              NMSetting *setting,
-             NMConnectionSerializationFlags flags)
+             NMConnectionSerializationFlags flags,
+             const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *vfs = NULL;
 	GVariantBuilder builder;

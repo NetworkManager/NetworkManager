@@ -1460,7 +1460,8 @@ _peers_dbus_only_synth (const NMSettInfoSetting *sett_info,
                         guint property_idx,
                         NMConnection *connection,
                         NMSetting *setting,
-                        NMConnectionSerializationFlags flags)
+                        NMConnectionSerializationFlags flags,
+                        const NMConnectionSerializationOptions *options)
 {
 	NMSettingWireGuard *self = NM_SETTING_WIREGUARD (setting);
 	NMSettingWireGuardPrivate *priv;

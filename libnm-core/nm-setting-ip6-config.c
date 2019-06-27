@@ -317,7 +317,8 @@ ip6_addresses_get (const NMSettInfoSetting *sett_info,
                    guint property_idx,
                    NMConnection *connection,
                    NMSetting *setting,
-                   NMConnectionSerializationFlags flags)
+                   NMConnectionSerializationFlags flags,
+                   const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *addrs = NULL;
 	const char *gateway;
@@ -359,7 +360,8 @@ ip6_address_data_get (const NMSettInfoSetting *sett_info,
                       guint property_idx,
                       NMConnection *connection,
                       NMSetting *setting,
-                      NMConnectionSerializationFlags flags)
+                      NMConnectionSerializationFlags flags,
+                      const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *addrs = NULL;
 
@@ -397,7 +399,8 @@ ip6_routes_get (const NMSettInfoSetting *sett_info,
                 guint property_idx,
                 NMConnection *connection,
                 NMSetting *setting,
-                NMConnectionSerializationFlags flags)
+                NMConnectionSerializationFlags flags,
+                const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -431,7 +434,8 @@ ip6_route_data_get (const NMSettInfoSetting *sett_info,
                     guint property_idx,
                     NMConnection *connection,
                     NMSetting *setting,
-                    NMConnectionSerializationFlags flags)
+                    NMConnectionSerializationFlags flags,
+                    const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *routes = NULL;
 
