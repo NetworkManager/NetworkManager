@@ -979,6 +979,8 @@ nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 	return nm_utils_strv_make_deep_copied (strv) ?: g_new0 (char *, 1);
 }
 
+char **nm_utils_strv_dup (gpointer strv, gssize len);
+
 /*****************************************************************************/
 
 GSList *nm_utils_g_slist_find_str (const GSList *list,
