@@ -169,6 +169,14 @@ static const NMDBusInterfaceInfoExtended interface_info_settings_connection;
 
 /*****************************************************************************/
 
+static GHashTable *
+_seen_bssids_hash_new (void)
+{
+	return g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+}
+
+/*****************************************************************************/
+
 NMConnection *
 nm_settings_connection_get_connection (NMSettingsConnection *self)
 {
@@ -1398,7 +1406,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wifi;
 		guint64 timestamp = 0;
-		gs_free char **bssids = NULL;
+		gs_free const char **bssids = NULL;
 
 		dupl_con = nm_simple_connection_new_clone (nm_settings_connection_get_connection (self));
 
@@ -1418,9 +1426,11 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 * return settings too.
 		 */
 		bssids = nm_settings_connection_get_seen_bssids (self);
-		s_wifi = nm_connection_get_setting_wireless (dupl_con);
-		if (bssids && bssids[0] && s_wifi)
-			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssids, NULL);
+		if (bssids) {
+			s_wifi = nm_connection_get_setting_wireless (dupl_con);
+			if (s_wifi)
+				g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssids, NULL);
+		}
 
 		/* Secrets should *never* be returned by the GetSettings method, they
 		 * get returned by the GetSecrets method which can be better
@@ -2347,13 +2357,16 @@ nm_settings_connection_register_kf_dbs (NMSettingsConnection *self,
 
 		tmp_strv = nm_key_file_db_get_string_list (priv->kf_db_seen_bssids, connection_uuid, &len);
 
-		if (tmp_strv) {
+		nm_clear_pointer (&priv->seen_bssids, g_hash_table_unref);
+
+		if (len > 0) {
 			_LOGT ("read %zu seen-bssids from keyfile database \"%s\"",
-			       NM_PTRARRAY_LEN (tmp_strv),
+			       len,
 			       nm_key_file_db_get_filename (priv->kf_db_seen_bssids));
-			g_hash_table_remove_all (priv->seen_bssids);
+			priv->seen_bssids = _seen_bssids_hash_new ();
 			for (i = len; i > 0; )
 				g_hash_table_add (priv->seen_bssids, g_steal_pointer (&tmp_strv[--i]));
+			nm_clear_g_free (&tmp_strv);
 		} else {
 			NMSettingWireless *s_wifi;
 
@@ -2368,10 +2381,13 @@ nm_settings_connection_register_kf_dbs (NMSettingsConnection *self,
 			s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (self));
 			if (s_wifi) {
 				len = nm_setting_wireless_get_num_seen_bssids (s_wifi);
-				for (i = 0; i < len; i++) {
-					const char *bssid = nm_setting_wireless_get_seen_bssid (s_wifi, i);
+				if (len > 0) {
+					priv->seen_bssids = _seen_bssids_hash_new ();
+					for (i = 0; i < len; i++) {
+						const char *bssid = nm_setting_wireless_get_seen_bssid (s_wifi, i);
 
-					g_hash_table_add (priv->seen_bssids, g_strdup (bssid));
+						g_hash_table_add (priv->seen_bssids, g_strdup (bssid));
+					}
 				}
 			}
 		}
@@ -2387,25 +2403,14 @@ nm_settings_connection_register_kf_dbs (NMSettingsConnection *self,
  * Returns: (transfer container) list of seen BSSIDs (in the standard hex-digits-and-colons notation).
  * The caller is responsible for freeing the list, but not the content.
  **/
-char **
+const char **
 nm_settings_connection_get_seen_bssids (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	GHashTableIter iter;
-	char **bssids, *bssid;
-	int i;
-
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NULL);
 
-	bssids = g_new (char *, g_hash_table_size (priv->seen_bssids) + 1);
-
-	i = 0;
-	g_hash_table_iter_init (&iter, priv->seen_bssids);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &bssid))
-		bssids[i++] = bssid;
-	bssids[i] = NULL;
-
-	return bssids;
+	return nm_utils_strdict_get_keys (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->seen_bssids,
+	                                  TRUE,
+	                                  NULL);
 }
 
 /**
@@ -2419,10 +2424,15 @@ gboolean
 nm_settings_connection_has_seen_bssid (NMSettingsConnection *self,
                                        const char *bssid)
 {
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-	g_return_val_if_fail (bssid != NULL, FALSE);
+	NMSettingsConnectionPrivate *priv;
 
-	return !!g_hash_table_lookup (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->seen_bssids, bssid);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
+	g_return_val_if_fail (bssid, FALSE);
+
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	return    priv->seen_bssids
+	       && g_hash_table_contains (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->seen_bssids, bssid);
 }
 
 /**
@@ -2442,6 +2452,9 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
 	const char *connection_uuid;
 
 	g_return_if_fail (seen_bssid != NULL);
+
+	if (!priv->seen_bssids)
+		priv->seen_bssids = _seen_bssids_hash_new ();
 
 	g_hash_table_add (priv->seen_bssids, g_strdup (seen_bssid));
 
@@ -2717,8 +2730,6 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	                                             G_CALLBACK (session_changed_cb), self);
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
-
-	priv->seen_bssids = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 	priv->autoconnect_retries = AUTOCONNECT_RETRIES_UNSET;
 

@@ -1513,13 +1513,14 @@ try_fill_ssid_for_hidden_ap (NMDeviceWifi *self,
 		NMSettingsConnection *sett_conn = connections[i];
 		NMSettingWireless *s_wifi;
 
+		if (!nm_settings_connection_has_seen_bssid (sett_conn, bssid))
+			continue;
 		s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (sett_conn));
-		if (s_wifi) {
-			if (nm_settings_connection_has_seen_bssid (sett_conn, bssid)) {
-				nm_wifi_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
-				break;
-			}
-		}
+		if (!s_wifi)
+			continue;
+
+		nm_wifi_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
+		break;
 	}
 }
 
