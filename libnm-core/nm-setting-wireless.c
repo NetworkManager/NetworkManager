@@ -725,6 +725,34 @@ nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
 	return priv->seen_bssids->pdata[i];
 }
 
+static GVariant *
+_to_dbus_fcn_seen_bssids (const NMSettInfoSetting *sett_info,
+                          guint property_idx,
+                          NMConnection *connection,
+                          NMSetting *setting,
+                          NMConnectionSerializationFlags flags,
+                          const NMConnectionSerializationOptions *options)
+{
+	NMSettingWirelessPrivate *priv;
+
+	if (   options
+	    && options->seen_bssids) {
+		return   options->seen_bssids[0]
+		       ? g_variant_new_strv (options->seen_bssids, -1)
+		       : NULL;
+	}
+
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+
+	if (   !priv->seen_bssids
+	    || priv->seen_bssids->len == 0)
+		return NULL;
+
+	return g_variant_new_strv ((const char *const*) priv->seen_bssids->pdata, priv->seen_bssids->len);
+}
+
+/*****************************************************************************/
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -1604,6 +1632,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_FUZZY_IGNORE |
 	                        G_PARAM_STATIC_STRINGS);
+
+	_properties_override_add_override (properties_override,
+	                                   obj_properties[PROP_SEEN_BSSIDS],
+	                                   G_VARIANT_TYPE_STRING_ARRAY,
+	                                   _to_dbus_fcn_seen_bssids,
+	                                   NULL,
+	                                   NULL);
 
 	/**
 	 * NMSettingWireless:mtu:

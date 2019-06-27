@@ -165,7 +165,13 @@ gpointer _nm_connection_check_main_setting (NMConnection *connection,
                                             GError **error);
 
 typedef struct {
-	int dummy;
+	struct {
+		guint64 val;
+		bool has;
+	} timestamp;
+
+	const char **seen_bssids;
+
 } NMConnectionSerializationOptions;
 
 GVariant *nm_connection_to_dbus_full (NMConnection *connection,
