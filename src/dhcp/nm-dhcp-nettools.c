@@ -1133,7 +1133,7 @@ nettools_create (NMDhcpNettools *self,
 
 	r = n_dhcp4_client_config_new (&config);
 	if (r) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "failed to create client-config");
+		nm_utils_error_set_errno (error, r, "failed to create client-config: %s");
 		return FALSE;
 	}
 
@@ -1143,13 +1143,13 @@ nettools_create (NMDhcpNettools *self,
 	n_dhcp4_client_config_set_broadcast_mac (config, (unsigned char[]){ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, }, ETH_ALEN); /* XXX */
 	r = n_dhcp4_client_config_set_client_id (config, client_id_arr, client_id_len);
 	if (r) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "failed to set client-id");
+		nm_utils_error_set_errno (error, r, "failed to set client-id: %s");
 		return FALSE;
 	}
 
 	r = n_dhcp4_client_new (&client, config);
 	if (r) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "failed to create client");
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, "failed to create client: error %d", r);
 		return FALSE;
 	}
 
@@ -1177,7 +1177,7 @@ _accept (NMDhcpClient *client,
 
 	r = n_dhcp4_client_lease_accept (priv->lease);
 	if (r) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "failed to accept lease");
+		nm_utils_error_set_errno (error, r, "failed to accept lease: %s");
 		return FALSE;
 	}
 
@@ -1201,7 +1201,7 @@ decline (NMDhcpClient *client,
 
 	r = n_dhcp4_client_lease_decline (priv->lease, error_message);
 	if (r) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "failed to decline lease");
+		nm_utils_error_set_errno (error, r, "failed to decline lease: %s");
 		return FALSE;
 	}
 
