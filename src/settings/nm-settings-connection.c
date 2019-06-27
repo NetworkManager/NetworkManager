@@ -1398,48 +1398,41 @@ get_settings_auth_cb (NMSettingsConnection *self,
                       GError *error,
                       gpointer data)
 {
-	if (error)
+	gs_free const char **seen_bssids = NULL;
+	NMConnectionSerializationOptions options = {
+	};
+	GVariant *settings;
+
+	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
-	else {
-		gs_unref_object NMConnection *dupl_con = NULL;
-		GVariant *settings;
-		NMSettingConnection *s_con;
-		NMSettingWireless *s_wifi;
-		guint64 timestamp = 0;
-		gs_free const char **bssids = NULL;
-
-		dupl_con = nm_simple_connection_new_clone (nm_settings_connection_get_connection (self));
-
-		/* Timestamp is not updated in connection's 'timestamp' property,
-		 * because it would force updating the connection and in turn
-		 * writing to /etc periodically, which we want to avoid. Rather real
-		 * timestamps are kept track of in a private variable. So, substitute
-		 * timestamp property with the real one here before returning the settings.
-		 */
-		nm_settings_connection_get_timestamp (self, &timestamp);
-		if (timestamp) {
-			s_con = nm_connection_get_setting_connection (dupl_con);
-			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
-		}
-		/* Seen BSSIDs are not updated in 802-11-wireless 'seen-bssids' property
-		 * from the same reason as timestamp. Thus we put it here to GetSettings()
-		 * return settings too.
-		 */
-		bssids = nm_settings_connection_get_seen_bssids (self);
-		if (bssids) {
-			s_wifi = nm_connection_get_setting_wireless (dupl_con);
-			if (s_wifi)
-				g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssids, NULL);
-		}
-
-		/* Secrets should *never* be returned by the GetSettings method, they
-		 * get returned by the GetSecrets method which can be better
-		 * protected against leakage of secrets to unprivileged callers.
-		 */
-		settings = nm_connection_to_dbus (dupl_con, NM_CONNECTION_SERIALIZE_NO_SECRETS);
-		g_dbus_method_invocation_return_value (context,
-		                                       g_variant_new ("(@a{sa{sv}})", settings));
+		return;
 	}
+
+	/* Timestamp is not updated in connection's 'timestamp' property,
+	 * because it would force updating the connection and in turn
+	 * writing to /etc periodically, which we want to avoid. Rather real
+	 * timestamps are kept track of in a private variable. So, substitute
+	 * timestamp property with the real one here before returning the settings.
+	 */
+	options.timestamp.has = TRUE;
+	nm_settings_connection_get_timestamp (self, &options.timestamp.val);
+
+	/* Seen BSSIDs are not updated in 802-11-wireless 'seen-bssids' property
+	 * from the same reason as timestamp. Thus we put it here to GetSettings()
+	 * return settings too.
+	 */
+	seen_bssids = nm_settings_connection_get_seen_bssids (self);
+	options.seen_bssids = seen_bssids;
+
+	/* Secrets should *never* be returned by the GetSettings method, they
+	 * get returned by the GetSecrets method which can be better
+	 * protected against leakage of secrets to unprivileged callers.
+	 */
+	settings = nm_connection_to_dbus_full (nm_settings_connection_get_connection (self),
+	                                       NM_CONNECTION_SERIALIZE_NO_SECRETS,
+	                                       &options);
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(@a{sa{sv}})", settings));
 }
 
 static void
