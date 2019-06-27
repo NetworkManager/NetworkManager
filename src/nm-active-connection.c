@@ -1533,8 +1533,7 @@ finalize (GObject *object)
 
 	nm_dbus_track_obj_path_set (&priv->settings_connection, NULL, FALSE);
 
-	_nm_keep_alive_set_owner (priv->keep_alive, NULL);
-	g_clear_object (&priv->keep_alive);
+	nm_clear_pointer (&priv->keep_alive, nm_keep_alive_destroy);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
 }

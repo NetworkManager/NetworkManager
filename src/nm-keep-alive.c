@@ -385,6 +385,26 @@ nm_keep_alive_disarm (NMKeepAlive *self)
 	cleanup_dbus_watch (self);
 }
 
+/**
+ * nm_keep_alive_destroy:
+ * @self: (allow-none): the #NMKeepAlive instance to destroy.
+ *
+ * This does 3 things in one:
+ *
+ *   - set owner to %NULL
+ *   - disarm the instance.
+ *   - unref @self.
+ */
+void
+nm_keep_alive_destroy (NMKeepAlive *self)
+{
+	if (!self)
+		return;
+	_nm_keep_alive_set_owner (self, NULL);
+	nm_keep_alive_disarm (self);
+	g_object_unref (self);
+}
+
 /*****************************************************************************/
 
 static void
