@@ -774,11 +774,19 @@ release_slave (NMDevice *device,
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	gboolean success;
+	int ifindex_slave;
+
+	ifindex_slave = nm_device_get_ip_ifindex (slave);
+
+	if (ifindex_slave <= 0) {
+		_LOGD (LOGD_TEAM, "team port %s is already released", nm_device_get_ip_iface (slave));
+		return;
+	}
 
 	if (configure) {
 		success = nm_platform_link_release (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
-		                                    nm_device_get_ip_ifindex (slave));
+		                                    ifindex_slave);
 
 		if (success)
 			_LOGI (LOGD_TEAM, "released team port %s", nm_device_get_ip_iface (slave));
@@ -789,9 +797,10 @@ release_slave (NMDevice *device,
 		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
 		 * other state is noticed by the now-released port.
 		 */
-		if (!nm_device_bring_up (slave, TRUE, NULL))
+		if (!nm_device_bring_up (slave, TRUE, NULL)) {
 			_LOGW (LOGD_TEAM, "released team port %s could not be brought up",
 			       nm_device_get_ip_iface (slave));
+		}
 
 		nm_clear_g_source (&priv->teamd_read_timeout);
 		priv->teamd_read_timeout = g_timeout_add_seconds (5,
