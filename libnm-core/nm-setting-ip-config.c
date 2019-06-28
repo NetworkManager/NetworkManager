@@ -4550,7 +4550,8 @@ _routing_rules_dbus_only_synth (const NMSettInfoSetting *sett_info,
                                 guint property_idx,
                                 NMConnection *connection,
                                 NMSetting *setting,
-                                NMConnectionSerializationFlags flags)
+                                NMConnectionSerializationFlags flags,
+                                const NMConnectionSerializationOptions *options)
 {
 	NMSettingIPConfig *self = NM_SETTING_IP_CONFIG (setting);
 	NMSettingIPConfigPrivate *priv;

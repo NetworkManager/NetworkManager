@@ -255,7 +255,8 @@ ip4_addresses_get (const NMSettInfoSetting *sett_info,
                    guint property_idx,
                    NMConnection *connection,
                    NMSetting *setting,
-                   NMConnectionSerializationFlags flags)
+                   NMConnectionSerializationFlags flags,
+                   const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *addrs = NULL;
 	const char *gateway;
@@ -308,7 +309,8 @@ ip4_address_labels_get (const NMSettInfoSetting *sett_info,
                         guint property_idx,
                         NMConnection *connection,
                         NMSetting *setting,
-                        NMConnectionSerializationFlags flags)
+                        NMConnectionSerializationFlags flags,
+                        const NMConnectionSerializationOptions *options)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	gboolean have_labels = FALSE;
@@ -351,7 +353,8 @@ ip4_address_data_get (const NMSettInfoSetting *sett_info,
                       guint property_idx,
                       NMConnection *connection,
                       NMSetting *setting,
-                      NMConnectionSerializationFlags flags)
+                      NMConnectionSerializationFlags flags,
+                      const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *addrs = NULL;
 
@@ -389,7 +392,8 @@ ip4_routes_get (const NMSettInfoSetting *sett_info,
                 guint property_idx,
                 NMConnection *connection,
                 NMSetting *setting,
-                NMConnectionSerializationFlags flags)
+                NMConnectionSerializationFlags flags,
+                const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -423,7 +427,8 @@ ip4_route_data_get (const NMSettInfoSetting *sett_info,
                     guint property_idx,
                     NMConnection *connection,
                     NMSetting *setting,
-                    NMConnectionSerializationFlags flags)
+                    NMConnectionSerializationFlags flags,
+                    const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *routes = NULL;
 

@@ -686,6 +686,7 @@ property_to_dbus (const NMSettInfoSetting *sett_info,
                   NMConnection *connection,
                   NMSetting *setting,
                   NMConnectionSerializationFlags flags,
+                  const NMConnectionSerializationOptions *options,
                   gboolean ignore_flags,
                   gboolean ignore_default)
 {
@@ -727,7 +728,7 @@ property_to_dbus (const NMSettInfoSetting *sett_info,
 	}
 
 	if (property->to_dbus_fcn) {
-		variant = property->to_dbus_fcn (sett_info, property_idx, connection, setting, flags);
+		variant = property->to_dbus_fcn (sett_info, property_idx, connection, setting, flags, options);
 		nm_g_variant_take_ref (variant);
 	} else {
 		nm_auto_unset_gvalue GValue prop_value = { 0, };
@@ -796,6 +797,8 @@ set_property_from_dbus (const NMSettInfoProperty *property,
  * @setting: the #NMSetting
  * @connection: the #NMConnection containing @setting
  * @flags: hash flags, e.g. %NM_CONNECTION_SERIALIZE_ALL
+ * @options: the #NMConnectionSerializationOptions options to control
+ *   what/how gets serialized.
  *
  * Converts the #NMSetting into a #GVariant of type #NM_VARIANT_TYPE_SETTING
  * mapping each setting property name to a value describing that property,
@@ -805,7 +808,10 @@ set_property_from_dbus (const NMSettInfoProperty *property,
  * properties
  **/
 GVariant *
-_nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionSerializationFlags flags)
+_nm_setting_to_dbus (NMSetting *setting,
+                     NMConnection *connection,
+                     NMConnectionSerializationFlags flags,
+                     const NMConnectionSerializationOptions *options)
 {
 	NMSettingPrivate *priv;
 	GVariantBuilder builder;
@@ -831,7 +837,7 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 	for (i = 0; i < sett_info->property_infos_len; i++) {
 		gs_unref_variant GVariant *dbus_value = NULL;
 
-		dbus_value = property_to_dbus (sett_info, i, connection, setting, flags, FALSE, TRUE);
+		dbus_value = property_to_dbus (sett_info, i, connection, setting, flags, options, FALSE, TRUE);
 		if (dbus_value) {
 			g_variant_builder_add (&builder,
 			                       "{sv}",
@@ -1455,8 +1461,8 @@ compare_property (const NMSettInfoSetting *sett_info,
 		gs_unref_variant GVariant *value1  = NULL;
 		gs_unref_variant GVariant *value2  = NULL;
 
-		value1 = property_to_dbus (sett_info, property_idx, con_a, set_a, NM_CONNECTION_SERIALIZE_ALL, TRUE, TRUE);
-		value2 = property_to_dbus (sett_info, property_idx, con_b, set_b, NM_CONNECTION_SERIALIZE_ALL, TRUE, TRUE);
+		value1 = property_to_dbus (sett_info, property_idx, con_a, set_a, NM_CONNECTION_SERIALIZE_ALL, NULL, TRUE, TRUE);
+		value2 = property_to_dbus (sett_info, property_idx, con_b, set_b, NM_CONNECTION_SERIALIZE_ALL, NULL, TRUE, TRUE);
 		if (nm_property_compare (value1, value2) != 0)
 			return NM_TERNARY_FALSE;
 	}
@@ -2382,7 +2388,7 @@ nm_setting_to_string (NMSetting *setting)
 	string = g_string_new (nm_setting_get_name (setting));
 	g_string_append_c (string, '\n');
 
-	variant = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	variant = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 
 	g_variant_iter_init (&iter, variant);
 	while ((child = g_variant_iter_next_value (&iter))) {
@@ -2404,7 +2410,8 @@ _nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett
                                                    guint property_idx,
                                                    NMConnection *connection,
                                                    NMSetting *setting,
-                                                   NMConnectionSerializationFlags flags)
+                                                   NMConnectionSerializationFlags flags,
+                                                   const NMConnectionSerializationOptions *options)
 {
 	NMSettingConnection *s_con;
 

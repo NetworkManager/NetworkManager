@@ -4320,7 +4320,8 @@ _nm_utils_hwaddr_cloned_get (const NMSettInfoSetting *sett_info,
                              guint property_idx,
                              NMConnection *connection,
                              NMSetting *setting,
-                             NMConnectionSerializationFlags flags)
+                             NMConnectionSerializationFlags flags,
+                             const NMConnectionSerializationOptions *options)
 {
 	gs_free char *addr = NULL;
 
@@ -4378,7 +4379,8 @@ _nm_utils_hwaddr_cloned_data_synth (const NMSettInfoSetting *sett_info,
                                     guint property_idx,
                                     NMConnection *connection,
                                     NMSetting *setting,
-                                    NMConnectionSerializationFlags flags)
+                                    NMConnectionSerializationFlags flags,
+                                    const NMConnectionSerializationOptions *options)
 {
 	gs_free char *addr = NULL;
 
@@ -5885,7 +5887,8 @@ _nm_utils_bridge_vlans_to_dbus (const NMSettInfoSetting *sett_info,
                                 guint property_idx,
                                 NMConnection *connection,
                                 NMSetting *setting,
-                                NMConnectionSerializationFlags flags)
+                                NMConnectionSerializationFlags flags,
+                                const NMConnectionSerializationOptions *options)
 {
 	gs_unref_ptrarray GPtrArray *vlans = NULL;
 	GVariantBuilder builder;

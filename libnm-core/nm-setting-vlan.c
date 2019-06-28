@@ -681,7 +681,8 @@ _override_flags_get (const NMSettInfoSetting *sett_info,
                      guint property_idx,
                      NMConnection *connection,
                      NMSetting *setting,
-                     NMConnectionSerializationFlags flags)
+                     NMConnectionSerializationFlags flags,
+                     const NMConnectionSerializationOptions *options)
 {
 	return g_variant_new_uint32 (nm_setting_vlan_get_flags ((NMSettingVlan *) setting));
 }

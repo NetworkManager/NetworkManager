@@ -159,4 +159,14 @@ nm_c_list_move_after (CList *lst, CList *elem)
 }
 #define nm_c_list_move_front(lst, elem) nm_c_list_move_after (lst, elem)
 
+#define nm_c_list_free_all(lst, type, member, destroy_fcn) \
+	G_STMT_START { \
+		CList *const _lst = (lst); \
+		type *_elem; \
+		\
+		while ((_elem = c_list_first_entry (_lst, type, member))) { \
+			destroy_fcn (_elem); \
+		} \
+	} G_STMT_END
+
 #endif /* __NM_C_LIST_H__ */

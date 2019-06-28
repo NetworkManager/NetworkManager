@@ -2345,6 +2345,62 @@ nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
 	return (char **) strv;
 }
 
+/**
+ * @strv: the strv array to copy. It may be %NULL if @len
+ *   is negative or zero (in which case %NULL will be returned).
+ * @len: the length of strings in @str. If negative, strv is assumed
+ *   to be a NULL terminated array.
+ *
+ * Like g_strdupv(), with two differences:
+ *
+ * - accepts a @len parameter for non-null terminated strv array.
+ *
+ * - this never returns an empty strv array, but always %NULL if
+ *   there are no strings.
+ *
+ * Note that if @len is non-negative, then it still must not
+ * contain any %NULL pointers within the first @len elements.
+ * Otherwise you would leak elements if you try to free the
+ * array with g_strfreev(). Allowing that would be error prone.
+ *
+ * Returns: (transfer full): a clone of the strv array. Always
+ *   %NULL terminated.
+ */
+char **
+nm_utils_strv_dup (gpointer strv, gssize len)
+{
+	gsize i, l;
+	char **v;
+	const char *const *const src = strv;
+
+	if (len < 0)
+		l = NM_PTRARRAY_LEN (src);
+	else
+		l = len;
+	if (l == 0) {
+		/* this function never returns an empty strv array. If you
+		 * need that, handle it yourself. */
+		return NULL;
+	}
+
+	v = g_new (char *, l + 1);
+	for (i = 0; i < l; i++) {
+
+		if (G_UNLIKELY (!src[i])) {
+			/* NULL strings are not allowed. Clear the remainder of the array
+			 * and return it (with assertion failure). */
+			l++;
+			for (; i < l; i++)
+				v[i] = NULL;
+			g_return_val_if_reached (v);
+		}
+
+		v[i] = g_strdup (src[i]);
+	}
+	v[l] = NULL;
+	return v;
+}
+
 /*****************************************************************************/
 
 gssize

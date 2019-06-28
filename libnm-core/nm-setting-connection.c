@@ -590,6 +590,26 @@ nm_setting_connection_get_timestamp (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->timestamp;
 }
 
+static GVariant *
+_to_dbus_fcn_timestamp (const NMSettInfoSetting *sett_info,
+                        guint property_idx,
+                        NMConnection *connection,
+                        NMSetting *setting,
+                        NMConnectionSerializationFlags flags,
+                        const NMConnectionSerializationOptions *options)
+{
+	guint64 v;
+
+	v =   options && options->timestamp.has
+	    ? options->timestamp.val
+	    : NM_SETTING_CONNECTION_GET_PRIVATE (setting)->timestamp;
+
+	if (v == 0u)
+		return NULL;
+
+	return g_variant_new_uint64 (v);
+}
+
 /**
  * nm_setting_connection_get_read_only:
  * @setting: the #NMSettingConnection
@@ -1874,6 +1894,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_FUZZY_IGNORE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	_properties_override_add_override (properties_override,
+	                                   obj_properties[PROP_TIMESTAMP],
+	                                   G_VARIANT_TYPE_UINT64,
+	                                   _to_dbus_fcn_timestamp,
+	                                   NULL,
+	                                   NULL);
 
 	/**
 	 * NMSettingConnection:read-only:

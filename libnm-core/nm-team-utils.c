@@ -2439,7 +2439,8 @@ _nm_team_settings_property_to_dbus (const NMSettInfoSetting *sett_info,
                                     guint property_idx,
                                     NMConnection *connection,
                                     NMSetting *setting,
-                                    NMConnectionSerializationFlags flags)
+                                    NMConnectionSerializationFlags flags,
+                                    const NMConnectionSerializationOptions *options)
 {
 	NMTeamSetting *self = _nm_setting_get_team_setting (setting);
 	const TeamAttrData *attr_data = _team_attr_data_get (self->d.is_port, sett_info->property_infos[property_idx].param_spec->param_id);

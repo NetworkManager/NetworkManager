@@ -71,8 +71,8 @@ typedef struct {
 	char *cloned_mac_address;
 	char *generate_mac_address_mask;
 	GArray *mac_address_blacklist;
+	GPtrArray *seen_bssids;
 	guint32 mtu;
-	GSList *seen_bssids;
 	gboolean hidden;
 	guint32 powersave;
 	NMSettingMacRandomization mac_address_randomization;
@@ -658,33 +658,27 @@ nm_setting_wireless_add_seen_bssid (NMSettingWireless *setting,
                                     const char *bssid)
 {
 	NMSettingWirelessPrivate *priv;
-	char *lower_bssid;
-	GSList *iter;
-	gboolean found = FALSE;
+	gs_free char *lower_bssid = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (bssid != NULL, FALSE);
 
-	lower_bssid = g_ascii_strdown (bssid, -1);
-	if (!lower_bssid)
-		return FALSE;
-
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
 
-	for (iter = priv->seen_bssids; iter; iter = iter->next) {
-		if (!strcmp ((char *) iter->data, lower_bssid)) {
-			found = TRUE;
-			break;
-		}
+	lower_bssid = g_ascii_strdown (bssid, -1);
+
+	if (!priv->seen_bssids) {
+		priv->seen_bssids = g_ptr_array_new_with_free_func (g_free);
+	} else {
+		if (nm_utils_strv_find_first ((char **) priv->seen_bssids->pdata,
+		                              priv->seen_bssids->len,
+		                              lower_bssid) >= 0)
+			return FALSE;
 	}
 
-	if (!found) {
-		priv->seen_bssids = g_slist_prepend (priv->seen_bssids, lower_bssid);
-		_notify (setting, PROP_SEEN_BSSIDS);
-	} else
-		g_free (lower_bssid);
-
-	return !found;
+	g_ptr_array_add (priv->seen_bssids, g_steal_pointer (&lower_bssid));
+	_notify (setting, PROP_SEEN_BSSIDS);
+	return TRUE;
 }
 
 /**
@@ -696,9 +690,15 @@ nm_setting_wireless_add_seen_bssid (NMSettingWireless *setting,
 guint32
 nm_setting_wireless_get_num_seen_bssids (NMSettingWireless *setting)
 {
+	NMSettingWirelessPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
 
-	return g_slist_length (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids);
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+
+	return   priv->seen_bssids
+	       ? priv->seen_bssids->len
+	       : 0u;
 }
 
 /**
@@ -712,10 +712,46 @@ const char *
 nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
                                     guint32 i)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+	NMSettingWirelessPrivate *priv;
 
-	return (const char *) g_slist_nth_data (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids, i);
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+
+	if (   !priv->seen_bssids
+	    || i >= priv->seen_bssids->len)
+		return NULL;
+
+	return priv->seen_bssids->pdata[i];
 }
+
+static GVariant *
+_to_dbus_fcn_seen_bssids (const NMSettInfoSetting *sett_info,
+                          guint property_idx,
+                          NMConnection *connection,
+                          NMSetting *setting,
+                          NMConnectionSerializationFlags flags,
+                          const NMConnectionSerializationOptions *options)
+{
+	NMSettingWirelessPrivate *priv;
+
+	if (   options
+	    && options->seen_bssids) {
+		return   options->seen_bssids[0]
+		       ? g_variant_new_strv (options->seen_bssids, -1)
+		       : NULL;
+	}
+
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+
+	if (   !priv->seen_bssids
+	    || priv->seen_bssids->len == 0)
+		return NULL;
+
+	return g_variant_new_strv ((const char *const*) priv->seen_bssids->pdata, priv->seen_bssids->len);
+}
+
+/*****************************************************************************/
 
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
@@ -723,8 +759,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
 	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NM_SETTING_WIRELESS_MODE_AP, NULL };
 	const char *valid_bands[] = { "a", "bg", NULL };
-	GSList *iter;
-	int i;
+	guint i;
 	gsize length;
 	GError *local = NULL;
 
@@ -846,15 +881,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	for (iter = priv->seen_bssids; iter; iter = iter->next) {
-		if (!nm_utils_hwaddr_valid (iter->data, ETH_ALEN)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid MAC address"),
-			             (const char *) iter->data);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SEEN_BSSIDS);
-			return FALSE;
+	if (priv->seen_bssids) {
+		for (i = 0; i < priv->seen_bssids->len; i++) {
+			const char *b;
+
+			b = priv->seen_bssids->pdata[i];
+			if (!nm_utils_hwaddr_valid (b, ETH_ALEN)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("'%s' is not a valid MAC address"),
+				             b);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SEEN_BSSIDS);
+				return FALSE;
+			}
 		}
 	}
 
@@ -945,7 +985,8 @@ nm_setting_wireless_get_security (const NMSettInfoSetting *sett_info,
                                   guint property_idx,
                                   NMConnection *connection,
                                   NMSetting *setting,
-                                  NMConnectionSerializationFlags flags)
+                                  NMConnectionSerializationFlags flags,
+                                  const NMConnectionSerializationOptions *options)
 {
 	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
 		return NULL;
@@ -1030,7 +1071,11 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, nm_setting_wireless_get_mtu (setting));
 		break;
 	case PROP_SEEN_BSSIDS:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->seen_bssids, TRUE));
+		g_value_take_boxed (value,
+		                      priv->seen_bssids
+		                    ? nm_utils_strv_dup (priv->seen_bssids->pdata,
+		                                         priv->seen_bssids->len)
+		                    : NULL);
 		break;
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
@@ -1058,7 +1103,6 @@ set_property (GObject *object, guint prop_id,
 	const char * const *blacklist;
 	const char *mac;
 	gboolean bool_val;
-	int i;
 
 	switch (prop_id) {
 	case PROP_SSID:
@@ -1113,7 +1157,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		blacklist = g_value_get_boxed (value);
 		g_array_set_size (priv->mac_address_blacklist, 0);
-		if (blacklist && *blacklist) {
+		if (blacklist && blacklist[0]) {
+			gsize i;
+
 			for (i = 0; blacklist[i]; i++) {
 				mac = _nm_utils_hwaddr_canonical_or_invalid (blacklist[i], ETH_ALEN);
 				g_array_append_val (priv->mac_address_blacklist, mac);
@@ -1123,10 +1169,23 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
-	case PROP_SEEN_BSSIDS:
-		g_slist_free_full (priv->seen_bssids, g_free);
-		priv->seen_bssids = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
+	case PROP_SEEN_BSSIDS: {
+		gs_unref_ptrarray GPtrArray *arr_old = NULL;
+		const char *const*strv;
+
+		arr_old = g_steal_pointer (&priv->seen_bssids);
+
+		strv = g_value_get_boxed (value);
+		if (strv && strv[0]) {
+			gsize i, l;
+
+			l = NM_PTRARRAY_LEN (strv);
+			priv->seen_bssids = g_ptr_array_new_full (l, g_free);
+			for (i = 0; i < l; i++)
+				g_ptr_array_add (priv->seen_bssids, g_strdup (strv[i]));
+		}
 		break;
+	}
 	case PROP_HIDDEN:
 		priv->hidden = g_value_get_boolean (value);
 		break;
@@ -1185,7 +1244,7 @@ finalize (GObject *object)
 	g_free (priv->cloned_mac_address);
 	g_free (priv->generate_mac_address_mask);
 	g_array_unref (priv->mac_address_blacklist);
-	g_slist_free_full (priv->seen_bssids, g_free);
+	nm_clear_pointer (&priv->seen_bssids, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_setting_wireless_parent_class)->finalize (object);
 }
@@ -1573,6 +1632,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_FUZZY_IGNORE |
 	                        G_PARAM_STATIC_STRINGS);
+
+	_properties_override_add_override (properties_override,
+	                                   obj_properties[PROP_SEEN_BSSIDS],
+	                                   G_VARIANT_TYPE_STRING_ARRAY,
+	                                   _to_dbus_fcn_seen_bssids,
+	                                   NULL,
+	                                   NULL);
 
 	/**
 	 * NMSettingWireless:mtu:

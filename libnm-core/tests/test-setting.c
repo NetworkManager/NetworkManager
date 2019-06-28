@@ -1418,7 +1418,7 @@ _check_team_setting (NMSetting *setting)
 		              nm_setting_team_get_runner_sys_prio (NM_SETTING_TEAM (setting)),
 		              NULL);
 	}
-	variant2 = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	variant2 = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
 	variant3 = nm_utils_gvariant_vardict_filter_drop_one (variant2, "config");
 	setting2 = nmtst_assert_setting_dbus_new (G_OBJECT_TYPE (setting), variant3);
 	nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);

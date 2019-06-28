@@ -65,7 +65,8 @@ GVariant *_nm_utils_hwaddr_cloned_get (const NMSettInfoSetting *sett_info,
                                        guint property_idx,
                                        NMConnection *connection,
                                        NMSetting *setting,
-                                       NMConnectionSerializationFlags flags);
+                                       NMConnectionSerializationFlags flags,
+                                       const NMConnectionSerializationOptions *options);
 gboolean    _nm_utils_hwaddr_cloned_set (NMSetting     *setting,
                                          GVariant      *connection_dict,
                                          const char    *property,
@@ -81,7 +82,8 @@ GVariant *  _nm_utils_hwaddr_cloned_data_synth (const NMSettInfoSetting *sett_in
                                                 guint property_idx,
                                                 NMConnection *connection,
                                                 NMSetting *setting,
-                                                NMConnectionSerializationFlags flags);
+                                                NMConnectionSerializationFlags flags,
+                                                const NMConnectionSerializationOptions *options);
 gboolean    _nm_utils_hwaddr_cloned_data_set (NMSetting *setting,
                                               GVariant *connection_dict,
                                               const char *property,
@@ -113,7 +115,8 @@ GVariant *  _nm_utils_bridge_vlans_to_dbus (const NMSettInfoSetting *sett_info,
                                             guint property_idx,
                                             NMConnection *connection,
                                             NMSetting *setting,
-                                            NMConnectionSerializationFlags flags);
+                                            NMConnectionSerializationFlags flags,
+                                            const NMConnectionSerializationOptions *options);
 
 gboolean    _nm_utils_bridge_vlans_from_dbus (NMSetting *setting,
                                               GVariant *connection_dict,

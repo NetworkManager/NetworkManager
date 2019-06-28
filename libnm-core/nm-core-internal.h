@@ -164,6 +164,20 @@ gpointer _nm_connection_check_main_setting (NMConnection *connection,
                                             const char *setting_name,
                                             GError **error);
 
+typedef struct {
+	struct {
+		guint64 val;
+		bool has;
+	} timestamp;
+
+	const char **seen_bssids;
+
+} NMConnectionSerializationOptions;
+
+GVariant *nm_connection_to_dbus_full (NMConnection *connection,
+                                      NMConnectionSerializationFlags flags,
+                                      const NMConnectionSerializationOptions *options);
+
 typedef enum {
 	/* whether the connection has any secrets.
 	 *
@@ -681,7 +695,8 @@ typedef GVariant *(*NMSettInfoPropToDBusFcn)            (const NMSettInfoSetting
                                                          guint property_idx,
                                                          NMConnection  *connection,
                                                          NMSetting     *setting,
-                                                         NMConnectionSerializationFlags flags);
+                                                         NMConnectionSerializationFlags flags,
+                                                         const NMConnectionSerializationOptions *options);
 typedef gboolean  (*NMSettInfoPropFromDBusFcn)          (NMSetting     *setting,
                                                          GVariant      *connection_dict,
                                                          const char    *property,
