@@ -14,20 +14,21 @@
 # ljanda <ljanda@redhat.com>, 2018. #zanata
 # lrintel <lrintel@redhat.com>, 2018. #zanata
 # tchuang <tchuang@redhat.com>, 2018. #zanata
+# Hsiu-Ming Chang <cges30901@gmail.com>, 2019.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NetworkManager master\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-05-28 14:23+0200\n"
-"PO-Revision-Date: 2017-11-07 06:49+0000\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
+"PO-Revision-Date: 2019-06-28 19:18+0800\n"
+"Last-Translator: Hsiu-Ming Chang <cges30901@gmail.com>\n"
 "Language-Team: Traditional Chinese <zh@li.org>\n"
-"Language: zh_Hant\n"
+"Language: zh_TW\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Zanata 4.6.2\n"
+"X-Generator: Poedit 2.2.1\n"
 
 #: ../clients/cli/agent.c:39
 #, c-format
@@ -37,7 +38,9 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
-"用法：nmcli agent {COMMAND |幫助}命令：= {secret | polkit |全部}\n"
+"用法：nmcli agent { 命令 |help }\n"
+"\n"
+"命令：= { secret | polkit |all }\n"
 "\n"
 
 #: ../clients/cli/agent.c:47
@@ -51,9 +54,10 @@ msgid ""
 "and if a password is required asks the user for it.\n"
 "\n"
 msgstr ""
-"用法：nmcli agent secret {help}運行nmcli作為NetworkManager秘密代理。當"
-"NetworkManager需要密碼時，它會向註冊代理詢問密碼。此命令使nmcli保持運行，如果"
-"需要密碼則詢問用戶。\n"
+"用法：nmcli agent secret { help }\n"
+"\n"
+"運行nmcli作為NetworkManager秘密代理。當NetworkManager需要密碼時，它會向註冊代"
+"理詢問密碼。此命令使nmcli保持運行，如果需要密碼則詢問用戶。\n"
 "\n"
 
 #: ../clients/cli/agent.c:57
@@ -67,8 +71,11 @@ msgid ""
 "the response back to polkit.\n"
 "\n"
 msgstr ""
-"用法：nmcli agent polkit {help}將nmcli註冊為用戶會話的polkit操作。當polkit守"
-"護程序需要授權時，nmcli會詢問用戶並將響應返回給polkit。\n"
+"用法：nmcli agent polkit { help }\n"
+"\n"
+"將nmcli註冊為用戶會話的polkit操作。\n"
+"當polkit守護程序需要授權時，nmcli會詢問用戶並\n"
+"將響應返回給polkit。\n"
 "\n"
 
 #: ../clients/cli/agent.c:67
@@ -79,7 +86,9 @@ msgid ""
 "Runs nmcli as both NetworkManager secret and a polkit agent.\n"
 "\n"
 msgstr ""
-"用法：nmcli agent all {help}運行nmcli作為NetworkManager機密和polkit代理。\n"
+"用法：nmcli agent all { help }\n"
+"\n"
+"運行nmcli作為NetworkManager機密和polkit代理。\n"
 "\n"
 
 #: ../clients/cli/agent.c:159
@@ -88,14 +97,14 @@ msgid "nmcli successfully registered as a NetworkManager's secret agent.\n"
 msgstr "nmcli成功註冊為NetworkManager的秘密代理。\n"
 
 #: ../clients/cli/agent.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "Error: secret agent initialization failed"
-msgstr "數據機初始化失敗"
+msgstr "錯誤：祕密代理初始化失敗"
 
 #: ../clients/cli/agent.c:180
-#, fuzzy, c-format
+#, c-format
 msgid "Error: polkit agent initialization failed: %s"
-msgstr "錯誤：啟動連線失敗：%s"
+msgstr "錯誤：polkit 代理初始化失敗：%s"
 
 #: ../clients/cli/agent.c:188
 #, c-format
@@ -109,19 +118,19 @@ msgid "GROUP"
 msgstr "GROUP"
 
 #: ../clients/cli/common.c:644
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s\n"
-msgstr "錯誤：連線驗證失敗：%s\n"
+msgstr "錯誤：openconnect 失敗：%s\n"
 
 #: ../clients/cli/common.c:651
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with status %d\n"
-msgstr "錯誤：連線無效：%s\n"
+msgstr "錯誤：openconnect 失敗，狀態 %d\n"
 
 #: ../clients/cli/common.c:653
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed with signal %d\n"
-msgstr "錯誤：連線無效：%s\n"
+msgstr "錯誤：openconnect 失敗，訊號 %d\n"
 
 #: ../clients/cli/common.c:741
 #, c-format
@@ -129,13 +138,13 @@ msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
 "without '--ask' option.\n"
 msgstr ""
-"警告：'密碼'%s' 未在'passwd-file'中給出，並且nmcli不能在沒有'--ask'選項的情況"
+"警告：密碼'%s' 未在'passwd-file'中給出，並且nmcli不能在沒有'--ask'選項的情況"
 "下詢問。\n"
 
 #: ../clients/cli/common.c:1241
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s."
-msgstr "錯誤：無法建立 NMClient 物件。"
+msgstr "錯誤：無法建立 NMClient 物件：%s。"
 
 #: ../clients/cli/common.c:1261
 msgid "Error: NetworkManager is not running."
@@ -171,7 +180,7 @@ msgstr "不明"
 
 #: ../clients/cli/common.c:1445
 msgid "none"
-msgstr "none"
+msgstr "無"
 
 #: ../clients/cli/common.c:1446
 msgid "portal"
@@ -200,24 +209,20 @@ msgstr "輸入連線類型："
 
 #. define some other prompts
 #: ../clients/cli/connections.c:69
-#, fuzzy
 msgid "Connection (name, UUID, or path): "
 msgstr "連線（名稱、UUID 或是路徑）："
 
 #: ../clients/cli/connections.c:70
-#, fuzzy
 msgid "VPN connection (name, UUID, or path): "
-msgstr "連線（名稱、UUID 或是路徑）："
+msgstr "VPN 連線（名稱、UUID 或是路徑）："
 
 #: ../clients/cli/connections.c:71
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
 msgstr "連線（名稱、UUID 或是路徑）："
 
 #: ../clients/cli/connections.c:72
-#, fuzzy
 msgid "Connection(s) (name, UUID, path or apath): "
-msgstr "連線（名稱、UUID 或是路徑）："
+msgstr "連線（名稱、UUID、路徑或是 apath）："
 
 #: ../clients/cli/connections.c:80
 msgid "activating"
@@ -234,7 +239,7 @@ msgstr "正在停用"
 # auto translated by TM merge from project: firewalld, version: 0.3.4, DocId: firewalld
 #: ../clients/cli/connections.c:83
 msgid "deactivated"
-msgstr "已停止"
+msgstr "已停用"
 
 #: ../clients/cli/connections.c:89
 msgid "VPN connecting (prepare)"
@@ -308,18 +313,41 @@ msgid ""
 "  export [id | uuid | path] <ID> [<output file>]\n"
 "\n"
 msgstr ""
-"用法：nmcli connection {COMMAND |幫助} COMMAND：= {show | up |下來|添加|修改|"
-"克隆|編輯|刪除|監視器|重裝|加載|進口| export} show [--active] [ -  order "
-"<order spec>] show [--active] [id | uuid |路徑|一條路徑] <ID> ...... [[id | "
-"uuid |路徑] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd文件 <file with "
-"passwords>]下來[id | uuid |路徑|一條路徑] <ID> ...添加COMMON_OPTIONS "
-"TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [ - （[+ |  - ]]<setting>。"
-"<property> <value>）+]修改[--temporary] [id | uuid |路徑] <ID> （[+ |  "
-"- ]<setting>。<property> <value>）+ clone [--temporary] [id | uuid |路徑] "
-"<ID> <new name>編輯[id | uuid |路徑] <ID>編輯[類型 <new_con_type>] [con-name "
-"<new_con_name>]刪除[id | uuid |路徑] <ID>監視[id | uuid |路徑] <ID> ......重"
-"裝負荷 <filename> [ <filename>...] import [--temporary]類型 <type> 文件 "
-"<file to import>export [id | uuid |路徑] <ID> [<output file>]\n"
+"用法：nmcli connection { 命令 | help }\n"
+"\n"
+"命令 := { show | up | down | add | modify | clone | edit | delete | monitor "
+"| reload | load | import | export }\n"
+"\n"
+"  show [--active] [--order <order spec>]\n"
+"  show [--active] [id | uuid | path | apath] <ID> ...\n"
+"\n"
+"  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file "
+"<file with passwords>]\n"
+"\n"
+"  down [id | uuid | path | apath] <ID> ...\n"
+"\n"
+"  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- "
+"([+|-]<setting>.<property> <value>)+]\n"
+"\n"
+"  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> "
+"<value>)+\n"
+"\n"
+"  clone [--temporary] [id | uuid | path ] <ID> <new name>\n"
+"\n"
+"  edit [id | uuid | path] <ID>\n"
+"  edit [type <new_con_type>] [con-name <new_con_name>]\n"
+"\n"
+"  delete [id | uuid | path] <ID>\n"
+"\n"
+"  monitor [id | uuid | path] <ID> ...\n"
+"\n"
+"  reload\n"
+"\n"
+"  load <filename> [ <filename>... ]\n"
+"\n"
+"  import [--temporary] type <type> file <file to import>\n"
+"\n"
+"  export [id | uuid | path] <ID> [<output file>]\n"
 "\n"
 
 #: ../clients/cli/connections.c:890
@@ -348,17 +376,24 @@ msgid ""
 "account. Use global --show-secrets option to reveal associated secrets as "
 "well.\n"
 msgstr ""
-"用法：nmcli連接顯示{ARGUMENTS |幫助} ARGUMENTS：= [--active] [ -  order "
-"<order spec>列出內存和磁盤上的連接配置文件，如果設備使用該連接配置文件，其中"
-"一些配置文件也可能處於活動狀態。如果沒有參數，則列出所有配置文件。指定--"
-"active選項時，僅顯示活動的配置文件。 --order允許自定義連接排序（參見手冊"
-"頁）。 ARGUMENTS：= [ -  active] [id | uuid |路徑|一條路徑] <ID> ...顯示指定"
-"連接的詳細信息。默認情況下，將顯示靜態配置和活動連接數據。可以使用全局'--"
-"fields'選項過濾輸出。有關更多信息，請參閱手冊頁。如果指定了--active選項，則僅"
-"考慮活動配置文件。使用全局--show-secrets選項來顯示相關的秘密。\n"
+"用法：nmcli connection show { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [--active] [--order <order spec>]\n"
+"\n"
+"列出內存和磁盤上的連接配置文件，如果設備使用該連接配置文件，\n"
+"其中一些配置文件也可能處於活動狀態。如果沒有參數，則列出所有\n"
+"配置文件。指定--active選項時，僅顯示活動的配置文件。 --order允\n"
+"許自定義連接排序（參見手冊頁）。\n"
+"\n"
+"ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
+"\n"
+"顯示指定連接的詳細信息。默認情況下，將顯示靜態配置和活動連接數據。\n"
+"可以使用全局'--fields'選項過濾輸出。有關更多信息，請參閱手冊頁。如果\n"
+"指定了--active選項，則僅考慮活動配置文件。使用全局--show-secrets選\n"
+"項來顯示相關的秘密。\n"
 
 #: ../clients/cli/connections.c:911
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection up { ARGUMENTS | help }\n"
 "\n"
@@ -381,27 +416,26 @@ msgid ""
 "passwd-file - file with password(s) required to activate the connection\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection up { ARGUMENTS | help }\n"
+"用法：nmcli connection up { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp "
-"<name>]\n"
+"<name>] [passwd-file <file with passwords>]\n"
 "\n"
-"Activate a connection on a device. The profile to activate is identified by "
-"its\n"
-"name, UUID or D-Bus path.\n"
+"在裝置上啟用連線。要啟用的設定檔藉由名稱、UUID 或 D-Bus 路徑識別。\n"
 "\n"
-"ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
+"ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>] [passwd-file <file "
+"with passwords>]\n"
 "\n"
-"Activate a device with a connection. The connection profile is selected\n"
-"automatically by NetworkManager.\n"
+"使用連線啟用裝置。NetworkManager 會自動選擇連線設定檔。\n"
 "\n"
-"ifname - specifies the device to active the connection on\n"
-"ap     - specifies AP to connect to (only valid for Wi-Fi)\n"
-"nsp    - specifies NSP to connect to (only valid for WiMAX)\n"
+"ifname      - 指定要啟用連線的裝置\n"
+"ap          - 指定要連線的 AP（只適用於 Wi-Fi）\n"
+"nsp         - 指定要連線的 NSP（只適用於 WiMAX）\n"
+"passwd-file - 具有用於啟用連線的密碼的檔案\n"
 "\n"
 
 #: ../clients/cli/connections.c:932
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
 "\n"
@@ -413,14 +447,12 @@ msgid ""
 "UUID or D-Bus path.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection down { ARGUMENTS | help }\n"
+"用法：nmcli connection down { ARGUMENTS | help }\n"
 "\n"
-"ARGUMENTS := [id | uuid | path | apath] <ID>\n"
+"ARGUMENTS := [id | uuid | path | apath] <ID> ...\n"
 "\n"
-"Deactivate a connection from a device (without preventing the device from\n"
-"further auto-activation). The profile to deactivate is identified by its "
-"name,\n"
-"UUID or D-Bus path.\n"
+"在裝置上停用連線（不避免裝置自動啟用）。要停用的設定檔藉由名稱、\n"
+"UUID 或 D-Bus 路徑識別。\n"
 "\n"
 
 #: ../clients/cli/connections.c:944
@@ -581,45 +613,159 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"用法：nmcli connection add {ARGUMENTS |幫助} ARGUMENTS：= COMMON_OPTIONS "
-"TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [ - （[+ |  - ]]<setting>。"
-"<property> <value>）+] COMMON_OPTIONS：類型 <type>IFNAME <interface name> | "
-"“*”[con-name <connection name>] [autoconnect yes | no] [save yes | no] "
-"[master <master (ifname, or connection UUID or name)>] [奴隸型 <master "
-"connection type>] TYPE_SPECIFIC_OPTIONS：以太網：[mac <MAC address>] [克隆 "
-"-  mac <cloned MAC address>] [mtu <MTU>] wifi：ssid <SSID>[蘋果電腦 <MAC "
-"address>] [克隆 -  mac <cloned MAC address>] [mtu <MTU>] [模式基礎設施| ap | "
-"adhoc] wimax：[mac <MAC address>] [nsp <NSP>] pppoe：用戶名 <PPPoE "
-"username>[密碼 <PPPoE password>] [服務 <PPPoE service name>] [mtu <MTU>] [蘋"
-"果電腦 <MAC address>] gsm：apn <APN>[用戶 <username>] [密碼 <password>] "
-"cdma：[用戶 <username>] [密碼 <password>infiniband：[mac <MAC address>] [mtu "
-"<MTU>] [傳輸模式數據報|連接] [父母 <ifname>] [p鍵 <IPoIB P_Key>]藍牙：[addr "
-"<bluetooth address>] [bt-type panu | nap | dun-gsm | dun-cdma] vlan：dev "
-"<parent device (connection UUID, ifname, or MAC)>ID <VLAN ID>[標誌 <VLAN "
-"flags>] [進入 <ingress priority mapping>] [出口 <egress priority mapping>] "
-"[mtu <MTU>] bond：[mode balance-rr（0）| active-backup（1）| balance-"
-"xor（2）|廣播（3）| 802.3ad（4）| balance-tlb（5）| balance-alb（6）] "
-"[primary <ifname>] [米蒙 <num>] [downdelay <num>] [updelay <num>] [arp-"
-"interval <num>] [arp-ip-target <num>] [lacp-rate slow（0）| fast（1）] bond-"
-"slave：master <master (ifname, or connection UUID or name)>團隊：[config "
-"<file>|<raw JSON data>] team-slave：master <master (ifname, or connection "
-"UUID or name)>[配置 <file>|<raw JSON data>] bridge：[stp yes | no] [優先級 "
-"<num>] [前進延遲 <2-30>] [你好時間 <1-10>] [max-age <6-40>] [老化時間 "
-"<0-1000000>] [multicast-snooping yes | no] [mac <MAC address>] bridge-slave："
-"master <master (ifname, or connection UUID or name)>[優先 <0-63>] [路徑成本 "
-"<1-65535>] [髮夾是|否] vpn：vpn-type vpnc | openvpn | pptp | openconnect | "
-"openswan | libreswan | ssh | l2tp |碘| ... [用戶 <username>] olpc-mesh：ssid "
-"<SSID>[渠道 <1-13>] [dhcp-anycast <MAC address>] adsl：用戶名 <username>協議"
-"pppoa | pppoe | ipoatm [密碼 <password>] [encapsulation vcmux | llc] tun："
-"mode tun | tap [owner <UID>] [組 <GID>] [pi yes | no] [vnet-hdr yes | no] [多"
-"隊列是|否] ip-tunnel：模式ipip | gre | sit | isatap | vti | ip6ip6 | ipip6 | "
-"ip6gre | vti6 remote <remote endpoint IP>[本地 <local endpoint IP>] [dev "
-"<parent device (ifname or connection UUID)>] macsec：dev <parent device "
-"(connection UUID, ifname, or MAC)>模式 <psk|eap>[CAK <key> CKN <key>] [加密"
-"是|否] [端口1-65534] macvlan：dev <parent device (connection UUID, ifname, "
-"or MAC)>mode vepa | bridge | private | passthru | source [tap yes | no] "
-"vxlan：id <VXLAN ID>遠程 <IP of multicast group or remote address>[本地 "
-"<source IP>] [dev <parent device (ifname or connection UUID)>]\n"
+"用法：nmcli connection add { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS "
+"[-- ([+|-]<setting>.<property> <value>)+]\n"
+"\n"
+"  COMMON_OPTIONS:\n"
+"                  type <type>\n"
+"                  ifname <interface name> | \"*\"\n"
+"                  [con-name <connection name>]\n"
+"                  [autoconnect yes|no]\n"
+"                  [save yes|no]\n"
+"                  [master <master (ifname, or connection UUID or name)>]\n"
+"                  [slave-type <master connection type>]\n"
+"\n"
+"  TYPE_SPECIFIC_OPTIONS:\n"
+"    ethernet:     [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    wifi:         ssid <SSID>\n"
+"                  [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [mode infrastructure|ap|adhoc]\n"
+"\n"
+"    wimax:        [mac <MAC address>]\n"
+"                  [nsp <NSP>]\n"
+"\n"
+"    pppoe:        username <PPPoE username>\n"
+"                  [password <PPPoE password>]\n"
+"                  [service <PPPoE service name>]\n"
+"                  [mtu <MTU>]\n"
+"                  [mac <MAC address>]\n"
+"\n"
+"    gsm:          apn <APN>\n"
+"                  [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    cdma:         [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    infiniband:   [mac <MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [transport-mode datagram | connected]\n"
+"                  [parent <ifname>]\n"
+"                  [p-key <IPoIB P_Key>]\n"
+"\n"
+"    bluetooth:    [addr <bluetooth address>]\n"
+"                  [bt-type panu|nap|dun-gsm|dun-cdma]\n"
+"\n"
+"    vlan:         dev <parent device (connection UUID, ifname, or MAC)>\n"
+"                  id <VLAN ID>\n"
+"                  [flags <VLAN flags>]\n"
+"                  [ingress <ingress priority mapping>]\n"
+"                  [egress <egress priority mapping>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
+"| broadcast (3) |\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
+"(6)]\n"
+"                  [primary <ifname>]\n"
+"                  [miimon <num>]\n"
+"                  [downdelay <num>]\n"
+"                  [updelay <num>]\n"
+"                  [arp-interval <num>]\n"
+"                  [arp-ip-target <num>]\n"
+"                  [lacp-rate slow (0) | fast (1)]\n"
+"\n"
+"    bond-slave:   master <master (ifname, or connection UUID or name)>\n"
+"\n"
+"    team:         [config <file>|<raw JSON data>]\n"
+"\n"
+"    team-slave:   master <master (ifname, or connection UUID or name)>\n"
+"                  [config <file>|<raw JSON data>]\n"
+"\n"
+"    bridge:       [stp yes|no]\n"
+"                  [priority <num>]\n"
+"                  [forward-delay <2-30>]\n"
+"                  [hello-time <1-10>]\n"
+"                  [max-age <6-40>]\n"
+"                  [ageing-time <0-1000000>]\n"
+"                  [multicast-snooping yes|no]\n"
+"                  [mac <MAC address>]\n"
+"\n"
+"    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
+"                  [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
+"ssh|l2tp|iodine|...\n"
+"                  [user <username>]\n"
+"\n"
+"    olpc-mesh:    ssid <SSID>\n"
+"                  [channel <1-13>]\n"
+"                  [dhcp-anycast <MAC address>]\n"
+"\n"
+"    adsl:         username <username>\n"
+"                  protocol pppoa|pppoe|ipoatm\n"
+"                  [password <password>]\n"
+"                  [encapsulation vcmux|llc]\n"
+"\n"
+"    tun:          mode tun|tap\n"
+"                  [owner <UID>]\n"
+"                  [group <GID>]\n"
+"                  [pi yes|no]\n"
+"                  [vnet-hdr yes|no]\n"
+"                  [multi-queue yes|no]\n"
+"\n"
+"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
+"                  remote <remote endpoint IP>\n"
+"                  [local <local endpoint IP>]\n"
+"                  [dev <parent device (ifname or connection UUID)>]\n"
+"\n"
+"    macsec:       dev <parent device (connection UUID, ifname, or MAC)>\n"
+"                  mode <psk|eap>\n"
+"                  [cak <key> ckn <key>]\n"
+"                  [encrypt yes|no]\n"
+"                  [port 1-65534]\n"
+"\n"
+"\n"
+"    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
+"                  mode vepa|bridge|private|passthru|source\n"
+"                  [tap yes|no]\n"
+"\n"
+"    vxlan:        id <VXLAN ID>\n"
+"                  remote <IP of multicast group or remote address>\n"
+"                  [local <source IP>]\n"
+"                  [dev <parent device (ifname or connection UUID)>]\n"
+"                  [source-port-min <0-65535>]\n"
+"                  [source-port-max <0-65535>]\n"
+"                  [destination-port <0-65535>]\n"
+"\n"
+"    wpan:         [short-addr <0x0000-0xffff>]\n"
+"                  [pan-id <0x0000-0xffff>]\n"
+"                  [page <default|0-31>]\n"
+"                  [channel <default|0-26>]\n"
+"                  [mac <MAC address>]\n"
+"\n"
+"    6lowpan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
+"    dummy:\n"
+"\n"
+"  SLAVE_OPTIONS:\n"
+"    bridge:       [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    team:         [config <file>|<raw JSON data>]\n"
+"\n"
+"  IP_OPTIONS:\n"
+"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 
 #: ../clients/cli/connections.c:1068
@@ -646,15 +792,24 @@ msgid ""
 "nmcli con mod bond0 -bond.options downdelay\n"
 "\n"
 msgstr ""
-"用法：nmcli連接修改{ARGUMENTS |幫助} ARGUMENTS：= [id | uuid |路徑] <ID> "
-"（[+ |  - ]<setting>。<property> <value>）+修改連接配置文件的一個或多個屬性。"
-"配置文件由其名稱，UUID或D-Bus路徑標識。對於多值屬性，您可以對屬性名稱使用可選"
-"的“+”或“ - ”前綴。 “+”符號允許附加項而不是覆蓋整個值。 “ - ”符號允許刪除所選"
-"項而不是整個值。示例：nmcli con mod home-wifi wifi.ssid rakosnicek nmcli con "
-"mod em1-1 ipv4.method manual ipv4.addr“192.168.1.2 / 24,10.10.1.5/8”nmcli "
-"con mod em1-1 + ipv4.dns 8.8。 4.4 nmcli con mod em1-1 -ipv4.dns 1 nmcli con "
-"mod em1-1 -ipv6.addr“abbe :: cafe / 56”nmcli con mod bond0 + bond.options "
-"mii = 500 nmcli con mod bond0 -bond.options downdelay\n"
+"用法：nmcli connection modify { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n"
+"\n"
+"修改連接配置文件的一個或多個屬性。配置文件由其名稱，UUID或D-Bus\n"
+"路徑標識。對於多值屬性，您可以對屬性名稱使用可選的“+”或“ - ”前綴。\n"
+"“+”符號允許附加項而不是覆蓋整個值。 \n"
+"“ - ”符號允許刪除所選項而不是整個值。\n"
+"\n"
+"示例：\n"
+"nmcli con mod home-wifi wifi.ssid rakosnicek\n"
+"nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, "
+"10.10.1.5/8\"\n"
+"nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
+"nmcli con mod em1-1 -ipv4.dns 1\n"
+"nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
+"nmcli con mod bond0 +bond.options mii=500\n"
+"nmcli con mod bond0 -bond.options downdelay\n"
 "\n"
 
 #: ../clients/cli/connections.c:1091
@@ -670,9 +825,12 @@ msgid ""
 "id (provided as <new name> argument).\n"
 "\n"
 msgstr ""
-"用法：nmcli連接克隆{ARGUMENTS |幫助} ARGUMENTS：= [--temporary] [id | uuid |"
-"路徑] <ID> <new name>克隆現有連接配置文件。新創建的連接將是該文件的精確副本 "
-"<ID>, ，除了uuid屬性（將生成）和id（提供為 <new name> 參數）。\n"
+"用法：nmcli connection clone { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [--temporary] [id | uuid | path] <ID> <new name>\n"
+"\n"
+"克隆現有連接配置文件。新創建的連接將是該文件的精確副本 <ID>，\n"
+"除了uuid屬性（將生成）和id（提供為 <new name> 參數）。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1103
@@ -690,16 +848,16 @@ msgid ""
 "Add a new connection profile in an interactive editor.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection edit { ARGUMENTS | help }\n"
+"用法：nmcli connection edit { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := [id | uuid | path] <ID>\n"
 "\n"
-"Edit an existing connection profile in an interactive editor.\n"
-"The profile is identified by its name, UUID or D-Bus path\n"
+"在互動式編輯程式編輯已存在的連線設定檔。\n"
+"設定檔藉由名稱、UUID 或 D-Bus 路徑識別\n"
 "\n"
 "ARGUMENTS := [type <new connection type>] [con-name <new connection name>]\n"
 "\n"
-"Add a new connection profile in an interactive editor.\n"
+"在互動式編輯程式加入新的連線設定檔。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1118
@@ -713,16 +871,16 @@ msgid ""
 "The profile is identified by its name, UUID or D-Bus path.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection delete { ARGUMENTS | help }\n"
+"用法：nmcli connection delete { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := [id | uuid | path] <ID>\n"
 "\n"
-"Delete a connection profile.\n"
-"The profile is identified by its name, UUID or D-Bus path.\n"
+"刪除連線設定檔。\n"
+"設定檔藉由名稱、UUID 或 D-Bus 路徑識別。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1129
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection monitor { ARGUMENTS | help }\n"
 "\n"
@@ -733,16 +891,13 @@ msgid ""
 "Monitors all connection profiles in case none is specified.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection edit { ARGUMENTS | help }\n"
+"用法：nmcli connection monitor { ARGUMENTS | help }\n"
 "\n"
-"ARGUMENTS := [id | uuid | path] <ID>\n"
+"ARGUMENTS := [id | uuid | path] <ID> ...\n"
 "\n"
-"Edit an existing connection profile in an interactive editor.\n"
-"The profile is identified by its name, UUID or D-Bus path\n"
-"\n"
-"ARGUMENTS := [type <new connection type>] [con-name <new connection name>]\n"
-"\n"
-"Add a new connection profile in an interactive editor.\n"
+"監控連線 activity.\n"
+"這個指令會在指定的連線變更時顯示一列。\n"
+"如果沒有指定連線，會監控所有連線設定檔。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1141
@@ -753,9 +908,9 @@ msgid ""
 "Reload all connection files from disk.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection reload { help }\n"
+"用法：nmcli connection reload { help }\n"
 "\n"
-"Reload all connection files from disk.\n"
+"從磁碟重新載入所有連線檔案。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1149
@@ -771,14 +926,12 @@ msgid ""
 "state.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection load { ARGUMENTS | help }\n"
+"用法：nmcli connection load { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := <filename> [<filename>...]\n"
 "\n"
-"Load/reload one or more connection files from disk. Use this after manually\n"
-"editing a connection file to ensure that NetworkManager is aware of its "
-"latest\n"
-"state.\n"
+"從磁碟載入/重新載入一個或多個連線檔案。手動編輯連線檔案後請使用這個命令\n"
+"來確保 NetworkManager 知道最後的狀態。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1161
@@ -795,13 +948,18 @@ msgid ""
 "is imported by NetworkManager VPN plugins.\n"
 "\n"
 msgstr ""
-"用法：nmcli連接導入{ARGUMENTS |幫助} ARGUMENTS：= [--temporary]類型 <type> 文"
-"件 <file to import>將外部/外部配置導入為NetworkManager連接配置文件。輸入文件"
-"的類型由type選項指定。目前僅支持VPN配置。配置由NetworkManager VPN插件導入。\n"
+"用法：nmcli connection import { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [--temporary] type <type> file <file to import>\n"
+"\n"
+"將外部/外部配置導入為NetworkManager連接配置文件。\n"
+"輸入文件的類型由type選項指定。\n"
+"目前僅支持VPN配置。\n"
+"配置由NetworkManager VPN插件導入。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1174
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection export { ARGUMENTS | help }\n"
 "\n"
@@ -811,33 +969,31 @@ msgid ""
 "The data are directed to standard output or to a file if a name is given.\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection delete { ARGUMENTS | help }\n"
+"用法：nmcli connection export { ARGUMENTS | help }\n"
 "\n"
-"ARGUMENTS := [id | uuid | path] <ID>\n"
+"ARGUMENTS := [id | uuid | path] <ID> [<output file>]\n"
 "\n"
-"Delete a connection profile.\n"
-"The profile is identified by its name, UUID or D-Bus path.\n"
+"匯出連線。目前只支援 VPN 連線。\n"
+"資料會導向到標準輸出，如果有指定名稱，會輸出到檔案。\n"
 "\n"
 
 #: ../clients/cli/connections.c:1264
-#, fuzzy, c-format
+#, c-format
 msgid "Error updating secrets for %s: %s\n"
-msgstr "儲存連線錯誤：%s"
+msgstr "更新 %s 的祕密發生錯誤：%s\n"
 
 #: ../clients/cli/connections.c:1313
-#, fuzzy
 msgid "Connection profile details"
-msgstr "連線詳情"
+msgstr "連線設定檔詳細資料"
 
 #: ../clients/cli/connections.c:1326 ../clients/cli/connections.c:1411
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'connection show': %s"
-msgstr "錯誤：「device show」：%s"
+msgstr "錯誤：「connection show」：%s"
 
 #: ../clients/cli/connections.c:1401
-#, fuzzy
 msgid "Activate connection details"
-msgstr "有效連線的詳細資訊"
+msgstr "啟用連線的詳細資訊"
 
 #: ../clients/cli/connections.c:1509 ../clients/cli/devices.c:1447
 #: ../clients/cli/devices.c:1461 ../clients/cli/devices.c:1476
@@ -846,24 +1002,24 @@ msgid "NAME"
 msgstr "NAME"
 
 #: ../clients/cli/connections.c:1602
-#, fuzzy, c-format
+#, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
-msgstr "無效的欄位「%s」; 允許的欄位：%s"
+msgstr "無效的欄位「%s」; 允許的欄位：%s 和 %s，或 %s,%s"
 
 #: ../clients/cli/connections.c:1612 ../clients/cli/connections.c:1620
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' has to be alone"
 msgstr "欄位 '%s' 必須是單獨的"
 
 #: ../clients/cli/connections.c:1880
 #, c-format
 msgid "incorrect string '%s' of '--order' option"
-msgstr "字符串錯誤'%s' ' -  order'選項"
+msgstr "'--order'選項的字符串'%s'錯誤"
 
 #: ../clients/cli/connections.c:1905
 #, c-format
 msgid "incorrect item '%s' in '--order' option"
-msgstr "錯誤的項目'%s' 在' -  order'選項中"
+msgstr "錯誤的項目'%s' 在'--order'選項中"
 
 #: ../clients/cli/connections.c:1943
 msgid "No connection specified"
@@ -872,7 +1028,7 @@ msgstr "沒有指定連接"
 #: ../clients/cli/connections.c:1954
 #, c-format
 msgid "%s argument is missing"
-msgstr "%s 爭論缺失"
+msgstr "沒有 %s 參數"
 
 #: ../clients/cli/connections.c:1972
 #, c-format
@@ -880,19 +1036,16 @@ msgid "unknown connection '%s'"
 msgstr "未知連接'%s'"
 
 #: ../clients/cli/connections.c:2001
-#, fuzzy
 msgid "'--order' argument is missing"
-msgstr "錯誤：沒有 %s 參數。"
+msgstr "沒有「--order」引數"
 
 #: ../clients/cli/connections.c:2061
-#, fuzzy
 msgid "NetworkManager active profiles"
-msgstr "NetworkManager 狀態"
+msgstr "NetworkManager 啟用的設定檔"
 
 #: ../clients/cli/connections.c:2062
-#, fuzzy
 msgid "NetworkManager connection profiles"
-msgstr "NetworkManager 進入了睡眠狀態"
+msgstr "NetworkManager 連線設定檔"
 
 #: ../clients/cli/connections.c:2114 ../clients/cli/connections.c:2859
 #: ../clients/cli/connections.c:2871 ../clients/cli/connections.c:2883
@@ -912,9 +1065,9 @@ msgid "Error: %s argument is missing."
 msgstr "錯誤：沒有 %s 參數。"
 
 #: ../clients/cli/connections.c:2142
-#, fuzzy, c-format
+#, c-format
 msgid "Error: %s - no such connection profile."
-msgstr "錯誤：%s - 此連線不存在。"
+msgstr "錯誤：%s - 此連線設定檔不存在。"
 
 #: ../clients/cli/connections.c:2233 ../clients/cli/connections.c:2846
 #: ../clients/cli/connections.c:2910 ../clients/cli/connections.c:8385
@@ -937,9 +1090,9 @@ msgid "no active connection or device"
 msgstr "沒有使用中的連線或裝置"
 
 #: ../clients/cli/connections.c:2354
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not compatible with connection '%s': "
-msgstr "設備'%s' 與連接不兼容'%s':"
+msgstr "裝置「%s」和連線「%s」不相容："
 
 #: ../clients/cli/connections.c:2387
 #, c-format
@@ -954,12 +1107,12 @@ msgstr "連線「%s」沒有找到任何裝置"
 #: ../clients/cli/connections.c:2441
 #, c-format
 msgid "Hint: use '%s' to get more details."
-msgstr ""
+msgstr "提示：使用「%s」來獲得更多資訊。"
 
 #: ../clients/cli/connections.c:2459
 #, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "連接成功激活（%s) （D-Bus活動路徑： %s)\n"
+msgstr "連線已成功啟用（%s) （D-Bus 啟用路徑： %s)\n"
 
 #: ../clients/cli/connections.c:2463 ../clients/cli/connections.c:2613
 #: ../clients/cli/connections.c:6701
@@ -978,9 +1131,9 @@ msgid "Error: Timeout expired (%d seconds)"
 msgstr "錯誤：超時已過期（%d 秒）"
 
 #: ../clients/cli/connections.c:2675
-#, fuzzy, c-format
+#, c-format
 msgid "failed to read passwd-file '%s': %s"
-msgstr "錯誤：移除「%s」的值失敗：%s\n"
+msgstr "無法讀取 passwd-file「%s」：%s"
 
 #: ../clients/cli/connections.c:2688
 #, c-format
@@ -1018,14 +1171,14 @@ msgid "preparing"
 msgstr "正在準備"
 
 #: ../clients/cli/connections.c:3027
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
-msgstr "連線「%s」 (%s) 已成功新增。\n"
+msgstr "連線「%s」 (%s) 已成功刪除。\n"
 
 #: ../clients/cli/connections.c:3043
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
-msgstr "連線已成功啟用（D-Bus 啟用路徑：%s）\n"
+msgstr "連線「%s」已成功停用（D-Bus 啟用路徑：%s）\n"
 
 #: ../clients/cli/connections.c:3094 ../clients/cli/connections.c:8599
 #: ../clients/cli/connections.c:8630 ../clients/cli/connections.c:8788
@@ -1034,24 +1187,24 @@ msgid "Error: No connection specified."
 msgstr "錯誤：尚未指定連線。"
 
 #: ../clients/cli/connections.c:3124
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "錯誤：「%s」並非啟用中的連線。"
+msgstr "錯誤：「%s」並非使用中的連線。\n"
 
 #: ../clients/cli/connections.c:3125
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all active connections found."
-msgstr "錯誤：「%s」並非啟用中的連線。"
+msgstr "錯誤：沒有找到所有使用中的連線。"
 
 #: ../clients/cli/connections.c:3133
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no active connection provided."
-msgstr "錯誤：無法啟用連線：%s。\n"
+msgstr "錯誤：沒有提供使用中的連線。"
 
 #: ../clients/cli/connections.c:3164
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
-msgstr "錯誤：啟動連線失敗：%s"
+msgstr "連線「%s」停用失敗：%s\n"
 
 #: ../clients/cli/connections.c:3415 ../clients/cli/connections.c:3472
 #: ../clients/common/nm-client-utils.c:225
@@ -1069,7 +1222,7 @@ msgstr "不明的錯誤"
 #: ../clients/cli/connections.c:3629
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
-msgstr "警告：master ='%s' 沒有引用任何現有的個人資料。\n"
+msgstr "警告：master='%s' 沒有引用任何現有的設定檔。\n"
 
 #: ../clients/cli/connections.c:3984
 #, c-format
@@ -1077,19 +1230,19 @@ msgid "Error: invalid property '%s': %s."
 msgstr "錯誤：無效的內容「%s」：%s。"
 
 #: ../clients/cli/connections.c:3998
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to %s %s.%s: %s."
-msgstr "錯誤：無法修改 %s.%s：%s。"
+msgstr "錯誤：無法 %s %s。%s：%s。"
 
 #: ../clients/cli/connections.c:4033
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is mandatory."
-msgstr "錯誤：「%s」設定不存在\n"
+msgstr "錯誤：「%s」是必要的。"
 
 #: ../clients/cli/connections.c:4060
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid slave type; %s."
-msgstr "錯誤：無效的連線類型；%s。"
+msgstr "錯誤：無效的 slave 類型；%s。"
 
 #: ../clients/cli/connections.c:4068
 #, c-format
@@ -1097,9 +1250,9 @@ msgid "Error: invalid connection type; %s."
 msgstr "錯誤：無效的連線類型；%s。"
 
 #: ../clients/cli/connections.c:4145
-#, fuzzy, c-format
+#, c-format
 msgid "Error: bad connection type: %s"
-msgstr "錯誤：無效的連線類型；%s。"
+msgstr "錯誤：不好的連線類型：%s"
 
 #: ../clients/cli/connections.c:4191
 #, c-format
@@ -1107,14 +1260,13 @@ msgid "Error: '%s': %s"
 msgstr "錯誤：'%s': %s"
 
 #: ../clients/cli/connections.c:4212
-#, fuzzy
 msgid "Error: master is required"
-msgstr "錯誤：需要「mater」。"
+msgstr "錯誤：需要「mater」"
 
 #: ../clients/cli/connections.c:4271
-#, fuzzy, c-format
+#, c-format
 msgid "Error: error adding bond option '%s=%s'."
-msgstr "錯誤：不明的連線「%s」。"
+msgstr "錯誤：加入 bond 選項「%s=%s」時發生錯誤。"
 
 #: ../clients/cli/connections.c:4302
 #, c-format
@@ -1127,9 +1279,9 @@ msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr "錯誤：'bt-type'：'%s' 無效;使用 [%s, %s, %s （%s), %s]."
 
 #: ../clients/cli/connections.c:4582
-#, fuzzy, c-format
+#, c-format
 msgid "Error: value for '%s' is missing."
-msgstr "錯誤：找不到 '%s' 選項的欄位。"
+msgstr "錯誤：缺少「%s」的值。"
 
 #: ../clients/cli/connections.c:4628
 msgid "Error: <setting>.<property> argument is missing."
@@ -1141,9 +1293,9 @@ msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "錯誤：設定「%s」無效或不被允許：%s。"
 
 #: ../clients/cli/connections.c:4699 ../clients/cli/connections.c:4715
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
-msgstr "「%s」意義含糊不清（%s x %s）"
+msgstr "錯誤：「%s」意義含糊不清（%s.%s 或 %s.%s）"
 
 #: ../clients/cli/connections.c:4733
 #, c-format
@@ -1151,19 +1303,20 @@ msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "錯誤：無效的 <setting>.<property> '%s'。"
 
 #: ../clients/cli/connections.c:4777 ../clients/cli/connections.c:8431
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to add '%s' connection: %s"
-msgstr "錯誤：無法新增「%s」連線：(%d) %s"
+msgstr "錯誤：無法新增「%s」連線：%s"
 
 #: ../clients/cli/connections.c:4795
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
 "connection by its uuid '%2$s'\n"
 msgid_plural ""
 "Warning: There are %3$u other connections with the name '%1$s'. Reference "
 "the connection by its uuid '%2$s'\n"
-msgstr[0] "警告：還有另一個名稱為'的連接%1$s'. 通過其uuid引用連接'%2$s'\n"
+msgstr[0] ""
+"警告：還有其他 %3$u 個名稱為「%1$s」的連線。透過 uuid「%2$s」參照連線。\n"
 
 #: ../clients/cli/connections.c:4804
 #, c-format
@@ -1198,16 +1351,16 @@ msgstr "您可以多次指定此選項。按 <Enter> 當你完成了。\n"
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:5046
-#, fuzzy, c-format
+#, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
-msgstr[0] "「%s」的連線類型有一個選用引數。\n"
+msgstr[0] "「%2$s」有 %1$d 個選用的設定。\n"
 
 #: ../clients/cli/connections.c:5052
-#, fuzzy, c-format
+#, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
-msgstr[0] "您是否希望提供它？（yes/no）[yes]"
+msgstr[0] "您是否希望提供它？ %s"
 
 #: ../clients/cli/connections.c:5185 ../clients/cli/utils.c:293
 #, c-format
@@ -1215,14 +1368,14 @@ msgid "Error: value for '%s' argument is required."
 msgstr "錯誤：「%s」引數需要有個值。"
 
 #: ../clients/cli/connections.c:5192
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'save': %s."
-msgstr "錯誤：「stp」：%s。"
+msgstr "錯誤：「save」：%s。"
 
 #: ../clients/cli/connections.c:5278 ../clients/cli/connections.c:5289
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' argument is required."
-msgstr "錯誤：需要「type」引數。"
+msgstr "錯誤：需要「%s」引數。"
 
 #: ../clients/cli/connections.c:6254
 #, c-format
@@ -1233,7 +1386,7 @@ msgstr "[「%s」設定值]\n"
 #. *              However, you should translate terms enclosed in <>.
 #.
 #: ../clients/cli/connections.c:6363
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "---[ Main menu ]---\n"
 "goto     [<setting> | <prop>]        :: go to a setting or property\n"
@@ -1250,7 +1403,7 @@ msgid ""
 "nmcli    <conf-option> <value>       :: nmcli configuration\n"
 "quit                                 :: exit nmcli\n"
 msgstr ""
-"---[ Main menu ]---\n"
+"---[ 主選單 ]---\n"
 "goto     [<setting> | <prop>]        :: 前往某項設定或內容\n"
 "remove   <setting>[.<prop>] | <prop> :: 移除設定或重設內容值\n"
 "set      [<setting>.<prop> <value>]  :: 設定內容值\n"
@@ -1347,7 +1500,7 @@ msgstr ""
 "範例：nmcli ipv4> print all\n"
 
 #: ../clients/cli/connections.c:6419
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
 "\n"
@@ -1360,12 +1513,14 @@ msgid ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 msgstr ""
-"verify [all]  :: 驗證設定或連線是否有效\n"
+"verify [all | fix]  :: 驗證設定或連線是否有效\n"
 "\n"
 "驗證設定或連線是否有效，並且可在之後進行儲存。它會顯示無效的值或是錯誤。\n"
-"\n"
-"範例：nmcli> verify\n"
+"有些錯誤可能可以藉由「fix」選項修理\n"
+"範例：nmcli> nmcli> verify\n"
+"          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
+"\n"
 
 #: ../clients/cli/connections.c:6428
 #, c-format
@@ -1382,11 +1537,13 @@ msgid ""
 "connection\n"
 "profile must be deleted.\n"
 msgstr ""
-"save [persistent | temporary] :: save the connection將連接配置文件發送到"
-"NetworkManager，它將永久保存，或者只保留在內存中。沒有參數的'save'意味著'保存"
-"持久'。請注意，一旦您持久保存配置文件，這些設置將在重新啟動或重新啟動時保存。"
-"後續更改也可以是臨時更改或持久更改，但任何臨時更改都不會在重新引導或重新啟動"
-"時保留。如果要完全刪除持久連接，則必須刪除連接配置文件。\n"
+"save [persistent | temporary] :: 儲存連線\n"
+"\n"
+"將連接配置文件發送到NetworkManager，它將永久保存，或者只保留在\n"
+"記憶體中。沒有參數的'save'意味著'save persistent'。\n"
+"請注意，一旦您持久保存配置文件，這些設置將在重新啟動或重新啟動時保存\n"
+"。後續更改也可以是臨時更改或持久更改，但任何臨時更改都不會在重新引導\n"
+"或重新啟動時保留。如果要完全刪除持久連接，則必須刪除連接配置文件。\n"
 
 #: ../clients/cli/connections.c:6439
 #, c-format
@@ -1428,7 +1585,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:6452
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
 "\n"
@@ -1445,13 +1602,15 @@ msgstr ""
 "nmcli [<conf-option> <value>]  :: nmcli 配置\n"
 "\n"
 "配置 nmcli。下列爲可用的選項：\n"
-"status-line yes | no        [default: no]\n"
-"save-confirmation yes | no  [default: yes]\n"
-"prompt-color <0-8>          [default: 0]\n"
+"status-line yes | no          [default: no]\n"
+"save-confirmation yes | no    [default: yes]\n"
+"show-secrets yes | no         [default: no]\n"
+"prompt-color <color> | <0-8>  [default: 0]\n"
 "%s\n"
 "範例：nmcli> nmcli status-line yes\n"
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
+"\n"
 
 #: ../clients/cli/connections.c:6474 ../clients/cli/connections.c:6610
 #, c-format
@@ -1512,7 +1671,7 @@ msgstr ""
 "這項指令會將提供的 <value> 設置至此內容\n"
 
 #: ../clients/cli/connections.c:6573
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
 "\n"
@@ -1555,11 +1714,16 @@ msgid ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 msgstr ""
-"去掉 [<value>|<index>|<option name>] ::刪除值刪除屬性值。對於單值屬性，這會將"
-"屬性設置回其默認值。對於容器類型屬性，這將刪除該屬性的所有值，或者您可以指定"
-"一個參數以僅刪除單個項目或選項。參數是要刪除的項的值或索引，或者是選項名稱"
-"（對於具有命名選項的屬性）。示例：nmcli ipv4.dns>刪除8.8.8.8 nmcli ipv4.dns>"
-"刪除2 nmcli bond.options>刪除downdelay\n"
+"remove [<value>|<index>|<option name>] ::刪除值\n"
+"\n"
+"移除屬性值。對於單值屬性，這會將屬性設置回其默認值。對於容器類型\n"
+"屬性，這將刪除該屬性的所有值，或者您可以指定一個參數以僅刪除單個\n"
+"項目或選項。參數是要刪除的項的值或索引，或者是選項名稱（對於具有\n"
+"命名選項的屬性）。\n"
+"\n"
+"示例：nmcli ipv4.dns> remove 8.8.8.8\n"
+"          nmcli ipv4.dns> remove 2\n"
+"          nmcli bond.options> remove downdelay\n"
 "\n"
 
 #: ../clients/cli/connections.c:6594
@@ -1609,14 +1773,14 @@ msgstr "錯誤：設定「%s」乃必要的，並且不可移除。\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
 #: ../clients/cli/connections.c:6822
-#, fuzzy, c-format
+#, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
-msgstr "[ Connection type: %s | name: %s | UUID: %s | dirty: %s ]\n"
+msgstr "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 
 #: ../clients/cli/connections.c:6858
-#, fuzzy, c-format
+#, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
-msgstr "連線尚未儲存。您是否真的希望退出？[y/n]\n"
+msgstr "連線尚未儲存。您是否真的希望退出？ %s"
 
 #: ../clients/cli/connections.c:6899
 #, c-format
@@ -1657,7 +1821,7 @@ msgstr "錯誤：%s\n"
 #: ../clients/cli/connections.c:6997
 #, c-format
 msgid "Unknown command argument: '%s'\n"
-msgstr "不明的檔案引數：「%s」\n"
+msgstr "不明的指令引數：「%s」\n"
 
 #: ../clients/cli/connections.c:7088
 #, c-format
@@ -1680,14 +1844,14 @@ msgid "Error: property %s\n"
 msgstr "錯誤：內容 %s\n"
 
 #: ../clients/cli/connections.c:7171
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
 "immediate activation of the connection.\n"
 "Do you still want to save? %s"
 msgstr ""
 "以「autoconnect=yes」儲存連線。這可能會即刻將連線啟用。\n"
-"您是否還是希望儲存？[是]"
+"您是否還是希望儲存？ %s"
 
 #: ../clients/cli/connections.c:7257
 #, c-format
@@ -1774,24 +1938,23 @@ msgid "Error: unknown setting: '%s'\n"
 msgstr "錯誤：不明的設定：「%s」\n"
 
 #: ../clients/cli/connections.c:7680
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' setting not present in the connection\n"
-msgstr "設定「%s」不存在連線中。\n"
+msgstr "設定「%s」不存在連線中\n"
 
 #: ../clients/cli/connections.c:7711
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid property: %s%s\n"
-msgstr "錯誤：無效的內容：%s\n"
+msgstr "錯誤：無效的內容：%s%s\n"
 
 #: ../clients/cli/connections.c:7713
-#, fuzzy
 msgid ", neither a valid setting name"
-msgstr "錯誤：無效的內容：%s，也不是組有效的設定名稱。\n"
+msgstr "，也不是有效的設定名稱"
 
 #: ../clients/cli/connections.c:7729
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid verify option: %s\n"
-msgstr "無效的選項「%s」"
+msgstr "無效的驗證選項：%s\n"
 
 #: ../clients/cli/connections.c:7737
 #, c-format
@@ -1809,19 +1972,19 @@ msgid "The error cannot be fixed automatically.\n"
 msgstr "錯誤無法自動修復。\n"
 
 #: ../clients/cli/connections.c:7776
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid argument '%s'\n"
-msgstr "錯誤：無效的額外引數「%s」。"
+msgstr "錯誤：無效的引數「%s」\n"
 
 #: ../clients/cli/connections.c:7830
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
-msgstr "錯誤：儲存「%s」(%s)連線失敗：(%d) %s\n"
+msgstr "錯誤：儲存「%s」(%s) 連線失敗：%s\n"
 
 #: ../clients/cli/connections.c:7836
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
-msgstr "錯誤：儲存「%s」(%s)連線失敗：(%d) %s\n"
+msgstr "錯誤：儲存「%s」(%s) 連線逾時\n"
 
 #: ../clients/cli/connections.c:7841
 #, c-format
@@ -1829,9 +1992,9 @@ msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "連線「%s」(%s) 已成功儲存。\n"
 
 #: ../clients/cli/connections.c:7842
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
-msgstr "連線「%s」 (%s) 已成功新增。\n"
+msgstr "連線「%s」 (%s) 已成功更新。\n"
 
 #: ../clients/cli/connections.c:7875
 #, c-format
@@ -1863,9 +2026,9 @@ msgid "Error: Cannot activate connection: %s.\n"
 msgstr "錯誤：無法啟用連線：%s。\n"
 
 #: ../clients/cli/connections.c:7922
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
-msgstr "錯誤：啟用「%s」(%s) 連線失敗：(%d) %s\n"
+msgstr "錯誤：啟用「%s」(%s) 連線失敗：%s\n"
 
 #: ../clients/cli/connections.c:7929
 msgid "Monitoring connection activation (press any key to continue)\n"
@@ -1882,9 +2045,9 @@ msgid "Error: save-confirmation: %s\n"
 msgstr "錯誤：save-confirmation：%s\n"
 
 #: ../clients/cli/connections.c:7981
-#, fuzzy, c-format
+#, c-format
 msgid "Error: show-secrets: %s\n"
-msgstr "錯誤：「show active」：%s"
+msgstr "錯誤：show-secrets：%s\n"
 
 #: ../clients/cli/connections.c:7988
 #, c-format
@@ -1958,9 +2121,9 @@ msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr "輸入「describe [<setting>.<prop>]」以取得詳細的內容描述。"
 
 #: ../clients/cli/connections.c:8354
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to modify connection '%s': %s"
-msgstr "錯誤：修改連線「%s」失敗：(%d) %s"
+msgstr "錯誤：修改連線「%s」失敗：%s"
 
 #: ../clients/cli/connections.c:8360
 #, c-format
@@ -1973,39 +2136,38 @@ msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s （%s) 克隆為 %s （%s).\n"
 
 #: ../clients/cli/connections.c:8502
-#, fuzzy
 msgid "New connection name: "
-msgstr "新連線"
+msgstr "新連線名稱："
 
 #: ../clients/cli/connections.c:8504
-#, fuzzy, c-format
+#, c-format
 msgid "Error: <new name> argument is missing."
-msgstr "錯誤：沒有 %s 參數。"
+msgstr "錯誤：沒有 <new name> 參數。"
 
 #: ../clients/cli/connections.c:8509 ../clients/cli/connections.c:9005
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown extra argument: '%s'."
-msgstr "錯誤：無效的額外引數「%s」。"
+msgstr "錯誤：未知的額外引數：「%s」。"
 
 #: ../clients/cli/connections.c:8554
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections deleted."
-msgstr "錯誤：尚未指定連線。"
+msgstr "錯誤：沒有刪除所有連線。"
 
 #: ../clients/cli/connections.c:8555
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection deletion failed: %s\n"
-msgstr "錯誤：連線刪除失敗：%s"
+msgstr "錯誤：連線刪除失敗：%s\n"
 
 #: ../clients/cli/connections.c:8611 ../clients/cli/connections.c:8732
 #, c-format
 msgid "Error: %s.\n"
-msgstr "錯誤：%s.\n"
+msgstr "錯誤：%s。\n"
 
 #: ../clients/cli/connections.c:8612 ../clients/cli/connections.c:8733
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections found."
-msgstr "錯誤：「%s」不是個有效的「connection」指令。"
+msgstr "錯誤：沒有找到所有連線。"
 
 #. truncate trailing ", "
 #: ../clients/cli/connections.c:8663
@@ -2014,29 +2176,29 @@ msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "錯誤：無法刪除不明的連線：%s。"
 
 #: ../clients/cli/connections.c:8673
-#, fuzzy, c-format
+#, c-format
 msgid "%s: connection profile changed\n"
-msgstr "連線失敗"
+msgstr "%s: 連線設定檔已變更\n"
 
 #: ../clients/cli/connections.c:8699
-#, fuzzy, c-format
+#, c-format
 msgid "%s: connection profile created\n"
-msgstr "連線失敗"
+msgstr "%s: 連線設定檔已建立\n"
 
 #: ../clients/cli/connections.c:8708
-#, fuzzy, c-format
+#, c-format
 msgid "%s: connection profile removed\n"
-msgstr "連線已移除"
+msgstr "%s: 連線設定檔已移除\n"
 
 #: ../clients/cli/connections.c:8770
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to reload connections: %s."
-msgstr "錯誤：無法新增「%s」連線：(%d) %s"
+msgstr "錯誤：無法重新載入連線：%s。"
 
 #: ../clients/cli/connections.c:8803
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to load connection: %s."
-msgstr "錯誤：無法新增「%s」連線：(%d) %s"
+msgstr "錯誤：無法載入連線：%s。"
 
 #: ../clients/cli/connections.c:8811
 #, c-format
@@ -2044,9 +2206,8 @@ msgid "Could not load file '%s'\n"
 msgstr "無法載入檔案「%s」\n"
 
 #: ../clients/cli/connections.c:8818
-#, fuzzy
 msgid "File to import: "
-msgstr "加密失敗：%d。"
+msgstr "要匯入的檔案："
 
 #: ../clients/cli/connections.c:8852
 #, c-format
@@ -2064,9 +2225,9 @@ msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr "警告：已經指定了'file'，忽略了額外的。\n"
 
 #: ../clients/cli/connections.c:8899
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown parameter: %s"
-msgstr "不明的參數：%s\n"
+msgstr "不明的參數：%s"
 
 #: ../clients/cli/connections.c:8910
 #, c-format
@@ -2074,49 +2235,48 @@ msgid "Error: 'type' argument is required."
 msgstr "錯誤：需要「type」引數。"
 
 #: ../clients/cli/connections.c:8914
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'file' argument is required."
-msgstr "錯誤：需要「ifname」引數。"
+msgstr "錯誤：需要「file」引數。"
 
 #: ../clients/cli/connections.c:8923
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to find VPN plugin for %s."
-msgstr "錯誤：無法修改 %s.%s：%s。"
+msgstr "錯誤：無法找到 %s 的 VPN 插件。"
 
 #: ../clients/cli/connections.c:8930 ../clients/cli/connections.c:9026
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to load VPN plugin: %s."
-msgstr "錯誤：無法修改 %s.%s：%s。"
+msgstr "錯誤：無法載入 VPN 插件：%s。"
 
 #: ../clients/cli/connections.c:8939
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to import '%s': %s."
-msgstr "錯誤：無法修改 %s.%s：%s。"
+msgstr "錯誤：無法匯入 「%s」：%s。"
 
 #: ../clients/cli/connections.c:9012
-#, fuzzy
 msgid "Output file name: "
-msgstr "檔案名稱"
+msgstr "輸出檔案名稱："
 
 #: ../clients/cli/connections.c:9017
-#, fuzzy, c-format
+#, c-format
 msgid "Error: the connection is not VPN."
-msgstr "錯誤：連線無效：%s\n"
+msgstr "錯誤：連線不是 VPN。"
 
 #: ../clients/cli/connections.c:9039
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to create temporary file %s."
-msgstr "無法建立暫時性檔案：%s"
+msgstr "錯誤：無法建立暫時性檔案 %s。"
 
 #: ../clients/cli/connections.c:9047
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to export '%s': %s."
-msgstr "錯誤：設置「%s」內容失敗：%s\n"
+msgstr "錯誤：匯出「%s」失敗：%s。"
 
 #: ../clients/cli/connections.c:9059
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to read temporary file '%s': %s."
-msgstr "錯誤：移除「%s」的值失敗：%s\n"
+msgstr "錯誤：讀取暫時性檔案「%s」 失敗：%s。"
 
 #. define some prompts
 #: ../clients/cli/devices.c:37
@@ -2124,9 +2284,8 @@ msgid "Interface: "
 msgstr "介面卡："
 
 #: ../clients/cli/devices.c:38
-#, fuzzy
 msgid "Interface(s): "
-msgstr "介面卡："
+msgstr "介面："
 
 #: ../clients/cli/devices.c:73 ../clients/cli/devices.c:1229
 msgid "(none)"
@@ -2191,16 +2350,42 @@ msgid ""
 "  lldp [list [ifname <ifname>]]\n"
 "\n"
 msgstr ""
-"用法：nmcli device {COMMAND |幫助} COMMAND：= {status |顯示|設置|連接|重新申"
-"請修改|斷開|刪除|監視器| wifi | lldp}狀態顯示[<ifname>]設置[ifname] <ifname> "
-"[autoconnect yes | no] [managed yes | no] connect <ifname>重新申請 <ifname>修"
-"改 <ifname> （[+ |  - ]<setting>。<property> <value>）+斷開連接 "
-"<ifname> ......刪除 <ifname> ......監視器 <ifname> ... wifi [list [ifname "
-"<ifname>] [bssid <BSSID>]] wifi連接 <(B)SSID> [密碼 <password>] [wep-key-"
-"type key | phrase] [ifname <ifname>] [bssid <BSSID>] [名稱 <name>] [私有是|"
-"否] [隱藏是|否] wifi熱點[ifname <ifname>] [con-name <name>] [ssid <SSID>] "
-"[band a | bg] [頻道 <channel>] [密碼 <password>] wifi重新掃描[ifname "
-"<ifname>] [[ssid <SSID to scan>] ...] lldp [list [ifname <ifname>]]\n"
+"用法：nmcli device { COMMAND | help }\n"
+"\n"
+"COMMAND := { status | show | set | connect | reapply | modify | disconnect | "
+"delete | monitor | wifi | lldp }\n"
+"\n"
+"  status\n"
+"\n"
+"  show [<ifname>]\n"
+"\n"
+"  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n"
+"\n"
+"  connect <ifname>\n"
+"\n"
+"  reapply <ifname>\n"
+"\n"
+"  modify <ifname> ([+|-]<setting>.<property> <value>)+\n"
+"\n"
+"  disconnect <ifname> ...\n"
+"\n"
+"  delete <ifname> ...\n"
+"\n"
+"  monitor <ifname> ...\n"
+"\n"
+"  wifi [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|auto]]\n"
+"\n"
+"  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[ifname <ifname>]\n"
+"                         [bssid <BSSID>] [name <name>] [private yes|no] "
+"[hidden yes|no]\n"
+"\n"
+"  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] "
+"[channel <channel>] [password <password>]\n"
+"\n"
+"  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
+"\n"
+"  lldp [list [ifname <ifname>]]\n"
 "\n"
 
 #: ../clients/cli/devices.c:712
@@ -2220,18 +2405,16 @@ msgid ""
 "status'.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device status { help }\n"
+"用法：nmcli device status { help }\n"
 "\n"
-"Show status for all devices.\n"
-"By default, the following columns are shown:\n"
-" DEVICE     - interface name\n"
-" TYPE       - device type\n"
-" STATE      - device state\n"
-" CONNECTION - connection activated on device (if any)\n"
-"Displayed columns can be changed using '--fields' global option. 'status' "
-"is\n"
-"the default command, which means 'nmcli device' calls 'nmcli device "
-"status'.\n"
+"顯示所有裝置的狀態。\n"
+"預設情況下，會顯示以下欄位：\n"
+" DEVICE     - 介面名稱\n"
+" TYPE       - 裝置類型\n"
+" STATE      - 裝置狀態\n"
+" CONNECTION - 裝置啟用的連線（如果有）\n"
+"顯示的欄位可以使用「--fields」全域選項變更。「status」是\n"
+"預設指令，這表示「nmcli device」呼叫「nmcli device status」。\n"
 "\n"
 
 #: ../clients/cli/devices.c:727
@@ -2245,12 +2428,12 @@ msgid ""
 "The command lists details for all devices, or for a given device.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device show { ARGUMENTS | help }\n"
+"用法：nmcli device show { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := [<ifname>]\n"
 "\n"
-"Show details of device(s).\n"
-"The command lists details for all devices, or for a given device.\n"
+"顯示裝置的詳細資訊。\n"
+"這個指令列出所有裝置或指定裝置的詳細資訊。\n"
 "\n"
 
 #: ../clients/cli/devices.c:738
@@ -2266,18 +2449,17 @@ msgid ""
 "It will also consider connections that are not set to auto-connect.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device connect { ARGUMENTS | help }\n"
+"用法：nmcli device connect { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := <ifname>\n"
 "\n"
-"Connect the device.\n"
-"NetworkManager will try to find a suitable connection that will be "
-"activated.\n"
-"It will also consider connections that are not set to auto-connect.\n"
+"裝置連線。\n"
+"NetworkManager 會嘗試找到會被啟用的適合的連線。\n"
+"它也會考慮沒有設為自動連線的連線。\n"
 "\n"
 
 #: ../clients/cli/devices.c:750
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -2287,14 +2469,6 @@ msgid ""
 "made since it was last applied.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device disconnect { ARGUMENTS | help }\n"
-"\n"
-"ARGUMENTS := <ifname>\n"
-"\n"
-"Disconnect the device.\n"
-"The command disconnects the device and prevents it from auto-activating\n"
-"further connections without user/manual intervention.\n"
-"\n"
 
 #: ../clients/cli/devices.c:761
 #, c-format
@@ -2317,16 +2491,24 @@ msgid ""
 "nmcli dev mod em1 -ipv4.dns 1\n"
 "nmcli dev mod em1 -ipv6.addr \"abbe::cafe/56\"\n"
 msgstr ""
-"用法：nmcli設備修改{ARGUMENTS | --help} ARGUMENTS：= <ifname> （[+ |  "
-"- ]<setting>。<property> <value>）+修改設備上當前活動的一個或多個屬性，而不修"
-"改連接配置文件。這些變化立即生效。對於多值屬性，您可以對屬性名稱使用可選"
-"的“+”或“ - ”前綴。 “+”符號允許附加項而不是覆蓋整個值。 “ - ”符號允許刪除所選"
-"項而不是整個值。示例：nmcli dev mod em1 ipv4.method manual ipv4."
-"addr“192.168.1.2 / 24,10.10.1.5/8”nmcli dev mod em1 + ipv4.dns 8.8.4.4 nmcli "
-"dev mod em1 -ipv4.dns 1 nmcli dev mod em1 -ipv6.addr“abbe :: cafe / 56”\n"
+"用法：nmcli device modify { ARGUMENTS | --help }\n"
+"\n"
+"ARGUMENTS := <ifname> ([+|-]<setting>.<property> <value>)+\n"
+"\n"
+"修改設備上當前活動的一個或多個屬性，而不修改連接配置文件。這些變化\n"
+"立即生效。對於多值屬性，您可以對屬性名稱使用可選的“+”或“ - ”前綴。 “+”\n"
+"符號允許附加項而不是覆蓋整個值。 “ - ”符號允許刪除所選項而不是整個值。\n"
+"\n"
+"示例：\n"
+"nmcli dev mod em1 ipv4.method manual ipv4.addr \"192.168.1.2/24, "
+"10.10.1.5/8\"\n"
+"nmcli dev mod em1 +ipv4.dns 8.8.4.4\n"
+"nmcli dev mod em1 -ipv4.dns 1\n"
+"nmcli dev mod em1 -ipv6.addr \"abbe::cafe/56\"\n"
+"\n"
 
 #: ../clients/cli/devices.c:781
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -2337,17 +2519,16 @@ msgid ""
 "further connections without user/manual intervention.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device disconnect { ARGUMENTS | help }\n"
+"用法：nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
-"ARGUMENTS := <ifname>\n"
+"ARGUMENTS := <ifname> ...\n"
 "\n"
-"Disconnect the device.\n"
-"The command disconnects the device and prevents it from auto-activating\n"
-"further connections without user/manual intervention.\n"
+"裝置斷線。\n"
+"這個指令使裝置斷線，並避免它在沒有使用者/手動介入下自動啟用連線。\n"
 "\n"
 
 #: ../clients/cli/devices.c:793
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -2359,12 +2540,13 @@ msgid ""
 "command.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device show { ARGUMENTS | help }\n"
+"用法：nmcli device delete { ARGUMENTS | help }\n"
 "\n"
-"ARGUMENTS := [<ifname>]\n"
+"ARGUMENTS := <ifname> ...\n"
 "\n"
-"Show details of device(s).\n"
-"The command lists details for all devices, or for a given device.\n"
+"刪除軟體裝置。\n"
+"這個指令會移除介面。這只適用於軟體裝置（例如 bond、橋接等）。\n"
+"硬體裝置無法被這個指令刪除。\n"
 "\n"
 
 #: ../clients/cli/devices.c:806
@@ -2380,13 +2562,18 @@ msgid ""
 "Modify device properties.\n"
 "\n"
 msgstr ""
-"用法：nmcli設備集{ARGUMENTS |幫助} ARGUMENTS：= DEVICE {PROPERTY "
-"[PROPERTY ...]}設備：= [ifname] <ifname> PROPERTY：= {autoconnect {yes |沒"
-"有} | {managed {yes | no}修改設備屬性。\n"
+"用法：nmcli device set { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
+"DEVICE    := [ifname] <ifname> \n"
+"PROPERTY  := { autoconnect { yes | no } |\n"
+"             { managed { yes | no }\n"
+"\n"
+"修改裝置屬性。\n"
 "\n"
 
 #: ../clients/cli/devices.c:819
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
@@ -2397,12 +2584,13 @@ msgid ""
 "Monitors all devices in case no interface is specified.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device show { ARGUMENTS | help }\n"
+"用法：nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
-"ARGUMENTS := [<ifname>]\n"
+"ARGUMENTS := [<ifname>] ...\n"
 "\n"
-"Show details of device(s).\n"
-"The command lists details for all devices, or for a given device.\n"
+"監控裝置活動。\n"
+"這個指令會在指定的裝置變更狀態時列出一行。\n"
+"如果沒有指定介面，會監控所有裝置。\n"
 "\n"
 
 #: ../clients/cli/devices.c:831
@@ -2458,29 +2646,51 @@ msgid ""
 "use 'nmcli device wifi list' for that.\n"
 "\n"
 msgstr ""
-"用法：nmcli device wifi {ARGUMENTS |幫助}在Wi-Fi設備上執行操作。 ARGUMENTS："
-"= [list [ifname <ifname>] [bssid <BSSID>]]列出可用的Wi-Fi接入點。 "
-"'ifname'和'bssid'選項可用於列出特定接口的AP或特定的BSSID。 ARGUMENTS：=連接 "
-"<(B)SSID> [密碼 <password>] [wep-key-type key | phrase] [ifname <ifname>] "
-"[bssid <BSSID>] [名稱 <name>] [private yes | no] [hidden yes | no]連接到SSID"
-"或BSSID指定的Wi-Fi網絡。該命令創建一個新連接，然後在設備上激活它。這是在GUI客"
-"戶端中單擊SSID的命令行對應物。該命令始終創建新連接，因此它主要用於連接到新的"
-"Wi-Fi網絡。如果已存在網絡連接，則最好按如下方式顯示現有配置文件：nmcli con "
-"up id <name>。請注意，目前僅支持開放，WEP和WPA-PSK網絡。還假設通過DHCP獲得IP"
-"配置。 ARGUMENTS：= hotspot [ifname <ifname>] [con-name <name>] [ssid "
-"<SSID>] [band a | bg] [頻道 <channel>] [密碼 <password>]創建一個Wi-Fi熱點。使"
-"用'connection down'或'device disconnect'來停止熱點。熱點的參數可能受可選參數"
-"的影響：ifname  - 要使用con-name的Wi-Fi設備 - 創建的熱點連接配置文件的名稱"
-"ssid  - 熱點頻段的SSID  - 使用頻道的Wi-Fi頻段 -  Wi-Fi通道使用密碼 - 用於熱點"
-"的密碼ARGUMENTS：= rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]請求"
-"NetworkManager立即重新掃描可用的接入點。 NetworkManager定期掃描Wi-Fi網絡，但"
-"在某些情況下，手動開始掃描可能很有用。 'ssid'允許掃描特定的SSID，這對於具有隱"
-"藏SSID的AP非常有用。可以給出更多'ssid'參數。請注意，此命令不顯示AP，請使"
-"用“nmcli device wifi list”。\n"
+"用法：nmcli device wifi { ARGUMENTS | help }\n"
+"\n"
+"在Wi-Fi設備上執行操作。\n"
+"\n"
+"ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|"
+"auto]]\n"
+"\n"
+"列出可用的 Wi-Fi 熱點。「ifname」和「bssid」選項可用於列出特定接口的AP\n"
+"或特定的BSSID。「--rescan」旗標表示是否要觸發新的 Wi-Fi 掃描。\n"
+"\n"
+"ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type key|"
+"phrase] [ifname <ifname>]\n"
+"                     [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
+"yes|no]\n"
+"\n"
+"連接到SSID或BSSID指定的Wi-Fi網絡。該命令創建一個新連接，然後\n"
+"在設備上激活它。這是在GUI客戶端中單擊SSID的命令行對應物。該\n"
+"命令始終創建新連接，因此它主要用於連接到新的Wi-Fi網絡。如果已\n"
+"存在網絡連接，則最好按如下方式顯示現有配置文件：\n"
+"nmcli con up id <name>。請注意，目前僅支持開放，WEP和WPA-PSK\n"
+"網絡。還假設通過DHCP獲得IP配置。\n"
+"\n"
+"ARGUMENTS := hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>]\n"
+"                     [band a|bg] [channel <channel>] [password <password>]\n"
+"\n"
+"創建一個Wi-Fi熱點。使用「connection down」或「device disconnect」\n"
+"來停止熱點。\n"
+"熱點的參數可能受可選參數的影響：\n"
+"ifname - 要使用的Wi-Fi設備\n"
+"con-name - 創建的熱點連接配置文件的名稱\n"
+"ssid - 熱點的SSID \n"
+"band - 要使用的 Wi-Fi band\n"
+"channel - 要使用的 Wi-Fi 頻道\n"
+"password - 用於熱點的密碼\n"
+"\n"
+"ARGUMENTS := rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
+"\n"
+"請求NetworkManager立即重新掃描可用的熱點。 NetworkManager定期\n"
+"掃描Wi-Fi網絡，但在某些情況下，手動開始掃描可能很有用。 'ssid'允許\n"
+"掃描特定的SSID，這對於具有隱藏SSID的AP非常有用。可以給出更多'ssid'\n"
+"參數。請注意，此命令不顯示AP，請使用“nmcli device wifi list”。\n"
 "\n"
 
 #: ../clients/cli/devices.c:878
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
@@ -2491,14 +2701,12 @@ msgid ""
 "used to list neighbors for a particular interface.\n"
 "\n"
 msgstr ""
-"Usage: nmcli device wimax { ARGUMENTS | help }\n"
+"用法：nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
-"Perform operation on WiMAX devices.\n"
+"ARGUMENTS := [list [ifname <ifname>]]\n"
 "\n"
-"ARGUMENTS := [list [ifname <ifname>] [nsp <name>]]\n"
-"\n"
-"List available WiMAX NSPs. The 'ifname' and 'nsp' options can be used to\n"
-"list networks for a particular interface, or with a specific NSP.\n"
+"列出透過 LLDP 找到的鄰近裝置。可以使用「ifname」選項來列出特定介面的\n"
+"鄰近裝置。\n"
 "\n"
 
 #: ../clients/cli/devices.c:976
@@ -2512,14 +2720,14 @@ msgid "Warning: argument '%s' is duplicated.\n"
 msgstr "警告：參數'%s' 是重複的。\n"
 
 #: ../clients/cli/devices.c:1002
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "錯誤：找不到「%s」裝置。"
+msgstr "錯誤：找不到「%s」裝置。\n"
 
 #: ../clients/cli/devices.c:1003
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices found."
-msgstr "錯誤：找不到 Wi-Fi 裝置。"
+msgstr "錯誤：沒有找到所有裝置。"
 
 #: ../clients/cli/devices.c:1034
 msgid "No interface specified"
@@ -2583,29 +2791,29 @@ msgid "Error: Timeout %d sec expired."
 msgstr "錯誤：逾時 %d 秒。"
 
 #: ../clients/cli/devices.c:1811
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
-msgstr "成功：裝置「%s」已成功啟用。"
+msgstr "裝置「%s」已成功以「%s」啟用。\n"
 
 #: ../clients/cli/devices.c:1817
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection activation failed: (%d) %s.\n"
-msgstr "錯誤：連線啟用失敗：(%d) %s。"
+msgstr "錯誤：連線啟用失敗：(%d) %s。\n"
 
 #: ../clients/cli/devices.c:1856
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
-msgstr "錯誤：無法設定主機名稱：(%d) %s"
+msgstr "錯誤：無法設定 Wi-Fi 熱點：%s"
 
 #: ../clients/cli/devices.c:1859
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to add/activate new connection: %s"
-msgstr "錯誤：新增/啟用新連線失敗：(%d) %s"
+msgstr "錯誤：新增/啟用新連線失敗：%s"
 
 #: ../clients/cli/devices.c:1862
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate connection: %s"
-msgstr "錯誤：新增/啟用新連線失敗：(%d) %s"
+msgstr "錯誤：啟用連線失敗：%s"
 
 #: ../clients/cli/devices.c:1932
 #, c-format
@@ -2613,9 +2821,9 @@ msgid "Error: Device activation failed: %s"
 msgstr "錯誤：裝置啟用失敗：%s"
 
 #: ../clients/cli/devices.c:1941
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device activation failed: device was disconnected"
-msgstr "錯誤：裝置啟用失敗：%s"
+msgstr "錯誤：裝置啟用失敗：奘置斷線"
 
 #: ../clients/cli/devices.c:1994
 #, c-format
@@ -2624,24 +2832,24 @@ msgstr "錯誤：不允許額外的引數：「%s」。"
 
 #: ../clients/cli/devices.c:2067 ../clients/cli/devices.c:2082
 #: ../clients/cli/devices.c:2319
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully disconnected.\n"
-msgstr "成功：裝置「%s」已經成功地斷線。"
+msgstr "裝置「%s」已經成功地斷線。\n"
 
 #: ../clients/cli/devices.c:2070 ../clients/cli/devices.c:2393
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully removed.\n"
-msgstr "成功：裝置「%s」已成功啟用。"
+msgstr "裝置「%s」已成功移除。\n"
 
 #: ../clients/cli/devices.c:2132 ../clients/cli/devices.c:2202
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s"
-msgstr "錯誤：裝置「%s」（%s）斷線失敗：%s"
+msgstr "錯誤：重新套用連線到裝置「%s」（%s）失敗：%s"
 
 #: ../clients/cli/devices.c:2142 ../clients/cli/devices.c:2211
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
-msgstr "連線已成功啟用（D-Bus 啟用路徑：%s）\n"
+msgstr "連線已成功重新套用到裝置「%s」。\n"
 
 #: ../clients/cli/devices.c:2236
 #, c-format
@@ -2649,29 +2857,29 @@ msgid "Error: Reading applied connection from device '%s' (%s) failed: %s"
 msgstr "錯誤：從設備讀取應用的連接'%s' （%s) 失敗： %s"
 
 #: ../clients/cli/devices.c:2303
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices disconnected."
-msgstr "錯誤：找不到 Wi-Fi 裝置。"
+msgstr "錯誤：沒有斷線所有裝置。"
 
 #: ../clients/cli/devices.c:2304
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
-msgstr "錯誤：裝置「%s」（%s）斷線失敗：%s"
+msgstr "錯誤：裝置「%s」（%s）斷線失敗：%s\n"
 
 #: ../clients/cli/devices.c:2384
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices deleted."
-msgstr "錯誤：找不到 Wi-Fi 裝置。"
+msgstr "錯誤：沒有刪除所有裝置。"
 
 #: ../clients/cli/devices.c:2385
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
-msgstr "錯誤：裝置「%s」（%s）斷線失敗：%s"
+msgstr "錯誤：裝置「%s」（%s）刪除失敗：%s\n"
 
 #: ../clients/cli/devices.c:2467
-#, fuzzy, c-format
+#, c-format
 msgid "Error: No property specified."
-msgstr "錯誤：尚未指定連線。"
+msgstr "錯誤：尚未指定屬性。"
 
 #: ../clients/cli/devices.c:2482 ../clients/cli/devices.c:2499
 #: ../clients/cli/general.c:692 ../clients/cli/general.c:704
@@ -2680,9 +2888,9 @@ msgid "Error: '%s' argument is missing."
 msgstr "錯誤：找不到「%s」參數。"
 
 #: ../clients/cli/devices.c:2488
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'managed': %s."
-msgstr "錯誤：「mode」：%s。"
+msgstr "錯誤：「managed」：%s。"
 
 #: ../clients/cli/devices.c:2505
 #, c-format
@@ -2690,24 +2898,24 @@ msgid "Error: 'autoconnect': %s."
 msgstr "錯誤：「autoconnect」：%s。"
 
 #: ../clients/cli/devices.c:2513 ../clients/cli/general.c:718
-#, fuzzy, c-format
+#, c-format
 msgid "Error: property '%s' is not known."
-msgstr "錯誤：無效的內容「%s」：%s。"
+msgstr "錯誤：屬性「%s」未知。"
 
 #: ../clients/cli/devices.c:2562
-#, fuzzy, c-format
+#, c-format
 msgid "%s: using connection '%s'\n"
-msgstr "沒有此連線「%s」"
+msgstr "%s: 使用連線「%s」\n"
 
 #: ../clients/cli/devices.c:2588
 #, c-format
 msgid "%s: device created\n"
-msgstr "%s: 設備創建\n"
+msgstr "%s: 裝置已建立\n"
 
 #: ../clients/cli/devices.c:2595
-#, fuzzy, c-format
+#, c-format
 msgid "%s: device removed\n"
-msgstr "裝置已移除"
+msgstr "%s: 裝置已移除\n"
 
 #: ../clients/cli/devices.c:2775
 msgid "Wi-Fi scan list"
@@ -2734,11 +2942,12 @@ msgid "Error: Device '%s' not found."
 msgstr "錯誤：找不到「%s」裝置。"
 
 #: ../clients/cli/devices.c:3054
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
 "NetworkManager Wi-Fi plugin."
-msgstr "錯誤：裝置「%s」不是個 Wi-Fi 裝置。"
+msgstr ""
+"錯誤：裝置「%s」不被識別為 Wi-Fi 裝置，請檢查 NetworkManager Wi-Fi 插件。"
 
 #: ../clients/cli/devices.c:3058 ../clients/cli/devices.c:3318
 #: ../clients/cli/devices.c:3819 ../clients/cli/devices.c:3979
@@ -2788,9 +2997,9 @@ msgid "Error: No Wi-Fi device found."
 msgstr "錯誤：找不到 Wi-Fi 裝置。"
 
 #: ../clients/cli/devices.c:3340
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
-msgstr "錯誤：無法修改 %s.%s：%s。"
+msgstr "錯誤：無法掃描隱藏 SSID：%s。"
 
 #: ../clients/cli/devices.c:3367
 #, c-format
@@ -2805,7 +3014,7 @@ msgstr "錯誤：找不到 BSSID 爲「%s」的存取點。"
 #: ../clients/cli/devices.c:3397
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
-msgstr ""
+msgstr "錯誤：連線「%s」存在但屬性不符合。"
 
 #: ../clients/cli/devices.c:3440
 #, c-format
@@ -2818,14 +3027,14 @@ msgid "Password: "
 msgstr "密碼："
 
 #: ../clients/cli/devices.c:3640
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid WPA PSK"
-msgstr "「%s」不是個有效的 PSK"
+msgstr "「%s」不是個有效的 WPA PSK"
 
 #: ../clients/cli/devices.c:3657
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
-msgstr "'%s' 的長度不合規定（應為 5 或 6 位數）"
+msgstr "「%s」不是有效的 WEP 金鑰（它應該是 5 或 13 個 ASCII 字元）"
 
 #: ../clients/cli/devices.c:3673
 #, c-format
@@ -2833,44 +3042,44 @@ msgid "Hotspot password: %s\n"
 msgstr "熱點密碼： %s\n"
 
 #: ../clients/cli/devices.c:3744
-#, fuzzy, c-format
+#, c-format
 msgid "Error: ssid is too long."
-msgstr "錯誤：需要「ssid」。"
+msgstr "錯誤：ssid 太長。"
 
 #: ../clients/cli/devices.c:3758
-#, fuzzy, c-format
+#, c-format
 msgid "Error: band argument value '%s' is invalid; use 'a' or 'bg'."
-msgstr "錯誤：wep-key-type 引數值「%s」無效，請使用「key」或是「phrase」。"
+msgstr "錯誤：band 引數值「%s」無效，請使用「a」或是「bg」。"
 
 #: ../clients/cli/devices.c:3783
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Unknown parameter %s."
-msgstr "不明的參數：%s\n"
+msgstr "錯誤：不明的參數：%s。"
 
 #: ../clients/cli/devices.c:3803
-#, fuzzy, c-format
+#, c-format
 msgid "Error: channel requires band too."
-msgstr "錯誤：需要「apn」。"
+msgstr "錯誤：頻道也需要 band。"
 
 #: ../clients/cli/devices.c:3808
-#, fuzzy, c-format
+#, c-format
 msgid "Error: channel '%s' not valid for band '%s'."
-msgstr "錯誤：「channel」：「%s」無效；請使用 <1-13>。"
+msgstr "錯誤：頻道「%s」對於 band「%s」無效。"
 
 #: ../clients/cli/devices.c:3832
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
-msgstr "錯誤：裝置「%s」不是個 Wi-Fi 裝置。"
+msgstr "錯誤：裝置「%s」不支援 AP 或 Ad-Hoc 模式。"
 
 #: ../clients/cli/devices.c:3866
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Invalid 'password': %s."
-msgstr "錯誤：無效的內容「%s」：%s。"
+msgstr "錯誤：無效的「密碼」：%s。"
 
 #: ../clients/cli/devices.c:3942
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' cannot repeat."
-msgstr "錯誤：「%s」設定不存在\n"
+msgstr "錯誤：「%s」不能重複。"
 
 #. Main header name
 #: ../clients/cli/devices.c:4047
@@ -2878,9 +3087,9 @@ msgid "Device LLDP neighbors"
 msgstr "設備LLDP鄰居"
 
 #: ../clients/cli/devices.c:4157
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device lldp list': %s"
-msgstr "錯誤：「device status」：%s"
+msgstr "錯誤：「device lldp list」：%s"
 
 #: ../clients/cli/general.c:41
 msgid "asleep"
@@ -2950,7 +3159,7 @@ msgid ""
 "  logging [level <log level>] [domains <log domains>]\n"
 "\n"
 msgstr ""
-"Usage: nmcli general { COMMAND | help }\n"
+"用法：nmcli general { COMMAND | help }\n"
 "\n"
 "COMMAND := { status | hostname | permissions | logging }\n"
 "\n"
@@ -2973,11 +3182,10 @@ msgid ""
 "status'\n"
 "\n"
 msgstr ""
-"Usage: nmcli general status { help }\n"
+"用法：nmcli general status { help }\n"
 "\n"
-"Show overall status of NetworkManager.\n"
-"'status' is the default action, which means 'nmcli gen' calls 'nmcli gen "
-"status'\n"
+"顯示 NetworkManager 的整體狀態。\n"
+"「status」是預設動作，這代表「nmcli gen」會呼叫「nmcli gen status」\n"
 "\n"
 
 #: ../clients/cli/general.c:352
@@ -2993,14 +3201,13 @@ msgid ""
 "hostname.\n"
 "\n"
 msgstr ""
-"Usage: nmcli general hostname { ARGUMENTS | help }\n"
+"用法：nmcli general hostname { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := [<hostname>]\n"
 "\n"
-"Get or change persistent system hostname.\n"
-"With no arguments, this prints currently configured hostname. When you pass\n"
-"a hostname, NetworkManager will set it as the new persistent system "
-"hostname.\n"
+"獲得或變更持久系統主機名稱。\n"
+"如果沒有參數，這會顯示目前配置的主機名稱。當您傳遞主機名稱，\n"
+"NetworkManager 會將它設為新的持久系統主機名稱。\n"
 "\n"
 
 #: ../clients/cli/general.c:364
@@ -3076,9 +3283,9 @@ msgid ""
 "Switch networking on.\n"
 "\n"
 msgstr ""
-"Usage: nmcli networking on { help }\n"
+"用法：nmcli networking on { help }\n"
 "\n"
-"Switch networking on.\n"
+"打開網路。\n"
 "\n"
 
 #: ../clients/cli/general.c:403
@@ -3089,9 +3296,9 @@ msgid ""
 "Switch networking off.\n"
 "\n"
 msgstr ""
-"Usage: nmcli networking off { help }\n"
+"用法：nmcli networking off { help }\n"
 "\n"
-"Switch networking off.\n"
+"關閉網路。\n"
 "\n"
 
 #: ../clients/cli/general.c:411
@@ -3106,17 +3313,16 @@ msgid ""
 "connectivity.\n"
 "\n"
 msgstr ""
-"Usage: nmcli networking connectivity { ARGUMENTS | help }\n"
+"用法：nmcli networking connectivity { ARGUMENTS | help }\n"
 "\n"
 "ARGUMENTS := [check]\n"
 "\n"
-"Get network connectivity state.\n"
-"The optional 'check' argument makes NetworkManager re-check the "
-"connectivity.\n"
+"獲取網路連線狀態。\n"
+"選填的「check」引數使 NetworkManager 重新檢查連線能力。\n"
 "\n"
 
 #: ../clients/cli/general.c:423
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli radio { COMMAND | help }\n"
 "\n"
@@ -3125,11 +3331,7 @@ msgid ""
 "  all | wifi | wwan [ on | off ]\n"
 "\n"
 msgstr ""
-"Usage: nmcli radio { COMMAND | help }\n"
-"\n"
-"COMMAND := { all | wifi | wwan | wimax }\n"
-"\n"
-"  all | wifi | wwan | wimax [ on | off ]\n"
+"用法：nmcli radio { COMMAND | help }\n"
 "\n"
 "COMMAND := { all | wifi | wwan }\n"
 "\n"
@@ -3196,8 +3398,10 @@ msgid ""
 "Prints a line whenever a change occurs in NetworkManager\n"
 "\n"
 msgstr ""
-"用法：nmcli監視器監視NetworkManager的更改。每當NetworkManager發生更改時打印一"
-"行\n"
+"用法：nmcli monitor\n"
+"\n"
+"監視 NetworkManager 的更改。\n"
+"當 NetworkManager 發生更改時打印一行\n"
 "\n"
 
 #: ../clients/cli/general.c:492
@@ -3228,14 +3432,14 @@ msgid "Error: 'general logging': %s"
 msgstr "錯誤：「general logging」：%s"
 
 #: ../clients/cli/general.c:728
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set logging: %s"
-msgstr "錯誤：設置日誌的存取被拒絕；%s"
+msgstr "錯誤：無法設定紀錄：%s"
 
 #: ../clients/cli/general.c:745
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set hostname: %s"
-msgstr "錯誤：無法設定主機名稱：(%d) %s"
+msgstr "錯誤：無法設定主機名稱：%s"
 
 #: ../clients/cli/general.c:814
 #, c-format
@@ -3277,39 +3481,37 @@ msgid "WWAN radio switch"
 msgstr "WWAN radio 開關"
 
 #: ../clients/cli/general.c:1056
-#, fuzzy
 msgid "NetworkManager has started"
-msgstr "NetworkManager 狀態"
+msgstr "NetworkManager 已啟動"
 
 #: ../clients/cli/general.c:1056
-#, fuzzy
 msgid "NetworkManager has stopped"
-msgstr "NetworkManager 狀態"
+msgstr "NetworkManager 已停止"
 
 #: ../clients/cli/general.c:1067
-#, fuzzy, c-format
+#, c-format
 msgid "Hostname set to '%s'\n"
-msgstr "將主機名稱設定為「%s」"
+msgstr "主機名稱設定為「%s」\n"
 
 #: ../clients/cli/general.c:1082
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is now the primary connection\n"
-msgstr "設定「%s」不存在連線中。\n"
+msgstr "「%s」現在是主要的連線\n"
 
 #: ../clients/cli/general.c:1084
-#, fuzzy, c-format
+#, c-format
 msgid "There's no primary connection\n"
-msgstr "驗證連線：%s\n"
+msgstr "沒有主要連線\n"
 
 #: ../clients/cli/general.c:1096
-#, fuzzy, c-format
+#, c-format
 msgid "Connectivity is now '%s'\n"
-msgstr "連線性"
+msgstr "連線性現在是「%s」\n"
 
 #: ../clients/cli/general.c:1110
-#, fuzzy, c-format
+#, c-format
 msgid "Networkmanager is now in the '%s' state\n"
-msgstr "NetworkManager 並不在執行中。"
+msgstr "NetworkManager 現在是「%s」狀態\n"
 
 #: ../clients/cli/general.c:1130
 msgid "connection available"
@@ -3341,7 +3543,7 @@ msgstr "hw"
 
 #: ../clients/cli/general.c:1169
 msgid "iface"
-msgstr "我面對"
+msgstr "iface"
 
 #: ../clients/cli/general.c:1172
 msgid "port"
@@ -3362,11 +3564,11 @@ msgstr "VPN"
 
 #: ../clients/cli/general.c:1198
 msgid "ip4 default"
-msgstr "ip4默認"
+msgstr "ip4 預設"
 
 #: ../clients/cli/general.c:1200
 msgid "ip6 default"
-msgstr "ip6默認"
+msgstr "ip6 預設"
 
 #: ../clients/cli/general.c:1282
 #, c-format
@@ -3383,22 +3585,22 @@ msgid ""
 "Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage "
 "details.\n"
 msgstr ""
-"使用“nmcli device show”獲取有關已知設備的完整信息和“nmcli connection show”以"
-"獲取有關活動連接配置文件的概述。有關完整的使用詳細信息，請參閱nmcli（1）和"
-"nmcli-examples（5）手冊頁。\n"
+"使用「nmcli device show」獲取有關已知裝置的完整資訊，\n"
+"「nmcli connection show」以獲取有關活動連接配置文件的概述。\n"
+"\n"
+"有關完整的使用詳細信息，請參閱nmcli（1）和nmcli-examples（5）手冊頁。\n"
 
 #: ../clients/cli/general.c:1371
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'monitor' command '%s' is not valid."
-msgstr "錯誤：「radio」指令「%s」無效。"
+msgstr "錯誤：「monitor」指令「%s」無效。"
 
 #: ../clients/cli/general.c:1383
-#, fuzzy
 msgid "Networkmanager is not running (waiting for it)\n"
-msgstr "NetworkManager 並不在執行中。"
+msgstr "NetworkManager 並不在執行中。（正在等待）\n"
 
 #: ../clients/cli/nmcli.c:244
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
@@ -3429,17 +3631,31 @@ msgid ""
 "  m[onitor]       monitor NetworkManager changes\n"
 "\n"
 msgstr ""
-"用法：nmcli [OPTIONS] OBJECT {COMMAND |幫助} OPTIONS -o [verview]概述模式（隱"
-"藏默認值）-t [erse] terse output -p [retty] pretty output -m [ode] tabular | "
-"multiline output mode -c [olors] auto | yes | no是否在輸出中使用顏色-f "
-"[ield] <field1,field2,...>| all | common指定要輸出的字段-g [et-values] "
-"<field1,field2,...>| all | -m tabular的常用快捷方式-t -f -e [scape] yes |沒有"
-"值的轉義列分隔符-a [sk]請求缺少參數-s [how-secrets]允許顯示密碼-w [ait] "
-"<seconds>                              設置超時等待完成操作-v [ersion] show "
-"program version -h [elp]打印此幫助OBJECT g [eneral] NetworkManager的一般狀態"
-"和操作n [etworking]整體網絡控制r [adio] NetworkManager無線電開關c "
-"[onnection] NetworkManager的連接由NetworkManager管理的設備[gent] "
-"NetworkManager秘密代理或polkit代理m [onitor]監視器NetworkManager更改\n"
+"用法：nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -a, --ask                                詢問遺失的引數\n"
+"  -c, --colors auto|yes|no                 是否在輸出中使用顏色\n"
+"  -e, --escape yes|no                      在值中跳脫欄位分隔符\n"
+"  -f, --fields <field,...>|all|common      指定要輸出的欄位\n"
+"  -g, --get-values <field,...>|all|common  -m tabular -t -f 的捷徑\n"
+"  -h, --help                               顯示這個說明\n"
+"  -m, --mode tabular|multiline             輸出模式\n"
+"  -o, --overview                           概述模式\n"
+"  -p, --pretty                             美化輸出\n"
+"  -s, --show-secrets                       允許顯示密碼\n"
+"  -t, --terse                              簡潔輸出\n"
+"  -v, --version                            顯示程式版本\n"
+"  -w, --wait <seconds>                     設定完成操作的等待逾時\n"
+"\n"
+"OBJECT\n"
+"  g[eneral]       NetworkManager 的一般狀態和操作\n"
+"  n[etworking]    整體網路控制\n"
+"  r[adio]         NetworkManager radio 開關\n"
+"  c[onnection]    NetworkManager 的連線\n"
+"  d[evice]        NetworkManager 管理的裝置\n"
+"  a[gent]         NetworkManager 秘密代理或 polkit 代理\n"
+"  m[onitor]       監控 NetworkManager 變更\n"
 "\n"
 
 #: ../clients/cli/nmcli.c:324
@@ -3450,22 +3666,22 @@ msgstr "錯誤：'%s' 選項的引數遺失。"
 #: ../clients/cli/nmcli.c:625
 #, c-format
 msgid "Unexpected end of file following '%s'\n"
-msgstr "'意外的文件結尾'%s'\n"
+msgstr "意外的文件結尾'%s'\n"
 
 #: ../clients/cli/nmcli.c:633
 #, c-format
 msgid "Expected whitespace following '%s'\n"
-msgstr "預期的空白之後'%s'\n"
+msgstr "預期在「%s」之後的空白\n"
 
 #: ../clients/cli/nmcli.c:645
 #, c-format
 msgid "Expected a value for '%s'\n"
-msgstr "期望價值'%s'\n"
+msgstr "預期「%s」的值\n"
 
 #: ../clients/cli/nmcli.c:659
 #, c-format
 msgid "Expected a line break following '%s'\n"
-msgstr "預計會有'換行'%s'\n"
+msgstr "預期在「%s」後有換行\n"
 
 #: ../clients/cli/nmcli.c:748
 #, c-format
@@ -3522,19 +3738,19 @@ msgid "Success"
 msgstr "成功"
 
 #: ../clients/cli/polkit-agent.c:68
-#, fuzzy, c-format
+#, c-format
 msgid "Authentication message: %s\n"
-msgstr "身份認證"
+msgstr "驗證訊息：%s\n"
 
 #: ../clients/cli/polkit-agent.c:76
-#, fuzzy, c-format
+#, c-format
 msgid "Authentication error: %s\n"
-msgstr "身份認證"
+msgstr "驗證錯誤：%s\n"
 
 #: ../clients/cli/polkit-agent.c:136
-#, fuzzy, c-format
+#, c-format
 msgid "Warning: polkit agent initialization failed: %s\n"
-msgstr "數據機初始化失敗"
+msgstr "警告：polkit 代理初始話失敗：%s\n"
 
 #: ../clients/cli/settings.c:46
 #, c-format
@@ -3558,9 +3774,8 @@ msgid "Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"
 msgstr "警告：設置 %s.%s 需要刪除ipv4和ipv6設置\n"
 
 #: ../clients/cli/settings.c:264
-#, fuzzy
 msgid "Do you want to remove them? [yes] "
-msgstr "您是否希望提供它們？（yes/no）[yes]"
+msgstr "您是否要移除它們？[yes] "
 
 #: ../clients/cli/settings.c:352
 #, c-format
@@ -3568,14 +3783,14 @@ msgid "Warning: %s is not an UUID of any existing connection profile\n"
 msgstr "警告： %s 不是任何現有連接配置文件的UUID\n"
 
 #: ../clients/cli/settings.c:357 ../clients/cli/settings.c:370
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a VPN connection profile"
-msgstr "錯誤：「%s」不是個有效的連線類型。"
+msgstr "「%s」不是 VPN 連線設定檔"
 
 #: ../clients/cli/settings.c:364
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a name of any exiting profile"
-msgstr "'%s' 不是合於規定的 team 配置或檔名"
+msgstr "「%s」不是任何存在的設定檔的名稱"
 
 #: ../clients/cli/settings.c:408
 #, c-format
@@ -3583,9 +3798,9 @@ msgid "Warning: %s\n"
 msgstr "警告： %s\n"
 
 #: ../clients/cli/settings.c:411
-#, fuzzy, c-format
+#, c-format
 msgid "Info: %s\n"
-msgstr "錯誤：%s\n"
+msgstr "資訊：%s\n"
 
 #: ../clients/cli/settings.c:504
 msgid "don't know how to get the property value"
@@ -3614,19 +3829,19 @@ msgid "Error: Unexpected argument '%s'"
 msgstr "錯誤：非預期的引數「%s」"
 
 #: ../clients/cli/utils.c:709
-#, fuzzy, c-format
+#, c-format
 msgid "invalid field '%s%s%s'; no such field"
-msgstr "無效的欄位「%s」; 允許的欄位：%s"
+msgstr "無效的欄位「%s%s%s」; 沒有這個欄位"
 
 #: ../clients/cli/utils.c:713
-#, fuzzy, c-format
+#, c-format
 msgid "invalid field '%s%s%s'; allowed fields: [%s]"
-msgstr "無效的欄位「%s」; 允許的欄位：%s"
+msgstr "無效的欄位「%s%s%s」; 允許的欄位：[%s]"
 
 #: ../clients/cli/utils.c:809
-#, fuzzy, c-format
+#, c-format
 msgid "failure to select field"
-msgstr "無法選擇指定的 APN"
+msgstr "無法選擇欄位"
 
 #: ../clients/cli/utils.c:1438
 #, c-format
@@ -3676,9 +3891,9 @@ msgstr "%lld - %s"
 #.
 #: ../clients/common/nm-client-utils.c:121
 #: ../clients/common/nm-client-utils.c:152
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is ambiguous (%s)"
-msgstr "「%s」意義含糊不清（%s x %s）"
+msgstr "「%s」意義含糊不清（%s）"
 
 #: ../clients/common/nm-client-utils.c:131
 #, c-format
@@ -3686,9 +3901,9 @@ msgid "'%s' is not valid; use [%s] or [%s]"
 msgstr "「%s」無效；請使用「%s」或是「%s」"
 
 #: ../clients/common/nm-client-utils.c:164
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; use [%s], [%s] or [%s]"
-msgstr "「%s」無效；請使用「%s」或是「%s」"
+msgstr "「%s」無效；請使用「%s」、「%s」或是「%s」"
 
 #: ../clients/common/nm-client-utils.c:213
 #, c-format
@@ -3702,7 +3917,7 @@ msgstr "名稱遺失，請嘗試 [%s] 其中之一"
 
 #: ../clients/common/nm-client-utils.c:265
 msgid "unmanaged"
-msgstr "不受管理的"
+msgstr "不受管理"
 
 #: ../clients/common/nm-client-utils.c:266
 msgid "unavailable"
@@ -3977,33 +4192,28 @@ msgid "teamd control failed"
 msgstr "teamd 控制失敗"
 
 #: ../clients/common/nm-client-utils.c:349
-#, fuzzy
 msgid "Modem failed or no longer available"
-msgstr "ModemManager 無法使用"
+msgstr "Modem 失敗或不再可用"
 
 #: ../clients/common/nm-client-utils.c:350
-#, fuzzy
 msgid "Modem now ready and available"
-msgstr "ModemManager 無法使用"
+msgstr "Modem 現在已準備好可以使用"
 
 #: ../clients/common/nm-client-utils.c:351
 msgid "SIM PIN was incorrect"
 msgstr "SIM PIN不正確"
 
 #: ../clients/common/nm-client-utils.c:352
-#, fuzzy
 msgid "New connection activation was enqueued"
-msgstr "錯誤：啟動連線失敗。"
+msgstr "新連線啟動加入佇列"
 
 #: ../clients/common/nm-client-utils.c:353
-#, fuzzy
 msgid "The device's parent changed"
-msgstr "裝置已移除"
+msgstr "裝置的父裝置已變更"
 
 #: ../clients/common/nm-client-utils.c:354
-#, fuzzy
 msgid "The device parent's management changed"
-msgstr "裝置已移除"
+msgstr "裝置的父裝置管理已變更"
 
 #: ../clients/common/nm-client-utils.c:355
 msgid "Open vSwitch database connection failed"
@@ -4022,84 +4232,68 @@ msgid "Failed to configure SR-IOV parameters"
 msgstr "無法配置SR-IOV參數"
 
 #: ../clients/common/nm-client-utils.c:359
-#, fuzzy
 msgid "The Wi-Fi P2P peer could not be found"
-msgstr "找不到 Wi-Fi 網路"
+msgstr "找不到 Wi-Fi P2P 對端"
 
 #: ../clients/common/nm-client-utils.c:365
-#, fuzzy
 msgid "Unknown reason"
 msgstr "原因不明"
 
 #: ../clients/common/nm-client-utils.c:366
-#, fuzzy
 msgid "The connection was disconnected"
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線已離線"
 
 #: ../clients/common/nm-client-utils.c:367
-#, fuzzy
 msgid "Disconnected by user"
-msgstr "離線"
+msgstr "使用者離線"
 
 #: ../clients/common/nm-client-utils.c:368
-#, fuzzy
 msgid "The base network connection was interrupted"
 msgstr "基礎的網路連線已經中斷"
 
 #: ../clients/common/nm-client-utils.c:369
-#, fuzzy
 msgid "The VPN service stopped unexpectedly"
 msgstr "VPN 服務無預期停止"
 
 #: ../clients/common/nm-client-utils.c:370
-#, fuzzy
 msgid "The VPN service returned invalid configuration"
 msgstr "VPN 服務傳回無效的配置"
 
 #: ../clients/common/nm-client-utils.c:371
-#, fuzzy
 msgid "The connection attempt timed out"
-msgstr "嚐試連線已經逾時"
+msgstr "連線嘗試已經逾時"
 
 #: ../clients/common/nm-client-utils.c:372
-#, fuzzy
 msgid "The VPN service did not start in time"
 msgstr "VPN 服務並沒有按時開始"
 
 #: ../clients/common/nm-client-utils.c:373
-#, fuzzy
 msgid "The VPN service failed to start"
 msgstr "VPN 服務無法開始"
 
 #: ../clients/common/nm-client-utils.c:374
-#, fuzzy
 msgid "No valid secrets"
-msgstr "VPN 密碼不正確"
+msgstr "沒有有效的祕密"
 
 #: ../clients/common/nm-client-utils.c:375
-#, fuzzy
 msgid "Invalid secrets"
-msgstr "VPN 密碼不正確"
+msgstr "VPN 密碼不正確無效的祕密"
 
 #: ../clients/common/nm-client-utils.c:376
-#, fuzzy
 msgid "The connection was removed"
 msgstr "連線已移除"
 
 #: ../clients/common/nm-client-utils.c:377
-#, fuzzy
 msgid "Master connection failed"
-msgstr "連線失敗"
+msgstr "主連線失敗"
 
 #: ../clients/common/nm-client-utils.c:378
-#, fuzzy
 msgid "Could not create a software link"
-msgstr "無法建立暫時性檔案：%s"
+msgstr "無法建立軟體連結"
 
 #: ../clients/common/nm-client-utils.c:379
-#, fuzzy
 msgid "The device disappeared"
-msgstr "裝置的連線消失"
+msgstr "裝置消失"
 
 #: ../clients/common/nm-meta-setting-access.c:510
 #, c-format
@@ -4107,20 +4301,20 @@ msgid "field '%s' has to be alone"
 msgstr "欄位 '%s' 必須是單獨的"
 
 #: ../clients/common/nm-meta-setting-access.c:525
-#, fuzzy, c-format
+#, c-format
 msgid "invalid field '%s%s%s%s%s'; %s%s%s"
-msgstr "無效的欄位「%s」; 允許的欄位：%s"
+msgstr "無效的欄位「%s%s%s%s%s」; %s%s%s"
 
 #: ../clients/common/nm-meta-setting-desc.c:311
 #: ../clients/common/nm-meta-setting-desc.c:372
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
-msgstr "無效的前綴「%s」；允許的值爲 <1-32>"
+msgstr "無效的前綴「%s」；允許的值爲 <1-%d>"
 
 #: ../clients/common/nm-meta-setting-desc.c:319
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "無效的 IP 位址：%s"
 
 #: ../clients/common/nm-meta-setting-desc.c:344
 msgid ""
@@ -4186,19 +4380,18 @@ msgstr "%s (%s)"
 
 #: ../clients/common/nm-meta-setting-desc.c:1334
 #: ../clients/common/nm-meta-setting-desc.c:1338
-#, fuzzy
 msgid "'%s' is out of range [%"
-msgstr "“%s' 超出範圍[0， %u]"
+msgstr "「%s」超出範圍 [%"
 
 #: ../clients/common/nm-meta-setting-desc.c:1343
 #, c-format
 msgid "'%s' is not a valid number"
-msgstr "“%s' 不是有效的數字"
+msgstr "「%s」不是有效的數字"
 
 #: ../clients/common/nm-meta-setting-desc.c:1400
 #, c-format
 msgid "'%s' is out of range [0, %u]"
-msgstr "“%s' 超出範圍[0， %u]"
+msgstr "「%s」超出範圍[0， %u]"
 
 #: ../clients/common/nm-meta-setting-desc.c:1446
 #, c-format
@@ -4206,24 +4399,24 @@ msgid "'%s' is not a valid Ethernet MAC"
 msgstr "「%s」不是個有效的乙太網路 MAC"
 
 #: ../clients/common/nm-meta-setting-desc.c:1554
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use a combination of [%s]"
-msgstr "不合於規定的選項 '%s' 或其值為 '%s'"
+msgstr "無效的選項「%s」，請使用「%s」的組合"
 
 #: ../clients/common/nm-meta-setting-desc.c:1559 ../libnm-core/nm-keyfile.c:884
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use one of [%s]"
-msgstr "不合於規定的選項 '%s' 或其值為 '%s'"
+msgstr "無效的選項「%s」，請使用「%s」之一"
 
 #: ../clients/common/nm-meta-setting-desc.c:1678
-#, fuzzy, c-format
+#, c-format
 msgid "%d (key)"
-msgstr "%d（十六進位的 ascii-key）"
+msgstr "%d（金鑰）"
 
 #: ../clients/common/nm-meta-setting-desc.c:1680
-#, fuzzy, c-format
+#, c-format
 msgid "%d (passphrase)"
-msgstr "%d（104/128 位元密碼）"
+msgstr "%d（密碼）"
 
 #: ../clients/common/nm-meta-setting-desc.c:1683
 #, c-format
@@ -4247,9 +4440,8 @@ msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
 #: ../clients/common/nm-meta-setting-desc.c:1708
-#, fuzzy
 msgid "MVRP, "
-msgstr "GVRP, "
+msgstr "MVRP, "
 
 #: ../clients/common/nm-meta-setting-desc.c:1729
 msgid "0 (none)"
@@ -4273,14 +4465,14 @@ msgid "'%s' is not valid; use <option>=<value>"
 msgstr "「%s」無效；請使用 <option>=<value>"
 
 #: ../clients/common/nm-meta-setting-desc.c:1967
-#, fuzzy, c-format
+#, c-format
 msgid "cannot set empty \"%s\" option"
-msgstr "錯誤：設置「%s」內容失敗：%s\n"
+msgstr "無法設定空的「%s」選項"
 
 #: ../clients/common/nm-meta-setting-desc.c:2026
-#, fuzzy, c-format
+#, c-format
 msgid "'%u' flags are not valid; use combination of %s"
-msgstr "「%s」無效；請使用「%s」或是「%s」"
+msgstr "「%u」旗標無效；請使用「%s」的組合"
 
 #: ../clients/common/nm-meta-setting-desc.c:2043
 #, c-format
@@ -4294,9 +4486,8 @@ msgid "'%s' is not valid"
 msgstr "「%s」無效"
 
 #: ../clients/common/nm-meta-setting-desc.c:2161
-#, fuzzy
 msgid "not a valid hex-string"
-msgstr "不是合於規定的介面名稱"
+msgstr "不是有效的 hex-string"
 
 #: ../clients/common/nm-meta-setting-desc.c:2177
 #, c-format
@@ -4307,12 +4498,12 @@ msgstr "「%s」不是個有效的十六進位字元"
 msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
-msgstr ""
+msgstr "太多引數。請只指定一個私密金鑰檔案或選擇性一個密碼"
 
 #: ../clients/common/nm-meta-setting-desc.c:2363
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set bond option \"%s\""
-msgstr "錯誤：設置「%s」內容失敗：%s\n"
+msgstr "無法設定 bond 選項「%s」"
 
 #: ../clients/common/nm-meta-setting-desc.c:2380
 #, c-format
@@ -4353,14 +4544,14 @@ msgstr ""
 #. * nmc_setting_set_property() is called only after the property
 #. * we're setting (type) has been removed.
 #: ../clients/common/nm-meta-setting-desc.c:2445
-#, fuzzy, c-format
+#, c-format
 msgid "Can not change the connection type"
-msgstr "輸入連線類型："
+msgstr "無法變更連線類型"
 
 #: ../clients/common/nm-meta-setting-desc.c:2523
-#, fuzzy, c-format
+#, c-format
 msgid "invalid permission \"%s\""
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的權限「%s」"
 
 #: ../clients/common/nm-meta-setting-desc.c:2560
 #, c-format
@@ -4368,9 +4559,9 @@ msgid "'%s' is not valid master; use ifname or connection UUID"
 msgstr "「%s」不是個有效的 master；請使用 ifname 或是連線 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:2641
-#, fuzzy, c-format
+#, c-format
 msgid "the value '%s' is not a valid UUID"
-msgstr "「%s」不是個有效的 UUID"
+msgstr "值「%s」不是個有效的 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:2712
 msgid "0 (disabled)"
@@ -4408,11 +4599,9 @@ msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "「%s」不是組介於 0 和（包含）%u 之間的數字"
 
 #: ../clients/common/nm-meta-setting-desc.c:2876
-#, fuzzy, c-format
+#, c-format
 msgid "changes will have no effect until '%s' includes 1 (enabled)"
-msgstr ""
-"警告：在「%s」包含 1（啟用）之前，變更將不會生效\n"
-"\n"
+msgstr "在「%s」包含 1（啟用）之前，變更將不會生效"
 
 #: ../clients/common/nm-meta-setting-desc.c:2906
 #, c-format
@@ -4431,17 +4620,17 @@ msgstr "「%s」不是個有效的 IBoIP P_Key"
 
 #: ../clients/common/nm-meta-setting-desc.c:3030
 msgid "default"
-msgstr "default"
+msgstr "預設"
 
 #: ../clients/common/nm-meta-setting-desc.c:3194
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv%c address '%s'"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "無效的 IPv%c 位址「%s」"
 
 #: ../clients/common/nm-meta-setting-desc.c:3321
-#, fuzzy, c-format
+#, c-format
 msgid "invalid gateway address '%s'"
-msgstr "無效的閘道器「%s」"
+msgstr "無效的閘道器位址「%s」"
 
 #: ../clients/common/nm-meta-setting-desc.c:3471
 #, c-format
@@ -4454,14 +4643,13 @@ msgstr "有效語法為：vf [attribute = value] ... [，vf [attribute = value] 
 
 #: ../clients/common/nm-meta-setting-desc.c:3575
 #: ../clients/common/nm-meta-setting-desc.c:3655
-#, fuzzy
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
-msgstr "有效的語法是：'[root |親 <handle>] [處理 <handle>] <qdisc>“"
+msgstr "有效的語法是：'[root | parent <handle>] [handle <handle>] <kind>'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3600
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
-msgstr ""
+msgstr "有效的語法是：'<vid>[-<vid>] [pvid] [untagged]'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3875
 #, c-format
@@ -4469,9 +4657,9 @@ msgid "invalid priority map '%s'"
 msgstr "無效的優先順序對映「%s」"
 
 #: ../clients/common/nm-meta-setting-desc.c:3963
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
-msgstr "「%s」無效；應提供三個字串"
+msgstr "「%s」無效；應提供兩個或三個字串"
 
 #: ../clients/common/nm-meta-setting-desc.c:4002
 #, c-format
@@ -4510,19 +4698,19 @@ msgid ""
 msgstr "“%s' 不兼容 %s “%s', 請更改密鑰或設置正確 %s 第一。"
 
 #: ../clients/common/nm-meta-setting-desc.c:4130
-#, fuzzy, c-format
+#, c-format
 msgid "WEP key is guessed to be of '%s'"
-msgstr "預測 WEP key 為「%s」\n"
+msgstr "預測 WEP key 為「%s」"
 
 #: ../clients/common/nm-meta-setting-desc.c:4135
-#, fuzzy, c-format
+#, c-format
 msgid "WEP key index set to '%d'"
-msgstr "預測 WEP key 為「%s」\n"
+msgstr "WEP 金鑰索引設為「%d」"
 
 #: ../clients/common/nm-meta-setting-desc.c:4174
 #, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
-msgstr "“%s' 與...不兼容%s' 鍵入，請更改或刪除密鑰。"
+msgstr "「%s」與「%s」類型不相容，請更改或刪除密鑰。"
 
 #: ../clients/common/nm-meta-setting-desc.c:4231
 #, c-format
@@ -4530,40 +4718,33 @@ msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
 msgstr "“%s' 無效;使用'on'，'off'或'ignore'"
 
 #: ../clients/common/nm-meta-setting-desc.c:4291
-#, fuzzy
 msgid "Bonding primary interface [none]"
-msgstr "Bonding 主要介面卡 [none]："
+msgstr "Bonding 主要介面卡 [none]"
 
 #. this is a virtual property, only needed during "ask" mode.
 #: ../clients/common/nm-meta-setting-desc.c:4298
-#, fuzzy
 msgid "Bonding monitoring mode"
-msgstr "連結監控"
+msgstr "Bonding 監控模式"
 
 #: ../clients/common/nm-meta-setting-desc.c:4307
-#, fuzzy
 msgid "Bonding miimon [100]"
-msgstr "Bonding miimon [100]："
+msgstr "Bonding miimon [100]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4315
-#, fuzzy
 msgid "Bonding downdelay [0]"
-msgstr "Bonding downdelay [0]："
+msgstr "Bonding downdelay [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4323
-#, fuzzy
 msgid "Bonding updelay [0]"
-msgstr "Bonding updelay [0]："
+msgstr "Bonding updelay [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4331
-#, fuzzy
 msgid "Bonding arp-interval [0]"
-msgstr "Bonding arp-interval [0]："
+msgstr "Bonding arp-interval [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4339
-#, fuzzy
 msgid "Bonding arp-ip-target [none]"
-msgstr "Bonding arp-ip-target [none]："
+msgstr "Bonding arp-ip-target [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4347
 msgid "LACP rate ('slow' or 'fast') [slow]"
@@ -4696,7 +4877,6 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:4766
 #: ../clients/common/nm-meta-setting-desc.c:4784
-#, fuzzy
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -4704,7 +4884,8 @@ msgid ""
 "Example: /home/cimrman/jara-priv-key Dardanely\n"
 msgstr ""
 "輸入私密金鑰和金鑰密碼的路徑（若尚未設定）：\n"
-"  <file path> [<password>]\n"
+"  [file://]<file path> [<password>]\n"
+"注意，nmcli 不支援以原始 blob 資料指定私密金鑰。\n"
 "範例：/home/cimrman/jara-priv-key Dardanely\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:4823
@@ -4718,14 +4899,12 @@ msgstr "使用者名稱"
 #: ../clients/common/nm-meta-setting-desc.c:5044
 #: ../clients/common/nm-meta-setting-desc.c:5434
 #: ../clients/common/nm-meta-setting-desc.c:6339
-#, fuzzy
 msgid "Password [none]"
-msgstr "密碼 [none]："
+msgstr "密碼 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4875
-#, fuzzy
 msgid "Bluetooth device address"
-msgstr "藍牙裝置位址："
+msgstr "藍牙裝置位址"
 
 #: ../clients/common/nm-meta-setting-desc.c:4923
 #: ../clients/common/nm-meta-setting-desc.c:5487
@@ -4733,39 +4912,32 @@ msgstr "藍牙裝置位址："
 #: ../clients/common/nm-meta-setting-desc.c:7032
 #: ../clients/common/nm-meta-setting-desc.c:7207
 #: ../clients/common/nm-meta-setting-desc.c:7437
-#, fuzzy
 msgid "MAC [none]"
-msgstr "MAC [none]："
+msgstr "MAC [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4929
-#, fuzzy
 msgid "Enable STP [no]"
-msgstr "啟用 STP（yes/no）[yes]："
+msgstr "啟用 STP [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4935
-#, fuzzy
 msgid "STP priority [32768]"
-msgstr "STP 優先順序 [128]："
+msgstr "STP 優先順序 [32768]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4941
-#, fuzzy
 msgid "Forward delay [15]"
-msgstr "Forward delay [15]："
+msgstr "Forward delay [15]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4947
-#, fuzzy
 msgid "Hello time [2]"
-msgstr "Hello time [2]："
+msgstr "Hello time [2]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4953
-#, fuzzy
 msgid "Max age [20]"
-msgstr "Max age [20]："
+msgstr "Max age [20]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4959
-#, fuzzy
 msgid "MAC address ageing time [300]"
-msgstr "MAC address ageing time [300]："
+msgstr "MAC address ageing time [300]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4965
 msgid "Group forward mask [0]"
@@ -4776,26 +4948,22 @@ msgid "Enable IGMP snooping [no]"
 msgstr "啟用IGMP Snooping [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5000
-#, fuzzy
 msgid "Bridge port priority [32]"
-msgstr "橋接連接埠優先順序 [32]："
+msgstr "橋接連接埠優先順序 [32]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5006
-#, fuzzy
 msgid "Bridge port STP path cost [100]"
-msgstr "橋接連接埠 STP path cost [100]："
+msgstr "橋接連接埠 STP path cost [100]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5012
-#, fuzzy
 msgid "Hairpin [no]"
-msgstr "Hairpin 模式"
+msgstr "Hairpin [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5038
 #: ../clients/common/nm-meta-setting-desc.c:5428
 #: ../clients/common/nm-meta-setting-desc.c:6852
-#, fuzzy
 msgid "Username [none]"
-msgstr "使用者名稱 [none]："
+msgstr "使用者名稱 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5141
 msgid ""
@@ -4842,26 +5010,22 @@ msgstr ""
 "計量'unknown'讓NetworkManager使用某些選擇值啟發式\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5444
-#, fuzzy
 msgid "APN"
-msgstr "AP"
+msgstr "APN"
 
 #: ../clients/common/nm-meta-setting-desc.c:5496
 #: ../clients/common/nm-meta-setting-desc.c:7063
 #: ../clients/common/nm-meta-setting-desc.c:7247
-#, fuzzy
 msgid "MTU [auto]"
-msgstr "MTU [auto]："
+msgstr "MTU [auto]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5515
-#, fuzzy
 msgid "P_KEY [none]"
-msgstr "P_KEY [none]："
+msgstr "P_KEY [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5524
-#, fuzzy
 msgid "Parent interface [none]"
-msgstr "父介面卡 [none]："
+msgstr "父介面卡 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5551
 msgid ""
@@ -4874,12 +5038,10 @@ msgstr ""
 "範例：8.8.8.8, 8.8.4.4\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5599
-#, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]"
-msgstr "IPv4 address (IP[/plen] [gateway]) [none]："
+msgstr "IPv4 address (IP[/plen]) [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5601
-#, fuzzy
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -4888,18 +5050,16 @@ msgid ""
 "Example: 192.168.1.5/24, 10.0.0.11/24\n"
 msgstr ""
 "輸入一列 IPv4 位址，格式為：\n"
-"  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
+"  ip[/prefix], ip[/prefix],...\n"
 "遺失的前綴會被視為 32 這個前綴。\n"
 "\n"
-"範例：192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
+"範例：192.168.1.5/24, 10.0.0.11/24\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5620
-#, fuzzy
 msgid "IPv4 gateway [none]"
-msgstr "IPv4 address (IP[/plen] [gateway]) [none]："
+msgstr "IPv4 閘道器 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5628
-#, fuzzy
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4912,11 +5072,14 @@ msgid ""
 "          10.1.2.0/24\n"
 msgstr ""
 "輸入一列 IPv4 路由，格式為：\n"
-"  ip/[prefix] next-hop [metric],...\n"
-"Missing prefix is regarded as a prefix of 32.\n"
-"Missing metric is regarded as a metric of 0.\n"
+"  ip[/prefix] [next-hop] [metric],...\n"
 "\n"
-"Example: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+"遺失的前綴被視為 32 這個前綴。\n"
+"遺失的 next-hop 被視為 0.0.0.0。\n"
+"遺失的度量表示預設（NM/kernel 會設定預設值）。\n"
+"\n"
+"範例：192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+"          10.1.2.0/24\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5668
 msgid ""
@@ -4924,6 +5087,9 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
+"輸入一列 IPv4 路由規則，格式為：\n"
+"  priority [prio] [from [src]] [to [dst]], ,...\n"
+"\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5758
 msgid ""
@@ -4944,12 +5110,10 @@ msgstr ""
 "範例：2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5812
-#, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]"
-msgstr "IPv6 address (IP[/plen] [gateway]) [none]："
+msgstr "IPv6 位址 (IP[/plen]) [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5814
-#, fuzzy
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -4958,19 +5122,16 @@ msgid ""
 "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 msgstr ""
 "輸入一列 IPv6 位址，格式為：\n"
-"  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
+"  ip[/prefix], ip[/prefix],...\n"
 "遺失的前綴會被視為 128 這個前綴。\n"
 "\n"
-"範例：2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, "
-"1050:0:0:0:5:600:300c:326b\n"
+"範例：2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5833
-#, fuzzy
 msgid "IPv6 gateway [none]"
-msgstr "IPv6 address (IP[/plen] [gateway]) [none]："
+msgstr "IPv6 閘道器 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5841
-#, fuzzy
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4984,12 +5145,16 @@ msgid ""
 "          abbe::/64 55\n"
 msgstr ""
 "輸入一列 IPv6 路由，格式為：\n"
-"  ip/[prefix] next-hop [metric],...\n"
-"Missing prefix is regarded as a prefix of 128.\n"
-"Missing metric is regarded as a metric of 0.\n"
+"  ip[/prefix] [next-hop] [metric],...\n"
 "\n"
-"Example: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
-"db8:beef::3 2\n"
+"遺失的前綴被視為 128 這個前綴。\n"
+"遺失的 next-hop 被視為 「::」。\n"
+"遺失的度量表示預設（NM/kernel 會設定預設值）。\n"
+"\n"
+"\n"
+"範例：2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:"
+"beef::3 2\n"
+"          abbe::/64 55\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5881
 msgid ""
@@ -4997,23 +5162,23 @@ msgid ""
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
 "\n"
 msgstr ""
+"輸入一列 IPv6 路由規則，格式為：\n"
+"  priority [prio] [from [src]] [to [dst]], ,...\n"
+"\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5969
 #: ../clients/common/nm-meta-setting-desc.c:6893
-#, fuzzy
 msgid "Parent device [none]"
-msgstr "父介面卡 [none]："
+msgstr "父裝置 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5975
-#, fuzzy
 msgid "Local endpoint [none]"
-msgstr "父介面卡 [none]："
+msgstr "本地端點 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5982
 #: ../clients/common/nm-meta-setting-desc.c:6913
-#, fuzzy
 msgid "Remote"
-msgstr "移除"
+msgstr "遠端"
 
 #: ../clients/common/nm-meta-setting-desc.c:6027
 msgid "MACsec parent device or connection UUID"
@@ -5037,9 +5202,8 @@ msgid "SCI port [1]"
 msgstr "SCI端口[1]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6096
-#, fuzzy
 msgid "MACVLAN parent device or connection UUID"
-msgstr "VLAN 父裝置或連線 UUID："
+msgstr "MACVLAN 父裝置或連線 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:6117
 msgid "Tap [no]"
@@ -5052,28 +5216,24 @@ msgid "SSID"
 msgstr "SSID"
 
 #: ../clients/common/nm-meta-setting-desc.c:6161
-#, fuzzy
 msgid "OLPC Mesh channel [1]"
-msgstr "OLPC Mesh channel [1]："
+msgstr "OLPC Mesh channel [1]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6170
-#, fuzzy
 msgid "DHCP anycast MAC address [none]"
-msgstr "DHCP anycast MAC address [none]："
+msgstr "DHCP anycast MAC 位址 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6320
 msgid "PPPoE parent device"
 msgstr "PPPoE父設備"
 
 #: ../clients/common/nm-meta-setting-desc.c:6326
-#, fuzzy
 msgid "Service [none]"
-msgstr "服務 [none]："
+msgstr "服務 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6333
-#, fuzzy
 msgid "PPPoE username"
-msgstr "PPPoE 使用者名稱："
+msgstr "PPPoE 使用者名稱"
 
 #: ../clients/common/nm-meta-setting-desc.c:6369
 msgid "Browser only [no]"
@@ -5089,24 +5249,20 @@ msgstr "PAC腳本"
 
 #: ../clients/common/nm-meta-setting-desc.c:6505
 #: ../clients/common/nm-meta-setting-desc.c:6667
-#, fuzzy
 msgid "Team JSON configuration [none]"
-msgstr "團隊 JSON 的配置 [none]："
+msgstr "團隊 JSON 的配置 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6755
-#, fuzzy
 msgid "User ID [none]"
-msgstr "使用者名稱 [none]："
+msgstr "使用者 ID [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6761
-#, fuzzy
 msgid "Group ID [none]"
-msgstr "MAC [none]："
+msgstr "群組 ID [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6767
-#, fuzzy
 msgid "Enable PI [no]"
-msgstr "啟用 STP（yes/no）[yes]："
+msgstr "啟用 PI [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6773
 msgid "Enable VNET header [no]"
@@ -5117,39 +5273,32 @@ msgid "Enable multi queue [no]"
 msgstr "啟用多隊列[no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6792
-#, fuzzy
 msgid "VLAN parent device or connection UUID"
-msgstr "VLAN 父裝置或連線 UUID："
+msgstr "VLAN 父裝置或連線 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:6799
-#, fuzzy
 msgid "VLAN ID (<0-4094>)"
-msgstr "VLAN ID <0-4095>："
+msgstr "VLAN ID (<0-4094>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:6805
-#, fuzzy
 msgid "VLAN flags (<0-7>) [none]"
-msgstr "VLAN 旗標（<0-7>）[none]："
+msgstr "VLAN 旗標（<0-7>）[none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6814
-#, fuzzy
 msgid "Ingress priority maps [none]"
-msgstr "Ingress 優先順序對映 [none]："
+msgstr "Ingress 優先順序對映 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6824
-#, fuzzy
 msgid "Egress priority maps [none]"
-msgstr "Egress 優先順序對映 [none]："
+msgstr "Egress 優先順序對映 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6900
-#, fuzzy
 msgid "VXLAN ID"
-msgstr "VLAN ID <0-4095>："
+msgstr "VLAN ID"
 
 #: ../clients/common/nm-meta-setting-desc.c:6906
-#, fuzzy
 msgid "Local address [none]"
-msgstr "DHCP anycast MAC address [none]："
+msgstr "本地位址 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6919
 msgid "Minimum source port [0]"
@@ -5160,33 +5309,29 @@ msgid "Maximum source port [0]"
 msgstr "最大源端口[0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6931
-#, fuzzy
 msgid "Destination port [8472]"
-msgstr "目的"
+msgstr "目的連接埠 [8472]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6971
 msgid "Peer"
-msgstr ""
+msgstr "對端 (peer)"
 
 #: ../clients/common/nm-meta-setting-desc.c:7001
-#, fuzzy
 msgid "WiMAX NSP name"
-msgstr "WiMAX NSP 名稱："
+msgstr "WiMAX NSP 名稱"
 
 #: ../clients/common/nm-meta-setting-desc.c:7038
 #: ../clients/common/nm-meta-setting-desc.c:7212
-#, fuzzy
 msgid "Cloned MAC [none]"
-msgstr "Cloned MAC [none]："
+msgstr "Cloned MAC [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:7071
-#, fuzzy
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
 "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 msgstr ""
-"輸入一列三個頻道（以逗號或空格區隔開）。\n"
+"輸入子頻道清單（以逗號或空格區隔開）。\n"
 "\n"
 "範例：0.0.0e20 0.0.0e21 0.0.0e22\n"
 
@@ -5213,7 +5358,7 @@ msgstr "（預設）"
 
 #: ../clients/common/nm-meta-setting-desc.c:7490
 msgid "Channel (<default|0-26>)"
-msgstr ""
+msgstr "頻道 (<default|0-26>)"
 
 #. ***************************************************************************
 #: ../clients/common/nm-meta-setting-desc.c:7625
@@ -5226,34 +5371,28 @@ msgstr "802-1x設置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7627
 #: ../src/devices/adsl/nm-device-adsl.c:132
-#, fuzzy
 msgid "ADSL connection"
-msgstr "ADSL 連線 %d"
+msgstr "ADSL 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7628
-#, fuzzy
 msgid "bluetooth connection"
-msgstr "Bond 連線 %d"
+msgstr "藍牙連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7629
-#, fuzzy
 msgid "Bond device"
-msgstr "Ethernet"
+msgstr "Bond 裝置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7630
-#, fuzzy
 msgid "Bridge device"
-msgstr "Ethernet"
+msgstr "橋接裝置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7631
-#, fuzzy
 msgid "Bridge port"
-msgstr "橋接"
+msgstr "橋接連接埠"
 
 #: ../clients/common/nm-meta-setting-desc.c:7632
-#, fuzzy
 msgid "CDMA mobile broadband connection"
-msgstr "行動寬頻連線 %d"
+msgstr "CDMA 行動寬頻連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7633
 msgid "General settings"
@@ -5276,15 +5415,13 @@ msgid "Generic settings"
 msgstr "通用設置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7638
-#, fuzzy
 msgid "GSM mobile broadband connection"
-msgstr "行動寬頻連線 %d"
+msgstr "GSM 行動寬頻連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7639
 #: ../src/devices/nm-device-infiniband.c:172
-#, fuzzy
 msgid "InfiniBand connection"
-msgstr "InfiniBand 連線 %d"
+msgstr "InfiniBand 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7640
 msgid "IPv4 protocol"
@@ -5303,18 +5440,16 @@ msgid "MACsec connection"
 msgstr "MACsec連接"
 
 #: ../clients/common/nm-meta-setting-desc.c:7644
-#, fuzzy
 msgid "macvlan connection"
-msgstr "Bond 連線 %d"
+msgstr "macvlan 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7645
 msgid "Match"
 msgstr "比對"
 
 #: ../clients/common/nm-meta-setting-desc.c:7646
-#, fuzzy
 msgid "OLPC Mesh connection"
-msgstr "CDMA 連線 %d"
+msgstr "OLPC Mesh 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7647
 msgid "Open vSwitch bridge settings"
@@ -5357,19 +5492,16 @@ msgid "Traffic controls"
 msgstr "交通管制"
 
 #: ../clients/common/nm-meta-setting-desc.c:7657
-#, fuzzy
 msgid "Team device"
-msgstr "裝置已移除"
+msgstr "團隊裝置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7658
-#, fuzzy
 msgid "Team port"
-msgstr "Team"
+msgstr "團隊連接埠"
 
 #: ../clients/common/nm-meta-setting-desc.c:7659
-#, fuzzy
 msgid "Tun device"
-msgstr "裝置已移除"
+msgstr "Tun 裝置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7660
 msgid "User settings"
@@ -5377,45 +5509,37 @@ msgstr "用戶設置"
 
 #: ../clients/common/nm-meta-setting-desc.c:7661
 #: ../src/devices/nm-device-vlan.c:400
-#, fuzzy
 msgid "VLAN connection"
-msgstr "VLAN 連線 %d"
+msgstr "VLAN 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7662 ../src/nm-manager.c:5518
-#, fuzzy
 msgid "VPN connection"
 msgstr "VPN 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7663
 #: ../src/devices/nm-device-vxlan.c:369
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VLAN 連線 %d"
+msgstr "VXLAN 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7664
-#, fuzzy
 msgid "Wi-Fi P2P connection"
-msgstr "Wi-Fi 連線 %d"
+msgstr "Wi-Fi P2P 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7665
-#, fuzzy
 msgid "WiMAX connection"
-msgstr "CDMA 連線 %d"
+msgstr "WiMAX 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7666
-#, fuzzy
 msgid "Wired Ethernet"
-msgstr "Ethernet"
+msgstr "有線乙太網路"
 
 #: ../clients/common/nm-meta-setting-desc.c:7667
-#, fuzzy
 msgid "WireGuard VPN settings"
-msgstr "WPAN設置"
+msgstr "WireGuard VPN 設定"
 
 #: ../clients/common/nm-meta-setting-desc.c:7668
-#, fuzzy
 msgid "Wi-Fi connection"
-msgstr "Wi-Fi 連線 %d"
+msgstr "Wi-Fi 連線"
 
 #: ../clients/common/nm-meta-setting-desc.c:7669
 msgid "Wi-Fi security settings"
@@ -5436,7 +5560,7 @@ msgstr "身份驗證會話已在進行中。"
 #: ../clients/common/nm-secret-agent-simple.c:230
 #, c-format
 msgid "Preshared-key for %s"
-msgstr ""
+msgstr "%s 的 Preshared-key"
 
 #: ../clients/common/nm-secret-agent-simple.c:286
 #: ../clients/common/nm-secret-agent-simple.c:323
@@ -5473,14 +5597,13 @@ msgid "Service"
 msgstr "服務"
 
 #: ../clients/common/nm-secret-agent-simple.c:486
-#, fuzzy
 msgid "WireGuard private-key"
-msgstr "無效的閘道器「%s」"
+msgstr "WireGuard 私密金鑰"
 
 #: ../clients/common/nm-secret-agent-simple.c:527
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to connect WireGuard VPN '%s'"
-msgstr "訪問有線網絡需要秘密'%s'"
+msgstr "連線 WireGuard VPN「%s」需要秘密"
 
 #: ../clients/common/nm-secret-agent-simple.c:628
 #: ../clients/common/nm-secret-agent-simple.c:912
@@ -5552,19 +5675,17 @@ msgid "MACsec EAP authentication"
 msgstr "MACsec EAP身份驗證"
 
 #: ../clients/common/nm-secret-agent-simple.c:940
-#, fuzzy
 msgid "WireGuard VPN secret"
-msgstr "WireGuard"
+msgstr "WireGuard VPN 祕密"
 
 #: ../clients/common/nm-secret-agent-simple.c:979
-#, fuzzy
 msgid "VPN password required"
-msgstr "需要 PIN 碼"
+msgstr "需要 VPN 密碼"
 
 #: ../clients/common/nm-vpn-helpers.c:52
-#, fuzzy, c-format
+#, c-format
 msgid "unknown VPN plugin \"%s\""
-msgstr "不明日誌網域「%s」"
+msgstr "不明 VPN 插件「%s」"
 
 #: ../clients/common/nm-vpn-helpers.c:63
 #, c-format
@@ -5578,14 +5699,13 @@ msgid ""
 msgstr "無法加載VPN插件“%s\" 因缺少“%s\". 缺少客戶端插件？"
 
 #: ../clients/common/nm-vpn-helpers.c:73
-#, fuzzy, c-format
+#, c-format
 msgid "failed to load VPN plugin \"%s\": %s"
-msgstr "錯誤：無法修改 %s.%s：%s。"
+msgstr "無法載入 VPN 插件「%s」：%s"
 
 #: ../clients/common/nm-vpn-helpers.c:128
-#, fuzzy
 msgid "Certificate password"
-msgstr "私密金鑰的密碼"
+msgstr "憑證密碼"
 
 # ctx::sourcefile::/rhn/admin/config/GeneralConfig.do
 #: ../clients/common/nm-vpn-helpers.c:129
@@ -5594,9 +5714,8 @@ msgstr "HTTP 代理的密碼"
 
 #: ../clients/common/nm-vpn-helpers.c:134
 #: ../clients/common/nm-vpn-helpers.c:139
-#, fuzzy
 msgid "Group password"
-msgstr "顯示密碼"
+msgstr "群組密碼"
 
 #: ../clients/common/nm-vpn-helpers.c:143 ../clients/tui/nmt-page-ip4.c:143
 #: ../clients/tui/nmt-page-ip6.c:143
@@ -5605,42 +5724,42 @@ msgstr "閘道器"
 
 #: ../clients/common/nm-vpn-helpers.c:144
 msgid "Cookie"
-msgstr "曲奇餅"
+msgstr "Cookie"
 
 #: ../clients/common/nm-vpn-helpers.c:145
 msgid "Gateway certificate hash"
-msgstr "網關證書哈希"
+msgstr "閘道器憑證雜湊"
 
 #: ../clients/common/nm-vpn-helpers.c:270
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid peer starting at %s:%zu: %s"
-msgstr "錯誤：無效的設定名稱；%s\n"
+msgstr "%s:%zu 開始的無效對端：%s"
 
 #: ../clients/common/nm-vpn-helpers.c:390
 msgid ""
 "The WireGuard config file must be a valid interface name followed by \".conf"
 "\""
-msgstr ""
+msgstr "WireGuard 設定檔必須是有效的介面名稱，後面加上「.conf」"
 
 #: ../clients/common/nm-vpn-helpers.c:678
 #, c-format
 msgid "unrecognized line at %s:%zu"
-msgstr ""
+msgstr "在 %s:%zu 無法辨識的列"
 
 #: ../clients/common/nm-vpn-helpers.c:683
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for '%s' at %s:%zu"
-msgstr "“...的值無效”%s\": %s"
+msgstr "「%s」的值無效在 %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:688
-#, fuzzy, c-format
+#, c-format
 msgid "invalid secret '%s' at %s:%zu"
-msgstr "無效路線： %s. %s"
+msgstr "無效的祕密「%s」在 %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:801
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to create WireGuard connection: %s"
-msgstr "錯誤：新增/啟用新連線失敗：(%d) %s"
+msgstr "建立 WireGuard 連線失敗：%s"
 
 #. Generated file. Do not edit.
 #: ../clients/common/settings-docs.h.in:3
@@ -6866,9 +6985,8 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.h.in:122
-#, fuzzy
 msgid "Control whether VLAN filtering is enabled on the bridge."
-msgstr "控制是否為此網橋啟用生成樹協議（STP）。"
+msgstr "控制是否為此橋接啟用 VLAN filtering。"
 
 #: ../clients/common/settings-docs.h.in:123
 msgid ""
@@ -7417,8 +7535,6 @@ msgid ""
 "Legacy setting that used to help establishing PPP data sessions for GSM-"
 "based modems. Deprecated: 1"
 msgstr ""
-"與基於GSM的移動寬帶網絡建立PPP數據會話時撥打的號碼。許多調製解調器不需要PPP連"
-"接到移動網絡，因此該屬性應保留為空，這允許NetworkManager自動選擇適當的設置。"
 
 #: ../clients/common/settings-docs.h.in:179
 msgid ""
@@ -8404,6 +8520,8 @@ msgid ""
 "Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
 "\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
 msgstr ""
+"對應於 teamd runner.name。允許的值為：\"roundrobin\", \"broadcast\", "
+"\"activebackup\", \"loadbalance\", \"lacp\", \"random\"。"
 
 #: ../clients/common/settings-docs.h.in:314
 msgid "Corresponds to the teamd runner.active."
@@ -8718,7 +8836,7 @@ msgstr "指定要在傳出數據包中使用的生存時間值。"
 msgid ""
 "The P2P device that should be connected to. Currently this is the only way "
 "to create or join a group."
-msgstr ""
+msgstr "應該要連線的 P2P 裝置。目前這是唯一建立或加入群組的方式。"
 
 #: ../clients/common/settings-docs.h.in:365
 msgid ""
@@ -8730,15 +8848,13 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.h.in:366
-#, fuzzy
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
 "the best method to use."
 msgstr ""
-"標誌指示WPS的哪種模式（如果有的話）。更改默認設置沒什麼意義，因為"
-"NetworkManager將自動確定從接入點功能啟動WPS註冊是否可行。可以通過將此屬性設置"
-"為值1來禁用WPS。"
+"旗標指示要使用 WPS 的哪種模式。更改預設設定沒什麼意義，因為 NetworkManager 將"
+"自動決定要使用的最佳方式。"
 
 #: ../clients/common/settings-docs.h.in:367
 msgid ""
@@ -8768,14 +8884,15 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.h.in:371
-#, fuzzy
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
 "used. Note that contrary to wg-quick's MTU setting, this does not take into "
 "account the current routes at the time of activation."
 msgstr ""
-"如果非零，則僅傳輸指定大小或更小的數據包，將更大的數據包分成多個以太網幀。"
+"如果非零，則僅傳輸指定大小或更小的數據包，將更大的封包分成多個片段。如果為"
+"零，會使用預設的 MTU。注意，與 wg-quick 的 MTU 設定相反，這不會考量啟動時的目"
+"前路由。"
 
 #: ../clients/common/settings-docs.h.in:372
 msgid ""
@@ -8791,9 +8908,8 @@ msgid "The 256 bit private-key in base64 encoding."
 msgstr ""
 
 #: ../clients/common/settings-docs.h.in:374
-#, fuzzy
 msgid "Flags indicating how to handle the \"private-key\" property."
-msgstr "標誌指示如何處理“private-key-password”屬性。"
+msgstr "旗標指示如何處理「private-key」屬性。"
 
 #: ../clients/common/settings-docs.h.in:375
 msgid ""
@@ -8827,23 +8943,22 @@ msgid "Connecting"
 msgstr "正在連線"
 
 #: ../clients/nm-online.c:206
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "錯誤：無法建立 NMClient 物件。"
+msgstr "錯誤：建立 NMClient 物件逾時\n"
 
 #: ../clients/nm-online.c:226
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "錯誤：無法建立 NMClient 物件。"
+msgstr "錯誤：無法建立 NMClient 物件：%s\n"
 
 #: ../clients/nm-online.c:252
 msgid "Don't print anything"
 msgstr "不印出任何東西"
 
 #: ../clients/nm-online.c:253
-#, fuzzy
 msgid "Wait for NetworkManager startup instead of a connection"
-msgstr "等待 NetworkManager 完成啟用開啟網路連線。"
+msgstr "等待 NetworkManager 啟動而不是連線"
 
 #: ../clients/nm-online.c:254
 msgid ""
@@ -8852,9 +8967,8 @@ msgid ""
 msgstr "連線的等待時間，以秒為單位（少了此選項，預設值將會是 30）"
 
 #: ../clients/nm-online.c:255
-#, fuzzy
 msgid "Exit immediately if NetworkManager is not running or connecting"
-msgstr "若 NetworkManager 沒有在執行的話，即刻退出"
+msgstr "若 NetworkManager 沒有在執行或連線中的話，即刻退出"
 
 #: ../clients/nm-online.c:275
 msgid ""
@@ -9029,7 +9143,6 @@ msgid "Could not create editor for invalid connection '%s'."
 msgstr "無法為無效的連線「%s」建立編輯程式。"
 
 #: ../clients/tui/nmt-editor.c:114
-#, fuzzy
 msgid "Edit Connection"
 msgstr "編輯連線"
 
@@ -9048,9 +9161,8 @@ msgid "Profile name"
 msgstr "設定檔名稱"
 
 #: ../clients/tui/nmt-editor.c:347
-#, fuzzy
 msgid "Ethernet device"
-msgstr "Ethernet"
+msgstr "Ethernet 裝置"
 
 #: ../clients/tui/nmt-editor.c:349
 msgid "Device"
@@ -9385,14 +9497,12 @@ msgid "Output key"
 msgstr "輸出鍵"
 
 #: ../clients/tui/nmt-page-ppp.c:131
-#, fuzzy
 msgid "PPP CONFIGURATION"
-msgstr "IPv4 配置"
+msgstr "PPP 配置"
 
 #: ../clients/tui/nmt-page-ppp.c:140
-#, fuzzy
 msgid "Allowed authentication methods:"
-msgstr "身份認證"
+msgstr "允許的驗證方式："
 
 #: ../clients/tui/nmt-page-ppp.c:147
 msgid "EAP"
@@ -9626,9 +9736,9 @@ msgid ""
 msgstr "將運行openconnect進行身份驗證。完成後它將返回nmtui。"
 
 #: ../clients/tui/nmtui-connect.c:69
-#, fuzzy, c-format
+#, c-format
 msgid "Error: openconnect failed: %s"
-msgstr "錯誤：連線刪除失敗：%s"
+msgstr "錯誤：openconnect 失敗：%s"
 
 #: ../clients/tui/nmtui-connect.c:76
 #, c-format
@@ -9643,7 +9753,7 @@ msgstr "openconnect因信號失敗 %d"
 #: ../clients/tui/nmtui-connect.c:183
 #, c-format
 msgid "Activation failed: %s"
-msgstr "激活失敗： %s"
+msgstr "啟動失敗： %s"
 
 #: ../clients/tui/nmtui-connect.c:254
 msgid "Connecting..."
@@ -9706,9 +9816,9 @@ msgid "Unable to delete connection: %s"
 msgstr "無法刪除連線：%s"
 
 #: ../clients/tui/nmtui-edit.c:508
-#, fuzzy, c-format
+#, c-format
 msgid "Could not delete connection '%s': %s"
-msgstr "無法刪除連線：%s"
+msgstr "無法刪除連線「%s」：%s"
 
 #: ../clients/tui/nmtui-edit.c:530
 #, c-format
@@ -9771,18 +9881,18 @@ msgid "Could not parse arguments"
 msgstr "無法剖析引數"
 
 #: ../clients/tui/nmtui.c:249
-#, fuzzy, c-format
+#, c-format
 msgid "Could not contact NetworkManager: %s.\n"
-msgstr "無法啟動連線：%s"
+msgstr "無法聯絡 NetworkManager：%s。\n"
 
 #: ../clients/tui/nmtui.c:254
 msgid "NetworkManager is not running."
 msgstr "NetworkManager 並不在執行中。"
 
 #: ../libnm-core/nm-crypto.c:213
-#, fuzzy, c-format
+#, c-format
 msgid "PEM key file had no start tag"
-msgstr "PEM 金鑰檔案沒有結束標籤「%s」。"
+msgstr "PEM 金鑰檔案沒有開始標籤"
 
 #: ../libnm-core/nm-crypto.c:221
 #, c-format
@@ -9878,19 +9988,19 @@ msgid "Failed to decode certificate."
 msgstr "解碼憑證失敗。"
 
 #: ../libnm-core/nm-crypto.c:702 ../libnm-core/nm-crypto.c:755
-#, fuzzy, c-format
+#, c-format
 msgid "Certificate file is empty"
-msgstr "關鍵是空的"
+msgstr "憑證檔案是空的"
 
 #: ../libnm-core/nm-crypto.c:735
 #, c-format
 msgid "Failed to recognize certificate"
-msgstr "识别证书失败"
+msgstr "識別憑證失敗"
 
 #: ../libnm-core/nm-crypto.c:845
 #, c-format
 msgid "not a valid private key"
-msgstr "不是一个有效的私钥"
+msgstr "不是一個有效的私密金鑰"
 
 #: ../libnm-core/nm-crypto-gnutls.c:75
 msgid "Failed to initialize the crypto engine."
@@ -9904,17 +10014,17 @@ msgstr "用於解密的不受支持的密鑰密碼"
 #: ../libnm-core/nm-crypto-gnutls.c:117 ../libnm-core/nm-crypto-nss.c:136
 #, c-format
 msgid "Invalid IV length (must be at least %u)."
-msgstr "无效的初始向量长度（至少为 %u）。"
+msgstr "無效的 IV 長度（至少為 %u）。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:134
 #, fuzzy, c-format
 msgid "Failed to initialize the decryption cipher context: %s (%s)"
-msgstr "初始化解密用的加密器失敗： %s / %s。"
+msgstr "初始化解密用的加密器失敗： %s (%s)"
 
 #: ../libnm-core/nm-crypto-gnutls.c:146
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to decrypt the private key: %s (%s)"
-msgstr "解密私密金鑰失敗： %s / %s。"
+msgstr "解密私密金鑰失敗： %s (%s)"
 
 #: ../libnm-core/nm-crypto-gnutls.c:160 ../libnm-core/nm-crypto-nss.c:223
 #, c-format
@@ -9937,9 +10047,9 @@ msgid "Failed to initialize the encryption cipher context: %s (%s)"
 msgstr "初始化加密用的加密器失敗： %s / %s。"
 
 #: ../libnm-core/nm-crypto-gnutls.c:247
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to encrypt the data: %s (%s)"
-msgstr "加密私密金鑰失敗： %s / %s。"
+msgstr "加密資料失敗： %s (%s)"
 
 #: ../libnm-core/nm-crypto-gnutls.c:272
 #, c-format
@@ -10085,14 +10195,12 @@ msgid "wrong type; should be a list of strings."
 msgstr "錯誤的類型;應該是一個字符串列表。"
 
 #: ../libnm-core/nm-connection.c:392
-#, fuzzy
 msgid "unknown setting name"
-msgstr "錯誤：「%s」設定不明\n"
+msgstr "未知設定名稱"
 
 #: ../libnm-core/nm-connection.c:404
-#, fuzzy
 msgid "duplicate setting name"
-msgstr "錯誤：「%s」設定不明\n"
+msgstr "重複的設定名稱"
 
 #: ../libnm-core/nm-connection.c:1415
 msgid "setting not found"
@@ -10105,19 +10213,16 @@ msgstr "非從屬連接需要設置"
 
 #: ../libnm-core/nm-connection.c:1494 ../libnm-core/nm-connection.c:1519
 #: ../libnm-core/nm-connection.c:1544
-#, fuzzy
 msgid "setting not allowed in slave connection"
-msgstr "設定「%s」不存在連線中。\n"
+msgstr "在從屬連線中設定不被允許"
 
 #: ../libnm-core/nm-connection.c:1634
-#, fuzzy
 msgid "Unexpected failure to verify the connection"
-msgstr "無法刪除連線：%s"
+msgstr "驗證連線發生未預期的失敗"
 
 #: ../libnm-core/nm-connection.c:1681
-#, fuzzy
 msgid "Unexpected failure to normalize the connection"
-msgstr "無法刪除連線：%s"
+msgstr "正常化連線時發生未預期的失敗"
 
 #: ../libnm-core/nm-connection.c:2375 ../libnm-core/nm-setting-8021x.c:2569
 #: ../libnm-core/nm-setting-8021x.c:2586 ../libnm-core/nm-setting-8021x.c:2617
@@ -10154,36 +10259,36 @@ msgstr "方法返回類型'%s', 但預計'%s'"
 #: ../libnm-core/nm-keyfile-utils.c:210
 #, c-format
 msgid "value is not an integer in range [%lld, %lld]"
-msgstr ""
+msgstr "值不是在範圍 [%lld, %lld] 中的整數"
 
 #: ../libnm-core/nm-keyfile.c:211
 msgid "ignoring missing number"
 msgstr "忽略丟失的號碼"
 
 #: ../libnm-core/nm-keyfile.c:219
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid number '%s'"
-msgstr "無效的單位「%s」"
+msgstr "忽略無效的數字「%s」"
 
 #: ../libnm-core/nm-keyfile.c:240
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s address: %s"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "忽略無效的 %s 位址：%s"
 
 #: ../libnm-core/nm-keyfile.c:282
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
-msgstr "無效的閘道器「%s」"
+msgstr "忽略 %s 路由無效的閘道器「%s」"
 
 #: ../libnm-core/nm-keyfile.c:303
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid %s route: %s"
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "忽略無效的 %s 路由：%s"
 
 #: ../libnm-core/nm-keyfile.c:428
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
-msgstr "意外的角色'%c' 地址 %s: “%s' （位置 %td)"
+msgstr "意外的字元'%c' 地址 %s: “%s' （位置 %td)"
 
 #: ../libnm-core/nm-keyfile.c:438
 #, c-format
@@ -10198,7 +10303,7 @@ msgstr "意外的角色'%c' 在前綴長度為 %s: “%s' （位置 %td)"
 #: ../libnm-core/nm-keyfile.c:458
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
-msgstr "垃圾在價值的最後 %s: “%s'"
+msgstr "垃圾在值 %s 的最後：「%s」"
 
 #: ../libnm-core/nm-keyfile.c:464
 #, c-format
@@ -10218,7 +10323,7 @@ msgstr "缺少前綴長度 %s “%s', 默認為 %d"
 #: ../libnm-core/nm-keyfile.c:814 ../libnm-core/nm-setting-user.c:374
 #, c-format
 msgid "invalid value for \"%s\": %s"
-msgstr "“...的值無效”%s\": %s"
+msgstr "「%s」的值無效：%s"
 
 #: ../libnm-core/nm-keyfile.c:852
 #, c-format
@@ -10231,9 +10336,8 @@ msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr "忽略無效的字節元素'%d' （不在0到255之間）"
 
 #: ../libnm-core/nm-keyfile.c:959
-#, fuzzy
 msgid "ignoring invalid MAC address"
-msgstr "不是個有效的 MAC 位址"
+msgstr "忽略無效的 MAC 位址"
 
 #: ../libnm-core/nm-keyfile.c:1217
 msgid "ignoring invalid SSID"
@@ -10244,14 +10348,13 @@ msgid "ignoring invalid raw password"
 msgstr "忽略無效的原始密碼"
 
 #: ../libnm-core/nm-keyfile.c:1370
-#, fuzzy
 msgid "invalid key/cert value"
-msgstr "無效的「%s」或是它的值「%s」無效"
+msgstr "無效的金鑰/憑證值"
 
 #: ../libnm-core/nm-keyfile.c:1381
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key/cert value path \"%s\""
-msgstr "無效的「%s」或是它的值「%s」無效"
+msgstr "無效的金鑰/憑證值路徑「%s」"
 
 #: ../libnm-core/nm-keyfile.c:1397 ../libnm-core/nm-keyfile.c:1480
 #, c-format
@@ -10276,14 +10379,14 @@ msgid "invalid key/cert value is not a valid blob"
 msgstr "無效的密鑰/證書值不是有效的blob"
 
 #: ../libnm-core/nm-keyfile.c:1594
-#, fuzzy, c-format
+#, c-format
 msgid "invalid parity value '%s'"
-msgstr "無效的「%s」或是它的值「%s」無效"
+msgstr "無效的同位值「%s」"
 
 #: ../libnm-core/nm-keyfile.c:1611 ../libnm-core/nm-keyfile.c:3130
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting: %s"
-msgstr "錯誤：無效的設定名稱；%s\n"
+msgstr "無效的設定：%s"
 
 #: ../libnm-core/nm-keyfile.c:1628
 #, c-format
@@ -10291,31 +10394,31 @@ msgid "ignoring invalid team configuration: %s"
 msgstr "忽略無效的團隊配置： %s"
 
 #: ../libnm-core/nm-keyfile.c:1706
-#, fuzzy, c-format
+#, c-format
 msgid "invalid qdisc: %s"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "無效的 qdisc：%s"
 
 #: ../libnm-core/nm-keyfile.c:1752
-#, fuzzy, c-format
+#, c-format
 msgid "invalid tfilter: %s"
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的 tfilter：%s"
 
 #: ../libnm-core/nm-keyfile.c:2974
-#, fuzzy, c-format
+#, c-format
 msgid "error loading setting value: %s"
-msgstr "錯誤：無效的設定名稱；%s\n"
+msgstr "載入設定值發生錯誤：%s"
 
 #: ../libnm-core/nm-keyfile.c:3002 ../libnm-core/nm-keyfile.c:3013
 #: ../libnm-core/nm-keyfile.c:3031 ../libnm-core/nm-keyfile.c:3042
 #: ../libnm-core/nm-keyfile.c:3053 ../libnm-core/nm-keyfile.c:3105
 #: ../libnm-core/nm-keyfile.c:3116
 msgid "value cannot be interpreted as integer"
-msgstr ""
+msgstr "值無法被解讀為整數"
 
 #: ../libnm-core/nm-keyfile.c:3151
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting name '%s'"
-msgstr "錯誤：無效的設定名稱；%s\n"
+msgstr "無效的設定名稱 「%s」"
 
 #: ../libnm-core/nm-keyfile.c:3196
 #, c-format
@@ -10335,32 +10438,32 @@ msgstr "無效的選項「%s」"
 #: ../libnm-core/nm-keyfile.c:3280
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
-msgstr ""
+msgstr "金鑰「%s.%s」不是在 base64 編碼有效的 256 位元金鑰"
 
 #: ../libnm-core/nm-keyfile.c:3293
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid secret flag"
-msgstr "「%s」不是有效的 DCB 旗標"
+msgstr "金鑰「%s.%s」不是有效的祕密旗標"
 
 #: ../libnm-core/nm-keyfile.c:3305
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
-msgstr "鑰匙'%s.%s' 不是布爾值"
+msgstr "金鑰「%s.%s」不是在範圍 0 到 2^32 的整數"
 
 #: ../libnm-core/nm-keyfile.c:3317
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid endpoint"
-msgstr "「%s」不是個有效的頻道"
+msgstr "金鑰「%s.%s」不是有效的端點"
 
 #: ../libnm-core/nm-keyfile.c:3339
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
-msgstr ""
+msgstr "金鑰「%s.%s」有無效的 allowed-ips"
 
 #: ../libnm-core/nm-keyfile.c:3351
-#, fuzzy, c-format
+#, c-format
 msgid "peer '%s' is invalid: %s"
-msgstr "「%s」無效"
+msgstr "對端「%s」無效：「%s」"
 
 #: ../libnm-core/nm-setting-6lowpan.c:93
 #, c-format
@@ -10398,28 +10501,26 @@ msgid "URI is not valid UTF-8"
 msgstr "URI無效UTF-8"
 
 #: ../libnm-core/nm-setting-8021x.c:290
-#, fuzzy
 msgid "data missing"
-msgstr "找不到屬性"
+msgstr "資料遺失"
 
 #: ../libnm-core/nm-setting-8021x.c:313 ../libnm-core/nm-setting-8021x.c:680
-#, fuzzy, c-format
+#, c-format
 msgid "certificate is invalid: %s"
-msgstr "屬性不合規定"
+msgstr "憑證無效：%s"
 
 #: ../libnm-core/nm-setting-8021x.c:321
 #, c-format
 msgid "certificate detected as invalid scheme"
-msgstr "证书无效"
+msgstr "憑證被偵測為無效的配置"
 
 #: ../libnm-core/nm-setting-8021x.c:535
 msgid "CA certificate must be in X.509 format"
 msgstr "CA證書必須採用X.509格式"
 
 #: ../libnm-core/nm-setting-8021x.c:551
-#, fuzzy
 msgid "invalid certificate format"
-msgstr "初始化憑證資料時發生錯誤：%s"
+msgstr "無效的憑證格式"
 
 #: ../libnm-core/nm-setting-8021x.c:690
 #, c-format
@@ -10487,19 +10588,18 @@ msgid "'%s' is not a valid value for the property"
 msgstr "'%s' 不是合於屬性規定的值"
 
 #: ../libnm-core/nm-setting-8021x.c:2896
-#, fuzzy
 msgid "invalid auth flags"
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的驗證旗標"
 
 #: ../libnm-core/nm-setting-bluetooth.c:160
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' connection requires '%s' or '%s' setting"
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr "「%s」連效需要「%s」或「%s」設定"
 
 #: ../libnm-core/nm-setting-bluetooth.c:206
 #, c-format
 msgid "'%s' connection requires '%s' setting"
-msgstr "“%s' 連接需要'%s' 設置"
+msgstr "「%s」連線需要「%s」設定"
 
 #: ../libnm-core/nm-setting-bond.c:556
 #, c-format
@@ -10555,12 +10655,12 @@ msgstr "未設定 '%s' 選項"
 #: ../libnm-core/nm-setting-bond.c:722
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
-msgstr "'%s' 不是合於 '%s' 選項的 IPv4 位址。"
+msgstr "'%s' 不是合於 '%s' 選項的 IPv4 位址"
 
 #: ../libnm-core/nm-setting-bond.c:750
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option is only valid with mode '%s'"
-msgstr "'%s' 選項僅適用於 '%s=%s'"
+msgstr "「%s」選項僅對「%s」模式有效"
 
 #: ../libnm-core/nm-setting-bond.c:761
 #, c-format
@@ -10568,9 +10668,9 @@ msgid "'%s' and '%s' cannot have different values"
 msgstr "“%s' 和'%s' 不能有不同的價值觀"
 
 #: ../libnm-core/nm-setting-bond.c:777
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option should be string"
-msgstr "未設定 '%s' 選項"
+msgstr "「%s」選項應該要是字串"
 
 #: ../libnm-core/nm-setting-bond.c:793
 #, c-format
@@ -10582,9 +10682,9 @@ msgstr "“%s' 選項對於模式'無效%s'"
 #: ../libnm-core/nm-setting-ovs-interface.c:259
 #: ../libnm-core/nm-setting-ovs-port.c:187
 #: ../libnm-core/nm-setting-team-port.c:319
-#, fuzzy, c-format
+#, c-format
 msgid "missing setting"
-msgstr "遺失選項"
+msgstr "遺失設定"
 
 #: ../libnm-core/nm-setting-bridge-port.c:328
 #: ../libnm-core/nm-setting-ovs-interface.c:280
@@ -10611,9 +10711,9 @@ msgid "the mask can't contain bits 0 (STP), 1 (MAC) or 2 (LACP)"
 msgstr "掩碼不能包含位0（STP），1（MAC）或2（LACP）"
 
 #: ../libnm-core/nm-setting-connection.c:908
-#, fuzzy, c-format
+#, c-format
 msgid "setting required for connection of type '%s'"
-msgstr "無法為「%s」連線（類型「%s」）建立編輯程式。"
+msgstr "「%s」類型的連線需要設定"
 
 #: ../libnm-core/nm-setting-connection.c:947
 #, c-format
@@ -10621,19 +10721,19 @@ msgid "'%s' is not a valid UUID"
 msgstr "「%s」不是個有效的 UUID"
 
 #: ../libnm-core/nm-setting-connection.c:997
-#, fuzzy, c-format
+#, c-format
 msgid "connection type '%s' is not valid"
-msgstr "索引「%s」無效"
+msgstr "連線類型「%s」無效"
 
 #: ../libnm-core/nm-setting-connection.c:1033
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown slave type '%s'"
-msgstr "不明日誌層級「%s」"
+msgstr "不明的從屬類型「%s」"
 
 #: ../libnm-core/nm-setting-connection.c:1044
-#, fuzzy, c-format
+#, c-format
 msgid "Slave connections need a valid '%s' property"
-msgstr "「%s」連線需要「%s」在此內容中"
+msgstr "從屬連線需要有效的「%s」屬性"
 
 #: ../libnm-core/nm-setting-connection.c:1065
 #, c-format
@@ -10663,9 +10763,9 @@ msgid "property type should be set to '%s'"
 msgstr "屬性類型應設置為'%s'"
 
 #: ../libnm-core/nm-setting-connection.c:1164
-#, fuzzy, c-format
+#, c-format
 msgid "slave-type '%s' requires a '%s' setting in the connection"
-msgstr "連線中需要 '%s' 設定存在"
+msgstr "slave-type「%s」需要連線中「%s」設定存在"
 
 #: ../libnm-core/nm-setting-connection.c:1174
 #, c-format
@@ -10675,9 +10775,9 @@ msgid ""
 msgstr "用'檢測從屬連接%s' 設置和端口類型'%s'. “%s' 應該設置為'%s'"
 
 #: ../libnm-core/nm-setting-connection.c:1191
-#, fuzzy, c-format
+#, c-format
 msgid "A slave connection with '%s' set to '%s' cannot have a '%s' setting"
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr "「%s」設為「%s」的從屬連線不能有「%s」設定"
 
 #: ../libnm-core/nm-setting-dcb.c:508
 msgid "flags invalid"
@@ -10741,9 +10841,8 @@ msgid "'%s' is not a number"
 msgstr "「%s」不是個數字"
 
 #: ../libnm-core/nm-setting-gsm.c:402
-#, fuzzy
 msgid "property is empty or wrong size"
-msgstr "屬性為空"
+msgstr "屬性為空或大小錯誤"
 
 #: ../libnm-core/nm-setting-gsm.c:412
 msgid "property must contain only digits"
@@ -10765,56 +10864,55 @@ msgid ""
 msgstr "軟件infiniband設備的接口名稱必須是'%s' 或者未設置（相反它是'%s')"
 
 #: ../libnm-core/nm-setting-infiniband.c:281
-#, fuzzy, c-format
+#, c-format
 msgid "mtu can be at most %u but it is %u"
-msgstr "mtu用於運輸模式'%s' 最多可以 %d 但它是 %d"
+msgstr "mtu 最多可以是 %u 但它是 %u"
 
 #: ../libnm-core/nm-setting-ip-config.c:136
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv4 address"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "IPv4 位址遺失"
 
 #: ../libnm-core/nm-setting-ip-config.c:136
-#, fuzzy, c-format
+#, c-format
 msgid "Missing IPv6 address"
-msgstr "無效的 IPv6 位址「%s」"
+msgstr "IPv6 位址遺失"
 
 #: ../libnm-core/nm-setting-ip-config.c:141
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv4 address '%s'"
 msgstr "無效的 IPv4 位址「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:141
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv6 address '%s'"
 msgstr "無效的 IPv6 位址「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:156
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv4 address prefix '%u'"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "無效的 IPv4 位址前綴「%u」"
 
 #: ../libnm-core/nm-setting-ip-config.c:156
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv6 address prefix '%u'"
-msgstr "無效的 IPv6 位址「%s」"
+msgstr "無效的 IPv6 位址前綴「%u」"
 
 #: ../libnm-core/nm-setting-ip-config.c:171
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid routing metric '%s'"
-msgstr "無效的單位「%s」"
+msgstr "無效的路由度量「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:1289
 #: ../libnm-core/nm-setting-sriov.c:418
-#, fuzzy
 msgid "unknown attribute"
-msgstr "錯誤：「%s」設定不明\n"
+msgstr "未知屬性"
 
 #: ../libnm-core/nm-setting-ip-config.c:1299
 #: ../libnm-core/nm-setting-sriov.c:428
-#, fuzzy, c-format
+#, c-format
 msgid "invalid attribute type '%s'"
-msgstr "無效的「%s」或是它的值「%s」無效"
+msgstr "無效的屬性類型「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:1310
 #, c-format
@@ -10828,25 +10926,24 @@ msgstr "屬性對IPv6路由無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:1327
 #: ../libnm-core/nm-setting-ip-config.c:1351
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv4 address"
-msgstr "「%s」不是個有效的 MAC 位址"
+msgstr "「%s」不是個有效的 IPv4 位址"
 
 #: ../libnm-core/nm-setting-ip-config.c:1328
 #: ../libnm-core/nm-setting-ip-config.c:1352
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv6 address"
-msgstr "「%s」不是個有效的 MAC 位址"
+msgstr "「%s」不是個有效的 IPv6 位址"
 
 #: ../libnm-core/nm-setting-ip-config.c:1342
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix %s"
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的前綴「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:2479
-#, fuzzy
 msgid "invalid priority"
-msgstr "無效的優先順序對映「%s」"
+msgstr "無效的優先順序"
 
 #: ../libnm-core/nm-setting-ip-config.c:2490
 #, fuzzy
@@ -10854,75 +10951,66 @@ msgid "missing table"
 msgstr "遺失選項"
 
 #: ../libnm-core/nm-setting-ip-config.c:2496
-#, fuzzy
 msgid "invalid action"
-msgstr "無效的選項「%s」"
+msgstr "無效的動作"
 
 #: ../libnm-core/nm-setting-ip-config.c:2503
 msgid "has from/src but the prefix-length is zero"
-msgstr ""
+msgstr "有 from/src 但是前綴長度是零"
 
 #: ../libnm-core/nm-setting-ip-config.c:2510
 msgid "missing from/src for a non zero prefix-length"
 msgstr ""
 
 #: ../libnm-core/nm-setting-ip-config.c:2515
-#, fuzzy
 msgid "invalid from/src"
-msgstr "無效的端口 %d"
+msgstr "無效的 from/src"
 
 #: ../libnm-core/nm-setting-ip-config.c:2520
-#, fuzzy
 msgid "invalid prefix length for from/src"
-msgstr "無效的前綴長度 %s “%s', 默認為 %d"
+msgstr "from/src 前綴長度無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:2527
 msgid "has to/dst but the prefix-length is zero"
-msgstr ""
+msgstr "有 to/dst 但是前綴長度是零"
 
 #: ../libnm-core/nm-setting-ip-config.c:2534
 msgid "missing to/dst for a non zero prefix-length"
 msgstr ""
 
 #: ../libnm-core/nm-setting-ip-config.c:2539
-#, fuzzy
 msgid "invalid to/dst"
-msgstr "無效的端口 %d"
+msgstr "無效的 to/dst"
 
 #: ../libnm-core/nm-setting-ip-config.c:2544
-#, fuzzy
 msgid "invalid prefix length for to/dst"
-msgstr "無效的前綴長度 %s “%s', 默認為 %d"
+msgstr "to/dst 前綴長度無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:2552
-#, fuzzy
 msgid "invalid iifname"
-msgstr "無效值"
+msgstr "無效的 iifname"
 
 #: ../libnm-core/nm-setting-ip-config.c:2560
-#, fuzzy
 msgid "invalid oifname"
-msgstr "無效值"
+msgstr "無效的 oifname"
 
 #: ../libnm-core/nm-setting-ip-config.c:2566
-#, fuzzy
 msgid "invalid source port range"
-msgstr "最小源端口[0]"
+msgstr "無效的來源連接埠範圍"
 
 #: ../libnm-core/nm-setting-ip-config.c:2572
-#, fuzzy
 msgid "invalid destination port range"
-msgstr "無效的選項「%s」"
+msgstr "無效的目的連接埠範圍"
 
 #: ../libnm-core/nm-setting-ip-config.c:2676
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key %s"
-msgstr "重複財產"
+msgstr "重複的金鑰 %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:2690
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key \"%s\""
-msgstr "無效的密鑰 ”%s\": %s"
+msgstr "無效的密鑰「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:2703
 #, fuzzy, c-format
@@ -10930,107 +11018,100 @@ msgid "invalid variant type '%s' for \"%s\""
 msgstr "無效的「%s」或是它的值「%s」無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:2712
-#, fuzzy
 msgid "missing \""
-msgstr "遺失選項"
+msgstr "遺失 \""
 
 #: ../libnm-core/nm-setting-ip-config.c:2718
-#, fuzzy
 msgid "invalid \""
-msgstr "無效的DUID"
+msgstr "無效的  \""
 
 #: ../libnm-core/nm-setting-ip-config.c:2909
-#, fuzzy
 msgid "Unsupported to-string-flags argument"
-msgstr "不支持的卸載功能"
+msgstr "不支援的 to-string-flags 引數"
 
 #: ../libnm-core/nm-setting-ip-config.c:2916
 msgid "Unsupported extra-argument"
-msgstr ""
+msgstr "不支援的 extra-argument"
 
 #: ../libnm-core/nm-setting-ip-config.c:3161
-#, fuzzy, c-format
+#, c-format
 msgid "unsupported key \"%s\""
-msgstr "不支持的tfilter選項：'%s'."
+msgstr "不支持的金鑰「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:3166
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key \"%s\""
-msgstr "重複的VF指數 %u"
+msgstr "重複的金鑰「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:3171
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for \"%s\""
-msgstr "“...的值無效”%s\": %s"
+msgstr "「%s」的值無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:3181
 msgid "empty text does not describe a rule"
-msgstr ""
+msgstr "空的文字不能描述一個規則"
 
 #: ../libnm-core/nm-setting-ip-config.c:3187
-#, fuzzy, c-format
+#, c-format
 msgid "missing argument for \"%s\""
-msgstr "遺失選項"
+msgstr "「%s」遺失引數"
 
 #: ../libnm-core/nm-setting-ip-config.c:3199
-#, fuzzy
 msgid "invalid \"from\" part"
-msgstr "無效的端口 %d"
+msgstr "無效的「from」部份"
 
 #: ../libnm-core/nm-setting-ip-config.c:3213
-#, fuzzy
 msgid "invalid \"to\" part"
-msgstr "無效的端口 %d"
+msgstr "無效的「to」部份"
 
 #: ../libnm-core/nm-setting-ip-config.c:3222
 #, c-format
 msgid "cannot detect address family for rule"
-msgstr ""
+msgstr "無法偵測規則的位址家族"
 
 #: ../libnm-core/nm-setting-ip-config.c:3279
 #: ../libnm-core/nm-setting-ip-config.c:3373
-#, fuzzy, c-format
+#, c-format
 msgid "rule is invalid: %s"
-msgstr "屬性不合規定"
+msgstr "規則無效：%s"
 
 #: ../libnm-core/nm-setting-ip-config.c:3356
-#, fuzzy
 msgid "invalid address family"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "無效的位址家族"
 
 #: ../libnm-core/nm-setting-ip-config.c:4618
-#, fuzzy, c-format
+#, c-format
 msgid "rule #%u is invalid: %s"
-msgstr "屬性不合規定"
+msgstr "規則 #%u 無效：%s"
 
 #: ../libnm-core/nm-setting-ip-config.c:4836
-#, fuzzy, c-format
+#, c-format
 msgid "%d. DNS server address is invalid"
-msgstr "%d。IPv4 位址不合規定"
+msgstr "%d。DNS 伺服器位址無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:4852
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address is invalid"
-msgstr "%d。IPv4 位址不合規定"
+msgstr "%d。IP 位址無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:4864
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address has 'label' property with invalid type"
-msgstr "%d。IPv4 位址的前綴不合規定"
+msgstr "%d。IP 位址有無效類型的「label」屬性"
 
 #: ../libnm-core/nm-setting-ip-config.c:4873
-#, fuzzy, c-format
+#, c-format
 msgid "%d. IP address has invalid label '%s'"
-msgstr "%d。IPv4 位址的前綴不合規定"
+msgstr "%d。IP 位址有無效的標籤「%s」"
 
 #: ../libnm-core/nm-setting-ip-config.c:4887
 msgid "gateway cannot be set if there are no addresses configured"
 msgstr "如果沒有配置地址，則無法設置網關"
 
 #: ../libnm-core/nm-setting-ip-config.c:4896
-#, fuzzy
 msgid "gateway is invalid"
-msgstr "屬性不合規定"
+msgstr "閘道器無效"
 
 #: ../libnm-core/nm-setting-ip-config.c:4910
 #, c-format
@@ -11045,28 +11126,28 @@ msgstr "%d. route不能是默認路由"
 #: ../libnm-core/nm-setting-ip-config.c:4935
 #, c-format
 msgid "%u. rule has wrong address-family"
-msgstr ""
+msgstr "%u. 規則有錯誤的 address-family"
 
 #: ../libnm-core/nm-setting-ip-config.c:4944
-#, fuzzy, c-format
+#, c-format
 msgid "%u. rule is invalid: %s"
-msgstr "%d。路徑不合規定"
+msgstr "%u。規則無效：%s"
 
 #: ../libnm-core/nm-setting-ip-config.c:4957
-#, fuzzy, c-format
+#, c-format
 msgid "a gateway is incompatible with '%s'"
-msgstr "'%s=%s' 與 '%s > 0' 不相容"
+msgstr "閘道器與「%s」不相容"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:340
-#, fuzzy, c-format
+#, c-format
 msgid "'%d' is not a valid tunnel mode"
-msgstr "'%d' 不是合於規定的頻道"
+msgstr "「%d」不是有效的隧道模式"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:363
 #: ../libnm-core/nm-setting-ip-tunnel.c:383
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv%c address"
-msgstr "「%s」不是個有效的 MAC 位址"
+msgstr "「%s」不是個有效的 IPv%c 位址"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:400
 msgid "tunnel keys can only be specified for GRE tunnels"
@@ -11074,9 +11155,9 @@ msgstr "隧道密鑰只能為GRE隧道指定"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:413
 #: ../libnm-core/nm-setting-ip-tunnel.c:429
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid tunnel key"
-msgstr "「%s」不是個有效的頻道"
+msgstr "「%s」不是個有效的通道金鑰"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:441
 msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
@@ -11094,9 +11175,9 @@ msgstr "模式不允許有線設置 %s"
 
 #: ../libnm-core/nm-setting-ip4-config.c:128
 #: ../libnm-core/nm-setting-ip6-config.c:174
-#, fuzzy, c-format
+#, c-format
 msgid "this property cannot be empty for '%s=%s'"
-msgstr "此屬性不能用於 '%s=%s'"
+msgstr "此屬性的「%s=%s」不能為空"
 
 #: ../libnm-core/nm-setting-ip4-config.c:140
 #: ../libnm-core/nm-setting-ip4-config.c:150
@@ -11109,9 +11190,9 @@ msgid "this property is not allowed for '%s=%s'"
 msgstr "此屬性不能用於 '%s=%s'"
 
 #: ../libnm-core/nm-setting-ip4-config.c:199
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid FQDN"
-msgstr "「%s」不是個有效的 UUID"
+msgstr "「%s」不是個有效的 FQDN"
 
 #: ../libnm-core/nm-setting-ip4-config.c:208
 msgid "property cannot be set when dhcp-hostname is also set"
@@ -11120,16 +11201,15 @@ msgstr "如果還設置了dhcp-hostname，則無法設置屬性"
 #: ../libnm-core/nm-setting-ip4-config.c:220
 #, c-format
 msgid "multiple addresses are not allowed for '%s=%s'"
-msgstr "'不允許多個地址'%s=%s'"
+msgstr "不允許多個地址'%s=%s'"
 
 #: ../libnm-core/nm-setting-ip4-config.c:234
 msgid "property should be TRUE when method is set to disabled"
 msgstr "當方法設置為禁用時，屬性應為TRUE"
 
 #: ../libnm-core/nm-setting-ip6-config.c:248
-#, fuzzy
 msgid "value is not a valid token"
-msgstr "「%s」不是個有效的 UUID"
+msgstr "值不是個有效的 token"
 
 #: ../libnm-core/nm-setting-ip6-config.c:259
 msgid "only makes sense with EUI64 address generation mode"
@@ -11154,12 +11234,11 @@ msgstr "關鍵是空的"
 #: ../libnm-core/nm-setting-macsec.c:257
 #, c-format
 msgid "the key must be %d characters"
-msgstr "關鍵必須是 %d 人物"
+msgstr "金鑰必須是 %d 個字元"
 
 #: ../libnm-core/nm-setting-macsec.c:265
-#, fuzzy
 msgid "the key contains non-hexadecimal characters"
-msgstr "IV 包含非十六進位的數字。"
+msgstr "金鑰包含非十六進位的字元"
 
 #: ../libnm-core/nm-setting-macsec.c:327 ../libnm-core/nm-setting-macvlan.c:157
 #: ../libnm-core/nm-setting-vlan.c:640
@@ -11174,7 +11253,7 @@ msgstr "EAP密鑰管理要求'%s' 設置存在"
 
 #: ../libnm-core/nm-setting-macsec.c:357
 msgid "must be either psk (0) or eap (1)"
-msgstr ""
+msgstr "必須為 psk (0) 或 eap (1)"
 
 #: ../libnm-core/nm-setting-macsec.c:366
 #, c-format
@@ -11183,7 +11262,7 @@ msgstr "無效的端口 %d"
 
 #: ../libnm-core/nm-setting-macsec.c:377
 msgid "only valid for psk mode"
-msgstr ""
+msgstr "只對 psk 模式有效"
 
 #: ../libnm-core/nm-setting-macvlan.c:168
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -11218,36 +11297,37 @@ msgstr "“%s' 不是有效的接口類型"
 #: ../libnm-core/nm-setting-ovs-interface.c:133
 #, c-format
 msgid "A connection with a '%s' setting needs connection.type explicitly set"
-msgstr "與''的連接%s' 設置需要connection.type顯式設置"
+msgstr "具有「%s」設定的連線需要明確設定 connection.type"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:145
 #, c-format
 msgid "A connection of type '%s' cannot have ovs-interface.type \"system\""
-msgstr "類型的連接'%s' 不能有ovs-interface.type“系統”"
+msgstr "類型「%s」的連線不能有 ovs-interface.type 「system」"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:157
 #, c-format
 msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
-msgstr "類型的連接'%s' 不能有一個ovs-interface.type“%s\""
+msgstr "類型「%s」的連線不能有 ovs-interface.type 「%s」"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:173
 #, c-format
 msgid ""
 "A connection with '%s' setting must be of connection.type \"ovs-interface\" "
 "but is \"%s\""
-msgstr "與'連接'%s' 設置必須是connection.type“ovs-interface”但是“%s\""
+msgstr ""
+"具有「%s」設定的連線必須是 connection.type 「ovs-interface」但是是「%s」"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:184
 #, c-format
 msgid ""
 "A connection with '%s' setting needs to be of 'patch' interface type, not "
 "'%s'"
-msgstr "與'連接'%s' 設置需要是'patch'接口類型，而不是'%s'"
+msgstr "具有「%s」設定的連線需要是「patch」介面類型，而不是「%s」"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:199
 #, c-format
 msgid "A connection with ovs-interface.type '%s' setting a 'ovs-patch' setting"
-msgstr "與ovs-interface.type的連接'%s' 設置'ovs-patch'設置"
+msgstr "具有 ovs-interface.type 「%s」設定的連線「ovs-patch」設定"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:219
 #, c-format
@@ -11257,24 +11337,24 @@ msgstr "缺少ovs界面設置"
 #: ../libnm-core/nm-setting-ovs-interface.c:225
 #, c-format
 msgid "Missing ovs interface type"
-msgstr "缺少ovs界麵類型"
+msgstr "缺少 ovs 介面類型"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:268
 #: ../libnm-core/nm-setting-ovs-port.c:196
 #, c-format
 msgid "A connection with a '%s' setting must have a master."
-msgstr "與''的連接%s' 設置必須有一個主人。"
+msgstr "具有「%s」設定的連線必須有一個主介面。"
 
 #: ../libnm-core/nm-setting-ovs-patch.c:104
 #: ../libnm-core/nm-setting-vxlan.c:354
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP address"
-msgstr "「%s」不是個有效的 MAC 位址"
+msgstr "「%s」不是個有效的 IP 位址"
 
 #: ../libnm-core/nm-setting-ovs-port.c:221
 #, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "“%s' 在vlan_mode中不允許"
+msgstr "「%s」在vlan_mode中不允許"
 
 #: ../libnm-core/nm-setting-ovs-port.c:231
 #, c-format
@@ -11284,12 +11364,12 @@ msgstr "標籤ID必須在0-4094範圍內，但是 %u"
 #: ../libnm-core/nm-setting-ovs-port.c:241
 #, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "“%s' 在lacp中是不允許的"
+msgstr "「%s」在lacp中是不允許的"
 
 #: ../libnm-core/nm-setting-ovs-port.c:251
 #, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "“%s' bond_mode中不允許使用"
+msgstr "「%s」在 bond_mode 中不允許使用"
 
 #: ../libnm-core/nm-setting-ppp.c:352
 #, c-format
@@ -11319,7 +11399,7 @@ msgstr "腳本太大了"
 #: ../libnm-core/nm-setting-proxy.c:186
 #, c-format
 msgid "the script is not valid utf8"
-msgstr "該腳本無效utf8"
+msgstr "該腳本不是有效的 utf8"
 
 #: ../libnm-core/nm-setting-proxy.c:194
 #, c-format
@@ -11376,9 +11456,9 @@ msgstr "有重複的TC過濾器"
 
 #: ../libnm-core/nm-setting-team.c:130 ../libnm-core/nm-setting-team.c:191
 #: ../libnm-core/nm-setting-team.c:313
-#, fuzzy, c-format
+#, c-format
 msgid "%s is out of range [0, %d]"
-msgstr "'%d' 值落在範圍之外 <%d-%d>"
+msgstr "%s 落在範圍之外 [0, %d]"
 
 #: ../libnm-core/nm-setting-team.c:173
 #, c-format
@@ -11386,9 +11466,9 @@ msgid "Missing target-host in nsna_ping link watcher"
 msgstr "在nsna_ping鏈接觀察器中缺少目標主機"
 
 #: ../libnm-core/nm-setting-team.c:179 ../libnm-core/nm-setting-team.c:295
-#, fuzzy, c-format
+#, c-format
 msgid "target-host '%s' contains invalid characters"
-msgstr "IV 包含非十六進位的數字。"
+msgstr "target-host 「%s」包含無效的字元"
 
 #: ../libnm-core/nm-setting-team.c:288
 #, c-format
@@ -11396,39 +11476,36 @@ msgid "Missing %s in arp_ping link watcher"
 msgstr "失踪 %s 在arp_ping鏈接觀察者"
 
 #: ../libnm-core/nm-setting-team.c:301
-#, fuzzy, c-format
+#, c-format
 msgid "source-host '%s' contains invalid characters"
-msgstr "IV 包含非十六進位的數字。"
+msgstr "source-host 「%s」包含無效的字元"
 
 #: ../libnm-core/nm-setting-team.c:319
-#, fuzzy
 msgid "vlanid is out of range [-1, 4094]"
-msgstr "'%d' 值落在範圍之外 <%d-%d>"
+msgstr "vlanid 落在範圍之外 [-1, 4094]"
 
 #: ../libnm-core/nm-setting-tun.c:167
-#, fuzzy, c-format
+#, c-format
 msgid "'%u': invalid mode"
-msgstr "「%s」不是個有效的 Wi-Fi 模式"
+msgstr "「%u」：無效的模式"
 
 #: ../libnm-core/nm-setting-tun.c:177
-#, fuzzy, c-format
+#, c-format
 msgid "'%s': invalid user ID"
-msgstr "「%s」不是個有效的 UUID"
+msgstr "「%s」：無效的使用者 ID"
 
 #: ../libnm-core/nm-setting-tun.c:188
-#, fuzzy, c-format
+#, c-format
 msgid "'%s': invalid group ID"
-msgstr "「%s」不是個有效的 UUID"
+msgstr "「%s」：無效的群組 ID"
 
 #: ../libnm-core/nm-setting-user.c:109
-#, fuzzy
 msgid "missing key"
-msgstr "遺失選項"
+msgstr "遺失金鑰"
 
 #: ../libnm-core/nm-setting-user.c:115
-#, fuzzy
 msgid "key is too long"
-msgstr "錯誤：需要「ssid」。"
+msgstr "金鑰太長"
 
 #: ../libnm-core/nm-setting-user.c:120
 msgid "key must be UTF8"
@@ -11436,31 +11513,27 @@ msgstr "密鑰必須是UTF8"
 
 #: ../libnm-core/nm-setting-user.c:143
 msgid "key requires a '.' for a namespace"
-msgstr "密鑰需要'。'用於命名空間"
+msgstr "密鑰需要'.'用於命名空間"
 
 #: ../libnm-core/nm-setting-user.c:156
 msgid "key cannot contain \"..\""
 msgstr "key不能包含“..”"
 
 #: ../libnm-core/nm-setting-user.c:161
-#, fuzzy
 msgid "key contains invalid characters"
-msgstr "IV 包含非十六進位的數字。"
+msgstr "金鑰包含無效的字元"
 
 #: ../libnm-core/nm-setting-user.c:186
-#, fuzzy
 msgid "value is missing"
-msgstr "找不到屬性"
+msgstr "值遺失"
 
 #: ../libnm-core/nm-setting-user.c:193
-#, fuzzy
 msgid "value is too large"
-msgstr "「%d」值不在範圍內 <0-3>"
+msgstr "值太長"
 
 #: ../libnm-core/nm-setting-user.c:199
-#, fuzzy
 msgid "value is not valid UTF8"
-msgstr "「%s」不是個有效的 UUID"
+msgstr "值不是個有效的 UTF8"
 
 #: ../libnm-core/nm-setting-user.c:329
 msgid "maximum number of user data entries reached"
@@ -11494,9 +11567,9 @@ msgid "cannot set connection.multi-connect for VPN setting"
 msgstr "無法為VPN設置設置connection.multi-connect"
 
 #: ../libnm-core/nm-setting-vpn.c:582
-#, fuzzy, c-format
+#, c-format
 msgid "secret was empty"
-msgstr "屬性為空"
+msgstr "祕密為空"
 
 #: ../libnm-core/nm-setting-vpn.c:612
 msgid "setting contained a secret with an empty name"
@@ -11505,11 +11578,11 @@ msgstr "設置包含一個空名稱的秘密"
 #: ../libnm-core/nm-setting-vpn.c:620
 #, c-format
 msgid "secret value was empty"
-msgstr "秘密價值是空的"
+msgstr "秘密值是空的"
 
 #: ../libnm-core/nm-setting-vpn.c:667 ../libnm-core/nm-setting.c:2211
 msgid "not a secret property"
-msgstr "不是秘密財產"
+msgstr "不是秘密屬性"
 
 #: ../libnm-core/nm-setting-vpn.c:673
 msgid "secret is not of correct type"
@@ -11517,12 +11590,12 @@ msgstr "秘密不是正確的類型"
 
 #: ../libnm-core/nm-setting-vpn.c:757
 msgid "secret flags property not found"
-msgstr ""
+msgstr "找不到祕密旗標屬性"
 
 #: ../libnm-core/nm-setting-vxlan.c:367
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP%c address"
-msgstr "「%s」不是個有效的 MAC 位址"
+msgstr "「%s」不是個有效的 IP%c 位址"
 
 #: ../libnm-core/nm-setting-vxlan.c:394
 #, c-format
@@ -11530,9 +11603,9 @@ msgid "%d is greater than local port max %d"
 msgstr "%d 大於本地端口最大值 %d"
 
 #: ../libnm-core/nm-setting-wired.c:754
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid Ethernet port value"
-msgstr "'%s' 不是合於規定的乙太網路連接埠之值"
+msgstr "「%s」不是合於規定的乙太網路連接埠之值"
 
 #: ../libnm-core/nm-setting-wired.c:764
 #, c-format
@@ -11562,21 +11635,19 @@ msgstr "靜態鏈路配置需要速度和雙工"
 
 #: ../libnm-core/nm-setting-wireguard.c:778
 msgid "missing public-key for peer"
-msgstr ""
+msgstr "遺失對端的公開金鑰"
 
 #: ../libnm-core/nm-setting-wireguard.c:782
 msgid "invalid public-key for peer"
-msgstr ""
+msgstr "對端的公開金鑰無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:791
-#, fuzzy
 msgid "invalid preshared-key for peer"
-msgstr "無效的閘道器「%s」"
+msgstr "對端的 preshared-key 無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:809
-#, fuzzy
 msgid "invalid endpoint for peer"
-msgstr "父介面卡 [none]："
+msgstr "對端端點無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:819
 #, fuzzy, c-format
@@ -11585,57 +11656,56 @@ msgstr "無效的 IPv4 位址「%s」"
 
 #: ../libnm-core/nm-setting-wireguard.c:828
 msgid "invalid preshared-key-flags for peer"
-msgstr ""
+msgstr "對端的 preshared-key-flags 無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:1567
 #, c-format
 msgid "peer #%u has no public-key"
-msgstr ""
+msgstr "對端 #%u 沒有公開金鑰"
 
 #: ../libnm-core/nm-setting-wireguard.c:1578
 #, c-format
 msgid "peer #%u has invalid public-key"
-msgstr ""
+msgstr "對端 #%u 公開金鑰無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:1592
 #, c-format
 msgid "peer #%u has invalid endpoint"
-msgstr ""
+msgstr "對端 #%u 端點無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:1622
 #, c-format
 msgid "peer #%u has invalid allowed-ips setting"
-msgstr ""
+msgstr "對端 #%u allowed-ips 設定無效"
 
 #: ../libnm-core/nm-setting-wireguard.c:1634
-#, fuzzy, c-format
+#, c-format
 msgid "peer #%u is invalid: %s"
-msgstr "屬性不合規定"
+msgstr "對端 #%u 無效：%s"
 
 #: ../libnm-core/nm-setting-wireguard.c:1705
 #: ../libnm-core/nm-setting-wireguard.c:1719
 #, c-format
 msgid "method \"%s\" is not supported for WireGuard"
-msgstr ""
+msgstr "WireGuard 不支援方法「%s」"
 
 #: ../libnm-core/nm-setting-wireguard.c:1739
 msgid "key must be 32 bytes base64 encoded"
-msgstr ""
+msgstr "金鑰必須是 32 位元組 base64 編碼"
 
 #: ../libnm-core/nm-setting-wireguard.c:1875
-#, fuzzy
 msgid "invalid peer secrets"
-msgstr "VPN 密碼不正確"
+msgstr "無效的對端祕密"
 
 #: ../libnm-core/nm-setting-wireguard.c:1898
 #, c-format
 msgid "peer #%u lacks public-key"
-msgstr ""
+msgstr "對端 #%u 缺少公開金鑰"
 
 #: ../libnm-core/nm-setting-wireguard.c:1912
 #, c-format
 msgid "non-existing peer '%s'"
-msgstr ""
+msgstr "不存在的對端「%s」"
 
 #: ../libnm-core/nm-setting-wireless-security.c:935
 #, c-format
@@ -11663,10 +11733,10 @@ msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "「%s」只能與「%s=%s」（WEP）搭配使用"
 
 #: ../libnm-core/nm-setting-wireless-security.c:1086
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "'%s' can only be used with 'wpa-eap', 'wpa-psk' or 'sae' key management "
-msgstr "“%s' 只能用''%s=%s' 要么 '%s=%s'"
+msgstr "「%s」只能用於「wpa-eap」、「wpa-psk」或「sae」金鑰管理"
 
 #: ../libnm-core/nm-setting-wireless.c:756
 #, c-format
@@ -11679,9 +11749,9 @@ msgid "'%s' is not a valid band"
 msgstr "「%s」不是個有效的頻道"
 
 #: ../libnm-core/nm-setting-wireless.c:776
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' requires setting '%s' property"
-msgstr "需要設定「%s」內容"
+msgstr "「%s」需要設定「%s」屬性"
 
 #: ../libnm-core/nm-setting-wireless.c:870
 #, c-format
@@ -11713,91 +11783,91 @@ msgstr ""
 #: ../libnm-core/nm-setting-wpan.c:205
 #, c-format
 msgid "channel must not be between %d and %d"
-msgstr ""
+msgstr "頻道不能介於 %d 和 %d 之間"
 
 #: ../libnm-core/nm-setting.c:906
 #, c-format
 msgid "duplicate property"
-msgstr "重複財產"
+msgstr "重複屬性"
 
 #: ../libnm-core/nm-setting.c:929
-#, fuzzy, c-format
+#, c-format
 msgid "unknown property"
-msgstr "不明的錯誤"
+msgstr "未知屬性"
 
 #: ../libnm-core/nm-setting.c:1000 ../libnm-core/nm-setting.c:1049
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
-msgstr "無法設置類型的屬性%s' 從類型的價值'%s'"
+msgstr "無法從類型「%2$s」的值設定類型「%1$s」的屬性"
 
 #: ../libnm-core/nm-setting.c:1019 ../libnm-core/nm-setting.c:1034
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set property: %s"
-msgstr "錯誤：設置「%s」內容失敗：%s\n"
+msgstr "設定屬性失敗：%s"
 
 #: ../libnm-core/nm-setting.c:1064
-#, fuzzy, c-format
+#, c-format
 msgid "can not set property: %s"
-msgstr "錯誤：設置「%s」內容失敗：%s\n"
+msgstr "無法設定屬性：%s"
 
 #: ../libnm-core/nm-setting.c:2102
 msgid "secret not found"
 msgstr "沒找到秘密"
 
 #: ../libnm-core/nm-team-utils.c:1241 ../libnm-core/nm-team-utils.c:1256
-#, fuzzy, c-format
+#, c-format
 msgid "invalid D-Bus property \"%s\""
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的 D-Bus 屬性「%s」"
 
 #: ../libnm-core/nm-team-utils.c:1266
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate D-Bus property \"%s\""
-msgstr "重複財產"
+msgstr "重複的 D-Bus 屬性「%s」"
 
 #: ../libnm-core/nm-team-utils.c:1287
-#, fuzzy, c-format
+#, c-format
 msgid "invalid D-Bus property \"%s\" for \"%s\""
-msgstr "無效的欄位「%s」; 允許的欄位：%s"
+msgstr "「%s」的無效的 D-Bus 屬性「%s」"
 
 #: ../libnm-core/nm-team-utils.c:1345
-#, fuzzy, c-format
+#, c-format
 msgid "unknown link-watcher name \"%s\""
-msgstr "不明日誌網域「%s」"
+msgstr "未知 link-watcher 名稱「%s」"
 
 #: ../libnm-core/nm-team-utils.c:1903
-#, fuzzy, c-format
+#, c-format
 msgid "missing runner"
-msgstr "遺失選項"
+msgstr "遺失執行器"
 
 #: ../libnm-core/nm-team-utils.c:1915
-#, fuzzy, c-format
+#, c-format
 msgid "invalid runner \"%s\""
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的執行器「%s」"
 
 #: ../libnm-core/nm-team-utils.c:1926
-#, fuzzy, c-format
+#, c-format
 msgid "invalid runner.tx-hash"
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的 runner.tx-hash"
 
 #: ../libnm-core/nm-team-utils.c:1944
-#, fuzzy, c-format
+#, c-format
 msgid "missing link watcher name"
-msgstr "遺失選項"
+msgstr "遺失連線監視器名稱"
 
 #: ../libnm-core/nm-team-utils.c:1947
-#, fuzzy, c-format
+#, c-format
 msgid "unknown link watcher \"%s\""
-msgstr "不明日誌網域「%s」"
+msgstr "未知連線監視器「%s」"
 
 #: ../libnm-core/nm-team-utils.c:1958
-#, fuzzy, c-format
+#, c-format
 msgid "missing target host"
-msgstr "遺失選項"
+msgstr "遺失目標主機"
 
 #: ../libnm-core/nm-team-utils.c:1965
-#, fuzzy, c-format
+#, c-format
 msgid "missing source address"
-msgstr "無效的 IPv4 位址「%s」"
+msgstr "遺失來源位址"
 
 #: ../libnm-core/nm-team-utils.c:1978
 #, c-format
@@ -11805,30 +11875,30 @@ msgid "team config exceeds size limit"
 msgstr "團隊配置超出大小限制"
 
 #: ../libnm-core/nm-team-utils.c:1984
-#, fuzzy, c-format
+#, c-format
 msgid "team config is not valid UTF-8"
-msgstr "URI無效UTF-8"
+msgstr "團隊設定不是有效的 UTF-8"
 
 #: ../libnm-core/nm-team-utils.c:1990
 #: ../src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8969
-#, fuzzy, c-format
+#, c-format
 msgid "invalid json"
-msgstr "無效的選項「%s」"
+msgstr "無效的 json"
 
 #: ../libnm-core/nm-team-utils.c:2137
-#, fuzzy, c-format
+#, c-format
 msgid "invalid D-Bus type \"%s\""
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的 D-Bus 類型「%s」"
 
 #: ../libnm-core/nm-team-utils.c:2162
-#, fuzzy, c-format
+#, c-format
 msgid "invalid link-watchers: %s"
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的連線監視器：「%s」"
 
 #: ../libnm-core/nm-utils.c:2316
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid handle."
-msgstr "「%s」不是個有效的頻道"
+msgstr "「%s」不是個有效的 handle。"
 
 #: ../libnm-core/nm-utils.c:2444
 #, c-format
@@ -11836,14 +11906,14 @@ msgid "'%s' unexpected: parent already specified."
 msgstr "“%s' 意外：父已經指定。"
 
 #: ../libnm-core/nm-utils.c:2460
-#, fuzzy, c-format
+#, c-format
 msgid "invalid handle: '%s'"
-msgstr "無效的選項「%s」"
+msgstr "無效的 handle：「%s」"
 
 #: ../libnm-core/nm-utils.c:2482
 #, fuzzy
 msgid "parent not specified."
-msgstr "錯誤：尚未指定介面卡。"
+msgstr "未指定介面卡。"
 
 #: ../libnm-core/nm-utils.c:2544
 #, c-format
@@ -11851,9 +11921,8 @@ msgid "unsupported qdisc option: '%s'."
 msgstr "不支持的qdisc選項：'%s'."
 
 #: ../libnm-core/nm-utils.c:2666
-#, fuzzy
 msgid "action name missing."
-msgstr "找不到屬性"
+msgstr "動作名稱遺失。"
 
 #: ../libnm-core/nm-utils.c:2692
 #, c-format
@@ -11861,9 +11930,8 @@ msgid "unsupported action option: '%s'."
 msgstr "不受支持的行動選項：'%s'."
 
 #: ../libnm-core/nm-utils.c:2830
-#, fuzzy
 msgid "invalid action: "
-msgstr "無效的選項「%s」"
+msgstr "無效的動作："
 
 #: ../libnm-core/nm-utils.c:2834
 #, c-format
@@ -11871,24 +11939,24 @@ msgid "unsupported tfilter option: '%s'."
 msgstr "不支持的tfilter選項：'%s'."
 
 #: ../libnm-core/nm-utils.c:3435
-#, fuzzy, c-format
+#, c-format
 msgid "failed stat file %s: %s"
-msgstr "無法設置訊號遮罩：%d"
+msgstr "失敗的 stat 檔案 %s：%s"
 
 #: ../libnm-core/nm-utils.c:3444
-#, fuzzy, c-format
+#, c-format
 msgid "not a file (%s)"
-msgstr "無法載入檔案「%s」\n"
+msgstr "不是檔案 (%s)"
 
 #: ../libnm-core/nm-utils.c:3455
-#, fuzzy, c-format
+#, c-format
 msgid "invalid file owner %d for %s"
-msgstr "無效的欄位「%s」; 允許的欄位：%s"
+msgstr "%2$s 的檔案擁有者 %1$d 無效"
 
 #: ../libnm-core/nm-utils.c:3466
 #, c-format
 msgid "file permissions for %s"
-msgstr "文件權限 %s"
+msgstr "%s 的檔案權限"
 
 #: ../libnm-core/nm-utils.c:3476
 #, c-format
@@ -11906,9 +11974,9 @@ msgid "Plugin file does not exist (%s)"
 msgstr "插件文件不存在（%s)"
 
 #: ../libnm-core/nm-utils.c:3517
-#, fuzzy, c-format
+#, c-format
 msgid "Plugin is not a valid file (%s)"
-msgstr "'%s' 不是合於 '%s' 規定的值"
+msgstr "插件不是有效的檔案 (%s)"
 
 #: ../libnm-core/nm-utils.c:3527
 #, c-format
@@ -11921,31 +11989,28 @@ msgid "Could not find \"%s\" binary"
 msgstr "找不到 ”%s\" 二進制"
 
 #: ../libnm-core/nm-utils.c:4462
-#, fuzzy
 msgid "unknown secret flags"
-msgstr "錯誤：「%s」設定不明\n"
+msgstr "未知祕密旗標"
 
 #: ../libnm-core/nm-utils.c:4472
 msgid "conflicting secret flags"
-msgstr ""
+msgstr "衝突的祕密旗標"
 
 #: ../libnm-core/nm-utils.c:4483
 msgid "secret flags must not be \"not-required\""
-msgstr ""
+msgstr "祕密旗標不能是「not-required」"
 
 #: ../libnm-core/nm-utils.c:4491
-#, fuzzy
 msgid "unsupported secret flags"
-msgstr "不支持的qdisc選項：'%s'."
+msgstr "不支援的祕密旗標"
 
 #: ../libnm-core/nm-utils.c:4521
 msgid "can't be simultaneously disabled and enabled"
 msgstr "無法同時禁用和啟用"
 
 #: ../libnm-core/nm-utils.c:4529
-#, fuzzy
 msgid "WPS is required"
-msgstr "需要 PIN 碼"
+msgstr "需要 WPS"
 
 #: ../libnm-core/nm-utils.c:4595
 #, c-format
@@ -11987,41 +12052,41 @@ msgstr "value為NULL"
 
 #: ../libnm-core/nm-utils.c:5406 ../libnm-core/nm-utils.c:5443
 msgid "value is empty"
-msgstr "價值是空的"
+msgstr "值是空的"
 
 #: ../libnm-core/nm-utils.c:5418
 #, c-format
 msgid "invalid JSON at position %d (%s)"
-msgstr "位置無效的JSON %d （%s)"
+msgstr "位置 %d 無效的 JSON (%s)"
 
 #: ../libnm-core/nm-utils.c:5538 ../libnm-core/nm-utils.c:5558
 msgid "unterminated escape sequence"
-msgstr "未終止的逃逸序列"
+msgstr "未終止的跳脫序列"
 
 #: ../libnm-core/nm-utils.c:5583
-#, fuzzy, c-format
+#, c-format
 msgid "unknown attribute '%s'"
-msgstr "不明的裝置「%s」。"
+msgstr "不明的屬性「%s」"
 
 #: ../libnm-core/nm-utils.c:5598
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
-msgstr "缺少鍵值分隔符'%c' '之後'%s'"
+msgstr "在「%2$s」之後缺少鍵值分隔符「%1$c」"
 
 #: ../libnm-core/nm-utils.c:5614
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
-msgstr "uint32 值 \"%s%s\" 对属性 \"\" 无效"
+msgstr "uint32 值「%s」對屬性「%s」無效"
 
 #: ../libnm-core/nm-utils.c:5623
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
-msgstr "uint8 值 \"%s%s\" 对属性 \"\" 无效"
+msgstr "uint8 值「%s」對屬性「%s」無效"
 
 #: ../libnm-core/nm-utils.c:5633
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
-msgstr "布尔值 \"%s%s\" 对属性 \"\" 无效"
+msgstr "布林值「%s」對屬性「%s」無效"
 
 #: ../libnm-core/nm-utils.c:5643
 #, c-format
@@ -12031,16 +12096,16 @@ msgstr "不受支持的屬性'%s' 類型'%s'"
 #: ../libnm-core/nm-utils.c:5992
 #, fuzzy, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
-msgstr "多個VF %d 和 %d 不按升序索引排序"
+msgstr "橋接 VLANs %d 和 %d 不按升序索引排序"
 
 #: ../libnm-core/nm-utils.c:6016
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate bridge VLAN vid %u"
-msgstr "重複的VF指數 %u"
+msgstr "重複的橋接 VLAN vid %u"
 
 #: ../libnm-core/nm-utils.c:6028
 msgid "only one VLAN can be the PVID"
-msgstr ""
+msgstr "只有一個 VLAN 可以是 PVID"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:296
 #, c-format
@@ -12078,9 +12143,9 @@ msgid "the plugin does not support export capability"
 msgstr "該插件不支持導出功能"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:108
-#, fuzzy, c-format
+#, c-format
 msgid "missing filename"
-msgstr "遺失選項"
+msgstr "遺失檔案名稱"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:116
 #, c-format
@@ -12103,9 +12168,9 @@ msgid "there exists a conflicting plugin with the same name (%s)"
 msgstr "存在一個具有相同名稱的衝突插件（%s)"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:1068
-#, fuzzy, c-format
+#, c-format
 msgid "missing \"plugin\" setting"
-msgstr "遺失選項"
+msgstr "遺失「插件」設定"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:1078
 #, c-format
@@ -12125,24 +12190,21 @@ msgid "missing service for VPN plugin info"
 msgstr "缺少VPN插件信息的服務"
 
 #: ../libnm/nm-device-adsl.c:69
-#, fuzzy
 msgid "The connection was not an ADSL connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是 ADSL 連線。"
 
 #: ../libnm/nm-device-bond.c:109
-#, fuzzy
 msgid "The connection was not a bond connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是 bond 連線。"
 
 #: ../libnm/nm-device-bridge.c:113
-#, fuzzy
 msgid "The connection was not a bridge connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是橋接連線。"
 
 #: ../libnm/nm-device-bt.c:135
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not a Bluetooth connection."
-msgstr "「bluetooth」連線類型有一項選用性引數。\n"
+msgstr "這個連線不是藍牙連線。"
 
 #: ../libnm/nm-device-bt.c:141
 #, c-format
@@ -12163,21 +12225,18 @@ msgid ""
 msgstr "該設備缺少連接所需的藍牙功能。"
 
 #: ../libnm/nm-device-dummy.c:75
-#, fuzzy
 msgid "The connection was not a dummy connection."
-msgstr "連線已移除"
+msgstr "連線不是虛擬連線。"
 
 #: ../libnm/nm-device-dummy.c:82 ../libnm/nm-device-generic.c:96
 #: ../libnm/nm-device-ovs-bridge.c:96 ../libnm/nm-device-ovs-interface.c:67
 #: ../libnm/nm-device-ovs-port.c:96
-#, fuzzy
 msgid "The connection did not specify an interface name."
-msgstr "InfiniBand P_Key 連線並位指定父介面的名稱"
+msgstr "連線沒有指定介面名稱。"
 
 #: ../libnm/nm-device-ethernet.c:204
-#, fuzzy
 msgid "The connection was not an Ethernet or PPPoE connection."
-msgstr "「PPPoE」的連線類型有四個選用引數。\n"
+msgstr "連線不是有線網路或 PPPoE 連線。"
 
 #: ../libnm/nm-device-ethernet.c:219
 msgid "The connection and device differ in S390 subchannels."
@@ -12203,20 +12262,17 @@ msgid "Device MAC (%s) is blacklisted by the connection."
 msgstr "設備MAC（%s) 被連接列入黑名單。"
 
 #: ../libnm/nm-device-generic.c:89
-#, fuzzy
 msgid "The connection was not a generic connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是通用連線。"
 
 #: ../libnm/nm-device-infiniband.c:91
-#, fuzzy
 msgid "The connection was not an InfiniBand connection."
-msgstr "「InfiniBand」連線類型有五個選用性引數。\n"
+msgstr "連線不是 InfiniBand 連線。"
 
 #: ../libnm/nm-device-infiniband.c:99 ../libnm/nm-device-wifi.c:622
 #: ../libnm/nm-device-wimax.c:322
-#, fuzzy
 msgid "Invalid device MAC address."
-msgstr "不是個有效的 MAC 位址"
+msgstr "無效的裝置 MAC 位址。"
 
 #: ../libnm/nm-device-infiniband.c:107 ../libnm/nm-device-wifi.c:629
 #: ../libnm/nm-device-wimax.c:329
@@ -12224,32 +12280,28 @@ msgid "The MACs of the device and the connection didn't match."
 msgstr "設備的MAC和連接不匹配。"
 
 #: ../libnm/nm-device-ip-tunnel.c:269
-#, fuzzy
 msgid "The connection was not an IP tunnel connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是 IP 隧道連線。"
 
 #: ../libnm/nm-device-macvlan.c:155
 msgid "The connection was not a MAC-VLAN connection."
 msgstr "連接不是MAC-VLAN連接。"
 
 #: ../libnm/nm-device-modem.c:117
-#, fuzzy
 msgid "The connection was not a modem connection."
-msgstr "連線已移除"
+msgstr "連線不是 modem 連線。"
 
 #: ../libnm/nm-device-modem.c:125
-#, fuzzy
 msgid "The connection was not a valid modem connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是有效的 modem 連線。"
 
 #: ../libnm/nm-device-modem.c:132
 msgid "The device is lacking capabilities required by the connection."
 msgstr "該設備缺乏連接所需的功能。"
 
 #: ../libnm/nm-device-olpc-mesh.c:112
-#, fuzzy
 msgid "The connection was not an OLPC Mesh connection."
-msgstr "「OLPC Mesh」連線類型有兩個選用性引數。\n"
+msgstr "連線不是 OLPC Mesh 連線。"
 
 #: ../libnm/nm-device-ovs-bridge.c:89
 msgid "The connection was not a ovs_bridge connection."
@@ -12264,24 +12316,20 @@ msgid "The connection was not a ovs_port connection."
 msgstr "連接不是ovs_port連接。"
 
 #: ../libnm/nm-device-team.c:136
-#, fuzzy
 msgid "The connection was not a team connection."
-msgstr "連線已移除"
+msgstr "連線不是團隊連線。"
 
 #: ../libnm/nm-device-tun.c:207
-#, fuzzy
 msgid "The connection was not a tun connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr "連線不是 tun 連線。"
 
 #: ../libnm/nm-device-tun.c:216
-#, fuzzy
 msgid "The mode of the device and the connection didn't match"
-msgstr "裝置的連線消失"
+msgstr "裝置的模式和連線不相符"
 
 #: ../libnm/nm-device-vlan.c:126
-#, fuzzy
 msgid "The connection was not a VLAN connection."
-msgstr "「VLAN」連線類型有四個選用性引數。\n"
+msgstr "連線不是 VLAN 連線。"
 
 #: ../libnm/nm-device-vlan.c:133
 msgid "The VLAN identifiers of the device and the connection didn't match."
@@ -12292,18 +12340,16 @@ msgid "The hardware address of the device and the connection didn't match."
 msgstr "設備的硬件地址和連接不匹配。"
 
 #: ../libnm/nm-device-vxlan.c:384
-#, fuzzy
 msgid "The connection was not a VXLAN connection."
-msgstr "「VLAN」連線類型有四個選用性引數。\n"
+msgstr "連線不是 VXLAN 連線。"
 
 #: ../libnm/nm-device-vxlan.c:391
 msgid "The VXLAN identifiers of the device and the connection didn't match."
 msgstr "設備的VXLAN標識符和連接不匹配。"
 
 #: ../libnm/nm-device-wifi-p2p.c:326
-#, fuzzy
 msgid "The connection was not a Wi-Fi P2P connection."
-msgstr "連接不是Wi-Fi連接。"
+msgstr "連線不是 Wi-Fi P2P 連線。"
 
 #: ../libnm/nm-device-wifi.c:613
 msgid "The connection was not a Wi-Fi connection."
@@ -12318,9 +12364,8 @@ msgid "The device is lacking WPA2/RSN capabilities required by the connection."
 msgstr "該設備缺少連接所需的WPA2 / RSN功能。"
 
 #: ../libnm/nm-device-wimax.c:313
-#, fuzzy
 msgid "The connection was not a WiMAX connection."
-msgstr "「WiMax」連線類型有一項選用性引數。\n"
+msgstr "連線不是 WiMAX 連線。"
 
 #: ../libnm/nm-device-wpan.c:81
 msgid "The connection was not a wpan connection."
@@ -12355,9 +12400,8 @@ msgid "ADSL"
 msgstr "ADSL"
 
 #: ../libnm/nm-device.c:1410
-#, fuzzy
 msgid "MACVLAN"
-msgstr "VLAN"
+msgstr "MACVLAN"
 
 #: ../libnm/nm-device.c:1412
 msgid "VXLAN"
@@ -12369,7 +12413,7 @@ msgstr "IPTunnel"
 
 #: ../libnm/nm-device.c:1416
 msgid "Tun"
-msgstr "屯"
+msgstr "Tun"
 
 #: ../libnm/nm-device.c:1418
 msgid "Veth"
@@ -12400,9 +12444,8 @@ msgid "WireGuard"
 msgstr "WireGuard"
 
 #: ../libnm/nm-device.c:1432
-#, fuzzy
 msgid "Wi-Fi P2P"
-msgstr "無線網路"
+msgstr "Wi-Fi P2P"
 
 #: ../libnm/nm-device.c:1464
 msgid "Wired"
@@ -12429,9 +12472,9 @@ msgid "%s %s"
 msgstr "%s %s"
 
 #: ../libnm/nm-device.c:2551
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not valid: %s"
-msgstr "錯誤：連線無效：%s\n"
+msgstr "連線無效：%s"
 
 #: ../libnm/nm-device.c:2560
 #, c-format
@@ -12439,23 +12482,20 @@ msgid "The interface names of the device and the connection didn't match."
 msgstr "設備的接口名稱和連接不匹配。"
 
 #: ../libnm/nm-manager.c:272
-#, fuzzy
 msgid "Checkpoint was removed before it was initialized"
-msgstr "有效連線的詳細資訊"
+msgstr "檢查點在初始化前被移除"
 
 #: ../libnm/nm-manager.c:993
-#, fuzzy
 msgid "Active connection removed before it was initialized"
-msgstr "有效連線的詳細資訊"
+msgstr "啟用的連線在初始化前被移除"
 
 #: ../libnm/nm-remote-settings.c:253
 msgid "Connection removed before it was initialized"
 msgstr "在初始化之前刪除了連接"
 
 #: ../libnm/nm-vpn-plugin-old.c:846 ../libnm/nm-vpn-service-plugin.c:1045
-#, fuzzy
 msgid "No service name specified"
-msgstr "錯誤：尚未指定介面卡。"
+msgstr "未指定服務名稱"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:1
 msgid "Enable or disable system networking"
@@ -12466,14 +12506,12 @@ msgid "System policy prevents enabling or disabling system networking"
 msgstr "系統政策防止啟用或停用系統網路作業"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:3
-#, fuzzy
 msgid "Reload NetworkManager configuration"
-msgstr "印出 NetworkManager 的版本並退出"
+msgstr "重新載入 NetworkManager 設定"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:4
-#, fuzzy
 msgid "System policy prevents reloading NetworkManager"
-msgstr "系統政策防止啟用或停用系統網路作業"
+msgstr "系統政策防止重新載入 NetworkManager"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:5
 msgid ""
@@ -12519,14 +12557,12 @@ msgid "System policy prevents control of network connections"
 msgstr "系統政策防止網路連線的控制"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-#, fuzzy
 msgid "Allow control of Wi-Fi scans"
-msgstr "允許控制網路連線"
+msgstr "允許控制 Wi-Fi 掃描"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
-#, fuzzy
 msgid "System policy prevents Wi-Fi scans"
-msgstr "系統政策防止啟用或停用 Wi-Fi 裝置"
+msgstr "系統政策防止 Wi-Fi 掃描"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Connection sharing via a protected Wi-Fi network"
@@ -12574,11 +12610,10 @@ msgid "Modify persistent global DNS configuration"
 msgstr "修改持久性全局DNS配置"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:28
-#, fuzzy
 msgid ""
 "System policy prevents modification of the persistent global DNS "
 "configuration"
-msgstr "系統政策讓您無法修改永久的系統主機名稱"
+msgstr "系統政策讓您無法修改永久的全域 DNS 設定"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:29
 msgid "Perform a checkpoint or rollback of interfaces configuration"
@@ -12607,80 +12642,79 @@ msgstr "系統策略阻止啟用或禁用連接檢查"
 #: ../shared/nm-glib-aux/nm-shared-utils.c:1481
 #, c-format
 msgid "object class '%s' has no property named '%s'"
-msgstr "對像類'%s' 沒有名為'的財產%s'"
+msgstr "物件類別「%s」沒有名為「%s」的屬性"
 
 #: ../shared/nm-glib-aux/nm-shared-utils.c:1488
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
-msgstr "物業'%s' 對像類'%s' 是不可寫的"
+msgstr "物件類別「%2$s」的屬性「%1$s」是不可寫入的"
 
 #: ../shared/nm-glib-aux/nm-shared-utils.c:1495
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
-msgstr "建築物“%s\" 對象'%s' 施工後無法設置"
+msgstr "物件「%2$s」的建構屬性「%1$s」無法在建構後設定"
 
 #: ../shared/nm-glib-aux/nm-shared-utils.c:1503
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
-msgstr "“%s::%s' 不是有效的屬性名稱; “%s' 不是GObject子類型"
+msgstr "「%s::%s」不是有效的屬性名稱；「%s」不是 GObject 子類型"
 
 #: ../shared/nm-glib-aux/nm-shared-utils.c:1512
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
-msgstr "無法設置屬性'%s' 類型'%s' 從類型的價值'%s'"
+msgstr "無法從類型「%3$s」的值設定類型為「%2$s」的屬性「%1$s」"
 
 #: ../shared/nm-glib-aux/nm-shared-utils.c:1523
 #, c-format
 msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
 "type '%s'"
-msgstr "價值“%s\" 類型'%s' 屬於無效或超出範圍的財產'%s' 類型'%s'"
+msgstr "類型「%2$s」的值「%1$s」無效或超出類型為「%4$s」的屬性「%3$s」的範圍"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:236
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not valid: properties should be specified as 'key=value'"
-msgstr "「%s」無效；應提供三個字串"
+msgstr "「%s」無效：屬性應該以「key=value」的格式指定"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:251
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid key"
-msgstr "「%s」不是個有效的頻道"
+msgstr "「%s」不是個有效的金鑰"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:257
-#, fuzzy, c-format
+#, c-format
 msgid "duplicate key '%s'"
-msgstr "重複的VF指數 %u"
+msgstr "重複的金鑰「%s」"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:271
-#, fuzzy, c-format
+#, c-format
 msgid "number for '%s' is out of range"
-msgstr "“%s' 超出範圍[0， %u]"
+msgstr "「%s」的數字超出範圍"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:274
-#, fuzzy, c-format
+#, c-format
 msgid "value for '%s' must be a number"
-msgstr "「%s」不是個數字"
+msgstr "「%s」的值必須是數字"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:285
 #, c-format
 msgid "value for '%s' must be a boolean"
-msgstr ""
+msgstr "「%s」的值必須是布林值"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:294
-#, fuzzy
 msgid "missing 'name' attribute"
-msgstr "遺失選項"
+msgstr "遺失「name」屬性"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:301
-#, fuzzy, c-format
+#, c-format
 msgid "invalid 'name' \"%s\""
-msgstr "無效的 IPv4 路由「%s」"
+msgstr "無效的「name」「%s」"
 
 #: ../shared/nm-libnm-core-aux/nm-libnm-core-aux.c:313
-#, fuzzy, c-format
+#, c-format
 msgid "attribute '%s' is invalid for \"%s\""
-msgstr "attribute對IPv4路由無效"
+msgstr "屬性「%s」對「%s」無效"
 
 #. TRANSLATORS: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
@@ -12693,9 +12727,9 @@ msgid "%s %u"
 msgstr "%s %u"
 
 #: ../src/main.c:177 ../src/main.c:342
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to read configuration: %s\n"
-msgstr "無法讀取配置：（%d）%s\n"
+msgstr "無法讀取配置：%s\n"
 
 #. Logging/debugging
 #: ../src/main.c:191 ../src/nm-iface-helper.c:293
@@ -12725,9 +12759,8 @@ msgid "Specify the location of a PID file"
 msgstr "指定 PID 檔案的位置"
 
 #: ../src/main.c:200
-#, fuzzy
 msgid "Print NetworkManager configuration and exit"
-msgstr "印出 NetworkManager 的版本並退出"
+msgstr "印出 NetworkManager 的設定並退出"
 
 #: ../src/main.c:210
 msgid ""
@@ -12772,18 +12805,18 @@ msgid "Cannot create '%s': %s"
 msgstr "不能創造 '%s': %s"
 
 #: ../src/main-utils.c:216
-#, fuzzy, c-format
+#, c-format
 msgid "%s is already running (pid %ld)\n"
-msgstr "NetworkManager 已在執行（pid %ld）\n"
+msgstr "%s 已在執行（pid %ld）\n"
 
 #: ../src/main-utils.c:226
-#, fuzzy, c-format
+#, c-format
 msgid "You must be root to run %s!\n"
-msgstr "您必須成為 root 才能執行 NetworkManager！\n"
+msgstr "您必須成為 root 才能執行 %s！\n"
 
 #: ../src/dhcp/nm-dhcp-dhclient-utils.c:302
 msgid "# Created by NetworkManager\n"
-msgstr "# Created by NetworkManager\n"
+msgstr "# 由 NetworkManager 建立\n"
 
 #: ../src/dhcp/nm-dhcp-dhclient-utils.c:313
 #, c-format
@@ -12791,7 +12824,7 @@ msgid ""
 "# Merged from %s\n"
 "\n"
 msgstr ""
-"# Merged from %s\n"
+"# 從 %s 合併\n"
 "\n"
 
 #: ../src/devices/bluetooth/nm-bluez-device.c:210
@@ -12808,9 +12841,8 @@ msgid "PAN connections cannot specify GSM, CDMA, or serial settings"
 msgstr "PAN連接不能指定GSM，CDMA或串行設置"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:295
-#, fuzzy
 msgid "PAN connection"
-msgstr "PAN 連線 %d"
+msgstr "PAN 連線"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:302
 msgid "DUN requested, but Bluetooth device does not support DUN"
@@ -12822,15 +12854,13 @@ msgstr "DUN連接必須包括GSM或CDMA設置"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:322
 #: ../src/devices/wwan/nm-modem-broadband.c:702
-#, fuzzy
 msgid "GSM connection"
-msgstr "GSM 連線 %d"
+msgstr "GSM 連線"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:324
 #: ../src/devices/wwan/nm-modem-broadband.c:726
-#, fuzzy
 msgid "CDMA connection"
-msgstr "CDMA 連線 %d"
+msgstr "CDMA 連線"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:332
 msgid "Unknown/unhandled Bluetooth connection type"
@@ -12840,38 +12870,32 @@ msgstr "未知/未處理的藍牙連接類型"
 #: ../src/devices/nm-device-ethernet.c:1432
 #: ../src/devices/nm-device-infiniband.c:190
 #: ../src/devices/wifi/nm-device-wifi.c:925
-#, fuzzy
 msgid "connection does not match device"
-msgstr "沒有使用中的連線或裝置"
+msgstr "連線不符合裝置"
 
 #: ../src/devices/nm-device-6lowpan.c:191
 msgid "6LOWPAN connection"
 msgstr "6LOWPAN連接"
 
 #: ../src/devices/nm-device-bond.c:71
-#, fuzzy
 msgid "Bond connection"
-msgstr "Bond 連線 %d"
+msgstr "Bond 連線"
 
 #: ../src/devices/nm-device-bridge.c:154
-#, fuzzy
 msgid "Bridge connection"
-msgstr "橋接連線 %d"
+msgstr "橋接連線"
 
 #: ../src/devices/nm-device-dummy.c:67
-#, fuzzy
 msgid "Dummy connection"
-msgstr "ADSL 連線 %d"
+msgstr "虛擬連線"
 
 #: ../src/devices/nm-device-ethernet.c:1413
-#, fuzzy
 msgid "PPPoE connection"
-msgstr "PPPoE 連線 %d"
+msgstr "PPPoE 連線"
 
 #: ../src/devices/nm-device-ethernet.c:1413
-#, fuzzy
 msgid "Wired connection"
-msgstr "有線連線 %d"
+msgstr "有線連線"
 
 #: ../src/devices/nm-device-ethernet-utils.c:33
 #, c-format
@@ -12879,47 +12903,41 @@ msgid "Wired connection %d"
 msgstr "有線連線 %d"
 
 #: ../src/devices/nm-device-ip-tunnel.c:422
-#, fuzzy
 msgid "IP tunnel connection"
-msgstr "編輯連線"
+msgstr "IP tunnel 連線"
 
 #: ../src/devices/nm-device-macvlan.c:365
-#, fuzzy
 msgid "MACVLAN connection"
-msgstr "VLAN 連線 %d"
+msgstr "MACVLAN 連線"
 
 #: ../src/devices/nm-device-tun.c:157
-#, fuzzy
 msgid "TUN connection"
-msgstr "DUN 連線 %d"
+msgstr "TUN 連線"
 
 #: ../src/devices/nm-device-wpan.c:68
 msgid "WPAN connection"
 msgstr "WPAN連接"
 
 #: ../src/devices/team/nm-device-team.c:102
-#, fuzzy
 msgid "Team connection"
-msgstr "Team 連線 %d"
+msgstr "Team 連線"
 
 #: ../src/devices/wifi/nm-device-olpc-mesh.c:134
-#, fuzzy
 msgid "Mesh"
-msgstr "Mesh 連線 %d"
+msgstr "Mesh"
 
 #: ../src/devices/wifi/nm-device-wifi.c:898
 msgid "WPA Ad-Hoc disabled due to kernel bugs"
 msgstr "由於內核錯誤，WPA Ad-Hoc被禁用"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:42
-#, fuzzy, c-format
+#, c-format
 msgid "%s is incompatible with static WEP keys"
-msgstr "'%s=%s' 與 '%s > 0' 不相容"
+msgstr "「%s」與靜態 WEP 金鑰不相容"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:76
-#, fuzzy
 msgid "LEAP authentication requires a LEAP username"
-msgstr "無線網路所需的身份認證"
+msgstr "LEAP 驗證需要 LEAP 使用者名稱"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:86
 msgid "LEAP username requires 'leap' authentication"
@@ -12959,9 +12977,8 @@ msgid "a connection using '%s' authentication cannot specify a WPA password"
 msgstr "使用'連接'%s' 身份驗證無法指定WPA密碼"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:240
-#, fuzzy
 msgid "Dynamic WEP requires an 802.1x setting"
-msgstr "動態 WEP（802.1x）"
+msgstr "動態 WEP 需要 802.1x 設定"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:250
 #: ../src/devices/wifi/nm-wifi-utils.c:278
@@ -12977,9 +12994,8 @@ msgid "WPA-PSK authentication is incompatible with 802.1x"
 msgstr "WPA-PSK身份驗證與802.1x不兼容"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:322
-#, fuzzy
 msgid "WPA-PSK requires 'open' authentication"
-msgstr "有線網路 802.1X 身份認證"
+msgstr "WPA-PSK 需要「open」驗證"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:334
 msgid "WPA Ad-Hoc authentication requires an Ad-Hoc mode AP"
@@ -13007,9 +13023,8 @@ msgid "WPA-EAP authentication requires an 802.1x setting"
 msgstr "WPA-EAP身份驗證需要802.1x設置"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:425
-#, fuzzy
 msgid "WPA-EAP requires 'open' authentication"
-msgstr "有線網路 802.1X 身份認證"
+msgstr "WPA-EAP 需要「open」驗證"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:436
 msgid "802.1x setting requires 'wpa-eap' key management"
@@ -13062,14 +13077,13 @@ msgid "WPA authentication is incompatible with Shared Key authentication"
 msgstr "WPA身份驗證與共享密鑰身份驗證不兼容"
 
 #: ../src/devices/wifi/nm-wifi-utils.c:761
-#, fuzzy
 msgid "Failed to determine AP security information"
-msgstr "設定解密用的對稱式金鑰失敗。"
+msgstr "無法決定 AP 安全性資訊"
 
 #: ../src/nm-config.c:562
-#, fuzzy, c-format
+#, c-format
 msgid "Bad '%s' option: "
-msgstr "未設定 '%s' 選項"
+msgstr "不好的「%s」選項："
 
 #: ../src/nm-config.c:575
 msgid "Config file location"
@@ -13080,14 +13094,12 @@ msgid "Config directory location"
 msgstr "配置目錄位置"
 
 #: ../src/nm-config.c:577
-#, fuzzy
 msgid "System config directory location"
-msgstr "配置目錄位置"
+msgstr "系統配置目錄位置"
 
 #: ../src/nm-config.c:578
-#, fuzzy
 msgid "Internal config file location"
-msgstr "配置檔案位置"
+msgstr "內部配置檔案位置"
 
 #: ../src/nm-config.c:579
 msgid "State file location"
@@ -13102,9 +13114,8 @@ msgid "List of plugins separated by ','"
 msgstr "外掛程式清單，以「,」區隔開。"
 
 #: ../src/nm-config.c:582
-#, fuzzy
 msgid "Quit after initial configuration"
-msgstr "目前的 nmcli 配置：\n"
+msgstr "初始設定後退出"
 
 #: ../src/nm-config.c:583 ../src/nm-iface-helper.c:295
 msgid "Don't become a daemon, and log to stderr"
@@ -13124,25 +13135,21 @@ msgid "The expected start of the response"
 msgstr "預期的反應起始"
 
 #: ../src/nm-config.c:595
-#, fuzzy
 msgid "NetworkManager options"
-msgstr "NetworkManager 權限"
+msgstr "NetworkManager 選項"
 
 #: ../src/nm-config.c:595
-#, fuzzy
 msgid "Show NetworkManager options"
-msgstr "NetworkManager 權限"
+msgstr "顯示 NetworkManager 選項"
 
 #. Interface/IP config
 #: ../src/nm-iface-helper.c:275
-#, fuzzy
 msgid "The interface to manage"
-msgstr "父介面卡 [none]："
+msgstr "要管理的介面"
 
 #: ../src/nm-iface-helper.c:276
-#, fuzzy
 msgid "Connection UUID"
-msgstr "連線"
+msgstr "連線 UUID"
 
 #: ../src/nm-iface-helper.c:277
 msgid "Connection Token for Stable IDs"
@@ -13161,18 +13168,16 @@ msgid "Use an IPv6 temporary privacy address"
 msgstr "使用IPv6臨時隱私地址"
 
 #: ../src/nm-iface-helper.c:281
-#, fuzzy
 msgid "Current DHCPv4 address"
-msgstr "複製的 MAC 位址"
+msgstr "目前的 DHCPv4 位址"
 
 #: ../src/nm-iface-helper.c:282
 msgid "Whether DHCPv4 must be successful"
 msgstr "DHCPv4是否必須成功"
 
 #: ../src/nm-iface-helper.c:283
-#, fuzzy
 msgid "Hex-encoded DHCPv4 client ID"
-msgstr "不支援的 DHCP 用戶端「%s」"
+msgstr "十六進位編碼的 DHCPv4 用戶端 ID"
 
 #: ../src/nm-iface-helper.c:284
 msgid "Hostname to send to DHCP server"
@@ -13180,7 +13185,7 @@ msgstr "要發送到DHCP服務器的主機名"
 
 #: ../src/nm-iface-helper.c:284
 msgid "barbar"
-msgstr "BARBAR"
+msgstr "barbar"
 
 #: ../src/nm-iface-helper.c:285
 msgid "FQDN to send to DHCP server"
@@ -13191,18 +13196,16 @@ msgid "host.domain.org"
 msgstr "host.domain.org"
 
 #: ../src/nm-iface-helper.c:286
-#, fuzzy
 msgid "Route priority for IPv4"
-msgstr "沒有可移除的優先順序"
+msgstr "IPv4 的路由優先順序"
 
 #: ../src/nm-iface-helper.c:286
 msgid "0"
 msgstr "0"
 
 #: ../src/nm-iface-helper.c:287
-#, fuzzy
 msgid "Route priority for IPv6"
-msgstr "沒有可移除的優先順序"
+msgstr "IPv6 的路由優先順序"
 
 #: ../src/nm-iface-helper.c:287
 msgid "1024"
