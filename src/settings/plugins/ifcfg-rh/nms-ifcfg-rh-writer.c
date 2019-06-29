@@ -3332,50 +3332,6 @@ do_write_to_disk (NMConnection *connection,
 	return TRUE;
 }
 
-static gboolean
-do_write_reread (NMConnection *connection,
-                 const char *ifcfg_name,
-                 NMConnection **out_reread,
-                 gboolean *out_reread_same,
-                 GError **error)
-{
-	gs_unref_object NMConnection *reread = NULL;
-	gs_free_error GError *local = NULL;
-	gs_free char *unhandled = NULL;
-	gboolean reread_same = FALSE;
-
-	nm_assert (!out_reread || !*out_reread);
-
-	reread = connection_from_file (ifcfg_name, &unhandled, &local, NULL);
-
-	if (!reread) {
-		g_propagate_error (error, local);
-		local = NULL;
-		return FALSE;
-	}
-	if (unhandled) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "connection is unhandled");
-		return FALSE;
-	}
-	if (out_reread_same) {
-		if (nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT))
-			reread_same = TRUE;
-
-		nm_assert (reread_same == nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
-		nm_assert (reread_same == ({
-		                                gs_unref_hashtable GHashTable *_settings = NULL;
-
-		                                (   nm_connection_diff (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT, &_settings)
-		                                 && !_settings);
-		                           }));
-	}
-
-	NM_SET_OUT (out_reread, g_steal_pointer (&reread));
-	NM_SET_OUT (out_reread_same, reread_same);
-	return TRUE;
-}
-
 gboolean
 nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
                                       const char *ifcfg_dir,
@@ -3394,7 +3350,6 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	nm_auto_free_gstring GString *route6_content = NULL;
 	gs_unref_hashtable GHashTable *secrets = NULL;
 	gs_unref_hashtable GHashTable *blobs = NULL;
-	GError *local = NULL;
 
 	nm_assert (!out_reread || !*out_reread);
 
@@ -3431,28 +3386,46 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 
 	/* Note that we just wrote the connection to disk, and re-read it from there.
 	 * That is racy if somebody else modifies the connection.
+	 * That race is why we must not tread a failure to re-read the profile
+	 * as an error.
 	 *
-	 * A better solution might be, to re-read the connection only based on the
-	 * in-memory representation of what we collected above. But the reader
+	 * FIXME: a much better solution might be, to re-read the connection only based
+	 * on the in-memory representation of what we collected above. But the reader
 	 * does not yet allow to inject the configuration. */
-	if (out_reread || out_reread_same) {
-		if (!do_write_reread (connection,
-		                      svFileGetName (ifcfg),
-		                      out_reread,
-		                      out_reread_same,
-		                      &local)) {
+	if (   out_reread
+	    || out_reread_same) {
+		gs_unref_object NMConnection *reread = NULL;
+		gboolean reread_same = FALSE;
+		gs_free_error GError *local = NULL;
+		gs_free char *unhandled = NULL;
+
+		reread = connection_from_file (svFileGetName (ifcfg),
+		                               &unhandled,
+		                               &local,
+		                               NULL);
+		nm_assert ((NM_IS_CONNECTION (reread) && !local) || (!reread && local));
+
+		if (!reread) {
 			_LOGW ("write: failure to re-read connection \"%s\": %s",
 			       svFileGetName (ifcfg), local->message);
-			g_clear_error (&local);
+		} else if (unhandled) {
+			g_clear_object (&reread);
+			_LOGW ("write: failure to re-read connection \"%s\": %s",
+			       svFileGetName (ifcfg), "connection is unhandled");
 		} else {
-			if (   out_reread_same
-			    && !*out_reread_same) {
-				_LOGD ("write: connection %s (%s) was modified by persisting it to \"%s\" ",
-				       nm_connection_get_id (connection),
-				       nm_connection_get_uuid (connection),
-				       svFileGetName (ifcfg));
+			if (out_reread_same) {
+				reread_same = nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT);
+				if (!reread_same) {
+					_LOGD ("write: connection %s (%s) was modified by persisting it to \"%s\" ",
+					       nm_connection_get_id (connection),
+					       nm_connection_get_uuid (connection),
+					       svFileGetName (ifcfg));
+				}
 			}
 		}
+
+		NM_SET_OUT (out_reread, g_steal_pointer (&reread));
+		NM_SET_OUT (out_reread_same, reread_same);
 	}
 
 	/* Only return the filename if this was a newly written ifcfg */
