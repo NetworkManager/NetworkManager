@@ -542,6 +542,37 @@ make_connection_setting (const char *file,
 	vint64 = svGetValueInt64 (ifcfg, "AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
 	g_object_set (s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (int) vint64, NULL);
 
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "DEVTIMEOUT", &value);
+	if (v) {
+		vint64 = _nm_utils_ascii_str_to_int64 (v, 10, 0, ((gint64) G_MAXINT32) / 1000, -1);
+		if (vint64 != -1)
+			vint64 *= 1000;
+		else {
+			char *endptr;
+			double d;
+
+			d = g_ascii_strtod (v, &endptr);
+			if (   errno == 0
+			    && endptr[0] == '\0'
+			    && d >= 0.0) {
+				d *= 1000.0;
+
+				/* We round. Yes, this is not correct to round IEEE 754 floats in general,
+				 * but sufficient for our case where we know that NetworkManager wrote the
+				 * setting with up to 3 digits for the milliseconds. */
+				d += 0.5;
+				if (   d >= 0.0
+				    && d <= (double) G_MAXINT32)
+					vint64 = (gint64) d;
+			}
+		}
+		if (vint64 == -1)
+			PARSE_WARNING ("invalid DEVTIMEOUT setting");
+		else
+			g_object_set (s_con, NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, (int) vint64, NULL);
+	}
+
 	i_val = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	if (!svGetValueEnum (ifcfg, "MDNS",
 	                     nm_setting_connection_mdns_get_type (),

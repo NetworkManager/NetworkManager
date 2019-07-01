@@ -65,6 +65,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_AUTH_RETRIES   "auth-retries"
 #define NM_SETTING_CONNECTION_MDNS           "mdns"
 #define NM_SETTING_CONNECTION_LLMNR          "llmnr"
+#define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT "wait-device-timeout"
 
 /* Types for property values */
 /**
@@ -213,6 +214,9 @@ NM_AVAILABLE_IN_1_12
 NMSettingConnectionMdns   nm_setting_connection_get_mdns (NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_14
 NMSettingConnectionLlmnr  nm_setting_connection_get_llmnr (NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_20
+gint32 nm_setting_connection_get_wait_device_timeout (NMSettingConnection *setting);
 
 G_END_DECLS
 
