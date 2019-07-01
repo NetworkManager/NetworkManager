@@ -2466,8 +2466,9 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 	guint i, j;
 	char **result;
 	gsize text_len;
+	const char *slave_types[] = {"bond-slave", "bridge-slave", "team-slave"};
 
-	result = g_new (char *, _NM_META_SETTING_TYPE_NUM * 2 + 1);
+	result = g_new (char *, _NM_META_SETTING_TYPE_NUM * 2 + G_N_ELEMENTS (slave_types) + 1);
 
 	text_len = text ? strlen (text) : 0;
 
@@ -2484,6 +2485,12 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 				result[j++] = g_strdup (v);
 		}
 		v = setting_info->general->setting_name;
+		if (!text || strncmp (text, v, text_len) == 0)
+			result[j++] = g_strdup (v);
+	}
+	for (i = 0; i < G_N_ELEMENTS (slave_types); i++) {
+		const char *v = slave_types[i];
+
 		if (!text || strncmp (text, v, text_len) == 0)
 			result[j++] = g_strdup (v);
 	}
