@@ -418,7 +418,10 @@ static void
 test_bond (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "rd.route=192.0.2.53::bong0", "bond=bong0:eth0,eth1:mode=balance-rr", NULL });
+	gs_strfreev char **argv = g_strdupv ((char *[]){ "rd.route=192.0.2.53::bong0",
+	                                                 "bond=bong0:eth0,eth1:mode=balance-rr",
+	                                                 "nameserver=203.0.113.53",
+	                                                 NULL });
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -443,7 +446,8 @@ test_bond (void)
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
-	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 1);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "203.0.113.53");
 	g_assert (!nm_setting_ip_config_get_gateway (s_ip4));
 	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 1);
 	ip_route = nm_setting_ip_config_get_route (s_ip4, 0);
