@@ -4169,7 +4169,8 @@ static SlaveConnectionInfo *
 find_slaves (NMManager *manager,
              NMSettingsConnection *sett_conn,
              NMDevice *device,
-             guint *out_n_slaves)
+             guint *out_n_slaves,
+             gboolean for_user_request)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gs_free NMSettingsConnection **all_connections = NULL;
@@ -4211,7 +4212,7 @@ find_slaves (NMManager *manager,
 			slave_device = nm_manager_get_best_device_for_connection (manager,
 			                                                          candidate,
 			                                                          NULL,
-			                                                          FALSE,
+			                                                          for_user_request,
 			                                                          devices,
 			                                                          NULL);
 
@@ -4287,7 +4288,8 @@ static void
 autoconnect_slaves (NMManager *self,
                     NMSettingsConnection *master_connection,
                     NMDevice *master_device,
-                    NMAuthSubject *subject)
+                    NMAuthSubject *subject,
+                    gboolean for_user_request)
 {
 	GError *local_err = NULL;
 
@@ -4297,7 +4299,7 @@ autoconnect_slaves (NMManager *self,
 		guint i, n_slaves = 0;
 		gboolean bind_lifetime_to_profile_visibility;
 
-		slaves = find_slaves (self, master_connection, master_device, &n_slaves);
+		slaves = find_slaves (self, master_connection, master_device, &n_slaves, for_user_request);
 		if (n_slaves > 1) {
 			gs_free char *value = NULL;
 
@@ -4697,7 +4699,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Check slaves for master connection and possibly activate them */
-	autoconnect_slaves (self, sett_conn, device, nm_active_connection_get_subject (active));
+	autoconnect_slaves (self, sett_conn, device, nm_active_connection_get_subject (active),
+	                    nm_active_connection_get_activation_reason (active) == NM_ACTIVATION_REASON_USER_REQUEST);
 
 	multi_connect = _nm_connection_get_multi_connect (nm_settings_connection_get_connection (sett_conn));
 	if (   multi_connect == NM_CONNECTION_MULTI_CONNECT_MULTIPLE
