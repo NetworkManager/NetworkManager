@@ -273,7 +273,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 		if (nm_utils_parse_inaddr_bin (AF_INET, netmask, NULL, &addr)) {
 			client_ip_prefix = nm_utils_ip4_netmask_to_prefix (addr.addr4);
 		} else {
-			_LOGW (LOGD_CORE, "Unrecognized address: %s", client_ip);
+			_LOGW (LOGD_CORE, "Invalid IP mask: %s", netmask);
 		}
 	}
 
