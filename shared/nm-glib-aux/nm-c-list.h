@@ -67,6 +67,18 @@ nm_c_list_elem_free (NMCListElem *elem)
 	return nm_c_list_elem_free_full (elem, NULL);
 }
 
+static inline void *
+nm_c_list_elem_free_steal (NMCListElem *elem)
+{
+	gpointer data;
+
+	if (!elem)
+		return NULL;
+	data = elem->data;
+	nm_c_list_elem_free_full (elem, NULL);
+	return data;
+}
+
 static inline void
 nm_c_list_elem_free_all (CList *head, GDestroyNotify free_fcn)
 {
