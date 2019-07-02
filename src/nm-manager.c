@@ -2157,9 +2157,7 @@ _delete_volatile_connection_all (NMManager *self, gboolean do_delete)
 	while ((elem = c_list_first_entry (&priv->delete_volatile_connection_lst_head, NMCListElem, lst))) {
 		gs_unref_object NMSettingsConnection *connection = NULL;
 
-		connection = elem->data;
-		nm_c_list_elem_free (elem);
-
+		connection = nm_c_list_elem_free_steal (elem);
 		if (do_delete)
 			_delete_volatile_connection_do (self, connection);
 	}
