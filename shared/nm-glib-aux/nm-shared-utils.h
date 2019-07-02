@@ -759,7 +759,13 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 }
 
 #define nm_utils_error_set(error, error_code, ...) \
-	g_set_error ((error), NM_UTILS_ERROR, error_code, __VA_ARGS__)
+	G_STMT_START { \
+		if (NM_NARG (__VA_ARGS__) == 1) { \
+			g_set_error_literal ((error), NM_UTILS_ERROR, (error_code), _NM_UTILS_MACRO_FIRST (__VA_ARGS__)); \
+		} else { \
+			g_set_error ((error), NM_UTILS_ERROR, (error_code), __VA_ARGS__); \
+		} \
+	} G_STMT_END
 
 #define nm_utils_error_set_errno(error, errsv, fmt, ...) \
 	G_STMT_START { \
