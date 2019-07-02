@@ -32,6 +32,20 @@
 
 /*****************************************************************************/
 
+static gboolean
+_connection_matches_type (gpointer key, gpointer value, gpointer user_data)
+{
+	NMConnection *connection = value;
+	const char *type_name = user_data;
+	NMSettingConnection *s_con;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (type_name == NULL)
+		return nm_setting_connection_get_master (s_con) == NULL;
+	else
+		return strcmp (nm_setting_connection_get_connection_type (s_con), type_name) == 0;
+}
+
 static NMConnection *
 get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 {
@@ -49,7 +63,18 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 		multi_connect = NM_CONNECTION_MULTI_CONNECT_MULTIPLE;
 	}
 
-	connection = g_hash_table_lookup (connections, (gpointer)basename);
+	connection = g_hash_table_lookup (connections, (gpointer) basename);
+	if (!connection && !ifname) {
+		/*
+		 * If ifname was not given, we'll match the connection by type.
+		 * If the type was not given either, then we're happy with any connection but slaves.
+		 * This is so that things like "bond=bond0:eth1,eth2 nameserver=1.3.3.7 end up
+		 * slapping the nameserver to the most reasonable connection (bond0).
+		 */
+		connection = g_hash_table_find (connections,
+		                                _connection_matches_type,
+		                                (gpointer) type_name);
+	}
 
 	if (connection) {
 		setting = (NMSetting *)nm_connection_get_setting_connection (connection);
@@ -657,7 +682,6 @@ parse_rd_peerdns (GHashTable *connections, char *argument)
 	g_object_set (s_ip,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, auto_dns,
 	              NULL);
-
 
 	s_ip = nm_connection_get_setting_ip6_config (connection);
 	g_object_set (s_ip,
