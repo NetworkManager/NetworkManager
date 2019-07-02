@@ -270,11 +270,13 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 	if (netmask && *netmask) {
 		NMIPAddr addr;
 
-		if (nm_utils_parse_inaddr_bin (AF_INET, netmask, NULL, &addr)) {
+		if (nm_utils_parse_inaddr_bin (AF_INET, netmask, NULL, &addr))
 			client_ip_prefix = nm_utils_ip4_netmask_to_prefix (addr.addr4);
-		} else {
+		else
+			client_ip_prefix = _nm_utils_ascii_str_to_int64 (netmask, 10, 0, 32, -1);
+
+		if (client_ip_prefix == -1)
 			_LOGW (LOGD_CORE, "Invalid IP mask: %s", netmask);
-		}
 	}
 
 	/* Static IP configuration might be present. */
