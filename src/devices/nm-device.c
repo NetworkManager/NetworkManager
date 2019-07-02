@@ -13445,7 +13445,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 			return TRUE;
 
 		/* A for-user-request, is effectively the same as pretending
-		 * that user-dbus flag is cleared. */
+		 * that user-explicit flag is cleared. */
 		mask |= NM_UNMANAGED_USER_EXPLICIT;
 		flags &= ~NM_UNMANAGED_USER_EXPLICIT;
 	}
@@ -13497,6 +13497,9 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
  * nm_device_get_managed:
  * @self: the #NMDevice
  * @for_user_request: whether to check the flags for an explicit user-request
+ *   Setting this to %TRUE has the same effect as if %NM_UNMANAGED_USER_EXPLICIT
+ *   unmanaged flag would be unset (meaning: explicitly not-unmanaged).
+ *   If this parameter is %TRUE, the device can only appear more managed.
  *
  * Whether the device is unmanaged according to the unmanaged flags.
  *
@@ -14066,13 +14069,17 @@ _nm_device_check_connection_available (NMDevice *self,
 		return FALSE;
 	}
 	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
-		if (!nm_device_get_managed (self, TRUE)) {
-			if (!nm_device_get_managed (self, FALSE)) {
+		if (nm_device_get_managed (self, FALSE)) {
+			/* device is managed, both for user-requests and non-user-requests alike. */
+		} else {
+			if (!nm_device_get_managed (self, TRUE)) {
+				/* device is strictly unmanaged by authoritative unmanaged reasons. */
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
 				                            "device is strictly unmanaged");
 				return FALSE;
 			}
 			if (!NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED)) {
+				/* device could be managed for an explict user-request, but this is not such a request. */
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
 				                            "device is currently unmanaged");
 				return FALSE;
