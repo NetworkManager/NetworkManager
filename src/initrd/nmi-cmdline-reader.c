@@ -398,7 +398,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 	}
 
 	if (peer && *peer)
-		_LOGW (LOGD_CORE, "Ignoring peer: %s (not implemented)\b", peer);
+		_LOGW (LOGD_CORE, "Ignoring peer: %s (not implemented)\n", peer);
 
 	if (gateway_ip && *gateway_ip) {
 		int addr_family = guess_ip_address_family (gateway_ip);
