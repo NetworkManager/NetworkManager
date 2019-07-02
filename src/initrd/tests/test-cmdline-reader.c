@@ -286,8 +286,12 @@ static void
 test_multiple (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=192.0.2.2:::::eth0", "ip=[2001:db8::2]:::::eth0", NULL });
+	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=192.0.2.2:::::eth0",
+	                                                 "ip=[2001:db8::2]:::::eth0",
+	                                                 "BOOTIF=00:53:AB:cd:02:03",
+	                                                 NULL });
 	NMConnection *connection;
+	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	NMIPAddress *ip_addr;
@@ -300,6 +304,10 @@ test_multiple (void)
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "eth0");
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpstr (nm_setting_wired_get_mac_address (s_wired), ==, "00:53:AB:CD:02:03");
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
@@ -326,7 +334,7 @@ test_some_more (void)
 	gs_unref_hashtable GHashTable *connections = NULL;
 	gs_strfreev char **argv = g_strdupv ((char *[]){ "bootdev=eth1", "hail", "nameserver=[2001:DB8:3::53]",
 	                                                 "satan", "nameserver=192.0.2.53", "worship",
-	                                                 "BOOTIF=00-53-AB-cd-02-03", "doom", "rd.peerdns=0",
+	                                                 "BOOTIF=01-00-53-AB-cd-02-03", "doom", "rd.peerdns=0",
 	                                                 "rd.route=[2001:DB8:3::/48]:[2001:DB8:2::1]:ens10",
 	                                                 NULL });
 	NMConnection *connection;
@@ -407,7 +415,7 @@ static void
 test_no_bootif (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "BOOTIF=00-53-AB-cd-02-03", "rd.bootif=0", NULL });
+	gs_strfreev char **argv = g_strdupv ((char *[]){ "BOOTIF=01-00-53-AB-cd-02-03", "rd.bootif=0", NULL });
 
 	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
 	g_assert (connections);
