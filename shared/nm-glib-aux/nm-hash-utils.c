@@ -199,3 +199,25 @@ nm_pstr_equal (gconstpointer a, gconstpointer b)
 	           && s2
 	           && nm_streq0 (*s1, *s2));
 }
+
+guint
+nm_pdirect_hash (gconstpointer p)
+{
+	const void *const*s = p;
+
+	if (!s)
+		return nm_hash_static (1852748873u);
+	return nm_direct_hash (*s);
+}
+
+gboolean
+nm_pdirect_equal (gconstpointer a, gconstpointer b)
+{
+	const void *const*s1 = a;
+	const void *const*s2 = b;
+
+	return    (s1 == s2)
+	       || (   s1
+	           && s2
+	           && *s1 == *s2);
+}
