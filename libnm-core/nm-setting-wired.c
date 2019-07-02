@@ -766,10 +766,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->device_mac_address && !nm_utils_hwaddr_valid (priv->device_mac_address, ETH_ALEN)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("is not a valid MAC address"));
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not a valid MAC address"),
+		             priv->device_mac_address);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
 		return FALSE;
 	}
@@ -831,10 +832,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (   priv->cloned_mac_address
 	    && !NM_CLONED_MAC_IS_SPECIAL (priv->cloned_mac_address)
 	    && !nm_utils_hwaddr_valid (priv->cloned_mac_address, ETH_ALEN)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("is not a valid MAC address"));
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not a valid MAC address"),
+		             priv->cloned_mac_address);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
 		return FALSE;
 	}
@@ -873,10 +875,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->wol_password && !nm_utils_hwaddr_valid (priv->wol_password, ETH_ALEN)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("is not a valid MAC address"));
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not a valid MAC address"),
+		             priv->wol_password);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD);
 		return FALSE;
 	}
