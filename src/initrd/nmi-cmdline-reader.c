@@ -745,6 +745,16 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 		NMConnection *connection;
 		NMSettingWired *s_wired;
 
+		if (   !nm_utils_hwaddr_valid (bootif, ETH_ALEN)
+		    && g_str_has_prefix (bootif, "01-")
+		    && nm_utils_hwaddr_valid (&bootif[3], ETH_ALEN)) {
+			/*
+			 * BOOTIF MAC address can be prefixed with a hardware type identifier.
+			 * "01" stays for "wired", no other are known.
+			 */
+			bootif += 3;
+		}
+
 		connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
 
 		s_wired = nm_connection_get_setting_wired (connection);
