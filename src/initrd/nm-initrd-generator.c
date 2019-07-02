@@ -66,7 +66,7 @@ output_conn (gpointer key, gpointer value, gpointer user_data)
 		if (!nm_utils_file_set_contents (full_filename, data, len, 0600, &error))
 			goto err_out;
 	} else
-		g_print ("\n*** Connection '%s' ***\n\n%s\n", basename, data);
+		g_print ("\n*** Connection '%s' ***\n\n%s", basename, data);
 
 	return;
 err_out:
