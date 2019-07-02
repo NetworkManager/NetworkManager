@@ -193,14 +193,16 @@ test_if_ip4_manual (void)
 	gs_unref_hashtable GHashTable *connections = NULL;
 	gs_strfreev char **argv = g_strdupv ((char *[]){
 		"ip=192.0.2.2::192.0.2.1:255.255.255.0:"
-		"hostname0.example.com:eth3::192.0.2.53", NULL });
+		"hostname0.example.com:eth3::192.0.2.53",
+		"ip=203.0.113.2::203.0.113.1:26:"
+		"hostname1.example.com:eth4", NULL });
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMIPAddress *ip_addr;
 
 	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
 	g_assert (connections);
-	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
 	connection = g_hash_table_lookup (connections, "eth3");
 	g_assert (connection);
@@ -221,8 +223,26 @@ test_if_ip4_manual (void)
 	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 24);
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.0.2.1");
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "hostname0.example.com");
-}
 
+	connection = g_hash_table_lookup (connections, "eth4");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "eth4");
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip_addr);
+	g_assert_cmpstr (nm_ip_address_get_address (ip_addr), ==, "203.0.113.2");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 26);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "203.0.113.1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "hostname1.example.com");
+}
 
 static void
 test_if_ip6_manual (void)
@@ -398,7 +418,10 @@ static void
 test_bond (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "rd.route=192.0.2.53::bong0", "bond=bong0:eth0,eth1:mode=balance-rr", NULL });
+	gs_strfreev char **argv = g_strdupv ((char *[]){ "rd.route=192.0.2.53::bong0",
+	                                                 "bond=bong0:eth0,eth1:mode=balance-rr",
+	                                                 "nameserver=203.0.113.53",
+	                                                 NULL });
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -423,7 +446,8 @@ test_bond (void)
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
-	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 1);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "203.0.113.53");
 	g_assert (!nm_setting_ip_config_get_gateway (s_ip4));
 	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 1);
 	ip_route = nm_setting_ip_config_get_route (s_ip4, 0);
