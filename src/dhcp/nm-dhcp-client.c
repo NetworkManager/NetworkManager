@@ -51,6 +51,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_ADDR_FAMILY,
 	PROP_FLAGS,
 	PROP_HWADDR,
+	PROP_BROADCAST_HWADDR,
 	PROP_IFACE,
 	PROP_IFINDEX,
 	PROP_MULTI_IDX,
@@ -65,6 +66,7 @@ typedef struct _NMDhcpClientPrivate {
 	NMDedupMultiIndex *multi_idx;
 	char *       iface;
 	GBytes *     hwaddr;
+	GBytes *     bcast_hwaddr;
 	char *       uuid;
 	GBytes *     client_id;
 	char *       hostname;
@@ -141,6 +143,14 @@ nm_dhcp_client_get_hw_addr (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hwaddr;
+}
+
+GBytes *
+nm_dhcp_client_get_broadcast_hw_addr (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->bcast_hwaddr;
 }
 
 guint32
@@ -869,6 +879,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HWADDR:
 		g_value_set_boxed (value, priv->hwaddr);
 		break;
+	case PROP_BROADCAST_HWADDR:
+		g_value_set_boxed (value, priv->bcast_hwaddr);
+		break;
 	case PROP_ADDR_FAMILY:
 		g_value_set_int (value, priv->addr_family);
 		break;
@@ -929,6 +942,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_HWADDR:
 		/* construct-only */
 		priv->hwaddr = g_value_dup_boxed (value);
+		break;
+	case PROP_BROADCAST_HWADDR:
+		/* construct-only */
+		priv->bcast_hwaddr = g_value_dup_boxed (value);
 		break;
 	case PROP_ADDR_FAMILY:
 		/* construct-only */
@@ -996,6 +1013,7 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->uuid, g_free);
 	g_clear_pointer (&priv->client_id, g_bytes_unref);
 	g_clear_pointer (&priv->hwaddr, g_bytes_unref);
+	g_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 
@@ -1036,6 +1054,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 
 	obj_properties[PROP_HWADDR] =
 	    g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR, "", "",
+	                        G_TYPE_BYTES,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_BROADCAST_HWADDR] =
+	    g_param_spec_boxed (NM_DHCP_CLIENT_BROADCAST_HWADDR, "", "",
 	                        G_TYPE_BYTES,
 	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                        G_PARAM_STATIC_STRINGS);

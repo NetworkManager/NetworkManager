@@ -7966,6 +7966,7 @@ dhcp4_start (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip4;
 	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
 	NMConnection *connection;
 	GError *error = NULL;
@@ -7981,8 +7982,10 @@ dhcp4_start (NMDevice *self)
 	priv->dhcp4.config = nm_dhcp4_config_new ();
 
 	pllink = nm_platform_link_get (nm_device_get_platform (self), nm_device_get_ip_ifindex (self));
-	if (pllink)
+	if (pllink) {
 		hwaddr = nmp_link_address_get_as_bytes (&pllink->l_address);
+		bcast_hwaddr = nmp_link_address_get_as_bytes (&pllink->l_broadcast);
+	}
 
 	client_id = dhcp4_get_client_id (self, connection, hwaddr);
 
@@ -7992,6 +7995,7 @@ dhcp4_start (NMDevice *self)
 	                                                nm_device_get_ip_iface (self),
 	                                                nm_device_get_ip_ifindex (self),
 	                                                hwaddr,
+	                                                bcast_hwaddr,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_route_table (self, AF_INET),
 	                                                nm_device_get_route_metric (self, AF_INET),
@@ -8769,6 +8773,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip6;
 	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *duid = NULL;
 	gboolean enforce_duid = FALSE;
 	const NMPlatformLink *pllink;
@@ -8792,8 +8797,10 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	}
 
 	pllink = nm_platform_link_get (nm_device_get_platform (self), nm_device_get_ip_ifindex (self));
-	if (pllink)
+	if (pllink) {
 		hwaddr = nmp_link_address_get_as_bytes (&pllink->l_address);
+		bcast_hwaddr = nmp_link_address_get_as_bytes (&pllink->l_broadcast);
+	}
 
 	duid = dhcp6_get_duid (self, connection, hwaddr, &enforce_duid);
 	priv->dhcp6.client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
@@ -8801,6 +8808,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                nm_device_get_ip_iface (self),
 	                                                nm_device_get_ip_ifindex (self),
 	                                                hwaddr,
+	                                                bcast_hwaddr,
 	                                                &ll_addr->address,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_route_table (self, AF_INET6),

@@ -1083,8 +1083,11 @@ nettools_create (NMDhcpNettools *self,
 	nm_auto (n_dhcp4_client_config_freep) NDhcp4ClientConfig *config = NULL;
 	nm_auto (n_dhcp4_client_unrefp) NDhcp4Client *client = NULL;
 	GBytes *hwaddr;
+	GBytes *bcast_hwaddr;
 	const uint8_t *hwaddr_arr;
+	const uint8_t *bcast_hwaddr_arr;
 	gsize hwaddr_len;
+	gsize bcast_hwaddr_len;
 	GBytes *client_id;
 	gs_unref_bytes GBytes *client_id_new = NULL;
 	const uint8_t *client_id_arr;
@@ -1100,6 +1103,9 @@ nettools_create (NMDhcpNettools *self,
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
 		return FALSE;
 	}
+
+	bcast_hwaddr = nm_dhcp_client_get_broadcast_hw_addr (NM_DHCP_CLIENT (self));
+	bcast_hwaddr_arr = g_bytes_get_data (bcast_hwaddr, &bcast_hwaddr_len);
 
 	switch (arp_type) {
 	case ARPHRD_ETHER:
@@ -1140,7 +1146,7 @@ nettools_create (NMDhcpNettools *self,
 	n_dhcp4_client_config_set_ifindex (config, nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)));
 	n_dhcp4_client_config_set_transport (config, transport);
 	n_dhcp4_client_config_set_mac (config, hwaddr_arr, hwaddr_len);
-	n_dhcp4_client_config_set_broadcast_mac (config, (unsigned char[]){ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, }, ETH_ALEN); /* XXX */
+	n_dhcp4_client_config_set_broadcast_mac (config, bcast_hwaddr_arr, bcast_hwaddr_len);
 	r = n_dhcp4_client_config_set_client_id (config, client_id_arr, client_id_len);
 	if (r) {
 		nm_utils_error_set_errno (error, r, "failed to set client-id: %s");

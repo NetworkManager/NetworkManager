@@ -381,6 +381,7 @@ main (int argc, char *argv[])
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
 	gs_unref_object NMNDisc *ndisc = NULL;
 	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 	const NMPlatformLink *pllink;
@@ -471,8 +472,10 @@ main (int argc, char *argv[])
 	nm_linux_platform_setup ();
 
 	pllink = nm_platform_link_get (NM_PLATFORM_GET, gl.ifindex);
-	if (pllink)
+	if (pllink) {
 		hwaddr = nmp_link_address_get_as_bytes (&pllink->l_address);
+		bcast_hwaddr = nmp_link_address_get_as_bytes (&pllink->l_broadcast);
+	}
 
 	if (global_opt.iid_str) {
 		GBytes *bytes;
@@ -508,6 +511,7 @@ main (int argc, char *argv[])
 		                                          global_opt.ifname,
 		                                          gl.ifindex,
 		                                          hwaddr,
+		                                          bcast_hwaddr,
 		                                          global_opt.uuid,
 		                                          RT_TABLE_MAIN,
 		                                          global_opt.priority_v4,

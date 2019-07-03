@@ -204,6 +204,7 @@ client_start (NMDhcpManager *self,
               const char *iface,
               int ifindex,
               GBytes *hwaddr,
+              GBytes *bcast_hwaddr,
               const char *uuid,
               guint32 route_table,
               guint32 route_metric,
@@ -233,10 +234,11 @@ client_start (NMDhcpManager *self,
 	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	if (!hwaddr) {
+	if (!hwaddr || !bcast_hwaddr) {
 		nm_utils_error_set (error,
 		                    NM_UTILS_ERROR_UNKNOWN,
-		                    "missing MAC address");
+		                    "missing %s address",
+		                    hwaddr ? "broadcast" : "MAC");
 		return NULL;
 	}
 
@@ -248,6 +250,8 @@ client_start (NMDhcpManager *self,
 		                    "invalid MAC address");
 		g_return_val_if_reached (NULL) ;
 	}
+
+	nm_assert (g_bytes_get_size (hwaddr) == g_bytes_get_size (bcast_hwaddr));
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
@@ -273,6 +277,7 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
 	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
+	                       NM_DHCP_CLIENT_BROADCAST_HWADDR, bcast_hwaddr,
 	                       NM_DHCP_CLIENT_UUID, uuid,
 	                       NM_DHCP_CLIENT_HOSTNAME, hostname,
 	                       NM_DHCP_CLIENT_ROUTE_TABLE, (guint) route_table,
@@ -345,6 +350,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            const char *iface,
                            int ifindex,
                            GBytes *hwaddr,
+                           GBytes *bcast_hwaddr,
                            const char *uuid,
                            guint32 route_table,
                            guint32 route_metric,
@@ -395,6 +401,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 	                     iface,
 	                     ifindex,
 	                     hwaddr,
+	                     bcast_hwaddr,
 	                     uuid,
 	                     route_table,
 	                     route_metric,
@@ -419,6 +426,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            const char *iface,
                            int ifindex,
                            GBytes *hwaddr,
+                           GBytes *bcast_hwaddr,
                            const struct in6_addr *ll_addr,
                            const char *uuid,
                            guint32 route_table,
@@ -450,6 +458,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 	                     iface,
 	                     ifindex,
 	                     hwaddr,
+	                     bcast_hwaddr,
 	                     uuid,
 	                     route_table,
 	                     route_metric,
