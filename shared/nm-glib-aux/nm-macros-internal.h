@@ -906,14 +906,19 @@ nm_streq0 (const char *s1, const char *s2)
 }
 
 #define NM_STR_HAS_PREFIX(str, prefix) \
-	(strncmp ((str), ""prefix"", NM_STRLEN (prefix)) == 0)
+	({ \
+		const char *const _str = (str); \
+		\
+		_str && (strncmp ((str), ""prefix"", NM_STRLEN (prefix)) == 0); \
+	})
 
 #define NM_STR_HAS_SUFFIX(str, suffix) \
 	({ \
-		const char *_str = (str); \
-		gsize _l = strlen (_str); \
+		const char *_str; \
+		gsize _l; \
 		\
-		(   (_l >= NM_STRLEN (suffix)) \
+		(   (_str = (str)) \
+		 && ((_l = strlen (_str)) >= NM_STRLEN (suffix)) \
 		 && (memcmp (&_str[_l - NM_STRLEN (suffix)], \
 		             ""suffix"", \
 		             NM_STRLEN (suffix)) == 0)); \
