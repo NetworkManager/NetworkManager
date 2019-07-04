@@ -164,6 +164,7 @@ typedef struct {
 } NMPLinkAddress;
 
 gconstpointer nmp_link_address_get (const NMPLinkAddress *addr, size_t *length);
+GBytes       *nmp_link_address_get_as_bytes (const NMPLinkAddress *addr);
 
 typedef enum {
 
@@ -1406,18 +1407,6 @@ guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 
 gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
-
-static inline GBytes *
-nm_platform_link_get_address_as_bytes (NMPlatform *self, int ifindex)
-{
-	gconstpointer p;
-	gsize l;
-
-	p = nm_platform_link_get_address (self, ifindex, &l);
-	return p
-	       ? g_bytes_new (p, l)
-	       : NULL;
-}
 
 int nm_platform_link_get_master (NMPlatform *self, int slave);
 

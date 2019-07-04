@@ -383,6 +383,7 @@ main (int argc, char *argv[])
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
+	const NMPlatformLink *pllink;
 	guint sd_id;
 	int errsv;
 
@@ -469,7 +470,9 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
-	hwaddr = nm_platform_link_get_address_as_bytes (NM_PLATFORM_GET, gl.ifindex);
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, gl.ifindex);
+	if (pllink)
+		hwaddr = nmp_link_address_get_as_bytes (&pllink->l_address);
 
 	if (global_opt.iid_str) {
 		GBytes *bytes;
