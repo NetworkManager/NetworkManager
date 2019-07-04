@@ -68,10 +68,7 @@ char *path_make_absolute(const char *p, const char *prefix) {
         if (path_is_absolute(p) || isempty(prefix))
                 return strdup(p);
 
-        if (endswith(prefix, "/"))
-                return strjoin(prefix, p);
-        else
-                return strjoin(prefix, "/", p);
+        return path_join(prefix, p);
 }
 
 int safe_getcwd(char **ret) {
@@ -256,7 +253,7 @@ char **path_strv_resolve(char **l, const char *root) {
 
                 if (root) {
                         orig = *s;
-                        t = prefix_root(root, orig);
+                        t = path_join(root, orig);
                         if (!t) {
                                 enomem = true;
                                 continue;
@@ -581,7 +578,7 @@ int find_binary(const char *name, char **ret) {
                 if (!path_is_absolute(element))
                         continue;
 
-                j = strjoin(element, "/", name);
+                j = path_join(element, name);
                 if (!j)
                         return -ENOMEM;
 
@@ -684,40 +681,6 @@ int mkfs_exists(const char *fstype) {
 
         mkfs = strjoina("mkfs.", fstype);
         return binary_is_good(mkfs);
-}
-
-char *prefix_root(const char *root, const char *path) {
-        char *n, *p;
-        size_t l;
-
-        /* If root is passed, prefixes path with it. Otherwise returns
-         * it as is. */
-
-        assert(path);
-
-        /* First, drop duplicate prefixing slashes from the path */
-        while (path[0] == '/' && path[1] == '/')
-                path++;
-
-        if (empty_or_root(root))
-                return strdup(path);
-
-        l = strlen(root) + 1 + strlen(path) + 1;
-
-        n = new(char, l);
-        if (!n)
-                return NULL;
-
-        p = stpcpy(n, root);
-
-        while (p > n && p[-1] == '/')
-                p--;
-
-        if (path[0] != '/')
-                *(p++) = '/';
-
-        strcpy(p, path);
-        return n;
 }
 
 int parse_path_argument_and_warn(const char *path, bool suppress_root, char **arg) {
@@ -1027,7 +990,7 @@ int systemd_installation_has_version(const char *root, unsigned minimal_version)
                 _cleanup_free_ char *path = NULL;
                 char *c, **name;
 
-                path = prefix_root(root, pattern);
+                path = path_join(root, pattern);
                 if (!path)
                         return -ENOMEM;
 

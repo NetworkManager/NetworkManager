@@ -21,6 +21,7 @@
 #include "log.h"
 #include "macro.h"
 #include "missing.h"
+#include "mkdir.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "stdio-util.h"
@@ -173,6 +174,12 @@ int write_string_file_ts(
 
         /* We don't know how to verify whether the file contents was already on-disk. */
         assert(!((flags & WRITE_STRING_FILE_VERIFY_ON_FAILURE) && (flags & WRITE_STRING_FILE_SYNC)));
+
+        if (flags & WRITE_STRING_FILE_MKDIR_0755) {
+                r = mkdir_parents(fn, 0755);
+                if (r < 0)
+                        return r;
+        }
 
         if (flags & WRITE_STRING_FILE_ATOMIC) {
                 assert(flags & WRITE_STRING_FILE_CREATE);
@@ -582,10 +589,7 @@ static int search_and_fopen_internal(const char *path, const char *mode, const c
                 _cleanup_free_ char *p = NULL;
                 FILE *f;
 
-                if (root)
-                        p = strjoin(root, *i, "/", path);
-                else
-                        p = strjoin(*i, "/", path);
+                p = path_join(root, *i, path);
                 if (!p)
                         return -ENOMEM;
 
