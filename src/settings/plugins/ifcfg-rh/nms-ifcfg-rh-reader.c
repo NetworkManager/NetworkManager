@@ -4656,8 +4656,8 @@ make_infiniband_setting (shvarFile *ifcfg,
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
 
 	if (svGetValueBoolean (ifcfg, "PKEY", FALSE)) {
+		gs_free char *parent = NULL;
 		int p_key;
-		char *parent;
 
 		if (!parse_infiniband_p_key (ifcfg, &p_key, &parent, error)) {
 			g_object_unref (s_infiniband);
