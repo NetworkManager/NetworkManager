@@ -580,7 +580,6 @@ static int parse_timestamp_impl(const char *t, usec_t *usec, bool with_tz) {
          */
 
         assert(t);
-        assert(usec);
 
         if (t[0] == '@' && !with_tz)
                 return parse_sec(t + 1, usec);
@@ -808,8 +807,8 @@ finish:
         else
                 return -EINVAL;
 
-        *usec = ret;
-
+        if (usec)
+                *usec = ret;
         return 0;
 }
 
@@ -866,7 +865,7 @@ int parse_timestamp(const char *t, usec_t *usec) {
         if (munmap(shared, sizeof *shared) != 0)
                 return negative_errno();
 
-        if (tmp.return_value == 0)
+        if (tmp.return_value == 0 && usec)
                 *usec = tmp.usec;
 
         return tmp.return_value;
@@ -928,7 +927,6 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
         bool something = false;
 
         assert(t);
-        assert(usec);
         assert(default_unit > 0);
 
         p = t;
@@ -940,7 +938,8 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
                 if (*s != 0)
                         return -EINVAL;
 
-                *usec = USEC_INFINITY;
+                if (usec)
+                        *usec = USEC_INFINITY;
                 return 0;
         }
 
@@ -1012,8 +1011,8 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
                 }
         }
 
-        *usec = r;
-
+        if (usec)
+                *usec = r;
         return 0;
 }
 

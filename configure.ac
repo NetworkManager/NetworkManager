@@ -65,9 +65,13 @@ dnl
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl
 AC_TYPE_PID_T
-AC_CHECK_SIZEOF(dev_t)
-AC_CHECK_SIZEOF(time_t)
 AC_CHECK_SIZEOF(pid_t)
+AC_CHECK_SIZEOF(uid_t)
+AC_CHECK_SIZEOF(gid_t)
+AC_CHECK_SIZEOF(dev_t)
+AC_CHECK_SIZEOF(ino_t)
+AC_CHECK_SIZEOF(time_t)
+AC_CHECK_SIZEOF(rlim_t,,[[#include <sys/resource.h>]])
 
 AC_CHECK_DECLS([
 	explicit_bzero],

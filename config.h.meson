@@ -118,14 +118,26 @@
 /* Define to 1 if libsystemd-login is available */
 #mesondefine SESSION_TRACKING_SYSTEMD
 
+/* The size of `pid_t', as computed by sizeof. */
+#mesondefine SIZEOF_PID_T
+
+/* The size of `uid_t', as computed by sizeof. */
+#mesondefine SIZEOF_UID_T
+
+/* The size of `gid_t', as computed by sizeof. */
+#mesondefine SIZEOF_GID_T
+
 /* The size of `dev_t', as computed by sizeof. */
 #mesondefine SIZEOF_DEV_T
+
+/* The size of `ino_t', as computed by sizeof. */
+#mesondefine SIZEOF_INO_T
 
 /* The size of `time_t', as computed by sizeof. */
 #mesondefine SIZEOF_TIME_T
 
-/* The size of `pid_t', as computed by sizeof. */
-#mesondefine SIZEOF_PID_T
+/* The size of `rlim_t', as computed by sizeof. */
+#mesondefine SIZEOF_RLIM_T
 
 /* Define to 1 to use ConsoleKit2 suspend api */
 #mesondefine SUSPEND_RESUME_CONSOLEKIT

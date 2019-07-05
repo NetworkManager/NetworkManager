@@ -214,6 +214,7 @@ libnm_systemd_shared = static_library(
     'systemd/src/basic/extract-word.c',
     'systemd/src/basic/fd-util.c',
     'systemd/src/basic/fileio.c',
+    'systemd/src/basic/format-util.c',
     'systemd/src/basic/fs-util.c',
     'systemd/src/basic/hash-funcs.c',
     'systemd/src/basic/hashmap.c',

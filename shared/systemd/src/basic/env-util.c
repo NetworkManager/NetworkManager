@@ -75,7 +75,7 @@ bool env_value_is_valid(const char *e) {
          * either. Discounting the shortest possible variable name of
          * length 1, the equal sign and trailing NUL this hence leaves
          * ARG_MAX-3 as longest possible variable value. */
-        if (strlen(e) > (size_t) sysconf(_SC_ARG_MAX) - 3)
+        if (strlen(e) > sc_arg_max() - 3)
                 return false;
 
         return true;
@@ -98,7 +98,7 @@ bool env_assignment_is_valid(const char *e) {
          * be > ARG_MAX, hence the individual variable assignments
          * cannot be either, but let's leave room for one trailing NUL
          * byte. */
-        if (strlen(e) > (size_t) sysconf(_SC_ARG_MAX) - 1)
+        if (strlen(e) > sc_arg_max() - 1)
                 return false;
 
         return true;
@@ -691,7 +691,7 @@ char **replace_env_argv(char **argv, char **env) {
                         if (e) {
                                 int r;
 
-                                r = strv_split_extract(&m, e, WHITESPACE, EXTRACT_RELAX|EXTRACT_QUOTES);
+                                r = strv_split_extract(&m, e, WHITESPACE, EXTRACT_RELAX|EXTRACT_UNQUOTE);
                                 if (r < 0) {
                                         ret[k] = NULL;
                                         strv_free(ret);

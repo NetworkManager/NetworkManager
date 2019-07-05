@@ -1662,7 +1662,6 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/device-nodes.h \
 	shared/systemd/sd-adapt-shared/dirent-util.h \
 	shared/systemd/sd-adapt-shared/errno-list.h \
-	shared/systemd/sd-adapt-shared/format-util.h \
 	shared/systemd/sd-adapt-shared/glob-util.h \
 	shared/systemd/sd-adapt-shared/gunicode.h \
 	shared/systemd/sd-adapt-shared/ioprio.h \
@@ -1702,6 +1701,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/fd-util.h \
 	shared/systemd/src/basic/fileio.c \
 	shared/systemd/src/basic/fileio.h \
+	shared/systemd/src/basic/format-util.c \
+	shared/systemd/src/basic/format-util.h \
 	shared/systemd/src/basic/fs-util.c \
 	shared/systemd/src/basic/fs-util.h \
 	shared/systemd/src/basic/hash-funcs.c \
