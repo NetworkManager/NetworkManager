@@ -25,6 +25,7 @@ sources = files(
   'dhcp/nm-dhcp-nettools.c',
   'dhcp/nm-dhcp-systemd.c',
   'dhcp/nm-dhcp-utils.c',
+  'dhcp/nm-dhcp-options.c',
   'ndisc/nm-lndp-ndisc.c',
   'ndisc/nm-ndisc.c',
   'platform/nm-netlink.c',

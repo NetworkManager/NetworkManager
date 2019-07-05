@@ -1836,6 +1836,8 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/nm-sd-utils-core.h \
 	src/systemd/nm-sd.c \
 	src/systemd/nm-sd.h \
+	src/systemd/nm-sd-utils-dhcp.h \
+	src/systemd/nm-sd-utils-dhcp.c \
 	src/systemd/sd-adapt-core/condition.h \
 	src/systemd/sd-adapt-core/conf-parser.h \
 	src/systemd/sd-adapt-core/device-util.h \
@@ -1964,6 +1966,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/dhcp/nm-dhcp-nettools.c \
 	src/dhcp/nm-dhcp-utils.c \
 	src/dhcp/nm-dhcp-utils.h \
+	src/dhcp/nm-dhcp-options.c \
+	src/dhcp/nm-dhcp-options.h \
 	src/dhcp/nm-dhcp-systemd.c \
 	src/dhcp/nm-dhcp-manager.c \
 	src/dhcp/nm-dhcp-manager.h \
