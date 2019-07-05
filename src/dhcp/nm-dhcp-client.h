@@ -34,17 +34,18 @@
 #define NM_IS_DHCP_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_CLIENT))
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClientClass))
 
-#define NM_DHCP_CLIENT_ADDR_FAMILY  "addr-family"
-#define NM_DHCP_CLIENT_FLAGS        "flags"
-#define NM_DHCP_CLIENT_HWADDR       "hwaddr"
-#define NM_DHCP_CLIENT_IFINDEX      "ifindex"
-#define NM_DHCP_CLIENT_INTERFACE    "iface"
-#define NM_DHCP_CLIENT_MULTI_IDX    "multi-idx"
-#define NM_DHCP_CLIENT_HOSTNAME     "hostname"
-#define NM_DHCP_CLIENT_ROUTE_METRIC "route-metric"
-#define NM_DHCP_CLIENT_ROUTE_TABLE  "route-table"
-#define NM_DHCP_CLIENT_TIMEOUT      "timeout"
-#define NM_DHCP_CLIENT_UUID         "uuid"
+#define NM_DHCP_CLIENT_ADDR_FAMILY      "addr-family"
+#define NM_DHCP_CLIENT_FLAGS            "flags"
+#define NM_DHCP_CLIENT_HWADDR           "hwaddr"
+#define NM_DHCP_CLIENT_BROADCAST_HWADDR "broadcast-hwaddr"
+#define NM_DHCP_CLIENT_IFINDEX          "ifindex"
+#define NM_DHCP_CLIENT_INTERFACE        "iface"
+#define NM_DHCP_CLIENT_MULTI_IDX        "multi-idx"
+#define NM_DHCP_CLIENT_HOSTNAME         "hostname"
+#define NM_DHCP_CLIENT_ROUTE_METRIC     "route-metric"
+#define NM_DHCP_CLIENT_ROUTE_TABLE      "route-table"
+#define NM_DHCP_CLIENT_TIMEOUT          "timeout"
+#define NM_DHCP_CLIENT_UUID             "uuid"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -80,6 +81,13 @@ typedef struct {
 	gboolean (*ip4_start)     (NMDhcpClient *self,
 	                           const char *anycast_addr,
 	                           const char *last_ip4_address,
+	                           GError **error);
+
+	gboolean (*accept)        (NMDhcpClient *self,
+	                           GError **error);
+
+	gboolean (*decline)       (NMDhcpClient *self,
+	                           const char *error_message,
 	                           GError **error);
 
 	gboolean (*ip6_start)     (NMDhcpClient *self,
@@ -122,6 +130,8 @@ GBytes *nm_dhcp_client_get_duid (NMDhcpClient *self);
 
 GBytes *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
+GBytes *nm_dhcp_client_get_broadcast_hw_addr (NMDhcpClient *self);
+
 guint32 nm_dhcp_client_get_route_table (NMDhcpClient *self);
 
 void nm_dhcp_client_set_route_table (NMDhcpClient *self, guint32 route_table);
@@ -154,6 +164,13 @@ gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    NMSettingIP6ConfigPrivacy privacy,
                                    guint needed_prefixes,
                                    GError **error);
+
+gboolean nm_dhcp_client_accept (NMDhcpClient *self,
+                                GError **error);
+
+gboolean nm_dhcp_client_decline (NMDhcpClient *self,
+                                 const char *error_message,
+                                 GError **error);
 
 void nm_dhcp_client_stop (NMDhcpClient *self, gboolean release);
 
@@ -199,5 +216,6 @@ extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcd;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_internal;
+extern const NMDhcpClientFactory _nm_dhcp_client_factory_nettools;
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */

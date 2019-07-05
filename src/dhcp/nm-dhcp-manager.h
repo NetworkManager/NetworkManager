@@ -49,6 +49,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               const char *iface,
                                               int ifindex,
                                               GBytes *hwaddr,
+                                              GBytes *bcast_hwaddr,
                                               const char *uuid,
                                               guint32 route_table,
                                               guint32 route_metric,
@@ -66,6 +67,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               const char *iface,
                                               int ifindex,
                                               GBytes *hwaddr,
+                                              GBytes *bcast_hwaddr,
                                               const struct in6_addr *ll_addr,
                                               const char *uuid,
                                               guint32 route_table,
@@ -84,7 +86,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
 /* For testing only */
 extern const char* nm_dhcp_helper_path;
 
-extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4];
+extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[5];
 
 void nmtst_dhcp_manager_unget (gpointer singleton_instance);
 

@@ -88,6 +88,43 @@ shared_n_acd_dep = declare_dependency(
 
 ###############################################################################
 
+shared_n_dhcp4 = static_library(
+    'n-dhcp4',
+    sources: files('n-dhcp4/src/n-dhcp4-c-connection.c',
+                   'n-dhcp4/src/n-dhcp4-c-lease.c',
+                   'n-dhcp4/src/n-dhcp4-c-probe.c',
+                   'n-dhcp4/src/n-dhcp4-client.c',
+                   'n-dhcp4/src/n-dhcp4-incoming.c',
+                   'n-dhcp4/src/n-dhcp4-outgoing.c',
+                   'n-dhcp4/src/n-dhcp4-private.h',
+                   'n-dhcp4/src/n-dhcp4-socket.c',
+                   'n-dhcp4/src/n-dhcp4.h',
+                   'n-dhcp4/src/util/packet.c',
+                   'n-dhcp4/src/util/packet.h',
+                   'n-dhcp4/src/util/socket.c',
+                   'n-dhcp4/src/util/socket.h'),
+    c_args: [
+        '-D_GNU_SOURCE',
+        '-Wno-declaration-after-statement',
+        '-Wno-pointer-arith',
+    ],
+    include_directories: [
+        include_directories('c-list/src'),
+        include_directories('c-siphash/src'),
+        include_directories('c-stdaux/src'),
+    ],
+    dependencies: [
+        shared_c_siphash_dep,
+    ],
+)
+
+shared_n_dhcp4_dep = declare_dependency(
+    include_directories: shared_inc,
+    link_with: shared_n_dhcp4,
+)
+
+###############################################################################
+
 version_conf = configuration_data()
 version_conf.set('NM_MAJOR_VERSION', nm_major_version)
 version_conf.set('NM_MINOR_VERSION', nm_minor_version)
@@ -238,11 +275,13 @@ libnm_systemd_shared = static_library(
     'systemd/src/basic/tmpfile-util.c',
     'systemd/src/basic/utf8.c',
     'systemd/src/basic/util.c',
+    'systemd/src/shared/dns-domain.c',
     'systemd/nm-sd-utils-shared.c',
   ),
   include_directories: include_directories(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
+    'systemd/src/shared',
   ),
   dependencies: shared_nm_glib_aux_dep,
   c_args: [
@@ -255,6 +294,7 @@ libnm_systemd_shared_dep = declare_dependency(
   include_directories: include_directories(
     'systemd/sd-adapt-shared',
     'systemd/src/basic',
+    'systemd/src/shared',
   ),
   dependencies: [
     shared_nm_glib_aux_dep,

@@ -183,7 +183,11 @@ _c_public_ void n_dhcp4_client_config_set_request_broadcast(NDhcp4ClientConfig *
  */
 _c_public_ void n_dhcp4_client_config_set_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac) {
         config->n_mac = n_mac;
-        memcpy(config->mac, mac, c_min(n_mac, sizeof(config->mac)));
+
+        if (n_mac > sizeof(config->mac))
+                n_mac = sizeof(config->mac);
+
+        memcpy(config->mac, mac, n_mac);
 }
 
 /**
@@ -209,7 +213,11 @@ _c_public_ void n_dhcp4_client_config_set_mac(NDhcp4ClientConfig *config, const 
  */
 _c_public_ void n_dhcp4_client_config_set_broadcast_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac) {
         config->n_broadcast_mac = n_mac;
-        memcpy(config->broadcast_mac, mac, c_min(n_mac, sizeof(config->broadcast_mac)));
+
+        if (n_mac > sizeof(config->mac))
+                n_mac = sizeof(config->mac);
+
+        memcpy(config->broadcast_mac, mac, n_mac);
 }
 
 /**

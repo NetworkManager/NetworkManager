@@ -381,8 +381,10 @@ main (int argc, char *argv[])
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
 	gs_unref_object NMNDisc *ndisc = NULL;
 	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
+	const NMPlatformLink *pllink;
 	guint sd_id;
 	int errsv;
 
@@ -469,7 +471,11 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
-	hwaddr = nm_platform_link_get_address_as_bytes (NM_PLATFORM_GET, gl.ifindex);
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, gl.ifindex);
+	if (pllink) {
+		hwaddr = nmp_link_address_get_as_bytes (&pllink->l_address);
+		bcast_hwaddr = nmp_link_address_get_as_bytes (&pllink->l_broadcast);
+	}
 
 	if (global_opt.iid_str) {
 		GBytes *bytes;
@@ -505,6 +511,7 @@ main (int argc, char *argv[])
 		                                          global_opt.ifname,
 		                                          gl.ifindex,
 		                                          hwaddr,
+		                                          bcast_hwaddr,
 		                                          global_opt.uuid,
 		                                          RT_TABLE_MAIN,
 		                                          global_opt.priority_v4,
@@ -589,8 +596,9 @@ main (int argc, char *argv[])
 
 /*****************************************************************************/
 
-const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4] = {
+const NMDhcpClientFactory *const _nm_dhcp_manager_factories[5] = {
 	&_nm_dhcp_client_factory_internal,
+	&_nm_dhcp_client_factory_nettools,
 };
 
 /*****************************************************************************/

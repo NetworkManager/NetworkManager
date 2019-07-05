@@ -266,6 +266,45 @@ endif
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/libndhcp4.la
+
+shared_libndhcp4_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	-std=c11 \
+	-Wno-error=declaration-after-statement \
+	-Wno-pointer-arith \
+	$(NULL)
+
+shared_libndhcp4_la_CPPFLAGS = \
+	-D_GNU_SOURCE \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-I$(srcdir)/shared/c-stdaux/src \
+	-I$(srcdir)/shared/c-list/src \
+	-I$(srcdir)/shared/c-siphash/src \
+	$(NULL)
+
+shared_libndhcp4_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS)
+
+shared_libndhcp4_la_SOURCES = \
+	shared/n-dhcp4/src/n-dhcp4-c-connection.c \
+	shared/n-dhcp4/src/n-dhcp4-c-lease.c \
+	shared/n-dhcp4/src/n-dhcp4-c-probe.c \
+	shared/n-dhcp4/src/n-dhcp4-client.c \
+	shared/n-dhcp4/src/n-dhcp4-incoming.c \
+	shared/n-dhcp4/src/n-dhcp4-outgoing.c \
+	shared/n-dhcp4/src/n-dhcp4-private.h \
+	shared/n-dhcp4/src/n-dhcp4-socket.c \
+	shared/n-dhcp4/src/n-dhcp4.h \
+	shared/n-dhcp4/src/util/packet.c \
+	shared/n-dhcp4/src/util/packet.h \
+	shared/n-dhcp4/src/util/socket.c \
+	shared/n-dhcp4/src/util/socket.h \
+	$(NULL)
+
+###############################################################################
+
 noinst_LTLIBRARIES += shared/nm-std-aux/libnm-std-aux.la
 
 shared_nm_std_aux_libnm_std_aux_la_CPPFLAGS = \
@@ -1620,6 +1659,7 @@ libsystemd_cppflags = \
 	-I$(srcdir)/shared/systemd/ \
 	-I$(srcdir)/shared/systemd/sd-adapt-shared \
 	-I$(srcdir)/shared/systemd/src/basic \
+	-I$(srcdir)/shared/systemd/src/shared \
 	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -1763,6 +1803,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/utf8.h \
 	shared/systemd/src/basic/util.c \
 	shared/systemd/src/basic/util.h \
+	shared/systemd/src/shared/dns-domain.c \
+	shared/systemd/src/shared/dns-domain.h \
 	$(NULL)
 
 shared_systemd_libnm_systemd_shared_la_LIBADD = \
@@ -1779,7 +1821,6 @@ src_libnm_systemd_core_la_cppflags = \
 	-I$(srcdir)/src \
 	-I$(srcdir)/src/systemd/sd-adapt-core \
 	-I$(srcdir)/src/systemd/src/systemd \
-	-I$(srcdir)/src/systemd/src/shared \
 	-I$(srcdir)/src/systemd/src/libsystemd-network \
 	-I$(srcdir)/src/systemd/src/libsystemd/sd-event \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
@@ -1840,8 +1881,6 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/src/libsystemd/sd-id128/id128-util.c \
 	src/systemd/src/libsystemd/sd-id128/id128-util.h \
 	src/systemd/src/libsystemd/sd-id128/sd-id128.c \
-	src/systemd/src/shared/dns-domain.c \
-	src/systemd/src/shared/dns-domain.h \
 	src/systemd/src/systemd/_sd-common.h \
 	src/systemd/src/systemd/sd-dhcp-client.h \
 	src/systemd/src/systemd/sd-dhcp-lease.h \
@@ -1866,7 +1905,9 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-src_libNetworkManagerBase_la_CPPFLAGS = $(src_cppflags)
+src_libNetworkManagerBase_la_CPPFLAGS = \
+	$(libsystemd_cppflags) \
+	$(src_cppflags)
 
 src_libNetworkManagerBase_la_SOURCES = \
 	\
@@ -1920,6 +1961,7 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/dhcp/nm-dhcp-client.c \
 	src/dhcp/nm-dhcp-client.h \
 	src/dhcp/nm-dhcp-client-logging.h \
+	src/dhcp/nm-dhcp-nettools.c \
 	src/dhcp/nm-dhcp-utils.c \
 	src/dhcp/nm-dhcp-utils.h \
 	src/dhcp/nm-dhcp-systemd.c \
@@ -2141,6 +2183,7 @@ src_libNetworkManager_la_LIBADD = \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
+	shared/libndhcp4.la \
 	shared/libcrbtree.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
@@ -2228,6 +2271,7 @@ src_nm_iface_helper_LDADD = \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
+	shared/libndhcp4.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -2275,6 +2319,7 @@ src_initrd_nm_initrd_generator_LDADD = \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libndhcp4.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)

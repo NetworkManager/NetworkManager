@@ -181,7 +181,7 @@ next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
 next if $filename =~ /\bsrc\/systemd\//
 	and not $filename =~ /\/sd-adapt\//
 	and not $filename =~ /\/nm-/;
-next if $filename =~ /\/(n-acd|c-list|c-siphash)\//;
+next if $filename =~ /\/(n-acd|c-list|c-siphash|n-dhcp4)\//;
 
 complain ('Tabs are only allowed at the beginning of a line') if $line =~ /[^\t]\t/;
 complain ('Trailing whitespace') if $line =~ /[ \t]$/;

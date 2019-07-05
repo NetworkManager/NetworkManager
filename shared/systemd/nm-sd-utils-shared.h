@@ -39,4 +39,9 @@ int nm_sd_utils_unbase64mem (const char *p,
 
 /*****************************************************************************/
 
+int nm_sd_dns_name_to_wire_format (const char *domain,
+                                   guint8 *buffer,
+                                   size_t len,
+                                   gboolean canonical);
+
 #endif /* __NM_SD_UTILS_SHARED_H__ */

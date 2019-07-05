@@ -5,16 +5,17 @@
 #include <c-stdaux.h>
 #include <errno.h>
 #include <linux/filter.h>
+#include <sys/socket.h> /* needed by linux/if.h */
+#include <linux/if.h>
 #include <linux/if_packet.h>
+#include <linux/netdevice.h>
 #include <linux/udp.h>
-#include <net/if.h>
 #include <netinet/ip.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include "n-dhcp4-private.h"
 #include "util/packet.h"
 #include "util/socket.h"
