@@ -1505,7 +1505,7 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 			continue;
 
 		iface = nm_setting_connection_get_interface_name (s_con);
-		if (nm_streq0 (iface, nm_device_get_iface (device)))
+		if (!nm_streq0 (iface, nm_device_get_iface (device)))
 			continue;
 
 		s_wired = nm_connection_get_setting_wired (connection);
