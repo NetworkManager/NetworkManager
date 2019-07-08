@@ -116,21 +116,23 @@ find_tag (const char *tag,
           gsize start_at,
           gsize *out_pos)
 {
-	gsize i, taglen;
-	gsize len = data_len - start_at;
+	const guint8 *p;
+	gsize taglen;
 
-	g_return_val_if_fail (out_pos != NULL, FALSE);
+	nm_assert (out_pos);
+	nm_assert (start_at <= data_len);
 
 	taglen = strlen (tag);
-	if (len >= taglen) {
-		for (i = 0; i < len - taglen + 1; i++) {
-			if (memcmp (data + start_at + i, tag, taglen) == 0) {
-				*out_pos = start_at + i;
-				return TRUE;
-			}
-		}
-	}
-	return FALSE;
+
+	p = memmem (&data[start_at], data_len - start_at, tag, taglen);
+	if (!p)
+		return FALSE;
+
+	*out_pos = p - data;
+
+	nm_assert (memcmp (&data[*out_pos], tag, taglen) == 0);
+
+	return TRUE;
 }
 
 #define DEK_INFO_TAG "DEK-Info: "
