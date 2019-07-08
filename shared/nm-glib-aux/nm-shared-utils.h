@@ -202,6 +202,9 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
 #define NM_CMP_DIRECT_MEMCMP(a, b, size) \
     NM_CMP_RETURN (memcmp ((a), (b), (size)))
 
+#define NM_CMP_DIRECT_STRCMP(a, b) \
+    NM_CMP_RETURN_DIRECT (strcmp ((a), (b)))
+
 #define NM_CMP_DIRECT_STRCMP0(a, b) \
     NM_CMP_RETURN_DIRECT (nm_strcmp0 ((a), (b)))
 
