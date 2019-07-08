@@ -107,15 +107,16 @@ include config-extra.h.mk
 
 DISTCLEANFILES += config-extra.h
 
-$(libnm_core_lib_h_pub_mkenums):    config-extra.h
-libnm-core/.dirstamp:               config-extra.h
-shared/.dirstamp:                   config-extra.h
-shared/nm-glib-aux/.dirstamp:       config-extra.h
-shared/nm-std-aux/.dirstamp:        config-extra.h
-shared/nm-udev-aux/.dirstamp:       config-extra.h
-shared/systemd/.dirstamp:           config-extra.h
-shared/systemd/src/basic/.dirstamp: config-extra.h
-src/dhcp/.dirstamp:                 config-extra.h
+$(libnm_core_lib_h_pub_mkenums):     config-extra.h
+libnm-core/.dirstamp:                config-extra.h
+shared/.dirstamp:                    config-extra.h
+shared/nm-glib-aux/.dirstamp:        config-extra.h
+shared/nm-std-aux/.dirstamp:         config-extra.h
+shared/nm-udev-aux/.dirstamp:        config-extra.h
+shared/systemd/.dirstamp:            config-extra.h
+shared/systemd/src/basic/.dirstamp:  config-extra.h
+shared/systemd/src/shared/.dirstamp: config-extra.h
+src/dhcp/.dirstamp:                  config-extra.h
 
 ###############################################################################
 
