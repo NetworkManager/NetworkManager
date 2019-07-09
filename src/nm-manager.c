@@ -2674,6 +2674,7 @@ get_existing_connection (NMManager *self,
 	if (!nm_settings_add_connection (priv->settings,
 	                                 connection,
 	                                 NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                                 NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 	                                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
 	                                 | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
 	                                 &added,
@@ -5419,6 +5420,7 @@ _add_and_activate_auth_done (NMManager *self,
 	nm_settings_add_connection_dbus (priv->settings,
 	                                 connection,
 	                                 persist_mode,
+	                                 NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 	                                 (  is_volatile
 	                                  ? NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
 	                                  : NM_SETTINGS_CONNECTION_INT_FLAGS_NONE),

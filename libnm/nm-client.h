@@ -389,6 +389,22 @@ NMRemoteConnection *nm_client_add_connection_finish (NMClient *client,
                                                      GAsyncResult *result,
                                                      GError **error);
 
+NM_AVAILABLE_IN_1_20
+void nm_client_add_connection2 (NMClient *client,
+                                GVariant *settings,
+                                NMSettingsAddConnection2Flags flags,
+                                GVariant *args,
+                                gboolean ignore_out_result,
+                                GCancellable *cancellable,
+                                GAsyncReadyCallback callback,
+                                gpointer user_data);
+
+NM_AVAILABLE_IN_1_20
+NMRemoteConnection *nm_client_add_connection2_finish (NMClient *client,
+                                                      GAsyncResult *result,
+                                                      GVariant **out_result,
+                                                      GError **error);
+
 gboolean nm_client_load_connections        (NMClient *client,
                                             char **filenames,
                                             char ***failures,

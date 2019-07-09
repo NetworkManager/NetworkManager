@@ -238,6 +238,7 @@ pan_connection_check_create (NMBluezDevice *self)
 	nm_settings_add_connection (priv->settings,
 	                            connection,
 	                            NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                            NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 	                            NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
 	                            &added,
 	                            &error);

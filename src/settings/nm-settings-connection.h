@@ -30,6 +30,14 @@
 
 typedef enum {
 
+	NM_SETTINGS_CONNECTION_ADD_REASON_NONE                         = 0,
+
+	NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT            = (1u << 0),
+
+} NMSettingsConnectionAddReason;
+
+typedef enum {
+
 	NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE                      = 0,
 
 	/* with persist-mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY, and
@@ -66,6 +74,8 @@ typedef enum {
 	 * when the user modifies it via D-Bus, the profile should become persisted
 	 * to disk and it the purpose why the profile was created should be forgotten. */
 	NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_DEFAULT_WIRED       = (1u << 7),
+
+	NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT         = (1u << 8),
 
 } NMSettingsConnectionUpdateReason;
 
