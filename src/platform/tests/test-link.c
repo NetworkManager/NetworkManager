@@ -328,7 +328,7 @@ test_slave (int master, int type, SignalData *master_changed)
 		ensure_no_signal (link_changed);
 		accept_signal (link_removed);
 	}
-	accept_signals (master_changed, 0, 2);
+	accept_signals (master_changed, 0, 3);
 
 	ensure_no_signal (master_changed);
 
