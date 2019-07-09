@@ -1529,7 +1529,9 @@ update_auth_cb (NMSettingsConnection *self,
 	                                 NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
 	                               | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
 	                                 NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME
-	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL
+	                               | (  NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)
+	                                  ? NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE
+	                                  : NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL)
 	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
 	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS,
 	                               "update-from-dbus",
@@ -1733,9 +1735,10 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
 
-	if (NM_FLAGS_ANY (flags_u, ~((guint32) (ALL_PERSIST_MODES |
-	                                        NM_SETTINGS_UPDATE2_FLAG_VOLATILE |
-	                                        NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)))) {
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  ALL_PERSIST_MODES
+	                                        | NM_SETTINGS_UPDATE2_FLAG_VOLATILE
+	                                        | NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT
+	                                        | NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
 		                             "Unknown flags");

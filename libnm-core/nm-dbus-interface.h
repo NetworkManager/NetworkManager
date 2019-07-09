@@ -1039,6 +1039,13 @@ typedef enum { /*< flags >*/
  *   has autoconnect enabled and is modified, it becomes eligible to autoconnect
  *   right away. Setting this flag, disables autoconnect until the connection
  *   is manually activated.
+ * @NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY: when a profile gets modified that is
+ *   currently active, then these changes don't take effect for the active
+ *   device unless the profile gets reactivated or the configuration reapplied.
+ *   There are two exceptions: by default "connection.zone" and "connection.metered"
+ *   properties take effect immediately. Specify this flag to prevent these
+ *   properties to take effect, so that the change is restricted to modify
+ *   the profile. Since: 1.20.
  *
  * Since: 1.12
  */
@@ -1050,6 +1057,7 @@ typedef enum { /*< flags >*/
 	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY             = 0x8,
 	NM_SETTINGS_UPDATE2_FLAG_VOLATILE                   = 0x10,
 	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = 0x20,
+	NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY                 = 0x40,
 } NMSettingsUpdate2Flags;
 
 /**

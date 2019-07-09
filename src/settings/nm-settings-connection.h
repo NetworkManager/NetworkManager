@@ -50,7 +50,10 @@ typedef enum {
 	/* Usually, changing a profile that is currently active does not immediately
 	 * reapply the changes. The exception are connection.zone and connection.metered
 	 * properties. When this flag is set, then these two properties are reapplied
-	 * right away. */
+	 * right away.
+	 *
+	 * See also %NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY flag, to prevent partial reapply
+	 * during Update2(). */
 	NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL           = (1u << 2),
 
 	NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS      = (1u << 3),
