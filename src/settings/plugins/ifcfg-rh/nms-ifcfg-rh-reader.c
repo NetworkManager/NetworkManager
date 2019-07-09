@@ -1579,7 +1579,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	gboolean has_key;
 	shvarFile *route_ifcfg;
 	gboolean never_default;
-	gint64 timeout;
+	gint64 i64;
 	int priority;
 	const char *const *item;
 	guint32 route_table;
@@ -1679,6 +1679,14 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_object_set (s_ip4,
 		              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, NULL,
 		              NM_SETTING_IP4_CONFIG_DHCP_FQDN, v,
+		              NULL);
+	}
+
+	i64 = svGetValueInt64 (ifcfg, "DHCP_HOSTNAME_FLAGS", 10, 0, G_MAXUINT32, -1);
+	if (i64 > -1) {
+		g_object_set (s_ip4,
+		              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
+		              (guint) i64,
 		              NULL);
 	}
 
@@ -1852,14 +1860,14 @@ make_ip4_setting (shvarFile *ifcfg,
 		}
 	}
 
-	timeout = svGetValueInt64 (ifcfg, "ACD_TIMEOUT", 10, -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -2);
-	if (timeout == -2) {
-		timeout = svGetValueInt64 (ifcfg, "ARPING_WAIT", 10, -1,
-		                           NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX / 1000, -1);
-		if (timeout > 0)
-			timeout *= 1000;
+	i64 = svGetValueInt64 (ifcfg, "ACD_TIMEOUT", 10, -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -2);
+	if (i64 == -2) {
+		i64 = svGetValueInt64 (ifcfg, "ARPING_WAIT", 10, -1,
+		                       NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX / 1000, -1);
+		if (i64 > 0)
+			i64 *= 1000;
 	}
-	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (int) timeout, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (int) i64, NULL);
 
 	return NM_SETTING (g_steal_pointer (&s_ip4));
 }
@@ -1993,6 +2001,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	gs_free const char **list = NULL;
 	const char *const *iter;
 	guint32 i;
+	gint64 i64;
 	int i_val;
 	GError *local = NULL;
 	int priority;
@@ -2152,6 +2161,15 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
 	              svGetValueBoolean (ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE), NULL);
+
+
+	i64 = svGetValueInt64 (ifcfg, "DHCPV6_HOSTNAME_FLAGS", 10, 0, G_MAXUINT32, -1);
+	if (i64 > -1) {
+		g_object_set (s_ip6,
+		              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
+		              (guint) i64,
+		              NULL);
+	}
 
 	/* Read static IP addresses.
 	 * Read them even for AUTO and DHCP methods - in this case the addresses are

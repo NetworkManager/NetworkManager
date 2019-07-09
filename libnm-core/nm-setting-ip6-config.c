@@ -658,6 +658,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 */
 
 	/* ---ifcfg-rh---
+	 * property: dhcp-hostname-flags
+	 * variable: DHCPV6_HOSTNAME_FLAGS
+	 * description: flags for the DHCP hostname property
+	 * example: DHCPV6_HOSTNAME_FLAGS=5
+	 */
+
+	/* ---ifcfg-rh---
 	 * property: never-default
 	 * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
 	 * default: IPV6_DEFROUTE=yes (when no variable specified)

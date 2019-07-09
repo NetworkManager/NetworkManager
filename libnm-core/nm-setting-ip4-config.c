@@ -775,6 +775,13 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * ---end---
 	 */
 
+	/* ---ifcfg-rh---
+	 * property: dhcp-hostname-flags
+	 * variable: DHCP_HOSTNAME_FLAGS
+	 * description: flags for the DHCP hostname and FQDN properties
+	 * example: DHCP_HOSTNAME_FLAGS=5
+	 */
+
 	/**
 	 * NMSettingIP4Config:dhcp-fqdn:
 	 *

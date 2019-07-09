@@ -887,6 +887,7 @@ test_read_wired_dhcp (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *mac;
@@ -916,11 +917,23 @@ test_read_wired_dhcp (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
-	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "foobar");
+	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)), ==, "foo.bar");
 	g_assert (nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
 	g_assert_cmpuint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
 	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
 	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
+	g_assert_cmpuint (nm_setting_ip_config_get_dhcp_hostname_flags (s_ip4),
+	                  ==,
+	                  NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED | NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE);
+
+	/* ===== IPv6 SETTING ===== */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "foo.bar");
+	g_assert_cmpuint (nm_setting_ip_config_get_dhcp_hostname_flags (s_ip6),
+	                  ==,
+	                  NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS);
 
 	g_object_unref (connection);
 }
@@ -4457,7 +4470,8 @@ test_write_wired_dhcp (void)
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "random-client-id-00:22:33",
-	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "awesome-hostname",
+	              NM_SETTING_IP4_CONFIG_DHCP_FQDN, "awesome.hostname",
+	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, (guint) NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
 	              NM_SETTING_IP_CONFIG_DHCP_IAID, "2864434397",
@@ -4470,8 +4484,10 @@ test_write_wired_dhcp (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DHCP,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "awesome.hostname",
+	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, (guint) NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE,
 	              NULL);
 
 	_writer_new_connection (connection,
