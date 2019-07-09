@@ -3575,6 +3575,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingIPConfig,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_HOSTNAME,
+	PROP_DHCP_HOSTNAME_FLAGS,
 	PROP_DHCP_SEND_HOSTNAME,
 	PROP_NEVER_DEFAULT,
 	PROP_MAY_FAIL,
@@ -3604,6 +3605,7 @@ typedef struct {
 	int dad_timeout;
 	int dhcp_timeout;
 	char *dhcp_iaid;
+	guint dhcp_hostname_flags;
 } NMSettingIPConfigPrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
@@ -4839,6 +4841,25 @@ nm_setting_ip_config_get_dad_timeout (NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_dhcp_hostname_flags:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-hostname-flags
+ * property.
+ *
+ * Returns: flags for the DHCP hostname and FQDN
+ *
+ * Since: 1.22
+ */
+NMDhcpHostnameFlags
+nm_setting_ip_config_get_dhcp_hostname_flags (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NM_DHCP_HOSTNAME_FLAG_NONE);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dhcp_hostname_flags;
+}
+
+/**
  * nm_setting_ip_config_get_dhcp_timeout:
  * @setting: the #NMSettingIPConfig
  *
@@ -5050,6 +5071,30 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	/* Validate DHCP hostname flags */
+	if (   priv->dhcp_hostname_flags != NM_DHCP_HOSTNAME_FLAG_NONE
+	    && !priv->dhcp_send_hostname) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("the property cannot be set when '%s' is disabled"),
+		             NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME);
+		g_prefix_error (error, "%s.%s: ",
+		                nm_setting_get_name (setting),
+		                NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS);
+		return FALSE;
+	}
+
+	if (!_nm_utils_validate_dhcp_hostname_flags (priv->dhcp_hostname_flags,
+	                                             NM_SETTING_IP_CONFIG_GET_FAMILY (setting),
+	                                             error)) {
+		g_prefix_error (error, "%s.%s: ",
+		                nm_setting_get_name (setting),
+		                NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS);
+		return FALSE;
+	}
+
+	/* Normalizable errors */
 	if (priv->gateway && priv->never_default) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -5319,6 +5364,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DHCP_IAID:
 		g_value_set_string (value, nm_setting_ip_config_get_dhcp_iaid (setting));
 		break;
+	case PROP_DHCP_HOSTNAME_FLAGS:
+		g_value_set_uint (value, nm_setting_ip_config_get_dhcp_hostname_flags (setting));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -5421,6 +5469,9 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_IAID:
 		priv->dhcp_iaid = g_value_dup_string (value);
+		break;
+	case PROP_DHCP_HOSTNAME_FLAGS:
+		priv->dhcp_hostname_flags = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -5837,6 +5888,38 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingIPConfig:dhcp-hostname-flags:
+	 *
+	 * Flags for the DHCP hostname and FQDN.
+	 *
+	 * Currently this property only includes flags to control the FQDN flags
+	 * set in the DHCP FQDN option. Supported FQDN flags are
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED and
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE.  When no FQDN flag is set and
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS is set, the DHCP FQDN option will
+	 * contain no flag. Otherwise, if no FQDN flag is set and
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS is not set, the standard FQDN flags
+	 * are set in the request:
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED for IPv4 and
+	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE for IPv6.
+	 *
+	 * When this property is set to the default value %NM_DHCP_HOSTNAME_FLAG_NONE,
+	 * a global default is looked up in NetworkManager configuration. If that value
+	 * is unset or also %NM_DHCP_HOSTNAME_FLAG_NONE, then the standard FQDN flags
+	 * described above are sent in the DHCP requests.
+	 *
+	 * Since: 1.22
+	 */
+	obj_properties[PROP_DHCP_HOSTNAME_FLAGS] =
+	    g_param_spec_uint (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, "", "",
+	                       0, G_MAXUINT32,
+	                       NM_DHCP_HOSTNAME_FLAG_NONE,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

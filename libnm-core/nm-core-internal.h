@@ -135,6 +135,21 @@ const char *nm_bluetooth_capability_to_string (NMBluetoothCapabilities capabilit
 
 /*****************************************************************************/
 
+#define NM_DHCP_HOSTNAME_FLAGS_FQDN_MASK        \
+    (  NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED       \
+     | NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE   \
+     | NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE     \
+     | NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS)
+
+#define NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4 \
+    (  NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED       \
+     | NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE)
+
+#define NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6 \
+    NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE
+
+/*****************************************************************************/
+
 typedef enum { /*< skip >*/
 	NM_SETTING_PARSE_FLAGS_NONE                     = 0,
 	NM_SETTING_PARSE_FLAGS_STRICT                   = 1LL << 0,
@@ -874,6 +889,10 @@ const char *nm_utils_wifi_freq_to_band (guint32 freq);
 
 gboolean _nm_utils_iaid_verify (const char *str, gint64 *out_value);
 
+gboolean _nm_utils_validate_dhcp_hostname_flags (NMDhcpHostnameFlags flags,
+                                                 int addr_family,
+                                                 GError **error);
+
 /*****************************************************************************/
 
 gboolean _nmtst_variant_attribute_spec_assert_sorted (const NMVariantAttributeSpec *const*array,
@@ -882,5 +901,4 @@ gboolean _nmtst_variant_attribute_spec_assert_sorted (const NMVariantAttributeSp
 const NMVariantAttributeSpec *_nm_variant_attribute_spec_find_binary_search (const NMVariantAttributeSpec *const*array,
                                                                              gsize len,
                                                                              const char *name);
-
 #endif
