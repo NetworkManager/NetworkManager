@@ -2412,7 +2412,7 @@ msgstr "<invisible>"
 #: ../clients/cli/devices.c:435
 #, c-format
 msgid "%u Mb/s"
-msgstr "%u Mo/s"
+msgstr "%u Mb/s"
 
 #: ../clients/cli/devices.c:689
 #, c-format
@@ -2885,7 +2885,7 @@ msgstr "%u MHz"
 #: ../clients/cli/devices.c:1150
 #, c-format
 msgid "%u Mbit/s"
-msgstr "%u Mo/s"
+msgstr "%u Mb/s"
 
 #: ../clients/cli/devices.c:1189
 msgid "Ad-Hoc"
