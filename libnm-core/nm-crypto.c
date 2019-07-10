@@ -49,6 +49,12 @@
 #define PEM_PKCS8_DEC_KEY_BEGIN "-----BEGIN PRIVATE KEY-----"
 #define PEM_PKCS8_DEC_KEY_END   "-----END PRIVATE KEY-----"
 
+#define PEM_TPM2_WRAPPED_KEY_BEGIN "-----BEGIN TSS2 PRIVATE KEY-----"
+#define PEM_TPM2_WRAPPED_KEY_END "-----END TSS2 PRIVATE KEY-----"
+
+#define PEM_TPM2_OLD_WRAPPED_KEY_BEGIN "-----BEGIN TSS2 KEY BLOB-----"
+#define PEM_TPM2_OLD_WRAPPED_KEY_END "-----END TSS2 KEY BLOB-----"
+
 /*****************************************************************************/
 
 static const NMCryptoCipherInfo cipher_infos[] = {
@@ -383,6 +389,43 @@ parse_pkcs8_key_file (const guint8 *data,
 	}
 
 	*out_encrypted = encrypted;
+	return TRUE;
+}
+
+static gboolean
+parse_tpm2_wrapped_key_file (const guint8 *data,
+                             gsize data_len,
+                             gboolean *out_encrypted,
+                             GError **error)
+{
+	gsize start = 0, end = 0;
+	const char *start_tag = NULL, *end_tag = NULL;
+
+	nm_assert (out_encrypted);
+
+	if (find_tag (PEM_TPM2_WRAPPED_KEY_BEGIN, data, data_len, 0, &start)) {
+		start_tag = PEM_TPM2_WRAPPED_KEY_BEGIN;
+		end_tag = PEM_TPM2_WRAPPED_KEY_END;
+	} else if (find_tag (PEM_TPM2_OLD_WRAPPED_KEY_BEGIN, data, data_len, 0, &start)) {
+		start_tag = PEM_TPM2_OLD_WRAPPED_KEY_BEGIN;
+		end_tag = PEM_TPM2_OLD_WRAPPED_KEY_END;
+	} else {
+		g_set_error_literal (error, NM_CRYPTO_ERROR,
+		                     NM_CRYPTO_ERROR_INVALID_DATA,
+		                     _("Failed to find expected TSS start tag."));
+		return FALSE;
+	}
+
+	start += strlen (start_tag);
+	if (!find_tag (end_tag, data, data_len, start, &end)) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
+		             _("Failed to find expected TSS end tag '%s'."),
+		             end_tag);
+		return FALSE;
+	}
+
+	*out_encrypted = FALSE;
 	return TRUE;
 }
 
@@ -824,6 +867,8 @@ nm_crypto_verify_private_key_data (const guint8 *data,
 			if (   !password
 			    || _nm_crypto_verify_pkcs8 (parsed.bin, parsed.len, is_encrypted, password, error))
 				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
+		} else if (parse_tpm2_wrapped_key_file (data, data_len, &is_encrypted, NULL)) {
+			format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 		} else {
 			NMCryptoCipherType cipher;
 			nm_auto_free_secret char *iv = NULL;
