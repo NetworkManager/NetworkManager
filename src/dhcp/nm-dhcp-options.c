@@ -168,10 +168,10 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_246,                       "private_246",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_247,                       "private_247",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_248,                       "private_248",                     FALSE ),
-	/* DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE */
+	/* NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE */
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_250,                       "private_250",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_251,                       "private_251",                     FALSE ),
-	/* DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY */
+	/* NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY */
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_253,                       "private_253",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_254,                       "private_254",                     FALSE ),
 
