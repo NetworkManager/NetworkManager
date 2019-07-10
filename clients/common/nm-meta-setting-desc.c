@@ -6141,7 +6141,7 @@ static const NMMetaPropertyInfo *const property_infos_OVS_INTERFACE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_INTERFACE_TYPE,
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            NM_MAKE_STRV ("internal", "patch"),
+			.values_static =            NM_MAKE_STRV ("internal", "system", "patch", "dpdk"),
 		),
 	),
 	NULL
