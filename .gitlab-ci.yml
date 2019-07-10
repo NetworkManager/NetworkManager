@@ -132,6 +132,11 @@ t_debian:9:
   image: debian:stretch
   <<: *do_build
 
+t_debian:10:
+  <<: *debian_install
+  image: debian:stretch
+  <<: *do_build
+
 t_debian:testing:
   <<: *debian_install
   image: debian:testing
