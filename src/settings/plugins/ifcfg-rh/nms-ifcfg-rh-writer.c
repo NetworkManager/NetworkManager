@@ -1849,6 +1849,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	GString *str;
 	const char *master, *master_iface = NULL, *type;
 	int vint;
+	gint32 vint32;
 	NMSettingConnectionMdns mdns;
 	NMSettingConnectionLlmnr llmnr;
 	guint32 vuint32;
@@ -2014,6 +2015,19 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 
 	vint = nm_setting_connection_get_auth_retries (s_con);
 	svSetValueInt64_cond (ifcfg, "AUTH_RETRIES", vint >= 0, vint);
+
+	vint32 = nm_setting_connection_get_wait_device_timeout (s_con);
+	if (vint32 == -1)
+		svUnsetValue (ifcfg, "DEVTIMEOUT");
+	else if ((vint32 % 1000) == 0)
+		svSetValueInt64 (ifcfg, "DEVTIMEOUT", vint32 / 1000);
+	else {
+		char b[100];
+
+		svSetValueStr (ifcfg,
+		               "DEVTIMEOUT",
+		               nm_sprintf_buf (b, "%.3f", ((double) vint) / 1000.0));
+	}
 
 	mdns = nm_setting_connection_get_mdns (s_con);
 	if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT) {

@@ -290,6 +290,15 @@ gboolean nm_pstr_equal (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 
+/* this hashes/compares the pointer value that we point to. Basically,
+ * (((const void *const*) a) == ((const void *const*) b)). */
+
+guint nm_pdirect_hash (gconstpointer p);
+
+gboolean nm_pdirect_equal (gconstpointer a, gconstpointer b);
+
+/*****************************************************************************/
+
 #define NM_HASH_OBFUSCATE_PTR_FMT "%016" G_GINT64_MODIFIER "x"
 
 /* sometimes we want to log a pointer directly, for providing context/information about
