@@ -2992,7 +2992,8 @@ nm_ip_routing_rule_from_string (const char *str,
 	 *   Of course, valid rules can be converted to string and read back the same (round-trip).
 	 *
 	 * - iproute2 in may regards is flexible about the command lines. For example
-	 *   - for tables it accepts table names from /etc/iproute2/rt_tables
+	 *   - for tables it accepts table names from /etc/iproute2/rt_tables. We only
+	 *     accept the special aliases "main", "local", and "default".
 	 *   - key names like "preference" can be abbreviated to "prefe", we don't do that.
 	 *   - the "preference"/"priority" may be unspecified, in which kernel automatically
 	 *     chooses an unused priority (during `ip rule add`). We don't allow for that, the
@@ -3072,8 +3073,16 @@ nm_ip_routing_rule_from_string (const char *str,
 			if (i64_table != -1)
 				goto next_fail_word0_duplicate_key;
 			i64_table = _nm_utils_ascii_str_to_int64 (word1, 0, 1, G_MAXUINT32, -1);
-			if (i64_table == -1)
-				goto next_fail_word1_invalid_value;
+			if (i64_table == -1) {
+				if (nm_streq (word1, "main"))
+					i64_table = RT_TABLE_MAIN;
+				else if (nm_streq (word1, "local"))
+					i64_table = RT_TABLE_LOCAL;
+				else if (nm_streq (word1, "default"))
+					i64_table = RT_TABLE_DEFAULT;
+				else
+					goto next_fail_word1_invalid_value;
+			}
 			goto next_words_consumed;
 		}
 		if (NM_IN_STRSET (word0, "tos",
