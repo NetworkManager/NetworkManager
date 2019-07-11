@@ -1811,6 +1811,9 @@ const char _nmtst_connection_unchanging_user_data = 0;
 void
 nmtst_connection_assert_unchanging (NMConnection *connection)
 {
+	if (!connection)
+		return;
+
 	nm_assert (NM_IS_CONNECTION (connection));
 
 	if (g_signal_handler_find (connection,
