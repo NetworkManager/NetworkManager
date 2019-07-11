@@ -3145,6 +3145,89 @@ eap_tls_reader (const char *eap_method,
 }
 
 static gboolean
+parse_8021x_phase2_auth (shvarFile *ifcfg,
+                         shvarFile *keys_ifcfg,
+                         NMSetting8021x *s_8021x,
+                         GError **error)
+{
+	gs_free char *inner_auth = NULL;
+	gs_free char *v_free = NULL;
+	const char *v;
+	gs_free const char **list = NULL;
+	const char *const *iter;
+	guint num_auth = 0;
+	guint num_autheap = 0;
+
+	v = svGetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", &v_free);
+	if (!v) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Missing IEEE_8021X_INNER_AUTH_METHODS");
+		return FALSE;
+	}
+
+	inner_auth = g_ascii_strdown (v, -1);
+	list = nm_utils_strsplit_set (inner_auth, " ");
+	for (iter = list; iter && *iter; iter++) {
+		if (NM_IN_STRSET (*iter, "pap",
+		                         "chap",
+		                         "mschap",
+		                         "mschapv2",
+		                         "gtc",
+		                         "otp",
+		                         "md5")) {
+			if (num_auth == 0) {
+				if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
+			}
+			num_auth++;
+		} else if (nm_streq (*iter, "tls")) {
+			if (num_auth == 0) {
+				if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, "tls", NULL);
+			}
+			num_auth++;
+		} else if (NM_IN_STRSET (*iter, "eap-md5",
+		                                "eap-mschapv2",
+		                                "eap-otp",
+		                                "eap-gtc")) {
+			if (num_autheap == 0) {
+				if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + NM_STRLEN ("eap-")), NULL);
+			}
+			num_autheap++;
+		} else if (nm_streq (*iter, "eap-tls")) {
+			if (num_autheap == 0) {
+				if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
+			}
+			num_autheap++;
+		} else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'",
+			             *iter);
+			return FALSE;
+		}
+	}
+
+	if (num_auth > 1)
+		PARSE_WARNING ("Discarded extra phase2 authentication methods");
+	if (num_auth > 1)
+		PARSE_WARNING ("Discarded extra phase2 EAP authentication methods");
+
+	if (!num_auth && !num_autheap) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "No phase2 authentication method found");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 eap_peap_reader (const char *eap_method,
                  shvarFile *ifcfg,
                  shvarFile *keys_ifcfg,
@@ -3154,8 +3237,6 @@ eap_peap_reader (const char *eap_method,
 {
 	gs_free char *value = NULL;
 	const char *v;
-	gs_free const char **list = NULL;
-	const char *const *iter;
 
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
@@ -3193,46 +3274,8 @@ eap_peap_reader (const char *eap_method,
 	if (v)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, v, NULL);
 
-	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", &value);
-	if (!v) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+	if (!parse_8021x_phase2_auth (ifcfg, keys_ifcfg, s_8021x, error))
 		return FALSE;
-	}
-
-	/* Handle options for the inner auth method */
-	list = nm_utils_strsplit_set (v, " ");
-	iter = list;
-	if (iter) {
-		if (NM_IN_STRSET (*iter, "MSCHAPV2",
-		                         "MD5",
-		                         "GTC")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-		} else if (nm_streq (*iter, "TLS")) {
-			if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
-			             *iter);
-			return FALSE;
-		}
-
-		{
-			gs_free char *lower = NULL;
-
-			lower = g_ascii_strdown (*iter, -1);
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
-		}
-	}
-
-	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
-		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -3245,11 +3288,8 @@ eap_ttls_reader (const char *eap_method,
                  gboolean phase2,
                  GError **error)
 {
-	gs_free char *inner_auth = NULL;
 	gs_free char *value = NULL;
 	const char *v;
-	gs_free const char **list = NULL;
-	const char *const *iter;
 
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
@@ -3269,44 +3309,8 @@ eap_ttls_reader (const char *eap_method,
 	if (v)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, v, NULL);
 
-	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", &value);
-	if (!v) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+	if (!parse_8021x_phase2_auth (ifcfg, keys_ifcfg, s_8021x, error))
 		return FALSE;
-	}
-
-	inner_auth = g_ascii_strdown (v, -1);
-
-	/* Handle options for the inner auth method */
-	list = nm_utils_strsplit_set (inner_auth, " ");
-	iter = list;
-	if (iter) {
-		if (NM_IN_STRSET (*iter, "mschapv2",
-		                         "mschap",
-		                         "pap",
-		                         "chap")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
-		} else if (nm_streq (*iter, "eap-tls")) {
-			if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
-		} else if (NM_IN_STRSET (*iter, "eap-mschapv2",
-		                                "eap-md5",
-		                                "eap-gtc")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + NM_STRLEN ("eap-")), NULL);
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
-			             *iter);
-			return FALSE;
-		}
-	}
 
 	return TRUE;
 }
@@ -3319,17 +3323,13 @@ eap_fast_reader (const char *eap_method,
                  gboolean phase2,
                  GError **error)
 {
-	char *anon_ident = NULL;
-	char *pac_file = NULL;
-	char *real_pac_path = NULL;
-	char *inner_auth = NULL;
-	char *fast_provisioning = NULL;
-	char *lower;
-	gs_free const char **list = NULL;
+	gs_free char *anon_ident = NULL;
+	gs_free char *pac_file = NULL;
+	gs_free char *real_pac_path = NULL;
+	gs_free char *fast_provisioning = NULL;
 	const char *const *iter;
 	const char *pac_prov_str;
 	gboolean allow_unauth = FALSE, allow_auth = FALSE;
-	gboolean success = FALSE;
 
 	pac_file = svGetValueStr_cp (ifcfg, "IEEE_8021X_PAC_FILE");
 	if (pac_file) {
@@ -3339,10 +3339,10 @@ eap_fast_reader (const char *eap_method,
 
 	fast_provisioning = svGetValueStr_cp (ifcfg, "IEEE_8021X_FAST_PROVISIONING");
 	if (fast_provisioning) {
-		gs_free const char **list1 = NULL;
+		gs_free const char **list = NULL;
 
-		list1 = nm_utils_strsplit_set (fast_provisioning, " \t");
-		for (iter = list1; iter && *iter; iter++) {
+		list = nm_utils_strsplit_set (fast_provisioning, " \t");
+		for (iter = list; iter && *iter; iter++) {
 			if (strcmp (*iter, "allow-unauth") == 0)
 				allow_unauth = TRUE;
 			else if (strcmp (*iter, "allow-auth") == 0)
@@ -3360,55 +3360,17 @@ eap_fast_reader (const char *eap_method,
 	if (!pac_file && !(allow_unauth || allow_auth)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled.");
-		goto done;
+		return FALSE;
 	}
 
 	anon_ident = svGetValueStr_cp (ifcfg, "IEEE_8021X_ANON_IDENTITY");
 	if (anon_ident)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
-	inner_auth = svGetValueStr_cp (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS");
-	if (!inner_auth) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
-		goto done;
-	}
+	if (!parse_8021x_phase2_auth (ifcfg, keys_ifcfg, s_8021x, error))
+		return FALSE;
 
-	/* Handle options for the inner auth method */
-	list = nm_utils_strsplit_set (inner_auth, " ");
-	iter = list;
-	if (iter) {
-		if (   !strcmp (*iter, "MSCHAPV2")
-		    || !strcmp (*iter, "GTC")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				goto done;
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
-			             *iter);
-			goto done;
-		}
-
-		lower = g_ascii_strdown (*iter, -1);
-		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
-		g_free (lower);
-	}
-
-	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
-		goto done;
-	}
-
-	success = TRUE;
-
-done:
-	g_free (inner_auth);
-	g_free (fast_provisioning);
-	g_free (real_pac_path);
-	g_free (pac_file);
-	g_free (anon_ident);
-	return success;
+	return TRUE;
 }
 
 typedef struct {
