@@ -1058,4 +1058,15 @@ nm_platform_lookup_ip6_route_by_weak_id (NMPlatform *platform,
 	return nm_platform_lookup (platform, &lookup);
 }
 
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_object_by_addr_family (NMPlatform *platform,
+                                          NMPObjectType obj_type,
+                                          int addr_family)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_object_by_addr_family (&lookup, obj_type, addr_family);
+	return nm_platform_lookup (platform, &lookup);
+}
+
 #endif /* __NMP_OBJECT_H__ */
