@@ -1392,6 +1392,7 @@ struct NMIPRoutingRule {
 	guint ref_count;
 	guint32 priority;
 	guint32 table;
+	gint32 suppress_prefixlength;
 	guint32 fwmark;
 	guint32 fwmask;
 	guint16 sport_start;
@@ -1472,10 +1473,11 @@ nm_ip_routing_rule_new (int addr_family)
 
 	self = g_slice_new (NMIPRoutingRule);
 	*self = (NMIPRoutingRule) {
-		.ref_count    = 1,
-		.is_v4        = (addr_family == AF_INET),
-		.action       = FR_ACT_TO_TBL,
-		.table        = RT_TABLE_MAIN,
+		.ref_count             = 1,
+		.is_v4                 = (addr_family == AF_INET),
+		.action                = FR_ACT_TO_TBL,
+		.table                 = RT_TABLE_MAIN,
+		.suppress_prefixlength = -1,
 	};
 	return self;
 }
@@ -1499,50 +1501,52 @@ nm_ip_routing_rule_new_clone (const NMIPRoutingRule *rule)
 
 	self = g_slice_new (NMIPRoutingRule);
 	*self = (NMIPRoutingRule) {
-		.ref_count    = 1,
-		.sealed       = FALSE,
-		.is_v4        = rule->is_v4,
+		.ref_count             = 1,
+		.sealed                = FALSE,
+		.is_v4                 = rule->is_v4,
 
-		.priority     = rule->priority,
-		.priority_has = rule->priority_has,
+		.priority              = rule->priority,
+		.priority_has          = rule->priority_has,
 
-		.invert       = rule->invert,
+		.invert                = rule->invert,
 
-		.tos          = rule->tos,
+		.tos                   = rule->tos,
 
-		.fwmark       = rule->fwmark,
-		.fwmask       = rule->fwmask,
+		.fwmark                = rule->fwmark,
+		.fwmask                = rule->fwmask,
 
-		.sport_start  = rule->sport_start,
-		.sport_end    = rule->sport_end,
-		.dport_start  = rule->dport_start,
-		.dport_end    = rule->dport_end,
+		.sport_start           = rule->sport_start,
+		.sport_end             = rule->sport_end,
+		.dport_start           = rule->dport_start,
+		.dport_end             = rule->dport_end,
 
-		.ipproto      = rule->ipproto,
+		.ipproto               = rule->ipproto,
 
-		.from_len     = rule->from_len,
-		.from_bin     = rule->from_bin,
-		.from_str     =   (   rule->from_has
-		                   && !rule->from_valid)
-		                ? g_strdup (rule->from_str)
-		                : NULL,
-		.from_has     = rule->from_has,
-		.from_valid   = rule->from_valid,
+		.from_len              = rule->from_len,
+		.from_bin              = rule->from_bin,
+		.from_str              =   (   rule->from_has
+		                            && !rule->from_valid)
+		                         ? g_strdup (rule->from_str)
+		                         : NULL,
+		.from_has              = rule->from_has,
+		.from_valid            = rule->from_valid,
 
-		.to_len       = rule->to_len,
-		.to_bin       = rule->to_bin,
-		.to_str       =   (   rule->to_has
-		                   && !rule->to_valid)
-		                ? g_strdup (rule->to_str)
-		                : NULL,
-		.to_has       = rule->to_has,
-		.to_valid     = rule->to_valid,
+		.to_len                = rule->to_len,
+		.to_bin                = rule->to_bin,
+		.to_str                =   (   rule->to_has
+		                            && !rule->to_valid)
+		                         ? g_strdup (rule->to_str)
+		                         : NULL,
+		.to_has                = rule->to_has,
+		.to_valid              = rule->to_valid,
 
-		.iifname      = g_strdup (rule->iifname),
-		.oifname      = g_strdup (rule->oifname),
+		.iifname               = g_strdup (rule->iifname),
+		.oifname               = g_strdup (rule->oifname),
 
-		.action       = rule->action,
-		.table        = rule->table,
+		.action                = rule->action,
+		.table                 = rule->table,
+
+		.suppress_prefixlength = rule->suppress_prefixlength,
 	};
 	return self;
 }
@@ -2326,6 +2330,38 @@ nm_ip_routing_rule_set_table (NMIPRoutingRule *self, guint32 table)
 }
 
 /**
+ * nm_ip_routing_rule_get_suppress_prefixlength:
+ * @self: the #NMIPRoutingRule instance
+ *
+ * Returns: the suppress_prefixlength of the rule. -1 means that the value is unset.
+ *
+ * Since: 1.20
+ */
+gint32
+nm_ip_routing_rule_get_suppress_prefixlength (const NMIPRoutingRule *self)
+{
+	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), -1);
+
+	return self->suppress_prefixlength;
+}
+
+/**
+ * nm_ip_routing_rule_set_suppress_prefixlength:
+ * @self: the #NMIPRoutingRule instance
+ * @suppress_prefixlength: the suppress_prefixlength to set. The value -1 means
+ *   unset.
+ *
+ * Since: 1.20
+ */
+void
+nm_ip_routing_rule_set_suppress_prefixlength (NMIPRoutingRule *self, gint32 suppress_prefixlength)
+{
+	g_return_if_fail (NM_IS_IP_ROUTING_RULE (self, FALSE));
+
+	self->suppress_prefixlength = suppress_prefixlength;
+}
+
+/**
  * nm_ip_routing_rule_cmp:
  * @rule: (allow-none): the #NMIPRoutingRule instance to compare
  * @other: (allow-none): the other #NMIPRoutingRule instance to compare
@@ -2360,6 +2396,8 @@ nm_ip_routing_rule_cmp (const NMIPRoutingRule *rule,
 	NM_CMP_FIELD (rule, other, action);
 
 	NM_CMP_FIELD (rule, other, table);
+
+	NM_CMP_FIELD (rule, other, suppress_prefixlength);
 
 	NM_CMP_FIELD (rule, other, sport_start);
 	NM_CMP_FIELD (rule, other, sport_end);
@@ -2571,6 +2609,20 @@ nm_ip_routing_rule_validate (const NMIPRoutingRule *self,
 		return FALSE;
 	}
 
+	if (self->suppress_prefixlength != -1) {
+		if (   self->suppress_prefixlength < -1
+		    || self->suppress_prefixlength > (self->is_v4 ? 32 : 128)) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("suppress_prefixlength out of range"));
+			return FALSE;
+		}
+		if (self->action != FR_ACT_TO_TBL) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("suppress_prefixlength is only allowed with the to-table action"));
+			return FALSE;
+		}
+	}
+
 	return TRUE;
 }
 
@@ -2593,6 +2645,7 @@ typedef enum {
 	RR_DBUS_ATTR_SPORT_END,
 	RR_DBUS_ATTR_SPORT_START,
 	RR_DBUS_ATTR_TABLE,
+	RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH,
 	RR_DBUS_ATTR_TO,
 	RR_DBUS_ATTR_TOS,
 	RR_DBUS_ATTR_TO_LEN,
@@ -2607,25 +2660,26 @@ typedef struct {
 
 static const RRDbusData rr_dbus_data[_RR_DBUS_ATTR_NUM] = {
 #define _D(attr, _name, type) [attr] = { .name = _name, .dbus_type = type, }
-	_D (RR_DBUS_ATTR_ACTION,      NM_IP_ROUTING_RULE_ATTR_ACTION,      G_VARIANT_TYPE_BYTE),
-	_D (RR_DBUS_ATTR_DPORT_END,   NM_IP_ROUTING_RULE_ATTR_DPORT_END,   G_VARIANT_TYPE_UINT16),
-	_D (RR_DBUS_ATTR_DPORT_START, NM_IP_ROUTING_RULE_ATTR_DPORT_START, G_VARIANT_TYPE_UINT16),
-	_D (RR_DBUS_ATTR_FAMILY,      NM_IP_ROUTING_RULE_ATTR_FAMILY,      G_VARIANT_TYPE_INT32),
-	_D (RR_DBUS_ATTR_FROM,        NM_IP_ROUTING_RULE_ATTR_FROM,        G_VARIANT_TYPE_STRING),
-	_D (RR_DBUS_ATTR_FROM_LEN,    NM_IP_ROUTING_RULE_ATTR_FROM_LEN,    G_VARIANT_TYPE_BYTE),
-	_D (RR_DBUS_ATTR_FWMARK,      NM_IP_ROUTING_RULE_ATTR_FWMARK,      G_VARIANT_TYPE_UINT32),
-	_D (RR_DBUS_ATTR_FWMASK,      NM_IP_ROUTING_RULE_ATTR_FWMASK,      G_VARIANT_TYPE_UINT32),
-	_D (RR_DBUS_ATTR_IIFNAME,     NM_IP_ROUTING_RULE_ATTR_IIFNAME,     G_VARIANT_TYPE_STRING),
-	_D (RR_DBUS_ATTR_INVERT,      NM_IP_ROUTING_RULE_ATTR_INVERT,      G_VARIANT_TYPE_BOOLEAN),
-	_D (RR_DBUS_ATTR_IPPROTO,     NM_IP_ROUTING_RULE_ATTR_IPPROTO,     G_VARIANT_TYPE_BYTE),
-	_D (RR_DBUS_ATTR_OIFNAME,     NM_IP_ROUTING_RULE_ATTR_OIFNAME,     G_VARIANT_TYPE_STRING),
-	_D (RR_DBUS_ATTR_PRIORITY,    NM_IP_ROUTING_RULE_ATTR_PRIORITY,    G_VARIANT_TYPE_UINT32),
-	_D (RR_DBUS_ATTR_SPORT_END,   NM_IP_ROUTING_RULE_ATTR_SPORT_END,   G_VARIANT_TYPE_UINT16),
-	_D (RR_DBUS_ATTR_SPORT_START, NM_IP_ROUTING_RULE_ATTR_SPORT_START, G_VARIANT_TYPE_UINT16),
-	_D (RR_DBUS_ATTR_TABLE,       NM_IP_ROUTING_RULE_ATTR_TABLE,       G_VARIANT_TYPE_UINT32),
-	_D (RR_DBUS_ATTR_TO,          NM_IP_ROUTING_RULE_ATTR_TO,          G_VARIANT_TYPE_STRING),
-	_D (RR_DBUS_ATTR_TOS,         NM_IP_ROUTING_RULE_ATTR_TOS,         G_VARIANT_TYPE_BYTE),
-	_D (RR_DBUS_ATTR_TO_LEN,      NM_IP_ROUTING_RULE_ATTR_TO_LEN,      G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_ACTION,                NM_IP_ROUTING_RULE_ATTR_ACTION,                G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_DPORT_END,             NM_IP_ROUTING_RULE_ATTR_DPORT_END,             G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_DPORT_START,           NM_IP_ROUTING_RULE_ATTR_DPORT_START,           G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_FAMILY,                NM_IP_ROUTING_RULE_ATTR_FAMILY,                G_VARIANT_TYPE_INT32),
+	_D (RR_DBUS_ATTR_FROM,                  NM_IP_ROUTING_RULE_ATTR_FROM,                  G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_FROM_LEN,              NM_IP_ROUTING_RULE_ATTR_FROM_LEN,              G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_FWMARK,                NM_IP_ROUTING_RULE_ATTR_FWMARK,                G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_FWMASK,                NM_IP_ROUTING_RULE_ATTR_FWMASK,                G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_IIFNAME,               NM_IP_ROUTING_RULE_ATTR_IIFNAME,               G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_INVERT,                NM_IP_ROUTING_RULE_ATTR_INVERT,                G_VARIANT_TYPE_BOOLEAN),
+	_D (RR_DBUS_ATTR_IPPROTO,               NM_IP_ROUTING_RULE_ATTR_IPPROTO,               G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_OIFNAME,               NM_IP_ROUTING_RULE_ATTR_OIFNAME,               G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_PRIORITY,              NM_IP_ROUTING_RULE_ATTR_PRIORITY,              G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_SPORT_END,             NM_IP_ROUTING_RULE_ATTR_SPORT_END,             G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_SPORT_START,           NM_IP_ROUTING_RULE_ATTR_SPORT_START,           G_VARIANT_TYPE_UINT16),
+	_D (RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH, NM_IP_ROUTING_RULE_ATTR_SUPPRESS_PREFIXLENGTH, G_VARIANT_TYPE_INT32),
+	_D (RR_DBUS_ATTR_TABLE,                 NM_IP_ROUTING_RULE_ATTR_TABLE,                 G_VARIANT_TYPE_UINT32),
+	_D (RR_DBUS_ATTR_TO,                    NM_IP_ROUTING_RULE_ATTR_TO,                    G_VARIANT_TYPE_STRING),
+	_D (RR_DBUS_ATTR_TOS,                   NM_IP_ROUTING_RULE_ATTR_TOS,                   G_VARIANT_TYPE_BYTE),
+	_D (RR_DBUS_ATTR_TO_LEN,                NM_IP_ROUTING_RULE_ATTR_TO_LEN,                G_VARIANT_TYPE_BYTE),
 #undef _D
 };
 
@@ -2788,6 +2842,9 @@ nm_ip_routing_rule_from_dbus (GVariant *variant,
 	if (variants[RR_DBUS_ATTR_TABLE])
 		nm_ip_routing_rule_set_table (self, g_variant_get_uint32 (variants[RR_DBUS_ATTR_TABLE]));
 
+	if (variants[RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH])
+		nm_ip_routing_rule_set_suppress_prefixlength (self, g_variant_get_int32 (variants[RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH]));
+
 	if (   strict
 	    && !nm_ip_routing_rule_validate (self, error))
 		return NULL;
@@ -2889,6 +2946,9 @@ nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self)
 	if (self->table != 0)
 		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_TABLE, g_variant_new_uint32 (self->table));
 
+	if (self->suppress_prefixlength != -1)
+		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH, g_variant_new_int32 (self->suppress_prefixlength));
+
 	return g_variant_builder_end (&builder);;
 }
 
@@ -2965,6 +3025,7 @@ nm_ip_routing_rule_from_string (const char *str,
 	gint64 i64_fwmask = -1;
 	gint64 i64_sport_start = -1;
 	gint64 i64_ipproto = -1;
+	gint64 i64_suppress_prefixlength = -1;
 	guint16 sport_end = 0;
 	gint64 i64_dport_start = -1;
 	guint16 dport_end = 0;
@@ -3160,6 +3221,17 @@ nm_ip_routing_rule_from_string (const char *str,
 			word_oifname = word1;
 			goto next_words_consumed;
 		}
+		if (NM_IN_STRSET (word0, "suppress_prefixlength",
+		                         "sup_pl")) {
+			if (!word1)
+				continue;
+			if (i64_suppress_prefixlength != -1)
+				goto next_fail_word0_duplicate_key;
+			i64_suppress_prefixlength = _nm_utils_ascii_str_to_int64 (word1, 0, 0, G_MAXINT32, -1);;
+			if (i64_suppress_prefixlength == -1)
+				goto next_fail_word1_invalid_value;
+			goto next_words_consumed;
+		}
 
 		/* also the action is still unsupported. For the moment, we only support
 		 * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
@@ -3252,6 +3324,9 @@ next_words_consumed:
 
 	if (i64_dport_start != -1)
 		nm_ip_routing_rule_set_destination_port (self, i64_dport_start, dport_end);
+
+	if (i64_suppress_prefixlength != -1)
+		nm_ip_routing_rule_set_suppress_prefixlength (self, i64_suppress_prefixlength);
 
 	if (   val_from_len > 0
 	    || (   val_from_len == 0
@@ -3487,6 +3562,12 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 		g_string_append_printf (nm_gstring_add_space_delimiter (str),
 		                        "table %u",
 		                        (guint) self->table);
+	}
+
+	if (self->suppress_prefixlength != -1) {
+		g_string_append_printf (nm_gstring_add_space_delimiter (str),
+		                        "suppress_prefixlength %d",
+		                        (int) self->suppress_prefixlength);
 	}
 
 	return g_string_free (g_steal_pointer (&str), FALSE);

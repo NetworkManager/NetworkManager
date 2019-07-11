@@ -923,29 +923,30 @@ nm_ip_routing_rule_to_platform (const NMIPRoutingRule *rule,
 	nm_assert (out_pl);
 
 	*out_pl = (NMPlatformRoutingRule) {
-		.addr_family = nm_ip_routing_rule_get_addr_family (rule),
-		.flags       = (  nm_ip_routing_rule_get_invert (rule)
-		                ? FIB_RULE_INVERT
-		                : 0),
-		.priority    = nm_ip_routing_rule_get_priority (rule),
-		.tos         = nm_ip_routing_rule_get_tos (rule),
-		.ip_proto    = nm_ip_routing_rule_get_ipproto (rule),
-		.fwmark      = nm_ip_routing_rule_get_fwmark (rule),
-		.fwmask      = nm_ip_routing_rule_get_fwmask (rule),
-		.sport_range = {
-		    .start   = nm_ip_routing_rule_get_source_port_start (rule),
-		    .end     = nm_ip_routing_rule_get_source_port_end (rule),
+		.addr_family                = nm_ip_routing_rule_get_addr_family (rule),
+		.flags                      = (  nm_ip_routing_rule_get_invert (rule)
+		                               ? FIB_RULE_INVERT
+		                               : 0),
+		.priority                   = nm_ip_routing_rule_get_priority (rule),
+		.tos                        = nm_ip_routing_rule_get_tos (rule),
+		.ip_proto                   = nm_ip_routing_rule_get_ipproto (rule),
+		.fwmark                     = nm_ip_routing_rule_get_fwmark (rule),
+		.fwmask                     = nm_ip_routing_rule_get_fwmask (rule),
+		.sport_range                = {
+		    .start                  = nm_ip_routing_rule_get_source_port_start (rule),
+		    .end                    = nm_ip_routing_rule_get_source_port_end (rule),
 		},
-		.dport_range = {
-		    .start   = nm_ip_routing_rule_get_destination_port_start (rule),
-		    .end     = nm_ip_routing_rule_get_destination_port_end (rule),
+		.dport_range                = {
+		    .start                  = nm_ip_routing_rule_get_destination_port_start (rule),
+		    .end                    = nm_ip_routing_rule_get_destination_port_end (rule),
 		},
-		.src         = *(nm_ip_routing_rule_get_from_bin (rule) ?: &nm_ip_addr_zero),
-		.dst         = *(nm_ip_routing_rule_get_to_bin (rule)   ?: &nm_ip_addr_zero),
-		.src_len     = nm_ip_routing_rule_get_from_len (rule),
-		.dst_len     = nm_ip_routing_rule_get_to_len (rule),
-		.action      = nm_ip_routing_rule_get_action (rule),
-		.table       = nm_ip_routing_rule_get_table (rule),
+		.src                        = *(nm_ip_routing_rule_get_from_bin (rule) ?: &nm_ip_addr_zero),
+		.dst                        = *(nm_ip_routing_rule_get_to_bin (rule)   ?: &nm_ip_addr_zero),
+		.src_len                    = nm_ip_routing_rule_get_from_len (rule),
+		.dst_len                    = nm_ip_routing_rule_get_to_len (rule),
+		.action                     = nm_ip_routing_rule_get_action (rule),
+		.table                      = nm_ip_routing_rule_get_table (rule),
+		.suppress_prefixlen_inverse = ~((guint32) nm_ip_routing_rule_get_suppress_prefixlength (rule)),
 	};
 
 	nm_ip_routing_rule_get_xifname_bin (rule, TRUE,  out_pl->iifname);
