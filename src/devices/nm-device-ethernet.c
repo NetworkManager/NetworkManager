@@ -65,6 +65,7 @@ typedef struct Supplicant {
 
 	/* signal handler ids */
 	gulong iface_state_id;
+	gulong auth_state_id;
 
 	/* Timeouts and idles */
 	guint con_timeout_id;
@@ -415,11 +416,68 @@ supplicant_interface_release (NMDeviceEthernet *self)
 	nm_clear_g_source (&priv->supplicant_timeout_id);
 	nm_clear_g_source (&priv->supplicant.con_timeout_id);
 	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_state_id);
+	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.auth_state_id);
 
 	if (priv->supplicant.iface) {
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
 		g_clear_object (&priv->supplicant.iface);
 	}
+}
+
+static void
+supplicant_auth_state_changed (NMSupplicantInterface *iface,
+                               GParamSpec *pspec,
+                               NMDeviceEthernet *self)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMSupplicantAuthState state;
+
+	state = nm_supplicant_interface_get_auth_state (priv->supplicant.iface);
+	_LOGD (LOGD_CORE, "supplicant auth state changed to %u", (unsigned) state);
+
+	if (state == NM_SUPPLICANT_AUTH_STATE_SUCCESS) {
+		nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_state_id);
+		nm_device_update_dynamic_ip_setup (NM_DEVICE (self));
+	}
+}
+
+static gboolean
+wired_auth_is_optional (NMDeviceEthernet *self)
+{
+	NMSetting8021x *s_8021x;
+
+	s_8021x = nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_802_1X);
+	g_return_val_if_fail (s_8021x, FALSE);
+	return nm_setting_802_1x_get_optional (s_8021x);
+}
+
+static void
+wired_auth_cond_fail (NMDeviceEthernet *self, NMDeviceStateReason reason)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+
+	if (wired_auth_is_optional (self)) {
+		_LOGI (LOGD_DEVICE | LOGD_ETHER,
+		       "Activation: (ethernet) 802.1X authentication is optional, continuing after a failure");
+		if (NM_IN_SET (nm_device_get_state (device),
+		               NM_DEVICE_STATE_CONFIG,
+		               NM_DEVICE_STATE_NEED_AUTH))
+			nm_device_activate_schedule_stage3_ip_config_start (device);
+
+		if (!priv->supplicant.auth_state_id) {
+			priv->supplicant.auth_state_id = g_signal_connect (priv->supplicant.iface,
+			                                                   "notify::" NM_SUPPLICANT_INTERFACE_AUTH_STATE,
+			                                                   G_CALLBACK (supplicant_auth_state_changed),
+			                                                   self);
+		}
+		return;
+	}
+
+	supplicant_interface_release (self);
+	nm_device_state_changed (NM_DEVICE (self),
+	                         NM_DEVICE_STATE_FAILED,
+	                         reason);
 }
 
 static void
@@ -451,11 +509,12 @@ wired_secrets_cb (NMActRequest *req,
 
 	if (error) {
 		_LOGW (LOGD_ETHER, "%s", error->message);
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	} else
-		nm_device_activate_schedule_stage1_device_prepare (device);
+		wired_auth_cond_fail (self, NM_DEVICE_STATE_REASON_NO_SECRETS);
+		return;
+	}
+
+	supplicant_interface_release (self);
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
@@ -506,9 +565,7 @@ link_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (device);
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
+		wired_auth_cond_fail (self, NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 		return FALSE;
 	}
 
@@ -528,7 +585,8 @@ link_timeout_cb (gpointer user_data)
 
 	_LOGI (LOGD_DEVICE | LOGD_ETHER,
 	       "Activation: (ethernet) disconnected during authentication, asking for new key.");
-	supplicant_interface_release (self);
+	if (!wired_auth_is_optional (self))
+		supplicant_interface_release (self);
 
 	nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 	wired_secrets_get_secrets (self, setting_name, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
@@ -537,7 +595,7 @@ link_timeout_cb (gpointer user_data)
 
 time_out:
 	_LOGW (LOGD_DEVICE | LOGD_ETHER, "link timed out.");
-	nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+	wired_auth_cond_fail (self, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
 	return FALSE;
 }
@@ -652,11 +710,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
 		supplicant_interface_release (self);
 
-		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		}
+		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device))
+			wired_auth_cond_fail (self, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 		break;
 	default:
 		break;
@@ -685,6 +740,15 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
+	_LOGI (LOGD_DEVICE | LOGD_ETHER, "Activation: (ethernet) asking for new secrets");
+
+	/* Don't tear down supplicant if the authentication is optional
+	 * because in case of a failure in getting new secrets we want to
+	 * keep the supplicant alive.
+	 */
+	if (!wired_auth_is_optional (self))
+		supplicant_interface_release (self);
+
 	wired_secrets_get_secrets (self, setting_name,
 	                             NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 	                           | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
@@ -710,12 +774,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	_LOGW (LOGD_DEVICE | LOGD_ETHER,
 	       "Activation: (ethernet) association took too long.");
 
-	supplicant_interface_release (self);
 	req = nm_device_get_act_request (device);
-	g_assert (req);
-
 	connection = nm_act_request_get_settings_connection (req);
-	g_assert (connection);
 
 	/* Ask for new secrets only if we've never activated this connection
 	 * before.  If we've connected before, don't bother the user with dialogs,
@@ -724,10 +784,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	if (nm_settings_connection_get_timestamp (connection, &timestamp))
 		new_secrets = !timestamp;
 
-	if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE)
-		_LOGW (LOGD_DEVICE | LOGD_ETHER, "Activation: (ethernet) asking for new secrets");
-	else
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
+	if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_FAILURE)
+		wired_auth_cond_fail (self, NM_DEVICE_STATE_REASON_NO_SECRETS);
 
 	return FALSE;
 }
