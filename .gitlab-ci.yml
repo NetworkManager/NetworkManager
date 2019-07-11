@@ -127,6 +127,18 @@ t_ubuntu:18.04:
   image: ubuntu:18.04
   <<: *do_build
 
+t_ubuntu:rolling:
+  <<: *debian_install
+  image: ubuntu:rolling
+  <<: *do_build
+  when: manual
+
+t_ubuntu:devel:
+  <<: *debian_install
+  image: ubuntu:devel
+  <<: *do_build
+  when: manual
+
 t_debian:9:
   <<: *debian_install
   image: debian:stretch
