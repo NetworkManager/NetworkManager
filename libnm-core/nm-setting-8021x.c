@@ -3797,7 +3797,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	/**
 	 * NMSetting8021x:phase2-auth:
 	 *
-	 * Specifies the allowed "phase 2" inner non-EAP authentication methods when
+	 * Specifies the allowed "phase 2" inner non-EAP authentication method when
 	 * an EAP method that uses an inner TLS tunnel is specified in the
 	 * #NMSetting8021x:eap property.  Recognized non-EAP "phase 2" methods are
 	 * "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", and "tls".
@@ -3822,7 +3822,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	/**
 	 * NMSetting8021x:phase2-autheap:
 	 *
-	 * Specifies the allowed "phase 2" inner EAP-based authentication methods
+	 * Specifies the allowed "phase 2" inner EAP-based authentication method
 	 * when an EAP method that uses an inner TLS tunnel is specified in the
 	 * #NMSetting8021x:eap property.  Recognized EAP-based "phase 2" methods are
 	 * "md5", "mschapv2", "otp", "gtc", and "tls". Each "phase 2" inner method
