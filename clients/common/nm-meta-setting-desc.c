@@ -4502,6 +4502,9 @@ static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_OPTIONAL,
+		.property_type =                &_pt_gobject_bool,
+	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_EAP,
 	    .property_type =                &_pt_multilist,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
