@@ -1165,6 +1165,7 @@ EXTRA_DIST += \
 	libnm-core/tests/certs/test-key-only-decrypted.der \
 	libnm-core/tests/certs/test-key-only-decrypted.pem \
 	libnm-core/tests/certs/test-key-only.pem \
+	libnm-core/tests/certs/test-tpm2wrapped-key.pem \
 	libnm-core/tests/nm-core-tests-enum-types.c.template \
 	libnm-core/tests/nm-core-tests-enum-types.h.template \
 	libnm-core/tests/meson.build
