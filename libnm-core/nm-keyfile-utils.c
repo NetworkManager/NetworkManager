@@ -28,6 +28,43 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 
+/*****************************************************************************/
+
+/**
+ * nm_key_file_get_boolean:
+ * @kf: the #GKeyFile
+ * @group: the group
+ * @key: the key
+ * @default_value: the default value if the value is set or not parsable as a boolean.
+ *
+ * Replacement for g_key_file_get_boolean() (which uses g_key_file_parse_value_as_boolean()).
+ * g_key_file_get_boolean() seems odd to me, because it accepts trailing ASCII whitespace,
+ * but not leading.
+ * This uses _nm_utils_ascii_str_to_bool(), which accepts trailing and leading whitespace,
+ * case-insensitive words, and also strings like "on" and "off".
+ * _nm_utils_ascii_str_to_bool() is our way to parse booleans from string, and we should
+ * use that one consistently.
+ *
+ * Also, it doesn't have g_key_file_get_boolean()'s odd API to require an error argument
+ * to detect parsing failures.
+ *
+ * Returns: either %TRUE or %FALSE if the key exists and is parsable as a boolean.
+ *   Otherwise, @default_value.
+ */
+int
+nm_key_file_get_boolean (GKeyFile *kf, const char *group, const char *key, int default_value)
+{
+	gs_free char *value = NULL;
+
+	value = g_key_file_get_value (kf, group, key, NULL);
+
+	if (!value)
+		return default_value;
+	return _nm_utils_ascii_str_to_bool (value, default_value);
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	const char *setting;
 	const char *alias;
