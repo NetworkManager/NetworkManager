@@ -2404,21 +2404,16 @@ connection_updated (NMSettings *settings,
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
-	const CList *tmp_lst;
-	NMDevice *device = NULL;
-	NMDevice *dev;
 
 	if (by_user) {
-		/* find device with given connection */
-		nm_manager_for_each_device (priv->manager, dev, tmp_lst) {
-			if (nm_device_get_settings_connection (dev) == connection) {
-				device = dev;
-				break;
-			}
-		}
+		const CList *tmp_lst;
+		NMDevice *device;
 
-		if (device)
-			nm_device_reapply_settings_immediately (device);
+		/* find device with given connection */
+		nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+			if (nm_device_get_settings_connection (device) == connection)
+				nm_device_reapply_settings_immediately (device);
+		}
 
 		/* Reset auto retries back to default since connection was updated */
 		nm_settings_connection_autoconnect_retries_reset (connection);
