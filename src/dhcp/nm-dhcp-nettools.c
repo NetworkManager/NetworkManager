@@ -374,6 +374,12 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	guint64 a_lifetime;
 
 	n_dhcp4_client_lease_get_yiaddr (lease, &a_address);
+	if (a_address.s_addr == INADDR_ANY) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get address from lease");
+		return FALSE;
+	}
+
+	/* n_dhcp4_client_lease_get_lifetime() never fails */
 	n_dhcp4_client_lease_get_lifetime (lease, &a_lifetime);
 
 	if (!lease_get_in_addr (lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &a_netmask)) {
