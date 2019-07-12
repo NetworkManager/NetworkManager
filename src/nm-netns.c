@@ -128,17 +128,27 @@ constructed (GObject *object)
 
 	priv->rules_manager = nmp_rules_manager_new (priv->platform);
 
-	/* Weakly track the default rules and rules that were added
-	 * outside of NetworkManager. */
+	/* Weakly track the default rules with a dummy user-tag. These
+	 * rules are always weekly tracked... */
 	nmp_rules_manager_track_default (priv->rules_manager,
 	                                 AF_UNSPEC,
 	                                 0,
 	                                 nm_netns_parent_class /* static dummy user-tag */);
+
+	/* Also weakly track all existing rules. These were added before NetworkManager
+	 * starts, so they are probably none of NetworkManager's business.
+	 *
+	 * However note that during service restart, devices may stay up and rules kept.
+	 * That means, after restart such rules may have been added by a previous run
+	 * of NetworkManager, we just don't know.
+	 *
+	 * For that reason, whenever we will touch such rules later one, we make them
+	 * fully owned and no longer weekly tracked. See %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG. */
 	nmp_rules_manager_track_from_platform (priv->rules_manager,
 	                                       NULL,
 	                                       AF_UNSPEC,
 	                                       0,
-	                                       nm_netns_parent_class /* static dummy user-tag */);
+	                                       NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
 
 	G_OBJECT_CLASS (nm_netns_parent_class)->constructed (object);
 }
