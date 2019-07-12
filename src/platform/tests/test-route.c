@@ -1534,14 +1534,16 @@ again:
 			nmp_rules_manager_track (rules_manager,
 			                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
 			                         1,
-			                         USER_TAG_1);
+			                         USER_TAG_1,
+			                         NULL);
 			if (nmtst_get_rand_bool ()) {
 				/* this has no effect, because a negative priority (of same absolute value)
 				 * has lower priority than the positive priority above. */
 				nmp_rules_manager_track (rules_manager,
 				                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
 				                         -1,
-				                         USER_TAG_2);
+				                         USER_TAG_2,
+				                         NULL);
 			}
 			if (nmtst_get_rand_uint32 () % objs_sync->len == 0) {
 				nmp_rules_manager_sync (rules_manager, FALSE);
@@ -1566,13 +1568,15 @@ again:
 				nmp_rules_manager_track (rules_manager,
 				                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
 				                         -1,
-				                         USER_TAG_1);
+				                         USER_TAG_1,
+				                         NULL);
 				break;
 			case 2:
 				nmp_rules_manager_track (rules_manager,
 				                         NMP_OBJECT_CAST_ROUTING_RULE (objs_sync->pdata[i]),
 				                         -2,
-				                         USER_TAG_2);
+				                         USER_TAG_2,
+				                         NULL);
 				break;
 			}
 			if (nmtst_get_rand_uint32 () % objs_sync->len == 0) {

@@ -6618,10 +6618,15 @@ _routing_rules_sync (NMDevice *self,
 
 				rule = nm_setting_ip_config_get_routing_rule (s_ip, i);
 				nm_ip_routing_rule_to_platform (rule, &plrule);
+
+				/* We track this rule, but we also make it explicitly not weakly-tracked
+				 * (meaning to untrack NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG at
+				 * the same time). */
 				nmp_rules_manager_track (rules_manager,
 				                         &plrule,
 				                         10,
-				                         user_tag);
+				                         user_tag,
+				                         NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
 			}
 		}
 	}
