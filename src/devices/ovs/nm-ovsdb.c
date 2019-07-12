@@ -357,7 +357,7 @@ _insert_interface (json_t *params, NMConnection *interface)
 
 	if (s_ovs_dpdk) {
 		json_array_append_new (options, json_pack ("[[s, s]]",
-		                                           "devargs",
+		                                           "dpdk-devargs",
 		                                           nm_setting_ovs_dpdk_get_devargs (s_ovs_dpdk)));
 	} else if (s_ovs_patch) {
 		json_array_append_new (options, json_pack ("[[s, s]]",
