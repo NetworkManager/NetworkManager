@@ -95,6 +95,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 	s_ovs_iface = nm_connection_get_setting_ovs_interface (connection);
 
 	if (!NM_IN_STRSET (nm_setting_ovs_interface_get_interface_type (s_ovs_iface),
+	                   "dpdk",
 	                   "internal",
 	                   "patch")) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
