@@ -1127,10 +1127,10 @@ link_config (NMDeviceWireGuard *self,
 	if (NM_IN_SET (config_mode, LINK_CONFIG_MODE_FULL,
 	                            LINK_CONFIG_MODE_REAPPLY)) {
 
-		wg_lnk.listen_port = nm_setting_wireguard_get_listen_port (s_wg),
+		wg_lnk.listen_port = nm_setting_wireguard_get_listen_port (s_wg);
 		wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT;
 
-		wg_lnk.fwmark = nm_setting_wireguard_get_fwmark (s_wg),
+		wg_lnk.fwmark = nm_setting_wireguard_get_fwmark (s_wg);
 		wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK;
 
 		if (nm_utils_base64secret_decode (nm_setting_wireguard_get_private_key (s_wg),
