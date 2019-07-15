@@ -41,6 +41,7 @@ typedef struct {
 	NMSupplicantFeature p2p_support;
 	NMSupplicantFeature wfd_support;
 	NMSupplicantFeature ft_support;
+	NMSupplicantFeature sha384_support;
 	guint             die_count_reset_id;
 	guint             die_count;
 } NMSupplicantManagerPrivate;
@@ -233,7 +234,8 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	                                     priv->fils_support,
 	                                     priv->p2p_support,
 	                                     priv->wfd_support,
-	                                     priv->ft_support);
+	                                     priv->ft_support,
+	                                     priv->sha384_support);
 
 	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
 	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
@@ -291,7 +293,8 @@ nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
 	                                     priv->fils_support,
 	                                     priv->p2p_support,
 	                                     priv->wfd_support,
-	                                     priv->ft_support);
+	                                     priv->ft_support,
+	                                     priv->sha384_support);
 
 	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
 	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
@@ -330,6 +333,7 @@ update_capabilities (NMSupplicantManager *self)
 	/* Support for the following is newer than the capabilities property */
 	priv->p2p_support = NM_SUPPLICANT_FEATURE_NO;
 	priv->ft_support = NM_SUPPLICANT_FEATURE_NO;
+	priv->sha384_support = NM_SUPPLICANT_FEATURE_NO;
 
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "Capabilities");
 	if (value) {
@@ -340,6 +344,7 @@ update_capabilities (NMSupplicantManager *self)
 			priv->fils_support = NM_SUPPLICANT_FEATURE_NO;
 			priv->p2p_support = NM_SUPPLICANT_FEATURE_NO;
 			priv->ft_support = NM_SUPPLICANT_FEATURE_NO;
+			priv->sha384_support = NM_SUPPLICANT_FEATURE_NO;
 			if (array) {
 				if (g_strv_contains (array, "ap"))
 					priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
@@ -351,19 +356,22 @@ update_capabilities (NMSupplicantManager *self)
 					priv->p2p_support = NM_SUPPLICANT_FEATURE_YES;
 				if (g_strv_contains (array, "ft"))
 					priv->ft_support = NM_SUPPLICANT_FEATURE_YES;
+				if (g_strv_contains (array, "sha384"))
+					priv->sha384_support = NM_SUPPLICANT_FEATURE_YES;
 				g_free (array);
 			}
 		}
 		g_variant_unref (value);
 	}
 
-	/* Tell all interfaces about results of the AP/PMF/FILS/P2P/FT check */
+	/* Tell all interfaces about results of the AP/PMF/FILS/P2P/FT/SHA384 check */
 	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
 		nm_supplicant_interface_set_ap_support (ifaces->data, priv->ap_support);
 		nm_supplicant_interface_set_pmf_support (ifaces->data, priv->pmf_support);
 		nm_supplicant_interface_set_fils_support (ifaces->data, priv->fils_support);
 		nm_supplicant_interface_set_p2p_support (ifaces->data, priv->p2p_support);
 		nm_supplicant_interface_set_ft_support (ifaces->data, priv->ft_support);
+		nm_supplicant_interface_set_sha384_support (ifaces->data, priv->sha384_support);
 	}
 
 	_LOGD ("AP mode is %ssupported",
@@ -381,6 +389,9 @@ update_capabilities (NMSupplicantManager *self)
 	_LOGD ("FT is %ssupported",
 	       (priv->ft_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
 	           (priv->ft_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
+	_LOGD ("SHA384 is %ssupported",
+	       (priv->sha384_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
+	           (priv->sha384_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
 
 	/* EAP-FAST */
 	priv->fast_support = NM_SUPPLICANT_FEATURE_NO;
@@ -520,6 +531,7 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 		priv->pmf_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
 		priv->fils_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
 		priv->ft_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
+		priv->sha384_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
 
 		set_running (self, FALSE);
 	}

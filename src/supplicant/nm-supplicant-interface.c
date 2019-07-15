@@ -114,6 +114,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_P2P_SUPPORT,
 	PROP_WFD_SUPPORT,
 	PROP_FT_SUPPORT,
+	PROP_SHA384_SUPPORT,
 );
 
 typedef struct {
@@ -127,6 +128,7 @@ typedef struct {
 	NMSupplicantFeature p2p_support;
 	NMSupplicantFeature wfd_support;
 	NMSupplicantFeature ft_support;
+	NMSupplicantFeature sha384_support;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
 
@@ -794,6 +796,12 @@ nm_supplicant_interface_get_ft_support (NMSupplicantInterface *self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->ft_support;
 }
 
+NMSupplicantFeature
+nm_supplicant_interface_get_sha384_support (NMSupplicantInterface *self)
+{
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->sha384_support;
+}
+
 void
 nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
                                         NMSupplicantFeature ap_support)
@@ -859,6 +867,15 @@ nm_supplicant_interface_set_ft_support (NMSupplicantInterface *self,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->ft_support = ft_support;
+}
+
+void
+nm_supplicant_interface_set_sha384_support (NMSupplicantInterface *self,
+                                            NMSupplicantFeature sha384_support)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	priv->sha384_support = sha384_support;
 }
 
 /*****************************************************************************/
@@ -2705,6 +2722,10 @@ set_property (GObject *object,
 		/* construct-only */
 		priv->ft_support = g_value_get_int (value);
 		break;
+	case PROP_SHA384_SUPPORT:
+		/* construct-only */
+		priv->sha384_support = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2731,7 +2752,8 @@ nm_supplicant_interface_new (const char *ifname,
                              NMSupplicantFeature fils_support,
                              NMSupplicantFeature p2p_support,
                              NMSupplicantFeature wfd_support,
-                             NMSupplicantFeature ft_support)
+                             NMSupplicantFeature ft_support,
+                             NMSupplicantFeature sha384_support)
 {
 	/* One of ifname or path need to be set */
 	g_return_val_if_fail (ifname != NULL || object_path != NULL, NULL);
@@ -2748,6 +2770,7 @@ nm_supplicant_interface_new (const char *ifname,
 	                     NM_SUPPLICANT_INTERFACE_P2P_SUPPORT, (int) p2p_support,
 	                     NM_SUPPLICANT_INTERFACE_WFD_SUPPORT, (int) wfd_support,
 	                     NM_SUPPLICANT_INTERFACE_FT_SUPPORT, (int) ft_support,
+	                     NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT, (int) sha384_support,
 	                     NULL);
 }
 
@@ -2908,6 +2931,14 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_FT_SUPPORT] =
 	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_FT_SUPPORT, "", "",
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      NM_SUPPLICANT_FEATURE_YES,
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_SHA384_SUPPORT] =
+	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT, "", "",
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
 	                      NM_SUPPLICANT_FEATURE_YES,
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
