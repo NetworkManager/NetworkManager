@@ -490,12 +490,8 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		goto done;
 
 	/* Connection properties */
-	if (!g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path)) {
-		*out_error_message = "Missing or invalid required value " NMD_CONNECTION_PROPS_PATH "!";
-		return NULL;
-	}
-
-	_items_add_key (items, NULL, "CONNECTION_DBUS_PATH", path);
+	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path))
+		_items_add_key (items, NULL, "CONNECTION_DBUS_PATH", path);
 
 	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_EXTERNAL, "b", &external) && external)
 		_items_add_str (items, "CONNECTION_EXTERNAL=1");
