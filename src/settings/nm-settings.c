@@ -888,6 +888,7 @@ impl_settings_load_connections (NMDBusObject *obj,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	gs_unref_ptrarray GPtrArray *failures = NULL;
 	gs_free const char **filenames = NULL;
+	gs_free char *op_result_str = NULL;
 
 	g_variant_get (parameters, "(^a&s)", &filenames);
 
@@ -931,6 +932,13 @@ next_filename:
 	if (failures)
 		g_ptr_array_add (failures, NULL);
 
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONNS_LOAD,
+	                            NULL,
+	                            !failures,
+	                            (op_result_str = g_strjoinv (",", (char **) filenames)),
+	                            invocation,
+	                            NULL);
+
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(b^as)",
 	                                                      (gboolean) (!failures),
@@ -968,6 +976,8 @@ impl_settings_reload_connections (NMDBusObject *obj,
 
 		nm_settings_plugin_reload_connections (plugin);
 	}
+
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONNS_RELOAD, NULL, TRUE, NULL, invocation, NULL);
 
 	g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", TRUE));
 }
