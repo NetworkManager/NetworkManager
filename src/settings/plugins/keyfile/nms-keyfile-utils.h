@@ -37,6 +37,9 @@ const char *nms_keyfile_utils_get_path (void);
 
 /*****************************************************************************/
 
+const char *nms_keyfile_loaded_uuid_is_filename (const char *filename,
+                                                 guint *out_uuid_len);
+
 char *nms_keyfile_loaded_uuid_filename (const char *dirname,
                                         const char *uuid,
                                         gboolean temporary);

@@ -3981,7 +3981,7 @@ nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extensi
 
 	if (require_extension) {
 		if (   l <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
-		    || !g_str_has_suffix (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+		    || !NM_STR_HAS_SUFFIX (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
 			return TRUE;
 		return FALSE;
 	}
@@ -3990,7 +3990,10 @@ nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extensi
 	if (base[l - 1] == '~')
 		return TRUE;
 
-	/* Ignore temporary files */
+	/* Ignore temporary files
+	 *
+	 * This check is also important to ignore .nmload files (see
+	 * %NM_KEYFILE_PATH_SUFFIX_NMMETA). */
 	if (check_mkstemp_suffix (base))
 		return TRUE;
 

@@ -2578,14 +2578,13 @@ static void
 test_loaded_uuid (void)
 {
 	const char *uuid = "3c03fd17-ddc3-4100-a954-88b6fafff959";
-	gs_free char *filename = g_strdup_printf ("%s%s%s",
-	                                          NM_KEYFILE_PATH_PREFIX_NMLOADED,
+	gs_free char *filename = g_strdup_printf ("%s%s",
 	                                          uuid,
-	                                          NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+	                                          NM_KEYFILE_PATH_SUFFIX_NMMETA);
 	gs_free char *full_filename = g_strdup_printf ("%s/%s",
 	                                               TEST_SCRATCH_DIR,
 	                                               filename);
-	const char *loaded_path0 = NM_KEYFILE_PATH_NMLOADED_NULL;
+	const char *loaded_path0 = NM_KEYFILE_PATH_NMMETA_SYMLINK_NULL;
 	const char *loaded_path1 = "/some/where/but/not/scratch/dir";
 	const char *filename2 = "foo1";
 	gs_free char *loaded_path2 = g_strdup_printf ("%s/%s",
