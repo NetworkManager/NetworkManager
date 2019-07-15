@@ -224,7 +224,7 @@ build_supplicant_config (NMDeviceMacsec *self, GError **error)
 	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
-	config = nm_supplicant_config_new (FALSE, FALSE);
+	config = nm_supplicant_config_new (FALSE, FALSE, FALSE, FALSE);
 
 	s_macsec = nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_MACSEC);
 
