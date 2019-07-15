@@ -58,10 +58,10 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[5] = {
 /*****************************************************************************/
 
 typedef struct {
-	NMDBusManager *      dbus_mgr;
-	gulong              new_conn_id;
-	gulong              dis_conn_id;
-	GHashTable *        connections;
+	NMDBusManager *dbus_mgr;
+	gulong         new_conn_id;
+	gulong         dis_conn_id;
+	GHashTable    *connections;
 } NMDhcpListenerPrivate;
 
 struct _NMDhcpListener {
@@ -282,7 +282,7 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 	/* Maps GDBusConnection :: signal-id */
 	priv->connections = g_hash_table_new (nm_direct_hash, NULL);
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
 
 	/* Register the socket our DHCP clients will return lease info on */
 	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
@@ -303,9 +303,10 @@ dispose (GObject *object)
 
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->new_conn_id);
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->dis_conn_id);
-	priv->dbus_mgr = NULL;
 
 	g_clear_pointer (&priv->connections, g_hash_table_destroy);
+
+	g_clear_object (&priv->dbus_mgr);
 
 	G_OBJECT_CLASS (nm_dhcp_listener_parent_class)->dispose (object);
 }
