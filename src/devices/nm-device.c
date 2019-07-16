@@ -11507,7 +11507,7 @@ check_and_reapply_connection (NMDevice *self,
 			    || !nm_streq0 (nm_setting_connection_get_stable_id (s_con_a), nm_setting_connection_get_stable_id (s_con_n))) {
 				connection_clean_free = nm_simple_connection_new_clone (connection);
 				connection_clean = connection_clean_free;
-				s_con_n = nm_connection_get_setting_connection (connection);
+				s_con_n = nm_connection_get_setting_connection (connection_clean);
 				g_object_set (s_con_n,
 				              NM_SETTING_CONNECTION_ID, nm_setting_connection_get_id (s_con_a),
 				              NM_SETTING_CONNECTION_UUID, nm_setting_connection_get_uuid (s_con_a),
