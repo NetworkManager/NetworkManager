@@ -2507,14 +2507,14 @@ test_nm_keyfile_plugin_utils_escape_filename (void)
 /*****************************************************************************/
 
 static void
-_assert_keyfile_loaded_uuid (const char *dirname,
-                             const char *uuid,
-                             const char *loaded_path,
-                             gboolean allow_relative,
-                             const char *exp_full_filename,
-                             const char *exp_uuid,
-                             const char *exp_symlink_target,
-                             const char *exp_loaded_path)
+_assert_keyfile_nmmeta (const char *dirname,
+                        const char *uuid,
+                        const char *loaded_path,
+                        gboolean allow_relative,
+                        const char *exp_full_filename,
+                        const char *exp_uuid,
+                        const char *exp_symlink_target,
+                        const char *exp_loaded_path)
 {
 	gs_free char *full_filename = NULL;
 	gs_free char *symlink_target = NULL;
@@ -2533,12 +2533,12 @@ _assert_keyfile_loaded_uuid (const char *dirname,
 
 	filename = g_path_get_basename (exp_full_filename);
 
-	full_filename = nms_keyfile_loaded_uuid_filename (dirname, uuid, FALSE);
+	full_filename = nms_keyfile_nmmeta_filename (dirname, uuid, FALSE);
 	g_assert_cmpstr (full_filename, ==, full_filename);
 	nm_clear_g_free (&full_filename);
 
 
-	g_assert (nms_keyfile_loaded_uuid_write (dirname, uuid, loaded_path, allow_relative, &full_filename));
+	g_assert (nms_keyfile_nmmeta_write (dirname, uuid, loaded_path, allow_relative, &full_filename));
 	g_assert_cmpstr (full_filename, ==, exp_full_filename);
 	nm_clear_g_free (&full_filename);
 
@@ -2550,7 +2550,7 @@ _assert_keyfile_loaded_uuid (const char *dirname,
 	g_assert_cmpstr (symlink_target, ==, exp_symlink_target);
 
 
-	success = nms_keyfile_loaded_uuid_read (dirname, filename, &full_filename, &uuid2, &loaded_path2, NULL);
+	success = nms_keyfile_nmmeta_read (dirname, filename, &full_filename, &uuid2, &loaded_path2, NULL);
 	g_assert_cmpint (!!exp_uuid, ==, success);
 	if (success)
 		g_assert_cmpstr (full_filename, ==, exp_full_filename);
@@ -2561,7 +2561,7 @@ _assert_keyfile_loaded_uuid (const char *dirname,
 	g_assert_cmpstr (loaded_path2, ==, exp_loaded_path);
 
 
-	success = nms_keyfile_loaded_uuid_read_from_file (exp_full_filename, &dirname3, &filename3, &uuid3, &loaded_path3);
+	success = nms_keyfile_nmmeta_read_from_file (exp_full_filename, &dirname3, &filename3, &uuid3, &loaded_path3);
 	g_assert_cmpint (!!exp_uuid, ==, success);
 	if (success) {
 		g_assert_cmpstr (dirname3, ==, dirname);
@@ -2575,7 +2575,7 @@ _assert_keyfile_loaded_uuid (const char *dirname,
 }
 
 static void
-test_loaded_uuid (void)
+test_nmmeta (void)
 {
 	const char *uuid = "3c03fd17-ddc3-4100-a954-88b6fafff959";
 	gs_free char *filename = g_strdup_printf ("%s%s",
@@ -2591,17 +2591,17 @@ test_loaded_uuid (void)
 	                                              TEST_SCRATCH_DIR,
 	                                              filename2);
 
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, NULL,         FALSE, full_filename, NULL, NULL,         NULL);
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, NULL,         TRUE,  full_filename, NULL, NULL,         NULL);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, NULL,         FALSE, full_filename, NULL, NULL,         NULL);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, NULL,         TRUE,  full_filename, NULL, NULL,         NULL);
 
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path0, FALSE, full_filename, uuid, loaded_path0, loaded_path0);
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path0, TRUE,  full_filename, uuid, loaded_path0, loaded_path0);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, loaded_path0, FALSE, full_filename, uuid, loaded_path0, loaded_path0);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, loaded_path0, TRUE,  full_filename, uuid, loaded_path0, loaded_path0);
 
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path1, FALSE, full_filename, uuid, loaded_path1, loaded_path1);
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path1, TRUE,  full_filename, uuid, loaded_path1, loaded_path1);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, loaded_path1, FALSE, full_filename, uuid, loaded_path1, loaded_path1);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, loaded_path1, TRUE,  full_filename, uuid, loaded_path1, loaded_path1);
 
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path2, FALSE, full_filename, uuid, loaded_path2, loaded_path2);
-	_assert_keyfile_loaded_uuid (TEST_SCRATCH_DIR, uuid, loaded_path2, TRUE,  full_filename, uuid, filename2,    loaded_path2);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, loaded_path2, FALSE, full_filename, uuid, loaded_path2, loaded_path2);
+	_assert_keyfile_nmmeta (TEST_SCRATCH_DIR, uuid, loaded_path2, TRUE,  full_filename, uuid, filename2,    loaded_path2);
 
 	(void) unlink (full_filename);
 }
@@ -2695,7 +2695,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/keyfile/test_nm_keyfile_plugin_utils_escape_filename", test_nm_keyfile_plugin_utils_escape_filename);
 
-	g_test_add_func ("/keyfile/test_loaded_uuid", test_loaded_uuid);
+	g_test_add_func ("/keyfile/test_nmmeta", test_nmmeta);
 
 	return g_test_run ();
 }

@@ -37,31 +37,31 @@ const char *nms_keyfile_utils_get_path (void);
 
 /*****************************************************************************/
 
-const char *nms_keyfile_loaded_uuid_is_filename (const char *filename,
-                                                 guint *out_uuid_len);
+const char *nms_keyfile_nmmeta_check_filename (const char *filename,
+                                               guint *out_uuid_len);
 
-char *nms_keyfile_loaded_uuid_filename (const char *dirname,
-                                        const char *uuid,
-                                        gboolean temporary);
+char *nms_keyfile_nmmeta_filename (const char *dirname,
+                                   const char *uuid,
+                                   gboolean temporary);
 
-gboolean nms_keyfile_loaded_uuid_read (const char *dirname,
-                                       const char *filename,
-                                       char **out_full_filename,
-                                       char **out_uuid,
-                                       char **out_loaded_path,
-                                       struct stat *out_st);
+gboolean nms_keyfile_nmmeta_read (const char *dirname,
+                                  const char *filename,
+                                  char **out_full_filename,
+                                  char **out_uuid,
+                                  char **out_loaded_path,
+                                  struct stat *out_st);
 
-gboolean nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
-                                                 char **out_dirname,
-                                                 char **out_filename,
-                                                 char **out_uuid,
-                                                 char **out_loaded_path);
+gboolean nms_keyfile_nmmeta_read_from_file (const char *full_filename,
+                                            char **out_dirname,
+                                            char **out_filename,
+                                            char **out_uuid,
+                                            char **out_loaded_path);
 
-gboolean nms_keyfile_loaded_uuid_write (const char *dirname,
-                                        const char *uuid,
-                                        const char *loaded_path,
-                                        gboolean allow_relative,
-                                        char **out_full_filename);
+gboolean nms_keyfile_nmmeta_write (const char *dirname,
+                                   const char *uuid,
+                                   const char *loaded_path,
+                                   gboolean allow_relative,
+                                   char **out_full_filename);
 
 /*****************************************************************************/
 
