@@ -45,7 +45,8 @@ gboolean nms_keyfile_loaded_uuid_read (const char *dirname,
                                        const char *filename,
                                        char **out_full_filename,
                                        char **out_uuid,
-                                       char **out_loaded_path);
+                                       char **out_loaded_path,
+                                       struct stat *out_st);
 
 gboolean nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
                                                  char **out_dirname,

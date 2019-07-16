@@ -64,7 +64,8 @@ nms_keyfile_loaded_uuid_read (const char *dirname,
                               const char *filename,
                               char **out_full_filename,
                               char **out_uuid,
-                              char **out_loaded_path)
+                              char **out_loaded_path,
+                              struct stat *out_st)
 {
 	const char *uuid;
 	const char *tmp;
@@ -115,7 +116,7 @@ nms_keyfile_loaded_uuid_read (const char *dirname,
 
 	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_NMLOADED,
 	                                               full_filename,
-	                                               NULL,
+	                                               out_st,
 	                                               NULL))
 		return FALSE;
 
@@ -148,7 +149,8 @@ nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
 	                                   filename,
 	                                   NULL,
 	                                   out_uuid,
-	                                   out_loaded_path))
+	                                   out_loaded_path,
+	                                   NULL))
 		return FALSE;
 
 	NM_SET_OUT (out_dirname, g_steal_pointer (&dirname));

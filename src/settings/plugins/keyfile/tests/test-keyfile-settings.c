@@ -2550,7 +2550,7 @@ _assert_keyfile_loaded_uuid (const char *dirname,
 	g_assert_cmpstr (symlink_target, ==, exp_symlink_target);
 
 
-	success = nms_keyfile_loaded_uuid_read (dirname, filename, &full_filename, &uuid2, &loaded_path2);
+	success = nms_keyfile_loaded_uuid_read (dirname, filename, &full_filename, &uuid2, &loaded_path2, NULL);
 	g_assert_cmpint (!!exp_uuid, ==, success);
 	if (success)
 		g_assert_cmpstr (full_filename, ==, exp_full_filename);
