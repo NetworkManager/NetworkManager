@@ -1614,6 +1614,8 @@ global:
 	nm_device_modem_get_apn;
 	nm_device_modem_get_device_id;
 	nm_device_modem_get_operator_code;
+	nm_ip_routing_rule_get_suppress_prefixlength;
+	nm_ip_routing_rule_set_suppress_prefixlength;
 	nm_setting_connection_get_wait_device_timeout;
 	nm_setting_ethtool_get_optnames;
 	nm_setting_ovs_dpdk_get_devargs;

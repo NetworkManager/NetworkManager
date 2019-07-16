@@ -22,6 +22,8 @@
 
 /*****************************************************************************/
 
+#define NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG ((const void *) nmp_rules_manager_new)
+
 typedef struct _NMPRulesManager NMPRulesManager;
 
 NMPRulesManager *nmp_rules_manager_new (NMPlatform *platform);
@@ -35,7 +37,8 @@ NM_AUTO_DEFINE_FCN0 (NMPRulesManager *, _nmp_rules_manager_unref, nmp_rules_mana
 void nmp_rules_manager_track (NMPRulesManager *self,
                               const NMPlatformRoutingRule *routing_rule,
                               gint32 track_priority,
-                              gconstpointer user_tag);
+                              gconstpointer user_tag,
+                              gconstpointer user_tag_untrack);
 
 void nmp_rules_manager_track_default (NMPRulesManager *self,
                                       int addr_family,

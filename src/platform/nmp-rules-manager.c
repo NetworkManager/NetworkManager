@@ -99,6 +99,17 @@ typedef enum {
 	CONFIG_STATE_NONE          = 0,
 	CONFIG_STATE_ADDED_BY_US   = 1,
 	CONFIG_STATE_REMOVED_BY_US = 2,
+
+	/* ConfigState encodes whether the rule was touched by us at all (CONFIG_STATE_NONE).
+	 *
+	 * Maybe we would only need to track whether we touched the rule at all. But we
+	 * track it more in detail what we did: did we add it (CONFIG_STATE_ADDED_BY_US)
+	 * or did we remove it (CONFIG_STATE_REMOVED_BY_US)?
+	 * Finally, we need CONFIG_STATE_OWNED_BY_US, which means that we didn't actively
+	 * add/remove it, but whenever we are about to undo the add/remove, we need to do it.
+	 * In that sense, CONFIG_STATE_OWNED_BY_US is really just a flag that we unconditionally
+	 * force the state next time when necessary. */
+	CONFIG_STATE_OWNED_BY_US   = 3,
 } ConfigState;
 
 typedef struct {
@@ -111,8 +122,10 @@ typedef struct {
 	 * This makes NMPRulesManager stateful (beyond the configuration that indicates
 	 * which rules are tracked).
 	 * After a restart, NetworkManager would no longer remember which rules were added
-	 * by us. That would need to be fixed by persisting the state and reloading it after
-	 * restart. */
+	 * by us.
+	 *
+	 * That is partially fixed by NetworkManager taking over the rules that it
+	 * actively configures (see %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
 	ConfigState config_state;
 } RulesObjData;
 
@@ -120,6 +133,15 @@ typedef struct {
 	gconstpointer user_tag;
 	CList user_tag_lst_head;
 } RulesUserTagData;
+
+/*****************************************************************************/
+
+static void _rules_data_untrack (NMPRulesManager *self,
+                                 RulesData *rules_data,
+                                 gboolean remove_user_tag_data,
+                                 gboolean make_owned_by_us);
+
+/*****************************************************************************/
 
 static void
 _rules_data_assert (const RulesData *rules_data, gboolean linked)
@@ -278,11 +300,31 @@ _rules_data_lookup (GHashTable *by_data,
 	return g_hash_table_lookup (by_data, &rules_data_needle);
 }
 
+/**
+ * nmp_rules_manager_track:
+ * @self: the #NMPRulesManager instance
+ * @routing_rule: the #NMPlatformRoutingRule to track or untrack
+ * @track_priority: the priority for tracking the rule. Note that
+ *   negative values indicate a forced absence of the rule. Priorities
+ *   are compared with their absolute values (with higher absolute
+ *   value being more important). For example, if you track the same
+ *   rule twice, once with priority -5 and +10, then the rule is
+ *   present (because the positive number is more important).
+ *   The special value 0 indicates weakly-tracked rules.
+ * @user_tag: the tag associated with tracking this rule. The same tag
+ *   must be used to untrack the rule later.
+ * @user_tag_untrack: if not %NULL, at the same time untrack this user-tag
+ *   for the same rule. Note that this is different from a plain nmp_rules_manager_untrack(),
+ *   because it enforces ownership of the now tracked rule. On the other hand,
+ *   a plain nmp_rules_manager_untrack() merely forgets about the tracking.
+ *   The purpose here is to set this to %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG.
+ */
 void
 nmp_rules_manager_track (NMPRulesManager *self,
                          const NMPlatformRoutingRule *routing_rule,
                          gint32 track_priority,
-                         gconstpointer user_tag)
+                         gconstpointer user_tag,
+                         gconstpointer user_tag_untrack)
 {
 	NMPObject obj_stack;
 	const NMPObject *p_obj_stack;
@@ -359,6 +401,17 @@ nmp_rules_manager_track (NMPRulesManager *self,
 		}
 	}
 
+	if (user_tag_untrack) {
+		if (user_tag != user_tag_untrack) {
+			RulesData *rules_data_untrack;
+
+			rules_data_untrack = _rules_data_lookup (self->by_data, p_obj_stack, user_tag_untrack);
+			if (rules_data_untrack)
+				_rules_data_untrack (self, rules_data_untrack, FALSE, TRUE);
+		} else
+			nm_assert_not_reached ();
+	}
+
 	_rules_data_assert (rules_data, TRUE);
 
 	if (changed) {
@@ -377,7 +430,8 @@ nmp_rules_manager_track (NMPRulesManager *self,
 static void
 _rules_data_untrack (NMPRulesManager *self,
                      RulesData *rules_data,
-                     gboolean remove_user_tag_data)
+                     gboolean remove_user_tag_data,
+                     gboolean make_owned_by_us)
 {
 	RulesObjData *obj_data;
 
@@ -401,14 +455,21 @@ _rules_data_untrack (NMPRulesManager *self,
 #endif
 
 	nm_assert (!c_list_is_empty (&rules_data->user_tag_lst));
-	if (   remove_user_tag_data
-	    && c_list_length_is (&rules_data->user_tag_lst, 1))
-		g_hash_table_remove (self->by_user_tag, &rules_data->user_tag);
 
 	obj_data = g_hash_table_lookup (self->by_obj, &rules_data->obj);
 	nm_assert (obj_data);
 	nm_assert (c_list_contains (&obj_data->obj_lst_head, &rules_data->obj_lst));
 	nm_assert (obj_data == g_hash_table_lookup (self->by_obj, &rules_data->obj));
+
+	if (make_owned_by_us) {
+		if (obj_data->config_state == CONFIG_STATE_NONE) {
+			/* we need to mark this entry that it requires a touch on the next
+			 * sync. */
+			obj_data->config_state = CONFIG_STATE_OWNED_BY_US;
+		}
+	} else if (   remove_user_tag_data
+	           && c_list_length_is (&rules_data->user_tag_lst, 1))
+		g_hash_table_remove (self->by_user_tag, &rules_data->user_tag);
 
 	/* if obj_data is marked to be "added_by_us" or "removed_by_us", we need to keep this entry
 	 * around for the next sync -- so that we can undo what we did earlier. */
@@ -440,7 +501,7 @@ nmp_rules_manager_untrack (NMPRulesManager *self,
 
 	rules_data = _rules_data_lookup (self->by_data, p_obj_stack, user_tag);
 	if (rules_data)
-		_rules_data_untrack (self, rules_data, TRUE);
+		_rules_data_untrack (self, rules_data, TRUE, FALSE);
 }
 
 void
@@ -486,7 +547,7 @@ nmp_rules_manager_untrack_all (NMPRulesManager *self,
 	c_list_for_each_entry_safe (rules_data, rules_data_safe, &user_tag_data->user_tag_lst_head, user_tag_lst) {
 		if (   all
 		    || rules_data->dirty)
-			_rules_data_untrack (self, rules_data, FALSE);
+			_rules_data_untrack (self, rules_data, FALSE, FALSE);
 	}
 	if (c_list_is_empty (&user_tag_data->user_tag_lst_head))
 		g_hash_table_remove (self->by_user_tag, user_tag_data);
@@ -525,11 +586,17 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 
 			rd_best = _rules_obj_get_best_data (obj_data);
 			if (rd_best) {
-				if (rd_best->track_priority_present)
+				if (rd_best->track_priority_present) {
+					if (obj_data->config_state == CONFIG_STATE_OWNED_BY_US)
+						obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
 					continue;
+				}
 				if (rd_best->track_priority_val == 0) {
-					if (obj_data->config_state != CONFIG_STATE_ADDED_BY_US)
+					if (!NM_IN_SET (obj_data->config_state, CONFIG_STATE_ADDED_BY_US,
+					                                        CONFIG_STATE_OWNED_BY_US)) {
+						obj_data->config_state = CONFIG_STATE_NONE;
 						continue;
+					}
 					obj_data->config_state = CONFIG_STATE_NONE;
 				}
 			}
@@ -563,11 +630,17 @@ nmp_rules_manager_sync (NMPRulesManager *self,
 			continue;
 		}
 
-		if (!rd_best->track_priority_present)
+		if (!rd_best->track_priority_present) {
+			if (obj_data->config_state == CONFIG_STATE_OWNED_BY_US)
+				obj_data->config_state = CONFIG_STATE_REMOVED_BY_US;
 			continue;
+		}
 		if (rd_best->track_priority_val == 0) {
-			if (obj_data->config_state != CONFIG_STATE_REMOVED_BY_US)
+			if (!NM_IN_SET (obj_data->config_state, CONFIG_STATE_REMOVED_BY_US,
+			                                        CONFIG_STATE_OWNED_BY_US)) {
+				obj_data->config_state = CONFIG_STATE_NONE;
 				continue;
+			}
 			obj_data->config_state = CONFIG_STATE_NONE;
 		}
 
@@ -610,7 +683,7 @@ nmp_rules_manager_track_from_platform (NMPRulesManager *self,
 		    && rr->addr_family != addr_family)
 			continue;
 
-		nmp_rules_manager_track (self, rr, tracking_priority, user_tag);
+		nmp_rules_manager_track (self, rr, tracking_priority, user_tag, NULL);
 	}
 }
 
@@ -638,7 +711,8 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
 		                         track_priority,
-		                         user_tag);
+		                         user_tag,
+		                         NULL);
 		nmp_rules_manager_track (self,
 		                         &((NMPlatformRoutingRule) {
 		                             .addr_family = AF_INET,
@@ -648,7 +722,8 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
 		                         track_priority,
-		                         user_tag);
+		                         user_tag,
+		                         NULL);
 		nmp_rules_manager_track (self,
 		                         &((NMPlatformRoutingRule) {
 		                             .addr_family = AF_INET,
@@ -658,7 +733,8 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
 		                         track_priority,
-		                         user_tag);
+		                         user_tag,
+		                         NULL);
 	}
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6)) {
 		nmp_rules_manager_track (self,
@@ -670,7 +746,8 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
 		                         track_priority,
-		                         user_tag);
+		                         user_tag,
+		                         NULL);
 		nmp_rules_manager_track (self,
 		                         &((NMPlatformRoutingRule) {
 		                             .addr_family = AF_INET6,
@@ -680,7 +757,8 @@ nmp_rules_manager_track_default (NMPRulesManager *self,
 		                             .protocol    = RTPROT_KERNEL,
 		                         }),
 		                         track_priority,
-		                         user_tag);
+		                         user_tag,
+		                         NULL);
 	}
 }
 
