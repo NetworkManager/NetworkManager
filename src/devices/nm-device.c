@@ -4796,6 +4796,9 @@ nm_device_new_default_connection (NMDevice *self)
 	if (!NM_DEVICE_GET_CLASS (self)->new_default_connection)
 		return NULL;
 
+	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
+		return NULL;
+
 	connection = NM_DEVICE_GET_CLASS (self)->new_default_connection (self);
 	if (!connection)
 		return NULL;

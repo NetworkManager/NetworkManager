@@ -1435,9 +1435,6 @@ new_default_connection (NMDevice *self)
 	gs_free char *uuid = NULL;
 	guint i, n_connections;
 
-	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
-		return NULL;
-
 	perm_hw_addr = nm_device_get_permanent_hw_address (self);
 	iface = nm_device_get_iface (self);
 
