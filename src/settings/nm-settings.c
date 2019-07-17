@@ -729,6 +729,7 @@ _sett_conn_entry_sds_update_cmp (const CList *ls_a,
                                  const CList *ls_b,
                                  gconstpointer user_data)
 {
+	const GSList *plugins = user_data;
 	StorageData *sd_a = c_list_entry (ls_a, StorageData, sd_lst);
 	StorageData *sd_b = c_list_entry (ls_b, StorageData, sd_lst);
 
@@ -740,7 +741,7 @@ _sett_conn_entry_sds_update_cmp (const CList *ls_a,
 	 * would expect).
 	 *
 	 * We want to sort the list in reverse though, with highest priority first. */
-	return nm_settings_storage_cmp (sd_b->storage, sd_a->storage, user_data);
+	return nm_settings_storage_cmp (sd_b->storage, sd_a->storage, plugins);
 }
 
 static void
@@ -1798,7 +1799,7 @@ nm_settings_delete_connection (NMSettings *self,
 	NMSettingsPrivate *priv;
 	NMSettingsStorage *cur_storage;
 	gs_free_error GError *local = NULL;
-	SettConnEntry *sett_conn_entry = NULL;
+	SettConnEntry *sett_conn_entry;
 	const char *uuid;
 	gboolean delete;
 	gboolean tombstone_in_memory = FALSE;
@@ -1823,7 +1824,7 @@ nm_settings_delete_connection (NMSettings *self,
 
 	g_return_if_fail (sett_conn_entry);
 	nm_assert (sett_conn_entry->sett_conn == sett_conn);
-	nm_assert (sett_conn_entry->storage == cur_storage);
+	g_return_if_fail (sett_conn_entry->storage == cur_storage);
 
 	if (NMS_IS_KEYFILE_STORAGE (cur_storage)) {
 		NMSKeyfileStorage *s = NMS_KEYFILE_STORAGE (cur_storage);
@@ -1839,6 +1840,8 @@ nm_settings_delete_connection (NMSettings *self,
 		delete = TRUE;
 
 	if (delete) {
+		StorageData *sd;
+
 		if (!nm_settings_plugin_delete_connection (nm_settings_storage_get_plugin (cur_storage),
 		                                           cur_storage,
 		                                           &local)) {
@@ -1850,7 +1853,24 @@ nm_settings_delete_connection (NMSettings *self,
 			 * cannot do better than warn. Proceed... */
 			tombstone_in_memory = TRUE;
 		}
-		_connection_changed_track (self, cur_storage, NULL, FALSE);
+
+		sett_conn_entry = _connection_changed_track (self, cur_storage, NULL, FALSE);
+
+		c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+			if (sd->storage == cur_storage)
+				continue;
+			if (nm_settings_storage_is_keyfile_tombstone (sd->storage))
+				continue;
+			if (!_storage_data_is_alive (sd))
+				continue;
+
+			/* we have still conflicting storages. We need to hide them with tombstones. */
+			if (nm_settings_storage_is_keyfile_run (sd->storage)) {
+				tombstone_in_memory = TRUE;
+				continue;
+			}
+			tombstone_on_disk = TRUE;
+		}
 	}
 
 	if (tombstone_on_disk) {
