@@ -2094,13 +2094,17 @@ src_libNetworkManager_la_SOURCES = \
 	src/settings/nm-secret-agent.h \
 	src/settings/nm-settings-connection.c \
 	src/settings/nm-settings-connection.h \
+	src/settings/nm-settings-storage.c \
+	src/settings/nm-settings-storage.h \
 	src/settings/nm-settings-plugin.c \
 	src/settings/nm-settings-plugin.h \
 	src/settings/nm-settings.c \
 	src/settings/nm-settings.h \
+	src/settings/nm-settings-utils.c \
+	src/settings/nm-settings-utils.h \
 	\
-	src/settings/plugins/keyfile/nms-keyfile-connection.c \
-	src/settings/plugins/keyfile/nms-keyfile-connection.h \
+	src/settings/plugins/keyfile/nms-keyfile-storage.c \
+	src/settings/plugins/keyfile/nms-keyfile-storage.h \
 	src/settings/plugins/keyfile/nms-keyfile-plugin.c \
 	src/settings/plugins/keyfile/nms-keyfile-plugin.h \
 	src/settings/plugins/keyfile/nms-keyfile-reader.c \
@@ -2819,10 +2823,11 @@ $(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS): $(libnm_core_l
 ###############################################################################
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-connection.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-connection.h \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-storage.c \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-storage.h \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.h
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.h \
+	$(NULL)
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src_cppflags_base)
 
@@ -3135,8 +3140,6 @@ src_settings_plugins_ifupdown_libnms_ifupdown_core_la_LIBADD = \
 	$(NULL)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
-	src/settings/plugins/ifupdown/nms-ifupdown-connection.c \
-	src/settings/plugins/ifupdown/nms-ifupdown-connection.h \
 	src/settings/plugins/ifupdown/nms-ifupdown-plugin.c \
 	src/settings/plugins/ifupdown/nms-ifupdown-plugin.h \
 	$(NULL)
@@ -4834,6 +4837,7 @@ install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq-shared.d
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/system-connections
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
 

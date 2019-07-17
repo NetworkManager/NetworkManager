@@ -1014,6 +1014,9 @@ typedef enum { /*< flags >*/
  *   is not deleted but merely the connection is decoupled from the file
  *   on disk. If you later delete an in-memory connection, the connection
  *   on disk will be deleted as well.
+ *   Note: with 1.20, this flag is no longer implemented because in-memory connections
+ *   are also persisted under /run. For the moment, this behaves the same as
+ *   @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED.
  * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED: this is like @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
  *   but if the connection has a corresponding file on disk, the association between
  *   the connection and the file is forgotten but the file is not modified.

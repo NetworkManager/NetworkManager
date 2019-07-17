@@ -3537,7 +3537,9 @@ nm_keyfile_read (GKeyFile *keyfile,
 			vpn_secrets = TRUE;
 		} else if (NM_STR_HAS_PREFIX (groups[i], NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER))
 			_read_setting_wireguard_peer (&info);
-		else
+		else if (nm_streq (groups[i], NM_KEYFILE_GROUP_NMMETA)) {
+			/* pass */
+		} else
 			_read_setting (&info);
 
 		info.group = NULL;
@@ -3981,7 +3983,7 @@ nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extensi
 
 	if (require_extension) {
 		if (   l <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
-		    || !g_str_has_suffix (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+		    || !NM_STR_HAS_SUFFIX (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
 			return TRUE;
 		return FALSE;
 	}
@@ -3990,7 +3992,10 @@ nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extensi
 	if (base[l - 1] == '~')
 		return TRUE;
 
-	/* Ignore temporary files */
+	/* Ignore temporary files
+	 *
+	 * This check is also important to ignore .nmload files (see
+	 * %NM_KEYFILE_PATH_SUFFIX_NMMETA). */
 	if (check_mkstemp_suffix (base))
 		return TRUE;
 

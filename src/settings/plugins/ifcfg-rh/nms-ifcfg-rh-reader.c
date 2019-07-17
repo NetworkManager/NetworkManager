@@ -6028,20 +6028,3 @@ nmtst_connection_from_file (const char *filename,
 	                                  error,
 	                                  NULL);
 }
-
-guint
-devtimeout_from_file (const char *filename)
-{
-	shvarFile *ifcfg;
-	guint devtimeout;
-
-	g_return_val_if_fail (filename != NULL, 0);
-
-	ifcfg = svOpenFile (filename, NULL);
-	if (!ifcfg)
-		return 0;
-
-	devtimeout = svGetValueInt64 (ifcfg, "DEVTIMEOUT", 10, 0, G_MAXUINT, 0);
-	svCloseFile (ifcfg);
-	return devtimeout;
-}

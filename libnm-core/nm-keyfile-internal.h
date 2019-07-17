@@ -162,6 +162,8 @@ GKeyFile *nm_keyfile_write (NMConnection *connection,
 char *nm_keyfile_plugin_kf_get_string (GKeyFile *kf, const char *group, const char *key, GError **error);
 void nm_keyfile_plugin_kf_set_string (GKeyFile *kf, const char *group, const char *key, const char *value);
 
+int nm_key_file_get_boolean (GKeyFile *kf, const char *group, const char *key, int default_value);
+
 void _nm_keyfile_copy (GKeyFile *dst, GKeyFile *src);
 gboolean _nm_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b);
 gboolean _nm_keyfile_equals (GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order);
@@ -169,14 +171,19 @@ gboolean _nm_keyfile_has_values (GKeyFile *keyfile);
 
 /*****************************************************************************/
 
+#define NM_KEYFILE_GROUP_NMMETA                 ".nmmeta"
+#define NM_KEYFILE_KEY_NMMETA_NM_GENERATED      "nm-generated"
+#define NM_KEYFILE_KEY_NMMETA_VOLATILE          "volatile"
+
+#define NM_KEYFILE_PATH_NAME_LIB                 NMLIBDIR  "/system-connections"
 #define NM_KEYFILE_PATH_NAME_ETC_DEFAULT         NMCONFDIR "/system-connections"
-#define NM_KEYFILE_PATH_NAME_RUN                 NMRUNDIR "/system-connections"
+#define NM_KEYFILE_PATH_NAME_RUN                 NMRUNDIR  "/system-connections"
 
 #define NM_KEYFILE_PATH_SUFFIX_NMCONNECTION      ".nmconnection"
 
-#define NM_KEYFILE_PATH_PREFIX_NMLOADED          ".loaded-"
+#define NM_KEYFILE_PATH_SUFFIX_NMMETA            ".nmmeta"
 
-#define NM_KEYFILE_PATH_NMLOADED_NULL            "/dev/null"
+#define NM_KEYFILE_PATH_NMMETA_SYMLINK_NULL      "/dev/null"
 
 gboolean nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extension);
 

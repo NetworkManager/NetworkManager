@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -33,89 +33,98 @@
 
 /*****************************************************************************/
 
-char *
-nms_keyfile_loaded_uuid_filename (const char *dirname,
-                                  const char *uuid,
-                                  gboolean temporary)
+const char *
+nms_keyfile_nmmeta_check_filename (const char *filename,
+                                   guint *out_uuid_len)
 {
-	char filename[250];
+	const char *uuid;
+	const char *s;
+	gsize len;
 
-	nm_assert (dirname && dirname[0] == '/');
-	nm_assert (uuid && nm_utils_is_uuid (uuid) && !strchr (uuid, '/'));
+	s = strrchr (filename, '/');
+	if (s)
+		filename = &s[1];
 
-	if (g_snprintf (filename,
-	                sizeof (filename),
-	                "%s%s%s%s",
-	                NM_KEYFILE_PATH_PREFIX_NMLOADED,
-	                uuid,
-	                NM_KEYFILE_PATH_SUFFIX_NMCONNECTION,
-	                temporary ? "~" : "") >= sizeof (filename)) {
-		/* valid uuids are limited in length. The buffer should always be large
-		 * enough. */
-		nm_assert_not_reached ();
+	len = strlen (filename);
+	if (   len <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMMETA)
+	    || memcmp (&filename[len - NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMMETA)],
+	               NM_KEYFILE_PATH_SUFFIX_NMMETA,
+	               NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMMETA)) != 0) {
+		/* the filename does not have the right suffix. */
 		return NULL;
 	}
 
-	return g_build_filename (dirname, filename, NULL);
+	len -= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMMETA);
+
+	if (!NM_IN_SET (len, 36, 40)) {
+		/* the remaining part of the filename has not the right length to
+		 * contain a UUID (according to nm_utils_is_uuid()). */
+		return NULL;
+	}
+
+	uuid = nm_strndup_a (100, filename, len, NULL);
+	if (!nm_utils_is_uuid (uuid))
+		return NULL;
+
+	NM_SET_OUT (out_uuid_len, len);
+	return filename;
+}
+
+char *
+nms_keyfile_nmmeta_filename (const char *dirname,
+                             const char *uuid,
+                             gboolean temporary)
+{
+	char filename[250];
+	char *s;
+
+	nm_assert (dirname && dirname[0] == '/');
+	nm_assert (   nm_utils_is_uuid (uuid)
+	           && !strchr (uuid, '/'));
+
+	if (g_snprintf (filename,
+	                sizeof (filename),
+	                "%s%s%s",
+	                uuid,
+	                NM_KEYFILE_PATH_SUFFIX_NMMETA,
+	                temporary ? "~" : "") >= sizeof (filename)) {
+		/* valid uuids are limited in length (nm_utils_is_uuid). The buffer should always
+		 * be large enough. */
+		nm_assert_not_reached ();
+	}
+
+	s = g_build_filename (dirname, filename, NULL);
+
+	nm_assert (nm_keyfile_utils_ignore_filename (s, FALSE));
+
+	return s;
 }
 
 gboolean
-nms_keyfile_loaded_uuid_read (const char *dirname,
-                              const char *filename,
-                              char **out_full_filename,
-                              char **out_uuid,
-                              char **out_loaded_path)
+nms_keyfile_nmmeta_read (const char *dirname,
+                         const char *filename,
+                         char **out_full_filename,
+                         char **out_uuid,
+                         char **out_loaded_path,
+                         struct stat *out_st)
 {
 	const char *uuid;
-	const char *tmp;
-	gsize len;
+	guint uuid_len;
 	gs_free char *full_filename = NULL;
 	gs_free char *ln = NULL;
 
 	nm_assert (dirname && dirname[0] == '/');
 	nm_assert (filename && filename[0] && !strchr (filename, '/'));
 
-	if (filename[0] != '.') {
-		/* the hidden-uuid filename must start with '.'. That is,
-		 * so that it does not conflict with regular keyfiles according
-		 * to nm_keyfile_utils_ignore_filename(). */
-		return FALSE;
-	}
-
-	len = strlen (filename);
-	if (   len <= NM_STRLEN (NM_KEYFILE_PATH_PREFIX_NMLOADED)
-	    || memcmp (filename, NM_KEYFILE_PATH_PREFIX_NMLOADED, NM_STRLEN (NM_KEYFILE_PATH_PREFIX_NMLOADED)) != 0) {
-		/* the filename does not have the right prefix. */
-		return FALSE;
-	}
-
-	tmp = &filename[NM_STRLEN (NM_KEYFILE_PATH_PREFIX_NMLOADED)];
-	len -= NM_STRLEN (NM_KEYFILE_PATH_PREFIX_NMLOADED);
-
-	if (   len <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
-	    || memcmp (&tmp[len - NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)],
-	               NM_KEYFILE_PATH_SUFFIX_NMCONNECTION,
-	               NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)) != 0) {
-		/* the file does not have the right suffix. */
-		return FALSE;
-	}
-	len -= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
-
-	if (!NM_IN_SET (len, 36, 40)) {
-		/* the remaining part of the filename has not the right length to
-		 * contain a UUID (according to nm_utils_is_uuid()). */
-		return FALSE;
-	}
-
-	uuid = nm_strndup_a (100, tmp, len, NULL);
-	if (!nm_utils_is_uuid (uuid))
+	uuid = nms_keyfile_nmmeta_check_filename (filename, &uuid_len);
+	if (!uuid)
 		return FALSE;
 
 	full_filename = g_build_filename (dirname, filename, NULL);
 
 	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_NMLOADED,
 	                                               full_filename,
-	                                               NULL,
+	                                               out_st,
 	                                               NULL))
 		return FALSE;
 
@@ -123,18 +132,18 @@ nms_keyfile_loaded_uuid_read (const char *dirname,
 	if (!ln)
 		return FALSE;
 
-	NM_SET_OUT (out_uuid, g_strdup (uuid));
+	NM_SET_OUT (out_uuid, g_strndup (uuid, uuid_len));
 	NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
 	NM_SET_OUT (out_loaded_path, g_steal_pointer (&ln));
 	return TRUE;
 }
 
 gboolean
-nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
-                                        char **out_dirname,
-                                        char **out_filename,
-                                        char **out_uuid,
-                                        char **out_loaded_path)
+nms_keyfile_nmmeta_read_from_file (const char *full_filename,
+                                   char **out_dirname,
+                                   char **out_filename,
+                                   char **out_uuid,
+                                   char **out_loaded_path)
 {
 	gs_free char *dirname = NULL;
 	gs_free char *filename = NULL;
@@ -144,11 +153,12 @@ nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
 	filename = g_path_get_basename (full_filename);
 	dirname = g_path_get_dirname (full_filename);
 
-	if (!nms_keyfile_loaded_uuid_read (dirname,
-	                                   filename,
-	                                   NULL,
-	                                   out_uuid,
-	                                   out_loaded_path))
+	if (!nms_keyfile_nmmeta_read (dirname,
+	                              filename,
+	                              NULL,
+	                              out_uuid,
+	                              out_loaded_path,
+	                              NULL))
 		return FALSE;
 
 	NM_SET_OUT (out_dirname, g_steal_pointer (&dirname));
@@ -157,20 +167,21 @@ nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
 }
 
 gboolean
-nms_keyfile_loaded_uuid_write (const char *dirname,
-                               const char *uuid,
-                               const char *loaded_path,
-                               gboolean allow_relative,
-                               char **out_full_filename)
+nms_keyfile_nmmeta_write (const char *dirname,
+                          const char *uuid,
+                          const char *loaded_path,
+                          gboolean allow_relative,
+                          char **out_full_filename)
 {
 	gs_free char *full_filename_tmp = NULL;
 	gs_free char *full_filename = NULL;
 
 	nm_assert (dirname && dirname[0] == '/');
-	nm_assert (uuid && nm_utils_is_uuid (uuid) && !strchr (uuid, '/'));
+	nm_assert (   nm_utils_is_uuid (uuid)
+	           && !strchr (uuid, '/'));
 	nm_assert (!loaded_path || loaded_path[0] == '/');
 
-	full_filename_tmp = nms_keyfile_loaded_uuid_filename (dirname, uuid, TRUE);
+	full_filename_tmp = nms_keyfile_nmmeta_filename (dirname, uuid, TRUE);
 
 	nm_assert (g_str_has_suffix (full_filename_tmp, "~"));
 	nm_assert (nm_utils_file_is_in_path (full_filename_tmp, dirname));
@@ -294,22 +305,3 @@ nms_keyfile_utils_check_file_permissions (NMSKeyfileFiletype filetype,
 	NM_SET_OUT (out_st, st);
 	return TRUE;
 }
-
-/*****************************************************************************/
-
-const char *
-nms_keyfile_utils_get_path (void)
-{
-	static char *path = NULL;
-
-	if (G_UNLIKELY (!path)) {
-		path = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
-		                                 NM_CONFIG_KEYFILE_GROUP_KEYFILE,
-		                                 NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
-		                                 NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
-		if (!path)
-			path = g_strdup (""NM_KEYFILE_PATH_NAME_ETC_DEFAULT"");
-	}
-	return path;
-}
-

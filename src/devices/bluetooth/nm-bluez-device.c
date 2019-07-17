@@ -235,15 +235,17 @@ pan_connection_check_create (NMBluezDevice *self)
 	 * which then already finds the suitable connection in priv->connections. This is confusing,
 	 * so block the signal. check_emit_usable will succeed after this function call returns. */
 	g_signal_handlers_block_by_func (priv->settings, cp_connection_added, self);
-	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
+	nm_settings_add_connection (priv->settings,
+	                            connection,
+	                            NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                            NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
+	                            &added,
+	                            &error);
 	g_signal_handlers_unblock_by_func (priv->settings, cp_connection_added, self);
 
 	if (added) {
 		nm_assert (!g_slist_find (priv->connections, added));
 		nm_assert (connection_compatible (self, added));
-
-		nm_settings_connection_set_flags (added, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED, TRUE);
-
 		priv->connections = g_slist_prepend (priv->connections, g_object_ref (added));
 		priv->pan_connection = added;
 		nm_log_dbg (LOGD_BT, "bluez[%s] added new Bluetooth connection for NAP device: '%s' (%s)", priv->path, id, uuid);
@@ -392,7 +394,7 @@ cp_connection_removed (NMSettings *settings,
 static void
 cp_connection_updated (NMSettings *settings,
                        NMSettingsConnection *sett_conn,
-                       gboolean by_user,
+                       guint update_reason_u,
                        NMBluezDevice *self)
 {
 	if (_internal_track_connection (self, sett_conn,
@@ -1225,7 +1227,7 @@ dispose (GObject *object)
 	if (to_delete) {
 		nm_log_dbg (LOGD_BT, "bluez[%s] removing Bluetooth connection for NAP device: '%s' (%s)", priv->path,
 		            nm_settings_connection_get_id (to_delete), nm_settings_connection_get_uuid (to_delete));
-		nm_settings_connection_delete (to_delete, NULL);
+		nm_settings_connection_delete (to_delete, FALSE);
 		g_object_unref (to_delete);
 	}
 

@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010-2016 Red Hat, Inc.
+ * (C) Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NMS_KEYFILE_UTILS_H__
@@ -22,42 +22,53 @@
 
 #include "NetworkManagerUtils.h"
 
-#define NMS_KEYFILE_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
-#define NMS_KEYFILE_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
-#define NMS_KEYFILE_CONNECTION_LOG_ARG(con)    NMS_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_settings_connection_get_uuid ((NMSettingsConnection *) (con)), nm_settings_connection_get_id ((NMSettingsConnection *) (con))
-#define NMS_KEYFILE_CONNECTION_LOG_FMTD        "%s (%s,\"%s\",%p)"
-#define NMS_KEYFILE_CONNECTION_LOG_ARGD(con)   NMS_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_settings_connection_get_uuid ((NMSettingsConnection *) (con)), nm_settings_connection_get_id ((NMSettingsConnection *) (con)), (con)
-
 typedef enum {
 	NMS_KEYFILE_FILETYPE_KEYFILE,
 	NMS_KEYFILE_FILETYPE_NMLOADED,
 } NMSKeyfileFiletype;
 
-const char *nms_keyfile_utils_get_path (void);
+typedef enum {
+	NMS_KEYFILE_STORAGE_TYPE_RUN       = 1, /* read-write, runtime only, e.g. /run */
+	NMS_KEYFILE_STORAGE_TYPE_ETC       = 2, /* read-write, persistent,   e.g. /etc     */
+	NMS_KEYFILE_STORAGE_TYPE_LIB_BASE  = 3, /* read-only,                e.g. /usr/lib */
+
+	_NMS_KEYFILE_STORAGE_TYPE_LIB_LAST = 1000,
+} NMSKeyfileStorageType;
+
+static inline NMSKeyfileStorageType
+NMS_KEYFILE_STORAGE_TYPE_LIB (guint run_idx)
+{
+	nm_assert (run_idx <= (_NMS_KEYFILE_STORAGE_TYPE_LIB_LAST - NMS_KEYFILE_STORAGE_TYPE_LIB_BASE));
+	return NMS_KEYFILE_STORAGE_TYPE_LIB_BASE + run_idx;
+}
 
 /*****************************************************************************/
 
-char *nms_keyfile_loaded_uuid_filename (const char *dirname,
-                                        const char *uuid,
-                                        gboolean temporary);
+const char *nms_keyfile_nmmeta_check_filename (const char *filename,
+                                               guint *out_uuid_len);
 
-gboolean nms_keyfile_loaded_uuid_read (const char *dirname,
-                                       const char *filename,
-                                       char **out_full_filename,
-                                       char **out_uuid,
-                                       char **out_loaded_path);
+char *nms_keyfile_nmmeta_filename (const char *dirname,
+                                   const char *uuid,
+                                   gboolean temporary);
 
-gboolean nms_keyfile_loaded_uuid_read_from_file (const char *full_filename,
-                                                 char **out_dirname,
-                                                 char **out_filename,
-                                                 char **out_uuid,
-                                                 char **out_loaded_path);
+gboolean nms_keyfile_nmmeta_read (const char *dirname,
+                                  const char *filename,
+                                  char **out_full_filename,
+                                  char **out_uuid,
+                                  char **out_loaded_path,
+                                  struct stat *out_st);
 
-gboolean nms_keyfile_loaded_uuid_write (const char *dirname,
-                                        const char *uuid,
-                                        const char *loaded_path,
-                                        gboolean allow_relative,
-                                        char **out_full_filename);
+gboolean nms_keyfile_nmmeta_read_from_file (const char *full_filename,
+                                            char **out_dirname,
+                                            char **out_filename,
+                                            char **out_uuid,
+                                            char **out_loaded_path);
+
+gboolean nms_keyfile_nmmeta_write (const char *dirname,
+                                   const char *uuid,
+                                   const char *loaded_path,
+                                   gboolean allow_relative,
+                                   char **out_full_filename);
 
 /*****************************************************************************/
 

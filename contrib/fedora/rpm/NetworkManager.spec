@@ -847,6 +847,7 @@ fi
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %dir %{nmlibdir}/VPN
+%dir %{nmlibdir}/system-connections
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/nmcli-examples.7*

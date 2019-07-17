@@ -181,7 +181,7 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags
 
 static void
 _settings_connection_updated (NMSettingsConnection *sett_conn,
-                              gboolean by_user,
+                              guint update_reason_u,
                               gpointer user_data)
 {
 	NMActiveConnection *self = user_data;
@@ -522,8 +522,9 @@ nm_active_connection_clear_secrets (NMActiveConnection *self)
 	if (nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection.obj,
 	                                                              priv->applied_connection,
 	                                                              NM_SETTING_COMPARE_FLAG_NONE)) {
-		/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-		nm_connection_clear_secrets (nm_settings_connection_get_connection (priv->settings_connection.obj));
+		nm_settings_connection_clear_secrets (priv->settings_connection.obj,
+		                                      FALSE,
+		                                      FALSE);
 	}
 	nm_connection_clear_secrets (priv->applied_connection);
 }

@@ -11507,7 +11507,7 @@ check_and_reapply_connection (NMDevice *self,
 			    || !nm_streq0 (nm_setting_connection_get_stable_id (s_con_a), nm_setting_connection_get_stable_id (s_con_n))) {
 				connection_clean_free = nm_simple_connection_new_clone (connection);
 				connection_clean = connection_clean_free;
-				s_con_n = nm_connection_get_setting_connection (connection);
+				s_con_n = nm_connection_get_setting_connection (connection_clean);
 				g_object_set (s_con_n,
 				              NM_SETTING_CONNECTION_ID, nm_setting_connection_get_id (s_con_a),
 				              NM_SETTING_CONNECTION_UUID, nm_setting_connection_get_uuid (s_con_a),
@@ -12404,16 +12404,28 @@ nm_device_set_ip_config (NMDevice *self,
 
 		if (   nm_device_sys_iface_state_is_external (self)
 		    && (settings_connection = nm_device_get_settings_connection (self))
-		    && NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
-		                     NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
+		    && NM_FLAGS_ALL (nm_settings_connection_get_flags (settings_connection),
+		                       NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED
+		                     | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		                     | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
 		    && nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request.obj)) == NM_ACTIVATION_TYPE_EXTERNAL) {
-			g_object_freeze_notify (G_OBJECT (settings_connection));
-			/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-			nm_connection_add_setting (nm_settings_connection_get_connection (settings_connection),
+			gs_unref_object NMConnection *new_connection = NULL;
+
+			new_connection = nm_simple_connection_new_clone (nm_settings_connection_get_connection (settings_connection));
+
+			nm_connection_add_setting (new_connection,
 			                           IS_IPv4
 			                             ? nm_ip4_config_create_setting (priv->ip_config_4)
 			                             : nm_ip6_config_create_setting (priv->ip_config_6));
-			g_object_thaw_notify (G_OBJECT (settings_connection));
+
+			nm_settings_connection_update (settings_connection,
+			                               new_connection,
+			                               NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
+			                               NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+			                               NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+			                               NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
+			                               "update-external",
+			                               NULL);
 		}
 
 		nm_device_queue_recheck_assume (self);
@@ -14365,7 +14377,7 @@ cp_connection_added (NMSettings *settings, NMSettingsConnection *sett_conn, gpoi
 }
 
 static void
-cp_connection_updated (NMSettings *settings, NMSettingsConnection *sett_conn, gboolean by_user, gpointer user_data)
+cp_connection_updated (NMSettings *settings, NMSettingsConnection *sett_conn, guint update_reason_u, gpointer user_data)
 {
 	cp_connection_added_or_updated (user_data, sett_conn);
 }

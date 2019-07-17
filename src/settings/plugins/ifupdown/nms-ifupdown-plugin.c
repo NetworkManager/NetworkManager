@@ -24,23 +24,12 @@
 
 #include "nms-ifupdown-plugin.h"
 
-#include <arpa/inet.h>
-#include <gmodule.h>
-
-#include "nm-setting-connection.h"
-#include "nm-dbus-interface.h"
-#include "settings/nm-settings-plugin.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-wired.h"
-#include "nm-setting-ppp.h"
-#include "nm-utils.h"
 #include "nm-core-internal.h"
-#include "NetworkManagerUtils.h"
 #include "nm-config.h"
+#include "settings/nm-settings-plugin.h"
+#include "settings/nm-settings-storage.h"
 
 #include "nms-ifupdown-interface-parser.h"
-#include "nms-ifupdown-connection.h"
 #include "nms-ifupdown-parser.h"
 
 #define ENI_INTERFACES_FILE "/etc/network/interfaces"
@@ -50,28 +39,35 @@
 /*****************************************************************************/
 
 typedef struct {
+	NMConnection *connection;
+	NMSettingsStorage *storage;
+} StorageData;
+
+typedef struct {
 	/* Stores an entry for blocks/interfaces read from /e/n/i and (if exists)
-	 * the NMIfupdownConnection associated with the block.
+	 * the StorageData associated with the block.
 	 */
 	GHashTable *eni_ifaces;
 
 	bool ifupdown_managed:1;
 
 	bool initialized:1;
-} SettingsPluginIfupdownPrivate;
 
-struct _SettingsPluginIfupdown {
+	bool already_reloaded:1;
+} NMSIfupdownPluginPrivate;
+
+struct _NMSIfupdownPlugin {
 	NMSettingsPlugin parent;
-	SettingsPluginIfupdownPrivate _priv;
+	NMSIfupdownPluginPrivate _priv;
 };
 
-struct _SettingsPluginIfupdownClass {
+struct _NMSIfupdownPluginClass {
 	NMSettingsPluginClass parent;
 };
 
-G_DEFINE_TYPE (SettingsPluginIfupdown, settings_plugin_ifupdown, NM_TYPE_SETTINGS_PLUGIN)
+G_DEFINE_TYPE (NMSIfupdownPlugin, nms_ifupdown_plugin, NM_TYPE_SETTINGS_PLUGIN)
 
-#define SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfupdown, SETTINGS_IS_PLUGIN_IFUPDOWN)
+#define NMS_IFUPDOWN_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSIfupdownPlugin, NMS_IS_IFUPDOWN_PLUGIN)
 
 /*****************************************************************************/
 
@@ -85,53 +81,143 @@ G_DEFINE_TYPE (SettingsPluginIfupdown, settings_plugin_ifupdown, NM_TYPE_SETTING
 
 /*****************************************************************************/
 
-static void initialize (SettingsPluginIfupdown *self);
+static GHashTable *load_eni_ifaces (NMSIfupdownPlugin *self);
 
 /*****************************************************************************/
 
-/* Returns the plugins currently known list of connections.  The returned
- * list is freed by the system settings service.
- */
-static GSList*
-get_connections (NMSettingsPlugin *plugin)
+static void
+_storage_data_destroy (StorageData *sd)
 {
-	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (plugin);
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-	GSList *list = NULL;
-	GHashTableIter iter;
-	void *value;
-
-	if (G_UNLIKELY (!priv->initialized))
-		initialize (self);
-
-	if (!priv->ifupdown_managed) {
-		_LOGD ("get_connections: not connections due to managed=false");
-		return NULL;
-	}
-
-	g_hash_table_iter_init (&iter, priv->eni_ifaces);
-	while (g_hash_table_iter_next (&iter, NULL, &value)) {
-		if (value)
-			list = g_slist_prepend (list, value);
-	}
-
-	_LOGD ("get_connections: %u connections", g_slist_length (list));
-	return list;
+	nm_g_object_unref (sd->connection);
+	nm_g_object_unref (sd->storage);
+	g_slice_free (StorageData, sd);
 }
 
-/*
- * Return a list of device specifications which NetworkManager should not
- * manage.  Returned list will be freed by the system settings service, and
- * each element must be allocated using g_malloc() or its variants.
- */
+/*****************************************************************************/
+
+static void
+initialize (NMSIfupdownPlugin *self)
+{
+	NMSIfupdownPluginPrivate *priv = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE (self);
+	gboolean ifupdown_managed;
+
+	nm_assert (!priv->initialized);
+
+	priv->initialized = TRUE;
+
+	ifupdown_managed = nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
+	                                                     NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
+	                                                     NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
+	                                                     !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
+	_LOGI ("management mode: %s", ifupdown_managed ? "managed" : "unmanaged");
+	priv->ifupdown_managed = ifupdown_managed;
+
+	priv->eni_ifaces = load_eni_ifaces (self);
+}
+
+static void
+reload_connections (NMSettingsPlugin *plugin,
+                    NMSettingsPluginConnectionLoadCallback callback,
+                    gpointer user_data)
+{
+	NMSIfupdownPlugin *self = NMS_IFUPDOWN_PLUGIN (plugin);
+	NMSIfupdownPluginPrivate *priv = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE (self);
+	gs_unref_hashtable GHashTable *eni_ifaces_old = NULL;
+	GHashTableIter iter;
+	StorageData *sd;
+	StorageData *sd2;
+	const char *block_name;
+
+	if (!priv->initialized)
+		initialize (self);
+	else if (!priv->already_reloaded) {
+		/* This is the first call to reload, but we are already initialized.
+		 *
+		 * This happens because during start NMSettings first queries unmanaged-specs,
+		 * and then issues a reload call right away.
+		 *
+		 * On future reloads, we really want to load /e/n/i again. */
+		priv->already_reloaded = TRUE;
+	} else {
+		eni_ifaces_old = priv->eni_ifaces;
+		priv->eni_ifaces = load_eni_ifaces (self);
+
+		g_hash_table_iter_init (&iter, eni_ifaces_old);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &block_name, (gpointer *) &sd)) {
+			if (!sd)
+				continue;
+
+			sd2 = g_hash_table_lookup (priv->eni_ifaces, block_name);
+			if (!sd2)
+				continue;
+
+			nm_assert (nm_streq (nm_settings_storage_get_uuid (sd->storage), nm_settings_storage_get_uuid (sd2->storage)));
+			nm_g_object_ref_set (&sd2->storage, sd->storage);
+			g_hash_table_iter_remove (&iter);
+		}
+	}
+
+	if (!priv->ifupdown_managed)
+		_LOGD ("load: no connections due to managed=false");
+
+	g_hash_table_iter_init (&iter, priv->eni_ifaces);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &sd)) {
+		gs_unref_object NMConnection *connection = NULL;
+
+		if (!sd)
+			continue;
+
+		connection = g_steal_pointer (&sd->connection);
+
+		if (!priv->ifupdown_managed)
+			continue;
+
+		_LOGD ("load: %s (%s)",
+		        nm_settings_storage_get_uuid (sd->storage),
+		        nm_connection_get_id (connection));
+		callback (plugin,
+		          sd->storage,
+		          connection,
+		          user_data);
+	}
+	if (   eni_ifaces_old
+	    && priv->ifupdown_managed) {
+		g_hash_table_iter_init (&iter, eni_ifaces_old);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &sd)) {
+			if (!sd)
+				continue;
+			_LOGD ("unload: %s",
+			        nm_settings_storage_get_uuid (sd->storage));
+			callback (plugin,
+			          sd->storage,
+			          NULL,
+			          user_data);
+		}
+	}
+}
+
+/*****************************************************************************/
+
+static GSList *
+_unmanaged_specs (GHashTable *eni_ifaces)
+{
+	gs_free const char **keys = NULL;
+	GSList *specs = NULL;
+	guint i, len;
+
+	keys = nm_utils_strdict_get_keys (eni_ifaces, TRUE, &len);
+	for (i = len; i > 0; ) {
+		i--;
+		specs = g_slist_prepend (specs, g_strdup_printf ("interface-name:=%s", keys[i]));
+	}
+	return specs;
+}
+
 static GSList*
 get_unmanaged_specs (NMSettingsPlugin *plugin)
 {
-	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (plugin);
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-	GSList *specs = NULL;
-	GHashTableIter iter;
-	const char *iface;
+	NMSIfupdownPlugin *self = NMS_IFUPDOWN_PLUGIN (plugin);
+	NMSIfupdownPluginPrivate *priv = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE (self);
 
 	if (G_UNLIKELY (!priv->initialized))
 		initialize (self);
@@ -142,40 +228,46 @@ get_unmanaged_specs (NMSettingsPlugin *plugin)
 	_LOGD ("unmanaged-specs: unmanaged devices count %u",
 	       g_hash_table_size (priv->eni_ifaces));
 
-	g_hash_table_iter_init (&iter, priv->eni_ifaces);
-	while (g_hash_table_iter_next (&iter, (gpointer) &iface, NULL))
-		specs = g_slist_append (specs, g_strdup_printf ("interface-name:=%s", iface));
-	return specs;
+	return _unmanaged_specs (priv->eni_ifaces);
 }
 
 /*****************************************************************************/
 
-static void
-initialize (SettingsPluginIfupdown *self)
+static GHashTable *
+load_eni_ifaces (NMSIfupdownPlugin *self)
 {
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
+	gs_unref_hashtable GHashTable *eni_ifaces = NULL;
 	gs_unref_hashtable GHashTable *auto_ifaces = NULL;
 	nm_auto_ifparser if_parser *parser = NULL;
 	if_block *block;
-	GHashTableIter con_iter;
-	const char *block_name;
-	NMIfupdownConnection *conn;
+	StorageData *sd;
 
-	nm_assert (!priv->initialized);
-	priv->initialized = TRUE;
+	eni_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) _storage_data_destroy);
 
 	parser = ifparser_parse (ENI_INTERFACES_FILE, 0);
 
 	c_list_for_each_entry (block, &parser->block_lst_head, block_lst) {
-
-		if (NM_IN_STRSET (block->type, "auto", "allow-hotplug")) {
+		if (NM_IN_STRSET (block->type, "auto",
+		                               "allow-hotplug")) {
 			if (!auto_ifaces)
-				auto_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
-			g_hash_table_add (auto_ifaces, g_strdup (block->name));
-			continue;
+				auto_ifaces = g_hash_table_new (nm_str_hash, g_str_equal);
+			g_hash_table_add (auto_ifaces, (char *) block->name);
 		}
+	}
+
+	c_list_for_each_entry (block, &parser->block_lst_head, block_lst) {
+
+		if (NM_IN_STRSET (block->type, "auto",
+		                               "allow-hotplug"))
+			continue;
 
 		if (nm_streq (block->type, "iface")) {
+			gs_free_error GError *local = NULL;
+			gs_unref_object NMConnection *connection = NULL;
+			gs_unref_object NMSettingsStorage *storage = NULL;
+			const char *uuid = NULL;
+			StorageData *sd_repl;
+
 			/* Bridge configuration */
 			if (g_str_has_prefix (block->name, "br")) {
 				/* Try to find bridge ports */
@@ -208,13 +300,13 @@ initialize (SettingsPluginIfupdown *self)
 						if (nm_streq (token, "none"))
 							continue;
 						if (state == 0) {
-							conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
-							if (!conn) {
+							sd = g_hash_table_lookup (eni_ifaces, block->name);
+							if (!sd) {
 								_LOGD ("parse: adding bridge port \"%s\"", token);
-								g_hash_table_insert (priv->eni_ifaces, g_strdup (token), NULL);
+								g_hash_table_insert (eni_ifaces, g_strdup (token), NULL);
 							} else {
 								_LOGD ("parse: adding bridge port \"%s\" (have connection %s)", token,
-								       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
+								       nm_settings_storage_get_uuid (sd->storage));
 							}
 						}
 					}
@@ -226,106 +318,91 @@ initialize (SettingsPluginIfupdown *self)
 			if (nm_streq (block->name, "lo"))
 				continue;
 
-			/* Remove any connection for this block that was previously found */
-			conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
-			if (conn) {
+			sd_repl = g_hash_table_lookup (eni_ifaces, block->name);
+			if (sd_repl) {
+				storage = g_steal_pointer (&sd_repl->storage);
 				_LOGD ("parse: replace connection \"%s\" (%s)",
 				       block->name,
-				       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
-				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (conn), NULL);
-				g_hash_table_remove (priv->eni_ifaces, block->name);
+				       nm_settings_storage_get_uuid (sd_repl->storage));
+				g_hash_table_remove (eni_ifaces, block->name);
 			}
 
-			/* add the new connection */
-			conn = nm_ifupdown_connection_new (block);
-			if (conn) {
-				_LOGD ("parse: adding connection \"%s\" (%s)", block->name,
-				       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
-			} else
-				_LOGD ("parse: adding place holder for connection \"%s\"", block->name);
-			g_hash_table_insert (priv->eni_ifaces, g_strdup (block->name), conn);
+			connection = ifupdown_new_connection_from_if_block (block,
+			                                                       auto_ifaces
+			                                                    && g_hash_table_contains (auto_ifaces, block->name),
+			                                                    &local);
+
+			if (!connection) {
+				_LOGD ("parse: adding place holder for \"%s\"%s%s%s",
+				       block->name,
+				       NM_PRINT_FMT_QUOTED (local, " (", local->message, ")", ""));
+				sd = NULL;
+			} else {
+
+				nmtst_connection_assert_unchanging (connection);
+				uuid = nm_connection_get_uuid (connection);
+
+				if (!storage)
+					storage = nm_settings_storage_new (NM_SETTINGS_PLUGIN (self), uuid, NULL);
+
+				sd = g_slice_new (StorageData);
+				*sd = (StorageData) {
+					.connection = g_steal_pointer (&connection),
+					.storage    = g_steal_pointer (&storage),
+				};
+				_LOGD ("parse: adding connection \"%s\" (%s)", block->name, uuid);
+			}
+
+			g_hash_table_replace (eni_ifaces, g_strdup (block->name), sd);
 			continue;
 		}
 
 		if (nm_streq (block->type, "mapping")) {
-			conn = g_hash_table_lookup (priv->eni_ifaces, block->name);
-			if (!conn) {
+			sd = g_hash_table_lookup (eni_ifaces, block->name);
+			if (!sd) {
 				_LOGD ("parse: adding mapping \"%s\"", block->name);
-				g_hash_table_insert (priv->eni_ifaces, g_strdup (block->name), NULL);
+				g_hash_table_insert (eni_ifaces, g_strdup (block->name), NULL);
 			} else {
 				_LOGD ("parse: adding mapping \"%s\" (have connection %s)", block->name,
-				       nm_settings_connection_get_uuid (NM_SETTINGS_CONNECTION (conn)));
+				       nm_settings_storage_get_uuid (sd->storage));
 			}
 			continue;
 		}
 	}
 
-	/* Make 'auto' interfaces autoconnect=TRUE */
-	g_hash_table_iter_init (&con_iter, priv->eni_ifaces);
-	while (g_hash_table_iter_next (&con_iter, (gpointer) &block_name, (gpointer) &conn)) {
-		NMSettingConnection *setting;
+	nm_clear_pointer (&auto_ifaces, g_hash_table_destroy);
 
-		if (   !conn
-		    || !auto_ifaces
-		    || !g_hash_table_contains (auto_ifaces, block_name))
-			continue;
-
-		/* FIXME(copy-on-write-connection): avoid modifying NMConnection instances and share them via copy-on-write. */
-		setting = nm_connection_get_setting_connection (nm_settings_connection_get_connection (NM_SETTINGS_CONNECTION (conn)));
-		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
-	}
-
-	/* Check the config file to find out whether to manage interfaces */
-	priv->ifupdown_managed = nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
-	                                                           NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
-	                                                           NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
-	                                                           !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
-	_LOGI ("management mode: %s", priv->ifupdown_managed ? "managed" : "unmanaged");
-
-	/* Now if we're running in managed mode, let NM know there are new connections */
-	if (priv->ifupdown_managed) {
-		GHashTableIter iter;
-
-		g_hash_table_iter_init (&iter, priv->eni_ifaces);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &conn)) {
-			if (conn) {
-				_nm_settings_plugin_emit_signal_connection_added (NM_SETTINGS_PLUGIN (self),
-				                                                  NM_SETTINGS_CONNECTION (conn));
-			}
-		}
-	}
+	return g_steal_pointer (&eni_ifaces);
 }
 
 /*****************************************************************************/
 
 static void
-settings_plugin_ifupdown_init (SettingsPluginIfupdown *self)
+nms_ifupdown_plugin_init (NMSIfupdownPlugin *self)
 {
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
-
-	priv->eni_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
 dispose (GObject *object)
 {
-	SettingsPluginIfupdown *plugin = SETTINGS_PLUGIN_IFUPDOWN (object);
-	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
+	NMSIfupdownPlugin *plugin = NMS_IFUPDOWN_PLUGIN (object);
+	NMSIfupdownPluginPrivate *priv = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE (plugin);
 
 	g_clear_pointer (&priv->eni_ifaces, g_hash_table_destroy);
 
-	G_OBJECT_CLASS (settings_plugin_ifupdown_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nms_ifupdown_plugin_parent_class)->dispose (object);
 }
 
 static void
-settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *klass)
+nms_ifupdown_plugin_class_init (NMSIfupdownPluginClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS (klass);
 
 	object_class->dispose = dispose;
 
-	plugin_class->get_connections     = get_connections;
+	plugin_class->plugin_name         = "ifupdown";
+	plugin_class->reload_connections  = reload_connections;
 	plugin_class->get_unmanaged_specs = get_unmanaged_specs;
 }
 
@@ -334,5 +411,5 @@ settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *klass)
 G_MODULE_EXPORT NMSettingsPlugin *
 nm_settings_plugin_factory (void)
 {
-	return g_object_new (SETTINGS_TYPE_PLUGIN_IFUPDOWN, NULL);
+	return g_object_new (NMS_TYPE_IFUPDOWN_PLUGIN, NULL);
 }

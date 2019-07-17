@@ -1657,10 +1657,12 @@ static inline char *
 _nm_strndup_a_step (char *s, const char *str, gsize len)
 {
 	NM_PRAGMA_WARNING_DISABLE ("-Wstringop-truncation");
+	NM_PRAGMA_WARNING_DISABLE ("-Wstringop-overflow");
 	if (len > 0)
 		strncpy (s, str, len);
 	s[len] = '\0';
 	return s;
+	NM_PRAGMA_WARNING_REENABLE;
 	NM_PRAGMA_WARNING_REENABLE;
 }
 
