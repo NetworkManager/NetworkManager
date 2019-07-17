@@ -55,7 +55,8 @@ NMConnection *
 nms_keyfile_storage_steal_connection (NMSKeyfileStorage *self)
 {
 	nm_assert (NMS_IS_KEYFILE_STORAGE (self));
-	nm_assert (NM_IS_CONNECTION (self->connection));
+	nm_assert (   (!self->connection && self->is_tombstone)
+               || NM_IS_CONNECTION (self->connection));
 
 	return g_steal_pointer (&self->connection);
 }

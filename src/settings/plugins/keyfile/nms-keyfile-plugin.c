@@ -516,7 +516,6 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 		}
 
 		connection = nms_keyfile_storage_steal_connection (storage);
-		nm_assert (NM_IS_CONNECTION (connection));
 
 		callback (NM_SETTINGS_PLUGIN (self),
 		          NM_SETTINGS_STORAGE (storage),
