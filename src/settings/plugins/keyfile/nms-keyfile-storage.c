@@ -81,8 +81,8 @@ cmp_fcn (const NMSKeyfileStorage *a,
 	NM_CMP_FIELD_UNSAFE (a, b, is_tombstone);
 
 	/* newer files are more important. */
-	NM_CMP_FIELD (b, a, stat_mtime.tv_sec);
-	NM_CMP_FIELD (b, a, stat_mtime.tv_nsec);
+	NM_CMP_FIELD (a, b, stat_mtime.tv_sec);
+	NM_CMP_FIELD (a, b, stat_mtime.tv_nsec);
 
 	NM_CMP_DIRECT_STRCMP (nms_keyfile_storage_get_filename (a), nms_keyfile_storage_get_filename (b));
 

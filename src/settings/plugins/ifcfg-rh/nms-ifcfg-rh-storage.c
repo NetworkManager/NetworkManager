@@ -89,8 +89,8 @@ cmp_fcn (const NMSIfcfgRHStorage *a,
 	nm_assert (a != b);
 
 	/* newer files are more important. */
-	NM_CMP_FIELD (b, a, stat_mtime.tv_sec);
-	NM_CMP_FIELD (b, a, stat_mtime.tv_nsec);
+	NM_CMP_FIELD (a, b, stat_mtime.tv_sec);
+	NM_CMP_FIELD (a, b, stat_mtime.tv_nsec);
 
 	NM_CMP_DIRECT_STRCMP (nms_ifcfg_rh_storage_get_filename (a), nms_ifcfg_rh_storage_get_filename (b));
 
