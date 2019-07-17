@@ -2889,6 +2889,12 @@ default_wired_clear_tag (NMSettings *self,
 	nm_assert (device == nm_settings_connection_default_wired_get_device (sett_conn));
 	nm_assert (sett_conn == g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ()));
 
+	_LOGT ("auto-default: forget association between %s (%s) and device %s (%s)",
+	       nm_settings_connection_get_uuid (sett_conn),
+	       nm_settings_connection_get_id (sett_conn),
+	       nm_device_get_iface (device),
+	       add_to_no_auto_default ? "persisted" : "temporary");
+
 	nm_settings_connection_default_wired_set_device (sett_conn, NULL);
 
 	g_object_set_qdata (G_OBJECT (device), _default_wired_connection_quark (), NULL);
@@ -2922,6 +2928,11 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	connection = nm_device_new_default_connection (device);
 	if (!connection)
 		return;
+
+	_LOGT ("auto-default: creating in-memory connection %s (%s) for device %s",
+	       nm_connection_get_uuid (connection),
+	       nm_connection_get_id (connection),
+	       nm_device_get_iface (device));
 
 	nm_settings_add_connection (self,
 	                            connection,
