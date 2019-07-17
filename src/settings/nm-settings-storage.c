@@ -34,8 +34,6 @@ nm_settings_storage_cmp (NMSettingsStorage *a,
                          const GSList *plugin_list)
 {
 	NMSettingsStorageClass *klass;
-	NMSettingsPlugin *plugin_a;
-	NMSettingsPlugin *plugin_b;
 
 	/* Sort by priority.
 	 *
@@ -51,28 +49,11 @@ nm_settings_storage_cmp (NMSettingsStorage *a,
 	NM_CMP_DIRECT (nm_settings_storage_is_keyfile_run (a),
 	               nm_settings_storage_is_keyfile_run (b));
 
-	plugin_a = nm_settings_storage_get_plugin (a);
-	plugin_b = nm_settings_storage_get_plugin (b);
-
-	if (plugin_a != plugin_b) {
-		int idx_a = g_slist_index ((GSList *) plugin_list, plugin_a);
-		int idx_b = g_slist_index ((GSList *) plugin_list, plugin_b);
-
-		/* the plugins must be found in the list. */
-		nm_assert (idx_a >= 0);
-		nm_assert (idx_b >= 0);
-		nm_assert (idx_a != idx_b);
-
-		/* plugins that appear first in @plugin_list have higher priority.
-		 * That means: smaller index -> higher priority. Reverse sort. */
-		NM_CMP_DIRECT (idx_b, idx_a);
-
-		/* undecided. We really don't expect unknown plugins here. */
-		return 0;
-	}
+	NM_CMP_RETURN (nm_settings_plugin_cmp_by_priority (nm_settings_storage_get_plugin (a),
+	                                                   nm_settings_storage_get_plugin (b),
+	                                                   plugin_list));
 
 	klass = NM_SETTINGS_STORAGE_GET_CLASS (a);
-
 	if (klass != NM_SETTINGS_STORAGE_GET_CLASS (b)) {
 		/* one plugin must return storages of the same type. Otherwise, it's
 		 * unclear how cmp_fcn() should compare them. */

@@ -196,6 +196,12 @@ void _nm_settings_plugin_emit_signal_unrecognized_specs_changed (NMSettingsPlugi
 
 /*****************************************************************************/
 
+int nm_settings_plugin_cmp_by_priority (const NMSettingsPlugin *a,
+                                        const NMSettingsPlugin *b,
+                                        const GSList *plugin_list);
+
+/*****************************************************************************/
+
 /* forward declare this function from NMSettings. It's used by the ifcfg-rh plugin,
  * but that shouldn't include all "nm-settings.h" header. */
 NMSettings *nm_settings_get (void);

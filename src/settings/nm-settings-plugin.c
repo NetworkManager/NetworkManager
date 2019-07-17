@@ -42,6 +42,32 @@ G_DEFINE_TYPE (NMSettingsPlugin, nm_settings_plugin, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+int
+nm_settings_plugin_cmp_by_priority (const NMSettingsPlugin *a,
+                                    const NMSettingsPlugin *b,
+                                    const GSList *plugin_list)
+{
+	nm_assert (NM_IS_SETTINGS_PLUGIN (a));
+	nm_assert (NM_IS_SETTINGS_PLUGIN (b));
+
+	if (a != b) {
+		int idx_a = g_slist_index ((GSList *) plugin_list, a);
+		int idx_b = g_slist_index ((GSList *) plugin_list, b);
+
+		/* the plugins must be found in the list. */
+		nm_assert (idx_a >= 0);
+		nm_assert (idx_b >= 0);
+
+		/* plugins that appear first in @plugin_list have higher priority.
+		 * That means: smaller index -> higher priority. Reverse sort. */
+		NM_CMP_DIRECT (idx_b, idx_a);
+	}
+
+	return 0;
+}
+
+/*****************************************************************************/
+
 GSList *
 nm_settings_plugin_get_unmanaged_specs (NMSettingsPlugin *self)
 {
