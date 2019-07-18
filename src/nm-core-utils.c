@@ -1158,13 +1158,10 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 
 /*****************************************************************************/
 
-#define MAC_TAG "mac:"
-#define INTERFACE_NAME_TAG "interface-name:"
-#define DEVICE_TYPE_TAG "type:"
-#define DRIVER_TAG "driver:"
-#define SUBCHAN_TAG "s390-subchannels:"
-#define DHCP_PLUGIN_TAG "dhcp-plugin:"
-#define EXCEPT_TAG "except:"
+#define DEVICE_TYPE_TAG                         "type:"
+#define DRIVER_TAG                              "driver:"
+#define DHCP_PLUGIN_TAG                         "dhcp-plugin:"
+#define EXCEPT_TAG                              "except:"
 #define MATCH_TAG_CONFIG_NM_VERSION             "nm-version:"
 #define MATCH_TAG_CONFIG_NM_VERSION_MIN         "nm-version-min:"
 #define MATCH_TAG_CONFIG_NM_VERSION_MAX         "nm-version-max:"
@@ -1363,10 +1360,10 @@ match_device_eval (const char *spec_str,
 		       && nm_streq (spec_str, match_data->device_type);
 	}
 
-	if (_MATCH_CHECK (spec_str, MAC_TAG))
+	if (_MATCH_CHECK (spec_str, NM_MATCH_SPEC_MAC_TAG))
 		return match_device_hwaddr_eval (spec_str, match_data);
 
-	if (_MATCH_CHECK (spec_str, INTERFACE_NAME_TAG)) {
+	if (_MATCH_CHECK (spec_str, NM_MATCH_SPEC_INTERFACE_NAME_TAG)) {
 		gboolean use_pattern = FALSE;
 
 		if (spec_str[0] == '=')
@@ -1418,7 +1415,7 @@ match_device_eval (const char *spec_str,
 		                                  match_data->driver_version ?: "");
 	}
 
-	if (_MATCH_CHECK (spec_str, SUBCHAN_TAG))
+	if (_MATCH_CHECK (spec_str, NM_MATCH_SPEC_S390_SUBCHANNELS_TAG))
 		return match_data_s390_subchannels_eval (spec_str, match_data);
 
 	if (_MATCH_CHECK (spec_str, DHCP_PLUGIN_TAG))

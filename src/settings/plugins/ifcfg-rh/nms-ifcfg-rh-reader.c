@@ -5630,21 +5630,21 @@ create_unhandled_connection (const char *filename, shvarFile *ifcfg,
 	if (v) {
 		gs_free char *lower = g_ascii_strdown (v, -1);
 
-		*out_spec = g_strdup_printf ("%s:mac:%s", type, lower);
+		*out_spec = g_strdup_printf ("%s:"NM_MATCH_SPEC_MAC_TAG"%s", type, lower);
 		return connection;
 	}
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "SUBCHANNELS", &value);
 	if (v) {
-		*out_spec = g_strdup_printf ("%s:s390-subchannels:%s", type, v);
+		*out_spec = g_strdup_printf ("%s:"NM_MATCH_SPEC_S390_SUBCHANNELS_TAG"%s", type, v);
 		return connection;
 	}
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "DEVICE", &value);
 	if (v) {
-		*out_spec = g_strdup_printf ("%s:interface-name:%s", type, v);
+		*out_spec = g_strdup_printf ("%s:"NM_MATCH_SPEC_INTERFACE_NAME_TAG"%s", type, v);
 		return connection;
 	}
 

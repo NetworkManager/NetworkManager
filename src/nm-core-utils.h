@@ -216,6 +216,10 @@ const char *nm_utils_find_helper (const char *progname,
 
 char *nm_utils_read_link_absolute (const char *link_file, GError **error);
 
+#define NM_MATCH_SPEC_MAC_TAG                    "mac:"
+#define NM_MATCH_SPEC_S390_SUBCHANNELS_TAG       "s390-subchannels:"
+#define NM_MATCH_SPEC_INTERFACE_NAME_TAG         "interface-name:"
+
 typedef enum {
 	NM_MATCH_SPEC_NO_MATCH  = 0,
 	NM_MATCH_SPEC_MATCH     = 1,
