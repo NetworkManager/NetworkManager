@@ -1634,17 +1634,30 @@ set_property (GObject *object,
 
 			for (i = 0; i < len; i++) {
 				const char *s = value_arr[i];
+				gboolean is_mac;
+				char *spec;
 
 				if (!s[0])
 					continue;
-				if (!nm_utils_hwaddr_valid (s, -1))
+
+				if (NM_STR_HAS_PREFIX (s, NM_MATCH_SPEC_INTERFACE_NAME_TAG"="))
+					is_mac = FALSE;
+				else if (nm_utils_hwaddr_valid (s, -1))
+					is_mac = TRUE;
+				else {
+					/* we drop all lines that we don't understand. */
 					continue;
+				}
+
 				if (nm_utils_strv_find_first (priv->no_auto_default.arr, j, s) >= 0)
 					continue;
 
+				spec = is_mac
+				       ? g_strdup_printf (NM_MATCH_SPEC_MAC_TAG"%s", s)
+				       : g_strdup (s);
+
 				priv->no_auto_default.arr[j++] = g_strdup (s);
-				priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs,
-				                                               g_strdup_printf (NM_MATCH_SPEC_MAC_TAG"%s", s));
+				priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, spec);
 			}
 			nm_assert (j <= len);
 			priv->no_auto_default.arr[j++] = NULL;

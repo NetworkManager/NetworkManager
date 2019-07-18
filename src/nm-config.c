@@ -368,8 +368,14 @@ no_auto_default_from_file (const char *no_auto_default_file)
 
 			s = nm_utils_str_utf8safe_unescape (s, &s_to_free);
 
-			if (!nm_utils_hwaddr_valid (s, -1))
+			if (   !NM_STR_HAS_PREFIX (s, NM_MATCH_SPEC_INTERFACE_NAME_TAG"=")
+			    && !nm_utils_hwaddr_valid (s, -1)) {
+				/* Maybe we shouldn't pre-validate the device specs that we read
+				 * from the file. After all, nm_match_spec_*() API silently ignores
+				 * all unknown value. However, lets just be strict here for now
+				 * and only accept what we also write. */
 				continue;
+			}
 
 			if (nm_utils_strv_find_first ((char **) list, l, s) >= 0)
 				continue;
@@ -433,7 +439,10 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	NMConfigPrivate *priv;
 	GError *error = NULL;
 	NMConfigData *new_data = NULL;
+	gs_free char *spec_to_free = NULL;
+	const char *ifname;
 	const char *hw_address;
+	const char *spec;
 	const char *const*no_auto_default_current;
 	GPtrArray *no_auto_default_new = NULL;
 	gboolean is_fake;
@@ -446,25 +455,29 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	hw_address = nm_device_get_permanent_hw_address_full (device, TRUE, &is_fake);
 
-	if (!hw_address)
-		return;
-
-	if (is_fake) {
-		/* this is a problem. The MAC address is fake, it's possibly only valid
-		 * until reboot (or even less).
-		 *
-		 * Also, nm_device_spec_match_list() ignores fake addresses, so even if
-		 * we would persist it, it wouldn't work (well, maybe it should?).
-		 *
-		 * Anyway, let's do nothing here. NMSettings needs to remember this
-		 * in memory. */
+	if (!hw_address) {
+		/* No MAC address, not even a fake one. We don't do anything for this device. */
 		return;
 	}
 
+	if (is_fake) {
+		/* A fake MAC address, no point in storing it to the file.
+		 * Also, nm_match_spec_device() would ignore fake MAC addresses.
+		 *
+		 * Instead, try the interface-name...  */
+		ifname = nm_device_get_ip_iface (device);
+		if (!nm_utils_is_valid_iface_name (ifname, NULL))
+			return;
+
+		spec_to_free = g_strdup_printf (NM_MATCH_SPEC_INTERFACE_NAME_TAG"=%s", ifname);
+		spec = spec_to_free;
+	} else
+		spec = hw_address;
+
 	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
 
-	if (nm_utils_strv_find_first ((char **) no_auto_default_current, -1, hw_address) >= 0) {
-		/* @hw_address is already blocked. We don't have to update our in-memory representation.
+	if (nm_utils_strv_find_first ((char **) no_auto_default_current, -1, spec) >= 0) {
+		/* @spec is already blocked. We don't have to update our in-memory representation.
 		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
 		return;
 	}
@@ -472,7 +485,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	no_auto_default_new = g_ptr_array_new ();
 	for (i = 0; no_auto_default_current && no_auto_default_current[i]; i++)
 		g_ptr_array_add (no_auto_default_new, (char *) no_auto_default_current[i]);
-	g_ptr_array_add (no_auto_default_new, (char *) hw_address);
+	g_ptr_array_add (no_auto_default_new, (char *) spec);
 	g_ptr_array_add (no_auto_default_new, NULL);
 
 	if (!no_auto_default_to_file (priv->no_auto_default_file, (const char *const*) no_auto_default_new->pdata, &error)) {
