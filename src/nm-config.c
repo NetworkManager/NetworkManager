@@ -416,6 +416,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	const char *hw_address;
 	const char *const*no_auto_default_current;
 	GPtrArray *no_auto_default_new = NULL;
+	gboolean is_fake;
 	guint i;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
@@ -423,9 +424,22 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	hw_address = nm_device_get_permanent_hw_address (device);
+	hw_address = nm_device_get_permanent_hw_address_full (device, TRUE, &is_fake);
+
 	if (!hw_address)
 		return;
+
+	if (is_fake) {
+		/* this is a problem. The MAC address is fake, it's possibly only valid
+		 * until reboot (or even less).
+		 *
+		 * Also, nm_device_spec_match_list() ignores fake addresses, so even if
+		 * we would persist it, it wouldn't work (well, maybe it should?).
+		 *
+		 * Anyway, let's do nothing here. NMSettings needs to remember this
+		 * in memory. */
+		return;
+	}
 
 	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
 
