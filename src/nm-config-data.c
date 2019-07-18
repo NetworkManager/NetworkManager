@@ -1623,20 +1623,30 @@ set_property (GObject *object,
 	case PROP_NO_AUTO_DEFAULT:
 		/* construct-only */
 		{
-			char **value_arr = g_value_get_boxed (value);
-			guint i, j = 0;
+			const char *const*value_arr = g_value_get_boxed (value);
+			gsize i, j = 0;
+			gsize len;
 
-			priv->no_auto_default.arr = g_new (char *, g_strv_length (value_arr) + 1);
+			len = NM_PTRARRAY_LEN (value_arr);
+
+			priv->no_auto_default.arr = g_new (char *, len + 1);
 			priv->no_auto_default.specs = NULL;
 
-			for (i = 0; value_arr && value_arr[i]; i++) {
-				if (   *value_arr[i]
-				    && nm_utils_hwaddr_valid (value_arr[i], -1)
-				    && nm_utils_strv_find_first (value_arr, i, value_arr[i]) < 0) {
-					priv->no_auto_default.arr[j++] = g_strdup (value_arr[i]);
-					priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, g_strdup_printf (NM_MATCH_SPEC_MAC_TAG"%s", value_arr[i]));
-				}
+			for (i = 0; i < len; i++) {
+				const char *s = value_arr[i];
+
+				if (!s[0])
+					continue;
+				if (!nm_utils_hwaddr_valid (s, -1))
+					continue;
+				if (nm_utils_strv_find_first (priv->no_auto_default.arr, j, s) >= 0)
+					continue;
+
+				priv->no_auto_default.arr[j++] = g_strdup (s);
+				priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs,
+				                                               g_strdup_printf (NM_MATCH_SPEC_MAC_TAG"%s", s));
 			}
+			nm_assert (j <= len);
 			priv->no_auto_default.arr[j++] = NULL;
 			priv->no_auto_default.specs = g_slist_reverse (priv->no_auto_default.specs);
 		}

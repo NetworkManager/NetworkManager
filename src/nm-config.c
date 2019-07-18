@@ -349,30 +349,32 @@ nm_config_get_first_start (NMConfig *config)
 static char **
 no_auto_default_from_file (const char *no_auto_default_file)
 {
-	GPtrArray *no_auto_default_new;
-	char **list;
-	guint i;
-	char *data;
-
-	no_auto_default_new = g_ptr_array_new ();
+	gs_free const char **list = NULL;
+	gs_free char *data = NULL;
+	gsize l = 0;
+	gsize i;
 
 	if (   no_auto_default_file
-	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL)) {
-		list = g_strsplit (data, "\n", -1);
+	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL))
+		list = nm_utils_strsplit_set (data, "\n");
+
+	if (list) {
 		for (i = 0; list[i]; i++) {
-			if (   *list[i]
-			    && nm_utils_hwaddr_valid (list[i], -1)
-			    && nm_utils_strv_find_first (list, i, list[i]) < 0)
-				g_ptr_array_add (no_auto_default_new, list[i]);
-			else
-				g_free (list[i]);
+			const char *s = list[i];
+
+			if (!s[0])
+				continue;
+			if (!nm_utils_hwaddr_valid (s, -1))
+				continue;
+
+			if (nm_utils_strv_find_first ((char **) list, l, s) >= 0)
+				continue;
+
+			list[l++] = s;
 		}
-		g_free (list);
-		g_free (data);
 	}
 
-	g_ptr_array_add (no_auto_default_new, NULL);
-	return (char **) g_ptr_array_free (no_auto_default_new, FALSE);
+	return nm_utils_strv_dup (list, l);
 }
 
 static gboolean
