@@ -4660,7 +4660,7 @@ nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
 
 /**
  * nm_utils_is_valid_iface_name:
- * @name: Name of interface
+ * @name: (allow-none): Name of interface
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Validate the network interface name.
@@ -4669,13 +4669,20 @@ nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
  * function in net/core/dev.c.
  *
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
+ *
+ * Before 1.20, this function did not accept %NULL as @name argument. If you
+ *   want to run against older versions of libnm, don't pass %NULL.
  */
 gboolean
 nm_utils_is_valid_iface_name (const char *name, GError **error)
 {
 	int i;
 
-	g_return_val_if_fail (name, FALSE);
+	if (!name) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is missing"));
+		return FALSE;
+	}
 
 	if (name[0] == '\0') {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -4712,13 +4719,16 @@ nm_utils_is_valid_iface_name (const char *name, GError **error)
 
 /**
  * nm_utils_iface_valid_name:
- * @name: Name of interface
+ * @name: (allow-none): Name of interface
  *
  * Validate the network interface name.
  *
  * Deprecated: 1.6: use nm_utils_is_valid_iface_name() instead, with better error reporting.
  *
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
+ *
+ * Before 1.20, this function did not accept %NULL as @name argument. If you
+ *   want to run against older versions of libnm, don't pass %NULL.
  */
 gboolean
 nm_utils_iface_valid_name (const char *name)
