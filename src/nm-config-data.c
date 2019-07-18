@@ -1503,16 +1503,6 @@ _match_section_infos_construct (GKeyFile *keyfile, const char *prefix)
 
 /*****************************************************************************/
 
-static gboolean
-_slist_str_equals (GSList *a, GSList *b)
-{
-	while (a && b && g_strcmp0 (a->data, b->data) == 0) {
-		a = a->next;
-		b = b->next;
-	}
-	return !a && !b;
-}
-
 NMConfigChangeFlags
 nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 {
@@ -1541,8 +1531,8 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
 		changes |= NM_CONFIG_CHANGE_CONNECTIVITY;
 
-	if (   !_slist_str_equals (priv_old->no_auto_default.specs, priv_new->no_auto_default.specs)
-	    || !_slist_str_equals (priv_old->no_auto_default.specs_config, priv_new->no_auto_default.specs_config))
+	if (   nm_utils_g_slist_strlist_cmp (priv_old->no_auto_default.specs,        priv_new->no_auto_default.specs)        != 0
+	    || nm_utils_g_slist_strlist_cmp (priv_old->no_auto_default.specs_config, priv_new->no_auto_default.specs_config) != 0)
 		changes |= NM_CONFIG_CHANGE_NO_AUTO_DEFAULT;
 
 	if (g_strcmp0 (nm_config_data_get_dns_mode (old_data), nm_config_data_get_dns_mode (new_data)))
