@@ -360,21 +360,32 @@ no_auto_default_from_file (const char *no_auto_default_file)
 
 	if (list) {
 		for (i = 0; list[i]; i++) {
+			gs_free char *s_to_free = NULL;
 			const char *s = list[i];
 
 			if (!s[0])
 				continue;
+
+			s = nm_utils_str_utf8safe_unescape (s, &s_to_free);
+
 			if (!nm_utils_hwaddr_valid (s, -1))
 				continue;
 
 			if (nm_utils_strv_find_first ((char **) list, l, s) >= 0)
 				continue;
 
-			list[l++] = s;
+			list[l++] =    g_steal_pointer (&s_to_free)
+			            ?: g_strdup (s);
 		}
 	}
 
-	return nm_utils_strv_dup (list, l);
+	if (l == 0)
+		return NULL;
+
+	/* the strings from [0..l-1] are already cloned. We just need to
+	 * clone the outer list (and NULL terminate).  */
+	list[l] = NULL;
+	return nm_memdup (list, sizeof (list[0]) * (l + 1));
 }
 
 static gboolean
@@ -386,7 +397,14 @@ no_auto_default_to_file (const char *no_auto_default_file, const char *const*no_
 
 	data = g_string_new ("");
 	for (i = 0; no_auto_default && no_auto_default[i]; i++) {
-		g_string_append (data, no_auto_default[i]);
+		gs_free char *s_to_free = NULL;
+		const char *s = no_auto_default[i];
+
+		s = nm_utils_str_utf8safe_escape (s,
+		                                    NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+		                                  | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+		                                  &s_to_free);
+		g_string_append (data, s);
 		g_string_append_c (data, '\n');
 	}
 	success = g_file_set_contents (no_auto_default_file, data->str, data->len, error);
