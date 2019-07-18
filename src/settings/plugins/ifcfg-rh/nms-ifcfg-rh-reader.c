@@ -5644,7 +5644,7 @@ create_unhandled_connection (const char *filename, shvarFile *ifcfg,
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "DEVICE", &value);
 	if (v) {
-		*out_spec = g_strdup_printf ("%s:"NM_MATCH_SPEC_INTERFACE_NAME_TAG"%s", type, v);
+		*out_spec = g_strdup_printf ("%s:"NM_MATCH_SPEC_INTERFACE_NAME_TAG"=%s", type, v);
 		return connection;
 	}
 

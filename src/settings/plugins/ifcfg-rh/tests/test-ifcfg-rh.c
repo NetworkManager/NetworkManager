@@ -721,7 +721,7 @@ test_read_unmanaged_unrecognized (void)
 	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-nm-controlled-unrecognized",
 	                                    NULL, NULL,
 	                                    &unhandled_spec);
-	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:interface-name:ipoac0");
+	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:interface-name:=ipoac0");
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
