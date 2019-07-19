@@ -170,6 +170,8 @@ static gboolean
 _internal_write_connection (NMConnection *connection,
                             gboolean is_nm_generated,
                             gboolean is_volatile,
+                            const char *shadowed_storage,
+                            gboolean shadowed_owned,
                             const char *keyfile_dir,
                             const char *profile_dir,
                             gboolean with_extension,
@@ -201,6 +203,8 @@ _internal_write_connection (NMConnection *connection,
 
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
 
+	nm_assert (!shadowed_owned || shadowed_storage);
+
 	rename =    force_rename
 	         || existing_path_read_only
 	         || (   existing_path
@@ -226,6 +230,20 @@ _internal_write_connection (NMConnection *connection,
 		g_key_file_set_boolean (kf_file,
 		                        NM_KEYFILE_GROUP_NMMETA,
 		                        NM_KEYFILE_KEY_NMMETA_VOLATILE,
+		                        TRUE);
+	}
+
+	if (shadowed_storage) {
+		g_key_file_set_string (kf_file,
+		                       NM_KEYFILE_GROUP_NMMETA,
+		                       NM_KEYFILE_KEY_NMMETA_SHADOWED_STORAGE,
+		                       shadowed_storage);
+	}
+
+	if (shadowed_owned) {
+		g_key_file_set_boolean (kf_file,
+		                        NM_KEYFILE_GROUP_NMMETA,
+		                        NM_KEYFILE_KEY_NMMETA_SHADOWED_OWNED,
 		                        TRUE);
 	}
 
@@ -356,6 +374,8 @@ gboolean
 nms_keyfile_writer_connection (NMConnection *connection,
                                gboolean is_nm_generated,
                                gboolean is_volatile,
+                               const char *shadowed_storage,
+                               gboolean shadowed_owned,
                                const char *keyfile_dir,
                                const char *profile_dir,
                                const char *existing_path,
@@ -371,6 +391,8 @@ nms_keyfile_writer_connection (NMConnection *connection,
 	return _internal_write_connection (connection,
 	                                   is_nm_generated,
 	                                   is_volatile,
+	                                   shadowed_storage,
+	                                   shadowed_owned,
 	                                   keyfile_dir,
 	                                   profile_dir,
 	                                   TRUE,
@@ -399,6 +421,8 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
 {
 	return _internal_write_connection (connection,
 	                                   FALSE,
+	                                   FALSE,
+	                                   NULL,
 	                                   FALSE,
 	                                   keyfile_dir,
 	                                   keyfile_dir,

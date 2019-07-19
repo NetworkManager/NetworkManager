@@ -1284,6 +1284,8 @@ _add_connection_to_first_plugin (NMSettings *self,
                                  gboolean in_memory,
                                  gboolean is_nm_generated,
                                  gboolean is_volatile,
+                                 const char *shadowed_storage,
+                                 gboolean shadowed_owned,
                                  NMSettingsStorage **out_new_storage,
                                  NMConnection **out_new_connection,
                                  GError **error)
@@ -1311,9 +1313,11 @@ _add_connection_to_first_plugin (NMSettings *self,
 		if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
 			success = nms_keyfile_plugin_add_connection (priv->keyfile_plugin,
 			                                             new_connection,
+			                                             in_memory,
 			                                             is_nm_generated,
 			                                             is_volatile,
-			                                             in_memory,
+			                                             shadowed_storage,
+			                                             shadowed_owned,
 			                                             &storage,
 			                                             &connection_to_add,
 			                                             &add_error);
@@ -1457,6 +1461,8 @@ nm_settings_add_connection (NMSettings *self,
 	                                                                    | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)),
 	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
 	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+	                                      NULL,
+	                                      FALSE,
 	                                      &new_storage,
 	                                      &new_connection,
 	                                      &local)) {
@@ -1538,6 +1544,8 @@ nm_settings_update_connection (NMSettings *self,
 	gboolean cur_in_memory;
 	gboolean new_in_memory;
 	const char *uuid;
+	const char *shadowed_storage;
+	gboolean shadowed_owned;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (sett_conn), FALSE);
@@ -1659,6 +1667,9 @@ nm_settings_update_connection (NMSettings *self,
 		                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE);
 	}
 
+	/* TODO: set and handle shadowed-storages. */
+	shadowed_storage = NULL;
+	shadowed_owned = FALSE;
 
 	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST) {
 		new_storage = g_object_ref (cur_storage);
@@ -1688,6 +1699,8 @@ nm_settings_update_connection (NMSettings *self,
 			                                           new_in_memory,
 			                                           NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
 			                                           NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+			                                           shadowed_storage,
+			                                           shadowed_owned,
 			                                           &new_storage,
 			                                           &new_connection,
 			                                           &local);
@@ -1701,6 +1714,8 @@ nm_settings_update_connection (NMSettings *self,
 				                                                connection,
 				                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
 				                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+				                                                shadowed_storage,
+				                                                shadowed_owned,
 				                                                NM_FLAGS_HAS (update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME),
 				                                                &new_storage,
 				                                                &new_connection,

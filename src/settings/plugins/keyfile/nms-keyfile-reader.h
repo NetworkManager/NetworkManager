@@ -37,6 +37,8 @@ NMConnection *nms_keyfile_reader_from_file (const char *full_filename,
                                             struct stat *out_stat,
                                             NMTernary *out_is_nm_generated,
                                             NMTernary *out_is_volatile,
+                                            char **out_shadowed_storage,
+                                            NMTernary *out_shadowed_owned,
                                             GError **error);
 
 #endif /* __NMS_KEYFILE_READER_H__ */

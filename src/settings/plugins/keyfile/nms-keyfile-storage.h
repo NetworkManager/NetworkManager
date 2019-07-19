@@ -51,6 +51,19 @@ typedef struct {
 		struct {
 			NMConnection *connection;
 
+			/* when we move a profile from permanent storage to unsaved (/run), then
+			 * we may leave the profile on disk (depending on options for Update2()).
+			 *
+			 * Later, when we save the profile again to disk, we want to re-use that filename.
+			 * Likewise, we delete the (now in-memory) profile, we may want to also delete
+			 * the original filename.
+			 *
+			 * This is the original filename, and we store it inside [.nmmeta] in the
+			 * keyfile in /run. Note that we don't store this in the .nmmeta file, because
+			 * the information is tied to the particular keyfile in /run, not to all UUIDs
+			 * in general. */
+			char *shadowed_storage;
+
 			/* the timestamp (stat's mtime) of the keyfile. For meta-data this
 			 * is irrelevant. The purpose is that if the same storage type (directory) has
 			 * multiple files with the same UUID, then the newer file gets preferred. */
@@ -65,6 +78,11 @@ typedef struct {
 			 * That is, it must be tied to the actual keyfile, and not to the UUID. */
 			bool is_nm_generated:1;
 			bool is_volatile:1;
+
+			/* if shadowed_storage is set, then this flag indicates whether the file
+			 * is owned. The difference comes into play when deleting the in-memory,
+			 * shadowing profile: a owned profile will also be deleted. */
+			bool shadowed_owned:1;
 
 		} conn_data;
 
@@ -106,6 +124,8 @@ NMSKeyfileStorage *nms_keyfile_storage_new_connection (struct _NMSKeyfilePlugin 
                                                        NMSKeyfileStorageType storage_type,
                                                        NMTernary is_nm_generated_opt,
                                                        NMTernary is_volatile_opt,
+                                                       const char *shadowed_storage,
+                                                       NMTernary shadowed_owned_opt,
                                                        const struct timespec *stat_mtime);
 
 void nms_keyfile_storage_destroy (NMSKeyfileStorage *storage);
@@ -186,6 +206,46 @@ nm_settings_storage_is_meta_data_alive (const NMSettingsStorage *storage)
 		return NULL;
 
 	return meta_data;
+}
+
+static inline const char *
+nm_settings_storage_get_shadowed_storage (const NMSettingsStorage *storage,
+                                          gboolean *out_shadowed_owned)
+{
+	if (NMS_IS_KEYFILE_STORAGE (storage)) {
+		const NMSKeyfileStorage *self = (const NMSKeyfileStorage *) storage;
+
+		if (self->storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN) {
+			if (!self->is_meta_data) {
+				if (self->u.conn_data.shadowed_storage) {
+					NM_SET_OUT (out_shadowed_owned, self->u.conn_data.shadowed_owned);
+					return self->u.conn_data.shadowed_storage;
+				}
+			}
+		}
+	}
+
+	NM_SET_OUT (out_shadowed_owned, FALSE);
+	return NULL;
+}
+
+static inline const char *
+nm_settings_storage_get_filename_for_shadowed_storage (const NMSettingsStorage *storage)
+{
+	g_return_val_if_fail (NM_IS_SETTINGS_STORAGE (storage), NULL);
+
+	if (!storage->_filename)
+		return NULL;
+
+	if (NMS_IS_KEYFILE_STORAGE (storage)) {
+		const NMSKeyfileStorage *self = (const NMSKeyfileStorage *) storage;
+
+		if (   self->is_meta_data
+		    || self->storage_type != NMS_KEYFILE_STORAGE_TYPE_ETC)
+			return NULL;
+	}
+
+	return storage->_filename;
 }
 
 /*****************************************************************************/

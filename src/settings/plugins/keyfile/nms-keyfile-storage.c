@@ -50,10 +50,13 @@ nms_keyfile_storage_copy_content (NMSKeyfileStorage *dst,
 		dst->u.meta_data = src->u.meta_data;
 	else {
 		gs_unref_object NMConnection *connection_to_free = NULL;
+		gs_free char *shadowed_storage_to_free = NULL;
 
 		connection_to_free = g_steal_pointer (&dst->u.conn_data.connection);
+		shadowed_storage_to_free = g_steal_pointer (&dst->u.conn_data.shadowed_storage);
 		dst->u.conn_data = src->u.conn_data;
 		nm_g_object_ref (dst->u.conn_data.connection);
+		dst->u.conn_data.shadowed_storage = g_strdup (dst->u.conn_data.shadowed_storage);
 	}
 }
 
@@ -159,6 +162,8 @@ nms_keyfile_storage_new_connection (NMSKeyfilePlugin *plugin,
                                     NMSKeyfileStorageType storage_type,
                                     NMTernary is_nm_generated_opt,
                                     NMTernary is_volatile_opt,
+                                    const char *shadowed_storage,
+                                    NMTernary shadowed_owned_opt,
                                     const struct timespec *stat_mtime)
 {
 	NMSKeyfileStorage *self;
@@ -175,12 +180,16 @@ nms_keyfile_storage_new_connection (NMSKeyfilePlugin *plugin,
 
 	self->u.conn_data.connection = connection_take; /* take reference. */
 
+	self->u.conn_data.shadowed_storage = g_strdup (shadowed_storage);
+
 	if (stat_mtime)
 		self->u.conn_data.stat_mtime = *stat_mtime;
 
 	if (storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN) {
 		self->u.conn_data.is_nm_generated = (is_nm_generated_opt == NM_TERNARY_TRUE);
 		self->u.conn_data.is_volatile     = (is_volatile_opt == NM_TERNARY_TRUE);
+		self->u.conn_data.shadowed_owned  =    shadowed_storage
+		                                    && (shadowed_owned_opt == NM_TERNARY_TRUE);
 	}
 
 	return self;
@@ -191,8 +200,11 @@ _storage_clear (NMSKeyfileStorage *self)
 {
 	c_list_unlink (&self->parent._storage_lst);
 	c_list_unlink (&self->parent._storage_by_uuid_lst);
-	if (!self->is_meta_data)
+	if (!self->is_meta_data) {
 		g_clear_object (&self->u.conn_data.connection);
+		nm_clear_g_free (&self->u.conn_data.shadowed_storage);
+		self->u.conn_data.shadowed_owned = FALSE;
+	}
 }
 
 static void
