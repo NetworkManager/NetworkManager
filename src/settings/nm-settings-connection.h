@@ -85,21 +85,46 @@ typedef enum {
 	 * if the profile is on-disk, update it on-disk, and keep it. */
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 
-	/* persist to disk. If the profile is currenly in-memory, remove
-	 * it from /run. */
+	/* persist to disk. If the profile is currently in-memory, remove
+	 * it from /run. Depending on the shadowed-storage, the pre-existing
+	 * file is reused when moving the storage.
+	 *
+	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_TO_DISK. */
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 
-	/* persist to /run (in-memory). If the profile is currently on disk,
-	 * delete it from disk. */
-	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	/* Update in-memory (i.e. persist to /run). If the profile is currently on disk,
+	 * then a reference to the profile is remembered as "shadowed-storage".
+	 * Later, when storing again to persistant storage, the shawowed-storage is
+	 * updated. When deleting the profile, the shadowed-storage is also deleted
+	 * from disk.
+	 *
+	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY. */
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 
-	/* persist to /run (in-memory). If the profile is currently on disk,
-	 * forget about it, but don't delete it from disk. */
+	/* Update in-memory (i.e. persist to /run). This is almost like
+	 * %NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY, except the in-memory profile
+	 * remembers not to own the shadowed-storage ("shadowed-owned").
+	 * The diffrence is that when deleting the in-memory profile, the original
+	 * profile is not deleted but instead the nmmeta tombstone remembers the
+	 * shadowed-storage and re-used it when re-adding the profile.
+	 *
+	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED. */
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 
-	/* this only updates the connection in-memory. Note that "in-memory" above
-	 * means to write to keyfile in /run. This really means to not notify the
-	 * settings plugin about the change. */
+	/* Update in-memory (i.e. persist to /run). If the profile is currently on disk,
+	 * delete it from disk.
+	 *
+	 * If the profile is in-memory and has a shadowed-storage, the original profile
+	 * will be deleted from disk.
+	 *
+	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY. */
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+
+	/* This only updates the connection in-memory. Note that "in-memory" above
+	 * means to write to keyfile in /run. This mode really means to not notify the
+	 * settings plugin about the change. This should be only used for updating
+	 * secrets.
+	 */
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST,
 
 } NMSettingsConnectionPersistMode;

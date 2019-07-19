@@ -1514,8 +1514,9 @@ update_auth_cb (NMSettingsConnection *self,
 
 	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK))
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
-	else if (NM_FLAGS_ANY (info->flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
-	                                      | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED))
+	else if (NM_FLAGS_ANY (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
+	else if (NM_FLAGS_ANY (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED))
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;
 	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY)) {
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
@@ -1752,7 +1753,8 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 	if (   (   NM_FLAGS_ANY (flags, _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES)
 	        && !nm_utils_is_power_of_two (flags & _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES))
 	    || (   NM_FLAGS_HAS (flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
-	        && !NM_FLAGS_ANY (flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
+	        && !NM_FLAGS_ANY (flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
+	                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
 	                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,

@@ -12420,7 +12420,7 @@ nm_device_set_ip_config (NMDevice *self,
 
 			nm_settings_connection_update (settings_connection,
 			                               new_connection,
-			                               NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
+			                               NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 			                               NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
 			                               NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
 			                               NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,

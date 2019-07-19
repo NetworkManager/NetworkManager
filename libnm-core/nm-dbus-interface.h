@@ -1030,26 +1030,31 @@ typedef enum { /*< flags >*/
  * NMSettingsUpdate2Flags:
  * @NM_SETTINGS_UPDATE2_FLAG_NONE: an alias for numeric zero, no flags set.
  * @NM_SETTINGS_UPDATE2_FLAG_TO_DISK: to persist the connection to disk.
- * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY: to make the connection in-memory only.
- *   If the connection was previously persistent, the corresponding file on disk
- *   is not deleted but merely the connection is decoupled from the file
- *   on disk. If you later delete an in-memory connection, the connection
- *   on disk will be deleted as well.
- *   Note: with 1.20, this flag is no longer implemented because in-memory connections
- *   are also persisted under /run. For the moment, this behaves the same as
- *   @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED.
- * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED: this is like @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
- *   but if the connection has a corresponding file on disk, the association between
- *   the connection and the file is forgotten but the file is not modified.
- *   The difference to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY is if you later
- *   save the connection again to disk, a new file name will be chosen without
- *   overwriting the remaining file on disk. Also, if you delete the connection
- *   later, the file on disk will not be deleted.
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY: makes the profile in-memory.
+ *   Note that such profiles are stored in keyfile format under /run.
+ *   If the file is already in-memory, the file in /run is updated in-place.
+ *   Otherwise, the previous storage for the profile is left unchanged
+ *   on disk, and the in-memory copy shadows it.
+ *   Note that the original filename of the previous persistent storage (if any)
+ *   is remembered. That means, when later persisting the profile again to disk,
+ *   the file on disk will be overwritten again.
+ *   Likewise, when finally deleting the profile, both the storage from /run
+ *   and persistent storage are deleted (or if the persistent storage does not
+ *   allow deletion, and nmmeta file is written to mark the UUID as deleted).
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED: this is almost the same as
+ *   @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY, with one difference: when later deleting
+ *   the profile, the original profile will not be deleted. Instead a nmmeta
+ *   file is written to /run to indicate that the profile is gone.
+ *   Note that if such a nmmeta tombstone file exists and hides a file in persistant
+ *   storage, then when re-adding the profile with the same UUID, then the original
+ *   storage is taken over again.
  * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY: this is like @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
- *   but if the connection has a corresponding file on disk, the file on
- *   disk will be deleted.
+ *   but if the connection has a corresponding file on persistent storage, the file
+ *   will be deleted right away. If the profile is later again persisted to disk,
+ *   a new, unused filename will be chosen.
  * @NM_SETTINGS_UPDATE2_FLAG_VOLATILE: This can be specified with either
- *   %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED or %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY.
+ *   %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY, %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
+ *   or %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY.
  *   After making the connection in-memory only, the connection is marked
  *   as volatile. That means, if the connection is currently not active
  *   it will be deleted right away. Otherwise, it is marked to for deletion
