@@ -920,6 +920,7 @@ nm_utf8_collate0 (const char *a, const char *b)
 
 int nm_strcmp_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
+int nm_strcmp0_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
 int nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
 
