@@ -2708,8 +2708,8 @@ fail:
  * @len: the number of elements in strv. If negative,
  *   strv must be a NULL terminated array and the length
  *   will be calculated first. If @len is a positive
- *   number, all first @len elements in @strv must be
- *   non-NULL, valid strings.
+ *   number, @strv is allowed to contain %NULL strings
+ *   too.
  *
  * Ascending sort of the array @strv inplace, using plain strcmp() string
  * comparison.
@@ -2717,9 +2717,16 @@ fail:
 void
 _nm_utils_strv_sort (const char **strv, gssize len)
 {
+	GCompareDataFunc cmp;
 	gsize l;
 
-	l = len < 0 ? (gsize) NM_PTRARRAY_LEN (strv) : (gsize) len;
+	if (len < 0) {
+		l = NM_PTRARRAY_LEN (strv);
+		cmp = nm_strcmp_p_with_data;
+	} else {
+		l = len;
+		cmp = nm_strcmp0_p_with_data;
+	}
 
 	if (l <= 1)
 		return;
@@ -2729,7 +2736,7 @@ _nm_utils_strv_sort (const char **strv, gssize len)
 	g_qsort_with_data (strv,
 	                   l,
 	                   sizeof (const char *),
-	                   nm_strcmp_p_with_data,
+	                   cmp,
 	                   NULL);
 }
 
