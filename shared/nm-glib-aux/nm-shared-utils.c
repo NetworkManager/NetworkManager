@@ -1364,6 +1364,8 @@ _nm_utils_strv_cleanup (char **strv,
 		return strv;
 
 	if (strip_whitespace) {
+		/* we only modify the strings pointed to by @strv if @strip_whitespace is
+		 * requested. Otherwise, the strings themselves are untouched. */
 		for (i = 0; strv[i]; i++)
 			g_strstrip (strv[i]);
 	}

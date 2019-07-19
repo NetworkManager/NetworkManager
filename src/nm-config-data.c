@@ -1623,22 +1623,27 @@ set_property (GObject *object,
 	case PROP_NO_AUTO_DEFAULT:
 		/* construct-only */
 		{
-			const char *const*value_arr = g_value_get_boxed (value);
-			gsize i, j = 0;
+			const char *const*value_arr_orig = g_value_get_boxed (value);
+			gs_free const char **value_arr = NULL;
+			GSList *specs = NULL;
+			gsize i, j;
 			gsize len;
 
+			len = NM_PTRARRAY_LEN (value_arr_orig);
+
+			/* sort entries, remove duplicates and empty words. */
+			value_arr =   len == 0
+			            ? NULL
+			            : nm_memdup (value_arr_orig, sizeof (const char *) * (len + 1));
+			nm_utils_strv_sort (value_arr, len);
+			_nm_utils_strv_cleanup ((char **) value_arr, FALSE, TRUE, TRUE);
+
 			len = NM_PTRARRAY_LEN (value_arr);
-
-			priv->no_auto_default.arr = g_new (char *, len + 1);
-			priv->no_auto_default.specs = NULL;
-
+			j = 0;
 			for (i = 0; i < len; i++) {
 				const char *s = value_arr[i];
 				gboolean is_mac;
 				char *spec;
-
-				if (!s[0])
-					continue;
 
 				if (NM_STR_HAS_PREFIX (s, NM_MATCH_SPEC_INTERFACE_NAME_TAG"="))
 					is_mac = FALSE;
@@ -1649,19 +1654,16 @@ set_property (GObject *object,
 					continue;
 				}
 
-				if (nm_utils_strv_find_first (priv->no_auto_default.arr, j, s) >= 0)
-					continue;
+				value_arr[j++] = s;
 
 				spec = is_mac
 				       ? g_strdup_printf (NM_MATCH_SPEC_MAC_TAG"%s", s)
 				       : g_strdup (s);
-
-				priv->no_auto_default.arr[j++] = g_strdup (s);
-				priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, spec);
+				specs = g_slist_prepend (specs, spec);
 			}
-			nm_assert (j <= len);
-			priv->no_auto_default.arr[j++] = NULL;
-			priv->no_auto_default.specs = g_slist_reverse (priv->no_auto_default.specs);
+
+			priv->no_auto_default.arr = nm_utils_strv_dup (value_arr, j);
+			priv->no_auto_default.specs = g_slist_reverse (specs);
 		}
 		break;
 	default:

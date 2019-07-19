@@ -349,9 +349,8 @@ nm_config_get_first_start (NMConfig *config)
 static char **
 no_auto_default_from_file (const char *no_auto_default_file)
 {
-	gs_free const char **list = NULL;
 	gs_free char *data = NULL;
-	gsize l = 0;
+	const char **list = NULL;
 	gsize i;
 
 	if (   no_auto_default_file
@@ -359,47 +358,21 @@ no_auto_default_from_file (const char *no_auto_default_file)
 		list = nm_utils_strsplit_set (data, "\n");
 
 	if (list) {
-		for (i = 0; list[i]; i++) {
-			gs_free char *s_to_free = NULL;
-			const char *s = list[i];
-
-			if (!s[0])
-				continue;
-
-			s = nm_utils_str_utf8safe_unescape (s, &s_to_free);
-
-			if (   !NM_STR_HAS_PREFIX (s, NM_MATCH_SPEC_INTERFACE_NAME_TAG"=")
-			    && !nm_utils_hwaddr_valid (s, -1)) {
-				/* Maybe we shouldn't pre-validate the device specs that we read
-				 * from the file. After all, nm_match_spec_*() API silently ignores
-				 * all unknown value. However, lets just be strict here for now
-				 * and only accept what we also write. */
-				continue;
-			}
-
-			if (nm_utils_strv_find_first ((char **) list, l, s) >= 0)
-				continue;
-
-			list[l++] =    g_steal_pointer (&s_to_free)
-			            ?: g_strdup (s);
-		}
+		for (i = 0; list[i]; i++)
+			list[i] = nm_utils_str_utf8safe_unescape_cp (list[i]);
 	}
 
-	if (l == 0)
-		return NULL;
-
-	/* the strings from [0..l-1] are already cloned. We just need to
-	 * clone the outer list (and NULL terminate).  */
-	list[l] = NULL;
-	return nm_memdup (list, sizeof (list[0]) * (l + 1));
+	/* The returned buffer here is not at all compact. That means, it has additional
+	 * memory allocations and is larger than needed. That means, you should not keep
+	 * this result around, only process it further and free it. */
+	return (char **) list;
 }
 
 static gboolean
 no_auto_default_to_file (const char *no_auto_default_file, const char *const*no_auto_default, GError **error)
 {
-	GString *data;
-	gboolean success;
-	guint i;
+	nm_auto_free_gstring GString *data = NULL;
+	gsize i;
 
 	data = g_string_new ("");
 	for (i = 0; no_auto_default && no_auto_default[i]; i++) {
@@ -413,9 +386,7 @@ no_auto_default_to_file (const char *no_auto_default_file, const char *const*no_
 		g_string_append (data, s);
 		g_string_append_c (data, '\n');
 	}
-	success = g_file_set_contents (no_auto_default_file, data->str, data->len, error);
-	g_string_free (data, TRUE);
-	return success;
+	return  g_file_set_contents (no_auto_default_file, data->str, data->len, error);
 }
 
 gboolean
@@ -444,9 +415,10 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	const char *hw_address;
 	const char *spec;
 	const char *const*no_auto_default_current;
-	GPtrArray *no_auto_default_new = NULL;
+	gs_free const char **no_auto_default_new = NULL;
 	gboolean is_fake;
-	guint i;
+	gsize len;
+	gssize idx;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 	g_return_if_fail (NM_IS_DEVICE (device));
@@ -476,28 +448,38 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
 
-	if (nm_utils_strv_find_first ((char **) no_auto_default_current, -1, spec) >= 0) {
+	len = NM_PTRARRAY_LEN (no_auto_default_current);
+
+	idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) no_auto_default_current,
+	                                            len,
+	                                            spec,
+	                                            nm_strcmp_with_data,
+	                                            NULL,
+	                                            NULL,
+	                                            NULL);
+	if (idx >= 0) {
 		/* @spec is already blocked. We don't have to update our in-memory representation.
 		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
 		return;
 	}
 
-	no_auto_default_new = g_ptr_array_new ();
-	for (i = 0; no_auto_default_current && no_auto_default_current[i]; i++)
-		g_ptr_array_add (no_auto_default_new, (char *) no_auto_default_current[i]);
-	g_ptr_array_add (no_auto_default_new, (char *) spec);
-	g_ptr_array_add (no_auto_default_new, NULL);
+	idx = ~idx;
 
-	if (!no_auto_default_to_file (priv->no_auto_default_file, (const char *const*) no_auto_default_new->pdata, &error)) {
+	no_auto_default_new = g_new (const char *, len + 2);
+	if (idx > 0)
+		memcpy (no_auto_default_new, no_auto_default_current, sizeof (const char *) * idx);
+	no_auto_default_new[idx] = spec;
+	if (idx < len)
+		memcpy (&no_auto_default_new[idx + 1], &no_auto_default_current[idx], sizeof (const char *) * (len - idx));
+	no_auto_default_new[len + 1] = NULL;
+
+	if (!no_auto_default_to_file (priv->no_auto_default_file, no_auto_default_new, &error)) {
 		_LOGW ("Could not update no-auto-default.state file: %s",
 		       error->message);
 		g_error_free (error);
 	}
 
-	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default_new->pdata);
-
-	/* unref no_auto_default_set here. Note that _set_config_data() probably invalidates the content of the array. */
-	g_ptr_array_unref (no_auto_default_new);
+	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, no_auto_default_new);
 
 	_set_config_data (self, new_data, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT);
 }
