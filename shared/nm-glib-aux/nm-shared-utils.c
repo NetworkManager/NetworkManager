@@ -806,6 +806,15 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 
 /*****************************************************************************/
 
+int
+nm_strcmp_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const char *s1 = a;
+	const char *s2 = b;
+
+	return strcmp (s1, s2);
+}
+
 /* like nm_strcmp_p(), suitable for g_ptr_array_sort_with_data().
  * g_ptr_array_sort() just casts nm_strcmp_p() to a function of different
  * signature. I guess, in glib there are knowledgeable people that ensure
