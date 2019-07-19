@@ -41,24 +41,32 @@ nms_keyfile_storage_copy_content (NMSKeyfileStorage *dst,
 {
 	nm_assert (src != dst);
 	nm_assert (nm_streq (nms_keyfile_storage_get_uuid (dst), nms_keyfile_storage_get_uuid (src)));
-	nm_assert (nms_keyfile_storage_get_filename (dst) && nm_streq (nms_keyfile_storage_get_filename (dst), nms_keyfile_storage_get_filename (src)));
+	nm_assert (   nms_keyfile_storage_get_filename (dst)
+	           && nm_streq (nms_keyfile_storage_get_filename (dst), nms_keyfile_storage_get_filename (src)));
+	nm_assert (dst->storage_type == src->storage_type);
+	nm_assert (dst->is_meta_data == src->is_meta_data);
 
-	nm_g_object_ref_set (&dst->connection, src->connection);
-	dst->storage_type     = src->storage_type;
-	dst->stat_mtime       = src->stat_mtime;
-	dst->is_nm_generated  = src->is_nm_generated;
-	dst->is_volatile      = src->is_volatile;
-	dst->is_tombstone     = src->is_tombstone;
+	if (dst->is_meta_data)
+		dst->u.meta_data = src->u.meta_data;
+	else {
+		gs_unref_object NMConnection *connection_to_free = NULL;
+
+		connection_to_free = g_steal_pointer (&dst->u.conn_data.connection);
+		dst->u.conn_data = src->u.conn_data;
+		nm_g_object_ref (dst->u.conn_data.connection);
+	}
 }
 
 NMConnection *
 nms_keyfile_storage_steal_connection (NMSKeyfileStorage *self)
 {
 	nm_assert (NMS_IS_KEYFILE_STORAGE (self));
-	nm_assert (   (!self->connection && self->is_tombstone)
-               || NM_IS_CONNECTION (self->connection));
+	nm_assert (   self->is_meta_data
+	           || NM_IS_CONNECTION (self->u.conn_data.connection));
 
-	return g_steal_pointer (&self->connection);
+	return   self->is_meta_data
+	       ? NULL
+	       : g_steal_pointer (&self->u.conn_data.connection);
 }
 
 /*****************************************************************************/
@@ -75,16 +83,19 @@ cmp_fcn (const NMSKeyfileStorage *a,
 	 * (inverse) priority. */
 	NM_CMP_FIELD_UNSAFE (b, a, storage_type);
 
-	/* tombstones are more important. */
-	nm_assert (a->is_tombstone == nm_settings_storage_is_keyfile_tombstone (NM_SETTINGS_STORAGE (a)));
-	nm_assert (b->is_tombstone == nm_settings_storage_is_keyfile_tombstone (NM_SETTINGS_STORAGE (b)));
-	NM_CMP_FIELD_UNSAFE (a, b, is_tombstone);
+	/* meta-data is more important. */
+	NM_CMP_FIELD_UNSAFE (a, b, is_meta_data);
 
-	/* newer files are more important. */
-	NM_CMP_FIELD (a, b, stat_mtime.tv_sec);
-	NM_CMP_FIELD (a, b, stat_mtime.tv_nsec);
+	if (a->is_meta_data) {
+		nm_assert (nm_streq (nms_keyfile_storage_get_filename (a), nms_keyfile_storage_get_filename (b)));
+		NM_CMP_FIELD_UNSAFE (a, b, u.meta_data.is_tombstone);
+	} else {
+		/* newer files are more important. */
+		NM_CMP_FIELD (a, b, u.conn_data.stat_mtime.tv_sec);
+		NM_CMP_FIELD (a, b, u.conn_data.stat_mtime.tv_nsec);
 
-	NM_CMP_DIRECT_STRCMP (nms_keyfile_storage_get_filename (a), nms_keyfile_storage_get_filename (b));
+		NM_CMP_DIRECT_STRCMP (nms_keyfile_storage_get_filename (a), nms_keyfile_storage_get_filename (b));
+	}
 
 	return 0;
 }
@@ -99,17 +110,27 @@ nms_keyfile_storage_init (NMSKeyfileStorage *self)
 static NMSKeyfileStorage *
 _storage_new (NMSKeyfilePlugin *plugin,
               const char *uuid,
-              const char *filename)
+              const char *filename,
+              gboolean is_meta_data,
+              NMSKeyfileStorageType storage_type)
+
 {
+	NMSKeyfileStorage *self;
+
 	nm_assert (NMS_IS_KEYFILE_PLUGIN (plugin));
 	nm_assert (nm_utils_is_uuid (uuid));
 	nm_assert (filename && filename[0] == '/');
 
-	return g_object_new (NMS_TYPE_KEYFILE_STORAGE,
+	self = g_object_new (NMS_TYPE_KEYFILE_STORAGE,
 	                     NM_SETTINGS_STORAGE_PLUGIN, plugin,
 	                     NM_SETTINGS_STORAGE_UUID, uuid,
 	                     NM_SETTINGS_STORAGE_FILENAME, filename,
 	                     NULL);
+
+	*((bool *) &self->is_meta_data) = is_meta_data;
+	*((NMSKeyfileStorageType *) &self->storage_type) = storage_type;
+
+	return self;
 }
 
 NMSKeyfileStorage *
@@ -126,12 +147,8 @@ nms_keyfile_storage_new_tombstone (NMSKeyfilePlugin *plugin,
 	nm_assert (NM_IN_SET (storage_type, NMS_KEYFILE_STORAGE_TYPE_ETC,
 	                                    NMS_KEYFILE_STORAGE_TYPE_RUN));
 
-	self = _storage_new (plugin, uuid, filename);
-
-	self->is_tombstone = TRUE;
-
-	self->storage_type = storage_type;
-
+	self = _storage_new (plugin, uuid, filename, TRUE, storage_type);
+	self->u.meta_data.is_tombstone = TRUE;
 	return self;
 }
 
@@ -154,19 +171,17 @@ nms_keyfile_storage_new_connection (NMSKeyfilePlugin *plugin,
 	           && storage_type <= _NMS_KEYFILE_STORAGE_TYPE_LIB_LAST);
 	nmtst_connection_assert_unchanging (connection_take);
 
-	self = _storage_new (plugin, nm_connection_get_uuid (connection_take), filename);
+	self = _storage_new (plugin, nm_connection_get_uuid (connection_take), filename, FALSE, storage_type);
 
-	self->connection = connection_take; /* take reference. */
-
-	if (storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN) {
-		self->is_nm_generated = (is_nm_generated_opt == NM_TERNARY_TRUE);
-		self->is_volatile     = (is_volatile_opt == NM_TERNARY_TRUE);
-	}
+	self->u.conn_data.connection = connection_take; /* take reference. */
 
 	if (stat_mtime)
-		self->stat_mtime = *stat_mtime;
+		self->u.conn_data.stat_mtime = *stat_mtime;
 
-	self->storage_type = storage_type;
+	if (storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN) {
+		self->u.conn_data.is_nm_generated = (is_nm_generated_opt == NM_TERNARY_TRUE);
+		self->u.conn_data.is_volatile     = (is_volatile_opt == NM_TERNARY_TRUE);
+	}
 
 	return self;
 }
@@ -176,7 +191,8 @@ _storage_clear (NMSKeyfileStorage *self)
 {
 	c_list_unlink (&self->parent._storage_lst);
 	c_list_unlink (&self->parent._storage_by_uuid_lst);
-	g_clear_object (&self->connection);
+	if (!self->is_meta_data)
+		g_clear_object (&self->u.conn_data.connection);
 }
 
 static void
@@ -226,12 +242,15 @@ nm_settings_storage_load_sett_flags (NMSettingsStorage *self,
 		return;
 
 	s = NMS_KEYFILE_STORAGE (self);
+
+	if (s->is_meta_data)
+		return;
 	if (s->storage_type != NMS_KEYFILE_STORAGE_TYPE_RUN)
 		return;
 
-	if (s->is_nm_generated)
+	if (s->u.conn_data.is_nm_generated)
 		*sett_flags |= NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED;
 
-	if (s->is_volatile)
+	if (s->u.conn_data.is_volatile)
 		*sett_flags |= NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE;
 }

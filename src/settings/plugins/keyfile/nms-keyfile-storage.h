@@ -34,6 +34,11 @@
 #define NMS_KEYFILE_STORAGE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_KEYFILE_STORAGE, NMSKeyfileStorageClass))
 
 typedef struct {
+	/* whether this is a tombstone to hide a UUID (via symlink to /dev/null). */
+	bool is_tombstone:1;
+} NMSettingsMetaData;
+
+typedef struct {
 	NMSettingsStorage parent;
 
 	/* The connection. Note that there are tombstones (loaded-uuid files to /dev/null)
@@ -42,35 +47,45 @@ typedef struct {
 	 * Also, we don't actually remember the loaded connection after returning it
 	 * to NMSettings. So, also for regular storages (non-tombstones) this field
 	 * is often cleared. */
-	NMConnection *connection;
+	union {
+		struct {
+			NMConnection *connection;
 
-	NMSKeyfileStorageType storage_type;
+			/* the timestamp (stat's mtime) of the keyfile. For meta-data this
+			 * is irrelevant. The purpose is that if the same storage type (directory) has
+			 * multiple files with the same UUID, then the newer file gets preferred. */
+			struct timespec stat_mtime;
 
-	/* the timestamp (stat's mtime) of the keyfile. For tombstones this
-	 * is irrelevant. The purpose is that if the same storage type (directory) has
-	 * multiple files with the same UUID, then the newer file gets preferred. */
-	struct timespec stat_mtime;
+			/* these flags are only relevant for storages with %NMS_KEYFILE_STORAGE_TYPE_RUN
+			 * (and non-metadata). This is to persist and reload these settings flags to
+			 * /run.
+			 *
+			 * Note that these flags are not stored in as meta-data. The reason is that meta-data
+			 * is per UUID. But these flags are only relevant for a particular keyfile on disk.
+			 * That is, it must be tied to the actual keyfile, and not to the UUID. */
+			bool is_nm_generated:1;
+			bool is_volatile:1;
 
-	/* these flags are only relevant for storages with %NMS_KEYFILE_STORAGE_TYPE_RUN
-	 * (and non-tombstones). This is to persist and reload these settings flags to
-	 * /run. */
-	bool is_nm_generated:1;
-	bool is_volatile:1;
+		} conn_data;
 
-	/* whether this is a tombstone to hide a UUID (via the loaded uuid symlinks).
-	 * If this is falls, the storage contains a profile, though note that
-	 * the connection field will be cleared when it's not used. So, a non-tombstone
-	 * has a connection in principle, but the connection field may still be %NULL.
-	 *
-	 * Note that a tombstone instance doesn't have a connection, but NMSettings
-	 * considers it alive because is_tombstone is %TRUE. That means, once a tombstone
-	 * gets removed, this flag is cleared. Then the storage instance has no connnection
-	 * and is no longer a tombstone, and NMSettings considers it ready for deletion.
-	 */
-	bool is_tombstone:1;
+		/* the content from the .nmmeta file. Note that the nmmeta file has the UUID
+		 * in the filename, that means there can be only two variants of this file:
+		 * in /etc and in /run. As such, this is really meta-data about the entire profile
+		 * (the UUID), and not about the individual keyfile. */
+		NMSettingsMetaData meta_data;
+
+	} u;
+
+	/* The storage type. This is directly related to the filename. Since
+	 * the filename cannot change, this value is unchanging. */
+	const NMSKeyfileStorageType storage_type;
+
+	/* whether union "u" has meta_data or conn_data. Since the type of the storage
+	 * depends on the (immutable) filename, this is also const. */
+	const bool is_meta_data;
 
 	/* this flag is only used during reload to mark and prune old entries. */
-	bool dirty:1;
+	bool is_dirty:1;
 
 } NMSKeyfileStorage;
 
@@ -132,18 +147,45 @@ nm_settings_storage_is_keyfile_lib (const NMSettingsStorage *self)
 	       && (((NMSKeyfileStorage *) self)->storage_type >= NMS_KEYFILE_STORAGE_TYPE_LIB_BASE);
 }
 
-static inline gboolean
-nm_settings_storage_is_keyfile_tombstone (const NMSettingsStorage *self)
+static inline const NMSettingsMetaData *
+nm_settings_storage_is_meta_data (const NMSettingsStorage *storage)
 {
-	/* Only keyfile storage supports tombstones. They indicate that a uuid
-	 * is shadowed via a symlink to /dev/null.
+	const NMSKeyfileStorage *self;
+
+	if (!NMS_IS_KEYFILE_STORAGE (storage))
+		return NULL;
+
+	self = (NMSKeyfileStorage *) storage;
+
+	if (!self->is_meta_data)
+		return NULL;
+
+	return &self->u.meta_data;
+}
+
+static inline const NMSettingsMetaData *
+nm_settings_storage_is_meta_data_alive (const NMSettingsStorage *storage)
+{
+	const NMSettingsMetaData *meta_data;
+
+	meta_data = nm_settings_storage_is_meta_data (storage);
+
+	if (!meta_data)
+		return NULL;
+
+	/* Regular (all other) storages are alive as long as they report a NMConnection, and
+	 * they will be dropped, once they have no more connection.
 	 *
-	 * Note that tombstones don't have a NMConnection instead they shadow
-	 * a UUID. As such, NMSettings considers them alive also if they have
-	 * not profile. That means, when a tombstone gets removed for good,
-	 * the is_tombstone must be cleared (so that it becomes truly dead). */
-	return    NMS_IS_KEYFILE_STORAGE (self)
-	       && ((NMSKeyfileStorage *) self)->is_tombstone;
+	 * Meta-data storages are special: they never report a NMConnection.
+	 * So, a meta-data storage is alive as long as it is tracked by the
+	 * settings plugin.
+	 *
+	 * This function is used to ckeck for that. */
+
+	if (c_list_is_empty (&storage->_storage_lst))
+		return NULL;
+
+	return meta_data;
 }
 
 /*****************************************************************************/

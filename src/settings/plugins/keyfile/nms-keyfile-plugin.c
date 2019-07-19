@@ -244,7 +244,7 @@ _nm_assert_storage (gpointer plugin  /* NMSKeyfilePlugin  */,
 	nm_assert (!plugin || NMS_IS_KEYFILE_PLUGIN (plugin));
 	nm_assert (NMS_IS_KEYFILE_STORAGE (storage));
 	nm_assert (!plugin || plugin == nm_settings_storage_get_plugin (storage));
-	nm_assert (!((NMSKeyfileStorage *) storage)->is_tombstone || !(((NMSKeyfileStorage *) storage)->connection));
+
 	nm_assert (({
 	                const char *f = nms_keyfile_storage_get_filename (storage);
 	                f && f[0] == '/';
@@ -253,6 +253,11 @@ _nm_assert_storage (gpointer plugin  /* NMSKeyfilePlugin  */,
 	uuid = nms_keyfile_storage_get_uuid (storage);
 
 	nm_assert (nm_utils_is_uuid (uuid));
+
+	nm_assert (   ((NMSKeyfileStorage *) storage)->is_meta_data
+	           || !(((NMSKeyfileStorage *) storage)->u.conn_data.connection)
+	           || (   NM_IS_CONNECTION ((((NMSKeyfileStorage *) storage)->u.conn_data.connection))
+	               && nm_streq0 (uuid, nm_connection_get_uuid ((((NMSKeyfileStorage *) storage)->u.conn_data.connection)))));
 
 	nm_assert (   !tracked
 	           || !plugin
@@ -264,7 +269,8 @@ _nm_assert_storage (gpointer plugin  /* NMSKeyfilePlugin  */,
 	           || storage == g_hash_table_lookup (NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin)->storages.idx_by_filename,
 	                                              nms_keyfile_storage_get_filename (storage)));
 
-	if (tracked && plugin) {
+	if (   tracked
+	    && plugin) {
 		sbuh = g_hash_table_lookup (NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin)->storages.idx_by_uuid, &uuid);
 		nm_assert (sbuh);
 		nm_assert (c_list_contains (&sbuh->_storage_by_uuid_lst_head, &((NMSKeyfileStorage *) storage)->parent._storage_by_uuid_lst));
@@ -454,7 +460,7 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 	c_list_init (&storages_deleted);
 
 	c_list_for_each_entry (storage_old, &priv->storages._storage_lst_head, parent._storage_lst)
-		storage_old->dirty = TRUE;
+		storage_old->is_dirty = TRUE;
 
 	c_list_for_each_entry_safe (storage_new, storage_safe, &storages_new->_storage_lst_head, parent._storage_lst) {
 		storage_old = nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_keyfile_storage_get_filename (storage_new));
@@ -465,28 +471,28 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 		    || !nm_streq (nms_keyfile_storage_get_uuid (storage_new), nms_keyfile_storage_get_uuid (storage_old))) {
 			if (storage_old) {
 				nm_sett_util_storages_steal (&priv->storages, storage_old);
-				c_list_link_tail (&storages_deleted, &storage_old->parent._storage_lst);
+				c_list_link_tail (&storages_deleted, &storage_old->parent._storage_by_uuid_lst);
 			}
-			storage_new->dirty = FALSE;
+			storage_new->is_dirty = FALSE;
 			nm_sett_util_storages_add_take (&priv->storages, storage_new);
 			g_ptr_array_add (storages_modified, g_object_ref (storage_new));
 			continue;
 		}
 
-		storage_old->dirty = FALSE;
+		storage_old->is_dirty = FALSE;
 		nms_keyfile_storage_copy_content (storage_old, storage_new);
 		nms_keyfile_storage_destroy (storage_new);
 		g_ptr_array_add (storages_modified, g_object_ref (storage_old));
 	}
 
 	c_list_for_each_entry_safe (storage_old, storage_safe, &priv->storages._storage_lst_head, parent._storage_lst) {
-		if (!storage_old->dirty)
+		if (!storage_old->is_dirty)
 			continue;
 		if (   replace_all
 		    || (   storages_replaced
 		        && g_hash_table_contains (storages_replaced, storage_old))) {
 			nm_sett_util_storages_steal (&priv->storages, storage_old);
-			c_list_link_tail (&storages_deleted, &storage_old->parent._storage_lst);
+			c_list_link_tail (&storages_deleted, &storage_old->parent._storage_by_uuid_lst);
 		}
 	}
 
@@ -494,7 +500,7 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 
 	for (i = 0; i < storages_modified->len; i++) {
 		storage = storages_modified->pdata[i];
-		storage->dirty = TRUE;
+		storage->is_dirty = TRUE;
 	}
 
 	for (i = 0; i < storages_modified->len; i++) {
@@ -502,18 +508,21 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 
 		storage = storages_modified->pdata[i];
 
-		if (!storage->dirty) {
-			/* the entry is no longer dirty. In the meantime we already emited
+		if (!storage->is_dirty) {
+			/* the entry is no longer is_dirty. In the meantime we already emited
 			 * another signal for it. */
 			continue;
 		}
-		storage->dirty = FALSE;
-		if (storage != nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_keyfile_storage_get_filename (storage))) {
+		storage->is_dirty = FALSE;
+
+		if (c_list_is_empty (&storage->parent._storage_lst)) {
 			/* hm? The profile was deleted in the meantime? That is only possible
 			 * if the signal handler called again into the plugin. In any case, the event
 			 * was already emitted. Skip. */
 			continue;
 		}
+
+		nm_assert (storage == nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_keyfile_storage_get_filename (storage)));
 
 		connection = nms_keyfile_storage_steal_connection (storage);
 
@@ -523,9 +532,8 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 		          user_data);
 	}
 
-	while ((storage = c_list_first_entry (&storages_deleted, NMSKeyfileStorage, parent._storage_lst))) {
-		c_list_unlink (&storage->parent._storage_lst);
-		storage->is_tombstone = FALSE;
+	while ((storage = c_list_first_entry (&storages_deleted, NMSKeyfileStorage, parent._storage_by_uuid_lst))) {
+		c_list_unlink (&storage->parent._storage_by_uuid_lst);
 		callback (NM_SETTINGS_PLUGIN (self),
 		          NM_SETTINGS_STORAGE (storage),
 		          NULL,
@@ -851,6 +859,7 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	           || storage->storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN);
 	nm_assert  (   priv->dirname_etc
 	            || storage->storage_type != NMS_KEYFILE_STORAGE_TYPE_ETC);
+	nm_assert (!storage->is_meta_data);
 
 	previous_filename = nms_keyfile_storage_get_filename (storage);
 	uuid = nms_keyfile_storage_get_uuid (storage);
@@ -895,9 +904,9 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	       uuid,
 	       nm_connection_get_id (connection));
 
-	storage->is_nm_generated = is_nm_generated;
-	storage->is_volatile     = is_volatile;
-	storage->stat_mtime      = *nm_sett_util_stat_mtime (full_filename, FALSE, &mtime);
+	storage->u.conn_data.is_nm_generated = is_nm_generated;
+	storage->u.conn_data.is_volatile     = is_volatile;
+	storage->u.conn_data.stat_mtime      = *nm_sett_util_stat_mtime (full_filename, FALSE, &mtime);
 
 	*out_storage = g_object_ref (NM_SETTINGS_STORAGE (storage));
 	*out_connection = g_steal_pointer (&reread);
@@ -969,14 +978,13 @@ delete_connection (NMSettingsPlugin *plugin,
 
 	_LOGT ("commit: deleted \"%s\", %s %s (%s%s%s%s)",
 	       previous_filename,
-	       storage->is_tombstone ? "tombstone" : "profile",
+	       storage->is_meta_data ? "meta-data" : "profile",
 	       uuid,
 	       operation_message,
 	       NM_PRINT_FMT_QUOTED (remove_from_disk_errmsg, ": ", remove_from_disk_errmsg, "", ""));
 
 	if (success) {
 		nm_sett_util_storages_steal (&priv->storages, storage);
-		storage->is_tombstone = FALSE;
 		nms_keyfile_storage_destroy (storage);
 	}
 
@@ -1088,7 +1096,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	storage = nm_sett_util_storages_lookup_by_filename (&priv->storages, nmmeta_filename);
 
 	nm_assert (   !storage
-	           || (   storage->is_tombstone
+	           || (   storage->is_meta_data
 	               && storage->storage_type == storage_type
 	               && nm_streq (nms_keyfile_storage_get_uuid (storage), uuid)));
 
@@ -1104,10 +1112,8 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 
 		storage_result = g_object_ref (storage);
 	} else {
-		if (storage) {
+		if (storage)
 			storage_result = nm_sett_util_storages_steal (&priv->storages, storage);
-			storage_result->is_tombstone = FALSE;
-		}
 	}
 
 out:

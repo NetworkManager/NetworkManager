@@ -168,16 +168,12 @@ nm_assert_storage_data_lst (CList *head)
 static gboolean
 _storage_data_is_alive (StorageData *sd)
 {
-	if (sd->connection)
-		return TRUE;
-
-	if (nm_settings_storage_is_keyfile_tombstone (sd->storage)) {
-		/* entry does not have a profile, but it's here as a tombstone to
-		 * hide/shadow other connections. That's also relevant. */
-		return TRUE;
-	}
-
-	return FALSE;
+	/* If the storage tracks a connection, it is considered alive.
+	 *
+	 * Meta-data storages are special: they never track a connection.
+	 * We need to check them specially to know when to drop them. */
+	return    sd->connection
+	       || nm_settings_storage_is_meta_data_alive (sd->storage);
 }
 
 /*****************************************************************************/
@@ -1192,6 +1188,7 @@ _connection_changed_track (NMSettings *self,
 
 	if (_LOGT_ENABLED ()) {
 		const char *filename;
+		const NMSettingsMetaData *meta_data;
 
 		filename = nm_settings_storage_get_filename (storage);
 		if (connection) {
@@ -1200,11 +1197,18 @@ _connection_changed_track (NMSettings *self,
 			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
 			       nm_connection_get_id (connection),
 			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
-		} else if (nm_settings_storage_is_keyfile_tombstone (storage)) {
-			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for hiding profile%s%s%s",
-			       sett_conn_entry->uuid,
-			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
-			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
+		} else if ((meta_data = nm_settings_storage_is_meta_data (storage))) {
+			if (meta_data->is_tombstone) {
+				_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for hiding profile%s%s%s",
+				       sett_conn_entry->uuid,
+				       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
+				       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
+			} else {
+				_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event with meta data for profile%s%s%s",
+				       sett_conn_entry->uuid,
+				       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
+				       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
+			}
 		} else {
 			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for dropping profile%s%s%s",
 			       sett_conn_entry->uuid,
@@ -1467,8 +1471,12 @@ nm_settings_add_connection (NMSettings *self,
 	sett_conn_entry = _connection_changed_track (self, new_storage, new_connection, TRUE);
 
 	c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+		const NMSettingsMetaData *meta_data;
 
-		if (!nm_settings_storage_is_keyfile_tombstone (sd->storage))
+		meta_data = nm_settings_storage_is_meta_data_alive (sd->storage);
+
+		if (   !meta_data
+		    || !meta_data->is_tombstone)
 			continue;
 
 		if (nm_settings_storage_is_keyfile_run (sd->storage)) {
@@ -1484,7 +1492,7 @@ nm_settings_add_connection (NMSettings *self,
 		                                      sd->storage,
 		                                      NULL);
 
-		nm_assert (!nm_settings_storage_is_keyfile_tombstone (sd->storage));
+		nm_assert (!_storage_data_is_alive (sd));
 
 		_connection_changed_track (self, sd->storage, NULL, FALSE);
 	}
@@ -1871,9 +1879,9 @@ nm_settings_delete_connection (NMSettings *self,
 		c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
 			if (sd->storage == cur_storage)
 				continue;
-			if (nm_settings_storage_is_keyfile_tombstone (sd->storage))
-				continue;
 			if (!_storage_data_is_alive (sd))
+				continue;
+			if (nm_settings_storage_is_meta_data (sd->storage))
 				continue;
 
 			/* we have still conflicting storages. We need to hide them with tombstones. */
