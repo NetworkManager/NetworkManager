@@ -1505,7 +1505,7 @@ update_auth_cb (NMSettingsConnection *self,
 	}
 
 	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK))
-		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	else if (NM_FLAGS_ANY (info->flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
 	                                      | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED))
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;

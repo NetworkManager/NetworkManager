@@ -87,7 +87,7 @@ typedef enum {
 
 	/* persist to disk. If the profile is currenly in-memory, remove
 	 * it from /run. */
-	NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 
 	/* persist to /run (in-memory). If the profile is currently on disk,
 	 * delete it from disk. */

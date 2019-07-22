@@ -1404,7 +1404,7 @@ nm_settings_add_connection (NMSettings *self,
 	const char *uuid;
 	StorageData *sd;
 
-	nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY));
 
 	nm_assert (!NM_FLAGS_ANY (sett_flags, ~_NM_SETTINGS_CONNECTION_INT_FLAGS_PERSISTENT_MASK));
@@ -1448,7 +1448,7 @@ nm_settings_add_connection (NMSettings *self,
 
 	if (!_add_connection_to_first_plugin (self,
 	                                      connection,
-	                                      (   persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
+	                                      (   persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK
 	                                       || NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
 	                                                                    | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)),
 	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
@@ -1539,7 +1539,7 @@ nm_settings_update_connection (NMSettings *self,
 	nm_assert (!NM_FLAGS_ANY (sett_flags, ~sett_mask));
 	nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST,
-	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY));
 
@@ -1582,7 +1582,7 @@ nm_settings_update_connection (NMSettings *self,
 	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP) {
 		persist_mode =   cur_in_memory
 		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED
-		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	}
 
 	if (   NM_FLAGS_HAS (sett_mask, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
@@ -1606,7 +1606,7 @@ nm_settings_update_connection (NMSettings *self,
 			                             NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST)) {
 				/* making a default-wired-connection a regulard connection implies persisting
 				 * it to disk (unless specified differently). */
-				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 			}
 		}
 	}
@@ -1624,7 +1624,7 @@ nm_settings_update_connection (NMSettings *self,
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;
 	}
 
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK)
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK)
 		new_in_memory = FALSE;
 	else if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 	                                  NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY))
@@ -2164,7 +2164,7 @@ settings_add_connection_helper (NMSettings *self,
 	}
 
 	if (NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK))
-		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	else {
 		nm_assert (NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY));
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
