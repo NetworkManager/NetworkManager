@@ -47,6 +47,7 @@
 #define NM_MANAGER_CONNECTIVITY "connectivity"
 #define NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE "connectivity-check-available"
 #define NM_MANAGER_CONNECTIVITY_CHECK_ENABLED "connectivity-check-enabled"
+#define NM_MANAGER_CONNECTIVITY_CHECK_URI "connectivity-check-uri"
 #define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
 #define NM_MANAGER_PRIMARY_CONNECTION_TYPE "primary-connection-type"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"

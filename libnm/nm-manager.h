@@ -108,6 +108,8 @@ gboolean  nm_manager_connectivity_check_get_enabled (NMManager *manager);
 void      nm_manager_connectivity_check_set_enabled (NMManager *manager,
                                                      gboolean enabled);
 
+const char *nm_manager_connectivity_check_get_uri (NMManager *manager);
+
 gboolean nm_manager_get_logging (NMManager *manager,
                                  char **level,
                                  char **domains,

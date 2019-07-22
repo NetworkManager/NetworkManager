@@ -605,6 +605,12 @@ nm_manager_connectivity_check_set_enabled (NMManager *manager, gboolean enabled)
 	                         "b", enabled);
 }
 
+const char *
+nm_manager_connectivity_check_get_uri (NMManager *manager)
+{
+	return nmdbus_manager_get_connectivity_check_uri (NM_MANAGER_GET_PRIVATE (manager)->proxy);
+}
+
 gboolean
 nm_manager_get_logging (NMManager *manager, char **level, char **domains, GError **error)
 {

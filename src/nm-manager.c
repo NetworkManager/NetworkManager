@@ -132,6 +132,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_CONNECTIVITY,
 	PROP_CONNECTIVITY_CHECK_AVAILABLE,
 	PROP_CONNECTIVITY_CHECK_ENABLED,
+	PROP_CONNECTIVITY_CHECK_URI,
 	PROP_PRIMARY_CONNECTION,
 	PROP_PRIMARY_CONNECTION_TYPE,
 	PROP_ACTIVATING_CONNECTION,
@@ -1129,8 +1130,13 @@ _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeF
 
 	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG))
 		_notify (self, PROP_GLOBAL_DNS_CONFIGURATION);
-	if ((!nm_config_data_get_connectivity_uri (config_data)) != (!nm_config_data_get_connectivity_uri (old_data)))
-		_notify (self, PROP_CONNECTIVITY_CHECK_AVAILABLE);
+
+	if (!nm_streq0 (nm_config_data_get_connectivity_uri (config_data),
+	                nm_config_data_get_connectivity_uri (old_data))) {
+		if ((!nm_config_data_get_connectivity_uri (config_data)) != (!nm_config_data_get_connectivity_uri (old_data)))
+			_notify (self, PROP_CONNECTIVITY_CHECK_AVAILABLE);
+		_notify (self, PROP_CONNECTIVITY_CHECK_URI);
+	}
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -7542,6 +7548,10 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
 		g_value_set_boolean (value, concheck_enabled (self, NULL));
 		break;
+	case PROP_CONNECTIVITY_CHECK_URI:
+		config_data = nm_config_get_data (priv->config);
+		g_value_set_string (value, nm_config_data_get_connectivity_uri (config_data));
+		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_dbus_utils_g_value_set_object_path (value, priv->primary_connection);
 		break;
@@ -8038,6 +8048,7 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Connectivity",               "u",     NM_MANAGER_CONNECTIVITY),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("ConnectivityCheckAvailable", "b",     NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_L ("ConnectivityCheckEnabled",   "b",     NM_MANAGER_CONNECTIVITY_CHECK_ENABLED,    NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK, NM_AUDIT_OP_NET_CONTROL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("ConnectivityCheckUri",       "s",     NM_MANAGER_CONNECTIVITY_CHECK_URI),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_L ("GlobalDnsConfiguration",     "a{sv}", NM_MANAGER_GLOBAL_DNS_CONFIGURATION,      NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS,        NM_AUDIT_OP_NET_CONTROL),
 		),
 	),
@@ -8149,6 +8160,12 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                          TRUE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONNECTIVITY_CHECK_URI] =
+	    g_param_spec_string (NM_MANAGER_CONNECTIVITY_CHECK_URI, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_PRIMARY_CONNECTION] =
 	    g_param_spec_string (NM_MANAGER_PRIMARY_CONNECTION, "", "",

@@ -553,6 +553,28 @@ nm_client_connectivity_check_set_enabled (NMClient *client, gboolean enabled)
 }
 
 /**
+ * nm_client_connectivity_check_get_uri:
+ * @client: a #NMClient
+ *
+ * Get the URI that will be queried to determine if there is internet
+ * connectivity.
+ *
+ * Returns: (transfer none): the connectivity URI in use
+ *
+ * Since: 1.20
+ */
+const char *
+nm_client_connectivity_check_get_uri (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	if (!nm_client_get_nm_running (client))
+		return NULL;
+
+	return nm_manager_connectivity_check_get_uri (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+/**
  * nm_client_get_logging:
  * @client: a #NMClient
  * @level: (allow-none): return location for logging level string

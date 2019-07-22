@@ -265,6 +265,9 @@ NM_AVAILABLE_IN_1_10
 void     nm_client_connectivity_check_set_enabled (NMClient *client,
                                                    gboolean enabled);
 
+NM_AVAILABLE_IN_1_20
+const char *nm_client_connectivity_check_get_uri (NMClient *client);
+
 gboolean nm_client_get_logging (NMClient *client,
                                 char **level,
                                 char **domains,

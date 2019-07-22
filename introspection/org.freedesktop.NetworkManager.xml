@@ -528,6 +528,13 @@
     <property name="ConnectivityCheckEnabled" type="b" access="readwrite"/>
 
     <!--
+        ConnectivityCheckUri:
+
+        The URI that NetworkManager will hit to check if there is internet connectivity.
+    -->
+    <property name="ConnectivityCheckUri" type="s" access="read"/>
+
+    <!--
         GlobalDnsConfiguration:
 
         Dictionary of global DNS settings where the key is one of "searches",
