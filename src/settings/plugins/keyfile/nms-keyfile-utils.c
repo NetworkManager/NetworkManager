@@ -122,7 +122,7 @@ nms_keyfile_nmmeta_read (const char *dirname,
 
 	full_filename = g_build_filename (dirname, filename, NULL);
 
-	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_NMLOADED,
+	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_NMMETA,
 	                                               full_filename,
 	                                               out_st,
 	                                               NULL))
@@ -242,7 +242,7 @@ nms_keyfile_utils_check_file_permissions_stat (NMSKeyfileFiletype filetype,
 			                     "file is not a regular file");
 			return FALSE;
 		}
-	} else if (filetype == NMS_KEYFILE_FILETYPE_NMLOADED) {
+	} else if (filetype == NMS_KEYFILE_FILETYPE_NMMETA) {
 		if (!S_ISLNK (st->st_mode)) {
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			                     "file is not a slink");
@@ -289,7 +289,7 @@ nms_keyfile_utils_check_file_permissions (NMSKeyfileFiletype filetype,
 			             "cannot access file: %s", nm_strerror_native (errsv));
 			return FALSE;
 		}
-	} else if (filetype == NMS_KEYFILE_FILETYPE_NMLOADED) {
+	} else if (filetype == NMS_KEYFILE_FILETYPE_NMMETA) {
 		if (lstat (filename, &st) != 0) {
 			errsv = errno;
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,

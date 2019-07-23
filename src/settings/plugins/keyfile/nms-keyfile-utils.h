@@ -24,7 +24,7 @@
 
 typedef enum {
 	NMS_KEYFILE_FILETYPE_KEYFILE,
-	NMS_KEYFILE_FILETYPE_NMLOADED,
+	NMS_KEYFILE_FILETYPE_NMMETA,
 } NMSKeyfileFiletype;
 
 typedef enum {
