@@ -273,3 +273,23 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 
 	return timestamp - offset;
 }
+
+gint64
+nm_utils_clock_gettime_ns (clockid_t clockid)
+{
+	struct timespec tp;
+
+	if (clock_gettime (clockid, &tp) != 0)
+		return -NM_ERRNO_NATIVE (errno);
+	return nm_utils_timespec_to_ns (&tp);
+}
+
+gint64
+nm_utils_clock_gettime_ms (clockid_t clockid)
+{
+	struct timespec tp;
+
+	if (clock_gettime (clockid, &tp) != 0)
+		return -NM_ERRNO_NATIVE (errno);
+	return nm_utils_timespec_to_ms (&tp);
+}
