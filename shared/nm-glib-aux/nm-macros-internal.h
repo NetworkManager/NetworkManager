@@ -1569,6 +1569,11 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 
 /*****************************************************************************/
 
+#define nm_g_slice_free(ptr) \
+	g_slice_free (typeof (*(ptr)), ptr)
+
+/*****************************************************************************/
+
 /* like g_memdup(). The difference is that the @size argument is of type
  * gsize, while g_memdup() has type guint. Since, the size of container types
  * like GArray is guint as well, this means trying to g_memdup() an
