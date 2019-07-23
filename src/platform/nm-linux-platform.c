@@ -739,29 +739,27 @@ _timestamp_nl_to_ms (guint32 timestamp_nl, gint64 monotonic_ms)
 static guint32
 _addrtime_timestamp_to_nm (guint32 timestamp, gint32 *out_now_nm)
 {
-	struct timespec tp;
-	gint64 now_nl, now_nm, result;
-	int err;
+	gint64 now_nl;
+	gint64 now_nm;
+	gint64 result;
 
 	/* timestamp is unset. Default to 1. */
 	if (!timestamp) {
-		if (out_now_nm)
-			*out_now_nm = 0;
+		NM_SET_OUT (out_now_nm, 0);
 		return 1;
 	}
 
 	/* do all the calculations in milliseconds scale */
 
-	err = clock_gettime (CLOCK_MONOTONIC, &tp);
-	g_assert (err == 0);
 	now_nm = nm_utils_get_monotonic_timestamp_ms ();
-	now_nl = (((gint64) tp.tv_sec) * ((gint64) 1000)) +
-	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
+	now_nl = nm_utils_clock_gettime_ms (CLOCK_MONOTONIC);
+
+	nm_assert (now_nm >= 1000);
+	nm_assert (now_nl >= 0);
 
 	result = now_nm - (now_nl - _timestamp_nl_to_ms (timestamp, now_nl));
 
-	if (out_now_nm)
-		*out_now_nm = now_nm / 1000;
+	NM_SET_OUT (out_now_nm, now_nm / 1000);
 
 	/* converting the timestamp into nm_utils_get_monotonic_timestamp_ms() scale is
 	 * a good guess but fails in the following situations:

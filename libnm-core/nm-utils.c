@@ -36,6 +36,7 @@
 #endif
 
 #include "nm-glib-aux/nm-enum-utils.h"
+#include "nm-glib-aux/nm-time-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -5775,24 +5776,23 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
 gint64
 nm_utils_get_timestamp_msec (void)
 {
-	struct timespec ts;
+	gint64 ts;
 
-	if (clock_gettime (CLOCK_BOOTTIME, &ts) != -1)
-		goto success;
+	ts = nm_utils_clock_gettime_ms (CLOCK_BOOTTIME);
+	if (ts >= 0)
+		return ts;
 
-	if (errno == EINVAL) {
+	if (ts == -EINVAL) {
 		/* The fallback to CLOCK_MONOTONIC is taken only if we're running on a
 		 * criminally old kernel, prior to 2.6.39 (released on 18 May, 2011).
 		 * That happens during buildcheck on old builders, we don't expect to
 		 * be actually runs on kernels that old. */
-		if (clock_gettime (CLOCK_MONOTONIC, &ts) != -1)
-			goto success;
+		ts = nm_utils_clock_gettime_ms (CLOCK_MONOTONIC);
+		if (ts >= 0)
+			return ts;
 	}
 
 	g_return_val_if_reached (-1);
-
-success:
-	return (((gint64) ts.tv_sec) * 1000) + (ts.tv_nsec / 1000000);
 }
 
 /*****************************************************************************/

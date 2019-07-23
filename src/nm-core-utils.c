@@ -40,6 +40,7 @@
 #include "nm-glib-aux/nm-random-utils.h"
 #include "nm-glib-aux/nm-io-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
+#include "nm-glib-aux/nm-time-utils.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -2546,7 +2547,7 @@ _host_id_read_timestamp (gboolean use_secret_key_file,
 	    && stat (SECRET_KEY_FILE, &st) == 0) {
 		/* don't check for overflow or timestamps in the future. We get whatever
 		 * (bogus) date is on the file. */
-		*out_timestamp_ns = (st.st_mtim.tv_sec * NM_UTILS_NS_PER_SECOND) + st.st_mtim.tv_nsec;
+		*out_timestamp_ns = nm_utils_timespec_to_ns (&st.st_mtim);
 		return TRUE;
 	}
 
