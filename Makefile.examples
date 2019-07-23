@@ -178,6 +178,7 @@ EXTRA_DIST += \
 	examples/python/gi/list-connections.py \
 	examples/python/gi/nm-add-connection2.py \
 	examples/python/gi/nm-connection-update-stable-id.py \
+	examples/python/gi/nm-update2.py \
 	examples/python/gi/nm-wg-set \
 	examples/python/gi/setting-user-data.py \
 	examples/python/gi/show-wifi-networks.py \
