@@ -1282,8 +1282,7 @@ static gboolean
 _add_connection_to_first_plugin (NMSettings *self,
                                  NMConnection *new_connection,
                                  gboolean in_memory,
-                                 gboolean is_nm_generated,
-                                 gboolean is_volatile,
+                                 NMSettingsConnectionIntFlags sett_flags,
                                  const char *shadowed_storage,
                                  gboolean shadowed_owned,
                                  NMSettingsStorage **out_new_storage,
@@ -1314,8 +1313,8 @@ _add_connection_to_first_plugin (NMSettings *self,
 			success = nms_keyfile_plugin_add_connection (priv->keyfile_plugin,
 			                                             new_connection,
 			                                             in_memory,
-			                                             is_nm_generated,
-			                                             is_volatile,
+			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
+			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
 			                                             shadowed_storage,
 			                                             shadowed_owned,
 			                                             &storage,
@@ -1324,8 +1323,8 @@ _add_connection_to_first_plugin (NMSettings *self,
 		} else {
 			if (in_memory)
 				continue;
-			nm_assert (!is_nm_generated);
-			nm_assert (!is_volatile);
+			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED));
+			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE));
 			success = nm_settings_plugin_add_connection (plugin,
 			                                             new_connection,
 			                                             &storage,
@@ -1377,6 +1376,50 @@ _add_connection_to_first_plugin (NMSettings *self,
 	nm_assert (first_error);
 	g_propagate_error (error, first_error);
 	return FALSE;
+}
+
+static gboolean
+_update_connection_to_plugin (NMSettings *self,
+                              NMSettingsStorage *storage,
+                              NMConnection *connection,
+                              NMSettingsConnectionIntFlags sett_flags,
+                              gboolean force_rename,
+                              const char *shadowed_storage,
+                              gboolean shadowed_owned,
+                              NMSettingsStorage **out_new_storage,
+                              NMConnection **out_new_connection,
+                              GError **error)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMSettingsPlugin *plugin;
+	gboolean success;
+
+	plugin = nm_settings_storage_get_plugin (storage);
+
+	if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
+		success = nms_keyfile_plugin_update_connection (priv->keyfile_plugin,
+		                                                storage,
+		                                                connection,
+		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
+		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+		                                                shadowed_storage,
+		                                                shadowed_owned,
+		                                                force_rename,
+		                                                out_new_storage,
+		                                                out_new_connection,
+		                                                error);
+	} else {
+		nm_assert (!shadowed_storage);
+		nm_assert (!shadowed_owned);
+		success = nm_settings_plugin_update_connection (plugin,
+		                                                storage,
+		                                                connection,
+		                                                out_new_storage,
+		                                                out_new_connection,
+		                                                error);
+	}
+
+	return success;
 }
 
 /**
@@ -1459,8 +1502,7 @@ nm_settings_add_connection (NMSettings *self,
 	                                      (   persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK
 	                                       || NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
 	                                                                    | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)),
-	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
-	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+	                                      sett_flags,
 	                                      NULL,
 	                                      FALSE,
 	                                      &new_storage,
@@ -1534,7 +1576,6 @@ nm_settings_update_connection (NMSettings *self,
                                const char *log_context_name,
                                GError **error)
 {
-	NMSettingsPrivate *priv;
 	gs_unref_object NMConnection *connection_cloned_1 = NULL;
 	gs_unref_object NMConnection *new_connection_cloned = NULL;
 	gs_unref_object NMConnection *new_connection = NULL;
@@ -1558,8 +1599,6 @@ nm_settings_update_connection (NMSettings *self,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY));
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	cur_storage = g_object_ref (nm_settings_connection_get_storage (sett_conn));
 
@@ -1697,37 +1736,23 @@ nm_settings_update_connection (NMSettings *self,
 			success = _add_connection_to_first_plugin (self,
 			                                           connection,
 			                                           new_in_memory,
-			                                           NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
-			                                           NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+			                                           sett_flags,
 			                                           shadowed_storage,
 			                                           shadowed_owned,
 			                                           &new_storage,
 			                                           &new_connection,
 			                                           &local);
 		} else {
-			NMSettingsPlugin *plugin;
-
-			plugin = nm_settings_storage_get_plugin (cur_storage);
-			if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
-				success = nms_keyfile_plugin_update_connection (priv->keyfile_plugin,
-				                                                cur_storage,
-				                                                connection,
-				                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
-				                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
-				                                                shadowed_storage,
-				                                                shadowed_owned,
-				                                                NM_FLAGS_HAS (update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME),
-				                                                &new_storage,
-				                                                &new_connection,
-				                                                &local);
-			} else {
-				success = nm_settings_plugin_update_connection (nm_settings_storage_get_plugin (cur_storage),
-				                                                cur_storage,
-				                                                connection,
-				                                                &new_storage,
-				                                                &new_connection,
-				                                                &local);
-			}
+			success = _update_connection_to_plugin (self,
+			                                        cur_storage,
+			                                        connection,
+			                                        sett_flags,
+			                                        update_reason,
+			                                        shadowed_storage,
+			                                        shadowed_owned,
+			                                        &new_storage,
+			                                        &new_connection,
+			                                        &local);
 		}
 		if (!success) {
 			gboolean ignore_failure;
