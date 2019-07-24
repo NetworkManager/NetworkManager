@@ -1189,26 +1189,27 @@ _connection_changed_track (NMSettings *self,
 	if (_LOGT_ENABLED ()) {
 		const char *filename;
 		const NMSettingsMetaData *meta_data;
+		const char *shadowed_storage;
+		gboolean shadowed_owned;
 
 		filename = nm_settings_storage_get_filename (storage);
 		if (connection) {
-			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event with connection \"%s\"%s%s%s",
+			shadowed_storage = nm_settings_storage_get_shadowed_storage (storage, &shadowed_owned);
+			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event with connection \"%s\"%s%s%s%s%s%s",
 			       sett_conn_entry->uuid,
 			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
 			       nm_connection_get_id (connection),
-			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
+			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""),
+			       NM_PRINT_FMT_QUOTED (shadowed_storage, shadowed_owned ? " (owns \"" : " (shadows \"", shadowed_storage, "\")", ""));
 		} else if ((meta_data = nm_settings_storage_is_meta_data (storage))) {
-			if (meta_data->is_tombstone) {
-				_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for hiding profile%s%s%s",
-				       sett_conn_entry->uuid,
-				       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
-				       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
-			} else {
-				_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event with meta data for profile%s%s%s",
-				       sett_conn_entry->uuid,
-				       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
-				       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
-			}
+			nm_assert (meta_data->is_tombstone);
+			shadowed_storage = nm_settings_storage_get_shadowed_storage (storage, &shadowed_owned);
+			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for %shiding profile%s%s%s%s%s%s",
+			       sett_conn_entry->uuid,
+			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
+			       nm_settings_storage_is_meta_data_alive  (storage) ? "" : "dropping ",
+			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""),
+			       NM_PRINT_FMT_QUOTED (shadowed_storage, shadowed_owned ? " (owns \"" : " (shadows \"", shadowed_storage, "\")", ""));
 		} else {
 			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for dropping profile%s%s%s",
 			       sett_conn_entry->uuid,
