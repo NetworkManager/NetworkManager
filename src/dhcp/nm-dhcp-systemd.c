@@ -165,17 +165,18 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	                           nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
 
 	LOG_LEASE (LOGD_DHCP4, "%s '%u' seconds (at %lld)",
-	           nm_dhcp_option_request_string (_nm_dhcp_option_dhcp4_options, NM_DHCP_OPTION_DHCP4_NM_EXPIRY),
+	           nm_dhcp_option_request_string (_nm_dhcp_option_dhcp4_options,
+	                                          NM_DHCP_OPTION_DHCP4_IP_ADDRESS_LEASE_TIME),
 	           (guint) a_lifetime,
 	           (long long) (ts_time + a_lifetime));
 	nm_dhcp_option_add_option_u64 (options,
 	                               _nm_dhcp_option_dhcp4_options,
-	                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
-	                               (guint64) (ts_time + a_lifetime));
-	nm_dhcp_option_add_option_u64 (options,
-	                               _nm_dhcp_option_dhcp4_options,
 	                               NM_DHCP_OPTION_DHCP4_IP_ADDRESS_LEASE_TIME,
 	                               a_lifetime);
+	nm_dhcp_option_add_option_u64 (options,
+	                               _nm_dhcp_option_dhcp4_options,
+	                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
+	                               (guint64) (ts_time + a_lifetime));
 
 	nm_ip4_config_add_address (ip4_config,
 	                           &((const NMPlatformIP4Address) {
