@@ -6123,6 +6123,12 @@ static const NMMetaPropertyInfo *const property_infos_OVS_BRIDGE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_BRIDGE_STP_ENABLE,
 		.property_type =                &_pt_gobject_bool,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_BRIDGE_DATAPATH_TYPE,
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            NM_MAKE_STRV ("system", "netdev"),
+		),
+	),
 	NULL
 };
 
