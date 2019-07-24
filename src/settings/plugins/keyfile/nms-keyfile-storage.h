@@ -35,6 +35,7 @@
 
 typedef struct {
 	/* whether this is a tombstone to hide a UUID (via symlink to /dev/null). */
+	char *shadowed_storage;
 	bool is_tombstone:1;
 } NMSettingsMetaData;
 
@@ -116,7 +117,8 @@ struct _NMSKeyfilePlugin;
 NMSKeyfileStorage *nms_keyfile_storage_new_tombstone (struct _NMSKeyfilePlugin *self,
                                                       const char *uuid,
                                                       const char *filename,
-                                                      NMSKeyfileStorageType storage_type);
+                                                      NMSKeyfileStorageType storage_type,
+                                                      const char *shadowed_storage);
 
 NMSKeyfileStorage *nms_keyfile_storage_new_connection (struct _NMSKeyfilePlugin *self,
                                                        NMConnection *connection_take /* pass reference */,
@@ -221,6 +223,9 @@ nm_settings_storage_get_shadowed_storage (const NMSettingsStorage *storage,
 					NM_SET_OUT (out_shadowed_owned, self->u.conn_data.shadowed_owned);
 					return self->u.conn_data.shadowed_storage;
 				}
+			} else {
+				NM_SET_OUT (out_shadowed_owned, FALSE);
+				return self->u.meta_data.shadowed_storage;
 			}
 		}
 	}

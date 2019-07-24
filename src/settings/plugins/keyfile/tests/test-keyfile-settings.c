@@ -2543,7 +2543,7 @@ _assert_keyfile_nmmeta (const char *dirname,
 	nm_clear_g_free (&full_filename);
 
 
-	g_assert (nms_keyfile_nmmeta_write (dirname, uuid, loaded_path, allow_relative, &full_filename));
+	g_assert (nms_keyfile_nmmeta_write (dirname, uuid, loaded_path, allow_relative, NULL, &full_filename));
 	g_assert_cmpstr (full_filename, ==, exp_full_filename);
 	nm_clear_g_free (&full_filename);
 
@@ -2555,7 +2555,7 @@ _assert_keyfile_nmmeta (const char *dirname,
 	g_assert_cmpstr (symlink_target, ==, exp_symlink_target);
 
 
-	success = nms_keyfile_nmmeta_read (dirname, filename, &full_filename, &uuid2, &loaded_path2, NULL);
+	success = nms_keyfile_nmmeta_read (dirname, filename, &full_filename, &uuid2, &loaded_path2, NULL, NULL);
 	g_assert_cmpint (!!exp_uuid, ==, success);
 	if (success)
 		g_assert_cmpstr (full_filename, ==, exp_full_filename);
@@ -2566,7 +2566,7 @@ _assert_keyfile_nmmeta (const char *dirname,
 	g_assert_cmpstr (loaded_path2, ==, exp_loaded_path);
 
 
-	success = nms_keyfile_nmmeta_read_from_file (exp_full_filename, &dirname3, &filename3, &uuid3, &loaded_path3);
+	success = nms_keyfile_nmmeta_read_from_file (exp_full_filename, &dirname3, &filename3, &uuid3, &loaded_path3, NULL);
 	g_assert_cmpint (!!exp_uuid, ==, success);
 	if (success) {
 		g_assert_cmpstr (dirname3, ==, dirname);

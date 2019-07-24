@@ -24,12 +24,20 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include "nm-glib-aux/nm-io-utils.h"
 #include "nm-keyfile-internal.h"
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-config.h"
+
+/*****************************************************************************/
+
+#define NMMETA_KF_GROUP_NAME_NMMETA                 "nmmeta"
+#define NMMETA_KF_KEY_NAME_NMMETA_UUID              "uuid"
+#define NMMETA_KF_KEY_NAME_NMMETA_LOADED_PATH       "loaded-path"
+#define NMMETA_KF_KEY_NAME_NMMETA_SHADOWED_STORAGE  "shadowed-storage"
 
 /*****************************************************************************/
 
@@ -106,12 +114,16 @@ nms_keyfile_nmmeta_read (const char *dirname,
                          char **out_full_filename,
                          char **out_uuid,
                          char **out_loaded_path,
+                         char **out_shadowed_storage,
                          struct stat *out_st)
 {
 	const char *uuid;
 	guint uuid_len;
 	gs_free char *full_filename = NULL;
-	gs_free char *ln = NULL;
+	gs_free char *loaded_path = NULL;
+	gs_free char *shadowed_storage = NULL;
+	struct stat st_stack;
+	struct stat *st = out_st ?: &st_stack;
 
 	nm_assert (dirname && dirname[0] == '/');
 	nm_assert (filename && filename[0] && !strchr (filename, '/'));
@@ -124,17 +136,43 @@ nms_keyfile_nmmeta_read (const char *dirname,
 
 	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_NMMETA,
 	                                               full_filename,
-	                                               out_st,
+	                                               st,
 	                                               NULL))
 		return FALSE;
 
-	ln = nm_utils_read_link_absolute (full_filename, NULL);
-	if (!ln)
-		return FALSE;
+	if (S_ISREG (st->st_mode)) {
+		gs_unref_keyfile GKeyFile *kf = NULL;
+		gs_free char *v_uuid = NULL;
+
+		kf = g_key_file_new ();
+
+		if (!g_key_file_load_from_file (kf, full_filename, G_KEY_FILE_NONE, NULL))
+			return FALSE;
+
+		v_uuid = g_key_file_get_string (kf, NMMETA_KF_GROUP_NAME_NMMETA, NMMETA_KF_KEY_NAME_NMMETA_UUID, NULL);
+		if (!nm_streq0 (v_uuid, uuid))
+			return FALSE;
+
+		loaded_path = g_key_file_get_string (kf, NMMETA_KF_GROUP_NAME_NMMETA, NMMETA_KF_KEY_NAME_NMMETA_LOADED_PATH, NULL);
+		shadowed_storage = g_key_file_get_string (kf, NMMETA_KF_GROUP_NAME_NMMETA, NMMETA_KF_KEY_NAME_NMMETA_SHADOWED_STORAGE, NULL);
+
+		if (   !loaded_path
+		    && !shadowed_storage) {
+			/* if there is no useful information in the file, it is the same as if
+			 * the file is not present. Signal failure. */
+			return FALSE;
+		}
+
+	} else {
+		loaded_path = nm_utils_read_link_absolute (full_filename, NULL);
+		if (!loaded_path)
+			return FALSE;
+	}
 
 	NM_SET_OUT (out_uuid, g_strndup (uuid, uuid_len));
 	NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
-	NM_SET_OUT (out_loaded_path, g_steal_pointer (&ln));
+	NM_SET_OUT (out_loaded_path, g_steal_pointer (&loaded_path));
+	NM_SET_OUT (out_shadowed_storage, g_steal_pointer (&shadowed_storage));
 	return TRUE;
 }
 
@@ -143,7 +181,8 @@ nms_keyfile_nmmeta_read_from_file (const char *full_filename,
                                    char **out_dirname,
                                    char **out_filename,
                                    char **out_uuid,
-                                   char **out_loaded_path)
+                                   char **out_loaded_path,
+                                   char **out_shadowed_storage)
 {
 	gs_free char *dirname = NULL;
 	gs_free char *filename = NULL;
@@ -158,6 +197,7 @@ nms_keyfile_nmmeta_read_from_file (const char *full_filename,
 	                              NULL,
 	                              out_uuid,
 	                              out_loaded_path,
+	                              out_shadowed_storage,
 	                              NULL))
 		return FALSE;
 
@@ -170,7 +210,8 @@ gboolean
 nms_keyfile_nmmeta_write (const char *dirname,
                           const char *uuid,
                           const char *loaded_path,
-                          gboolean allow_relative,
+                          gboolean loaded_path_allow_relative,
+                          const char *shadowed_storage,
                           char **out_full_filename)
 {
 	gs_free char *full_filename_tmp = NULL;
@@ -180,6 +221,7 @@ nms_keyfile_nmmeta_write (const char *dirname,
 	nm_assert (   nm_utils_is_uuid (uuid)
 	           && !strchr (uuid, '/'));
 	nm_assert (!loaded_path || loaded_path[0] == '/');
+	nm_assert (!shadowed_storage || loaded_path);
 
 	full_filename_tmp = nms_keyfile_nmmeta_filename (dirname, uuid, TRUE);
 
@@ -198,7 +240,7 @@ nms_keyfile_nmmeta_write (const char *dirname,
 		return success;
 	}
 
-	if (allow_relative) {
+	if (loaded_path_allow_relative) {
 		const char *f;
 
 		f = nm_utils_file_is_in_path (loaded_path, dirname);
@@ -209,18 +251,40 @@ nms_keyfile_nmmeta_write (const char *dirname,
 		}
 	}
 
-	if (symlink (loaded_path, full_filename_tmp) != 0) {
-		full_filename_tmp[strlen (full_filename_tmp) - 1] = '\0';
-		NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
-		return FALSE;
-	}
+	full_filename = g_strndup (full_filename_tmp, strlen (full_filename_tmp) - 1);
 
-	full_filename = g_strdup (full_filename_tmp);
-	full_filename[strlen (full_filename) - 1] = '\0';
-	if (rename (full_filename_tmp, full_filename) != 0) {
-		(void) unlink (full_filename_tmp);
-		NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
-		return FALSE;
+	if (shadowed_storage) {
+		gs_unref_keyfile GKeyFile *kf = NULL;
+		gs_free char *contents = NULL;
+		gsize length;
+
+		kf = g_key_file_new ();
+
+		g_key_file_set_string (kf, NMMETA_KF_GROUP_NAME_NMMETA, NMMETA_KF_KEY_NAME_NMMETA_UUID, uuid);
+		g_key_file_set_string (kf, NMMETA_KF_GROUP_NAME_NMMETA, NMMETA_KF_KEY_NAME_NMMETA_LOADED_PATH, loaded_path);
+		g_key_file_set_string (kf, NMMETA_KF_GROUP_NAME_NMMETA, NMMETA_KF_KEY_NAME_NMMETA_SHADOWED_STORAGE, shadowed_storage);
+
+		contents = g_key_file_to_data (kf, &length, NULL);
+
+		if (!nm_utils_file_set_contents (full_filename, contents, length, 0600, NULL)) {
+			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
+			return FALSE;
+		}
+	} else {
+		/* we only have the "loaded_path" to store. That is commonly used for the tombstones to
+		 * link to /dev/null. A symlink is sufficient to store that ammount of information.
+		 * No need to bother with a keyfile. */
+		if (symlink (loaded_path, full_filename_tmp) != 0) {
+			full_filename_tmp[strlen (full_filename_tmp) - 1] = '\0';
+			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
+			return FALSE;
+		}
+
+		if (rename (full_filename_tmp, full_filename) != 0) {
+			(void) unlink (full_filename_tmp);
+			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
+			return FALSE;
+		}
 	}
 
 	NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
@@ -243,9 +307,10 @@ nms_keyfile_utils_check_file_permissions_stat (NMSKeyfileFiletype filetype,
 			return FALSE;
 		}
 	} else if (filetype == NMS_KEYFILE_FILETYPE_NMMETA) {
-		if (!S_ISLNK (st->st_mode)) {
+		if (   !S_ISLNK (st->st_mode)
+		    && !S_ISREG (st->st_mode)) {
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			                     "file is not a slink");
+			                     "file is neither a symlink nor a regular file");
 			return FALSE;
 		}
 	} else
@@ -259,7 +324,7 @@ nms_keyfile_utils_check_file_permissions_stat (NMSKeyfileFiletype filetype,
 			return FALSE;
 		}
 
-		if (   filetype == NMS_KEYFILE_FILETYPE_KEYFILE
+		if (   S_ISREG (st->st_mode)
 		    && (st->st_mode & 0077)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "File permissions (%03o) are insecure",

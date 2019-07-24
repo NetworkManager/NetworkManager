@@ -46,9 +46,13 @@ nms_keyfile_storage_copy_content (NMSKeyfileStorage *dst,
 	nm_assert (dst->storage_type == src->storage_type);
 	nm_assert (dst->is_meta_data == src->is_meta_data);
 
-	if (dst->is_meta_data)
+	if (dst->is_meta_data) {
+		gs_free char *shadowed_storage_to_free = NULL;
+
+		shadowed_storage_to_free = g_steal_pointer (&dst->u.meta_data.shadowed_storage);
 		dst->u.meta_data = src->u.meta_data;
-	else {
+		dst->u.meta_data.shadowed_storage = g_strdup (dst->u.meta_data.shadowed_storage);
+	} else {
 		gs_unref_object NMConnection *connection_to_free = NULL;
 		gs_free char *shadowed_storage_to_free = NULL;
 
@@ -140,7 +144,8 @@ NMSKeyfileStorage *
 nms_keyfile_storage_new_tombstone (NMSKeyfilePlugin *plugin,
                                    const char *uuid,
                                    const char *filename,
-                                   NMSKeyfileStorageType storage_type)
+                                   NMSKeyfileStorageType storage_type,
+                                   const char *shadowed_storage)
 {
 	NMSKeyfileStorage *self;
 
@@ -152,6 +157,8 @@ nms_keyfile_storage_new_tombstone (NMSKeyfilePlugin *plugin,
 
 	self = _storage_new (plugin, uuid, filename, TRUE, storage_type);
 	self->u.meta_data.is_tombstone = TRUE;
+	if (storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN)
+		self->u.meta_data.shadowed_storage = g_strdup (shadowed_storage);
 	return self;
 }
 
@@ -200,7 +207,9 @@ _storage_clear (NMSKeyfileStorage *self)
 {
 	c_list_unlink (&self->parent._storage_lst);
 	c_list_unlink (&self->parent._storage_by_uuid_lst);
-	if (!self->is_meta_data) {
+	if (self->is_meta_data)
+		nm_clear_g_free (&self->u.meta_data.shadowed_storage);
+	else {
 		g_clear_object (&self->u.conn_data.connection);
 		nm_clear_g_free (&self->u.conn_data.shadowed_storage);
 		self->u.conn_data.shadowed_owned = FALSE;

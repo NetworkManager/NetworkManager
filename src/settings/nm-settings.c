@@ -1914,6 +1914,7 @@ nm_settings_delete_connection (NMSettings *self,
 		                                              uuid,
 		                                              FALSE,
 		                                              TRUE,
+		                                              NULL,
 		                                              &tombstone_1_storage,
 		                                              NULL))
 			tombstone_in_memory = TRUE;
@@ -1927,6 +1928,7 @@ nm_settings_delete_connection (NMSettings *self,
 		                                              uuid,
 		                                              TRUE,
 		                                              TRUE,
+		                                              NULL,
 		                                              &tombstone_2_storage,
 		                                              NULL)) {
 			nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
@@ -1934,6 +1936,7 @@ nm_settings_delete_connection (NMSettings *self,
 			                                         uuid,
 			                                         TRUE,
 			                                         TRUE,
+			                                         NULL,
 			                                         &tombstone_2_storage,
 			                                         NULL);
 		}

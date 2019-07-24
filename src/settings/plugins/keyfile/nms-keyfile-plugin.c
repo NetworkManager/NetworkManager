@@ -309,6 +309,7 @@ _load_file (NMSKeyfilePlugin *self,
 	if (_ignore_filename (storage_type, filename)) {
 		gs_free char *nmmeta = NULL;
 		gs_free char *loaded_path = NULL;
+		gs_free char *shadowed_storage_filename = NULL;
 
 		if (!nms_keyfile_nmmeta_check_filename (filename, NULL)) {
 			if (error)
@@ -322,6 +323,7 @@ _load_file (NMSKeyfilePlugin *self,
 		                              &full_filename,
 		                              &nmmeta,
 		                              &loaded_path,
+		                              &shadowed_storage_filename,
 		                              NULL)) {
 			if (error)
 				nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, "skip unreadable nmmeta file");
@@ -349,7 +351,8 @@ _load_file (NMSKeyfilePlugin *self,
 		return nms_keyfile_storage_new_tombstone (self,
 		                                          nmmeta,
 		                                          full_filename,
-		                                          storage_type);
+		                                          storage_type,
+		                                          shadowed_storage_filename);
 	}
 
 	full_filename = g_build_filename (dirname, filename, NULL);
@@ -1052,6 +1055,9 @@ delete_connection (NMSettingsPlugin *plugin,
  *   has no /etc directory configured, this results in a hard failure.
  * @set: if %TRUE, write the symlink to point to /dev/null. If %FALSE,
  *   delete the nmmeta file (if it exists).
+ * @shadowed_storage: a tombstone can also shadow an existing storage.
+ *   In combination with @set and @in_memory, this is allowed to store
+ *   the shadowed storage filename.
  * @out_storage: (transfer full) (allow-none): the storage element that changes, or
  *   NULL if nothing changed. Note that the file on disk is already as
  *   we want to write it, then this still counts as a change. No change only
@@ -1076,6 +1082,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
                                          const char *uuid,
                                          gboolean in_memory,
                                          gboolean set,
+                                         const char *shadowed_storage,
                                          NMSettingsStorage **out_storage,
                                          gboolean *out_hard_failure)
 {
@@ -1092,6 +1099,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	nm_assert (NMS_IS_KEYFILE_PLUGIN (self));
 	nm_assert (nm_utils_is_uuid (uuid));
 	nm_assert (!out_storage || !*out_storage);
+	nm_assert (!shadowed_storage || (set && in_memory));
 
 	priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
 
@@ -1104,7 +1112,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 		dirname = priv->dirname_run;
 	} else {
 		if (!priv->dirname_etc) {
-			_LOGT ("commit: cannot %s%s nmmeta symlink for %s as there is no /etc directory",
+			_LOGT ("commit: cannot %s%s nmmeta file for %s as there is no /etc directory",
 			       simulate ? "simulate " : "",
 			       loaded_path ? "write" : "delete",
 			       uuid);
@@ -1123,13 +1131,15 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 		                                           uuid,
 		                                           loaded_path,
 		                                           FALSE,
+		                                           shadowed_storage,
 		                                           &nmmeta_filename);
 	}
 
-	_LOGT ("commit: %s nmmeta symlink \"%s\"%s%s%s %s",
+	_LOGT ("commit: %s nmmeta file \"%s\"%s%s%s%s%s%s %s",
 	       loaded_path ? "writing" : "deleting",
 	       nmmeta_filename,
 	       NM_PRINT_FMT_QUOTED (loaded_path, " (pointing to \"", loaded_path, "\")", ""),
+	       NM_PRINT_FMT_QUOTED (shadowed_storage, " (shadows \"", shadowed_storage, "\")", ""),
 	       simulate
 	       ? "simulated"
 	       : (  nmmeta_success
@@ -1152,8 +1162,12 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 			storage = nms_keyfile_storage_new_tombstone (self,
 			                                             uuid,
 			                                             nmmeta_filename,
-			                                             storage_type);
+			                                             storage_type,
+			                                             shadowed_storage);
 			nm_sett_util_storages_add_take (&priv->storages, storage);
+		} else {
+			g_free (storage->u.meta_data.shadowed_storage);
+			storage->u.meta_data.shadowed_storage = g_strdup (shadowed_storage);
 		}
 
 		storage_result = g_object_ref (storage);

@@ -68,6 +68,7 @@ gboolean nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
                                                   const char *uuid,
                                                   gboolean in_memory,
                                                   gboolean set,
+                                                  const char *shadowed_storage,
                                                   NMSettingsStorage **out_storage,
                                                   gboolean *out_hard_failure);
 
