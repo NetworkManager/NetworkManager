@@ -945,7 +945,7 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (user_data);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 
-	g_assert (priv->client6 == client);
+	nm_assert (priv->client6 == client);
 
 	_LOGD ("client event %d", event);
 
