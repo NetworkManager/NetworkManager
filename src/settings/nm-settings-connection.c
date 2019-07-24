@@ -44,6 +44,11 @@
 #define AUTOCONNECT_RETRIES_FOREVER      -1
 #define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
+#define _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES ((NMSettingsUpdate2Flags) (  NM_SETTINGS_UPDATE2_FLAG_TO_DISK \
+                                                                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY \
+                                                                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED \
+                                                                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))
+
 /*****************************************************************************/
 
 NMConnection **
@@ -1504,6 +1509,9 @@ update_auth_cb (NMSettingsConnection *self,
 		}
 	}
 
+	nm_assert (   !NM_FLAGS_ANY (info->flags, _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES)
+	           || nm_utils_is_power_of_two (info->flags & _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES));
+
 	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK))
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	else if (NM_FLAGS_ANY (info->flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
@@ -1725,14 +1733,10 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 	GVariantIter iter;
 	const char *args_name;
 	NMSettingsUpdate2Flags flags;
-	const NMSettingsUpdate2Flags ALL_PERSIST_MODES =   NM_SETTINGS_UPDATE2_FLAG_TO_DISK
-	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
-	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
-	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY;
 
 	g_variant_get (parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
 
-	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  ALL_PERSIST_MODES
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES
 	                                        | NM_SETTINGS_UPDATE2_FLAG_VOLATILE
 	                                        | NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT
 	                                        | NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)))) {
@@ -1745,11 +1749,11 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 
 	flags = (NMSettingsUpdate2Flags) flags_u;
 
-	if (   (   NM_FLAGS_ANY (flags, ALL_PERSIST_MODES)
-	        && !nm_utils_is_power_of_two (flags & ALL_PERSIST_MODES))
+	if (   (   NM_FLAGS_ANY (flags, _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES)
+	        && !nm_utils_is_power_of_two (flags & _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES))
 	    || (   NM_FLAGS_HAS (flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
-	        && !NM_FLAGS_ANY (flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED |
-	                                 NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
+	        && !NM_FLAGS_ANY (flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
+	                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
 		                             "Conflicting flags");
