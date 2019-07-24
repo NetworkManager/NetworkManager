@@ -228,6 +228,81 @@ _sett_conn_entry_get_conn (SettConnEntry *sett_conn_entry)
 	return sett_conn_entry ? sett_conn_entry->sett_conn : NULL;
 }
 
+/**
+ * _sett_conn_entry_storage_find_conflicting_storage:
+ * @sett_conn_entry: the list of settings-storages for the given UUID.
+ * @target_plugin: the settings plugin to check
+ * @storage_check_including: (allow-none): optionally compare against this storage.
+ * @plugins: the list of plugins sorted in descending priority. This determines
+ *   the priority and whether a storage conflicts.
+ *
+ * If we were to add the a storage to @target_plugin, then this function checks
+ * whether there are already other storages that would hide the storage after we
+ * add it. Those conflicting/hiding storages are a problem, because they have higher
+ * priority, so we cannot add the storage.
+ *
+ * @storage_check_including is optional, and if given then it checks whether updating
+ * the profile in this storage would result in confict. This is the check before
+ * update-connection. If this parameter is omitted, then it's about what happens
+ * when adding a new profile (add-connection).
+ *
+ * Returns: the conflicting storage or %NULL if there is none.
+ */
+static NMSettingsStorage *
+_sett_conn_entry_storage_find_conflicting_storage (SettConnEntry *sett_conn_entry,
+                                                   NMSettingsPlugin *target_plugin,
+                                                   NMSettingsStorage *storage_check_including,
+                                                   const GSList *plugins)
+{
+	StorageData *sd;
+
+	if (!sett_conn_entry)
+		return NULL;
+
+	if (   storage_check_including
+	    && nm_settings_storage_is_keyfile_run (storage_check_including)) {
+		/* the storage we check against is in-memory. It always has highest
+		 * priority, so there can be no other conflicting storages. */
+		return NULL;
+	}
+
+	/* Finds the first (highest priority) storage that has a connection.
+	 * Note that due to tombstones (that have a high priority), the connection
+	 * may not actually be exposed. This is to find hidden/shadowed storages
+	 * that provide a connection. */
+	c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+		nm_assert (NM_IS_SETTINGS_STORAGE (sd->storage));
+
+		if (!sd->connection) {
+			/* We only consider storages with connection. In particular,
+			 * tombstones are not relevant, because we can delete them to
+			 * resolve the conflict. */
+			continue;
+		}
+
+		if (sd->storage == storage_check_including) {
+			/* ok, the storage is the one we are about to check. All other
+			 * storages are lower priority, so there is no storage that hides
+			 * our storage_check_including. */
+			return NULL;
+		}
+
+		if (nm_settings_plugin_cmp_by_priority (nm_settings_storage_get_plugin (sd->storage),
+		                                        target_plugin,
+		                                        plugins) <= 0) {
+			/* the plugin of the existing storage is less important than @target_plugin.
+			 * We have no conflicting/hiding storage. */
+			return NULL;
+		}
+
+		/* Found. If we would add the profile to @target_plugin, then it would be hidden
+		 * by existing_storage. */
+		return sd->storage;
+	}
+
+	return NULL;
+}
+
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettings,
@@ -1281,6 +1356,7 @@ _plugin_connections_reload (NMSettings *self)
 
 static gboolean
 _add_connection_to_first_plugin (NMSettings *self,
+                                 SettConnEntry *sett_conn_entry,
                                  NMConnection *new_connection,
                                  gboolean in_memory,
                                  NMSettingsConnectionIntFlags sett_flags,
@@ -1309,6 +1385,28 @@ _add_connection_to_first_plugin (NMSettings *self,
 		gs_free_error GError *add_error = NULL;
 		gboolean success;
 		const char *filename;
+
+		if (!in_memory) {
+			NMSettingsStorage *conflicting_storage;
+
+			conflicting_storage = _sett_conn_entry_storage_find_conflicting_storage (sett_conn_entry, plugin, NULL, priv->plugins);
+			if (conflicting_storage) {
+				/* we have a connection provided by a plugin with higher priority than the one
+				 * we would want to add the connection. We cannot do that, because doing so
+				 * would result in adding a connection that gets hidden by the existing profile.
+				 * Also, since we test the plugins in order of priority, all following plugins
+				 * are unsuitable.
+				 *
+				 * Multiple connection plugins are so cumbersome, especially if they are unable
+				 * to add the connection. I suggest to disable all plugins except keyfile. */
+				_LOGT ("add-connection: failed to add %s/'%s': there is an existing storage "NM_SETTINGS_STORAGE_PRINT_FMT" with higher priority",
+				       nm_connection_get_uuid (new_connection),
+				       nm_connection_get_id (new_connection),
+				       NM_SETTINGS_STORAGE_PRINT_ARG (conflicting_storage));
+				nm_assert (first_error);
+				break;
+			}
+		}
 
 		if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
 			success = nms_keyfile_plugin_add_connection (priv->keyfile_plugin,
@@ -1473,8 +1571,8 @@ nm_settings_add_connection (NMSettings *self,
 
 	uuid = nm_connection_get_uuid (connection);
 
-	/* Make sure a connection with this UUID doesn't already exist */
-	if (_sett_conn_entry_get_conn (_sett_conn_entries_get (self, uuid))) {
+	sett_conn_entry = _sett_conn_entries_get (self, uuid);
+	if (_sett_conn_entry_get_conn (sett_conn_entry)) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_UUID_EXISTS,
@@ -1499,6 +1597,7 @@ nm_settings_add_connection (NMSettings *self,
 		connection = connection_cloned_1;
 
 	if (!_add_connection_to_first_plugin (self,
+	                                      sett_conn_entry,
 	                                      connection,
 	                                      (   persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK
 	                                       || NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
@@ -1735,6 +1834,7 @@ nm_settings_update_connection (NMSettings *self,
 
 		if (migrate_storage) {
 			success = _add_connection_to_first_plugin (self,
+			                                           _sett_conn_entries_get (self, uuid),
 			                                           connection,
 			                                           new_in_memory,
 			                                           sett_flags,
