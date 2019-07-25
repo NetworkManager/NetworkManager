@@ -1324,37 +1324,6 @@ auth_start (NMSettingsConnection *self,
 
 /**** DBus method handlers ************************************/
 
-static gboolean
-check_writable (NMConnection *self, GError **error)
-{
-	NMSettingConnection *s_con;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (self), FALSE);
-
-	s_con = nm_connection_get_setting_connection (self);
-	if (!s_con) {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "Connection did not have required 'connection' setting");
-		return FALSE;
-	}
-
-	/* If the connection is read-only, that has to be changed at the source of
-	 * the problem (ex a system settings plugin that can't write connections out)
-	 * instead of over D-Bus.
-	 */
-	if (nm_setting_connection_get_read_only (s_con)) {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
-		                     "Connection is read-only");
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static void
 get_settings_auth_cb (NMSettingsConnection *self,
                       GDBusMethodInvocation *context,
@@ -1603,13 +1572,6 @@ settings_connection_update (NMSettingsConnection *self,
 	UpdateInfo *info;
 	const char *permission;
 
-	/* If the connection is read-only, that has to be changed at the source of
-	 * the problem (ex a system settings plugin that can't write connections out)
-	 * instead of over D-Bus.
-	 */
-	if (!check_writable (nm_settings_connection_get_connection (self), &error))
-		goto error;
-
 	/* Check if the settings are valid first */
 	if (new_settings) {
 		if (!g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION)) {
@@ -1836,9 +1798,6 @@ impl_settings_connection_delete (NMDBusObject *obj,
 	GError *error = NULL;
 
 	nm_assert (nm_settings_connection_still_valid (self));
-
-	if (!check_writable (nm_settings_connection_get_connection (self), &error))
-		goto err;
 
 	subject = _new_auth_subject (invocation, &error);
 	if (!subject)

@@ -676,7 +676,6 @@ ifupdown_new_connection_from_if_block (if_block *block,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, block->name,
 	              NM_SETTING_CONNECTION_ID, idstr,
 	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_READ_ONLY, TRUE,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, (gboolean) (!!autoconnect),
 	              NULL);
 
