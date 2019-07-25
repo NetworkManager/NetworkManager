@@ -40,6 +40,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MCAST_SNOOPING_ENABLE,
 	PROP_RSTP_ENABLE,
 	PROP_STP_ENABLE,
+	PROP_DATAPATH_TYPE,
 );
 
 /**
@@ -51,6 +52,7 @@ struct _NMSettingOvsBridge {
 	NMSetting parent;
 
 	char *fail_mode;
+	char *datapath_type;
 	gboolean mcast_snooping_enable;
 	gboolean rstp_enable;
 	gboolean stp_enable;
@@ -128,6 +130,22 @@ nm_setting_ovs_bridge_get_stp_enable (NMSettingOvsBridge *self)
 	return self->stp_enable;
 }
 
+/**
+ * nm_setting_ovs_bridge_get_datapath_type:
+ * @self: the #NMSettingOvsBridge
+ *
+ * Returns: the #NMSettingOvsBridge:datapath_type property of the setting
+ *
+ * Since: 1.20
+ **/
+const char *
+nm_setting_ovs_bridge_get_datapath_type (NMSettingOvsBridge *self)
+{
+	g_return_val_if_fail (NM_IS_SETTING_OVS_BRIDGE (self), NULL);
+
+	return self->datapath_type;
+}
+
 /*****************************************************************************/
 
 static int
@@ -172,6 +190,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (!NM_IN_STRSET (self->datapath_type, "system", "netdev", NULL)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not valid"),
+		             self->datapath_type);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_OVS_BRIDGE_SETTING_NAME, NM_SETTING_OVS_BRIDGE_DATAPATH_TYPE);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -195,6 +223,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_STP_ENABLE:
 		g_value_set_boolean (value, self->stp_enable);
+		break;
+	case PROP_DATAPATH_TYPE:
+		g_value_set_string (value, self->datapath_type);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -221,6 +252,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_STP_ENABLE:
 		self->stp_enable = g_value_get_boolean (value);
+		break;
+	case PROP_DATAPATH_TYPE:
+		g_free (self->datapath_type);
+		self->datapath_type = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -256,6 +291,7 @@ finalize (GObject *object)
 	NMSettingOvsBridge *self = NM_SETTING_OVS_BRIDGE (object);
 
 	g_free (self->fail_mode);
+	g_free (self->datapath_type);
 
 	G_OBJECT_CLASS (nm_setting_ovs_bridge_parent_class)->finalize (object);
 }
@@ -328,6 +364,20 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingOvsBridge:datapath-type:
+	 *
+	 * The data path type. One of "system", "netdev" or empty.
+	 *
+	 * Since: 1.20
+	 **/
+	obj_properties[PROP_DATAPATH_TYPE] =
+	    g_param_spec_string (NM_SETTING_OVS_BRIDGE_DATAPATH_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

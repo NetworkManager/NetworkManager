@@ -256,6 +256,7 @@
 #define DESCRIBE_DOC_NM_SETTING_MACVLAN_PROMISCUOUS N_("Whether the interface should be put in promiscuous mode.")
 #define DESCRIBE_DOC_NM_SETTING_MACVLAN_TAP N_("Whether the interface should be a MACVTAP.")
 #define DESCRIBE_DOC_NM_SETTING_MATCH_INTERFACE_NAME N_("A list of interface names to match. Each element is a shell wildcard pattern.  When an element is prefixed with exclamation mark (!) the condition is inverted. A candidate interface name is considered matching when both these conditions are satisfied: (a) any of the elements not prefixed with '!' matches or there aren't such elements; (b) none of the elements prefixed with '!' match.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_DATAPATH_TYPE N_("The data path type. One of \"system\", \"netdev\" or empty.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_FAIL_MODE N_("The bridge failure mode. One of \"secure\", \"standalone\" or empty.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE N_("Enable or disable multicast snooping.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_RSTP_ENABLE N_("Enable or disable RSTP.")

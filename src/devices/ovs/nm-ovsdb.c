@@ -445,6 +445,7 @@ _insert_bridge (json_t *params, NMConnection *bridge, json_t *new_ports)
 	gboolean mcast_snooping_enable = FALSE;
 	gboolean rstp_enable = FALSE;
 	gboolean stp_enable = FALSE;
+	const char *datapath_type = NULL;
 	json_t *row;
 
 	s_ovs_bridge = nm_connection_get_setting_ovs_bridge (bridge);
@@ -456,6 +457,7 @@ _insert_bridge (json_t *params, NMConnection *bridge, json_t *new_ports)
 		mcast_snooping_enable = nm_setting_ovs_bridge_get_mcast_snooping_enable (s_ovs_bridge);
 		rstp_enable = nm_setting_ovs_bridge_get_rstp_enable (s_ovs_bridge);
 		stp_enable = nm_setting_ovs_bridge_get_stp_enable (s_ovs_bridge);
+		datapath_type = nm_setting_ovs_bridge_get_datapath_type (s_ovs_bridge);
 	}
 
 	if (fail_mode)
@@ -466,6 +468,8 @@ _insert_bridge (json_t *params, NMConnection *bridge, json_t *new_ports)
 		json_object_set_new (row, "rstp_enable", json_boolean (rstp_enable));
 	if (stp_enable)
 		json_object_set_new (row, "stp_enable", json_boolean (stp_enable));
+	if (datapath_type)
+		json_object_set_new (row, "datapath_type", json_string (datapath_type));
 
 	json_object_set_new (row, "name", json_string (nm_connection_get_interface_name (bridge)));
 	json_object_set_new (row, "ports", json_pack ("[s, O]", "set", new_ports));
