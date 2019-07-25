@@ -1438,7 +1438,7 @@ update_complete (NMSettingsConnection *self,
 
 		g_variant_builder_init (&result, G_VARIANT_TYPE ("a{sv}"));
 		g_dbus_method_invocation_return_value (info->context,
-		                                       g_variant_new ("(@a{sv})", g_variant_builder_end (&result)));
+		                                       g_variant_new ("(a{sv})", &result));
 	} else
 		g_dbus_method_invocation_return_value (info->context, NULL);
 
@@ -1514,12 +1514,6 @@ update_auth_cb (NMSettingsConnection *self,
 	} else
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
 
-	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)) {
-		nm_settings_connection_autoconnect_blocked_reason_set (self,
-		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
-		                                                       TRUE);
-	}
-
 	nm_settings_connection_update (self,
 	                               info->new_settings,
 	                               persist_mode,
@@ -1529,9 +1523,14 @@ update_auth_cb (NMSettingsConnection *self,
 	                                 NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
 	                               | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
 	                                 NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME
-	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL
+	                               | (  NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)
+	                                  ? NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE
+	                                  : NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL)
 	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
-	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS,
+	                               | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS
+	                               | (  NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)
+	                                  ? NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT
+	                                  : NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE),
 	                               "update-from-dbus",
 	                               &local);
 
@@ -1733,9 +1732,10 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
 
-	if (NM_FLAGS_ANY (flags_u, ~((guint32) (ALL_PERSIST_MODES |
-	                                        NM_SETTINGS_UPDATE2_FLAG_VOLATILE |
-	                                        NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)))) {
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  ALL_PERSIST_MODES
+	                                        | NM_SETTINGS_UPDATE2_FLAG_VOLATILE
+	                                        | NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT
+	                                        | NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
 		                             "Unknown flags");
@@ -1757,13 +1757,7 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 		return;
 	}
 
-	if (!g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}"))) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
-		                             "args is of invalid type");
-		g_dbus_method_invocation_take_error (invocation, error);
-		return;
-	}
+	nm_assert (g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
 
 	g_variant_iter_init (&iter, args);
 	while (g_variant_iter_next (&iter, "{&sv}", &args_name, NULL)) {

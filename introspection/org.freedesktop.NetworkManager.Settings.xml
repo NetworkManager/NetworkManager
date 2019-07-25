@@ -64,6 +64,41 @@
     </method>
 
     <!--
+        AddConnection2:
+        @settings: New connection settings, properties, and (optionally) secrets.
+        @flags: optional flags argument. Currently the following flags are supported:
+          "0x1" (to-disk),
+          "0x2" (in-memory),
+          "0x20" (block-autoconnect).
+          Unknown flags cause the call to fail.
+        @args: optional arguments dictionary, for extensibility. Currently no
+          arguments are accepted. Specifying unknown keys causes the call
+          to fail.
+        @path: Object path of the new connection that was just added.
+        @result: output argument, currently no additional results are returned.
+
+        Add a new connection profile.
+
+        Either the flags 0x1 (to-disk) or 0x2 (in-memory) must be specified.
+        The effect is whether to behave like AddConnection or AddConnectionUnsaved.
+        If 0x20 (block-autoconnect) is specified, autoconnect for the new profile
+        is blocked from the beginnin. Otherwise, the profile might automatically
+        connect if a suitable device is around.
+
+        AddConnection2 is a extensible alternative to AddConnection, and AddConnectionUnsaved.
+        The new variant can do everything that the older variants could, and more.
+
+        Since: 1.20
+    -->
+    <method name="AddConnection2">
+      <arg name="settings" type="a{sa{sv}}" direction="in"/>
+      <arg name="flags" type="u" direction="in"/>
+      <arg name="args" type="a{sv}" direction="in"/>
+      <arg name="path" type="o" direction="out"/>
+      <arg name="result" type="a{sv}" direction="out"/>
+    </method>
+
+    <!--
         LoadConnections:
         @filenames: Array of paths to on-disk connection profiles in directories monitored by NetworkManager.
         @status: Success or failure of the operation as a whole. True if NetworkManager at least tried to load the indicated connections, even if it did not succeed. False if an error occurred before trying to load the connections (eg, permission denied).

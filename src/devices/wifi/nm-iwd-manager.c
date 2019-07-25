@@ -472,6 +472,7 @@ mirror_8021x_connection (NMIwdManager *self,
 	if (!nm_settings_add_connection (priv->settings,
 	                                 connection,
 	                                 NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                                 NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 	                                 NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
 	                                 &settings_connection,
 	                                 &error)) {

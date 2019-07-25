@@ -923,7 +923,12 @@ _connection_changed_update (NMSettings *self,
 		priv->connections_generation++;
 
 		g_signal_connect (sett_conn, NM_SETTINGS_CONNECTION_FLAGS_CHANGED, G_CALLBACK (connection_flags_changed), self);
+	}
 
+	if (NM_FLAGS_HAS (update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT)) {
+		nm_settings_connection_autoconnect_blocked_reason_set (sett_conn,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+		                                                       TRUE);
 	}
 
 	sett_mask |= NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE;
@@ -1371,6 +1376,7 @@ _add_connection_to_first_plugin (NMSettings *self,
  * @self: the #NMSettings object
  * @connection: the source connection to create a new #NMSettingsConnection from
  * @persist_mode: the persist-mode for this profile.
+ * @add_reason: the add-reason flags.
  * @sett_flags: the settings flags to set.
  * @out_sett_conn: (allow-none) (transfer none): the added settings connection on success.
  * @error: on return, a location to store any errors that may occur
@@ -1385,6 +1391,7 @@ gboolean
 nm_settings_add_connection (NMSettings *self,
                             NMConnection *connection,
                             NMSettingsConnectionPersistMode persist_mode,
+                            NMSettingsConnectionAddReason add_reason,
                             NMSettingsConnectionIntFlags sett_flags,
                             NMSettingsConnection **out_sett_conn,
                             GError **error)
@@ -1407,6 +1414,8 @@ nm_settings_add_connection (NMSettings *self,
 
 	nm_assert (   !NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE)
 	           || persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY);
+
+	nm_assert (!NM_FLAGS_ANY (add_reason, ~NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT));
 
 	NM_SET_OUT (out_sett_conn, NULL);
 
@@ -1486,7 +1495,10 @@ nm_settings_add_connection (NMSettings *self,
 	                                       _NM_SETTINGS_CONNECTION_INT_FLAGS_PERSISTENT_MASK,
 	                                       FALSE,
 	                                         NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
-	                                       | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS);
+	                                       | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS
+	                                       | (  NM_FLAGS_HAS (add_reason, NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT)
+	                                          ? NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT
+	                                          : NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE));
 
 	nm_assert (sett_conn_entry == _sett_conn_entries_get (self, sett_conn_entry->uuid));
 	nm_assert (NM_IS_SETTINGS_CONNECTION (sett_conn_entry->sett_conn));
@@ -1972,6 +1984,7 @@ pk_add_cb (NMAuthChain *chain,
 		nm_settings_add_connection (self,
 		                            connection,
 		                            GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "persist-mode")),
+		                            GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "add-reason")),
 		                            GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sett-flags")),
 		                            &added,
 		                            &error);
@@ -1999,6 +2012,7 @@ void
 nm_settings_add_connection_dbus (NMSettings *self,
                                  NMConnection *connection,
                                  NMSettingsConnectionPersistMode persist_mode,
+                                 NMSettingsConnectionAddReason add_reason,
                                  NMSettingsConnectionIntFlags sett_flags,
                                  NMAuthSubject *subject,
                                  GDBusMethodInvocation *context,
@@ -2073,6 +2087,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
 	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
 	nm_auth_chain_set_data (chain, "persist-mode", GUINT_TO_POINTER (persist_mode), NULL);
+	nm_auth_chain_set_data (chain, "add-reason", GUINT_TO_POINTER (add_reason), NULL);
 	nm_auth_chain_set_data (chain, "sett-flags", GUINT_TO_POINTER (sett_flags), NULL);
 	nm_auth_chain_add_call_unsafe (chain, perm, TRUE);
 	return;
@@ -2091,27 +2106,42 @@ settings_add_connection_add_cb (NMSettings *self,
                                 NMAuthSubject *subject,
                                 gpointer user_data)
 {
+	gboolean is_add_connection_2 = GPOINTER_TO_INT (user_data);
+
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, NULL, subject, error->message);
+		return;
+	}
+
+	if (is_add_connection_2) {
+		GVariantBuilder builder;
+
+		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+		g_dbus_method_invocation_return_value (context,
+		                                       g_variant_new ("(oa{sv})",
+		                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
+		                                                      &builder));
 	} else {
 		g_dbus_method_invocation_return_value (context,
 		                                       g_variant_new ("(o)",
 		                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
-		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE, NULL,
-		                            subject, NULL);
 	}
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE, NULL,
+	                            subject, NULL);
 }
 
 static void
 settings_add_connection_helper (NMSettings *self,
                                 GDBusMethodInvocation *context,
+                                gboolean is_add_connection_2,
                                 GVariant *settings,
-                                NMSettingsConnectionPersistMode persist_mode)
+                                NMSettingsAddConnection2Flags flags)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
 	gs_unref_object NMAuthSubject *subject = NULL;
+	NMSettingsConnectionPersistMode persist_mode;
 
 	connection = _nm_simple_connection_new_from_dbus (settings,
 	                                                    NM_SETTING_PARSE_FLAGS_STRICT
@@ -2133,14 +2163,24 @@ settings_add_connection_helper (NMSettings *self,
 		return;
 	}
 
+	if (NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	else {
+		nm_assert (NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY));
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
+	}
+
 	nm_settings_add_connection_dbus (self,
 	                                 connection,
 	                                 persist_mode,
+	                                   NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT)
+	                                 ? NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT
+	                                 : NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 	                                 NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
 	                                 subject,
 	                                 context,
 	                                 settings_add_connection_add_cb,
-	                                 NULL);
+	                                 GINT_TO_POINTER (!!is_add_connection_2));
 }
 
 static void
@@ -2156,7 +2196,7 @@ impl_settings_add_connection (NMDBusObject *obj,
 	gs_unref_variant GVariant *settings = NULL;
 
 	g_variant_get (parameters, "(@a{sa{sv}})", &settings);
-	settings_add_connection_helper (self, invocation, settings, NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK);
+	settings_add_connection_helper (self, invocation, FALSE, settings, NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK);
 }
 
 static void
@@ -2172,7 +2212,70 @@ impl_settings_add_connection_unsaved (NMDBusObject *obj,
 	gs_unref_variant GVariant *settings = NULL;
 
 	g_variant_get (parameters, "(@a{sa{sv}})", &settings);
-	settings_add_connection_helper (self, invocation, settings, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY);
+	settings_add_connection_helper (self, invocation, FALSE, settings, NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY);
+}
+
+static void
+impl_settings_add_connection2 (NMDBusObject *obj,
+                               const NMDBusInterfaceInfoExtended *interface_info,
+                               const NMDBusMethodInfoExtended *method_info,
+                               GDBusConnection *connection,
+                               const char *sender,
+                               GDBusMethodInvocation *invocation,
+                               GVariant *parameters)
+{
+	NMSettings *self = NM_SETTINGS (obj);
+	gs_unref_variant GVariant *settings = NULL;
+	gs_unref_variant GVariant *args = NULL;
+	NMSettingsAddConnection2Flags flags;
+	const char *args_name;
+	GVariantIter iter;
+	guint32 flags_u;
+
+	g_variant_get (parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
+
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
+	                                        | NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY
+	                                        | NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT)))) {
+		g_dbus_method_invocation_take_error (invocation,
+		                                     g_error_new_literal (NM_SETTINGS_ERROR,
+		                                                          NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                                                          "Unknown flags"));
+		return;
+	}
+
+	flags = flags_u;
+
+	if (!NM_FLAGS_ANY (flags,   NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
+	                          | NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY)) {
+		g_dbus_method_invocation_take_error (invocation,
+		                                     g_error_new_literal (NM_SETTINGS_ERROR,
+		                                                          NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                                                          "Requires either to-disk (0x1) or in-memory (0x2) flags"));
+		return;
+	}
+
+	if (NM_FLAGS_ALL (flags,   NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
+	                         | NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY)) {
+		g_dbus_method_invocation_take_error (invocation,
+		                                     g_error_new_literal (NM_SETTINGS_ERROR,
+		                                                          NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                                                          "Cannot set to-disk (0x1) and in-memory (0x2) flags together"));
+		return;
+	}
+
+	nm_assert (g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
+
+	g_variant_iter_init (&iter, args);
+	while (g_variant_iter_next (&iter, "{&sv}", &args_name, NULL)) {
+		g_dbus_method_invocation_take_error (invocation,
+		                                     g_error_new (NM_SETTINGS_ERROR,
+		                                                  NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                                                  "Unsupported argument '%s'", args_name));
+		return;
+	}
+
+	settings_add_connection_helper (self, invocation, TRUE, settings, flags);
 }
 
 /*****************************************************************************/
@@ -2941,6 +3044,7 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	nm_settings_add_connection (self,
 	                            connection,
 	                            NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                            NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 	                            NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
 	                            &added,
 	                            &error);
@@ -3437,6 +3541,21 @@ static const NMDBusInterfaceInfoExtended interface_info_settings = {
 					),
 				),
 				.handle = impl_settings_add_connection_unsaved,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"AddConnection2",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("settings", "a{sa{sv}}"),
+						NM_DEFINE_GDBUS_ARG_INFO ("flags",    "u"),
+						NM_DEFINE_GDBUS_ARG_INFO ("args",     "a{sv}"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("path", "o"),
+						NM_DEFINE_GDBUS_ARG_INFO ("result", "a{sv}"),
+					),
+				),
+				.handle = impl_settings_add_connection2,
 			),
 			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
 				NM_DEFINE_GDBUS_METHOD_INFO_INIT (

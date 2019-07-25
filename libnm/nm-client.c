@@ -1631,23 +1631,55 @@ nm_client_get_connection_by_uuid (NMClient *client, const char *uuid)
 	return nm_remote_settings_get_connection_by_uuid (NM_CLIENT_GET_PRIVATE (client)->settings, uuid);
 }
 
-static void
-add_connection_cb (GObject *object,
-                   GAsyncResult *result,
-                   gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	NMRemoteConnection *conn;
-	GError *error = NULL;
+typedef struct {
+	NMRemoteConnection *connection;
+	GVariant *results;
+} AddConnection2CbData;
 
-	conn = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (object), result, &error);
-	if (conn)
-		g_simple_async_result_set_op_res_gpointer (simple, conn, g_object_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
+static void
+add_connection2_cb_data_destroy (gpointer user_data)
+{
+	AddConnection2CbData *data = user_data;
+
+	g_object_unref (data->connection);
+	nm_g_variant_unref (data->results);
+	nm_g_slice_free (data);
+}
+
+static void
+add_connection2_cb (NMRemoteSettings *self,
+                    NMRemoteConnection *connection,
+                    GVariant *results,
+                    GError *error,
+                    gpointer user_data)
+{
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
+
+	if (error) {
+		g_simple_async_result_take_error (simple,
+		                                  g_error_new_literal (error->domain,
+		                                                       error->code,
+		                                                       error->message));
+	} else if (g_simple_async_result_get_source_tag (simple) == nm_client_add_connection_async) {
+		g_simple_async_result_set_op_res_gpointer (simple,
+		                                           g_object_ref (connection),
+		                                           g_object_unref);
+	} else {
+		AddConnection2CbData *data;
+
+		nm_assert (g_simple_async_result_get_source_tag (simple) == nm_client_add_connection2);
+
+		data = g_slice_new (AddConnection2CbData);
+		*data = (AddConnection2CbData) {
+			.connection = g_object_ref (connection),
+			.results    = nm_g_variant_ref (results),
+		};
+		g_simple_async_result_set_op_res_gpointer (simple,
+		                                           data,
+		                                           add_connection2_cb_data_destroy);
+	}
 
 	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
 }
 
 /**
@@ -1698,9 +1730,17 @@ nm_client_add_connection_async (NMClient *client,
 	                                    nm_client_add_connection_async);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_remote_settings_add_connection_async (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                         connection, save_to_disk,
-	                                         cancellable, add_connection_cb, simple);
+
+	nm_remote_settings_add_connection2 (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                    nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+	                                    save_to_disk
+	                                    ? NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
+	                                    : NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY,
+	                                    NULL,
+	                                    TRUE,
+	                                    cancellable,
+	                                    add_connection2_cb,
+	                                    simple);
 }
 
 /**
@@ -1722,13 +1762,111 @@ nm_client_add_connection_finish (NMClient *client,
 	GSimpleAsyncResult *simple;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_add_connection_async), NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
 		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+/**
+ * nm_client_add_connection2:
+ * @client: the %NMClient
+ * @settings: the "a{sa{sv}}" #GVariant with the content of the setting.
+ * @flags: the %NMSettingsAddConnection2Flags argument.
+ * @args: (allow-none): the "a{sv}" #GVariant with extra argument or %NULL
+ *   for no extra arguments.
+ * @ignore_out_result: this function wraps AddConnection2(), which has an
+ *   additional result "a{sv}" output parameter. By setting this to %TRUE,
+ *   you signal that you are not interested in that output parameter.
+ *   This allows the function to fall back to AddConnection() and AddConnectionUnsaved(),
+ *   which is interesting if you run against an older server version that does
+ *   not yet provide AddConnection2(). By setting this to %FALSE, the function
+ *   under the hood always calls AddConnection2().
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the add operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Call AddConnection2() D-Bus API asynchronously.
+ *
+ * Since: 1.20
+ **/
+void
+nm_client_add_connection2 (NMClient *client,
+                           GVariant *settings,
+                           NMSettingsAddConnection2Flags flags,
+                           GVariant *args,
+                           gboolean ignore_out_result,
+                           GCancellable *cancellable,
+                           GAsyncReadyCallback callback,
+                           gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (g_variant_is_of_type (settings, G_VARIANT_TYPE ("a{sa{sv}}")));
+	g_return_if_fail (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client),
+	                                    callback,
+	                                    user_data,
+	                                    nm_client_add_connection2);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+
+	nm_remote_settings_add_connection2 (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                    settings,
+	                                    flags,
+	                                    args,
+	                                    ignore_out_result,
+	                                    cancellable,
+	                                    add_connection2_cb,
+	                                    simple);
+}
+
+/**
+ * nm_client_add_connection2_finish:
+ * @client: the #NMClient
+ * @result: the #GAsyncResult
+ * @out_result: (allow-none) (transfer full) (out): the output #GVariant
+ *   from AddConnection2().
+ *   If you care about the output result, then the "ignore_out_result"
+ *   parameter of nm_client_add_connection2() must not be set to %TRUE.
+ * @error: (allow-none): the error argument.
+ *
+ * Returns: (transfer full): on success, a pointer to the added
+ *   #NMRemoteConnection.
+ *
+ * Since: 1.20
+ */
+NMRemoteConnection *
+nm_client_add_connection2_finish (NMClient *client,
+                                  GAsyncResult *result,
+                                  GVariant **out_result,
+                                  GError **error)
+{
+	GSimpleAsyncResult *simple;
+	AddConnection2CbData *data;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_add_connection2), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error)) {
+		NM_SET_OUT (out_result, NULL);
+		return NULL;
+	}
+
+	data = g_simple_async_result_get_op_res_gpointer (simple);
+	NM_SET_OUT (out_result, g_variant_ref (data->results));
+	return g_object_ref (data->connection);
 }
 
 /**

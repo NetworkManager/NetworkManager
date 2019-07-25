@@ -22,6 +22,7 @@
 
 #include "nm-remote-settings.h"
 
+#include "c-list/src/c-list.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-client.h"
@@ -43,7 +44,7 @@ typedef struct {
 	GPtrArray *visible_connections;
 
 	/* AddConnectionInfo objects that are waiting for the connection to become initialized */
-	GSList *add_list;
+	CList add_lst_head;
 
 	char *hostname;
 	gboolean can_modify;
@@ -70,51 +71,78 @@ static guint signals[LAST_SIGNAL] = { 0 };
 /*****************************************************************************/
 
 typedef struct {
+	CList add_lst;
 	NMRemoteSettings *self;
-	GSimpleAsyncResult *simple;
+	NMRemoteSettingAddConnection2Callback callback;
+	gpointer user_data;
+	GCancellable *cancellable;
 	char *path;
-	gboolean saved;
+	GVariant *results;
+	gulong cancellable_id;
+	NMSettingsAddConnection2Flags flags;
+	bool ignore_out_result:1;
 } AddConnectionInfo;
 
 static AddConnectionInfo *
-add_connection_info_find (NMRemoteSettings *self, const char *path)
+_add_connection_info_find (NMRemoteSettings *self, const char *path)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
+	AddConnectionInfo *info;
 
-	for (iter = priv->add_list; iter; iter = g_slist_next (iter)) {
-		AddConnectionInfo *info = iter->data;
-
-		if (!g_strcmp0 (info->path, path))
+	c_list_for_each_entry (info, &priv->add_lst_head, add_lst) {
+		if (nm_streq0 (info->path, path))
 			return info;
 	}
-
 	return NULL;
 }
 
 static void
-add_connection_info_complete (NMRemoteSettings *self,
-                              AddConnectionInfo *info,
-                              NMRemoteConnection *connection,
-                              GError *error)
+_add_connection_info_complete (AddConnectionInfo *info,
+                               NMRemoteConnection *connection,
+                               GError *error_take)
 {
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	nm_assert (info);
 
-	g_return_if_fail (info != NULL);
+	c_list_unlink_stale (&info->add_lst);
 
-	if (connection) {
-		g_simple_async_result_set_op_res_gpointer (info->simple,
-		                                           g_object_ref (connection),
-		                                           g_object_unref);
-	} else
-		g_simple_async_result_set_from_error (info->simple, error);
-	g_simple_async_result_complete (info->simple);
+	nm_clear_g_signal_handler (info->cancellable, &info->cancellable_id);
 
-	g_object_unref (info->simple);
-	priv->add_list = g_slist_remove (priv->add_list, info);
+	if (   info->cancellable
+	    && !nm_utils_error_is_cancelled (error_take, FALSE)) {
+		GError *error2 = NULL;
 
-	g_free (info->path);
-	g_slice_free (AddConnectionInfo, info);
+		if (g_cancellable_set_error_if_cancelled (info->cancellable, &error2)) {
+			g_clear_error (&error_take);
+			error_take = error2;
+			connection = NULL;
+		}
+	}
+
+	info->callback (info->self,
+	                connection,
+	                connection ? info->results : NULL,
+	                error_take,
+	                info->user_data);
+
+	g_clear_error (&error_take);
+
+	g_object_unref (info->self);
+	nm_g_object_unref (info->cancellable);
+	nm_clear_g_free (&info->path);
+	nm_g_variant_unref (info->results);
+
+	nm_g_slice_free (info);
+}
+
+static void
+_add_connection_info_cancelled (GCancellable *cancellable,
+                                AddConnectionInfo *info)
+{
+	_add_connection_info_complete (info,
+	                               NULL,
+	                               g_error_new_literal (G_IO_ERROR,
+	                                                    G_IO_ERROR_CANCELLED,
+	                                                    "Operation was cancelled"));
 }
 
 typedef const char * (*ConnectionStringGetter) (NMConnection *);
@@ -216,7 +244,7 @@ connection_added (NMRemoteSettings *self,
                   NMRemoteConnection *remote)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	AddConnectionInfo *addinfo;
+	AddConnectionInfo *info;
 	const char *path;
 
 	if (!g_signal_handler_find (remote, G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, NULL,
@@ -233,26 +261,27 @@ connection_added (NMRemoteSettings *self,
 		g_signal_stop_emission (self, signals[CONNECTION_ADDED], 0);
 
 	path = nm_connection_get_path (NM_CONNECTION (remote));
-	addinfo = add_connection_info_find (self, path);
-	if (addinfo)
-		add_connection_info_complete (self, addinfo, remote, NULL);
+	info = _add_connection_info_find (self, path);
+	if (info)
+		_add_connection_info_complete (info, remote, NULL);
 }
 
 static void
-object_creation_failed (NMObject *object, const char *failed_path)
+object_creation_failed (NMObject *object,
+                        const char *failed_path)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
-	AddConnectionInfo *addinfo;
-	GError *add_error;
+	AddConnectionInfo *info;
 
-	addinfo = add_connection_info_find (self, failed_path);
-	if (addinfo) {
-		add_error = g_error_new_literal (NM_CLIENT_ERROR,
-		                                 NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
-		                                 _("Connection removed before it was initialized"));
-		add_connection_info_complete (self, addinfo, NULL, add_error);
-		g_error_free (add_error);
-	}
+	info = _add_connection_info_find (self, failed_path);
+	if (!info)
+		return;
+
+	_add_connection_info_complete (info,
+	                               NULL,
+	                               g_error_new_literal (NM_CLIENT_ERROR,
+	                                                    NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+	                                                    _("Connection removed before it was initialized")));
 }
 
 const GPtrArray *
@@ -269,83 +298,114 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	AddConnectionInfo *info = user_data;
 	GError *error = NULL;
 
-	if (info->saved) {
+	if (    info->ignore_out_result
+	     && info->flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
 		nmdbus_settings_call_add_connection_finish (NMDBUS_SETTINGS (proxy),
 		                                            &info->path,
-		                                            result, &error);
-	} else {
+		                                            result,
+		                                            &error);
+	} else if (   info->ignore_out_result
+	           && info->flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY) {
 		nmdbus_settings_call_add_connection_unsaved_finish (NMDBUS_SETTINGS (proxy),
 		                                                    &info->path,
-		                                                    result, &error);
+		                                                    result,
+		                                                    &error);
+	} else {
+		nmdbus_settings_call_add_connection2_finish (NMDBUS_SETTINGS (proxy),
+		                                             &info->path,
+		                                             &info->results,
+		                                             result,
+		                                             &error);
+		if (info->ignore_out_result) {
+			/* despite we have the result, the caller didn't ask for it.
+			 * Through it away, so we consistently don't return a result. */
+			nm_clear_pointer (&info->results, g_variant_unref);
+		}
 	}
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		add_connection_info_complete (info->self, info, NULL, error);
-		g_clear_error (&error);
+		_add_connection_info_complete (info, NULL, error);
+		return;
 	}
 
 	/* On success, we still have to wait until the connection is fully
 	 * initialized before calling the callback.
 	 */
+	if (info->cancellable) {
+		gulong id;
+
+		id = g_cancellable_connect (info->cancellable,
+		                            G_CALLBACK (_add_connection_info_cancelled),
+		                            info,
+		                            NULL);
+		if (id == 0) {
+			/* the callback was invoked synchronously, which destroyed @info.
+			 * We must not touch @info anymore. */
+		} else
+			info->cancellable_id = id;
+	}
 }
 
 void
-nm_remote_settings_add_connection_async (NMRemoteSettings *settings,
-                                         NMConnection *connection,
-                                         gboolean save_to_disk,
-                                         GCancellable *cancellable,
-                                         GAsyncReadyCallback callback,
-                                         gpointer user_data)
+nm_remote_settings_add_connection2 (NMRemoteSettings *self,
+                                    GVariant *settings,
+                                    NMSettingsAddConnection2Flags flags,
+                                    GVariant *args,
+                                    gboolean ignore_out_result,
+                                    GCancellable *cancellable,
+                                    NMRemoteSettingAddConnection2Callback callback,
+                                    gpointer user_data)
 {
 	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
-	GVariant *new_settings;
 
-	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	nm_assert (NM_IS_REMOTE_SETTINGS (self));
+	nm_assert (g_variant_is_of_type (settings, G_VARIANT_TYPE ("a{sa{sv}}")));
+	nm_assert (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
+	nm_assert (callback);
 
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
-	info = g_slice_new0 (AddConnectionInfo);
-	info->self = settings;
-	info->simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
-	                                          nm_remote_settings_add_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
-	info->saved = save_to_disk;
+	info = g_slice_new (AddConnectionInfo);
+	*info = (AddConnectionInfo) {
+		.self              = g_object_ref (self),
+		.cancellable       = nm_g_object_ref (cancellable),
+		.flags             = flags,
+		.ignore_out_result = ignore_out_result,
+		.callback          = callback,
+		.user_data         = user_data,
+	};
+	c_list_link_tail (&priv->add_lst_head, &info->add_lst);
 
-	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-
-	if (save_to_disk) {
+	/* Although AddConnection2() being capable to handle also AddConnection() and
+	 * AddConnectionUnsaved() variants, we prefer to use the old D-Bus methods when
+	 * they are sufficient. The reason is that libnm should avoid hard dependencies
+	 * on 1.20 API whenever possible. */
+	if (    ignore_out_result
+	     && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
 		nmdbus_settings_call_add_connection (priv->proxy,
-		                                     new_settings,
-		                                     NULL,
-		                                     add_connection_done, info);
-	} else {
+		                                     settings,
+		                                     cancellable,
+		                                     add_connection_done,
+		                                     info);
+	} else if (   ignore_out_result
+	           && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY) {
 		nmdbus_settings_call_add_connection_unsaved (priv->proxy,
-		                                             new_settings,
-		                                             NULL,
-		                                             add_connection_done, info);
+		                                             settings,
+		                                             cancellable,
+		                                             add_connection_done,
+		                                             info);
+	} else {
+		nmdbus_settings_call_add_connection2 (priv->proxy,
+		                                      settings,
+		                                      flags,
+		                                         args
+		                                      ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
+		                                      cancellable,
+		                                      add_connection_done,
+		                                      info);
 	}
-
-	priv->add_list = g_slist_append (priv->add_list, info);
-}
-
-NMRemoteConnection *
-nm_remote_settings_add_connection_finish (NMRemoteSettings *settings,
-                                          GAsyncResult *result,
-                                          GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (settings), nm_remote_settings_add_connection_async), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 gboolean
@@ -606,6 +666,7 @@ nm_remote_settings_init (NMRemoteSettings *self)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
+	c_list_init (&priv->add_lst_head);
 	priv->all_connections = g_ptr_array_new ();
 	priv->visible_connections = g_ptr_array_new ();
 }
@@ -664,7 +725,7 @@ dispose (GObject *object)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	int i;
+	guint i;
 
 	if (priv->all_connections) {
 		for (i = 0; i < priv->all_connections->len; i++)

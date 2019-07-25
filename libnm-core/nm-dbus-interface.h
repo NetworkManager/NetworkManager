@@ -1006,6 +1006,27 @@ typedef enum { /*< flags >*/
 } NMActivationStateFlags;
 
 /**
+ * NMSettingsAddConnection2Flags:
+ * @NM_SETTINGS_ADD_CONNECTION2_FLAG_NONE: an alias for numeric zero, no flags set.
+ * @NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK: to persist the connection to disk.
+ * @NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY: to make the connection in-memory only.
+ * @NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT: usually, when the connection
+ *   has autoconnect enabled and gets added, it becomes eligible to autoconnect
+ *   right away. Setting this flag, disables autoconnect until the connection
+ *   is manually activated.
+ *
+ * Numeric flags for the "flags" argument of AddConnection2() D-Bus API.
+ *
+ * Since: 1.20
+ */
+typedef enum { /*< flags >*/
+	NM_SETTINGS_ADD_CONNECTION2_FLAG_NONE              = 0,
+	NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK           = 0x1,
+	NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY         = 0x2,
+	NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT = 0x20,
+} NMSettingsAddConnection2Flags;
+
+/**
  * NMSettingsUpdate2Flags:
  * @NM_SETTINGS_UPDATE2_FLAG_NONE: an alias for numeric zero, no flags set.
  * @NM_SETTINGS_UPDATE2_FLAG_TO_DISK: to persist the connection to disk.
@@ -1039,6 +1060,13 @@ typedef enum { /*< flags >*/
  *   has autoconnect enabled and is modified, it becomes eligible to autoconnect
  *   right away. Setting this flag, disables autoconnect until the connection
  *   is manually activated.
+ * @NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY: when a profile gets modified that is
+ *   currently active, then these changes don't take effect for the active
+ *   device unless the profile gets reactivated or the configuration reapplied.
+ *   There are two exceptions: by default "connection.zone" and "connection.metered"
+ *   properties take effect immediately. Specify this flag to prevent these
+ *   properties to take effect, so that the change is restricted to modify
+ *   the profile. Since: 1.20.
  *
  * Since: 1.12
  */
@@ -1050,6 +1078,7 @@ typedef enum { /*< flags >*/
 	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY             = 0x8,
 	NM_SETTINGS_UPDATE2_FLAG_VOLATILE                   = 0x10,
 	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = 0x20,
+	NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY                 = 0x40,
 } NMSettingsUpdate2Flags;
 
 /**

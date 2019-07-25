@@ -258,6 +258,7 @@ restore_and_activate_connection (NMCheckpoint *self,
 		if (!nm_settings_add_connection (NM_SETTINGS_GET,
 		                                 dev_checkpoint->settings_connection,
 		                                 persist_mode,
+		                                 NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
 		                                 sett_flags,
 		                                 &connection,
 		                                 &local_error)) {
