@@ -91,6 +91,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP4_IP_ADDRESS_LEASE_TIME,             "dhcp_lease_time",                 FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_RENEWAL_T1_TIME,                   "dhcp_renewal_time",               FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_REBINDING_T2_TIME,                 "dhcp_rebinding_time",             FALSE ),
+	REQ (NM_DHCP_OPTION_DHCP4_CLIENT_ID,                         "dhcp_client_identifier",          FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NEW_TZDB_TIMEZONE,                 "tcode",                           FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NWIP_DOMAIN,                       "nwip_domain",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NWIP_SUBOPTIONS,                   "nwip_suboptions",                 FALSE ),
@@ -109,6 +110,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP4_STREETTALK_DIR_ASSIST_SERVER,      "streettalk_directory_assistance_server", FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_SLP_DIRECTORY_AGENT,               "slp_directory_agent",             FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_SLP_SERVICE_SCOPE,                 "slp_service_scope",               FALSE ),
+	REQ (NM_DHCP_OPTION_DHCP4_CLIENT_FQDN,                       "fqdn",                            FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_RELAY_AGENT_INFORMATION,           "relay_agent_information",         FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NDS_SERVERS,                       "nds_servers",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NDS_TREE_NAME,                     "nds_tree_name",                   FALSE ),
@@ -168,10 +170,10 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_246,                       "private_246",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_247,                       "private_247",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_248,                       "private_248",                     FALSE ),
-	/* DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE */
+	/* NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE */
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_250,                       "private_250",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_251,                       "private_251",                     FALSE ),
-	/* DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY */
+	/* NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY */
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_253,                       "private_253",                     FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_254,                       "private_254",                     FALSE ),
 

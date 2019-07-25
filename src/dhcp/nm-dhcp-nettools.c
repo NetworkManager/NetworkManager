@@ -35,6 +35,7 @@
 #include "nm-utils.h"
 #include "nm-config.h"
 #include "nm-dhcp-utils.h"
+#include "nm-dhcp-options.h"
 #include "nm-core-utils.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
@@ -81,33 +82,6 @@ G_DEFINE_TYPE (NMDhcpNettools, nm_dhcp_nettools, NM_TYPE_DHCP_CLIENT)
 
 /*****************************************************************************/
 
-#define DHCP_OPTION_SUBNET_MASK                        1
-#define DHCP_OPTION_TIME_OFFSET                        2
-#define DHCP_OPTION_ROUTER                             3
-#define DHCP_OPTION_DOMAIN_NAME_SERVER                 6
-#define DHCP_OPTION_HOST_NAME                         12
-#define DHCP_OPTION_DOMAIN_NAME                       15
-#define DHCP_OPTION_ROOT_PATH                         17
-#define DHCP_OPTION_INTERFACE_MTU                     26
-#define DHCP_OPTION_BROADCAST                         28
-#define DHCP_OPTION_STATIC_ROUTE                      33
-#define DHCP_OPTION_NIS_DOMAIN                        40
-#define DHCP_OPTION_NIS_SERVERS                       41
-#define DHCP_OPTION_NTP_SERVER                        42
-#define DHCP_OPTION_VENDOR_SPECIFIC                   43
-#define DHCP_OPTION_IP_ADDRESS_LEASE_TIME             51
-#define DHCP_OPTION_SERVER_IDENTIFIER                 54
-#define DHCP_OPTION_CLIENT_IDENTIFIER                 61
-#define DHCP_OPTION_CLIENT_FQDN                       81
-#define DHCP_OPTION_DOMAIN_SEARCH_LIST               119
-#define DHCP_OPTION_CLASSLESS_STATIC_ROUTE           121
-#define DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE   249
-#define DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY      252
-
-/* Internal values */
-#define DHCP_OPTION_IP_ADDRESS       1024
-#define DHCP_OPTION_EXPIRY           1025
-
 #define DHCP_MAX_FQDN_LENGTH 255
 
 enum {
@@ -124,53 +98,6 @@ enum {
 	NM_IN_ADDR_CLASS_INVALID,
 };
 
-typedef struct {
-	const char *name;
-	uint16_t option_num;
-	bool include;
-} ReqOption;
-
-#define REQPREFIX "requested_"
-
-#define REQ(_num, _name, _include) \
-	{ \
-		.name = REQPREFIX""_name, \
-		.option_num = _num, \
-		.include = _include, \
-	}
-
-static const ReqOption dhcp4_requests[] = {
-	REQ (DHCP_OPTION_SUBNET_MASK,                    "subnet_mask",                     TRUE ),
-	REQ (DHCP_OPTION_TIME_OFFSET,                    "time_offset",                     TRUE ),
-	REQ (DHCP_OPTION_DOMAIN_NAME_SERVER,             "domain_name_servers",             TRUE ),
-	REQ (DHCP_OPTION_HOST_NAME,                      "host_name",                       TRUE ),
-	REQ (DHCP_OPTION_DOMAIN_NAME,                    "domain_name",                     TRUE ),
-	REQ (DHCP_OPTION_INTERFACE_MTU,                  "interface_mtu",                   TRUE ),
-	REQ (DHCP_OPTION_BROADCAST,                      "broadcast_address",               TRUE ),
-
-	/* RFC 3442: The Classless Static Routes option code MUST appear in the parameter
-	 *   request list prior to both the Router option code and the Static
-	 *   Routes option code, if present. */
-	REQ (DHCP_OPTION_CLASSLESS_STATIC_ROUTE,         "rfc3442_classless_static_routes", TRUE ),
-	REQ (DHCP_OPTION_ROUTER,                         "routers",                         TRUE ),
-	REQ (DHCP_OPTION_STATIC_ROUTE,                   "static_routes",                   TRUE ),
-	REQ (DHCP_OPTION_NIS_DOMAIN,                     "nis_domain",                      TRUE ),
-	REQ (DHCP_OPTION_NIS_SERVERS,                    "nis_servers",                     TRUE ),
-	REQ (DHCP_OPTION_NTP_SERVER,                     "ntp_servers",                     TRUE ),
-	REQ (DHCP_OPTION_SERVER_IDENTIFIER,              "dhcp_server_identifier",          TRUE ),
-	REQ (DHCP_OPTION_DOMAIN_SEARCH_LIST,             "domain_search",                   TRUE ),
-	REQ (DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE, "ms_classless_static_routes",      TRUE ),
-	REQ (DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY,    "wpad",                            TRUE ),
-	REQ (DHCP_OPTION_ROOT_PATH,                      "root_path",                       TRUE ),
-
-	/* Internal values */
-	REQ (DHCP_OPTION_IP_ADDRESS_LEASE_TIME,          "expiry",                          FALSE ),
-	REQ (DHCP_OPTION_CLIENT_IDENTIFIER,              "dhcp_client_identifier",          FALSE ),
-	REQ (DHCP_OPTION_IP_ADDRESS,                     "ip_address",                      FALSE ),
-
-	{ 0 }
-};
-
 static int
 in_addr_class (struct in_addr addr)
 {
@@ -184,66 +111,6 @@ in_addr_class (struct in_addr addr)
 	default:
 		return NM_IN_ADDR_CLASS_INVALID;
 	}
-}
-
-static void
-take_option (GHashTable *options,
-             const ReqOption *requests,
-             guint option,
-             char *value)
-{
-	guint i;
-
-	nm_assert (options);
-	nm_assert (requests);
-	nm_assert (value);
-
-	for (i = 0; requests[i].name; i++) {
-		nm_assert (g_str_has_prefix (requests[i].name, REQPREFIX));
-		if (requests[i].option_num == option) {
-			g_hash_table_insert (options,
-			                     (gpointer) (requests[i].name + NM_STRLEN (REQPREFIX)),
-			                     value);
-			return;
-		}
-	}
-
-	/* Option should always be found */
-	nm_assert_not_reached ();
-}
-
-static void
-add_option (GHashTable *options, const ReqOption *requests, guint option, const char *value)
-{
-	if (options)
-		take_option (options, requests, option, g_strdup (value));
-}
-
-static void
-add_option_u64 (GHashTable *options, const ReqOption *requests, guint option, guint64 value)
-{
-	if (options)
-		take_option (options, requests, option, g_strdup_printf ("%" G_GUINT64_FORMAT, value));
-}
-
-static void
-add_requests_to_options (GHashTable *options, const ReqOption *requests)
-{
-	guint i;
-
-	if (!options)
-		return;
-
-	for (i = 0; requests[i].name; i++) {
-		if (requests[i].include)
-			g_hash_table_insert (options, (gpointer) requests[i].name, g_strdup ("1"));
-	}
-}
-
-static GHashTable *
-create_options_dict (void)
-{
-	return g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
 }
 
 static gboolean
@@ -507,9 +374,15 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	guint64 a_lifetime;
 
 	n_dhcp4_client_lease_get_yiaddr (lease, &a_address);
+	if (a_address.s_addr == INADDR_ANY) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get address from lease");
+		return FALSE;
+	}
+
+	/* n_dhcp4_client_lease_get_lifetime() never fails */
 	n_dhcp4_client_lease_get_lifetime (lease, &a_lifetime);
 
-	if (!lease_get_in_addr (lease, DHCP_OPTION_SUBNET_MASK, &a_netmask)) {
+	if (!lease_get_in_addr (lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &a_netmask)) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get netmask from lease");
 		return FALSE;
 	}
@@ -518,18 +391,21 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	a_plen = nm_utils_ip4_netmask_to_prefix (a_netmask.s_addr);
 
 	LOG_LEASE (LOGD_DHCP4, "address %s/%u", addr_str, a_plen);
-	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, addr_str);
-	add_option (options,
-	            dhcp4_requests,
-	            DHCP_OPTION_SUBNET_MASK,
-	            nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
+	nm_dhcp_option_add_option (options,
+	                           _nm_dhcp_option_dhcp4_options,
+	                           NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS,
+	                           addr_str);
+	nm_dhcp_option_add_option (options,
+	                           _nm_dhcp_option_dhcp4_options,
+	                           NM_DHCP_OPTION_DHCP4_SUBNET_MASK,
+	                           nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
 
 	LOG_LEASE (LOGD_DHCP4, "expires in %u seconds",
 	           (guint) ((a_lifetime - ts)/1000000000));
-	add_option_u64 (options,
-	                dhcp4_requests,
-	                DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
-	                (guint64) (a_lifetime / 1000000000));
+	nm_dhcp_option_add_option_u64 (options,
+	                               _nm_dhcp_option_dhcp4_options,
+	                               NM_DHCP_OPTION_DHCP4_IP_ADDRESS_LEASE_TIME,
+	                               (guint64) (a_lifetime / 1000000000));
 
 	nm_ip4_config_add_address (ip4_config,
 	                           &((const NMPlatformIP4Address) {
@@ -558,7 +434,7 @@ lease_parse_domain_name_servers (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_DOMAIN_NAME_SERVER, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, &data, &n_data);
 	if (r)
 		return;
 
@@ -579,7 +455,10 @@ lease_parse_domain_name_servers (NDhcp4ClientLease *lease,
 	}
 
 	LOG_LEASE (LOGD_DHCP4, "nameserver '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
+	nm_dhcp_option_add_option (options,
+	                           _nm_dhcp_option_dhcp4_options,
+	                           NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER,
+	                           str->str);
 }
 
 static void
@@ -603,7 +482,7 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_CLASSLESS_STATIC_ROUTE, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE, &data, &n_data);
 	if (!r) {
 		nm_gstring_prepare (&str);
 
@@ -648,10 +527,13 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 			                         }),
 			                         NULL);
 		}
-		add_option (options, dhcp4_requests, DHCP_OPTION_CLASSLESS_STATIC_ROUTE, str->str);
+		nm_dhcp_option_add_option (options,
+		                           _nm_dhcp_option_dhcp4_options,
+		                           NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE,
+		                           str->str);
 	}
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_STATIC_ROUTE, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_STATIC_ROUTE, &data, &n_data);
 	if (!r) {
 		nm_gstring_prepare (&str);
 
@@ -697,10 +579,13 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 			                         }),
 			                         NULL);
 		}
-		add_option (options, dhcp4_requests, DHCP_OPTION_STATIC_ROUTE, str->str);
+		nm_dhcp_option_add_option (options,
+		                           _nm_dhcp_option_dhcp4_options,
+		                           NM_DHCP_OPTION_DHCP4_STATIC_ROUTE,
+		                           str->str);
 	}
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_ROUTER, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_ROUTER, &data, &n_data);
 	if (!r) {
 		nm_gstring_prepare (&str);
 
@@ -739,7 +624,10 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 			                         NULL);
 		}
 		LOG_LEASE (LOGD_DHCP4, "router %s", str->str);
-		add_option (options, dhcp4_requests, DHCP_OPTION_ROUTER, str->str);
+		nm_dhcp_option_add_option (options,
+		                           _nm_dhcp_option_dhcp4_options,
+		                           NM_DHCP_OPTION_DHCP4_ROUTER,
+		                           str->str);
 	}
 }
 
@@ -751,14 +639,17 @@ lease_parse_mtu (NDhcp4ClientLease *lease,
 {
 	uint16_t mtu;
 
-	if (!lease_get_u16 (lease, DHCP_OPTION_INTERFACE_MTU, &mtu))
+	if (!lease_get_u16 (lease, NM_DHCP_OPTION_DHCP4_INTERFACE_MTU, &mtu))
 		return;
 
 	if (mtu < 68)
 		return;
 
 	LOG_LEASE (LOGD_DHCP4, "mtu %u", mtu);
-	add_option_u64 (options, dhcp4_requests, DHCP_OPTION_INTERFACE_MTU, mtu);
+	nm_dhcp_option_add_option_u64 (options,
+	                               _nm_dhcp_option_dhcp4_options,
+	                               NM_DHCP_OPTION_DHCP4_INTERFACE_MTU,
+	                               mtu);
 	nm_ip4_config_set_mtu (ip4_config, mtu, NM_IP_CONFIG_SOURCE_DHCP);
 }
 
@@ -773,7 +664,7 @@ lease_parse_metered (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_VENDOR_SPECIFIC, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_VENDOR_SPECIFIC, &data, &n_data);
 	if (r) {
 		metered = FALSE;
 	} else {
@@ -796,7 +687,7 @@ lease_parse_ntps (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_NTP_SERVER, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_NTP_SERVER, &data, &n_data);
 	if (r)
 		return;
 
@@ -808,7 +699,7 @@ lease_parse_ntps (NDhcp4ClientLease *lease,
 	}
 
 	LOG_LEASE (LOGD_DHCP4, "ntp server '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_NTP_SERVER, str->str);
+	nm_dhcp_option_add_option (options, _nm_dhcp_option_dhcp4_options, NM_DHCP_OPTION_DHCP4_NTP_SERVER, str->str);
 }
 
 static void
@@ -821,7 +712,7 @@ lease_parse_hostname (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_HOST_NAME, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_HOST_NAME, &data, &n_data);
 	if (r)
 		return;
 
@@ -831,7 +722,7 @@ lease_parse_hostname (NDhcp4ClientLease *lease,
 		return;
 
 	LOG_LEASE (LOGD_DHCP4, "hostname '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_HOST_NAME, str->str);
+	nm_dhcp_option_add_option (options, _nm_dhcp_option_dhcp4_options, NM_DHCP_OPTION_DHCP4_HOST_NAME, str->str);
 }
 
 static void
@@ -846,7 +737,7 @@ lease_parse_domainname (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_DOMAIN_NAME, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, &data, &n_data);
 	if (r)
 		return;
 
@@ -864,7 +755,7 @@ lease_parse_domainname (NDhcp4ClientLease *lease,
 		nm_ip4_config_add_domain (ip4_config, *d);
 	}
 	LOG_LEASE (LOGD_DHCP4, "domain name '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_DOMAIN_NAME, str->str);
+	nm_dhcp_option_add_option (options, _nm_dhcp_option_dhcp4_options, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, str->str);
 }
 
 static void
@@ -878,7 +769,7 @@ lease_parse_search_domains (NDhcp4ClientLease *lease,
 	size_t n_data, n_cache = 0;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_DOMAIN_SEARCH_LIST, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST, &data, &n_data);
 	if (r)
 		return;
 
@@ -898,7 +789,10 @@ lease_parse_search_domains (NDhcp4ClientLease *lease,
 		nm_ip4_config_add_search (ip4_config, domain->str);
 	}
 	LOG_LEASE (LOGD_DHCP4, "domain search '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_DOMAIN_SEARCH_LIST, str->str);
+	nm_dhcp_option_add_option (options,
+	                           _nm_dhcp_option_dhcp4_options,
+	                           NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST,
+	                           str->str);
 }
 
 static void
@@ -911,13 +805,13 @@ lease_parse_root_path (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_ROOT_PATH, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_ROOT_PATH, &data, &n_data);
 	if (r)
 		return;
 
 	str = g_string_new_len ((char *)data, n_data);
 	LOG_LEASE (LOGD_DHCP4, "root path '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_ROOT_PATH, str->str);
+	nm_dhcp_option_add_option (options, _nm_dhcp_option_dhcp4_options, NM_DHCP_OPTION_DHCP4_ROOT_PATH, str->str);
 }
 
 static void
@@ -930,13 +824,16 @@ lease_parse_wpad (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY, &data, &n_data);
 	if (r)
 		return;
 
 	str = g_string_new_len ((char *)data, n_data);
 	LOG_LEASE (LOGD_DHCP4, "wpad '%s'", str->str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY, str->str);
+	nm_dhcp_option_add_option (options,
+	                           _nm_dhcp_option_dhcp4_options,
+	                           NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
+	                           str->str);
 }
 
 static NMIP4Config *
@@ -955,7 +852,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	g_return_val_if_fail (lease != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
-	options = out_options ? create_options_dict () : NULL;
+	options = out_options ? nm_dhcp_option_create_options_dict () : NULL;
 
 	if (!lease_parse_address (lease, iface, ip4_config, options, error))
 		return NULL;
@@ -1003,7 +900,7 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
 		return;
 	}
 
-	add_requests_to_options (options, dhcp4_requests);
+	nm_dhcp_option_add_requests_to_options (options, _nm_dhcp_option_dhcp4_options);
 
 	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
 	                          NM_DHCP_STATE_BOUND,
@@ -1252,10 +1149,11 @@ ip4_start (NMDhcpClient *client,
 	}
 
 	/* Add requested options */
-	for (i = 0; dhcp4_requests[i].name; i++) {
-		if (dhcp4_requests[i].include) {
-			nm_assert (dhcp4_requests[i].option_num <= 255);
-			n_dhcp4_client_probe_config_request_option (config, dhcp4_requests[i].option_num);
+	for (i = 0; _nm_dhcp_option_dhcp4_options[i].name; i++) {
+		if (_nm_dhcp_option_dhcp4_options[i].include) {
+			nm_assert (_nm_dhcp_option_dhcp4_options[i].option_num <= 255);
+			n_dhcp4_client_probe_config_request_option (config,
+			                                            _nm_dhcp_option_dhcp4_options[i].option_num);
 		}
 	}
 
@@ -1279,7 +1177,7 @@ ip4_start (NMDhcpClient *client,
 			}
 
 			r = n_dhcp4_client_probe_config_append_option (config,
-			                                               DHCP_OPTION_CLIENT_FQDN,
+			                                               NM_DHCP_OPTION_DHCP4_CLIENT_FQDN,
 			                                               buffer,
 			                                               3 + r);
 			if (r) {
@@ -1288,7 +1186,7 @@ ip4_start (NMDhcpClient *client,
 			}
 		} else {
 			r = n_dhcp4_client_probe_config_append_option (config,
-			                                               DHCP_OPTION_HOST_NAME,
+			                                               NM_DHCP_OPTION_DHCP4_HOST_NAME,
 			                                               hostname,
 			                                               strlen (hostname));
 			if (r) {
