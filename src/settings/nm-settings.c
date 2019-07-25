@@ -825,23 +825,82 @@ _sett_conn_entries_remove_and_destroy (NMSettings *self,
 /*****************************************************************************/
 
 static int
+_sett_conn_entry_sds_update_cmp_ascending (const StorageData *sd_a,
+                                           const StorageData *sd_b,
+                                           const GSList *plugins)
+{
+	const NMSettingsMetaData *meta_data_a;
+	const NMSettingsMetaData *meta_data_b;
+	bool is_keyfile_run_a;
+	bool is_keyfile_run_b;
+
+	/* Sort storages by priority. More important storages are sorted
+	 * higher (ascending sort). For example, if "sd_a" is more important than
+	 * "sd_b" (sd_a>sd_b), a positive integer is returned. */
+
+	meta_data_a = nm_settings_storage_is_meta_data (sd_a->storage);
+	meta_data_b = nm_settings_storage_is_meta_data (sd_b->storage);
+
+	/* runtime storages (both connections and meta-data) are always more
+	 * important. */
+	is_keyfile_run_a = nm_settings_storage_is_keyfile_run (sd_a->storage);
+	is_keyfile_run_b = nm_settings_storage_is_keyfile_run (sd_b->storage);
+	if (is_keyfile_run_a != is_keyfile_run_b) {
+
+		if (   !meta_data_a
+		    && !meta_data_b) {
+			/* Ok, both are non-meta-data providing actual profiles. But one is in /run and one is in
+			 * another storage. In this case we first honor whether one of the storages is explicitly
+			 * prioritized. The prioritize flag is an in-memory hack to overwrite relative priorities
+			 * contrary to what exists on-disk.
+			 *
+			 * This is done because when we use explicit D-Bus API (like update-connection)
+			 * to update a profile, then we really want to prioritize the candidate
+			 * despite having multiple other profiles.
+			 *
+			 * The example is if you have the same UUID twice in /run (one of them shadowed).
+			 * If you move it to disk, then one of the profiles gets deleted and re-created
+			 * on disk, but that on-disk profile must win against the remainging profile in
+			 * /run. At least until the next reload/restart. */
+			NM_CMP_FIELD_UNSAFE (sd_a, sd_b, prioritize);
+		}
+
+		/* in-memory has higher priority. That is regardless of whether any of
+		 * them is meta-data/tombstone or a profile.
+		 *
+		 * That works, because if any of them are tombstones/metadata, then we are in full
+		 * control. There can by only one meta-data file, which is fully owned (and accordingly
+		 * created/deleted) by NetworkManager.
+		 *
+		 * The only case where this might not be right is if we have profiles
+		 * in /run that are shadowed. When we move such a profile to disk, then
+		 * a conflict might arise. That is handled by "prioritize" above! */
+		NM_CMP_DIRECT (is_keyfile_run_a, is_keyfile_run_b);
+	}
+
+	/* After we determined that both profiles are either in /run or not,
+	 * tombstones are always more important than non-tombstones. */
+	NM_CMP_DIRECT (meta_data_a && meta_data_a->is_tombstone,
+	               meta_data_b && meta_data_b->is_tombstone);
+
+	/* Again, prioritized entries are sorted first (higher priority). */
+	NM_CMP_FIELD_UNSAFE (sd_a, sd_b, prioritize);
+
+	/* finally, compare the storages. This basically honors the timestamp
+	 * of the profile and the relative order of the source plugin (via the
+	 * @plugins list). */
+	return nm_settings_storage_cmp (sd_a->storage, sd_b->storage, plugins);
+}
+
+static int
 _sett_conn_entry_sds_update_cmp (const CList *ls_a,
                                  const CList *ls_b,
                                  gconstpointer user_data)
 {
-	const GSList *plugins = user_data;
-	StorageData *sd_a = c_list_entry (ls_a, StorageData, sd_lst);
-	StorageData *sd_b = c_list_entry (ls_b, StorageData, sd_lst);
-
-	/* prioritized entries are sorted first (higher priority). */
-	NM_CMP_FIELD_UNSAFE (sd_b, sd_a, prioritize);
-
-	/* nm_settings_storage_cmp() compares in ascending order. Meaning,
-	 * if the storage has higher priority, it gives a positive number (as one
-	 * would expect).
-	 *
-	 * We want to sort the list in reverse though, with highest priority first. */
-	return nm_settings_storage_cmp (sd_b->storage, sd_a->storage, plugins);
+	/* we sort highest priority storages first (descending). Hence, the order is swapped. */
+	return _sett_conn_entry_sds_update_cmp_ascending (c_list_entry (ls_b, StorageData, sd_lst),
+	                                                  c_list_entry (ls_a, StorageData, sd_lst),
+	                                                  user_data);
 }
 
 static void
