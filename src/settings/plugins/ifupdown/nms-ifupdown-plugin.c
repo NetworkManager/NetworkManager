@@ -25,6 +25,7 @@
 #include "nms-ifupdown-plugin.h"
 
 #include "nm-core-internal.h"
+#include "nm-core-utils.h"
 #include "nm-config.h"
 #include "settings/nm-settings-plugin.h"
 #include "settings/nm-settings-storage.h"
@@ -208,7 +209,7 @@ _unmanaged_specs (GHashTable *eni_ifaces)
 	keys = nm_utils_strdict_get_keys (eni_ifaces, TRUE, &len);
 	for (i = len; i > 0; ) {
 		i--;
-		specs = g_slist_prepend (specs, g_strdup_printf ("interface-name:=%s", keys[i]));
+		specs = g_slist_prepend (specs, g_strdup_printf (NM_MATCH_SPEC_INTERFACE_NAME_TAG"=%s", keys[i]));
 	}
 	return specs;
 }

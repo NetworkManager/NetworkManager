@@ -2907,6 +2907,7 @@ static void
 device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 {
 	gs_unref_object NMConnection *connection = NULL;
+	NMSettingsPrivate *priv;
 	NMSettingsConnection *added;
 	GError *error = NULL;
 
@@ -2917,12 +2918,15 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	                                      G_CALLBACK (device_realized),
 	                                      self);
 
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
 	 */
 	if (   !nm_device_get_managed (device, FALSE)
 	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ())
-	    || have_connection_for_device (self, device))
+	    || have_connection_for_device (self, device)
+	    || nm_config_get_no_auto_default_for_device (priv->config, device))
 		return;
 
 	connection = nm_device_new_default_connection (device);

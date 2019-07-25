@@ -349,47 +349,44 @@ nm_config_get_first_start (NMConfig *config)
 static char **
 no_auto_default_from_file (const char *no_auto_default_file)
 {
-	GPtrArray *no_auto_default_new;
-	char **list;
-	guint i;
-	char *data;
-
-	no_auto_default_new = g_ptr_array_new ();
+	gs_free char *data = NULL;
+	const char **list = NULL;
+	gsize i;
 
 	if (   no_auto_default_file
-	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL)) {
-		list = g_strsplit (data, "\n", -1);
-		for (i = 0; list[i]; i++) {
-			if (   *list[i]
-			    && nm_utils_hwaddr_valid (list[i], -1)
-			    && nm_utils_strv_find_first (list, i, list[i]) < 0)
-				g_ptr_array_add (no_auto_default_new, list[i]);
-			else
-				g_free (list[i]);
-		}
-		g_free (list);
-		g_free (data);
+	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL))
+		list = nm_utils_strsplit_set (data, "\n");
+
+	if (list) {
+		for (i = 0; list[i]; i++)
+			list[i] = nm_utils_str_utf8safe_unescape_cp (list[i]);
 	}
 
-	g_ptr_array_add (no_auto_default_new, NULL);
-	return (char **) g_ptr_array_free (no_auto_default_new, FALSE);
+	/* The returned buffer here is not at all compact. That means, it has additional
+	 * memory allocations and is larger than needed. That means, you should not keep
+	 * this result around, only process it further and free it. */
+	return (char **) list;
 }
 
 static gboolean
 no_auto_default_to_file (const char *no_auto_default_file, const char *const*no_auto_default, GError **error)
 {
-	GString *data;
-	gboolean success;
-	guint i;
+	nm_auto_free_gstring GString *data = NULL;
+	gsize i;
 
 	data = g_string_new ("");
 	for (i = 0; no_auto_default && no_auto_default[i]; i++) {
-		g_string_append (data, no_auto_default[i]);
+		gs_free char *s_to_free = NULL;
+		const char *s = no_auto_default[i];
+
+		s = nm_utils_str_utf8safe_escape (s,
+		                                    NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+		                                  | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+		                                  &s_to_free);
+		g_string_append (data, s);
 		g_string_append_c (data, '\n');
 	}
-	success = g_file_set_contents (no_auto_default_file, data->str, data->len, error);
-	g_string_free (data, TRUE);
-	return success;
+	return  g_file_set_contents (no_auto_default_file, data->str, data->len, error);
 }
 
 gboolean
@@ -413,44 +410,76 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	NMConfigPrivate *priv;
 	GError *error = NULL;
 	NMConfigData *new_data = NULL;
+	gs_free char *spec_to_free = NULL;
+	const char *ifname;
 	const char *hw_address;
+	const char *spec;
 	const char *const*no_auto_default_current;
-	GPtrArray *no_auto_default_new = NULL;
-	guint i;
+	gs_free const char **no_auto_default_new = NULL;
+	gboolean is_fake;
+	gsize len;
+	gssize idx;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	hw_address = nm_device_get_permanent_hw_address (device);
-	if (!hw_address)
+	hw_address = nm_device_get_permanent_hw_address_full (device, TRUE, &is_fake);
+
+	if (!hw_address) {
+		/* No MAC address, not even a fake one. We don't do anything for this device. */
 		return;
+	}
+
+	if (is_fake) {
+		/* A fake MAC address, no point in storing it to the file.
+		 * Also, nm_match_spec_device() would ignore fake MAC addresses.
+		 *
+		 * Instead, try the interface-name...  */
+		ifname = nm_device_get_ip_iface (device);
+		if (!nm_utils_is_valid_iface_name (ifname, NULL))
+			return;
+
+		spec_to_free = g_strdup_printf (NM_MATCH_SPEC_INTERFACE_NAME_TAG"=%s", ifname);
+		spec = spec_to_free;
+	} else
+		spec = hw_address;
 
 	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
 
-	if (nm_utils_strv_find_first ((char **) no_auto_default_current, -1, hw_address) >= 0) {
-		/* @hw_address is already blocked. We don't have to update our in-memory representation.
+	len = NM_PTRARRAY_LEN (no_auto_default_current);
+
+	idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) no_auto_default_current,
+	                                            len,
+	                                            spec,
+	                                            nm_strcmp_with_data,
+	                                            NULL,
+	                                            NULL,
+	                                            NULL);
+	if (idx >= 0) {
+		/* @spec is already blocked. We don't have to update our in-memory representation.
 		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
 		return;
 	}
 
-	no_auto_default_new = g_ptr_array_new ();
-	for (i = 0; no_auto_default_current && no_auto_default_current[i]; i++)
-		g_ptr_array_add (no_auto_default_new, (char *) no_auto_default_current[i]);
-	g_ptr_array_add (no_auto_default_new, (char *) hw_address);
-	g_ptr_array_add (no_auto_default_new, NULL);
+	idx = ~idx;
 
-	if (!no_auto_default_to_file (priv->no_auto_default_file, (const char *const*) no_auto_default_new->pdata, &error)) {
+	no_auto_default_new = g_new (const char *, len + 2);
+	if (idx > 0)
+		memcpy (no_auto_default_new, no_auto_default_current, sizeof (const char *) * idx);
+	no_auto_default_new[idx] = spec;
+	if (idx < len)
+		memcpy (&no_auto_default_new[idx + 1], &no_auto_default_current[idx], sizeof (const char *) * (len - idx));
+	no_auto_default_new[len + 1] = NULL;
+
+	if (!no_auto_default_to_file (priv->no_auto_default_file, no_auto_default_new, &error)) {
 		_LOGW ("Could not update no-auto-default.state file: %s",
 		       error->message);
 		g_error_free (error);
 	}
 
-	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default_new->pdata);
-
-	/* unref no_auto_default_set here. Note that _set_config_data() probably invalidates the content of the array. */
-	g_ptr_array_unref (no_auto_default_new);
+	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, no_auto_default_new);
 
 	_set_config_data (self, new_data, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT);
 }

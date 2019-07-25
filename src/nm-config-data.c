@@ -1503,16 +1503,6 @@ _match_section_infos_construct (GKeyFile *keyfile, const char *prefix)
 
 /*****************************************************************************/
 
-static gboolean
-_slist_str_equals (GSList *a, GSList *b)
-{
-	while (a && b && g_strcmp0 (a->data, b->data) == 0) {
-		a = a->next;
-		b = b->next;
-	}
-	return !a && !b;
-}
-
 NMConfigChangeFlags
 nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 {
@@ -1541,8 +1531,8 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
 		changes |= NM_CONFIG_CHANGE_CONNECTIVITY;
 
-	if (   !_slist_str_equals (priv_old->no_auto_default.specs, priv_new->no_auto_default.specs)
-	    || !_slist_str_equals (priv_old->no_auto_default.specs_config, priv_new->no_auto_default.specs_config))
+	if (   nm_utils_g_slist_strlist_cmp (priv_old->no_auto_default.specs,        priv_new->no_auto_default.specs)        != 0
+	    || nm_utils_g_slist_strlist_cmp (priv_old->no_auto_default.specs_config, priv_new->no_auto_default.specs_config) != 0)
 		changes |= NM_CONFIG_CHANGE_NO_AUTO_DEFAULT;
 
 	if (g_strcmp0 (nm_config_data_get_dns_mode (old_data), nm_config_data_get_dns_mode (new_data)))
@@ -1633,22 +1623,47 @@ set_property (GObject *object,
 	case PROP_NO_AUTO_DEFAULT:
 		/* construct-only */
 		{
-			char **value_arr = g_value_get_boxed (value);
-			guint i, j = 0;
+			const char *const*value_arr_orig = g_value_get_boxed (value);
+			gs_free const char **value_arr = NULL;
+			GSList *specs = NULL;
+			gsize i, j;
+			gsize len;
 
-			priv->no_auto_default.arr = g_new (char *, g_strv_length (value_arr) + 1);
-			priv->no_auto_default.specs = NULL;
+			len = NM_PTRARRAY_LEN (value_arr_orig);
 
-			for (i = 0; value_arr && value_arr[i]; i++) {
-				if (   *value_arr[i]
-				    && nm_utils_hwaddr_valid (value_arr[i], -1)
-				    && nm_utils_strv_find_first (value_arr, i, value_arr[i]) < 0) {
-					priv->no_auto_default.arr[j++] = g_strdup (value_arr[i]);
-					priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, g_strdup_printf ("mac:%s", value_arr[i]));
+			/* sort entries, remove duplicates and empty words. */
+			value_arr =   len == 0
+			            ? NULL
+			            : nm_memdup (value_arr_orig, sizeof (const char *) * (len + 1));
+			nm_utils_strv_sort (value_arr, len);
+			_nm_utils_strv_cleanup ((char **) value_arr, FALSE, TRUE, TRUE);
+
+			len = NM_PTRARRAY_LEN (value_arr);
+			j = 0;
+			for (i = 0; i < len; i++) {
+				const char *s = value_arr[i];
+				gboolean is_mac;
+				char *spec;
+
+				if (NM_STR_HAS_PREFIX (s, NM_MATCH_SPEC_INTERFACE_NAME_TAG"="))
+					is_mac = FALSE;
+				else if (nm_utils_hwaddr_valid (s, -1))
+					is_mac = TRUE;
+				else {
+					/* we drop all lines that we don't understand. */
+					continue;
 				}
+
+				value_arr[j++] = s;
+
+				spec = is_mac
+				       ? g_strdup_printf (NM_MATCH_SPEC_MAC_TAG"%s", s)
+				       : g_strdup (s);
+				specs = g_slist_prepend (specs, spec);
 			}
-			priv->no_auto_default.arr[j++] = NULL;
-			priv->no_auto_default.specs = g_slist_reverse (priv->no_auto_default.specs);
+
+			priv->no_auto_default.arr = nm_utils_strv_dup (value_arr, j);
+			priv->no_auto_default.specs = g_slist_reverse (specs);
 		}
 		break;
 	default:

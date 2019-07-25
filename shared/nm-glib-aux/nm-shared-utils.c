@@ -806,6 +806,15 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 
 /*****************************************************************************/
 
+int
+nm_strcmp_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const char *s1 = a;
+	const char *s2 = b;
+
+	return strcmp (s1, s2);
+}
+
 /* like nm_strcmp_p(), suitable for g_ptr_array_sort_with_data().
  * g_ptr_array_sort() just casts nm_strcmp_p() to a function of different
  * signature. I guess, in glib there are knowledgeable people that ensure
@@ -820,6 +829,15 @@ nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
 	const char *s2 = *((const char **) b);
 
 	return strcmp (s1, s2);
+}
+
+int
+nm_strcmp0_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const char *s1 = *((const char **) a);
+	const char *s2 = *((const char **) b);
+
+	return nm_strcmp0 (s1, s2);
 }
 
 int
@@ -1346,6 +1364,8 @@ _nm_utils_strv_cleanup (char **strv,
 		return strv;
 
 	if (strip_whitespace) {
+		/* we only modify the strings pointed to by @strv if @strip_whitespace is
+		 * requested. Otherwise, the strings themselves are untouched. */
 		for (i = 0; strv[i]; i++)
 			g_strstrip (strv[i]);
 	}
@@ -2690,8 +2710,8 @@ fail:
  * @len: the number of elements in strv. If negative,
  *   strv must be a NULL terminated array and the length
  *   will be calculated first. If @len is a positive
- *   number, all first @len elements in @strv must be
- *   non-NULL, valid strings.
+ *   number, @strv is allowed to contain %NULL strings
+ *   too.
  *
  * Ascending sort of the array @strv inplace, using plain strcmp() string
  * comparison.
@@ -2699,9 +2719,16 @@ fail:
 void
 _nm_utils_strv_sort (const char **strv, gssize len)
 {
+	GCompareDataFunc cmp;
 	gsize l;
 
-	l = len < 0 ? (gsize) NM_PTRARRAY_LEN (strv) : (gsize) len;
+	if (len < 0) {
+		l = NM_PTRARRAY_LEN (strv);
+		cmp = nm_strcmp_p_with_data;
+	} else {
+		l = len;
+		cmp = nm_strcmp0_p_with_data;
+	}
 
 	if (l <= 1)
 		return;
@@ -2711,7 +2738,7 @@ _nm_utils_strv_sort (const char **strv, gssize len)
 	g_qsort_with_data (strv,
 	                   l,
 	                   sizeof (const char *),
-	                   nm_strcmp_p_with_data,
+	                   cmp,
 	                   NULL);
 }
 
