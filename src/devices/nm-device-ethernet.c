@@ -560,7 +560,7 @@ build_supplicant_config (NMDeviceEthernet *self,
 	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
-	config = nm_supplicant_config_new (FALSE, FALSE);
+	config = nm_supplicant_config_new (FALSE, FALSE, FALSE, FALSE);
 
 	security = nm_connection_get_setting_802_1x (connection);
 	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, mtu, TRUE, error)) {

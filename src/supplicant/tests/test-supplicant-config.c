@@ -110,7 +110,7 @@ build_supplicant_config (NMConnection *connection,
 	NMSetting8021x *s_8021x;
 	gboolean success;
 
-	config = nm_supplicant_config_new (support_pmf, support_fils);
+	config = nm_supplicant_config_new (support_pmf, support_fils, FALSE, FALSE);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);

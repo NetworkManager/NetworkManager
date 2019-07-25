@@ -66,8 +66,8 @@ static const struct validate_entry validate_table[] = {
 const char * pairwise_allowed[] = { "CCMP", "TKIP", "NONE", NULL };
 const char * group_allowed[] =    { "CCMP", "TKIP", "WEP104", "WEP40", NULL };
 const char * proto_allowed[] =    { "WPA", "RSN", NULL };
-const char * key_mgmt_allowed[] = { "WPA-PSK", "WPA-PSK-SHA256",
-                                    "WPA-EAP", "WPA-EAP-SHA256",
+const char * key_mgmt_allowed[] = { "WPA-PSK", "WPA-PSK-SHA256", "FT-PSK",
+                                    "WPA-EAP", "WPA-EAP-SHA256", "FT-EAP", "FT-EAP-SHA384",
                                     "FILS-SHA256", "FILS-SHA384",
                                     "IEEE8021X", "WPA-NONE", "SAE",
                                     "NONE", NULL };

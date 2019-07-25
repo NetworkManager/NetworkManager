@@ -49,6 +49,8 @@ typedef struct {
 	gboolean   dispose_has_run;
 	gboolean   support_pmf;
 	gboolean   support_fils;
+	gboolean   support_ft;
+	gboolean   support_sha384;
 } NMSupplicantConfigPrivate;
 
 struct _NMSupplicantConfig {
@@ -67,7 +69,8 @@ G_DEFINE_TYPE (NMSupplicantConfig, nm_supplicant_config, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 NMSupplicantConfig *
-nm_supplicant_config_new (gboolean support_pmf, gboolean support_fils)
+nm_supplicant_config_new (gboolean support_pmf, gboolean support_fils,
+                          gboolean support_ft, gboolean support_sha384)
 {
 	NMSupplicantConfigPrivate *priv;
 	NMSupplicantConfig *self;
@@ -77,6 +80,8 @@ nm_supplicant_config_new (gboolean support_pmf, gboolean support_fils)
 
 	priv->support_pmf = support_pmf;
 	priv->support_fils = support_fils;
+	priv->support_ft = support_ft;
+	priv->support_sha384 = support_sha384;
 
 	return self;
 }
@@ -754,7 +759,8 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     GError **error)
 {
 	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
-	const char *key_mgmt, *key_mgmt_conf, *auth_alg;
+	nm_auto_free_gstring GString *key_mgmt_conf = NULL;
+	const char *key_mgmt, *auth_alg;
 	const char *psk;
 	gboolean set_pmf;
 
@@ -773,28 +779,43 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			fils = NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE;
 	}
 
-	key_mgmt = key_mgmt_conf = nm_setting_wireless_security_get_key_mgmt (setting);
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
+	key_mgmt_conf = g_string_new (key_mgmt);
 	if (nm_streq (key_mgmt, "wpa-psk")) {
 		if (priv->support_pmf)
-			key_mgmt_conf = "wpa-psk wpa-psk-sha256";
+			g_string_append (key_mgmt_conf, " wpa-psk-sha256");
+		if (priv->support_ft)
+			g_string_append (key_mgmt_conf, " ft-psk");
 	} else if (nm_streq (key_mgmt, "wpa-eap")) {
+		if (priv->support_pmf)
+			g_string_append (key_mgmt_conf, " wpa-eap-sha256");
+		if (priv->support_ft)
+			g_string_append (key_mgmt_conf, " ft-eap");
+		if (priv->support_ft && priv->support_sha384)
+			g_string_append (key_mgmt_conf, " ft-eap-sha384");
 		switch (fils) {
-		case NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL:
-			key_mgmt_conf = priv->support_pmf
-				? "wpa-eap wpa-eap-sha256 fils-sha256 fils-sha384"
-				: "wpa-eap fils-sha256 fils-sha384";
-			break;
 		case NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED:
-			key_mgmt_conf = "fils-sha256 fils-sha384";
+			g_string_truncate (key_mgmt_conf, 0);
+			if (!priv->support_pmf)
+				g_string_assign (key_mgmt_conf, "fils-sha256 fils-sha384");
+			/* fall-through */
+		case NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL:
+			if (priv->support_pmf)
+				g_string_append (key_mgmt_conf, " fils-sha256 fils-sha384");
+			if (priv->support_pmf && priv->support_ft)
+				g_string_append (key_mgmt_conf, " ft-fils-sha256");
+			if (priv->support_pmf && priv->support_ft & priv->support_sha384)
+				g_string_append (key_mgmt_conf, " ft-fils-sha384");
 			break;
 		default:
-			if (priv->support_pmf)
-				key_mgmt_conf = "wpa-eap wpa-eap-sha256";
 			break;
 		}
+	} else if (nm_streq (key_mgmt, "sae")) {
+		if (priv->support_ft)
+			g_string_append (key_mgmt_conf, " ft-sae");
 	}
 
-	if (!add_string_val (self, key_mgmt_conf, "key_mgmt", TRUE, NULL, error))
+	if (!add_string_val (self, key_mgmt_conf->str, "key_mgmt", TRUE, NULL, error))
 		return FALSE;
 
 	auth_alg = nm_setting_wireless_security_get_auth_alg (setting);
