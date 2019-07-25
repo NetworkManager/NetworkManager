@@ -856,6 +856,43 @@ lease_parse_wpad (NDhcp4ClientLease *lease,
 	                           str->str);
 }
 
+static void
+lease_parse_private_options (NDhcp4ClientLease *lease,
+                             const char *iface,
+                             GHashTable *options)
+{
+	int i;
+
+	for (i = NM_DHCP_OPTION_DHCP4_PRIVATE_224; i <= NM_DHCP_OPTION_DHCP4_PRIVATE_254; i++) {
+		gs_free char *option_string = NULL;
+		guint8 *data;
+		gsize n_data;
+		int r;
+
+		/* We manage private options 249 (private classless static route) and 252 (wpad) in a special
+		 * way, so skip them as we here just manage all (the other) private options as raw data */
+		if (NM_IN_SET (i, NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE,
+		                  NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY))
+			continue;
+
+		r = n_dhcp4_client_lease_query (lease, i, &data, &n_data);
+		if (r)
+			continue;
+
+		option_string = nm_utils_bin2hexstr_full (data, n_data, ':', FALSE, NULL);
+		LOG_LEASE (LOGD_DHCP4, "%s '%s'",
+		           nm_dhcp_option_request_string (_nm_dhcp_option_dhcp4_options, i),
+		           option_string);
+		if (options) {
+			nm_dhcp_option_take_option (options,
+			                            _nm_dhcp_option_dhcp4_options,
+			                            i,
+			                            g_steal_pointer (&option_string));
+		}
+
+	}
+}
+
 static NMIP4Config *
 lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
                      const char *iface,
@@ -888,6 +925,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	lease_parse_ntps (lease, iface, options);
 	lease_parse_root_path (lease, iface, options);
 	lease_parse_wpad (lease, iface, options);
+	lease_parse_private_options (lease, iface, options);
 
 	NM_SET_OUT (out_options, g_steal_pointer (&options));
 	return g_steal_pointer (&ip4_config);
