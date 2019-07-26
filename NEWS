@@ -17,7 +17,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Added support for configuring fq_codel line discipline and mirred action.
 * Added a possibility for distributions to ship dispatcher scripts in /usr/lib.
 * Drop deprecated setting "main.monitor-connection-files" in NetworkManager.conf.
-  This setting has no more effect and was disabled by default for a long time.
+  This setting now has no more effect and was disabled by default for a long time.
   Instead, after changes load files explicitly with `nmcli connection load` and
   `nmcli connection reload`.
 * Rework parsing team JSON config in libnm and stricter validate settings.
@@ -25,6 +25,28 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   still allowing setting arbitrary JSON config directly.
 * Drop ibft settings plugin. This functionality is now covered by using
   nm-initrd-generator from initrd to pre-generate in-memory profiles.
+* Support "suppress_prefixlength" attribute for policy routing rules.
+* Rework implementation of settings plugins and how profiles are presisted
+  to disk.
+* In-memory profiles are now only handled by keyfile plugin and will also be
+  persisted to /run directory. This allows to restart NetworkManager without
+  loosing these profiles and it provides a file-system based API for creating
+  in-memory profiles.
+* Keyfile plugin now supports a read-only directory of profiles under directory
+  "/usr/lib/NetworkManager/system-connections". Such profiles still can be modified
+  and deleted via D-Bus, which results in writing profiles to /etc or /run that
+  shadow the read-only files.
+* Add new D-Bus method AddConnection2() that allows to block autoconnect of
+  the profile at the moment when creating the profile. Also add support for
+  this API to libnm.
+* Add flag "no-reapply" to Update2() D-Bus method. Normally, when a connection
+  profile gets modified, this only changes the profile itself. If the profile
+  is activated at a device, then the device's configuration does not update before
+  the profile is fully re-activated or Reapply on the device gets called. There
+  was an exception to this: the "connection.zone" and the "connection.metered"
+  properties take effect immediately. The "no-reapply" flag allows suppressing this,
+  so that not changes take effect automatically. The purpose is to really only modify
+  the profile itself without changes to the runtime configuration of the device.
 
 The following changes were backported to 1.18.x releases between 1.18.0
 and 1.18.2 are also present in NetworkManager-1.18:
