@@ -298,7 +298,7 @@ int verify_file(const char *fn, const char *blob, bool accept_extra_nl) {
         errno = 0;
         k = fread(buf, 1, l + accept_extra_nl + 1, f);
         if (ferror(f))
-                return errno > 0 ? -errno : -EIO;
+                return errno_or_else(EIO);
 
         if (k != l && k != l + accept_extra_nl)
                 return 0;
@@ -382,7 +382,7 @@ int read_full_stream_full(
                         l += k;
 
                 if (ferror(f)) {
-                        r = errno > 0 ? -errno : -EIO;
+                        r = errno_or_else(EIO);
                         goto finalize;
                 }
 
@@ -661,7 +661,7 @@ int fflush_and_check(FILE *f) {
         fflush(f);
 
         if (ferror(f))
-                return errno > 0 ? -errno : -EIO;
+                return errno_or_else(EIO);
 
         return 0;
 }
@@ -776,7 +776,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, funlockfile);
 int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret) {
         size_t n = 0, allocated = 0, count = 0;
         _cleanup_free_ char *buffer = NULL;
-        int r;
+        int r, tty = -1;
 
         assert(f);
 
@@ -851,6 +851,17 @@ int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret) {
                         count++;
 
                         if (eol != EOL_NONE) {
+                                /* If we are on a tty, we can't wait for more input. But we expect only
+                                 * \n as the single EOL marker, so there is no need to wait. We check
+                                 * this condition last to avoid isatty() check if not necessary. */
+
+                                if (tty < 0)
+                                        tty = isatty(fileno(f));
+                                if (tty > 0)
+                                        break;
+                        }
+
+                        if (eol != EOL_NONE) {
                                 previous_eol |= eol;
                                 continue;
                         }
@@ -888,7 +899,7 @@ int safe_fgetc(FILE *f, char *ret) {
         k = fgetc(f);
         if (k == EOF) {
                 if (ferror(f))
-                        return errno > 0 ? -errno : -EIO;
+                        return errno_or_else(EIO);
 
                 if (ret)
                         *ret = 0;

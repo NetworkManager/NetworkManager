@@ -108,7 +108,6 @@ const char* split(const char **state, size_t *l, const char *separator, SplitFla
 #define _FOREACH_WORD(word, length, s, separator, flags, state)         \
         for ((state) = (s), (word) = split(&(state), &(length), (separator), (flags)); (word); (word) = split(&(state), &(length), (separator), (flags)))
 
-char *strappend(const char *s, const char *suffix);
 char *strnappend(const char *s, const char *suffix, size_t length);
 
 char *strjoin_real(const char *x, ...) _sentinel_;
@@ -196,12 +195,6 @@ static inline int free_and_strdup_warn(char **p, const char *s) {
         return 0;
 }
 int free_and_strndup(char **p, const char *s, size_t l);
-
-char *string_erase(char *x);
-
-char *string_free_erase(char *s);
-DEFINE_TRIVIAL_CLEANUP_FUNC(char *, string_free_erase);
-#define _cleanup_string_free_erase_ _cleanup_(string_free_erasep)
 
 bool string_is_safe(const char *p) _pure_;
 
