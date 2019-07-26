@@ -26,6 +26,25 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Drop ibft settings plugin. This functionality is now covered by using
   nm-initrd-generator from initrd to pre-generate in-memory profiles.
 
+The following changes were backported to 1.18.x releases between 1.18.0
+and 1.18.2 are also present in NetworkManager-1.18:
+
+- 1.18.2:
+* Add compatibility with out-of-tree WireGuard module on 5.2 kernels
+* Fix parsing of BOOTIF= variables in initrd.
+* Accept numeric IPv4 prefix in place of a mask when parsing a command line
+  in initrd.
+* Don't check connectivity of unconfigured devices.
+* Fix PKCS#12 handling in the ifcfg-rh plugin.
+* Avoid waiting for udev to see software devices created by NetworkManager.
+* Don't attempt to stop management daemon for Team devices created
+  externally to NetworkManager.
+* Use FQDN for persistent hostname on Slackware.
+* Restore IPv6 configuration of a device when its link goes back up.
+* Fix management status of software devices on system suspend.
+* Make nmcli not print certificate blobs if --show-secrets is not used.
+* Fix MTU reapply.
+
 =============================================
 NetworkManager-1.18
 Overview of changes since NetworkManager-1.16
