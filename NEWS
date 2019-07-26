@@ -5,7 +5,7 @@ Overview of changes since NetworkManager-1.18
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Add compatibility with out-of-tree wireshark module on 5.2 kernels
+* Add compatibility with out-of-tree WireGuard module on 5.2 kernels
 * Fix parsing of BOOTIF= variables in initrd.
 * Accept numeric IPv4 prefix in place of a mask when parsing a command line
   in initrd.
