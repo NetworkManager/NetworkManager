@@ -216,13 +216,22 @@ _read_from_file (const char *full_filename,
                  struct stat *out_stat,
                  NMTernary *out_is_nm_generated,
                  NMTernary *out_is_volatile,
+                 char **out_shadowed_storage,
+                 NMTernary *out_shadowed_owned,
                  GError **error)
 {
 	NMConnection *connection;
 
 	nm_assert (full_filename && full_filename[0] == '/');
 
-	connection = nms_keyfile_reader_from_file (full_filename, plugin_dir, out_stat, out_is_nm_generated, out_is_volatile, error);
+	connection = nms_keyfile_reader_from_file (full_filename,
+	                                           plugin_dir,
+	                                           out_stat,
+	                                           out_is_nm_generated,
+	                                           out_is_volatile,
+	                                           out_shadowed_storage,
+	                                           out_shadowed_owned,
+	                                           error);
 
 	nm_assert (!connection || (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS));
 	nm_assert (!connection || nm_utils_is_uuid (nm_connection_get_uuid (connection)));
@@ -244,7 +253,7 @@ _nm_assert_storage (gpointer plugin  /* NMSKeyfilePlugin  */,
 	nm_assert (!plugin || NMS_IS_KEYFILE_PLUGIN (plugin));
 	nm_assert (NMS_IS_KEYFILE_STORAGE (storage));
 	nm_assert (!plugin || plugin == nm_settings_storage_get_plugin (storage));
-	nm_assert (!((NMSKeyfileStorage *) storage)->is_tombstone || !(((NMSKeyfileStorage *) storage)->connection));
+
 	nm_assert (({
 	                const char *f = nms_keyfile_storage_get_filename (storage);
 	                f && f[0] == '/';
@@ -253,6 +262,11 @@ _nm_assert_storage (gpointer plugin  /* NMSKeyfilePlugin  */,
 	uuid = nms_keyfile_storage_get_uuid (storage);
 
 	nm_assert (nm_utils_is_uuid (uuid));
+
+	nm_assert (   ((NMSKeyfileStorage *) storage)->is_meta_data
+	           || !(((NMSKeyfileStorage *) storage)->u.conn_data.connection)
+	           || (   NM_IS_CONNECTION ((((NMSKeyfileStorage *) storage)->u.conn_data.connection))
+	               && nm_streq0 (uuid, nm_connection_get_uuid ((((NMSKeyfileStorage *) storage)->u.conn_data.connection)))));
 
 	nm_assert (   !tracked
 	           || !plugin
@@ -264,7 +278,8 @@ _nm_assert_storage (gpointer plugin  /* NMSKeyfilePlugin  */,
 	           || storage == g_hash_table_lookup (NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin)->storages.idx_by_filename,
 	                                              nms_keyfile_storage_get_filename (storage)));
 
-	if (tracked && plugin) {
+	if (   tracked
+	    && plugin) {
 		sbuh = g_hash_table_lookup (NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin)->storages.idx_by_uuid, &uuid);
 		nm_assert (sbuh);
 		nm_assert (c_list_contains (&sbuh->_storage_by_uuid_lst_head, &((NMSKeyfileStorage *) storage)->parent._storage_by_uuid_lst));
@@ -285,6 +300,8 @@ _load_file (NMSKeyfilePlugin *self,
 	gs_unref_object NMConnection *connection = NULL;
 	NMTernary is_volatile_opt;
 	NMTernary is_nm_generated_opt;
+	NMTernary shadowed_owned_opt;
+	gs_free char *shadowed_storage = NULL;
 	gs_free_error GError *local = NULL;
 	gs_free char *full_filename = NULL;
 	struct stat st;
@@ -292,6 +309,7 @@ _load_file (NMSKeyfilePlugin *self,
 	if (_ignore_filename (storage_type, filename)) {
 		gs_free char *nmmeta = NULL;
 		gs_free char *loaded_path = NULL;
+		gs_free char *shadowed_storage_filename = NULL;
 
 		if (!nms_keyfile_nmmeta_check_filename (filename, NULL)) {
 			if (error)
@@ -305,6 +323,7 @@ _load_file (NMSKeyfilePlugin *self,
 		                              &full_filename,
 		                              &nmmeta,
 		                              &loaded_path,
+		                              &shadowed_storage_filename,
 		                              NULL)) {
 			if (error)
 				nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, "skip unreadable nmmeta file");
@@ -332,7 +351,8 @@ _load_file (NMSKeyfilePlugin *self,
 		return nms_keyfile_storage_new_tombstone (self,
 		                                          nmmeta,
 		                                          full_filename,
-		                                          storage_type);
+		                                          storage_type,
+		                                          shadowed_storage_filename);
 	}
 
 	full_filename = g_build_filename (dirname, filename, NULL);
@@ -344,6 +364,8 @@ _load_file (NMSKeyfilePlugin *self,
 	                              &st,
 	                              &is_nm_generated_opt,
 	                              &is_volatile_opt,
+	                              &shadowed_storage,
+	                              &shadowed_owned_opt,
 	                              &local);
 	if (!connection) {
 		if (error)
@@ -359,6 +381,8 @@ _load_file (NMSKeyfilePlugin *self,
 	                                           storage_type,
 	                                           is_nm_generated_opt,
 	                                           is_volatile_opt,
+	                                           shadowed_storage,
+	                                           shadowed_owned_opt,
 	                                           &st.st_mtim);
 }
 
@@ -454,7 +478,7 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 	c_list_init (&storages_deleted);
 
 	c_list_for_each_entry (storage_old, &priv->storages._storage_lst_head, parent._storage_lst)
-		storage_old->dirty = TRUE;
+		storage_old->is_dirty = TRUE;
 
 	c_list_for_each_entry_safe (storage_new, storage_safe, &storages_new->_storage_lst_head, parent._storage_lst) {
 		storage_old = nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_keyfile_storage_get_filename (storage_new));
@@ -465,28 +489,28 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 		    || !nm_streq (nms_keyfile_storage_get_uuid (storage_new), nms_keyfile_storage_get_uuid (storage_old))) {
 			if (storage_old) {
 				nm_sett_util_storages_steal (&priv->storages, storage_old);
-				c_list_link_tail (&storages_deleted, &storage_old->parent._storage_lst);
+				c_list_link_tail (&storages_deleted, &storage_old->parent._storage_by_uuid_lst);
 			}
-			storage_new->dirty = FALSE;
+			storage_new->is_dirty = FALSE;
 			nm_sett_util_storages_add_take (&priv->storages, storage_new);
 			g_ptr_array_add (storages_modified, g_object_ref (storage_new));
 			continue;
 		}
 
-		storage_old->dirty = FALSE;
+		storage_old->is_dirty = FALSE;
 		nms_keyfile_storage_copy_content (storage_old, storage_new);
 		nms_keyfile_storage_destroy (storage_new);
 		g_ptr_array_add (storages_modified, g_object_ref (storage_old));
 	}
 
 	c_list_for_each_entry_safe (storage_old, storage_safe, &priv->storages._storage_lst_head, parent._storage_lst) {
-		if (!storage_old->dirty)
+		if (!storage_old->is_dirty)
 			continue;
 		if (   replace_all
 		    || (   storages_replaced
 		        && g_hash_table_contains (storages_replaced, storage_old))) {
 			nm_sett_util_storages_steal (&priv->storages, storage_old);
-			c_list_link_tail (&storages_deleted, &storage_old->parent._storage_lst);
+			c_list_link_tail (&storages_deleted, &storage_old->parent._storage_by_uuid_lst);
 		}
 	}
 
@@ -494,7 +518,7 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 
 	for (i = 0; i < storages_modified->len; i++) {
 		storage = storages_modified->pdata[i];
-		storage->dirty = TRUE;
+		storage->is_dirty = TRUE;
 	}
 
 	for (i = 0; i < storages_modified->len; i++) {
@@ -502,18 +526,21 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 
 		storage = storages_modified->pdata[i];
 
-		if (!storage->dirty) {
-			/* the entry is no longer dirty. In the meantime we already emited
+		if (!storage->is_dirty) {
+			/* the entry is no longer is_dirty. In the meantime we already emited
 			 * another signal for it. */
 			continue;
 		}
-		storage->dirty = FALSE;
-		if (storage != nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_keyfile_storage_get_filename (storage))) {
+		storage->is_dirty = FALSE;
+
+		if (c_list_is_empty (&storage->parent._storage_lst)) {
 			/* hm? The profile was deleted in the meantime? That is only possible
 			 * if the signal handler called again into the plugin. In any case, the event
 			 * was already emitted. Skip. */
 			continue;
 		}
+
+		nm_assert (storage == nm_sett_util_storages_lookup_by_filename (&priv->storages, nms_keyfile_storage_get_filename (storage)));
 
 		connection = nms_keyfile_storage_steal_connection (storage);
 
@@ -523,9 +550,8 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 		          user_data);
 	}
 
-	while ((storage = c_list_first_entry (&storages_deleted, NMSKeyfileStorage, parent._storage_lst))) {
-		c_list_unlink (&storage->parent._storage_lst);
-		storage->is_tombstone = FALSE;
+	while ((storage = c_list_first_entry (&storages_deleted, NMSKeyfileStorage, parent._storage_by_uuid_lst))) {
+		c_list_unlink (&storage->parent._storage_by_uuid_lst);
 		callback (NM_SETTINGS_PLUGIN (self),
 		          NM_SETTINGS_STORAGE (storage),
 		          NULL,
@@ -717,9 +743,11 @@ load_connections (NMSettingsPlugin *plugin,
 gboolean
 nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
                                    NMConnection *connection,
+                                   gboolean in_memory,
                                    gboolean is_nm_generated,
                                    gboolean is_volatile,
-                                   gboolean in_memory,
+                                   const char *shadowed_storage,
+                                   gboolean shadowed_owned,
                                    NMSettingsStorage **out_storage,
                                    NMConnection **out_connection,
                                    GError **error)
@@ -739,8 +767,16 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	nm_assert (out_storage && !*out_storage);
 	nm_assert (out_connection && !*out_connection);
 
+	nm_assert (   in_memory
+	           || (   !is_nm_generated
+	               && !is_volatile
+	               && !shadowed_storage
+	               && !shadowed_owned));
+
 	uuid = nm_connection_get_uuid (connection);
 
+	/* Note that even if the caller requests persistent storage, we may switch to in-memory, if
+	 * no /etc directory is configured. */
 	storage_type =   !in_memory && priv->dirname_etc
 	               ? NMS_KEYFILE_STORAGE_TYPE_ETC
 	               : NMS_KEYFILE_STORAGE_TYPE_RUN;
@@ -748,6 +784,8 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	if (!nms_keyfile_writer_connection (connection,
 	                                    is_nm_generated,
 	                                    is_volatile,
+	                                    shadowed_storage,
+	                                    shadowed_owned,
 	                                      storage_type == NMS_KEYFILE_STORAGE_TYPE_ETC
 	                                    ? priv->dirname_etc
 	                                    : priv->dirname_run,
@@ -779,11 +817,12 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	nm_assert (full_filename && full_filename[0] == '/');
 	nm_assert (!nm_sett_util_storages_lookup_by_filename (&priv->storages, full_filename));
 
-	_LOGT ("commit: %s (%s) added as \"%s\"%s",
+	_LOGT ("commit: %s (%s) added as \"%s\"%s%s%s%s",
 	       uuid,
 	       nm_connection_get_id (connection),
 	       full_filename,
-	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile));
+	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile),
+	       NM_PRINT_FMT_QUOTED (shadowed_storage, " (shadows \"", shadowed_storage, shadowed_owned ? "\", owned)" : "\")", ""));
 
 	storage = nms_keyfile_storage_new_connection (self,
 	                                              g_steal_pointer (&reread),
@@ -791,6 +830,8 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	                                              storage_type,
 	                                              is_nm_generated ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
 	                                              is_volatile ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
+	                                              shadowed_storage,
+	                                              shadowed_owned ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
 	                                              nm_sett_util_stat_mtime (full_filename, FALSE, &mtime));
 
 	nm_sett_util_storages_add_take (&priv->storages, g_object_ref (storage));
@@ -813,6 +854,8 @@ add_connection (NMSettingsPlugin *plugin,
 	                                          FALSE,
 	                                          FALSE,
 	                                          FALSE,
+	                                          NULL,
+	                                          FALSE,
 	                                          out_storage,
 	                                          out_connection,
 	                                          error);
@@ -824,6 +867,8 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
                                       NMConnection *connection,
                                       gboolean is_nm_generated,
                                       gboolean is_volatile,
+                                      const char *shadowed_storage,
+                                      gboolean shadowed_owned,
                                       gboolean force_rename,
                                       NMSettingsStorage **out_storage,
                                       NMConnection **out_connection,
@@ -839,6 +884,7 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	const char *previous_filename;
 	gboolean reread_same;
 	const char *uuid;
+	char strbuf[100];
 
 	_nm_assert_storage (self, storage, TRUE);
 	nm_assert (NM_IS_CONNECTION (connection));
@@ -847,8 +893,13 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	nm_assert (!error || !*error);
 	nm_assert (NM_IN_SET (storage->storage_type, NMS_KEYFILE_STORAGE_TYPE_ETC,
 	                                             NMS_KEYFILE_STORAGE_TYPE_RUN));
-	nm_assert (   (!is_nm_generated && !is_volatile)
-	           || storage->storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN);
+	nm_assert (!storage->is_meta_data);
+	nm_assert (   storage->storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN
+	           || (   !is_nm_generated
+	               && !is_volatile
+	               && !shadowed_storage
+	               && !shadowed_owned));
+	nm_assert (!shadowed_owned || shadowed_storage);
 	nm_assert  (   priv->dirname_etc
 	            || storage->storage_type != NMS_KEYFILE_STORAGE_TYPE_ETC);
 
@@ -858,6 +909,8 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	if (!nms_keyfile_writer_connection (connection,
 	                                    is_nm_generated,
 	                                    is_volatile,
+	                                    shadowed_storage,
+	                                    shadowed_owned,
 	                                      storage->storage_type == NMS_KEYFILE_STORAGE_TYPE_ETC
 	                                    ? priv->dirname_etc
 	                                    : priv->dirname_run,
@@ -890,14 +943,17 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	nm_assert (_nm_connection_verify (reread, NULL) == NM_SETTING_VERIFY_SUCCESS);
 	nm_assert (nm_streq (nm_connection_get_uuid (reread), uuid));
 
-	_LOGT ("commit: \"%s\": profile %s (%s) written",
+	_LOGT ("commit: \"%s\": profile %s (%s) written%s%s%s%s",
 	       full_filename,
 	       uuid,
-	       nm_connection_get_id (connection));
+	       nm_connection_get_id (connection),
+	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile),
+	       NM_PRINT_FMT_QUOTED (shadowed_storage, shadowed_owned ? " (owns \"" : " (shadows \"", shadowed_storage, "\")", ""));
 
-	storage->is_nm_generated = is_nm_generated;
-	storage->is_volatile     = is_volatile;
-	storage->stat_mtime      = *nm_sett_util_stat_mtime (full_filename, FALSE, &mtime);
+	storage->u.conn_data.is_nm_generated = is_nm_generated;
+	storage->u.conn_data.is_volatile     = is_volatile;
+	storage->u.conn_data.stat_mtime      = *nm_sett_util_stat_mtime (full_filename, FALSE, &mtime);
+	storage->u.conn_data.shadowed_owned  = shadowed_owned;
 
 	*out_storage = g_object_ref (NM_SETTINGS_STORAGE (storage));
 	*out_connection = g_steal_pointer (&reread);
@@ -916,6 +972,8 @@ update_connection (NMSettingsPlugin *plugin,
 	                                             storage,
 	                                             connection,
 	                                             FALSE,
+	                                             FALSE,
+	                                             NULL,
 	                                             FALSE,
 	                                             FALSE,
 	                                             out_storage,
@@ -969,14 +1027,13 @@ delete_connection (NMSettingsPlugin *plugin,
 
 	_LOGT ("commit: deleted \"%s\", %s %s (%s%s%s%s)",
 	       previous_filename,
-	       storage->is_tombstone ? "tombstone" : "profile",
+	       storage->is_meta_data ? "meta-data" : "profile",
 	       uuid,
 	       operation_message,
 	       NM_PRINT_FMT_QUOTED (remove_from_disk_errmsg, ": ", remove_from_disk_errmsg, "", ""));
 
 	if (success) {
 		nm_sett_util_storages_steal (&priv->storages, storage);
-		storage->is_tombstone = FALSE;
 		nms_keyfile_storage_destroy (storage);
 	}
 
@@ -998,6 +1055,9 @@ delete_connection (NMSettingsPlugin *plugin,
  *   has no /etc directory configured, this results in a hard failure.
  * @set: if %TRUE, write the symlink to point to /dev/null. If %FALSE,
  *   delete the nmmeta file (if it exists).
+ * @shadowed_storage: a tombstone can also shadow an existing storage.
+ *   In combination with @set and @in_memory, this is allowed to store
+ *   the shadowed storage filename.
  * @out_storage: (transfer full) (allow-none): the storage element that changes, or
  *   NULL if nothing changed. Note that the file on disk is already as
  *   we want to write it, then this still counts as a change. No change only
@@ -1022,6 +1082,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
                                          const char *uuid,
                                          gboolean in_memory,
                                          gboolean set,
+                                         const char *shadowed_storage,
                                          NMSettingsStorage **out_storage,
                                          gboolean *out_hard_failure)
 {
@@ -1038,6 +1099,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	nm_assert (NMS_IS_KEYFILE_PLUGIN (self));
 	nm_assert (nm_utils_is_uuid (uuid));
 	nm_assert (!out_storage || !*out_storage);
+	nm_assert (!shadowed_storage || (set && in_memory));
 
 	priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
 
@@ -1050,7 +1112,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 		dirname = priv->dirname_run;
 	} else {
 		if (!priv->dirname_etc) {
-			_LOGT ("commit: cannot %s%s nmmeta symlink for %s as there is no /etc directory",
+			_LOGT ("commit: cannot %s%s nmmeta file for %s as there is no /etc directory",
 			       simulate ? "simulate " : "",
 			       loaded_path ? "write" : "delete",
 			       uuid);
@@ -1069,13 +1131,15 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 		                                           uuid,
 		                                           loaded_path,
 		                                           FALSE,
+		                                           shadowed_storage,
 		                                           &nmmeta_filename);
 	}
 
-	_LOGT ("commit: %s nmmeta symlink \"%s\"%s%s%s %s",
+	_LOGT ("commit: %s nmmeta file \"%s\"%s%s%s%s%s%s %s",
 	       loaded_path ? "writing" : "deleting",
 	       nmmeta_filename,
 	       NM_PRINT_FMT_QUOTED (loaded_path, " (pointing to \"", loaded_path, "\")", ""),
+	       NM_PRINT_FMT_QUOTED (shadowed_storage, " (shadows \"", shadowed_storage, "\")", ""),
 	       simulate
 	       ? "simulated"
 	       : (  nmmeta_success
@@ -1088,7 +1152,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	storage = nm_sett_util_storages_lookup_by_filename (&priv->storages, nmmeta_filename);
 
 	nm_assert (   !storage
-	           || (   storage->is_tombstone
+	           || (   storage->is_meta_data
 	               && storage->storage_type == storage_type
 	               && nm_streq (nms_keyfile_storage_get_uuid (storage), uuid)));
 
@@ -1098,16 +1162,18 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 			storage = nms_keyfile_storage_new_tombstone (self,
 			                                             uuid,
 			                                             nmmeta_filename,
-			                                             storage_type);
+			                                             storage_type,
+			                                             shadowed_storage);
 			nm_sett_util_storages_add_take (&priv->storages, storage);
+		} else {
+			g_free (storage->u.meta_data.shadowed_storage);
+			storage->u.meta_data.shadowed_storage = g_strdup (shadowed_storage);
 		}
 
 		storage_result = g_object_ref (storage);
 	} else {
-		if (storage) {
+		if (storage)
 			storage_result = nm_sett_util_storages_steal (&priv->storages, storage);
-			storage_result->is_tombstone = FALSE;
-		}
 	}
 
 out:

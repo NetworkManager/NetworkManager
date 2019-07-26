@@ -168,16 +168,12 @@ nm_assert_storage_data_lst (CList *head)
 static gboolean
 _storage_data_is_alive (StorageData *sd)
 {
-	if (sd->connection)
-		return TRUE;
-
-	if (nm_settings_storage_is_keyfile_tombstone (sd->storage)) {
-		/* entry does not have a profile, but it's here as a tombstone to
-		 * hide/shadow other connections. That's also relevant. */
-		return TRUE;
-	}
-
-	return FALSE;
+	/* If the storage tracks a connection, it is considered alive.
+	 *
+	 * Meta-data storages are special: they never track a connection.
+	 * We need to check them specially to know when to drop them. */
+	return    sd->connection
+	       || nm_settings_storage_is_meta_data_alive (sd->storage);
 }
 
 /*****************************************************************************/
@@ -230,6 +226,110 @@ static NMSettingsConnection *
 _sett_conn_entry_get_conn (SettConnEntry *sett_conn_entry)
 {
 	return sett_conn_entry ? sett_conn_entry->sett_conn : NULL;
+}
+
+/**
+ * _sett_conn_entry_storage_find_conflicting_storage:
+ * @sett_conn_entry: the list of settings-storages for the given UUID.
+ * @target_plugin: the settings plugin to check
+ * @storage_check_including: (allow-none): optionally compare against this storage.
+ * @plugins: the list of plugins sorted in descending priority. This determines
+ *   the priority and whether a storage conflicts.
+ *
+ * If we were to add the a storage to @target_plugin, then this function checks
+ * whether there are already other storages that would hide the storage after we
+ * add it. Those conflicting/hiding storages are a problem, because they have higher
+ * priority, so we cannot add the storage.
+ *
+ * @storage_check_including is optional, and if given then it checks whether updating
+ * the profile in this storage would result in confict. This is the check before
+ * update-connection. If this parameter is omitted, then it's about what happens
+ * when adding a new profile (add-connection).
+ *
+ * Returns: the conflicting storage or %NULL if there is none.
+ */
+static NMSettingsStorage *
+_sett_conn_entry_storage_find_conflicting_storage (SettConnEntry *sett_conn_entry,
+                                                   NMSettingsPlugin *target_plugin,
+                                                   NMSettingsStorage *storage_check_including,
+                                                   const GSList *plugins)
+{
+	StorageData *sd;
+
+	if (!sett_conn_entry)
+		return NULL;
+
+	if (   storage_check_including
+	    && nm_settings_storage_is_keyfile_run (storage_check_including)) {
+		/* the storage we check against is in-memory. It always has highest
+		 * priority, so there can be no other conflicting storages. */
+		return NULL;
+	}
+
+	/* Finds the first (highest priority) storage that has a connection.
+	 * Note that due to tombstones (that have a high priority), the connection
+	 * may not actually be exposed. This is to find hidden/shadowed storages
+	 * that provide a connection. */
+	c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+		nm_assert (NM_IS_SETTINGS_STORAGE (sd->storage));
+
+		if (!sd->connection) {
+			/* We only consider storages with connection. In particular,
+			 * tombstones are not relevant, because we can delete them to
+			 * resolve the conflict. */
+			continue;
+		}
+
+		if (sd->storage == storage_check_including) {
+			/* ok, the storage is the one we are about to check. All other
+			 * storages are lower priority, so there is no storage that hides
+			 * our storage_check_including. */
+			return NULL;
+		}
+
+		if (nm_settings_plugin_cmp_by_priority (nm_settings_storage_get_plugin (sd->storage),
+		                                        target_plugin,
+		                                        plugins) <= 0) {
+			/* the plugin of the existing storage is less important than @target_plugin.
+			 * We have no conflicting/hiding storage. */
+			return NULL;
+		}
+
+		/* Found. If we would add the profile to @target_plugin, then it would be hidden
+		 * by existing_storage. */
+		return sd->storage;
+	}
+
+	return NULL;
+}
+
+static NMSettingsStorage *
+_sett_conn_entry_find_shadowed_storage (SettConnEntry *sett_conn_entry,
+                                        const char *shadowed_storage_filename,
+                                        NMSettingsStorage *blacklisted_storage)
+{
+	StorageData *sd;
+
+	if (!shadowed_storage_filename)
+		return NULL;
+
+	c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+
+		nm_assert (NM_IS_SETTINGS_STORAGE (sd->storage));
+
+		if (!sd->connection)
+			continue;
+
+		if (blacklisted_storage == sd->storage)
+			continue;
+
+		if (!nm_streq0 (nm_settings_storage_get_filename_for_shadowed_storage (sd->storage), shadowed_storage_filename))
+			continue;
+
+		return sd->storage;
+	}
+
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -725,23 +825,82 @@ _sett_conn_entries_remove_and_destroy (NMSettings *self,
 /*****************************************************************************/
 
 static int
+_sett_conn_entry_sds_update_cmp_ascending (const StorageData *sd_a,
+                                           const StorageData *sd_b,
+                                           const GSList *plugins)
+{
+	const NMSettingsMetaData *meta_data_a;
+	const NMSettingsMetaData *meta_data_b;
+	bool is_keyfile_run_a;
+	bool is_keyfile_run_b;
+
+	/* Sort storages by priority. More important storages are sorted
+	 * higher (ascending sort). For example, if "sd_a" is more important than
+	 * "sd_b" (sd_a>sd_b), a positive integer is returned. */
+
+	meta_data_a = nm_settings_storage_is_meta_data (sd_a->storage);
+	meta_data_b = nm_settings_storage_is_meta_data (sd_b->storage);
+
+	/* runtime storages (both connections and meta-data) are always more
+	 * important. */
+	is_keyfile_run_a = nm_settings_storage_is_keyfile_run (sd_a->storage);
+	is_keyfile_run_b = nm_settings_storage_is_keyfile_run (sd_b->storage);
+	if (is_keyfile_run_a != is_keyfile_run_b) {
+
+		if (   !meta_data_a
+		    && !meta_data_b) {
+			/* Ok, both are non-meta-data providing actual profiles. But one is in /run and one is in
+			 * another storage. In this case we first honor whether one of the storages is explicitly
+			 * prioritized. The prioritize flag is an in-memory hack to overwrite relative priorities
+			 * contrary to what exists on-disk.
+			 *
+			 * This is done because when we use explicit D-Bus API (like update-connection)
+			 * to update a profile, then we really want to prioritize the candidate
+			 * despite having multiple other profiles.
+			 *
+			 * The example is if you have the same UUID twice in /run (one of them shadowed).
+			 * If you move it to disk, then one of the profiles gets deleted and re-created
+			 * on disk, but that on-disk profile must win against the remainging profile in
+			 * /run. At least until the next reload/restart. */
+			NM_CMP_FIELD_UNSAFE (sd_a, sd_b, prioritize);
+		}
+
+		/* in-memory has higher priority. That is regardless of whether any of
+		 * them is meta-data/tombstone or a profile.
+		 *
+		 * That works, because if any of them are tombstones/metadata, then we are in full
+		 * control. There can by only one meta-data file, which is fully owned (and accordingly
+		 * created/deleted) by NetworkManager.
+		 *
+		 * The only case where this might not be right is if we have profiles
+		 * in /run that are shadowed. When we move such a profile to disk, then
+		 * a conflict might arise. That is handled by "prioritize" above! */
+		NM_CMP_DIRECT (is_keyfile_run_a, is_keyfile_run_b);
+	}
+
+	/* After we determined that both profiles are either in /run or not,
+	 * tombstones are always more important than non-tombstones. */
+	NM_CMP_DIRECT (meta_data_a && meta_data_a->is_tombstone,
+	               meta_data_b && meta_data_b->is_tombstone);
+
+	/* Again, prioritized entries are sorted first (higher priority). */
+	NM_CMP_FIELD_UNSAFE (sd_a, sd_b, prioritize);
+
+	/* finally, compare the storages. This basically honors the timestamp
+	 * of the profile and the relative order of the source plugin (via the
+	 * @plugins list). */
+	return nm_settings_storage_cmp (sd_a->storage, sd_b->storage, plugins);
+}
+
+static int
 _sett_conn_entry_sds_update_cmp (const CList *ls_a,
                                  const CList *ls_b,
                                  gconstpointer user_data)
 {
-	const GSList *plugins = user_data;
-	StorageData *sd_a = c_list_entry (ls_a, StorageData, sd_lst);
-	StorageData *sd_b = c_list_entry (ls_b, StorageData, sd_lst);
-
-	/* prioritized entries are sorted first (higher priority). */
-	NM_CMP_FIELD_UNSAFE (sd_b, sd_a, prioritize);
-
-	/* nm_settings_storage_cmp() compares in ascending order. Meaning,
-	 * if the storage has higher priority, it gives a positive number (as one
-	 * would expect).
-	 *
-	 * We want to sort the list in reverse though, with highest priority first. */
-	return nm_settings_storage_cmp (sd_b->storage, sd_a->storage, plugins);
+	/* we sort highest priority storages first (descending). Hence, the order is swapped. */
+	return _sett_conn_entry_sds_update_cmp_ascending (c_list_entry (ls_b, StorageData, sd_lst),
+	                                                  c_list_entry (ls_a, StorageData, sd_lst),
+	                                                  user_data);
 }
 
 static void
@@ -1192,19 +1351,28 @@ _connection_changed_track (NMSettings *self,
 
 	if (_LOGT_ENABLED ()) {
 		const char *filename;
+		const NMSettingsMetaData *meta_data;
+		const char *shadowed_storage;
+		gboolean shadowed_owned;
 
 		filename = nm_settings_storage_get_filename (storage);
 		if (connection) {
-			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event with connection \"%s\"%s%s%s",
+			shadowed_storage = nm_settings_storage_get_shadowed_storage (storage, &shadowed_owned);
+			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event with connection \"%s\"%s%s%s%s%s%s",
 			       sett_conn_entry->uuid,
 			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
 			       nm_connection_get_id (connection),
-			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
-		} else if (nm_settings_storage_is_keyfile_tombstone (storage)) {
-			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for hiding profile%s%s%s",
+			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""),
+			       NM_PRINT_FMT_QUOTED (shadowed_storage, shadowed_owned ? " (owns \"" : " (shadows \"", shadowed_storage, "\")", ""));
+		} else if ((meta_data = nm_settings_storage_is_meta_data (storage))) {
+			nm_assert (meta_data->is_tombstone);
+			shadowed_storage = nm_settings_storage_get_shadowed_storage (storage, &shadowed_owned);
+			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for %shiding profile%s%s%s%s%s%s",
 			       sett_conn_entry->uuid,
 			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
-			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
+			       nm_settings_storage_is_meta_data_alive  (storage) ? "" : "dropping ",
+			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""),
+			       NM_PRINT_FMT_QUOTED (shadowed_storage, shadowed_owned ? " (owns \"" : " (shadows \"", shadowed_storage, "\")", ""));
 		} else {
 			_LOGT ("storage[%s,"NM_SETTINGS_STORAGE_PRINT_FMT"]: change event for dropping profile%s%s%s",
 			       sett_conn_entry->uuid,
@@ -1276,10 +1444,12 @@ _plugin_connections_reload (NMSettings *self)
 
 static gboolean
 _add_connection_to_first_plugin (NMSettings *self,
+                                 SettConnEntry *sett_conn_entry,
                                  NMConnection *new_connection,
                                  gboolean in_memory,
-                                 gboolean is_nm_generated,
-                                 gboolean is_volatile,
+                                 NMSettingsConnectionIntFlags sett_flags,
+                                 const char *shadowed_storage,
+                                 gboolean shadowed_owned,
                                  NMSettingsStorage **out_new_storage,
                                  NMConnection **out_new_connection,
                                  GError **error)
@@ -1304,20 +1474,44 @@ _add_connection_to_first_plugin (NMSettings *self,
 		gboolean success;
 		const char *filename;
 
+		if (!in_memory) {
+			NMSettingsStorage *conflicting_storage;
+
+			conflicting_storage = _sett_conn_entry_storage_find_conflicting_storage (sett_conn_entry, plugin, NULL, priv->plugins);
+			if (conflicting_storage) {
+				/* we have a connection provided by a plugin with higher priority than the one
+				 * we would want to add the connection. We cannot do that, because doing so
+				 * would result in adding a connection that gets hidden by the existing profile.
+				 * Also, since we test the plugins in order of priority, all following plugins
+				 * are unsuitable.
+				 *
+				 * Multiple connection plugins are so cumbersome, especially if they are unable
+				 * to add the connection. I suggest to disable all plugins except keyfile. */
+				_LOGT ("add-connection: failed to add %s/'%s': there is an existing storage "NM_SETTINGS_STORAGE_PRINT_FMT" with higher priority",
+				       nm_connection_get_uuid (new_connection),
+				       nm_connection_get_id (new_connection),
+				       NM_SETTINGS_STORAGE_PRINT_ARG (conflicting_storage));
+				nm_assert (first_error);
+				break;
+			}
+		}
+
 		if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
 			success = nms_keyfile_plugin_add_connection (priv->keyfile_plugin,
 			                                             new_connection,
-			                                             is_nm_generated,
-			                                             is_volatile,
 			                                             in_memory,
+			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
+			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+			                                             shadowed_storage,
+			                                             shadowed_owned,
 			                                             &storage,
 			                                             &connection_to_add,
 			                                             &add_error);
 		} else {
 			if (in_memory)
 				continue;
-			nm_assert (!is_nm_generated);
-			nm_assert (!is_volatile);
+			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED));
+			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE));
 			success = nm_settings_plugin_add_connection (plugin,
 			                                             new_connection,
 			                                             &storage,
@@ -1371,6 +1565,97 @@ _add_connection_to_first_plugin (NMSettings *self,
 	return FALSE;
 }
 
+static gboolean
+_update_connection_to_plugin (NMSettings *self,
+                              NMSettingsStorage *storage,
+                              NMConnection *connection,
+                              NMSettingsConnectionIntFlags sett_flags,
+                              gboolean force_rename,
+                              const char *shadowed_storage,
+                              gboolean shadowed_owned,
+                              NMSettingsStorage **out_new_storage,
+                              NMConnection **out_new_connection,
+                              GError **error)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMSettingsPlugin *plugin;
+	gboolean success;
+
+	plugin = nm_settings_storage_get_plugin (storage);
+
+	if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
+		success = nms_keyfile_plugin_update_connection (priv->keyfile_plugin,
+		                                                storage,
+		                                                connection,
+		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
+		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+		                                                shadowed_storage,
+		                                                shadowed_owned,
+		                                                force_rename,
+		                                                out_new_storage,
+		                                                out_new_connection,
+		                                                error);
+	} else {
+		nm_assert (!shadowed_storage);
+		nm_assert (!shadowed_owned);
+		success = nm_settings_plugin_update_connection (plugin,
+		                                                storage,
+		                                                connection,
+		                                                out_new_storage,
+		                                                out_new_connection,
+		                                                error);
+	}
+
+	return success;
+}
+
+static void
+_set_nmmeta_tombstone (NMSettings *self,
+                       const char *uuid,
+                       gboolean tombstone_on_disk,
+                       gboolean tombstone_in_memory,
+                       const char *shadowed_storage)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	gs_unref_object NMSettingsStorage *tombstone_1_storage = NULL;
+	gs_unref_object NMSettingsStorage *tombstone_2_storage = NULL;
+
+	if (tombstone_on_disk) {
+		if (!nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
+		                                              FALSE,
+		                                              uuid,
+		                                              FALSE,
+		                                              TRUE,
+		                                              NULL,
+		                                              &tombstone_1_storage,
+		                                              NULL))
+			tombstone_in_memory = TRUE;
+		if (tombstone_1_storage)
+			_connection_changed_track (self, tombstone_1_storage, NULL, FALSE);
+	}
+
+	if (tombstone_in_memory) {
+		if (!nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
+		                                              FALSE,
+		                                              uuid,
+		                                              TRUE,
+		                                              TRUE,
+		                                              shadowed_storage,
+		                                              &tombstone_2_storage,
+		                                              NULL)) {
+			nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
+			                                         TRUE,
+			                                         uuid,
+			                                         TRUE,
+			                                         TRUE,
+			                                         shadowed_storage,
+			                                         &tombstone_2_storage,
+			                                         NULL);
+		}
+		_connection_changed_track (self, tombstone_2_storage, NULL, FALSE);
+	}
+}
+
 /**
  * nm_settings_add_connection:
  * @self: the #NMSettings object
@@ -1396,24 +1681,34 @@ nm_settings_add_connection (NMSettings *self,
                             NMSettingsConnection **out_sett_conn,
                             GError **error)
 {
+	NMSettingsPrivate *priv;
 	gs_unref_object NMConnection *connection_cloned_1 = NULL;
 	gs_unref_object NMConnection *new_connection = NULL;
 	gs_unref_object NMSettingsStorage *new_storage = NULL;
+	gs_unref_object NMSettingsStorage *shadowed_storage = NULL;
+	NMSettingsStorage *update_storage = NULL;
 	gs_free_error GError *local = NULL;
 	SettConnEntry *sett_conn_entry;
 	const char *uuid;
 	StorageData *sd;
+	gboolean new_in_memory;
+	gboolean success;
+	const char *shadowed_storage_filename = NULL;
 
-	nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY));
+
+	new_in_memory = (persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK);
 
 	nm_assert (!NM_FLAGS_ANY (sett_flags, ~_NM_SETTINGS_CONNECTION_INT_FLAGS_PERSISTENT_MASK));
 
-	nm_assert (   !NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
-	           || persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY);
-
-	nm_assert (   !NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE)
-	           || persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY);
+	if (NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                              | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)) {
+		nm_assert (new_in_memory);
+		new_in_memory = TRUE;
+	}
 
 	nm_assert (!NM_FLAGS_ANY (add_reason, ~NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT));
 
@@ -1421,8 +1716,8 @@ nm_settings_add_connection (NMSettings *self,
 
 	uuid = nm_connection_get_uuid (connection);
 
-	/* Make sure a connection with this UUID doesn't already exist */
-	if (_sett_conn_entry_get_conn (_sett_conn_entries_get (self, uuid))) {
+	sett_conn_entry = _sett_conn_entries_get (self, uuid);
+	if (_sett_conn_entry_get_conn (sett_conn_entry)) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_UUID_EXISTS,
@@ -1446,47 +1741,152 @@ nm_settings_add_connection (NMSettings *self,
 	if (connection_cloned_1)
 		connection = connection_cloned_1;
 
-	if (!_add_connection_to_first_plugin (self,
-	                                      connection,
-	                                      (   persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
-	                                       || NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
-	                                                                    | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)),
-	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
-	                                      NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
-	                                      &new_storage,
-	                                      &new_connection,
-	                                      &local)) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "failure adding connection: %s",
-		             local->message);
+	if (sett_conn_entry) {
+		c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+			if (!nm_settings_storage_is_meta_data (sd->storage))
+				continue;
+			shadowed_storage = nm_g_object_ref (_sett_conn_entry_find_shadowed_storage (sett_conn_entry,
+			                                                                            nm_settings_storage_get_shadowed_storage (sd->storage, NULL),
+			                                                                            NULL));
+			if (shadowed_storage) {
+				/* We have a nmmeta tombstone that indicates that a storage is shadowed.
+				 *
+				 * This happens when deleting a in-memory profile that was decoupled from
+				 * the persitant storage with NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
+				 * We need to take over this storage again... */
+				break;
+			}
+		}
+	}
+
+	if (   shadowed_storage
+	    && !new_in_memory) {
+		NMSettingsStorage *conflicting_storage;
+
+		conflicting_storage = _sett_conn_entry_storage_find_conflicting_storage (sett_conn_entry,
+		                                                                         nm_settings_storage_get_plugin (shadowed_storage),
+		                                                                         shadowed_storage,
+		                                                                         priv->plugins);
+		if (conflicting_storage) {
+			/* We cannot add the profile as @shadowed_storage, because there is another, existing storage
+			 * that would hide it. Just add it as new storage. In general, this leads to duplication of profiles,
+			 * but the circumstances where this happens are very exotic (you need at least one additional settings
+			 * plugin, then going through the paths of making shadowed_storage in-memory-detached and delete it,
+			 * and finally adding the conflicting storage outside of NM and restart/reload). */
+			_LOGT ("ignore shadowed storage "NM_SETTINGS_STORAGE_PRINT_FMT" due to conflicting storage "NM_SETTINGS_STORAGE_PRINT_FMT,
+			       NM_SETTINGS_STORAGE_PRINT_ARG (shadowed_storage),
+			       NM_SETTINGS_STORAGE_PRINT_ARG (conflicting_storage));
+		} else
+			update_storage = shadowed_storage;
+	}
+
+	shadowed_storage_filename =   (   shadowed_storage
+	                               && !update_storage)
+	                            ? nm_settings_storage_get_filename_for_shadowed_storage (shadowed_storage)
+	                            : NULL;
+
+again_add_connection:
+
+	if (!update_storage) {
+		success = _add_connection_to_first_plugin (self,
+		                                           sett_conn_entry,
+		                                           connection,
+		                                           new_in_memory,
+		                                           sett_flags,
+		                                           shadowed_storage_filename,
+		                                           FALSE,
+		                                           &new_storage,
+		                                           &new_connection,
+		                                           &local);
+	} else {
+		success = _update_connection_to_plugin (self,
+		                                        update_storage,
+		                                        connection,
+		                                        sett_flags,
+		                                        FALSE,
+		                                        shadowed_storage_filename,
+		                                        FALSE,
+		                                        &new_storage,
+		                                        &new_connection,
+		                                        &local);
+		if (!success) {
+			if (!NMS_IS_KEYFILE_STORAGE (update_storage)) {
+				/* hm, the intended storage is not keyfile (it's ifcfg-rh). This settings
+				 * plugin may not support the new connection. So step back and retry adding
+				 * the profile anew. */
+				_LOGT ("failure to add profile as existing storage \"%s\": %s",
+				       nm_settings_storage_get_filename (update_storage),
+				       local->message);
+				update_storage = NULL;
+				g_clear_object (&shadowed_storage);
+				shadowed_storage_filename = NULL;
+				g_clear_error (&local);
+				goto again_add_connection;
+			}
+		}
+	}
+
+	if (!success) {
+		if (!update_storage) {
+			g_set_error (error,
+			             NM_SETTINGS_ERROR,
+			             NM_SETTINGS_ERROR_FAILED,
+			             "failure adding connection: %s",
+			             local->message);
+		} else {
+			g_set_error (error,
+			             NM_SETTINGS_ERROR,
+			             NM_SETTINGS_ERROR_FAILED,
+			             "failure writing connection to existing storage \"%s\": %s",
+			             nm_settings_storage_get_filename (update_storage),
+			             local->message);
+		}
 		return FALSE;
 	}
 
 	sett_conn_entry = _connection_changed_track (self, new_storage, new_connection, TRUE);
 
 	c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
+		const NMSettingsMetaData *meta_data;
+		gs_unref_object NMSettingsStorage *new_tombstone_storage = NULL;
+		gboolean in_memory;
+		gboolean simulate;
 
-		if (!nm_settings_storage_is_keyfile_tombstone (sd->storage))
+		meta_data = nm_settings_storage_is_meta_data_alive (sd->storage);
+		if (   !meta_data
+		    || !meta_data->is_tombstone)
 			continue;
 
-		if (nm_settings_storage_is_keyfile_run (sd->storage)) {
-			/* We remove this file from /run. */
-		} else {
+		if (nm_settings_storage_is_keyfile_run (sd->storage))
+			in_memory = TRUE;
+		else {
 			if (nm_settings_storage_is_keyfile_run (new_storage)) {
 				/* Don't remove the file from /etc if we just wrote an in-memory connection */
 				continue;
 			}
+			in_memory = FALSE;
 		}
 
-		nm_settings_plugin_delete_connection (nm_settings_storage_get_plugin (sd->storage),
-		                                      sd->storage,
-		                                      NULL);
-
-		nm_assert (!nm_settings_storage_is_keyfile_tombstone (sd->storage));
-
-		_connection_changed_track (self, sd->storage, NULL, FALSE);
+		simulate = FALSE;
+again_delete_tombstone:
+		if (!nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
+		                                              simulate,
+		                                              uuid,
+		                                              in_memory,
+		                                              FALSE,
+		                                              NULL,
+		                                              &new_tombstone_storage,
+		                                              NULL)) {
+			/* Ups, something went wrong. We really need to get rid of the tombstone. At least
+			 * forget about it in-memory. Upong next restart/reload, this might be reverted
+			 * however :( .*/
+			if (!simulate) {
+				simulate = TRUE;
+				goto again_delete_tombstone;
+			}
+		}
+		if (new_tombstone_storage)
+			_connection_changed_track (self, new_tombstone_storage, NULL, FALSE);
 	}
 
 	_connection_changed_process_all_dirty (self,
@@ -1520,16 +1920,19 @@ nm_settings_update_connection (NMSettings *self,
                                const char *log_context_name,
                                GError **error)
 {
-	NMSettingsPrivate *priv;
 	gs_unref_object NMConnection *connection_cloned_1 = NULL;
 	gs_unref_object NMConnection *new_connection_cloned = NULL;
 	gs_unref_object NMConnection *new_connection = NULL;
 	NMConnection *new_connection_real;
 	gs_unref_object NMSettingsStorage *cur_storage = NULL;
 	gs_unref_object NMSettingsStorage *new_storage = NULL;
+	NMSettingsStorage *drop_storage = NULL;
+	SettConnEntry *sett_conn_entry;
 	gboolean cur_in_memory;
 	gboolean new_in_memory;
 	const char *uuid;
+	gboolean tombstone_in_memory = FALSE;
+	gboolean tombstone_on_disk = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (sett_conn), FALSE);
@@ -1539,18 +1942,20 @@ nm_settings_update_connection (NMSettings *self,
 	nm_assert (!NM_FLAGS_ANY (sett_flags, ~sett_mask));
 	nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST,
-	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
+	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 	                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY));
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	cur_storage = g_object_ref (nm_settings_connection_get_storage (sett_conn));
 
 	uuid = nm_settings_storage_get_uuid (cur_storage);
 
 	nm_assert (NM_IS_SETTINGS_STORAGE (cur_storage));
-	nm_assert (_sett_conn_entry_get_conn (_sett_conn_entries_get (self, uuid)) == sett_conn);
+
+	sett_conn_entry = _sett_conn_entries_get (self, uuid);
+
+	nm_assert (_sett_conn_entry_get_conn (sett_conn_entry) == sett_conn);
 
 	if (connection) {
 		gs_free_error GError *local = NULL;
@@ -1581,8 +1986,8 @@ nm_settings_update_connection (NMSettings *self,
 
 	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP) {
 		persist_mode =   cur_in_memory
-		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED
-		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	}
 
 	if (   NM_FLAGS_HAS (sett_mask, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
@@ -1602,11 +2007,15 @@ nm_settings_update_connection (NMSettings *self,
 
 			default_wired_clear_tag (self, device, sett_conn, FALSE);
 
-			if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
-			                             NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST)) {
-				/* making a default-wired-connection a regulard connection implies persisting
-				 * it to disk (unless specified differently). */
-				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+			if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST)) {
+				/* making a default-wired-connection a regular connection implies persisting
+				 * it to disk (unless specified differently).
+				 *
+				 * Actually, this line is probably unreached, because we should not use
+				 * NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST to toggle the nm-generated
+				 * flag. */
+				nm_assert_not_reached ();
+				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 			}
 		}
 	}
@@ -1621,12 +2030,13 @@ nm_settings_update_connection (NMSettings *self,
 		 * in-memory. The caller did not request to persist this to disk, however we need
 		 * to store the flags in run. */
 		nm_assert (cur_in_memory);
-		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
 	}
 
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK)
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK)
 		new_in_memory = FALSE;
-	else if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
+	else if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+	                                  NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 	                                  NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY))
 		new_in_memory = TRUE;
 	else {
@@ -1651,60 +2061,96 @@ nm_settings_update_connection (NMSettings *self,
 		                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE);
 	}
 
-
 	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST) {
 		new_storage = g_object_ref (cur_storage);
-		new_connection = g_object_ref (connection);
+		new_connection_real = connection;
 		_LOGT ("update[%s]: %s: update profile \"%s\" (not persisted)",
 		       nm_settings_storage_get_uuid (cur_storage),
 		       log_context_name,
 		       nm_connection_get_id (connection));
 	} else {
-		gboolean success;
-		gboolean migrate_storage;
+		NMSettingsStorage *shadowed_storage;
+		const char *cur_shadowed_storage_filename;
+		const char *new_shadowed_storage_filename = NULL;
+		gboolean cur_shadowed_owned;
+		gboolean new_shadowed_owned = FALSE;
+		NMSettingsStorage *update_storage = NULL;
 		gs_free_error GError *local = NULL;
+		gboolean success;
 
-		if (new_in_memory != cur_in_memory)
-			migrate_storage = TRUE;
-		else if  (   !new_in_memory
-		          && nm_settings_storage_is_keyfile_lib (cur_storage)) {
+		cur_shadowed_storage_filename = nm_settings_storage_get_shadowed_storage (cur_storage, &cur_shadowed_owned);
+
+		shadowed_storage = _sett_conn_entry_find_shadowed_storage (sett_conn_entry, cur_shadowed_storage_filename, cur_storage);
+		if (!shadowed_storage) {
+			cur_shadowed_storage_filename = NULL;
+			cur_shadowed_owned = FALSE;
+		}
+
+		if (   new_in_memory
+		    && persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY) {
+			if (cur_in_memory) {
+				drop_storage = shadowed_storage;
+				update_storage = cur_storage;
+			} else
+				drop_storage = cur_storage;
+		} else if (   !new_in_memory
+		           && cur_in_memory
+		           && shadowed_storage) {
+			drop_storage = cur_storage;
+			update_storage = shadowed_storage;
+		} else if (new_in_memory != cur_in_memory) {
+			if (!new_in_memory)
+				drop_storage = cur_storage;
+			else if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY)
+				drop_storage = cur_storage;
+			else {
+				nm_assert (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+				                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED));
+			}
+		} else if (nm_settings_storage_is_keyfile_lib (cur_storage)) {
 			/* the profile is a keyfile in /usr/lib. It cannot be overwritten, we must migrate it
 			 * from /usr/lib to /etc. */
-			migrate_storage = TRUE;
 		} else
-			migrate_storage = FALSE;
+			update_storage = cur_storage;
 
-		if (migrate_storage) {
+		if (new_in_memory) {
+			if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY) {
+				/* pass */
+			} else if (!cur_in_memory) {
+				new_shadowed_storage_filename = nm_settings_storage_get_filename_for_shadowed_storage (cur_storage);
+				if (   new_shadowed_storage_filename
+				    && persist_mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED)
+					new_shadowed_owned = TRUE;
+			} else {
+				new_shadowed_storage_filename = cur_shadowed_storage_filename;
+				if (   new_shadowed_storage_filename
+				    && persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY)
+					new_shadowed_owned = TRUE;
+			}
+		}
+
+		if (!update_storage) {
 			success = _add_connection_to_first_plugin (self,
+			                                           sett_conn_entry,
 			                                           connection,
 			                                           new_in_memory,
-			                                           NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
-			                                           NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+			                                           sett_flags,
+			                                           new_shadowed_storage_filename,
+			                                           new_shadowed_owned,
 			                                           &new_storage,
 			                                           &new_connection,
 			                                           &local);
 		} else {
-			NMSettingsPlugin *plugin;
-
-			plugin = nm_settings_storage_get_plugin (cur_storage);
-			if (plugin == (NMSettingsPlugin *) priv->keyfile_plugin) {
-				success = nms_keyfile_plugin_update_connection (priv->keyfile_plugin,
-				                                                cur_storage,
-				                                                connection,
-				                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
-				                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
-				                                                NM_FLAGS_HAS (update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME),
-				                                                &new_storage,
-				                                                &new_connection,
-				                                                &local);
-			} else {
-				success = nm_settings_plugin_update_connection (nm_settings_storage_get_plugin (cur_storage),
-				                                                cur_storage,
-				                                                connection,
-				                                                &new_storage,
-				                                                &new_connection,
-				                                                &local);
-			}
+			success = _update_connection_to_plugin (self,
+			                                        update_storage,
+			                                        connection,
+			                                        sett_flags,
+			                                        update_reason,
+			                                        new_shadowed_storage_filename,
+			                                        new_shadowed_owned,
+			                                        &new_storage,
+			                                        &new_connection,
+			                                        &local);
 		}
 		if (!success) {
 			gboolean ignore_failure;
@@ -1715,7 +2161,7 @@ nm_settings_update_connection (NMSettings *self,
 			       nm_settings_storage_get_uuid (cur_storage),
 			       log_context_name,
 			       ignore_failure ? "ignore " : "",
-			       migrate_storage ? "write" : "update",
+			       update_storage ? "update" : "write",
 			       nm_connection_get_id (connection),
 			       local->message);
 			if (!ignore_failure) {
@@ -1723,75 +2169,76 @@ nm_settings_update_connection (NMSettings *self,
 				             NM_SETTINGS_ERROR,
 				             NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "failed to %s connection: %s",
-				             migrate_storage ? "write" : "update",
+				             update_storage ? "update" : "write",
 				             local->message);
 				return FALSE;
 			}
+
 			new_storage = g_object_ref (cur_storage);
-			new_connection = g_object_ref (connection);
+			new_connection_real = connection;
 		} else {
+			gs_unref_variant GVariant *agent_owned_secrets = NULL;
+
 			_LOGT ("update[%s]: %s: %s profile \"%s\"",
 			       nm_settings_storage_get_uuid (cur_storage),
 			       log_context_name,
-			       migrate_storage ? "write" : "update",
+			       update_storage ? "update" : "write",
 			       nm_connection_get_id (connection));
+
+			nm_assert_valid_settings_storage (NULL, new_storage);
+			nm_assert (NM_IS_CONNECTION (new_connection));
+			nm_assert (nm_streq (uuid, nm_settings_storage_get_uuid (new_storage)));
+
+
+			agent_owned_secrets = nm_connection_to_dbus (connection,
+			                                               NM_CONNECTION_SERIALIZE_ONLY_SECRETS
+			                                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
+			new_connection_real = _connection_changed_normalize_connection (new_storage,
+			                                                                new_connection,
+			                                                                agent_owned_secrets,
+			                                                                &new_connection_cloned);
+			if (!new_connection_real) {
+				nm_assert_not_reached ();
+				new_connection_real = new_connection;
+			}
 		}
 	}
 
-	nm_assert_valid_settings_storage (NULL, new_storage);
-	nm_assert (NM_IS_CONNECTION (new_connection));
-	nm_assert (nm_streq (uuid, nm_settings_storage_get_uuid (new_storage)));
-
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST)
-		new_connection_real = new_connection;
-	else {
-		gs_unref_variant GVariant *agent_owned_secrets = NULL;
-
-		agent_owned_secrets = nm_connection_to_dbus (connection,
-		                                               NM_CONNECTION_SERIALIZE_ONLY_SECRETS
-		                                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
-		new_connection_real = _connection_changed_normalize_connection (new_storage,
-		                                                                new_connection,
-		                                                                agent_owned_secrets,
-		                                                                &new_connection_cloned);
-		if (!new_connection_real) {
-			nm_assert_not_reached ();
-			new_connection_real = new_connection;
-		}
-	}
-
+	nm_assert (NM_IS_SETTINGS_STORAGE (new_storage));
 	nm_assert (NM_IS_CONNECTION (new_connection_real));
 
 	_connection_changed_track (self, new_storage, new_connection_real, TRUE);
 
-	if (new_storage != cur_storage) {
+	if (   drop_storage
+	    && drop_storage != new_storage) {
 		gs_free_error GError *local = NULL;
-		gboolean remove_from_disk;
 
-		if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED)
-			remove_from_disk = FALSE;
-		else if (nm_settings_storage_is_keyfile_lib (cur_storage))
-			remove_from_disk = FALSE;
-		else
-			remove_from_disk = TRUE;
+		if (!nm_settings_plugin_delete_connection (nm_settings_storage_get_plugin (drop_storage),
+		                                           drop_storage,
+		                                           &local)) {
+			const char *filename;
 
-		if (remove_from_disk) {
-			if (!nm_settings_plugin_delete_connection (nm_settings_storage_get_plugin (cur_storage),
-			                                           cur_storage,
-			                                           &local)) {
-				const char *filename;
-
-				filename = nm_settings_storage_get_filename (cur_storage);
-				_LOGW ("update[%s]: failed to delete moved storage "NM_SETTINGS_STORAGE_PRINT_FMT"%s%s%s: %s",
-				       nm_settings_storage_get_uuid (cur_storage),
-				       NM_SETTINGS_STORAGE_PRINT_ARG (cur_storage),
-				       local->message,
-				       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""));
-			}
-
-			_connection_changed_track (self, cur_storage, NULL, FALSE);
-		}
+			filename = nm_settings_storage_get_filename (drop_storage);
+			_LOGT ("update[%s]: failed to delete moved storage "NM_SETTINGS_STORAGE_PRINT_FMT"%s%s%s: %s",
+			       nm_settings_storage_get_uuid (drop_storage),
+			       NM_SETTINGS_STORAGE_PRINT_ARG (drop_storage),
+			       NM_PRINT_FMT_QUOTED (filename, " (file \"", filename, "\")", ""),
+			       local->message);
+			/* there is no aborting back form this. We must get rid of the connection and
+			 * cannot do better than log a message. Proceed, but remember to write tombstones. */
+			if (nm_settings_storage_is_keyfile_run (cur_storage))
+				tombstone_in_memory = TRUE;
+			else
+				tombstone_on_disk = TRUE;
+		} else
+			_connection_changed_track (self, drop_storage, NULL, FALSE);
 	}
+
+	_set_nmmeta_tombstone (self,
+	                       uuid,
+	                       tombstone_on_disk,
+	                       tombstone_in_memory,
+	                       NULL);
 
 	_connection_changed_process_all_dirty (self,
 	                                       FALSE,
@@ -1808,22 +2255,23 @@ nm_settings_delete_connection (NMSettings *self,
                                NMSettingsConnection *sett_conn,
                                gboolean allow_add_to_no_auto_default)
 {
-	NMSettingsPrivate *priv;
 	NMSettingsStorage *cur_storage;
+	NMSettingsStorage *shadowed_storage;
+	NMSettingsStorage *shadowed_storage_unowned = NULL;
+	NMSettingsStorage *drop_storages[2] = { };
 	gs_free_error GError *local = NULL;
 	SettConnEntry *sett_conn_entry;
+	const char *cur_shadowed_storage_filename;
+	const char *new_shadowed_storage_filename = NULL;
+	gboolean cur_shadowed_owned;
 	const char *uuid;
-	gboolean delete;
 	gboolean tombstone_in_memory = FALSE;
 	gboolean tombstone_on_disk = FALSE;
-	gs_unref_object NMSettingsStorage *tombstone_1_storage = NULL;
-	gs_unref_object NMSettingsStorage *tombstone_2_storage = NULL;
+	int i;
 
 	g_return_if_fail (NM_IS_SETTINGS (self));
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (sett_conn));
 	g_return_if_fail (nm_settings_has_connection (self, sett_conn));
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	cur_storage = nm_settings_connection_get_storage (sett_conn);
 
@@ -1843,38 +2291,62 @@ nm_settings_delete_connection (NMSettings *self,
 
 		if (NM_IN_SET (s->storage_type, NMS_KEYFILE_STORAGE_TYPE_RUN,
 		                                NMS_KEYFILE_STORAGE_TYPE_ETC))
-			delete = TRUE;
-		else {
+			drop_storages[0] = cur_storage;
+		else
 			tombstone_on_disk = TRUE;
-			delete = FALSE;
-		}
 	} else
-		delete = TRUE;
+		drop_storages[0] = cur_storage;
 
-	if (delete) {
+	cur_shadowed_storage_filename = nm_settings_storage_get_shadowed_storage (cur_storage, &cur_shadowed_owned);
+
+	shadowed_storage = _sett_conn_entry_find_shadowed_storage (sett_conn_entry, cur_shadowed_storage_filename, cur_storage);
+	if (shadowed_storage) {
+		if (!cur_shadowed_owned)
+			shadowed_storage_unowned = g_steal_pointer (&shadowed_storage);
+	}
+	drop_storages[1] = shadowed_storage;
+
+	for (i = 0; i < (int) G_N_ELEMENTS (drop_storages); i++) {
+		NMSettingsStorage *storage;
 		StorageData *sd;
 
-		if (!nm_settings_plugin_delete_connection (nm_settings_storage_get_plugin (cur_storage),
-		                                           cur_storage,
+		storage = drop_storages[i];
+		if (!storage)
+			continue;
+
+		if (!nm_settings_plugin_delete_connection (nm_settings_storage_get_plugin (storage),
+		                                           storage,
 		                                           &local)) {
-			_LOGW ("delete-connection: failed to delete storage "NM_SETTINGS_STORAGE_PRINT_FMT": %s",
-			       NM_SETTINGS_STORAGE_PRINT_ARG (cur_storage),
+			_LOGT ("delete-connection: failed to delete storage "NM_SETTINGS_STORAGE_PRINT_FMT": %s",
+			       NM_SETTINGS_STORAGE_PRINT_ARG (storage),
 			       local->message);
 			g_clear_error (&local);
 			/* there is no aborting back form this. We must get rid of the connection and
-			 * cannot do better than warn. Proceed... */
-			tombstone_in_memory = TRUE;
-		}
-
-		sett_conn_entry = _connection_changed_track (self, cur_storage, NULL, FALSE);
+			 * cannot do better than log a message. Proceed, but remember to write tombstones. */
+			if (nm_settings_storage_is_keyfile_run (cur_storage))
+				tombstone_in_memory = TRUE;
+			else
+				tombstone_on_disk = TRUE;
+			sett_conn_entry = _sett_conn_entries_get (self, uuid);
+		} else
+			sett_conn_entry = _connection_changed_track (self, storage, NULL, FALSE);
 
 		c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
-			if (sd->storage == cur_storage)
-				continue;
-			if (nm_settings_storage_is_keyfile_tombstone (sd->storage))
+			if (NM_IN_SET (sd->storage, drop_storages[0],
+			                            drop_storages[1]))
 				continue;
 			if (!_storage_data_is_alive (sd))
 				continue;
+			if (nm_settings_storage_is_meta_data (sd->storage))
+				continue;
+
+			if (sd->storage == shadowed_storage_unowned) {
+				/* this only happens if we leak a profile on disk after NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
+				 * We need to write a tombstone and remember the shadowed-storage. */
+				tombstone_in_memory = TRUE;
+				new_shadowed_storage_filename = nm_settings_storage_get_filename (shadowed_storage_unowned);
+				continue;
+			}
 
 			/* we have still conflicting storages. We need to hide them with tombstones. */
 			if (nm_settings_storage_is_keyfile_run (sd->storage)) {
@@ -1885,37 +2357,11 @@ nm_settings_delete_connection (NMSettings *self,
 		}
 	}
 
-	if (tombstone_on_disk) {
-		if (!nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
-		                                              FALSE,
-		                                              uuid,
-		                                              FALSE,
-		                                              TRUE,
-		                                              &tombstone_1_storage,
-		                                              NULL))
-			tombstone_in_memory = TRUE;
-		if (tombstone_1_storage)
-			_connection_changed_track (self, tombstone_1_storage, NULL, FALSE);
-	}
-
-	if (tombstone_in_memory) {
-		if (!nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
-		                                              FALSE,
-		                                              uuid,
-		                                              TRUE,
-		                                              TRUE,
-		                                              &tombstone_2_storage,
-		                                              NULL)) {
-			nms_keyfile_plugin_set_nmmeta_tombstone (priv->keyfile_plugin,
-			                                         TRUE,
-			                                         uuid,
-			                                         TRUE,
-			                                         TRUE,
-			                                         &tombstone_2_storage,
-			                                         NULL);
-		}
-		_connection_changed_track (self, tombstone_2_storage, NULL, FALSE);
-	}
+	_set_nmmeta_tombstone (self,
+	                       uuid,
+	                       tombstone_on_disk,
+	                       tombstone_in_memory,
+	                       new_shadowed_storage_filename);
 
 	_connection_changed_process_all_dirty (self,
 	                                       allow_add_to_no_auto_default,
@@ -2164,7 +2610,7 @@ settings_add_connection_helper (NMSettings *self,
 	}
 
 	if (NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK))
-		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	else {
 		nm_assert (NM_FLAGS_HAS (flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY));
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;

@@ -44,6 +44,11 @@
 #define AUTOCONNECT_RETRIES_FOREVER      -1
 #define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
+#define _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES ((NMSettingsUpdate2Flags) (  NM_SETTINGS_UPDATE2_FLAG_TO_DISK \
+                                                                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY \
+                                                                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED \
+                                                                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))
+
 /*****************************************************************************/
 
 NMConnection **
@@ -1319,37 +1324,6 @@ auth_start (NMSettingsConnection *self,
 
 /**** DBus method handlers ************************************/
 
-static gboolean
-check_writable (NMConnection *self, GError **error)
-{
-	NMSettingConnection *s_con;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (self), FALSE);
-
-	s_con = nm_connection_get_setting_connection (self);
-	if (!s_con) {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "Connection did not have required 'connection' setting");
-		return FALSE;
-	}
-
-	/* If the connection is read-only, that has to be changed at the source of
-	 * the problem (ex a system settings plugin that can't write connections out)
-	 * instead of over D-Bus.
-	 */
-	if (nm_setting_connection_get_read_only (s_con)) {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
-		                     "Connection is read-only");
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static void
 get_settings_auth_cb (NMSettingsConnection *self,
                       GDBusMethodInvocation *context,
@@ -1504,10 +1478,14 @@ update_auth_cb (NMSettingsConnection *self,
 		}
 	}
 
+	nm_assert (   !NM_FLAGS_ANY (info->flags, _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES)
+	           || nm_utils_is_power_of_two (info->flags & _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES));
+
 	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK))
-		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
-	else if (NM_FLAGS_ANY (info->flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
-	                                      | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
+	else if (NM_FLAGS_ANY (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
+	else if (NM_FLAGS_ANY (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED))
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;
 	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY)) {
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
@@ -1593,13 +1571,6 @@ settings_connection_update (NMSettingsConnection *self,
 	GError *error = NULL;
 	UpdateInfo *info;
 	const char *permission;
-
-	/* If the connection is read-only, that has to be changed at the source of
-	 * the problem (ex a system settings plugin that can't write connections out)
-	 * instead of over D-Bus.
-	 */
-	if (!check_writable (nm_settings_connection_get_connection (self), &error))
-		goto error;
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
@@ -1725,14 +1696,10 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 	GVariantIter iter;
 	const char *args_name;
 	NMSettingsUpdate2Flags flags;
-	const NMSettingsUpdate2Flags ALL_PERSIST_MODES =   NM_SETTINGS_UPDATE2_FLAG_TO_DISK
-	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
-	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
-	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY;
 
 	g_variant_get (parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
 
-	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  ALL_PERSIST_MODES
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (  _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES
 	                                        | NM_SETTINGS_UPDATE2_FLAG_VOLATILE
 	                                        | NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT
 	                                        | NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)))) {
@@ -1745,11 +1712,12 @@ impl_settings_connection_update2 (NMDBusObject *obj,
 
 	flags = (NMSettingsUpdate2Flags) flags_u;
 
-	if (   (   NM_FLAGS_ANY (flags, ALL_PERSIST_MODES)
-	        && !nm_utils_is_power_of_two (flags & ALL_PERSIST_MODES))
+	if (   (   NM_FLAGS_ANY (flags, _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES)
+	        && !nm_utils_is_power_of_two (flags & _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES))
 	    || (   NM_FLAGS_HAS (flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
-	        && !NM_FLAGS_ANY (flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED |
-	                                 NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
+	        && !NM_FLAGS_ANY (flags,   NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
+	                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
+	                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
 		                             "Conflicting flags");
@@ -1830,9 +1798,6 @@ impl_settings_connection_delete (NMDBusObject *obj,
 	GError *error = NULL;
 
 	nm_assert (nm_settings_connection_still_valid (self));
-
-	if (!check_writable (nm_settings_connection_get_connection (self), &error))
-		goto err;
 
 	subject = _new_auth_subject (invocation, &error);
 	if (!subject)

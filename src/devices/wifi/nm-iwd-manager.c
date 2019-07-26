@@ -436,7 +436,6 @@ mirror_8021x_connection (NMIwdManager *self,
 	                                    NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	                                    NM_SETTING_CONNECTION_ID, name,
 	                                    NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf (uuid),
-	                                    NM_SETTING_CONNECTION_READ_ONLY, TRUE,
 	                                    NULL));
 	nm_connection_add_setting (connection, setting);
 

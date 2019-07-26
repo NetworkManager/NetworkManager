@@ -254,7 +254,7 @@ restore_and_activate_connection (NMCheckpoint *self,
 		_LOGD ("rollback: adding connection %s again",
 		       nm_connection_get_uuid (dev_checkpoint->settings_connection));
 
-		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 		if (!nm_settings_add_connection (NM_SETTINGS_GET,
 		                                 dev_checkpoint->settings_connection,
 		                                 persist_mode,

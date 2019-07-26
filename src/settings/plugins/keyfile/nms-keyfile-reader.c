@@ -164,6 +164,8 @@ nms_keyfile_reader_from_file (const char *full_filename,
                               struct stat *out_stat,
                               NMTernary *out_is_nm_generated,
                               NMTernary *out_is_volatile,
+                              char **out_shadowed_storage,
+                              NMTernary *out_shadowed_owned,
                               GError **error)
 {
 	gs_unref_keyfile GKeyFile *key_file = NULL;
@@ -209,6 +211,16 @@ nms_keyfile_reader_from_file (const char *full_filename,
 	                                                      NM_KEYFILE_GROUP_NMMETA,
 	                                                      NM_KEYFILE_KEY_NMMETA_VOLATILE,
 	                                                      NM_TERNARY_DEFAULT));
+
+	NM_SET_OUT (out_shadowed_storage, g_key_file_get_string (key_file,
+	                                                         NM_KEYFILE_GROUP_NMMETA,
+	                                                         NM_KEYFILE_KEY_NMMETA_SHADOWED_STORAGE,
+	                                                         NULL));
+
+	NM_SET_OUT (out_shadowed_owned, nm_key_file_get_boolean (key_file,
+	                                                         NM_KEYFILE_GROUP_NMMETA,
+	                                                         NM_KEYFILE_KEY_NMMETA_SHADOWED_OWNED,
+	                                                         NM_TERNARY_DEFAULT));
 
 	return connection;
 }

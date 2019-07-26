@@ -5454,7 +5454,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	const char *device_path;
 	const char *specific_object_path;
 	gs_free NMConnection **conns = NULL;
-	NMSettingsConnectionPersistMode persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	NMSettingsConnectionPersistMode persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 	gboolean is_volatile = FALSE;
 	gboolean bind_dbus_client = FALSE;
 	AsyncOpType async_op_type;
@@ -5485,7 +5485,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 				s = g_variant_get_string (option_value, NULL);
 
 				is_volatile = FALSE;
-				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+				persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
 
 				if (nm_streq (s, "volatile")) {
 					persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
