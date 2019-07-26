@@ -5,6 +5,7 @@
 
 #include "nm-sd-adapt-core.h"
 
+#include <errno.h>
 #include <netinet/in.h>
 #include <string.h>
 

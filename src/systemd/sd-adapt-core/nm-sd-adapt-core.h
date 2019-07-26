@@ -50,8 +50,6 @@
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
 
-#include <net/if_arp.h>
-
 /* Missing in Linux 3.2.0, in Ubuntu 12.04 */
 #ifndef BPF_XOR
 #define BPF_XOR 0xa0

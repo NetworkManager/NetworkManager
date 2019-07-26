@@ -75,6 +75,12 @@ int log_get_max_level_realm(LogRealm realm) _pure_;
  * for the application itself.
  */
 
+#if 0 /* NM_IGNORED */
+assert_cc(STRLEN(__FILE__) > STRLEN(RELATIVE_SOURCE_PATH) + 1);
+#define PROJECT_FILE (__FILE__ + STRLEN(RELATIVE_SOURCE_PATH) + 1)
+#endif /* NM_IGNORED */
+#define PROJECT_FILE __FILE__
+
 int log_open(void);
 void log_close(void);
 void log_forget_fds(void);
@@ -201,7 +207,6 @@ _noreturn_ void log_assert_failed_realm(
 #define log_assert_failed(text, ...) \
         log_assert_failed_realm(LOG_REALM, (text), __VA_ARGS__)
 
-
 _noreturn_ void log_assert_failed_unreachable_realm(
                 LogRealm realm,
                 const char *text,
@@ -221,7 +226,7 @@ void log_assert_failed_return_realm(
         log_assert_failed_return_realm(LOG_REALM, (text), __VA_ARGS__)
 
 #define log_dispatch(level, error, buffer)                              \
-        log_dispatch_internal(level, error, __FILE__, __LINE__, __func__, NULL, NULL, NULL, NULL, buffer)
+        log_dispatch_internal(level, error, PROJECT_FILE, __LINE__, __func__, NULL, NULL, NULL, NULL, buffer)
 #endif /* NM_IGNORED */
 
 /* Logging with level */
@@ -230,7 +235,7 @@ void log_assert_failed_return_realm(
                 int _level = (level), _e = (error), _realm = (realm);   \
                 (log_get_max_level_realm(_realm) >= LOG_PRI(_level))    \
                         ? log_internal_realm(LOG_REALM_PLUS_LEVEL(_realm, _level), _e, \
-                                             __FILE__, __LINE__, __func__, __VA_ARGS__) \
+                                             PROJECT_FILE, __LINE__, __func__, __VA_ARGS__) \
                         : -ERRNO_VALUE(_e);                             \
         })
 
@@ -266,20 +271,20 @@ int log_emergency_level(void);
 /* Structured logging */
 #define log_struct_errno(level, error, ...) \
         log_struct_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, level), \
-                            error, __FILE__, __LINE__, __func__, __VA_ARGS__, NULL)
+                            error, PROJECT_FILE, __LINE__, __func__, __VA_ARGS__, NULL)
 #define log_struct(level, ...) log_struct_errno(level, 0, __VA_ARGS__)
 
 #define log_struct_iovec_errno(level, error, iovec, n_iovec)            \
         log_struct_iovec_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, level), \
-                                  error, __FILE__, __LINE__, __func__, iovec, n_iovec)
+                                  error, PROJECT_FILE, __LINE__, __func__, iovec, n_iovec)
 #define log_struct_iovec(level, iovec, n_iovec) log_struct_iovec_errno(level, 0, iovec, n_iovec)
 
 /* This modifies the buffer passed! */
 #define log_dump(level, buffer) \
         log_dump_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, level), \
-                          0, __FILE__, __LINE__, __func__, buffer)
+                          0, PROJECT_FILE, __LINE__, __func__, buffer)
 
-#define log_oom() log_oom_internal(LOG_REALM, __FILE__, __LINE__, __func__)
+#define log_oom() log_oom_internal(LOG_REALM, PROJECT_FILE, __LINE__, __func__)
 
 bool log_on_console(void) _pure_;
 
@@ -307,6 +312,7 @@ void log_set_prohibit_ipc(bool b);
 
 int log_dup_console(void);
 
+#if 0 /* NM_IGNORED */
 int log_syntax_internal(
                 const char *unit,
                 int level,
@@ -317,6 +323,9 @@ int log_syntax_internal(
                 int line,
                 const char *func,
                 const char *format, ...) _printf_(9, 10);
+#endif /* NM_IGNORED */
+#define log_syntax_internal(unit, level, config_file, config_line, error, file, line, func, format, ...) \
+    log_internal_realm((level), (error), file, (line), (func), "syntax[%s]: "format, (config_file), __VA_ARGS__) \
 
 int log_syntax_invalid_utf8_internal(
                 const char *unit,
@@ -332,7 +341,7 @@ int log_syntax_invalid_utf8_internal(
         ({                                                              \
                 int _level = (level), _e = (error);                     \
                 (log_get_max_level() >= LOG_PRI(_level))                \
-                        ? log_internal_realm(_level, _e, __FILE__, __LINE__, __func__, __VA_ARGS__) \
+                        ? log_syntax_internal(unit, _level, config_file, config_line, _e, PROJECT_FILE, __LINE__, __func__, __VA_ARGS__) \
                         : -ERRNO_VALUE(_e);                             \
         })
 
@@ -340,7 +349,7 @@ int log_syntax_invalid_utf8_internal(
         ({                                                              \
                 int _level = (level);                                   \
                 (log_get_max_level() >= LOG_PRI(_level))                \
-                        ? log_syntax_invalid_utf8_internal(unit, _level, config_file, config_line, __FILE__, __LINE__, __func__, rvalue) \
+                        ? log_syntax_invalid_utf8_internal(unit, _level, config_file, config_line, PROJECT_FILE, __LINE__, __func__, rvalue) \
                         : -EINVAL;                                      \
         })
 

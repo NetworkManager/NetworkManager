@@ -1720,7 +1720,6 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/procfs-util.h \
 	shared/systemd/sd-adapt-shared/raw-clone.h \
 	shared/systemd/sd-adapt-shared/rlimit-util.h \
-	shared/systemd/sd-adapt-shared/strxcpyx.h \
 	shared/systemd/sd-adapt-shared/terminal-util.h \
 	shared/systemd/sd-adapt-shared/unaligned.h \
 	shared/systemd/sd-adapt-shared/user-util.h \
@@ -1796,6 +1795,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/string-util.h \
 	shared/systemd/src/basic/strv.c \
 	shared/systemd/src/basic/strv.h \
+	shared/systemd/src/basic/strxcpyx.c \
+	shared/systemd/src/basic/strxcpyx.h \
 	shared/systemd/src/basic/time-util.c \
 	shared/systemd/src/basic/time-util.h \
 	shared/systemd/src/basic/tmpfile-util.c \

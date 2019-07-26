@@ -5,8 +5,9 @@
 
 #include "nm-sd-adapt-core.h"
 
-#include <linux/filter.h>
 #include <arpa/inet.h>
+#include <linux/filter.h>
+#include <netinet/if_ether.h>
 
 #include "arp-util.h"
 #include "fd-util.h"

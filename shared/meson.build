@@ -271,6 +271,7 @@ libnm_systemd_shared = static_library(
     'systemd/src/basic/string-table.c',
     'systemd/src/basic/string-util.c',
     'systemd/src/basic/strv.c',
+    'systemd/src/basic/strxcpyx.c',
     'systemd/src/basic/time-util.c',
     'systemd/src/basic/tmpfile-util.c',
     'systemd/src/basic/utf8.c',

@@ -5,6 +5,7 @@
 
 #include "nm-sd-adapt-core.h"
 
+#include <errno.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
 #include <stdio.h>
@@ -580,7 +581,7 @@ static void client_stop(sd_dhcp_client *client, int error) {
         assert(client);
 
         if (error < 0)
-                log_dhcp_client(client, "STOPPED: %s", strerror(-error));
+                log_dhcp_client_errno(client, error, "STOPPED: %m");
         else if (error == SD_DHCP_CLIENT_EVENT_STOP)
                 log_dhcp_client(client, "STOPPED");
         else

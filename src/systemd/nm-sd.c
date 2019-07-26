@@ -132,10 +132,6 @@ nm_sd_event_attach_default (void)
 
 /*****************************************************************************/
 
-const bool mempool_use_allowed = true;
-
-/*****************************************************************************/
-
 /* ensure that defines in nm-sd.h correspond to the internal defines. */
 
 #include "nm-sd-adapt-core.h"

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "alloc-util.h"
+#include "errno-util.h"
 #include "in-addr-util.h"
 #include "macro.h"
 #include "parse-util.h"
@@ -93,12 +94,19 @@ int in_addr_is_localhost(int family, const union in_addr_union *u) {
         return -EAFNOSUPPORT;
 }
 
+bool in4_addr_equal(const struct in_addr *a, const struct in_addr *b) {
+        assert(a);
+        assert(b);
+
+        return a->s_addr == b->s_addr;
+}
+
 int in_addr_equal(int family, const union in_addr_union *a, const union in_addr_union *b) {
         assert(a);
         assert(b);
 
         if (family == AF_INET)
-                return a->in.s_addr == b->in.s_addr;
+                return in4_addr_equal(&a->in, &b->in);
 
         if (family == AF_INET6)
                 return
@@ -319,7 +327,7 @@ int in_addr_to_string(int family, const union in_addr_union *u, char **ret) {
 
         errno = 0;
         if (!inet_ntop(family, u, x, l))
-                return errno > 0 ? -errno : -EINVAL;
+                return errno_or_else(EINVAL);
 
         *ret = TAKE_PTR(x);
         return 0;
@@ -350,7 +358,7 @@ int in_addr_prefix_to_string(int family, const union in_addr_union *u, unsigned 
 
         errno = 0;
         if (!inet_ntop(family, u, x, l))
-                return errno > 0 ? -errno : -EINVAL;
+                return errno_or_else(EINVAL);
 
         p = x + strlen(x);
         l -= strlen(x);
@@ -390,7 +398,7 @@ int in_addr_ifindex_to_string(int family, const union in_addr_union *u, int ifin
 
         errno = 0;
         if (!inet_ntop(family, u, x, l))
-                return errno > 0 ? -errno : -EINVAL;
+                return errno_or_else(EINVAL);
 
         sprintf(strchr(x, 0), "%%%i", ifindex);
 
@@ -410,7 +418,7 @@ int in_addr_from_string(int family, const char *s, union in_addr_union *ret) {
 
         errno = 0;
         if (inet_pton(family, s, ret ?: &buffer) <= 0)
-                return errno > 0 ? -errno : -EINVAL;
+                return errno_or_else(EINVAL);
 
         return 0;
 }

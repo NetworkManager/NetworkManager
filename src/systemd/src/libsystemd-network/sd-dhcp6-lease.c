@@ -5,6 +5,7 @@
 
 #include "nm-sd-adapt-core.h"
 
+#include <errno.h>
 
 #include "alloc-util.h"
 #include "dhcp6-lease-internal.h"
@@ -206,12 +207,8 @@ int dhcp6_lease_set_dns(sd_dhcp6_lease *lease, uint8_t *optval, size_t optlen) {
         r = dhcp6_option_parse_ip6addrs(optval, optlen, &lease->dns,
                                         lease->dns_count,
                                         &lease->dns_allocated);
-        if (r < 0) {
-                log_dhcp6_client(client, "Invalid DNS server option: %s",
-                                 strerror(-r));
-
-                return r;
-        }
+        if (r < 0)
+                return log_dhcp6_client_errno(client, r, "Invalid DNS server option: %m");
 
         lease->dns_count = r;
 
@@ -337,12 +334,8 @@ int dhcp6_lease_set_sntp(sd_dhcp6_lease *lease, uint8_t *optval, size_t optlen) 
         r = dhcp6_option_parse_ip6addrs(optval, optlen, &lease->ntp,
                                         lease->ntp_count,
                                         &lease->ntp_allocated);
-        if (r < 0) {
-                log_dhcp6_client(client, "Invalid SNTP server option: %s",
-                                 strerror(-r));
-
-                return r;
-        }
+        if (r < 0)
+                return log_dhcp6_client_errno(client, r, "Invalid SNTP server option: %m");
 
         lease->ntp_count = r;
 
