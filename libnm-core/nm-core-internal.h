@@ -476,6 +476,13 @@ gboolean _nm_utils_generate_mac_address_mask_parse (const char *value,
 
 /*****************************************************************************/
 
+static inline gpointer
+_nm_connection_get_setting (NMConnection *connection,
+                            GType type)
+{
+	return (gpointer) nm_connection_get_setting (connection, type);
+}
+
 NMSettingIPConfig *nm_connection_get_setting_ip_config (NMConnection *connection,
                                                         int addr_family);
 
