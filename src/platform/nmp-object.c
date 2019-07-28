@@ -786,7 +786,7 @@ _nmp_object_new_from_class (const NMPClass *klass)
 }
 
 NMPObject *
-nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plobj)
+nmp_object_new (NMPObjectType obj_type, gconstpointer plobj)
 {
 	const NMPClass *klass = nmp_class_from_type (obj_type);
 	NMPObject *obj;
