@@ -554,6 +554,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 #define NMP_OBJECT_CAST_ROUTING_RULE(obj)  _NMP_OBJECT_CAST (obj, routing_rule,  NMP_OBJECT_TYPE_ROUTING_RULE)
 #define NMP_OBJECT_CAST_QDISC(obj)         _NMP_OBJECT_CAST (obj, qdisc,         NMP_OBJECT_TYPE_QDISC)
 #define NMP_OBJECT_CAST_TFILTER(obj)       _NMP_OBJECT_CAST (obj, tfilter,       NMP_OBJECT_TYPE_TFILTER)
+#define NMP_OBJECT_CAST_LNK_WIREGUARD(obj) _NMP_OBJECT_CAST (obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
 
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
