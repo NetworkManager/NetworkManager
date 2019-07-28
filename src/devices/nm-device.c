@@ -6587,11 +6587,15 @@ _routing_rules_sync (NMDevice *self,
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPRulesManager *rules_manager = nm_netns_get_rules_manager (nm_device_get_netns (self));
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	gboolean untrack_only_dirty = FALSE;
 	gboolean keep_deleted_rules;
-	gpointer user_tag;
+	gpointer user_tag_1;
+	gpointer user_tag_2;
 
-	user_tag = priv;
+	/* take two arbitrary user-tag pointers that belong to @self. */
+	user_tag_1 = &priv->v4_route_table;
+	user_tag_2 = &priv->v6_route_table;
 
 	if (set_mode == NM_TERNARY_TRUE) {
 		NMConnection *applied_connection;
@@ -6600,7 +6604,9 @@ _routing_rules_sync (NMDevice *self,
 		int is_ipv4;
 
 		untrack_only_dirty = TRUE;
-		nmp_rules_manager_set_dirty (rules_manager, user_tag);
+		nmp_rules_manager_set_dirty (rules_manager, user_tag_1);
+		if (klass->get_extra_rules)
+			nmp_rules_manager_set_dirty (rules_manager, user_tag_2);
 
 		applied_connection = nm_device_get_applied_connection (self);
 
@@ -6625,13 +6631,30 @@ _routing_rules_sync (NMDevice *self,
 				nmp_rules_manager_track (rules_manager,
 				                         &plrule,
 				                         10,
-				                         user_tag,
+				                         user_tag_1,
 				                         NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+			}
+		}
+
+		if (klass->get_extra_rules) {
+			gs_unref_ptrarray GPtrArray *extra_rules = NULL;
+
+			extra_rules = klass->get_extra_rules (self);
+			if (extra_rules) {
+				for (i = 0; i < extra_rules->len; i++) {
+					nmp_rules_manager_track (rules_manager,
+					                         NMP_OBJECT_CAST_ROUTING_RULE (extra_rules->pdata[i]),
+					                         10,
+					                         user_tag_2,
+					                         NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+				}
 			}
 		}
 	}
 
-	nmp_rules_manager_untrack_all (rules_manager, user_tag, !untrack_only_dirty);
+	nmp_rules_manager_untrack_all (rules_manager, user_tag_1, !untrack_only_dirty);
+	if (klass->get_extra_rules)
+		nmp_rules_manager_untrack_all (rules_manager, user_tag_2, !untrack_only_dirty);
 
 	keep_deleted_rules = FALSE;
 	if (set_mode == NM_TERNARY_DEFAULT) {

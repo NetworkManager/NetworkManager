@@ -320,6 +320,12 @@ typedef struct _NMDeviceClass {
 
 	void        (* set_enabled) (NMDevice *self, gboolean enabled);
 
+	/* let the subclass return additional NMPlatformRoutingRule (in form of NMPObject
+	 * pointers) that shall be added to the rules provided by this device.
+	 * The returned GPtrArray will be g_ptr_array_unref()'ed. The subclass may or
+	 * may not keep an additional reference and return this array again and again. */
+	GPtrArray *(*get_extra_rules) (NMDevice *self);
+
 	/* allow derived classes to override the result of nm_device_autoconnect_allowed().
 	 * If the value changes, the class should call nm_device_emit_recheck_auto_activate(),
 	 * which emits NM_DEVICE_RECHECK_AUTO_ACTIVATE signal. */
