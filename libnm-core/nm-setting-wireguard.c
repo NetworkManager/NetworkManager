@@ -929,7 +929,7 @@ typedef struct {
 /**
  * NMSettingWireGuard:
  *
- * WireGuard Ethernet Settings
+ * WireGuard Settings
  *
  * Since: 1.16
  */
