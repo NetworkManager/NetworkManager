@@ -26,6 +26,13 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Drop ibft settings plugin. This functionality is now covered by using
   nm-initrd-generator from initrd to pre-generate in-memory profiles.
 * Support "suppress_prefixlength" attribute for policy routing rules.
+  This is what wg-quick uses for the "Improved Rule-based Routing" solution,
+  and the user can now manually configure such policy routing rules.
+* Support "wireguard.ip4-auto-default-route" and "wireguard.ip6-auto-default-route".
+  This automatically implements the "Improved Rule-based Routing" of wg-quick
+  to help with routing loops. Note that this is now enabled by default, so
+  there is a change in behavior if your WireGuard connection profiles had the
+  default-route (0.0.0.0/0 or ::/0) in allowed-ips.
 * Rework implementation of settings plugins and how profiles are presisted
   to disk.
 * In-memory profiles are now only handled by keyfile plugin and will also be
