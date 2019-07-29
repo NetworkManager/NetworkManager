@@ -534,101 +534,27 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->obj_with_ifindex : NULL; \
 	})
 
-#define NMP_OBJECT_CAST_LINK(obj) \
+#define _NMP_OBJECT_CAST(obj, field, ...) \
 	({ \
 		typeof (obj) _obj = (obj); \
 		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_LINK); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->link : NULL; \
+		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), __VA_ARGS__)); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->field : NULL; \
 	})
 
-#define NMP_OBJECT_CAST_IP_ADDRESS(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS)); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip_address : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IPX_ADDRESS(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS)); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ipx_address : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IP4_ADDRESS(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip4_address : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IP6_ADDRESS(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_address : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IPX_ROUTE(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ipx_route : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IP_ROUTE(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip_route : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IP4_ROUTE(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ROUTE); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip4_route : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_IP6_ROUTE(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_route : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_ROUTING_RULE(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_ROUTING_RULE); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->routing_rule : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_QDISC(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_QDISC); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->qdisc : NULL; \
-	})
-
-#define NMP_OBJECT_CAST_TFILTER(obj) \
-	({ \
-		typeof (obj) _obj = (obj); \
-		\
-		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_TFILTER); \
-		_obj ? &NM_CONSTCAST (NMPObject, _obj)->tfilter : NULL; \
-	})
+#define NMP_OBJECT_CAST_LINK(obj)          _NMP_OBJECT_CAST (obj, link,          NMP_OBJECT_TYPE_LINK)
+#define NMP_OBJECT_CAST_IP_ADDRESS(obj)    _NMP_OBJECT_CAST (obj, ip_address,    NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS)
+#define NMP_OBJECT_CAST_IPX_ADDRESS(obj)   _NMP_OBJECT_CAST (obj, ipx_address,   NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS)
+#define NMP_OBJECT_CAST_IP4_ADDRESS(obj)   _NMP_OBJECT_CAST (obj, ip4_address,   NMP_OBJECT_TYPE_IP4_ADDRESS)
+#define NMP_OBJECT_CAST_IP6_ADDRESS(obj)   _NMP_OBJECT_CAST (obj, ip6_address,   NMP_OBJECT_TYPE_IP6_ADDRESS)
+#define NMP_OBJECT_CAST_IP_ROUTE(obj)      _NMP_OBJECT_CAST (obj, ip_route,      NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
+#define NMP_OBJECT_CAST_IPX_ROUTE(obj)     _NMP_OBJECT_CAST (obj, ipx_route,     NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
+#define NMP_OBJECT_CAST_IP4_ROUTE(obj)     _NMP_OBJECT_CAST (obj, ip4_route,     NMP_OBJECT_TYPE_IP4_ROUTE)
+#define NMP_OBJECT_CAST_IP6_ROUTE(obj)     _NMP_OBJECT_CAST (obj, ip6_route,     NMP_OBJECT_TYPE_IP6_ROUTE)
+#define NMP_OBJECT_CAST_ROUTING_RULE(obj)  _NMP_OBJECT_CAST (obj, routing_rule,  NMP_OBJECT_TYPE_ROUTING_RULE)
+#define NMP_OBJECT_CAST_QDISC(obj)         _NMP_OBJECT_CAST (obj, qdisc,         NMP_OBJECT_TYPE_QDISC)
+#define NMP_OBJECT_CAST_TFILTER(obj)       _NMP_OBJECT_CAST (obj, tfilter,       NMP_OBJECT_TYPE_TFILTER)
+#define NMP_OBJECT_CAST_LNK_WIREGUARD(obj) _NMP_OBJECT_CAST (obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
 
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
@@ -673,7 +599,7 @@ nmp_object_unref (const NMPObject *obj)
 		_changed; \
 	})
 
-NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob);
+NMPObject *nmp_object_new (NMPObjectType obj_type, gconstpointer plobj);
 NMPObject *nmp_object_new_link (int ifindex);
 
 const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, gconstpointer plobj);

@@ -2265,9 +2265,11 @@ _get_route_table (NMDevice *self,
                   int addr_family)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceClass *klass;
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip;
 	guint32 route_table = 0;
+	gboolean is_user_config = TRUE;
 
 	nm_assert_addr_family (addr_family);
 
@@ -2288,15 +2290,25 @@ _get_route_table (NMDevice *self,
 			route_table = nm_setting_ip_config_get_route_table (s_ip);
 	}
 	if (route_table == 0u) {
-		route_table = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-		                                                             addr_family == AF_INET
-		                                                           ? NM_CON_DEFAULT ("ipv4.route-table")
-		                                                           : NM_CON_DEFAULT ("ipv6.route-table"),
-		                                                           self,
-		                                                           0,
-		                                                           G_MAXUINT32,
-		                                                           0);
+		gint64 v;
+
+		v = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                   addr_family == AF_INET
+		                                                 ? NM_CON_DEFAULT ("ipv4.route-table")
+		                                                 : NM_CON_DEFAULT ("ipv6.route-table"),
+		                                                 self,
+		                                                 0,
+		                                                 G_MAXUINT32,
+		                                                 -1);
+		if (v != -1) {
+			route_table = v;
+			is_user_config = FALSE;
+		}
 	}
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->coerce_route_table)
+		route_table = klass->coerce_route_table (self, addr_family, route_table, is_user_config);
 
 	if (addr_family == AF_INET) {
 		priv->v4_route_table_initialized = TRUE;
@@ -6587,11 +6599,15 @@ _routing_rules_sync (NMDevice *self,
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPRulesManager *rules_manager = nm_netns_get_rules_manager (nm_device_get_netns (self));
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	gboolean untrack_only_dirty = FALSE;
 	gboolean keep_deleted_rules;
-	gpointer user_tag;
+	gpointer user_tag_1;
+	gpointer user_tag_2;
 
-	user_tag = priv;
+	/* take two arbitrary user-tag pointers that belong to @self. */
+	user_tag_1 = &priv->v4_route_table;
+	user_tag_2 = &priv->v6_route_table;
 
 	if (set_mode == NM_TERNARY_TRUE) {
 		NMConnection *applied_connection;
@@ -6600,7 +6616,9 @@ _routing_rules_sync (NMDevice *self,
 		int is_ipv4;
 
 		untrack_only_dirty = TRUE;
-		nmp_rules_manager_set_dirty (rules_manager, user_tag);
+		nmp_rules_manager_set_dirty (rules_manager, user_tag_1);
+		if (klass->get_extra_rules)
+			nmp_rules_manager_set_dirty (rules_manager, user_tag_2);
 
 		applied_connection = nm_device_get_applied_connection (self);
 
@@ -6625,13 +6643,30 @@ _routing_rules_sync (NMDevice *self,
 				nmp_rules_manager_track (rules_manager,
 				                         &plrule,
 				                         10,
-				                         user_tag,
+				                         user_tag_1,
 				                         NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+			}
+		}
+
+		if (klass->get_extra_rules) {
+			gs_unref_ptrarray GPtrArray *extra_rules = NULL;
+
+			extra_rules = klass->get_extra_rules (self);
+			if (extra_rules) {
+				for (i = 0; i < extra_rules->len; i++) {
+					nmp_rules_manager_track (rules_manager,
+					                         NMP_OBJECT_CAST_ROUTING_RULE (extra_rules->pdata[i]),
+					                         10,
+					                         user_tag_2,
+					                         NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+				}
 			}
 		}
 	}
 
-	nmp_rules_manager_untrack_all (rules_manager, user_tag, !untrack_only_dirty);
+	nmp_rules_manager_untrack_all (rules_manager, user_tag_1, !untrack_only_dirty);
+	if (klass->get_extra_rules)
+		nmp_rules_manager_untrack_all (rules_manager, user_tag_2, !untrack_only_dirty);
 
 	keep_deleted_rules = FALSE;
 	if (set_mode == NM_TERNARY_DEFAULT) {
@@ -11532,6 +11567,12 @@ check_and_reapply_connection (NMDevice *self,
 
 	/**************************************************************************
 	 * Reapply changes
+	 *
+	 * Note that reapply_connection() is called as very first. This is for example
+	 * important for NMDeviceWireGuard, which implements coerce_route_table()
+	 * and get_extra_rules().
+	 * That is because NMDeviceWireGuard caches settings, so during reapply that
+	 * cache must be updated *first*.
 	 *************************************************************************/
 	klass->reapply_connection (self, con_old, con_new);
 
@@ -11549,6 +11590,8 @@ check_and_reapply_connection (NMDevice *self,
 
 	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
 	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
+
+	_routing_rules_sync (self, NM_TERNARY_TRUE);
 
 	reactivate_proxy_config (self);
 

@@ -21,12 +21,16 @@
 
 #include "nm-device-wireguard.h"
 
+#include <linux/rtnetlink.h>
+#include <linux/fib_rules.h>
+
 #include "nm-setting-wireguard.h"
 #include "nm-core-internal.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-device-private.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
+#include "platform/nmp-rules-manager.h"
 #include "nm-device-factory.h"
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
@@ -134,10 +138,21 @@ typedef struct {
 	GHashTable *peers;
 
 	gint64 resolve_next_try_at;
-	guint  resolve_next_try_id;
-
 	gint64 link_config_last_at;
+
+	guint  resolve_next_try_id;
 	guint  link_config_delayed_id;
+
+	guint32 auto_default_route_fwmark;
+
+	guint32 auto_default_route_priority;
+
+	bool auto_default_route_enabled_4:1;
+	bool auto_default_route_enabled_6:1;
+	bool auto_default_route_initialized:1;
+	bool auto_default_route_refresh:1;
+	bool auto_default_route_priority_initialized:1;
+
 } NMDeviceWireGuardPrivate;
 
 struct _NMDeviceWireGuard {
@@ -174,6 +189,394 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_link_config_mode_to_string, LinkConfigMode,
 	NM_UTILS_LOOKUP_ITEM (LINK_CONFIG_MODE_ASSUME,    "assume"),
 	NM_UTILS_LOOKUP_ITEM (LINK_CONFIG_MODE_ENDPOINTS, "endpoints"),
 );
+
+/*****************************************************************************/
+
+static void
+_auto_default_route_get_enabled (NMSettingWireGuard *s_wg,
+                                 NMConnection *connection,
+                                 gboolean *out_enabled_v4,
+                                 gboolean *out_enabled_v6)
+{
+	NMTernary enabled_v4;
+	NMTernary enabled_v6;
+
+	enabled_v4 = nm_setting_wireguard_get_ip4_auto_default_route (s_wg);
+	enabled_v6 = nm_setting_wireguard_get_ip6_auto_default_route (s_wg);
+
+	if (enabled_v4 == NM_TERNARY_DEFAULT) {
+		if (nm_setting_ip_config_get_never_default (nm_connection_get_setting_ip_config (connection, AF_INET)))
+			enabled_v4 = FALSE;
+	}
+	if (enabled_v6 == NM_TERNARY_DEFAULT) {
+		if (nm_setting_ip_config_get_never_default (nm_connection_get_setting_ip_config (connection, AF_INET6)))
+			enabled_v6 = FALSE;
+	}
+
+	if (   enabled_v4 == NM_TERNARY_DEFAULT
+	    || enabled_v6 == NM_TERNARY_DEFAULT) {
+		guint i, n_peers;
+
+		n_peers = nm_setting_wireguard_get_peers_len (s_wg);
+		for (i = 0; i < n_peers; i++) {
+			NMWireGuardPeer *peer = nm_setting_wireguard_get_peer (s_wg, i);
+			guint n_aips;
+			guint j;
+
+			n_aips = nm_wireguard_peer_get_allowed_ips_len (peer);
+			for (j = 0; j < n_aips; j++) {
+				const char *aip;
+				gboolean valid;
+				int prefix;
+				int addr_family;
+
+				aip = nm_wireguard_peer_get_allowed_ip (peer, j, &valid);
+				if (!valid)
+					continue;
+				if (!nm_utils_parse_inaddr_prefix_bin (AF_UNSPEC,
+				                                       aip,
+				                                       &addr_family,
+				                                       NULL,
+				                                       &prefix))
+					continue;
+				if (prefix != 0)
+					continue;
+
+				if (addr_family == AF_INET) {
+					if (enabled_v4 == NM_TERNARY_DEFAULT) {
+						enabled_v4 = TRUE;
+						if (enabled_v6 != NM_TERNARY_DEFAULT)
+							goto done;
+					}
+				} else {
+					if (enabled_v6 == NM_TERNARY_DEFAULT) {
+						enabled_v6 = TRUE;
+						if (enabled_v4 != NM_TERNARY_DEFAULT)
+							goto done;
+					}
+				}
+			}
+		}
+done:
+		;
+	}
+
+	*out_enabled_v4 = (enabled_v4 == TRUE);
+	*out_enabled_v6 = (enabled_v6 == TRUE);
+}
+
+static guint32
+_auto_default_route_find_unused_table (NMPlatform *platform)
+{
+	guint32 table;
+	int is_ipv4;
+
+	for (table = 51820; TRUE; table++) {
+		const NMDedupMultiHeadEntry *head_entry;
+		const guint32 table_coerced = nm_platform_route_table_coerce (table);
+		NMDedupMultiIter iter;
+		const NMPObject *plobj;
+
+		/* find a table/fwmark that is not yet in use. */
+
+		for (is_ipv4 = 0; is_ipv4 < 2; is_ipv4++) {
+			head_entry = nm_platform_lookup_object (platform,
+			                                          is_ipv4
+			                                        ? NMP_OBJECT_TYPE_IP4_ROUTE
+			                                        : NMP_OBJECT_TYPE_IP6_ROUTE,
+			                                        -1);
+			nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+				if (NMP_OBJECT_CAST_IP_ROUTE (plobj)->table_coerced == table_coerced)
+					goto try_next_table;
+			}
+		}
+
+		head_entry = nm_platform_lookup_object_by_addr_family (platform,
+		                                                       NMP_OBJECT_TYPE_ROUTING_RULE,
+		                                                       AF_UNSPEC);
+		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+			const NMPlatformRoutingRule *rr = NMP_OBJECT_CAST_ROUTING_RULE (plobj);
+
+			if (rr->fwmark == table)
+				goto try_next_table;
+		}
+
+		head_entry = nm_platform_lookup_obj_type (platform, NMP_OBJECT_TYPE_LINK);
+		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+			const NMPObject *lnk_wg;
+
+			if (plobj->link.type != NM_LINK_TYPE_WIREGUARD)
+				continue;
+
+			lnk_wg = plobj->_link.netlink.lnk;
+
+			if (!lnk_wg)
+				continue;
+
+			if (NMP_OBJECT_GET_TYPE (lnk_wg) != NMP_OBJECT_TYPE_LNK_WIREGUARD)
+				continue;
+
+			if (NMP_OBJECT_CAST_LNK_WIREGUARD (lnk_wg)->fwmark == table)
+				goto try_next_table;
+		}
+
+		return table;
+try_next_table:
+		;
+	}
+}
+
+#define PRIO_WIDTH ((guint32) 2)
+
+static gboolean
+_auto_default_route_find_priority_exists (const NMDedupMultiHeadEntry *head_entry,
+                                          guint32 priority)
+{
+	NMDedupMultiIter iter;
+	const NMPObject *plobj;
+
+	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+		const NMPlatformRoutingRule *rr = NMP_OBJECT_CAST_ROUTING_RULE (plobj);
+
+		/* we don't differenciate between IPv4 vs. IPv6. There should be no
+		 * conflicting rules with the same priority. */
+		if (   rr->priority >= priority
+		    && rr->priority < priority + PRIO_WIDTH)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static guint32
+_auto_default_route_find_priority (NMPlatform *platform,
+                                   const char *uuid)
+{
+	const NMDedupMultiHeadEntry *head_entry;
+	guint64 rnd_seed;
+	const guint32 PRIME_NUMBER = 1111567573u;
+	const guint32 RANGE_TOP = ((32766u - 2u * PRIO_WIDTH) / PRIO_WIDTH);
+	const guint32 RANGE_LEN1 = 200u;
+	const guint32 RANGE_LEN2 = (RANGE_TOP - 100u) - RANGE_LEN1;
+	guint32 range_len;
+	guint32 range_top;
+	guint32 prio_candidate = 0;
+	guint32 i_step;
+	guint32 i;
+
+	/* For the auto-default-route policy routing rule we add 4 rules (2 Ipv4 and 2 IPv6).
+	 * Hence, we choose a priority for the first (of the two rules) and the second
+	 * rule gets priority + 1.
+	 * We want a priority that is
+	 *   - unused so far.
+	 *   - smaller than 32766u (which is the priority of the default rules for IPv4 and IPv6)
+	 *   - stable for each connection but different between connections (we hash the UUID
+	 *     as a "random" seed)
+	 *   - if possible, close to 32766u (RANGE_LEN1). Only otherwise fallback to the entire
+	 *     range (RANGE_LEN2).
+	 */
+
+	rnd_seed = c_siphash_hash ((const guint8 [16]) { 0xb9, 0x39, 0x8e, 0xed, 0x15, 0xb3, 0xd1, 0xc4, 0x5f, 0x45, 0x00, 0x4f, 0xec, 0xc2, 0x2b, 0x7e },
+	                           (const guint8 *) uuid,
+	                           uuid ? strlen (uuid) + 1u : 0u);
+
+	head_entry = nm_platform_lookup_object_by_addr_family (platform,
+	                                                       NMP_OBJECT_TYPE_ROUTING_RULE,
+	                                                       AF_UNSPEC);
+
+	range_len = RANGE_LEN1;
+	range_top = RANGE_TOP;
+
+again:
+	i_step = ((guint32) rnd_seed) % range_len;
+	for (i = 0; i < range_len; i++) {
+
+		/* we sample the range in a stable, but somewhat arbitrary order to
+		 * find an unused priority. */
+		i_step = (i_step + PRIME_NUMBER) % range_len;
+
+		nm_assert (i_step < range_top);
+
+		prio_candidate = (range_top - i_step) * PRIO_WIDTH;
+
+		nm_assert (prio_candidate < 32766u);
+
+		if (!_auto_default_route_find_priority_exists (head_entry, prio_candidate))
+			return prio_candidate;
+	}
+
+	if (range_len == RANGE_LEN1) {
+		/* within the narrow range close to RANGE_TOP we couldn't find any unused
+		 * priority. Retry with the entire range... */
+		range_len = RANGE_LEN2;
+		range_top -= RANGE_LEN1;
+		goto again;
+	}
+
+	/* Couldn't find an unused one? Very odd, this really should not happen unless there
+	 * are thousands of rules already. Just pick the last one we sampled. */
+	return prio_candidate;
+}
+
+static void
+_auto_default_route_init (NMDeviceWireGuard *self)
+{
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingWireGuard *s_wg;
+	gboolean enabled_v4;
+	gboolean enabled_v6;
+	gboolean refreshing_only;
+	guint32 old_fwmark;
+	char sbuf1[100];
+
+	if (G_LIKELY (   priv->auto_default_route_initialized
+	              && !priv->auto_default_route_refresh))
+		return;
+
+	refreshing_only =    priv->auto_default_route_initialized
+	                  && priv->auto_default_route_refresh;
+	priv->auto_default_route_refresh = FALSE;
+
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
+
+	s_wg = _nm_connection_get_setting (connection, NM_TYPE_SETTING_WIREGUARD);
+
+	old_fwmark = priv->auto_default_route_fwmark;
+
+	priv->auto_default_route_fwmark = nm_setting_wireguard_get_fwmark (s_wg);
+
+	_auto_default_route_get_enabled (s_wg,
+	                                 connection,
+	                                 &enabled_v4,
+	                                 &enabled_v6);
+	priv->auto_default_route_enabled_4 = enabled_v4;
+	priv->auto_default_route_enabled_6 = enabled_v6;
+	priv->auto_default_route_initialized = TRUE;
+
+	if (   (   priv->auto_default_route_enabled_4
+	        || priv->auto_default_route_enabled_6)
+	    && priv->auto_default_route_fwmark == 0u) {
+		if (refreshing_only)
+			priv->auto_default_route_fwmark = old_fwmark;
+		else
+			priv->auto_default_route_fwmark = _auto_default_route_find_unused_table (nm_device_get_platform (NM_DEVICE (self)));
+	}
+
+	_LOGT (LOGD_DEVICE,
+	       "auto-default-route is %s for IPv4 and %s for IPv6%s",
+	       priv->auto_default_route_enabled_4 ? "enabled" : "disabled",
+	       priv->auto_default_route_enabled_6 ? "enabled" : "disabled",
+	         priv->auto_default_route_enabled_4 || priv->auto_default_route_enabled_6
+	       ? nm_sprintf_buf (sbuf1, " (fwmark 0x%x)", priv->auto_default_route_fwmark)
+	       : "");
+}
+
+static GPtrArray *
+get_extra_rules (NMDevice *device)
+{
+	NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD (device);
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
+	gs_unref_ptrarray GPtrArray *extra_rules = NULL;
+	guint32 priority = 0;
+	int is_ipv4;
+	NMConnection *connection;
+
+	_auto_default_route_init (self);
+
+	connection = nm_device_get_applied_connection (device);
+	if (!connection)
+		return NULL;
+
+	for (is_ipv4 = 0; is_ipv4 < 2; is_ipv4++) {
+		NMSettingIPConfig *s_ip;
+		int addr_family = is_ipv4 ? AF_INET : AF_INET6;
+		guint32 table_main;
+		guint32 fwmark;
+
+		if (is_ipv4) {
+			if (!priv->auto_default_route_enabled_4)
+				continue;
+		} else {
+			if (!priv->auto_default_route_enabled_6)
+				continue;
+		}
+
+		if (!extra_rules) {
+			if (priv->auto_default_route_priority_initialized)
+				priority = priv->auto_default_route_priority;
+			else {
+				priority = _auto_default_route_find_priority (nm_device_get_platform (device),
+				                                              nm_connection_get_uuid (connection));
+				priv->auto_default_route_priority = priority;
+				priv->auto_default_route_priority_initialized = TRUE;
+			}
+			extra_rules = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+		}
+
+		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+		table_main = nm_setting_ip_config_get_route_table (s_ip);
+		if (table_main == 0)
+			table_main = RT_TABLE_MAIN;
+
+		fwmark = priv->auto_default_route_fwmark;
+
+		G_STATIC_ASSERT_EXPR (PRIO_WIDTH == 2);
+
+		g_ptr_array_add (extra_rules,
+		                 nmp_object_new (NMP_OBJECT_TYPE_ROUTING_RULE,
+		                                 &((const NMPlatformRoutingRule) {
+		                                       .priority                   = priority,
+		                                       .addr_family                = addr_family,
+		                                       .action                     = FR_ACT_TO_TBL,
+		                                       .table                      = table_main,
+		                                       .suppress_prefixlen_inverse = ~((guint32) 0u),
+		                                   })));
+
+		g_ptr_array_add (extra_rules,
+		                 nmp_object_new (NMP_OBJECT_TYPE_ROUTING_RULE,
+		                                 &((const NMPlatformRoutingRule) {
+		                                       .priority    = priority + 1u,
+		                                       .addr_family = addr_family,
+		                                       .action      = FR_ACT_TO_TBL,
+		                                       .table       = fwmark,
+		                                       .flags       = FIB_RULE_INVERT,
+		                                       .fwmark      = fwmark,
+		                                       .fwmask      = 0xFFFFFFFFu,
+		                                   })));
+	}
+
+	return g_steal_pointer (&extra_rules);
+}
+
+static guint32
+coerce_route_table (NMDevice *device,
+                    int addr_family,
+                    guint32 route_table,
+                    gboolean is_user_config)
+{
+	NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD (device);
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
+	gboolean auto_default_route_enabled;
+
+	if (route_table != 0u)
+		return route_table;
+
+	_auto_default_route_init (self);
+
+	auto_default_route_enabled =   (addr_family == AF_INET)
+	                             ? priv->auto_default_route_enabled_4
+	                             : priv->auto_default_route_enabled_6;
+
+	if (auto_default_route_enabled) {
+		/* we need to enable full-sync mode of all routing tables. */
+		_LOGT (LOGD_DEVICE, "coerce ipv%c.route-table setting to \"main\" (table 254) as we enable auto-default-route handling",
+		       nm_utils_addr_family_to_char (addr_family));
+		return RT_TABLE_MAIN;
+	}
+
+	return 0;
+}
 
 /*****************************************************************************/
 
@@ -1084,6 +1487,8 @@ link_config (NMDeviceWireGuard *self,
 	_LOGT (LOGD_DEVICE, "wireguard link config (%s, %s)...",
 	       reason, _link_config_mode_to_string (config_mode));
 
+	_auto_default_route_init (self);
+
 	if (!priv->dns_manager) {
 		priv->dns_manager = g_object_ref (nm_dns_manager_get ());
 		g_signal_connect (priv->dns_manager, NM_DNS_MANAGER_CONFIG_CHANGED, G_CALLBACK (_dns_config_changed), self);
@@ -1130,7 +1535,7 @@ link_config (NMDeviceWireGuard *self,
 		wg_lnk.listen_port = nm_setting_wireguard_get_listen_port (s_wg);
 		wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_LISTEN_PORT;
 
-		wg_lnk.fwmark = nm_setting_wireguard_get_fwmark (s_wg);
+		wg_lnk.fwmark = priv->auto_default_route_fwmark;
 		wg_change_flags |= NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK;
 
 		if (nm_utils_base64secret_decode (nm_setting_wireguard_get_private_key (s_wg),
@@ -1256,6 +1661,7 @@ static NMIPConfig *
 _get_dev2_ip_config (NMDeviceWireGuard *self,
                      int addr_family)
 {
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
 	gs_unref_object NMIPConfig *ip_config = NULL;
 	NMConnection *connection;
 	NMSettingWireGuard *s_wg;
@@ -1264,6 +1670,9 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 	int ip_ifindex;
 	guint32 route_metric;
 	guint32 route_table_coerced;
+	gboolean auto_default_route_enabled;
+
+	_auto_default_route_init (self);
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 
@@ -1303,6 +1712,10 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 
 	route_table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (NM_DEVICE (self), addr_family));
 
+	auto_default_route_enabled =   (addr_family == AF_INET)
+	                             ? priv->auto_default_route_enabled_4
+	                             : priv->auto_default_route_enabled_6;
+
 	n_peers = nm_setting_wireguard_get_peers_len (s_wg);
 	for (i = 0; i < n_peers; i++) {
 		NMWireGuardPeer *peer = nm_setting_wireguard_get_peer (s_wg, i);
@@ -1316,6 +1729,7 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 			const char *aip;
 			gboolean valid;
 			int prefix;
+			guint32 rtable_coerced;
 
 			aip = nm_wireguard_peer_get_allowed_ip (peer, j, &valid);
 
@@ -1335,13 +1749,24 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 
 			nm_utils_ipx_address_clear_host_address (addr_family, &addrbin, NULL, prefix);
 
+			rtable_coerced = route_table_coerced;
+
+			if (   prefix == 0
+			    && auto_default_route_enabled) {
+				/* In auto-default-route mode, we place the default route in a table that
+				 * has the same number as the fwmark. wg-quick does that too. If you don't
+				 * like that, configure the rules and the default-route explicitly in the
+				 * connection profile. */
+				rtable_coerced = nm_platform_route_table_coerce (priv->auto_default_route_fwmark);
+			}
+
 			if (addr_family == AF_INET) {
 				rt.r4 = (NMPlatformIP4Route) {
 					.network       = addrbin.addr4,
 					.plen          = prefix,
 					.ifindex       = ip_ifindex,
 					.rt_source     = NM_IP_CONFIG_SOURCE_USER,
-					.table_coerced = route_table_coerced,
+					.table_coerced = rtable_coerced,
 					.metric        = route_metric,
 				};
 			} else {
@@ -1350,7 +1775,7 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 					.plen          = prefix,
 					.ifindex       = ip_ifindex,
 					.rt_source     = NM_IP_CONFIG_SOURCE_USER,
-					.table_coerced = route_table_coerced,
+					.table_coerced = rtable_coerced,
 					.metric        = route_metric,
 				};
 			}
@@ -1406,20 +1831,28 @@ get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 }
 
 static void
+_device_cleanup (NMDeviceWireGuard *self)
+{
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
+
+	_peers_remove_all (priv);
+
+	_secrets_cancel (self);
+
+	priv->auto_default_route_initialized = FALSE;
+	priv->auto_default_route_priority_initialized = FALSE;
+}
+
+static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	NMDeviceWireGuardPrivate *priv;
-
 	if (new_state <= NM_DEVICE_STATE_ACTIVATED)
 		return;
 
-	priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (device);
-
-	_peers_remove_all (priv);
-	_secrets_cancel (NM_DEVICE_WIREGUARD (device));
+	_device_cleanup (NM_DEVICE_WIREGUARD (device));
 }
 
 /*****************************************************************************/
@@ -1440,6 +1873,8 @@ can_reapply_change (NMDevice *device,
 		                                          NM_SETTING_WIREGUARD_SETTING_NAME,
 		                                          error,
 		                                          NM_SETTING_WIREGUARD_FWMARK,
+		                                          NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
+		                                          NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
 		                                          NM_SETTING_WIREGUARD_LISTEN_PORT,
 		                                          NM_SETTING_WIREGUARD_PEERS,
 		                                          NM_SETTING_WIREGUARD_PEER_ROUTES,
@@ -1461,8 +1896,11 @@ reapply_connection (NMDevice *device,
                     NMConnection *con_new)
 {
 	NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD (device);
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
 	gs_unref_object NMIPConfig *ip4_config = NULL;
 	gs_unref_object NMIPConfig *ip6_config = NULL;
+
+	priv->auto_default_route_refresh = TRUE;
 
 	ip4_config = _get_dev2_ip_config (self, AF_INET);
 	ip6_config = _get_dev2_ip_config (self, AF_INET6);
@@ -1567,11 +2005,8 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD (object);
-	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
 
-	_secrets_cancel (self);
-
-	_peers_remove_all (priv);
+	_device_cleanup (self);
 
 	G_OBJECT_CLASS (nm_device_wireguard_parent_class)->dispose (object);
 }
@@ -1633,6 +2068,8 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *klass)
 	device_class->can_reapply_change = can_reapply_change;
 	device_class->reapply_connection = reapply_connection;
 	device_class->get_configured_mtu = get_configured_mtu;
+	device_class->get_extra_rules = get_extra_rules;
+	device_class->coerce_route_table = coerce_route_table;
 
 	obj_properties[PROP_PUBLIC_KEY] =
 	    g_param_spec_variant (NM_DEVICE_WIREGUARD_PUBLIC_KEY,

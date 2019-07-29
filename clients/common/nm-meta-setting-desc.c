@@ -7137,6 +7137,12 @@ static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_MTU,
 		.property_type =                &_pt_gobject_mtu,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
+		.property_type =                &_pt_gobject_enum,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
+		.property_type =                &_pt_gobject_enum,
+	),
 	NULL
 };
 
