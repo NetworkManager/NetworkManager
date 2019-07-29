@@ -215,4 +215,18 @@
 # define NM_AVAILABLE_IN_1_20
 #endif
 
+#if NM_VERSION_MIN_REQUIRED >= NM_VERSION_1_22
+# define NM_DEPRECATED_IN_1_22           G_DEPRECATED
+# define NM_DEPRECATED_IN_1_22_FOR(f)    G_DEPRECATED_FOR(f)
+#else
+# define NM_DEPRECATED_IN_1_22
+# define NM_DEPRECATED_IN_1_22_FOR(f)
+#endif
+
+#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_22
+# define NM_AVAILABLE_IN_1_22            G_UNAVAILABLE(1,22)
+#else
+# define NM_AVAILABLE_IN_1_22
+#endif
+
 #endif  /* NM_VERSION_H */
