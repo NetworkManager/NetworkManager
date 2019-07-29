@@ -1308,7 +1308,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	/**
 	 * NMSettingWireless:mode:
 	 *
-	 * Wi-Fi network mode; one of "infrastructure", "adhoc" or "ap".  If blank,
+	 * Wi-Fi network mode; one of "infrastructure", "mesh", "adhoc" or "ap".  If blank,
 	 * infrastructure is assumed.
 	 **/
 	/* ---ifcfg-rh---
