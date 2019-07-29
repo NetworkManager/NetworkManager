@@ -904,6 +904,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
 	const char *valid_pairwise[] = { "tkip", "ccmp", NULL };
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+	NMSettingWireless *s_wifi;
+	const char *wifi_mode;
+
+	s_wifi = connection ? nm_connection_get_setting_wireless (connection) : NULL;
+	wifi_mode = s_wifi ? nm_setting_wireless_get_mode (s_wifi) : NULL;
 
 	if (!priv->key_mgmt) {
 		g_set_error_literal (error,
@@ -914,14 +919,27 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!g_strv_contains (valid_key_mgmt, priv->key_mgmt)) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid value for the property"),
-		             priv->key_mgmt);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-		return FALSE;
+	if (g_strcmp0 (wifi_mode, NM_SETTING_WIRELESS_MODE_MESH) == 0) {
+		if (   (strcmp (priv->key_mgmt, "none") == 0)
+		    || (strcmp (priv->key_mgmt, "sae") == 0)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("'%s' is not a valid value for '%s' mode connections"),
+			             priv->key_mgmt, NM_SETTING_WIRELESS_MODE_MESH);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+			return FALSE;
+		}
+	} else {
+		if (!g_strv_contains (valid_key_mgmt, priv->key_mgmt)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("'%s' is not a valid value for the property"),
+			             priv->key_mgmt);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+			return FALSE;
+		}
 	}
 
 	if (priv->auth_alg && !strcmp (priv->auth_alg, "leap")) {

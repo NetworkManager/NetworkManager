@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include "nm-utils.h"
+#include "nm-core-internal.h"
 
 static gboolean
 verify_no_wep (NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error)
@@ -526,6 +527,7 @@ gboolean
 nm_wifi_utils_complete_connection (GBytes *ap_ssid,
                                    const char *bssid,
                                    NM80211Mode ap_mode,
+                                   guint32 ap_freq,
                                    guint32 ap_flags,
                                    guint32 ap_wpa_flags,
                                    guint32 ap_rsn_flags,
@@ -539,6 +541,7 @@ nm_wifi_utils_complete_connection (GBytes *ap_ssid,
 	GBytes *ssid;
 	const char *mode, *key_mgmt, *auth_alg, *leap_username;
 	gboolean adhoc = FALSE;
+	gboolean mesh = FALSE;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -575,6 +578,10 @@ nm_wifi_utils_complete_connection (GBytes *ap_ssid,
 			if (ap_mode == NM_802_11_MODE_ADHOC)
 				valid = TRUE;
 			adhoc = TRUE;
+		} else if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_MESH)) {
+			if (ap_mode == NM_802_11_MODE_MESH)
+				valid = TRUE;
+			mesh = TRUE;
 		}
 
 		if (valid == FALSE) {
@@ -590,8 +597,55 @@ nm_wifi_utils_complete_connection (GBytes *ap_ssid,
 		if (ap_mode == NM_802_11_MODE_ADHOC) {
 			mode = NM_SETTING_WIRELESS_MODE_ADHOC;
 			adhoc = TRUE;
+		} else if (ap_mode == NM_802_11_MODE_MESH) {
+			mode = NM_SETTING_WIRELESS_MODE_MESH;
+			mesh = TRUE;
 		}
 		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_MODE, mode, NULL);
+	}
+
+	/* For now mesh requires channel and band, fill them only if both not present.
+	 * Do not check existing values against an existing ap/mesh point,
+	 * mesh join will start a new network if required */
+	if (mesh) {
+		const char *band;
+		guint32 channel;
+		gboolean band_valid = TRUE;
+		gboolean chan_valid = TRUE;
+		gboolean valid;
+
+		band = nm_setting_wireless_get_band (s_wifi);
+		channel = nm_setting_wireless_get_channel (s_wifi);
+
+		valid =    ((band == NULL) && (channel == 0))
+		        || ((band != NULL) && (channel != 0));
+
+		if ((band == NULL) && (channel == 0)) {
+			channel = nm_utils_wifi_freq_to_channel (ap_freq);
+			if (channel) {
+				g_object_set (s_wifi,
+				              NM_SETTING_WIRELESS_CHANNEL, channel,
+				              NULL);
+			} else {
+				chan_valid = FALSE;
+			}
+
+			band = nm_utils_wifi_freq_to_band (ap_freq);
+			if (band) {
+				g_object_set (s_wifi, NM_SETTING_WIRELESS_BAND, band, NULL);
+			} else {
+				band_valid = FALSE;
+			}
+		}
+
+		if (!valid || !chan_valid || !band_valid) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("connection does not match mesh point"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MODE);
+			return FALSE;
+		}
 	}
 
 	/* Security */

@@ -89,7 +89,8 @@ nm_wifi_utils_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (   (mode == NM_802_11_MODE_INFRA)
 	                      || (mode == NM_802_11_MODE_AP)
-	                      || (mode == NM_802_11_MODE_ADHOC), FALSE);
+	                      || (mode == NM_802_11_MODE_ADHOC)
+	                      || (mode == NM_802_11_MODE_MESH), FALSE);
 
 	klass = NM_WIFI_UTILS_GET_CLASS (data);
 

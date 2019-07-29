@@ -757,7 +757,13 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NM_SETTING_WIRELESS_MODE_AP, NULL };
+	const char *valid_modes[] = {
+		NM_SETTING_WIRELESS_MODE_INFRA,
+		NM_SETTING_WIRELESS_MODE_ADHOC,
+		NM_SETTING_WIRELESS_MODE_AP,
+		NM_SETTING_WIRELESS_MODE_MESH,
+		NULL
+	};
 	const char *valid_bands[] = { "a", "bg", NULL };
 	guint i;
 	gsize length;
@@ -822,6 +828,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_CHANNEL);
 			return FALSE;
 		}
+	}
+
+	if ((g_strcmp0 (priv->mode, NM_SETTING_WIRELESS_MODE_MESH) == 0) && !(priv->channel && priv->band)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		             _("'%s' requires '%s' and '%s' property"),
+		             priv->mode, NM_SETTING_WIRELESS_BAND, NM_SETTING_WIRELESS_CHANNEL);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MODE);
+		return FALSE;
 	}
 
 	if (priv->bssid && !nm_utils_hwaddr_valid (priv->bssid, ETH_ALEN)) {

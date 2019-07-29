@@ -536,6 +536,9 @@ _metagen_device_detail_wifi_properties_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_AR
 		                                         : N_("no"))
 		                                      : N_("unknown"),
 		                                      get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_MESH:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_MESH),
+		                                  get_type);
 	default:
 		break;
 	}
@@ -555,6 +558,7 @@ const NmcMetaGenericInfo *const metagen_device_detail_wifi_properties[_NMC_GENER
 	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_ADHOC, "ADHOC"),
 	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_2GHZ,  "2GHZ"),
 	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_5GHZ,  "5GHZ"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_MESH,  "MESH"),
 };
 
 /*****************************************************************************/
@@ -1188,6 +1192,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_strc (arr, 3, bssid);
 	set_val_strc (arr, 4, mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
 	                    : mode == NM_802_11_MODE_INFRA ? _("Infra")
+	                    : mode == NM_802_11_MODE_MESH ? _("Mesh")
 	                    : _("N/A"));
 	set_val_str  (arr, 5, channel_str);
 	set_val_str  (arr, 6, freq_str);

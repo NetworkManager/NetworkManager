@@ -292,6 +292,7 @@ typedef enum { /*< flags >*/
  * @NM_WIFI_DEVICE_CAP_FREQ_VALID: device reports frequency capabilities
  * @NM_WIFI_DEVICE_CAP_FREQ_2GHZ: device supports 2.4GHz frequencies
  * @NM_WIFI_DEVICE_CAP_FREQ_5GHZ: device supports 5GHz frequencies
+ * @NM_WIFI_DEVICE_CAP_MESH: device supports acting as a mesh point
  *
  * 802.11 specific device encryption and authentication capabilities.
  **/
@@ -308,6 +309,7 @@ typedef enum { /*< flags >*/
 	NM_WIFI_DEVICE_CAP_FREQ_VALID    = 0x00000100,
 	NM_WIFI_DEVICE_CAP_FREQ_2GHZ     = 0x00000200,
 	NM_WIFI_DEVICE_CAP_FREQ_5GHZ     = 0x00000400,
+	NM_WIFI_DEVICE_CAP_MESH          = 0x00001000,
 } NMDeviceWifiCapabilities;
 
 /**
@@ -383,6 +385,7 @@ typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
  *   provides connectivity to clients.
  * @NM_802_11_MODE_AP: the device is an access point/hotspot.  Not valid for
  *   access point objects; used only for hotspot mode on the local machine.
+ * @NM_802_11_MODE_MESH: the device is a 802.11s mesh point.
  *
  * Indicates the 802.11 mode an access point or device is currently in.
  **/
@@ -391,6 +394,7 @@ typedef enum { /*< underscore_name=nm_802_11_mode >*/
 	NM_802_11_MODE_ADHOC   = 1,
 	NM_802_11_MODE_INFRA   = 2,
 	NM_802_11_MODE_AP      = 3,
+	NM_802_11_MODE_MESH    = 4,
 } NM80211Mode;
 
 /**

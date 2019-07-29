@@ -47,6 +47,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   properties take effect immediately. The "no-reapply" flag allows suppressing this,
   so that not changes take effect automatically. The purpose is to really only modify
   the profile itself without changes to the runtime configuration of the device.
+* Added support for Wi-Fi Mesh network.
 
 The following changes were backported to 1.18.x releases between 1.18.0
 and 1.18.2 are also present in NetworkManager-1.18:

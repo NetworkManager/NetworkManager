@@ -123,6 +123,13 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_WIRELESS_MODE_INFRA  "infrastructure"
 
 /**
+ * NM_SETTING_WIRELESS_MODE_MESH:
+ *
+ * Indicates that the connection should create a mesh point.
+ */
+#define NM_SETTING_WIRELESS_MODE_MESH   "mesh"
+
+/**
  * NMSettingWirelessPowersave:
  * @NM_SETTING_WIRELESS_POWERSAVE_DEFAULT: use the default value
  * @NM_SETTING_WIRELESS_POWERSAVE_IGNORE: don't touch existing setting

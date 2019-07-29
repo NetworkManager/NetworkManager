@@ -866,4 +866,6 @@ void _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
 
 gboolean nm_utils_connection_is_adhoc_wpa (NMConnection *connection);
 
+const char *nm_utils_wifi_freq_to_band (guint32 freq);
+
 #endif
