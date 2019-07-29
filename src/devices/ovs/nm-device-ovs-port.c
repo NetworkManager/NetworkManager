@@ -140,13 +140,18 @@ del_iface_cb (GError *error, gpointer user_data)
 static void
 release_slave (NMDevice *device, NMDevice *slave, gboolean configure)
 {
-	nm_ovsdb_del_interface (nm_ovsdb_get (), nm_device_get_iface (slave),
-	                        del_iface_cb, g_object_ref (slave));
+	NMDeviceOvsPort *self = NM_DEVICE_OVS_PORT (device);
 
-	/* Open VSwitch is going to delete this one. We must ignore what happens
-	 * next with the interface. */
-	if (NM_IS_DEVICE_OVS_INTERFACE (slave))
-		nm_device_update_from_platform_link (slave, NULL);
+	if (configure) {
+		_LOGI (LOGD_DEVICE, "releasing ovs interface %s", nm_device_get_ip_iface (slave));
+		nm_ovsdb_del_interface (nm_ovsdb_get (), nm_device_get_iface (slave),
+		                        del_iface_cb, g_object_ref (slave));
+		/* Open VSwitch is going to delete this one. We must ignore what happens
+		 * next with the interface. */
+		if (NM_IS_DEVICE_OVS_INTERFACE (slave))
+			nm_device_update_from_platform_link (slave, NULL);
+	} else
+		_LOGI (LOGD_DEVICE, "ovs interface %s was released", nm_device_get_ip_iface (slave));
 }
 
 /*****************************************************************************/
