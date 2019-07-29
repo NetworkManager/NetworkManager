@@ -1406,20 +1406,24 @@ get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 }
 
 static void
+_device_cleanup (NMDeviceWireGuard *self)
+{
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
+
+	_peers_remove_all (priv);
+	_secrets_cancel (self);
+}
+
+static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	NMDeviceWireGuardPrivate *priv;
-
 	if (new_state <= NM_DEVICE_STATE_ACTIVATED)
 		return;
 
-	priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (device);
-
-	_peers_remove_all (priv);
-	_secrets_cancel (NM_DEVICE_WIREGUARD (device));
+	_device_cleanup (NM_DEVICE_WIREGUARD (device));
 }
 
 /*****************************************************************************/
@@ -1567,11 +1571,8 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceWireGuard *self = NM_DEVICE_WIREGUARD (object);
-	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
 
-	_secrets_cancel (self);
-
-	_peers_remove_all (priv);
+	_device_cleanup (self);
 
 	G_OBJECT_CLASS (nm_device_wireguard_parent_class)->dispose (object);
 }
