@@ -11550,6 +11550,8 @@ check_and_reapply_connection (NMDevice *self,
 	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
 	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
 
+	_routing_rules_sync (self, NM_TERNARY_TRUE);
+
 	reactivate_proxy_config (self);
 
 	return TRUE;
