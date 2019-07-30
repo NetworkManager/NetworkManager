@@ -3119,7 +3119,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
+do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
@@ -4020,11 +4020,11 @@ finish:
 }
 
 static NMCCommand device_wifi_cmds[] = {
-	{ "list",     do_device_wifi_list,            NULL,             TRUE,   TRUE },
-	{ "connect",  do_device_wifi_connect_network, NULL,             TRUE,   TRUE },
-	{ "hotspot",  do_device_wifi_hotspot,         NULL,             TRUE,   TRUE },
-	{ "rescan",   do_device_wifi_rescan,          NULL,             TRUE,   TRUE },
-	{ NULL,       do_device_wifi_list,            NULL,             TRUE,   TRUE },
+	{ "list",     do_device_wifi_list,     NULL,  TRUE,  TRUE },
+	{ "connect",  do_device_wifi_connect,  NULL,  TRUE,  TRUE },
+	{ "hotspot",  do_device_wifi_hotspot,  NULL,  TRUE,  TRUE },
+	{ "rescan",   do_device_wifi_rescan,   NULL,  TRUE,  TRUE },
+	{ NULL,       do_device_wifi_list,     NULL,  TRUE,  TRUE },
 };
 
 static NMCResultCode
