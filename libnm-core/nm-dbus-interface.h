@@ -673,7 +673,7 @@ typedef enum {
  * NMConnectionMultiConnect:
  * @NM_CONNECTION_MULTI_CONNECT_DEFAULT: indicates that the per-connection
  *   setting is unspecified. In this case, it will fallback to the default
- *   value, which is @NM_CONNECTION_MULTI_CONNECT_SINGLE.
+ *   value, which is %NM_CONNECTION_MULTI_CONNECT_SINGLE.
  * @NM_CONNECTION_MULTI_CONNECT_SINGLE: the connection profile can only
  *   be active once at each moment. Activating a profile that is already active,
  *   will first deactivate it.
@@ -1045,14 +1045,14 @@ typedef enum { /*< flags >*/
  *   Likewise, when finally deleting the profile, both the storage from /run
  *   and persistent storage are deleted (or if the persistent storage does not
  *   allow deletion, and nmmeta file is written to mark the UUID as deleted).
- * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED: this is almost the same as
- *   @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY, with one difference: when later deleting
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED: this is almost the same
+ *   as %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY, with one difference: when later deleting
  *   the profile, the original profile will not be deleted. Instead a nmmeta
  *   file is written to /run to indicate that the profile is gone.
  *   Note that if such a nmmeta tombstone file exists and hides a file in persistant
  *   storage, then when re-adding the profile with the same UUID, then the original
  *   storage is taken over again.
- * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY: this is like @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY: this is like %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
  *   but if the connection has a corresponding file on persistent storage, the file
  *   will be deleted right away. If the profile is later again persisted to disk,
  *   a new, unused filename will be chosen.
