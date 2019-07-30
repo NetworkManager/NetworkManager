@@ -423,10 +423,10 @@ _auto_default_route_init (NMDeviceWireGuard *self)
 {
 	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingWireGuard *s_wg;
-	gboolean enabled_v4;
-	gboolean enabled_v6;
+	gboolean enabled_v4 = FALSE;
+	gboolean enabled_v6 = FALSE;
 	gboolean refreshing_only;
+	guint32 new_fwmark = 0;
 	guint32 old_fwmark;
 	char sbuf1[100];
 
@@ -436,40 +436,47 @@ _auto_default_route_init (NMDeviceWireGuard *self)
 
 	refreshing_only =    priv->auto_default_route_initialized
 	                  && priv->auto_default_route_refresh;
-	priv->auto_default_route_refresh = FALSE;
-
-	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-
-	s_wg = _nm_connection_get_setting (connection, NM_TYPE_SETTING_WIREGUARD);
 
 	old_fwmark = priv->auto_default_route_fwmark;
 
-	priv->auto_default_route_fwmark = nm_setting_wireguard_get_fwmark (s_wg);
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
+	if (connection) {
+		NMSettingWireGuard *s_wg;
 
-	_auto_default_route_get_enabled (s_wg,
-	                                 connection,
-	                                 &enabled_v4,
-	                                 &enabled_v6);
+		s_wg = _nm_connection_get_setting (connection, NM_TYPE_SETTING_WIREGUARD);
+
+		new_fwmark = nm_setting_wireguard_get_fwmark (s_wg);
+
+		_auto_default_route_get_enabled (s_wg,
+		                                 connection,
+		                                 &enabled_v4,
+		                                 &enabled_v6);
+	}
+
+	if (   (   enabled_v4
+	        || enabled_v6)
+	    && new_fwmark == 0u) {
+		if (refreshing_only)
+			new_fwmark = old_fwmark;
+		else
+			new_fwmark = _auto_default_route_find_unused_table (nm_device_get_platform (NM_DEVICE (self)));
+	}
+
+	priv->auto_default_route_refresh = FALSE;
+	priv->auto_default_route_fwmark = new_fwmark;
 	priv->auto_default_route_enabled_4 = enabled_v4;
 	priv->auto_default_route_enabled_6 = enabled_v6;
 	priv->auto_default_route_initialized = TRUE;
 
-	if (   (   priv->auto_default_route_enabled_4
-	        || priv->auto_default_route_enabled_6)
-	    && priv->auto_default_route_fwmark == 0u) {
-		if (refreshing_only)
-			priv->auto_default_route_fwmark = old_fwmark;
-		else
-			priv->auto_default_route_fwmark = _auto_default_route_find_unused_table (nm_device_get_platform (NM_DEVICE (self)));
+	if (connection) {
+		_LOGT (LOGD_DEVICE,
+		       "auto-default-route is %s for IPv4 and %s for IPv6%s",
+		       priv->auto_default_route_enabled_4 ? "enabled" : "disabled",
+		       priv->auto_default_route_enabled_6 ? "enabled" : "disabled",
+		         priv->auto_default_route_enabled_4 || priv->auto_default_route_enabled_6
+		       ? nm_sprintf_buf (sbuf1, " (fwmark 0x%x)", priv->auto_default_route_fwmark)
+		       : "");
 	}
-
-	_LOGT (LOGD_DEVICE,
-	       "auto-default-route is %s for IPv4 and %s for IPv6%s",
-	       priv->auto_default_route_enabled_4 ? "enabled" : "disabled",
-	       priv->auto_default_route_enabled_6 ? "enabled" : "disabled",
-	         priv->auto_default_route_enabled_4 || priv->auto_default_route_enabled_6
-	       ? nm_sprintf_buf (sbuf1, " (fwmark 0x%x)", priv->auto_default_route_fwmark)
-	       : "");
 }
 
 static GPtrArray *
