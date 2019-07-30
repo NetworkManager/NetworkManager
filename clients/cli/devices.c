@@ -1841,6 +1841,13 @@ typedef struct {
 } AddAndActivateInfo;
 
 static void
+add_and_activate_info_free (AddAndActivateInfo *info)
+{
+	g_object_unref (info->device);
+	g_free (info);
+}
+
+static void
 add_and_activate_cb (GObject *client,
                      GAsyncResult *result,
                      gpointer user_data)
@@ -1887,7 +1894,7 @@ add_and_activate_cb (GObject *client,
 		}
 	}
 
-	g_free (info);
+	add_and_activate_info_free (info);
 }
 
 static void
@@ -1946,7 +1953,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			g_object_unref (active);
 			quit ();
-			g_free (info);
+			add_and_activate_info_free (info);
 			return;
 		}
 
@@ -1973,7 +1980,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
 	}
-	g_free (info);
+	add_and_activate_info_free (info);
 }
 
 static NMCResultCode
@@ -2020,7 +2027,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
-	info->device = device;
+	info->device = g_object_ref (device);
 	info->hotspot = FALSE;
 
 	nm_client_activate_connection_async (nmc->client,
@@ -3524,7 +3531,7 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
-	info->device = device;
+	info->device = g_object_ref (device);
 	info->hotspot = FALSE;
 	info->create = !existing_con;
 	if (existing_con) {
@@ -3894,7 +3901,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
-	info->device = device;
+	info->device = g_object_ref (device);
 	info->hotspot = TRUE;
 	info->create = TRUE;
 
