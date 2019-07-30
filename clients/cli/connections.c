@@ -2933,7 +2933,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			pwds = *argv;
 		}
 		else if (!nmc->complete) {
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -8901,7 +8902,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			else
 				g_printerr (_("Warning: 'file' already specified, ignoring extra one.\n"));
 		} else {
-			g_string_printf (nmc->return_text, _("Unknown parameter: %s"), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 

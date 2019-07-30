@@ -1681,9 +1681,9 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	while (argc > 0) {
-		g_printerr (_("Unknown parameter: %s\n"), *argv);
-		next_arg (nmc, &argc, &argv, NULL);
+	if (argc) {
+		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -3027,8 +3027,10 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (argc)
-		g_printerr (_("Unknown parameter: %s\n"), *argv);
+	if (argc) {
+		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+		return NMC_RESULT_ERROR_USER_INPUT;
+	}
 
 	if (rescan == NULL || strcmp (rescan, "auto") == 0) {
 		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SECOND, 0);
@@ -3291,7 +3293,9 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 		} else if (!nmc->complete) {
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -3784,7 +3788,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 		} else if (nmc_arg_is_option (*argv, "show-password")) {
 			show_password = TRUE;
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Unknown parameter %s."), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
@@ -3966,8 +3970,11 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 			g_ptr_array_add (ssids, *argv);
-		} else if (!nmc->complete)
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+		} else if (!nmc->complete) {
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
