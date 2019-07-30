@@ -3410,7 +3410,7 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 	if (!existing_con) {
 		/* If there are some connection data from user, create a connection and
 		 * fill them into proper settings. */
-		if (con_name || private || bssid2_arr || password || hidden)
+		if (con_name || private || bssid2_arr || hidden)
 			connection = nm_simple_connection_new ();
 
 		if (con_name || private) {
