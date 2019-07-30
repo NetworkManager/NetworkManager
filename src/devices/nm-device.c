@@ -4054,13 +4054,14 @@ nm_device_create_and_realize (NMDevice *self,
 {
 	nm_auto_nmpobj const NMPObject *plink_keep_alive = NULL;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const NMPlatformLink *plink = NULL;
+	const NMPlatformLink *plink;
 
 	/* Must be set before device is realized */
-	priv->nm_owned = !nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
-
+	plink = nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
+	priv->nm_owned = !plink || !link_type_compatible (self, plink->type, NULL, NULL);
 	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", priv->nm_owned ? "" : "not ");
 
+	plink = NULL;
 	/* Create any resources the device needs */
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
 		if (!NM_DEVICE_GET_CLASS (self)->create_and_realize (self, connection, parent, &plink, error))
