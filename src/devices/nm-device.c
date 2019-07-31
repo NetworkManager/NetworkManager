@@ -4858,7 +4858,6 @@ nm_device_master_release_slaves (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason reason;
-	gboolean configure = TRUE;
 	CList *iter, *safe;
 
 	/* Don't release the slaves if this connection doesn't belong to NM. */
@@ -4869,14 +4868,10 @@ nm_device_master_release_slaves (NMDevice *self)
 	if (priv->state == NM_DEVICE_STATE_FAILED)
 		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 
-	if (   priv->ifindex <= 0
-	    || !nm_platform_link_get (nm_device_get_platform (self), priv->ifindex))
-		configure = FALSE;
-
 	c_list_for_each_safe (iter, safe, &priv->slaves) {
 		SlaveInfo *info = c_list_entry (iter, SlaveInfo, lst_slave);
 
-		nm_device_master_release_one_slave (self, info->slave, configure, reason);
+		nm_device_master_release_one_slave (self, info->slave, TRUE, reason);
 	}
 }
 
