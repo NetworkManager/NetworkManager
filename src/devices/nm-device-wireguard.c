@@ -265,157 +265,51 @@ done:
 	*out_enabled_v6 = (enabled_v6 == TRUE);
 }
 
-static guint32
-_auto_default_route_find_unused_table (NMPlatform *platform)
-{
-	guint32 table;
-	int is_ipv4;
-
-	for (table = 51820; TRUE; table++) {
-		const NMDedupMultiHeadEntry *head_entry;
-		const guint32 table_coerced = nm_platform_route_table_coerce (table);
-		NMDedupMultiIter iter;
-		const NMPObject *plobj;
-
-		/* find a table/fwmark that is not yet in use. */
-
-		for (is_ipv4 = 0; is_ipv4 < 2; is_ipv4++) {
-			head_entry = nm_platform_lookup_object (platform,
-			                                          is_ipv4
-			                                        ? NMP_OBJECT_TYPE_IP4_ROUTE
-			                                        : NMP_OBJECT_TYPE_IP6_ROUTE,
-			                                        -1);
-			nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-				if (NMP_OBJECT_CAST_IP_ROUTE (plobj)->table_coerced == table_coerced)
-					goto try_next_table;
-			}
-		}
-
-		head_entry = nm_platform_lookup_object_by_addr_family (platform,
-		                                                       NMP_OBJECT_TYPE_ROUTING_RULE,
-		                                                       AF_UNSPEC);
-		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-			const NMPlatformRoutingRule *rr = NMP_OBJECT_CAST_ROUTING_RULE (plobj);
-
-			if (rr->fwmark == table)
-				goto try_next_table;
-		}
-
-		head_entry = nm_platform_lookup_obj_type (platform, NMP_OBJECT_TYPE_LINK);
-		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-			const NMPObject *lnk_wg;
-
-			if (plobj->link.type != NM_LINK_TYPE_WIREGUARD)
-				continue;
-
-			lnk_wg = plobj->_link.netlink.lnk;
-
-			if (!lnk_wg)
-				continue;
-
-			if (NMP_OBJECT_GET_TYPE (lnk_wg) != NMP_OBJECT_TYPE_LNK_WIREGUARD)
-				continue;
-
-			if (NMP_OBJECT_CAST_LNK_WIREGUARD (lnk_wg)->fwmark == table)
-				goto try_next_table;
-		}
-
-		return table;
-try_next_table:
-		;
-	}
-}
-
-#define PRIO_WIDTH ((guint32) 2)
-
-static gboolean
-_auto_default_route_find_priority_exists (const NMDedupMultiHeadEntry *head_entry,
-                                          guint32 priority)
-{
-	NMDedupMultiIter iter;
-	const NMPObject *plobj;
-
-	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-		const NMPlatformRoutingRule *rr = NMP_OBJECT_CAST_ROUTING_RULE (plobj);
-
-		/* we don't differenciate between IPv4 vs. IPv6. There should be no
-		 * conflicting rules with the same priority. */
-		if (   rr->priority >= priority
-		    && rr->priority < priority + PRIO_WIDTH)
-			return TRUE;
-	}
-
-	return FALSE;
-}
+#define AUTO_RANDOM_RANGE 500u
 
 static guint32
-_auto_default_route_find_priority (NMPlatform *platform,
-                                   const char *uuid)
+_auto_default_route_get_auto_fwmark (const char *uuid)
 {
-	const NMDedupMultiHeadEntry *head_entry;
 	guint64 rnd_seed;
-	const guint32 PRIME_NUMBER = 1111567573u;
-	const guint32 RANGE_TOP = ((32766u - 2u * PRIO_WIDTH) / PRIO_WIDTH);
-	const guint32 RANGE_LEN1 = 200u;
-	const guint32 RANGE_LEN2 = (RANGE_TOP - 100u) - RANGE_LEN1;
-	guint32 range_len;
-	guint32 range_top;
-	guint32 prio_candidate = 0;
-	guint32 i_step;
-	guint32 i;
 
-	/* For the auto-default-route policy routing rule we add 4 rules (2 Ipv4 and 2 IPv6).
-	 * Hence, we choose a priority for the first (of the two rules) and the second
-	 * rule gets priority + 1.
-	 * We want a priority that is
-	 *   - unused so far.
-	 *   - smaller than 32766u (which is the priority of the default rules for IPv4 and IPv6)
-	 *   - stable for each connection but different between connections (we hash the UUID
-	 *     as a "random" seed)
-	 *   - if possible, close to 32766u (RANGE_LEN1). Only otherwise fallback to the entire
-	 *     range (RANGE_LEN2).
+	/* we use the generated number as fwmark but also as routing table for
+	 * the default-route.
+	 *
+	 * We pick a number
+	 *
+	 * - based on the connection's UUID (as stable seed).
+	 * - larger than 51820u (arbitrarily)
+	 * - one out of AUTO_RANDOM_RANGE
 	 */
 
-	rnd_seed = c_siphash_hash ((const guint8 [16]) { 0xb9, 0x39, 0x8e, 0xed, 0x15, 0xb3, 0xd1, 0xc4, 0x5f, 0x45, 0x00, 0x4f, 0xec, 0xc2, 0x2b, 0x7e },
+	rnd_seed = c_siphash_hash (NM_HASH_SEED_16 (0xb9, 0x39, 0x8e, 0xed, 0x15, 0xb3, 0xd1, 0xc4, 0x5f, 0x45, 0x00, 0x4f, 0xec, 0xc2, 0x2b, 0x7e),
 	                           (const guint8 *) uuid,
 	                           uuid ? strlen (uuid) + 1u : 0u);
 
-	head_entry = nm_platform_lookup_object_by_addr_family (platform,
-	                                                       NMP_OBJECT_TYPE_ROUTING_RULE,
-	                                                       AF_UNSPEC);
+	return 51820u + (rnd_seed % AUTO_RANDOM_RANGE);
+}
 
-	range_len = RANGE_LEN1;
-	range_top = RANGE_TOP;
+#define PRIO_WIDTH 2u
 
-again:
-	i_step = ((guint32) rnd_seed) % range_len;
-	for (i = 0; i < range_len; i++) {
+static guint32
+_auto_default_route_get_auto_priority (const char *uuid)
+{
+	const guint32 RANGE_TOP = 32766u - 1000u;
+	guint64 rnd_seed;
 
-		/* we sample the range in a stable, but somewhat arbitrary order to
-		 * find an unused priority. */
-		i_step = (i_step + PRIME_NUMBER) % range_len;
+	/* we pick a priority for the routing rules as follows:
+	 *
+	 * - use the connection's UUID as stable seed for the "random" number.
+	 * - have it smaller than RANGE_TOP (32766u - 1000u), where 32766u is the priority of the default
+	 *   rules
+	 * - we add 2 rules (PRIO_WIDTH). Hence only pick even priorites.
+	 * - pick one out of AUTO_RANDOM_RANGE. */
 
-		nm_assert (i_step < range_top);
+	rnd_seed = c_siphash_hash (NM_HASH_SEED_16 (0x99, 0x22, 0x4d, 0x7c, 0x37, 0xda, 0x8e, 0x7b, 0x2f, 0x55, 0x16, 0x7b, 0x75, 0xda, 0x42, 0xdc),
+	                           (const guint8 *) uuid,
+	                           uuid ? strlen (uuid) + 1u : 0u);
 
-		prio_candidate = (range_top - i_step) * PRIO_WIDTH;
-
-		nm_assert (prio_candidate < 32766u);
-
-		if (!_auto_default_route_find_priority_exists (head_entry, prio_candidate))
-			return prio_candidate;
-	}
-
-	if (range_len == RANGE_LEN1) {
-		/* within the narrow range close to RANGE_TOP we couldn't find any unused
-		 * priority. Retry with the entire range... */
-		range_len = RANGE_LEN2;
-		range_top -= RANGE_LEN1;
-		goto again;
-	}
-
-	/* Couldn't find an unused one? Very odd, this really should not happen unless there
-	 * are thousands of rules already. Just pick the last one we sampled. */
-	return prio_candidate;
+	return RANGE_TOP - (((rnd_seed % (PRIO_WIDTH * AUTO_RANDOM_RANGE)) / PRIO_WIDTH) * PRIO_WIDTH);
 }
 
 static void
@@ -459,7 +353,7 @@ _auto_default_route_init (NMDeviceWireGuard *self)
 		if (refreshing_only)
 			new_fwmark = old_fwmark;
 		else
-			new_fwmark = _auto_default_route_find_unused_table (nm_device_get_platform (NM_DEVICE (self)));
+			new_fwmark = _auto_default_route_get_auto_fwmark (nm_connection_get_uuid (connection));
 	}
 
 	priv->auto_default_route_refresh = FALSE;
@@ -513,8 +407,7 @@ get_extra_rules (NMDevice *device)
 			if (priv->auto_default_route_priority_initialized)
 				priority = priv->auto_default_route_priority;
 			else {
-				priority = _auto_default_route_find_priority (nm_device_get_platform (device),
-				                                              nm_connection_get_uuid (connection));
+				priority = _auto_default_route_get_auto_priority (nm_connection_get_uuid (connection));
 				priv->auto_default_route_priority = priority;
 				priv->auto_default_route_priority_initialized = TRUE;
 			}
