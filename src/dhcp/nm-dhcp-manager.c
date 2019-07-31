@@ -123,7 +123,7 @@ _client_factory_get_gtype (const NMDhcpClientFactory *client_factory,
 
 	if (client_factory == &_nm_dhcp_client_factory_internal) {
 		/* we are already using the internal plugin. Nothing to do. */
-		return gtype;
+		goto out;
 	}
 
 	klass = g_type_class_ref (gtype);
@@ -131,13 +131,23 @@ _client_factory_get_gtype (const NMDhcpClientFactory *client_factory,
 	nm_assert (NM_IS_DHCP_CLIENT_CLASS (klass));
 
 	if (addr_family == AF_INET6) {
-		return   klass->ip6_start
-		       ? gtype
-		       : _nm_dhcp_client_factory_internal.get_type ();
+		if (!klass->ip6_start)
+			gtype = _client_factory_get_gtype (&_nm_dhcp_client_factory_internal, addr_family);
+	} else {
+		if (!klass->ip4_start)
+			gtype = _client_factory_get_gtype (&_nm_dhcp_client_factory_internal, addr_family);
 	}
-	return   klass->ip4_start
-	       ? gtype
-	       : _nm_dhcp_client_factory_internal.get_type ();
+
+out:
+	nm_assert (g_type_is_a (gtype, NM_TYPE_DHCP_CLIENT));
+	nm_assert (({
+	               nm_auto_unref_gtypeclass NMDhcpClientClass *k = g_type_class_ref (gtype);
+
+	                  (addr_family == AF_INET6 && k->ip6_start)
+	               || (addr_family == AF_INET  && k->ip4_start);
+	            }));
+
+	return gtype;
 }
 
 /*****************************************************************************/
@@ -228,6 +238,7 @@ client_start (NMDhcpManager *self,
 	NMDhcpClient *client;
 	gboolean success = FALSE;
 	gsize hwaddr_len;
+	GType gtype;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface, NULL);
@@ -271,7 +282,14 @@ client_start (NMDhcpManager *self,
 		g_object_unref (client);
 	}
 
-	client = g_object_new (_client_factory_get_gtype (priv->client_factory, addr_family),
+	gtype = _client_factory_get_gtype (priv->client_factory, addr_family);
+
+	nm_log_trace (LOGD_DHCP , "dhcp%c: creating IPv%c DHCP client of type %s",
+	              nm_utils_addr_family_to_char (addr_family),
+	              nm_utils_addr_family_to_char (addr_family),
+	              g_type_name (gtype));
+
+	client = g_object_new (gtype,
 	                       NM_DHCP_CLIENT_MULTI_IDX, multi_idx,
 	                       NM_DHCP_CLIENT_ADDR_FAMILY, addr_family,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
