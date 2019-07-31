@@ -234,6 +234,15 @@ def secret_to_string(secret):
         return ''
     return secret
 
+def val_to_str(val):
+    if val == NM.Ternary.DEFAULT:
+        return 'default'
+    if val == NM.Ternary.TRUE:
+        return 'true'
+    if val == NM.Ternary.FALSE:
+        return 'false'
+    return repr(val)
+
 ###############################################################################
 
 def wg_read_private_key(privkey_file):
@@ -273,6 +282,9 @@ def do_get(nm_client, connection):
     print('private-key-flags:            %s' % (secret_flags_to_string(s_wg.get_private_key_flags())))
     print('listen-port:                  %s' % (s_wg.get_listen_port()))
     print('fwmark:                       0x%x' % (s_wg.get_fwmark()))
+    print('peer-routes:                  %s' % (val_to_str(s_wg.get_peer_routes())))
+    print('ip4-auto-default-route:       %s' % (val_to_str(s_wg.get_ip4_auto_default_route())))
+    print('ip6-auto-default-route:       %s' % (val_to_str(s_wg.get_ip6_auto_default_route())))
     for i in range(s_wg.get_peers_len()):
         peer = s_wg.get_peer(i)
         print('peer[%d].public-key:           %s' % (i, peer.get_public_key()))
