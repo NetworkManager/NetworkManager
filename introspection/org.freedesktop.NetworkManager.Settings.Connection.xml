@@ -111,7 +111,8 @@
           "0x4" (in-memory-detached),
           "0x8" (in-memory-only),
           "0x10" (volatile),
-          "0x20" (block-autoconnect).
+          "0x20" (block-autoconnect),
+          "0x40" (no-reapply).
           Unknown flags cause the call to fail.
         @args: optional arguments dictionary, for extensibility. Currently no
           arguments are accepted. Specifying unknown keys causes the call
@@ -124,6 +125,12 @@
         the change is only made in memory (without touching an eventual
         profile on disk). If neither 0x1 nor 0x2 is set, the change is made
         in memory only, if the connection is already in memory only.
+        The flags 0x4 (in-memory-detached) and 0x8 (in-memory-only) are like
+        "in-memory", but behave slightly different when migrating the profile
+        from disk to in-memory.
+        The flag 0x20 (block-autoconnect) blocks auto-connect on the updated
+        profile, and 0x40 (no-reapply) prevents "connection.zone" and "connection.metered"
+        properties to take effect on currently active devices.
         Secrets may be part of the update request, and will be either stored in persistent
         storage or sent to a Secret Agent for storage, depending on the flags
         associated with each secret.
