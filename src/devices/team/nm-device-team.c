@@ -774,6 +774,12 @@ release_slave (NMDevice *device,
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	gboolean success;
+	int ifindex;
+
+	ifindex = nm_device_get_ifindex (device);
+	if (   ifindex <= 0
+	    || !nm_platform_link_get (nm_device_get_platform (device), ifindex))
+		configure = FALSE;
 
 	if (configure) {
 		success = nm_platform_link_release (nm_device_get_platform (device),

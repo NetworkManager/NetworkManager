@@ -415,6 +415,12 @@ release_slave (NMDevice *device,
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean success;
 	gs_free char *address = NULL;
+	int ifindex;
+
+	ifindex = nm_device_get_ifindex (device);
+	if (   ifindex <= 0
+	    || !nm_platform_link_get (nm_device_get_platform (device), ifindex))
+		configure = FALSE;
 
 	if (configure) {
 		/* When the last slave is released the bond MAC will be set to a random
