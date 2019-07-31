@@ -2698,6 +2698,7 @@ recheck_assume_connection (NMManager *self,
 	gboolean was_unmanaged = FALSE;
 	gboolean generated = FALSE;
 	NMDeviceState state;
+	gboolean activation_type_assume;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
@@ -2721,10 +2722,42 @@ recheck_assume_connection (NMManager *self,
 	if (!sett_conn)
 		return FALSE;
 
+	activation_type_assume = !generated;
+
+	if (state == NM_DEVICE_STATE_UNMANAGED) {
+		gs_free char *initramfs_lease = g_strdup_printf (RUNSTATEDIR "/initramfs/net.%s.lease",
+		                                                 nm_device_get_iface (device));
+		gs_free char *connection_lease = g_strdup_printf (NMRUNDIR "/dhclient-%s-%s.lease",
+		                                                  nm_settings_connection_get_uuid (sett_conn),
+		                                                  nm_device_get_iface (device));
+
+		if (rename (initramfs_lease, connection_lease) == 0) {
+			/*
+			 * We've managed to steal the lease used by initramfs before it
+			 * killed off the dhclient. We need to take ownership of the configured
+			 * connection and act like the device was configured by us.
+			 * Otherwise the address would just expire.
+			 */
+			_LOG2I (LOGD_DEVICE, device, "assume: taking over an initramfs-configured connection");
+			activation_type_assume = TRUE;
+
+			if (generated) {
+				nm_settings_connection_update (sett_conn,
+				                               NULL,
+				                               NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+				                               0,
+				                               NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
+				                               NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
+				                               "assume-initrd",
+				                               NULL);
+			}
+		}
+	}
+
 	nm_device_sys_iface_state_set (device,
-	                               generated
-	                                   ? NM_DEVICE_SYS_IFACE_STATE_EXTERNAL
-	                                   : NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+	                                 activation_type_assume
+	                               ? NM_DEVICE_SYS_IFACE_STATE_ASSUME
+	                               : NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
 
 	/* Move device to DISCONNECTED to activate the connection */
 	if (state == NM_DEVICE_STATE_UNMANAGED) {
@@ -2768,8 +2801,8 @@ recheck_assume_connection (NMManager *self,
 		                                 NULL,
 		                                 device,
 		                                 subject,
-		                                 generated ? NM_ACTIVATION_TYPE_EXTERNAL : NM_ACTIVATION_TYPE_ASSUME,
-		                                 generated ? NM_ACTIVATION_REASON_EXTERNAL : NM_ACTIVATION_REASON_ASSUME,
+		                                 activation_type_assume ? NM_ACTIVATION_TYPE_ASSUME : NM_ACTIVATION_TYPE_EXTERNAL,
+		                                 activation_type_assume ? NM_ACTIVATION_REASON_ASSUME : NM_ACTIVATION_REASON_EXTERNAL,
 		                                 NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY,
 		                                 &error);
 
@@ -2785,7 +2818,8 @@ recheck_assume_connection (NMManager *self,
 				                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 			}
 
-			if (generated) {
+			if (   generated
+			    && !activation_type_assume) {
 				_LOG2D (LOGD_DEVICE, device, "assume: deleting generated connection after assuming failed");
 				nm_settings_connection_delete (sett_conn, FALSE);
 			} else {
