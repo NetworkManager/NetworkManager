@@ -89,10 +89,11 @@ _client_factory_available (const NMDhcpClientFactory *client_factory)
 	return NULL;
 }
 
-static const NMDhcpClientFactory *
-_client_factory_get_effective (const NMDhcpClientFactory *client_factory,
-                               int addr_family)
+static GType
+_client_factory_get_gtype (const NMDhcpClientFactory *client_factory,
+                           int addr_family)
 {
+	GType gtype;
 	nm_auto_unref_gtypeclass NMDhcpClientClass *klass = NULL;
 
 	nm_assert (client_factory);
@@ -118,23 +119,25 @@ _client_factory_get_effective (const NMDhcpClientFactory *client_factory,
 	 * to those plugins. But we don't intend to do so. The internal plugin is the way forward and
 	 * not extending other plugins. */
 
+	gtype = client_factory->get_type ();
+
 	if (client_factory == &_nm_dhcp_client_factory_internal) {
-		/* already using internal plugin. Nothing to do. */
-		return client_factory;
+		/* we are already using the internal plugin. Nothing to do. */
+		return gtype;
 	}
 
-	klass = g_type_class_ref (client_factory->get_type ());
+	klass = g_type_class_ref (gtype);
 
 	nm_assert (NM_IS_DHCP_CLIENT_CLASS (klass));
 
 	if (addr_family == AF_INET6) {
 		return   klass->ip6_start
-		       ? client_factory
-		       : &_nm_dhcp_client_factory_internal;
+		       ? gtype
+		       : _nm_dhcp_client_factory_internal.get_type ();
 	}
 	return   klass->ip4_start
-	       ? client_factory
-	       : &_nm_dhcp_client_factory_internal;
+	       ? gtype
+	       : _nm_dhcp_client_factory_internal.get_type ();
 }
 
 /*****************************************************************************/
@@ -225,7 +228,6 @@ client_start (NMDhcpManager *self,
 	NMDhcpClient *client;
 	gboolean success = FALSE;
 	gsize hwaddr_len;
-	const NMDhcpClientFactory *client_factory;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface, NULL);
@@ -255,8 +257,6 @@ client_start (NMDhcpManager *self,
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	client_factory = _client_factory_get_effective (priv->client_factory, addr_family);
-
 	/* Kill any old client instance */
 	client = get_client_for_ifindex (self, addr_family, ifindex);
 	if (client) {
@@ -271,7 +271,7 @@ client_start (NMDhcpManager *self,
 		g_object_unref (client);
 	}
 
-	client = g_object_new (client_factory->get_type (),
+	client = g_object_new (_client_factory_get_gtype (priv->client_factory, addr_family),
 	                       NM_DHCP_CLIENT_MULTI_IDX, multi_idx,
 	                       NM_DHCP_CLIENT_ADDR_FAMILY, addr_family,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
