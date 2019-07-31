@@ -119,7 +119,10 @@ _client_factory_get_gtype (const NMDhcpClientFactory *client_factory,
 	 * to those plugins. But we don't intend to do so. The internal plugin is the way forward and
 	 * not extending other plugins. */
 
-	gtype = client_factory->get_type ();
+	if (client_factory->get_type_per_addr_family)
+		gtype = client_factory->get_type_per_addr_family (addr_family);
+	else
+		gtype = client_factory->get_type ();
 
 	if (client_factory == &_nm_dhcp_client_factory_internal) {
 		/* we are already using the internal plugin. Nothing to do. */
@@ -547,9 +550,10 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 		if (!f)
 			continue;
 
-		nm_log_dbg (LOGD_DHCP, "dhcp-init: enabled DHCP client '%s' (%s)%s",
-		            f->name, g_type_name (f->get_type ()),
-		            _client_factory_available (f) ? "" : " (not available)");
+		nm_log_dbg (LOGD_DHCP, "dhcp-init: enabled DHCP client '%s'%s%s",
+		            f->name,
+		            _client_factory_available (f) ? "" : " (not available)",
+		            f->experimental ? " (undocumented internal plugin)" : "");
 	}
 
 	/* Client-specific setup */

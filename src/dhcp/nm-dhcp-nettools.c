@@ -1272,7 +1272,7 @@ nm_dhcp_nettools_class_init (NMDhcpNettoolsClass *class)
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_nettools = {
-	.name = "nettools",
-	.get_type = nm_dhcp_nettools_get_type,
-	.get_path = NULL,
+	.name         = "nettools",
+	.get_type     = nm_dhcp_nettools_get_type,
+	.experimental = TRUE,
 };

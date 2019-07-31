@@ -207,15 +207,18 @@ void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
  *****************************************************************************/
 
 typedef struct {
-	GType (*get_type)(void);
+	GType (*get_type) (void);
+	GType (*get_type_per_addr_family) (int addr_family);
 	const char *name;
 	const char *(*get_path) (void);
+	bool experimental:1;
 } NMDhcpClientFactory;
 
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcd;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_internal;
+extern const NMDhcpClientFactory _nm_dhcp_client_factory_systemd;
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_nettools;
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */
