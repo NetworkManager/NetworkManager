@@ -1869,16 +1869,19 @@ add_and_activate_info_free (AddAndActivateInfo *info)
 	nm_g_slice_free (info);
 }
 
+NM_AUTO_DEFINE_FCN0 (AddAndActivateInfo *, _nm_auto_free_add_and_activate_info, add_and_activate_info_free)
+#define nm_auto_free_add_and_activate_info nm_auto (_nm_auto_free_add_and_activate_info)
+
 static void
 add_and_activate_cb (GObject *client,
                      GAsyncResult *result,
                      gpointer user_data)
 {
-	AddAndActivateInfo *info = user_data;
+	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
-	NMActiveConnection *active;
-	GError *error = NULL;
+	gs_unref_object NMActiveConnection *active = NULL;
+	gs_free_error GError *error = NULL;
 
 	if (info->create)
 		active = nm_client_add_and_activate_connection_finish (NM_CLIENT (client), result, &error);
@@ -1886,37 +1889,36 @@ add_and_activate_cb (GObject *client,
 		active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
-		if (info->hotspot)
+		if (info->hotspot) {
 			g_string_printf (nmc->return_text, _("Error: Failed to setup a Wi-Fi hotspot: %s"),
 			                 error->message);
-		else if (info->create)
+		} else if (info->create) {
 			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: %s"),
 			                 error->message);
-		else
+		} else {
 			g_string_printf (nmc->return_text, _("Error: Failed to activate connection: %s"),
 			                 error->message);
-		g_error_free (error);
+		}
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
-	} else {
-		if (nmc->nowait_flag) {
-			g_object_unref (active);
-			quit ();
-		} else {
-			g_object_ref (device);
-			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
-			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
-
-			connected_state_cb (device, active);
-
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
-
-			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
-				progress_id = g_timeout_add (120, progress_cb, device);
-		}
+		return;
 	}
 
-	add_and_activate_info_free (info);
+	if (nmc->nowait_flag) {
+		quit ();
+		return;
+	}
+
+	g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
+	g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
+	connected_state_cb (g_object_ref (device),
+	                    g_steal_pointer (&active));
+
+	g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
+
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
+		progress_id = g_timeout_add (120, progress_cb, device);
 }
 
 static void
@@ -1945,9 +1947,9 @@ create_connect_connection_for_device (AddAndActivateInfo *info)
 static void
 connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 {
-	AddAndActivateInfo *info = user_data;
+	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
-	NMActiveConnection *active;
+	gs_unref_object NMActiveConnection *active = NULL;
 	GError *error = NULL;
 	const GPtrArray *devices;
 	NMDevice *device;
@@ -1958,7 +1960,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		/* If no connection existed for the device, create one and activate it */
 		if (g_error_matches (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION)) {
 			info->create = TRUE;
-			create_connect_connection_for_device (info);
+			create_connect_connection_for_device (g_steal_pointer (&info));
 			return;
 		}
 
@@ -1967,42 +1969,41 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
-	} else {
-		g_assert (active);
-		devices = nm_active_connection_get_devices (active);
-		if (devices->len == 0) {
-			g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
-			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-			g_object_unref (active);
-			quit ();
-			add_and_activate_info_free (info);
-			return;
-		}
-
-		device = g_ptr_array_index (devices, 0);
-
-		if (nmc->nowait_flag) {
-			g_object_unref (active);
-			quit ();
-		} else {
-			if (nmc->secret_agent) {
-				NMRemoteConnection *connection = nm_active_connection_get_connection (active);
-
-				nm_secret_agent_simple_enable (nmc->secret_agent,
-				                               nm_connection_get_path (NM_CONNECTION (connection)));
-			}
-
-			g_object_ref (device);
-			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
-			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
-
-			connected_state_cb (device, active);
-
-			/* Start timer not to loop forever if "notify::state" signal is not issued */
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
-		}
+		return;
 	}
-	add_and_activate_info_free (info);
+
+	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
+
+	devices = nm_active_connection_get_devices (active);
+	if (devices->len == 0) {
+		g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+		return;
+	}
+
+	device = g_ptr_array_index (devices, 0);
+
+	if (nmc->nowait_flag) {
+		quit ();
+		return;
+	}
+
+	if (nmc->secret_agent) {
+		NMRemoteConnection *connection = nm_active_connection_get_connection (active);
+
+		nm_secret_agent_simple_enable (nmc->secret_agent,
+		                               nm_connection_get_path (NM_CONNECTION (connection)));
+	}
+
+	g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
+	g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
+	connected_state_cb (g_object_ref (device),
+	                    g_steal_pointer (&active));
+
+	/* Start timer not to loop forever if "notify::state" signal is not issued */
+	g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 }
 
 static NMCResultCode
@@ -3148,7 +3149,7 @@ static void
 activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
 	NMRemoteConnection *remote_con = NM_REMOTE_CONNECTION (source_object);
-	AddAndActivateInfo *info = user_data;
+	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	gs_unref_variant GVariant *ret = NULL;
 	GError *error = NULL;
@@ -3160,7 +3161,6 @@ activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_da
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_error_free (error);
 		quit ();
-		add_and_activate_info_free (info);
 		return;
 	}
 
@@ -3170,7 +3170,7 @@ activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_da
 	                                     info->specific_object,
 	                                     NULL,
 	                                     add_and_activate_cb,
-	                                     info);
+	                                     g_steal_pointer (&info));
 }
 
 static NMCResultCode
