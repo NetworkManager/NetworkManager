@@ -3186,14 +3186,11 @@ nm_device_check_connectivity (NMDevice *self,
                               NMDeviceConnectivityCallback callback,
                               gpointer user_data)
 {
-	NMDeviceConnectivityHandle *handle;
-
 	if (!concheck_is_possible (self))
 		return NULL;
 
 	concheck_periodic_schedule_set (self, addr_family, CONCHECK_SCHEDULE_CHECK_EXTERNAL);
-	handle = concheck_start (self, addr_family, callback, user_data, FALSE);
-	return handle;
+	return concheck_start (self, addr_family, callback, user_data, FALSE);
 }
 
 void
@@ -15117,6 +15114,7 @@ _set_state_full (NMDevice *self,
 	gboolean no_firmware = FALSE;
 	NMSettingsConnection *sett_conn;
 	NMSettingSriov *s_sriov;
+	gboolean concheck_now;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -15452,8 +15450,11 @@ _set_state_full (NMDevice *self,
 	if (ip_config_valid (old_state) && !ip_config_valid (state))
 	    notify_ip_properties (self);
 
-	concheck_update_interval (self, AF_INET, state == NM_DEVICE_STATE_ACTIVATED);
-	concheck_update_interval (self, AF_INET6, state == NM_DEVICE_STATE_ACTIVATED);
+	concheck_now =    NM_IN_SET (state, NM_DEVICE_STATE_ACTIVATED,
+	                                    NM_DEVICE_STATE_DISCONNECTED)
+	               || old_state >= NM_DEVICE_STATE_ACTIVATED;
+	concheck_update_interval (self, AF_INET, concheck_now);
+	concheck_update_interval (self, AF_INET6, concheck_now);
 
 	/* Dispose of the cached activation request */
 	if (req)
