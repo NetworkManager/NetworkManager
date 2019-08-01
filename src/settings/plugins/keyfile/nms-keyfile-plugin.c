@@ -1090,7 +1090,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	gboolean hard_failure = FALSE;
 	NMSKeyfileStorage *storage;
 	gs_unref_object NMSKeyfileStorage *storage_result = NULL;
-	gboolean nmmeta_success = FALSE;
+	gboolean nmmeta_errno;
 	gs_free char *nmmeta_filename = NULL;
 	NMSKeyfileStorageType storage_type;
 	const char *loaded_path;
@@ -1116,6 +1116,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 			       simulate ? "simulate " : "",
 			       loaded_path ? "write" : "delete",
 			       uuid);
+			nmmeta_errno = 0;
 			hard_failure = TRUE;
 			goto out;
 		}
@@ -1124,29 +1125,30 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	}
 
 	if (simulate) {
-		nmmeta_success = TRUE;
+		nmmeta_errno = 0;
 		nmmeta_filename = nms_keyfile_nmmeta_filename (dirname, uuid, FALSE);
 	} else {
-		nmmeta_success = nms_keyfile_nmmeta_write (dirname,
-		                                           uuid,
-		                                           loaded_path,
-		                                           FALSE,
-		                                           shadowed_storage,
-		                                           &nmmeta_filename);
+		nmmeta_errno = nms_keyfile_nmmeta_write (dirname,
+		                                         uuid,
+		                                         loaded_path,
+		                                         FALSE,
+		                                         shadowed_storage,
+		                                         &nmmeta_filename);
 	}
 
-	_LOGT ("commit: %s nmmeta file \"%s\"%s%s%s%s%s%s %s",
+	_LOGT ("commit: %s nmmeta file \"%s\"%s%s%s%s%s%s %s%s%s%s",
 	       loaded_path ? "writing" : "deleting",
 	       nmmeta_filename,
 	       NM_PRINT_FMT_QUOTED (loaded_path, " (pointing to \"", loaded_path, "\")", ""),
 	       NM_PRINT_FMT_QUOTED (shadowed_storage, " (shadows \"", shadowed_storage, "\")", ""),
 	       simulate
 	       ? "simulated"
-	       : (  nmmeta_success
-	          ? "succeeded"
-	          : "failed"));
+	       : (  nmmeta_errno < 0
+	          ? "failed"
+	          : "succeeded"),
+	       NM_PRINT_FMT_QUOTED (nmmeta_errno < 0, " (", nm_strerror_native (nm_errno_native (nmmeta_errno)), ")", ""));
 
-	if (!nmmeta_success)
+	if (nmmeta_errno < 0)
 		goto out;
 
 	storage = nm_sett_util_storages_lookup_by_filename (&priv->storages, nmmeta_filename);
@@ -1177,12 +1179,13 @@ nms_keyfile_plugin_set_nmmeta_tombstone (NMSKeyfilePlugin *self,
 	}
 
 out:
-	nm_assert (!nmmeta_success || !hard_failure);
-	nm_assert (nmmeta_success  || !storage_result);
+	nm_assert (nmmeta_errno <= 0);
+	nm_assert (nmmeta_errno < 0  || !hard_failure);
+	nm_assert (nmmeta_errno == 0 || !storage_result);
 
 	NM_SET_OUT (out_hard_failure, hard_failure);
 	NM_SET_OUT (out_storage, (NMSettingsStorage *) g_steal_pointer (&storage_result));
-	return nmmeta_success;
+	return nmmeta_errno >= 0;
 }
 
 /*****************************************************************************/

@@ -206,7 +206,7 @@ nms_keyfile_nmmeta_read_from_file (const char *full_filename,
 	return TRUE;
 }
 
-gboolean
+int
 nms_keyfile_nmmeta_write (const char *dirname,
                           const char *uuid,
                           const char *loaded_path,
@@ -216,6 +216,7 @@ nms_keyfile_nmmeta_write (const char *dirname,
 {
 	gs_free char *full_filename_tmp = NULL;
 	gs_free char *full_filename = NULL;
+	int errsv;
 
 	nm_assert (dirname && dirname[0] == '/');
 	nm_assert (   nm_utils_is_uuid (uuid)
@@ -231,13 +232,15 @@ nms_keyfile_nmmeta_write (const char *dirname,
 	(void) unlink (full_filename_tmp);
 
 	if (!loaded_path) {
-		gboolean success = TRUE;
-
 		full_filename_tmp[strlen (full_filename_tmp) - 1] = '\0';
-		if (unlink (full_filename_tmp) != 0)
-			success = NM_IN_SET (errno, ENOENT);
+		errsv = 0;
+		if (unlink (full_filename_tmp) != 0) {
+			errsv = -NM_ERRNO_NATIVE (errno);
+			if (errsv == -ENOENT)
+				errsv = 0;
+		}
 		NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
-		return success;
+		return errsv;
 	}
 
 	if (loaded_path_allow_relative) {
@@ -270,30 +273,32 @@ nms_keyfile_nmmeta_write (const char *dirname,
 		                                 contents,
 		                                 length,
 		                                 0600,
-		                                 NULL,
+		                                 &errsv,
 		                                 NULL)) {
 			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
-			return FALSE;
+			return -NM_ERRNO_NATIVE (errsv);
 		}
 	} else {
 		/* we only have the "loaded_path" to store. That is commonly used for the tombstones to
 		 * link to /dev/null. A symlink is sufficient to store that ammount of information.
 		 * No need to bother with a keyfile. */
 		if (symlink (loaded_path, full_filename_tmp) != 0) {
+			errsv = -NM_ERRNO_NATIVE (errno);
 			full_filename_tmp[strlen (full_filename_tmp) - 1] = '\0';
 			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
-			return FALSE;
+			return errsv;
 		}
 
 		if (rename (full_filename_tmp, full_filename) != 0) {
+			errsv = -NM_ERRNO_NATIVE (errno);
 			(void) unlink (full_filename_tmp);
 			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
-			return FALSE;
+			return errsv;
 		}
 	}
 
 	NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename));
-	return TRUE;
+	return 0;
 }
 
 /*****************************************************************************/
