@@ -343,8 +343,6 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 		return TRUE;
 
 	msg = nl80211_alloc_msg (self, NL80211_CMD_SET_WOWLAN, 0);
-	if (!msg)
-		return FALSE;
 
 	triggers = nla_nest_start (msg, NL80211_ATTR_WOWLAN_TRIGGERS);
 	if (!triggers)
@@ -636,14 +634,12 @@ nl80211_get_ap_info (NMWifiUtilsNl80211 *self,
 		return;
 
 	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_STATION, 0);
-	if (msg) {
-		NLA_PUT (msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
+	NLA_PUT (msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
 
-		nl80211_send_and_recv (self, msg, nl80211_station_handler, sta_info);
-		if (!sta_info->signal_valid) {
-			/* Fall back to bss_info signal quality (both are in percent) */
-			sta_info->signal = bss_info.beacon_signal;
-		}
+	nl80211_send_and_recv (self, msg, nl80211_station_handler, sta_info);
+	if (!sta_info->signal_valid) {
+		/* Fall back to bss_info signal quality (both are in percent) */
+		sta_info->signal = bss_info.beacon_signal;
 	}
 
 	return;
