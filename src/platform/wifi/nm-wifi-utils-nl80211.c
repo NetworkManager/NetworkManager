@@ -347,6 +347,8 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 		return FALSE;
 
 	triggers = nla_nest_start (msg, NL80211_ATTR_WOWLAN_TRIGGERS);
+	if (!triggers)
+		goto nla_put_failure;
 
 	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY))
 		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_ANY);
