@@ -233,8 +233,10 @@ _lldp_attr_take_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, char *str)
 	pdata = &pdata[attr_id];
 
 	/* we ignore duplicate fields silently. */
-	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE)
+	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE) {
+		g_free (str);
 		return;
+	}
 
 	pdata->attr_type = LLDP_ATTR_TYPE_STRING;
 	pdata->v_string = str;
