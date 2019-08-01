@@ -5015,7 +5015,6 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_INTERFACE_NAME,
 	    .is_cli_option =                TRUE,
 	    .property_alias =               "ifname",
-	    .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 	    .prompt =                       NM_META_TEXT_PROMPT_IFNAME,
 	    .property_type = DEFINE_PROPERTY_TYPE (
 	        .get_fcn =                  _get_fcn_gobject,
