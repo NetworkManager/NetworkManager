@@ -125,7 +125,7 @@ nm_key_file_db_ref (NMKeyFileDB *self)
 
 	g_return_val_if_fail (_IS_KEY_FILE_DB (self, FALSE, TRUE), NULL);
 
-	nm_assert (self->ref_count <= G_MAXUINT);
+	nm_assert (self->ref_count < G_MAXUINT);
 	self->ref_count++;
 	return self;
 }
