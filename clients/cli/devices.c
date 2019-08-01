@@ -1836,17 +1836,37 @@ connected_state_cb (NMDevice *device, NMActiveConnection *active)
 typedef struct {
 	NmCli *nmc;
 	NMDevice *device;
-	gboolean hotspot;
-	gboolean create;
 	char *specific_object;
+	bool hotspot:1;
+	bool create:1;
 } AddAndActivateInfo;
+
+static AddAndActivateInfo *
+add_and_activate_info_new (NmCli *nmc,
+                           NMDevice *device,
+                           gboolean hotspot,
+                           gboolean create,
+                           const char *specific_object)
+{
+	AddAndActivateInfo *info;
+
+	info = g_slice_new (AddAndActivateInfo);
+	*info = (AddAndActivateInfo) {
+		.nmc             = nmc,
+		.device          = g_object_ref (device),
+		.hotspot         = hotspot,
+		.create          = create,
+		.specific_object = g_strdup (specific_object),
+	};
+	return info;
+}
 
 static void
 add_and_activate_info_free (AddAndActivateInfo *info)
 {
 	g_object_unref (info->device);
 	g_free (info->specific_object);
-	g_free (info);
+	nm_g_slice_free (info);
 }
 
 static void
@@ -1854,7 +1874,7 @@ add_and_activate_cb (GObject *client,
                      GAsyncResult *result,
                      gpointer user_data)
 {
-	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
 	NMActiveConnection *active;
@@ -1925,7 +1945,7 @@ create_connect_connection_for_device (AddAndActivateInfo *info)
 static void
 connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 {
-	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	NMActiveConnection *active;
 	GError *error = NULL;
@@ -2027,10 +2047,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 		                  nmc);
 	}
 
-	info = g_malloc0 (sizeof (AddAndActivateInfo));
-	info->nmc = nmc;
-	info->device = g_object_ref (device);
-	info->hotspot = FALSE;
+	info = add_and_activate_info_new (nmc, device, FALSE, FALSE, NULL);
 
 	nm_client_activate_connection_async (nmc->client,
 	                                     NULL,  /* let NM find a connection automatically */
@@ -3131,7 +3148,7 @@ static void
 activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
 	NMRemoteConnection *remote_con = NM_REMOTE_CONNECTION (source_object);
-	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	gs_unref_variant GVariant *ret = NULL;
 	GError *error = NULL;
@@ -3560,12 +3577,7 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = g_malloc0 (sizeof (AddAndActivateInfo));
-	info->nmc = nmc;
-	info->device = g_object_ref (device);
-	info->hotspot = FALSE;
-	info->create = !remote_con;
-	info->specific_object = g_strdup (nm_object_get_path (NM_OBJECT (ap)));
+	info = add_and_activate_info_new (nmc, device, FALSE, !remote_con, nm_object_get_path (NM_OBJECT (ap)));
 
 	if (remote_con) {
 		nm_remote_connection_update2 (remote_con,
@@ -3932,11 +3944,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = g_malloc0 (sizeof (AddAndActivateInfo));
-	info->nmc = nmc;
-	info->device = g_object_ref (device);
-	info->hotspot = TRUE;
-	info->create = TRUE;
+	info = add_and_activate_info_new (nmc, device, TRUE, TRUE, NULL);
 
 	nm_client_add_and_activate_connection_async (nmc->client,
 	                                             connection,
