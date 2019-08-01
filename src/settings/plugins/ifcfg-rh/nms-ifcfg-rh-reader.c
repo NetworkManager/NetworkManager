@@ -3629,7 +3629,10 @@ make_wpa_setting (shvarFile *ifcfg,
 	wpa_sae = nm_streq0 (v, "SAE");
 	wpa_eap = nm_streq0 (v, "WPA-EAP");
 	ieee8021x = nm_streq0 (v, "IEEE8021X");
-	if (!wpa_psk && !wpa_sae && !wpa_eap && !ieee8021x)
+	if (   !wpa_psk
+	    && !wpa_sae
+	    && !wpa_eap
+	    && !ieee8021x)
 		return NULL; /* Not WPA or Dynamic WEP */
 
 	/* WPS */
@@ -3693,7 +3696,9 @@ make_wpa_setting (shvarFile *ifcfg,
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae", NULL);
 		else
 			g_assert_not_reached ();
-	} else if (wpa_eap || ieee8021x) {
+	} else {
+		nm_assert (wpa_eap || ieee8021x);
+
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
 		if (adhoc) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -3710,10 +3715,6 @@ make_wpa_setting (shvarFile *ifcfg,
 
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, lower, NULL);
 		}
-	} else {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Unknown wireless KEY_MGMT type '%s'", v);
-		return NULL;
 	}
 
 	i_val = NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT;
