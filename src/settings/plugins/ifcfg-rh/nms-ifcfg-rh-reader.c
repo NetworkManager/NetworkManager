@@ -3692,10 +3692,10 @@ make_wpa_setting (shvarFile *ifcfg,
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
 		else if (wpa_psk)
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
-		else if (wpa_sae)
+		else {
+			nm_assert (wpa_sae);
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae", NULL);
-		else
-			g_assert_not_reached ();
+		}
 	} else {
 		nm_assert (wpa_eap || ieee8021x);
 
