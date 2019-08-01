@@ -225,7 +225,7 @@ _lldp_attr_set_str (LldpAttrData *pdata, LldpAttrId attr_id, const char *v_strin
 }
 
 static void
-_lldp_attr_take_str_ptr (LldpAttrData *pdata, LldpAttrId attr_id, char *str)
+_lldp_attr_set_str_take (LldpAttrData *pdata, LldpAttrId attr_id, char *str)
 {
 	nm_assert (pdata);
 	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_STRING);
@@ -268,8 +268,7 @@ _lldp_attr_set_vardict (LldpAttrData *pdata, LldpAttrId attr_id, GVariant *varia
 
 	/* we ignore duplicate fields silently */
 	if (pdata->attr_type != LLDP_ATTR_TYPE_NONE) {
-		if (g_variant_is_floating (variant))
-			g_variant_unref (variant);
+		nm_g_variant_unref_floating (variant);
 		return;
 	}
 
@@ -688,9 +687,10 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 				                        g_variant_dict_end (&dict));
 
 				_lldp_attr_set_uint32 (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VID, vid);
-				_lldp_attr_take_str_ptr (neigh->attrs,
-				                         LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME,
-				                         name_to_free ?: g_strdup (name));
+				if (name_to_free)
+					_lldp_attr_set_str_take (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME, name_to_free);
+				else
+					_lldp_attr_set_str (neigh->attrs, LLDP_ATTR_ID_IEEE_802_1_VLAN_NAME, name);
 				break;
 			}
 			default:
