@@ -335,7 +335,7 @@ nm_utils_file_get_contents (int dirfd,
  * Copied from GLib's g_file_set_contents() et al., but allows
  * specifying a mode for the new file.
  */
-gboolean
+int
 nm_utils_file_set_contents (const char *filename,
                             const char *contents,
                             gssize length,
@@ -349,10 +349,10 @@ nm_utils_file_set_contents (const char *filename,
 	int fd;
 	char bstrerr[NM_STRERROR_BUFSIZE];
 
-	g_return_val_if_fail (filename, FALSE);
-	g_return_val_if_fail (contents || !length, FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
-	g_return_val_if_fail (length >= -1, FALSE);
+	g_return_val_if_fail (filename, -EINVAL);
+	g_return_val_if_fail (contents || !length, -EINVAL);
+	g_return_val_if_fail (!error || !*error, -EINVAL);
+	g_return_val_if_fail (length >= -1, -EINVAL);
 
 	if (length == -1)
 		length = strlen (contents);
@@ -360,33 +360,32 @@ nm_utils_file_set_contents (const char *filename,
 	tmp_name = g_strdup_printf ("%s.XXXXXX", filename);
 	fd = g_mkstemp_full (tmp_name, O_RDWR | O_CLOEXEC, mode);
 	if (fd < 0) {
-		errsv = errno;
+		errsv = NM_ERRNO_NATIVE (errno);
 		g_set_error (error,
 		             G_FILE_ERROR,
 		             g_file_error_from_errno (errsv),
 		             "failed to create file %s: %s",
 		             tmp_name,
 		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-		return FALSE;
+		return -errsv;
 	}
 
 	while (length > 0) {
 		s = write (fd, contents, length);
 		if (s < 0) {
-			errsv = errno;
+			errsv = NM_ERRNO_NATIVE (errno);
 			if (errsv == EINTR)
 				continue;
 
 			nm_close (fd);
 			unlink (tmp_name);
-
 			g_set_error (error,
 			             G_FILE_ERROR,
 			             g_file_error_from_errno (errsv),
 			             "failed to write to file %s: %s",
 			             tmp_name,
 			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-			return FALSE;
+			return -errsv;
 		}
 
 		g_assert (s <= length);
@@ -404,25 +403,23 @@ nm_utils_file_set_contents (const char *filename,
 	if (   lstat (filename, &statbuf) == 0
 	    && statbuf.st_size > 0) {
 		if (fsync (fd) != 0) {
-			errsv = errno;
-
+			errsv = NM_ERRNO_NATIVE (errno);
 			nm_close (fd);
 			unlink (tmp_name);
-
 			g_set_error (error,
 			             G_FILE_ERROR,
 			             g_file_error_from_errno (errsv),
 			             "failed to fsync %s: %s",
 			             tmp_name,
 			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-			return FALSE;
+			return -errsv;
 		}
 	}
 
 	nm_close (fd);
 
 	if (rename (tmp_name, filename)) {
-		errsv = errno;
+		errsv = NM_ERRNO_NATIVE (errno);
 		unlink (tmp_name);
 		g_set_error (error,
 		             G_FILE_ERROR,
@@ -431,10 +428,10 @@ nm_utils_file_set_contents (const char *filename,
 		             tmp_name,
 		             filename,
 		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-		return FALSE;
+		return -errsv;
 	}
 
-	return TRUE;
+	return 0;
 }
 
 /**

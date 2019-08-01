@@ -2695,11 +2695,11 @@ _host_id_read (guint8 **out_host_id,
 			nm_log_warn (LOGD_CORE, "secret-key: failure to generate good random data for secret-key (use non-persistent key)");
 		else if (nm_utils_get_testing ()) {
 			/* for test code, we don't write the generated secret-key to disk. */
-		} else if (!nm_utils_file_set_contents (SECRET_KEY_FILE,
-		                                        (const char *) new_content,
-		                                        len,
-		                                        0600,
-		                                        &error)) {
+		} else if (nm_utils_file_set_contents (SECRET_KEY_FILE,
+		                                       (const char *) new_content,
+		                                       len,
+		                                       0600,
+		                                       &error) < 0) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
 			             SECRET_KEY_FILE, error->message);
 			g_clear_error (&error);
