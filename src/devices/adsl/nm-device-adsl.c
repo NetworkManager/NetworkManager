@@ -207,7 +207,7 @@ br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 	memset (&be, 0, sizeof (be));
 	be.backend_num = ATM_BACKEND_BR2684;
 	be.ifspec.method = BR2684_FIND_BYIFNAME;
-	strcpy (be.ifspec.spec.ifname, priv->nas_ifname);
+	nm_utils_ifname_cpy (be.ifspec.spec.ifname, priv->nas_ifname);
 	be.fcs_in = BR2684_FCSIN_NO;
 	be.fcs_out = BR2684_FCSOUT_NO;
 	be.encaps = is_llc ? BR2684_ENCAPS_LLC : BR2684_ENCAPS_VC;
