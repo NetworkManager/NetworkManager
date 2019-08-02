@@ -5989,10 +5989,12 @@ _nm_utils_bridge_vlans_from_dbus (NMSetting *setting,
 		if (vid_start > vid_end)
 			continue;
 
-		g_variant_lookup (vlan_var, "pvid", "b", &pvid);
+		if (!g_variant_lookup (vlan_var, "pvid", "b", &pvid))
+			pvid = FALSE;
 		if (pvid && vid_start != vid_end)
 			continue;
-		g_variant_lookup (vlan_var, "untagged", "b", &untagged);
+		if (!g_variant_lookup (vlan_var, "untagged", "b", &untagged))
+			untagged = FALSE;
 
 		vlan = nm_bridge_vlan_new (vid_start, vid_end);
 		nm_bridge_vlan_set_untagged (vlan, untagged);
