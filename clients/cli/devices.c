@@ -1838,7 +1838,16 @@ typedef struct {
 	NMDevice *device;
 	gboolean hotspot;
 	gboolean create;
+	char *specific_object;
 } AddAndActivateInfo;
+
+static void
+add_and_activate_info_free (AddAndActivateInfo *info)
+{
+	g_object_unref (info->device);
+	g_free (info->specific_object);
+	g_free (info);
+}
 
 static void
 add_and_activate_cb (GObject *client,
@@ -1887,7 +1896,7 @@ add_and_activate_cb (GObject *client,
 		}
 	}
 
-	g_free (info);
+	add_and_activate_info_free (info);
 }
 
 static void
@@ -1946,7 +1955,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			g_object_unref (active);
 			quit ();
-			g_free (info);
+			add_and_activate_info_free (info);
 			return;
 		}
 
@@ -1973,7 +1982,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
 	}
-	g_free (info);
+	add_and_activate_info_free (info);
 }
 
 static NMCResultCode
@@ -2020,7 +2029,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
-	info->device = device;
+	info->device = g_object_ref (device);
 	info->hotspot = FALSE;
 
 	nm_client_activate_connection_async (nmc->client,
@@ -3118,14 +3127,44 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static void
+activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+	NMRemoteConnection *remote_con = NM_REMOTE_CONNECTION (source_object);
+	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	gs_unref_variant GVariant *ret = NULL;
+	GError *error = NULL;
+
+	ret = nm_remote_connection_update2_finish (remote_con, res, &error);
+
+	if (!ret) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_error_free (error);
+		quit ();
+		add_and_activate_info_free (info);
+		return;
+	}
+
+	nm_client_activate_connection_async (nmc->client,
+	                                     NM_CONNECTION (remote_con),
+	                                     info->device,
+	                                     info->specific_object,
+	                                     NULL,
+	                                     add_and_activate_cb,
+	                                     info);
+}
+
 static NMCResultCode
-do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
+do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
 	NM80211ApFlags ap_flags;
 	NM80211ApSecurityFlags ap_wpa_flags;
 	NM80211ApSecurityFlags ap_rsn_flags;
+	NMRemoteConnection *remote_con = NULL;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -3146,7 +3185,6 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	char *passwd_ask = NULL;
 	const GPtrArray *avail_cons;
 	gboolean name_match = FALSE;
-	gboolean existing_con = FALSE;
 	int i;
 
 	/* Set default timeout waiting for operation completion. */
@@ -3395,22 +3433,22 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			/* ap has been checked against bssid1, bssid2 and the ssid
 			 * and now avail_con has been checked against ap.
 			 */
-			connection = NM_CONNECTION (avail_con);
-			existing_con = TRUE;
+			remote_con = avail_con;
+			connection = NM_CONNECTION (remote_con);
 			break;
 		}
 	}
 
-	if (name_match && !existing_con) {
+	if (name_match && !remote_con) {
 		g_string_printf (nmc->return_text, _("Error: Connection '%s' exists but properties don't match."), con_name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
 
-	if (!existing_con) {
+	if (!remote_con) {
 		/* If there are some connection data from user, create a connection and
 		 * fill them into proper settings. */
-		if (con_name || private || bssid2_arr || password || hidden)
+		if (con_name || private || bssid2_arr || hidden)
 			connection = nm_simple_connection_new ();
 
 		if (con_name || private) {
@@ -3524,22 +3562,24 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
-	info->device = device;
+	info->device = g_object_ref (device);
 	info->hotspot = FALSE;
-	info->create = !existing_con;
-	if (existing_con) {
-		nm_client_activate_connection_async (nmc->client,
-		                                     connection,
-		                                     device,
-		                                     nm_object_get_path (NM_OBJECT (ap)),
-		                                     NULL,
-		                                     add_and_activate_cb,
-		                                     info);
+	info->create = !remote_con;
+	info->specific_object = g_strdup (nm_object_get_path (NM_OBJECT (ap)));
+
+	if (remote_con) {
+		nm_remote_connection_update2 (remote_con,
+		                              nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+		                              NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT,
+		                              NULL,
+		                              NULL,
+		                              activate_update2_cb,
+		                              info);
 	} else {
 		nm_client_add_and_activate_connection_async (nmc->client,
 		                                             connection,
-		                                             device,
-		                                             nm_object_get_path (NM_OBJECT (ap)),
+		                                             info->device,
+		                                             info->specific_object,
 		                                             NULL,
 		                                             add_and_activate_cb,
 		                                             info);
@@ -3894,7 +3934,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;
-	info->device = device;
+	info->device = g_object_ref (device);
 	info->hotspot = TRUE;
 	info->create = TRUE;
 
@@ -4020,11 +4060,11 @@ finish:
 }
 
 static NMCCommand device_wifi_cmds[] = {
-	{ "list",     do_device_wifi_list,            NULL,             TRUE,   TRUE },
-	{ "connect",  do_device_wifi_connect_network, NULL,             TRUE,   TRUE },
-	{ "hotspot",  do_device_wifi_hotspot,         NULL,             TRUE,   TRUE },
-	{ "rescan",   do_device_wifi_rescan,          NULL,             TRUE,   TRUE },
-	{ NULL,       do_device_wifi_list,            NULL,             TRUE,   TRUE },
+	{ "list",     do_device_wifi_list,     NULL,  TRUE,  TRUE },
+	{ "connect",  do_device_wifi_connect,  NULL,  TRUE,  TRUE },
+	{ "hotspot",  do_device_wifi_hotspot,  NULL,  TRUE,  TRUE },
+	{ "rescan",   do_device_wifi_rescan,   NULL,  TRUE,  TRUE },
+	{ NULL,       do_device_wifi_list,     NULL,  TRUE,  TRUE },
 };
 
 static NMCResultCode
