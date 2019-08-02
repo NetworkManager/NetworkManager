@@ -318,6 +318,9 @@ sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer u
 	const NMPlatformIP6Address *addr_a = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
 	const NMPlatformIP6Address *addr_b = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj);
 
+	nm_assert (addr_a);
+	nm_assert (addr_b);
+
 	return _addresses_sort_cmp (addr_a, addr_b,
 	                            ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
 }
