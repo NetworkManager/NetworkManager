@@ -1587,8 +1587,8 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 			    || _team_setting_has_fields_any_v (self, attr_lst_runner_pt3, G_N_ELEMENTS (attr_lst_runner_pt3))) {
 				gboolean list_is_empty2 = TRUE;
 
-				if (!list_is_empty)
-					nm_json_aux_gstr_append_delimiter (gstr);
+				nm_assert (list_is_empty);
+
 				nm_json_aux_gstr_append_obj_name (gstr, "runner", '{');
 
 				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, attr_lst_runner_pt1, G_N_ELEMENTS (attr_lst_runner_pt1)))
