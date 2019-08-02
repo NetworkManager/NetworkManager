@@ -127,8 +127,10 @@ static int n_acd_socket_new(int *fdp, int fd_bpf_prog, NAcdConfig *config) {
 
         if (fd_bpf_prog >= 0) {
                 r = setsockopt(s, SOL_SOCKET, SO_ATTACH_BPF, &fd_bpf_prog, sizeof(fd_bpf_prog));
-                if (r < 0)
-                        return -c_errno();
+                if (r < 0) {
+                        r = -c_errno();
+                        goto error;
+                }
         }
 
         r = bind(s, (struct sockaddr *)&address, sizeof(address));
