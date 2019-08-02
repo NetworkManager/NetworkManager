@@ -206,10 +206,7 @@ validate_type_keyword (const struct Opt * opt,
                        const char * value,
                        const guint32 len)
 {
-	char **allowed;
-	char **candidates = NULL;
-	char **candidate;
-	gboolean found = FALSE;
+	gs_free char *value_free = NULL;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
@@ -218,26 +215,33 @@ validate_type_keyword (const struct Opt * opt,
 	if (!opt->str_allowed)
 		return TRUE;
 
-	candidates = g_strsplit (value, " ", 0);
-	if (!candidates)
-		goto out;
+	value = nm_strndup_a (300, value, len, &value_free);
 
 	/* validate each space-separated word in 'value' */
-	for (candidate = candidates; *candidate; candidate++) {
-		found = FALSE;
-		for (allowed = (char **) opt->str_allowed; *allowed; allowed++) {
-			if (strcmp (*candidate, *allowed) == 0) {
-				found = TRUE;
-				break;
-			}
-		}
-		if (!found)
-			break;
-	}
 
-out:
-	g_strfreev (candidates);
-	return found;
+	while (TRUE) {
+		char *s;
+
+		while (value[0] == ' ')
+			value++;
+
+		if (value[0] == '\0')
+			return TRUE;
+
+		s = strchr (value, ' ');
+		if (s) {
+			s[0] = '\0';
+			s++;
+		}
+
+		if (nm_utils_strv_find_first ((char **) opt->str_allowed, -1, value) < 0)
+			return FALSE;
+
+		if (!s)
+			return TRUE;
+
+		value = s;
+	}
 }
 
 OptType
@@ -254,7 +258,9 @@ nm_supplicant_settings_verify_setting (const char * key,
 	g_return_val_if_fail (value != NULL, FALSE);
 
 	if (strcmp (key, "mode") == 0) {
-		if (strcmp (value, "1") && strcmp (value, "2") && strcmp (value, "5"))
+		if (len != 1)
+			return TYPE_INVALID;
+		if (!NM_IN_SET (value[0], '1', '2', '5'))
 			return TYPE_INVALID;
 		return TYPE_INT;
 	}
