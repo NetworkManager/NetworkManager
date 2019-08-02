@@ -257,7 +257,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	case NM_LINK_TYPE_TEAM:
 		g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
 		accept_signal (link_changed);
-		accept_signals (master_changed, 0, 2);
+		accept_signals (master_changed, 0, 3);
 		break;
 	default:
 		break;
