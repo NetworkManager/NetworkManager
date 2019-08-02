@@ -1467,7 +1467,7 @@ link_config (NMDeviceWireGuard *self,
 	                                       plpeers_len,
 	                                       wg_change_flags);
 
-	nm_explicit_bzero (plpeers, sizeof (plpeers) * plpeers_len);
+	nm_explicit_bzero (plpeers, sizeof (plpeers[0]) * plpeers_len);
 
 	if (r < 0) {
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
