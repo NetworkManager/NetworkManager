@@ -3394,10 +3394,9 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		return;
 
 	if (!nm_wireguard_peer_is_valid (peer, TRUE, TRUE, &error)) {
-		if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-		                  _("peer '%s' is invalid: %s"),
-		                  info->group, error->message))
-			return;
+		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+		             _("peer '%s' is invalid: %s"),
+		             info->group, error->message);
 		return;
 	}
 
