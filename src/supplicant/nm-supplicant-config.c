@@ -139,11 +139,17 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 	else {
 		type = nm_supplicant_settings_verify_setting (key, value, len);
 		if (type == TYPE_INVALID) {
-			char buf[255];
-			memset (&buf[0], 0, sizeof (buf));
-			memcpy (&buf[0], value, len > 254 ? 254 : len);
+			gs_free char *str_free = NULL;
+			const char *str;
+
+			str = nm_utils_buf_utf8safe_escape (value, len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &str_free);
+
+			str = nm_strquote_a (255, str);
+
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-			             "key '%s' and/or value '%s' invalid", key, hidden ?: buf);
+			             "key '%s' and/or value %s invalid",
+			             key,
+			             hidden ?: str);
 			return FALSE;
 		}
 	}
