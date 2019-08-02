@@ -49,18 +49,28 @@
  * to detect parsing failures.
  *
  * Returns: either %TRUE or %FALSE if the key exists and is parsable as a boolean.
- *   Otherwise, @default_value.
+ *   Otherwise, @default_value. Sets errno to ENODATA, EINVAL or 0, depending on whether
+ *   the key exists, whether the value is invalid, or success.
  */
 int
 nm_key_file_get_boolean (GKeyFile *kf, const char *group, const char *key, int default_value)
 {
+	int v;
 	gs_free char *value = NULL;
 
 	value = g_key_file_get_value (kf, group, key, NULL);
 
-	if (!value)
+	if (!value) {
+		errno = ENODATA;
 		return default_value;
-	return _nm_utils_ascii_str_to_bool (value, default_value);
+	}
+	v = _nm_utils_ascii_str_to_bool (value, -1);
+	if (v != -1) {
+		errno = 0;
+		return v;
+	}
+	errno = EINVAL;
+	return default_value;
 }
 
 /*****************************************************************************/
