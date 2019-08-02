@@ -2866,7 +2866,7 @@ _clear_connections_cached_list (NMSettingsPrivate *priv)
 	 * it. That is a bug, this code just tries to make it blow up
 	 * more eagerly. */
 	memset (priv->connections_cached_list,
-	        0xdeaddead,
+	        0x43,
 	        sizeof (NMSettingsConnection *) * (priv->connections_len + 1));
 #endif
 

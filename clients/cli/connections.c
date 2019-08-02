@@ -1298,17 +1298,16 @@ got_secrets (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
 	NMRemoteConnection *remote = NM_REMOTE_CONNECTION (source_object);
 	GetSecretsData *data = user_data;
-	GVariant *secrets;
-	GError *error = NULL;
+	gs_unref_variant GVariant *secrets = NULL;
 
 	secrets = nm_remote_connection_get_secrets_finish (remote, res, NULL);
 	if (secrets) {
+		gs_free_error GError *error = NULL;
+
 		if (!nm_connection_update_secrets (data->local, NULL, secrets, &error) && error) {
 			g_printerr (_("Error updating secrets for %s: %s\n"),
 			            data->setting_name, error->message);
-			g_clear_error (&error);
 		}
-		g_variant_unref (secrets);
 	}
 
 	g_main_loop_quit (data->loop);
@@ -2712,7 +2711,6 @@ parse_passwords (const char *passwd_file, GError **error)
 	if (!passwd_file)
 		return g_steal_pointer (&pwds_hash);
 
-	/* Read the passwords file */
 	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("failed to read passwd-file '%s': %s"),
@@ -2722,7 +2720,7 @@ parse_passwords (const char *passwd_file, GError **error)
 	}
 
 	strv = nm_utils_strsplit_set (contents, "\r\n");
-	for (iter = strv; *iter; iter++) {
+	for (iter = strv; strv && *iter; iter++) {
 		gs_free char *iter_s = g_strdup (*iter);
 
 		pwd = strchr (iter_s, ':');
@@ -2764,6 +2762,7 @@ parse_passwords (const char *passwd_file, GError **error)
 
 		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
 	}
+
 	return g_steal_pointer (&pwds_hash);
 }
 
@@ -2783,22 +2782,24 @@ nmc_activate_connection (NmCli *nmc,
 	NMDevice *device = NULL;
 	const char *spec_object = NULL;
 	gboolean device_found;
-	GError *local = NULL;
 
 	g_return_val_if_fail (nmc, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (connection && (ifname || ap || nsp)) {
+	if (   connection
+	    && (   ifname
+	        || ap
+	        || nsp)) {
+		gs_free_error GError *local = NULL;
+
 		device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &local);
 
 		/* Virtual connection may not have their interfaces created yet */
 		if (!device_found && !nm_connection_is_virtual (connection)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
 			             "%s", local->message);
-			g_clear_error (&local);
 			return FALSE;
 		}
-		g_clear_error (&local);
 	} else if (ifname) {
 		device = nm_client_get_device_by_iface (nmc->client, ifname);
 		if (!device) {
@@ -2813,11 +2814,10 @@ nmc_activate_connection (NmCli *nmc,
 	}
 
 	/* Parse passwords given in passwords file */
-	pwds_hash = parse_passwords (pwds, &local);
-	if (local) {
-		g_propagate_error (error, local);
+	pwds_hash = parse_passwords (pwds, error);
+	if (!pwds_hash)
 		return FALSE;
-	}
+
 	if (nmc->pwds_hash)
 		g_hash_table_destroy (nmc->pwds_hash);
 	nmc->pwds_hash = pwds_hash;
@@ -7572,18 +7572,19 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					}
 				} else {
 					gs_free char *prop_name = NULL;
-					GError *tmp_err = NULL;
+					gs_free GError *tmp_err = NULL;
 
 					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {
 						if (!nmc_setting_set_property (nmc->client, ss, prop_name, '\0', NULL, &tmp_err)) {
-							g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+							g_print (_("Error: failed to remove value of '%s': %s\n"),
+							         prop_name,
 							         tmp_err->message);
-							g_clear_error (&tmp_err);
 						}
 					} else {
-						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;
+
+						/* If the string is not a property, try it as a setting */
 						s_tmp = is_setting_valid (connection,
 						                          valid_settings_main,
 						                          valid_settings_slave,
@@ -7591,16 +7592,17 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						if (s_tmp) {
 							/* Remove setting from the connection */
 							connection_remove_setting (connection, s_tmp);
+
 							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
 								menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
-						} else
+						} else {
 							g_print (_("Error: %s properties, nor it is a setting name.\n"),
 							         tmp_err->message);
-						g_clear_error (&tmp_err);
+						}
 					}
 				}
 			}
@@ -7660,7 +7662,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					/* Show description for all properties */
 					print_setting_description (ss);
 				} else {
-					GError *tmp_err = NULL;
+					gs_free_error GError *tmp_err = NULL;
 					gs_free char *prop_name = NULL;
 
 					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
@@ -7677,11 +7679,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						                          cmd_arg_p);
 						if (s_tmp)
 							print_setting_description (s_tmp);
-						else
+						else {
 							g_print (_("Error: invalid property: %s, "
 							           "neither a valid setting name.\n"),
 							         tmp_err->message);
-						g_clear_error (&tmp_err);
+						}
 					}
 				}
 			}
@@ -7768,19 +7770,21 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 			if (   menu_ctx.curr_setting
 			    && (!cmd_arg || strcmp (cmd_arg, "all") != 0)) {
-				GError *tmp_err = NULL;
-				(void) nm_setting_verify (menu_ctx.curr_setting, NULL, &tmp_err);
+				gs_free_error GError *tmp_err = NULL;
+
+				nm_setting_verify (menu_ctx.curr_setting, NULL, &tmp_err);
 				g_print (_("Verify setting '%s': %s\n"),
 				         nm_setting_get_name (menu_ctx.curr_setting),
 				         tmp_err ? tmp_err->message : "OK");
-				g_clear_error (&tmp_err);
 			} else {
-				GError *tmp_err = NULL;
-				gboolean valid, modified;
+				gs_free_error GError *tmp_err = NULL;
 				gboolean fixed = TRUE;
+				gboolean modified;
+				gboolean valid;
 
 				valid = nm_connection_verify (connection, &tmp_err);
-				if (!valid && (g_strcmp0 (cmd_arg, "fix") == 0)) {
+				if (   !valid
+				    && nm_streq0 (cmd_arg, "fix")) {
 					/* Try to fix normalizable errors */
 					g_clear_error (&tmp_err);
 					fixed = nm_connection_normalize (connection, NULL, &modified, &tmp_err);
@@ -7789,7 +7793,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				         tmp_err ? tmp_err->message : "OK");
 				if (!fixed)
 					g_print (_("The error cannot be fixed automatically.\n"));
-				g_clear_error (&tmp_err);
 			}
 			break;
 

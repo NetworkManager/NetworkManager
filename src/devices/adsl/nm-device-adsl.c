@@ -155,6 +155,7 @@ br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 	if (priv->brfd < 0) {
 		errsv = errno;
 		_LOGE (LOGD_ADSL, "failed to open ATM control socket (%d)", errsv);
+		priv->brfd = -1;
 		return FALSE;
 	}
 

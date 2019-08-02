@@ -284,8 +284,8 @@ nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 
 	nla_parse_arr (attrs,
-	               genlmsg_attrdata(gnlh, 0),
-	               genlmsg_attrlen(gnlh, 0),
+	               genlmsg_attrdata (gnlh, 0),
+	               genlmsg_attrlen (gnlh, 0),
 	               NULL);
 
 	if (!attrs[NL80211_ATTR_WOWLAN_TRIGGERS])
@@ -343,10 +343,10 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 		return TRUE;
 
 	msg = nl80211_alloc_msg (self, NL80211_CMD_SET_WOWLAN, 0);
-	if (!msg)
-		return FALSE;
 
 	triggers = nla_nest_start (msg, NL80211_ATTR_WOWLAN_TRIGGERS);
+	if (!triggers)
+		goto nla_put_failure;
 
 	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY))
 		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_ANY);
@@ -363,7 +363,7 @@ wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wo
 	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE))
 		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_RFKILL_RELEASE);
 
-	nla_nest_end(msg, triggers);
+	nla_nest_end (msg, triggers);
 
 	err = nl80211_send_and_recv (self, msg, NULL, NULL);
 
@@ -634,14 +634,12 @@ nl80211_get_ap_info (NMWifiUtilsNl80211 *self,
 		return;
 
 	msg = nl80211_alloc_msg (self, NL80211_CMD_GET_STATION, 0);
-	if (msg) {
-		NLA_PUT (msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
+	NLA_PUT (msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
 
-		nl80211_send_and_recv (self, msg, nl80211_station_handler, sta_info);
-		if (!sta_info->signal_valid) {
-			/* Fall back to bss_info signal quality (both are in percent) */
-			sta_info->signal = bss_info.beacon_signal;
-		}
+	nl80211_send_and_recv (self, msg, nl80211_station_handler, sta_info);
+	if (!sta_info->signal_valid) {
+		/* Fall back to bss_info signal quality (both are in percent) */
+		sta_info->signal = bss_info.beacon_signal;
 	}
 
 	return;
