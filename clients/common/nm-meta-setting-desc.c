@@ -3755,7 +3755,7 @@ _get_fcn_vlan_xgress_priority_map (ARGS_GET_FCN)
 	NMVlanPriorityMap map_type = _vlan_priority_map_type_from_property_info (property_info);
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	GString *str = NULL;
-	guint32 i, num;
+	gint32 i, num;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
