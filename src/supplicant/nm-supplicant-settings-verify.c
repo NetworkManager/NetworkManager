@@ -30,7 +30,7 @@ struct Opt {
 	const gint32     int_low;  /* Inclusive */
 	const gint32     int_high; /* Inclusive; max length for strings */
 	const gboolean   str_allowed_multiple;
-	const char **    str_allowed;
+	const char *const*str_allowed;
 };
 
 static gboolean validate_type_int     (const struct Opt * opt,
@@ -63,31 +63,31 @@ static const struct validate_entry validate_table[] = {
 	{ TYPE_KEYWORD, validate_type_keyword },
 };
 
-const char * pairwise_allowed[] = { "CCMP", "TKIP", "NONE", NULL };
-const char * group_allowed[] =    { "CCMP", "TKIP", "WEP104", "WEP40", NULL };
-const char * proto_allowed[] =    { "WPA", "RSN", NULL };
-const char * key_mgmt_allowed[] = { "WPA-PSK", "WPA-PSK-SHA256", "FT-PSK",
-                                    "WPA-EAP", "WPA-EAP-SHA256", "FT-EAP", "FT-EAP-SHA384",
-                                    "FILS-SHA256", "FILS-SHA384",
-                                    "IEEE8021X", "WPA-NONE", "SAE",
-                                    "NONE", NULL };
-const char * auth_alg_allowed[] = { "OPEN", "SHARED", "LEAP", NULL };
-const char * eap_allowed[] =      { "LEAP", "MD5", "TLS", "PEAP", "TTLS", "SIM",
-                                    "PSK", "FAST", "PWD", NULL };
+static const char *const pairwise_allowed[] = { "CCMP", "TKIP", "NONE", NULL };
+static const char *const group_allowed[] =    { "CCMP", "TKIP", "WEP104", "WEP40", NULL };
+static const char *const proto_allowed[] =    { "WPA", "RSN", NULL };
+static const char *const key_mgmt_allowed[] = { "WPA-PSK", "WPA-PSK-SHA256", "FT-PSK",
+                                                "WPA-EAP", "WPA-EAP-SHA256", "FT-EAP", "FT-EAP-SHA384",
+                                                "FILS-SHA256", "FILS-SHA384",
+                                                "IEEE8021X", "WPA-NONE", "SAE",
+                                                "NONE", NULL };
+static const char *const auth_alg_allowed[] = { "OPEN", "SHARED", "LEAP", NULL };
+static const char *const eap_allowed[] =      { "LEAP", "MD5", "TLS", "PEAP", "TTLS", "SIM",
+                                                "PSK", "FAST", "PWD", NULL };
 
-const char * phase1_allowed[] =   {"peapver=0", "peapver=1", "peaplabel=1",
-                                    "peap_outer_success=0", "include_tls_length=1",
-                                    "sim_min_num_chal=3", "fast_provisioning=0",
-                                    "fast_provisioning=1", "fast_provisioning=2",
-                                    "fast_provisioning=3", "tls_disable_tlsv1_0=0",
-                                    "tls_disable_tlsv1_0=1", "tls_disable_tlsv1_1=0",
-                                    "tls_disable_tlsv1_1=1", "tls_disable_tlsv1_2=0",
-                                    "tls_disable_tlsv1_2=1", NULL };
-const char * phase2_allowed[] =   {"auth=PAP", "auth=CHAP", "auth=MSCHAP",
-                                   "auth=MSCHAPV2", "auth=GTC", "auth=OTP",
-                                   "auth=MD5", "auth=TLS", "autheap=MD5",
-                                   "autheap=MSCHAPV2", "autheap=OTP",
-                                   "autheap=GTC", "autheap=TLS", NULL };
+static const char *const phase1_allowed[] =   { "peapver=0", "peapver=1", "peaplabel=1",
+                                                "peap_outer_success=0", "include_tls_length=1",
+                                                "sim_min_num_chal=3", "fast_provisioning=0",
+                                                "fast_provisioning=1", "fast_provisioning=2",
+                                                "fast_provisioning=3", "tls_disable_tlsv1_0=0",
+                                                "tls_disable_tlsv1_0=1", "tls_disable_tlsv1_1=0",
+                                                "tls_disable_tlsv1_1=1", "tls_disable_tlsv1_2=0",
+                                                "tls_disable_tlsv1_2=1", NULL };
+static const char *const phase2_allowed[] =   { "auth=PAP", "auth=CHAP", "auth=MSCHAP",
+                                                "auth=MSCHAPV2", "auth=GTC", "auth=OTP",
+                                                "auth=MD5", "auth=TLS", "autheap=MD5",
+                                                "autheap=MSCHAPV2", "autheap=OTP",
+                                                "autheap=GTC", "autheap=TLS", NULL };
 
 static const struct Opt opt_table[] = {
 	{ "ssid",               TYPE_BYTES,   0, 32,FALSE,  NULL },
