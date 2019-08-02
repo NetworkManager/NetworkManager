@@ -1939,7 +1939,7 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 			break;
 
 		s = &p[1];
-		g_utf8_validate (s, buflen, &p);
+		(void) g_utf8_validate (s, buflen, &p);
 	} while (TRUE);
 
 	*to_free = g_string_free (gstr, FALSE);
@@ -2834,10 +2834,15 @@ nm_utils_g_slist_find_str (const GSList *list,
 int
 nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b)
 {
-	for (; a && b; a = a->next, b = b->next)
+	while (TRUE) {
+		if (!a)
+			return !b ? 0 : -1;
+		if (!b)
+			return 1;
 		NM_CMP_DIRECT_STRCMP0 (a->data, b->data);
-	NM_CMP_SELF (a, b);
-	return 0;
+		a = a->next;
+		b = b->next;
+	}
 }
 
 /*****************************************************************************/
@@ -2878,7 +2883,7 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 	}
 	va_end (ap);
 
-	g_slice_free1 (((gsize) nargs) * sizeof (gconstpointer), user_data);
+	g_slice_free1 (((gsize) nargs) * sizeof (gconstpointer), data);
 }
 
 /*****************************************************************************/

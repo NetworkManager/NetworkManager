@@ -244,7 +244,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 			dns[0] = tmp;
 			dns[1] = get_word (&argument, ':');
 			dns_addr_family[1] = guess_ip_address_family (dns[1]);
-			if (argument && *argument)
+			if (*argument)
 				_LOGW (LOGD_CORE, "Ignoring extra: '%s'.", argument);
 		} else {
 			mtu = tmp;
