@@ -13,7 +13,6 @@ service = 'org.freedesktop.nm_dispatcher.service'
 configure_file(
   input: service + '.in',
   output: service,
-  install: true,
   install_dir: dbus_sys_dir,
   configuration: service_conf,
 )
