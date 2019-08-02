@@ -277,7 +277,7 @@ foreach_item_helper (NMSettingVpn *self,
 	}
 
 	for (i = 0; i < len; i++) {
-		nm_assert (keys[i]);
+		nm_assert (keys && keys[i]);
 		keys[i] = g_strdup (keys[i]);
 	}
 	nm_assert (!keys[i]);
