@@ -1939,7 +1939,7 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 			break;
 
 		s = &p[1];
-		g_utf8_validate (s, buflen, &p);
+		(void) g_utf8_validate (s, buflen, &p);
 	} while (TRUE);
 
 	*to_free = g_string_free (gstr, FALSE);
