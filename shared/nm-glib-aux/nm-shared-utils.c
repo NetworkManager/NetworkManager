@@ -2834,10 +2834,15 @@ nm_utils_g_slist_find_str (const GSList *list,
 int
 nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b)
 {
-	for (; a && b; a = a->next, b = b->next)
+	while (TRUE) {
+		if (!a)
+			return !b ? 0 : -1;
+		if (!b)
+			return 1;
 		NM_CMP_DIRECT_STRCMP0 (a->data, b->data);
-	NM_CMP_SELF (a, b);
-	return 0;
+		a = a->next;
+		b = b->next;
+	}
 }
 
 /*****************************************************************************/
