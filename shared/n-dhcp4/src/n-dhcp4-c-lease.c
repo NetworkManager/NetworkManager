@@ -44,10 +44,7 @@ static int n_dhcp4_incoming_get_timeouts(NDhcp4Incoming *message, uint64_t *t1p,
         } else if (u32 == UINT32_MAX) {
                 lifetime = UINT64_MAX;
         } else {
-                if (u32 == UINT32_MAX)
-                        lifetime = UINT64_MAX;
-                else
-                        lifetime = u32 * (1000000000ULL);
+                lifetime = u32 * (1000000000ULL);
         }
 
         r = n_dhcp4_incoming_query_t2(message, &u32);
