@@ -2711,7 +2711,6 @@ parse_passwords (const char *passwd_file, GError **error)
 	if (!passwd_file)
 		return g_steal_pointer (&pwds_hash);
 
-	/* Read the passwords file */
 	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("failed to read passwd-file '%s': %s"),
@@ -2721,7 +2720,7 @@ parse_passwords (const char *passwd_file, GError **error)
 	}
 
 	strv = nm_utils_strsplit_set (contents, "\r\n");
-	for (iter = strv; *iter; iter++) {
+	for (iter = strv; strv && *iter; iter++) {
 		gs_free char *iter_s = g_strdup (*iter);
 
 		pwd = strchr (iter_s, ':');
