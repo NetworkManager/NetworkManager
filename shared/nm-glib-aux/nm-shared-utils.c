@@ -2878,7 +2878,7 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 	}
 	va_end (ap);
 
-	g_slice_free1 (((gsize) nargs) * sizeof (gconstpointer), user_data);
+	g_slice_free1 (((gsize) nargs) * sizeof (gconstpointer), data);
 }
 
 /*****************************************************************************/
