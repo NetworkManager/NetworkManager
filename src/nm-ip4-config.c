@@ -544,6 +544,9 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	const NMPlatformIP4Address *a2 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b));
 	guint32 n1, n2;
 
+	nm_assert (a1);
+	nm_assert (a2);
+
 	/* Sort by address type. For example link local will
 	 * be sorted *after* a global address. */
 	p1 = _addresses_sort_cmp_get_prio (a1->address);
@@ -576,6 +579,9 @@ sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer u
 {
 	const NMPlatformIP4Address *addr_a = NMP_OBJECT_CAST_IP4_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
 	const NMPlatformIP4Address *addr_b = NMP_OBJECT_CAST_IP4_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj);
+
+	nm_assert (addr_a);
+	nm_assert (addr_b);
 
 	/* Primary addresses first */
 	return NM_FLAGS_HAS (addr_a->n_ifa_flags, IFA_F_SECONDARY) -
