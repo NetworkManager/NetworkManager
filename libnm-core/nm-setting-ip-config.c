@@ -1335,7 +1335,7 @@ nm_ip_route_attribute_validate  (const char *name,
 			if (str) {
 				addr = nm_strndup_a (200, addr, str - addr, &addr_free);
 				str++;
-				if (_nm_utils_ascii_str_to_int64 (str, 10, 1, family == AF_INET ? 32 : 128, -1) < 0) {
+				if (_nm_utils_ascii_str_to_int64 (str, 10, 0, family == AF_INET ? 32 : 128, -1) < 0) {
 					g_set_error (error,
 					             NM_CONNECTION_ERROR,
 					             NM_CONNECTION_ERROR_FAILED,
@@ -5001,15 +5001,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. route is invalid"),
-			             (int) (i + 1));
-			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
-			return FALSE;
-		}
-		if (nm_ip_route_get_prefix (route) == 0) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("%d. route cannot be a default route"),
 			             (int) (i + 1));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
 			return FALSE;

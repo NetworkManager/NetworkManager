@@ -1116,15 +1116,6 @@ next:
 		         ? info_to->v.addr.plen
 		         : (addr_family == AF_INET ? 32 : 128);
 
-		if (   (   (addr_family == AF_INET  && !info_to->v.addr.addr.addr4)
-		        || (addr_family == AF_INET6 && IN6_IS_ADDR_UNSPECIFIED (&info_to->v.addr.addr.addr6)))
-		    && prefix == 0) {
-			/* we ignore default routes by returning -ERANGE. */
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Ignore manual default route");
-			return -ERANGE;
-		}
-
 		route = nm_ip_route_new_binary (addr_family,
 		                                &info_to->v.addr.addr,
 		                                prefix,
@@ -1244,7 +1235,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 		return FALSE;
 	if (has_key) {
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
-		if (prefix == 0 || netmask != _nm_utils_ip4_prefix_to_netmask (prefix)) {
+		if (netmask != _nm_utils_ip4_prefix_to_netmask (prefix)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, inet_buf));
 			return FALSE;
