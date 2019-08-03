@@ -1593,16 +1593,6 @@ static const NMDBusInterfaceInfoExtended interface_info_agent_manager = {
 			),
 			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
 				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
-					"RegisterWithCapabilities",
-					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
-						NM_DEFINE_GDBUS_ARG_INFO ("identifier",   "s"),
-						NM_DEFINE_GDBUS_ARG_INFO ("capabilities", "u"),
-					),
-				),
-				.handle = impl_agent_manager_register_with_capabilities,
-			),
-			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
-				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
 					"Unregister",
 				),
 				.handle = impl_agent_manager_unregister,
