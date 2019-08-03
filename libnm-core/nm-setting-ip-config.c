@@ -1312,8 +1312,6 @@ nm_ip_route_attribute_validate  (const char *name,
 
 	if (g_variant_type_equal (spec->type, G_VARIANT_TYPE_STRING)) {
 		const char *string = g_variant_get_string (value, NULL);
-		gs_free char *string_free = NULL;
-		char *sep;
 
 		switch (spec->str_type) {
 		case 'a': /* IP address */
@@ -1328,30 +1326,35 @@ nm_ip_route_attribute_validate  (const char *name,
 				return FALSE;
 			}
 			break;
-		case 'p': /* IP address + optional prefix */
-			string_free = g_strdup (string);
-			sep = strchr (string_free, '/');
-			if (sep) {
-				*sep = 0;
-				if (_nm_utils_ascii_str_to_int64 (sep + 1, 10, 1, family == AF_INET ? 32 : 128, -1) < 0) {
+		case 'p': /* IP address + optional prefix */ {
+			gs_free char *addr_free = NULL;
+			const char *addr = string;
+			const char *str;
+
+			str = strchr (addr, '/');
+			if (str) {
+				addr = nm_strndup_a (200, addr, str - addr, &addr_free);
+				str++;
+				if (_nm_utils_ascii_str_to_int64 (str, 10, 1, family == AF_INET ? 32 : 128, -1) < 0) {
 					g_set_error (error,
 					             NM_CONNECTION_ERROR,
 					             NM_CONNECTION_ERROR_FAILED,
-					             _("invalid prefix %s"), sep + 1);
+					             _("invalid prefix %s"), str);
 					return FALSE;
 				}
 			}
-			if (!nm_utils_ipaddr_valid (family, string_free)) {
+			if (!nm_utils_ipaddr_valid (family, addr)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_FAILED,
 				             family == AF_INET ?
 				                 _("'%s' is not a valid IPv4 address") :
 				                 _("'%s' is not a valid IPv6 address"),
-				             string_free);
+				             string);
 				return FALSE;
 			}
 			break;
+		}
 		default:
 			break;
 		}
