@@ -79,9 +79,6 @@ NMSecretAgentCallId *nm_secret_agent_get_secrets (NMSecretAgent *agent,
                                                   NMSecretAgentCallback callback,
                                                   gpointer callback_data);
 
-void        nm_secret_agent_cancel_secrets (NMSecretAgent *agent,
-                                            NMSecretAgentCallId *call_id);
-
 NMSecretAgentCallId *nm_secret_agent_save_secrets (NMSecretAgent *agent,
                                                    const char *path,
                                                    NMConnection *connection,
@@ -93,5 +90,8 @@ NMSecretAgentCallId *nm_secret_agent_delete_secrets (NMSecretAgent *agent,
                                                      NMConnection *connection,
                                                      NMSecretAgentCallback callback,
                                                      gpointer callback_data);
+
+void nm_secret_agent_cancel_call (NMSecretAgent *self,
+                                  NMSecretAgentCallId *call_id);
 
 #endif /* __NETWORKMANAGER_SECRET_AGENT_H__ */

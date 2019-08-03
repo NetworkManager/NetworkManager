@@ -93,13 +93,13 @@ NM_DEFINE_SINGLETON_GETTER (NMAgentManager, nm_agent_manager_get, NM_TYPE_AGENT_
             if (!(self)) \
                 g_snprintf (__prefix1, sizeof (__prefix1), "%s%s", ""_NMLOG_PREFIX_NAME"", "[]"); \
             else if ((self) != singleton_instance) \
-                g_snprintf (__prefix1, sizeof (__prefix1), "%s[%p]", ""_NMLOG_PREFIX_NAME"", (self)); \
+                g_snprintf (__prefix1, sizeof (__prefix1), "%s["NM_HASH_OBFUSCATE_PTR_FMT"]", ""_NMLOG_PREFIX_NAME"", NM_HASH_OBFUSCATE_PTR (self)); \
             else \
                 g_strlcpy (__prefix1, _NMLOG_PREFIX_NAME, sizeof (__prefix1)); \
             if (__agent) { \
                 g_snprintf (__prefix2, sizeof (__prefix2), \
-                            ": req[%p, %s]", \
-                            __agent, \
+                            ": agent["NM_HASH_OBFUSCATE_PTR_FMT",%s]", \
+                            NM_HASH_OBFUSCATE_PTR (__agent), \
                             nm_secret_agent_get_description (__agent)); \
             } else \
                 __prefix2[0] = '\0'; \
@@ -109,9 +109,9 @@ NM_DEFINE_SINGLETON_GETTER (NMAgentManager, nm_agent_manager_get, NM_TYPE_AGENT_
         } \
     } G_STMT_END
 
-#define LOG_REQ_FMT          "[%p/%s%s%s%s%s%s]"
+#define LOG_REQ_FMT          "["NM_HASH_OBFUSCATE_PTR_FMT"/%s%s%s%s%s%s]"
 #define LOG_REQ_ARG(req) \
-	(req), \
+	NM_HASH_OBFUSCATE_PTR (req), \
 	NM_PRINT_FMT_QUOTE_STRING ((req)->detail), \
 	NM_PRINT_FMT_QUOTED (((req)->request_type == REQUEST_TYPE_CON_GET) && (req)->con.get.setting_name, \
 	                     "/\"", (req)->con.get.setting_name, "\"", \
@@ -539,12 +539,10 @@ request_free (Request *req)
 	if (req->idle_id)
 		g_source_remove (req->idle_id);
 
-	if (req->current && req->current_call_id) {
-		/* cancel-secrets invokes the done-callback synchronously -- in which case
-		 * the handler just return.
-		 * Hence, we can proceed to free @req... */
-		nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
-	}
+	/* cancel-secrets invokes the done-callback synchronously -- in which case
+	 * the handler just return.
+	 * Hence, we can proceed to free @req... */
+	nm_secret_agent_cancel_call (req->current, req->current_call_id);
 
 	g_object_unref (req->subject);
 
@@ -742,12 +740,9 @@ request_next_agent (Request *req)
 
 	self = req->self;
 
-	if (req->current) {
-		if (req->current_call_id)
-			nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
-		g_clear_object (&req->current);
-	}
+	nm_secret_agent_cancel_call (req->current, req->current_call_id);
 	nm_assert (!req->current_call_id);
+	g_clear_object (&req->current);
 
 	if (req->pending) {
 		/* Send the request to the next agent */
@@ -882,10 +877,8 @@ _con_get_request_done (NMSecretAgent *agent,
 			req_complete_error (req, error);
 			g_error_free (error);
 		} else {
-			if (req->current_call_id) {
-				/* Tell the failed agent we're no longer interested. */
-				nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
-			}
+			/* Tell the failed agent we're no longer interested. */
+			nm_secret_agent_cancel_call (req->current, req->current_call_id);
 
 			/* Try the next agent */
 			request_next_agent (req);
