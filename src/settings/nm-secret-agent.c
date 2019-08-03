@@ -137,7 +137,7 @@ request_new (NMSecretAgent *self,
 	r->cancellable = g_cancellable_new ();
 	c_list_link_tail (&NM_SECRET_AGENT_GET_PRIVATE (self)->requests,
 	                  &r->lst);
-	_LOGt ("request "LOG_REQ_FMT": created", LOG_REQ_ARG (r));
+	_LOGT ("request "LOG_REQ_FMT": created", LOG_REQ_ARG (r));
 	return r;
 }
 #define request_new(self,dbus_command,path,setting_name,callback,callback_data) request_new(self,""dbus_command"",path,setting_name,callback,callback_data)
@@ -147,7 +147,7 @@ request_free (NMSecretAgentCallId *r)
 {
 	NMSecretAgent *self = r->agent;
 
-	_LOGt ("request "LOG_REQ_FMT": destroyed", LOG_REQ_ARG (r));
+	_LOGT ("request "LOG_REQ_FMT": destroyed", LOG_REQ_ARG (r));
 	c_list_unlink_stale (&r->lst);
 	g_free (r->path);
 	g_free (r->setting_name);
@@ -665,7 +665,7 @@ _on_disconnected_name_owner_changed (GDBusConnection *connection,
 	               &old_owner,
 	               &new_owner);
 
-	_LOGt ("name-owner-changed: %s%s%s => %s%s%s",
+	_LOGT ("name-owner-changed: %s%s%s => %s%s%s",
 	       NM_PRINT_FMT_QUOTE_STRING (old_owner),
 	       NM_PRINT_FMT_QUOTE_STRING (new_owner));
 
@@ -719,7 +719,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->connection = g_object_ref (connection);
 	priv->connection_is_private = !!nm_dbus_manager_connection_get_private_name (priv->bus_mgr, connection);
 
-	_LOGt ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s, capabilities=%s",
+	_LOGT ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s, capabilities=%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),
 	       NM_PRINT_FMT_QUOTE_STRING (owner_username),
 	       nm_auth_subject_to_string (subject, buf_subject, sizeof (buf_subject)),
@@ -803,7 +803,7 @@ finalize (GObject *object)
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->finalize (object);
 
-	_LOGt ("finalized");
+	_LOGT ("finalized");
 }
 
 static void
