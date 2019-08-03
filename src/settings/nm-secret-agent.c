@@ -50,7 +50,7 @@ typedef struct {
 	NMSecretAgentCapabilities capabilities;
 	GSList *permissions;
 	GDBusProxy *proxy;
-	GDBusConnection *connection;
+	GDBusConnection *dbus_connection;
 	CList requests;
 	guint on_disconnected_id;
 } NMSecretAgentPrivate;
@@ -625,14 +625,14 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 static void
 _on_disconnected_cleanup (NMSecretAgentPrivate *priv)
 {
-	nm_clear_g_dbus_connection_signal (priv->connection,
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
 	                                   &priv->on_disconnected_id);
-	g_clear_object (&priv->connection);
+	g_clear_object (&priv->dbus_connection);
 	g_clear_object (&priv->proxy);
 }
 
 static void
-_on_disconnected_name_owner_changed (GDBusConnection *connection,
+_on_disconnected_name_owner_changed (GDBusConnection *dbus_connection,
                                      const char       *sender_name,
                                      const char       *object_path,
                                      const char       *interface_name,
@@ -677,7 +677,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	char buf_subject[64];
 	char buf_caps[150];
 	gulong uid;
-	GDBusConnection *connection;
+	GDBusConnection *dbus_connection;
 	gs_free_error GError *error = NULL;
 
 	g_return_val_if_fail (context != NULL, NULL);
@@ -685,9 +685,9 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	g_return_val_if_fail (nm_auth_subject_is_unix_process (subject), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
 
-	connection = g_dbus_method_invocation_get_connection (context);
+	dbus_connection = g_dbus_method_invocation_get_connection (context);
 
-	g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
 
 	uid = nm_auth_subject_get_unix_process_uid (subject);
 
@@ -701,13 +701,13 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	priv->connection = g_object_ref (connection);
+	priv->dbus_connection = g_object_ref (dbus_connection);
 
 	_LOGT ("constructed: %s, owner=%s%s%s (%s), unique-name=%s%s%s, capabilities=%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),
 	       NM_PRINT_FMT_QUOTE_STRING (owner_username),
 	       nm_auth_subject_to_string (subject, buf_subject, sizeof (buf_subject)),
-	       NM_PRINT_FMT_QUOTE_STRING (g_dbus_connection_get_unique_name (priv->connection)),
+	       NM_PRINT_FMT_QUOTE_STRING (g_dbus_connection_get_unique_name (priv->dbus_connection)),
 	       _capabilities_to_string (capabilities, buf_caps, sizeof (buf_caps)));
 
 	priv->identifier = g_strdup (identifier);
@@ -717,7 +717,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
 
-	priv->proxy = g_dbus_proxy_new_sync (priv->connection,
+	priv->proxy = g_dbus_proxy_new_sync (priv->dbus_connection,
 	                                       G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
 	                                     | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
 	                                     NULL,
@@ -734,7 +734,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 		g_clear_error (&error);
 	}
 
-	priv->on_disconnected_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->connection,
+	priv->on_disconnected_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
 	                                                                                   priv->dbus_owner,
 	                                                                                   _on_disconnected_name_owner_changed,
 	                                                                                   self,
