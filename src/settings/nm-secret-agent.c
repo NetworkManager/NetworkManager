@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
@@ -42,13 +43,13 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
+	CList permissions;
 	char *description;
 	NMAuthSubject *subject;
 	char *identifier;
 	char *owner_username;
 	char *dbus_owner;
 	NMSecretAgentCapabilities capabilities;
-	GSList *permissions;
 	GDBusProxy *proxy;
 	GDBusConnection *dbus_connection;
 	CList requests;
@@ -277,31 +278,25 @@ nm_secret_agent_add_permission (NMSecretAgent *agent,
                                 gboolean allowed)
 {
 	NMSecretAgentPrivate *priv;
-	GSList *iter;
+	NMCListElem *elem;
 
 	g_return_if_fail (agent != NULL);
 	g_return_if_fail (permission != NULL);
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
 
-	/* Check if the permission is already in the list */
-	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
-		if (g_strcmp0 (permission, iter->data) == 0) {
-			/* If the permission is no longer allowed, remove it from the
-			 * list.  If it is now allowed, do nothing since it's already
-			 * in the list.
-			 */
-			if (allowed == FALSE) {
-				g_free (iter->data);
-				priv->permissions = g_slist_delete_link (priv->permissions, iter);
-			}
-			return;
-		}
+	elem = nm_c_list_elem_find_first (&priv->permissions, p, nm_streq (p, permission));
+
+	if (elem) {
+		if (!allowed)
+			nm_c_list_elem_free_full (elem, g_free);
+		return;
 	}
 
-	/* New permission that's allowed */
-	if (allowed)
-		priv->permissions = g_slist_prepend (priv->permissions, g_strdup (permission));
+	if (allowed) {
+		c_list_link_tail (&priv->permissions,
+		                  &nm_c_list_elem_new_stale (g_strdup (permission))->lst);
+	}
 }
 
 /**
@@ -318,20 +313,11 @@ nm_secret_agent_add_permission (NMSecretAgent *agent,
 gboolean
 nm_secret_agent_has_permission (NMSecretAgent *agent, const char *permission)
 {
-	NMSecretAgentPrivate *priv;
-	GSList *iter;
-
 	g_return_val_if_fail (agent != NULL, FALSE);
 	g_return_val_if_fail (permission != NULL, FALSE);
 
-	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
-
-	/* Check if the permission is already in the list */
-	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
-		if (g_strcmp0 (permission, iter->data) == 0)
-			return TRUE;
-	}
-	return FALSE;
+	return !!nm_c_list_elem_find_first (&NM_SECRET_AGENT_GET_PRIVATE (agent)->permissions,
+	                                    p, nm_streq (p, permission));
 }
 
 /*****************************************************************************/
@@ -748,6 +734,7 @@ nm_secret_agent_init (NMSecretAgent *self)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
+	c_list_init (&priv->permissions);
 	c_list_init (&priv->requests);
 }
 
@@ -783,7 +770,7 @@ finalize (GObject *object)
 	g_free (priv->owner_username);
 	g_free (priv->dbus_owner);
 
-	g_slist_free_full (priv->permissions, g_free);
+	nm_c_list_elem_free_all (&priv->permissions, g_free);
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->finalize (object);
 
