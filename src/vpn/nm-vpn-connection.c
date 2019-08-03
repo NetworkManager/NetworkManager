@@ -111,8 +111,7 @@ typedef struct {
 	NMVpnPluginInfo *plugin_info;
 	char *bus_name;
 
-	/* Firewall */
-	NMFirewallManagerCallId fw_call;
+	NMFirewallManagerCallId *fw_call;
 
 	NMNetns *netns;
 
@@ -1195,7 +1194,7 @@ _cleanup_failed_config (NMVpnConnection *self)
 
 static void
 fw_change_zone_cb (NMFirewallManager *firewall_manager,
-                   NMFirewallManagerCallId call_id,
+                   NMFirewallManagerCallId *call_id,
                    GError *error,
                    gpointer user_data)
 {

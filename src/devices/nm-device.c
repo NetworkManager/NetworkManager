@@ -489,7 +489,7 @@ typedef struct _NMDevicePrivate {
 	/* Firewall */
 	FirewallState fw_state:4;
 	NMFirewallManager *fw_mgr;
-	NMFirewallManagerCallId fw_call;
+	NMFirewallManagerCallId *fw_call;
 
 	/* IPv4LL stuff */
 	sd_ipv4ll *    ipv4ll;
@@ -10303,7 +10303,7 @@ activate_stage3_ip_config_start (NMDevice *self)
 
 static void
 fw_change_zone_cb (NMFirewallManager *firewall_manager,
-                   NMFirewallManagerCallId call_id,
+                   NMFirewallManagerCallId *call_id,
                    GError *error,
                    gpointer user_data)
 {
@@ -10316,6 +10316,7 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
 
 	if (priv->fw_call != call_id)
 		g_return_if_reached ();
+
 	priv->fw_call = NULL;
 
 	if (nm_utils_error_is_cancelled (error, FALSE))
