@@ -2134,7 +2134,7 @@ connection_changed_on_idle (NMManager *self,
 	if (priv->connection_changed_on_idle_id == 0)
 		priv->connection_changed_on_idle_id = g_idle_add (connection_changed_on_idle_cb, self);
 
-	if (!nm_c_list_elem_find_first (&priv->connection_changed_on_idle_lst, sett_conn)) {
+	if (!nm_c_list_elem_find_first_ptr (&priv->connection_changed_on_idle_lst, sett_conn)) {
 		c_list_link_tail (&priv->connection_changed_on_idle_lst,
 		                  &nm_c_list_elem_new_stale (g_object_ref (sett_conn))->lst);
 	}
