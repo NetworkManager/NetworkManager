@@ -75,20 +75,34 @@ G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
-            char __prefix[32]; \
+            char _prefix[64]; \
             \
-            if ((self)) \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", ""_NMLOG_PREFIX_NAME"", (self)); \
-            else \
-                g_strlcpy (__prefix, _NMLOG_PREFIX_NAME, sizeof (__prefix)); \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, NULL, NULL, \
+            if ((self)) { \
+                g_snprintf (_prefix, \
+                            sizeof (_prefix), \
+                            "%s["NM_HASH_OBFUSCATE_PTR_FMT"]", \
+                            ""_NMLOG_PREFIX_NAME"", \
+                            NM_HASH_OBFUSCATE_PTR (self)); \
+            } else \
+                g_strlcpy (_prefix, _NMLOG_PREFIX_NAME, sizeof (_prefix)); \
+            \
+            _nm_log ((level), \
+                     (_NMLOG_DOMAIN), \
+                     0, \
+                     NULL, \
+                     NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+                     _prefix \
+                     _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
 
-#define LOG_REQ_FMT          "req[%p,%s,%s%s%s%s]"
-#define LOG_REQ_ARG(req)     (req), (req)->dbus_command, NM_PRINT_FMT_QUOTE_STRING ((req)->path), ((req)->cancellable ? "" : " (cancelled)")
+#define LOG_REQ_FMT          "req["NM_HASH_OBFUSCATE_PTR_FMT",%s,%s%s%s%s]"
+#define LOG_REQ_ARG(req) \
+    NM_HASH_OBFUSCATE_PTR (req), \
+    (req)->dbus_command, \
+    NM_PRINT_FMT_QUOTE_STRING ((req)->path), \
+    ((req)->cancellable ? "" : " (cancelled)")
 
 /*****************************************************************************/
 
