@@ -3110,7 +3110,8 @@ nm_ip_routing_rule_from_string (const char *str,
 			goto next_words_consumed;
 		}
 		if (NM_IN_STRSET (word0, "not")) {
-			/* we accept multiple "not" specifiers. */
+			/* we accept multiple "not" specifiers. "not not" still means
+			 * not. */
 			val_invert = TRUE;
 			goto next_words_consumed;
 		}
@@ -3460,14 +3461,14 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 
 	str = g_string_sized_new (30);
 
-	if (self->invert)
-		g_string_append (str, "not");
-
 	if (self->priority_has) {
 		g_string_append_printf (nm_gstring_add_space_delimiter (str),
 		                        "priority %u",
 		                        (guint) self->priority);
 	}
+
+	if (self->invert)
+		g_string_append (nm_gstring_add_space_delimiter (str), "not");
 
 	_rr_string_append_inet_addr (str,
 	                             TRUE,

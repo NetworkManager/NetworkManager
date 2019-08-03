@@ -3168,7 +3168,9 @@ test_routing_rule (gconstpointer test_data)
 	_rr_from_str ("priority 5 from :: iif a\\\\303b table 25");
 	_rr_from_str ("priority 5 to 0.0.0.0 sport 10 table 6",
 	              "priority 5 to 0.0.0.0 sport 10-10 table 6");
-	_rr_from_str ("not priority 5 to 0.0.0.0 dport 10-133 table 6",
+	_rr_from_str ("priority 5 not to 0.0.0.0 dport 10-133 table 6",
+	              "not priority 5 to 0.0.0.0 dport 10-133 table 6",
+	              "not priority 5 not to 0.0.0.0 dport 10-133 table 6",
 	              "priority 5 to 0.0.0.0 not dport 10-133 not table 6",
 	              "priority 5 to 0.0.0.0 not dport 10-\\ 133 not table 6");
 	_rr_from_str ("priority 5 to 0.0.0.0 ipproto 10 sport 10 table 6");
