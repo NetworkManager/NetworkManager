@@ -221,7 +221,7 @@ _peers_remove (NMDeviceWireGuardPrivate *priv,
 	nm_clear_g_cancellable (&peer_data->ep_resolv.cancellable);
 	g_slice_free (PeerData, peer_data);
 
-	if (c_list_is_empty (&peer_data->lst_peers)) {
+	if (c_list_is_empty (&priv->lst_peers_head)) {
 		nm_clear_g_source (&priv->resolve_next_try_id);
 		nm_clear_g_source (&priv->link_config_delayed_id);
 	}
