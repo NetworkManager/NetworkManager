@@ -1884,8 +1884,8 @@ update_one_secret (NMSetting *setting,
 	i_peer = 0;
 	while (g_variant_iter_next (&iter_peers, "@a{sv}", &peer_var)) {
 		_nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
+		nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
 		PeerData *pd;
-		NMWireGuardPeer *peer;
 		const char *cstr;
 
 		i_peer++;
