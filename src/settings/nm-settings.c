@@ -1455,7 +1455,7 @@ _add_connection_to_first_plugin (NMSettings *self,
                                  GError **error)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GError *first_error = NULL;
+	gs_free_error GError *first_error = NULL;
 	GSList *iter;
 	const char *uuid;
 
@@ -1561,7 +1561,7 @@ _add_connection_to_first_plugin (NMSettings *self,
 	}
 
 	nm_assert (first_error);
-	g_propagate_error (error, first_error);
+	g_propagate_error (error, g_steal_pointer (&first_error));
 	return FALSE;
 }
 
