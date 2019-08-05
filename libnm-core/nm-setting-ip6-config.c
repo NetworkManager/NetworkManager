@@ -663,7 +663,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 
 	/* ---ifcfg-rh---
 	 * property: dhcp-hostname
-	 * variable: DHCP_HOSTNAME
+	 * variable: DHCPV6_HOSTNAME
 	 * description: Hostname to send the DHCP server.
 	 * ---end---
 	 */
