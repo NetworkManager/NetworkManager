@@ -224,7 +224,7 @@ if enable_introspection
     extra_args: cflags,
     header: 'NetworkManager.h',
     install: true,
-    depends: libnm_dep,
+    dependencies: libnm_dep,
   )
 
   generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')

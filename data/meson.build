@@ -11,7 +11,6 @@ server = 'server.conf'
 configure_file(
   input: server + '.in',
   output: server,
-  install: true,
   install_dir: join_paths(nm_datadir, 'doc', nm_name, 'examples'),
   configuration: data_conf,
 )
@@ -32,7 +31,6 @@ if install_systemd_unit_dir
     configure_file(
       input: service + '.in',
       output: service,
-      install: true,
       install_dir: systemd_system_unit_dir,
       configuration: data_conf,
     )
