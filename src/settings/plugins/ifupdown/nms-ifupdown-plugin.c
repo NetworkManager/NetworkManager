@@ -321,10 +321,10 @@ load_eni_ifaces (NMSIfupdownPlugin *self)
 
 			sd_repl = g_hash_table_lookup (eni_ifaces, block->name);
 			if (sd_repl) {
-				storage = g_steal_pointer (&sd_repl->storage);
 				_LOGD ("parse: replace connection \"%s\" (%s)",
 				       block->name,
 				       nm_settings_storage_get_uuid (sd_repl->storage));
+				storage = g_steal_pointer (&sd_repl->storage);
 				g_hash_table_remove (eni_ifaces, block->name);
 			}
 
