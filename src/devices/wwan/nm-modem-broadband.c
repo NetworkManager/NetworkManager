@@ -1134,7 +1134,7 @@ simple_disconnect_ready (GObject *source_object,
 {
 	MMModemSimple *modem_iface = MM_MODEM_SIMPLE (source_object);
 	DisconnectContext *ctx = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	if (!mm_modem_simple_disconnect_finish (modem_iface, res, &error)) {
 		if (   ctx->warn
