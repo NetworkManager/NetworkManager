@@ -59,7 +59,7 @@ static void link_query(int netns, const char *name, int *ifindexp, struct ether_
                         s = socket(AF_INET, SOCK_DGRAM, 0);
                         c_assert(s >= 0);
 
-                        strncpy(ifr.ifr_name, name, n_name);
+                        memcpy(ifr.ifr_name, name, n_name);
                         r = ioctl(s, SIOCGIFHWADDR, &ifr);
                         c_assert(r >= 0);
 
