@@ -126,6 +126,8 @@ typedef enum { /*< flags >*/
  * NM_SETTING_WIRELESS_MODE_MESH:
  *
  * Indicates that the connection should create a mesh point.
+ *
+ * Since: 1.20
  */
 #define NM_SETTING_WIRELESS_MODE_MESH   "mesh"
 

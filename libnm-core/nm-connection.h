@@ -112,7 +112,7 @@ NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
  * @NM_CONNECTION_SERIALIZE_NO_SECRETS: do not include secrets
  * @NM_CONNECTION_SERIALIZE_ONLY_SECRETS: only serialize secrets
  * @NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED: if set, only secrets that
- *   are agent owned will be serialized.
+ *   are agent owned will be serialized. Since: 1.20
  *
  * These flags determine which properties are serialized when calling when
  * calling nm_connection_to_dbus().
