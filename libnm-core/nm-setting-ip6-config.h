@@ -103,6 +103,8 @@ G_BEGIN_DECLS
  * NM_SETTING_IP6_CONFIG_METHOD_DISABLED:
  *
  * IPv6 is disabled for the connection.
+ *
+ * Since: 1.20
  */
 #define NM_SETTING_IP6_CONFIG_METHOD_DISABLED   "disabled"
 
