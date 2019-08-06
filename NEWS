@@ -9,7 +9,7 @@ with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
-  and disabled by default since NetworkManager 1.12 has now been removed.
+  and disabled by default since NetworkManager 1.12, has now been removed.
 * The DHCP client now defaults to "internal". The default can be overriden
   at build time by using the --with-config-dhcp-default option of the
   configure script or at run time by setting the main.dhcp option in the
@@ -18,10 +18,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Added a possibility for distributions to ship dispatcher scripts in /usr/lib.
 * Drop deprecated setting "main.monitor-connection-files" in NetworkManager.conf.
   This setting now has no more effect and was disabled by default for a long time.
-  Instead, after changes load files explicitly with `nmcli connection load` and
+  Instead, after changes, load files explicitly with `nmcli connection load` or
   `nmcli connection reload`.
 * Rework parsing team JSON config in libnm and stricter validate settings.
-  With this NetworkManager rejects settings that it considers invalid while
+  With this, NetworkManager rejects settings that it considers invalid while
   still allowing setting arbitrary JSON config directly.
 * Drop ibft settings plugin. This functionality is now covered by using
   nm-initrd-generator from initrd to pre-generate in-memory profiles.
@@ -30,11 +30,13 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   and the user can now manually configure such policy routing rules.
 * Support "wireguard.ip4-auto-default-route" and "wireguard.ip6-auto-default-route".
   This automatically implements the "Improved Rule-based Routing" of wg-quick
-  to help with routing loops. Note that this is now enabled by default, so
-  there is a change in behavior if your WireGuard connection profiles had the
-  default-route (0.0.0.0/0 or ::/0) in allowed-ips.
+  to help avoiding routing loops when setting the default-route on the WireGuard
+  interface. Note that this is now enabled by default, so there is a change in behavior
+  if your WireGuard connection profiles from before had a default-route (/0)
+  in allowed-ips.
 * Rework implementation of settings plugins and how profiles are presisted
-  to disk.
+  to disk. This is a large internal refactoring of the settings plugins that
+  allows to migrate a connection profile between plugins.
 * In-memory profiles are now only handled by keyfile plugin and will also be
   persisted to /run directory. This allows to restart NetworkManager without
   loosing these profiles and it provides a file-system based API for creating
@@ -47,13 +49,17 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   the profile at the moment when creating the profile. Also add support for
   this API to libnm.
 * Add flag "no-reapply" to Update2() D-Bus method. Normally, when a connection
-  profile gets modified, this only changes the profile itself. If the profile
-  is activated at a device, then the device's configuration does not update before
-  the profile is fully re-activated or Reapply on the device gets called. There
-  was an exception to this: the "connection.zone" and the "connection.metered"
-  properties take effect immediately. The "no-reapply" flag allows suppressing this,
-  so that not changes take effect automatically. The purpose is to really only modify
-  the profile itself without changes to the runtime configuration of the device.
+  profile gets modified, this only changes the profile itself. When the profile
+  is currently activated on a device, then the device's configuration does not update
+  before the profile is fully re-activated or Reapply on the device is called. There
+  is an exception to this: the "connection.zone" and the "connection.metered"
+  properties take effect immediately. The "no-reapply" flag allows suppressing to
+  reapply any properties, so that no changes take effect automatically. The purpose
+  is to really only modify the profile itself without changes to the runtime configuration
+  of the device.
+* Add "ipv6.method=disabled" to disable IPv6 on a device, like also possible for
+  IPv4. Until now, the users could only set "ipv6.method=ignore" which means the
+  users are free to set IPv6 related sysctl values themselves.
 * Added support for Wi-Fi Mesh network.
 
 The following changes were backported to 1.18.x releases between 1.18.0
