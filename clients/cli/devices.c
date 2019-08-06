@@ -1681,9 +1681,9 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	while (argc > 0) {
-		g_printerr (_("Unknown parameter: %s\n"), *argv);
-		next_arg (nmc, &argc, &argv, NULL);
+	if (argc) {
+		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -1836,20 +1836,52 @@ connected_state_cb (NMDevice *device, NMActiveConnection *active)
 typedef struct {
 	NmCli *nmc;
 	NMDevice *device;
-	gboolean hotspot;
-	gboolean create;
+	char *specific_object;
+	bool hotspot:1;
+	bool create:1;
 } AddAndActivateInfo;
+
+static AddAndActivateInfo *
+add_and_activate_info_new (NmCli *nmc,
+                           NMDevice *device,
+                           gboolean hotspot,
+                           gboolean create,
+                           const char *specific_object)
+{
+	AddAndActivateInfo *info;
+
+	info = g_slice_new (AddAndActivateInfo);
+	*info = (AddAndActivateInfo) {
+		.nmc             = nmc,
+		.device          = g_object_ref (device),
+		.hotspot         = hotspot,
+		.create          = create,
+		.specific_object = g_strdup (specific_object),
+	};
+	return info;
+}
+
+static void
+add_and_activate_info_free (AddAndActivateInfo *info)
+{
+	g_object_unref (info->device);
+	g_free (info->specific_object);
+	nm_g_slice_free (info);
+}
+
+NM_AUTO_DEFINE_FCN0 (AddAndActivateInfo *, _nm_auto_free_add_and_activate_info, add_and_activate_info_free)
+#define nm_auto_free_add_and_activate_info nm_auto (_nm_auto_free_add_and_activate_info)
 
 static void
 add_and_activate_cb (GObject *client,
                      GAsyncResult *result,
                      gpointer user_data)
 {
-	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
-	NMActiveConnection *active;
-	GError *error = NULL;
+	gs_unref_object NMActiveConnection *active = NULL;
+	gs_free_error GError *error = NULL;
 
 	if (info->create)
 		active = nm_client_add_and_activate_connection_finish (NM_CLIENT (client), result, &error);
@@ -1857,37 +1889,36 @@ add_and_activate_cb (GObject *client,
 		active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
-		if (info->hotspot)
+		if (info->hotspot) {
 			g_string_printf (nmc->return_text, _("Error: Failed to setup a Wi-Fi hotspot: %s"),
 			                 error->message);
-		else if (info->create)
+		} else if (info->create) {
 			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: %s"),
 			                 error->message);
-		else
+		} else {
 			g_string_printf (nmc->return_text, _("Error: Failed to activate connection: %s"),
 			                 error->message);
-		g_error_free (error);
+		}
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
-	} else {
-		if (nmc->nowait_flag) {
-			g_object_unref (active);
-			quit ();
-		} else {
-			g_object_ref (device);
-			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
-			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
-
-			connected_state_cb (device, active);
-
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
-
-			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
-				progress_id = g_timeout_add (120, progress_cb, device);
-		}
+		return;
 	}
 
-	g_free (info);
+	if (nmc->nowait_flag) {
+		quit ();
+		return;
+	}
+
+	g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
+	g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
+	connected_state_cb (g_object_ref (device),
+	                    g_steal_pointer (&active));
+
+	g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
+
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
+		progress_id = g_timeout_add (120, progress_cb, device);
 }
 
 static void
@@ -1916,9 +1947,9 @@ create_connect_connection_for_device (AddAndActivateInfo *info)
 static void
 connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 {
-	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
-	NMActiveConnection *active;
+	gs_unref_object NMActiveConnection *active = NULL;
 	GError *error = NULL;
 	const GPtrArray *devices;
 	NMDevice *device;
@@ -1929,7 +1960,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		/* If no connection existed for the device, create one and activate it */
 		if (g_error_matches (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION)) {
 			info->create = TRUE;
-			create_connect_connection_for_device (info);
+			create_connect_connection_for_device (g_steal_pointer (&info));
 			return;
 		}
 
@@ -1938,42 +1969,41 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
-	} else {
-		g_assert (active);
-		devices = nm_active_connection_get_devices (active);
-		if (devices->len == 0) {
-			g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
-			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-			g_object_unref (active);
-			quit ();
-			g_free (info);
-			return;
-		}
-
-		device = g_ptr_array_index (devices, 0);
-
-		if (nmc->nowait_flag) {
-			g_object_unref (active);
-			quit ();
-		} else {
-			if (nmc->secret_agent) {
-				NMRemoteConnection *connection = nm_active_connection_get_connection (active);
-
-				nm_secret_agent_simple_enable (nmc->secret_agent,
-				                               nm_connection_get_path (NM_CONNECTION (connection)));
-			}
-
-			g_object_ref (device);
-			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
-			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
-
-			connected_state_cb (device, active);
-
-			/* Start timer not to loop forever if "notify::state" signal is not issued */
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
-		}
+		return;
 	}
-	g_free (info);
+
+	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
+
+	devices = nm_active_connection_get_devices (active);
+	if (devices->len == 0) {
+		g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+		return;
+	}
+
+	device = g_ptr_array_index (devices, 0);
+
+	if (nmc->nowait_flag) {
+		quit ();
+		return;
+	}
+
+	if (nmc->secret_agent) {
+		NMRemoteConnection *connection = nm_active_connection_get_connection (active);
+
+		nm_secret_agent_simple_enable (nmc->secret_agent,
+		                               nm_connection_get_path (NM_CONNECTION (connection)));
+	}
+
+	g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
+	g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
+	connected_state_cb (g_object_ref (device),
+	                    g_steal_pointer (&active));
+
+	/* Start timer not to loop forever if "notify::state" signal is not issued */
+	g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 }
 
 static NMCResultCode
@@ -2018,10 +2048,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 		                  nmc);
 	}
 
-	info = g_malloc0 (sizeof (AddAndActivateInfo));
-	info->nmc = nmc;
-	info->device = device;
-	info->hotspot = FALSE;
+	info = add_and_activate_info_new (nmc, device, FALSE, FALSE, NULL);
 
 	nm_client_activate_connection_async (nmc->client,
 	                                     NULL,  /* let NM find a connection automatically */
@@ -3027,8 +3054,10 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (argc)
-		g_printerr (_("Unknown parameter: %s\n"), *argv);
+	if (argc) {
+		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+		return NMC_RESULT_ERROR_USER_INPUT;
+	}
 
 	if (rescan == NULL || strcmp (rescan, "auto") == 0) {
 		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SECOND, 0);
@@ -3116,14 +3145,43 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static void
+activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+	NMRemoteConnection *remote_con = NM_REMOTE_CONNECTION (source_object);
+	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
+	NmCli *nmc = info->nmc;
+	gs_unref_variant GVariant *ret = NULL;
+	GError *error = NULL;
+
+	ret = nm_remote_connection_update2_finish (remote_con, res, &error);
+
+	if (!ret) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_error_free (error);
+		quit ();
+		return;
+	}
+
+	nm_client_activate_connection_async (nmc->client,
+	                                     NM_CONNECTION (remote_con),
+	                                     info->device,
+	                                     info->specific_object,
+	                                     NULL,
+	                                     add_and_activate_cb,
+	                                     g_steal_pointer (&info));
+}
+
 static NMCResultCode
-do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
+do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
 	NM80211ApFlags ap_flags;
 	NM80211ApSecurityFlags ap_wpa_flags;
 	NM80211ApSecurityFlags ap_rsn_flags;
+	NMRemoteConnection *remote_con = NULL;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -3144,7 +3202,6 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	char *passwd_ask = NULL;
 	const GPtrArray *avail_cons;
 	gboolean name_match = FALSE;
-	gboolean existing_con = FALSE;
 	int i;
 
 	/* Set default timeout waiting for operation completion. */
@@ -3291,7 +3348,9 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 		} else if (!nmc->complete) {
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -3391,22 +3450,22 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			/* ap has been checked against bssid1, bssid2 and the ssid
 			 * and now avail_con has been checked against ap.
 			 */
-			connection = NM_CONNECTION (avail_con);
-			existing_con = TRUE;
+			remote_con = avail_con;
+			connection = NM_CONNECTION (remote_con);
 			break;
 		}
 	}
 
-	if (name_match && !existing_con) {
+	if (name_match && !remote_con) {
 		g_string_printf (nmc->return_text, _("Error: Connection '%s' exists but properties don't match."), con_name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
 
-	if (!existing_con) {
+	if (!remote_con) {
 		/* If there are some connection data from user, create a connection and
 		 * fill them into proper settings. */
-		if (con_name || private || bssid2_arr || password || hidden)
+		if (con_name || private || bssid2_arr || hidden)
 			connection = nm_simple_connection_new ();
 
 		if (con_name || private) {
@@ -3518,24 +3577,21 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = g_malloc0 (sizeof (AddAndActivateInfo));
-	info->nmc = nmc;
-	info->device = device;
-	info->hotspot = FALSE;
-	info->create = !existing_con;
-	if (existing_con) {
-		nm_client_activate_connection_async (nmc->client,
-		                                     connection,
-		                                     device,
-		                                     nm_object_get_path (NM_OBJECT (ap)),
-		                                     NULL,
-		                                     add_and_activate_cb,
-		                                     info);
+	info = add_and_activate_info_new (nmc, device, FALSE, !remote_con, nm_object_get_path (NM_OBJECT (ap)));
+
+	if (remote_con) {
+		nm_remote_connection_update2 (remote_con,
+		                              nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+		                              NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT,
+		                              NULL,
+		                              NULL,
+		                              activate_update2_cb,
+		                              info);
 	} else {
 		nm_client_add_and_activate_connection_async (nmc->client,
 		                                             connection,
-		                                             device,
-		                                             nm_object_get_path (NM_OBJECT (ap)),
+		                                             info->device,
+		                                             info->specific_object,
 		                                             NULL,
 		                                             add_and_activate_cb,
 		                                             info);
@@ -3784,7 +3840,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 		} else if (nmc_arg_is_option (*argv, "show-password")) {
 			show_password = TRUE;
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Unknown parameter %s."), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
@@ -3888,11 +3944,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = g_malloc0 (sizeof (AddAndActivateInfo));
-	info->nmc = nmc;
-	info->device = device;
-	info->hotspot = TRUE;
-	info->create = TRUE;
+	info = add_and_activate_info_new (nmc, device, TRUE, TRUE, NULL);
 
 	nm_client_add_and_activate_connection_async (nmc->client,
 	                                             connection,
@@ -3966,8 +4018,11 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 			g_ptr_array_add (ssids, *argv);
-		} else if (!nmc->complete)
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+		} else if (!nmc->complete) {
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
@@ -4013,11 +4068,11 @@ finish:
 }
 
 static NMCCommand device_wifi_cmds[] = {
-	{ "list",     do_device_wifi_list,            NULL,             TRUE,   TRUE },
-	{ "connect",  do_device_wifi_connect_network, NULL,             TRUE,   TRUE },
-	{ "hotspot",  do_device_wifi_hotspot,         NULL,             TRUE,   TRUE },
-	{ "rescan",   do_device_wifi_rescan,          NULL,             TRUE,   TRUE },
-	{ NULL,       do_device_wifi_list,            NULL,             TRUE,   TRUE },
+	{ "list",     do_device_wifi_list,     NULL,  TRUE,  TRUE },
+	{ "connect",  do_device_wifi_connect,  NULL,  TRUE,  TRUE },
+	{ "hotspot",  do_device_wifi_hotspot,  NULL,  TRUE,  TRUE },
+	{ "rescan",   do_device_wifi_rescan,   NULL,  TRUE,  TRUE },
+	{ NULL,       do_device_wifi_list,     NULL,  TRUE,  TRUE },
 };
 
 static NMCResultCode

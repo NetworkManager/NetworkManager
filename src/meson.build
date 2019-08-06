@@ -293,10 +293,9 @@ network_manager_sym = executable(
 # this uses symbols from nm-full-symbols instead of libNetworkManager.a
 ver_script = custom_target(
   symbol_map_name,
-  input: meson.source_root(),
   output: symbol_map_name,
   depends: [ network_manager_sym, core_plugins ],
-  command: [create_exports_networkmanager, '--called-from-build', '@INPUT@'],
+  command: [create_exports_networkmanager, '--called-from-build', meson.source_root()],
 )
 
 ldflags = ['-rdynamic', '-Wl,--version-script,@0@'.format(ver_script.full_path())]

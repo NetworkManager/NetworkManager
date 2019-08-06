@@ -2933,7 +2933,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			pwds = *argv;
 		}
 		else if (!nmc->complete) {
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -3135,7 +3136,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No connection specified."));
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
@@ -3153,7 +3154,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			arg_ptr++;
 			if (!arg_num) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
-				NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 		}
 
@@ -3174,7 +3175,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	if (!found_active_cons) {
 		g_string_printf (nmc->return_text, _("Error: no active connection provided."));
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_NOT_FOUND);
+		return NMC_RESULT_ERROR_NOT_FOUND;
 	}
 	nm_assert (found_active_cons->len > 0);
 
@@ -8220,7 +8221,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	else {
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, &error)) {
 			g_string_assign (nmc->return_text, error->message);
-			NMC_RETURN (nmc, error->code);
+			return error->code;
 		}
 	}
 
@@ -8250,7 +8251,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		} else {
 			g_string_printf (nmc->return_text,
 			                 _("Error: only one of 'id', 'filename', uuid, or 'path' can be provided."));
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
@@ -8264,7 +8265,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_NOT_FOUND);
+			return NMC_RESULT_ERROR_NOT_FOUND;
 		}
 
 		/* Duplicate the connection and use that so that we need not
@@ -8418,7 +8419,7 @@ do_connection_modify (NmCli *nmc,
 	connection = get_connection (nmc, &argc, &argv, NULL, NULL, NULL, &error);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		NMC_RETURN (nmc, error->code);
+		return error->code;
 	}
 
 	rc = nm_client_get_connection_by_uuid (nmc->client,
@@ -8426,12 +8427,12 @@ do_connection_modify (NmCli *nmc,
 	if (!rc) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."),
 		                 nm_connection_get_uuid (connection));
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_NOT_FOUND);
+		return NMC_RESULT_ERROR_NOT_FOUND;
 	}
 
 	if (!nmc_read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
 		g_string_assign (nmc->return_text, error->message);
-		NMC_RETURN (nmc, error->code);
+		return error->code;
 	}
 
 	if (nmc->complete)
@@ -8509,7 +8510,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 	connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, NULL, NULL, &error);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		NMC_RETURN (nmc, error->code);
+		return error->code;
 	}
 
 	if (nmc->complete)
@@ -8522,12 +8523,12 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		                                         _("New connection name: "));
 	} else {
 		g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr, NULL) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	new_connection = nm_simple_connection_new_clone (connection);
@@ -8858,7 +8859,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			filename = nm_strstrip (filename_ask);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
@@ -8874,7 +8875,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
 			if (   argc == 1
@@ -8895,7 +8896,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 			if (argc == 1 && nmc->complete)
 				nmc->return_value = NMC_RESULT_COMPLETE_FILE;
@@ -8904,8 +8905,8 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			else
 				g_printerr (_("Warning: 'file' already specified, ignoring extra one.\n"));
 		} else {
-			g_string_printf (nmc->return_text, _("Unknown parameter: %s"), *argv);
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -8916,11 +8917,11 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 
 	if (!type) {
 		g_string_printf (nmc->return_text, _("Error: 'type' argument is required."));
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 	if (!filename) {
 		g_string_printf (nmc->return_text, _("Error: 'file' argument is required."));
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
+		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 	if (nm_streq (type, "wireguard"))
@@ -8929,7 +8930,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		service_type = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), type);
 		if (!service_type) {
 			g_string_printf (nmc->return_text, _("Error: failed to find VPN plugin for %s."), type);
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
+			return NMC_RESULT_ERROR_UNKNOWN;
 		}
 
 		/* Import VPN configuration */
@@ -8937,7 +8938,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		if (!plugin) {
 			g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 			                 error->message);
-			NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
+			return NMC_RESULT_ERROR_UNKNOWN;
 		}
 
 		connection = nm_vpn_editor_plugin_import (plugin, filename, &error);
@@ -8946,7 +8947,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: failed to import '%s': %s."),
 		                 filename, error->message);
-		NMC_RETURN (nmc, NMC_RESULT_ERROR_UNKNOWN);
+		return NMC_RESULT_ERROR_UNKNOWN;
 	}
 
 	add_connection (nmc->client,

@@ -892,9 +892,9 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 1459
+size: 1409
 location: clients/tests/test-client.py:951:test_003()/31
-cmd: $NMCLI -f ALL dev s eth0
+cmd: $NMCLI -f ALL dev status
 lang: C
 returncode: 0
 stdout: 1272 bytes
@@ -907,14 +907,9 @@ wlan1   wifi      unavailable  unknown           unknown           /org/freedesk
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-stderr: 24 bytes
->>>
-Unknown parameter: eth0
-
-<<<
-size: 1474
+size: 1424
 location: clients/tests/test-client.py:951:test_003()/32
-cmd: $NMCLI -f ALL dev s eth0
+cmd: $NMCLI -f ALL dev status
 lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1277 bytes
@@ -925,11 +920,6 @@ eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedes
 wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
-
-<<<
-stderr: 24 bytes
->>>
-Nieznany parametr: eth0
 
 <<<
 size: 3494
@@ -1782,9 +1772,9 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 1459
+size: 1409
 location: clients/tests/test-client.py:951:test_003()/54
-cmd: $NMCLI -f ALL dev s eth0
+cmd: $NMCLI -f ALL dev status
 lang: C
 returncode: 0
 stdout: 1272 bytes
@@ -1797,14 +1787,9 @@ wlan1   wifi      unavailable  unknown           unknown           /org/freedesk
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-stderr: 24 bytes
->>>
-Unknown parameter: eth0
-
-<<<
-size: 1474
+size: 1424
 location: clients/tests/test-client.py:951:test_003()/55
-cmd: $NMCLI -f ALL dev s eth0
+cmd: $NMCLI -f ALL dev status
 lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1277 bytes
@@ -1815,11 +1800,6 @@ eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedes
 wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
-
-<<<
-stderr: 24 bytes
->>>
-Nieznany parametr: eth0
 
 <<<
 size: 3494

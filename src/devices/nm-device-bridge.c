@@ -628,10 +628,12 @@ release_slave (NMDevice *device,
 	int ifindex_slave;
 	int ifindex;
 
-	ifindex = nm_device_get_ifindex (device);
-	if (   ifindex <= 0
-	    || !nm_platform_link_get (nm_device_get_platform (device), ifindex))
-		configure = FALSE;
+	if (configure) {
+		ifindex = nm_device_get_ifindex (device);
+		if (   ifindex <= 0
+		    || !nm_platform_link_get (nm_device_get_platform (device), ifindex))
+			configure = FALSE;
+	}
 
 	ifindex_slave = nm_device_get_ip_ifindex (slave);
 
