@@ -1,3 +1,17 @@
+===============================================
+NetworkManager-1.16.4
+Overview of changes since NetworkManager-1.16.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix netlink for WireGuard with strict checking in kernel 5.2+.
+* Fix handling OVS devices when restarting NetworkManager.
+* Fix restoring serial port settings before terminating pppd.
+* Avoid connectivity checking on devices without IP configuration.
+* Fix mangling static IPv6 routes.
+* Other various bug fixes and improvements.
+
 =============================================
 NetworkManager-1.16.2
 Overview of changes since NetworkManager-1.16
