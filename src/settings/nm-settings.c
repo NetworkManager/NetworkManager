@@ -3386,12 +3386,6 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	/* Find a wired connection matching for the device, if any */
 	c_list_for_each_entry (sett_conn, &priv->connections_lst_head, _connections_lst) {
 		NMConnection *connection = nm_settings_connection_get_connection (sett_conn);
-		const char *ctype;
-
-		ctype = nm_connection_get_connection_type (connection);
-		if (!NM_IN_STRSET (ctype, NM_SETTING_WIRED_SETTING_NAME,
-		                          NM_SETTING_PPPOE_SETTING_NAME))
-			continue;
 
 		if (!nm_device_check_connection_compatible (device, connection, NULL))
 			continue;
