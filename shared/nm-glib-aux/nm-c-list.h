@@ -88,8 +88,25 @@ nm_c_list_elem_free_all (CList *head, GDestroyNotify free_fcn)
 		nm_c_list_elem_free_full (elem, free_fcn);
 }
 
+#define nm_c_list_elem_find_first(head, arg, predicate) \
+	({ \
+		CList *const _head = (head); \
+		NMCListElem *_result = NULL; \
+		NMCListElem *_elem; \
+		\
+		c_list_for_each_entry (_elem, _head, lst) { \
+			void *const arg = _elem->data; \
+			\
+			if (predicate) { \
+				_result = _elem; \
+				break; \
+			} \
+		} \
+		_result; \
+	})
+
 /**
- * nm_c_list_elem_find_first:
+ * nm_c_list_elem_find_first_ptr:
  * @head: the @CList head of a list containing #NMCListElem elements.
  *   Note that the head is not itself part of the list.
  * @needle: the needle pointer.
@@ -100,15 +117,9 @@ nm_c_list_elem_free_all (CList *head, GDestroyNotify free_fcn)
  * Returns: the found list element or %NULL if not found.
  */
 static inline NMCListElem *
-nm_c_list_elem_find_first (CList *head, gconstpointer needle)
+nm_c_list_elem_find_first_ptr (CList *head, gconstpointer needle)
 {
-	NMCListElem *elem;
-
-	c_list_for_each_entry (elem, head, lst) {
-		if (elem->data == needle)
-			return elem;
-	}
-	return NULL;
+	return nm_c_list_elem_find_first (head, x, x == needle);
 }
 
 /*****************************************************************************/

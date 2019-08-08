@@ -87,9 +87,6 @@ gboolean nm_dbus_manager_ensure_uid (NMDBusManager          *self,
                                      GQuark error_domain,
                                      int error_code);
 
-const char *nm_dbus_manager_connection_get_private_name (NMDBusManager *self,
-                                                         GDBusConnection *connection);
-
 gboolean nm_dbus_manager_get_unix_user (NMDBusManager *self,
                                         const char *sender,
                                         gulong *out_uid);
@@ -104,12 +101,5 @@ gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
 void nm_dbus_manager_private_server_register (NMDBusManager *self,
                                               const char *path,
                                               const char *tag);
-
-GDBusProxy *nm_dbus_manager_new_proxy (NMDBusManager *self,
-                                       GDBusConnection *connection,
-                                       GType proxy_type,
-                                       const char *name,
-                                       const char *path,
-                                       const char *iface);
 
 #endif /* __NM_DBUS_MANAGER_H__ */
