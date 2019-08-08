@@ -26,7 +26,7 @@ static int n_dhcp4_client_probe_option_new(NDhcp4ClientProbeOption **optionp,
                                     uint8_t n_data) {
         NDhcp4ClientProbeOption *op;
 
-        op = malloc(sizeof(op) + n_data);
+        op = malloc(sizeof(*op) + n_data);
         if (!op)
                 return -ENOMEM;
 
