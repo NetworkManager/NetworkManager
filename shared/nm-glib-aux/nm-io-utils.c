@@ -32,9 +32,9 @@
 
 /*****************************************************************************/
 
-_nm_printf (3, 4)
+_nm_printf (4, 5)
 static int
-_get_contents_error (GError **error, int errsv, const char *format, ...)
+_get_contents_error (GError **error, int errsv, int *out_errsv, const char *format, ...)
 {
 	nm_assert (NM_ERRNO_NATIVE (errsv));
 
@@ -53,13 +53,17 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 		             msg,
 		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
 	}
-	return -errsv;
+
+	nm_assert (errsv > 0);
+	NM_SET_OUT (out_errsv, errsv);
+
+	return FALSE;
 }
-#define _get_contents_error_errno(error, ...) \
+#define _get_contents_error_errno(error, out_errsv, ...) \
 	({ \
 		int _errsv = (errno); \
 		\
-		_get_contents_error (error, _errsv, __VA_ARGS__); \
+		_get_contents_error (error, _errsv, out_errsv, __VA_ARGS__); \
 	})
 
 static char *
@@ -110,21 +114,25 @@ _mem_realloc (char *old, gboolean do_bzero_mem, gsize cur_len, gsize new_len)
  *  the NUL byte. That is, it reads only files up to a length of
  *  @max_length - 1 bytes.
  * @length: optional output argument of the read file size.
+ * @out_errsv: (allow-none) (out): on error, a positive errno. or zero.
+ * @error:
+ *
  *
  * A reimplementation of g_file_get_contents() with a few differences:
  *   - accepts an open fd, instead of a path name. This allows you to
  *     use openat().
  *   - limits the maximum filesize to max_length.
  *
- * Returns: a negative error code on failure.
+ * Returns: TRUE on success.
  */
-int
+gboolean
 nm_utils_fd_get_contents (int fd,
                           gboolean close_fd,
                           gsize max_length,
                           NMUtilsFileGetContentsFlags flags,
                           char **contents,
                           gsize *length,
+                          int *out_errsv,
                           GError **error)
 {
 	nm_auto_close int fd_keeper = close_fd ? fd : -1;
@@ -133,12 +141,14 @@ nm_utils_fd_get_contents (int fd,
 	const bool do_bzero_mem = NM_FLAGS_HAS (flags, NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET);
 	int errsv;
 
-	g_return_val_if_fail (fd >= 0, -EINVAL);
-	g_return_val_if_fail (contents, -EINVAL);
-	g_return_val_if_fail (!error || !*error, -EINVAL);
+	g_return_val_if_fail (fd >= 0, FALSE);
+	g_return_val_if_fail (contents && !*contents, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	NM_SET_OUT (length, 0);
 
 	if (fstat (fd, &stat_buf) < 0)
-		return _get_contents_error_errno (error, "failure during fstat");
+		return _get_contents_error_errno (error, out_errsv, "failure during fstat");
 
 	if (!max_length) {
 		/* default to a very large size, but not extreme */
@@ -151,23 +161,23 @@ nm_utils_fd_get_contents (int fd,
 		ssize_t n_read;
 
 		if (n_stat > max_length - 1)
-			return _get_contents_error (error, EMSGSIZE, "file too large (%zu+1 bytes with maximum %zu bytes)", n_stat, max_length);
+			return _get_contents_error (error, EMSGSIZE, out_errsv, "file too large (%zu+1 bytes with maximum %zu bytes)", n_stat, max_length);
 
 		str = g_try_malloc (n_stat + 1);
 		if (!str)
-			return _get_contents_error (error, ENOMEM, "failure to allocate buffer of %zu+1 bytes", n_stat);
+			return _get_contents_error (error, ENOMEM, out_errsv, "failure to allocate buffer of %zu+1 bytes", n_stat);
 
 		n_read = nm_utils_fd_read_loop (fd, str, n_stat, TRUE);
 		if (n_read < 0) {
 			if (do_bzero_mem)
 				nm_explicit_bzero (str, n_stat);
-			return _get_contents_error (error, -n_read, "error reading %zu bytes from file descriptor", n_stat);
+			return _get_contents_error (error, -n_read, out_errsv, "error reading %zu bytes from file descriptor", n_stat);
 		}
 		str[n_read] = '\0';
 
 		if (n_read < n_stat) {
 			if (!(str = _mem_realloc (str, do_bzero_mem, n_stat + 1, n_read + 1)))
-				return _get_contents_error (error, ENOMEM, "failure to reallocate buffer with %zu bytes", n_read + 1);
+				return _get_contents_error (error, ENOMEM, out_errsv, "failure to reallocate buffer with %zu bytes", n_read + 1);
 		}
 		NM_SET_OUT (length, n_read);
 	} else {
@@ -181,13 +191,13 @@ nm_utils_fd_get_contents (int fd,
 		else {
 			fd2 = fcntl (fd, F_DUPFD_CLOEXEC, 0);
 			if (fd2 < 0)
-				return _get_contents_error_errno (error, "error during dup");
+				return _get_contents_error_errno (error, out_errsv, "error during dup");
 		}
 
 		if (!(f = fdopen (fd2, "r"))) {
 			errsv = errno;
 			nm_close (fd2);
-			return _get_contents_error (error, errsv, "failure during fdopen");
+			return _get_contents_error (error, errsv, out_errsv, "failure during fdopen");
 		}
 
 		n_have = 0;
@@ -201,14 +211,14 @@ nm_utils_fd_get_contents (int fd,
 			if (ferror (f)) {
 				if (do_bzero_mem)
 					nm_explicit_bzero (buf, sizeof (buf));
-				return _get_contents_error (error, errsv, "error during fread");
+				return _get_contents_error (error, errsv, out_errsv, "error during fread");
 			}
 
 			if (   n_have > G_MAXSIZE - 1 - n_read
 			    || n_have + n_read + 1 > max_length) {
 				if (do_bzero_mem)
 					nm_explicit_bzero (buf, sizeof (buf));
-				return _get_contents_error (error, EMSGSIZE, "file stream too large (%zu+1 bytes with maximum %zu bytes)",
+				return _get_contents_error (error, EMSGSIZE, out_errsv, "file stream too large (%zu+1 bytes with maximum %zu bytes)",
 				                            (n_have > G_MAXSIZE - 1 - n_read) ? G_MAXSIZE : n_have + n_read,
 				                            max_length);
 			}
@@ -230,7 +240,7 @@ nm_utils_fd_get_contents (int fd,
 				if (!(str = _mem_realloc (str, do_bzero_mem, old_n_alloc, n_alloc))) {
 					if (do_bzero_mem)
 						nm_explicit_bzero (buf, sizeof (buf));
-					return _get_contents_error (error, ENOMEM, "failure to allocate buffer of %zu bytes", n_alloc);
+					return _get_contents_error (error, ENOMEM, out_errsv, "failure to allocate buffer of %zu bytes", n_alloc);
 				}
 			}
 
@@ -247,7 +257,7 @@ nm_utils_fd_get_contents (int fd,
 			str[n_have] = '\0';
 			if (n_have + 1 < n_alloc) {
 				if (!(str = _mem_realloc (str, do_bzero_mem, n_alloc, n_have + 1)))
-					return _get_contents_error (error, ENOMEM, "failure to truncate buffer to %zu bytes", n_have + 1);
+					return _get_contents_error (error, ENOMEM, out_errsv, "failure to truncate buffer to %zu bytes", n_have + 1);
 			}
 		}
 
@@ -255,7 +265,8 @@ nm_utils_fd_get_contents (int fd,
 	}
 
 	*contents = g_steal_pointer (&str);
-	return 0;
+	NM_SET_OUT (out_errsv, 0);
+	return TRUE;
 }
 
 /**
@@ -270,54 +281,49 @@ nm_utils_fd_get_contents (int fd,
  *   the NUL byte. That is, it reads only files up to a length of
  *   @max_length - 1 bytes.
  * @length: optional output argument of the read file size.
+ * @out_errsv: (allow-none) (out): on error, a positive errno. or zero.
+ * @error:
  *
  * A reimplementation of g_file_get_contents() with a few differences:
  *   - accepts an @dirfd to open @filename relative to that path via openat().
  *   - limits the maximum filesize to max_length.
  *   - uses O_CLOEXEC on internal file descriptor
+ *   - optionally returns the native errno on failure.
  *
- * Returns: a negative error code on failure.
+ * Returns: TRUE on success.
  */
-int
+gboolean
 nm_utils_file_get_contents (int dirfd,
                             const char *filename,
                             gsize max_length,
                             NMUtilsFileGetContentsFlags flags,
                             char **contents,
                             gsize *length,
+                            int *out_errsv,
                             GError **error)
 {
 	int fd;
-	int errsv;
-	char bstrerr[NM_STRERROR_BUFSIZE];
 
-	g_return_val_if_fail (filename && filename[0], -EINVAL);
+	g_return_val_if_fail (filename && filename[0], FALSE);
+	g_return_val_if_fail (contents && !*contents, FALSE);
+
+	NM_SET_OUT (length, 0);
 
 	if (dirfd >= 0) {
 		fd = openat (dirfd, filename, O_RDONLY | O_CLOEXEC);
 		if (fd < 0) {
-			errsv = errno;
-
-			g_set_error (error,
-			             G_FILE_ERROR,
-			             g_file_error_from_errno (errsv),
-			             "Failed to open file \"%s\" with openat: %s",
-			             filename,
-			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-			return -NM_ERRNO_NATIVE (errsv);
+			return _get_contents_error_errno (error,
+			                                  out_errsv,
+			                                  "Failed to open file \"%s\" with openat",
+			                                  filename);
 		}
 	} else {
 		fd = open (filename, O_RDONLY | O_CLOEXEC);
 		if (fd < 0) {
-			errsv = errno;
-
-			g_set_error (error,
-			             G_FILE_ERROR,
-			             g_file_error_from_errno (errsv),
-			             "Failed to open file \"%s\": %s",
-			             filename,
-			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-			return -NM_ERRNO_NATIVE (errsv);
+			return _get_contents_error_errno (error,
+			                                  out_errsv,
+			                                  "Failed to open file \"%s\"",
+			                                  filename);
 		}
 	}
 	return nm_utils_fd_get_contents (fd,
@@ -326,6 +332,7 @@ nm_utils_file_get_contents (int dirfd,
 	                                 flags,
 	                                 contents,
 	                                 length,
+	                                 out_errsv,
 	                                 error);
 }
 
@@ -335,11 +342,12 @@ nm_utils_file_get_contents (int dirfd,
  * Copied from GLib's g_file_set_contents() et al., but allows
  * specifying a mode for the new file.
  */
-int
+gboolean
 nm_utils_file_set_contents (const char *filename,
                             const char *contents,
                             gssize length,
                             mode_t mode,
+                            int *out_errsv,
                             GError **error)
 {
 	gs_free char *tmp_name = NULL;
@@ -347,12 +355,11 @@ nm_utils_file_set_contents (const char *filename,
 	int errsv;
 	gssize s;
 	int fd;
-	char bstrerr[NM_STRERROR_BUFSIZE];
 
-	g_return_val_if_fail (filename, -EINVAL);
-	g_return_val_if_fail (contents || !length, -EINVAL);
-	g_return_val_if_fail (!error || !*error, -EINVAL);
-	g_return_val_if_fail (length >= -1, -EINVAL);
+	g_return_val_if_fail (filename, FALSE);
+	g_return_val_if_fail (contents || !length, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (length >= -1, FALSE);
 
 	if (length == -1)
 		length = strlen (contents);
@@ -360,14 +367,10 @@ nm_utils_file_set_contents (const char *filename,
 	tmp_name = g_strdup_printf ("%s.XXXXXX", filename);
 	fd = g_mkstemp_full (tmp_name, O_RDWR | O_CLOEXEC, mode);
 	if (fd < 0) {
-		errsv = NM_ERRNO_NATIVE (errno);
-		g_set_error (error,
-		             G_FILE_ERROR,
-		             g_file_error_from_errno (errsv),
-		             "failed to create file %s: %s",
-		             tmp_name,
-		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-		return -errsv;
+		return _get_contents_error_errno (error,
+		                                  out_errsv,
+		                                  "failed to create file %s",
+		                                  tmp_name);
 	}
 
 	while (length > 0) {
@@ -379,13 +382,11 @@ nm_utils_file_set_contents (const char *filename,
 
 			nm_close (fd);
 			unlink (tmp_name);
-			g_set_error (error,
-			             G_FILE_ERROR,
-			             g_file_error_from_errno (errsv),
-			             "failed to write to file %s: %s",
-			             tmp_name,
-			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-			return -errsv;
+			return _get_contents_error (error,
+			                            errsv,
+			                            out_errsv,
+			                            "failed to write to file %s",
+			                            tmp_name);
 		}
 
 		g_assert (s <= length);
@@ -406,13 +407,11 @@ nm_utils_file_set_contents (const char *filename,
 			errsv = NM_ERRNO_NATIVE (errno);
 			nm_close (fd);
 			unlink (tmp_name);
-			g_set_error (error,
-			             G_FILE_ERROR,
-			             g_file_error_from_errno (errsv),
-			             "failed to fsync %s: %s",
-			             tmp_name,
-			             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-			return -errsv;
+			return _get_contents_error (error,
+			                            errsv,
+			                            out_errsv,
+			                            "failed to fsync %s",
+			                            tmp_name);
 		}
 	}
 
@@ -421,17 +420,15 @@ nm_utils_file_set_contents (const char *filename,
 	if (rename (tmp_name, filename)) {
 		errsv = NM_ERRNO_NATIVE (errno);
 		unlink (tmp_name);
-		g_set_error (error,
-		             G_FILE_ERROR,
-		             g_file_error_from_errno (errsv),
-		             "failed to rename %s to %s: %s",
-		             tmp_name,
-		             filename,
-		             nm_strerror_native_r (errsv, bstrerr, sizeof (bstrerr)));
-		return -errsv;
+		return _get_contents_error (error,
+		                            errsv,
+		                            out_errsv,
+		                            "failed rename %s to %s",
+		                            tmp_name,
+		                            filename);
 	}
 
-	return 0;
+	return TRUE;
 }
 
 /**

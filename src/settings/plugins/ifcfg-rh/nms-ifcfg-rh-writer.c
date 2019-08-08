@@ -301,11 +301,12 @@ write_blobs (GHashTable *blobs, GError **error)
 		 * can use paths from now on instead of pushing around the certificate
 		 * data itself.
 		 */
-		if (nm_utils_file_set_contents (filename,
-		                                (const char *) g_bytes_get_data (blob, NULL),
-		                                g_bytes_get_size (blob),
-		                                0600,
-		                                &write_error) < 0) {
+		if (!nm_utils_file_set_contents (filename,
+		                                 (const char *) g_bytes_get_data (blob, NULL),
+		                                 g_bytes_get_size (blob),
+		                                 0600,
+		                                 NULL,
+		                                 &write_error)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not write certificate to file \"%s\": %s",
 			             filename,

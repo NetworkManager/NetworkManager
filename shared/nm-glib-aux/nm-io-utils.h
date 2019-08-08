@@ -37,27 +37,30 @@ typedef enum {
 	NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET = (1 << 0),
 } NMUtilsFileGetContentsFlags;
 
-int nm_utils_fd_get_contents (int fd,
-                              gboolean close_fd,
-                              gsize max_length,
-                              NMUtilsFileGetContentsFlags flags,
-                              char **contents,
-                              gsize *length,
-                              GError **error);
+gboolean nm_utils_fd_get_contents (int fd,
+                                   gboolean close_fd,
+                                   gsize max_length,
+                                   NMUtilsFileGetContentsFlags flags,
+                                   char **contents,
+                                   gsize *length,
+                                   int *out_errsv,
+                                   GError **error);
 
-int nm_utils_file_get_contents (int dirfd,
-                                const char *filename,
-                                gsize max_length,
-                                NMUtilsFileGetContentsFlags flags,
-                                char **contents,
-                                gsize *length,
-                                GError **error);
+gboolean nm_utils_file_get_contents (int dirfd,
+                                     const char *filename,
+                                     gsize max_length,
+                                     NMUtilsFileGetContentsFlags flags,
+                                     char **contents,
+                                     gsize *length,
+                                     int *out_errsv,
+                                     GError **error);
 
-int nm_utils_file_set_contents (const char *filename,
-                                const char *contents,
-                                gssize length,
-                                mode_t mode,
-                                GError **error);
+gboolean nm_utils_file_set_contents (const char *filename,
+                                     const char *contents,
+                                     gssize length,
+                                     mode_t mode,
+                                     int *out_errsv,
+                                     GError **error);
 
 struct stat;
 

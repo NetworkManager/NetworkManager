@@ -266,7 +266,12 @@ nms_keyfile_nmmeta_write (const char *dirname,
 
 		contents = g_key_file_to_data (kf, &length, NULL);
 
-		if (nm_utils_file_set_contents (full_filename, contents, length, 0600, NULL) < 0) {
+		if (!nm_utils_file_set_contents (full_filename,
+		                                 contents,
+		                                 length,
+		                                 0600,
+		                                 NULL,
+		                                 NULL)) {
 			NM_SET_OUT (out_full_filename, g_steal_pointer (&full_filename_tmp));
 			return FALSE;
 		}

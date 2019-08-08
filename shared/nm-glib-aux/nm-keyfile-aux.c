@@ -186,7 +186,6 @@ nm_key_file_db_destroy (NMKeyFileDB *self)
 void
 nm_key_file_db_start (NMKeyFileDB *self)
 {
-	int r;
 	gs_free char *contents = NULL;
 	gsize contents_len;
 	gs_free_error GError *error = NULL;
@@ -196,14 +195,14 @@ nm_key_file_db_start (NMKeyFileDB *self)
 
 	self->is_started = TRUE;
 
-	r = nm_utils_file_get_contents (-1,
-	                                self->filename,
-	                                20*1024*1024,
-	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-	                                &contents,
-	                                &contents_len,
-	                                &error);
-	if (r < 0) {
+	if (!nm_utils_file_get_contents (-1,
+	                                 self->filename,
+	                                 20*1024*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                 &contents,
+	                                 &contents_len,
+	                                 NULL,
+	                                 &error)) {
 		_LOGD ("failed to read \"%s\": %s", self->filename, error->message);
 		return;
 	}

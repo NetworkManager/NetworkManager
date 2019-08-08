@@ -444,7 +444,8 @@ file_read_contents (const char *filename,
 	                                   NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
 	                                   &out_contents->str,
 	                                   &out_contents->len,
-	                                   error) >= 0;
+	                                   NULL,
+	                                   error);
 }
 
 GBytes *

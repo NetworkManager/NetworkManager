@@ -2431,8 +2431,8 @@ again:
 		 * where our configured SYSCONFDIR is.  Alternatively, it might be in
 		 * LOCALSTATEDIR /lib/dbus/machine-id.
 		 */
-		if (   nm_utils_file_get_contents (-1, "/etc/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0
-		    || nm_utils_file_get_contents (-1, LOCALSTATEDIR"/lib/dbus/machine-id", 100*1024, 0, &content, NULL, NULL) >= 0) {
+		if (   nm_utils_file_get_contents (-1, "/etc/machine-id",                   100*1024, 0, &content, NULL, NULL, NULL)
+		    || nm_utils_file_get_contents (-1, LOCALSTATEDIR"/lib/dbus/machine-id", 100*1024, 0, &content, NULL, NULL, NULL)) {
 			g_strstrip (content);
 			if (nm_utils_hexstr2bin_full (content,
 			                              FALSE,
@@ -2615,13 +2615,14 @@ _host_id_read (guint8 **out_host_id,
 	GError *error = NULL;
 	gboolean success;
 
-	if (nm_utils_file_get_contents (-1,
-	                                SECRET_KEY_FILE,
-	                                10*1024,
-	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
-	                                (char **) &file_content.str,
-	                                &file_content.len,
-	                                &error) < 0) {
+	if (!nm_utils_file_get_contents (-1,
+	                                 SECRET_KEY_FILE,
+	                                 10*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
+	                                 &file_content.str,
+	                                 &file_content.len,
+	                                 NULL,
+	                                 &error)) {
 		if (!nm_utils_error_is_notfound (error)) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure reading secret key in \"%s\": %s (generate new key)",
 			             SECRET_KEY_FILE, error->message);
@@ -2695,11 +2696,12 @@ _host_id_read (guint8 **out_host_id,
 			nm_log_warn (LOGD_CORE, "secret-key: failure to generate good random data for secret-key (use non-persistent key)");
 		else if (nm_utils_get_testing ()) {
 			/* for test code, we don't write the generated secret-key to disk. */
-		} else if (nm_utils_file_set_contents (SECRET_KEY_FILE,
-		                                       (const char *) new_content,
-		                                       len,
-		                                       0600,
-		                                       &error) < 0) {
+		} else if (!nm_utils_file_set_contents (SECRET_KEY_FILE,
+		                                        (const char *) new_content,
+		                                        len,
+		                                        0600,
+		                                        NULL,
+		                                        &error)) {
 			nm_log_warn (LOGD_CORE, "secret-key: failure to persist secret key in \"%s\" (%s) (use non-persistent key)",
 			             SECRET_KEY_FILE, error->message);
 			g_clear_error (&error);
@@ -2809,9 +2811,14 @@ again:
 		NMUuid uuid;
 		gboolean is_fake = FALSE;
 
-		nm_utils_file_get_contents (-1, "/proc/sys/kernel/random/boot_id", 0,
+		nm_utils_file_get_contents (-1,
+		                            "/proc/sys/kernel/random/boot_id",
+		                            0,
 		                            NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-		                            &contents, NULL, NULL);
+		                            &contents,
+		                            NULL,
+		                            NULL,
+		                            NULL);
 		if (   !contents
 		    || !_nm_utils_uuid_parse (nm_strstrip (contents), &uuid)) {
 			/* generate a random UUID instead. */
