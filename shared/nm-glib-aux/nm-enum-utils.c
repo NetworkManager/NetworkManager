@@ -225,7 +225,7 @@ _nm_utils_enum_from_str_full (GType type,
                               char **err_token,
                               const NMUtilsEnumValueInfo *value_infos)
 {
-	GTypeClass *klass;
+	nm_auto_unref_gtypeclass GTypeClass *klass = NULL;
 	gboolean ret = FALSE;
 	int value = 0;
 	gs_free char *str_clone = NULL;
@@ -317,7 +317,6 @@ _nm_utils_enum_from_str_full (GType type,
 
 	NM_SET_OUT (err_token, !ret && s[0] ? g_strdup (s) : NULL);
 	NM_SET_OUT (out_value, ret ? value : 0);
-	g_type_class_unref (klass);
 	return ret;
 }
 
