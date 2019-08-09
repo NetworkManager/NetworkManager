@@ -130,6 +130,12 @@ typedef enum {
 } NMMetaColor;
 
 typedef enum {
+	NM_META_ACCESSOR_MODIFIER_SET,
+	NM_META_ACCESSOR_MODIFIER_ADD,
+	NM_META_ACCESSOR_MODIFIER_DEL,
+} NMMetaAccessorModifier;
+
+typedef enum {
 	NM_META_ACCESSOR_GET_TYPE_PRETTY,
 	NM_META_ACCESSOR_GET_TYPE_PARSABLE,
 	NM_META_ACCESSOR_GET_TYPE_COLOR,
@@ -210,7 +216,7 @@ struct _NMMetaPropertyType {
 	                     const NMMetaEnvironment *environment,
 	                     gpointer environment_user_data,
 	                     NMSetting *setting,
-	                     char modifier,
+	                     NMMetaAccessorModifier modifier,
 	                     const char *value,
 	                     GError **error);
 

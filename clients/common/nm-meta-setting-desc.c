@@ -638,7 +638,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, NMMetaAccessorGetType get_type, NMMetaAccessorGetFlags get_flags, NMMetaAccessorGetOutFlags *out_flags, gboolean *out_is_default, gpointer *out_to_free
 
 #define ARGS_SET_FCN \
-	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, char modifier, const char *value, GError **error
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, NMMetaAccessorModifier modifier, const char *value, GError **error
 
 #define ARGS_REMOVE_FCN \
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
@@ -653,43 +653,52 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaSettingInfoEditor *setting_info, NMSetting *setting, NMMetaAccessorSettingInitType init_type
 
 static gboolean
-_SET_FCN_DO_RESET_DEFAULT (const NMMetaPropertyInfo *property_info, char modifier, const char *value)
+_SET_FCN_DO_RESET_DEFAULT (const NMMetaPropertyInfo *property_info, NMMetaAccessorModifier modifier, const char *value)
 {
 	nm_assert (property_info);
 	nm_assert (!property_info->property_type->set_supports_remove);
-	nm_assert (NM_IN_SET (modifier, '\0', '+'));
-	nm_assert (value || modifier == '\0');
+	nm_assert (NM_IN_SET (modifier, NM_META_ACCESSOR_MODIFIER_SET,
+	                                NM_META_ACCESSOR_MODIFIER_ADD));
+	nm_assert (   value
+	           || modifier == NM_META_ACCESSOR_MODIFIER_SET);
 
 	return value == NULL;
 }
 
 static gboolean
-_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (const NMMetaPropertyInfo *property_info, char modifier, const char *value)
+_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (const NMMetaPropertyInfo *property_info, NMMetaAccessorModifier modifier, const char *value)
 {
 	nm_assert (property_info);
 	nm_assert (property_info->property_type->set_supports_remove);
-	nm_assert (NM_IN_SET (modifier, '\0', '+', '-'));
-	nm_assert (value || modifier == '\0');
+	nm_assert (NM_IN_SET (modifier, NM_META_ACCESSOR_MODIFIER_SET,
+	                                NM_META_ACCESSOR_MODIFIER_ADD,
+	                                NM_META_ACCESSOR_MODIFIER_DEL));
+	nm_assert (   value
+	           || modifier == NM_META_ACCESSOR_MODIFIER_SET);
 
 	return value == NULL;
 }
 
 static gboolean
-_SET_FCN_DO_SET_ALL (char modifier, const char *value)
+_SET_FCN_DO_SET_ALL (NMMetaAccessorModifier modifier, const char *value)
 {
-	nm_assert (NM_IN_SET (modifier, '\0', '+', '-'));
+	nm_assert (NM_IN_SET (modifier, NM_META_ACCESSOR_MODIFIER_SET,
+	                                NM_META_ACCESSOR_MODIFIER_ADD,
+	                                NM_META_ACCESSOR_MODIFIER_DEL));
 	nm_assert (value);
 
-	return modifier == '\0';
+	return modifier == NM_META_ACCESSOR_MODIFIER_SET;
 }
 
 static gboolean
-_SET_FCN_DO_REMOVE (char modifier, const char *value)
+_SET_FCN_DO_REMOVE (NMMetaAccessorModifier modifier, const char *value)
 {
-	nm_assert (NM_IN_SET (modifier, '\0', '+', '-'));
+	nm_assert (NM_IN_SET (modifier, NM_META_ACCESSOR_MODIFIER_SET,
+	                                NM_META_ACCESSOR_MODIFIER_ADD,
+	                                NM_META_ACCESSOR_MODIFIER_DEL));
 	nm_assert (value);
 
-	return modifier == '-';
+	return modifier == NM_META_ACCESSOR_MODIFIER_DEL;
 }
 
 #define RETURN_UNSUPPORTED_GET_TYPE() \

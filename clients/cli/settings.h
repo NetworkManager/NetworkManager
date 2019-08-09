@@ -45,7 +45,7 @@ char       *nmc_setting_get_property_parsable (NMSetting *setting,
 gboolean    nmc_setting_set_property (NMClient *client,
                                       NMSetting *setting,
                                       const char *prop,
-                                      char modifier,
+                                      NMMetaAccessorModifier modifier,
                                       const char *val,
                                       GError **error);
 

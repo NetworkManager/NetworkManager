@@ -532,7 +532,7 @@ gboolean
 nmc_setting_set_property (NMClient *client,
                           NMSetting *setting,
                           const char *prop,
-                          char modifier,
+                          NMMetaAccessorModifier modifier,
                           const char *value,
                           GError **error)
 {
@@ -542,14 +542,14 @@ nmc_setting_set_property (NMClient *client,
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-	g_return_val_if_fail (NM_IN_SET (modifier, '\0', '-', '+'), FALSE);
+	g_return_val_if_fail (NM_IN_SET (modifier, NM_META_ACCESSOR_MODIFIER_SET, NM_META_ACCESSOR_MODIFIER_DEL, NM_META_ACCESSOR_MODIFIER_ADD), FALSE);
 
 	if (!(property_info = nm_meta_property_info_find_by_setting (setting, prop)))
 		goto out_fail_read_only;
 	if (!property_info->property_type->set_fcn)
 		goto out_fail_read_only;
 
-	if (   modifier == '-'
+	if (   modifier == NM_META_ACCESSOR_MODIFIER_DEL
 	    && !property_info->property_type->set_supports_remove) {
 		/* The property is a plain property. It does not support '-'.
 		 *
@@ -572,7 +572,7 @@ nmc_setting_set_property (NMClient *client,
 		}
 	}
 
-	if (   NM_IN_SET (modifier, '+', '-')
+	if (   NM_IN_SET (modifier, NM_META_ACCESSOR_MODIFIER_ADD, NM_META_ACCESSOR_MODIFIER_DEL)
 	    && (   !value
 	        || !value[0])) {
 		/* nothing to do. */
