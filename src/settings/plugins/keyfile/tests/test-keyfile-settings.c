@@ -2543,7 +2543,7 @@ _assert_keyfile_nmmeta (const char *dirname,
 	nm_clear_g_free (&full_filename);
 
 
-	g_assert (nms_keyfile_nmmeta_write (dirname, uuid, loaded_path, allow_relative, NULL, &full_filename));
+	g_assert_cmpint (nms_keyfile_nmmeta_write (dirname, uuid, loaded_path, allow_relative, NULL, &full_filename), ==, 0);
 	g_assert_cmpstr (full_filename, ==, exp_full_filename);
 	nm_clear_g_free (&full_filename);
 

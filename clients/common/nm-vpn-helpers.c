@@ -390,13 +390,14 @@ nm_vpn_wireguard_import (const char *filename,
 		return FALSE;
 	}
 
-	if (nm_utils_file_get_contents (-1,
-	                                filename,
-	                                10*1024*1024,
-	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
-	                                &file_content.str,
-	                                &file_content.len,
-	                                error) < 0)
+	if (!nm_utils_file_get_contents (-1,
+	                                 filename,
+	                                 10*1024*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
+	                                 &file_content.str,
+	                                 &file_content.len,
+	                                 NULL,
+	                                 error))
 		return NULL;
 
 	/* We interpret the file like `wg-quick up` and `wg setconf` do.

@@ -868,14 +868,19 @@ _lookup_cached_link (const NMPCache *cache,
 static char *
 _linktype_read_devtype (int dirfd)
 {
-	char *contents = NULL;
+	gs_free char *contents = NULL;
 	char *cont, *end;
 
 	nm_assert (dirfd >= 0);
 
-	if (nm_utils_file_get_contents (dirfd, "uevent", 1*1024*1024,
-	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-	                                &contents, NULL, NULL) < 0)
+	if (!nm_utils_file_get_contents (dirfd,
+	                                 "uevent",
+	                                 1*1024*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                 &contents,
+	                                 NULL,
+	                                 NULL,
+	                                 NULL))
 		return NULL;
 	for (cont = contents; cont; cont = end) {
 		end = strpbrk (cont, "\r\n");
@@ -884,10 +889,9 @@ _linktype_read_devtype (int dirfd)
 		if (strncmp (cont, DEVTYPE_PREFIX, NM_STRLEN (DEVTYPE_PREFIX)) == 0) {
 			cont += NM_STRLEN (DEVTYPE_PREFIX);
 			memmove (contents, cont, strlen (cont) + 1);
-			return contents;
+			return g_steal_pointer (&contents);
 		}
 	}
-	g_free (contents);
 	return NULL;
 }
 
@@ -4406,12 +4410,17 @@ static void
 _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	GError *error = NULL;
-	char *contents;
+	gs_free char *contents = NULL;
 	gs_free char *value_escaped = g_strescape (value, NULL);
 
-	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024,
-	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-	                                &contents, NULL, &error) < 0) {
+	if (!nm_utils_file_get_contents (dirfd,
+	                                 path,
+	                                 1*1024*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                 &contents,
+	                                 NULL,
+	                                 NULL,
+	                                 &error)) {
 		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", pathid ?: path, value_escaped, error->message);
 		g_clear_error (&error);
 		return;
@@ -4425,7 +4434,6 @@ _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *pathid, int dirfd, c
 
 		_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", pathid ?: path, value_escaped, contents_escaped);
 	}
-	g_free (contents);
 }
 
 #define _log_dbg_sysctl_set(platform, pathid, dirfd, path, value) \
@@ -4841,7 +4849,7 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	GError *error = NULL;
-	char *contents;
+	gs_free char *contents = NULL;
 
 	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
@@ -4853,9 +4861,14 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 		pathid = path;
 	}
 
-	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024,
-	                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-	                                &contents, NULL, &error) < 0) {
+	if (!nm_utils_file_get_contents (dirfd,
+	                                 path,
+	                                 1*1024*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+	                                 &contents,
+	                                 NULL,
+	                                 NULL,
+	                                 &error)) {
 		NMLogLevel log_level = LOGL_ERR;
 		int errsv = EBUSY;
 
@@ -4879,7 +4892,7 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 	_log_dbg_sysctl_get (platform, pathid, contents);
 
 	/* errno is left undefined (as we don't return NULL). */
-	return contents;
+	return g_steal_pointer (&contents);
 }
 
 /*****************************************************************************/

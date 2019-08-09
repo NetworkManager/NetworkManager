@@ -40,8 +40,13 @@ def con_to_str(con):
     return '"%s" (%s)' % (s_con.get_id(), s_con.get_uuid())
 
 def usage():
-    print('Usage: %s [[id] <id>]' % (sys.argv[0]))
-    print('       %s [[uuid] <uuid>]' % (sys.argv[0]))
+    arg0 = sys.argv[0]
+    arg0_spaced = ' ' * len(arg0)
+    print('Usage: %s [ [id] <id> | [uuid] <uuid> ] \\' % (arg0))
+    print('       %s [ --to-disk | --in-memory | --in-memory-detached | --in-memory-only ] \\' % (arg0_spaced))
+    print('       %s [ --block-autoconnect ] \\' % (arg0_spaced))
+    print('       %s [ --volatile ] \\' % (arg0_spaced))
+    print('       %s [ --no-reapply ] \\' % (arg0_spaced))
     return 1
 
 def die(msg, print_usage=False):

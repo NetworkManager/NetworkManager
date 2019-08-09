@@ -2886,9 +2886,14 @@ test_sysctl_rename (void)
 	case 0: {
 		gs_free char *c = NULL;
 
-		if (nm_utils_file_get_contents (dirfd, "ifindex", 1*1024*1024,
-		                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-		                                &c, NULL, NULL) < 0)
+		if (!nm_utils_file_get_contents (dirfd,
+		                                 "ifindex",
+		                                 1*1024*1024,
+		                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+		                                 &c,
+		                                 NULL,
+		                                 NULL,
+		                                 NULL))
 			g_assert_not_reached();
 		g_assert_cmpint (ifindex[0], ==, (int) _nm_utils_ascii_str_to_int64 (c, 10, 0, G_MAXINT, -1));
 		break;
@@ -2952,9 +2957,14 @@ test_sysctl_netns_switch (void)
 	{
 		gs_free char *c = NULL;
 
-		if (nm_utils_file_get_contents (dirfd, "ifindex", 0,
-		                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-		                                &c, NULL, NULL) < 0)
+		if (!nm_utils_file_get_contents (dirfd,
+		                                 "ifindex",
+		                                 0,
+		                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+		                                 &c,
+		                                 NULL,
+		                                 NULL,
+		                                 NULL))
 			g_assert_not_reached();
 		g_assert_cmpint (ifindex, ==, (int) _nm_utils_ascii_str_to_int64 (c, 10, 0, G_MAXINT, -1));
 	}
@@ -2997,11 +3007,14 @@ test_sysctl_netns_switch (void)
 	{
 		gs_free char *c = NULL;
 
-		if (nm_utils_file_get_contents (-1,
-		                                nm_sprintf_bufa (100, "/sys/class/net/%s/ifindex", IFNAME),
-		                                0,
-		                                NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-		                                &c, NULL, NULL) < 0)
+		if (!nm_utils_file_get_contents (-1,
+		                                 nm_sprintf_bufa (100, "/sys/class/net/%s/ifindex", IFNAME),
+		                                 0,
+		                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+		                                 &c,
+		                                 NULL,
+		                                 NULL,
+		                                 NULL))
 			ifindex_tmp = -1;
 		else
 			ifindex_tmp = _nm_utils_ascii_str_to_int64 (c, 10, 0, G_MAXINT, -2);

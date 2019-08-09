@@ -126,8 +126,12 @@ cert_writer (NMConnection *connection,
 		new_path = g_strdup_printf ("%s/%s-%s.%s", info->keyfile_dir, nm_connection_get_uuid (connection),
 		                            cert_data->vtable->file_suffix, ext);
 
-		success = nm_utils_file_set_contents (new_path, (const char *) blob_data,
-		                                      blob_len, 0600, &local);
+		success = nm_utils_file_set_contents (new_path,
+		                                      (const char *) blob_data,
+		                                      blob_len,
+		                                      0600,
+		                                      NULL,
+		                                      &local);
 		if (success) {
 			/* Write the path value to the keyfile.
 			 * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
@@ -309,7 +313,12 @@ _internal_write_connection (NMConnection *connection,
 		return FALSE;
 	}
 
-	nm_utils_file_set_contents (path, kf_content_buf, kf_content_len, 0600, &local_err);
+	nm_utils_file_set_contents (path,
+	                            kf_content_buf,
+	                            kf_content_len,
+	                            0600,
+	                            NULL,
+	                            &local_err);
 	if (local_err) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "error writing to file '%s': %s",

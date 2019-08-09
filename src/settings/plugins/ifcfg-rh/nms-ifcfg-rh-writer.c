@@ -305,6 +305,7 @@ write_blobs (GHashTable *blobs, GError **error)
 		                                 (const char *) g_bytes_get_data (blob, NULL),
 		                                 g_bytes_get_size (blob),
 		                                 0600,
+		                                 NULL,
 		                                 &write_error)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not write certificate to file \"%s\": %s",

@@ -66,12 +66,12 @@ gboolean nms_keyfile_nmmeta_read_from_file (const char *full_filename,
                                             char **out_loaded_path,
                                             char **out_shadowed_storage);
 
-gboolean nms_keyfile_nmmeta_write (const char *dirname,
-                                   const char *uuid,
-                                   const char *loaded_path,
-                                   gboolean loaded_path_allow_relative,
-                                   const char *shadowed_storage,
-                                   char **out_full_filename);
+int nms_keyfile_nmmeta_write (const char *dirname,
+                              const char *uuid,
+                              const char *loaded_path,
+                              gboolean loaded_path_allow_relative,
+                              const char *shadowed_storage,
+                              char **out_full_filename);
 
 /*****************************************************************************/
 
