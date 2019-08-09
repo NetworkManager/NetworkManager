@@ -549,12 +549,6 @@ nmc_setting_set_property (NMClient *client,
 	if (!property_info->property_type->set_fcn)
 		goto out_fail_read_only;
 
-	if (   NM_IN_SET (modifier, '+', '-')
-	    && !value) {
-		/* nothing to do. */
-		return TRUE;
-	}
-
 	if (   modifier == '-'
 	    && !property_info->property_type->set_supports_remove) {
 		/* The property is a plain property. It does not support '-'.
@@ -576,6 +570,13 @@ nmc_setting_set_property (NMClient *client,
 		default:
 			break;
 		}
+	}
+
+	if (   NM_IN_SET (modifier, '+', '-')
+	    && (   !value
+	        || !value[0])) {
+		/* nothing to do. */
+		return TRUE;
 	}
 
 	g_object_freeze_notify (G_OBJECT (setting));
