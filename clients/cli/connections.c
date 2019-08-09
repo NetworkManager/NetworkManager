@@ -4706,20 +4706,18 @@ nmc_read_connection_properties (NmCli *nmc,
                                 char ***argv,
                                 GError **error)
 {
-	const char *option;
-	const char *value = NULL;
-	GError *local = NULL;
-
 	/* First check if we have a slave-type, as this would mean we will not
 	 * have ip properties but possibly others, slave-type specific.
 	 */
 	/* Go through arguments and set properties */
 	do {
-		const NMMetaAbstractInfo *chosen = NULL;
-		gs_strfreev char **strv = NULL;
 		const NMMetaSettingValidPartItem *const*type_settings;
 		const NMMetaSettingValidPartItem *const*slv_settings;
 		NMMetaAccessorModifier modifier;
+		const char *option_orig;
+		const char *option;
+		const char *value = NULL;
+		const char *tmp;
 
 		if (!con_settings (connection, &type_settings, &slv_settings, error))
 			return FALSE;
@@ -4727,57 +4725,58 @@ nmc_read_connection_properties (NmCli *nmc,
 		ensure_settings (connection, slv_settings);
 		ensure_settings (connection, type_settings);
 
-		option = **argv;
-		if (!option) {
+		option_orig = **argv;
+		if (!option_orig) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: <setting>.<property> argument is missing."));
 			return FALSE;
 		}
 
-		switch (option[0]) {
-		case '+': modifier = NM_META_ACCESSOR_MODIFIER_ADD; break;
-		case '-': modifier = NM_META_ACCESSOR_MODIFIER_DEL; break;
-		default:  modifier = NM_META_ACCESSOR_MODIFIER_SET; break;
+		switch (option_orig[0]) {
+		case '+': modifier = NM_META_ACCESSOR_MODIFIER_ADD; option = &option_orig[1]; break;
+		case '-': modifier = NM_META_ACCESSOR_MODIFIER_DEL; option = &option_orig[1]; break;
+		default:  modifier = NM_META_ACCESSOR_MODIFIER_SET; option = option_orig;     break;
 		}
 
-		strv = g_strsplit (option, ".", 2);
-		if (g_strv_length (strv) == 2) {
+		if ((tmp = strchr (option, '.'))) {
+			gs_free char *option_sett = g_strndup (option, tmp - option);
+			const char *option_prop = &tmp[1];
+			const char *option_sett_expanded;
+			GError *local = NULL;
+
 			/* This seems like a <setting>.<property> (such as "connection.id" or "bond.mode"),
 			 * optionally prefixed with "+| or "-". */
-			char *setting = strv[0];
-			const char *setting_name;
 
-			if (modifier != NM_META_ACCESSOR_MODIFIER_SET)
-				setting++;
+			if (   *argc == 1
+			    && nmc->complete)
+				complete_property_name (nmc, connection, modifier, option_sett, option_prop);
 
-			if (*argc == 1 && nmc->complete)
-				complete_property_name (nmc, connection, modifier, setting, strv[1]);
-
-			setting_name = check_valid_name (setting, type_settings, slv_settings, &local);
-			if (!setting_name) {
+			option_sett_expanded = check_valid_name (option_sett, type_settings, slv_settings, &local);
+			if (!option_sett_expanded) {
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: invalid or not allowed setting '%s': %s."),
-				             setting, local->message);
+				             option_sett, local->message);
 				g_clear_error (&local);
 				return FALSE;
 			}
 
 			(*argc)--;
 			(*argv)++;
-			if (!get_value (&value, argc, argv, option, error))
+			if (!get_value (&value, argc, argv, option_orig, error))
 				return FALSE;
 
 			if (!*argc && nmc->complete) {
-				complete_property (nmc, setting, strv[1], value ?: "", connection);
+				complete_property (nmc, option_sett, option_prop, value ?: "", connection);
 				return TRUE;
 			}
 
-			if (!set_property (nmc->client, connection, setting_name, strv[1], value, modifier, error))
+			if (!set_property (nmc->client, connection, option_sett_expanded, option_prop, value, modifier, error))
 				return FALSE;
 		} else {
-			NMMetaSettingType s;
+			const NMMetaAbstractInfo *chosen = NULL;
 			const char *chosen_setting_name = NULL;
 			const char *chosen_option = NULL;
+			NMMetaSettingType s;
 
 			/* Let's see if this is an property alias (such as "id", "mode", "type" or "con-name")*/
 			for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
@@ -4833,8 +4832,6 @@ nmc_read_connection_properties (NmCli *nmc,
 			}
 
 			if (!chosen) {
-				if (modifier != NM_META_ACCESSOR_MODIFIER_SET)
-					option++;
 				if (*argc == 1 && nmc->complete)
 					complete_property_name (nmc, connection, modifier, option, NULL);
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -4847,7 +4844,7 @@ nmc_read_connection_properties (NmCli *nmc,
 
 			(*argc)--;
 			(*argv)++;
-			if (!get_value (&value, argc, argv, option, error))
+			if (!get_value (&value, argc, argv, option_orig, error))
 				return FALSE;
 
 			if (!*argc && nmc->complete)
