@@ -1458,11 +1458,12 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	GType gtype_prop;
 	gboolean has_gtype = FALSE;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
+	nm_auto_unref_gtypeclass GTypeClass *gtype_prop_class = NULL;
 	nm_auto_unref_gtypeclass GTypeClass *gtype_class = NULL;
 	gboolean is_flags;
 	int v;
 
-	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
+	if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (property_info->property_typ_data) {
@@ -1479,15 +1480,15 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	                  G_TYPE_INT,
 	                  G_TYPE_UINT)
 	    && G_TYPE_IS_CLASSED (gtype)
-	    && (gtype_class = g_type_class_ref (gtype))
-	    && (   (is_flags = G_IS_FLAGS_CLASS (gtype_class))
-	        || G_IS_ENUM_CLASS (gtype_class))) {
+	    && (gtype_prop_class = g_type_class_ref (gtype))
+	    && (   (is_flags = G_IS_FLAGS_CLASS (gtype_prop_class))
+	        || G_IS_ENUM_CLASS (gtype_prop_class))) {
 		/* valid */
 	} else if (   !has_gtype
 	           && G_TYPE_IS_CLASSED (gtype_prop)
-	           && (gtype_class = g_type_class_ref (gtype_prop))
-	           && (   (is_flags = G_IS_FLAGS_CLASS (gtype_class))
-	               || G_IS_ENUM_CLASS (gtype_class))) {
+	           && (gtype_prop_class = g_type_class_ref (gtype_prop))
+	           && (   (is_flags = G_IS_FLAGS_CLASS (gtype_prop_class))
+	               || G_IS_ENUM_CLASS (gtype_prop_class))) {
 		gtype = gtype_prop;
 	} else
 		g_return_val_if_reached (FALSE);
@@ -1507,16 +1508,33 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 		                                                                       v);
 	}
 
+	gtype_class = g_type_class_ref (gtype);
+
+	if (   G_IS_FLAGS_CLASS (gtype_class)
+	    && !_SET_FCN_DO_SET_ALL (modifier, value)) {
+		nm_auto_unset_gvalue GValue int_value = { };
+		guint v_flag;
+
+		g_value_init (&int_value, G_TYPE_UINT);
+		g_object_get_property (G_OBJECT (setting), property_info->property_name, &int_value);
+		v_flag = g_value_get_uint (&int_value);
+
+		if (_SET_FCN_DO_REMOVE (modifier, value))
+			v = (int) (v_flag & ~((guint) v));
+		else
+			v = (int) (v_flag | ((guint) v));
+	}
+
 	g_value_init (&gval, gtype_prop);
 	if (gtype_prop == G_TYPE_INT)
 		g_value_set_int (&gval, v);
 	else if (gtype_prop == G_TYPE_UINT)
 		g_value_set_uint (&gval, v);
 	else if (is_flags) {
-		nm_assert (G_IS_FLAGS_CLASS (gtype_class));
+		nm_assert (G_IS_FLAGS_CLASS (gtype_prop_class));
 		g_value_set_flags (&gval, v);
 	} else {
-		nm_assert (G_IS_ENUM_CLASS (gtype_class));
+		nm_assert (G_IS_ENUM_CLASS (gtype_prop_class));
 		g_value_set_enum (&gval, v);
 	}
 
@@ -4339,12 +4357,14 @@ static const NMMetaPropertyType _pt_gobject_secret_flags = {
 	.get_fcn =                      _get_fcn_gobject_secret_flags,
 	.set_fcn =                      _set_fcn_gobject_enum,
 	.values_fcn =                   _values_fcn_gobject_enum,
+	.set_supports_remove =          TRUE,
 };
 
 static const NMMetaPropertyType _pt_gobject_enum = {
 	.get_fcn =                      _get_fcn_gobject_enum,
 	.set_fcn =                      _set_fcn_gobject_enum,
 	.values_fcn =                   _values_fcn_gobject_enum,
+	.set_supports_remove =          TRUE,
 };
 
 static const NMMetaPropertyType _pt_gobject_devices = {
