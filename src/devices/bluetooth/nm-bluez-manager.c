@@ -45,7 +45,6 @@
 #define NM_BLUEZ_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_BLUEZ_MANAGER, NMBluezManagerClass))
 
 typedef struct {
-	int bluez_version;
 
 	NMSettings *settings;
 	NMBluez5Manager *manager5;
@@ -182,29 +181,15 @@ manager_network_server_added_cb (GObject *manager,
 }
 
 static void
-setup_version_number (NMBluezManager *self, int bluez_version)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	g_return_if_fail (!priv->bluez_version);
-
-	_LOGI ("use BlueZ version %d", bluez_version);
-
-	priv->bluez_version = bluez_version;
-
-	/* Just detected the version. Cleanup the ongoing checking/detection. */
-	cleanup_checking (self, TRUE);
-}
-
-static void
 setup_bluez5 (NMBluezManager *self)
 {
 	NMBluez5Manager *manager;
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	g_return_if_fail (!priv->manager5 && !priv->bluez_version);
+	g_return_if_fail (!priv->manager5);
 
-	setup_version_number (self, 5);
+	cleanup_checking (self, TRUE);
+
 	priv->manager5 = manager = nm_bluez5_manager_new (priv->settings);
 
 	g_signal_connect (manager,
@@ -229,31 +214,27 @@ watch_name_on_appeared (GDBusConnection *connection,
 }
 
 static void
-check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, const char *reason)
+check_bluez_and_try_setup_final_step (NMBluezManager *self, gboolean ready, const char *reason)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	g_return_if_fail (!priv->bluez_version);
-
-	switch (bluez_version) {
-	case 5:
+	if (ready) {
 		setup_bluez5 (self);
-		break;
-	default:
-		_LOGD ("detecting BlueZ version failed: %s", reason);
+		return;
+	}
 
-		/* cancel current attempts to detect the version. */
-		cleanup_checking (self, FALSE);
-		if (!priv->watch_name_id) {
-			priv->watch_name_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
-			                                        NM_BLUEZ_SERVICE,
-			                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
-			                                        watch_name_on_appeared,
-			                                        NULL,
-			                                        self,
-			                                        NULL);
-		}
-		break;
+	_LOGD ("detecting BlueZ version failed: %s", reason);
+
+	/* cancel current attempts to detect the version. */
+	cleanup_checking (self, FALSE);
+	if (!priv->watch_name_id) {
+		priv->watch_name_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+		                                        NM_BLUEZ_SERVICE,
+		                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
+		                                        watch_name_on_appeared,
+		                                        NULL,
+		                                        self,
+		                                        NULL);
 	}
 }
 
@@ -265,9 +246,7 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 	NMBluezManager *self = async_data_unpack (user_data);
 	NMBluezManagerPrivate *priv;
 	GError *error = NULL;
-	GVariant *result;
-	const char *xml_data;
-	int bluez_version = 0;
+	gs_unref_variant GVariant *result = NULL;
 	const char *reason = NULL;
 
 	if (!self)
@@ -277,7 +256,6 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 
 	g_return_if_fail (priv->introspect_proxy);
 	g_return_if_fail (!g_cancellable_is_cancelled (priv->async_cancellable));
-	g_return_if_fail (!priv->bluez_version);
 
 	g_clear_object (&priv->async_cancellable);
 
@@ -288,25 +266,13 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 
 		g_dbus_error_strip_remote_error (error);
 		reason2 = g_strdup_printf ("introspect failed with %s", error->message);
-		check_bluez_and_try_setup_final_step (self, 0, reason2);
+		check_bluez_and_try_setup_final_step (self, FALSE, reason2);
 		g_error_free (error);
 		g_free (reason2);
 		return;
 	}
 
-	g_variant_get (result, "(&s)", &xml_data);
-
-	/* might not be the best approach to detect the version, but it's good enough in practice. */
-	if (strstr (xml_data, "org.freedesktop.DBus.ObjectManager"))
-		bluez_version = 5;
-	else if (strstr (xml_data, NM_BLUEZ4_MANAGER_INTERFACE))
-		bluez_version = 4;
-	else
-		reason = "unexpected introspect result";
-
-	g_variant_unref (result);
-
-	check_bluez_and_try_setup_final_step (self, bluez_version, reason);
+	check_bluez_and_try_setup_final_step (self, TRUE, reason);
 }
 
 static void
@@ -325,13 +291,13 @@ check_bluez_and_try_setup_on_new_proxy (GObject *source_object,
 
 	g_return_if_fail (!priv->introspect_proxy);
 	g_return_if_fail (!g_cancellable_is_cancelled (priv->async_cancellable));
-	g_return_if_fail (!priv->bluez_version);
 
 	priv->introspect_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
 
 	if (!priv->introspect_proxy) {
 		char *reason = g_strdup_printf ("bluez error creating dbus proxy: %s", error->message);
-		check_bluez_and_try_setup_final_step (self, 0, reason);
+
+		check_bluez_and_try_setup_final_step (self, FALSE, reason);
 		g_error_free (error);
 		g_free (reason);
 		return;
@@ -351,8 +317,6 @@ static void
 check_bluez_and_try_setup (NMBluezManager *self)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	g_return_if_fail (!priv->bluez_version);
 
 	/* there should be no ongoing detection. Anyway, cleanup_checking. */
 	cleanup_checking (self, FALSE);
@@ -424,8 +388,6 @@ dispose (GObject *object)
 	}
 
 	cleanup_checking (self, TRUE);
-
-	priv->bluez_version = 0;
 
 	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
 
