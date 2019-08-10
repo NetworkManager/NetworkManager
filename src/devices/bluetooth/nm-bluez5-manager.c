@@ -346,7 +346,7 @@ device_added (GDBusProxy *proxy, const char *path, NMBluez5Manager *self)
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	device = nm_bluez_device_new (path, priv->settings);
+	device = nm_bluez_device_new (g_dbus_proxy_get_connection (proxy), path, priv->settings);
 	g_signal_connect (device, NM_BLUEZ_DEVICE_INITIALIZED, G_CALLBACK (device_initialized), self);
 	g_signal_connect (device, "notify::" NM_BLUEZ_DEVICE_USABLE, G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);

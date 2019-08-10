@@ -46,7 +46,8 @@ typedef struct _NMBluezDeviceClass NMBluezDeviceClass;
 
 GType nm_bluez_device_get_type (void);
 
-NMBluezDevice *nm_bluez_device_new (const char *path,
+NMBluezDevice *nm_bluez_device_new (GDBusConnection *dbus_connection,
+                                    const char *path,
                                     NMSettings *settings);
 
 const char *nm_bluez_device_get_path (NMBluezDevice *self);

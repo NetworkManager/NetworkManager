@@ -61,6 +61,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	char *path;
+
 	GDBusConnection *dbus_connection;
 
 	GDBusProxy *proxy;
@@ -961,24 +962,6 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	g_object_unref (self);
 }
 
-static void
-on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
-{
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	priv->dbus_connection = g_bus_get_finish (res, &error);
-
-	if (!priv->dbus_connection) {
-		nm_log_warn (LOGD_BT, "bluez[%s] failed to acquire bus connection: %s.", priv->path, error->message);
-		g_clear_error (&error);
-		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
-	} else
-		check_emit_usable (self);
-
-	g_object_unref (self);
-}
-
 /*****************************************************************************/
 
 static void
@@ -1037,7 +1020,8 @@ nm_bluez_device_init (NMBluezDevice *self)
 }
 
 NMBluezDevice *
-nm_bluez_device_new (const char *path,
+nm_bluez_device_new (GDBusConnection *dbus_connection,
+                     const char *path,
                      NMSettings *settings)
 {
 	NMBluezDevice *self;
@@ -1045,6 +1029,7 @@ nm_bluez_device_new (const char *path,
 
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SETTINGS (settings), NULL);
+	g_return_val_if_fail (G_IS_DBUS_CONNECTION (dbus_connection), NULL);
 
 	self = (NMBluezDevice *) g_object_new (NM_TYPE_BLUEZ_DEVICE,
 	                                       NM_BLUEZ_DEVICE_PATH, path,
@@ -1062,20 +1047,18 @@ nm_bluez_device_new (const char *path,
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, G_CALLBACK (cp_connection_removed), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, G_CALLBACK (cp_connection_updated), self);
 
-	g_bus_get (G_BUS_TYPE_SYSTEM,
-	           NULL,
-	           (GAsyncReadyCallback) on_bus_acquired,
-	           g_object_ref (self));
+	priv->dbus_connection = g_object_ref (dbus_connection);
 
-	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                          G_DBUS_PROXY_FLAGS_NONE,
-	                          NULL,
-	                          NM_BLUEZ_SERVICE,
-	                          priv->path,
-	                          NM_BLUEZ5_DEVICE_INTERFACE,
-	                          NULL,
-	                          (GAsyncReadyCallback) on_proxy_acquired,
-	                          g_object_ref (self));
+	g_dbus_proxy_new (priv->dbus_connection,
+	                  G_DBUS_PROXY_FLAGS_NONE,
+	                  NULL,
+	                  NM_BLUEZ_SERVICE,
+	                  priv->path,
+	                  NM_BLUEZ5_DEVICE_INTERFACE,
+	                  NULL,
+	                  (GAsyncReadyCallback) on_proxy_acquired,
+	                  g_object_ref (self));
+
 	return self;
 }
 
