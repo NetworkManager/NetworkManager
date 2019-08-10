@@ -3335,17 +3335,14 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
 	src/devices/bluetooth/nm-bluez-common.h \
 	src/devices/bluetooth/nm-bluez-device.c \
 	src/devices/bluetooth/nm-bluez-device.h \
-	src/devices/bluetooth/nm-bluez4-adapter.c \
-	src/devices/bluetooth/nm-bluez4-adapter.h \
-	src/devices/bluetooth/nm-bluez4-manager.c \
-	src/devices/bluetooth/nm-bluez4-manager.h \
 	src/devices/bluetooth/nm-bluez5-manager.c \
 	src/devices/bluetooth/nm-bluez5-manager.h \
 	src/devices/bluetooth/nm-bt-error.h \
 	src/devices/bluetooth/nm-bt-error.c \
 	\
 	src/devices/bluetooth/nm-device-bt.c \
-	src/devices/bluetooth/nm-device-bt.h
+	src/devices/bluetooth/nm-device-bt.h \
+	$(NULL)
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = $(src_cppflags_device_plugin)
 

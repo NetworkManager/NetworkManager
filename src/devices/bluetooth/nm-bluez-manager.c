@@ -27,7 +27,6 @@
 #include "devices/nm-device-bridge.h"
 #include "nm-setting-bluetooth.h"
 #include "settings/nm-settings.h"
-#include "nm-bluez4-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
@@ -49,7 +48,6 @@ typedef struct {
 	int bluez_version;
 
 	NMSettings *settings;
-	NMBluez4Manager *manager4;
 	NMBluez5Manager *manager5;
 
 	guint watch_name_id;
@@ -199,31 +197,12 @@ setup_version_number (NMBluezManager *self, int bluez_version)
 }
 
 static void
-setup_bluez4 (NMBluezManager *self)
-{
-	NMBluez4Manager *manager;
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	g_return_if_fail (!priv->manager4 && !priv->manager5 && !priv->bluez_version);
-
-	setup_version_number (self, 4);
-	priv->manager4 = manager = nm_bluez4_manager_new (priv->settings);
-
-	g_signal_connect (manager,
-	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
-	                  G_CALLBACK (manager_bdaddr_added_cb),
-	                  self);
-
-	nm_bluez4_manager_query_devices (manager);
-}
-
-static void
 setup_bluez5 (NMBluezManager *self)
 {
 	NMBluez5Manager *manager;
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	g_return_if_fail (!priv->manager4 && !priv->manager5 && !priv->bluez_version);
+	g_return_if_fail (!priv->manager5 && !priv->bluez_version);
 
 	setup_version_number (self, 5);
 	priv->manager5 = manager = nm_bluez5_manager_new (priv->settings);
@@ -257,9 +236,6 @@ check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, c
 	g_return_if_fail (!priv->bluez_version);
 
 	switch (bluez_version) {
-	case 4:
-		setup_bluez4 (self);
-		break;
 	case 5:
 		setup_bluez5 (self);
 		break;
@@ -442,10 +418,6 @@ dispose (GObject *object)
 	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	if (priv->manager4) {
-		g_signal_handlers_disconnect_by_func (priv->manager4, manager_bdaddr_added_cb, self);
-		g_clear_object (&priv->manager4);
-	}
 	if (priv->manager5) {
 		g_signal_handlers_disconnect_by_data (priv->manager5, self);
 		g_clear_object (&priv->manager5);

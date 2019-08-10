@@ -1,8 +1,6 @@
 sources = files(
   'nm-bluez-device.c',
   'nm-bluez-manager.c',
-  'nm-bluez4-adapter.c',
-  'nm-bluez4-manager.c',
   'nm-bluez5-manager.c',
   'nm-bt-error.c',
   'nm-device-bt.c',
