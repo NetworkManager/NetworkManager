@@ -109,6 +109,26 @@ G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#define _NMLOG_PREFIX_NAME    "bluez"
+#define _NMLOG_DOMAIN         LOGD_BT
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
+            const char *_path = (self) ? NM_BLUEZ_DEVICE_GET_PRIVATE (self)->path : NULL; \
+            \
+            _nm_log ((level), \
+                     (_NMLOG_DOMAIN), \
+                     0, \
+                     NULL, \
+                     NULL, \
+                     "%s%s%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     NM_PRINT_FMT_QUOTED (_path, _NMLOG_PREFIX_NAME"[", _path, "]: ", _NMLOG_PREFIX_NAME": ") \
+                     _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
+
 static void cp_connection_added (NMSettings *settings,
                                  NMSettingsConnection *sett_conn,
                                  NMBluezDevice *self);
@@ -224,8 +244,8 @@ pan_connection_check_create (NMBluezDevice *self)
 	nm_connection_add_setting (connection, setting);
 
 	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
-		nm_log_err (LOGD_BT, "bluez[%s] couldn't generate a connection for NAP device: %s",
-		            priv->path, error->message);
+		_LOGE ("couldn't generate a connection for NAP device: %s",
+		       error->message);
 		g_error_free (error);
 		g_return_if_reached ();
 	}
@@ -248,10 +268,11 @@ pan_connection_check_create (NMBluezDevice *self)
 		nm_assert (connection_compatible (self, added));
 		priv->connections = g_slist_prepend (priv->connections, g_object_ref (added));
 		priv->pan_connection = added;
-		nm_log_dbg (LOGD_BT, "bluez[%s] added new Bluetooth connection for NAP device: '%s' (%s)", priv->path, id, uuid);
+		_LOGD ("added new Bluetooth connection for NAP device: '%s' (%s)",
+		       id, uuid);
 	} else {
-		nm_log_warn (LOGD_BT, "bluez[%s] couldn't add new Bluetooth connection for NAP device: '%s' (%s): %s",
-		             priv->path, id, uuid, error->message);
+		_LOGW ("couldn't add new Bluetooth connection for NAP device: '%s' (%s): %s",
+		       id, uuid, error->message);
 		g_clear_error (&error);
 	}
 }
@@ -430,19 +451,15 @@ bluez_disconnect_cb (GDBusConnection *dbus_connection,
                      GAsyncResult *res,
                      gpointer user_data)
 {
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE ((NMBluezDevice *) user_data);
-	GError *error = NULL;
-	GVariant *variant;
+	gs_unref_object NMBluezDevice *self = user_data;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *variant = NULL;
 
 	variant = g_dbus_connection_call_finish (dbus_connection, res, &error);
 	if (!variant) {
 		if (!strstr (error->message, "org.bluez.Error.NotConnected"))
-			nm_log_warn (LOGD_BT, "bluez[%s]: failed to disconnect: %s", priv->path, error->message);
-		g_error_free (error);
-	} else
-		g_variant_unref (variant);
-
-	g_object_unref (NM_BLUEZ_DEVICE (user_data));
+			_LOGW ("failed to disconnect: %s", error->message);
+	}
 }
 
 void
@@ -689,14 +706,14 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids)
 	if (priv->capabilities != uint_val) {
 		if (priv->capabilities) {
 			/* changing (relevant) capabilities is not supported and ignored -- except setting initially */
-			nm_log_warn (LOGD_BT, "bluez[%s] ignore change of capabilities for Bluetooth device from %u to %u",
-			             priv->path, priv->capabilities, uint_val);
+			_LOGW ("ignore change of capabilities for Bluetooth device from %u to %u",
+			       priv->capabilities, uint_val);
 			return;
 		}
-		nm_log_dbg (LOGD_BT, "bluez[%s] set capabilities for Bluetooth device: %s%s%s", priv->path,
-		            uint_val & NM_BT_CAPABILITY_NAP ? "NAP" : "",
-		            ((uint_val & NM_BT_CAPABILITY_DUN) && (uint_val &NM_BT_CAPABILITY_NAP)) ? " | " : "",
-		            uint_val & NM_BT_CAPABILITY_DUN ? "DUN" : "");
+		_LOGD ("set capabilities for Bluetooth device: %s%s%s",
+		       uint_val & NM_BT_CAPABILITY_NAP ? "NAP" : "",
+		       ((uint_val & NM_BT_CAPABILITY_DUN) && (uint_val &NM_BT_CAPABILITY_NAP)) ? " | " : "",
+		       uint_val & NM_BT_CAPABILITY_DUN ? "DUN" : "");
 		priv->capabilities = uint_val;
 		_notify (self, PROP_CAPABILITIES);
 	}
@@ -715,17 +732,17 @@ _set_property_address (NMBluezDevice *self, const char *addr)
 		return;
 
 	if (!addr) {
-		nm_log_warn (LOGD_BT, "bluez[%s] cannot reset address from '%s' to NULL", priv->path, priv->address);
+		_LOGW ("cannot reset address from '%s' to NULL", priv->address);
 		return;
 	}
 
 	if (priv->address != NULL) {
-		nm_log_warn (LOGD_BT, "bluez[%s] cannot reset address from '%s' to '%s'", priv->path, priv->address, addr);
+		_LOGW ("cannot reset address from '%s' to '%s'", priv->address, addr);
 		return;
 	}
 
 	if (!nm_utils_hwaddr_valid (addr, ETH_ALEN)) {
-		nm_log_warn (LOGD_BT, "bluez[%s] cannot set address to '%s' (invalid value)", priv->path, addr);
+		_LOGW ("cannot set address to '%s' (invalid value)", addr);
 		return;
 	}
 
@@ -835,7 +852,7 @@ adapter5_on_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 
 	priv->adapter5 = g_dbus_proxy_new_for_bus_finish (res, &error);
 	if (!priv->adapter5) {
-		nm_log_warn (LOGD_BT, "bluez[%s] failed to acquire adapter proxy: %s.", priv->path, error->message);
+		_LOGW ("failed to acquire adapter proxy: %s", error->message);
 		g_clear_error (&error);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
 	} else {
@@ -935,7 +952,7 @@ query_properties (NMBluezDevice *self)
 	} else {
 		/* If the Adapter property is unset at this point, we won't try to acquire the adapter later on
 		 * and the device stays unusable. This should not happen, but if it does, log a debug message. */
-		nm_log_dbg (LOGD_BT, "bluez[%s] device has no adapter property and cannot be used.", priv->path);
+		_LOGD ("device has no adapter property and cannot be used");
 	}
 
 	/* Check if any connections match this device */
@@ -951,7 +968,7 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	priv->proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
 
 	if (!priv->proxy) {
-		nm_log_warn (LOGD_BT, "bluez[%s] failed to acquire device proxy: %s.", priv->path, error->message);
+		_LOGW ("failed to acquire device proxy: %s", error->message);
 		g_clear_error (&error);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
 	} else {
@@ -1037,7 +1054,7 @@ nm_bluez_device_new (GDBusConnection *dbus_connection,
 	if (!self)
 		return NULL;
 
-	nm_log_dbg (LOGD_BT, "bluez[%s] create NMBluezDevice", path);
+	_LOGD ("create NMBluezDevice");
 
 	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
@@ -1107,8 +1124,9 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
 
 	if (to_delete) {
-		nm_log_dbg (LOGD_BT, "bluez[%s] removing Bluetooth connection for NAP device: '%s' (%s)", priv->path,
-		            nm_settings_connection_get_id (to_delete), nm_settings_connection_get_uuid (to_delete));
+		_LOGD ("removing Bluetooth connection for NAP device: '%s' (%s)",
+		       nm_settings_connection_get_id (to_delete),
+		       nm_settings_connection_get_uuid (to_delete));
 		nm_settings_connection_delete (to_delete, FALSE);
 		g_object_unref (to_delete);
 	}
@@ -1119,9 +1137,10 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE ((NMBluezDevice *) object);
+	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_BT, "bluez[%s]: finalize NMBluezDevice", priv->path);
+	_LOGD ("finalize NMBluezDevice");
 
 	g_free (priv->path);
 	g_free (priv->adapter_address);
