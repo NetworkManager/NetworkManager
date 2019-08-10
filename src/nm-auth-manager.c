@@ -124,11 +124,6 @@ typedef enum {
 	POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION = (1<<0),
 } PolkitCheckAuthorizationFlags;
 
-typedef enum {
-	IDLE_REASON_AUTHORIZED,
-	IDLE_REASON_NO_DBUS,
-} IdleReason;
-
 struct _NMAuthManagerCallId {
 	CList calls_lst;
 	NMAuthManager *self;
@@ -137,7 +132,6 @@ struct _NMAuthManagerCallId {
 	gpointer user_data;
 	guint64 call_numid;
 	guint idle_id;
-	IdleReason idle_reason:8;
 };
 
 #define cancellation_id_to_str_a(call_numid) \
@@ -276,25 +270,15 @@ static gboolean
 _call_on_idle (gpointer user_data)
 {
 	NMAuthManagerCallId *call_id = user_data;
-	gs_free_error GError *error = NULL;
-	gboolean is_authorized = FALSE;
+	gboolean is_authorized = TRUE;
 	gboolean is_challenge = FALSE;
-	const char *error_msg = NULL;
 
 	call_id->idle_id = 0;
-	if (call_id->idle_reason == IDLE_REASON_AUTHORIZED) {
-		is_authorized = TRUE;
-		_LOG2T (call_id, "completed: authorized=%d, challenge=%d (simulated)",
-		        is_authorized, is_challenge);
-	} else {
-		nm_assert (call_id->idle_reason == IDLE_REASON_NO_DBUS);
-		error_msg = "failure creating GDBusProxy for authorization request";
-		_LOG2T (call_id, "completed: failed due to no D-Bus proxy");
-	}
 
-	if (error_msg)
-		g_set_error_literal (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, error_msg);
-	_call_id_invoke_callback (call_id, is_authorized, is_challenge, error);
+	_LOG2T (call_id, "completed: authorized=%d, challenge=%d (simulated)",
+	        is_authorized, is_challenge);
+
+	_call_id_invoke_callback (call_id, is_authorized, is_challenge, NULL);
 	return G_SOURCE_REMOVE;
 }
 
@@ -351,15 +335,12 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 
 	if (!priv->dbus_connection) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding due to polkit authorization disabled)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else if (nm_auth_subject_is_internal (subject)) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for internal request)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else if (nm_auth_subject_get_unix_process_uid (subject) == 0) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for root)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else {
 		GVariant *parameters;
