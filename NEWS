@@ -3,10 +3,7 @@ NetworkManager-1.20
 Overview of changes since NetworkManager-1.18
 =============================================
 
-This is a snapshot of NetworkManager 1.20 development series.
-The API is subject to change and not guaranteed to be compatible
-with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+This is a new stable release of NetworkManager.  Notable changes include:
 
 * The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
   and disabled by default since NetworkManager 1.12, has now been removed.
