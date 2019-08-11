@@ -1029,6 +1029,8 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 	NMConnection *connection;
 
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
+
 	if (priv->act_request)
 		g_object_unref (priv->act_request);
 	priv->act_request = g_object_ref (req);
@@ -1066,8 +1068,11 @@ nm_modem_act_stage1_prepare (NMModem *self,
 void
 nm_modem_act_stage2_config (NMModem *self)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	NMModemPrivate *priv;
 
+	g_return_if_fail (NM_IS_MODEM (self));
+
+	priv = NM_MODEM_GET_PRIVATE (self);
 	/* Clear secrets tries counter since secrets were successfully used
 	 * already if we get here.
 	 */

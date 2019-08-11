@@ -67,10 +67,6 @@ modem_added_cb (NMModemManager *manager,
 	gs_unref_object NMDevice *device = NULL;
 	const char *driver;
 
-	/* Do nothing if the modem was consumed by some other plugin */
-	if (nm_device_factory_emit_component_added (NM_DEVICE_FACTORY (self), G_OBJECT (modem)))
-		return;
-
 	if (nm_modem_is_claimed (modem))
 		return;
 
@@ -80,9 +76,10 @@ modem_added_cb (NMModemManager *manager,
 	 * it.  The rfcomm port (and thus the modem) gets created automatically
 	 * by the Bluetooth code during the connection process.
 	 */
-	if (driver && strstr (driver, "bluetooth")) {
-		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)",
-		             nm_modem_get_control_port (modem));
+	if (   driver
+	    && strstr (driver, "bluetooth")) {
+		nm_log_dbg (LOGD_MB, "WWAN factory ignores bluetooth modem '%s' which should be handled by bluetooth plugin",
+		            nm_modem_get_control_port (modem));
 		return;
 	}
 

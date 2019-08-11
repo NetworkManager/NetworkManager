@@ -3441,11 +3441,8 @@ $(src_devices_bluetooth_libnm_bluetooth_utils_la_OBJECTS): $(libnm_core_lib_h_pu
 core_plugins += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
-	src/devices/bluetooth/nm-bluez-device.c \
-	src/devices/bluetooth/nm-bluez-device.h \
 	src/devices/bluetooth/nm-bluez-manager.c \
-	src/devices/bluetooth/nm-bluez5-manager.c \
-	src/devices/bluetooth/nm-bluez5-manager.h \
+	src/devices/bluetooth/nm-bluez-manager.h \
 	src/devices/bluetooth/nm-device-bt.c \
 	src/devices/bluetooth/nm-device-bt.h \
 	$(NULL)

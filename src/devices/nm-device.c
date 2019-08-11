@@ -4785,42 +4785,24 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	return TRUE;
 }
 
-/**
- * nm_device_notify_component_added():
- * @self: the #NMDevice
- * @component: the component being added by a plugin
- *
- * Called by the manager to notify the device that a new component has
- * been found.  The device implementation should return %TRUE if it
- * wishes to claim the component, or %FALSE if it cannot.
- *
- * Returns: %TRUE to claim the component, %FALSE if the component cannot be
- * claimed.
- */
-gboolean
-nm_device_notify_component_added (NMDevice *self, GObject *component)
+void
+nm_device_notify_availability_maybe_changed (NMDevice *self)
 {
-	NMDeviceClass *klass;
 	NMDevicePrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	klass = NM_DEVICE_GET_CLASS (self);
 
-	if (priv->state == NM_DEVICE_STATE_DISCONNECTED) {
-		/* A device could have stayed disconnected because it would
-		 * want to register with a network server that now become
-		 * available. */
-		nm_device_recheck_available_connections (self);
-		if (g_hash_table_size (priv->available_connections) > 0)
-			nm_device_emit_recheck_auto_activate (self);
-	}
+	if (priv->state != NM_DEVICE_STATE_DISCONNECTED)
+		return;
 
-	if (klass->component_added)
-		return klass->component_added (self, component);
-
-	return FALSE;
+	/* A device could have stayed disconnected because it would
+	 * want to register with a network server that now become
+	 * available. */
+	nm_device_recheck_available_connections (self);
+	if (g_hash_table_size (priv->available_connections) > 0)
+		nm_device_emit_recheck_auto_activate (self);
 }
 
 /**

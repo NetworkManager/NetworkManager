@@ -131,6 +131,10 @@ _nm_setting_secret_flags_valid (NMSettingSecretFlags flags)
 
 /*****************************************************************************/
 
+const char *nm_bluetooth_capability_to_string (NMBluetoothCapabilities capabilities, char *buf, gsize len);
+
+/*****************************************************************************/
+
 typedef enum { /*< skip >*/
 	NM_SETTING_PARSE_FLAGS_NONE                     = 0,
 	NM_SETTING_PARSE_FLAGS_STRICT                   = 1LL << 0,
