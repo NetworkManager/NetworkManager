@@ -15,6 +15,7 @@
 
 #include "nm-core-internal.h"
 
+#include "nm-std-aux/nm-dbus-compat.h"
 #include "c-list/src/c-list.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
@@ -469,7 +470,7 @@ bluez_connect (NMBluez5Manager *self)
 	                          NULL,
 	                          NM_BLUEZ_SERVICE,
 	                          NM_BLUEZ_MANAGER_PATH,
-	                          NM_OBJECT_MANAGER_INTERFACE,
+	                          DBUS_INTERFACE_OBJECT_MANAGER,
 	                          NULL,
 	                          (GAsyncReadyCallback) on_proxy_acquired,
 	                          self);

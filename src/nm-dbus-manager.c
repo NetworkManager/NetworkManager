@@ -1449,7 +1449,7 @@ static const GDBusSignalInfo signal_info_objmgr_interfaces_removed = NM_DEFINE_G
 );
 
 static const GDBusInterfaceInfo interface_info_objmgr = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
-	"org.freedesktop.DBus.ObjectManager",
+	DBUS_INTERFACE_OBJECT_MANAGER,
 	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
 		NM_DEFINE_GDBUS_METHOD_INFO (
 			"GetManagedObjects",
