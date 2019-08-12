@@ -55,8 +55,6 @@
 typedef struct _NMDhcpNettools NMDhcpNettools;
 typedef struct _NMDhcpNettoolsClass NMDhcpNettoolsClass;
 
-static GType nm_dhcp_nettools_get_type (void);
-
 /*****************************************************************************/
 
 typedef struct {

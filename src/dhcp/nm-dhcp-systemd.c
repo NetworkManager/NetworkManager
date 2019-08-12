@@ -1186,6 +1186,8 @@ _get_type_per_addr_family (int addr_family)
 {
 	nm_assert_addr_family (addr_family);
 
+	if (FALSE && addr_family == AF_INET)
+		return nm_dhcp_nettools_get_type ();
 	return nm_dhcp_systemd_get_type ();
 }
 
