@@ -876,21 +876,23 @@
           <para>Add, modify or remove properties in the connection profile.</para>
 
           <para>To set the property just specify the property name followed by the
-          value. An empty value (<literal>""</literal>) removes the property value.</para>
+          value. An empty value (<literal>""</literal>) resets the property value to
+          the default.</para>
 
           <para>In addition to the properties, you can also use short names for some of
           the properties. Consult the <link linkend='property_aliases' endterm='property_aliases.title' />
           section for details.</para>
 
-          <para>If you want to append an item to the existing value, use
-          <literal>+</literal> prefix for the property name. If you want to remove just
-          one item from container-type property, use <literal>-</literal> prefix for
-          the property name and specify a value or an zero-based index of the item to
-          remove (or option name for properties with named options) as
-          <replaceable>value</replaceable>. The <literal>+</literal> and <literal>-</literal>
-          modifies only have a real effect for multi-value (container)
-          properties like <literal>ipv4.dns</literal>, <literal>ipv4.addresses</literal>,
-          <literal>bond.options</literal>, etc.</para>
+          <para>If you want to append an item or a flag to the existing value, use
+          <literal>+</literal> prefix for the property name or alias. If you want to
+          remove items from a container-type or flag property, use <literal>-</literal> prefix.
+          For certain properties you can also remove elements by specifying the zero-based
+          index(es).
+          The <literal>+</literal> and <literal>-</literal> modifiers
+          only have a real effect for properties that support them.
+          These are for example multi-value (container) properties or flags like <literal>ipv4.dns</literal>,
+          <literal>ip4</literal>, <literal>ipv4.addresses</literal>, <literal>bond.options</literal>,
+          <literal>802-1x.phase1-auth-flags</literal> etc.</para>
 
           <para>See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> for complete reference of setting and property names, their descriptions
