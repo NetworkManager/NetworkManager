@@ -682,7 +682,7 @@ typedef enum {
  * if the default routes for IPv4 and IPv6 are on different devices, or if policy
  * routing is configured. In general, the global metered state tries to express whether
  * the traffic is likely metered, but since that depends on the traffic itself,
- * there is not one answer in all cases. Hance, an application may want to consider
+ * there is not one answer in all cases. Hence, an application may want to consider
  * the per-device's metered states.
  *
  * Since: 1.2
