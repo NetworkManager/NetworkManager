@@ -209,6 +209,7 @@ test-*.trs
 /src/devices/tests/test-acd
 /src/devices/tests/test-lldp
 /src/devices/wifi/tests/test-devices-wifi
+/src/devices/wwan/tests/test-service-providers
 /src/dhcp/nm-dhcp-helper
 /src/dhcp/tests/test-dhcp-dhclient
 /src/dhcp/tests/test-dhcp-options

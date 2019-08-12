@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding='utf-8'?>
+<!DOCTYPE serviceproviders SYSTEM "serviceproviders.2.dtd">
+
+<serviceproviders format="2.0">
+
+<country code="feh">
+	<provider>
+		<name>Sophia</name>
+		<gsm>
+			<network-id mcc="666" mnc="999"/>
+			<apn value="access.example.com">
+				<plan type="postpaid"/>
+				<usage type="internet"/>
+				<name>APN</name>
+				<dns>192.0.2.1</dns>
+				<dns>192.0.2.2</dns>
+			</apn>
+		</gsm>
+	</provider>
+</country>
+
+<country code="meh">
+	<provider>
+		<name>Demiurge</name>
+		<gsm>
+			<network-id mcc="133" mnc="37"/>
+			<network-id mcc="133" mnc="666"/>
+			<apn value="mms">
+				<usage type="mms"/>
+				<name>Unsolicited Nudes MMS</name>
+				<username>mms</username>
+				<password>mms</password>
+				<mmsc>http://mms.example.com/</mmsc>
+				<mmsproxy>192.0.2.1:8080</mmsproxy>
+			</apn>
+			<apn value="gprs.example.com">
+				<plan type="postpaid"/>
+				<usage type="internet"/>
+				<name>GPRS</name>
+				<username>praise</username>
+				<password>santa</password>
+				<dns>192.0.2.1</dns>
+				<dns>192.0.2.2</dns>
+				<gateway>192.0.2.3</gateway>
+				<authentication method="pap"/>
+			</apn>
+			<apn value="second.example.com">
+				<plan type="postpaid"/>
+				<usage type="internet"/>
+				<name>Second</name>
+				<username>worship</username>
+				<password>doom</password>
+			</apn>
+		</gsm>
+	</provider>
+
+	<provider>
+		<name>Personal</name>
+		<gsm>
+			<network-id mcc="666" mnc="999"/>
+			<apn value="access.example.com">
+				<plan type="postpaid"/>
+				<usage type="internet"/>
+				<name>APN</name>
+				<dns>192.0.2.1</dns>
+				<dns>192.0.2.2</dns>
+			</apn>
+		</gsm>
+	</provider>
+</country>
+
+</serviceproviders>
+
