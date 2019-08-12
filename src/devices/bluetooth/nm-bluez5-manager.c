@@ -69,6 +69,7 @@ G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 #define NM_BLUEZ5_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluez5Manager, NM_IS_BLUEZ5_MANAGER)
 
 #define NM_BLUEZ5_MANAGER_GET_NETWORK_SERVER_VTABLE(self) (&(self)->network_server_vtable)
+
 #define NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER(vtable) \
 	NM_BLUEZ5_MANAGER(((char *)(vtable)) - offsetof (struct _NMBluez5Manager, network_server_vtable))
 
@@ -345,7 +346,7 @@ device_added (GDBusProxy *proxy, const char *path, NMBluez5Manager *self)
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	device = nm_bluez_device_new (path, NULL, priv->settings, 5);
+	device = nm_bluez_device_new (g_dbus_proxy_get_connection (proxy), path, priv->settings);
 	g_signal_connect (device, NM_BLUEZ_DEVICE_INITIALIZED, G_CALLBACK (device_initialized), self);
 	g_signal_connect (device, "notify::" NM_BLUEZ_DEVICE_USABLE, G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);

@@ -33,12 +33,6 @@
 #define NM_BLUEZ5_NETWORK_INTERFACE "org.bluez.Network1"
 #define NM_BLUEZ5_NETWORK_SERVER_INTERFACE "org.bluez.NetworkServer1"
 
-#define NM_BLUEZ4_MANAGER_INTERFACE "org.bluez.Manager"
-#define NM_BLUEZ4_ADAPTER_INTERFACE "org.bluez.Adapter"
-#define NM_BLUEZ4_DEVICE_INTERFACE  "org.bluez.Device"
-#define NM_BLUEZ4_SERIAL_INTERFACE  "org.bluez.Serial"
-#define NM_BLUEZ4_NETWORK_INTERFACE "org.bluez.Network"
-
 #define NM_BLUEZ_MANAGER_BDADDR_ADDED "bdaddr-added"
 #define NM_BLUEZ_MANAGER_NETWORK_SERVER_ADDED "network-server-added"
 

@@ -8,6 +8,8 @@ The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Drop support for BlueZ 4. BlueZ 5 was released in 2012 and should
+  nowadays be available everywhere.
 * Various bug fixes and improvements.
 
 =============================================
