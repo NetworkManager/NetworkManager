@@ -404,6 +404,7 @@ get_managed_objects_cb (GDBusProxy *proxy,
                         GAsyncResult *res,
                         NMBluez5Manager *self)
 {
+	gs_unref_variant GVariant *variant0 = NULL;
 	GVariant *variant, *ifaces;
 	GVariantIter i;
 	GError *error = NULL;
@@ -422,7 +423,8 @@ get_managed_objects_cb (GDBusProxy *proxy,
 		g_clear_error (&error);
 		return;
 	}
-	g_variant_iter_init (&i, g_variant_get_child_value (variant, 0));
+	variant0 = g_variant_get_child_value (variant, 0);
+	g_variant_iter_init (&i, variant0);
 	while ((g_variant_iter_next (&i, "{&o*}", &path, &ifaces))) {
 		object_manager_interfaces_added (proxy, path, ifaces, self);
 		g_variant_unref (ifaces);
