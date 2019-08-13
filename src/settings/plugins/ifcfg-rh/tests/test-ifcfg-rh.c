@@ -1520,10 +1520,8 @@ test_read_wired_ipv6_manual (void)
 	NMIPAddress *ip6_addr;
 	NMIPRoute *ip6_route;
 
-	NMTST_EXPECT_NM_WARN ("*ignoring manual default route*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-ipv6-manual",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
-	g_test_assert_expected_messages ();
 	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1581,7 +1579,7 @@ test_read_wired_ipv6_manual (void)
 	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 96);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 3);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 4);
 	/* Route #1 */
 	ip6_route = nm_setting_ip_config_get_route (s_ip6, 0);
 	g_assert (ip6_route);
@@ -1592,12 +1590,19 @@ test_read_wired_ipv6_manual (void)
 	/* Route #2 */
 	ip6_route = nm_setting_ip_config_get_route (s_ip6, 1);
 	g_assert (ip6_route);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip6_route), ==, "::");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 0);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip6_route), ==, "dead::beaf");
+	g_assert_cmpint (nm_ip_route_get_metric (ip6_route), ==, -1);
+	/* Route #3 */
+	ip6_route = nm_setting_ip_config_get_route (s_ip6, 2);
+	g_assert (ip6_route);
 	g_assert_cmpstr (nm_ip_route_get_dest (ip6_route), ==, "abbe::cafe");
 	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 64);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip6_route), ==, NULL);
 	g_assert_cmpint (nm_ip_route_get_metric (ip6_route), ==, 777);
-	/* Route #3 */
-	ip6_route = nm_setting_ip_config_get_route (s_ip6, 2);
+	/* Route #4 */
+	ip6_route = nm_setting_ip_config_get_route (s_ip6, 3);
 	g_assert (ip6_route);
 	g_assert_cmpstr (nm_ip_route_get_dest (ip6_route), ==, "aaaa::cccc");
 	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 64);

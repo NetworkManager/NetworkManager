@@ -991,8 +991,6 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 
 		route.plen = nm_ip_route_get_prefix (s_route);
 		nm_assert (route.plen <= 32);
-		if (route.plen == 0)
-			continue;
 
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
 		if (nm_ip_route_get_metric (s_route) == -1)

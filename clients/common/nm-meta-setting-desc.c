@@ -367,7 +367,7 @@ _parse_ip_route (int family,
 	}
 	prefix = MAX_PREFIX;
 	if (plen) {
-		if ((prefix = _nm_utils_ascii_str_to_int64 (plen, 10, 1, MAX_PREFIX, -1)) == -1) {
+		if ((prefix = _nm_utils_ascii_str_to_int64 (plen, 10, 0, MAX_PREFIX, -1)) == -1) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 			             _("invalid prefix '%s'; <1-%d> allowed"),
 			             plen, MAX_PREFIX);
