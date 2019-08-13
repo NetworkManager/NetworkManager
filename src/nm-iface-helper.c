@@ -596,9 +596,10 @@ main (int argc, char *argv[])
 
 /*****************************************************************************/
 
-const NMDhcpClientFactory *const _nm_dhcp_manager_factories[5] = {
+const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
+	/* For nm-iface-helper there is no option to choose a DHCP plugin.
+	 * It just uses the "internal" one. */
 	&_nm_dhcp_client_factory_internal,
-	&_nm_dhcp_client_factory_nettools,
 };
 
 /*****************************************************************************/

@@ -1173,8 +1173,25 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	client_class->stop = stop;
 }
 
+const NMDhcpClientFactory _nm_dhcp_client_factory_systemd = {
+	.name         = "systemd",
+	.get_type     = nm_dhcp_systemd_get_type,
+	.experimental = TRUE,
+};
+
+/*****************************************************************************/
+
+static GType
+_get_type_per_addr_family (int addr_family)
+{
+	nm_assert_addr_family (addr_family);
+
+	if (FALSE && addr_family == AF_INET)
+		return nm_dhcp_nettools_get_type ();
+	return nm_dhcp_systemd_get_type ();
+}
+
 const NMDhcpClientFactory _nm_dhcp_client_factory_internal = {
-	.name = "internal",
-	.get_type = nm_dhcp_systemd_get_type,
-	.get_path = NULL,
+	.name                     = "internal",
+	.get_type_per_addr_family = _get_type_per_addr_family,
 };

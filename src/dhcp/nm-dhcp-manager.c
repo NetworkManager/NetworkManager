@@ -89,10 +89,11 @@ _client_factory_available (const NMDhcpClientFactory *client_factory)
 	return NULL;
 }
 
-static const NMDhcpClientFactory *
-_client_factory_get_effective (const NMDhcpClientFactory *client_factory,
-                               int addr_family)
+static GType
+_client_factory_get_gtype (const NMDhcpClientFactory *client_factory,
+                           int addr_family)
 {
+	GType gtype;
 	nm_auto_unref_gtypeclass NMDhcpClientClass *klass = NULL;
 
 	nm_assert (client_factory);
@@ -118,23 +119,38 @@ _client_factory_get_effective (const NMDhcpClientFactory *client_factory,
 	 * to those plugins. But we don't intend to do so. The internal plugin is the way forward and
 	 * not extending other plugins. */
 
+	if (client_factory->get_type_per_addr_family)
+		gtype = client_factory->get_type_per_addr_family (addr_family);
+	else
+		gtype = client_factory->get_type ();
+
 	if (client_factory == &_nm_dhcp_client_factory_internal) {
-		/* already using internal plugin. Nothing to do. */
-		return client_factory;
+		/* we are already using the internal plugin. Nothing to do. */
+		goto out;
 	}
 
-	klass = g_type_class_ref (client_factory->get_type ());
+	klass = g_type_class_ref (gtype);
 
 	nm_assert (NM_IS_DHCP_CLIENT_CLASS (klass));
 
 	if (addr_family == AF_INET6) {
-		return   klass->ip6_start
-		       ? client_factory
-		       : &_nm_dhcp_client_factory_internal;
+		if (!klass->ip6_start)
+			gtype = _client_factory_get_gtype (&_nm_dhcp_client_factory_internal, addr_family);
+	} else {
+		if (!klass->ip4_start)
+			gtype = _client_factory_get_gtype (&_nm_dhcp_client_factory_internal, addr_family);
 	}
-	return   klass->ip4_start
-	       ? client_factory
-	       : &_nm_dhcp_client_factory_internal;
+
+out:
+	nm_assert (g_type_is_a (gtype, NM_TYPE_DHCP_CLIENT));
+	nm_assert (({
+	               nm_auto_unref_gtypeclass NMDhcpClientClass *k = g_type_class_ref (gtype);
+
+	                  (addr_family == AF_INET6 && k->ip6_start)
+	               || (addr_family == AF_INET  && k->ip4_start);
+	            }));
+
+	return gtype;
 }
 
 /*****************************************************************************/
@@ -225,7 +241,7 @@ client_start (NMDhcpManager *self,
 	NMDhcpClient *client;
 	gboolean success = FALSE;
 	gsize hwaddr_len;
-	const NMDhcpClientFactory *client_factory;
+	GType gtype;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface, NULL);
@@ -255,8 +271,6 @@ client_start (NMDhcpManager *self,
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	client_factory = _client_factory_get_effective (priv->client_factory, addr_family);
-
 	/* Kill any old client instance */
 	client = get_client_for_ifindex (self, addr_family, ifindex);
 	if (client) {
@@ -271,7 +285,14 @@ client_start (NMDhcpManager *self,
 		g_object_unref (client);
 	}
 
-	client = g_object_new (client_factory->get_type (),
+	gtype = _client_factory_get_gtype (priv->client_factory, addr_family);
+
+	nm_log_trace (LOGD_DHCP , "dhcp%c: creating IPv%c DHCP client of type %s",
+	              nm_utils_addr_family_to_char (addr_family),
+	              nm_utils_addr_family_to_char (addr_family),
+	              g_type_name (gtype));
+
+	client = g_object_new (gtype,
 	                       NM_DHCP_CLIENT_MULTI_IDX, multi_idx,
 	                       NM_DHCP_CLIENT_ADDR_FAMILY, addr_family,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
@@ -529,9 +550,10 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 		if (!f)
 			continue;
 
-		nm_log_dbg (LOGD_DHCP, "dhcp-init: enabled DHCP client '%s' (%s)%s",
-		            f->name, g_type_name (f->get_type ()),
-		            _client_factory_available (f) ? "" : " (not available)");
+		nm_log_dbg (LOGD_DHCP, "dhcp-init: enabled DHCP client '%s'%s%s",
+		            f->name,
+		            _client_factory_available (f) ? "" : " (not available)",
+		            f->experimental ? " (undocumented internal plugin)" : "");
 	}
 
 	/* Client-specific setup */
