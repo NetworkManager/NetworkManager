@@ -52,7 +52,6 @@
 %bcond_without wwan
 %bcond_without team
 %bcond_without wifi
-%bcond_with iwd
 %bcond_without ovs
 %bcond_without ppp
 %bcond_without nmtui
@@ -75,6 +74,11 @@
 %bcond_without crypto_gnutls
 %else
 %bcond_with crypto_gnutls
+%endif
+%if 0%{?rhel}
+%bcond_with iwd
+%else
+%bcond_without iwd
 %endif
 
 ###############################################################################
