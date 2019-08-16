@@ -84,9 +84,12 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
  * #NMSetting8021xAuthFlags values indicate which authentication settings
  * should be used.
  *
+ * Before 1.22, this was wrongly marked as a enum and not as a flags
+ * type.
+ *
  * Since: 1.8
  */
-typedef enum { /*< underscore_name=nm_setting_802_1x_auth_flags >*/
+typedef enum { /*< flags, underscore_name=nm_setting_802_1x_auth_flags >*/
 	NM_SETTING_802_1X_AUTH_FLAGS_NONE                = 0,
 	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE     = 0x1,
 	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE     = 0x2,
