@@ -3136,14 +3136,14 @@ test_read_wifi_wpa_psk_adhoc (void)
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
 	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "I wonder what the king is doing tonight?");
 
-	/* Pairwise cipher is unused in adhoc mode */
-	g_assert_cmpint (nm_setting_wireless_security_get_num_pairwise (s_wsec), ==, 0);
+	g_assert_cmpint (nm_setting_wireless_security_get_num_pairwise (s_wsec), ==, 1);
+	g_assert_cmpstr (nm_setting_wireless_security_get_pairwise (s_wsec, 0), ==, "ccmp");
 
 	g_assert_cmpint (nm_setting_wireless_security_get_num_groups (s_wsec), ==, 1);
 	g_assert_cmpstr (nm_setting_wireless_security_get_group (s_wsec, 0), ==, "ccmp");
 
 	g_assert_cmpint (nm_setting_wireless_security_get_num_protos (s_wsec), ==, 1);
-	g_assert_cmpstr (nm_setting_wireless_security_get_proto (s_wsec, 0), ==, "wpa");
+	g_assert_cmpstr (nm_setting_wireless_security_get_proto (s_wsec, 0), ==, "rsn");
 
 	/* ===== IPv4 SETTING ===== */
 
@@ -6464,8 +6464,9 @@ test_write_wifi_wpa_psk_adhoc (void)
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
 	              NULL);
 
-	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
-	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
