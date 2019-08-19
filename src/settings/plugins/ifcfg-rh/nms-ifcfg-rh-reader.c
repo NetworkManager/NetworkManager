@@ -3679,9 +3679,7 @@ make_wpa_setting (shvarFile *ifcfg,
 			}
 		}
 
-		if (adhoc)
-			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
-		else if (wpa_psk)
+		if (wpa_psk)
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
 		else {
 			nm_assert (wpa_sae);

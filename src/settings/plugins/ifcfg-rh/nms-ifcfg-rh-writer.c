@@ -583,7 +583,7 @@ write_wireless_security_setting (NMConnection *connection,
 		svUnsetValue (ifcfg, "KEY_MGMT");
 		wep = TRUE;
 		*no_8021x = TRUE;
-	} else if (!strcmp (key_mgmt, "wpa-none") || !strcmp (key_mgmt, "wpa-psk")) {
+	} else if (!strcmp (key_mgmt, "wpa-psk")) {
 		svSetValueStr (ifcfg, "KEY_MGMT", "WPA-PSK");
 		wpa = TRUE;
 		*no_8021x = TRUE;

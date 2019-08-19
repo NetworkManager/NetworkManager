@@ -6084,29 +6084,3 @@ _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
 	return TRUE;
 }
 
-gboolean
-nm_utils_connection_is_adhoc_wpa (NMConnection *connection)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-	const char *key_mgmt;
-	const char *mode;
-
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	if (!s_wifi)
-		return FALSE;
-
-	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC))
-		return FALSE;
-
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (!s_wsec)
-		return FALSE;
-
-	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	if (!nm_streq0 (key_mgmt, "wpa-none"))
-		return FALSE;
-
-	return TRUE;
-}

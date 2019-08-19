@@ -317,7 +317,7 @@ add_wireless_secrets (RequestData *request,
 	if (!key_mgmt)
 		return FALSE;
 
-	if (NM_IN_STRSET (key_mgmt, "wpa-none", "wpa-psk", "sae")) {
+	if (NM_IN_STRSET (key_mgmt, "wpa-psk", "sae")) {
 		secret = _secret_real_new_plain (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
 		                                 _("Password"),
 		                                 NM_SETTING (s_wsec),

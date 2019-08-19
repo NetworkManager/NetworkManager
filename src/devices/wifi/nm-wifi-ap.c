@@ -1305,40 +1305,6 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 
 		add_pair_ciphers (ap, s_wireless_sec);
 		add_group_ciphers (ap, s_wireless_sec);
-	} else if (!strcmp (key_mgmt, "wpa-none")) {
-		guint32 i;
-
-		/* Ad-Hoc has special requirements: proto=WPA, pairwise=(none), and
-		 * group=TKIP/CCMP (but not both).
-		 */
-
-		flags = priv->wpa_flags | NM_802_11_AP_SEC_KEY_MGMT_PSK;
-
-		/* Clear ciphers; pairwise must be unset anyway, and group gets set below */
-		flags &= ~(  NM_802_11_AP_SEC_PAIR_WEP40
-		           | NM_802_11_AP_SEC_PAIR_WEP104
-		           | NM_802_11_AP_SEC_PAIR_TKIP
-		           | NM_802_11_AP_SEC_PAIR_CCMP
-		           | NM_802_11_AP_SEC_GROUP_WEP40
-		           | NM_802_11_AP_SEC_GROUP_WEP104
-		           | NM_802_11_AP_SEC_GROUP_TKIP
-		           | NM_802_11_AP_SEC_GROUP_CCMP);
-
-		for (i = 0; i < nm_setting_wireless_security_get_num_groups (s_wireless_sec); i++) {
-			if (!strcmp (nm_setting_wireless_security_get_group (s_wireless_sec, i), "ccmp")) {
-				flags |= NM_802_11_AP_SEC_GROUP_CCMP;
-				break;
-			}
-		}
-
-		/* Default to TKIP since not all WPA-capable cards can do CCMP */
-		if (!(flags & NM_802_11_AP_SEC_GROUP_CCMP))
-			flags |= NM_802_11_AP_SEC_GROUP_TKIP;
-
-		nm_wifi_ap_set_wpa_flags (ap, flags);
-
-		/* Don't use Ad-Hoc RSN yet */
-		nm_wifi_ap_set_rsn_flags (ap, NM_802_11_AP_SEC_NONE);
 	}
 
 done:

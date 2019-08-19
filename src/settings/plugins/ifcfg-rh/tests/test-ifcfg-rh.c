@@ -3133,7 +3133,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-none");
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
 	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "I wonder what the king is doing tonight?");
 
 	/* Pairwise cipher is unused in adhoc mode */
@@ -6460,7 +6460,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
 	g_object_set (s_wsec,
-	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none",
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
 	              NULL);
 
