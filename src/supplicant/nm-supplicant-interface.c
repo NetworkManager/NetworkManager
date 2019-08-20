@@ -135,7 +135,8 @@ typedef struct {
 	NMSupplicantFeature p2p_support;
 	NMSupplicantFeature mesh_support;
 	NMSupplicantFeature wfd_support;
-	NMSupplicantFeature ft_support;
+	NMSupplicantFeature ft_support_global;
+	NMSupplicantFeature ft_support_per_iface;
 	NMSupplicantFeature sha384_support;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
@@ -609,14 +610,25 @@ static void
 parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	gboolean have_active = FALSE, have_p2p = FALSE, have_ssid = FALSE;
+	gboolean have_active = FALSE;
+	gboolean have_ssid = FALSE;
+	gboolean have_p2p = FALSE;
+	gboolean have_ft = FALSE;
 	gint32 max_scan_ssids = -1;
 	const char **array;
 
 	g_return_if_fail (capabilities && g_variant_is_of_type (capabilities, G_VARIANT_TYPE_VARDICT));
 
-	if (   g_variant_lookup (capabilities, "Modes", "^a&s", &array)
-	    && array) {
+	if (g_variant_lookup (capabilities, "KeyMgmt", "^a&s", &array)) {
+		have_ft = g_strv_contains (array, "wpa-ft-psk");
+		g_free (array);
+	}
+
+	priv->ft_support_per_iface =   have_ft
+	                             ? NM_SUPPLICANT_FEATURE_YES
+	                             : NM_SUPPLICANT_FEATURE_NO;
+
+	if (g_variant_lookup (capabilities, "Modes", "^a&s", &array)) {
 		if (g_strv_contains (array, "p2p"))
 			have_p2p = TRUE;
 		g_free (array);
@@ -627,8 +639,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 		_notify (self, PROP_P2P_AVAILABLE);
 	}
 
-	if (   g_variant_lookup (capabilities, "Scan", "^a&s", &array)
-	    && array) {
+	if (g_variant_lookup (capabilities, "Scan", "^a&s", &array)) {
 		if (g_strv_contains (array, "active"))
 			have_active = TRUE;
 		if (g_strv_contains (array, "ssid"))
@@ -807,7 +818,13 @@ nm_supplicant_interface_get_wfd_support (NMSupplicantInterface *self)
 NMSupplicantFeature
 nm_supplicant_interface_get_ft_support (NMSupplicantInterface *self)
 {
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->ft_support;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->ft_support_global == NM_SUPPLICANT_FEATURE_NO)
+		return NM_SUPPLICANT_FEATURE_NO;
+	if (priv->ft_support_per_iface != NM_SUPPLICANT_FEATURE_UNKNOWN)
+		return priv->ft_support_per_iface;
+	return priv->ft_support_global;
 }
 
 NMSupplicantFeature
@@ -889,7 +906,7 @@ nm_supplicant_interface_set_ft_support (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	priv->ft_support = ft_support;
+	priv->ft_support_global = ft_support;
 }
 
 void
@@ -2801,7 +2818,7 @@ set_property (GObject *object,
 		break;
 	case PROP_FT_SUPPORT:
 		/* construct-only */
-		priv->ft_support = g_value_get_int (value);
+		priv->ft_support_global = g_value_get_int (value);
 		break;
 	case PROP_SHA384_SUPPORT:
 		/* construct-only */
