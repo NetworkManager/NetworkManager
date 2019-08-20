@@ -3754,29 +3754,35 @@ unique_master_iface_ifname (const GPtrArray *connections,
 }
 
 static void
-set_default_interface_name (NmCli *nmc, NMSettingConnection *s_con)
+set_default_interface_name (NmCli *nmc,
+                            NMSettingConnection *s_con)
 {
-	const GPtrArray *connections;
-	char *ifname = NULL;
-	const char *con_type = nm_setting_connection_get_connection_type (s_con);
+	const char *default_name;
+	const char *con_type;
 
 	if (nm_setting_connection_get_interface_name (s_con))
 		return;
 
-	connections = nm_client_get_connections (nmc->client);
+	con_type = nm_setting_connection_get_connection_type (s_con);
 
 	/* Set a sensible bond/team/bridge interface name by default */
-	if (g_strcmp0 (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
-		ifname = unique_master_iface_ifname (connections, "nm-bond");
-	else if (g_strcmp0 (con_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
-		ifname = unique_master_iface_ifname (connections, "nm-team");
-	else if (g_strcmp0 (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-		ifname = unique_master_iface_ifname (connections, "nm-bridge");
+	if (nm_streq (con_type, NM_SETTING_BOND_SETTING_NAME))
+		default_name = "nm-bond";
+	else if (nm_streq (con_type, NM_SETTING_TEAM_SETTING_NAME))
+		default_name = "nm-team";
+	else if (nm_streq (con_type, NM_SETTING_BRIDGE_SETTING_NAME))
+		default_name = "nm-bridge";
 	else
-		return;
+		default_name = NULL;
 
-	g_object_set (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, ifname, NULL);
-	g_free (ifname);
+	if (default_name) {
+		const GPtrArray *connections;
+		gs_free char *ifname = NULL;
+
+		connections = nm_client_get_connections (nmc->client);
+		ifname = unique_master_iface_ifname (connections, default_name);
+		g_object_set (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, ifname, NULL);
+	}
 }
 
 /*****************************************************************************/
@@ -5332,11 +5338,12 @@ read_properties:
 		const char *ifname = nm_setting_connection_get_interface_name (s_con);
 		const char *type = nm_setting_connection_get_connection_type (s_con);
 		const char *slave_type = nm_setting_connection_get_slave_type (s_con);
-		char *try_name, *default_name;
 
 		/* If only bother when there's a type, which is not guaranteed at this point.
 		 * Otherwise the validation will fail anyway. */
 		if (type) {
+			gs_free char *try_name = NULL;
+			gs_free char *default_name = NULL;
 			const GPtrArray *connections;
 
 			connections = nm_client_get_connections (nmc->client);
@@ -5344,9 +5351,7 @@ read_properties:
 			           ? g_strdup_printf ("%s-%s", get_name_alias_toplevel (type, slave_type), ifname)
 			           : g_strdup (get_name_alias_toplevel (type, slave_type));
 			default_name = nmc_unique_connection_name (connections, try_name);
-			g_free (try_name);
 			g_object_set (s_con, NM_SETTING_CONNECTION_ID, default_name, NULL);
-			g_free (default_name);
 		}
 	}
 
