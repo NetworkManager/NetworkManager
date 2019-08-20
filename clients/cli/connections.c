@@ -3733,22 +3733,22 @@ static char *
 unique_master_iface_ifname (const GPtrArray *connections,
                             const char *try_name)
 {
-	NMConnection *connection;
 	char *new_name;
-	unsigned num = 1;
-	int i = 0;
-	const char *ifname = NULL;
+	guint num = 0;
+	guint i;
 
 	new_name = g_strdup (try_name);
-	while (i < connections->len) {
-		connection = NM_CONNECTION (connections->pdata[i]);
-		ifname = nm_connection_get_interface_name (connection);
-		if (g_strcmp0 (new_name, ifname) == 0) {
+
+again:
+	for (i = 0; i < connections->len; i++) {
+		NMConnection *connection = connections->pdata[i];
+
+		if (nm_streq0 (new_name, nm_connection_get_interface_name (connection))) {
+			num++;
 			g_free (new_name);
-			new_name = g_strdup_printf ("%s%d", try_name, num++);
-			i = 0;
-		} else
-			i++;
+			new_name = g_strdup_printf ("%s%u", try_name, num);
+			goto again;
+		}
 	}
 	return new_name;
 }
