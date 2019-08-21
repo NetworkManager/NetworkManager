@@ -234,12 +234,17 @@ nm_utils_get_monotonic_timestamp_s (void)
  * @timestamp_ns_per_tick: How many nanoseconds make one unit of @timestamp? E.g. if
  *   @timestamp is in unit seconds, pass %NM_UTILS_NS_PER_SECOND; if @timestamp is
  *   in nanoseconds, pass 1; if @timestamp is in milliseconds, pass %NM_UTILS_NS_PER_SECOND/1000.
+ *   This must be a multiple of 10, and between 1 and %NM_UTILS_NS_PER_SECOND.
  *
  * Returns: the monotonic-timestamp as CLOCK_BOOTTIME, as returned by clock_gettime().
  *   The unit is the same as the passed in @timestamp based on @timestamp_ns_per_tick.
  *   E.g. if you passed @timestamp in as seconds, it will return boottime in seconds.
- *   If @timestamp is non-positive, it returns -1. Note that a (valid) monotonic-timestamp
- *   is always positive.
+ *
+ *   Note that valid monotonic-timestamps are always positive numbers (counting roughly since
+ *   the application is running). However, it might make sense to calculate a timestamp from
+ *   before the application was running, hence negative @timestamp is allowed. The result
+ *   in that case might also be a negative timestamp (in CLOCK_BOOTTIME), which would indicate
+ *   that the timestamp lies in the past before the machine was booted.
  *
  * On older kernels that don't support CLOCK_BOOTTIME, the returned time is instead CLOCK_MONOTONIC.
  **/
@@ -256,9 +261,6 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 	                          timestamp_ns_per_tick % 10 == 0),
 	                      -1);
 
-	/* Check that the timestamp is in a valid range. */
-	g_return_val_if_fail (timestamp >= 0, -1);
-
 	/* if the caller didn't yet ever fetch a monotonic-timestamp, he cannot pass any meaningful
 	 * value (because he has no idea what these timestamps would be). That would be a bug. */
 	nm_assert (g_atomic_pointer_get (&p_global_state));
@@ -270,8 +272,10 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 	/* calculate the offset of monotonic-timestamp to boottime. offset_s is <= 1. */
 	offset = p->offset_sec * (NM_UTILS_NS_PER_SECOND / timestamp_ns_per_tick);
 
-	/* check for overflow. */
-	g_return_val_if_fail (offset > 0 || timestamp < G_MAXINT64 + offset, G_MAXINT64);
+	nm_assert (offset <= 0 && offset > G_MININT64);
+
+	/* check for overflow (note that offset is non-positive). */
+	g_return_val_if_fail (timestamp < G_MAXINT64 + offset, G_MAXINT64);
 
 	return timestamp - offset;
 }
