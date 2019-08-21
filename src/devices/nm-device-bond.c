@@ -213,10 +213,10 @@ set_simple_option (NMDevice *device,
 	set_bond_attr (device, mode, opt, value);
 }
 
-static NMActStageReturn
-apply_bonding_config (NMDevice *device)
+static gboolean
+apply_bonding_config (NMDeviceBond *self)
 {
-	NMDeviceBond *self = NM_DEVICE_BOND (device);
+	NMDevice *device = NM_DEVICE (self);
 	NMSettingBond *s_bond;
 	int ifindex = nm_device_get_ifindex (device);
 	const char *mode_str, *value;
@@ -239,7 +239,7 @@ apply_bonding_config (NMDevice *device)
 
 	s_bond = nm_device_get_applied_setting (device, NM_TYPE_SETTING_BOND);
 
-	g_return_val_if_fail (s_bond, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (s_bond, FALSE);
 
 	mode_str = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE);
 	if (!mode_str)
@@ -248,7 +248,7 @@ apply_bonding_config (NMDevice *device)
 	mode = _nm_setting_bond_mode_from_string (mode_str);
 	if (mode == NM_BOND_MODE_UNKNOWN) {
 		_LOGW (LOGD_BOND, "unknown bond mode '%s'", mode_str);
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		return FALSE;
 	}
 
 	/* Set mode first, as some other options (e.g. arp_interval) are valid
@@ -334,24 +334,30 @@ apply_bonding_config (NMDevice *device)
 	else
 		set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
 
-	return NM_ACT_STAGE_RETURN_SUCCESS;
+	return TRUE;
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
+	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
-	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (dev, out_failure_reason);
+	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
 	/* Interface must be down to set bond options */
-	nm_device_take_down (dev, TRUE);
-	ret = apply_bonding_config (dev);
-	if (ret != NM_ACT_STAGE_RETURN_FAILURE)
-		ret = nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
-	nm_device_bring_up (dev, TRUE, NULL);
+	nm_device_take_down (device, TRUE);
+	if (!apply_bonding_config (self))
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	else {
+		if (!nm_device_hw_addr_set_cloned (device,
+		                                   nm_device_get_applied_connection (device),
+		                                   FALSE))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+	nm_device_bring_up (device, TRUE, NULL);
 
 	return ret;
 }
