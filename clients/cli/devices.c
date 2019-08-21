@@ -593,7 +593,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[] = {
 	NMC_META_GENERIC ("DBUS-PATH"),   /* 16 */
 	NULL,
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "IN-USE,SSID,MODE,CHAN,RATE,SIGNAL,BARS,SECURITY"
+#define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "IN-USE,BSSID,SSID,MODE,CHAN,RATE,SIGNAL,BARS,SECURITY"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
 const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[] = {
