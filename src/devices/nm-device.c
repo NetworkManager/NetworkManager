@@ -102,11 +102,6 @@ _LOG_DECLARE_SELF (NMDevice);
 
 typedef void (*ActivationHandleFunc) (NMDevice *self);
 
-typedef struct {
-	ActivationHandleFunc func;
-	guint id;
-} ActivationHandleData;
-
 typedef enum {
 	CLEANUP_TYPE_KEEP,
 	CLEANUP_TYPE_REMOVED,
@@ -333,8 +328,23 @@ typedef struct _NMDevicePrivate {
 	NMActRequest *  queued_act_request;
 	bool            queued_act_request_is_waiting_for_carrier:1;
 	NMDBusTrackObjPath act_request;
-	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
-	ActivationHandleData act_handle6;
+
+	union {
+		struct {
+			guint activation_source_id_6;
+			guint activation_source_id_4; /* for layer2 and IPv4. */
+		};
+		guint activation_source_id_x[2];
+	};
+
+	union {
+		struct {
+			ActivationHandleFunc activation_source_func_6;
+			ActivationHandleFunc activation_source_func_4; /* for layer2 and IPv4. */
+		};
+		ActivationHandleFunc activation_source_func_x[2];
+	};
+
 	guint           recheck_assume_id;
 
 	struct {
@@ -633,7 +643,6 @@ static void _carrier_wait_check_queued_act_request (NMDevice *self);
 static gint64 _get_carrier_wait_ms (NMDevice *self);
 
 static const char *_activation_func_to_string (ActivationHandleFunc func);
-static void activation_source_handle_cb (NMDevice *self, int addr_family);
 
 static void _set_state_full (NMDevice *self,
                              NMDeviceState state,
@@ -6094,119 +6103,102 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 
 /*****************************************************************************/
 
-static gboolean
-activation_source_handle_cb4 (gpointer user_data)
-{
-	activation_source_handle_cb (user_data, AF_INET);
-	return G_SOURCE_REMOVE;
-}
-
-static gboolean
-activation_source_handle_cb6 (gpointer user_data)
-{
-	activation_source_handle_cb (user_data, AF_INET6);
-	return G_SOURCE_REMOVE;
-}
-
-static ActivationHandleData *
-activation_source_get_by_family (NMDevice *self,
-                                 int addr_family,
-                                 GSourceFunc *out_idle_func)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	switch (addr_family) {
-	case AF_INET6:
-		NM_SET_OUT (out_idle_func, activation_source_handle_cb6);
-		return &priv->act_handle6;
-	case AF_INET:
-		NM_SET_OUT (out_idle_func, activation_source_handle_cb4);
-		return &priv->act_handle4;
-	}
-	g_return_val_if_reached (NULL);
-}
-
 static void
 activation_source_clear (NMDevice *self,
                          int addr_family)
 {
-	ActivationHandleData *act_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
-	act_data = activation_source_get_by_family (self, addr_family, NULL);
-
-	if (act_data->id) {
+	if (priv->activation_source_id_x[IS_IPv4] != 0) {
 		_LOGD (LOGD_DEVICE, "activation-stage: clear %s,v%c (id %u)",
-		       _activation_func_to_string (act_data->func),
+		       _activation_func_to_string (priv->activation_source_func_x[IS_IPv4]),
 		       nm_utils_addr_family_to_char (addr_family),
-		       act_data->id);
-		nm_clear_g_source (&act_data->id);
-		act_data->func = NULL;
+		       priv->activation_source_id_x[IS_IPv4]);
+		nm_clear_g_source (&priv->activation_source_id_x[IS_IPv4]);
+		priv->activation_source_func_x[IS_IPv4] = NULL;
 	}
 }
 
-static void
+static gboolean
 activation_source_handle_cb (NMDevice *self,
                              int addr_family)
 {
-	ActivationHandleData *act_data, a;
+	NMDevicePrivate *priv;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
+	ActivationHandleFunc activation_source_func;
+	guint activation_source_id;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
-	act_data = activation_source_get_by_family (self, addr_family, NULL);
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_if_fail (act_data->id);
-	g_return_if_fail (act_data->func);
+	activation_source_func = priv->activation_source_func_x[IS_IPv4];
+	activation_source_id = priv->activation_source_id_x[IS_IPv4];
 
-	a = *act_data;
+	g_return_val_if_fail (activation_source_id != 0, G_SOURCE_REMOVE);
+	nm_assert (activation_source_func);
 
-	act_data->func = NULL;
-	act_data->id = 0;
+	priv->activation_source_func_x[IS_IPv4] = NULL;
+	priv->activation_source_id_x[IS_IPv4] = 0;
 
 	_LOGD (LOGD_DEVICE, "activation-stage: invoke %s,v%c (id %u)",
-	       _activation_func_to_string (a.func),
+	       _activation_func_to_string (activation_source_func),
 	       nm_utils_addr_family_to_char (addr_family),
-	       a.id);
+	       activation_source_id);
 
-	a.func (self);
+	activation_source_func (self);
 
-	_LOGD (LOGD_DEVICE, "activation-stage: complete %s,v%c (id %u)",
-	       _activation_func_to_string (a.func),
+	_LOGT (LOGD_DEVICE, "activation-stage: complete %s,v%c (id %u)",
+	       _activation_func_to_string (activation_source_func),
 	       nm_utils_addr_family_to_char (addr_family),
-	       a.id);
+	       activation_source_id);
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+activation_source_handle_cb_4 (gpointer user_data)
+{
+	return activation_source_handle_cb (user_data, AF_INET);
+}
+
+static gboolean
+activation_source_handle_cb_6 (gpointer user_data)
+{
+	return activation_source_handle_cb (user_data, AF_INET6);
 }
 
 static void
 activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_family)
 {
-	ActivationHandleData *act_data;
-	GSourceFunc source_func = NULL;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 	guint new_id = 0;
 
-	act_data = activation_source_get_by_family (self, addr_family, &source_func);
-
-	if (act_data->id && act_data->func == func) {
-		/* Don't bother rescheduling the same function that's about to
-		 * run anyway.  Fixes issues with crappy wireless drivers sending
-		 * streams of associate events before NM has had a chance to process
-		 * the first one.
-		 */
-		_LOGD (LOGD_DEVICE, "activation-stage: already scheduled %s,v%c (id %u)",
+	if (   priv->activation_source_id_x[IS_IPv4] != 0
+	    && priv->activation_source_func_x[IS_IPv4] == func) {
+		/* Scheduling the same stage multiple times is fine. */
+		_LOGT (LOGD_DEVICE, "activation-stage: already scheduled %s,v%c (id %u)",
 		       _activation_func_to_string (func),
 		       nm_utils_addr_family_to_char (addr_family),
-		       act_data->id);
+		       priv->activation_source_id_x[IS_IPv4]);
 		return;
 	}
 
-	new_id = g_idle_add (source_func, self);
+	new_id = g_idle_add (  IS_IPv4
+	                     ? activation_source_handle_cb_4
+	                     : activation_source_handle_cb_6,
+	                     self);
 
-	if (act_data->id) {
-		_LOGW (LOGD_DEVICE, "activation-stage: schedule %s,v%c which replaces %s,v%c (id %u -> %u)",
+	if (priv->activation_source_id_x[IS_IPv4] != 0) {
+		_LOGD (LOGD_DEVICE, "activation-stage: schedule %s,v%c which replaces %s,v%c (id %u -> %u)",
 		       _activation_func_to_string (func),
 		       nm_utils_addr_family_to_char (addr_family),
-		       _activation_func_to_string (act_data->func),
+		       _activation_func_to_string (priv->activation_source_func_x[IS_IPv4]),
 		       nm_utils_addr_family_to_char (addr_family),
-		       act_data->id, new_id);
-		nm_clear_g_source (&act_data->id);
+		       priv->activation_source_id_x[IS_IPv4], new_id);
+		nm_clear_g_source (&priv->activation_source_id_x[IS_IPv4]);
 	} else {
 		_LOGD (LOGD_DEVICE, "activation-stage: schedule %s,v%c (id %u)",
 		       _activation_func_to_string (func),
@@ -6214,19 +6206,8 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_
 		       new_id);
 	}
 
-	act_data->func = func;
-	act_data->id = new_id;
-}
-
-static gboolean
-activation_source_is_scheduled (NMDevice *self,
-                                ActivationHandleFunc func,
-                                int addr_family)
-{
-	ActivationHandleData *act_data;
-
-	act_data = activation_source_get_by_family (self, addr_family, NULL);
-	return act_data->func == func;
+	priv->activation_source_func_x[IS_IPv4] = func;
+	priv->activation_source_id_x[IS_IPv4] = new_id;
 }
 
 /*****************************************************************************/
@@ -12269,7 +12250,7 @@ nm_device_is_activating (NMDevice *self)
 	 * handler is actually run.  If there's an activation handler scheduled
 	 * we're activating anyway.
 	 */
-	return priv->act_handle4.id ? TRUE : FALSE;
+	return priv->activation_source_id_4 != 0;
 }
 
 NMProxyConfig *
@@ -13251,9 +13232,8 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	 * it changing IP configurations before they are applied. Postpone the
 	 * update in such case.
 	 */
-	if (activation_source_is_scheduled (self,
-	                                    activate_stage5_ip_config_result_x[IS_IPv4],
-	                                    addr_family))
+	if (   priv->activation_source_id_x[IS_IPv4] != 0
+	    && priv->activation_source_func_x[IS_IPv4] == activate_stage5_ip_config_result_x[IS_IPv4])
 		return G_SOURCE_CONTINUE;
 
 	priv->queued_ip_config_id_x[IS_IPv4] = 0;

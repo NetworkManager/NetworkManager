@@ -1886,7 +1886,7 @@ device_state_changed (NMDevice *device,
 
 			switch (nm_device_state_reason_check (reason)) {
 			case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-				 blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST;
+				blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST;
 				break;
 			case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
 				blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED;
