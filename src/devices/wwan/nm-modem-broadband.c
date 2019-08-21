@@ -586,9 +586,9 @@ connect_context_step (NMModemBroadband *self)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMModem *_self,
-                    NMConnection *connection,
-                    NMDeviceStateReason *out_failure_reason)
+modem_act_stage1_prepare (NMModem *_self,
+                          NMConnection *connection,
+                          NMDeviceStateReason *out_failure_reason)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 
@@ -1512,7 +1512,7 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->get_user_pass = get_user_pass;
 	modem_class->check_connection_compatible_with_modem = check_connection_compatible_with_modem;
 	modem_class->complete_connection = complete_connection;
-	modem_class->act_stage1_prepare = act_stage1_prepare;
+	modem_class->modem_act_stage1_prepare = modem_act_stage1_prepare;
 	modem_class->owns_port = owns_port;
 
 	obj_properties[PROP_MODEM] =

@@ -136,9 +136,9 @@ typedef struct {
 	                                            NMConnection *const*existing_connections,
 	                                            GError **error);
 
-	NMActStageReturn (*act_stage1_prepare)     (NMModem *modem,
-	                                            NMConnection *connection,
-	                                            NMDeviceStateReason *out_failure_reason);
+	NMActStageReturn (*modem_act_stage1_prepare) (NMModem *modem,
+	                                              NMConnection *connection,
+	                                              NMDeviceStateReason *out_failure_reason);
 
 	NMActStageReturn (*static_stage3_ip4_config_start) (NMModem *self,
 	                                                    NMActRequest *req,

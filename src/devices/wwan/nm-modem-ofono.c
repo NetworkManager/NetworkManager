@@ -1114,9 +1114,9 @@ create_connect_properties (NMConnection *connection)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMModem *modem,
-                    NMConnection *connection,
-                    NMDeviceStateReason *out_failure_reason)
+modem_act_stage1_prepare (NMModem *modem,
+                          NMConnection *connection,
+                          NMDeviceStateReason *out_failure_reason)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -1308,6 +1308,6 @@ nm_modem_ofono_class_init (NMModemOfonoClass *klass)
 	modem_class->deactivate_cleanup = deactivate_cleanup;
 	modem_class->check_connection_compatible_with_modem = check_connection_compatible_with_modem;
 
-	modem_class->act_stage1_prepare = act_stage1_prepare;
+	modem_class->modem_act_stage1_prepare = modem_act_stage1_prepare;
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;
 }
