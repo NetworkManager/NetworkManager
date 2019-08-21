@@ -26,6 +26,12 @@
 /* This file should only be used by subclasses of NMDevice */
 
 typedef enum {
+	NM_DEVICE_STAGE_STATE_INIT      = 0,
+	NM_DEVICE_STAGE_STATE_PENDING   = 1,
+	NM_DEVICE_STAGE_STATE_COMPLETED = 2,
+} NMDeviceStageState;
+
+typedef enum {
 	NM_DEVICE_IP_STATE_NONE,
 	NM_DEVICE_IP_STATE_WAIT,
 	NM_DEVICE_IP_STATE_CONF,

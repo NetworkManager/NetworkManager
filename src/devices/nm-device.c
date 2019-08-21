@@ -413,6 +413,8 @@ typedef struct _NMDevicePrivate {
 
 	bool            concheck_rp_filter_checked:1;
 
+	NMDeviceStageState stage1_sriov_state:3;
+
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
 
@@ -679,6 +681,8 @@ static void (*const activate_stage4_ip_config_timeout_x[2]) (NMDevice *self) = {
 	activate_stage4_ip_config_timeout_6,
 	activate_stage4_ip_config_timeout_4,
 };
+
+static void sriov_op_cb (GError *error, gpointer user_data);
 
 static void activate_stage5_ip_config_result_4 (NMDevice *self);
 static void activate_stage5_ip_config_result_6 (NMDevice *self);
@@ -4243,7 +4247,7 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	}
 }
 
-static void sriov_op_cb (GError *error, gpointer user_data);
+/*****************************************************************************/
 
 static void
 sriov_op_start (NMDevice *self, SriovOp *op)
@@ -4276,16 +4280,57 @@ sriov_op_cb (GError *error, gpointer user_data)
 
 	priv->sriov.pending = NULL;
 
+	g_clear_object (&op->cancellable);
+
 	if (op->callback)
 		op->callback (error, op->callback_data);
 
-	g_clear_object (&op->cancellable);
-	g_slice_free (SriovOp, op);
+	nm_assert (!priv->sriov.pending);
+
+	nm_g_slice_free (op);
 
 	if (priv->sriov.next) {
 		sriov_op_start (self,
 		                g_steal_pointer (&priv->sriov.next));
 	}
+}
+
+static void
+sriov_op_queue_op (NMDevice *self,
+                   SriovOp *op)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->sriov.next) {
+		SriovOp *op_next = g_steal_pointer (&priv->sriov.next);
+
+		/* Cancel the next operation immediately */
+		if (op_next->callback) {
+			gs_free_error GError *error = NULL;
+
+			nm_utils_error_set_cancelled (&error, FALSE, NULL);
+			op_next->callback (error, op_next->callback_data);
+		}
+
+		nm_g_slice_free (op_next);
+
+		if (!priv->sriov.pending) {
+			/* This (having "next" set but "pending" not) can only happen if we are
+			 * called from inside the callback again.
+			 *
+			 * That means we append the new request as "next" and return. Once
+			 * the callback returns, it will schedule the request. */
+			priv->sriov.next = op;
+			return;
+		}
+	} else if (priv->sriov.pending) {
+		priv->sriov.next = op;
+		g_cancellable_cancel (priv->sriov.pending->cancellable);
+		return;
+	}
+
+	if (op)
+		sriov_op_start (self, op);
 }
 
 static void
@@ -4295,32 +4340,35 @@ sriov_op_queue (NMDevice *self,
                 NMPlatformAsyncCallback callback,
                 gpointer callback_data)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GError *error = NULL;
 	SriovOp *op;
 
-	op = g_slice_new0 (SriovOp);
-	op->num_vfs = num_vfs;
-	op->autoprobe = autoprobe;
-	op->callback = callback;
-	op->callback_data = callback_data;
+	/* We usually never want to cancel an async write operation, unless it's superseded
+	 * by a newer operation (that resets the state). That is, because we need to ensure
+	 * that we never end up doing two concurrent writes (since we write on a background
+	 * thread, that would be unordered/racy).
+	 * Of course, since we queue requests only per-device, when devices get renamed we
+	 * might end up writing the same sysctl concurrently still. But that's really
+	 * unlikely, and don't rename after udev completes!
+	 *
+	 * The "next" operation is not yet even started. It can be replaced/canceled right away
+	 * when a newer request comes.
+	 * The "pending" operation is currently ongoing, and we may cancel it if
+	 * we have a follow-up operation (queued in "next"). Unless we have a such
+	 * a newer request, we cannot cancel it!
+	 *
+	 * FIXME(shutdown): However, during shutdown we don't have a follow-up write request to cancel
+	 * this operation and we have to give it at least some time to complete. The solution is that
+	 * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MS
+	 * grace period we pull the plug and cancel it. */
 
-	if (priv->sriov.next) {
-		/* Cancel the next operation immediately */
-		if (priv->sriov.next->callback) {
-			nm_utils_error_set_cancelled (&error, FALSE, NULL);
-			priv->sriov.next->callback (error, priv->sriov.next->callback_data);
-			g_clear_error (&error);
-		}
-		g_slice_free (SriovOp, priv->sriov.next);
-		priv->sriov.next = NULL;
-	}
-
-	if (priv->sriov.pending) {
-		priv->sriov.next = op;
-		g_cancellable_cancel (priv->sriov.pending->cancellable);
-	} else
-		sriov_op_start (self, op);
+	op = g_slice_new (SriovOp);
+	*op = (SriovOp) {
+		.num_vfs       = num_vfs,
+		.autoprobe     = autoprobe,
+		.callback      = callback,
+		.callback_data = callback_data,
+	};
+	sriov_op_queue_op (self, op);
 }
 
 static void
@@ -6396,63 +6444,14 @@ sriov_params_cb (GError *error, gpointer data)
 		return;
 	}
 
-	nm_device_activate_schedule_stage2_device_config (self);
+	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+
+	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingSriov *s_sriov;
-	guint i, num;
-
-	if (   priv->ifindex > 0
-	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)
-	    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
-		nm_auto_freev NMPlatformVF **plat_vfs = NULL;
-		gs_free_error GError *error = NULL;
-		NMSriovVF *vf;
-		NMTernary autoprobe;
-		gpointer *data;
-
-		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
-		if (autoprobe == NM_TERNARY_DEFAULT) {
-			autoprobe = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-			                                                         NM_CON_DEFAULT ("sriov.autoprobe-drivers"),
-			                                                         self,
-			                                                         NM_TERNARY_FALSE,
-			                                                         NM_TERNARY_TRUE,
-			                                                         NM_TERNARY_TRUE);
-		}
-
-		num = nm_setting_sriov_get_num_vfs (s_sriov);
-		plat_vfs = g_new0 (NMPlatformVF *, num + 1);
-		for (i = 0; i < num; i++) {
-			vf = nm_setting_sriov_get_vf (s_sriov, i);
-			plat_vfs[i] = sriov_vf_config_to_platform (self, vf, &error);
-			if (!plat_vfs[i]) {
-				_LOGE (LOGD_DEVICE,
-				       "failed to apply SR-IOV VF '%s': %s",
-				       nm_utils_sriov_vf_to_str (vf, FALSE, NULL),
-				       error->message);
-				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
-				return NM_ACT_STAGE_RETURN_FAILURE;
-			}
-		}
-
-		/* When changing the number of VFs the kernel can block
-		 * for very long time in the write to sysfs, especially
-		 * if autoprobe-drivers is enabled. Do it asynchronously
-		 * to avoid blocking the entire NM process.
-		 */
-		data = nm_utils_user_data_pack (self, g_steal_pointer (&plat_vfs));
-		sriov_op_queue (self,
-		                nm_setting_sriov_get_total_vfs (s_sriov),
-		                autoprobe,
-		                sriov_params_cb,
-		                data);
-		return NM_ACT_STAGE_RETURN_POSTPONE;
-	}
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -6481,18 +6480,77 @@ activate_stage1_device_prepare (NMDevice *self)
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
+	if (priv->stage1_sriov_state != NM_DEVICE_STAGE_STATE_COMPLETED) {
+		NMSettingSriov *s_sriov;
+
+		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
+			/* pass */
+		} else if (priv->stage1_sriov_state == NM_DEVICE_STAGE_STATE_PENDING)
+			return;
+		else if (   priv->ifindex > 0
+		         && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)
+		         && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+			nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+			gs_free_error GError *error = NULL;
+			NMSriovVF *vf;
+			NMTernary autoprobe;
+			guint i, num;
+
+			autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
+			if (autoprobe == NM_TERNARY_DEFAULT) {
+				autoprobe = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+				                                                         NM_CON_DEFAULT ("sriov.autoprobe-drivers"),
+				                                                         self,
+				                                                         NM_TERNARY_FALSE,
+				                                                         NM_TERNARY_TRUE,
+				                                                         NM_TERNARY_TRUE);
+			}
+
+			num = nm_setting_sriov_get_num_vfs (s_sriov);
+			plat_vfs = g_new0 (NMPlatformVF *, num + 1);
+			for (i = 0; i < num; i++) {
+				vf = nm_setting_sriov_get_vf (s_sriov, i);
+				plat_vfs[i] = sriov_vf_config_to_platform (self, vf, &error);
+				if (!plat_vfs[i]) {
+					_LOGE (LOGD_DEVICE,
+					       "failed to apply SR-IOV VF '%s': %s",
+					       nm_utils_sriov_vf_to_str (vf, FALSE, NULL),
+					       error->message);
+					nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+					return;
+				}
+			}
+
+			/* When changing the number of VFs the kernel can block
+			 * for very long time in the write to sysfs, especially
+			 * if autoprobe-drivers is enabled. Do it asynchronously
+			 * to avoid blocking the entire NM process.
+			 */
+			sriov_op_queue (self,
+			                nm_setting_sriov_get_total_vfs (s_sriov),
+			                autoprobe,
+			                sriov_params_cb,
+			                nm_utils_user_data_pack (self,
+			                                         g_steal_pointer (&plat_vfs)));
+			priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_PENDING;
+			return;
+		}
+		priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+	}
+
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
 		ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &failure_reason);
-		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
-			return;
-		} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
 			return;
 		}
-		g_return_if_fail (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+		if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+			return;
+
+		nm_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
 
 	nm_device_activate_schedule_stage2_device_config (self);
@@ -9911,7 +9969,7 @@ _ip6_privacy_get (NMDevice *self)
 		return ip6_privacy;
 
 	if (!nm_device_get_ip_ifindex (self))
-		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;;
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
 	/* 3.) No valid default-value configured. Fallback to reading sysctl.
 	 *
@@ -14572,6 +14630,8 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 
 	_cancel_activation (self);
 
+	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_INIT;
+
 	if (cleanup_type != CLEANUP_TYPE_KEEP) {
 		nm_manager_device_route_metric_clear (nm_manager_get (),
 		                                      nm_device_get_ip_ifindex (self));
@@ -15010,9 +15070,9 @@ deactivate_ready (NMDevice *self, NMDeviceStateReason reason)
 	if (priv->dispatcher.call_id)
 		return;
 
-	if (priv->sriov.pending)
+	if (   priv->sriov.pending
+	    || priv->sriov.next)
 		return;
-	nm_assert (!priv->sriov.next);
 
 	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
 }
