@@ -7787,8 +7787,8 @@ dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (success) {
-		nm_dhcp_client_accept (priv->dhcp4.client, NULL);
-		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (configs[1]));
+		nm_device_activate_schedule_ip_config_result (self, AF_INET,
+		                                              NM_IP_CONFIG_CAST (configs[1]));
 	} else {
 		nm_dhcp_client_decline (priv->dhcp4.client, "Address conflict detected", NULL);
 		nm_device_ip_method_failed (self, AF_INET,
@@ -10770,6 +10770,18 @@ activate_stage5_ip_config_result_4 (NMDevice *self)
 		if (!start_sharing (self, priv->ip_config_4, &error)) {
 			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed: %s", error->message);
 			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+			return;
+		}
+	}
+
+	if (priv->dhcp4.client) {
+		gs_free_error GError *error = NULL;
+
+		if (!nm_dhcp_client_accept (priv->dhcp4.client, &error)) {
+			_LOGW (LOGD_DHCP4,
+			       "Activation: Stage 5 of 5 (IPv4 Commit) error accepting lease: %s",
+			       error->message);
+			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_DHCP_ERROR);
 			return;
 		}
 	}
