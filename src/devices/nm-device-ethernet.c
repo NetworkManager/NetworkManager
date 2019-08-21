@@ -794,14 +794,19 @@ link_negotiation_set (NMDevice *device)
 		autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
 		speed = nm_setting_wired_get_speed (s_wired);
 		duplex = link_duplex_to_platform (nm_setting_wired_get_duplex (s_wired));
-		if (!autoneg && !speed && !duplex) {
+		if (   !autoneg
+		    && !speed
+		    && !duplex) {
 			_LOGD (LOGD_DEVICE, "set-link: ignore link negotiation");
 			return;
 		}
 	}
 
-	if (!nm_platform_ethtool_get_link_settings (nm_device_get_platform (device), nm_device_get_ifindex (device),
-	                                            &link_autoneg, &link_speed, &link_duplex)) {
+	if (!nm_platform_ethtool_get_link_settings (nm_device_get_platform (device),
+	                                            nm_device_get_ifindex (device),
+	                                            &link_autoneg,
+	                                            &link_speed,
+	                                            &link_duplex)) {
 		_LOGW (LOGD_DEVICE, "set-link: unable to retrieve link negotiation");
 		return;
 	}
@@ -814,16 +819,18 @@ link_negotiation_set (NMDevice *device)
 		return;
 	}
 
-	if (autoneg && !speed && !duplex)
+	if (   autoneg
+	    && !speed
+	    && !duplex)
 		_LOGD (LOGD_DEVICE, "set-link: configure auto-negotiation");
 	else {
 		_LOGD (LOGD_DEVICE, "set-link: configure %snegotiation (%u Mbit%s - %s duplex%s)",
 		       autoneg ? "auto-" : "static ",
 		       speed ?: link_speed,
 		       speed ? "" : "*",
-		       duplex
-		         ? nm_platform_link_duplex_type_to_string (duplex)
-		         : nm_platform_link_duplex_type_to_string (link_duplex),
+		         duplex
+		       ? nm_platform_link_duplex_type_to_string (duplex)
+		       : nm_platform_link_duplex_type_to_string (link_duplex),
 		       duplex ? "" : "*");
 	}
 
@@ -846,7 +853,7 @@ pppoe_reconnect_delay (gpointer user_data)
 	priv->pppoe_wait_id = 0;
 	_LOGI (LOGD_DEVICE, "PPPoE reconnect delay complete, resuming connection...");
 	nm_device_activate_schedule_stage2_device_config (NM_DEVICE (self));
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static NMActStageReturn
@@ -869,20 +876,26 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 	 * a previous PPPoE connection was torn down, wait a bit to allow the
 	 * remote side to handle the disconnection.  Otherwise the peer may
 	 * get confused and fail to negotiate the new connection. (rh #1023503)
+	 *
+	 * FIXME(shutdown): when exiting, we also need to wait before quiting,
+	 * at least for additional NM_SHUTDOWN_TIMEOUT_MS seconds because
+	 * otherwise after restart the device won't work for the first seconds.
 	 */
-	if (priv->last_pppoe_time) {
+	if (priv->last_pppoe_time != 0) {
 		gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
 
 		if (   delay < PPPOE_RECONNECT_DELAY
 		    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
-			_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
-			       delay);
-			g_assert (!priv->pppoe_wait_id);
-			priv->pppoe_wait_id = g_timeout_add_seconds (delay,
-			                                             pppoe_reconnect_delay,
-			                                             self);
+			if (priv->pppoe_wait_id == 0) {
+				_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
+				       delay);
+				priv->pppoe_wait_id = g_timeout_add_seconds (delay,
+				                                             pppoe_reconnect_delay,
+				                                             self);
+			}
 			return NM_ACT_STAGE_RETURN_POSTPONE;
 		}
+		nm_clear_g_source (&priv->pppoe_wait_id);
 		priv->last_pppoe_time = 0;
 	}
 
