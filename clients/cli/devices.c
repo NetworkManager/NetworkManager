@@ -756,7 +756,7 @@ usage_device_reapply (void)
 	              "ARGUMENTS := <ifname>\n"
 	              "\n"
 	              "Attempts to update device with changes to the currently active connection\n"
-                      "made since it was last applied.\n\n"));
+	              "made since it was last applied.\n\n"));
 }
 
 static void
@@ -3901,7 +3901,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 	if (!con_name)
 		con_name = default_name = nmc_unique_connection_name (nm_client_get_connections (nmc->client), "Hotspot");
 	g_object_set (s_con,
-                      NM_SETTING_CONNECTION_ID, con_name,
+	              NM_SETTING_CONNECTION_ID, con_name,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NULL);
 	g_free (default_name);
