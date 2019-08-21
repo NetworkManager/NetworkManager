@@ -1741,7 +1741,7 @@ do_device_show (NmCli *nmc, int argc, char **argv)
 		int i;
 
 		/* nmc_do_cmd() should not call this with argc=0. */
-		g_assert (!nmc->complete);
+		nm_assert (!nmc->complete);
 
 		/* Show details for all devices */
 		for (i = 0; devices[i]; i++) {
@@ -3031,7 +3031,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				nmc_complete_strings (rescan, "auto", "no", "yes");
 			break;
 		default:
-			g_assert_not_reached();
+			nm_assert_not_reached();
 			break;
 		}
 	}
@@ -3222,7 +3222,7 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 		next_arg (nmc, &argc, &argv, NULL);
 	} else {
 		/* nmc_do_cmd() should not call this with argc=0. */
-		g_assert (!nmc->complete);
+		nm_assert (!nmc->complete);
 
 		if (nmc->ask) {
 			ssid_ask = nmc_readline (&nmc->nmc_config, _("SSID or BSSID: "));
