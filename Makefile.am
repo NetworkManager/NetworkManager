@@ -487,6 +487,12 @@ $(shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_
 
 ###############################################################################
 
+EXTRA_DIST += \
+	shared/nm-utils/tests/meson.build \
+	$(NULL)
+
+###############################################################################
+
 check_programs += shared/nm-utils/tests/test-shared-general
 
 shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
