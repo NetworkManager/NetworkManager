@@ -2658,8 +2658,10 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	priv->hw_addr_scan_expire = 0;
 
 	/* Set spoof MAC to the interface */
-	if (!nm_device_hw_addr_set_cloned (device, connection, TRUE))
+	if (!nm_device_hw_addr_set_cloned (device, connection, TRUE)) {
+		*out_failure_reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	/* AP and Mesh modes never use a specific object or existing scanned AP */
 	if (!NM_IN_SET (priv->mode, NM_802_11_MODE_AP,

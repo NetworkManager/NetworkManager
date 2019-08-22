@@ -355,8 +355,12 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	if (priv->props.type == IFF_TUN) {
 		/* Nothing to do for TUN devices */
 	} else {
-		if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
+		if (!nm_device_hw_addr_set_cloned (device,
+		                                   nm_device_get_applied_connection (device),
+		                                   FALSE)) {
+			*out_failure_reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
 	}
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
