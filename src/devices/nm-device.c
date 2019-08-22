@@ -404,7 +404,6 @@ typedef struct _NMDevicePrivate {
 	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:5;
 
 	bool            is_enslaved:1;
-	bool            master_ready_handled:1;
 
 	bool            ipv6ll_handle:1; /* TRUE if NM handles the device's IPv6LL address */
 	bool            ipv6ll_has:1;
@@ -6268,22 +6267,18 @@ master_ready (NMDevice *self,
 	NMActiveConnection *master_connection;
 	NMDevice *master;
 
-	g_return_if_fail (priv->state == NM_DEVICE_STATE_PREPARE);
-	g_return_if_fail (!priv->master_ready_handled);
-
 	/* Notify a master device that it has a new slave */
-	g_return_if_fail (nm_active_connection_get_master_ready (active));
-	master_connection = nm_active_connection_get_master (active);
+	nm_assert (nm_active_connection_get_master_ready (active));
 
-	priv->master_ready_handled = TRUE;
-	nm_clear_g_signal_handler (active, &priv->master_ready_id);
+	master_connection = nm_active_connection_get_master (active);
 
 	master = nm_active_connection_get_device (master_connection);
 
 	_LOGD (LOGD_DEVICE, "master connection ready; master device %s",
 	       nm_device_get_iface (master));
 
-	if (priv->master && priv->master != master)
+	if (   priv->master
+	    && priv->master != master)
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
 	/* If the master didn't change, add-slave only rechecks whether to assume a connection. */
@@ -6297,8 +6292,12 @@ master_ready_cb (NMActiveConnection *active,
                  GParamSpec *pspec,
                  NMDevice *self)
 {
-	master_ready (self, active);
-	nm_device_activate_schedule_stage2_device_config (self);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (nm_active_connection_get_master_ready (active));
+
+	if (priv->state == NM_DEVICE_STATE_PREPARE)
+		nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
 static void
@@ -6460,6 +6459,8 @@ activate_stage1_device_prepare (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActiveConnection *active;
+	NMActiveConnection *master;
 
 	priv->v4_route_table_initialized = FALSE;
 	priv->v6_route_table_initialized = FALSE;
@@ -6559,6 +6560,30 @@ activate_stage1_device_prepare (NMDevice *self)
 			nm_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 		}
 	}
+
+	active = NM_ACTIVE_CONNECTION (priv->act_request.obj);
+	master = nm_active_connection_get_master (active);
+	if (master) {
+		/* If the master connection is ready for slaves, attach ourselves */
+		if (!nm_active_connection_get_master_ready (active)) {
+			if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+				_LOGD (LOGD_DEVICE, "master connection is deactivating");
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+				return;
+			}
+			if (priv->master_ready_id == 0) {
+				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
+				priv->master_ready_id = g_signal_connect (active,
+				                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+				                                          (GCallback) master_ready_cb,
+				                                          self);
+			}
+			return;
+		}
+	}
+	nm_clear_g_signal_handler (priv->act_request.obj, &priv->master_ready_id);
+	if (master)
+		master_ready (self, active);
 
 	nm_device_activate_schedule_stage2_device_config (self);
 }
@@ -6951,43 +6976,7 @@ activate_stage2_device_config (NMDevice *self)
 void
 nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request.obj);
-
-	if (!priv->master_ready_handled) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request.obj);
-		NMActiveConnection *master;
-
-		master = nm_active_connection_get_master (active);
-
-		if (!master) {
-			g_warn_if_fail (!priv->master_ready_id);
-			priv->master_ready_handled = TRUE;
-		} else {
-			/* If the master connection is ready for slaves, attach ourselves */
-			if (nm_active_connection_get_master_ready (active))
-				master_ready (self, active);
-			else if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
-				_LOGD (LOGD_DEVICE, "master connection is deactivating");
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
-			} else {
-				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
-
-				if (priv->master_ready_id == 0) {
-					priv->master_ready_id = g_signal_connect (active,
-					                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
-					                                          (GCallback) master_ready_cb,
-					                                          self);
-				}
-				/* Postpone */
-				return;
-			}
-		}
-	}
 
 	activation_source_schedule (self, activate_stage2_device_config, AF_INET);
 }
@@ -14717,10 +14706,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	if (priv->act_request.obj) {
 		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request.obj), AF_INET, FALSE);
-
-		priv->master_ready_handled = FALSE;
 		nm_clear_g_signal_handler (priv->act_request.obj, &priv->master_ready_id);
-
 		act_request_set (self, NULL);
 	}
 
@@ -16663,13 +16649,14 @@ dispose (GObject *object)
 
 	_cleanup_generic_pre (self, CLEANUP_TYPE_KEEP);
 
-	g_warn_if_fail (c_list_is_empty (&priv->slaves));
-	g_assert (priv->master_ready_id == 0);
+	nm_assert (c_list_is_empty (&priv->slaves));
 
 	/* Let the kernel manage IPv6LL again */
 	set_nm_ipv6ll (self, FALSE);
 
 	_cleanup_generic_post (self, CLEANUP_TYPE_KEEP);
+
+	nm_assert (priv->master_ready_id == 0);
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
