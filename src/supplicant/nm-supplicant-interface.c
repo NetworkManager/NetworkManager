@@ -108,6 +108,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_WFD_SUPPORT,
 	PROP_FT_SUPPORT,
 	PROP_SHA384_SUPPORT,
+	PROP_AUTH_STATE,
 );
 
 typedef struct {
@@ -161,6 +162,7 @@ typedef struct {
 
 	gint64         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_ms() */
 
+	NMSupplicantAuthState auth_state;
 } NMSupplicantInterfacePrivate;
 
 struct _NMSupplicantInterface {
@@ -819,6 +821,12 @@ nm_supplicant_interface_get_sha384_support (NMSupplicantInterface *self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->sha384_support;
 }
 
+NMSupplicantAuthState
+nm_supplicant_interface_get_auth_state (NMSupplicantInterface *self)
+{
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->auth_state;
+}
+
 void
 nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
                                         NMSupplicantFeature ap_support)
@@ -1330,6 +1338,34 @@ wpas_iface_network_request (GDBusProxy *proxy,
 }
 
 static void
+eap_changed (GDBusProxy *proxy,
+             const char *status,
+             const char *parameter,
+             gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantAuthState auth_state = NM_SUPPLICANT_AUTH_STATE_UNKNOWN;
+
+	if (nm_streq0 (status, "started"))
+		auth_state = NM_SUPPLICANT_AUTH_STATE_STARTED;
+	else if (nm_streq0 (status, "completion")) {
+		if (nm_streq0 (parameter, "success"))
+			auth_state = NM_SUPPLICANT_AUTH_STATE_SUCCESS;
+		else if (nm_streq0 (parameter, "failure"))
+			auth_state = NM_SUPPLICANT_AUTH_STATE_FAILURE;
+	}
+
+	/* the state eventually reaches one of started, success or failure
+	 * so ignore any other intermediate (unknown) state change. */
+	if (   auth_state != NM_SUPPLICANT_AUTH_STATE_UNKNOWN
+	    && auth_state != priv->auth_state) {
+		priv->auth_state = auth_state;
+		_notify (self, PROP_AUTH_STATE);
+	}
+}
+
+static void
 props_changed_cb (GDBusProxy *proxy,
                   GVariant *changed_properties,
                   GStrv invalidated_properties,
@@ -1671,6 +1707,8 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                         G_CALLBACK (wpas_iface_bss_removed), self);
 	_nm_dbus_signal_connect (priv->iface_proxy, "NetworkRequest", G_VARIANT_TYPE ("(oss)"),
 	                         G_CALLBACK (wpas_iface_network_request), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "EAP", G_VARIANT_TYPE ("(ss)"),
+	                         G_CALLBACK (eap_changed), self);
 
 	/* Scan result aging parameters */
 	g_dbus_proxy_call (priv->iface_proxy,
@@ -2747,6 +2785,9 @@ get_property (GObject *object,
 	case PROP_P2P_AVAILABLE:
 		g_value_set_boolean (value, priv->p2p_capable && priv->p2p_proxy_acquired);
 		break;
+	case PROP_AUTH_STATE:
+		g_value_set_uint (value, priv->auth_state);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3039,6 +3080,13 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                      G_PARAM_WRITABLE |
 	                      G_PARAM_CONSTRUCT_ONLY |
 	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_AUTH_STATE] =
+	    g_param_spec_uint (NM_SUPPLICANT_INTERFACE_AUTH_STATE, "", "",
+	                       NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
+	                       _NM_SUPPLICANT_AUTH_STATE_NUM - 1,
+	                       NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
