@@ -369,12 +369,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (device);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	NMActStageReturn ret;
-	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingWifiP2P *s_wifi_p2p;
 	NMWifiP2PPeer *peer;
-
-	nm_clear_g_source (&priv->sup_timeout_id);
 
 	ret = NM_DEVICE_CLASS (nm_device_wifi_p2p_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
@@ -385,10 +382,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
-
-	connection = nm_act_request_get_applied_connection (req);
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_wifi_p2p = NM_SETTING_WIFI_P2P (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIFI_P2P));
@@ -397,12 +391,13 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	peer = nm_wifi_p2p_peers_find_first_compatible (&priv->peers_lst_head, connection);
 	if (!peer) {
 		/* Set up a timeout on the find attempt and run a find for the same period of time */
-		priv->sup_timeout_id = g_timeout_add_seconds (10,
-		                                              supplicant_find_timeout_cb,
-		                                              self);
+		if (priv->sup_timeout_id == 0) {
+			priv->sup_timeout_id = g_timeout_add_seconds (10,
+			                                              supplicant_find_timeout_cb,
+			                                              self);
 
-		nm_supplicant_interface_p2p_start_find (priv->mgmt_iface, 10);
-
+			nm_supplicant_interface_p2p_start_find (priv->mgmt_iface, 10);
+		}
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
