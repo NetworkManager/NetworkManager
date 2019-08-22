@@ -136,7 +136,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return ret;
 
 	platform = nm_device_get_platform (device);
-	g_return_val_if_fail (platform, NM_ACT_STAGE_RETURN_FAILURE);
+	nm_assert (NM_IS_PLATFORM (platform));
 
 	ifindex = nm_device_get_ifindex (device);
 
@@ -147,7 +147,11 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	g_return_val_if_fail (s_wpan, NM_ACT_STAGE_RETURN_FAILURE);
 
 	hwaddr = nm_platform_link_get_address (platform, ifindex, &hwaddr_len);
-	g_return_val_if_fail (hwaddr, NM_ACT_STAGE_RETURN_FAILURE);
+
+	if (!hwaddr) {
+		*out_failure_reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	/* As of kernel 4.16, the 6LoWPAN devices layered on top of WPANs
 	 * need to be DOWN as well as the WPAN device itself in order to
@@ -156,7 +160,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	                                                NM_LINK_TYPE_6LOWPAN,
 	                                                hwaddr,
 	                                                hwaddr_len);
-	if (lowpan_plink && NM_FLAGS_HAS (lowpan_plink->n_ifi_flags, IFF_UP)) {
+	if (   lowpan_plink
+	    && NM_FLAGS_HAS (lowpan_plink->n_ifi_flags, IFF_UP)) {
 		lowpan_device = nm_manager_get_device_by_ifindex (nm_manager_get (),
 		                                                  lowpan_plink->ifindex);
 	}
@@ -192,6 +197,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	}
 
 	ret = NM_ACT_STAGE_RETURN_SUCCESS;
+
 out:
 	nm_device_bring_up (device, TRUE, NULL);
 
