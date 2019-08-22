@@ -864,9 +864,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	link_negotiation_set (device);
 
-	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
 	/* If we're re-activating a PPPoE connection a short while after
 	 * a previous PPPoE connection was torn down, wait a bit to allow the
 	 * remote side to handle the disconnection.  Otherwise the peer may
@@ -1771,6 +1768,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	device_class->new_default_connection = new_default_connection;
 
 	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->get_configured_mtu = get_configured_mtu;
