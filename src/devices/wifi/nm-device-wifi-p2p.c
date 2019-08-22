@@ -399,21 +399,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static void
-cleanup_p2p_connect_attempt (NMDeviceWifiP2P *self, gboolean disconnect)
-{
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
-
-	nm_clear_g_source (&priv->sup_timeout_id);
-	nm_clear_g_source (&priv->peer_missing_id);
-
-	if (priv->mgmt_iface)
-		nm_supplicant_interface_p2p_cancel_connect (priv->mgmt_iface);
-
-	if (disconnect && priv->group_iface)
-		nm_supplicant_interface_p2p_disconnect (priv->group_iface);
-}
-
 /*
  * supplicant_connection_timeout_cb
  *
@@ -609,9 +594,17 @@ static void
 deactivate (NMDevice *device)
 {
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (device);
+	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (device);
 
-	cleanup_p2p_connect_attempt (self, TRUE);
+	nm_clear_g_source (&priv->sup_timeout_id);
+	nm_clear_g_source (&priv->peer_missing_id);
+
+	if (priv->mgmt_iface)
+		nm_supplicant_interface_p2p_cancel_connect (priv->mgmt_iface);
+
+	if (priv->group_iface)
+		nm_supplicant_interface_p2p_disconnect (priv->group_iface);
 
 	/* Clear any critical protocol notification in the Wi-Fi stack */
 	if (ifindex > 0)
