@@ -1755,10 +1755,11 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
                                      NMDeviceWifi *self)
 {
 	NMActRequest *req;
-	GVariant *val, *secrets = NULL;
+	gs_unref_variant GVariant *val_key = NULL;
+	gs_unref_variant GVariant *secrets = NULL;
+	gs_free_error GError *error = NULL;
 	const char *array;
 	gsize psk_len = 0;
-	GError *error = NULL;
 
 	if (nm_device_get_state (NM_DEVICE (self)) != NM_DEVICE_STATE_NEED_AUTH) {
 		_LOGI (LOGD_DEVICE | LOGD_WIFI, "WPS: The connection can't be updated with credentials");
@@ -1770,11 +1771,11 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_if_fail (NM_IS_ACT_REQUEST (req));
 
-	val = g_variant_lookup_value (credentials, "Key", G_VARIANT_TYPE_BYTESTRING);
-	if (val) {
+	val_key = g_variant_lookup_value (credentials, "Key", G_VARIANT_TYPE_BYTESTRING);
+	if (val_key) {
 		char psk[64];
 
-		array = g_variant_get_fixed_array (val, &psk_len, 1);
+		array = g_variant_get_fixed_array (val_key, &psk_len, 1);
 		if (psk_len >= 8 && psk_len <= 63) {
 			memcpy (psk, array, psk_len);
 			psk[psk_len] = '\0';
@@ -1787,22 +1788,22 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 		}
 		if (!secrets)
 			_LOGW (LOGD_DEVICE | LOGD_WIFI, "WPS: ignore invalid PSK");
-		g_variant_unref (val);
 	}
-	if (secrets) {
-		if (nm_settings_connection_new_secrets (nm_act_request_get_settings_connection (req),
-		                                        nm_act_request_get_applied_connection (req),
-		                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-		                                        secrets,
-		                                        &error)) {
-			wifi_secrets_cancel (self);
-			nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
-		} else {
-			_LOGW (LOGD_DEVICE | LOGD_WIFI, "WPS: Could not update the connection with credentials: %s", error->message);
-			g_error_free (error);
-		}
-		g_variant_unref (secrets);
+
+	if (!secrets)
+		return;
+
+	if (!nm_settings_connection_new_secrets (nm_act_request_get_settings_connection (req),
+	                                         nm_act_request_get_applied_connection (req),
+	                                         NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                                         secrets,
+	                                         &error)) {
+		_LOGW (LOGD_DEVICE | LOGD_WIFI, "WPS: Could not update the connection with credentials: %s", error->message);
+		return;
 	}
+
+	wifi_secrets_cancel (self);
+	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
 }
 
 static gboolean
