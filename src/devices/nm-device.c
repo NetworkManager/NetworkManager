@@ -683,6 +683,8 @@ static void (*const activate_stage4_ip_config_timeout_x[2]) (NMDevice *self) = {
 
 static void sriov_op_cb (GError *error, gpointer user_data);
 
+static void activate_stage2_device_config (NMDevice *self);
+
 static void activate_stage5_ip_config_result_4 (NMDevice *self);
 static void activate_stage5_ip_config_result_6 (NMDevice *self);
 
@@ -6257,6 +6259,36 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_
 	priv->activation_source_id_x[IS_IPv4] = new_id;
 }
 
+static void
+activation_source_invoke_sync (NMDevice *self, ActivationHandleFunc func, int addr_family)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
+
+	if (priv->activation_source_id_x[IS_IPv4] == 0) {
+		_LOGD (LOGD_DEVICE, "activation-stage: synchronously invoke %s,v%c",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family));
+	} else if (priv->activation_source_func_x[IS_IPv4] == func) {
+		_LOGD (LOGD_DEVICE, "activation-stage: synchronously invoke %s,v%c which was already scheduled (id %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       priv->activation_source_id_x[IS_IPv4]);
+	} else {
+		_LOGD (LOGD_DEVICE, "activation-stage: synchronously invoke %s,v%c which replaces %s,v%c (id %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       _activation_func_to_string (priv->activation_source_func_x[IS_IPv4]),
+		       nm_utils_addr_family_to_char (addr_family),
+		       priv->activation_source_id_x[IS_IPv4]);
+	}
+
+	nm_clear_g_source (&priv->activation_source_id_x[IS_IPv4]);
+	priv->activation_source_func_x[IS_IPv4] = NULL;
+
+	func (self);
+}
+
 /*****************************************************************************/
 
 static void
@@ -6585,7 +6617,7 @@ activate_stage1_device_prepare (NMDevice *self)
 	if (master)
 		master_ready (self, active);
 
-	nm_device_activate_schedule_stage2_device_config (self);
+	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
 }
 
 /*
