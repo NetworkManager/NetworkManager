@@ -481,15 +481,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 }
 
-static NMActStageReturn
-act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
-{
-	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
 /*****************************************************************************/
 
 static void
@@ -614,7 +605,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	device_class->complete_connection = complete_connection;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->update_connection = update_connection;
-	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 
 	obj_properties[PROP_ID] =

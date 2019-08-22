@@ -415,15 +415,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	              NULL);
 }
 
-static NMActStageReturn
-act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
-{
-	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
 /*****************************************************************************/
 
 static void
@@ -502,7 +493,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	device_class->connection_type_check_compatible = NM_SETTING_MACVLAN_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP);
 
-	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->create_and_realize = create_and_realize;

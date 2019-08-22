@@ -6536,6 +6536,15 @@ activate_stage1_device_prepare (NMDevice *self)
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 
+		if (klass->act_stage1_prepare_set_hwaddr_ethernet) {
+			if (!nm_device_hw_addr_set_cloned (self,
+			                                   nm_device_get_applied_connection (self),
+			                                   FALSE)) {
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+				return;
+			}
+		}
+
 		if (klass->act_stage1_prepare) {
 			NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
