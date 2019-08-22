@@ -478,9 +478,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDevice *parent_device;
 	NMSettingVlan *s_vlan;
 
-	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
 	/* Change MAC address to parent's one if needed */
 	parent_device = nm_device_parent_get_device (device);
 	if (parent_device) {
@@ -599,6 +596,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	device_class->link_changed = link_changed;
 	device_class->unrealize_notify = unrealize_notify;
 	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->is_available = is_available;

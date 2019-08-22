@@ -507,11 +507,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	s_bridge = (NMSetting *) nm_connection_get_setting_bridge (connection);
 	g_return_val_if_fail (s_bridge, NM_ACT_STAGE_RETURN_FAILURE);
 
-	if (!nm_device_hw_addr_set_cloned (device, connection, FALSE)) {
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-		return NM_ACT_STAGE_RETURN_FAILURE;
-	}
-
 	for (option = master_options; option->name; option++)
 		commit_option (device, s_bridge, option, FALSE);
 
@@ -758,6 +753,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	device_class->master_update_slave_connection = master_update_slave_connection;
 
 	device_class->create_and_realize = create_and_realize;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->deactivate = deactivate;
