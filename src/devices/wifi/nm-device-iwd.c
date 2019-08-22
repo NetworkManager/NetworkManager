@@ -1716,6 +1716,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	NMWifiAP *ap = NULL;
+	gs_unref_object NMWifiAP *ap_fake = NULL;
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
@@ -1741,7 +1742,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		goto add_new;
 
 	ap_path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
-	ap = ap_path ? nm_wifi_ap_lookup_for_device (NM_DEVICE (self), ap_path) : NULL;
+	ap =   ap_path
+	     ? nm_wifi_ap_lookup_for_device (NM_DEVICE (self), ap_path)
+	     : NULL;
 	if (ap) {
 		set_current_ap (self, ap, TRUE);
 		return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -1767,19 +1770,19 @@ add_new:
 	 * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
 	 * the device is deactivated (Ad-Hoc or Hotspot).
 	 */
-	ap = nm_wifi_ap_new_fake_from_connection (connection);
-	g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	ap_fake = nm_wifi_ap_new_fake_from_connection (connection);
+	if (!ap_fake)
+		g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
 
-	if (nm_wifi_ap_is_hotspot (ap))
-		nm_wifi_ap_set_address (ap, nm_device_get_hw_address (device));
+	if (nm_wifi_ap_is_hotspot (ap_fake))
+		nm_wifi_ap_set_address (ap_fake, nm_device_get_hw_address (device));
 
 	g_object_freeze_notify (G_OBJECT (self));
-	ap_add_remove (self, TRUE, ap, FALSE);
+	ap_add_remove (self, TRUE, ap_fake, FALSE);
 	g_object_thaw_notify (G_OBJECT (self));
-	set_current_ap (self, ap, FALSE);
+	set_current_ap (self, ap_fake, FALSE);
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
-	                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
-	g_object_unref (ap);
+	                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (ap_fake)));
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 

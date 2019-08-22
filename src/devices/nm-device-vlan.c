@@ -497,7 +497,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	if (s_vlan) {
 		gs_free NMVlanQosMapping *ingress_map = NULL;
 		gs_free NMVlanQosMapping *egress_map = NULL;
-		guint n_ingress_map = 0, n_egress_map = 0;
+		guint n_ingress_map = 0;
+		guint n_egress_map = 0;
 
 		_nm_setting_vlan_get_priorities (s_vlan,
 		                                 NM_VLAN_INGRESS_MAP,
@@ -520,7 +521,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		                              n_egress_map);
 	}
 
-	return ret;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static guint32

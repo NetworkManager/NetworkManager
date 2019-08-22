@@ -660,7 +660,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		 * have a PID, then we must fail.
 		 */
 		cfg = teamdctl_config_get_raw (priv->tdc);
-		if (cfg && nm_streq0 (cfg,  nm_setting_team_get_config (s_team))) {
+		if (   cfg
+		    && nm_streq0 (cfg,  nm_setting_team_get_config (s_team))) {
 			_LOGD (LOGD_TEAM, "using existing matching teamd config");
 			return NM_ACT_STAGE_RETURN_SUCCESS;
 		}
@@ -684,8 +685,10 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	return teamd_start (device, connection) ?
-		NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
+	if (!teamd_start (device, connection))
+		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
 static void

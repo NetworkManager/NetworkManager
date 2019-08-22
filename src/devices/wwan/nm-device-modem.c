@@ -593,7 +593,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	req = nm_device_get_act_request (device);
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
-	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, req, out_failure_reason);
+	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
+	                                    req,
+	                                    out_failure_reason);
 }
 
 static NMActStageReturn

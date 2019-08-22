@@ -94,7 +94,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	dirfd = nm_platform_sysctl_open_netdir (nm_device_get_platform (device), nm_device_get_ifindex (device), ifname_verified);
 	if (dirfd < 0) {
-		if (!strcmp (transport_mode, "datagram"))
+		if (nm_streq (transport_mode, "datagram"))
 			return NM_ACT_STAGE_RETURN_SUCCESS;
 		else {
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_INFINIBAND_MODE);
