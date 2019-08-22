@@ -454,8 +454,10 @@ wired_secrets_cb (NMActRequest *req,
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	} else
-		nm_device_activate_schedule_stage1_device_prepare (device);
+		return;
+	}
+
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
@@ -851,8 +853,9 @@ pppoe_reconnect_delay (gpointer user_data)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	priv->pppoe_wait_id = 0;
+	priv->last_pppoe_time = 0;
 	_LOGI (LOGD_DEVICE, "PPPoE reconnect delay complete, resuming connection...");
-	nm_device_activate_schedule_stage2_device_config (NM_DEVICE (self));
+	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
 	return G_SOURCE_REMOVE;
 }
 

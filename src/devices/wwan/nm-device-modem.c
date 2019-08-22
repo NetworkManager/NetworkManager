@@ -48,10 +48,11 @@ typedef struct {
 	NMModem *modem;
 	NMDeviceModemCapabilities caps;
 	NMDeviceModemCapabilities current_caps;
-	gboolean rf_enabled;
 	char *device_id;
 	char *operator_code;
 	char *apn;
+	bool rf_enabled:1;
+	NMDeviceStageState stage1_state:3;
 } NMDeviceModemPrivate;
 
 struct _NMDeviceModem {
@@ -119,16 +120,17 @@ modem_prepare_result (NMModem *modem,
                       gpointer user_data)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
-	NMDeviceState state;
 	NMDeviceStateReason reason = i_reason;
 
-	state = nm_device_get_state (device);
-	g_return_if_fail (state == NM_DEVICE_STATE_PREPARE);
+	if (   nm_device_get_state (device) != NM_DEVICE_STATE_PREPARE
+	    || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING) {
+		nm_assert_not_reached ();
+		success = FALSE;
+	}
 
-	if (success)
-		nm_device_activate_schedule_stage2_device_config (device);
-	else {
+	if (!success) {
 		/* There are several reasons to block autoconnection at device level:
 		 *
 		 *  - Wrong SIM-PIN: The device won't autoconnect because it doesn't make sense
@@ -164,7 +166,11 @@ modem_prepare_result (NMModem *modem,
 			break;
 		}
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+		return;
 	}
+
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
@@ -187,16 +193,19 @@ static void
 modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 
 	if (error) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	} else {
-		/* Otherwise, on success for modem secrets we need to schedule stage1 again */
-		g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
-		nm_device_activate_schedule_stage1_device_prepare (device);
+		return;
 	}
+
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
@@ -542,7 +551,10 @@ complete_connection (NMDevice *device,
 static void
 deactivate (NMDevice *device)
 {
-	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	nm_modem_deactivate (priv->modem, device);
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
 }
 
 /*****************************************************************************/
@@ -583,14 +595,24 @@ deactivate_async (NMDevice *self,
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 	NMActRequest *req;
 
 	req = nm_device_get_act_request (device);
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
-	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
-	                                    req,
-	                                    out_failure_reason);
+	if (priv->stage1_state == NM_DEVICE_STAGE_STATE_INIT) {
+		priv->stage1_state = NM_DEVICE_STAGE_STATE_PENDING;
+		return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
+		                                    req,
+		                                    out_failure_reason);
+	}
+
+	if (priv->stage1_state == NM_DEVICE_STAGE_STATE_PENDING)
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+
+	nm_assert (priv->stage1_state == NM_DEVICE_STAGE_STATE_COMPLETED);
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn

@@ -56,6 +56,7 @@ typedef struct {
 	guint teamd_read_timeout;
 	guint teamd_dbus_watch;
 	bool kill_in_progress:1;
+	NMDeviceStageState stage1_state:3;
 } NMDeviceTeamPrivate;
 
 struct _NMDeviceTeam {
@@ -407,19 +408,20 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	 */
 	success = ensure_teamd_connection (device);
 
-	if (nm_device_get_state (device) != NM_DEVICE_STATE_PREPARE)
+	if (   nm_device_get_state (device) != NM_DEVICE_STATE_PREPARE
+	    || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
 		return;
 
+	if (success)
+		success = teamd_read_config (self);
+
 	if (!success) {
-		if (!nm_device_sys_iface_state_is_external_or_assume (device)) {
-			teamd_cleanup (self, TRUE);
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-		}
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 		return;
 	}
 
-	if (teamd_read_config (self))
-		nm_device_activate_schedule_stage2_device_config (device);
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
@@ -658,6 +660,14 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	if (!s_team)
 		g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
 
+	if (priv->stage1_state == NM_DEVICE_STAGE_STATE_PENDING)
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+
+	if (priv->stage1_state == NM_DEVICE_STAGE_STATE_COMPLETED)
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_PENDING;
+
 	if (priv->tdc) {
 		/* If the existing teamd config is the same as we're about to use,
 		 * then we can proceed.  If it's not the same, and we have a PID,
@@ -700,6 +710,8 @@ deactivate (NMDevice *device)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
 
 	if (nm_device_sys_iface_state_is_external (device))
 		return;

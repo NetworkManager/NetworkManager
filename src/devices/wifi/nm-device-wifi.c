@@ -1735,8 +1735,10 @@ wifi_secrets_cb (NMActRequest *req,
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	} else
-		nm_device_activate_schedule_stage1_device_prepare (device);
+		return;
+	}
+
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
