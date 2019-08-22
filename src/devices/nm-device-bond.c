@@ -343,10 +343,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
-	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
-
 	/* Interface must be down to set bond options */
 	nm_device_take_down (device, TRUE);
 	if (!apply_bonding_config (self))

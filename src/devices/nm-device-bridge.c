@@ -497,14 +497,9 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-	NMActStageReturn ret;
 	NMConnection *connection;
 	NMSetting *s_bridge;
 	const Option *option;
-
-	ret = NM_DEVICE_CLASS (nm_device_bridge_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);

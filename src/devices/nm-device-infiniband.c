@@ -76,15 +76,10 @@ static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	nm_auto_close int dirfd = -1;
-	NMActStageReturn ret;
 	NMSettingInfiniband *s_infiniband;
 	char ifname_verified[IFNAMSIZ];
 	const char *transport_mode;
 	gboolean ok;
-
-	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	s_infiniband = nm_device_get_applied_setting (device, NM_TYPE_SETTING_INFINIBAND);
 

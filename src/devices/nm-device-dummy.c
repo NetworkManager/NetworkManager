@@ -119,12 +119,6 @@ create_and_realize (NMDevice *device,
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-	NMActStageReturn ret;
-
-	ret = NM_DEVICE_CLASS (nm_device_dummy_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
-
 	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 

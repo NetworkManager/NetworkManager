@@ -637,15 +637,10 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	gs_free_error GError *error = NULL;
 	NMSettingTeam *s_team;
 	NMConnection *connection;
 	const char *cfg;
-
-	ret = NM_DEVICE_CLASS (nm_device_team_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);

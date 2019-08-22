@@ -233,12 +233,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 {
-	NMActStageReturn ret;
-
-	ret = NM_DEVICE_CLASS (nm_device_6lowpan_parent_class)->act_stage1_prepare (dev, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
-
 	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	return NM_ACT_STAGE_RETURN_SUCCESS;

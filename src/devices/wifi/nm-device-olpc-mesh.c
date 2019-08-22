@@ -145,12 +145,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	NMActStageReturn ret;
 	gboolean scanning;
-
-	ret = NM_DEVICE_CLASS (nm_device_olpc_mesh_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	/* disconnect companion device, if it is connected */
 	if (nm_device_get_act_request (NM_DEVICE (priv->companion))) {

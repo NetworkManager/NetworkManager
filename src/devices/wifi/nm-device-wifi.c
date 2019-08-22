@@ -2621,7 +2621,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMActStageReturn ret;
 	NMWifiAP *ap = NULL;
 	gs_unref_object NMWifiAP *ap_fake = NULL;
 	NMActRequest *req;
@@ -2629,10 +2628,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMSettingWireless *s_wireless;
 	const char *mode;
 	const char *ap_path;
-
-	ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);

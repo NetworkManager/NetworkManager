@@ -131,10 +131,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDevice *lowpan_device = NULL;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
-	ret = NM_DEVICE_CLASS (nm_device_wpan_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
-
 	platform = nm_device_get_platform (device);
 	nm_assert (NM_IS_PLATFORM (platform));
 

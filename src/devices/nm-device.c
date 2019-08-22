@@ -6449,12 +6449,6 @@ sriov_params_cb (GError *error, gpointer data)
 	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
-static NMActStageReturn
-act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
-{
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
 /*
  * activate_stage1_device_prepare
  *
@@ -6540,17 +6534,21 @@ activate_stage1_device_prepare (NMDevice *self)
 
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
-		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+		NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 
-		ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &failure_reason);
-		if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
-			return;
+		if (klass->act_stage1_prepare) {
+			NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+
+			ret = klass->act_stage1_prepare (self, &failure_reason);
+			if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
+				return;
+			}
+			if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+				return;
+
+			nm_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 		}
-		if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
-			return;
-
-		nm_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
 
 	nm_device_activate_schedule_stage2_device_config (self);
@@ -17179,7 +17177,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->link_changed = link_changed;
 
 	klass->is_available = is_available;
-	klass->act_stage1_prepare = act_stage1_prepare;
 	klass->act_stage2_config = act_stage2_config;
 	klass->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	klass->act_stage4_ip_config_timeout = act_stage4_ip_config_timeout;

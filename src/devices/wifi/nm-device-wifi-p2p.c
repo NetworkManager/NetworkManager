@@ -368,14 +368,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (device);
 	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
-	NMActStageReturn ret;
 	NMConnection *connection;
 	NMSettingWifiP2P *s_wifi_p2p;
 	NMWifiP2PPeer *peer;
-
-	ret = NM_DEVICE_CLASS (nm_device_wifi_p2p_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	if (!priv->mgmt_iface) {
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);

@@ -351,11 +351,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
-	NMActStageReturn ret;
-
-	ret = NM_DEVICE_CLASS (nm_device_tun_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	if (priv->props.type == IFF_TUN) {
 		/* Nothing to do for TUN devices */
