@@ -955,6 +955,11 @@ gpointer *nm_utils_hash_keys_to_array (GHashTable *hash,
                                        gpointer user_data,
                                        guint *out_len);
 
+gpointer *nm_utils_hash_values_to_array (GHashTable *hash,
+                                         GCompareDataFunc compare_func,
+                                         gpointer user_data,
+                                         guint *out_len);
+
 static inline const char **
 nm_utils_strdict_get_keys (const GHashTable *hash,
                            gboolean sorted,
