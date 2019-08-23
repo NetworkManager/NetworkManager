@@ -1213,7 +1213,7 @@ _ppp_manager_stop (NMPPPManager *self,
 		/* No PID. There is nothing to kill, however, invoke the callback in
 		 * an idle handler.
 		 *
-		 * Note that we don't register nm_shutdown_wait_obj_register().
+		 * Note that we don't register nm_shutdown_wait_obj_register_object().
 		 * In order for shutdown to work properly, the caller must always
 		 * explicitly cancel the action to go down. With the idle-handler,
 		 * cancelling the handle completes the request. */
@@ -1225,7 +1225,7 @@ _ppp_manager_stop (NMPPPManager *self,
 	 * until the process terminated. We do that, by registering an object
 	 * that delays shutdown. */
 	handle->shutdown_waitobj = g_object_new (G_TYPE_OBJECT, NULL);
-	nm_shutdown_wait_obj_register (handle->shutdown_waitobj, "ppp-manager-wait-kill-pppd");
+	nm_shutdown_wait_obj_register_object (handle->shutdown_waitobj, "ppp-manager-wait-kill-pppd");
 	nm_utils_kill_child_async (nm_steal_int (&priv->pid),
 	                           SIGTERM, LOGD_PPP, "pppd",
 	                           NM_SHUTDOWN_TIMEOUT_MS,
