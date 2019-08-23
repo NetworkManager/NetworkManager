@@ -97,6 +97,8 @@ typedef struct _NMModemPrivate {
 	/* PPP stats */
 	guint32 in_bytes;
 	guint32 out_bytes;
+
+	bool claimed:1;
 } NMModemPrivate;
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
@@ -173,6 +175,53 @@ nm_modem_state_to_string (NMModemState state)
 		return state_table[state];
 	return NULL;
 }
+
+/*****************************************************************************/
+
+gboolean
+nm_modem_is_claimed (NMModem *self)
+{
+	g_return_val_if_fail (NM_IS_MODEM (self), FALSE);
+
+	return NM_MODEM_GET_PRIVATE (self)->claimed;
+}
+
+NMModem *
+nm_modem_claim (NMModem *self)
+{
+	NMModemPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
+
+	priv = NM_MODEM_GET_PRIVATE (self);
+
+	g_return_val_if_fail (!priv->claimed, NULL);
+
+	priv->claimed = TRUE;
+	return g_object_ref (self);
+}
+
+void
+nm_modem_unclaim (NMModem *self)
+{
+	NMModemPrivate *priv;
+
+	g_return_if_fail (NM_IS_MODEM (self));
+
+	priv = NM_MODEM_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->claimed);
+
+	/* we don't actually unclaim the instance. This instance should not be re-used
+	 * by another owner, that is because we only claim modems as we receive them.
+	 * There is no mechanism that somebody else would later re-use them again.
+	 *
+	 * // priv->claimed = FALSE; */
+
+	g_object_unref (self);
+}
+
+/*****************************************************************************/
 
 NMModemState
 nm_modem_get_state (NMModem *self)

@@ -154,6 +154,10 @@ typedef struct {
 
 GType nm_modem_get_type (void);
 
+gboolean nm_modem_is_claimed (NMModem *modem);
+NMModem *nm_modem_claim (NMModem *modem);
+void nm_modem_unclaim (NMModem *modem);
+
 const char *nm_modem_get_path            (NMModem *modem);
 const char *nm_modem_get_uid             (NMModem *modem);
 const char *nm_modem_get_control_port    (NMModem *modem);

@@ -64,11 +64,14 @@ modem_added_cb (NMModemManager *manager,
                 gpointer user_data)
 {
 	NMWwanFactory *self = NM_WWAN_FACTORY (user_data);
-	NMDevice *device;
+	gs_unref_object NMDevice *device = NULL;
 	const char *driver;
 
 	/* Do nothing if the modem was consumed by some other plugin */
 	if (nm_device_factory_emit_component_added (NM_DEVICE_FACTORY (self), G_OBJECT (modem)))
+		return;
+
+	if (nm_modem_is_claimed (modem))
 		return;
 
 	driver = nm_modem_get_driver (modem);
@@ -85,9 +88,7 @@ modem_added_cb (NMModemManager *manager,
 
 	/* Make the new modem device */
 	device = nm_device_modem_new (modem);
-	g_assert (device);
 	g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, device);
-	g_object_unref (device);
 }
 
 static NMDevice *

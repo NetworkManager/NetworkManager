@@ -716,7 +716,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 
 	g_return_if_fail (modem != NULL);
 
-	priv->modem = g_object_ref (modem);
+	priv->modem = nm_modem_claim (modem);
 
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
@@ -844,7 +844,7 @@ dispose (GObject *object)
 
 	if (priv->modem) {
 		g_signal_handlers_disconnect_by_data (priv->modem, NM_DEVICE_MODEM (object));
-		g_clear_object (&priv->modem);
+		nm_clear_pointer (&priv->modem, nm_modem_unclaim);
 	}
 
 	g_clear_pointer (&priv->device_id, g_free);

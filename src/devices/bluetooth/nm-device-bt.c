@@ -577,7 +577,7 @@ modem_cleanup (NMDeviceBt *self)
 
 	if (priv->modem) {
 		g_signal_handlers_disconnect_matched (priv->modem, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, self);
-		g_clear_object (&priv->modem);
+		nm_clear_pointer (&priv->modem, nm_modem_unclaim);
 	}
 }
 
@@ -646,6 +646,10 @@ component_added (NMDevice *device, GObject *component)
 		return FALSE;
 
 	modem = NM_MODEM (component);
+
+	if (nm_modem_is_claimed (modem))
+		return FALSE;
+
 	if (!priv->rfcomm_iface)
 		return FALSE;
 
@@ -675,12 +679,9 @@ component_added (NMDevice *device, GObject *component)
 	_LOGI (LOGD_BT | LOGD_MB,
 	       "Activation: (bluetooth) Stage 2 of 5 (Device Configure) modem found.");
 
-	if (priv->modem) {
-		g_warn_if_reached ();
-		modem_cleanup (self);
-	}
+	modem_cleanup (self);
 
-	priv->modem = g_object_ref (modem);
+	priv->modem = nm_modem_claim (modem);
 	g_signal_connect (modem, NM_MODEM_PPP_STATS, G_CALLBACK (ppp_stats), self);
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);

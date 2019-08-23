@@ -3,6 +3,7 @@ global:
 	nm_modem_act_stage1_prepare;
 	nm_modem_act_stage2_config;
 	nm_modem_check_connection_compatible;
+	nm_modem_claim;
 	nm_modem_complete_connection;
 	nm_modem_deactivate;
 	nm_modem_deactivate_async;
@@ -14,14 +15,15 @@ global:
 	nm_modem_get_device_id;
 	nm_modem_get_driver;
 	nm_modem_get_iid;
-	nm_modem_get_path;
 	nm_modem_get_ip_ifindex;
 	nm_modem_get_operator_code;
+	nm_modem_get_path;
 	nm_modem_get_secrets;
 	nm_modem_get_state;
 	nm_modem_get_type;
 	nm_modem_get_uid;
 	nm_modem_ip4_pre_commit;
+	nm_modem_is_claimed;
 	nm_modem_manager_get;
 	nm_modem_manager_get_type;
 	nm_modem_manager_name_owner_get;
@@ -32,6 +34,7 @@ global:
 	nm_modem_stage3_ip4_config_start;
 	nm_modem_stage3_ip6_config_start;
 	nm_modem_state_to_string;
+	nm_modem_unclaim;
 local:
 	*;
 };
