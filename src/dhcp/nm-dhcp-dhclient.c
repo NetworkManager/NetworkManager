@@ -213,7 +213,7 @@ merge_dhclient_config (NMDhcpDhclient *self,
 	                                      orig_path,
 	                                      orig,
 	                                      out_new_client_id);
-	g_assert (new);
+	nm_assert (new);
 
 	return g_file_set_contents (conf_file,
 	                            new,
