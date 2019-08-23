@@ -610,6 +610,54 @@ nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
 	return TRUE;
 }
 
+gboolean
+nm_platform_sysctl_ip_neigh_set_ipv6_reachable_time (NMPlatform *self,
+                                                     const char *iface,
+                                                     guint value_ms)
+{
+	char path[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	char str[128];
+	guint clamped;
+
+	_CHECK_SELF (self, klass, FALSE);
+
+	if (!value_ms)
+		return TRUE;
+
+	/* RFC 4861 says the value can't be greater than one hour.
+	 * Also use a reasonable lower threshold. */
+	clamped = NM_CLAMP (value_ms, 100, 3600000);
+	nm_sprintf_buf (path, "/proc/sys/net/ipv6/neigh/%s/base_reachable_time_ms", iface);
+	nm_sprintf_buf (str, "%u", clamped);
+	if (!nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), str))
+		return FALSE;
+
+	/* Set stale time in the same way as kernel */
+	nm_sprintf_buf (path, "/proc/sys/net/ipv6/neigh/%s/gc_stale_time", iface);
+	nm_sprintf_buf (str, "%u", clamped * 3 / 1000);
+
+	return nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), str);
+}
+
+gboolean
+nm_platform_sysctl_ip_neigh_set_ipv6_retrans_time (NMPlatform *self,
+                                                   const char *iface,
+                                                   guint value_ms)
+{
+	char path[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	char str[128];
+
+	_CHECK_SELF (self, klass, FALSE);
+
+	if (!value_ms)
+		return TRUE;
+
+	nm_sprintf_buf (path, "/proc/sys/net/ipv6/neigh/%s/retrans_time_ms", iface);
+	nm_sprintf_buf (str, "%u", NM_CLAMP (value_ms, 10, 3600000));
+
+	return nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), str);
+}
+
 /**
  * nm_platform_sysctl_get:
  * @self: platform instance
