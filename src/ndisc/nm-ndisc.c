@@ -1039,6 +1039,14 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 	config_map_to_string (changed, changedstr);
 	_LOGD ("neighbor discovery configuration changed [%s]:", changedstr);
 	_LOGD ("  dhcp-level %s", dhcp_level_to_string (priv->rdata.public.dhcp_level));
+
+	if (rdata->public.hop_limit)
+		_LOGD ("  hop limit      : %d", rdata->public.hop_limit);
+	if (rdata->public.reachable_time_ms)
+		_LOGD ("  reachable time : %u", (guint) rdata->public.reachable_time_ms);
+	if (rdata->public.retrans_timer_ms)
+		_LOGD ("  retrans timer  : %u", (guint) rdata->public.retrans_timer_ms);
+
 	for (i = 0; i < rdata->gateways->len; i++) {
 		NMNDiscGateway *gateway = &g_array_index (rdata->gateways, NMNDiscGateway, i);
 

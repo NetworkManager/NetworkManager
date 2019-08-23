@@ -220,6 +220,18 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
 		nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
 
+	if (changed & NM_NDISC_CONFIG_REACHABLE_TIME) {
+		nm_platform_sysctl_ip_neigh_set_ipv6_reachable_time (NM_PLATFORM_GET,
+		                                                     global_opt.ifname,
+		                                                     rdata->reachable_time_ms);
+	}
+
+	if (changed & NM_NDISC_CONFIG_RETRANS_TIMER) {
+		nm_platform_sysctl_ip_neigh_set_ipv6_retrans_time (NM_PLATFORM_GET,
+		                                                   global_opt.ifname,
+		                                                   rdata->retrans_timer_ms);
+	}
+
 	if (changed & NM_NDISC_CONFIG_MTU) {
 		nm_platform_sysctl_ip_conf_set_int64 (NM_PLATFORM_GET,
 		                                      AF_INET6,

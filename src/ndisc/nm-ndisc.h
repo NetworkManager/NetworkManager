@@ -112,6 +112,8 @@ typedef enum {
 	NM_NDISC_CONFIG_DNS_DOMAINS                         = 1 << 5,
 	NM_NDISC_CONFIG_HOP_LIMIT                           = 1 << 6,
 	NM_NDISC_CONFIG_MTU                                 = 1 << 7,
+	NM_NDISC_CONFIG_REACHABLE_TIME                      = 1 << 8,
+	NM_NDISC_CONFIG_RETRANS_TIMER                       = 1 << 9,
 } NMNDiscConfigMap;
 
 typedef enum {
@@ -137,6 +139,8 @@ typedef struct {
 	NMNDiscDHCPLevel dhcp_level;
 	guint32 mtu;
 	int hop_limit;
+	guint32 reachable_time_ms;
+	guint32 retrans_timer_ms;
 
 	guint gateways_n;
 	guint addresses_n;
