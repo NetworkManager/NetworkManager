@@ -45,7 +45,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES (
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
 {
-	nm_manager_set_capability (nm_manager_get (), NM_CAPABILITY_TEAM);
+	nm_manager_set_capability (NM_MANAGER_GET, NM_CAPABILITY_TEAM);
 	return (NMDeviceFactory *) g_object_new (NM_TYPE_TEAM_FACTORY, NULL);
 }
 

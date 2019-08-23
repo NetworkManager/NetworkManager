@@ -451,7 +451,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->constructed (object);
 
-	priv->manager = g_object_ref (nm_manager_get ());
+	priv->manager = g_object_ref (NM_MANAGER_GET);
 
 	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_ADDED, G_CALLBACK (device_added_cb), self);
 	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_REMOVED, G_CALLBACK (device_removed_cb), self);

@@ -70,7 +70,7 @@ new_device_from_type (const char *name, NMDeviceType device_type)
 	const char *type_desc;
 	NMLinkType link_type = NM_LINK_TYPE_NONE;
 
-	if (nm_manager_get_device (nm_manager_get (), name, device_type))
+	if (nm_manager_get_device (NM_MANAGER_GET, name, device_type))
 		return NULL;
 
 	if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE) {
@@ -117,7 +117,7 @@ ovsdb_device_removed (NMOvsdb *ovsdb, const char *name, NMDeviceType device_type
 	NMDevice *device;
 	NMDeviceState device_state;
 
-	device = nm_manager_get_device (nm_manager_get (), name, device_type);
+	device = nm_manager_get_device (NM_MANAGER_GET, name, device_type);
 	if (!device)
 		return;
 
@@ -145,7 +145,7 @@ ovsdb_interface_failed (NMOvsdb *ovsdb,
 
 	_LOGI (name, connection_uuid, "ovs interface \"%s\" (%s) failed: %s", name, connection_uuid, error);
 
-	device = nm_manager_get_device (nm_manager_get (), name, NM_DEVICE_TYPE_OVS_INTERFACE);
+	device = nm_manager_get_device (NM_MANAGER_GET, name, NM_DEVICE_TYPE_OVS_INTERFACE);
 	if (!device)
 		return;
 

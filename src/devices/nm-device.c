@@ -1717,7 +1717,7 @@ _parent_set_ifindex (NMDevice *self,
 	}
 
 	if (parent_ifindex > 0) {
-		parent_device = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+		parent_device = nm_manager_get_device_by_ifindex (NM_MANAGER_GET, parent_ifindex);
 		if (parent_device == self)
 			parent_device = NULL;
 	} else
@@ -2210,7 +2210,7 @@ nm_device_get_route_metric (NMDevice *self,
 	if (route_metric >= 0)
 		goto out;
 
-	route_metric = nm_manager_device_route_metric_reserve (nm_manager_get (),
+	route_metric = nm_manager_device_route_metric_reserve (NM_MANAGER_GET,
 	                                                       nm_device_get_ip_ifindex (self),
 	                                                       nm_device_get_device_type (self));
 out:
@@ -3676,7 +3676,7 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 	if (plink->master <= 0)
 		return;
 
-	master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
+	master = nm_manager_get_device_by_ifindex (NM_MANAGER_GET, plink->master);
 	plink_master = nm_platform_link_get (nm_device_get_platform (self), plink->master);
 	plink_master_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink_master));
 
@@ -5895,7 +5895,7 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 		return FALSE;
 	}
 
-	conn_iface = nm_manager_get_connection_iface (nm_manager_get (),
+	conn_iface = nm_manager_get_connection_iface (NM_MANAGER_GET,
 	                                              connection,
 	                                              NULL,
 	                                              &local);
@@ -10658,7 +10658,7 @@ start_sharing (NMDevice *self, NMIP4Config *config, GError **error)
 		 * the announced setting without restarting dnsmasq. That means, if the default
 		 * route changes w.r.t. being metered, then the shared connection does not get
 		 * updated before reactivating. */
-		announce_android_metered = NM_IN_SET (nm_manager_get_metered (nm_manager_get ()),
+		announce_android_metered = NM_IN_SET (nm_manager_get_metered (NM_MANAGER_GET),
 		                                      NM_METERED_YES,
 		                                      NM_METERED_GUESS_YES);
 		break;
@@ -14668,7 +14668,7 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_INIT;
 
 	if (cleanup_type != CLEANUP_TYPE_KEEP) {
-		nm_manager_device_route_metric_clear (nm_manager_get (),
+		nm_manager_device_route_metric_clear (NM_MANAGER_GET,
 		                                      nm_device_get_ip_ifindex (self));
 	}
 
