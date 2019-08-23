@@ -136,6 +136,20 @@ remove_one_modem (gpointer key, gpointer value, gpointer user_data)
 
 /*****************************************************************************/
 
+NMModem **
+nm_modem_manager_get_modems (NMModemManager *self,
+                             guint *out_len)
+{
+	g_return_val_if_fail (NM_IS_MODEM_MANAGER (self), NULL);
+
+	return (NMModem **) nm_utils_hash_values_to_array (NM_MODEM_MANAGER_GET_PRIVATE (self)->modems,
+	                                                   NULL,
+	                                                   NULL,
+	                                                   out_len);
+}
+
+/*****************************************************************************/
+
 static void
 modm_clear_manager (NMModemManager *self)
 {
