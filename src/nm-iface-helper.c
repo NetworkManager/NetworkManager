@@ -569,10 +569,7 @@ main (int argc, char *argv[])
 		if (iid)
 			nm_ndisc_set_iid (ndisc, *iid);
 
-		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra",          "1");
-		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra_defrtr",   "0");
-		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra_pinfo",    "0");
-		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra_rtr_pref", "0");
+		nm_platform_sysctl_ip_conf_set (NM_PLATFORM_GET, AF_INET6, global_opt.ifname, "accept_ra", "0");
 
 		g_signal_connect (NM_PLATFORM_GET,
 		                  NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
