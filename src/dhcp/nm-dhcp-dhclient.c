@@ -38,7 +38,6 @@
 #include "nm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-utils.h"
-#include "nm-config.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
 #include "NetworkManagerUtils.h"
@@ -118,35 +117,14 @@ get_dhclient_leasefile (int addr_family,
                         const char *uuid,
                         char **out_preferred_path)
 {
-	gs_free char *rundir_path = NULL;
 	gs_free char *path = NULL;
 
-	/* First, see if the lease file is in /run */
-	rundir_path = g_strdup_printf (NMRUNDIR "/dhclient%s-%s-%s.lease",
-	                               _addr_family_to_path_part (addr_family),
-	                               uuid,
-	                               iface);
-
-	if (g_file_test (rundir_path, G_FILE_TEST_EXISTS)) {
-		NM_SET_OUT (out_preferred_path, g_strdup (rundir_path));
-		return g_steal_pointer (&rundir_path);
-	}
-
-	/* /var/lib/NetworkManager is the preferred leasefile path */
-	path = g_strdup_printf (NMSTATEDIR "/dhclient%s-%s-%s.lease",
-	                        _addr_family_to_path_part (addr_family),
-	                        uuid,
-	                        iface);
-
-	if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+	if (nm_dhcp_utils_get_leasefile_path (addr_family, "dhclient", iface, uuid, &path)) {
 		NM_SET_OUT (out_preferred_path, g_strdup (path));
 		return g_steal_pointer (&path);
 	}
 
-	if (nm_config_get_configure_and_quit (nm_config_get ()) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD)
-		NM_SET_OUT (out_preferred_path, g_steal_pointer (&rundir_path));
-	else
-		NM_SET_OUT (out_preferred_path, g_steal_pointer (&path));
+	NM_SET_OUT (out_preferred_path, g_steal_pointer (&path));
 
 	/* If the leasefile we're looking for doesn't exist yet in the new location
 	 * (eg, /var/lib/NetworkManager) then look in old locations to maintain
