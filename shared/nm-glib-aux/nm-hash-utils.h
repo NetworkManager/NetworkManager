@@ -311,15 +311,15 @@ gboolean nm_pdirect_equal (gconstpointer a, gconstpointer b);
  *
  * Note that there is a chance that two different pointer values hash to the same obfuscated
  * value. So beware of that when reviewing logs. However, such a collision is very unlikely. */
-#define nm_hash_obfuscate_ptr(static_seed, val) \
-	({ \
-		NMHashState _h; \
-		const void *_val_obf_ptr = (val); \
-		\
-		nm_hash_init (&_h, (static_seed)); \
-		nm_hash_update_val (&_h, _val_obf_ptr); \
-		nm_hash_complete_u64 (&_h); \
-	})
+static inline guint64
+nm_hash_obfuscate_ptr (guint static_seed, gconstpointer val)
+{
+	NMHashState h;
+
+	nm_hash_init (&h, static_seed);
+	nm_hash_update_val (&h, val);
+	return nm_hash_complete_u64 (&h);
+}
 
 /* if you want to log obfuscated pointer for a certain context (like, NMPRuleManager
  * logging user-tags), then you are advised to use nm_hash_obfuscate_ptr() with your
