@@ -84,9 +84,10 @@ LOGD_IP_from_af (int addr_family)
            (domain), \
            (ifname), \
            (con_uuid), \
-           "%s[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+           "%s["NM_HASH_OBFUSCATE_PTR_FMT"] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
            (prefix) ?: "", \
-           self _NM_UTILS_MACRO_REST(__VA_ARGS__))
+           NM_HASH_OBFUSCATE_PTR (self) \
+           _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
 static inline gboolean
 _nm_log_ptr_is_debug (NMLogLevel level)
