@@ -95,9 +95,10 @@ $name ||= 'modemu';
 socket my $fd, AF_NETLINK, SOCK_RAW, NETLINK_KOBJECT_UEVENT
 	or die "Can't create a netlink socket: $!";
 
+my $seqnum = 666;
 sub send_netlink
 {
-	my %props = @_;
+	my %props = (@_, SEQNUM => $seqnum++);
 	my $props = join '', map { $_, '=', $props{$_}, "\0" } keys %props;
 
 	my $head = pack 'a8NLLLNLLL',
