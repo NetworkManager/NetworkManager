@@ -149,6 +149,9 @@ expected_free (Expected *e)
 	g_free (e);
 }
 
+NM_AUTO_DEFINE_FCN_VOID0 (Expected *, _nm_auto_free_expected, expected_free)
+#define nm_auto_free_expected nm_auto(_nm_auto_free_expected)
+
 static void
 compare_expected_to_ifparser (if_parser *parser, Expected *e)
 {
@@ -226,7 +229,7 @@ init_ifparser_with_file (const char *file)
 static void
 test1_ignore_line_before_first_block (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test1");
 
@@ -238,14 +241,12 @@ test1_ignore_line_before_first_block (void)
 	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test2_wrapped_line (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test2");
 
@@ -254,14 +255,12 @@ test2_wrapped_line (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test3_wrapped_multiline_multiarg (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test3");
 
@@ -274,14 +273,12 @@ test3_wrapped_multiline_multiarg (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test4_allow_auto_is_auto (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test4");
 
@@ -290,14 +287,12 @@ test4_allow_auto_is_auto (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test5_allow_auto_multiarg (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test5");
 
@@ -308,14 +303,12 @@ test5_allow_auto_multiarg (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test6_mixed_whitespace (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test6");
 
@@ -325,8 +318,6 @@ test6_mixed_whitespace (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
@@ -348,7 +339,7 @@ test8_long_line_wrapped (void)
 static void
 test9_wrapped_lines_in_block (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test9");
 
@@ -362,14 +353,12 @@ test9_wrapped_lines_in_block (void)
 	expected_block_add_key (b, expected_key_new ("gateway", "10.250.2.50"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test11_complex_wrap (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test11");
 
@@ -380,14 +369,12 @@ test11_complex_wrap (void)
 	expected_block_add_key (b, expected_key_new ("pre-up", "/sbin/ifconfig eth0 up"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test12_complex_wrap_split_word (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test12");
 
@@ -398,14 +385,12 @@ test12_complex_wrap_split_word (void)
 	expected_block_add_key (b, expected_key_new ("up", "ifup ppp0=dsl"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test13_more_mixed_whitespace (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test13");
 
@@ -415,14 +400,12 @@ test13_more_mixed_whitespace (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test14_mixed_whitespace_block_start (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test14");
 
@@ -438,14 +421,12 @@ test14_mixed_whitespace_block_start (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test15_trailing_space (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test15");
 
@@ -455,23 +436,20 @@ test15_trailing_space (void)
 	expected_add_block (e, b);
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test16_missing_newline (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test16");
 
 	e = expected_new ();
 	expected_add_block (e, expected_block_new ("mapping", "eth0"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
+
 static void
 test17_read_static_ipv4 (void)
 {
@@ -578,7 +556,7 @@ test19_read_static_ipv4_plen (void)
 static void
 test20_source_stanza (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test20-source-stanza");
 
@@ -597,14 +575,12 @@ test20_source_stanza (void)
 	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
 
 static void
 test21_source_dir_stanza (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
 	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test21-source-dir-stanza");
 
@@ -617,9 +593,33 @@ test21_source_dir_stanza (void)
 	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
 
 	compare_expected_to_ifparser (parser, e);
-
-	expected_free (e);
 }
+
+static void
+test22_duplicate_stanzas (void)
+{
+	nm_auto_free_expected Expected *e = NULL;
+	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test22-duplicate-stanzas");
+
+	e = expected_new ();
+
+	b = expected_block_new ("iface", "br10");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "manual"));
+	expected_block_add_key (b, expected_key_new ("bridge-ports", "enp6s0.15"));
+	expected_block_add_key (b, expected_key_new ("bridge-stp", "off"));
+	expected_block_add_key (b, expected_key_new ("bridge-maxwait", "0"));
+	expected_block_add_key (b, expected_key_new ("bridge-fd", "0"));
+	b = expected_block_new ("iface", "br10");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "auto"));
+	expected_block_add_key (b, expected_key_new ("bridge-ports", "enp6s0.15"));
+
+	compare_expected_to_ifparser (parser, e);
+}
+
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 
@@ -650,6 +650,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/ifupdate/read_static_ipv4_plen",          test19_read_static_ipv4_plen);
 	g_test_add_func ("/ifupdate/source_stanza",                  test20_source_stanza);
 	g_test_add_func ("/ifupdate/source_dir_stanza",              test21_source_dir_stanza);
+	g_test_add_func ("/ifupdate/test22-duplicate-stanzas",       test22_duplicate_stanzas);
 
 	return g_test_run ();
 }

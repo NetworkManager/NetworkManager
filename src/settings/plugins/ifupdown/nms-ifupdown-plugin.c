@@ -89,6 +89,8 @@ static GHashTable *load_eni_ifaces (NMSIfupdownPlugin *self);
 static void
 _storage_data_destroy (StorageData *sd)
 {
+	if (!sd)
+		return;
 	nm_g_object_unref (sd->connection);
 	nm_g_object_unref (sd->storage);
 	g_slice_free (StorageData, sd);
