@@ -3408,18 +3408,44 @@ EXTRA_DIST += \
 
 if WITH_MODEM_MANAGER_1
 
+noinst_LTLIBRARIES += src/devices/bluetooth/libnm-bluetooth-utils.la
+
+src_devices_bluetooth_libnm_bluetooth_utils_la_SOURCES = \
+	src/devices/bluetooth/nm-bluez-common.h \
+	src/devices/bluetooth/nm-bt-error.c \
+	src/devices/bluetooth/nm-bt-error.h \
+	$(NULL)
+
+src_devices_bluetooth_libnm_bluetooth_utils_la_CPPFLAGS = \
+	$(src_cppflags_base) \
+	$(NULL)
+
+src_devices_bluetooth_libnm_bluetooth_utils_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+if WITH_BLUEZ5_DUN
+src_devices_bluetooth_libnm_bluetooth_utils_la_SOURCES += \
+	src/devices/bluetooth/nm-bluez5-dun.c \
+	src/devices/bluetooth/nm-bluez5-dun.h \
+	$(NULL)
+
+src_devices_bluetooth_libnm_bluetooth_utils_la_CPPFLAGS += $(BLUEZ5_CFLAGS)
+src_devices_bluetooth_libnm_bluetooth_utils_la_LIBADD += $(BLUEZ5_LIBS)
+endif
+
+$(src_devices_bluetooth_libnm_bluetooth_utils_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+###############################################################################
+
 core_plugins += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
-	src/devices/bluetooth/nm-bluez-manager.c \
-	src/devices/bluetooth/nm-bluez-common.h \
 	src/devices/bluetooth/nm-bluez-device.c \
 	src/devices/bluetooth/nm-bluez-device.h \
+	src/devices/bluetooth/nm-bluez-manager.c \
 	src/devices/bluetooth/nm-bluez5-manager.c \
 	src/devices/bluetooth/nm-bluez5-manager.h \
-	src/devices/bluetooth/nm-bt-error.h \
-	src/devices/bluetooth/nm-bt-error.c \
-	\
 	src/devices/bluetooth/nm-device-bt.c \
 	src/devices/bluetooth/nm-device-bt.h \
 	$(NULL)
@@ -3431,18 +3457,30 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
+	src/devices/bluetooth/libnm-bluetooth-utils.la \
 	src/devices/wwan/libnm-wwan.la \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
-if WITH_BLUEZ5_DUN
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS += $(BLUEZ5_CFLAGS)
+$(src_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES += \
-	src/devices/bluetooth/nm-bluez5-dun.c \
-	src/devices/bluetooth/nm-bluez5-dun.h
+###############################################################################
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD += $(BLUEZ5_LIBS)
-endif
+check_programs_norun += \
+	src/devices/bluetooth/tests/nm-bt-test
+
+src_devices_bluetooth_tests_nm_bt_test_CPPFLAGS = \
+	$(src_cppflags_test) \
+	$(NULL)
+src_devices_bluetooth_tests_nm_bt_test_LDADD = \
+	src/devices/bluetooth/libnm-bluetooth-utils.la \
+	src/libNetworkManager.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+$(src_devices_bluetooth_tests_nm_bt_test_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+###############################################################################
 
 check-local-devices-bluetooth: src/devices/bluetooth/libnm-device-plugin-bluetooth.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(srcdir)/linker-script-devices.ver"
