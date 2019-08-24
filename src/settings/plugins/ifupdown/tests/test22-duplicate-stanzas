@@ -1,0 +1,8 @@
+iface br10 inet manual
+    bridge_ports    enp6s0.15
+    bridge_stp      off
+    bridge_maxwait  0
+    bridge_fd       0
+
+iface br10 inet auto
+    bridge_ports enp6s0.15

@@ -595,6 +595,30 @@ test21_source_dir_stanza (void)
 	compare_expected_to_ifparser (parser, e);
 }
 
+static void
+test22_duplicate_stanzas (void)
+{
+	nm_auto_free_expected Expected *e = NULL;
+	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test22-duplicate-stanzas");
+
+	e = expected_new ();
+
+	b = expected_block_new ("iface", "br10");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "manual"));
+	expected_block_add_key (b, expected_key_new ("bridge-ports", "enp6s0.15"));
+	expected_block_add_key (b, expected_key_new ("bridge-stp", "off"));
+	expected_block_add_key (b, expected_key_new ("bridge-maxwait", "0"));
+	expected_block_add_key (b, expected_key_new ("bridge-fd", "0"));
+	b = expected_block_new ("iface", "br10");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "auto"));
+	expected_block_add_key (b, expected_key_new ("bridge-ports", "enp6s0.15"));
+
+	compare_expected_to_ifparser (parser, e);
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -626,6 +650,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/ifupdate/read_static_ipv4_plen",          test19_read_static_ipv4_plen);
 	g_test_add_func ("/ifupdate/source_stanza",                  test20_source_stanza);
 	g_test_add_func ("/ifupdate/source_dir_stanza",              test21_source_dir_stanza);
+	g_test_add_func ("/ifupdate/test22-duplicate-stanzas",       test22_duplicate_stanzas);
 
 	return g_test_run ();
 }

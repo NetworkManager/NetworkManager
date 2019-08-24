@@ -3215,6 +3215,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth1 \
 	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza \
 	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d \
+	src/settings/plugins/ifupdown/tests/test22-duplicate-stanzas \
 	src/settings/plugins/ifupdown/meson.build \
 	src/settings/plugins/ifupdown/tests/meson.build
 
