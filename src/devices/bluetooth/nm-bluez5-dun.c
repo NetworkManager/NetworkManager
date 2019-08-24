@@ -353,8 +353,8 @@ nm_bluez5_dun_connect (NMBluez5DunContext *context,
 
 	context->sdp_session = sdp_connect (&context->src, &context->dst, SDP_NON_BLOCKING);
 	if (!context->sdp_session) {
+		int err = errno;
 		GError *error;
-		int err = sdp_get_error (context->sdp_session);
 
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Failed to connect to the SDP server: (%d) %s",
