@@ -2935,8 +2935,9 @@ _parse_info_find (NMSetting *setting,
 
 				if (!pis)
 					continue;
+				if (!pis->properties)
+					continue;
 
-				g_assert (pis->properties);
 				g_assert (pis->properties[0]);
 				for (j = 0; pis->properties[j]; j++) {
 					const ParseInfoProperty *pip0;
@@ -3874,8 +3875,12 @@ nm_keyfile_write (NMConnection *connection,
 	for (i = 0; i < n_settings; i++) {
 		const NMSettInfoSetting *sett_info;
 		NMSetting *setting = settings[i];
+		const char *setting_name;
+		const char *setting_alias;
 
 		sett_info = _nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting));
+
+		setting_name = sett_info->setting_class->setting_info->setting_name;
 
 		if (sett_info->detail.gendata_info) {
 			guint k, n_keys;
@@ -3886,7 +3891,6 @@ nm_keyfile_write (NMConnection *connection,
 			n_keys = _nm_setting_gendata_get_all (setting, &keys, NULL);
 
 			if (n_keys > 0) {
-				const char *setting_name = sett_info->setting_class->setting_info->setting_name;
 				GHashTable *h = _nm_setting_gendata_hash (setting, FALSE);
 
 				for (k = 0; k < n_keys; k++) {
@@ -3924,6 +3928,18 @@ nm_keyfile_write (NMConnection *connection,
 			_write_setting_wireguard (setting, &info);
 			if (info.error)
 				goto out_with_info_error;
+		}
+
+		setting_alias = nm_keyfile_plugin_get_alias_for_setting_name (setting_name);
+		if (   (   setting_alias
+		        && g_key_file_has_group (info.keyfile, setting_alias))
+		    || g_key_file_has_group (info.keyfile, setting_name)) {
+			/* we have a section for the setting. Nothing to do. */
+		} else {
+			/* ensure the group is present. There is no API for that, so add and remove
+			 * a dummy key. */
+			g_key_file_set_value  (info.keyfile, setting_alias ?: setting_name, ".X", "1");
+			g_key_file_remove_key (info.keyfile, setting_alias ?: setting_name, ".X", NULL);
 		}
 
 		nm_assert (!info.error);
