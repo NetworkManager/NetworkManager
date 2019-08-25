@@ -292,8 +292,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->apn) {
-		guint32 apn_len = strlen (priv->apn);
-		guint32 i;
+		gsize apn_len = strlen (priv->apn);
+		gsize i;
 
 		if (apn_len < 1 || apn_len > 64) {
 			g_set_error (error,
@@ -339,7 +339,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->username && !strlen (priv->username)) {
+	if (   priv->username
+	    && priv->username[0] == '\0') {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -349,8 +350,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->network_id) {
-		guint32 nid_len = strlen (priv->network_id);
-		guint32 i;
+		gsize nid_len = strlen (priv->network_id);
+		gsize i;
 
 		/* Accept both 5 and 6 digit MCC/MNC codes */
 		if ((nid_len < 5) || (nid_len > 6)) {
