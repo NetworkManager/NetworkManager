@@ -2272,6 +2272,29 @@ nmtst_keyfile_assert_data (GKeyFile *kf, const char *data, gssize data_len)
 	g_assert_cmpmem (d2, d2_len, d1, d1_len);
 }
 
+static inline gssize
+nmtst_keyfile_get_num_keys (GKeyFile *keyfile,
+                            const char *group_name)
+{
+	gs_strfreev char **keys = NULL;
+	gs_free_error GError *error = NULL;
+	gsize l;
+
+	g_assert (keyfile);
+	g_assert (group_name);
+
+	if (!g_key_file_has_group (keyfile, group_name))
+		return -1;
+
+	keys = g_key_file_get_keys (keyfile, group_name, &l, &error);
+
+	nmtst_assert_success (keys, error);
+
+	g_assert_cmpint (NM_PTRARRAY_LEN (keys), ==, l);
+
+	return l;
+}
+
 /*****************************************************************************/
 
 #endif /* __NM_TEST_UTILS_H__ */
