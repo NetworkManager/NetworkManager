@@ -2913,41 +2913,47 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
 	),
 };
 
-static const ParseInfoProperty *
+static void
 _parse_info_find (NMSetting *setting,
                   const char *property_name,
-                  const NMMetaSettingInfo **out_setting_info)
+                  const NMMetaSettingInfo **out_setting_info,
+                  const ParseInfoSetting **out_parse_info_setting,
+                  const ParseInfoProperty **out_parse_info_property)
 {
 	const NMMetaSettingInfo *setting_info;
 	const ParseInfoSetting *pis;
-	gssize idx;
+	const ParseInfoProperty *pip;
 
 #if NM_MORE_ASSERTS > 10
 	{
 		guint i, j;
+		static int asserted = FALSE;
 
-		for (i = 0; i < G_N_ELEMENTS (parse_infos); i++) {
-			pis = parse_infos[i];
+		if (!asserted) {
+			for (i = 0; i < G_N_ELEMENTS (parse_infos); i++) {
+				pis = parse_infos[i];
 
-			if (!pis)
-				continue;
+				if (!pis)
+					continue;
 
-			g_assert (pis->properties);
-			g_assert (pis->properties[0]);
-			for (j = 0; pis->properties[j]; j++) {
-				const ParseInfoProperty *pip0;
-				const ParseInfoProperty *pip = pis->properties[j];
+				g_assert (pis->properties);
+				g_assert (pis->properties[0]);
+				for (j = 0; pis->properties[j]; j++) {
+					const ParseInfoProperty *pip0;
+					const ParseInfoProperty *pipj = pis->properties[j];
 
-				g_assert (pip->property_name);
-				if (   j > 0
-				    && (pip0 = pis->properties[j - 1])
-				    && strcmp (pip0->property_name, pip->property_name) >= 0) {
-					g_error ("Wrong order at index #%d.%d: \"%s.%s\" before \"%s.%s\"",
-					         i, j - 1,
-					         nm_meta_setting_infos[i].setting_name, pip0->property_name,
-					         nm_meta_setting_infos[i].setting_name, pip->property_name);
+					g_assert (pipj->property_name);
+					if (   j > 0
+					    && (pip0 = pis->properties[j - 1])
+					    && strcmp (pip0->property_name, pipj->property_name) >= 0) {
+						g_error ("Wrong order at index #%d.%d: \"%s.%s\" before \"%s.%s\"",
+						         i, j - 1,
+						         nm_meta_setting_infos[i].setting_name, pip0->property_name,
+						         nm_meta_setting_infos[i].setting_name, pipj->property_name);
+					}
 				}
 			}
+			asserted = TRUE;
 		}
 	}
 #endif
@@ -2955,16 +2961,25 @@ _parse_info_find (NMSetting *setting,
 	if (   !NM_IS_SETTING (setting)
 	    || !(setting_info = NM_SETTING_GET_CLASS (setting)->setting_info)) {
 		/* handle invalid setting objects gracefully. */
-		*out_setting_info = NULL;
-		return NULL;
+		NM_SET_OUT (out_setting_info, NULL);
+		NM_SET_OUT (out_parse_info_setting, NULL);
+		NM_SET_OUT (out_parse_info_property, NULL);
+		return;
 	}
 
 	nm_assert (setting_info->setting_name);
+	nm_assert (_NM_INT_NOT_NEGATIVE (setting_info->meta_type));
+	nm_assert (setting_info->meta_type < G_N_ELEMENTS (parse_infos));
 
-	*out_setting_info = setting_info;
+	pis = parse_infos[setting_info->meta_type];
 
-	if ((pis = parse_infos[setting_info->meta_type])) {
+	pip = NULL;
+	if (   pis
+	    && property_name) {
+		gssize idx;
+
 		G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoProperty, property_name) == 0);
+
 		idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
 		                                            NM_PTRARRAY_LEN (pis->properties),
 		                                            &property_name,
@@ -2973,10 +2988,12 @@ _parse_info_find (NMSetting *setting,
 		                                            NULL,
 		                                            NULL);
 		if (idx >= 0)
-			return pis->properties[idx];
+			pip = pis->properties[idx];
 	}
 
-	return NULL;
+	NM_SET_OUT (out_setting_info, setting_info);
+	NM_SET_OUT (out_parse_info_setting, pis);
+	NM_SET_OUT (out_parse_info_property, pip);
 }
 
 /*****************************************************************************/
@@ -3002,7 +3019,7 @@ read_one_setting_value (KeyfileReaderInfo *info,
 
 	key = property_info->name;
 
-	pip = _parse_info_find (setting, key, &setting_info);
+	_parse_info_find (setting, key, &setting_info, NULL, &pip);
 
 	nm_assert (setting_info);
 
@@ -3620,7 +3637,7 @@ write_setting_value (KeyfileWriterInfo *info,
 
 	key = property_info->name;
 
-	pip = _parse_info_find (setting, key, &setting_info);
+	_parse_info_find (setting, key, &setting_info, NULL, &pip);
 
 	if (!pip) {
 		if (!setting_info) {
