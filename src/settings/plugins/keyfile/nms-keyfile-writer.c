@@ -337,6 +337,7 @@ _internal_write_connection (NMConnection *connection,
 
 	if (out_reread || out_reread_same) {
 		gs_unref_object NMConnection *reread = NULL;
+		gs_free_error GError *reread_error = NULL;
 		gboolean reread_same = FALSE;
 
 		reread = nms_keyfile_reader_from_keyfile (kf_file, path, NULL, profile_dir, FALSE, NULL);
@@ -344,7 +345,8 @@ _internal_write_connection (NMConnection *connection,
 		nm_assert (NM_IS_CONNECTION (reread));
 
 		if (   reread
-		    && !nm_connection_normalize (reread, NULL, NULL, NULL)) {
+		    && !nm_connection_normalize (reread, NULL, NULL, &reread_error)) {
+			nm_log_err (LOGD_SETTINGS, "BUG: failure to normalize profile that we just wrote to disk: %s", reread_error->message);
 			nm_assert_not_reached ();
 			g_clear_object (&reread);
 		}
@@ -439,4 +441,3 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
 	                                   out_reread_same,
 	                                   error);
 }
-
