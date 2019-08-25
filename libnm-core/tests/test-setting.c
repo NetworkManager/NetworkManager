@@ -3279,6 +3279,53 @@ test_parse_tc_handle (void)
 
 /*****************************************************************************/
 
+static void
+test_empty_setting (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	gs_unref_object NMConnection *con2 = NULL;
+	NMSettingBluetooth *s_bt;
+	NMSettingGsm *s_gsm;
+	gs_unref_keyfile GKeyFile *kf = NULL;
+	gs_free_error GError *error = NULL;
+
+	con = nmtst_create_minimal_connection ("bt-empty-gsm", "dca3192a-f2dc-48eb-b806-d0ff788f122c", NM_SETTING_BLUETOOTH_SETTING_NAME, NULL);
+
+	s_bt = _nm_connection_get_setting (con, NM_TYPE_SETTING_BLUETOOTH);
+	g_object_set (s_bt,
+	              NM_SETTING_BLUETOOTH_TYPE, "dun",
+	              NM_SETTING_BLUETOOTH_BDADDR, "aa:bb:cc:dd:ee:ff",
+	              NULL);
+
+	s_gsm = NM_SETTING_GSM (nm_setting_gsm_new ());
+	nm_connection_add_setting (con, NM_SETTING (s_gsm));
+
+	nmtst_connection_normalize (con);
+
+	nmtst_assert_connection_verifies_without_normalization (con);
+
+	kf = nm_keyfile_write (con, NULL, NULL, &error);
+	nmtst_assert_success (kf, error);
+
+	/* the [gsm] setting was lost because it only has default values.
+	 * As a result, the connection also became invalid. */
+
+	g_assert (!g_key_file_has_group (kf, "gsm"));
+
+	con2 = nm_keyfile_read (kf,
+	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NULL,
+	                        NULL,
+	                        &error);
+	nmtst_assert_success (con2, error);
+
+	g_assert (!nm_connection_get_setting (con2, NM_TYPE_SETTING_GSM));
+
+	nmtst_assert_connection_unnormalizable (con2, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -3365,6 +3412,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/parse-tc-handle", test_parse_tc_handle);
 
 	g_test_add_func ("/libnm/test_team_setting", test_team_setting);
+
+	g_test_add_func ("/libnm/test_empty_setting", test_empty_setting);
 
 	return g_test_run ();
 }
