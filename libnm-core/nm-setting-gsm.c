@@ -295,7 +295,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		gsize apn_len = strlen (priv->apn);
 		gsize i;
 
-		if (apn_len < 1 || apn_len > 64) {
+		if (apn_len > 64) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
