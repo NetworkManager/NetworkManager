@@ -2954,22 +2954,6 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 
 	list = nm_utils_strsplit_set (p, " ");
 	for (iter = list; iter && *iter; iter++, i++) {
-		/* Ad-Hoc configurations cannot have pairwise ciphers, and can only
-		 * have one group cipher.  Ignore any additional group ciphers and
-		 * any pairwise ciphers specified.
-		 */
-		if (adhoc) {
-			if (group && (i > 0)) {
-				PARSE_WARNING ("ignoring group cipher '%s' (only one group cipher allowed "
-				               "in Ad-Hoc mode)", *iter);
-				continue;
-			} else if (!group) {
-				PARSE_WARNING ("ignoring pairwise cipher '%s' (pairwise not used "
-				               "in Ad-Hoc mode)", *iter);
-				continue;
-			}
-		}
-
 		if (!strcmp (*iter, "CCMP")) {
 			if (group)
 				nm_setting_wireless_security_add_group (wsec, "ccmp");
@@ -3644,8 +3628,8 @@ make_wpa_setting (shvarFile *ifcfg,
 
 	/* WPA and/or RSN */
 	if (adhoc) {
-		/* Ad-Hoc mode only supports WPA proto for now */
-		nm_setting_wireless_security_add_proto (wsec, "wpa");
+		/* Ad-Hoc mode only supports RSN proto */
+		nm_setting_wireless_security_add_proto (wsec, "rsn");
 	} else {
 		gs_free char *value2 = NULL;
 		const char *v2;
@@ -3679,9 +3663,7 @@ make_wpa_setting (shvarFile *ifcfg,
 			}
 		}
 
-		if (adhoc)
-			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
-		else if (wpa_psk)
+		if (wpa_psk)
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
 		else {
 			nm_assert (wpa_sae);

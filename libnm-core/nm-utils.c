@@ -1214,46 +1214,30 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		break;
 	case NMU_SEC_WPA_PSK:
 		if (adhoc)
-			return FALSE;  /* FIXME: Kernel WPA Ad-Hoc support is buggy */
+			return FALSE;
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
-			/* Ad-Hoc WPA APs won't necessarily have the PSK flag set, and
-			 * they don't have any pairwise ciphers. */
-			if (adhoc) {
-				/* coverity[dead_error_line] */
-				if (   (ap_wpa & NM_802_11_AP_SEC_GROUP_TKIP)
+			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
-				if (   (ap_wpa & NM_802_11_AP_SEC_GROUP_CCMP)
+				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
-			} else {
-				if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
-					if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
-						return TRUE;
-					if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-						return TRUE;
-				}
 			}
 			return FALSE;
 		}
 		break;
 	case NMU_SEC_WPA2_PSK:
-		if (adhoc)
-			return FALSE;  /* FIXME: Kernel WPA Ad-Hoc support is buggy */
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
-			/* Ad-Hoc WPA APs won't necessarily have the PSK flag set, and
-			 * they don't have any pairwise ciphers, nor any RSA flags yet. */
 			if (adhoc) {
-				/* coverity[dead_error_line] */
-				if (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP)
-					return TRUE;
-				if (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP)
+				if (!(wifi_caps & NM_WIFI_DEVICE_CAP_IBSS_RSN))
+					return FALSE;
+				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
+				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
 			} else {
 				if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
@@ -6084,29 +6068,3 @@ _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,
 	return TRUE;
 }
 
-gboolean
-nm_utils_connection_is_adhoc_wpa (NMConnection *connection)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-	const char *key_mgmt;
-	const char *mode;
-
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	if (!s_wifi)
-		return FALSE;
-
-	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC))
-		return FALSE;
-
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (!s_wsec)
-		return FALSE;
-
-	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-	if (!nm_streq0 (key_mgmt, "wpa-none"))
-		return FALSE;
-
-	return TRUE;
-}

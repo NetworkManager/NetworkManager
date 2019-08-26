@@ -907,6 +907,9 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	if (tb[NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED])
 		info->can_wowlan = TRUE;
 
+	if (tb[NL80211_ATTR_SUPPORT_IBSS_RSN])
+		info->caps |= NM_WIFI_DEVICE_CAP_IBSS_RSN;
+
 	info->success = TRUE;
 
 	return NL_SKIP;

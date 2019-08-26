@@ -293,6 +293,7 @@ typedef enum { /*< flags >*/
  * @NM_WIFI_DEVICE_CAP_FREQ_2GHZ: device supports 2.4GHz frequencies
  * @NM_WIFI_DEVICE_CAP_FREQ_5GHZ: device supports 5GHz frequencies
  * @NM_WIFI_DEVICE_CAP_MESH: device supports acting as a mesh point. Since: 1.20.
+ * @NM_WIFI_DEVICE_CAP_IBSS_RSN: device supports WPA2/RSN in an IBSS network. Since: 1.22.
  *
  * 802.11 specific device encryption and authentication capabilities.
  **/
@@ -310,6 +311,7 @@ typedef enum { /*< flags >*/
 	NM_WIFI_DEVICE_CAP_FREQ_2GHZ     = 0x00000200,
 	NM_WIFI_DEVICE_CAP_FREQ_5GHZ     = 0x00000400,
 	NM_WIFI_DEVICE_CAP_MESH          = 0x00001000,
+	NM_WIFI_DEVICE_CAP_IBSS_RSN      = 0x00002000,
 } NMDeviceWifiCapabilities;
 
 /**

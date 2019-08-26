@@ -601,8 +601,7 @@ get_security_type (NMEditorWirelessSecurityMethodBinding *binding)
 		return "dynamic-wep";
 	}
 
-	if (   !strcmp (key_mgmt, "wpa-none")
-	    || !strcmp (key_mgmt, "wpa-psk"))
+	if (!strcmp (key_mgmt, "wpa-psk"))
 		return "wpa-personal";
 
 	if (!strcmp (key_mgmt, "wpa-eap"))

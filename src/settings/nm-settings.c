@@ -2487,17 +2487,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		goto done;
 	}
 
-	/* FIXME: The kernel doesn't support Ad-Hoc WPA connections well at this time,
-	 * and turns them into open networks.  It's been this way since at least
-	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
-	 */
-	if (nm_utils_connection_is_adhoc_wpa (connection)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                             "WPA Ad-Hoc disabled due to kernel bugs");
-		goto done;
-	}
-
 	if (!nm_auth_is_subject_in_acl_set_error (connection,
 	                                          subject,
 	                                          NM_SETTINGS_ERROR,
