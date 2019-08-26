@@ -42,6 +42,7 @@
 #include "nm-dhcp-client-logging.h"
 #include "n-dhcp4/src/n-dhcp4.h"
 #include "systemd/nm-sd-utils-shared.h"
+#include "systemd/nm-sd-utils-dhcp.h"
 
 /*****************************************************************************/
 
@@ -63,6 +64,7 @@ typedef struct {
 	NDhcp4ClientLease *lease;
 	GIOChannel *channel;
 	guint event_id;
+	char *lease_file;
 } NMDhcpNettoolsPrivate;
 
 struct _NMDhcpNettools {
@@ -874,8 +876,34 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 /*****************************************************************************/
 
 static void
+lease_save (NDhcp4ClientLease *lease, const char *lease_file)
+{
+	struct in_addr a_address;
+	nm_auto_free_gstring GString *new_contents = NULL;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
+	nm_assert (lease);
+	nm_assert (lease_file);
+
+	new_contents = g_string_new ("# This is private data. Do not parse.\n");
+
+	n_dhcp4_client_lease_get_yiaddr (lease, &a_address);
+	if (a_address.s_addr == INADDR_ANY)
+		return;
+
+	g_string_append_printf (new_contents,
+	                        "ADDRESS=%s\n", nm_utils_inet4_ntop (a_address.s_addr, sbuf));
+
+	g_file_set_contents (lease_file,
+	                     new_contents->str,
+	                     -1,
+	                     NULL);
+}
+
+static void
 bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
 {
+	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
 	gs_unref_object NMIP4Config *ip4_config = NULL;
 	gs_unref_hashtable GHashTable *options = NULL;
@@ -899,6 +927,7 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
 	}
 
 	nm_dhcp_option_add_requests_to_options (options, _nm_dhcp_option_dhcp4_options);
+	lease_save (lease, priv->lease_file);
 
 	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
 	                          NM_DHCP_STATE_BOUND,
@@ -1120,6 +1149,7 @@ ip4_start (NMDhcpClient *client,
 	nm_auto (n_dhcp4_client_probe_config_freep) NDhcp4ClientProbeConfig *config = NULL;
 	NMDhcpNettools *self = NM_DHCP_NETTOOLS (client);
 	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE (self);
+	gs_free char *lease_file = NULL;
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
 	int r, i;
@@ -1141,10 +1171,31 @@ ip4_start (NMDhcpClient *client,
 	 */
 	n_dhcp4_client_probe_config_set_start_delay (config, 1);
 
-	if (last_ip4_address) {
+	nm_dhcp_utils_get_leasefile_path (AF_INET,
+	                                  "internal",
+	                                  nm_dhcp_client_get_iface (client),
+	                                  nm_dhcp_client_get_uuid (client),
+	                                  &lease_file);
+
+	if (last_ip4_address)
 		inet_pton (AF_INET, last_ip4_address, &last_addr);
-		n_dhcp4_client_probe_config_set_requested_ip (config, last_addr);
+	else {
+		/*
+		 * TODO: we stick to the systemd-networkd lease file format. Quite easy for now to
+		 * just use the functions in systemd code. Anyway, as in the end we just use the
+		 * ip address from all the options found in the lease, write a function that parses
+		 * the lease file just for the assigned address and returns it in &last_address.
+		 * Then drop reference to systemd-networkd structures and functions.
+		 */
+		nm_auto (sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
+
+		dhcp_lease_load (&lease, lease_file);
+		if (lease)
+			sd_dhcp_lease_get_address (lease, &last_addr);
 	}
+
+	if (last_addr.s_addr)
+		n_dhcp4_client_probe_config_set_requested_ip (config, last_addr);
 
 	/* Add requested options */
 	for (i = 0; _nm_dhcp_option_dhcp4_options[i].name; i++) {
@@ -1194,6 +1245,9 @@ ip4_start (NMDhcpClient *client,
 		}
 	}
 
+	g_free (priv->lease_file);
+	priv->lease_file = g_steal_pointer (&lease_file);
+
 	r = n_dhcp4_client_probe (priv->client, &priv->probe, config);
 	if (r) {
 		nm_utils_error_set_errno (error, r, "failed to start DHCP client: %s");
@@ -1233,6 +1287,7 @@ dispose (GObject *object)
 {
 	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE ((NMDhcpNettools *) object);
 
+	nm_clear_pointer (&priv->lease_file, g_free);
 	nm_clear_pointer (&priv->channel, g_io_channel_unref);
 	nm_clear_g_source (&priv->event_id);
 	nm_clear_pointer (&priv->lease, n_dhcp4_client_lease_unref);
