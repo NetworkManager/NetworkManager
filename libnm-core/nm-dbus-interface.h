@@ -655,8 +655,8 @@ typedef enum {
 /**
  * NMMetered:
  * @NM_METERED_UNKNOWN:     The metered status is unknown
- * @NM_METERED_YES:         Metered, the value was statically set
- * @NM_METERED_NO:          Not metered, the value was statically set
+ * @NM_METERED_YES:         Metered, the value was explicitly configured
+ * @NM_METERED_NO:          Not metered, the value was explicitly configured
  * @NM_METERED_GUESS_YES:   Metered, the value was guessed
  * @NM_METERED_GUESS_NO:    Not metered, the value was guessed
  *
@@ -675,7 +675,7 @@ typedef enum {
  * device type or on DHCP options (like Android devices exposing a "ANDROID_METERED"
  * DHCP vendor option).
  *
- * Most applications probably should treat the runtime states %NM_METERED_GUESS_YES
+ * Most applications probably should treat the runtime state %NM_METERED_GUESS_YES
  * like %NM_METERED_YES, and all other states as not metered.
  *
  * Note that the per-device metered states are then combined to a global metered
