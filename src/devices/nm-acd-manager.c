@@ -188,7 +188,6 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 	AddressInfo *info;
 	gboolean emit_probe_terminated = FALSE;
 	char address_str[INET_ADDRSTRLEN];
-	gs_free char *hwaddr_str = NULL;
 	int r;
 
 	if (n_acd_dispatch (self->acd))
@@ -197,6 +196,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 	while (   !n_acd_pop_event (self->acd, &event)
 	       && event) {
 		char to_string_buffer[ACD_EVENT_TO_STRING_BUF_SIZE];
+		gs_free char *hwaddr_str = NULL;
 		gboolean check_probing_done = FALSE;
 
 		switch (event->event) {
