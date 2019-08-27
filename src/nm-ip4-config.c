@@ -191,7 +191,9 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	if (!nm_dedup_multi_index_add_full (multi_idx,
 	                                    &idx_type->parent,
 	                                    obj_new,
-	                                    NM_DEDUP_MULTI_IDX_MODE_APPEND,
+	                                      append_force
+	                                    ? NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE
+	                                    : NM_DEDUP_MULTI_IDX_MODE_APPEND,
 	                                    NULL,
 	                                    entry_old ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 	                                    NULL,
