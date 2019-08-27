@@ -1359,6 +1359,9 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 	 */
 
 	path = get_cert_path (base_dir, (const guint8 *) data, data_len);
+
+	/* FIXME(keyfile-parse-in-memory): it is wrong that keyfile reader makes decisions based on
+	 * the file systems content. The serialization/parsing should be entirely in-memory. */
 	if (   !memchr (data, '/', data_len)
 	    && !has_cert_ext (path)) {
 		if (!consider_exists)
@@ -1439,6 +1442,10 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 			path2 = path2_free;
 		}
 
+		/* FIXME(keyfile-parse-in-memory): keyfile reader must not access the file system and
+		 * (in a first step) only operate in memory-only. If the presence of files should be checked,
+		 * then by invoking a callback (and possibly keyfile settings plugin would
+		 * collect the file names to be checked and check them later). */
 		if (!g_file_test (path2, G_FILE_TEST_EXISTS)) {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
 			             _("certificate or key file '%s' does not exist"),
