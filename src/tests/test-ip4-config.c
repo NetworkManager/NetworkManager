@@ -113,9 +113,7 @@ test_replace (void)
 
 	g_assert (nm_ip4_config_replace (config2, config1, &relevant_changes));
 	g_assert (relevant_changes);
-
-	 /* FIXME: this currently fails due to a bug in replace() */
-	g_assert (!nm_ip4_config_equal (config1, config2));
+	g_assert (nm_ip4_config_equal (config1, config2));
 }
 
 static void
