@@ -126,6 +126,10 @@ cert_writer (NMConnection *connection,
 		new_path = g_strdup_printf ("%s/%s-%s.%s", info->keyfile_dir, nm_connection_get_uuid (connection),
 		                            cert_data->vtable->file_suffix, ext);
 
+		/* FIXME(keyfile-parse-in-memory): writer must not access/write to the file system before
+		 * being sure that the entire profile can be written and all circumstances are good to
+		 * proceed. That means, while writing we must only collect the blogs in-memory, and write
+		 * them all in the end together (or not at all). */
 		success = nm_utils_file_set_contents (new_path, (const char *) blob_data,
 		                                      blob_len, 0600, &local);
 		if (success) {
@@ -193,10 +197,12 @@ _internal_write_connection (NMConnection *connection,
 	gs_free char *path = NULL;
 	const char *id;
 	WriteInfo info = { 0 };
-	GError *local_err = NULL;
+	gs_free_error GError *local_err = NULL;
 	int errsv;
 	gboolean rename;
 	int i_path;
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = FALSE;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
@@ -309,12 +315,40 @@ _internal_write_connection (NMConnection *connection,
 		return FALSE;
 	}
 
+	if (   out_reread
+	    || out_reread_same) {
+		gs_free_error GError *reread_error = NULL;
+
+		reread = nms_keyfile_reader_from_keyfile (kf_file, path, NULL, profile_dir, FALSE, &reread_error);
+
+		if (   !reread
+		    || !nm_connection_normalize (reread, NULL, NULL, &reread_error)) {
+			nm_log_err (LOGD_SETTINGS, "BUG: the profile cannot be stored in keyfile format without becoming unusable: %s", reread_error->message);
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "keyfile writer produces an invalid connection: %s",
+			             reread_error->message);
+			nm_assert_not_reached ();
+			return FALSE;
+		}
+
+		if (out_reread_same) {
+			reread_same = !!nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT);
+
+			nm_assert (reread_same == nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+			nm_assert (reread_same == ({
+			                                gs_unref_hashtable GHashTable *_settings = NULL;
+
+			                                (   nm_connection_diff (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT, &_settings)
+			                                 && !_settings);
+			                           }));
+		}
+	}
+
 	nm_utils_file_set_contents (path, kf_content_buf, kf_content_len, 0600, &local_err);
 	if (local_err) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "error writing to file '%s': %s",
 		             path, local_err->message);
-		g_error_free (local_err);
 		return FALSE;
 	}
 
@@ -335,36 +369,8 @@ _internal_write_connection (NMConnection *connection,
 	    && !nm_streq (path, existing_path))
 		unlink (existing_path);
 
-	if (out_reread || out_reread_same) {
-		gs_unref_object NMConnection *reread = NULL;
-		gboolean reread_same = FALSE;
-
-		reread = nms_keyfile_reader_from_keyfile (kf_file, path, NULL, profile_dir, FALSE, NULL);
-
-		nm_assert (NM_IS_CONNECTION (reread));
-
-		if (   reread
-		    && !nm_connection_normalize (reread, NULL, NULL, NULL)) {
-			nm_assert_not_reached ();
-			g_clear_object (&reread);
-		}
-
-		if (reread && out_reread_same) {
-			reread_same = !!nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT);
-
-			nm_assert (reread_same == nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
-			nm_assert (reread_same == ({
-			                                gs_unref_hashtable GHashTable *_settings = NULL;
-
-			                                (   nm_connection_diff (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT, &_settings)
-			                                 && !_settings);
-			                           }));
-		}
-
-		NM_SET_OUT (out_reread, g_steal_pointer (&reread));
-		NM_SET_OUT (out_reread_same, reread_same);
-	}
-
+	NM_SET_OUT (out_reread, g_steal_pointer (&reread));
+	NM_SET_OUT (out_reread_same, reread_same);
 	NM_SET_OUT (out_path, g_steal_pointer (&path));
 
 	return TRUE;
@@ -439,4 +445,3 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
 	                                   out_reread_same,
 	                                   error);
 }
-

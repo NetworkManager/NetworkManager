@@ -2581,7 +2581,7 @@ static void
 test_roundtrip_conversion (gconstpointer test_data)
 {
 	const int MODE = GPOINTER_TO_INT (test_data);
-	const char *ID= nm_sprintf_bufa (100, "roundtip-conversion-%d", MODE);
+	const char *ID= nm_sprintf_bufa (100, "roundtrip-conversion-%d", MODE);
 	const char *UUID= "63376701-b61e-4318-bf7e-664a1c1eeaab";
 	const char *INTERFACE_NAME = nm_sprintf_bufa (100, "ifname%d", MODE);
 	guint32 ETH_MTU = nmtst_rand_select ((guint32) 0u,
@@ -2663,6 +2663,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "addr-gen-mode=stable-privacy\n"
 		                     "dns-search=\n"
 		                     "method=auto\n"
+		                     "\n"
+		                     "[proxy]\n"
 		                     "",
 		                     ID,
 		                     UUID,
@@ -2722,6 +2724,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "interface-name=%s\n"
 		                     "permissions=\n"
 		                     "\n"
+		                     "[wireguard]\n"
+		                     "\n"
 		                     "[ipv4]\n"
 		                     "dns-search=\n"
 		                     "method=disabled\n"
@@ -2730,6 +2734,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "addr-gen-mode=stable-privacy\n"
 		                     "dns-search=\n"
 		                     "method=ignore\n"
+		                     "\n"
+		                     "[proxy]\n"
 		                     "",
 		                     ID,
 		                     UUID,
@@ -2770,7 +2776,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "type=wireguard\n"
 		                     "interface-name=%s\n"
 		                     "permissions=\n"
-		                     "%s" /* [wireguard] */
+		                     "\n"
+		                     "[wireguard]\n"
 		                     "%s" /* fwmark */
 		                     "%s" /* listen-port */
 		                     "%s" /* private-key-flags */
@@ -2785,17 +2792,12 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "addr-gen-mode=stable-privacy\n"
 		                     "dns-search=\n"
 		                     "method=ignore\n"
+		                     "\n"
+		                     "[proxy]\n"
 		                     "",
 		                     ID,
 		                     UUID,
 		                     INTERFACE_NAME,
-		                     (  (   (WG_FWMARK != 0)
-		                         || (WG_LISTEN_PORT != 0)
-		                         || (WG_PRIVATE_KEY_FLAGS != NM_SETTING_SECRET_FLAG_NONE)
-		                         || (   WG_PRIVATE_KEY
-		                             && WG_PRIVATE_KEY_FLAGS == NM_SETTING_SECRET_FLAG_NONE))
-		                      ? "\n[wireguard]\n"
-		                      : ""),
 		                     (  (WG_FWMARK != 0)
 		                      ? nm_sprintf_bufa (100, "fwmark=%u\n", WG_FWMARK)
 		                      : ""),
@@ -2887,6 +2889,8 @@ test_roundtrip_conversion (gconstpointer test_data)
 		                     "routing-rule1=priority 1 from ::/0 table 1000\n"
 		                     "routing-rule2=priority 2 from 1:2:3:b::/65 table 1001\n"
 		                     "routing-rule3=priority 3 from 1:2:3:c::/66 table 1002\n"
+		                     "\n"
+		                     "[proxy]\n"
 		                     "",
 		                     ID,
 		                     UUID,
@@ -3279,6 +3283,51 @@ test_parse_tc_handle (void)
 
 /*****************************************************************************/
 
+static void
+test_empty_setting (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	gs_unref_object NMConnection *con2 = NULL;
+	NMSettingBluetooth *s_bt;
+	NMSettingGsm *s_gsm;
+	gs_unref_keyfile GKeyFile *kf = NULL;
+	gs_free_error GError *error = NULL;
+
+	con = nmtst_create_minimal_connection ("bt-empty-gsm", "dca3192a-f2dc-48eb-b806-d0ff788f122c", NM_SETTING_BLUETOOTH_SETTING_NAME, NULL);
+
+	s_bt = _nm_connection_get_setting (con, NM_TYPE_SETTING_BLUETOOTH);
+	g_object_set (s_bt,
+	              NM_SETTING_BLUETOOTH_TYPE, "dun",
+	              NM_SETTING_BLUETOOTH_BDADDR, "aa:bb:cc:dd:ee:ff",
+	              NULL);
+
+	s_gsm = NM_SETTING_GSM (nm_setting_gsm_new ());
+	nm_connection_add_setting (con, NM_SETTING (s_gsm));
+
+	nmtst_connection_normalize (con);
+
+	nmtst_assert_connection_verifies_without_normalization (con);
+
+	kf = nm_keyfile_write (con, NULL, NULL, &error);
+	nmtst_assert_success (kf, error);
+
+	g_assert (g_key_file_has_group (kf, "gsm"));
+	g_assert_cmpint (nmtst_keyfile_get_num_keys (kf, "gsm"), ==, 0);
+
+	con2 = nm_keyfile_read (kf,
+	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NULL,
+	                        NULL,
+	                        &error);
+	nmtst_assert_success (con2, error);
+
+	g_assert (nm_connection_get_setting (con2, NM_TYPE_SETTING_GSM));
+
+	nmtst_assert_connection_verifies_without_normalization (con2);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -3365,6 +3414,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/parse-tc-handle", test_parse_tc_handle);
 
 	g_test_add_func ("/libnm/test_team_setting", test_team_setting);
+
+	g_test_add_func ("/libnm/test_empty_setting", test_empty_setting);
 
 	return g_test_run ();
 }
