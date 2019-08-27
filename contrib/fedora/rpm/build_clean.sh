@@ -130,6 +130,7 @@ fi
 
 if [[ $NO_DIST != 1 ]]; then
     ./autogen.sh \
+        --with-runstatedir=/run \
         --program-prefix= \
         --prefix=/usr \
         --exec-prefix=/usr \
