@@ -661,22 +661,22 @@ typedef enum {
  * @NM_METERED_GUESS_NO:    Not metered, the value was guessed
  *
  * The NMMetered enum has two different purposes: one is to configure
- * "connection.metered" setting of a connection profile, and the other is
- * to express the actual metered state of the device at a given moment.
+ * "connection.metered" setting of a connection profile in #NMSettingConnection, and
+ * the other is to express the actual metered state of the #NMDevice at a given moment.
  *
- * For the connection profile only %NM_METERED_UNKNOWN, %NM_METERED_NO
- * and %NM_METERED_YES are allowed.
+ * For the connection profile only #NM_METERED_UNKNOWN, #NM_METERED_NO
+ * and #NM_METERED_YES are allowed.
  *
  * The device's metered state at runtime is determined by the profile
- * which is currently active. If the profile explicitly specifies %NM_METERED_NO
- * or %NM_METERED_YES, then the device's metered state is as such.
- * If the connection profile leaves it undecided at %NM_METERED_UNKNOWN (the default),
+ * which is currently active. If the profile explicitly specifies #NM_METERED_NO
+ * or #NM_METERED_YES, then the device's metered state is as such.
+ * If the connection profile leaves it undecided at #NM_METERED_UNKNOWN (the default),
  * then NetworkManager tries to guess the metered state, for example based on the
  * device type or on DHCP options (like Android devices exposing a "ANDROID_METERED"
- * DHCP vendor option).
+ * DHCP vendor option). This then leads to either #NM_METERED_GUESS_NO or #NM_METERED_GUESS_YES.
  *
- * Most applications probably should treat the runtime state %NM_METERED_GUESS_YES
- * like %NM_METERED_YES, and all other states as not metered.
+ * Most applications probably should treat the runtime state #NM_METERED_GUESS_YES
+ * like #NM_METERED_YES, and all other states as not metered.
  *
  * Note that the per-device metered states are then combined to a global metered
  * state. This is basically the metered state of the device with the best default
