@@ -272,7 +272,7 @@ subdir('settings/plugins')
 
 # NetworkManager binary
 
-create_exports_networkmanager = join_paths(meson.source_root(), 'tools', 'create-exports-NetworkManager.sh')
+create_exports_networkmanager = join_paths(source_root, 'tools', 'create-exports-NetworkManager.sh')
 symbol_map_name = 'NetworkManager.ver'
 
 # libNetworkManager.a, as built by meson doesn't contain all symbols
@@ -295,7 +295,7 @@ ver_script = custom_target(
   symbol_map_name,
   output: symbol_map_name,
   depends: [ network_manager_sym, core_plugins ],
-  command: [create_exports_networkmanager, '--called-from-build', meson.source_root()],
+  command: [create_exports_networkmanager, '--called-from-build', source_root],
 )
 
 ldflags = ['-rdynamic', '-Wl,--version-script,@0@'.format(ver_script.full_path())]
@@ -323,6 +323,6 @@ endif
 
 test(
   'check-config-options',
-  find_program(join_paths(meson.source_root(), 'tools', 'check-config-options.sh')),
-  args: [meson.source_root()]
+  find_program(join_paths(source_root, 'tools', 'check-config-options.sh')),
+  args: source_root,
 )

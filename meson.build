@@ -69,6 +69,9 @@ gnome = import('gnome')
 i18n = import('i18n')
 pkg = import('pkgconfig')
 
+source_root = meson.current_source_dir()
+build_root = meson.current_build_dir()
+
 po_dir = join_paths(meson.source_root(), 'po')
 
 intltool_merge = find_program('intltool-merge')
@@ -81,7 +84,7 @@ top_inc = include_directories('.')
 perl = find_program('perl')
 xsltproc = find_program('xsltproc')
 
-check_exports = find_program(join_paths(meson.source_root(), 'tools', 'check-exports.sh'))
+check_exports = find_program(join_paths(source_root, 'tools', 'check-exports.sh'))
 
 cc = meson.get_compiler('c')
 
@@ -190,9 +193,9 @@ endif
 add_project_arguments(common_flags, language: 'c')
 add_project_link_arguments(common_ldflags, language: 'c')
 
-linker_script_binary   = join_paths(meson.source_root(), 'linker-script-binary.ver')
-linker_script_devices  = join_paths(meson.source_root(), 'linker-script-devices.ver')
-linker_script_settings = join_paths(meson.source_root(), 'linker-script-settings.ver')
+linker_script_binary   = join_paths(source_root, 'linker-script-binary.ver')
+linker_script_devices  = join_paths(source_root, 'linker-script-devices.ver')
+linker_script_settings = join_paths(source_root, 'linker-script-settings.ver')
 
 ldflags_linker_script_binary   = [ '-Wl,--version-script,@0@'.format(linker_script_binary) ]
 ldflags_linker_script_devices  = [ '-Wl,--version-script,@0@'.format(linker_script_devices) ]
@@ -736,7 +739,7 @@ endif
 tests = get_option('tests')
 enable_tests = (tests != 'no')
 require_root_tests = (tests == 'root')
-test_script = find_program(join_paths(meson.source_root(), 'tools', 'run-nm-test.sh'))
+test_script = find_program(join_paths(source_root, 'tools', 'run-nm-test.sh'))
 
 # valgrind
 locations = get_option('valgrind')
@@ -749,13 +752,13 @@ endif
 if enable_valgrind
   valgrind_suppressions_path = get_option('valgrind_suppressions')
   if valgrind_suppressions_path == ''
-    valgrind_suppressions_path = join_paths(meson.source_root(), 'valgrind.suppressions')
+    valgrind_suppressions_path = join_paths(source_root, 'valgrind.suppressions')
   endif
 endif
 
 test_args = [
   '--called-from-make',
-  meson.build_root(),
+  build_root,
   '',
   enable_valgrind ? valgrind.path() : '',
   enable_valgrind ? valgrind_suppressions_path : '',
@@ -866,8 +869,8 @@ config_extra_h.set_quoted('NMPLUGINDIR',       nm_plugindir)
 config_extra_h.set_quoted('NMRUNDIR',          nm_pkgrundir)
 config_extra_h.set_quoted('NMSTATEDIR',        nm_pkgstatedir)
 config_extra_h.set_quoted('NMVPNDIR',          nm_vpndir)
-config_extra_h.set_quoted('NM_BUILD_BUILDDIR', meson.build_root())
-config_extra_h.set_quoted('NM_BUILD_SRCDIR',   meson.source_root())
+config_extra_h.set_quoted('NM_BUILD_BUILDDIR', build_root)
+config_extra_h.set_quoted('NM_BUILD_SRCDIR',   source_root)
 if enable_ppp
     config_extra_h.set_quoted('PPPD_PLUGIN_DIR', pppd_plugin_dir)
 endif

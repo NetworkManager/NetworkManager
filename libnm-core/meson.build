@@ -293,7 +293,7 @@ shared_nm_libnm_core_aux_dep = declare_dependency(
 
 ###############################################################################
 
-enums_to_docbook = join_paths(meson.source_root(), 'tools', 'enums-to-docbook.pl')
+enums_to_docbook = join_paths(source_root, 'tools', 'enums-to-docbook.pl')
 
 docbooks = [
   ['nm-dbus-types', 'nm-dbus-interface.h', 'NetworkManager D-Bus API Types'],

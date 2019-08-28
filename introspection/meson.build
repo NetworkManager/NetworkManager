@@ -76,7 +76,7 @@ foreach iface: ifaces
   if gio_unix_dep.version().version_compare('>= 2.51.3')
     dbus_iface_xml_path = join_paths(meson.current_build_dir(), 'dbus-' + iface_xml)
   else
-    dbus_iface_xml_path = join_paths(meson.build_root(), 'dbus-' + iface_xml)
+    dbus_iface_xml_path = join_paths(build_root, 'dbus-' + iface_xml)
   endif
 
   content_files += dbus_iface_xml_path
