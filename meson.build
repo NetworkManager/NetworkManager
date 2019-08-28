@@ -280,9 +280,7 @@ config_h.set_quoted('NM_DIST_VERSION', dist_version)
 enable_wifi = get_option('wifi')
 
 enable_iwd = get_option('iwd')
-if enable_iwd
-  assert(enable_wifi, 'Enabling iwd support requires Wi-Fi support as well')
-endif
+assert((not enable_iwd) or enable_wifi, 'Enabling iwd support requires Wi-Fi support as well')
 config_h.set10('WITH_IWD', enable_iwd)
 
 enable_wext = get_option('wext')
