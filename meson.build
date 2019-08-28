@@ -65,6 +65,24 @@ libnm_pkgincludedir = join_paths(nm_includedir, libnm_name)
 
 nm_debug = get_option('buildtype').contains('debug')
 
+gnome = import('gnome')
+i18n = import('i18n')
+pkg = import('pkgconfig')
+
+po_dir = join_paths(meson.source_root(), 'po')
+
+intltool_merge = find_program('intltool-merge')
+intltool_cache = join_paths(po_dir, '.intltool-merge-cache')
+intltool_desktop_cmd = [intltool_merge, '-d', '-u', '-c', intltool_cache, po_dir, '@INPUT@', '@OUTPUT@']
+intltool_xml_cmd = [intltool_merge, '-x', '-u', '-c', intltool_cache, po_dir, '@INPUT@', '@OUTPUT@']
+
+top_inc = include_directories('.')
+
+perl = find_program('perl')
+xsltproc = find_program('xsltproc')
+
+check_exports = find_program(join_paths(meson.source_root(), 'tools', 'check-exports.sh'))
+
 cc = meson.get_compiler('c')
 
 config_h = configuration_data()
@@ -783,22 +801,6 @@ else
 fi
 '''
 
-gnome = import('gnome')
-i18n = import('i18n')
-pkg = import('pkgconfig')
-
-po_dir = join_paths(meson.source_root(), 'po')
-
-intltool_merge = find_program('intltool-merge')
-intltool_cache = join_paths(po_dir, '.intltool-merge-cache')
-intltool_desktop_cmd = [intltool_merge, '-d', '-u', '-c', intltool_cache, po_dir, '@INPUT@', '@OUTPUT@']
-intltool_xml_cmd = [intltool_merge, '-x', '-u', '-c', intltool_cache, po_dir, '@INPUT@', '@OUTPUT@']
-
-perl = find_program('perl')
-xsltproc = find_program('xsltproc')
-
-check_exports = find_program(join_paths(meson.source_root(), 'tools', 'check-exports.sh'))
-
 content_files = []
 
 # FIXME: every plugin calls to this:
@@ -813,8 +815,6 @@ check_so_symbols = \
         $(call set_sanitizer_env,$(1)); \
         LD_BIND_NOW=1 LD_PRELOAD=$${LD_PRELOAD}:$(1) $(builddir)/src/NetworkManager --version >/dev/null
 '''
-
-top_inc = include_directories('.')
 
 subdir('introspection')
 subdir('shared')
