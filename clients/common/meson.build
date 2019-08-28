@@ -45,7 +45,7 @@ if enable_introspection
 else
   settings_docs_source = configure_file(
     input: settings_docs + '.in',
-    output: settings_docs,
+    output: '@BASENAME@',
     configuration: configuration_data(),
   )
 endif

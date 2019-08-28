@@ -847,11 +847,9 @@ if enable_docs
   subdir('docs')
 endif
 
-config = 'config.h'
-
 configure_file(
-  input: config + '.meson',
-  output: config,
+  input: 'config.h.meson',
+  output: '@BASENAME@',
   configuration: config_h,
 )
 
@@ -879,7 +877,7 @@ config_extra_h.set_quoted('SYSCONFDIR',        nm_sysconfdir)
 
 configure_file(
   input: 'config-extra.h.meson',
-  output: 'config-extra.h',
+  output: '@BASENAME@',
   configuration: config_extra_h,
 )
 

@@ -8,11 +8,10 @@ service_conf.set('sysconfdir', nm_sysconfdir)
 service_conf.set('localstatedir', nm_localstatedir)
 service_conf.set('libexecdir', nm_libexecdir)
 
-service = 'org.freedesktop.nm_dispatcher.service'
 
 configure_file(
-  input: service + '.in',
-  output: service,
+  input: 'org.freedesktop.nm_dispatcher.service.in',
+  output: '@BASENAME@',
   install_dir: dbus_sys_dir,
   configuration: service_conf,
 )

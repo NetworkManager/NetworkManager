@@ -132,7 +132,7 @@ version_conf.set('NM_MICRO_VERSION', nm_micro_version)
 
 version_header = configure_file(
     input: 'nm-version-macros.h.in',
-    output: 'nm-version-macros.h',
+    output: '@BASENAME@',
     configuration: version_conf,
 )
 
