@@ -270,7 +270,7 @@ create_and_realize (NMDevice *device,
 /*****************************************************************************/
 
 static NMDeviceCapabilities
-get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *device)
 {
 	/* We assume MACVLAN interfaces always support carrier detect */
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
@@ -416,16 +416,17 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMActStageReturn ret;
 
-	ret = NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->act_stage1_prepare (dev, out_failure_reason);
+	ret = NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
 		return NM_ACT_STAGE_RETURN_FAILURE;
+
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 

@@ -496,17 +496,17 @@ link_timeout_cb (gpointer user_data)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMDevice *dev = NM_DEVICE (self);
+	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
 	NMConnection *applied_connection;
 	const char *setting_name;
 
 	priv->supplicant_timeout_id = 0;
 
-	req = nm_device_get_act_request (dev);
+	req = nm_device_get_act_request (device);
 
-	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_state_changed (dev,
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
+		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 		return FALSE;
@@ -516,7 +516,7 @@ link_timeout_cb (gpointer user_data)
 	 * ARE checked - we are likely to have wrong key.  Ask the user for
 	 * another one.
 	 */
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_CONFIG)
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_CONFIG)
 		goto time_out;
 
 	nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (req));
@@ -530,14 +530,14 @@ link_timeout_cb (gpointer user_data)
 	       "Activation: (ethernet) disconnected during authentication, asking for new key.");
 	supplicant_interface_release (self);
 
-	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+	nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 	wired_secrets_get_secrets (self, setting_name, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
 
 	return FALSE;
 
 time_out:
 	_LOGW (LOGD_DEVICE | LOGD_ETHER, "link timed out.");
-	nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+	nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
 	return FALSE;
 }
@@ -850,19 +850,19 @@ pppoe_reconnect_delay (gpointer user_data)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMActStageReturn ret;
 
-	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, out_failure_reason);
+	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	link_negotiation_set (dev);
+	link_negotiation_set (device);
 
-	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	/* If we're re-activating a PPPoE connection a short while after
@@ -874,7 +874,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 		gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
 
 		if (   delay < PPPOE_RECONNECT_DELAY
-		    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
+		    && nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE)) {
 			_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
 			       delay);
 			g_assert (!priv->pppoe_wait_id);
