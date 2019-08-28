@@ -58,7 +58,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceOlpcMesh,
 typedef struct {
 	NMDevice *companion;
 	NMManager *manager;
-	gboolean  stage1_waiting;
+	bool stage1_waiting:1;
 } NMDeviceOlpcMeshPrivate;
 
 struct _NMDeviceOlpcMesh {
@@ -145,12 +145,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	NMActStageReturn ret;
 	gboolean scanning;
-
-	ret = NM_DEVICE_CLASS (nm_device_olpc_mesh_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
 
 	/* disconnect companion device, if it is connected */
 	if (nm_device_get_act_request (NM_DEVICE (priv->companion))) {
@@ -171,6 +166,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
+	priv->stage1_waiting = FALSE;
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -254,10 +250,9 @@ companion_notify_cb (NMDeviceWifi *companion, GParamSpec *pspec, gpointer user_d
 		return;
 
 	g_object_get (companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
-
 	if (!scanning) {
 		priv->stage1_waiting = FALSE;
-		nm_device_activate_schedule_stage2_device_config (NM_DEVICE (self));
+		nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
 	}
 }
 

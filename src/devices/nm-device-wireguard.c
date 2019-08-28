@@ -1276,8 +1276,10 @@ _secrets_cb (NMActRequest *req,
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	} else
-		nm_device_activate_schedule_stage1_device_prepare (device);
+		return;
+	}
+
+	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static void
@@ -1515,17 +1517,6 @@ link_config_delayed_resolver_cb (gpointer user_data)
 {
 	link_config_delayed (user_data, "resolver-update");
 	return G_SOURCE_REMOVE;
-}
-
-static NMActStageReturn
-act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
-{
-	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (device);
-
-	priv->auto_default_route_initialized = FALSE;
-	priv->auto_default_route_priority_initialized = FALSE;
-
-	return NM_DEVICE_CLASS (nm_device_wireguard_parent_class)->act_stage1_prepare (device, out_failure_reason);
 }
 
 static NMActStageReturn
@@ -1968,7 +1959,6 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *klass)
 	device_class->connection_type_check_compatible = NM_SETTING_WIREGUARD_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_WIREGUARD);
 
-	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->state_changed = device_state_changed;
 	device_class->create_and_realize = create_and_realize;
 	device_class->act_stage2_config = act_stage2_config;

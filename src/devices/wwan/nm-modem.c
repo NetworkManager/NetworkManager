@@ -974,9 +974,9 @@ nm_modem_get_secrets (NMModem *self,
 /*****************************************************************************/
 
 static NMActStageReturn
-act_stage1_prepare (NMModem *modem,
-                    NMConnection *connection,
-                    NMDeviceStateReason *out_failure_reason)
+modem_act_stage1_prepare (NMModem *modem,
+                          NMConnection *connection,
+                          NMDeviceStateReason *out_failure_reason)
 {
 	NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_UNKNOWN);
 	return NM_ACT_STAGE_RETURN_FAILURE;
@@ -1003,7 +1003,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	setting_name = nm_connection_need_secrets (connection, &hints);
 	if (!setting_name) {
 		nm_assert (!hints);
-		return NM_MODEM_GET_CLASS (self)->act_stage1_prepare (self, connection, out_failure_reason);
+		return NM_MODEM_GET_CLASS (self)->modem_act_stage1_prepare (self, connection, out_failure_reason);
 	}
 
 	/* Secrets required... */
@@ -1798,7 +1798,7 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	klass->act_stage1_prepare = act_stage1_prepare;
+	klass->modem_act_stage1_prepare = modem_act_stage1_prepare;
 	klass->stage3_ip6_config_request = stage3_ip6_config_request;
 	klass->deactivate_cleanup = deactivate_cleanup;
 

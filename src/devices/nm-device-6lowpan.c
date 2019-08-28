@@ -230,20 +230,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	              NULL);
 }
 
-static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
-{
-	NMActStageReturn ret;
-
-	ret = NM_DEVICE_CLASS (nm_device_6lowpan_parent_class)->act_stage1_prepare (dev, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
-
-	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
-		return NM_ACT_STAGE_RETURN_FAILURE;
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
 /*****************************************************************************/
 
 static void
@@ -273,7 +259,7 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	device_class->connection_type_check_compatible = NM_SETTING_6LOWPAN_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_6LOWPAN);
 
-	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->complete_connection = complete_connection;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;

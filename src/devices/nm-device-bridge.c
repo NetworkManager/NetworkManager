@@ -225,7 +225,7 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 	GParamSpec *pspec;
 	GValue val = G_VALUE_INIT;
 	guint32 uval = 0;
-	gs_free char *value = NULL;
+	char value[100];
 
 	g_assert (setting);
 
@@ -258,10 +258,10 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 		if (option->user_hz_compensate)
 			uval *= 100;
 	} else
-		g_assert_not_reached ();
+		nm_assert_not_reached ();
 	g_value_unset (&val);
 
-	value = g_strdup_printf ("%u", uval);
+	nm_sprintf_buf (value, "%u", uval);
 	if (slave)
 		nm_platform_sysctl_slave_set_option (nm_device_get_platform (device), ifindex, option->sysname, value);
 	else
@@ -497,26 +497,15 @@ bridge_set_vlan_options (NMDevice *device, NMSettingBridge *s_bridge)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-	NMActStageReturn ret;
 	NMConnection *connection;
 	NMSetting *s_bridge;
 	const Option *option;
 
-	NM_DEVICE_BRIDGE (device)->vlan_configured = FALSE;
-
-	ret = NM_DEVICE_CLASS (nm_device_bridge_parent_class)->act_stage1_prepare (device, out_failure_reason);
-	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
-		return ret;
-
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+
 	s_bridge = (NMSetting *) nm_connection_get_setting_bridge (connection);
 	g_return_val_if_fail (s_bridge, NM_ACT_STAGE_RETURN_FAILURE);
-
-	if (!nm_device_hw_addr_set_cloned (device, connection, FALSE)) {
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-		return NM_ACT_STAGE_RETURN_FAILURE;
-	}
 
 	for (option = master_options; option->name; option++)
 		commit_option (device, s_bridge, option, FALSE);
@@ -555,6 +544,10 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 deactivate (NMDevice *device)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
+
+	self->vlan_configured = FALSE;
+
 	if (nm_bt_vtable_network_server) {
 		/* always call unregister. It does nothing if the device
 		 * isn't registered as a hotspot bridge. */
@@ -760,6 +753,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	device_class->master_update_slave_connection = master_update_slave_connection;
 
 	device_class->create_and_realize = create_and_realize;
+	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->deactivate = deactivate;

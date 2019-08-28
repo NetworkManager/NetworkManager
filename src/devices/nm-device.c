@@ -102,11 +102,6 @@ _LOG_DECLARE_SELF (NMDevice);
 
 typedef void (*ActivationHandleFunc) (NMDevice *self);
 
-typedef struct {
-	ActivationHandleFunc func;
-	guint id;
-} ActivationHandleData;
-
 typedef enum {
 	CLEANUP_TYPE_KEEP,
 	CLEANUP_TYPE_REMOVED,
@@ -333,8 +328,23 @@ typedef struct _NMDevicePrivate {
 	NMActRequest *  queued_act_request;
 	bool            queued_act_request_is_waiting_for_carrier:1;
 	NMDBusTrackObjPath act_request;
-	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
-	ActivationHandleData act_handle6;
+
+	union {
+		struct {
+			guint activation_source_id_6;
+			guint activation_source_id_4; /* for layer2 and IPv4. */
+		};
+		guint activation_source_id_x[2];
+	};
+
+	union {
+		struct {
+			ActivationHandleFunc activation_source_func_6;
+			ActivationHandleFunc activation_source_func_4; /* for layer2 and IPv4. */
+		};
+		ActivationHandleFunc activation_source_func_x[2];
+	};
+
 	guint           recheck_assume_id;
 
 	struct {
@@ -394,7 +404,6 @@ typedef struct _NMDevicePrivate {
 	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:5;
 
 	bool            is_enslaved:1;
-	bool            master_ready_handled:1;
 
 	bool            ipv6ll_handle:1; /* TRUE if NM handles the device's IPv6LL address */
 	bool            ipv6ll_has:1;
@@ -402,6 +411,8 @@ typedef struct _NMDevicePrivate {
 	bool            device_link_changed_down:1;
 
 	bool            concheck_rp_filter_checked:1;
+
+	NMDeviceStageState stage1_sriov_state:3;
 
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
@@ -633,7 +644,6 @@ static void _carrier_wait_check_queued_act_request (NMDevice *self);
 static gint64 _get_carrier_wait_ms (NMDevice *self);
 
 static const char *_activation_func_to_string (ActivationHandleFunc func);
-static void activation_source_handle_cb (NMDevice *self, int addr_family);
 
 static void _set_state_full (NMDevice *self,
                              NMDeviceState state,
@@ -670,6 +680,10 @@ static void (*const activate_stage4_ip_config_timeout_x[2]) (NMDevice *self) = {
 	activate_stage4_ip_config_timeout_6,
 	activate_stage4_ip_config_timeout_4,
 };
+
+static void sriov_op_cb (GError *error, gpointer user_data);
+
+static void activate_stage2_device_config (NMDevice *self);
 
 static void activate_stage5_ip_config_result_4 (NMDevice *self);
 static void activate_stage5_ip_config_result_6 (NMDevice *self);
@@ -4234,7 +4248,7 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	}
 }
 
-static void sriov_op_cb (GError *error, gpointer user_data);
+/*****************************************************************************/
 
 static void
 sriov_op_start (NMDevice *self, SriovOp *op)
@@ -4267,16 +4281,57 @@ sriov_op_cb (GError *error, gpointer user_data)
 
 	priv->sriov.pending = NULL;
 
+	g_clear_object (&op->cancellable);
+
 	if (op->callback)
 		op->callback (error, op->callback_data);
 
-	g_clear_object (&op->cancellable);
-	g_slice_free (SriovOp, op);
+	nm_assert (!priv->sriov.pending);
+
+	nm_g_slice_free (op);
 
 	if (priv->sriov.next) {
 		sriov_op_start (self,
 		                g_steal_pointer (&priv->sriov.next));
 	}
+}
+
+static void
+sriov_op_queue_op (NMDevice *self,
+                   SriovOp *op)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->sriov.next) {
+		SriovOp *op_next = g_steal_pointer (&priv->sriov.next);
+
+		/* Cancel the next operation immediately */
+		if (op_next->callback) {
+			gs_free_error GError *error = NULL;
+
+			nm_utils_error_set_cancelled (&error, FALSE, NULL);
+			op_next->callback (error, op_next->callback_data);
+		}
+
+		nm_g_slice_free (op_next);
+
+		if (!priv->sriov.pending) {
+			/* This (having "next" set but "pending" not) can only happen if we are
+			 * called from inside the callback again.
+			 *
+			 * That means we append the new request as "next" and return. Once
+			 * the callback returns, it will schedule the request. */
+			priv->sriov.next = op;
+			return;
+		}
+	} else if (priv->sriov.pending) {
+		priv->sriov.next = op;
+		g_cancellable_cancel (priv->sriov.pending->cancellable);
+		return;
+	}
+
+	if (op)
+		sriov_op_start (self, op);
 }
 
 static void
@@ -4286,32 +4341,35 @@ sriov_op_queue (NMDevice *self,
                 NMPlatformAsyncCallback callback,
                 gpointer callback_data)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GError *error = NULL;
 	SriovOp *op;
 
-	op = g_slice_new0 (SriovOp);
-	op->num_vfs = num_vfs;
-	op->autoprobe = autoprobe;
-	op->callback = callback;
-	op->callback_data = callback_data;
+	/* We usually never want to cancel an async write operation, unless it's superseded
+	 * by a newer operation (that resets the state). That is, because we need to ensure
+	 * that we never end up doing two concurrent writes (since we write on a background
+	 * thread, that would be unordered/racy).
+	 * Of course, since we queue requests only per-device, when devices get renamed we
+	 * might end up writing the same sysctl concurrently still. But that's really
+	 * unlikely, and don't rename after udev completes!
+	 *
+	 * The "next" operation is not yet even started. It can be replaced/canceled right away
+	 * when a newer request comes.
+	 * The "pending" operation is currently ongoing, and we may cancel it if
+	 * we have a follow-up operation (queued in "next"). Unless we have a such
+	 * a newer request, we cannot cancel it!
+	 *
+	 * FIXME(shutdown): However, during shutdown we don't have a follow-up write request to cancel
+	 * this operation and we have to give it at least some time to complete. The solution is that
+	 * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MS
+	 * grace period we pull the plug and cancel it. */
 
-	if (priv->sriov.next) {
-		/* Cancel the next operation immediately */
-		if (priv->sriov.next->callback) {
-			nm_utils_error_set_cancelled (&error, FALSE, NULL);
-			priv->sriov.next->callback (error, priv->sriov.next->callback_data);
-			g_clear_error (&error);
-		}
-		g_slice_free (SriovOp, priv->sriov.next);
-		priv->sriov.next = NULL;
-	}
-
-	if (priv->sriov.pending) {
-		priv->sriov.next = op;
-		g_cancellable_cancel (priv->sriov.pending->cancellable);
-	} else
-		sriov_op_start (self, op);
+	op = g_slice_new (SriovOp);
+	*op = (SriovOp) {
+		.num_vfs       = num_vfs,
+		.autoprobe     = autoprobe,
+		.callback      = callback,
+		.callback_data = callback_data,
+	};
+	sriov_op_queue_op (self, op);
 }
 
 static void
@@ -6094,119 +6152,102 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 
 /*****************************************************************************/
 
-static gboolean
-activation_source_handle_cb4 (gpointer user_data)
-{
-	activation_source_handle_cb (user_data, AF_INET);
-	return G_SOURCE_REMOVE;
-}
-
-static gboolean
-activation_source_handle_cb6 (gpointer user_data)
-{
-	activation_source_handle_cb (user_data, AF_INET6);
-	return G_SOURCE_REMOVE;
-}
-
-static ActivationHandleData *
-activation_source_get_by_family (NMDevice *self,
-                                 int addr_family,
-                                 GSourceFunc *out_idle_func)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	switch (addr_family) {
-	case AF_INET6:
-		NM_SET_OUT (out_idle_func, activation_source_handle_cb6);
-		return &priv->act_handle6;
-	case AF_INET:
-		NM_SET_OUT (out_idle_func, activation_source_handle_cb4);
-		return &priv->act_handle4;
-	}
-	g_return_val_if_reached (NULL);
-}
-
 static void
 activation_source_clear (NMDevice *self,
                          int addr_family)
 {
-	ActivationHandleData *act_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
-	act_data = activation_source_get_by_family (self, addr_family, NULL);
-
-	if (act_data->id) {
+	if (priv->activation_source_id_x[IS_IPv4] != 0) {
 		_LOGD (LOGD_DEVICE, "activation-stage: clear %s,v%c (id %u)",
-		       _activation_func_to_string (act_data->func),
+		       _activation_func_to_string (priv->activation_source_func_x[IS_IPv4]),
 		       nm_utils_addr_family_to_char (addr_family),
-		       act_data->id);
-		nm_clear_g_source (&act_data->id);
-		act_data->func = NULL;
+		       priv->activation_source_id_x[IS_IPv4]);
+		nm_clear_g_source (&priv->activation_source_id_x[IS_IPv4]);
+		priv->activation_source_func_x[IS_IPv4] = NULL;
 	}
 }
 
-static void
+static gboolean
 activation_source_handle_cb (NMDevice *self,
                              int addr_family)
 {
-	ActivationHandleData *act_data, a;
+	NMDevicePrivate *priv;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
+	ActivationHandleFunc activation_source_func;
+	guint activation_source_id;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
-	act_data = activation_source_get_by_family (self, addr_family, NULL);
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_if_fail (act_data->id);
-	g_return_if_fail (act_data->func);
+	activation_source_func = priv->activation_source_func_x[IS_IPv4];
+	activation_source_id = priv->activation_source_id_x[IS_IPv4];
 
-	a = *act_data;
+	g_return_val_if_fail (activation_source_id != 0, G_SOURCE_REMOVE);
+	nm_assert (activation_source_func);
 
-	act_data->func = NULL;
-	act_data->id = 0;
+	priv->activation_source_func_x[IS_IPv4] = NULL;
+	priv->activation_source_id_x[IS_IPv4] = 0;
 
 	_LOGD (LOGD_DEVICE, "activation-stage: invoke %s,v%c (id %u)",
-	       _activation_func_to_string (a.func),
+	       _activation_func_to_string (activation_source_func),
 	       nm_utils_addr_family_to_char (addr_family),
-	       a.id);
+	       activation_source_id);
 
-	a.func (self);
+	activation_source_func (self);
 
-	_LOGD (LOGD_DEVICE, "activation-stage: complete %s,v%c (id %u)",
-	       _activation_func_to_string (a.func),
+	_LOGT (LOGD_DEVICE, "activation-stage: complete %s,v%c (id %u)",
+	       _activation_func_to_string (activation_source_func),
 	       nm_utils_addr_family_to_char (addr_family),
-	       a.id);
+	       activation_source_id);
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+activation_source_handle_cb_4 (gpointer user_data)
+{
+	return activation_source_handle_cb (user_data, AF_INET);
+}
+
+static gboolean
+activation_source_handle_cb_6 (gpointer user_data)
+{
+	return activation_source_handle_cb (user_data, AF_INET6);
 }
 
 static void
 activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_family)
 {
-	ActivationHandleData *act_data;
-	GSourceFunc source_func = NULL;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 	guint new_id = 0;
 
-	act_data = activation_source_get_by_family (self, addr_family, &source_func);
-
-	if (act_data->id && act_data->func == func) {
-		/* Don't bother rescheduling the same function that's about to
-		 * run anyway.  Fixes issues with crappy wireless drivers sending
-		 * streams of associate events before NM has had a chance to process
-		 * the first one.
-		 */
-		_LOGD (LOGD_DEVICE, "activation-stage: already scheduled %s,v%c (id %u)",
+	if (   priv->activation_source_id_x[IS_IPv4] != 0
+	    && priv->activation_source_func_x[IS_IPv4] == func) {
+		/* Scheduling the same stage multiple times is fine. */
+		_LOGT (LOGD_DEVICE, "activation-stage: already scheduled %s,v%c (id %u)",
 		       _activation_func_to_string (func),
 		       nm_utils_addr_family_to_char (addr_family),
-		       act_data->id);
+		       priv->activation_source_id_x[IS_IPv4]);
 		return;
 	}
 
-	new_id = g_idle_add (source_func, self);
+	new_id = g_idle_add (  IS_IPv4
+	                     ? activation_source_handle_cb_4
+	                     : activation_source_handle_cb_6,
+	                     self);
 
-	if (act_data->id) {
-		_LOGW (LOGD_DEVICE, "activation-stage: schedule %s,v%c which replaces %s,v%c (id %u -> %u)",
+	if (priv->activation_source_id_x[IS_IPv4] != 0) {
+		_LOGD (LOGD_DEVICE, "activation-stage: schedule %s,v%c which replaces %s,v%c (id %u -> %u)",
 		       _activation_func_to_string (func),
 		       nm_utils_addr_family_to_char (addr_family),
-		       _activation_func_to_string (act_data->func),
+		       _activation_func_to_string (priv->activation_source_func_x[IS_IPv4]),
 		       nm_utils_addr_family_to_char (addr_family),
-		       act_data->id, new_id);
-		nm_clear_g_source (&act_data->id);
+		       priv->activation_source_id_x[IS_IPv4], new_id);
+		nm_clear_g_source (&priv->activation_source_id_x[IS_IPv4]);
 	} else {
 		_LOGD (LOGD_DEVICE, "activation-stage: schedule %s,v%c (id %u)",
 		       _activation_func_to_string (func),
@@ -6214,19 +6255,38 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_
 		       new_id);
 	}
 
-	act_data->func = func;
-	act_data->id = new_id;
+	priv->activation_source_func_x[IS_IPv4] = func;
+	priv->activation_source_id_x[IS_IPv4] = new_id;
 }
 
-static gboolean
-activation_source_is_scheduled (NMDevice *self,
-                                ActivationHandleFunc func,
-                                int addr_family)
+static void
+activation_source_invoke_sync (NMDevice *self, ActivationHandleFunc func, int addr_family)
 {
-	ActivationHandleData *act_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
-	act_data = activation_source_get_by_family (self, addr_family, NULL);
-	return act_data->func == func;
+	if (priv->activation_source_id_x[IS_IPv4] == 0) {
+		_LOGD (LOGD_DEVICE, "activation-stage: synchronously invoke %s,v%c",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family));
+	} else if (priv->activation_source_func_x[IS_IPv4] == func) {
+		_LOGD (LOGD_DEVICE, "activation-stage: synchronously invoke %s,v%c which was already scheduled (id %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       priv->activation_source_id_x[IS_IPv4]);
+	} else {
+		_LOGD (LOGD_DEVICE, "activation-stage: synchronously invoke %s,v%c which replaces %s,v%c (id %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       _activation_func_to_string (priv->activation_source_func_x[IS_IPv4]),
+		       nm_utils_addr_family_to_char (addr_family),
+		       priv->activation_source_id_x[IS_IPv4]);
+	}
+
+	nm_clear_g_source (&priv->activation_source_id_x[IS_IPv4]);
+	priv->activation_source_func_x[IS_IPv4] = NULL;
+
+	func (self);
 }
 
 /*****************************************************************************/
@@ -6239,22 +6299,18 @@ master_ready (NMDevice *self,
 	NMActiveConnection *master_connection;
 	NMDevice *master;
 
-	g_return_if_fail (priv->state == NM_DEVICE_STATE_PREPARE);
-	g_return_if_fail (!priv->master_ready_handled);
-
 	/* Notify a master device that it has a new slave */
-	g_return_if_fail (nm_active_connection_get_master_ready (active));
-	master_connection = nm_active_connection_get_master (active);
+	nm_assert (nm_active_connection_get_master_ready (active));
 
-	priv->master_ready_handled = TRUE;
-	nm_clear_g_signal_handler (active, &priv->master_ready_id);
+	master_connection = nm_active_connection_get_master (active);
 
 	master = nm_active_connection_get_device (master_connection);
 
 	_LOGD (LOGD_DEVICE, "master connection ready; master device %s",
 	       nm_device_get_iface (master));
 
-	if (priv->master && priv->master != master)
+	if (   priv->master
+	    && priv->master != master)
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
 	/* If the master didn't change, add-slave only rechecks whether to assume a connection. */
@@ -6268,8 +6324,12 @@ master_ready_cb (NMActiveConnection *active,
                  GParamSpec *pspec,
                  NMDevice *self)
 {
-	master_ready (self, active);
-	nm_device_activate_schedule_stage2_device_config (self);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (nm_active_connection_get_master_ready (active));
+
+	if (priv->state == NM_DEVICE_STATE_PREPARE)
+		nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
 static void
@@ -6415,64 +6475,9 @@ sriov_params_cb (GError *error, gpointer data)
 		return;
 	}
 
-	nm_device_activate_schedule_stage2_device_config (self);
-}
+	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
 
-static NMActStageReturn
-act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingSriov *s_sriov;
-	guint i, num;
-
-	if (   priv->ifindex > 0
-	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)
-	    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
-		nm_auto_freev NMPlatformVF **plat_vfs = NULL;
-		gs_free_error GError *error = NULL;
-		NMSriovVF *vf;
-		NMTernary autoprobe;
-		gpointer *data;
-
-		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
-		if (autoprobe == NM_TERNARY_DEFAULT) {
-			autoprobe = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-			                                                         NM_CON_DEFAULT ("sriov.autoprobe-drivers"),
-			                                                         self,
-			                                                         NM_TERNARY_FALSE,
-			                                                         NM_TERNARY_TRUE,
-			                                                         NM_TERNARY_TRUE);
-		}
-
-		num = nm_setting_sriov_get_num_vfs (s_sriov);
-		plat_vfs = g_new0 (NMPlatformVF *, num + 1);
-		for (i = 0; i < num; i++) {
-			vf = nm_setting_sriov_get_vf (s_sriov, i);
-			plat_vfs[i] = sriov_vf_config_to_platform (self, vf, &error);
-			if (!plat_vfs[i]) {
-				_LOGE (LOGD_DEVICE,
-				       "failed to apply SR-IOV VF '%s': %s",
-				       nm_utils_sriov_vf_to_str (vf, FALSE, NULL),
-				       error->message);
-				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
-				return NM_ACT_STAGE_RETURN_FAILURE;
-			}
-		}
-
-		/* When changing the number of VFs the kernel can block
-		 * for very long time in the write to sysfs, especially
-		 * if autoprobe-drivers is enabled. Do it asynchronously
-		 * to avoid blocking the entire NM process.
-		 */
-		data = nm_utils_user_data_pack (self, g_steal_pointer (&plat_vfs));
-		sriov_op_queue (self,
-		                nm_setting_sriov_get_total_vfs (s_sriov),
-		                autoprobe,
-		                sriov_params_cb,
-		                data);
-		return NM_ACT_STAGE_RETURN_POSTPONE;
-	}
-	return NM_ACT_STAGE_RETURN_SUCCESS;
+	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
 /*
@@ -6486,6 +6491,8 @@ activate_stage1_device_prepare (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActiveConnection *active;
+	NMActiveConnection *master;
 
 	priv->v4_route_table_initialized = FALSE;
 	priv->v6_route_table_initialized = FALSE;
@@ -6500,21 +6507,117 @@ activate_stage1_device_prepare (NMDevice *self)
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
-	/* Assumed connections were already set up outside NetworkManager */
-	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
-		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+	if (priv->stage1_sriov_state != NM_DEVICE_STAGE_STATE_COMPLETED) {
+		NMSettingSriov *s_sriov;
 
-		ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &failure_reason);
-		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
+			/* pass */
+		} else if (priv->stage1_sriov_state == NM_DEVICE_STAGE_STATE_PENDING)
 			return;
-		} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
+		else if (   priv->ifindex > 0
+		         && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)
+		         && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+			nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+			gs_free_error GError *error = NULL;
+			NMSriovVF *vf;
+			NMTernary autoprobe;
+			guint i, num;
+
+			autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
+			if (autoprobe == NM_TERNARY_DEFAULT) {
+				autoprobe = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+				                                                         NM_CON_DEFAULT ("sriov.autoprobe-drivers"),
+				                                                         self,
+				                                                         NM_TERNARY_FALSE,
+				                                                         NM_TERNARY_TRUE,
+				                                                         NM_TERNARY_TRUE);
+			}
+
+			num = nm_setting_sriov_get_num_vfs (s_sriov);
+			plat_vfs = g_new0 (NMPlatformVF *, num + 1);
+			for (i = 0; i < num; i++) {
+				vf = nm_setting_sriov_get_vf (s_sriov, i);
+				plat_vfs[i] = sriov_vf_config_to_platform (self, vf, &error);
+				if (!plat_vfs[i]) {
+					_LOGE (LOGD_DEVICE,
+					       "failed to apply SR-IOV VF '%s': %s",
+					       nm_utils_sriov_vf_to_str (vf, FALSE, NULL),
+					       error->message);
+					nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+					return;
+				}
+			}
+
+			/* When changing the number of VFs the kernel can block
+			 * for very long time in the write to sysfs, especially
+			 * if autoprobe-drivers is enabled. Do it asynchronously
+			 * to avoid blocking the entire NM process.
+			 */
+			sriov_op_queue (self,
+			                nm_setting_sriov_get_total_vfs (s_sriov),
+			                autoprobe,
+			                sriov_params_cb,
+			                nm_utils_user_data_pack (self,
+			                                         g_steal_pointer (&plat_vfs)));
+			priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_PENDING;
 			return;
 		}
-		g_return_if_fail (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+		priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
 	}
 
-	nm_device_activate_schedule_stage2_device_config (self);
+	/* Assumed connections were already set up outside NetworkManager */
+	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
+		NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
+
+		if (klass->act_stage1_prepare_set_hwaddr_ethernet) {
+			if (!nm_device_hw_addr_set_cloned (self,
+			                                   nm_device_get_applied_connection (self),
+			                                   FALSE)) {
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+				return;
+			}
+		}
+
+		if (klass->act_stage1_prepare) {
+			NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+
+			ret = klass->act_stage1_prepare (self, &failure_reason);
+			if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
+				return;
+			}
+			if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+				return;
+
+			nm_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+		}
+	}
+
+	active = NM_ACTIVE_CONNECTION (priv->act_request.obj);
+	master = nm_active_connection_get_master (active);
+	if (master) {
+		/* If the master connection is ready for slaves, attach ourselves */
+		if (!nm_active_connection_get_master_ready (active)) {
+			if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+				_LOGD (LOGD_DEVICE, "master connection is deactivating");
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+				return;
+			}
+			if (priv->master_ready_id == 0) {
+				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
+				priv->master_ready_id = g_signal_connect (active,
+				                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+				                                          (GCallback) master_ready_cb,
+				                                          self);
+			}
+			return;
+		}
+	}
+	nm_clear_g_signal_handler (priv->act_request.obj, &priv->master_ready_id);
+	if (master)
+		master_ready (self, active);
+
+	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
 }
 
 /*
@@ -6905,43 +7008,7 @@ activate_stage2_device_config (NMDevice *self)
 void
 nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request.obj);
-
-	if (!priv->master_ready_handled) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request.obj);
-		NMActiveConnection *master;
-
-		master = nm_active_connection_get_master (active);
-
-		if (!master) {
-			g_warn_if_fail (!priv->master_ready_id);
-			priv->master_ready_handled = TRUE;
-		} else {
-			/* If the master connection is ready for slaves, attach ourselves */
-			if (nm_active_connection_get_master_ready (active))
-				master_ready (self, active);
-			else if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
-				_LOGD (LOGD_DEVICE, "master connection is deactivating");
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
-			} else {
-				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
-
-				if (priv->master_ready_id == 0) {
-					priv->master_ready_id = g_signal_connect (active,
-					                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
-					                                          (GCallback) master_ready_cb,
-					                                          self);
-				}
-				/* Postpone */
-				return;
-			}
-		}
-	}
 
 	activation_source_schedule (self, activate_stage2_device_config, AF_INET);
 }
@@ -9930,7 +9997,7 @@ _ip6_privacy_get (NMDevice *self)
 		return ip6_privacy;
 
 	if (!nm_device_get_ip_ifindex (self))
-		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;;
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
 	/* 3.) No valid default-value configured. Fallback to reading sysctl.
 	 *
@@ -12269,7 +12336,7 @@ nm_device_is_activating (NMDevice *self)
 	 * handler is actually run.  If there's an activation handler scheduled
 	 * we're activating anyway.
 	 */
-	return priv->act_handle4.id ? TRUE : FALSE;
+	return priv->activation_source_id_4 != 0;
 }
 
 NMProxyConfig *
@@ -13251,9 +13318,8 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	 * it changing IP configurations before they are applied. Postpone the
 	 * update in such case.
 	 */
-	if (activation_source_is_scheduled (self,
-	                                    activate_stage5_ip_config_result_x[IS_IPv4],
-	                                    addr_family))
+	if (   priv->activation_source_id_x[IS_IPv4] != 0
+	    && priv->activation_source_func_x[IS_IPv4] == activate_stage5_ip_config_result_x[IS_IPv4])
 		return G_SOURCE_CONTINUE;
 
 	priv->queued_ip_config_id_x[IS_IPv4] = 0;
@@ -14592,6 +14658,8 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 
 	_cancel_activation (self);
 
+	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_INIT;
+
 	if (cleanup_type != CLEANUP_TYPE_KEEP) {
 		nm_manager_device_route_metric_clear (nm_manager_get (),
 		                                      nm_device_get_ip_ifindex (self));
@@ -14670,10 +14738,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	if (priv->act_request.obj) {
 		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request.obj), AF_INET, FALSE);
-
-		priv->master_ready_handled = FALSE;
 		nm_clear_g_signal_handler (priv->act_request.obj, &priv->master_ready_id);
-
 		act_request_set (self, NULL);
 	}
 
@@ -15030,9 +15095,9 @@ deactivate_ready (NMDevice *self, NMDeviceStateReason reason)
 	if (priv->dispatcher.call_id)
 		return;
 
-	if (priv->sriov.pending)
+	if (   priv->sriov.pending
+	    || priv->sriov.next)
 		return;
-	nm_assert (!priv->sriov.next);
 
 	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
 }
@@ -16616,13 +16681,14 @@ dispose (GObject *object)
 
 	_cleanup_generic_pre (self, CLEANUP_TYPE_KEEP);
 
-	g_warn_if_fail (c_list_is_empty (&priv->slaves));
-	g_assert (priv->master_ready_id == 0);
+	nm_assert (c_list_is_empty (&priv->slaves));
 
 	/* Let the kernel manage IPv6LL again */
 	set_nm_ipv6ll (self, FALSE);
 
 	_cleanup_generic_post (self, CLEANUP_TYPE_KEEP);
+
+	nm_assert (priv->master_ready_id == 0);
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
@@ -17139,7 +17205,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->link_changed = link_changed;
 
 	klass->is_available = is_available;
-	klass->act_stage1_prepare = act_stage1_prepare;
 	klass->act_stage2_config = act_stage2_config;
 	klass->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	klass->act_stage4_ip_config_timeout = act_stage4_ip_config_timeout;
