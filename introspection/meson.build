@@ -91,7 +91,7 @@ endforeach
 
 install_data(
   ifaces_xmls,
-  install_dir: dbus_ifaces_dir,
+  install_dir: dbus_interfaces_dir,
 )
 
 libnmdbus = static_library(

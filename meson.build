@@ -314,19 +314,19 @@ if enable_introspection
   assert(gir_dep.found(), 'introspection support was requested, but the gobject-introspection library is not available. Use -Dintrospection=false to build without it.')
 endif
 
-udev_dir = get_option('udev_dir')
-install_udev_dir = (udev_dir != 'no')
+udev_udevdir = get_option('udev_dir')
+install_udevdir = (udev_udevdir != 'no')
 
-if install_udev_dir and udev_dir == ''
-  udev_dir = dependency('udev').get_pkgconfig_variable('udevdir')
+if install_udevdir and udev_udevdir == ''
+  udev_udevdir = dependency('udev').get_pkgconfig_variable('udevdir')
 endif
 
-systemd_system_unit_dir = get_option('systemdsystemunitdir')
-install_systemd_unit_dir = (systemd_system_unit_dir != 'no')
+systemd_systemdsystemunitdir = get_option('systemdsystemunitdir')
+install_systemdunitdir = (systemd_systemdsystemunitdir != 'no')
 
-if install_systemd_unit_dir and systemd_system_unit_dir == ''
+if install_systemdunitdir and systemd_systemdsystemunitdir == ''
   assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
-  systemd_system_unit_dir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
+  systemd_systemdsystemunitdir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
 endif
 
 enable_systemd_journal = get_option('systemd_journal')
@@ -461,7 +461,7 @@ config_h.set10('WITH_JSON_VALIDATION', enable_json_validation)
 enable_polkit = get_option('polkit')
 if enable_polkit
   # FIXME: policydir should be relative to `datadir`, not `prefix`. Fixed in https://gitlab.freedesktop.org/polkit/polkit/merge_requests/2
-  polkit_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
+  polkit_gobject_policydir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
 endif
 
 config_default_main_auth_polkit = enable_polkit.to_string()
@@ -494,11 +494,11 @@ endif
 dbus_conf_dir = get_option('dbus_conf_dir')
 if dbus_conf_dir == ''
   assert(dbus_dep.found(), 'D-Bus required but not found, please provide a valid system bus config dir')
-  dbus_conf_dir = join_paths(dbus_dep.get_pkgconfig_variable('sysconfdir'), 'dbus-1', 'system.d')
+  dbus_conf_dir = join_paths(dbus_dep.get_pkgconfig_variable('sysconfdir', define_variable: ['sysconfdir', nm_sysconfdir]), 'dbus-1', 'system.d')
 endif
 
-dbus_ifaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
-dbus_sys_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
+dbus_interfaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
+dbus_system_bus_services_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
 
 # pppd
 enable_ppp = get_option('ppp')
@@ -526,8 +526,8 @@ enable_modem_manager = get_option('modem_manager')
 if enable_modem_manager
   mm_glib_dep = dependency('mm-glib', version: '>= 0.7.991')
 
-  service_provider_db = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
-  config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', service_provider_db)
+  mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
+  config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', mobile_broadband_provider_info_database)
 endif
 
 # Bluez5 DUN support
@@ -894,7 +894,7 @@ meson.add_install_script(
 output = '\nSystem paths:\n'
 output += '  prefix: ' + nm_prefix + '\n'
 output += '  exec_prefix: ' + nm_prefix + '\n'
-output += '  systemdunitdir: ' + systemd_system_unit_dir + '\n'
+output += '  systemdunitdir: ' + systemd_systemdsystemunitdir + '\n'
 output += '  nmbinary: ' + nm_pkgsbindir + '\n'
 output += '  nmconfdir: ' + nm_pkgconfdir + '\n'
 output += '  nmlibdir: ' + nm_pkglibdir + '\n'

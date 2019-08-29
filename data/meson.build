@@ -13,7 +13,7 @@ configure_file(
   configuration: data_conf,
 )
 
-if install_systemd_unit_dir
+if install_systemdunitdir
   services = [
     'NetworkManager-dispatcher.service.in',
     'NetworkManager.service.in',
@@ -29,7 +29,7 @@ if install_systemd_unit_dir
     configure_file(
       input: service,
       output: '@BASENAME@',
-      install_dir: systemd_system_unit_dir,
+      install_dir: systemd_systemdsystemunitdir,
       configuration: data_conf,
     )
   endforeach
@@ -37,12 +37,12 @@ if install_systemd_unit_dir
   if enable_ovs
     install_data(
       'NetworkManager-ovs.conf',
-      install_dir: join_paths(systemd_system_unit_dir, 'NetworkManager.service.d'),
+      install_dir: join_paths(systemd_systemdsystemunitdir, 'NetworkManager.service.d'),
     )
   endif
 endif
 
-if install_udev_dir
+if install_udevdir
   data = files(
     '84-nm-drivers.rules',
     '85-nm-unmanaged.rules',
@@ -51,7 +51,7 @@ if install_udev_dir
 
   install_data(
     data,
-    install_dir: join_paths(udev_dir, 'rules.d'),
+    install_dir: join_paths(udev_udevdir, 'rules.d'),
   )
 endif
 
@@ -70,6 +70,6 @@ if enable_polkit
     output: '@BASENAME@',
     command: intltool_xml_cmd,
     install: true,
-    install_dir: polkit_dir,
+    install_dir: polkit_gobject_policydir,
   )
 endif
