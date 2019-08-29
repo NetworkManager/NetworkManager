@@ -970,16 +970,17 @@ stderr: 54 bytes
 Błąd: nieprawidłowy dodatkowy parametr „eth0”.
 
 <<<
-size: 3621
+size: 3703
 location: clients/tests/test-client.py:test_003()/35
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
-stdout: 3485 bytes
+stdout: 3567 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -1039,16 +1040,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3657
+size: 3739
 location: clients/tests/test-client.py:test_003()/36
 cmd: $NMCLI -f ALL dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3511 bytes
+stdout: 3593 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -1108,16 +1110,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2314
+size: 2374
 location: clients/tests/test-client.py:test_003()/37
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: C
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -1177,16 +1180,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2324
+size: 2384
 location: clients/tests/test-client.py:test_003()/38
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -1902,16 +1906,17 @@ stderr: 54 bytes
 Błąd: nieprawidłowy dodatkowy parametr „eth0”.
 
 <<<
-size: 3621
+size: 3703
 location: clients/tests/test-client.py:test_003()/60
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
-stdout: 3485 bytes
+stdout: 3567 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -1971,16 +1976,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3657
+size: 3739
 location: clients/tests/test-client.py:test_003()/61
 cmd: $NMCLI -f ALL dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3511 bytes
+stdout: 3593 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -2040,16 +2046,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2314
+size: 2374
 location: clients/tests/test-client.py:test_003()/62
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: C
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -2109,16 +2116,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2324
+size: 2384
 location: clients/tests/test-client.py:test_003()/63
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -2704,16 +2712,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3621
+size: 3703
 location: clients/tests/test-client.py:test_003()/72
 cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3485 bytes
+stdout: 3567 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -2773,16 +2782,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3657
+size: 3739
 location: clients/tests/test-client.py:test_003()/73
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3511 bytes
+stdout: 3593 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -3368,16 +3378,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3633
+size: 3715
 location: clients/tests/test-client.py:test_003()/82
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3485 bytes
+stdout: 3567 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -3437,16 +3448,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3669
+size: 3751
 location: clients/tests/test-client.py:test_003()/83
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3511 bytes
+stdout: 3593 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -4104,12 +4116,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4561
+size: 4643
 location: clients/tests/test-client.py:test_003()/92
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4416 bytes
+stdout: 4498 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -4117,6 +4129,7 @@ stdout: 4416 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -4185,12 +4198,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4603
+size: 4685
 location: clients/tests/test-client.py:test_003()/93
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4448 bytes
+stdout: 4530 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -4198,6 +4211,7 @@ stdout: 4448 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -4864,12 +4878,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4574
+size: 4656
 location: clients/tests/test-client.py:test_003()/102
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4416 bytes
+stdout: 4498 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -4877,6 +4891,7 @@ stdout: 4416 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -4945,12 +4960,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4616
+size: 4698
 location: clients/tests/test-client.py:test_003()/103
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4448 bytes
+stdout: 4530 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -4958,6 +4973,7 @@ stdout: 4448 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -5548,16 +5564,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2320
+size: 2380
 location: clients/tests/test-client.py:test_003()/112
 cmd: $NMCLI --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -5617,16 +5634,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2330
+size: 2390
 location: clients/tests/test-client.py:test_003()/113
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -6208,16 +6226,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2332
+size: 2392
 location: clients/tests/test-client.py:test_003()/122
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -6277,16 +6296,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2342
+size: 2402
 location: clients/tests/test-client.py:test_003()/123
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -6520,15 +6540,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 3050
+size: 3136
 location: clients/tests/test-client.py:test_003()/132
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2898 bytes
+stdout: 2984 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
@@ -6555,15 +6575,15 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 3081
+size: 3167
 location: clients/tests/test-client.py:test_003()/133
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2919 bytes
+stdout: 3005 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
@@ -6764,15 +6784,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 3062
+size: 3148
 location: clients/tests/test-client.py:test_003()/142
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2898 bytes
+stdout: 2984 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
@@ -6799,15 +6819,15 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 3093
+size: 3179
 location: clients/tests/test-client.py:test_003()/143
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2919 bytes
+stdout: 3005 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
@@ -7080,19 +7100,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4589
+size: 4718
 location: clients/tests/test-client.py:test_003()/152
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4428 bytes
+stdout: 4557 bytes
 >>>
 =========================
   Device details (eth0)
 =========================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -7127,19 +7147,19 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 4657
+size: 4786
 location: clients/tests/test-client.py:test_003()/153
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4486 bytes
+stdout: 4615 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
 ==================================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -7420,19 +7440,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4601
+size: 4730
 location: clients/tests/test-client.py:test_003()/162
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4428 bytes
+stdout: 4557 bytes
 >>>
 =========================
   Device details (eth0)
 =========================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -7467,19 +7487,19 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 4669
+size: 4798
 location: clients/tests/test-client.py:test_003()/163
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4486 bytes
+stdout: 4615 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
 ==================================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -7632,14 +7652,14 @@ proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1398
+size: 1440
 location: clients/tests/test-client.py:test_003()/172
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1238 bytes
+stdout: 1280 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -7650,14 +7670,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1408
+size: 1450
 location: clients/tests/test-client.py:test_003()/173
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1238 bytes
+stdout: 1280 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -7786,14 +7806,14 @@ proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1410
+size: 1452
 location: clients/tests/test-client.py:test_003()/182
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1238 bytes
+stdout: 1280 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -7804,14 +7824,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1420
+size: 1462
 location: clients/tests/test-client.py:test_003()/183
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1238 bytes
+stdout: 1280 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -8492,16 +8512,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3639
+size: 3721
 location: clients/tests/test-client.py:test_003()/192
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3485 bytes
+stdout: 3567 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -8561,16 +8582,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3675
+size: 3757
 location: clients/tests/test-client.py:test_003()/193
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3511 bytes
+stdout: 3593 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -9300,16 +9322,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3651
+size: 3733
 location: clients/tests/test-client.py:test_003()/202
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3485 bytes
+stdout: 3567 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -9369,16 +9392,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3687
+size: 3769
 location: clients/tests/test-client.py:test_003()/203
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3511 bytes
+stdout: 3593 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -10194,12 +10218,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4579
+size: 4661
 location: clients/tests/test-client.py:test_003()/212
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4416 bytes
+stdout: 4498 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -10207,6 +10231,7 @@ stdout: 4416 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -10275,12 +10300,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4621
+size: 4703
 location: clients/tests/test-client.py:test_003()/213
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4448 bytes
+stdout: 4530 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -10288,6 +10313,7 @@ stdout: 4448 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -11112,12 +11138,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4591
+size: 4673
 location: clients/tests/test-client.py:test_003()/222
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4416 bytes
+stdout: 4498 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -11125,6 +11151,7 @@ stdout: 4416 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -11193,12 +11220,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4633
+size: 4715
 location: clients/tests/test-client.py:test_003()/223
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4448 bytes
+stdout: 4530 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -11206,6 +11233,7 @@ stdout: 4448 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -11944,16 +11972,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2337
+size: 2397
 location: clients/tests/test-client.py:test_003()/232
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -12013,16 +12042,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2347
+size: 2407
 location: clients/tests/test-client.py:test_003()/233
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -12752,16 +12782,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2349
+size: 2409
 location: clients/tests/test-client.py:test_003()/242
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -12821,16 +12852,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2359
+size: 2419
 location: clients/tests/test-client.py:test_003()/243
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2175 bytes
+stdout: 2235 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -13010,16 +13042,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3642
+size: 3724
 location: clients/tests/test-client.py:test_003()/252
 cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3505 bytes
+stdout: 3587 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13079,16 +13112,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3680
+size: 3762
 location: clients/tests/test-client.py:test_003()/253
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3615 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13268,16 +13302,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3654
+size: 3736
 location: clients/tests/test-client.py:test_003()/262
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3505 bytes
+stdout: 3587 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13337,16 +13372,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3692
+size: 3774
 location: clients/tests/test-client.py:test_003()/263
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3615 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13556,12 +13592,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4582
+size: 4664
 location: clients/tests/test-client.py:test_003()/272
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4436 bytes
+stdout: 4518 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -13569,6 +13605,7 @@ stdout: 4436 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13637,12 +13674,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4626
+size: 4708
 location: clients/tests/test-client.py:test_003()/273
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4470 bytes
+stdout: 4552 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13650,6 +13687,7 @@ stdout: 4470 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13868,12 +13906,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4594
+size: 4676
 location: clients/tests/test-client.py:test_003()/282
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4436 bytes
+stdout: 4518 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -13881,6 +13919,7 @@ stdout: 4436 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -13949,12 +13988,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4638
+size: 4720
 location: clients/tests/test-client.py:test_003()/283
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4470 bytes
+stdout: 4552 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13962,6 +14001,7 @@ stdout: 4470 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -14146,16 +14186,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2340
+size: 2400
 location: clients/tests/test-client.py:test_003()/292
 cmd: $NMCLI --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -14215,16 +14256,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2350
+size: 2410
 location: clients/tests/test-client.py:test_003()/293
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -14400,16 +14442,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2352
+size: 2412
 location: clients/tests/test-client.py:test_003()/302
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -14469,16 +14512,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2362
+size: 2422
 location: clients/tests/test-client.py:test_003()/303
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -14638,15 +14682,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 3090
+size: 3176
 location: clients/tests/test-client.py:test_003()/312
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2938 bytes
+stdout: 3024 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
@@ -14673,15 +14717,15 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3125
+size: 3211
 location: clients/tests/test-client.py:test_003()/313
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2963 bytes
+stdout: 3049 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
@@ -14808,15 +14852,15 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 3102
+size: 3188
 location: clients/tests/test-client.py:test_003()/322
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2938 bytes
+stdout: 3024 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
@@ -14843,15 +14887,15 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3137
+size: 3223
 location: clients/tests/test-client.py:test_003()/323
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2963 bytes
+stdout: 3049 bytes
 >>>
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
@@ -15008,19 +15052,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4649
+size: 4778
 location: clients/tests/test-client.py:test_003()/332
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4488 bytes
+stdout: 4617 bytes
 >>>
 =========================
   Device details (eth0)
 =========================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -15055,19 +15099,19 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4723
+size: 4852
 location: clients/tests/test-client.py:test_003()/333
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4552 bytes
+stdout: 4681 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
 ==================================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -15232,19 +15276,19 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4661
+size: 4790
 location: clients/tests/test-client.py:test_003()/342
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4488 bytes
+stdout: 4617 bytes
 >>>
 =========================
   Device details (eth0)
 =========================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -15279,19 +15323,19 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4735
+size: 4864
 location: clients/tests/test-client.py:test_003()/343
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4552 bytes
+stdout: 4681 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
 ==================================
-NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
+NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
@@ -15418,14 +15462,14 @@ stdout: 190 bytes
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1418
+size: 1460
 location: clients/tests/test-client.py:test_003()/352
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1258 bytes
+stdout: 1300 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -15436,14 +15480,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1428
+size: 1470
 location: clients/tests/test-client.py:test_003()/353
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1258 bytes
+stdout: 1300 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -15546,14 +15590,14 @@ stdout: 190 bytes
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1430
+size: 1472
 location: clients/tests/test-client.py:test_003()/362
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1258 bytes
+stdout: 1300 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -15564,14 +15608,14 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1440
+size: 1482
 location: clients/tests/test-client.py:test_003()/363
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1258 bytes
+stdout: 1300 bytes
 >>>
-GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
+GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
 INTERFACE-FLAGS:yes:yes:no
 WIRED-PROPERTIES:off:
@@ -15844,16 +15888,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3659
+size: 3741
 location: clients/tests/test-client.py:test_003()/372
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3505 bytes
+stdout: 3587 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -15913,16 +15958,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3697
+size: 3779
 location: clients/tests/test-client.py:test_003()/373
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3615 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -16244,16 +16290,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3671
+size: 3753
 location: clients/tests/test-client.py:test_003()/382
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3505 bytes
+stdout: 3587 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -16313,16 +16360,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3709
+size: 3791
 location: clients/tests/test-client.py:test_003()/383
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3533 bytes
+stdout: 3615 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -16686,12 +16734,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4599
+size: 4681
 location: clients/tests/test-client.py:test_003()/392
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4436 bytes
+stdout: 4518 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -16699,6 +16747,7 @@ stdout: 4436 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -16767,12 +16816,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4643
+size: 4725
 location: clients/tests/test-client.py:test_003()/393
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4470 bytes
+stdout: 4552 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -16780,6 +16829,7 @@ stdout: 4470 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -17152,12 +17202,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4611
+size: 4693
 location: clients/tests/test-client.py:test_003()/402
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4436 bytes
+stdout: 4518 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -17165,6 +17215,7 @@ stdout: 4436 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -17233,12 +17284,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4655
+size: 4737
 location: clients/tests/test-client.py:test_003()/403
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4470 bytes
+stdout: 4552 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -17246,6 +17297,7 @@ stdout: 4470 bytes
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
 GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:                         --
 GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
@@ -17576,16 +17628,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2357
+size: 2417
 location: clients/tests/test-client.py:test_003()/412
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -17645,16 +17698,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2367
+size: 2427
 location: clients/tests/test-client.py:test_003()/413
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -17976,16 +18030,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2369
+size: 2429
 location: clients/tests/test-client.py:test_003()/422
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
@@ -18045,16 +18100,17 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2379
+size: 2439
 location: clients/tests/test-client.py:test_003()/423
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2195 bytes
+stdout: 2255 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
 GENERAL.NM-TYPE:NMDeviceEthernet
+GENERAL.DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 GENERAL.VENDOR:
 GENERAL.PRODUCT:
 GENERAL.DRIVER:virtual
