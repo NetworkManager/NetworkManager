@@ -4151,11 +4151,12 @@ nm_device_create_and_realize (NMDevice *self,
 	nm_auto_nmpobj const NMPObject *plink_keep_alive = NULL;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const NMPlatformLink *plink;
+	gboolean nm_owned;
 
 	/* Must be set before device is realized */
 	plink = nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
-	priv->nm_owned = !plink || !link_type_compatible (self, plink->type, NULL, NULL);
-	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", priv->nm_owned ? "" : "not ");
+	nm_owned = !plink || !link_type_compatible (self, plink->type, NULL, NULL);
+	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", nm_owned ? "" : "not ");
 
 	plink = NULL;
 	/* Create any resources the device needs */
@@ -4167,6 +4168,8 @@ nm_device_create_and_realize (NMDevice *self,
 			plink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
 		}
 	}
+
+	priv->nm_owned = nm_owned;
 
 	realize_start_setup (self,
 	                     plink,
