@@ -179,6 +179,29 @@ add_ip_config (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfig
 	}
 }
 
+static GVariant *
+create_update_args (NMDnsDnsmasq *self,
+                    const NMGlobalDnsConfig *global_config,
+                    const CList *ip_config_lst_head,
+                    const char *hostname)
+{
+	GVariantBuilder servers;
+	const NMDnsIPConfigData *ip_data;
+
+	g_variant_builder_init (&servers, G_VARIANT_TYPE ("aas"));
+
+	if (global_config)
+		add_global_config (self, &servers, global_config);
+	else {
+		c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst)
+			add_ip_config (self, &servers, ip_data);
+	}
+
+	return g_variant_new ("(aas)", &servers);
+}
+
+/*****************************************************************************/
+
 static void
 dnsmasq_update_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
@@ -370,25 +393,16 @@ update (NMDnsPlugin *plugin,
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
-	GVariantBuilder servers;
-	const NMDnsIPConfigData *ip_data;
 
 	start_dnsmasq (self);
 
-	g_variant_builder_init (&servers, G_VARIANT_TYPE ("aas"));
-
-	if (global_config)
-		add_global_config (self, &servers, global_config);
-	else {
-		c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst)
-			add_ip_config (self, &servers, ip_data);
-	}
-
-	g_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
-	priv->set_server_ex_args = g_variant_ref_sink (g_variant_new ("(aas)", &servers));
+	nm_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
+	priv->set_server_ex_args = g_variant_ref_sink (create_update_args (self,
+	                                                                   global_config,
+	                                                                   ip_config_lst_head,
+	                                                                   hostname));
 
 	send_dnsmasq_update (self);
-
 	return TRUE;
 }
 
