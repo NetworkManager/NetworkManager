@@ -365,7 +365,8 @@ static gboolean
 update (NMDnsPlugin *plugin,
         const NMGlobalDnsConfig *global_config,
         const CList *ip_config_lst_head,
-        const char *hostname)
+        const char *hostname,
+        GError **error)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);

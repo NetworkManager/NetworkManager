@@ -338,7 +338,8 @@ static gboolean
 update (NMDnsPlugin *plugin,
         const NMGlobalDnsConfig *global_config,
         const CList *ip_config_lst_head,
-        const char *hostname)
+        const char *hostname,
+        GError **error)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
 	gs_unref_hashtable GHashTable *interfaces = NULL;

@@ -1428,13 +1428,15 @@ update_dns (NMDnsManager *self,
 		nm_dns_plugin_update (priv->sd_resolve_plugin,
 		                      global_config,
 		                      _ip_config_lst_head (self),
-		                      priv->hostname);
+		                      priv->hostname,
+		                      NULL);
 	}
 
 	/* Let any plugins do their thing first */
 	if (priv->plugin) {
 		NMDnsPlugin *plugin = priv->plugin;
 		const char *plugin_name = nm_dns_plugin_get_name (plugin);
+		gs_free_error GError *plugin_error = NULL;
 
 		if (nm_dns_plugin_is_caching (plugin)) {
 			if (no_caching) {
@@ -1449,8 +1451,9 @@ update_dns (NMDnsManager *self,
 		if (!nm_dns_plugin_update (plugin,
 		                           global_config,
 		                           _ip_config_lst_head (self),
-		                           priv->hostname)) {
-			_LOGW ("update-dns: plugin %s update failed", plugin_name);
+		                           priv->hostname,
+		                           &plugin_error)) {
+			_LOGW ("update-dns: plugin %s update failed: %s", plugin_name, plugin_error->message);
 
 			/* If the plugin failed to update, we shouldn't write out a local
 			 * caching DNS configuration to resolv.conf.

@@ -27,9 +27,11 @@ static gboolean
 update (NMDnsPlugin *plugin,
         const NMGlobalDnsConfig *global_config,
         const CList *ip_config_lst_head,
-        const char *hostname)
+        const char *hostname,
+        GError **error)
 {
 	char *argv[] = { DNSSEC_TRIGGER_PATH, "--async", "--update", NULL };
+	gs_free_error GError *local = NULL;
 	int status;
 
 	/* TODO: We currently call a script installed with the dnssec-trigger
@@ -41,9 +43,19 @@ update (NMDnsPlugin *plugin,
 	 * without calling custom scripts. The dnssec-trigger functionality
 	 * may be eventually merged into NetworkManager.
 	 */
-	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, NULL))
+	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &local)) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    "error spawning dns-trigger: %s",
+		                    local->message);
 		return FALSE;
-	return (status == 0);
+	}
+	if (status != 0) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    "dns-trigger exited with error code %d",
+		                    status);
+		return FALSE;
+	}
+	return TRUE;
 }
 
 /*****************************************************************************/
