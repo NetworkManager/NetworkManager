@@ -459,25 +459,9 @@ modem_prepare_result (NMModem *modem,
 	g_return_if_fail (state == NM_DEVICE_STATE_CONFIG || state == NM_DEVICE_STATE_NEED_AUTH);
 
 	if (success) {
-		NMActRequest *req;
-		NMActStageReturn ret;
-		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+		nm_modem_act_stage2_config (modem);
 
-		req = nm_device_get_act_request (device);
-		g_return_if_fail (req);
-
-		ret = nm_modem_act_stage2_config (modem, req, &failure_reason);
-		switch (ret) {
-		case NM_ACT_STAGE_RETURN_POSTPONE:
-			break;
-		case NM_ACT_STAGE_RETURN_SUCCESS:
-			nm_device_activate_schedule_stage3_ip_config_start (device);
-			break;
-		case NM_ACT_STAGE_RETURN_FAILURE:
-		default:
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, failure_reason);
-			break;
-		}
+		nm_device_activate_schedule_stage3_ip_config_start (device);
 	} else {
 		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
 			/* If the connect failed because the SIM PIN was wrong don't allow

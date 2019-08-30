@@ -1063,10 +1063,8 @@ nm_modem_act_stage1_prepare (NMModem *self,
 
 /*****************************************************************************/
 
-NMActStageReturn
-nm_modem_act_stage2_config (NMModem *self,
-                            NMActRequest *req,
-                            NMDeviceStateReason *out_failure_reason)
+void
+nm_modem_act_stage2_config (NMModem *self)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 
@@ -1074,8 +1072,6 @@ nm_modem_act_stage2_config (NMModem *self,
 	 * already if we get here.
 	 */
 	priv->secrets_tries = 0;
-
-	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 /*****************************************************************************/

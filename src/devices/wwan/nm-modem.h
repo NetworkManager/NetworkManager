@@ -213,9 +213,7 @@ NMActStageReturn nm_modem_act_stage1_prepare (NMModem *modem,
                                               NMActRequest *req,
                                               NMDeviceStateReason *out_failure_reason);
 
-NMActStageReturn nm_modem_act_stage2_config (NMModem *modem,
-                                             NMActRequest *req,
-                                             NMDeviceStateReason *out_failure_reason);
+void nm_modem_act_stage2_config (NMModem *modem);
 
 NMActStageReturn nm_modem_stage3_ip4_config_start (NMModem *modem,
                                                    NMDevice *device,
