@@ -19,7 +19,6 @@
 
 enum {
 	FAILED,
-	CHILD_QUIT,
 	LAST_SIGNAL,
 };
 
@@ -94,159 +93,25 @@ nm_dns_plugin_get_name (NMDnsPlugin *self)
 	return klass->plugin_name;
 }
 
-/*****************************************************************************/
-
-static void
-_clear_pidfile (NMDnsPlugin *self)
-{
-	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
-
-	if (priv->pidfile) {
-		unlink (priv->pidfile);
-		g_clear_pointer (&priv->pidfile, g_free);
-	}
-}
-
-static void
-kill_existing (const char *progname, const char *pidfile, const char *kill_match)
-{
-	long pid;
-	gs_free char *contents = NULL;
-	gs_free char *cmdline_contents = NULL;
-	guint64 start_time;
-	char proc_path[256];
-	gs_free_error GError *error = NULL;
-
-	if (!pidfile)
-		return;
-
-	if (!kill_match)
-		g_return_if_reached ();
-
-	if (!g_file_get_contents (pidfile, &contents, NULL, &error)) {
-		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
-			return;
-		goto out;
-	}
-
-	pid = _nm_utils_ascii_str_to_int64 (contents, 10, 2, INT_MAX, -1);
-	if (pid == -1)
-		goto out;
-
-	start_time = nm_utils_get_start_time_for_pid (pid, NULL, NULL);
-	if (start_time == 0)
-		goto out;
-
-	nm_sprintf_buf (proc_path, "/proc/%ld/cmdline", pid);
-	if (!g_file_get_contents (proc_path, &cmdline_contents, NULL, NULL))
-		goto out;
-
-	if (!strstr (cmdline_contents, kill_match))
-		goto out;
-
-	nm_utils_kill_process_sync (pid, start_time, SIGKILL, _NMLOG_DOMAIN,
-	                            progname ?: "<dns-process>",
-	                            0, 0, 1000);
-
-out:
-	unlink (pidfile);
-}
-
-static void
-watch_cb (GPid pid, int status, gpointer user_data)
-{
-	NMDnsPlugin *self = NM_DNS_PLUGIN (user_data);
-	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
-
-	priv->pid = 0;
-	priv->watch_id = 0;
-	g_clear_pointer (&priv->progname, g_free);
-	_clear_pidfile (self);
-
-	g_signal_emit (self, signals[CHILD_QUIT], 0, status);
-}
-
-GPid
-nm_dns_plugin_child_pid (NMDnsPlugin *self)
-{
-	NMDnsPluginPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DNS_PLUGIN (self), 0);
-
-	priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
-	return priv->pid;
-}
-
-GPid
-nm_dns_plugin_child_spawn (NMDnsPlugin *self,
-                           const char **argv,
-                           const char *pidfile,
-                           const char *kill_match)
-{
-	NMDnsPluginPrivate *priv;
-	GError *error = NULL;
-	GPid pid;
-	gs_free char *cmdline = NULL;
-	gs_free char *progname = NULL;
-
-	g_return_val_if_fail (argv && argv[0], 0);
-	g_return_val_if_fail (NM_IS_DNS_PLUGIN (self), 0);
-
-	priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
-
-	g_return_val_if_fail (!priv->pid, 0);
-	nm_assert (!priv->progname);
-	nm_assert (!priv->watch_id);
-	nm_assert (!priv->pidfile);
-
-	progname = g_path_get_basename (argv[0]);
-	kill_existing (progname, pidfile, kill_match);
-
-	_LOGI ("starting %s...", progname);
-	_LOGD ("command line: %s",
-	       (cmdline = g_strjoinv (" ", (char **) argv)));
-
-	if (!g_spawn_async (NULL, (char **) argv, NULL,
-	                   G_SPAWN_DO_NOT_REAP_CHILD,
-	                   nm_utils_setpgid, NULL,
-	                   &pid,
-	                   &error)) {
-		_LOGW ("failed to spawn %s: %s",
-		       progname, error->message);
-		g_clear_error (&error);
-		return 0;
-	}
-
-	_LOGD ("%s started with pid %d", progname, pid);
-	priv->watch_id = g_child_watch_add (pid, (GChildWatchFunc) watch_cb, self);
-	priv->pid = pid;
-	priv->progname = g_steal_pointer (&progname);
-	priv->pidfile = g_strdup (pidfile);
-
-	return pid;
-}
-
-gboolean
-nm_dns_plugin_child_kill (NMDnsPlugin *self)
-{
-	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
-
-	nm_clear_g_source (&priv->watch_id);
-	if (priv->pid) {
-		nm_utils_kill_child_sync (priv->pid, SIGTERM, _NMLOG_DOMAIN,
-		                          priv->progname ?: "<dns-process>", NULL, 1000, 0);
-		priv->pid = 0;
-		g_clear_pointer (&priv->progname, g_free);
-	}
-	_clear_pidfile (self);
-
-	return TRUE;
-}
-
 void
 nm_dns_plugin_stop (NMDnsPlugin *self)
 {
-	nm_dns_plugin_child_kill (self);
+	NMDnsPluginClass *klass;
+
+	g_return_if_fail (NM_IS_DNS_PLUGIN (self));
+
+	klass = NM_DNS_PLUGIN_GET_CLASS (self);
+	if (klass->stop)
+		klass->stop (self);
+}
+
+void
+_nm_dns_plugin_emit_failed (gpointer /* NMDnsPlugin * */ self,
+                            gboolean is_fatal)
+{
+	nm_assert (NM_IS_DNS_PLUGIN (self));
+
+	g_signal_emit (self, signals[FAILED], 0, (gboolean) (!!is_fatal));
 }
 
 /*****************************************************************************/
@@ -254,27 +119,12 @@ nm_dns_plugin_stop (NMDnsPlugin *self)
 static void
 nm_dns_plugin_init (NMDnsPlugin *self)
 {
-	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DNS_PLUGIN, NMDnsPluginPrivate);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDnsPlugin *self = NM_DNS_PLUGIN (object);
-
-	nm_dns_plugin_stop (self);
-
-	G_OBJECT_CLASS (nm_dns_plugin_parent_class)->dispose (object);
 }
 
 static void
 nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (plugin_class);
-
-	g_type_class_add_private (plugin_class, sizeof (NMDnsPluginPrivate));
-
-	object_class->dispose = dispose;
 
 	/* Emitted by the plugin and consumed by NMDnsManager when
 	 * some error happens with the nameserver subprocess.  Causes NM to fall
@@ -286,15 +136,6 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__VOID,
-	                  G_TYPE_NONE, 0);
-
-	signals[CHILD_QUIT] =
-	    g_signal_new (NM_DNS_PLUGIN_CHILD_QUIT,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDnsPluginClass, child_quit),
-	                  NULL, NULL,
-	                  g_cclosure_marshal_VOID__INT,
-	                  G_TYPE_NONE, 1, G_TYPE_INT);
+	                  g_cclosure_marshal_VOID__BOOLEAN,
+	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }

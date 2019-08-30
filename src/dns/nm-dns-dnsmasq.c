@@ -39,6 +39,10 @@ typedef struct {
 	gboolean running;
 
 	GVariant *set_server_ex_args;
+
+	GPid pid;
+	guint watch_id;
+	char *progname;
 } NMDnsDnsmasqPrivate;
 
 struct _NMDnsDnsmasq {
@@ -58,6 +62,53 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
 #define _NMLOG_DOMAIN         LOGD_DNS
 #define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "dnsmasq", __VA_ARGS__)
+
+/*****************************************************************************/
+
+static void
+kill_existing (const char *progname, const char *pidfile, const char *kill_match)
+{
+	long pid;
+	gs_free char *contents = NULL;
+	gs_free char *cmdline_contents = NULL;
+	guint64 start_time;
+	char proc_path[256];
+	gs_free_error GError *error = NULL;
+
+	if (!pidfile)
+		return;
+
+	if (!kill_match)
+		g_return_if_reached ();
+
+	if (!g_file_get_contents (pidfile, &contents, NULL, &error)) {
+		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
+			return;
+		goto out;
+	}
+
+	pid = _nm_utils_ascii_str_to_int64 (contents, 10, 2, INT_MAX, -1);
+	if (pid == -1)
+		goto out;
+
+	start_time = nm_utils_get_start_time_for_pid (pid, NULL, NULL);
+	if (start_time == 0)
+		goto out;
+
+	nm_sprintf_buf (proc_path, "/proc/%ld/cmdline", pid);
+	if (!g_file_get_contents (proc_path, &cmdline_contents, NULL, NULL))
+		goto out;
+
+	if (!strstr (cmdline_contents, kill_match))
+		goto out;
+
+	nm_utils_kill_process_sync (pid, start_time, SIGKILL, _NMLOG_DOMAIN,
+	                            progname ?: "<dns-process>",
+	                            0, 0, 1000);
+
+out:
+	unlink (pidfile);
+}
 
 /*****************************************************************************/
 
@@ -266,7 +317,7 @@ name_owner_changed (GObject    *object,
 		if (priv->running) {
 			_LOGI ("dnsmasq disappeared");
 			priv->running = FALSE;
-			g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
+			_nm_dns_plugin_emit_failed (self, FALSE);
 		} else {
 			/* The only reason for which (!priv->running) here
 			 * is that the dnsmasq process quit. We don't care
@@ -294,7 +345,7 @@ dnsmasq_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	if (!proxy) {
 		_LOGW ("failed to connect to dnsmasq via DBus: %s", error->message);
-		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
+		_nm_dns_plugin_emit_failed (self, FALSE);
 		return;
 	}
 
@@ -315,20 +366,54 @@ dnsmasq_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 static void
+watch_cb (GPid pid, int status, gpointer user_data)
+{
+	NMDnsDnsmasq *self = user_data;
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+	int err;
+
+	priv->pid = 0;
+	priv->watch_id = 0;
+	g_clear_pointer (&priv->progname, g_free);
+	(void) unlink (PIDFILE);
+
+	if (WIFEXITED (status)) {
+		err = WEXITSTATUS (status);
+		if (err) {
+			_LOGW ("dnsmasq exited with error: %s",
+			       nm_utils_dnsmasq_status_to_string (err, NULL, 0));
+		} else
+			_LOGD ("dnsmasq exited normally");
+	} else if (WIFSTOPPED (status))
+		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
+	else if (WIFSIGNALED (status))
+		_LOGW ("dnsmasq died with signal %d", WTERMSIG (status));
+	else
+		_LOGW ("dnsmasq died from an unknown cause");
+
+	priv->running = FALSE;
+
+	_nm_dns_plugin_emit_failed (self, TRUE);
+}
+
+static void
 start_dnsmasq (NMDnsDnsmasq *self)
 {
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+	gs_free_error GError *local = NULL;
 	const char *dm_binary;
 	const char *argv[15];
 	GPid pid = 0;
 	guint idx = 0;
+	gs_free char *cmdline = NULL;
+	gs_free char *progname = NULL;
 
 	if (priv->running) {
 		/* the dnsmasq process is running. Nothing to do. */
 		return;
 	}
 
-	if (nm_dns_plugin_child_pid ((NMDnsPlugin *) self) > 0) {
+	if (priv->pid > 0) {
 		/* if we already have a child process spawned, don't do
 		 * it again. */
 		return;
@@ -360,10 +445,33 @@ start_dnsmasq (NMDnsDnsmasq *self)
 	argv[idx++] = NULL;
 	nm_assert (idx <= G_N_ELEMENTS (argv));
 
-	/* And finally spawn dnsmasq */
-	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
-	if (!pid)
+	nm_assert (priv->pid == 0);
+	nm_assert (!priv->progname);
+	nm_assert (!priv->watch_id);
+
+	progname = g_path_get_basename (argv[0]);
+	kill_existing (progname, PIDFILE, "bin/dnsmasq");
+
+	_LOGI ("starting %s...", progname);
+	_LOGD ("command line: %s",
+	       (cmdline = g_strjoinv (" ", (char **) argv)));
+
+	if (!g_spawn_async (NULL,
+	                    (char **) argv,
+	                    NULL,
+	                    G_SPAWN_DO_NOT_REAP_CHILD,
+	                    nm_utils_setpgid,
+	                    NULL,
+	                    &pid,
+	                    &local)) {
+		_LOGW ("failed to spawn dnsmasq: %s", local->message);
 		return;
+	}
+
+	_LOGD ("%s started with pid %d", progname, pid);
+	priv->watch_id = g_child_watch_add (pid, (GChildWatchFunc) watch_cb, self);
+	priv->pid = pid;
+	priv->progname = g_steal_pointer (&progname);
 
 	if (   priv->dnsmasq
 	    || priv->dnsmasq_cancellable) {
@@ -409,33 +517,26 @@ update (NMDnsPlugin *plugin,
 /*****************************************************************************/
 
 static void
-child_quit (NMDnsPlugin *plugin, int status)
+kill_child (NMDnsDnsmasq *self)
+{
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->watch_id);
+	if (priv->pid) {
+		nm_utils_kill_child_sync (priv->pid, SIGTERM, _NMLOG_DOMAIN,
+		                          priv->progname ?: "<dns-process>", NULL, 1000, 0);
+		priv->pid = 0;
+		g_clear_pointer (&priv->progname, g_free);
+	}
+	(void) unlink (PIDFILE);
+}
+
+static void
+stop (NMDnsPlugin *plugin)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
-	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
-	gboolean failed = TRUE;
-	int err;
 
-	if (WIFEXITED (status)) {
-		err = WEXITSTATUS (status);
-		if (err) {
-			_LOGW ("dnsmasq exited with error: %s",
-			       nm_utils_dnsmasq_status_to_string (err, NULL, 0));
-		} else {
-			_LOGD ("dnsmasq exited normally");
-			failed = FALSE;
-		}
-	} else if (WIFSTOPPED (status))
-		_LOGW ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
-	else if (WIFSIGNALED (status))
-		_LOGW ("dnsmasq died with signal %d", WTERMSIG (status));
-	else
-		_LOGW ("dnsmasq died from an unknown cause");
-
-	priv->running = FALSE;
-
-	if (failed)
-		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
+	kill_child (self);
 }
 
 /*****************************************************************************/
@@ -454,7 +555,10 @@ nm_dns_dnsmasq_new (void)
 static void
 dispose (GObject *object)
 {
-	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE ((NMDnsDnsmasq *) object);
+	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (object);
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+
+	kill_child (self);
 
 	nm_clear_g_cancellable (&priv->dnsmasq_cancellable);
 	nm_clear_g_cancellable (&priv->update_cancellable);
@@ -476,6 +580,6 @@ nm_dns_dnsmasq_class_init (NMDnsDnsmasqClass *dns_class)
 
 	plugin_class->plugin_name = "dnsmasq";
 	plugin_class->is_caching  = TRUE;
-	plugin_class->child_quit  = child_quit;
+	plugin_class->stop        = stop;
 	plugin_class->update      = update;
 }
