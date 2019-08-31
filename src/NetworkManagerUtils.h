@@ -75,6 +75,10 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform (const NMIPRoutingRule *ru
 #define NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG    500
 
 typedef enum {
+	/* There is no watched_obj argument, and the shutdown is delayed until the user
+	 * explicitly calls unregister on the returned handle. */
+	NM_SHUTDOWN_WAIT_TYPE_HANDLE,
+
 	/* The watched_obj argument is a GObject, and shutdown is delayed until the object
 	 * gets destroyed (or unregistered). */
 	NM_SHUTDOWN_WAIT_TYPE_OBJECT,
@@ -101,6 +105,15 @@ nm_shutdown_wait_obj_register_object_full (gpointer watched_obj,
 }
 
 #define nm_shutdown_wait_obj_register_object(watched_obj, msg_reason) nm_shutdown_wait_obj_register_object_full((watched_obj), (""msg_reason""), FALSE)
+
+static inline NMShutdownWaitObjHandle *
+nm_shutdown_wait_obj_register_handle_full (char *msg_reason,
+                                           gboolean free_msg_reason)
+{
+	return nm_shutdown_wait_obj_register_full (NULL, NM_SHUTDOWN_WAIT_TYPE_HANDLE, msg_reason, free_msg_reason);
+}
+
+#define nm_shutdown_wait_obj_register_handle(msg_reason) nm_shutdown_wait_obj_register_handle_full((""msg_reason""), FALSE)
 
 static inline NMShutdownWaitObjHandle *
 nm_shutdown_wait_obj_register_cancellable_full (GCancellable *watched_obj,

@@ -981,6 +981,7 @@ _shutdown_waitobj_cb (gpointer user_data,
  * nm_shutdown_wait_obj_register_full:
  * @watched_obj: the object to watch. Takes a weak reference on the object
  *   to be notified when it gets destroyed.
+ *   If wait_type is %NM_SHUTDOWN_WAIT_TYPE_HANDLE, this must be %NULL.
  * @wait_type: whether @watched_obj is just a plain GObject or a GCancellable
  *   that should be cancelled.
  * @msg_reason: a reason message, for debugging and logging purposes.
@@ -1029,6 +1030,8 @@ nm_shutdown_wait_obj_register_full (gpointer watched_obj,
 		g_return_val_if_fail (G_IS_OBJECT (watched_obj), NULL);
 	else if (wait_type == NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE)
 		g_return_val_if_fail (G_IS_CANCELLABLE (watched_obj), NULL);
+	else if (wait_type == NM_SHUTDOWN_WAIT_TYPE_HANDLE)
+		g_return_val_if_fail (!watched_obj, NULL);
 	else
 		g_return_val_if_reached (NULL);
 
@@ -1046,7 +1049,8 @@ nm_shutdown_wait_obj_register_full (gpointer watched_obj,
 		.is_cancellable  = (wait_type == NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE),
 	};
 	c_list_link_tail (&_shutdown_waitobj_lst_head, &handle->lst);
-	g_object_weak_ref (watched_obj, _shutdown_waitobj_cb, handle);
+	if (watched_obj)
+		g_object_weak_ref (watched_obj, _shutdown_waitobj_cb, handle);
 	return handle;
 }
 
@@ -1055,10 +1059,11 @@ nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle)
 {
 	g_return_if_fail (handle);
 
-	nm_assert (G_IS_OBJECT (handle->watched_obj));
+	nm_assert (!handle->watched_obj || G_IS_OBJECT (handle->watched_obj));
 	nm_assert (nm_c_list_contains_entry (&_shutdown_waitobj_lst_head, handle, lst));
 
-	g_object_weak_unref (handle->watched_obj, _shutdown_waitobj_cb, handle);
+	if (handle->watched_obj)
+		g_object_weak_unref (handle->watched_obj, _shutdown_waitobj_cb, handle);
 	_shutdown_waitobj_unregister (handle);
 }
 
