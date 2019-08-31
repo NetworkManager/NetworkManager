@@ -32,7 +32,7 @@ typedef struct _NMDnsPluginPrivate {
 	char *pidfile;
 } NMDnsPluginPrivate;
 
-G_DEFINE_TYPE_EXTENDED (NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
+G_DEFINE_ABSTRACT_TYPE (NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT)
 
 #define NM_DNS_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMDnsPlugin, NM_IS_DNS_PLUGIN)
 
