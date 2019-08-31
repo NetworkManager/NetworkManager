@@ -1154,6 +1154,15 @@ nm_utils_dbus_normalize_object_path (const char *path)
 
 guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);
 
+static inline gboolean
+nm_utils_process_state_is_dead (char pstate)
+{
+	/* "/proc/[pid]/stat" returns a state as the 3rd fields (see `man 5 proc`).
+	 * Some of these states indicate the the process is effectively dead (or a zombie).
+	 */
+	return NM_IN_SET (pstate, 'Z', 'x', 'X');
+}
+
 /*****************************************************************************/
 
 gpointer _nm_utils_user_data_pack (int nargs, gconstpointer *args);

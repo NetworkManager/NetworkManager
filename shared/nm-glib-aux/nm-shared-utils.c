@@ -2681,7 +2681,9 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 
 	g_return_val_if_fail (pid > 0, 0);
 
-	nm_sprintf_buf (filename, "/proc/%"G_GUINT64_FORMAT"/stat", (guint64) pid);
+	G_STATIC_ASSERT_EXPR (sizeof (GPid) >= sizeof (pid_t));
+
+	nm_sprintf_buf (filename, "/proc/%"G_PID_FORMAT"/stat", (GPid) pid);
 
 	if (!g_file_get_contents (filename, &contents, &length, NULL))
 		goto fail;
