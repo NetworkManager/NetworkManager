@@ -46,18 +46,6 @@ update (NMDnsPlugin *plugin,
 	return (status == 0);
 }
 
-static gboolean
-is_caching (NMDnsPlugin *plugin)
-{
-	return TRUE;
-}
-
-static const char *
-get_name (NMDnsPlugin *plugin)
-{
-	return "unbound";
-}
-
 /*****************************************************************************/
 
 static void
@@ -76,7 +64,7 @@ nm_dns_unbound_class_init (NMDnsUnboundClass *klass)
 {
 	NMDnsPluginClass *plugin_class = NM_DNS_PLUGIN_CLASS (klass);
 
-	plugin_class->update = update;
-	plugin_class->is_caching = is_caching;
-	plugin_class->get_name = get_name;
+	plugin_class->plugin_name = "unbound";
+	plugin_class->is_caching  = TRUE;
+	plugin_class->update      = update;
 }

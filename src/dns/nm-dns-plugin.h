@@ -2,8 +2,8 @@
 /* Copyright (C) 2010 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_DNS_PLUGIN_H__
-#define __NETWORKMANAGER_DNS_PLUGIN_H__
+#ifndef __NM_DNS_PLUGIN_H__
+#define __NM_DNS_PLUGIN_H__
 
 #include "nm-dns-manager.h"
 #include "nm-config-data.h"
@@ -28,8 +28,6 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* Methods */
-
 	/* Called when DNS information is changed.  'configs' is an array
 	 * of pointers to NMDnsIPConfigData sorted by priority.
 	 * 'global_config' is the optional global DNS
@@ -40,16 +38,7 @@ typedef struct {
 	                    const CList *ip_config_lst_head,
 	                    const char *hostname);
 
-	/* Subclasses should override and return TRUE if they start a local
-	 * caching nameserver that listens on localhost and would block any
-	 * other local caching nameserver from operating.
-	 */
-	gboolean (*is_caching) (NMDnsPlugin *self);
-
-	/* Subclasses should override this and return their plugin name */
-	const char *(*get_name) (NMDnsPlugin *self);
-
-	/* Signals */
+	const char *plugin_name;
 
 	/* Emitted by the plugin base class when the nameserver subprocess
 	 * quits.  This signal is consumed by the plugin subclasses and not
@@ -57,6 +46,13 @@ typedef struct {
 	 * by waitpid(2)) is fatal it should then emit the 'failed' signal.
 	 */
 	void (*child_quit) (NMDnsPlugin *self, int status);
+
+	/* Types should set to TRUE if they start a local caching nameserver
+	 * that listens on localhost and would block any other local caching
+	 * nameserver from operating.
+	 */
+	bool is_caching:1;
+
 } NMDnsPluginClass;
 
 GType nm_dns_plugin_get_type (void);
@@ -89,4 +85,4 @@ GPid nm_dns_plugin_child_pid (NMDnsPlugin *self);
 
 gboolean nm_dns_plugin_child_kill (NMDnsPlugin *self);
 
-#endif /* __NETWORKMANAGER_DNS_PLUGIN_H__ */
+#endif /* __NM_DNS_PLUGIN_H__ */

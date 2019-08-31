@@ -74,23 +74,22 @@ nm_dns_plugin_update (NMDnsPlugin *self,
 	                                               hostname);
 }
 
-static gboolean
-is_caching (NMDnsPlugin *self)
-{
-	return FALSE;
-}
-
 gboolean
 nm_dns_plugin_is_caching (NMDnsPlugin *self)
 {
-	return NM_DNS_PLUGIN_GET_CLASS (self)->is_caching (self);
+	return NM_DNS_PLUGIN_GET_CLASS (self)->is_caching;
 }
 
 const char *
 nm_dns_plugin_get_name (NMDnsPlugin *self)
 {
-	g_assert (NM_DNS_PLUGIN_GET_CLASS (self)->get_name);
-	return NM_DNS_PLUGIN_GET_CLASS (self)->get_name (self);
+	NMDnsPluginClass *klass;
+
+	g_return_val_if_fail (NM_IS_DNS_PLUGIN (self), NULL);
+
+	klass = NM_DNS_PLUGIN_GET_CLASS (self);
+	nm_assert (klass->plugin_name);
+	return klass->plugin_name;
 }
 
 /*****************************************************************************/
@@ -274,8 +273,6 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 	g_type_class_add_private (plugin_class, sizeof (NMDnsPluginPrivate));
 
 	object_class->dispose = dispose;
-
-	plugin_class->is_caching = is_caching;
 
 	/* Emitted by the plugin and consumed by NMDnsManager when
 	 * some error happens with the nameserver subprocess.  Causes NM to fall

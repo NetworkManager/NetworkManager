@@ -425,20 +425,6 @@ child_quit (NMDnsPlugin *plugin, int status)
 
 /*****************************************************************************/
 
-static gboolean
-is_caching (NMDnsPlugin *plugin)
-{
-	return TRUE;
-}
-
-static const char *
-get_name (NMDnsPlugin *plugin)
-{
-	return "dnsmasq";
-}
-
-/*****************************************************************************/
-
 static void
 nm_dns_dnsmasq_init (NMDnsDnsmasq *self)
 {
@@ -473,8 +459,8 @@ nm_dns_dnsmasq_class_init (NMDnsDnsmasqClass *dns_class)
 
 	object_class->dispose = dispose;
 
-	plugin_class->child_quit = child_quit;
-	plugin_class->is_caching = is_caching;
-	plugin_class->update = update;
-	plugin_class->get_name = get_name;
+	plugin_class->plugin_name = "dnsmasq";
+	plugin_class->is_caching  = TRUE;
+	plugin_class->child_quit  = child_quit;
+	plugin_class->update      = update;
 }

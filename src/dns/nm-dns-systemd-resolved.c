@@ -388,20 +388,6 @@ update (NMDnsPlugin *plugin,
 
 /*****************************************************************************/
 
-static gboolean
-is_caching (NMDnsPlugin *plugin)
-{
-	return TRUE;
-}
-
-static const char *
-get_name (NMDnsPlugin *plugin)
-{
-	return "systemd-resolved";
-}
-
-/*****************************************************************************/
-
 static void
 name_owner_changed (NMDnsSystemdResolved *self,
                     const char *owner)
@@ -553,7 +539,7 @@ nm_dns_systemd_resolved_class_init (NMDnsSystemdResolvedClass *dns_class)
 
 	object_class->dispose = dispose;
 
-	plugin_class->is_caching = is_caching;
-	plugin_class->update = update;
-	plugin_class->get_name = get_name;
+	plugin_class->plugin_name = "systemd-resolved";
+	plugin_class->is_caching  = TRUE;
+	plugin_class->update      = update;
 }
