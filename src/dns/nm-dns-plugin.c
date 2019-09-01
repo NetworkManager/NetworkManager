@@ -17,13 +17,6 @@
 
 /*****************************************************************************/
 
-enum {
-	FAILED,
-	LAST_SIGNAL,
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
 typedef struct _NMDnsPluginPrivate {
 	GPid pid;
 	guint watch_id;
@@ -105,15 +98,6 @@ nm_dns_plugin_stop (NMDnsPlugin *self)
 		klass->stop (self);
 }
 
-void
-_nm_dns_plugin_emit_failed (gpointer /* NMDnsPlugin * */ self,
-                            gboolean is_fatal)
-{
-	nm_assert (NM_IS_DNS_PLUGIN (self));
-
-	g_signal_emit (self, signals[FAILED], 0, (gboolean) (!!is_fatal));
-}
-
 /*****************************************************************************/
 
 static void
@@ -124,18 +108,4 @@ nm_dns_plugin_init (NMDnsPlugin *self)
 static void
 nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (plugin_class);
-
-	/* Emitted by the plugin and consumed by NMDnsManager when
-	 * some error happens with the nameserver subprocess.  Causes NM to fall
-	 * back to writing out a non-local-caching resolv.conf until the next
-	 * DNS update.
-	 */
-	signals[FAILED] =
-	    g_signal_new (NM_DNS_PLUGIN_FAILED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__BOOLEAN,
-	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }

@@ -15,8 +15,6 @@
 #define NM_IS_DNS_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DNS_PLUGIN))
 #define NM_DNS_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DNS_PLUGIN, NMDnsPluginClass))
 
-#define NM_DNS_PLUGIN_FAILED "failed"
-
 typedef struct {
 	GObject parent;
 } NMDnsPlugin;
@@ -60,10 +58,5 @@ gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                GError **error);
 
 void nm_dns_plugin_stop (NMDnsPlugin *self);
-
-/*****************************************************************************/
-
-void _nm_dns_plugin_emit_failed (gpointer /* NMDnsPlugin * */ self,
-                                 gboolean is_fatal);
 
 #endif /* __NM_DNS_PLUGIN_H__ */

@@ -50,10 +50,6 @@
 #define NETCONFIG_PATH "/sbin/netconfig"
 #endif
 
-#define PLUGIN_RATELIMIT_INTERVAL    30
-#define PLUGIN_RATELIMIT_BURST       5
-#define PLUGIN_RATELIMIT_DELAY       300
-
 /*****************************************************************************/
 
 typedef enum {
@@ -1557,71 +1553,6 @@ update_dns (NMDnsManager *self,
 	return !update || result == SR_SUCCESS;
 }
 
-static void
-plugin_failed (NMDnsManager *self, NMDnsPlugin *plugin)
-{
-	GError *error = NULL;
-
-	/* Errors with non-caching plugins aren't fatal */
-	if (!nm_dns_plugin_is_caching (plugin))
-		return;
-
-	/* Disable caching until the next DNS update */
-	if (!update_dns (self, TRUE, &error)) {
-		_LOGW ("could not commit DNS changes: %s", error->message);
-		g_clear_error (&error);
-	}
-}
-
-static gboolean
-plugin_child_quit_update_dns (gpointer user_data)
-{
-	GError *error = NULL;
-	NMDnsManager *self = NM_DNS_MANAGER (user_data);
-
-	/* Let the plugin try to spawn the child again */
-	if (!update_dns (self, FALSE, &error)) {
-		_LOGW ("could not commit DNS changes: %s", error->message);
-		g_clear_error (&error);
-	}
-
-	return G_SOURCE_REMOVE;
-}
-
-static void
-plugin_failed_cb (NMDnsPlugin *plugin, gboolean is_fatal, NMDnsManager *self)
-{
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-
-	if (is_fatal) {
-		gint64 ts = nm_utils_get_monotonic_timestamp_ms ();
-
-		_LOGW ("plugin %s died unexpectedly", nm_dns_plugin_get_name (plugin));
-
-		if (   !priv->plugin_ratelimit.ts
-		    || (ts - priv->plugin_ratelimit.ts) / 1000 > PLUGIN_RATELIMIT_INTERVAL) {
-			priv->plugin_ratelimit.ts = ts;
-			priv->plugin_ratelimit.num_restarts = 0;
-		} else {
-			priv->plugin_ratelimit.num_restarts++;
-			if (priv->plugin_ratelimit.num_restarts > PLUGIN_RATELIMIT_BURST) {
-				plugin_failed (self, plugin);
-				_LOGW ("plugin %s child respawning too fast, delaying update for %u seconds",
-				        nm_dns_plugin_get_name (plugin), PLUGIN_RATELIMIT_DELAY);
-				priv->plugin_ratelimit.timer = g_timeout_add_seconds (PLUGIN_RATELIMIT_DELAY,
-				                                                      plugin_child_quit_update_dns,
-				                                                      self);
-				return;
-			}
-		}
-
-		plugin_child_quit_update_dns (self);
-		return;
-	}
-
-	plugin_failed (self, plugin);
-}
-
 /*****************************************************************************/
 
 static void
@@ -1856,7 +1787,6 @@ _clear_plugin (NMDnsManager *self)
 	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 
 	if (priv->plugin) {
-		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed_cb, self);
 		nm_dns_plugin_stop (priv->plugin);
 		g_clear_object (&priv->plugin);
 		return TRUE;
@@ -2078,10 +2008,6 @@ again:
 		}
 	} else if (nm_clear_g_object (&priv->sd_resolve_plugin))
 		systemd_resolved_changed = TRUE;
-
-	if (   plugin_changed
-	    && priv->plugin)
-		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed_cb), self);
 
 	g_object_freeze_notify (G_OBJECT (self));
 

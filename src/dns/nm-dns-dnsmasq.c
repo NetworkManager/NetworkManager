@@ -31,6 +31,9 @@
 #define DNSMASQ_DBUS_SERVICE "org.freedesktop.NetworkManager.dnsmasq"
 #define DNSMASQ_DBUS_PATH    "/uk/org/thekelleys/dnsmasq"
 
+#define RATELIMIT_INTERVAL_MSEC    30000
+#define RATELIMIT_BURST            5
+
 #define _NMLOG_DOMAIN      LOGD_DNS
 
 /*****************************************************************************/
@@ -647,10 +650,18 @@ typedef struct {
 
 	char *name_owner;
 
+	gint64 burst_start_at;
+
 	GPid process_pid;
 
 	guint name_owner_changed_id;
 	guint main_timeout_id;
+
+	guint burst_retry_timeout_id;
+
+	guint8 burst_count;
+
+	bool is_stopped:1;
 
 } NMDnsDnsmasqPrivate;
 
@@ -671,6 +682,10 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
 #undef _NMLOG
 #define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "dnsmasq", __VA_ARGS__)
+
+/*****************************************************************************/
+
+static gboolean start_dnsmasq (NMDnsDnsmasq *self, gboolean force_start, GError **error);
 
 /*****************************************************************************/
 
@@ -839,30 +854,27 @@ send_dnsmasq_update (NMDnsDnsmasq *self)
 {
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 
-	if (!priv->set_server_ex_args)
-		return;
+	if (   !priv->name_owner
+	    || !priv->set_server_ex_args)
+	    return;
 
-	if (priv->name_owner) {
-		_LOGD ("trying to update dnsmasq nameservers");
+	_LOGD ("trying to update dnsmasq nameservers");
 
-		nm_clear_g_cancellable (&priv->update_cancellable);
-		priv->update_cancellable = g_cancellable_new ();
+	nm_clear_g_cancellable (&priv->update_cancellable);
+	priv->update_cancellable = g_cancellable_new ();
 
-		g_dbus_connection_call (priv->dbus_connection,
-		                        priv->name_owner,
-		                        DNSMASQ_DBUS_PATH,
-		                        DNSMASQ_DBUS_SERVICE,
-		                        "SetServersEx",
-		                        priv->set_server_ex_args,
-		                        NULL,
-		                        G_DBUS_CALL_FLAGS_NO_AUTO_START,
-		                        20000,
-		                        priv->update_cancellable,
-		                        dnsmasq_update_done,
-		                        self);
-		g_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
-	} else
-		_LOGD ("dnsmasq is starting... The nameserver update will be sent when dnsmasq appears");
+	g_dbus_connection_call (priv->dbus_connection,
+	                        priv->name_owner,
+	                        DNSMASQ_DBUS_PATH,
+	                        DNSMASQ_DBUS_SERVICE,
+	                        "SetServersEx",
+	                        priv->set_server_ex_args,
+	                        NULL,
+	                        G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                        20000,
+	                        priv->update_cancellable,
+	                        dnsmasq_update_done,
+	                        self);
 }
 
 /*****************************************************************************/
@@ -888,8 +900,11 @@ _main_cleanup (NMDnsDnsmasq *self, gboolean emit_failed)
 	 * process in the background. */
 	nm_clear_g_cancellable (&priv->main_cancellable);
 
-	if (emit_failed)
-		_nm_dns_plugin_emit_failed (self, TRUE);
+	if (   !priv->is_stopped
+	    && priv->burst_retry_timeout_id == 0) {
+		start_dnsmasq (self, FALSE, NULL);
+		send_dnsmasq_update (self);
+	}
 }
 
 static void
@@ -1001,10 +1016,24 @@ spawn_notify (GCancellable *cancellable,
 }
 
 static gboolean
-start_dnsmasq (NMDnsDnsmasq *self, GError **error)
+_burst_retry_timeout_cb (gpointer user_data)
+{
+	NMDnsDnsmasq *self = user_data;
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+
+	priv->burst_retry_timeout_id = 0;
+
+	start_dnsmasq (self, TRUE, NULL);
+	send_dnsmasq_update (self);
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+start_dnsmasq (NMDnsDnsmasq *self, gboolean force_start, GError **error)
 {
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 	const char *dm_binary;
+	gint64 now;
 
 	if (G_LIKELY (priv->main_cancellable)) {
 		/* The process is already running or about to be started. Nothing to do. */
@@ -1030,6 +1059,31 @@ start_dnsmasq (NMDnsDnsmasq *self, GError **error)
 		}
 	}
 
+	now = nm_utils_get_monotonic_timestamp_ms ();
+	if (   force_start
+	    || priv->burst_start_at == 0
+	    || priv->burst_start_at + RATELIMIT_INTERVAL_MSEC <= now) {
+		priv->burst_start_at = now;
+		priv->burst_count = 1;
+		nm_clear_g_source (&priv->burst_retry_timeout_id);
+		_LOGT ("rate-limit: start burst interval of %d seconds %s",
+		       RATELIMIT_INTERVAL_MSEC / 1000,
+		       force_start ? " (force)" : "");
+	} else if (priv->burst_count < RATELIMIT_BURST) {
+		nm_assert (priv->burst_retry_timeout_id == 0);
+		priv->burst_count++;
+		_LOGT ("rate-limit: %u try within burst interval of %d seconds",
+		       (guint) priv->burst_count,
+		       RATELIMIT_INTERVAL_MSEC / 1000);
+	} else {
+		if (priv->burst_retry_timeout_id == 0) {
+			_LOGW ("dnsmasq dies and gets respawned too quickly. Back off. Something is very wrong");
+			priv->burst_retry_timeout_id = g_timeout_add_seconds ((2 * RATELIMIT_INTERVAL_MSEC) / 1000, _burst_retry_timeout_cb, self);
+		} else
+			_LOGT ("rate-limit: currently rate-limited from restart");
+		return TRUE;
+	}
+
 	priv->main_timeout_id = g_timeout_add (10000,
 	                                       spawn_timeout_cb,
 	                                       self);
@@ -1053,7 +1107,7 @@ update (NMDnsPlugin *plugin,
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 
-	if (!start_dnsmasq (self, error))
+	if (!start_dnsmasq (self, TRUE, error))
 		return FALSE;
 
 	nm_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
@@ -1072,6 +1126,11 @@ static void
 stop (NMDnsPlugin *plugin)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+
+	priv->is_stopped = TRUE;
+	priv->burst_start_at = 0;
+	nm_clear_g_source (&priv->burst_retry_timeout_id);
 
 	/* Cancelling the cancellable will also terminate the
 	 * process (in the background). */
@@ -1096,6 +1155,10 @@ dispose (GObject *object)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (object);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
+
+	priv->is_stopped = TRUE;
+
+	nm_clear_g_source (&priv->burst_retry_timeout_id);
 
 	_main_cleanup (self, FALSE);
 
