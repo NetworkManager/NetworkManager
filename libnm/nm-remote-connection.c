@@ -86,11 +86,11 @@ update2_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (nmdbus_settings_connection_call_update2_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
 	                                                    &v,
 	                                                    result,
-	                                                    &error))
+	                                                    &error)) {
 		g_simple_async_result_set_op_res_gpointer (simple,
 		                                           v,
 		                                           (GDestroyNotify) g_variant_unref);
-	else {
+	} else {
 		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
 	}
