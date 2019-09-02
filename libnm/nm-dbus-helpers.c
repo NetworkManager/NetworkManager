@@ -26,12 +26,6 @@ _nm_dbus_bus_type (void)
 	return nm_bus;
 }
 
-gboolean
-_nm_dbus_is_connection_private (GDBusConnection *connection)
-{
-	return g_dbus_connection_get_unique_name (connection) == NULL;
-}
-
 /* D-Bus has an upper limit on number of Match rules and it's rather easy
  * to hit as the proxy likes to add one for each object. Let's remove the Match
  * rule the proxy added and ensure a less granular rule is present instead.

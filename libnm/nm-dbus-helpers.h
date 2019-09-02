@@ -14,8 +14,6 @@
 
 GBusType _nm_dbus_bus_type (void);
 
-gboolean         _nm_dbus_is_connection_private (GDBusConnection *connection);
-
 void             _nm_dbus_proxy_replace_match   (GDBusProxy *proxy);
 
 void _nm_dbus_bind_properties (gpointer object,
