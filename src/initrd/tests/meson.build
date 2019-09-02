@@ -1,4 +1,5 @@
 test_units = [
+  'test-dt-reader',
   'test-ibft-reader',
   'test-cmdline-reader',
 ]

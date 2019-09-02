@@ -217,6 +217,7 @@ test-*.trs
 /src/dnsmasq/tests/test-dnsmasq-utils
 /src/initrd/nm-initrd-generator
 /src/initrd/tests/test-cmdline-reader
+/src/initrd/tests/test-dt-reader
 /src/initrd/tests/test-ibft-reader
 /src/nm-iface-helper
 /src/ndisc/tests/test-ndisc-fake

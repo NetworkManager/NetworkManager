@@ -252,7 +252,8 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 		}
 	}
 
-	if (ifname == NULL && g_strcmp0 (kind, "ibft") == 0) {
+	if (ifname == NULL && (   g_strcmp0 (kind, "fw") == 0
+	                       || g_strcmp0 (kind, "ibft") == 0)) {
 		GHashTableIter iter;
 		const char *mac;
 		GHashTable *nic;
@@ -281,6 +282,13 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 
 			g_hash_table_insert (connections,
 			                     g_strdup_printf ("ibft%s", index),
+			                     connection);
+		}
+
+		connection = nmi_dt_reader_parse (sysfs_dir);
+		if (connection) {
+			g_hash_table_insert (connections,
+			                     g_strdup ("ofw"),
 			                     connection);
 		}
 

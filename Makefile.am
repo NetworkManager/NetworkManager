@@ -2312,6 +2312,7 @@ src_initrd_libnmi_core_la_CPPFLAGS = \
 src_initrd_libnmi_core_la_SOURCES = \
 	src/initrd/nm-initrd-generator.h \
 	src/initrd/nmi-cmdline-reader.c \
+	src/initrd/nmi-dt-reader.c \
 	src/initrd/nmi-ibft-reader.c \
 	$(NULL)
 
@@ -2344,6 +2345,26 @@ src_initrd_nm_initrd_generator_LDADD = \
 src_initrd_nm_initrd_generator_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
+
+check_programs += src/initrd/tests/test-dt-reader
+
+src_initrd_tests_test_dt_reader_CPPFLAGS = \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/initrd/tests\" \
+	$(src_cppflags)
+
+src_initrd_tests_test_dt_reader_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
+
+src_initrd_tests_test_dt_reader_LDADD = \
+	src/initrd/libnmi-core.la \
+	src/libNetworkManagerTest.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 check_programs += src/initrd/tests/test-ibft-reader
 
@@ -2586,6 +2607,7 @@ $(src_initrd_libnmi_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_nm_initrd_generator_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_tests_test_cmdline_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_tests_test_ibft_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_initrd_tests_test_dt_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 

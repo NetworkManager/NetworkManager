@@ -1,5 +1,6 @@
 sources = files(
   'nmi-cmdline-reader.c',
+  'nmi-dt-reader.c',
   'nmi-ibft-reader.c',
 )
 
