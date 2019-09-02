@@ -222,6 +222,7 @@ nm_dhcp_option_take_option (GHashTable *options,
 	nm_assert (options);
 	nm_assert (requests);
 	nm_assert (value);
+	nm_assert (g_utf8_validate (value, -1, NULL));
 
 	g_hash_table_insert (options,
 	                     (gpointer) nm_dhcp_option_request_string (requests, option),

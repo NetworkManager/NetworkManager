@@ -811,7 +811,7 @@ static void
 lease_parse_wpad (NDhcp4ClientLease *lease,
                   GHashTable *options)
 {
-	nm_auto_free_gstring GString *str = NULL;
+	gs_free char *wpad = NULL;
 	uint8_t *data;
 	size_t n_data;
 	int r;
@@ -820,11 +820,14 @@ lease_parse_wpad (NDhcp4ClientLease *lease,
 	if (r)
 		return;
 
-	str = g_string_new_len ((char *)data, n_data);
+	nm_utils_buf_utf8safe_escape ((char *)data, n_data, 0, &wpad);
+	if (wpad == NULL)
+		wpad = g_strndup ((char *)data, n_data);
+
 	nm_dhcp_option_add_option (options,
 	                           _nm_dhcp_option_dhcp4_options,
 	                           NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
-	                           str->str);
+	                           wpad);
 }
 
 static void
