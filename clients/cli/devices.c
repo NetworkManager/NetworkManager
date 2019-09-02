@@ -3153,7 +3153,7 @@ static void
 activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
 	NMRemoteConnection *remote_con = NM_REMOTE_CONNECTION (source_object);
-	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
+	AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	gs_unref_variant GVariant *ret = NULL;
 	GError *error = NULL;
@@ -3165,6 +3165,7 @@ activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_da
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_error_free (error);
 		quit ();
+		add_and_activate_info_free (info);
 		return;
 	}
 
@@ -3174,7 +3175,7 @@ activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_da
 	                                     info->specific_object,
 	                                     NULL,
 	                                     add_and_activate_cb,
-	                                     g_steal_pointer (&info));
+	                                     info);
 }
 
 static NMCResultCode
