@@ -373,6 +373,8 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-obj.h \
 	shared/nm-glib-aux/nm-random-utils.c \
 	shared/nm-glib-aux/nm-random-utils.h \
+	shared/nm-glib-aux/nm-ref-string.c \
+	shared/nm-glib-aux/nm-ref-string.h \
 	shared/nm-glib-aux/nm-secret-utils.c \
 	shared/nm-glib-aux/nm-secret-utils.h \
 	shared/nm-glib-aux/nm-shared-utils.c \
