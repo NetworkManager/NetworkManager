@@ -1975,4 +1975,18 @@ nm_close (int fd)
 
 #define NM_PID_T_INVAL ((pid_t) -1)
 
+/*****************************************************************************/
+
+NM_AUTO_DEFINE_FCN_VOID0 (GMutex *, _nm_auto_unlock_g_mutex, g_mutex_unlock)
+
+#define nm_auto_unlock_g_mutex nm_auto (_nm_auto_unlock_g_mutex)
+
+#define _NM_G_MUTEX_LOCKED(lock, uniq) \
+	nm_auto_unlock_g_mutex GMutex *NM_UNIQ_T(nm_lock, uniq) = (lock)
+
+#define NM_G_MUTEX_LOCKED(lock) \
+	_NM_G_MUTEX_LOCKED (lock, NM_UNIQ)
+
+/*****************************************************************************/
+
 #endif /* __NM_MACROS_INTERNAL_H__ */
