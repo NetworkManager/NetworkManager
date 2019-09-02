@@ -6596,13 +6596,13 @@ activate_stage1_device_prepare (NMDevice *self)
 	active = NM_ACTIVE_CONNECTION (priv->act_request.obj);
 	master = nm_active_connection_get_master (active);
 	if (master) {
+		if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+			_LOGD (LOGD_DEVICE, "master connection is deactivating");
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			return;
+		}
 		/* If the master connection is ready for slaves, attach ourselves */
 		if (!nm_active_connection_get_master_ready (active)) {
-			if (nm_active_connection_get_state (master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
-				_LOGD (LOGD_DEVICE, "master connection is deactivating");
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
-				return;
-			}
 			if (priv->master_ready_id == 0) {
 				_LOGD (LOGD_DEVICE, "waiting for master connection to become ready");
 				priv->master_ready_id = g_signal_connect (active,
