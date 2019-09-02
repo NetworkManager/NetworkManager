@@ -3914,12 +3914,6 @@ nm_keyfile_write (NMConnection *connection,
 				goto out_with_info_error;
 		}
 
-		if (NM_IS_SETTING_WIREGUARD (setting)) {
-			_write_setting_wireguard (setting, &info);
-			if (info.error)
-				goto out_with_info_error;
-		}
-
 		setting_alias = nm_keyfile_plugin_get_alias_for_setting_name (setting_name);
 		if (   (   setting_alias
 		        && g_key_file_has_group (info.keyfile, setting_alias))
@@ -3930,6 +3924,12 @@ nm_keyfile_write (NMConnection *connection,
 			 * a dummy key. */
 			g_key_file_set_value  (info.keyfile, setting_alias ?: setting_name, ".X", "1");
 			g_key_file_remove_key (info.keyfile, setting_alias ?: setting_name, ".X", NULL);
+		}
+
+		if (NM_IS_SETTING_WIREGUARD (setting)) {
+			_write_setting_wireguard (setting, &info);
+			if (info.error)
+				goto out_with_info_error;
 		}
 
 		nm_assert (!info.error);
