@@ -853,13 +853,10 @@ lease_parse_private_options (NDhcp4ClientLease *lease,
 			continue;
 
 		option_string = nm_utils_bin2hexstr_full (data, n_data, ':', FALSE, NULL);
-		if (options) {
-			nm_dhcp_option_take_option (options,
-			                            _nm_dhcp_option_dhcp4_options,
-			                            i,
-			                            g_steal_pointer (&option_string));
-		}
-
+		nm_dhcp_option_take_option (options,
+		                            _nm_dhcp_option_dhcp4_options,
+		                            i,
+		                            g_steal_pointer (&option_string));
 	}
 }
 
@@ -879,7 +876,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	g_return_val_if_fail (lease != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
-	options = out_options ? nm_dhcp_option_create_options_dict () : NULL;
+	options = nm_dhcp_option_create_options_dict ();
 
 	if (!lease_parse_address (lease, ip4_config, options, error))
 		return NULL;
