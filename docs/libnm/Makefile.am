@@ -18,8 +18,10 @@ DOC_SOURCE_DIR= \
 	$(top_srcdir)/libnm \
 	$(top_builddir)/libnm
 
+decorators := $(shell $(top_srcdir)/tools/decorators.sh $(top_srcdir)/libnm-core/nm-version.h)
+
 # Extra options to supply to gtkdoc-scan.
-SCAN_OPTIONS=--rebuild-types --rebuild-sections
+SCAN_OPTIONS=--rebuild-types --rebuild-sections --ignore-decorators "$(decorators)"
 
 # Extra options to supply to gtkdoc-mkdb.
 MKDB_OPTIONS=--sgml-mode --output-format=xml
