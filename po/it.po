@@ -4407,11 +4407,11 @@ msgstr "La connessione di rete di base è stata interrotta"
 
 #: ../clients/common/nm-client-utils.c:369
 msgid "The VPN service stopped unexpectedly"
-msgstr "Ll servizio VPN è terminato inaspettatamente"
+msgstr "Il servizio VPN è terminato inaspettatamente"
 
 #: ../clients/common/nm-client-utils.c:370
 msgid "The VPN service returned invalid configuration"
-msgstr "Ll servizio VPN ha restituito una configurazione non valida"
+msgstr "Il servizio VPN ha restituito una configurazione non valida"
 
 #: ../clients/common/nm-client-utils.c:371
 msgid "The connection attempt timed out"
