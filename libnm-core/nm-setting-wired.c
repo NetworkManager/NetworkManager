@@ -1237,7 +1237,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	/**
 	 * NMSettingWired:speed:
 	 *
-	 * When a value grater than 0 is set, configures the device to use
+	 * When a value greater than 0 is set, configures the device to use
 	 * the specified speed. If "auto-negotiate" is "yes" the specified
 	 * speed will be the only one advertised during link negotiation:
 	 * this works only for BASE-T 802.3 specifications and is useful for
