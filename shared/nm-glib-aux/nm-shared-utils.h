@@ -89,6 +89,16 @@ nm_utils_addr_family_to_size (int addr_family)
 	g_return_val_if_reached (0);
 }
 
+static inline int
+nm_utils_addr_family_from_size (gsize len)
+{
+	switch (len) {
+	case sizeof (in_addr_t):       return AF_INET;
+	case sizeof (struct in6_addr): return AF_INET6;
+	}
+	return AF_UNSPEC;
+}
+
 #define nm_assert_addr_family(addr_family) \
 	nm_assert (NM_IN_SET ((addr_family), AF_INET, AF_INET6))
 
