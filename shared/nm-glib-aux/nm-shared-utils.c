@@ -683,11 +683,80 @@ nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
+static gboolean
+_parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
+{
+	gs_free char *s_free = NULL;
+	struct in_addr a1;
+	guint8 bin[sizeof (a1)];
+	char *s;
+	int i;
+
+	if (inet_aton (text, &a1) != 1)
+		return FALSE;
+
+	/* OK, inet_aton() accepted the format. That's good, because we want
+	 * to accept IPv4 addresses in octal format, like 255.255.000.000.
+	 * That's what "legacy" means here. inet_pton() doesn't accept those.
+	 *
+	 * But inet_aton() also ignores trailing garbage and formats with fewer than
+	 * 4 digits. That is just too crazy and we don't do that. Perform additional checks
+	 * and reject some forms that inet_aton() accepted.
+	 *
+	 * Note that we still should (of course) accept everything that inet_pton()
+	 * accepts. However this code never gets called if inet_pton() succeeds
+	 * (see below, aside the assertion code). */
+
+	if (NM_STRCHAR_ANY (text, ch, (   !(ch >= '0' && ch <= '9')
+	                               && !NM_IN_SET (ch, '.', 'x')))) {
+		/* We only accepts '.', digits, and 'x' for "0x". */
+		return FALSE;
+	}
+
+	s = nm_memdup_maybe_a (300, text, strlen (text) + 1, &s_free);
+
+	for (i = 0; i < G_N_ELEMENTS (bin); i++) {
+		char *current_token = s;
+		gint32 v;
+
+		s = strchr (s, '.');
+		if (s) {
+			s[0] = '\0';
+			s++;
+		}
+
+		if ((i == G_N_ELEMENTS (bin) - 1) != (s == NULL)) {
+			/* Exactly for the last digit, we expect to have no more following token.
+			 * But this isn't the case. Abort. */
+			return FALSE;
+		}
+
+		v = _nm_utils_ascii_str_to_int64 (current_token, 0, 0, 0xFF, -1);
+		if (v == -1) {
+			/* we do accept octal and hex (even with leading "0x"). But something
+			 * about this token is wrong. */
+			return FALSE;
+		}
+
+		bin[i] = v;
+	}
+
+	if (memcmp (bin, &a1, sizeof (bin)) != 0) {
+		/* our parsing did not agree with what inet_aton() gave. Something
+		 * is wrong. Abort. */
+		return FALSE;
+	}
+
+	*out_addr = a1.s_addr;
+	return TRUE;
+}
+
 gboolean
-nm_utils_parse_inaddr_bin (int addr_family,
-                           const char *text,
-                           int *out_addr_family,
-                           gpointer out_addr)
+nm_utils_parse_inaddr_bin_full (int addr_family,
+                                gboolean accept_legacy,
+                                const char *text,
+                                int *out_addr_family,
+                                gpointer out_addr)
 {
 	NMIPAddr addrbin;
 
@@ -699,8 +768,26 @@ nm_utils_parse_inaddr_bin (int addr_family,
 	} else
 		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
 
-	if (inet_pton (addr_family, text, &addrbin) != 1)
-		return FALSE;
+	if (inet_pton (addr_family, text, &addrbin) != 1) {
+		if (   accept_legacy
+		    && addr_family == AF_INET
+		    && _parse_legacy_addr4 (text, &addrbin.addr4)) {
+			/* The address is in some legacy format which inet_aton() accepts, but not inet_pton().
+			 * Most likely octal digits (leading zeros). We accept the address. */
+		} else
+			return FALSE;
+	}
+
+#if NM_MORE_ASSERTS > 10
+	if (addr_family == AF_INET) {
+		in_addr_t a;
+
+		/* The legacy parser should accept everything that inet_pton() accepts too. Meaning,
+		 * it should strictly parse *more* formats. And of course, parse it the same way. */
+		nm_assert (_parse_legacy_addr4 (text, &a));
+		nm_assert (addrbin.addr4 == a);
+	}
+#endif
 
 	NM_SET_OUT (out_addr_family, addr_family);
 	if (out_addr)

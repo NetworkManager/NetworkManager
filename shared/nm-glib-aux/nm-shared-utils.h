@@ -542,10 +542,19 @@ gboolean nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
-gboolean nm_utils_parse_inaddr_bin  (int addr_family,
-                                     const char *text,
-                                     int *out_addr_family,
-                                     gpointer out_addr);
+gboolean nm_utils_parse_inaddr_bin_full (int addr_family,
+                                         gboolean accept_legacy,
+                                         const char *text,
+                                         int *out_addr_family,
+                                         gpointer out_addr);
+static inline gboolean
+nm_utils_parse_inaddr_bin (int addr_family,
+                           const char *text,
+                           int *out_addr_family,
+                           gpointer out_addr)
+{
+	return nm_utils_parse_inaddr_bin_full (addr_family, FALSE, text, out_addr_family, out_addr);
+}
 
 gboolean nm_utils_parse_inaddr (int addr_family,
                                 const char *text,
