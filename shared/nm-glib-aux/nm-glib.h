@@ -556,6 +556,17 @@ _nm_g_value_unset (GValue *value)
 #define g_value_unset _nm_g_value_unset
 #endif
 
+/* G_PID_FORMAT was added only in 2.53.5. Define it ourself.
+ *
+ * If this was about "pid_t", we would check SIZEOF_PID_T, and set
+ * PRIi32/PRIi16, like systemd does. But it's actually about
+ * GPid, which glib typedefs as an "int".
+ *
+ * There is a test_gpid() that check that GPid is really a typedef
+ * for int. */
+#undef G_PID_FORMAT
+#define G_PID_FORMAT "i"
+
 /*****************************************************************************/
 
 #endif  /* __NM_GLIB_H__ */
