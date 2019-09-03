@@ -33,15 +33,15 @@ foreach test_unit: test_units
   exe = executable(
     'libnm-core-' + test_unit,
     [test_unit + '.c'] + enum,
-    dependencies: [
-      libnm_core_dep,
-      libnm_systemd_shared_no_logging_dep,
-    ],
+    dependencies: libnm_core_dep,
     c_args: [
         '-DNETWORKMANAGER_COMPILATION_TEST',
         '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
       ],
-    link_with: libnm_core,
+    link_with: [
+      libnm_core,
+      libnm_systemd_logging_stub,
+    ],
   )
   test(
     'libnm-core/' + test_unit,

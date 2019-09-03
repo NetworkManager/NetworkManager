@@ -52,7 +52,8 @@ deps = [
   libsystemd_dep,
   libudev_dep,
   libnm_core_dep,
-  shared_n_dhcp4_dep,
+  libn_dhcp4_dep,
+  libnm_udev_aux_dep,
 ]
 
 if enable_wext
@@ -155,7 +156,7 @@ nm_deps = [
   libndp_dep,
   libudev_dep,
   libnm_core_dep,
-  shared_n_acd_dep,
+  libn_acd_dep,
   logind_dep,
 ]
 

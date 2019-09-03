@@ -15,16 +15,14 @@ foreach test_unit: test_units
     test_unit[0],
     [
       test_unit[0] + '.c',
-      shared_nm_test_utils_impl_c,
+      nm_test_utils_impl_source,
     ],
-    dependencies: [
-      liblibnm_dep,
-      libnm_systemd_shared_no_logging_dep,
-    ],
+    dependencies: liblibnm_dep,
     c_args: cflags,
     link_with: [
       liblibnm,
       libnm_core,
+      libnm_systemd_logging_stub,
     ],
   )
 
@@ -39,7 +37,7 @@ endforeach
 # just test, that we can build "nm-vpn-plugin-utils.c"
 libnm_vpn_plugin_utils_test = static_library(
   'nm-vpn-plugin-utils-test',
-  sources: shared_nm_utils_nm_vpn_plugin_utils_c + [libnm_enum[1]],
+  sources: nm_vpn_plugin_utils_source + [libnm_enum[1]],
   include_directories: libnm_inc,
   dependencies: libnm_core_dep,
   c_args: cflags,

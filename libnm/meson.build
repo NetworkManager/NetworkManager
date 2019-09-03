@@ -55,11 +55,11 @@ libnm_headers = files(
 )
 
 install_headers(
-  libnm_core_headers + libnm_headers + [version_header],
+  libnm_core_headers + libnm_headers + [nm_version_macro_header],
   subdir: libnm_name,
 )
 
-enum_headers = libnm_headers + [version_header]
+enum_headers = libnm_headers + [nm_version_macro_header]
 enum_types = 'nm-enum-types'
 
 libnm_enum = gnome.mkenums(
@@ -137,12 +137,13 @@ liblibnm = static_library(
     libnmdbus_dep,
     dl_dep,
     libudev_dep,
-    shared_nm_glib_aux_dep,
     libnm_core_dep,
+    libnm_utils_base_dep,
+    libnm_udev_aux_dep,
     uuid_dep,
-    libnm_systemd_shared_no_logging_dep,
   ],
   c_args: cflags,
+  link_with: libnm_systemd_logging_stub,
 )
 
 liblibnm_dep = declare_dependency(
@@ -153,13 +154,13 @@ liblibnm_dep = declare_dependency(
   ],
   dependencies: [
     libnm_core_dep,
-    libnm_systemd_shared_no_logging_dep,
     libnmdbus_dep,
-    shared_nm_glib_aux_dep,
+    libnm_utils_base_dep,
     libudev_dep,
     dl_dep,
     uuid_dep,
   ],
+  link_with: libnm_systemd_logging_stub,
 )
 
 libnm = shared_library(
@@ -170,7 +171,7 @@ libnm = shared_library(
     libnm_core,
     libnm_systemd_logging_stub,
     libnmdbus,
-    shared_nm_glib_aux,
+    libnm_utils_base,
   ],
   dependencies: liblibnm_dep,
   link_args: [
@@ -210,7 +211,7 @@ test(
 )
 
 if enable_introspection
-  gir_sources = libnm_core_enum + libnm_core_headers + libnm_core_sources + libnm_enum + libnm_headers + libnm_sources + [version_header]
+  gir_sources = libnm_core_enum + libnm_core_headers + libnm_core_sources + libnm_enum + libnm_headers + libnm_sources + [nm_version_macro_header]
 
   libnm_gir = gnome.generate_gir(
     libnm,
