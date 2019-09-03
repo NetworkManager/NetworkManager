@@ -118,13 +118,13 @@ test_nm_utils_kill_child_async_do (const char *name, pid_t pid, int sig, guint32
 	timeout_id = g_timeout_add_seconds (5, test_nm_utils_kill_child_async_fail_cb, &data);
 
 	data.loop = g_main_loop_new (NULL, FALSE);
-	g_main_run (data.loop);
+	g_main_loop_run (data.loop);
 
 	g_assert (data.called);
 	success = g_source_remove (timeout_id);
 	g_assert (success);
 
-	g_main_destroy (data.loop);
+	g_main_loop_unref (data.loop);
 }
 
 static void
@@ -578,4 +578,3 @@ main (int argc, char **argv)
 
 	return g_test_run ();
 }
-
