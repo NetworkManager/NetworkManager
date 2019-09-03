@@ -5764,7 +5764,7 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:99
 msgid ""
-"When a value grater than 0 is set, configures the device to use the "
+"When a value greater than 0 is set, configures the device to use the "
 "specified speed. If \"auto-negotiate\" is \"yes\" the specified speed will "
 "be the only one advertised during link negotiation: this works only for BASE-"
 "T 802.3 specifications and is useful for enforcing gigabit speeds, as in "
