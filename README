@@ -86,3 +86,68 @@ distribution directs syslog's 'daemon' facility output, as
 enormously.  See the logging section of file
 contrib/fedora/rpm/NetworkManager.conf for how to enable debug logging
 in NetworkManager.
+
+Environment
+--------------
+RHEL 8.0
+NetworkManager 1.14.0
+installed vrouter.ko for running kernel version (unloaded)
+installed vif utility (contrail-vrouter-utils)
+
+How to build RPMs
+------------------
+git clone --single-branch --branch contrail-vrouter https://github.com/progmaticlab/NetworkManager.git
+export PYTHON=python3
+export NM_RPMBUILD_ARGS="--without=adsl --without=bluetooth --without=wwan --without=team --without=wifi --without=ovs"
+NetworkManager/contrib/fedora/REQUIRED_PACKAGES
+NetworkManager/contrib/fedora/rpm/build.sh
+
+How to apply Contrail vrouter plugin
+------------------
+dnf remove -y NetworkManager-libnm*
+rpm -iv NetworkManager/contrib/fedora/rpm/latest/RPMS/x86_64/NetworkManager-libnm
+rpm -iv NetworkManager/contrib/fedora/rpm/latest/RPMS/x86_64/NetworkManager-1.14.0*
+rpm -iv NetworkManager/contrib/fedora/rpm/latest/RPMS/x86_64/NetworkManager-contrail-1.14*
+systemctl daemon-reload
+systemctl restart NetworkManager
+
+Usage
+-------
+nmcli c add type contrail-vrouter physdev enp0s3 conn.interface vhost0 autoconnect no
+nmcli c up contrail-vrouter-vhost0
+nmcli c down contrail-vrouter-vhost0
+
+Troubleshooting
+----------------
+To set maximum log level:
+nmcli general logging level TRACE domains ALL
+
+To get all system logs regarding the component "NetworkManager" for last hour and get new logs in real time (tail -f):
+journalctl -f --no-tail --since "1 hour ago" -u NetworkManager
+
+To get all system logs regarding the component "NetworkManager" with keyword "CONTRAILl" for last hour and get new logs in real time (tail -f):
+journalctl -f --no-tail -g "CONTRAIL" --since "1 hour ago" -u NetworkManager
+
+To load vrouter module or get error message if it's already loaded:
+modprobe -v --first-time vrouter
+
+To unload vrouter module or get error message if it's already unloaded:
+modprobe -rv --first-time vrouter
+
+To get log level for core component of NetworkManager:
+nmcli general logging
+
+To get list of network devices (network interfaces):
+nmcli device
+
+To set debug log level for core component of NetworkManager:
+nmcli g log level DEBUG
+
+To notify NetworkManager about changes after connection profile was manually changed (/etc/NetworkManager/system-connections/), not by nmcli means
+nmcli connection reload
+
+To delete all connection profiles with keyword "vhost" in their names (by means of nmcli):
+for i in `nmcli -f NAME c show | grep "vhost"`; do nmcli c del $i; done
+
+To delete all connection profiles with keyword "contrail" in their names (manual deleting, not by nmcli means):
+rm -rf /etc/NetworkManager/system-connections/contrail*

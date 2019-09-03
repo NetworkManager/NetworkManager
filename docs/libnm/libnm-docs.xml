@@ -319,6 +319,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-bridge-port.xml"/>
     <xi:include href="xml/nm-setting-bridge.xml"/>
     <xi:include href="xml/nm-setting-cdma.xml"/>
+    <xi:include href="xml/nm-setting-contrail-vrouter.xml"/>
     <xi:include href="xml/nm-setting-dcb.xml"/>
     <xi:include href="xml/nm-setting-dummy.xml"/>
     <xi:include href="xml/nm-setting-ethtool.xml"/>
@@ -370,6 +371,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-bond.xml"/>
     <xi:include href="xml/nm-device-bridge.xml"/>
     <xi:include href="xml/nm-device-bt.xml"/>
+    <xi:include href="xml/nm-device-contrail-vrouter.xml"/>
     <xi:include href="xml/nm-device-dummy.xml"/>
     <xi:include href="xml/nm-device-ethernet.xml"/>
     <xi:include href="xml/nm-device-generic.xml"/>

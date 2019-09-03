@@ -77,6 +77,7 @@
     <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-online.xml"/>
+    <xi:include href="../../man/nm-contrail.xml"/>
     <xi:include href="../../man/nm-initrd-generator.xml"/>
     <xi:include href="../../man/nm-openvswitch.xml"><xi:fallback /></xi:include>
   </part>
@@ -209,6 +210,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wireless.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wpan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.PPP.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.ContrailVrouter.xml"/>
     </chapter>
 
     <chapter id="ref-dbus-active-connections">

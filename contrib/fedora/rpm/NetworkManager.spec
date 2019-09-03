@@ -58,6 +58,12 @@
 %bcond_with    test
 %bcond_with    lto
 %bcond_with    sanitizer
+%bcond_without contrail
+%if 0%{?fedora} > 28 || 0%{?rhel} > 7
+%bcond_with libnm_glib
+%else
+%bcond_without libnm_glib
+%endif
 %if 0%{?fedora}
 %bcond_without connectivity_fedora
 %else
@@ -480,6 +486,17 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 
 
+%if %{with contrail}
+%package contrail
+Summary: Contrail vrouter device plugin for NetworkManager
+Group: System Environment/Base
+Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+
+%description contrail
+This package contains NetworkManager support for Contrail vrouters.
+%endif
+
+
 %prep
 %autosetup -p1 -n NetworkManager-%{real_version}
 
@@ -701,6 +718,11 @@ intltoolize --automake --copy --force
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
 	--with-config-logging-backend-default=%{logging_backend_default} \
 	--enable-json-validation
+%if %{with contrail}
+    --enable-contrail=yes
+%else
+    --enable-contrail=no
+%endif
 
 make %{?_smp_mflags}
 
@@ -923,6 +945,14 @@ fi
 %files ppp
 %{_libdir}/pppd/%{ppp_version}/nm-pppd-plugin.so
 %{nmplugindir}/libnm-ppp-plugin.so
+%endif
+
+
+%if %{with contrail}
+%files contrail
+%{nmplugindir}/libnm-device-plugin-contrail.so
+%{systemd_dir}/NetworkManager.service.d/NetworkManager-contrail.conf
+%{_mandir}/man7/nm-contrail.7*
 %endif
 
 

@@ -33,6 +33,7 @@
 #include "nm-setting-bridge.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-contrail-vrouter.h"
 #include "nm-setting-dcb.h"
 #include "nm-setting-dummy.h"
 #include "nm-setting-generic.h"

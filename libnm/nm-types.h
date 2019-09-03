@@ -21,6 +21,7 @@ typedef struct _NMDeviceAdsl         NMDeviceAdsl;
 typedef struct _NMDeviceBond         NMDeviceBond;
 typedef struct _NMDeviceBridge       NMDeviceBridge;
 typedef struct _NMDeviceBt           NMDeviceBt;
+typedef struct _NMDeviceContrailVrouter NMDeviceContrailVrouter;
 typedef struct _NMDeviceDummy        NMDeviceDummy;
 typedef struct _NMDeviceEthernet     NMDeviceEthernet;
 typedef struct _NMDeviceGeneric      NMDeviceGeneric;

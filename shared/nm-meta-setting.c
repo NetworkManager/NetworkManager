@@ -16,6 +16,7 @@
 #include "nm-setting-bridge.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-contrail-vrouter.h"
 #include "nm-setting-dcb.h"
 #include "nm-setting-dummy.h"
 #include "nm-setting-ethtool.h"
@@ -206,6 +207,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_CONNECTION,
 		.setting_name =             NM_SETTING_CONNECTION_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_connection_get_type,
+	},
+	[NM_META_SETTING_TYPE_CONTRAIL_VROUTER] = {
+		.meta_type =                NM_META_SETTING_TYPE_CONTRAIL_VROUTER,
+		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
+		.setting_name =             NM_SETTING_CONTRAIL_VROUTER_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_contrail_vrouter_get_type,
 	},
 	[NM_META_SETTING_TYPE_DCB] = {
 		.meta_type =                NM_META_SETTING_TYPE_DCB,

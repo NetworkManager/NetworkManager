@@ -23,6 +23,7 @@ typedef struct _NMSettingBridge           NMSettingBridge;
 typedef struct _NMSettingBridgePort       NMSettingBridgePort;
 typedef struct _NMSettingCdma             NMSettingCdma;
 typedef struct _NMSettingConnection       NMSettingConnection;
+typedef struct _NMSettingContrailVrouter  NMSettingContrailVrouter;
 typedef struct _NMSettingDcb              NMSettingDcb;
 typedef struct _NMSettingDummy            NMSettingDummy;
 typedef struct _NMSettingEthtool          NMSettingEthtool;

@@ -1387,8 +1387,10 @@ libnm_1_12_2 {
 
 libnm_1_14_0 {
 global:
+    nm_connection_get_setting_contrail_vrouter;
 	nm_connection_multi_connect_get_type;
 	nm_device_6lowpan_get_type;
+	nm_device_contrail_vrouter_get_type;
 	nm_device_wireguard_get_fwmark;
 	nm_device_wireguard_get_listen_port;
 	nm_device_wireguard_get_public_key;
@@ -1398,6 +1400,9 @@ global:
 	nm_setting_connection_get_llmnr;
 	nm_setting_connection_get_multi_connect;
 	nm_setting_connection_llmnr_get_type;
+	nm_setting_contrail_vrouter_get_physdev;
+	nm_setting_contrail_vrouter_get_type;
+	nm_setting_contrail_vrouter_new;
 	nm_setting_ethtool_clear_features;
 	nm_setting_ethtool_get_feature;
 	nm_setting_ethtool_get_type;

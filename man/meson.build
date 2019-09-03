@@ -47,6 +47,10 @@ if enable_ovs
   mans += [['nm-openvswitch', '7']]
 endif
 
+if enable_contrail
+  mans += [['nm-contrail', '7']]
+endif
+
 foreach man: mans
   input = man[0] + '.xml'
   content_files += join_paths(meson.current_source_dir(), input)

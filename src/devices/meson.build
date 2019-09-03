@@ -20,3 +20,7 @@ endif
 if enable_tests
   subdir('tests')
 endif
+
+if enable_contrail
+  subdir('contrail')
+endif

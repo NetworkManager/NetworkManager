@@ -624,43 +624,44 @@ typedef struct {
 } LinkDesc;
 
 static const LinkDesc linktypes[] = {
-	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
-	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
+	{ NM_LINK_TYPE_NONE,            "none",            NULL,             NULL },
+	{ NM_LINK_TYPE_UNKNOWN,         "unknown",         NULL,             NULL },
 
-	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
-	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
-	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
-	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
-	{ NM_LINK_TYPE_WWAN_NET,      "wwan",        NULL,          "wwan" },
-	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
-	{ NM_LINK_TYPE_WPAN,          "wpan",        NULL,          NULL },
-	{ NM_LINK_TYPE_6LOWPAN,       "6lowpan",     NULL,          NULL },
+	{ NM_LINK_TYPE_ETHERNET,        "ethernet",        NULL,             NULL },
+	{ NM_LINK_TYPE_INFINIBAND,      "infiniband",      NULL,             NULL },
+	{ NM_LINK_TYPE_OLPC_MESH,       "olpc-mesh",       NULL,             NULL },
+	{ NM_LINK_TYPE_WIFI,            "wifi",            NULL,             "wlan" },
+	{ NM_LINK_TYPE_WWAN_NET,        "wwan",            NULL,             "wwan" },
+	{ NM_LINK_TYPE_WIMAX,           "wimax",           "wimax",          "wimax" },
+	{ NM_LINK_TYPE_WPAN,            "wpan",            NULL,             NULL },
+	{ NM_LINK_TYPE_6LOWPAN,         "6lowpan",         NULL,             NULL },
 
-	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
-	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
-	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
-	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
-	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
-	{ NM_LINK_TYPE_IP6TNL,        "ip6tnl",      "ip6tnl",      NULL },
-	{ NM_LINK_TYPE_IP6GRE,        "ip6gre",      "ip6gre",      NULL },
-	{ NM_LINK_TYPE_IP6GRETAP,     "ip6gretap",   "ip6gretap",   NULL },
-	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
-	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
-	{ NM_LINK_TYPE_MACSEC,        "macsec",      "macsec",      NULL },
-	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
-	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
-	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
-	{ NM_LINK_TYPE_PPP,           "ppp",         NULL,          "ppp" },
-	{ NM_LINK_TYPE_SIT,           "sit",         "sit",         NULL },
-	{ NM_LINK_TYPE_TUN,           "tun",         "tun",         NULL },
-	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
-	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
-	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
-	{ NM_LINK_TYPE_WIREGUARD,     "wireguard",   "wireguard",   "wireguard" },
+	{ NM_LINK_TYPE_BNEP,            "bluetooth",       NULL,             "bluetooth" },
+	{ NM_LINK_TYPE_DUMMY,           "dummy",           "dummy",          NULL },
+	{ NM_LINK_TYPE_GRE,             "gre",             "gre",            NULL },
+	{ NM_LINK_TYPE_GRETAP,          "gretap",          "gretap",         NULL },
+	{ NM_LINK_TYPE_IFB,             "ifb",             "ifb",            NULL },
+	{ NM_LINK_TYPE_IP6TNL,          "ip6tnl",          "ip6tnl",         NULL },
+	{ NM_LINK_TYPE_IP6GRE,          "ip6gre",          "ip6gre",         NULL },
+	{ NM_LINK_TYPE_IP6GRETAP,       "ip6gretap",       "ip6gretap",      NULL },
+	{ NM_LINK_TYPE_IPIP,            "ipip",            "ipip",           NULL },
+	{ NM_LINK_TYPE_LOOPBACK,        "loopback",        NULL,             NULL },
+	{ NM_LINK_TYPE_MACSEC,          "macsec",          "macsec",         NULL },
+	{ NM_LINK_TYPE_MACVLAN,         "macvlan",         "macvlan",        NULL },
+	{ NM_LINK_TYPE_MACVTAP,         "macvtap",         "macvtap",        NULL },
+	{ NM_LINK_TYPE_OPENVSWITCH,     "openvswitch",     "openvswitch",    NULL },
+	{ NM_LINK_TYPE_PPP,             "ppp",             NULL,             "ppp" },
+	{ NM_LINK_TYPE_SIT,             "sit",             "sit",             NULL },
+	{ NM_LINK_TYPE_TUN,             "tun",             "tun",             NULL },
+	{ NM_LINK_TYPE_VETH,            "veth",            "veth",            NULL },
+	{ NM_LINK_TYPE_VLAN,            "vlan",            "vlan",            "vlan" },
+	{ NM_LINK_TYPE_VXLAN,           "vxlan",           "vxlan",           "vxlan" },
+	{ NM_LINK_TYPE_WIREGUARD,       "wireguard",       "wireguard",       "wireguard" },
+	{ NM_LINK_TYPE_CONTRAILVROUTER, "contrailvrouter", "contrailvrouter", NULL },
 
-	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
-	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
-	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
+	{ NM_LINK_TYPE_BRIDGE,          "bridge",          "bridge",          "bridge" },
+	{ NM_LINK_TYPE_BOND,            "bond",            "bond",            "bond" },
+	{ NM_LINK_TYPE_TEAM,            "team",            "team",            NULL },
 };
 
 static const char *
@@ -965,6 +966,9 @@ _linktype_get_type (NMPlatform *platform,
 		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver_info)) {
 			if (nm_streq (driver_info.driver, "openvswitch"))
 				return NM_LINK_TYPE_OPENVSWITCH;
+
+			if (nm_streq (driver_info.driver, "vrouter"))
+				return NM_LINK_TYPE_CONTRAILVROUTER;
 
 			if (arptype == 256) {
 				/* Some s390 CTC-type devices report 256 for the encapsulation type

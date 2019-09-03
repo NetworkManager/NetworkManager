@@ -22,7 +22,7 @@
 /*
  * dbus services details
  */
-#define NM_DBUS_SERVICE                        "org.freedesktop.NetworkManager"
+#define NM_DBUS_SERVICE                           "org.freedesktop.NetworkManager"
 
 #define NM_DBUS_INTERFACE                      "org.freedesktop.NetworkManager"
 #define NM_DBUS_INTERFACE_ACCESS_POINT         NM_DBUS_INTERFACE ".AccessPoint"
@@ -65,6 +65,7 @@
 #define NM_DBUS_INTERFACE_IP6_CONFIG           NM_DBUS_INTERFACE ".IP6Config"
 #define NM_DBUS_INTERFACE_WIFI_P2P_PEER        NM_DBUS_INTERFACE ".WifiP2PPeer"
 #define NM_DBUS_INTERFACE_WIMAX_NSP            NM_DBUS_INTERFACE ".WiMax.Nsp"
+#define NM_DBUS_INTERFACE_DEVICE_CONTRAIL_VROUTER NM_DBUS_INTERFACE_DEVICE ".ContrailVrouter"
 
 #define NM_DBUS_PATH                           "/org/freedesktop/NetworkManager"
 #define NM_DBUS_PATH_ACCESS_POINT              NM_DBUS_PATH "/AccessPoint"
@@ -209,6 +210,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_6LOWPAN: 6LoWPAN interface
  * @NM_DEVICE_TYPE_WIREGUARD: a WireGuard interface
  * @NM_DEVICE_TYPE_WIFI_P2P: an 802.11 Wi-Fi P2P device (Since: 1.16)
+ * @NM_DEVICE_TYPE_CONTRAIL_VROUTER: a Contrail Vrouter
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -245,6 +247,7 @@ typedef enum {
 	NM_DEVICE_TYPE_6LOWPAN       = 28,
 	NM_DEVICE_TYPE_WIREGUARD     = 29,
 	NM_DEVICE_TYPE_WIFI_P2P      = 30,
+    NM_DEVICE_TYPE_CONTRAIL_VROUTER = 31,
 } NMDeviceType;
 
 /**
@@ -564,6 +567,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE: a duplicate IP address was detected
  * @NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED: The selected IP method is not supported
  * @NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED: configuration of SR-IOV parameters failed
+ * @NM_DEVICE_STATE_REASON_CONTRAIL_VROUTER_FAILED: Contrail Vrouter kernel module failed
  * @NM_DEVICE_STATE_REASON_PEER_NOT_FOUND: The Wi-Fi P2P peer could not be found
  *
  * Device state change reason codes
@@ -637,6 +641,7 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED          = 65,
 	NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED     = 66,
 	NM_DEVICE_STATE_REASON_PEER_NOT_FOUND                 = 67,
+	NM_DEVICE_STATE_REASON_CONTRAIL_VROUTER_FAILED        = 68,
 } NMDeviceStateReason;
 
 /**

@@ -88,8 +88,10 @@ content_files = \
 	$(top_builddir)/man/NetworkManager.xml \
 	$(top_builddir)/man/NetworkManager.conf.xml \
 	$(top_builddir)/man/nmcli-examples.xml \
+	$(top_builddir)/man/nm-contrail.xml \
 	$(top_builddir)/man/nm-settings.xml \
 	$(top_builddir)/man/nm-settings-keyfile.xml \
+	$(top_builddir)/man/nm-openvswitch.xml \
 	version.xml \
 	$(NULL)
 

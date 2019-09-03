@@ -342,6 +342,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_reason_to_string, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE,           N_("A duplicate IP address was detected")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED,          N_("The selected IP method is not supported")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,     N_("Failed to configure SR-IOV parameters")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_CONTRAIL_VROUTER_FAILED,        N_("Contrail vrouter kernel module failed")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PEER_NOT_FOUND,                 N_("The Wi-Fi P2P peer could not be found")),
 )
 

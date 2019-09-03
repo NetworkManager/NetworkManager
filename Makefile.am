@@ -547,6 +547,10 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Bond.h \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.c \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.h \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.c \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.h \
+	introspection/org.freedesktop.NetworkManager.Device.ContrailVrouter.c \
+	introspection/org.freedesktop.NetworkManager.Device.ContrailVrouter.h \
 	introspection/org.freedesktop.NetworkManager.Device.Dummy.c \
 	introspection/org.freedesktop.NetworkManager.Device.Dummy.h \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.c \
@@ -663,6 +667,8 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wpan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.DnsManager.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Lowpan.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.ContrailVrouter.xml
 	docs/api/dbus-org.freedesktop.NetworkManager.IP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.IP6Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.PPP.xml \
@@ -703,6 +709,8 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Bond.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	introspection/org.freedesktop.NetworkManager.Device.ContrailVrouter.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Dummy.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
@@ -776,6 +784,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-bridge.h \
 	libnm-core/nm-setting-cdma.h \
 	libnm-core/nm-setting-connection.h \
+	libnm-core/nm-setting-contrail-vrouter.h
 	libnm-core/nm-setting-dcb.h \
 	libnm-core/nm-setting-dummy.h \
 	libnm-core/nm-setting-ethtool.h \
@@ -850,6 +859,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-bridge.c \
 	libnm-core/nm-setting-cdma.c \
 	libnm-core/nm-setting-connection.c \
+	libnm-core/nm-setting-contrail-vrouter.c \
 	libnm-core/nm-setting-dcb.c \
 	libnm-core/nm-setting-dummy.c \
 	libnm-core/nm-setting-ethtool.c \
@@ -1193,6 +1203,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-bond.h \
 	libnm/nm-device-bridge.h \
 	libnm/nm-device-bt.h \
+	libnm/nm-device-contrail-vrouter.h \
 	libnm/nm-device-dummy.h \
 	libnm/nm-device-ethernet.h \
 	libnm/nm-device-generic.h \
@@ -1254,6 +1265,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-bond.c \
 	libnm/nm-device-bridge.c \
 	libnm/nm-device-bt.c \
+	libnm/nm-device-contrail-vrouter.c \
 	libnm/nm-device-dummy.c \
 	libnm/nm-device-ethernet.c \
 	libnm/nm-device-generic.c \
@@ -3656,6 +3668,48 @@ EXTRA_DIST += \
 	src/devices/ovs/meson.build
 
 ###############################################################################
+# src/devices/contrail
+###############################################################################
+
+if WITH_CONTRAIL
+
+if HAVE_SYSTEMD
+
+systemdnmunitdir = $(systemdsystemunitdir)/NetworkManager.service.d
+systemdnmunit_DATA = \
+	data/NetworkManager-contrail.conf
+
+endif
+
+core_plugins += src/devices/contrail/libnm-device-plugin-contrail.la
+
+src_devices_contrail_libnm_device_plugin_contrail_la_SOURCES = \
+	src/devices/contrail/nm-contrail-factory.c \
+	src/devices/contrail/nm-device-contrail-vrouter.c \
+	src/devices/contrail/nm-device-contrail-vrouter.h
+
+src_devices_contrail_libnm_device_plugin_contrail_la_CPPFLAGS = \
+	$(src_cppflags_device_plugin) \
+	$(NULL)
+
+src_devices_contrail_libnm_device_plugin_contrail_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
+
+src_devices_contrail_libnm_device_plugin_contrail_la_LIBADD = \
+	$(GLIB_LIBS)
+
+check-local-devices-contrail: src/devices/contrail/libnm-device-plugin-contrail.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/contrail/.libs/libnm-device-plugin-contrail.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/contrail/.libs/libnm-device-plugin-contrail.so)
+
+endif
+
+EXTRA_DIST += \
+	data/NetworkManager-contrail.conf \
+	src/devices/contrail/meson.build
+
+###############################################################################
 # src/dnsmasq/tests
 ###############################################################################
 
@@ -4756,6 +4810,13 @@ man_pages += man/nm-openvswitch.7
 else
 EXTRA_DIST += man/nm-openvswitch.7
 dist_dependencies += man/nm-openvswitch.7
+endif
+
+if WITH_CONTRAIL
+man_pages += man/nm-contrail.7
+else
+EXTRA_DIST += man/nm-contrail.7
+dist_dependencies += man/nm-contrail.7
 endif
 
 if CONFIG_PLUGIN_IFCFG_RH

@@ -891,6 +891,8 @@ _supports_addr_family (NMConnection *self, int family)
 	g_return_val_if_fail (connection_type, TRUE);
 	if (strcmp (connection_type, NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0)
 		return TRUE;
+	if (strcmp (connection_type, NM_SETTING_CONTRAIL_VROUTER_SETTING_NAME) == 0)
+		return TRUE;
 	if (strcmp (connection_type, NM_SETTING_WPAN_SETTING_NAME) == 0)
 		return FALSE;
 	if (strcmp (connection_type, NM_SETTING_6LOWPAN_SETTING_NAME) == 0)
@@ -2682,6 +2684,7 @@ nm_connection_is_virtual (NMConnection *connection)
 
 	if (NM_IN_STRSET (type, NM_SETTING_6LOWPAN_SETTING_NAME,
 	                        NM_SETTING_BOND_SETTING_NAME,
+                            NM_SETTING_CONTRAIL_VROUTER_SETTING_NAME,
 	                        NM_SETTING_BRIDGE_SETTING_NAME,
 	                        NM_SETTING_DUMMY_SETTING_NAME,
 	                        NM_SETTING_IP_TUNNEL_SETTING_NAME,
@@ -3337,6 +3340,22 @@ _nm_connection_get_setting_bluetooth_for_nap (NMConnection *connection)
 	    && nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP))
 		return s_bt;
 	return NULL;
+}
+
+/**
+ * nm_connection_get_setting_contrail_vrouter:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingContrailVrouter the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingContrailVrouter if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.14
+ **/
+NMSettingContrailVrouter *
+nm_connection_get_setting_contrail_vrouter (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_CONTRAIL_VROUTER);
 }
 
 /*****************************************************************************/

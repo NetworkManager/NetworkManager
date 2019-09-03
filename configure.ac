@@ -817,6 +817,13 @@ if test "${enable_ovs}" != "no"; then
 fi
 AM_CONDITIONAL(WITH_OPENVSWITCH, test "${enable_ovs}" = "yes")
 
+# Contrail vrouter integration
+AC_ARG_ENABLE(contrail, AS_HELP_STRING([--enable-contrail], [enable Contrail vrouter support]))
+if test "${enable_contrail}" != "no"; then
+    enable_contrail='yes'
+fi
+AM_CONDITIONAL(WITH_CONTRAIL, test "${enable_contrail}" = "yes")
+
 # DHCP client support
 AC_ARG_WITH([dhclient],
             AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient support]))
@@ -1229,6 +1236,8 @@ if test "$build_docs" != "yes" -a \
         \
         -f "$srcdir"/man/nm-openvswitch.7 -a \
         \
+        -f "$srcdir"/man/nm-contrail.7 -a \
+        \
         -f "$srcdir"/man/nm-settings-ifcfg-rh.5 -a \
         -f "$srcdir"/man/nm-settings-keyfile.5 -a \
         -f "$srcdir"/man/nm-settings.5 -a \
@@ -1301,6 +1310,8 @@ echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
 echo "  libteamdctl: $enable_teamdctl"
 echo "  ovs: $enable_ovs"
+echo "  contrail: $enable_contrail"
+echo "  libnm-glib: $with_libnm_glib"
 echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
 echo "  iwd: $ac_with_iwd"

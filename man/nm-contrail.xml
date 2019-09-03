@@ -1,0 +1,56 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
+
+<!--
+  nm-contrail(7) manual page
+
+  Copyright 2019 Red Hat, Inc.
+
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. You may obtain a copy of the GNU Free Documentation License
+  from the Free Software Foundation by visiting their Web site or by
+  writing to:
+
+  Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<refentry id="nm-contrail">
+  <refentryinfo>
+    <title>nm-contrail</title>
+    <author>NetworkManager Contrail vrouter support</author>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>nm-contrail</refentrytitle>
+    <manvolnum>7</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">Contrail vrouter support overview</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>nm-contrail</refname>
+    <refpurpose>overview of NetworkManager Contrail vrouter support</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>Overview</title>
+  </refsect1>
+  <refsect1>
+    <title>Examples</title>
+    <example>
+    </example>
+  </refsect1>
+  <refsect1>
+    <title>Bugs</title>
+  </refsect1>
+  <refsect1>
+    <title>See Also</title>
+  </refsect1>
+</refentry>

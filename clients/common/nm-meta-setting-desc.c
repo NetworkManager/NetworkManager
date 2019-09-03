@@ -5207,6 +5207,19 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_CONTRAIL_VROUTER
+static const NMMetaPropertyInfo *const property_infos_CONTRAIL_VROUTER[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONTRAIL_VROUTER_PHYSDEV,
+		.is_cli_option =                TRUE,
+		.property_alias =               "physdev",
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.prompt =                       N_("Physical device name"),
+		.property_type =                &_pt_gobject_string,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_DCB
 static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_FLAGS,
@@ -7643,6 +7656,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_BRIDGE_PORT         N_("Bridge port")
 #define SETTING_PRETTY_NAME_CDMA                N_("CDMA mobile broadband connection")
 #define SETTING_PRETTY_NAME_CONNECTION          N_("General settings")
+#define SETTING_PRETTY_NAME_CONTRAIL_VROUTER    N_("Contrail vrouter settings")
 #define SETTING_PRETTY_NAME_DCB                 N_("DCB settings")
 #define SETTING_PRETTY_NAME_DUMMY               N_("Dummy settings")
 #define SETTING_PRETTY_NAME_ETHTOOL             N_("Ethtool settings")
@@ -7767,6 +7781,17 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	        NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
 	        NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 	    ),
+	),
+	SETTING_INFO (CONTRAIL_VROUTER,
+		.alias =                            "contrail-vrouter",
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (CONTRAIL_VROUTER,      TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               TRUE),
+		),
 	),
 	SETTING_INFO_EMPTY (GENERIC,
 	    .valid_parts = NM_META_SETTING_VALID_PARTS (

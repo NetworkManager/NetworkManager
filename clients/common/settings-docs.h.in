@@ -383,3 +383,4 @@
 #define DESCRIBE_DOC_NM_SETTING_WPAN_PAGE N_("IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, use whatever the device is already set to\".")
 #define DESCRIBE_DOC_NM_SETTING_WPAN_PAN_ID N_("IEEE 802.15.4 Personal Area Network (PAN) identifier.")
 #define DESCRIBE_DOC_NM_SETTING_WPAN_SHORT_ADDRESS N_("Short IEEE 802.15.4 address to be used within a restricted environment.")
+#define DESCRIBE_DOC_NM_SETTING_CONTRAIL_VROUTER_PHYSDEV N_("Physical device name.")
