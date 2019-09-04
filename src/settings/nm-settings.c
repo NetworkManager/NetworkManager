@@ -2421,7 +2421,7 @@ pk_add_cb (NMAuthChain *chain,
 	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Insufficient privileges.");
+		                             NM_UTILS_ERROR_MSG_INSUFF_PRIV);
 	} else {
 		/* Authorized */
 		connection = nm_auth_chain_get_data (chain, "connection");
@@ -2521,7 +2521,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	if (!chain) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to authenticate the request.");
+		                             NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED);
 		goto done;
 	}
 
@@ -2605,7 +2605,7 @@ settings_add_connection_helper (NMSettings *self,
 		g_dbus_method_invocation_return_error_literal (context,
 		                                               NM_SETTINGS_ERROR,
 		                                               NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                                               "Unable to determine UID of request.");
+		                                               NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
 		return;
 	}
 
@@ -2946,7 +2946,7 @@ impl_settings_get_connection_by_uuid (NMDBusObject *obj,
 	if (!subject) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine UID of request.");
+		                             NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
 		goto error;
 	}
 
@@ -3293,7 +3293,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Insufficient privileges.");
+		                             NM_UTILS_ERROR_MSG_INSUFF_PRIV);
 	} else {
 		hostname = nm_auth_chain_get_data (chain, "hostname");
 

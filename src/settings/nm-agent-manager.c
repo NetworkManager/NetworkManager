@@ -392,7 +392,7 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 	if (!subject) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request sender and UID.");
+		                             NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
 		goto done;
 	}
 	sender_uid = nm_auth_subject_get_unix_process_uid (subject);

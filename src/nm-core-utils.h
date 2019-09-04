@@ -496,4 +496,8 @@ const char *nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
 
 #define NM_VPN_ROUTE_METRIC_DEFAULT     50
 
+#define NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED   "Unable to authenticate the request"
+#define NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN    "Unable to determine UID of the request"
+#define NM_UTILS_ERROR_MSG_INSUFF_PRIV       "Insufficient privileges"
+
 #endif /* __NM_CORE_UTILS_H__ */
