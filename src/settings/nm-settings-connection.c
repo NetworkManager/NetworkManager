@@ -1235,7 +1235,7 @@ pk_auth_cb (NMAuthManager *auth_manager,
 	} else if (nm_auth_call_result_eval (is_authorized, is_challenge, auth_error) != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Insufficient privileges");
+		                             NM_UTILS_ERROR_MSG_INSUFF_PRIV);
 	}
 
 	auth_data->callback (self,
@@ -1268,7 +1268,7 @@ _new_auth_subject (GDBusMethodInvocation *context, GError **error)
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                     "Unable to determine UID of request.");
+		                     NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
 	}
 
 	return subject;
