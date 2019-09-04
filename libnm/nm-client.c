@@ -291,12 +291,15 @@ nm_client_networking_get_enabled (NMClient *client)
  * all controlled interfaces are available for activation.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Deprecated: 1.22, use nm_client_networking_set_enabled_async() or GDBusConnection
  **/
 gboolean
 nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	/* FIXME(libnm-async-api): add nm_client_networking_set_enabled_async(). */
 	if (!_nm_client_check_nm_running (client, error))
 		return FALSE;
 
@@ -329,12 +332,15 @@ nm_client_wireless_get_enabled (NMClient *client)
  * @enabled: %TRUE to enable wireless
  *
  * Enables or disables wireless devices.
- **/
+ *
+ * Deprecated: 1.22, use nm_client_wireless_set_enabled_async() or GDBusConnection
+ */
 void
 nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
+	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
 	if (!nm_client_get_nm_running (client))
 		return;
 
@@ -669,6 +675,8 @@ nm_client_get_connectivity (NMClient *client)
  * if you do not want to block.
  *
  * Returns: the (new) current connectivity state
+ *
+ * Deprecated: 1.22, use nm_client_check_connectivity_async() or GDBusConnection
  */
 NMConnectivityState
 nm_client_check_connectivity (NMClient *client,
@@ -780,6 +788,8 @@ nm_client_check_connectivity_finish (NMClient *client,
  * or cleared.
  *
  * Returns: %TRUE if the request was successful, %FALSE if it failed
+ *
+ * Deprecated: 1.22, use nm_client_save_hostname_async() or GDBusConnection
  **/
 gboolean
 nm_client_save_hostname (NMClient *client,
@@ -1417,6 +1427,8 @@ nm_client_add_and_activate_connection2_finish (NMClient *client,
  * Deactivates an active #NMActiveConnection.
  *
  * Returns: success or failure
+ *
+ * Deprecated: 1.22, use nm_client_deactivate_connection_async() or GDBusConnection
  **/
 gboolean
 nm_client_deactivate_connection (NMClient *client,
@@ -1878,6 +1890,8 @@ nm_client_add_connection2_finish (NMClient *client,
  *
  * Returns: %TRUE if NetworkManager at least tried to load @filenames,
  * %FALSE if an error occurred (eg, permission denied).
+ *
+ * Deprecated: 1.22, use nm_client_load_connections_async() or GDBusConnection
  **/
 gboolean
 nm_client_load_connections (NMClient *client,
@@ -2001,6 +2015,8 @@ nm_client_load_connections_finish (NMClient *client,
  * the in-memory state matches the on-disk state.
  *
  * Return value: %TRUE on success, %FALSE on failure
+ *
+ * Deprecated: 1.22, use nm_client_reload_connections_async() or GDBusConnection
  **/
 gboolean
 nm_client_reload_connections (NMClient *client,
@@ -3661,7 +3677,9 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:networking-enabled:
 	 *
 	 * Whether networking is enabled.
-	 **/
+	 *
+	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_NETWORKING_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED, "", "",
@@ -3673,6 +3691,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:wireless-enabled:
 	 *
 	 * Whether wireless is enabled.
+	 *
+	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_ENABLED,
@@ -3697,7 +3717,9 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:wwan-enabled:
 	 *
 	 * Whether WWAN functionality is enabled.
-	 **/
+	 *
+	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_WWAN_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED, "", "",
@@ -3721,7 +3743,9 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:wimax-enabled:
 	 *
 	 * Whether WiMAX functionality is enabled.
-	 **/
+	 *
+	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_WIMAX_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED, "", "",
@@ -3786,6 +3810,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Whether a connectivity checking service has been enabled.
 	 *
 	 * Since: 1.10
+	 *
+	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY_CHECK_ENABLED,
