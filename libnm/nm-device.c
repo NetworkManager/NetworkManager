@@ -444,11 +444,6 @@ set_property (GObject *object,
 	gboolean b;
 
 	switch (prop_id) {
-	case PROP_MANAGED:
-		b = g_value_get_boolean (value);
-		if (priv->managed != b)
-			nm_device_set_managed (NM_DEVICE (object), b);
-		break;
 	case PROP_AUTOCONNECT:
 		b = g_value_get_boolean (value);
 		if (priv->autoconnect != b)
