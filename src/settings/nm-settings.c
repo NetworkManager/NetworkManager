@@ -3288,6 +3288,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	c_list_unlink (nm_auth_chain_parent_lst_list (chain));
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
+	hostname = nm_auth_chain_get_data (chain, "hostname");
 
 	/* If our NMSettingsConnection is already gone, do nothing */
 	if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -3295,14 +3296,18 @@ pk_hostname_cb (NMAuthChain *chain,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             NM_UTILS_ERROR_MSG_INSUFF_PRIV);
 	} else {
-		hostname = nm_auth_chain_get_data (chain, "hostname");
-
 		if (!nm_hostname_manager_write_hostname (priv->hostname_manager, hostname)) {
 			error = g_error_new_literal (NM_SETTINGS_ERROR,
 			                             NM_SETTINGS_ERROR_FAILED,
 			                             "Saving the hostname failed.");
 		}
 	}
+
+	nm_audit_log_control_op (NM_AUDIT_OP_HOSTNAME_SAVE,
+	                         hostname,
+	                         !error,
+	                         nm_auth_chain_get_subject (chain),
+	                         error ? error->message : NULL);
 
 	if (error)
 		g_dbus_method_invocation_take_error (context, error);
@@ -3323,30 +3328,39 @@ impl_settings_save_hostname (NMDBusObject *obj,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	const char *hostname;
+	const char *error_reason;
+	int error_code;
 
 	g_variant_get (parameters, "(&s)", &hostname);
 
 	/* Minimal validation of the hostname */
 	if (!nm_hostname_manager_validate_hostname (hostname)) {
-		g_dbus_method_invocation_return_error_literal (invocation,
-		                                               NM_SETTINGS_ERROR,
-		                                               NM_SETTINGS_ERROR_INVALID_HOSTNAME,
-		                                               "The hostname was too long or contained invalid characters.");
-		return;
+		error_code = NM_SETTINGS_ERROR_INVALID_HOSTNAME;
+		error_reason = "The hostname was too long or contained invalid characters";
+		goto err;
 	}
 
 	chain = nm_auth_chain_new_context (invocation, pk_hostname_cb, self);
 	if (!chain) {
-		g_dbus_method_invocation_return_error_literal (invocation,
-		                                               NM_SETTINGS_ERROR,
-		                                               NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                                               "Unable to authenticate the request.");
-		return;
+		error_code = NM_SETTINGS_ERROR_PERMISSION_DENIED;
+		error_reason = NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED;
+		goto err;
 	}
 
 	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
 	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
+	return;
+err:
+	nm_audit_log_control_op (NM_AUDIT_OP_HOSTNAME_SAVE,
+	                         hostname,
+	                         FALSE,
+	                         invocation,
+	                         error_reason);
+	g_dbus_method_invocation_return_error_literal (invocation,
+	                                               NM_SETTINGS_ERROR,
+	                                               error_code,
+	                                               error_reason);
 }
 
 /*****************************************************************************/

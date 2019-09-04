@@ -49,6 +49,7 @@ typedef struct _NMAuditManagerClass NMAuditManagerClass;
 #define NM_AUDIT_OP_NET_CONTROL             "networking-control"
 #define NM_AUDIT_OP_RADIO_CONTROL           "radio-control"
 #define NM_AUDIT_OP_STATISTICS              "statistics"
+#define NM_AUDIT_OP_HOSTNAME_SAVE           "hostname-save"
 
 #define NM_AUDIT_OP_DEVICE_AUTOCONNECT      "device-autoconnect"
 #define NM_AUDIT_OP_DEVICE_DISCONNECT       "device-disconnect"
