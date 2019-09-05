@@ -224,4 +224,13 @@ void _nm_activate_result_free (_NMActivateResult *result);
 
 /*****************************************************************************/
 
+void nm_manager_reload (NMManager *manager,
+                        NMManagerReloadFlags flags,
+                        GCancellable *cancellable,
+                        GAsyncReadyCallback callback,
+                        gpointer user_data);
+gboolean nm_manager_reload_finish (NMManager *manager,
+                                   GAsyncResult *result,
+                                   GError **error);
+
 #endif /* __NM_MANAGER_H__ */

@@ -2737,6 +2737,88 @@ nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
 	                                               error);
 }
 
+static void
+reload_cb (GObject *object,
+           GAsyncResult *result,
+           gpointer user_data)
+{
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nm_manager_reload_finish (NM_MANAGER (object), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+}
+
+/**
+ * nm_client_reload:
+ * @client: the %NMClient
+ * @flags: flags indicating what to reload.
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the add operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Reload NetworkManager's configuration and perform certain updates, like
+ * flushing caches or rewriting external state to disk. This is similar to
+ * sending SIGHUP to NetworkManager but it allows for more fine-grained control
+ * over what to reload (see @flags). It also allows non-root access via
+ * PolicyKit and contrary to signals it is synchronous.
+ *
+ * Since: 1.22
+ **/
+void
+nm_client_reload (NMClient *client,
+                  NMManagerReloadFlags flags,
+                  GCancellable *cancellable,
+                  GAsyncReadyCallback callback,
+                  gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_reload);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	nm_manager_reload (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                   flags,
+	                   cancellable, reload_cb, simple);
+}
+
+/**
+ * nm_client_reload_finish:
+ * @client: an #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_reload().
+ *
+ * Returns: %TRUE on success or %FALSE on failure.
+ *
+ * Since: 1.22
+ **/
+gboolean
+nm_client_reload_finish (NMClient *client,
+                         GAsyncResult *result,
+                         GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+	                                               error);
+}
+
 /****************************************************************/
 /* Object Initialization                                        */
 /****************************************************************/

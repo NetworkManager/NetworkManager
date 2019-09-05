@@ -475,6 +475,17 @@ gboolean nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
                                                               GAsyncResult *result,
                                                               GError **error);
 
+NM_AVAILABLE_IN_1_22
+void nm_client_reload (NMClient *client,
+                       NMManagerReloadFlags flags,
+                       GCancellable *cancellable,
+                       GAsyncReadyCallback callback,
+                       gpointer user_data);
+NM_AVAILABLE_IN_1_22
+gboolean nm_client_reload_finish (NMClient *client,
+                                  GAsyncResult *result,
+                                  GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */
