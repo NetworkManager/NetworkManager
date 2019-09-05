@@ -2879,18 +2879,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	    && obj->_link.ext_data == NULL) {
 		switch (obj->link.type) {
 		case NM_LINK_TYPE_WIFI:
+		case NM_LINK_TYPE_OLPC_MESH:
 			obj->_link.ext_data = (GObject *) nm_wifi_utils_new (ifi->ifi_index,
 			                                                     _genl_sock (NM_LINUX_PLATFORM (platform)),
 			                                                     TRUE);
-			break;
-		case NM_LINK_TYPE_OLPC_MESH:
-#if HAVE_WEXT
-			/* The kernel driver now uses nl80211, but we force use of WEXT because
-			 * the cfg80211 interactions are not quite ready to support access to
-			 * mesh control through nl80211 just yet.
-			 */
-			obj->_link.ext_data = (GObject *) nm_wifi_utils_wext_new (ifi->ifi_index, FALSE);
-#endif
 			break;
 		case NM_LINK_TYPE_WPAN:
 			obj->_link.ext_data = (GObject *) nm_wpan_utils_new (ifi->ifi_index,
