@@ -82,9 +82,9 @@ get_autoconnect_allowed (NMDevice *device)
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
-	/* We shall always have a companion if we're >= DISCONENCTED, and this
-	 * ought not be called until then. */
-	g_return_val_if_fail (priv->companion, FALSE);
+	/* We can't even connect if we don't have a companion yet. */
+	if (!priv->companion)
+		return FALSE;
 
 	/* We must not attempt to autoconnect when the companion is connected or
 	 * connecting, * because we'd tear down its connection. */
