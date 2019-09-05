@@ -354,6 +354,38 @@ usage_general_permissions (void)
 }
 
 static void
+usage_general_reload (void)
+{
+	g_printerr (_("Usage: nmcli general reload { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [<flag>[,<flag>...]]\n"
+	              "\n"
+	              "Reload NetworkManager's configuration and perform certain updates, like\n"
+	              "flushing caches or rewriting external state to disk. This is similar to\n"
+	              "sending SIGHUP to NetworkManager but it allows for more fine-grained\n"
+	              "control over what to reload through the flags argument. It also allows\n"
+	              "non-root access via PolicyKit and contrary to signals it is synchronous.\n"
+	              "\n"
+	              "Available flags are:\n"
+	              "\n"
+	              "  'conf'        Reload the NetworkManager.conf configuration from\n"
+	              "                disk. Note that this does not include connections, which\n"
+	              "                can be reloaded through 'nmcli connection reload' instead.\n"
+	              "\n"
+	              "  'dns-rc'      Update DNS configuration, which usually involves writing\n"
+	              "                /etc/resolv.conf anew.\n"
+	              "\n"
+	              "  'dns-full'    Restart the DNS plugin. This is for example useful when\n"
+	              "                using dnsmasq plugin, which uses additional configuration\n"
+	              "                in /etc/NetworkManager/dnsmasq.d. If you edit those files,\n"
+	              "                you can restart the DNS plugin. This action shortly\n"
+	              "                interrupts name resolution.\n"
+	              "\n"
+	              "With no flags, everything that is supported is reloaded, which is\n"
+	              "identical to sending a SIGHUP.\n"));
+}
+
+static void
 usage_general_logging (void)
 {
 	g_printerr (_("Usage: nmcli general logging { ARGUMENTS | help }\n"
@@ -596,6 +628,70 @@ show_nm_permissions (NmCli *nmc)
 }
 
 static NMCResultCode
+do_general_reload (NmCli *nmc, int argc, char **argv)
+{
+	gs_unref_variant GVariant *result = NULL;
+	gs_free_error GError *error = NULL;
+	gs_free const char **values = NULL;
+	gs_free char *err_token = NULL;
+	gs_free char *joined = NULL;
+	int flags = 0;
+
+	next_arg (nmc, &argc, &argv, NULL);
+
+	if (nmc->complete) {
+		if (argc == 0)
+			return nmc->return_value;
+
+		if (argc == 1) {
+			values = nm_utils_enum_get_values (nm_manager_reload_flags_get_type (),
+			                                   NM_MANAGER_RELOAD_FLAG_CONF,
+			                                   NM_MANAGER_RELOAD_FLAG_ALL);
+			nmc_complete_strv (*argv, -1, values);
+		}
+		return nmc->return_value;
+	}
+
+	if (argc > 0) {
+		if (!nm_utils_enum_from_str (nm_manager_reload_flags_get_type (), *argv, &flags, &err_token)) {
+			values = nm_utils_enum_get_values (nm_manager_reload_flags_get_type (),
+			                                   NM_MANAGER_RELOAD_FLAG_CONF,
+			                                   NM_MANAGER_RELOAD_FLAG_ALL);
+			joined = g_strjoinv (",", (char **) values);
+			g_string_printf (nmc->return_text,
+			                 _("Error: invalid reload flag '%s'. Allowed flags are: %s"),
+			                 err_token,
+			                 joined);
+			return NMC_RESULT_ERROR_USER_INPUT;
+		}
+		argc--;
+		argv++;
+	}
+
+	if (argc > 0) {
+		g_string_printf (nmc->return_text, _("Error: extra argument '%s'"), *argv);
+		return NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	result = nmc_dbus_call_sync (nmc,
+	                             "/org/freedesktop/NetworkManager",
+	                             "org.freedesktop.NetworkManager",
+	                             "Reload",
+	                             g_variant_new ("(u)", flags),
+	                             G_VARIANT_TYPE("()"),
+	                             &error);
+
+	if (error) {
+		g_string_printf (nmc->return_text,
+		                 _("Error: failed to reload: %s"),
+		                 nmc_error_get_simple_message (error));
+		return NMC_RESULT_ERROR_UNKNOWN;
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
 do_general_permissions (NmCli *nmc, int argc, char **argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
@@ -772,6 +868,7 @@ static const NMCCommand general_cmds[] = {
 	{ "hostname",     do_general_hostname,     usage_general_hostname,     TRUE,   TRUE },
 	{ "permissions",  do_general_permissions,  usage_general_permissions,  TRUE,   TRUE },
 	{ "logging",      do_general_logging,      usage_general_logging,      TRUE,   TRUE },
+	{ "reload",       do_general_reload,       usage_general_reload,       FALSE,  FALSE },
 	{ NULL,           do_general_status,       usage_general,              TRUE,   TRUE },
 };
 
