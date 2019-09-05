@@ -40,7 +40,13 @@ NMPlatformIP6Address nm_dhcp_utils_ip6_prefix_from_options (GHashTable *options)
 
 char *nm_dhcp_utils_duid_to_string (GBytes *duid);
 
-GBytes *     nm_dhcp_utils_client_id_string_to_bytes (const char *client_id);
+GBytes *nm_dhcp_utils_client_id_string_to_bytes (const char *client_id);
+
+gboolean nm_dhcp_utils_get_leasefile_path (int addr_family,
+                                           const char *plugin_name,
+                                           const char *iface,
+                                           const char *uuid,
+                                           char **out_leasefile_path);
 
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
 

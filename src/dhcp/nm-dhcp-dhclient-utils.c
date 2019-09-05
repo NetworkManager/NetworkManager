@@ -128,7 +128,7 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname, gboolean 
 		guint i;
 
 		p = g_bytes_get_data (client_id, &l);
-		g_assert (p);
+		nm_assert (p);
 
 		/* Allow type 0 (non-hardware address) to be represented as a string
 		 * as long as all the characters are printable.

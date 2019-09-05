@@ -30,7 +30,6 @@
 #include "nm-std-aux/unaligned.h"
 
 #include "nm-utils.h"
-#include "nm-config.h"
 #include "nm-dhcp-utils.h"
 #include "nm-dhcp-options.h"
 #include "nm-core-utils.h"
@@ -535,37 +534,6 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 /*****************************************************************************/
 
-static char *
-get_leasefile_path (int addr_family, const char *iface, const char *uuid)
-{
-	char *rundir_path;
-	char *statedir_path;
-
-	rundir_path = g_strdup_printf (NMRUNDIR "/internal%s-%s-%s.lease",
-	                               addr_family == AF_INET6 ? "6" : "",
-	                               uuid,
-	                               iface);
-
-	if (g_file_test (rundir_path, G_FILE_TEST_EXISTS))
-		return rundir_path;
-
-	statedir_path = g_strdup_printf (NMSTATEDIR "/internal%s-%s-%s.lease",
-	                                 addr_family == AF_INET6 ? "6" : "",
-	                                 uuid,
-	                                 iface);
-
-	if (   g_file_test (statedir_path, G_FILE_TEST_EXISTS)
-	    || nm_config_get_configure_and_quit (nm_config_get ()) != NM_CONFIG_CONFIGURE_AND_QUIT_INITRD) {
-		g_free (rundir_path);
-		return statedir_path;
-	} else {
-		g_free (statedir_path);
-		return rundir_path;
-	}
-}
-
-/*****************************************************************************/
-
 static void
 bound4_handle (NMDhcpSystemd *self)
 {
@@ -704,9 +672,11 @@ ip4_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	lease_file = get_leasefile_path (AF_INET,
-	                                 nm_dhcp_client_get_iface (client),
-	                                 nm_dhcp_client_get_uuid (client));
+	nm_dhcp_utils_get_leasefile_path (AF_INET,
+	                                  "internal",
+	                                  nm_dhcp_client_get_iface (client),
+	                                  nm_dhcp_client_get_uuid (client),
+	                                  &lease_file);
 
 	if (last_ip4_address)
 		inet_pton (AF_INET, last_ip4_address, &last_addr);
