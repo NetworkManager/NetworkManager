@@ -25,25 +25,6 @@
 #define NM_CONFIG_DATA_NO_AUTO_DEFAULT       "no-auto-default"
 #define NM_CONFIG_DATA_DNS_MODE              "dns"
 
-/* The flags for Reload. Currently these are internal defines,
- * only their numeric value matters and must be stable as
- * they are public API! Also, the enum must fit in uint32. */
-enum { /*< skip >*/
-	NM_MANAGER_RELOAD_FLAGS_NONE                            = 0,
-
-	/* reload the configuration from disk */
-	NM_MANAGER_RELOAD_FLAGS_CONF                            = (1LL << 0),
-
-	/* write DNS configuration to resolv.conf */
-	NM_MANAGER_RELOAD_FLAGS_DNS_RC                          = (1LL << 1),
-
-	/* restart the DNS plugin (includes DNS_RC) */
-	NM_MANAGER_RELOAD_FLAGS_DNS_FULL                        = (1LL << 2),
-
-	_NM_MANAGER_RELOAD_FLAGS_ALL,
-	NM_MANAGER_RELOAD_FLAGS_ALL = ((_NM_MANAGER_RELOAD_FLAGS_ALL - 1) << 1) - 1,
-};
-
 typedef enum { /*< flags >*/
 	NM_CONFIG_GET_VALUE_NONE                   = 0,
 
