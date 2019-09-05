@@ -174,17 +174,28 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static void
+static gboolean
 _mesh_set_channel (NMDeviceOlpcMesh *self, guint32 channel)
 {
 	NMPlatform *platform;
 	int ifindex = nm_device_get_ifindex (NM_DEVICE (self));
+	guint32 old_channel;
 
 	platform = nm_device_get_platform (NM_DEVICE (self));
-	if (nm_platform_mesh_get_channel (platform, ifindex) != channel) {
-		if (nm_platform_mesh_set_channel (platform, ifindex, channel))
-			_notify (self, PROP_ACTIVE_CHANNEL);
-	}
+	old_channel = nm_platform_mesh_get_channel (platform, ifindex);
+
+	if (channel == 0)
+		channel = old_channel;
+
+	/* We want to call this even if the channel number is the same,
+	 * because that actually starts the mesh with the configured mesh ID. */
+	if (!nm_platform_mesh_set_channel (platform, ifindex, channel))
+		return FALSE;
+
+	if (old_channel != channel)
+		_notify (self, PROP_ACTIVE_CHANNEL);
+
+	return TRUE;
 }
 
 static NMActStageReturn
@@ -192,26 +203,34 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 	NMSettingOlpcMesh *s_mesh;
-	guint32 channel;
 	GBytes *ssid;
 	const char *anycast_addr;
+	gboolean success;
 
 	s_mesh = nm_device_get_applied_setting (device, NM_TYPE_SETTING_OLPC_MESH);
 
 	g_return_val_if_fail (s_mesh, NM_ACT_STAGE_RETURN_FAILURE);
 
-	channel = nm_setting_olpc_mesh_get_channel (s_mesh);
-	if (channel != 0)
-		_mesh_set_channel (self, channel);
-
 	ssid = nm_setting_olpc_mesh_get_ssid (s_mesh);
-	nm_platform_mesh_set_ssid (nm_device_get_platform (device),
-	                           nm_device_get_ifindex (device),
-	                           g_bytes_get_data (ssid, NULL),
-	                           g_bytes_get_size (ssid));
+	nm_device_take_down (NM_DEVICE (self), TRUE);
+	success = nm_platform_mesh_set_ssid (nm_device_get_platform (device),
+	                                     nm_device_get_ifindex (device),
+	                                     g_bytes_get_data (ssid, NULL),
+	                                     g_bytes_get_size (ssid));
+	nm_device_bring_up (NM_DEVICE (self), TRUE, NULL);
+	if (!success) {
+		_LOGW (LOGD_WIFI, "Unable to set the mesh ID");
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	anycast_addr = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh);
 	nm_device_set_dhcp_anycast_address (device, anycast_addr);
+
+	if (!_mesh_set_channel (self, nm_setting_olpc_mesh_get_channel (s_mesh))) {
+		_LOGW (LOGD_WIFI, "Unable to set the mesh channel");
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
