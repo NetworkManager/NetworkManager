@@ -3,12 +3,12 @@ NetworkManager-1.20.2
 Overview of changes since NetworkManager-1.20.0
 ===============================================
 
-This is a snapshot of NetworkManager 1.20 development series.
-The API is subject to change and not guaranteed to be compatible
-with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+This is a new stable release of NetworkManager.  Notable changes include:
 
+* Don't ask wpa_supplicant to attempt to enable FT if the interface doesn't
+  support it.
 * Various bug fixes and improvements.
+* French, Japanese, Korean, Polish and Simplified Chinese translation updates.
 
 =============================================
 NetworkManager-1.20
