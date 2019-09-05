@@ -475,14 +475,18 @@ if enable_polkit_agent
 endif
 config_h.set10('WITH_POLKIT_AGENT', enable_polkit_agent)
 
-crypto_gnutls_dep = dependency('gnutls', version: '>= 2.12', required: false)
-crypto_nss_dep = dependency('nss', required: false)
 
 crypto = get_option('crypto')
 if crypto == 'nss'
-  assert(crypto_nss_dep.found(), 'Requires gnutls crypto support')
+    crypto_dep = dependency('nss', required: false)
+    assert(crypto_dep.found(), 'Requires nss crypto support')
 elif crypto == 'gnutls'
-  assert(crypto_gnutls_dep.found(), 'Requires gnutls crypto support')
+    crypto_dep = dependency(
+      'gnutls',
+      version: '>= 2.12',
+      required: false,
+    )
+    assert(crypto_dep.found(), 'Requires gnutls crypto support')
 else
   error('bug')
 endif
@@ -961,7 +965,7 @@ output += '  code coverage: ' + get_option('b_coverage').to_string() + '\n'
 output += '  LTO: ' + enable_lto.to_string() + '\n'
 output += '  Linker garbage collection: ' + enable_ld_gc.to_string() + '\n'
 output += '  JSON validation for libnm: ' + enable_json_validation.to_string() + '\n'
-output += '  crypto: ' + crypto + ' (have-gnutls: ' + crypto_gnutls_dep.found().to_string() + ', have-nss: ' + crypto_nss_dep.found().to_string() + ')\n'
+output += '  crypto: ' + crypto + '\n'
 output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'
 output += '  vapi: ' + enable_vapi.to_string() + '\n'

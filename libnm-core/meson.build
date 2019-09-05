@@ -177,11 +177,8 @@ shared_nm_libnm_core_intern_dep = declare_dependency(
 ###############################################################################
 
 deps = [
-  dl_dep,
+  crypto_dep,
   libnm_utils_base_dep,
-  libudev_dep,
-  uuid_dep,
-  shared_nm_libnm_core_intern_dep,
 ]
 
 cflags = [
@@ -189,35 +186,24 @@ cflags = [
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
 ]
 
+libnm_crypto = static_library(
+  'nm-crypto',
+  sources: 'nm-crypto-@0@.c'.format(crypto),
+  dependencies: deps,
+  c_args: cflags,
+)
+
+deps = [
+  dl_dep,
+  libnm_utils_base_dep,
+  libudev_dep,
+  uuid_dep,
+  shared_nm_libnm_core_intern_dep,
+]
+
 if enable_json_validation
   libnm_core_sources += files('nm-json.c')
   deps += jansson_dep
-endif
-
-if (crypto_gnutls_dep.found())
-  libnm_crypto_gnutls = static_library(
-    'nm-crypto-gnutls',
-    sources: [ 'nm-crypto-gnutls.c' ],
-    dependencies: deps + [ crypto_gnutls_dep ],
-    c_args: cflags,
-  )
-endif
-
-if (crypto_nss_dep.found())
-  libnm_crypto_nss = static_library(
-    'nm-crypto-nss',
-    sources: [ 'nm-crypto-nss.c' ],
-    dependencies: deps + [ crypto_nss_dep ],
-    c_args: cflags,
-  )
-endif
-
-if crypto == 'gnutls'
-  libnm_crypto = libnm_crypto_gnutls
-elif crypto == 'nss'
-  libnm_crypto = libnm_crypto_nss
-else
-  error('bug')
 endif
 
 libnm_core_sources_all =  libnm_core_sources
