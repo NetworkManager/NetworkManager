@@ -4800,7 +4800,6 @@ EXTRA_DIST += \
 	tools/check-settings-docs.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
-	tools/decorators.sh \
 	tools/meson-post-install.sh \
 	tools/run-nm-test.sh \
 	tools/test-networkmanager-service.py \
