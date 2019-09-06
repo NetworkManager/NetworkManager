@@ -32,9 +32,6 @@ configure_file(
   configuration: version_conf,
 )
 
-result = run_command(join_paths(meson.source_root(), 'tools', 'decorators.sh'),
-                     join_paths(meson.source_root(), 'libnm-core', 'nm-version.h'))
-
 gnome.gtkdoc(
   doc_module,
   main_xml: doc_module + '-docs.xml',
@@ -46,7 +43,7 @@ gnome.gtkdoc(
   scan_args: [
     '--rebuild-types',
     '--rebuild-sections',
-    '--ignore-decorators=' + result.stdout().strip(),
+    '--ignore-decorators=NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?',
     '--ignore-headers=' + ' '.join(private_headers),
   ],
   scanobjs_args: '--type-init-func="g_type_init();"',
