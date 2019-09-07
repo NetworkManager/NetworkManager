@@ -2,7 +2,7 @@ name = 'nm-online'
 
 deps = [
   libnm_dep,
-  libnm_core_dep,
+  libnm_nm_default_dep,
 ]
 
 clients_cflags = [

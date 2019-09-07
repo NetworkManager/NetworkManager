@@ -2,7 +2,7 @@ name = 'nm-pppd-plugin'
 
 deps = [
   dl_dep,
-  libnm_core_dep,
+  libnm_core_nm_default_dep,
 ]
 
 nm_pppd_plugin = shared_module(
@@ -22,6 +22,7 @@ nm_pppd_plugin = shared_module(
 name = 'nm-ppp-plugin'
 
 deps = [
+  daemon_nm_default_dep,
   nm_dep,
 ]
 

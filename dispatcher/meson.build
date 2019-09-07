@@ -25,7 +25,7 @@ sources = files('nm-dispatcher-utils.c')
 
 deps = [
   libnm_dep,
-  libnm_core_dep,
+  libnm_nm_default_dep,
 ]
 
 cflags = [

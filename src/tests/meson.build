@@ -35,8 +35,7 @@ cflags = [
 exe = executable(
   test_unit,
   test_unit + '.c',
-  include_directories: src_inc,
-  dependencies: libnm_core_dep,
+  dependencies: daemon_nm_default_dep,
   c_args: cflags,
   link_with: [
     libnm_systemd_core,

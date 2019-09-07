@@ -8,7 +8,7 @@ cflags = [
 executable(
   name,
   name + '.c',
-  dependencies: libnm_core_dep,
+  dependencies: glib_nm_default_dep,
   c_args: cflags,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

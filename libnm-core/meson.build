@@ -1,5 +1,11 @@
 libnm_core_inc = include_directories('.')
 
+libnm_core_nm_default_dep = declare_dependency(
+  sources: nm_version_macro_header,
+  include_directories: libnm_core_inc,
+  dependencies: glib_nm_default_dep,
+)
+
 libnm_core_headers = files(
   'nm-connection.h',
   'nm-core-types.h',
@@ -159,7 +165,7 @@ shared_nm_libnm_core_intern = static_library(
     include_directories: libnm_core_inc,
     dependencies: [
         libnm_core_enum_dep,
-        libnm_utils_base_dep,
+        libnm_core_nm_default_dep,
     ],
 )
 

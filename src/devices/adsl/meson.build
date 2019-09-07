@@ -5,6 +5,7 @@ sources = files(
 
 deps = [
   libudev_dep,
+  nm_default_dep,
   nm_dep,
 ]
 

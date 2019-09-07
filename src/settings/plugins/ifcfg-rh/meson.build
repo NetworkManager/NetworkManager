@@ -26,6 +26,7 @@ core_sources = files(
 )
 
 deps = [
+  nm_default_dep,
   nm_dep,
 ]
 

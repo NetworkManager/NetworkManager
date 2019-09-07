@@ -6,6 +6,7 @@ sources = files(
 
 deps = [
   libnm_wwan_dep,
+  nm_default_dep,
   nm_dep,
 ]
 

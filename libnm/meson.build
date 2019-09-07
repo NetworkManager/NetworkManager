@@ -1,5 +1,11 @@
 libnm_inc = include_directories('.')
 
+libnm_nm_default_dep = declare_dependency(
+  sources: libnm_core_enum[1],
+  include_directories: libnm_inc,
+  dependencies: libnm_core_nm_default_dep,
+)
+
 cflags = [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
@@ -138,7 +144,7 @@ liblibnm = static_library(
     dl_dep,
     libudev_dep,
     libnm_core_dep,
-    libnm_utils_base_dep,
+    libnm_nm_default_dep,
     libnm_udev_aux_dep,
     uuid_dep,
   ],
@@ -146,26 +152,10 @@ liblibnm = static_library(
   link_with: libnm_systemd_logging_stub,
 )
 
-liblibnm_dep = declare_dependency(
-  sources: libnm_enum[1],
-  include_directories: [
-    libnm_inc,
-    libnm_core_inc,
-  ],
-  dependencies: [
-    libnm_core_dep,
-    libnmdbus_dep,
-    libnm_utils_base_dep,
-    libudev_dep,
-    dl_dep,
-    uuid_dep,
-  ],
-  link_with: libnm_systemd_logging_stub,
-)
-
 libnm = shared_library(
   'nm',
   version: libnm_version,
+  dependencies: libnm_nm_default_dep,
   link_whole: [
     liblibnm,
     libnm_core,
@@ -173,7 +163,6 @@ libnm = shared_library(
     libnmdbus,
     libnm_utils_base,
   ],
-  dependencies: liblibnm_dep,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),
   ],

@@ -1,10 +1,10 @@
 examples = [
-  ['add-connection-gdbus', [libnm_enum[1]], [libnm_inc], [uuid_dep]],
-  ['add-connection-libnm', [], [], [libnm_dep]],
-  ['get-active-connections-gdbus', [libnm_enum[1]], [libnm_inc], []],
-  ['get-ap-info-libnm', [], [], [libnm_dep]],
+  ['add-connection-gdbus', [libnm_enum[1], nm_version_macro_header], [libnm_inc, shared_inc], [uuid_dep]],
+  ['add-connection-libnm', [nm_version_macro_header], [shared_inc], [libnm_dep]],
+  ['get-active-connections-gdbus', [libnm_enum[1], nm_version_macro_header], [libnm_inc, shared_inc], []],
+  ['get-ap-info-libnm', [nm_version_macro_header], [shared_inc], [libnm_dep]],
   ['list-connections-gdbus', [], [], []],
-  ['list-connections-libnm', [], [], [libnm_dep]],
+  ['list-connections-libnm', [nm_version_macro_header], [shared_inc], [libnm_dep]],
   ['monitor-nm-running-gdbus', [], [], []],
   ['monitor-nm-state-gdbus', [], [], []],
 ]

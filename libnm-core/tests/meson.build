@@ -32,8 +32,8 @@ test_cert_dir = join_paths(meson.current_source_dir(), 'certs')
 foreach test_unit: test_units
   exe = executable(
     'libnm-core-' + test_unit,
-    [test_unit + '.c'] + enum,
-    dependencies: libnm_core_dep,
+    [test_unit + '.c', libnm_core_enum[1]] + enum,
+    dependencies: libnm_core_nm_default_dep,
     c_args: [
         '-DNETWORKMANAGER_COMPILATION_TEST',
         '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',

@@ -8,6 +8,7 @@ sources = files(
 deps = [
   libsystemd_dep,
   mm_glib_dep,
+  nm_default_dep,
   nm_dep,
 ]
 

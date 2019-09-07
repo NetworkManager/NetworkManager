@@ -1,8 +1,8 @@
 name = 'nmtui'
 
 deps = [
+  libnm_nm_default_dep,
   newt_dep,
-  libnm_core_dep,
 ]
 
 cflags = clients_cflags + [

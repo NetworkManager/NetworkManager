@@ -20,6 +20,7 @@ if enable_iwd
 endif
 
 deps = [
+  nm_default_dep,
   nm_dep,
 ]
 

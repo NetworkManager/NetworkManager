@@ -1,5 +1,9 @@
 shared_inc = include_directories('.')
 
+nm_default_dep = declare_dependency(include_directories: [top_inc, shared_inc])
+
+glib_nm_default_dep = declare_dependency(dependencies: [glib_dep, nm_default_dep])
+
 libc_siphash = static_library(
   'c-siphash',
   sources: 'c-siphash/src/c-siphash.c',
@@ -152,33 +156,26 @@ links = [
 libnm_utils_base = static_library(
   'nm-utils-base',
   sources: sources,
-  include_directories: top_inc,
-  dependencies: glib_dep,
+  dependencies: glib_nm_default_dep,
   c_args: c_flags,
   link_with: links,
 )
 
-incs = [
-  top_inc,
-  shared_inc,
-]
-
 libnm_utils_base_dep = declare_dependency(
-  include_directories: incs,
-  dependencies: glib_dep,
+  dependencies: glib_nm_default_dep,
   link_with: libnm_utils_base,
 )
 
 deps = [
+  glib_nm_default_dep,
   libudev_dep,
-  libnm_utils_base_dep,
 ]
 
 libnm_udev_aux = static_library(
   'nm-udev-aux',
   sources: 'nm-udev-aux/nm-udev-utils.c',
-  c_args: c_flags,
   dependencies: deps,
+  c_args: c_flags,
 )
 
 libnm_udev_aux_dep = declare_dependency(
@@ -239,20 +236,20 @@ libnm_systemd_shared = static_library(
   'nm-systemd-shared',
   sources: sources,
   include_directories: incs,
-  dependencies: libnm_utils_base_dep,
+  dependencies: glib_nm_default_dep,
   c_args: c_flags,
 )
 
 libnm_systemd_shared_dep = declare_dependency(
   include_directories: incs,
-  dependencies: libnm_utils_base_dep,
+  dependencies: glib_dep,
   link_with: libnm_systemd_shared,
 )
 
 libnm_systemd_logging_stub = static_library(
   'nm-systemd-logging-stub',
   sources: 'systemd/nm-logging-stub.c',
-  dependencies: libnm_utils_base_dep,
+  dependencies: glib_nm_default_dep,
   c_args: c_flags,
 )
 

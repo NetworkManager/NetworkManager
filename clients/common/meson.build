@@ -4,6 +4,7 @@ nm_polkit_listener = files('nm-polkit-listener.c')
 
 deps = [
   libnm_dep,
+  libnm_nm_default_dep,
   shared_nm_libnm_core_aux_dep,
 ]
 

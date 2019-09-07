@@ -8,6 +8,7 @@ sources = files(
 
 deps = [
   jansson_dep,
+  nm_default_dep,
   nm_dep,
 ]
 

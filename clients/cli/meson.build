@@ -22,7 +22,7 @@ deps = [
   libnm_dep,
   libnmc_base_dep,
   libnmc_dep,
-  libnm_core_dep,
+  libnm_nm_default_dep,
   readline_dep,
 ]
 

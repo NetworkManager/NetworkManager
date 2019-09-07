@@ -7,7 +7,7 @@ exe = executable(
     libnm_dep,
     libnmc_dep,
     libnmc_base_dep,
-    libnm_core_dep,
+    libnm_nm_default_dep,
   ],
   c_args: clients_cflags + [
     '-DNETWORKMANAGER_COMPILATION_TEST',
@@ -31,6 +31,7 @@ exe = executable(
     ],
     dependencies: [
         libnm_dep,
+        libnm_nm_default_dep,
         shared_nm_libnm_core_aux_dep,
         shared_nm_libnm_core_intern_dep,
     ],

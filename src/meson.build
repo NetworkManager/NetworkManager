@@ -1,5 +1,11 @@
 src_inc = include_directories('.')
 
+daemon_nm_default_dep = declare_dependency(
+  sources: libnm_core_enum[1],
+  include_directories: src_inc,
+  dependencies: libnm_core_nm_default_dep,
+)
+
 install_data(
   'org.freedesktop.NetworkManager.conf',
   install_dir: dbus_conf_dir,
@@ -49,10 +55,11 @@ sources = files(
 )
 
 deps = [
+  daemon_nm_default_dep,
   libsystemd_dep,
   libudev_dep,
-  libnm_core_dep,
   libn_dhcp4_dep,
+  libnm_systemd_shared_dep,
   libnm_udev_aux_dep,
 ]
 
@@ -152,10 +159,10 @@ sources = files(
 )
 
 nm_deps = [
+  daemon_nm_default_dep,
   dl_dep,
   libndp_dep,
   libudev_dep,
-  libnm_core_dep,
   libn_acd_dep,
   logind_dep,
 ]
@@ -189,10 +196,10 @@ libnetwork_manager = static_library(
 )
 
 deps = [
+  daemon_nm_default_dep,
   dl_dep,
   libndp_dep,
   libudev_dep,
-  libnm_core_dep,
 ]
 
 name = 'nm-iface-helper'
@@ -220,11 +227,6 @@ if enable_tests
     'platform/nm-fake-platform.c',
   )
 
-  deps = [
-    libudev_dep,
-    libnm_core_dep,
-  ]
-
   test_cflags = ['-DNETWORKMANAGER_COMPILATION_TEST']
   if require_root_tests
     test_cflags += ['-DREQUIRE_ROOT_TESTS=1']
@@ -233,13 +235,13 @@ if enable_tests
   libnetwork_manager_test = static_library(
     nm_name + 'Test',
     sources: sources,
-    dependencies: deps,
+    dependencies: daemon_nm_default_dep,
     c_args: cflags + test_cflags,
     link_with: libnetwork_manager,
   )
 
   test_nm_dep = declare_dependency(
-    dependencies: nm_dep,
+    dependencies: [daemon_nm_default_dep, nm_dep],
     compile_args: test_cflags,
     link_with: libnetwork_manager_test,
   )

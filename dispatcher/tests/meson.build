@@ -10,8 +10,9 @@ exe = executable(
   [ test_unit + '.c' ] + [ nmdbus_dispatcher_sources ],
   include_directories: incs,
   dependencies: [
-    libnm_core_dep,
     libnm_dep,
+    libnm_nm_default_dep,
+    libnm_utils_base_dep,
   ],
   c_args: [
       '-DNETWORKMANAGER_COMPILATION_TEST',
