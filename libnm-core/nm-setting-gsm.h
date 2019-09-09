@@ -24,6 +24,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
+#define NM_SETTING_GSM_AUTO_CONFIG     "auto-config"
 #define NM_SETTING_GSM_USERNAME        "username"
 #define NM_SETTING_GSM_PASSWORD        "password"
 #define NM_SETTING_GSM_PASSWORD_FLAGS  "password-flags"
@@ -59,6 +60,10 @@ typedef struct {
 GType nm_setting_gsm_get_type (void);
 
 NMSetting *nm_setting_gsm_new                  (void);
+
+NM_AVAILABLE_IN_1_22
+gboolean    nm_setting_gsm_get_auto_config     (NMSettingGsm *setting);
+
 const char *nm_setting_gsm_get_username        (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_password        (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_apn             (NMSettingGsm *setting);

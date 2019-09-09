@@ -1299,6 +1299,29 @@ _normalize_bridge_port_vlan_order (NMConnection *self)
 }
 
 static gboolean
+_normalize_gsm_auto_config (NMConnection *self)
+{
+	NMSettingGsm *s_gsm;
+
+	s_gsm = nm_connection_get_setting_gsm (self);
+	if (!s_gsm)
+		return FALSE;
+
+	if (!nm_setting_gsm_get_auto_config (s_gsm))
+		return FALSE;
+
+	if (   !nm_setting_gsm_get_apn (s_gsm)
+	    && !nm_setting_gsm_get_username (s_gsm)
+	    && !nm_setting_gsm_get_password (s_gsm))
+		return FALSE;
+
+	g_object_set (s_gsm,
+	              NM_SETTING_GSM_AUTO_CONFIG, FALSE,
+	              NULL);
+	return TRUE;
+}
+
+static gboolean
 _normalize_required_settings (NMConnection *self)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
@@ -1614,6 +1637,7 @@ _connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_sriov_vf_order (connection);
 	was_modified |= _normalize_bridge_vlan_order (connection);
 	was_modified |= _normalize_bridge_port_vlan_order (connection);
+	was_modified |= _normalize_gsm_auto_config (connection);
 
 	was_modified = !!was_modified;
 

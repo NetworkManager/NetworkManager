@@ -5365,6 +5365,9 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GSM
 static const NMMetaPropertyInfo *const property_infos_GSM[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_AUTO_CONFIG,
+	    .property_type =                &_pt_gobject_bool,
+	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_NUMBER,
 	    .property_type =                &_pt_gobject_string,
 	),
