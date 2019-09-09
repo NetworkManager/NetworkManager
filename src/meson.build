@@ -1,7 +1,7 @@
 src_inc = include_directories('.')
 
 daemon_nm_default_dep = declare_dependency(
-  sources: libnm_core_enum[1],
+  sources: libnm_core_enum_sources[1],
   include_directories: src_inc,
   dependencies: libnm_core_nm_default_dep,
 )
@@ -15,15 +15,7 @@ subdir('systemd')
 
 core_plugins = []
 
-nm_cflags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
-
-nm_dep = declare_dependency(
-  include_directories: src_inc,
-  dependencies: libnm_core_dep,
-  compile_args: nm_cflags,
-)
-
-cflags = nm_cflags
+daemon_c_flags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
 
 sources = files(
   'dhcp/nm-dhcp-client.c',
@@ -59,6 +51,7 @@ deps = [
   libsystemd_dep,
   libudev_dep,
   libn_dhcp4_dep,
+  libnm_core_dep,
   libnm_systemd_shared_dep,
   libnm_udev_aux_dep,
 ]
@@ -71,8 +64,7 @@ libnetwork_manager_base = static_library(
   nm_name + 'Base',
   sources: sources,
   dependencies: deps,
-  c_args: cflags,
-  link_with: libnm_core,
+  c_args: daemon_c_flags,
 )
 
 sources = files(
@@ -187,7 +179,7 @@ libnetwork_manager = static_library(
   nm_name,
   sources: sources,
   dependencies: nm_deps,
-  c_args: cflags,
+  c_args: daemon_c_flags,
   link_with: [
     libnetwork_manager_base,
     libnm_systemd_core,
@@ -208,7 +200,7 @@ executable(
   name,
   name + '.c',
   dependencies: deps,
-  c_args: cflags,
+  c_args: daemon_c_flags,
   link_with: [
     libnetwork_manager_base,
     libnm_systemd_core,
@@ -227,7 +219,7 @@ if enable_tests
     'platform/nm-fake-platform.c',
   )
 
-  test_cflags = ['-DNETWORKMANAGER_COMPILATION_TEST']
+  test_cflags = daemon_c_flags + ['-DNETWORKMANAGER_COMPILATION_TEST']
   if require_root_tests
     test_cflags += ['-DREQUIRE_ROOT_TESTS=1']
   endif
@@ -236,12 +228,12 @@ if enable_tests
     nm_name + 'Test',
     sources: sources,
     dependencies: daemon_nm_default_dep,
-    c_args: cflags + test_cflags,
+    c_args: test_cflags,
     link_with: libnetwork_manager,
   )
 
   test_nm_dep = declare_dependency(
-    dependencies: [daemon_nm_default_dep, nm_dep],
+    dependencies: daemon_nm_default_dep,
     compile_args: test_cflags,
     link_with: libnetwork_manager_test,
   )
@@ -286,9 +278,9 @@ symbol_map_name = 'NetworkManager.ver'
 network_manager_sym = executable(
   'nm-full-symbols',
   'main.c',
-  c_args: nm_cflags,
-  link_args: '-Wl,--no-gc-sections',
   dependencies: nm_deps,
+  c_args: daemon_c_flags,
+  link_args: '-Wl,--no-gc-sections',
   link_whole: [libnetwork_manager, libnetwork_manager_base, libnm_core],
   install: false,
 )
@@ -307,7 +299,7 @@ network_manager = executable(
   nm_name,
   'main.c',
   dependencies: nm_deps,
-  c_args: nm_cflags,
+  c_args: daemon_c_flags,
   link_with: libnetwork_manager,
   link_args: ldflags,
   link_depends: ver_script,

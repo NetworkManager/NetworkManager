@@ -1,7 +1,7 @@
 libnm_inc = include_directories('.')
 
 libnm_nm_default_dep = declare_dependency(
-  sources: libnm_core_enum[1],
+  sources: libnm_core_enum_sources[1],
   include_directories: libnm_inc,
   dependencies: libnm_core_nm_default_dep,
 )
@@ -143,13 +143,12 @@ liblibnm = static_library(
     libnmdbus_dep,
     dl_dep,
     libudev_dep,
-    libnm_core_dep,
     libnm_nm_default_dep,
     libnm_udev_aux_dep,
     uuid_dep,
   ],
   c_args: cflags,
-  link_with: libnm_systemd_logging_stub,
+  link_with: [libnm_systemd_logging_stub, libnm_libnm_core_intern],
 )
 
 libnm = shared_library(
@@ -200,7 +199,7 @@ test(
 )
 
 if enable_introspection
-  gir_sources = libnm_core_enum + libnm_core_headers + libnm_core_sources + libnm_enum + libnm_headers + libnm_sources + [nm_version_macro_header]
+  gir_sources = libnm_core_enum_sources + libnm_core_headers + libnm_core_sources + libnm_enum + libnm_headers + libnm_sources + [nm_version_macro_header]
 
   libnm_gir = gnome.generate_gir(
     libnm,

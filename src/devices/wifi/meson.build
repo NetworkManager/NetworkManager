@@ -19,15 +19,11 @@ if enable_iwd
   )
 endif
 
-deps = [
-  nm_default_dep,
-  nm_dep,
-]
-
 libnm_device_plugin_wifi = shared_module(
   'nm-device-plugin-wifi',
   sources: sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,

@@ -22,6 +22,12 @@ test(
 
 ###############################################################################
 
+deps = [
+  libnm_dep,
+  libnm_libnm_core_aux_dep,
+  libnm_nm_default_dep,
+]
+
 exe = executable(
     'test-libnm-core-aux',
     [ 'test-libnm-core-aux.c', ],
@@ -29,12 +35,8 @@ exe = executable(
         '-DNETWORKMANAGER_COMPILATION_TEST',
         '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
     ],
-    dependencies: [
-        libnm_dep,
-        libnm_nm_default_dep,
-        shared_nm_libnm_core_aux_dep,
-        shared_nm_libnm_core_intern_dep,
-    ],
+    dependencies: deps,
+    link_with: libnm_systemd_logging_stub,
 )
 
 test(

@@ -4,21 +4,20 @@ sources = files(
   'nmi-ibft-reader.c',
 )
 
-nm_cflags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
-
 libnmi_core = static_library(
   'nmi-core',
-  c_args: nm_cflags,
   sources: sources,
   dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
 )
 
 name = 'nm-initrd-generator'
+
 executable(
   name,
   name + '.c',
-  c_args: nm_cflags,
   dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_with: [libnetwork_manager_base, libnmi_core],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

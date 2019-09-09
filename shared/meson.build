@@ -110,6 +110,12 @@ nm_version_macro_header = configure_file(
   configuration: nm_version_macro_conf,
 )
 
+nm_ethtool_utils_source = files('nm-libnm-core-intern/nm-ethtool-utils.c')
+
+nm_libnm_core_aux_source = files('nm-libnm-core-aux/nm-libnm-core-aux.c')
+
+nm_libnm_core_utils_source = files('nm-libnm-core-intern/nm-libnm-core-utils.c')
+
 nm_meta_setting_source = files('nm-meta-setting.c')
 
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')

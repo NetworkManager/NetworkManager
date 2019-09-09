@@ -25,15 +25,11 @@ core_sources = files(
   'shvar.c',
 )
 
-deps = [
-  nm_default_dep,
-  nm_dep,
-]
-
 libnms_ifcfg_rh_core = static_library(
   'nms-ifcfg-rh-core',
   sources: core_sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
 )
 
 sources = [dbus_sources] + core_sources + files('nms-ifcfg-rh-storage.c', 'nms-ifcfg-rh-plugin.c')
@@ -41,7 +37,8 @@ sources = [dbus_sources] + core_sources + files('nms-ifcfg-rh-storage.c', 'nms-i
 libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',
   sources: sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_with: [libnms_ifcfg_rh_core],
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,

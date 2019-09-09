@@ -3,16 +3,11 @@ sources = files(
   'nms-ifupdown-parser.c',
 )
 
-deps = [
-  nm_default_dep,
-  libudev_dep,
-  nm_dep,
-]
-
 libnms_ifupdown_core = static_library(
   'nms-ifupdown-core',
   sources: sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
 )
 
 sources = files(
@@ -22,7 +17,8 @@ sources = files(
 libnm_settings_plugin_ifupdown = shared_module(
   'nm-settings-plugin-ifupdown',
   sources: sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_with: libnms_ifupdown_core,
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,

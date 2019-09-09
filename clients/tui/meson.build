@@ -58,6 +58,7 @@ deps += [
   libnm_dep,
   libnmc_dep,
   libnmc_base_dep,
+  libnm_libnm_core_aux_dep,
   libnmt_newt_dep,
 ]
 
@@ -66,6 +67,7 @@ executable(
   sources,
   dependencies: deps,
   c_args: cflags,
+  link_with: libnm_systemd_logging_stub,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,

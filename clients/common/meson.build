@@ -4,8 +4,8 @@ nm_polkit_listener = files('nm-polkit-listener.c')
 
 deps = [
   libnm_dep,
+  libnm_libnm_core_aux_dep,
   libnm_nm_default_dep,
-  shared_nm_libnm_core_aux_dep,
 ]
 
 cflags = clients_cflags + [
@@ -50,6 +50,11 @@ else
     configuration: configuration_data(),
   )
 endif
+
+deps += [
+  libnm_libnm_core_aux_dep,
+  libnm_utils_base_dep,
+]
 
 libnmc = static_library(
   'nmc',

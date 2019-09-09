@@ -5,6 +5,11 @@ test_units = [
   ['test-secret-agent',           90],
 ]
 
+deps = [
+  libnm_core_dep,
+  libnm_nm_default_dep,
+]
+
 cflags = [
   '-DNETWORKMANAGER_COMPILATION_TEST',
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
@@ -16,14 +21,11 @@ foreach test_unit: test_units
     [
       test_unit[0] + '.c',
       nm_test_utils_impl_source,
+      libnm_enum[1],
     ],
-    dependencies: libnm_nm_default_dep,
+    dependencies: deps,
     c_args: cflags,
-    link_with: [
-      liblibnm,
-      libnm_core,
-      libnm_systemd_logging_stub,
-    ],
+    link_with: liblibnm,
   )
 
   test(

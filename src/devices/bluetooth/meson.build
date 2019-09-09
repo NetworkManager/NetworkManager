@@ -5,9 +5,8 @@ sources = files(
 )
 
 deps = [
+  daemon_nm_default_dep,
   libnm_wwan_dep,
-  nm_default_dep,
-  nm_dep,
 ]
 
 if enable_bluez5_dun
@@ -20,6 +19,7 @@ libnm_device_plugin_bluetooth = shared_module(
   'nm-device-plugin-bluetooth',
   sources: sources,
   dependencies: deps,
+  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,

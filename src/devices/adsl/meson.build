@@ -3,16 +3,11 @@ sources = files(
   'nm-device-adsl.c',
 )
 
-deps = [
-  libudev_dep,
-  nm_default_dep,
-  nm_dep,
-]
-
 libnm_device_plugin_adsl = shared_module(
   'nm-device-plugin-adsl',
   sources: sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,

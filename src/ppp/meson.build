@@ -21,17 +21,13 @@ nm_pppd_plugin = shared_module(
 
 name = 'nm-ppp-plugin'
 
-deps = [
-  daemon_nm_default_dep,
-  nm_dep,
-]
-
 linker_script = join_paths(meson.current_source_dir(), 'nm-ppp-plugin.ver')
 
 core_plugins += shared_module(
   name,
   sources: 'nm-ppp-manager.c',
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),
   ],
