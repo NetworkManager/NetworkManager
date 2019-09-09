@@ -8845,17 +8845,24 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 static NMCResultCode
 do_connection_reload (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
+	gs_unref_variant GVariant *result = NULL;
+	gs_free_error GError *error = NULL;
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (!nm_client_reload_connections (nmc->client, NULL, &error)) {
+	result = nmc_dbus_call_sync (nmc,
+	                             "/org/freedesktop/NetworkManager/Settings",
+	                             "org.freedesktop.NetworkManager.Settings",
+	                             "ReloadConnections",
+	                             g_variant_new ("()"),
+	                             G_VARIANT_TYPE("(b)"),
+	                             &error);
+	if (error) {
 		g_string_printf (nmc->return_text, _("Error: failed to reload connections: %s."),
 		                 nmc_error_get_simple_message (error));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_clear_error (&error);
 	}
 
 	return nmc->return_value;
@@ -9245,7 +9252,7 @@ static const NMCCommand connection_cmds[] = {
 	{ "add",      do_connection_add,        usage_connection_add,      TRUE,   TRUE },
 	{ "edit",     do_connection_edit,       usage_connection_edit,     TRUE,   TRUE },
 	{ "delete",   do_connection_delete,     usage_connection_delete,   TRUE,   TRUE },
-	{ "reload",   do_connection_reload,     usage_connection_reload,   TRUE,   TRUE },
+	{ "reload",   do_connection_reload,     usage_connection_reload,   FALSE,  FALSE },
 	{ "load",     do_connection_load,       usage_connection_load,     TRUE,   TRUE },
 	{ "modify",   do_connection_modify,     usage_connection_modify,   TRUE,   TRUE },
 	{ "clone",    do_connection_clone,      usage_connection_clone,    TRUE,   TRUE },
