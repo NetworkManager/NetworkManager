@@ -2537,6 +2537,25 @@ EXTRA_DIST += \
 	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/index \
 	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/lun \
 	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/port \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootpath \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-request \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-response \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/broadcast-ip \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-ip \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-name \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/domain-name \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/gateway-ip \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/name \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/netmask-ip \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/root-path \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/server-ip \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/tftp-file \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/vendor-options \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/device_type \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/local-mac-address \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/mac-address \
+	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/name \
+	src/initrd/tests/sysfs-dt-tftp/firmware/devicetree/base/chosen/bootpath \
 	src/initrd/tests/sysfs-static/class/net/eth0/address \
 	src/initrd/tests/sysfs-static/class/net/eth1/address \
 	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/prefix-len \
