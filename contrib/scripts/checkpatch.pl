@@ -178,7 +178,7 @@ if ($filename !~ /\.[ch]$/) {
 }
 
 next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
-next if $filename =~ /\bsrc\/systemd\//
+next if $filename =~ /\b(shared|src)\/systemd\//
 	and not $filename =~ /\/sd-adapt\//
 	and not $filename =~ /\/nm-/;
 next if $filename =~ /\/(n-acd|c-list|c-siphash)\//;
