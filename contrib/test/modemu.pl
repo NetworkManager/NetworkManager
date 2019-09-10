@@ -136,6 +136,7 @@ sub cleanup
 # Ensure we clean up before and after.
 END { cleanup };
 $SIG{INT} = sub { cleanup; die };
+$SIG{TERM} = sub { cleanup; die };
 cleanup;
 
 my $pty = new IO::Pty;
