@@ -1,19 +1,6 @@
 #!/usr/bin/perl -n
+# SPDX-License-Identifier: GPL-2.0+
 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
 # Copyright 2018 Red Hat, Inc.
 
 # $ perldoc checkpatch.pl for eye-pleasing view of the manual:
@@ -61,6 +48,7 @@ our $filename;
 our $line_no;
 our $indent;
 our $check_is_todo;
+our $expect_spdx;
 
 sub new_hunk
 {
@@ -70,6 +58,7 @@ sub new_hunk
 
 sub new_file
 {
+	$expect_spdx = 0;
 	$check_is_todo = 1;
 	$filename = shift;
 	@functions_seen = ();
@@ -178,17 +167,22 @@ if ($filename !~ /\.[ch]$/) {
 }
 
 next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
-next if $filename =~ /\bsrc\/systemd\//
+next if $filename =~ /\b(shared|src)\/systemd\//
 	and not $filename =~ /\/sd-adapt\//
 	and not $filename =~ /\/nm-/;
 next if $filename =~ /\/(n-acd|c-list|c-siphash|n-dhcp4)\//;
+
+$expect_spdx = 1 if $line_no == 1;
+$expect_spdx = 0 if $line =~ /SPDX-License-Identifier/;
+complain ('Missing a SPDX-License-Identifier') if $line_no == 2 and $expect_spdx;
 
 complain ('Tabs are only allowed at the beginning of a line') if $line =~ /[^\t]\t/;
 complain ('Trailing whitespace') if $line =~ /[ \t]$/;
 complain ('Don\'t use glib typedefs for char/short/int/long/float/double') if $line =~ /\bg(char|short|int|long|float|double)\b/;
 complain ("Don't use \"$1 $2\" instead of \"$2 $1\"") if $line =~ /\b(char|short|int|long) +(unsigned|signed)\b/;
 complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\b(unsigned) +(int)\b/;
-complain ("Please use LGPL2+ for new files") if $is_patch and $line =~ /under the terms of the GNU General Public License/;
+complain ("Please use LGPL-2.1+ SPDX tag for new files") if $is_patch and $line =~ /SPDX-License-Identifier/ and not /LGPL-2.1\+/;
+complain ("Use a SPDX-License-Identifier instead of Licensing boilerplate") if $is_patch and $line =~ /under the terms of/;
 complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 complain ("Don't add Emacs editor formatting hints to source files") if $line_no == 1 and $line =~ /-\*-.+-\*-/;
 complain ("XXX marker are reserved for development while work-in-progress. Use TODO or FIXME comment instead?") if $line =~ /\bXXX\b/;

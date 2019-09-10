@@ -40,7 +40,6 @@ test-*.trs
 /NetworkManager-*.tar.*
 
 /ABOUT-NLS
-/COPYING
 /INSTALL
 /TAGS
 /aclocal.m4

@@ -91,7 +91,6 @@ content_files = \
 	$(top_builddir)/man/nm-settings.xml \
 	$(top_builddir)/man/nm-settings-keyfile.xml \
 	version.xml \
-	../../COPYING \
 	$(NULL)
 
 

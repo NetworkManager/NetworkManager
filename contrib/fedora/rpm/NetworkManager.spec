@@ -875,6 +875,8 @@ fi
 %{_datadir}/doc/NetworkManager/examples/server.conf
 %doc NEWS AUTHORS README CONTRIBUTING TODO
 %license COPYING
+%license COPYING.LGPL
+%license COPYING.GFDL
 
 
 %if %{with adsl}

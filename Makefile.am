@@ -4784,6 +4784,9 @@ TESTS += $(check_programs)
 
 EXTRA_DIST += \
 	CONTRIBUTING \
+	COPYING.LGPL \
+	COPYING.GFDL \
+	\
 	NetworkManager.pc.in \
 	intltool-extract.in \
 	intltool-merge.in \

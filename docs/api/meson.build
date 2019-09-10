@@ -20,7 +20,6 @@ configure_file(
   configuration: version_conf,
 )
 
-content_files += join_paths(meson.source_root(), 'COPYING')
 filecopier = find_program('cp')
 foreach intro : introspection_files
   path = intro[1].split('/')[-1]
