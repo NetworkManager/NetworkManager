@@ -6,7 +6,7 @@ libnm_nm_default_dep = declare_dependency(
   dependencies: libnm_core_nm_default_dep,
 )
 
-cflags = [
+c_flags = [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
 ]
@@ -65,12 +65,11 @@ install_headers(
   subdir: libnm_name,
 )
 
-enum_headers = libnm_headers + [nm_version_macro_header]
 enum_types = 'nm-enum-types'
 
-libnm_enum = gnome.mkenums(
+libnm_enum_sources = gnome.mkenums(
   enum_types,
-  sources: enum_headers,
+  sources: libnm_headers + [nm_version_macro_header],
   identifier_prefix: nm_id_prefix,
   c_template: enum_types + '.c.template',
   h_template: enum_types + '.h.template',
@@ -133,48 +132,50 @@ libnm_sources = files(
   'nm-wimax-nsp.c',
 )
 
-linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
+deps = [
+  libnmdbus_dep,
+  libnm_nm_default_dep,
+  libnm_udev_aux_dep,
+  libudev_dep,
+]
+
+links = [
+  libnm_libnm_core_intern,
+  libnm_systemd_logging_stub,
+]
 
 liblibnm = static_library(
   'libnm',
-  sources: libnm_sources + libnm_enum,
+  sources: libnm_sources + libnm_enum_sources,
   include_directories: libnm_core_inc,
-  dependencies: [
-    libnmdbus_dep,
-    dl_dep,
-    libudev_dep,
-    libnm_nm_default_dep,
-    libnm_udev_aux_dep,
-    uuid_dep,
-  ],
-  c_args: cflags,
-  link_with: [libnm_systemd_logging_stub, libnm_libnm_core_intern],
+  dependencies: deps,
+  c_args: c_flags,
+  link_with: links,
 )
+
+links = [
+  liblibnm,
+  libnm_core,
+  libnmdbus,
+  libnm_systemd_logging_stub,
+  libnm_utils_base,
+]
+
+linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
 
 libnm = shared_library(
   'nm',
   version: libnm_version,
   dependencies: libnm_nm_default_dep,
-  link_whole: [
-    liblibnm,
-    libnm_core,
-    libnm_systemd_logging_stub,
-    libnmdbus,
-    libnm_utils_base,
-  ],
-  link_args: [
-    '-Wl,--version-script,@0@'.format(linker_script),
-  ],
+  link_whole: links,
+  link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
   install: true,
 )
 
 libnm_dep = declare_dependency(
-  sources: libnm_enum[1],
-  include_directories: [
-    libnm_inc,
-    libnm_core_inc,
-  ],
+  sources: libnm_enum_sources[1],
+  include_directories: libnm_inc,
   link_with: libnm,
 )
 
@@ -199,21 +200,19 @@ test(
 )
 
 if enable_introspection
-  gir_sources = libnm_core_enum_sources + libnm_core_headers + libnm_core_sources + libnm_enum + libnm_headers + libnm_sources + [nm_version_macro_header]
 
   libnm_gir = gnome.generate_gir(
     libnm,
-    sources: gir_sources,
+    sources: libnm_core_sources + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
+    includes: 'Gio-2.0',
     nsversion: nm_gir_version,
     namespace: 'NM',
     identifier_prefix: nm_id_prefix,
     symbol_prefix: nm_id_prefix.to_lower(),
-    export_packages: libnm_name,
-    includes: 'Gio-2.0',
-    extra_args: cflags,
     header: 'NetworkManager.h',
+    export_packages: libnm_name,
+    extra_args: c_flags,
     install: true,
-    dependencies: libnm_dep,
   )
 
   generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
@@ -276,9 +275,9 @@ if enable_introspection
   name = 'nm-settings-docs.xml'
   nm_settings_docs = custom_target(
     name,
-    input: libnm_gir[0],
+    input: [libnm_gir[0], nm_settings_docs_overrides],
     output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
+    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT0@', '--overrides', '@INPUT1@', '--output', '@OUTPUT@'],
     depends: libnm_gir,
   )
 endif
