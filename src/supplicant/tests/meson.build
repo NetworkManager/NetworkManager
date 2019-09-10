@@ -3,7 +3,8 @@ test_unit = 'test-supplicant-config'
 exe = executable(
   test_unit,
   test_unit + '.c',
-  dependencies: test_nm_dep,
+  dependencies: libnetwork_manager_test_dep,
+  c_args: test_c_flags,
 )
 
 test(

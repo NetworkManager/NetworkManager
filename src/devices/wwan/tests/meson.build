@@ -2,8 +2,9 @@ exe = executable(
   'test-service-providers',
   sources: files('test-service-providers.c',
                  '../nm-service-providers.c'),
-  dependencies: test_nm_dep,
   include_directories: wwan_inc,
+  dependencies: libnetwork_manager_test_dep,
+  c_args: test_c_flags,
 )
 test(
   'wwan/test-service-providers',
