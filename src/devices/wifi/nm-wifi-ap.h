@@ -81,6 +81,7 @@ gboolean          nm_wifi_ap_get_fake                 (const NMWifiAP *ap);
 gboolean          nm_wifi_ap_set_fake                 (NMWifiAP *ap,
                                                        gboolean fake);
 NM80211ApFlags    nm_wifi_ap_get_flags                (const NMWifiAP *self);
+gboolean          nm_wifi_ap_get_metered              (const NMWifiAP *self);
 
 const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
                                                        char *str_buf,

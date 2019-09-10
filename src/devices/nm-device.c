@@ -14091,6 +14091,11 @@ nm_device_update_metered (NMDevice *self)
 		}
 	}
 
+	if (   value == NM_METERED_INVALID
+	    && NM_DEVICE_GET_CLASS (self)->get_guessed_metered
+	    && NM_DEVICE_GET_CLASS (self)->get_guessed_metered (self))
+		value = NM_METERED_GUESS_YES;
+
 	/* Try to guess a value using the metered flag in IP configuration */
 	if (value == NM_METERED_INVALID) {
 		if (   priv->ip_config_4

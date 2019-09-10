@@ -3166,6 +3166,15 @@ set_enabled (NMDevice *device, gboolean enabled)
 }
 
 static gboolean
+get_guessed_metered (NMDevice *device)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	return priv->current_ap && nm_wifi_ap_get_metered (priv->current_ap);
+}
+
+static gboolean
 can_reapply_change (NMDevice *device,
                     const char *setting_name,
                     NMSetting *s_old,
@@ -3375,6 +3384,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->get_enabled = get_enabled;
+	device_class->get_guessed_metered = get_guessed_metered;
 	device_class->set_enabled = set_enabled;
 
 	device_class->act_stage1_prepare = act_stage1_prepare;

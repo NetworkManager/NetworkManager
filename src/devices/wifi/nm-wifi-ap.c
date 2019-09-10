@@ -53,10 +53,12 @@ struct _NMWifiAPPrivate {
 	NM80211ApSecurityFlags wpa_flags;  /* WPA-related flags */
 	NM80211ApSecurityFlags rsn_flags;  /* RSN (WPA2) -related flags */
 
+	bool               metered:1;
+
 	/* Non-scanned attributes */
-	bool                fake:1;       /* Whether or not the AP is from a scan */
-	bool                hotspot:1;    /* Whether the AP is a local device's hotspot network */
-	gint32              last_seen;    /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
+	bool               fake:1;       /* Whether or not the AP is from a scan */
+	bool               hotspot:1;    /* Whether the AP is a local device's hotspot network */
+	gint32             last_seen;    /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
 };
 
 typedef struct _NMWifiAPPrivate NMWifiAPPrivate;
@@ -392,6 +394,12 @@ nm_wifi_ap_set_last_seen (NMWifiAP *ap, gint32 last_seen)
 	return FALSE;
 }
 
+gboolean
+nm_wifi_ap_get_metered (const NMWifiAP *self)
+{
+	return NM_WIFI_AP_GET_PRIVATE (self)->metered;
+}
+
 /*****************************************************************************/
 
 static NM80211ApSecurityFlags
@@ -717,44 +725,50 @@ get_max_rate_vht (const guint8 *bytes, guint len, guint32 *out_maxrate)
 /* Management Frame Information Element IDs, ieee80211_eid */
 #define WLAN_EID_HT_CAPABILITY       45
 #define WLAN_EID_VHT_CAPABILITY     191
+#define WLAN_EID_VENDOR_SPECIFIC    221
 
-static guint32
-get_max_rate (const guint8 *bytes, gsize len)
+static void
+parse_ies (const guint8 *bytes, gsize len, guint32 *out_max_rate, gboolean *out_metered)
 {
 	guint8 id, elem_len;
-	guint32 max_rate = 0;
+	guint32 m;
+
+	*out_max_rate = 0;
+	*out_metered = FALSE;
 
 	while (len) {
-		guint32 m;
-
 		if (len < 2)
-			return 0;
+			break;
 
 		id = *bytes++;
 		elem_len = *bytes++;
 		len -= 2;
 
 		if (elem_len > len)
-			return 0;
+			break;
 
 		switch (id) {
 		case WLAN_EID_HT_CAPABILITY:
-			if (!get_max_rate_ht (bytes, elem_len, &m))
-				return 0;
-			max_rate = NM_MAX (max_rate, m);
+			if (get_max_rate_ht (bytes, elem_len, &m))
+				*out_max_rate = NM_MAX (*out_max_rate, m);
 			break;
 		case WLAN_EID_VHT_CAPABILITY:
-			if (!get_max_rate_vht (bytes, elem_len, &m))
-				return 0;
-			max_rate = NM_MAX (max_rate, m);
+			if (get_max_rate_vht (bytes, elem_len, &m))
+				*out_max_rate = NM_MAX (*out_max_rate, m);
+			break;
+		case WLAN_EID_VENDOR_SPECIFIC:
+			if (   len == 8
+			    && bytes[0] == 0x00            /* OUI: Microsoft */
+			    && bytes[1] == 0x50
+			    && bytes[2] == 0xf2
+			    && bytes[3] == 0x11)           /* OUI type: Network cost */
+				*out_metered = (bytes[7] > 1); /* Cost level > 1 */
 			break;
 		}
 
 		len -= elem_len;
 		bytes += elem_len;
 	}
-
-	return max_rate;
 }
 
 /*****************************************************************************/
@@ -774,7 +788,8 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 	gint16 i16;
 	guint16 u16;
 	gboolean changed = FALSE;
-	guint32 max_rate;
+	gboolean metered;
+	guint32 max_rate, rate;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
 	g_return_val_if_fail (properties, FALSE);
@@ -855,9 +870,12 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 	v = g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
 	if (v) {
 		bytes = g_variant_get_fixed_array (v, &len, 1);
-		max_rate = NM_MAX (max_rate, get_max_rate (bytes, len));
+		parse_ies (bytes, len, &rate, &metered);
+		max_rate = NM_MAX (max_rate, rate);
 		g_variant_unref (v);
+		priv->metered = metered;
 	}
+
 	if (max_rate)
 		changed |= nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
 
@@ -988,7 +1006,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 		export_path = "/";
 
 	g_snprintf (str_buf, buf_len,
-	            "%17s %-35s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
+	            "%17s %-35s [ %c %3u %3u%% %c%c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
 	            priv->address ?: "(none)",
 	            (ssid_to_free = _nm_utils_ssid_to_string (priv->ssid)),
 	            (priv->mode == NM_802_11_MODE_ADHOC
@@ -1003,6 +1021,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	            chan,
 	            priv->strength,
 	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : '_',
+	            priv->metered ? 'M' : '_',
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
 	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_s ()) - priv->last_seen) : -1,
