@@ -51,18 +51,6 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
 
 core_plugins += libnm_settings_plugin_ifcfg_rh
 
-# FIXME: check_so_symbols replacement
-'''
-run_target(
-  'check-local-symbols-settings-ifcfg-rh',
-  command: [check_so_symbols, libnm_settings_plugin_ifcfg_rh.full_path()],
-  depends: libnm_settings_plugin_ifcfg_rh,
-)
-
-check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
-  $(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
-'''
-
 data = [
   'nm-ifdown',
   'nm-ifup',

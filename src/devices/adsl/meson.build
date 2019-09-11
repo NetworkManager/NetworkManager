@@ -21,10 +21,3 @@ test(
   check_exports,
   args: [libnm_device_plugin_adsl.full_path(), linker_script_devices],
 )
-
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so)
-'''

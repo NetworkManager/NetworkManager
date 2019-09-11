@@ -38,13 +38,6 @@ test(
   args: [libnm_device_plugin_wifi.full_path(), linker_script_devices],
 )
 
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so)
-'''
-
 if enable_tests
   subdir('tests')
 endif

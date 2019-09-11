@@ -24,18 +24,6 @@ libnm_settings_plugin_ifupdown = shared_module(
 
 core_plugins += libnm_settings_plugin_ifupdown
 
-# FIXME: check_so_symbols replacement
-'''
-run_target(
-  'check-local-symbols-settings-ifupdown',
-  command: [check_so_symbols, libnm_settings_plugin_ifupdown.full_path()],
-  depends: libnm_settings_plugin_ifupdown,
-)
-
-check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
-  $(call check_so_symbols,$(builddir)/src/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
-'''
-
 if enable_tests
   subdir('tests')
 endif

@@ -34,10 +34,3 @@ test(
   check_exports,
   args: [libnm_device_plugin_bluetooth.full_path(), linker_script_devices],
 )
-
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-bluetooth: src/devices/bluetooth/libnm-device-plugin-bluetooth.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so)
-'''

@@ -69,15 +69,6 @@ run_target(
   depends: libnm_device_plugin_wwan,
 )
 
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devices/wwan/libnm-wwan.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so)
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-wwan.so)
-'''
-
 if enable_tests
   subdir('tests')
 endif

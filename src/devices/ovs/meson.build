@@ -29,10 +29,3 @@ test(
   check_exports,
   args: [libnm_device_plugin_ovs.full_path(), linker_script_devices],
 )
-
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so)
-'''
