@@ -1,20 +1,16 @@
 name = 'nm-pppd-plugin'
 
-deps = [
-  dl_dep,
-  libnm_core_nm_default_dep,
+c_flags = [
+  '-DG_LOG_DOMAIN="@0@"'.format(name),
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
 ]
 
 nm_pppd_plugin = shared_module(
   name,
   name_prefix: '',
   sources: name + '.c',
-  include_directories: src_inc,
-  dependencies: deps,
-  c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
-  ],
+  dependencies: libnm_core_nm_default_dep,
+  c_args: c_flags,
   install: true,
   install_dir: pppd_plugin_dir,
 )
@@ -28,9 +24,7 @@ core_plugins += shared_module(
   sources: 'nm-ppp-manager.c',
   dependencies: daemon_nm_default_dep,
   c_args: daemon_c_flags,
-  link_args: [
-    '-Wl,--version-script,@0@'.format(linker_script),
-  ],
+  link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
   install: true,
   install_dir: nm_plugindir,
