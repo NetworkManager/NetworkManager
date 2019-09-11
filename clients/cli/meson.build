@@ -19,15 +19,9 @@ sources = files(
 )
 
 deps = [
-  libnm_dep,
   libnmc_base_dep,
   libnmc_dep,
-  libnm_nm_default_dep,
   readline_dep,
-]
-
-c_flags = clients_c_flags + [
-  '-DG_LOG_DOMAIN="@0@"'.format(name),
 ]
 
 if enable_polkit_agent
@@ -40,7 +34,7 @@ executable(
   name,
   sources,
   dependencies: deps,
-  c_args: c_flags,
+  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format(name)],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
