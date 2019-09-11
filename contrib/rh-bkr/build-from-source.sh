@@ -56,6 +56,7 @@ $SUDO yum install \
     libubsan \
     libudev-devel \
     libuuid-devel \
+    mobile-broadband-provider-info-devel \
     newt-devel \
     nss-devel \
     pkgconfig \
