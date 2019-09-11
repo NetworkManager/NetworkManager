@@ -20,26 +20,22 @@ install_data(
   install_dir: dbus_conf_dir,
 )
 
-sources = files('nm-dispatcher-utils.c')
-
 deps = [
   libnm_dep,
   libnm_nm_default_dep,
 ]
 
-cflags = [
+c_flags = [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
 ]
 
 libnm_dispatcher_core = static_library(
   name + '-core',
-  sources: sources,
+  sources: 'nm-dispatcher-utils.c',
   dependencies: deps,
-  c_args: cflags,
+  c_args: c_flags,
 )
-
-sources = files('nm-dispatcher.c')
 
 nmdbus_dispatcher_sources = gnome.gdbus_codegen(
   'nmdbus-dispatcher',
@@ -50,9 +46,9 @@ nmdbus_dispatcher_sources = gnome.gdbus_codegen(
 
 executable(
   name,
-  sources,
+  name + '.c',
   dependencies: deps,
-  c_args: cflags,
+  c_args: c_flags,
   link_with: libnm_dispatcher_core,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
