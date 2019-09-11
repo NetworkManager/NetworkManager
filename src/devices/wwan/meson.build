@@ -22,9 +22,7 @@ libnm_wwan = shared_module(
   sources: sources,
   dependencies: deps,
   c_args: daemon_c_flags,
-  link_args: [
-    '-Wl,--version-script,@0@'.format(linker_script),
-  ],
+  link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
   install: true,
   install_dir: nm_plugindir,
