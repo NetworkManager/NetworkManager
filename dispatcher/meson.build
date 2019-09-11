@@ -8,7 +8,6 @@ service_conf.set('sysconfdir', nm_sysconfdir)
 service_conf.set('localstatedir', nm_localstatedir)
 service_conf.set('libexecdir', nm_libexecdir)
 
-
 configure_file(
   input: 'org.freedesktop.nm_dispatcher.service.in',
   output: '@BASENAME@',
