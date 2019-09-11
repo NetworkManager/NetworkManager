@@ -74,9 +74,6 @@ install_data(
   install_mode: 'rwxr-xr-x',
 )
 
-meson.add_install_script('sh', '-c',
-                         'mkdir -p $DESTDIR/@0@/sysconfig/network-scripts'.format(nm_sysconfdir))
-
 if enable_tests
   subdir('tests')
 endif

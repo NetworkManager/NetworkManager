@@ -895,6 +895,8 @@ meson.add_install_script(
   nm_pkgstatedir,
   enable_docs ? 'install_docs' : '',
   nm_mandir,
+  enable_ifcfg_rh ? 'create_network_scripts' : '',
+  nm_sysconfdir,
 )
 
 output = '\nSystem paths:\n'
