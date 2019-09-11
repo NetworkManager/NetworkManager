@@ -219,6 +219,9 @@ BuildRequires: libndp-devel >= 1.0
 %if 0%{?with_modem_manager_1}
 BuildRequires: ModemManager-glib-devel >= 1.0
 %endif
+%if %{with wwan}
+BuildRequires: mobile-broadband-provider-info-devel
+%endif
 %if %{with nmtui}
 BuildRequires: newt-devel
 %endif

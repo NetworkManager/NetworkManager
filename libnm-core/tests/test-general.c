@@ -1747,7 +1747,7 @@ test_setting_gsm_apn_bad_chars (void)
 
 	/* 0 characters long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "", NULL);
-	g_assert (!nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
+	g_assert (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL));
 
 	/* 65-character long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl1", NULL);

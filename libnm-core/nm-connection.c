@@ -1041,7 +1041,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
+_normalize_infiniband_mtu (NMConnection *self)
 {
 	NMSettingInfiniband *s_infini = nm_connection_get_setting_infiniband (self);
 
@@ -1056,7 +1056,7 @@ _normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_bond_mode (NMConnection *self, GHashTable *parameters)
+_normalize_bond_mode (NMConnection *self)
 {
 	NMSettingBond *s_bond = nm_connection_get_setting_bond (self);
 
@@ -1077,7 +1077,7 @@ _normalize_bond_mode (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_bond_options (NMConnection *self, GHashTable *parameters)
+_normalize_bond_options (NMConnection *self)
 {
 	NMSettingBond *s_bond = nm_connection_get_setting_bond (self);
 	gboolean changed = FALSE;
@@ -1107,7 +1107,7 @@ again:
 }
 
 static gboolean
-_normalize_wireless_mac_address_randomization (NMConnection *self, GHashTable *parameters)
+_normalize_wireless_mac_address_randomization (NMConnection *self)
 {
 	NMSettingWireless *s_wifi = nm_connection_get_setting_wireless (self);
 	const char *cloned_mac_address;
@@ -1153,7 +1153,7 @@ _normalize_wireless_mac_address_randomization (NMConnection *self, GHashTable *p
 }
 
 static gboolean
-_normalize_macsec (NMConnection *self, GHashTable *parameters)
+_normalize_macsec (NMConnection *self)
 {
 	NMSettingMacsec *s_macsec = nm_connection_get_setting_macsec (self);
 	gboolean changed = FALSE;
@@ -1176,7 +1176,7 @@ _normalize_macsec (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_team_config (NMConnection *self, GHashTable *parameters)
+_normalize_team_config (NMConnection *self)
 {
 	NMSettingTeam *s_team = nm_connection_get_setting_team (self);
 
@@ -1192,7 +1192,7 @@ _normalize_team_config (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_team_port_config (NMConnection *self, GHashTable *parameters)
+_normalize_team_port_config (NMConnection *self)
 {
 	NMSettingTeamPort *s_team_port = nm_connection_get_setting_team_port (self);
 
@@ -1208,7 +1208,7 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_bluetooth_type (NMConnection *self, GHashTable *parameters)
+_normalize_bluetooth_type (NMConnection *self)
 {
 	const char *type = _nm_connection_detect_bluetooth_type (self);
 
@@ -1222,7 +1222,7 @@ _normalize_bluetooth_type (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
+_normalize_ovs_interface_type (NMConnection *self)
 {
 	NMSettingOvsInterface *s_ovs_interface = nm_connection_get_setting_ovs_interface (self);
 	gboolean modified;
@@ -1243,7 +1243,7 @@ _normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_ip_tunnel_wired_setting (NMConnection *self, GHashTable *parameters)
+_normalize_ip_tunnel_wired_setting (NMConnection *self)
 {
 	NMSettingIPTunnel *s_ip_tunnel;
 
@@ -1263,7 +1263,7 @@ _normalize_ip_tunnel_wired_setting (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_sriov_vf_order (NMConnection *self, GHashTable *parameters)
+_normalize_sriov_vf_order (NMConnection *self)
 {
 	NMSettingSriov *s_sriov;
 
@@ -1275,7 +1275,7 @@ _normalize_sriov_vf_order (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_bridge_vlan_order (NMConnection *self, GHashTable *parameters)
+_normalize_bridge_vlan_order (NMConnection *self)
 {
 	NMSettingBridge *s_bridge;
 
@@ -1287,7 +1287,7 @@ _normalize_bridge_vlan_order (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_bridge_port_vlan_order (NMConnection *self, GHashTable *parameters)
+_normalize_bridge_port_vlan_order (NMConnection *self)
 {
 	NMSettingBridgePort *s_port;
 
@@ -1299,7 +1299,30 @@ _normalize_bridge_port_vlan_order (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_required_settings (NMConnection *self, GHashTable *parameters)
+_normalize_gsm_auto_config (NMConnection *self)
+{
+	NMSettingGsm *s_gsm;
+
+	s_gsm = nm_connection_get_setting_gsm (self);
+	if (!s_gsm)
+		return FALSE;
+
+	if (!nm_setting_gsm_get_auto_config (s_gsm))
+		return FALSE;
+
+	if (   !nm_setting_gsm_get_apn (s_gsm)
+	    && !nm_setting_gsm_get_username (s_gsm)
+	    && !nm_setting_gsm_get_password (s_gsm))
+		return FALSE;
+
+	g_object_set (s_gsm,
+	              NM_SETTING_GSM_AUTO_CONFIG, FALSE,
+	              NULL);
+	return TRUE;
+}
+
+static gboolean
+_normalize_required_settings (NMConnection *self)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
 	NMSetting *s_bridge;
@@ -1323,7 +1346,7 @@ _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_invalid_slave_port_settings (NMConnection *self, GHashTable *parameters)
+_normalize_invalid_slave_port_settings (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	const char *slave_type;
@@ -1597,23 +1620,24 @@ _connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_connection_uuid (connection);
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
-	was_modified |= _normalize_required_settings (connection, parameters);
-	was_modified |= _normalize_invalid_slave_port_settings (connection, parameters);
+	was_modified |= _normalize_required_settings (connection);
+	was_modified |= _normalize_invalid_slave_port_settings (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_ethernet_link_neg (connection);
-	was_modified |= _normalize_infiniband_mtu (connection, parameters);
-	was_modified |= _normalize_bond_mode (connection, parameters);
-	was_modified |= _normalize_bond_options (connection, parameters);
-	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
-	was_modified |= _normalize_macsec (connection, parameters);
-	was_modified |= _normalize_team_config (connection, parameters);
-	was_modified |= _normalize_team_port_config (connection, parameters);
-	was_modified |= _normalize_bluetooth_type (connection, parameters);
-	was_modified |= _normalize_ovs_interface_type (connection, parameters);
-	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
-	was_modified |= _normalize_sriov_vf_order (connection, parameters);
-	was_modified |= _normalize_bridge_vlan_order (connection, parameters);
-	was_modified |= _normalize_bridge_port_vlan_order (connection, parameters);
+	was_modified |= _normalize_infiniband_mtu (connection);
+	was_modified |= _normalize_bond_mode (connection);
+	was_modified |= _normalize_bond_options (connection);
+	was_modified |= _normalize_wireless_mac_address_randomization (connection);
+	was_modified |= _normalize_macsec (connection);
+	was_modified |= _normalize_team_config (connection);
+	was_modified |= _normalize_team_port_config (connection);
+	was_modified |= _normalize_bluetooth_type (connection);
+	was_modified |= _normalize_ovs_interface_type (connection);
+	was_modified |= _normalize_ip_tunnel_wired_setting (connection);
+	was_modified |= _normalize_sriov_vf_order (connection);
+	was_modified |= _normalize_bridge_vlan_order (connection);
+	was_modified |= _normalize_bridge_port_vlan_order (connection);
+	was_modified |= _normalize_gsm_auto_config (connection);
 
 	was_modified = !!was_modified;
 

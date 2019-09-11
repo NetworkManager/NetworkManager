@@ -2,6 +2,7 @@ sources = files(
   'nm-modem-broadband.c',
   'nm-modem.c',
   'nm-modem-manager.c',
+  'nm-service-providers.c',
 )
 
 deps = [
@@ -28,8 +29,10 @@ libnm_wwan = shared_module(
   install_dir: nm_plugindir,
 )
 
+wwan_inc = include_directories('.')
+
 libnm_wwan_dep = declare_dependency(
-  include_directories: include_directories('.'),
+  include_directories: wwan_inc,
   link_with: libnm_wwan,
 )
 
@@ -74,3 +77,7 @@ check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devic
   $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
   $(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-wwan.so)
 '''
+
+if enable_tests
+  subdir('tests')
+endif

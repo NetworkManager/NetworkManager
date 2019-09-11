@@ -3315,7 +3315,10 @@ src_devices_wwan_libnm_wwan_la_SOURCES = \
 	src/devices/wwan/nm-modem-manager.c \
 	src/devices/wwan/nm-modem-manager.h \
 	src/devices/wwan/nm-modem.c \
-	src/devices/wwan/nm-modem.h
+	src/devices/wwan/nm-modem.h \
+	src/devices/wwan/nm-service-providers.c \
+	src/devices/wwan/nm-service-providers.h \
+	$(NULL)
 
 if WITH_OFONO
 src_devices_wwan_libnm_wwan_la_SOURCES += \
@@ -3364,11 +3367,35 @@ check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devic
 
 check_local += check-local-devices-wwan
 
+src_devices_wwan_tests_test_service_providers_SOURCES = \
+	src/devices/wwan/tests/test-service-providers.c \
+	src/devices/wwan/nm-service-providers.c \
+	src/devices/wwan/nm-service-providers.h \
+	$(NULL)
+
+src_devices_wwan_tests_test_service_providers_CPPFLAGS = \
+	$(src_cppflags_base_test) \
+	-I$(srcdir)/src/devices/wwan \
+	$(NULL)
+
+src_devices_wwan_tests_test_service_providers_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+src_devices_wwan_tests_test_service_providers_LDADD = \
+	src/libNetworkManagerTest.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+check_programs += src/devices/wwan/tests/test-service-providers
+
 endif
 
 EXTRA_DIST += \
 	src/devices/wwan/libnm-wwan.ver \
-	src/devices/wwan/meson.build
+	src/devices/wwan/meson.build \
+	src/devices/wwan/tests/test-service-providers.xml \
+	$(NULL)
 
 ###############################################################################
 # src/devices/bluetooth

@@ -22,6 +22,7 @@ install \
     \
     ModemManager-devel \
     ModemManager-glib-devel \
+    mobile-broadband-provider-info-devel \
     audit-libs-devel \
     bash-completion \
     bluez-libs-devel \
