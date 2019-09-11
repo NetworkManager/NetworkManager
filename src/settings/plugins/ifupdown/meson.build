@@ -10,13 +10,9 @@ libnms_ifupdown_core = static_library(
   c_args: daemon_c_flags,
 )
 
-sources = files(
-  'nms-ifupdown-plugin.c',
-)
-
 libnm_settings_plugin_ifupdown = shared_module(
   'nm-settings-plugin-ifupdown',
-  sources: sources,
+  sources: 'nms-ifupdown-plugin.c',
   dependencies: daemon_nm_default_dep,
   c_args: daemon_c_flags,
   link_with: libnms_ifupdown_core,
