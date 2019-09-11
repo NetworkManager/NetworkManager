@@ -604,7 +604,9 @@ deactivate (NMDevice *device)
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
+get_configured_mtu (NMDevice *device,
+                    NMDeviceMtuSource *out_source,
+                    gboolean *out_force)
 {
 	*out_source = NM_DEVICE_MTU_SOURCE_NONE;
 	return 0;
