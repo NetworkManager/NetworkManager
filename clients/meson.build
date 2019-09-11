@@ -1,3 +1,5 @@
+clients_c_flags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT']
+
 name = 'nm-online'
 
 deps = [
@@ -5,19 +7,11 @@ deps = [
   libnm_nm_default_dep,
 ]
 
-clients_c_flags = [
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
-]
-
-c_flags = clients_c_flags + [
-  '-DG_LOG_DOMAIN="@0@"'.format(name),
-]
-
 executable(
   name,
   name + '.c',
   dependencies: deps,
-  c_args: c_flags,
+  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format(name)],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
