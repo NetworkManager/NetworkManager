@@ -9127,9 +9127,21 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	{
 		guint32 mtu = 0;
 
-		/* preferably, get the MTU from explicit user-configuration.
-		 * Only if that fails, look at the current @config (which contains
-		 * MTUs from DHCP/PPP) or maybe fallback to a device-specific MTU. */
+		/* We take the MTU from various sources: (in order of increasing
+		 * priority) parent link, IP configuration (which contains the
+		 * MTU from DHCP/PPP), connection profile.
+		 *
+		 * We could just compare it with the platform MTU and apply it
+		 * when different, but this would revert at random times manual
+		 * changes done by the user with the MTU from the connection.
+		 *
+		 * Instead, we remember the source of the currently configured
+		 * MTU and apply the new one only when the new source has a
+		 * higher priority, so that we don't set a MTU from same source
+		 * multiple times. An exception to this is for the PARENT
+		 * source, since we need to keep tracking the parent MTU when it
+		 * changes.
+		 */
 
 		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
 			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &source);
