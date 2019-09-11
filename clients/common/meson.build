@@ -2,29 +2,29 @@ common_inc = include_directories('.')
 
 nm_polkit_listener = files('nm-polkit-listener.c')
 
-deps = [
+common_deps = [
   libnm_dep,
-  libnm_libnm_core_aux_dep,
   libnm_nm_default_dep,
 ]
 
-c_flags = clients_c_flags + [
-  '-DG_LOG_DOMAIN="libnmc"',
-]
+common_c_flags = clients_c_flags + ['-DG_LOG_DOMAIN="libnmc"']
+
+sources = files(
+  'nm-client-utils.c',
+  'nm-secret-agent-simple.c',
+  'nm-vpn-helpers.c',
+)
 
 libnmc_base = static_library(
   'nmc-base',
-  sources: files(
-    'nm-client-utils.c',
-    'nm-secret-agent-simple.c',
-    'nm-vpn-helpers.c',
-  ),
-  dependencies: deps,
-  c_args: c_flags,
+  sources: sources,
+  dependencies: common_deps,
+  c_args: common_c_flags,
 )
 
 libnmc_base_dep = declare_dependency(
   include_directories: common_inc,
+  dependencies: common_deps,
   link_with: libnmc_base,
 )
 
@@ -51,25 +51,22 @@ else
   )
 endif
 
-deps += [
-  libnm_libnm_core_aux_dep,
-  libnm_utils_base_dep,
-]
+sources = nm_meta_setting_source + [settings_docs_source] + files(
+  'nm-meta-setting-access.c',
+  'nm-meta-setting-desc.c',
+)
 
 libnmc = static_library(
   'nmc',
-  sources: files(
-    'nm-meta-setting-access.c',
-    'nm-meta-setting-desc.c',
-  ) + nm_meta_setting_source + [settings_docs_source],
-  dependencies: deps,
+  sources: sources,
+  dependencies: common_deps + [libnm_libnm_core_aux_dep],
   c_args: c_flags,
-  link_with: libnmc_base,
   link_depends: settings_docs_source,
 )
 
 libnmc_dep = declare_dependency(
   include_directories: common_inc,
+  dependencies: common_deps,
   link_with: libnmc,
 )
 
