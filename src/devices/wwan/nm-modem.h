@@ -282,6 +282,6 @@ void nm_modem_emit_ip6_config_result (NMModem *self,
 
 const char *nm_modem_ip_type_to_string (NMModemIPType ip_type);
 
-guint32 nm_modem_get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source);
+guint32 nm_modem_get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source, gboolean *out_force);
 
 #endif /* __NETWORKMANAGER_MODEM_H__ */

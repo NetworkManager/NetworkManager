@@ -1378,7 +1378,7 @@ act_stage3_ip_config_start (NMDevice *device,
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source, gboolean *out_force)
 {
 	/* When "MTU" for `wg-quick up` is unset, it calls `ip route get` for
 	 * each configured endpoint, to determine the suitable MTU how to reach
