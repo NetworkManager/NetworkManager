@@ -29,9 +29,11 @@ foreach test_unit: test_units
   )
 endforeach
 
+name = 'monitor'
+
 executable(
-  'monitor',
-  'monitor.c',
+  name,
+  name + '.c',
   dependencies: libnetwork_manager_test_dep,
   c_args: test_c_flags,
 )
