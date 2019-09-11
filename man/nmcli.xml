@@ -1616,6 +1616,19 @@
 
       <varlistentry>
         <term>
+          <command>wifi</command>
+          <command>show-password</command>
+          <arg><option>ifname</option> <replaceable>ifname</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Show the details of the active Wi-Fi networks, including the
+          secrets.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
           <command>lldp</command>
           <arg>
             <command>list</command>
