@@ -134,23 +134,18 @@ libnm_sources = files(
 
 deps = [
   libnmdbus_dep,
+  libnm_libnm_core_intern_dep,
   libnm_nm_default_dep,
   libnm_udev_aux_dep,
   libudev_dep,
 ]
 
-links = [
-  libnm_libnm_core_intern,
-  libnm_systemd_logging_stub,
-]
-
 liblibnm = static_library(
   'libnm',
   sources: libnm_sources + libnm_enum_sources,
-  include_directories: libnm_core_inc,
   dependencies: deps,
   c_args: c_flags,
-  link_with: links,
+  link_with: libnm_systemd_logging_stub,
 )
 
 links = [

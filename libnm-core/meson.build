@@ -92,6 +92,13 @@ libnm_libnm_core_intern = static_library(
   c_args: common_c_flags,
 )
 
+libnm_libnm_core_intern_dep = declare_dependency(
+  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
+  include_directories: [libnm_core_inc, shared_inc],
+  dependencies: libnm_utils_base_dep,
+  link_with: libnm_libnm_core_intern,
+)
+
 deps = [
   crypto_dep,
   libnm_utils_base_dep,
