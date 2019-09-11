@@ -339,7 +339,9 @@ typedef struct _NMDeviceClass {
 	                                  NMSettingsConnection *sett_conn,
 	                                  char **specific_object);
 
-	guint32     (*get_configured_mtu) (NMDevice *self, NMDeviceMtuSource *out_source);
+	guint32     (*get_configured_mtu) (NMDevice *self,
+	                                   NMDeviceMtuSource *out_source,
+	                                   gboolean *out_force);
 
 	/* allow the subclass to overwrite the routing table. This is mainly useful
 	 * to change from partial mode (route-table=0) to full-sync mode (route-table=254). */
