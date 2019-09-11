@@ -1,8 +1,9 @@
-sources = files(
+nm_service_providers_source = files('nm-service-providers.c')
+
+sources = nm_service_providers_source + files(
   'nm-modem-broadband.c',
   'nm-modem.c',
   'nm-modem-manager.c',
-  'nm-service-providers.c',
 )
 
 deps = [

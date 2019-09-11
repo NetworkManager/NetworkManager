@@ -1,13 +1,15 @@
+test_unit = 'test-service-providers'
+
 exe = executable(
-  'test-service-providers',
-  sources: files('test-service-providers.c',
-                 '../nm-service-providers.c'),
+  test_unit,
+  [test_unit + '.c'] + nm_service_providers_source,
   include_directories: wwan_inc,
   dependencies: libnetwork_manager_test_dep,
   c_args: test_c_flags,
 )
+
 test(
-  'wwan/test-service-providers',
+  'wwan/' + test_unit,
   test_script,
   timeout: default_test_timeout,
   args: test_args + [exe.full_path()],
