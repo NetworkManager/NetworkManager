@@ -32,14 +32,17 @@ libnms_ifcfg_rh_core = static_library(
   c_args: daemon_c_flags,
 )
 
-sources = [dbus_sources] + core_sources + files('nms-ifcfg-rh-storage.c', 'nms-ifcfg-rh-plugin.c')
+sources = [dbus_sources] + core_sources + files(
+  'nms-ifcfg-rh-storage.c',
+  'nms-ifcfg-rh-plugin.c',
+)
 
 libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',
   sources: sources,
   dependencies: daemon_nm_default_dep,
   c_args: daemon_c_flags,
-  link_with: [libnms_ifcfg_rh_core],
+  link_with: libnms_ifcfg_rh_core,
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,
@@ -60,8 +63,13 @@ check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-setti
   $(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
 '''
 
+data = [
+  'nm-ifdown',
+  'nm-ifup',
+]
+
 install_data(
-  ['nm-ifup', 'nm-ifdown'],
+  data,
   install_dir: nm_libexecdir,
   install_mode: 'rwxr-xr-x',
 )
