@@ -3185,6 +3185,7 @@ can_reapply_change (NMDevice *device,
 		return nm_device_hash_check_invalid_keys (diffs,
 		                                          NM_SETTING_WIRELESS_SETTING_NAME,
 		                                          error,
+		                                          NM_SETTING_WIRELESS_SEEN_BSSIDS, /* ignored */
 		                                          NM_SETTING_WIRELESS_MTU, /* reapplied with IP config */
 		                                          NM_SETTING_WIRELESS_WAKE_ON_WLAN);
 	}
