@@ -59,6 +59,7 @@ install \
     locales \
     make \
     meson \
+    mobile-broadband-provider-info \
     pkg-config \
     ppp \
     ppp-dev \

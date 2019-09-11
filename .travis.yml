@@ -44,6 +44,7 @@ addons:
     - dnsmasq
     - libcurl4-gnutls-dev
     - python3-pip
+    - mobile-broadband-provider-info
   coverity_scan:
     project:
       name: NetworkManager/NetworkManager
