@@ -1,6 +1,6 @@
 name = 'nm-dhcp-helper'
 
-cflags = [
+c_flags = [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
 ]
@@ -9,7 +9,7 @@ executable(
   name,
   name + '.c',
   dependencies: glib_nm_default_dep,
-  c_args: cflags,
+  c_args: c_flags,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
