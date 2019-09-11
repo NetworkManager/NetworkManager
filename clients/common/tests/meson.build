@@ -9,7 +9,7 @@ exe = executable(
     libnmc_base_dep,
     libnm_nm_default_dep,
   ],
-  c_args: clients_cflags + [
+  c_args: clients_c_flags + [
     '-DNETWORKMANAGER_COMPILATION_TEST',
   ],
 )

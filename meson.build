@@ -137,18 +137,18 @@ common_ldflags = []
 
 enable_ld_gc = get_option('ld_gc')
 if enable_ld_gc
-  test_cflags = [
+  test_c_flags = [
     '-fdata-sections',
     '-ffunction-sections',
   ]
 
   test_ldflags = ['-Wl,--gc-sections']
 
-  foreach cflag: test_cflags + test_ldflags
+  foreach cflag: test_c_flags + test_ldflags
     assert(cc.has_argument(cflag), 'Unused symbol eviction requested but not supported. Use -Dld_gc=false to build without it.')
   endforeach
 
-  common_flags += test_cflags
+  common_flags += test_c_flags
   common_ldflags += test_ldflags
 endif
 

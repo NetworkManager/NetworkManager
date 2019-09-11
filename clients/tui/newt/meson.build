@@ -26,7 +26,7 @@ libnmt_newt = static_library(
   sources: sources + [libnm_enum_sources[1]],
   include_directories: libnm_inc,
   dependencies: deps,
-  c_args: cflags,
+  c_args: c_flags,
 )
 
 libnmt_newt_dep = declare_dependency(

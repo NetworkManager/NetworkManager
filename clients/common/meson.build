@@ -8,7 +8,7 @@ deps = [
   libnm_nm_default_dep,
 ]
 
-cflags = clients_cflags + [
+c_flags = clients_c_flags + [
   '-DG_LOG_DOMAIN="libnmc"',
 ]
 
@@ -20,7 +20,7 @@ libnmc_base = static_library(
     'nm-vpn-helpers.c',
   ),
   dependencies: deps,
-  c_args: cflags,
+  c_args: c_flags,
 )
 
 libnmc_base_dep = declare_dependency(
@@ -63,7 +63,7 @@ libnmc = static_library(
     'nm-meta-setting-desc.c',
   ) + nm_meta_setting_source + [settings_docs_source],
   dependencies: deps,
-  c_args: cflags,
+  c_args: c_flags,
   link_with: libnmc_base,
   link_depends: settings_docs_source,
 )
