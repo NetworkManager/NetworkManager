@@ -1,5 +1,3 @@
-test_ifcfg_dir = meson.current_source_dir()
-
 test_unit = 'test-ifcfg-rh'
 
 exe = executable(
