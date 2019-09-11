@@ -3389,6 +3389,8 @@ src_devices_wwan_tests_test_service_providers_LDADD = \
 
 check_programs += src/devices/wwan/tests/test-service-providers
 
+$(src_devices_wwan_tests_test_service_providers_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 endif
 
 EXTRA_DIST += \
