@@ -21,15 +21,20 @@ sources = files(
   'nmt-newt-widget.c',
 )
 
+deps = [
+  libnm_nm_default_dep,
+  newt_dep,
+]
+
 libnmt_newt = static_library(
   'nmt-newt',
-  sources: sources + [libnm_enum_sources[1]],
-  include_directories: libnm_inc,
+  sources: sources,
   dependencies: deps,
-  c_args: c_flags,
+  c_args: common_c_flags,
 )
 
 libnmt_newt_dep = declare_dependency(
   include_directories: include_directories('.'),
+  dependencies: newt_dep,
   link_with: libnmt_newt,
 )
