@@ -9075,6 +9075,33 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, NMDeviceMtuSource *out_s
 	                                                     out_source);
 }
 
+guint32
+nm_device_get_configured_mtu_wired_parent (NMDevice *self,
+                                           NMDeviceMtuSource *out_source)
+{
+	guint32 mtu = 0;
+	int ifindex;
+
+	mtu = nm_device_get_configured_mtu_for_wired (self, out_source);
+	if (*out_source != NM_DEVICE_MTU_SOURCE_NONE) {
+		nm_assert (mtu > 0);
+		return mtu;
+	}
+
+	/* Inherit the MTU from parent device, if any */
+	ifindex = nm_device_parent_get_ifindex (self);
+	if (ifindex > 0) {
+		mtu = nm_platform_link_get_mtu (nm_device_get_platform (self), ifindex);
+		if (mtu >= NM_DEVICE_GET_CLASS (self)->mtu_parent_delta) {
+			mtu -= NM_DEVICE_GET_CLASS (self)->mtu_parent_delta;
+			*out_source = NM_DEVICE_MTU_SOURCE_PARENT;
+		} else
+			mtu = 0;
+	}
+
+	return mtu;
+}
+
 /*****************************************************************************/
 
 static void
