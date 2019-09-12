@@ -2193,6 +2193,13 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
       </varlistentry>
 
       <varlistentry>
+        <term><option>device-disabled</option></term>
+        <listitem>
+          <para>Device is disabled by software or hardware kill switch.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><option>manager-running</option></term>
         <listitem>
           <para>Notice that the NetworkManager daemon is available.</para>

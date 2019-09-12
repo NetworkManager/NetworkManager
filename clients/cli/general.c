@@ -1242,6 +1242,41 @@ device_overview (NmCli *nmc, NMDevice *device)
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
+
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_WIFI:
+	case NM_DEVICE_TYPE_OLPC_MESH:
+	case NM_DEVICE_TYPE_WIFI_P2P:
+		if (!nm_client_wireless_get_enabled (nmc->client)) {
+			tmp = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_DEVICE_DISABLED, _("sw disabled"));
+			g_string_append_printf (outbuf, "%s, ", tmp);
+			g_free (tmp);
+		}
+		if (!nm_client_wireless_hardware_get_enabled (nmc->client)) {
+			tmp = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_DEVICE_DISABLED, _("hw disabled"));
+			g_string_append_printf (outbuf, "%s, ", tmp);
+			g_free (tmp);
+		}
+		break;
+	case NM_DEVICE_TYPE_MODEM:
+		if (  nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device))
+		    & (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)) {
+			if (!nm_client_wwan_get_enabled (nmc->client)) {
+				tmp = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_DEVICE_DISABLED, _("sw disabled"));
+				g_string_append_printf (outbuf, "%s, ", tmp);
+				g_free (tmp);
+			}
+			if (!nm_client_wwan_hardware_get_enabled (nmc->client)) {
+				tmp = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_DEVICE_DISABLED, _("hw disabled"));
+				g_string_append_printf (outbuf, "%s, ", tmp);
+				g_free (tmp);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
 	if (nm_device_is_software (device))
 		g_string_append_printf (outbuf, "%s, ", _("sw"));
 	else

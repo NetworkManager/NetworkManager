@@ -52,6 +52,7 @@
 	[NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "31", \
 	[NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31", \
 	[NM_META_COLOR_DEVICE_UNAVAILABLE]       =  "2", \
+	[NM_META_COLOR_DEVICE_DISABLED]          = "31", \
 	[NM_META_COLOR_MANAGER_RUNNING]          = "32", \
 	[NM_META_COLOR_MANAGER_STARTING]         = "33", \
 	[NM_META_COLOR_MANAGER_STOPPED]          = "31", \
@@ -558,6 +559,7 @@ parse_color_scheme (char *palette_buffer,
 		[NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "device-firmware-missing",
 		[NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "device-plugin-missing",
 		[NM_META_COLOR_DEVICE_UNAVAILABLE]       = "device-unavailable",
+		[NM_META_COLOR_DEVICE_DISABLED]          = "device-disabled",
 		[NM_META_COLOR_DEVICE_UNKNOWN]           = "device-unknown",
 		[NM_META_COLOR_MANAGER_RUNNING]          = "manager-running",
 		[NM_META_COLOR_MANAGER_STARTING]         = "manager-starting",
