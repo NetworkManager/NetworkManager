@@ -372,15 +372,16 @@
     <!--
         WimaxEnabled:
 
-        Indicates if WiMAX devices are currently enabled or not.
+        DEPRECATED. Doesn't have any meaning and is around only for
+        compatibility reasons.
     -->
     <property name="WimaxEnabled" type="b" access="readwrite"/>
 
     <!--
         WimaxHardwareEnabled:
 
-        Indicates if the WiMAX hardware is currently enabled, i.e. the state of
-        the RF kill switch.
+        DEPRECATED. Doesn't have any meaning and is around only for
+        compatibility reasons.
     -->
     <property name="WimaxHardwareEnabled" type="b" access="read"/>
 
