@@ -406,6 +406,17 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	if ((priv->state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
 		return;
 
+	if (_LOGI_ENABLED ()) {
+		gs_free const char **keys = NULL;
+		guint i, nkeys;
+
+		keys = nm_utils_strdict_get_keys (options, TRUE, &nkeys);
+		for (i = 0; i < nkeys; i++) {
+			_LOGI ("option %-20s => '%s'", keys[i],
+		               (char *) g_hash_table_lookup (options, keys[i]));
+		}
+	}
+
 	if (   priv->addr_family == AF_INET6
 	    && new_state == NM_DHCP_STATE_BOUND) {
 		char *start, *iaid;
@@ -838,15 +849,6 @@ nm_dhcp_client_handle_event (gpointer unused,
 		while (g_variant_iter_next (&iter, "{&sv}", &name, &value)) {
 			maybe_add_option (self, str_options, name, value);
 			g_variant_unref (value);
-		}
-
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
-			GHashTableIter hash_iter;
-			gpointer key, val;
-
-			g_hash_table_iter_init (&hash_iter, str_options);
-			while (g_hash_table_iter_next (&hash_iter, &key, &val))
-				_LOGD ("option '%s'=>'%s'", (const char *) key, (const char *) val);
 		}
 
 		/* Create the IP config */
