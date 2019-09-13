@@ -75,12 +75,10 @@ libnm_core_headers = files(
 
 enum_types = 'nm-core-enum-types'
 
-libnm_core_enum_sources = gnome.mkenums(
+libnm_core_enum_sources = gnome.mkenums_simple(
   enum_types,
   sources: libnm_core_headers + [nm_version_macro_header],
   identifier_prefix: nm_id_prefix,
-  c_template: enum_types + '.c.template',
-  h_template: enum_types + '.h.template',
   install_header: true,
   install_dir: libnm_pkgincludedir,
 )

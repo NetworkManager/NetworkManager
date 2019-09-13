@@ -9,12 +9,10 @@
 
 enum_types = 'nm-core-tests-enum-types'
 
-enum_sources = gnome.mkenums(
+enum_sources = gnome.mkenums_simple(
   enum_types,
   sources: 'test-general-enums.h',
   identifier_prefix: nm_id_prefix,
-  c_template: enum_types + '.c.template',
-  h_template: enum_types + '.h.template',
 )
 
 deps = [
