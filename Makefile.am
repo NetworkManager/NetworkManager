@@ -3397,6 +3397,7 @@ EXTRA_DIST += \
 	src/devices/wwan/libnm-wwan.ver \
 	src/devices/wwan/meson.build \
 	src/devices/wwan/tests/test-service-providers.xml \
+	src/devices/wwan/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
