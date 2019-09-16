@@ -66,6 +66,7 @@ static NmtNewtPopupEntry wifi_band[] = {
 static NmtNewtPopupEntry wifi_security[] = {
 	{ NC_("Wi-Fi security", "None"),           "none" },
 	{ N_("WPA & WPA2 Personal"),               "wpa-personal" },
+	{ N_("WPA3 Personal"),                     "wpa3-personal" },
 	{ N_("WPA & WPA2 Enterprise"),             "wpa-enterprise" },
 	{ N_("WEP 40/128-bit Key (Hex or ASCII)"), "wep-key" },
 	{ N_("WEP 128-bit Passphrase"),            "wep-passphrase" },
@@ -263,6 +264,7 @@ nmt_page_wifi_constructed (GObject *object)
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Password"), widget, NULL);
 	nmt_newt_stack_add (stack, "wpa-personal", subgrid);
+	nmt_newt_stack_add (stack, "wpa3-personal", subgrid);
 
 	/* "wpa-enterprise" */
 	// FIXME
