@@ -205,7 +205,8 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 
 	/* WPA[2]-PSK and WPA[2] Enterprise */
 	if (   !strcmp (key_mgmt, "wpa-psk")
-	    || !strcmp (key_mgmt, "wpa-eap")) {
+	    || !strcmp (key_mgmt, "wpa-eap")
+	    || !strcmp (key_mgmt, "sae")) {
 
 		if (!strcmp (key_mgmt, "wpa-psk")) {
 			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
@@ -214,6 +215,10 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		} else if (!strcmp (key_mgmt, "wpa-eap")) {
 			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+		} else if (!strcmp (key_mgmt, "sae")) {
+			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_SAE)
+			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE))
 				return FALSE;
 		}
 
