@@ -1122,4 +1122,32 @@ typedef enum {
 	NM_TERNARY_TRUE = 1,
 } NMTernary;
 
+/**
+ * NMManagerReloadFlags:
+ * @NM_MANAGER_RELOAD_FLAG_NONE: an alias for numeric zero, no flags set. This
+ *   reloads everything that is supported and is identical to a SIGHUP.
+ * @NM_MANAGER_RELOAD_FLAG_CONF: reload the NetworkManager.conf configuration
+ *   from disk. Note that this does not include connections, which can be
+ *   reloaded via Setting's ReloadConnections().
+ * @NM_MANAGER_RELOAD_FLAG_DNS_RC: update DNS configuration, which usually
+ *   involves writing /etc/resolv.conf anew.
+ * @NM_MANAGER_RELOAD_FLAG_DNS_FULL: means to restart the DNS plugin. This
+ *   is for example useful when using dnsmasq plugin, which uses additional
+ *   configuration in /etc/NetworkManager/dnsmasq.d. If you edit those files,
+ *   you can restart the DNS plugin. This action shortly interrupts name
+ *   resolution.
+ * @NM_MANAGER_RELOAD_FLAG_ALL: all flags.
+ *
+ * Flags for the manager Reload() call.
+ *
+ * Since: 1.22
+ */
+typedef enum { /*< flags >*/
+	NM_MANAGER_RELOAD_FLAG_NONE          = 0,    /*< skip >*/
+	NM_MANAGER_RELOAD_FLAG_CONF          = 0x1,
+	NM_MANAGER_RELOAD_FLAG_DNS_RC        = 0x2,
+	NM_MANAGER_RELOAD_FLAG_DNS_FULL      = 0x4,
+	NM_MANAGER_RELOAD_FLAG_ALL           = 0x7,  /*< skip >*/
+} NMManagerReloadFlags;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

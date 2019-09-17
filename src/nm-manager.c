@@ -1155,16 +1155,16 @@ _reload_auth_cb (NMAuthChain *chain,
 		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                                 "Not authorized to reload configuration");
 	} else {
-		if (NM_FLAGS_ANY (flags, ~NM_MANAGER_RELOAD_FLAGS_ALL)) {
+		if (NM_FLAGS_ANY (flags, ~NM_MANAGER_RELOAD_FLAG_ALL)) {
 			/* invalid flags */
 		} else if (flags == 0)
 			reload_type = NM_CONFIG_CHANGE_CAUSE_SIGHUP;
 		else {
-			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_CONF))
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAG_CONF))
 				reload_type |= NM_CONFIG_CHANGE_CAUSE_CONF;
-			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_DNS_RC))
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAG_DNS_RC))
 				reload_type |= NM_CONFIG_CHANGE_CAUSE_DNS_RC;
-			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAGS_DNS_FULL))
+			if (NM_FLAGS_HAS (flags, NM_MANAGER_RELOAD_FLAG_DNS_FULL))
 				reload_type |= NM_CONFIG_CHANGE_CAUSE_DNS_FULL;
 		}
 

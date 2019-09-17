@@ -1631,5 +1631,8 @@ global:
 
 libnm_1_22_0 {
 global:
+	nm_client_reload;
+	nm_client_reload_finish;
+	nm_manager_reload_flags_get_type;
 	nm_setting_gsm_get_auto_config;
 } libnm_1_20_0;

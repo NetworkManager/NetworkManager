@@ -89,4 +89,12 @@ extern const NmcMetaGenericInfo *const metagen_dhcp_config[];
 
 const char *nm_connectivity_to_string (NMConnectivityState connectivity);
 
+GVariant *nmc_dbus_call_sync (NmCli *nmc,
+                              const char *object_path,
+                              const char *interface_name,
+                              const char *method_name,
+                              GVariant *parameters,
+                              const GVariantType *reply_type,
+                              GError **error);
+
 #endif /* NMC_COMMON_H */
