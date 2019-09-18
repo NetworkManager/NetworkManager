@@ -14575,6 +14575,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	}
 
 	priv->mtu_source = NM_DEVICE_MTU_SOURCE_NONE;
+	priv->ip6_mtu = 0;
 	if (priv->mtu_initial || priv->ip6_mtu_initial) {
 		ifindex = nm_device_get_ip_ifindex (self);
 
