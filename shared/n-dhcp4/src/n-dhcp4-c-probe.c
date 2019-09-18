@@ -1009,7 +1009,7 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_BOUND;
 
-                /* XXX: trigger timers */
+                n_dhcp4_client_arm_timer (probe->client);
 
                 break;
 

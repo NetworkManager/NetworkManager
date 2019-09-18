@@ -7736,7 +7736,13 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	       _ip_state_to_string (priv->ip_state_4),
 	       priv->dhcp4.was_active);
 
-	/* Keep client running if there are static addresses configured
+	/* The client is always left running after a failure. */
+
+	/* Nothing to do if we failed before... */
+	if (priv->ip_state_4 == NM_DEVICE_IP_STATE_FAIL)
+		goto clear_config;
+
+	/* ... and also if there are static addresses configured
 	 * on the interface.
 	 */
 	if (   priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE
@@ -7752,14 +7758,12 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	 */
 	if (   dhcp_state == NM_DHCP_STATE_TERMINATED
 	    || (!priv->dhcp4.was_active && priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF)) {
-		dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 		nm_device_activate_schedule_ip_config_timeout (self, AF_INET);
 		return;
 	}
 
 	/* In any other case (expired lease, assumed connection, etc.),
-	 * start a grace period in which we keep the client running,
-	 * hoping that it will regain a lease.
+	 * wait for some time before failing the IP method.
 	 */
 	if (!priv->dhcp4.grace_id) {
 		priv->dhcp4.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
@@ -7787,8 +7791,8 @@ dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (success) {
-		nm_dhcp_client_accept (priv->dhcp4.client, NULL);
-		nm_device_activate_schedule_ip_config_result (self, AF_INET, NM_IP_CONFIG_CAST (configs[1]));
+		nm_device_activate_schedule_ip_config_result (self, AF_INET,
+		                                              NM_IP_CONFIG_CAST (configs[1]));
 	} else {
 		nm_dhcp_client_decline (priv->dhcp4.client, "Address conflict detected", NULL);
 		nm_device_ip_method_failed (self, AF_INET,
@@ -8381,10 +8385,16 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 	       _ip_state_to_string (priv->ip_state_6),
 	       priv->dhcp6.was_active);
 
+	/* The client is always left running after a failure. */
+
+	/* Nothing to do if we failed before... */
+	if (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL)
+		goto clear_config;
+
 	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
 
 	if (is_dhcp_managed) {
-		/* Keep client running if there are static addresses configured
+		/* ... and also if there are static addresses configured
 		 * on the interface.
 		 */
 		if (   priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE
@@ -8400,14 +8410,12 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		 */
 		if (   dhcp_state == NM_DHCP_STATE_TERMINATED
 		    || (!priv->dhcp6.was_active && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF)) {
-			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 			nm_device_activate_schedule_ip_config_timeout (self, AF_INET6);
 			return;
 		}
 
 		/* In any other case (expired lease, assumed connection, etc.),
-		 * start a grace period in which we keep the client running,
-		 * hoping that it will regain a lease.
+		 * wait for some time before failing the IP method.
 		 */
 		if (!priv->dhcp6.grace_id) {
 			priv->dhcp6.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
@@ -10770,6 +10778,18 @@ activate_stage5_ip_config_result_4 (NMDevice *self)
 		if (!start_sharing (self, priv->ip_config_4, &error)) {
 			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed: %s", error->message);
 			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+			return;
+		}
+	}
+
+	if (priv->dhcp4.client) {
+		gs_free_error GError *error = NULL;
+
+		if (!nm_dhcp_client_accept (priv->dhcp4.client, &error)) {
+			_LOGW (LOGD_DHCP4,
+			       "Activation: Stage 5 of 5 (IPv4 Commit) error accepting lease: %s",
+			       error->message);
+			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_DHCP_ERROR);
 			return;
 		}
 	}
