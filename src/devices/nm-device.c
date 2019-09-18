@@ -9371,7 +9371,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 		if (   s_ip6
 		    && !NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
-		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE
+		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 		                      NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
 			/* the interface has IPv6 enabled. The MTU with IPv6 cannot be smaller
 			 * then 1280.
