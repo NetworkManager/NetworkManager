@@ -905,6 +905,54 @@ clear_secrets (const NMSettInfoSetting *sett_info,
 	return changed;
 }
 
+static gboolean
+vpn_secrets_from_dbus (NMSetting *setting,
+                       GVariant *connection_dict,
+                       const char *property,
+                       GVariant *value,
+                       NMSettingParseFlags parse_flags,
+                       GError **error)
+{
+	nm_auto_unset_gvalue GValue object_value = G_VALUE_INIT;
+
+	g_value_init (&object_value, G_TYPE_HASH_TABLE);
+	_nm_utils_strdict_from_dbus (value, &object_value);
+	return nm_g_object_set_property (G_OBJECT (setting), property, &object_value, error);
+}
+
+static GVariant *
+vpn_secrets_to_dbus (const NMSettInfoSetting *sett_info,
+                     guint property_idx,
+                     NMConnection *connection,
+                     NMSetting *setting,
+                     NMConnectionSerializationFlags flags,
+                     const NMConnectionSerializationOptions *options)
+{
+	gs_unref_hashtable GHashTable *secrets = NULL;
+	const char *property_name = sett_info->property_infos[property_idx].name;
+	GVariantBuilder builder;
+	GHashTableIter iter;
+	const char *key, *value;
+	NMSettingSecretFlags secret_flags;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
+	g_object_get (setting, property_name, &secrets, NULL);
+
+	if (secrets) {
+		g_hash_table_iter_init (&iter, secrets);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+			if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)) {
+				if (   !nm_setting_get_secret_flags (setting, key, &secret_flags, NULL)
+				    || !NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+					continue;
+			}
+			g_variant_builder_add (&builder, "{ss}", key, value);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
 /*****************************************************************************/
 
 static void
@@ -1123,11 +1171,12 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        NM_SETTING_PARAM_SECRET |
 	                        G_PARAM_STATIC_STRINGS);
 
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_SECRETS],
-	                                    G_VARIANT_TYPE ("a{ss}"),
-	                                    _nm_utils_strdict_to_dbus,
-	                                    _nm_utils_strdict_from_dbus);
+	_properties_override_add_override (properties_override,
+	                                   obj_properties[PROP_SECRETS],
+	                                   G_VARIANT_TYPE ("a{ss}"),
+	                                   vpn_secrets_to_dbus,
+	                                   vpn_secrets_from_dbus,
+	                                   NULL);
 
 	/**
 	 * NMSettingVpn:timeout:
