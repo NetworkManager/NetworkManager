@@ -585,7 +585,7 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	 * (b) since EAP/802.1x isn't used and thus there are fewer steps to fail
 	 * during a roam, we can wait longer before scanning for roam candidates.
 	 */
-	bgscan = "simple:30:-80:86400";
+	bgscan = "simple:30:-70:86400";
 
 	/* If using WPA Enterprise or Dynamic WEP use a shorter bgscan interval on
 	 * the assumption that this is a multi-AP ESS in which we want more reliable
