@@ -561,6 +561,7 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	const char *bgscan;
+	gsize num_seen_bssids;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -587,14 +588,16 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	 */
 	bgscan = "simple:30:-70:86400";
 
-	/* If using WPA Enterprise or Dynamic WEP use a shorter bgscan interval on
-	 * the assumption that this is a multi-AP ESS in which we want more reliable
-	 * roaming between APs.  Thus trigger scans when the signal is still somewhat
-	 * OK so we have an up-to-date roam candidate list when the signal gets bad.
+	/* If using WPA Enterprise, Dynamic WEP or we have seen more than one AP use
+	 * a shorter bgscan interval on the assumption that this is a multi-AP ESS
+	 * in which we want more reliable roaming between APs. Thus trigger scans
+	 * when the signal is still somewhat OK so we have an up-to-date roam
+	 * candidate list when the signal gets bad.
 	 */
+	num_seen_bssids = nm_setting_wireless_get_num_seen_bssids (s_wifi);
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (s_wsec) {
-		if (NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wsec),
+	if (num_seen_bssids > 1 || s_wsec) {
+		if (num_seen_bssids > 1 || NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wsec),
 		                  "ieee8021x",
 		                  "wpa-eap"))
 			bgscan = "simple:30:-65:300";
