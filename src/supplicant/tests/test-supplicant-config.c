@@ -223,7 +223,7 @@ test_wifi_wep_key (const char *detail,
 	gs_unref_bytes GBytes *ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
 	const char *bssid_str = "11:22:33:44:55:66";
 	gs_unref_bytes GBytes *wep_key_bytes = g_bytes_new (expected, expected_size);
-	const char *bgscan_data = "simple:30:-80:86400";
+	const char *bgscan_data = "simple:30:-70:86400";
 	gs_unref_bytes GBytes *bgscan = g_bytes_new (bgscan_data, strlen (bgscan_data));
 
 	connection = new_basic_connection ("Test Wifi WEP Key", ssid, test_bssid ? bssid_str : NULL);
@@ -251,7 +251,7 @@ test_wifi_wep_key (const char *detail,
 	NMTST_EXPECT_NM_INFO ("Config: added 'wep_key0' value *");
 	NMTST_EXPECT_NM_INFO ("Config: added 'wep_tx_keyidx' value '0'");
 	if (!test_bssid)
-		NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-80:86400'*");
+		NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-70:86400'*");
 
 	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
 	g_test_assert_expected_messages ();
