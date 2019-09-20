@@ -95,7 +95,7 @@ main (int argc, char *argv[])
 	int errsv;
 
 	option_context = g_option_context_new ("-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
-	                                       "[bootdev=...] [nameserver=...] [rd.peerdns=...] [rd.bootif=...] [BOOTIF=...] ... ");
+	                                       "[bootdev=...] [nameserver=...] [rd.peerdns=...] [rd.bootif=...] [BOOTIF=...] [rd.znet=...] ... ");
 
 	g_option_context_set_summary (option_context, "Generate early NetworkManager configuration.");
 	g_option_context_set_description (option_context,

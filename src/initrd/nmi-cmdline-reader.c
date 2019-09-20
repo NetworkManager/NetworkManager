@@ -690,6 +690,37 @@ parse_rd_peerdns (GHashTable *connections, char *argument)
 }
 
 static void
+parse_rd_znet (GHashTable *connections, char *argument)
+{
+	const char *nettype = NULL;
+	const char *tmp = NULL;
+	const char *subchannels[4] = { 0, 0, 0, 0 };
+	NMConnection *connection;
+	NMSettingWired *s_wired = NULL;
+
+	nettype = get_word (&argument, ',');
+	subchannels[0] = get_word (&argument, ',');
+	subchannels[1] = get_word (&argument, ',');
+	if (g_strcmp0 (nettype, "ctc") != 0) {
+		subchannels[2] = get_word (&argument, ',');
+	}
+
+	connection = get_conn (connections, NULL, NULL);
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, &subchannels,
+	              NULL);
+
+	while ((tmp = get_word (&argument, ',')) != NULL) {
+		gs_strfreev char ** optval = NULL;
+
+		optval = g_strsplit (tmp, "=", 2);
+		nm_setting_wired_add_s390_option (s_wired, optval[0], optval[1]);
+	}
+}
+
+static void
 _normalize_conn (gpointer key, gpointer value, gpointer user_data)
 {
 	NMConnection *connection = value;
@@ -735,6 +766,8 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 			ignore_bootif = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.neednet") == 0)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
+		else if (strcmp (tag, "rd.znet") == 0)
+			parse_rd_znet (connections, argument);
 		else if (strcasecmp (tag, "BOOTIF") == 0)
 			bootif = argument;
 	}
