@@ -706,6 +706,8 @@ typedef GVariant *(*NMSettInfoPropGPropToDBusFcn)       (const GValue *from);
 typedef void      (*NMSettInfoPropGPropFromDBusFcn)     (GVariant *from,
                                                          GValue *to);
 
+const NMSettInfoSetting *nmtst_sett_info_settings (void);
+
 struct _NMSettInfoProperty {
 	const char *name;
 	GParamSpec *param_spec;

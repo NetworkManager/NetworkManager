@@ -9,6 +9,7 @@
 #include <linux/pkt_sched.h>
 #include <net/if.h>
 
+#include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-core-internal.h"
@@ -3317,6 +3318,161 @@ test_empty_setting (void)
 
 /*****************************************************************************/
 
+static void
+test_setting_metadata (void)
+{
+	const NMSettInfoSetting *sett_info_settings = nmtst_sett_info_settings ();
+	NMMetaSettingType meta_type;
+
+	G_STATIC_ASSERT (_NM_META_SETTING_TYPE_NUM == NM_META_SETTING_TYPE_UNKNOWN);
+
+	for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
+		const NMMetaSettingInfo *msi = &nm_meta_setting_infos[meta_type];
+		nm_auto_unref_gtypeclass NMSettingClass *klass = NULL;
+		GType gtype;
+
+		g_assert (msi->setting_name);
+		g_assert (msi->get_setting_gtype);
+		g_assert (msi->meta_type == meta_type);
+		g_assert (msi->setting_priority >= NM_SETTING_PRIORITY_CONNECTION);
+		g_assert (msi->setting_priority <= NM_SETTING_PRIORITY_USER);
+
+		if (meta_type > 0)
+			g_assert_cmpint (strcmp (nm_meta_setting_infos[meta_type - 1].setting_name, msi->setting_name), <, 0);
+
+		gtype = msi->get_setting_gtype ();
+
+		g_assert (g_type_is_a (gtype, NM_TYPE_SETTING));
+		g_assert (gtype != NM_TYPE_SETTING);
+
+		klass = g_type_class_ref (gtype);
+		g_assert (klass);
+		g_assert (NM_IS_SETTING_CLASS (klass));
+	}
+
+	g_assert (sett_info_settings);
+
+	for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
+		const NMSettInfoSetting *sis = &sett_info_settings[meta_type];
+		const NMMetaSettingInfo *msi = &nm_meta_setting_infos[meta_type];
+		gs_unref_hashtable GHashTable *h_properties = NULL;
+		GType gtype;
+		gs_unref_object NMSetting *setting = NULL;
+		guint prop_idx;
+		gs_free GParamSpec **property_specs = NULL;
+		guint n_property_specs;
+
+		g_assert (sis);
+
+		g_assert (NM_IS_SETTING_CLASS (sis->setting_class));
+
+		gtype = msi->get_setting_gtype ();
+
+		g_assert (G_TYPE_FROM_CLASS (sis->setting_class) == gtype);
+
+		setting = g_object_new (gtype, NULL);
+
+		g_assert (NM_IS_SETTING (setting));
+
+		g_assert_cmpint (sis->property_infos_len, >, 0);
+		g_assert (sis->property_infos);
+
+		h_properties = g_hash_table_new (nm_str_hash, g_str_equal);
+
+		for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
+			const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
+
+			g_assert (sip->name);
+
+			if (prop_idx > 0)
+				g_assert_cmpint (strcmp (sis->property_infos[prop_idx - 1].name, sip->name), <, 0);
+
+			g_assert (sip->dbus_type);
+			g_assert (g_variant_type_string_is_valid ((const char *) sip->dbus_type));
+
+			if (!g_hash_table_insert (h_properties, (char *) sip->name, sip->param_spec))
+				g_assert_not_reached ();
+
+			if (sip->param_spec) {
+				nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
+
+				g_assert_cmpstr (sip->name, ==, sip->param_spec->name);
+
+				g_value_init (&val, sip->param_spec->value_type);
+				g_object_get_property (G_OBJECT (setting), sip->name, &val);
+
+				if (sip->param_spec->value_type == G_TYPE_STRING) {
+					const char *default_value;
+
+					default_value = ((const GParamSpecString *) sip->param_spec)->default_value;
+					if (default_value) {
+						/* having a string property with a default != NULL is really ugly. They
+						 * should be best avoided... */
+						if (   meta_type == NM_META_SETTING_TYPE_DCB
+						    && nm_streq (sip->name, NM_SETTING_DCB_APP_FCOE_MODE)) {
+							/* Whitelist the properties that have a non-NULL default value. */
+							g_assert_cmpstr (default_value, ==, NM_SETTING_DCB_FCOE_MODE_FABRIC);
+						} else
+							g_assert_not_reached ();
+					}
+
+					if (nm_streq (sip->name, NM_SETTING_NAME))
+						g_assert_cmpstr (g_value_get_string (&val), ==, msi->setting_name);
+					else
+						g_assert_cmpstr (g_value_get_string (&val), ==, default_value);
+				}
+			}
+		}
+
+		/* check that all GObject based properties are tracked by the settings. */
+		property_specs = g_object_class_list_properties (G_OBJECT_CLASS (sis->setting_class),
+		                                                 &n_property_specs);
+		g_assert (property_specs);
+		g_assert_cmpint (n_property_specs, >, 0);
+		for (prop_idx = 0; prop_idx < n_property_specs; prop_idx++) {
+			const GParamSpec *pip = property_specs[prop_idx];
+
+			g_assert (g_hash_table_lookup (h_properties, pip->name) == pip);
+		}
+
+		/* check that property_infos_sorted is as expected. */
+		if (sis->property_infos_sorted) {
+			gs_unref_hashtable GHashTable *h = g_hash_table_new (nm_direct_hash, NULL);
+
+			/* property_infos_sorted is only implemented for [connection] type */
+			g_assert_cmpint (meta_type, ==, NM_META_SETTING_TYPE_CONNECTION);
+
+			/* ensure that there are no duplicates, and that all properties are also
+			 * tracked by sis->property_infos. */
+			for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
+				const NMSettInfoProperty *sip = sis->property_infos_sorted[prop_idx];
+
+				if (!g_hash_table_add (h, (gpointer) sip))
+					g_assert_not_reached ();
+			}
+			for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
+				const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
+
+				g_assert (g_hash_table_contains (h, sip));
+			}
+		} else
+			g_assert_cmpint (meta_type, !=, NM_META_SETTING_TYPE_CONNECTION);
+
+		/* consistency check for gendata-info. */
+		if (sis->detail.gendata_info) {
+			g_assert_cmpint (meta_type, ==, NM_META_SETTING_TYPE_ETHTOOL);
+			g_assert (sis->detail.gendata_info->get_variant_type);
+
+			/* the gendata info based setting has only one regular property: the "name". */
+			g_assert_cmpint (sis->property_infos_len, ==, 1);
+			g_assert_cmpstr (sis->property_infos[0].name, ==, NM_SETTING_NAME);
+		} else
+			g_assert_cmpint (meta_type, !=, NM_META_SETTING_TYPE_ETHTOOL);
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -3405,6 +3561,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/test_team_setting", test_team_setting);
 
 	g_test_add_func ("/libnm/test_empty_setting", test_empty_setting);
+
+	g_test_add_func ("/libnm/test_setting_metadata", test_setting_metadata);
 
 	return g_test_run ();
 }

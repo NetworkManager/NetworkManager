@@ -354,6 +354,12 @@ _properties_override_add_transform (GArray *properties_override,
 
 static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
 
+const NMSettInfoSetting *
+nmtst_sett_info_settings (void)
+{
+	return _sett_info_settings;
+}
+
 static int
 _property_infos_sort_cmp_setting_connection (gconstpointer p_a,
                                              gconstpointer p_b,
