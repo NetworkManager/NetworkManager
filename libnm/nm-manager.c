@@ -369,26 +369,6 @@ update_permissions (NMManager *self, GVariant *permissions)
 	g_list_free (keys);
 }
 
-static gboolean
-get_permissions_sync (NMManager *self, GError **error)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GVariant *permissions;
-
-	if (nmdbus_manager_call_get_permissions_sync (priv->proxy,
-	                                              &permissions,
-	                                              NULL, error)) {
-		update_permissions (self, permissions);
-		g_variant_unref (permissions);
-		return TRUE;
-	} else {
-		if (error && *error)
-			g_dbus_error_strip_remote_error (*error);
-		update_permissions (self, NULL);
-		return FALSE;
-	}
-}
-
 static void
 get_permissions_reply (GObject *object,
                        GAsyncResult *result,
@@ -1756,19 +1736,25 @@ constructed (GObject *object)
 static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
-	NMManager *manager = NM_MANAGER (initable);
-	GError *local_error = NULL;
+	NMManager *self = NM_MANAGER (initable);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gs_free_error GError *local_error = NULL;
+	gs_unref_variant GVariant *permissions = NULL;
 
 	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error)) {
 		/* Never happens. */
 		g_return_val_if_reached (FALSE);
 	}
 
-	if (!get_permissions_sync (manager, &local_error)) {
+	if (!nmdbus_manager_call_get_permissions_sync (priv->proxy,
+	                                               &permissions,
+	                                               NULL,
+	                                               &local_error)) {
+		g_dbus_error_strip_remote_error (local_error);
 		g_warning ("Unable to get permissions: %s\n", local_error->message);
-		g_error_free (local_error);
 	}
 
+	update_permissions (self, permissions);
 	return TRUE;
 }
 

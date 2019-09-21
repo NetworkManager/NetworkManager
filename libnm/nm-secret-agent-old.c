@@ -47,7 +47,6 @@ typedef struct {
 
 	bool registered:1;
 	bool registering:1;
-	bool private_bus:1;
 	bool session_bus:1;
 	bool auto_register:1;
 	bool suppress_auto:1;
@@ -140,12 +139,6 @@ verify_sender (NMSecretAgentOld *self,
 	gs_free_error GError *local = NULL;
 
 	g_return_val_if_fail (context != NULL, FALSE);
-
-	/* Private bus connection is always to NetworkManager, which is always
-	 * UID 0.
-	 */
-	if (priv->private_bus)
-		return TRUE;
 
 	/* Verify that the sender is the same as NetworkManager's bus name owner. */
 
@@ -451,8 +444,6 @@ check_nm_running (NMSecretAgentOld *self, GError **error)
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
 
-	if (priv->private_bus)
-		return TRUE;
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
 	if (owner)
 		return TRUE;
@@ -981,14 +972,10 @@ init_common (NMSecretAgentOld *self)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	priv->private_bus = _nm_dbus_is_connection_private (priv->bus);
+	priv->session_bus = _nm_dbus_bus_type () == G_BUS_TYPE_SESSION;
 
-	if (priv->private_bus == FALSE) {
-		priv->session_bus = _nm_dbus_bus_type () == G_BUS_TYPE_SESSION;
-
-		g_signal_connect (priv->manager_proxy, "notify::g-name-owner",
-		                  G_CALLBACK (name_owner_changed), self);
-	}
+	g_signal_connect (priv->manager_proxy, "notify::g-name-owner",
+	                  G_CALLBACK (name_owner_changed), self);
 }
 
 typedef struct {
@@ -1052,7 +1039,7 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
 	GError *error = NULL;
 
-	priv->bus = _nm_dbus_new_connection_finish (result, &error);
+	priv->bus = g_bus_get_finish (result, &error);
 	if (!priv->bus) {
 		init_async_complete (init_data, error);
 		return;
@@ -1150,7 +1137,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	priv->bus = _nm_dbus_new_connection (cancellable, error);
+	priv->bus = g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
 	if (!priv->bus)
 		return FALSE;
 
@@ -1193,7 +1180,10 @@ init_async (GAsyncInitable *initable, int io_priority,
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
 
-	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
+	g_bus_get (_nm_dbus_bus_type (),
+	           cancellable,
+	           init_async_got_bus,
+	           init_data);
 }
 
 static gboolean

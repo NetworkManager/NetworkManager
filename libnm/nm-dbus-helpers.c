@@ -26,63 +26,6 @@ _nm_dbus_bus_type (void)
 	return nm_bus;
 }
 
-GDBusConnection *
-_nm_dbus_new_connection (GCancellable *cancellable, GError **error)
-{
-	return g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
-}
-
-static void
-new_connection_async_got_system (GObject *source, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GDBusConnection *connection;
-	GError *error = NULL;
-
-	connection = g_bus_get_finish (result, &error);
-	if (connection)
-		g_simple_async_result_set_op_res_gpointer (simple, connection, g_object_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-void
-_nm_dbus_new_connection_async (GCancellable *cancellable,
-                               GAsyncReadyCallback callback,
-                               gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	simple = g_simple_async_result_new (NULL, callback, user_data, _nm_dbus_new_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	g_bus_get (_nm_dbus_bus_type (),
-	           cancellable,
-	           new_connection_async_got_system, simple);
-}
-
-GDBusConnection *
-_nm_dbus_new_connection_finish (GAsyncResult *result,
-                                GError **error)
-{
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-
-	return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
-}
-
-gboolean
-_nm_dbus_is_connection_private (GDBusConnection *connection)
-{
-	return g_dbus_connection_get_unique_name (connection) == NULL;
-}
-
 /* D-Bus has an upper limit on number of Match rules and it's rather easy
  * to hit as the proxy likes to add one for each object. Let's remove the Match
  * rule the proxy added and ensure a less granular rule is present instead.

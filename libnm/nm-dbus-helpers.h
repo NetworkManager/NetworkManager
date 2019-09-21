@@ -14,17 +14,6 @@
 
 GBusType _nm_dbus_bus_type (void);
 
-GDBusConnection *_nm_dbus_new_connection        (GCancellable *cancellable,
-                                                 GError **error);
-
-void             _nm_dbus_new_connection_async  (GCancellable *cancellable,
-                                                 GAsyncReadyCallback callback,
-                                                 gpointer user_data);
-GDBusConnection *_nm_dbus_new_connection_finish (GAsyncResult *result,
-                                                 GError **error);
-
-gboolean         _nm_dbus_is_connection_private (GDBusConnection *connection);
-
 void             _nm_dbus_proxy_replace_match   (GDBusProxy *proxy);
 
 void _nm_dbus_bind_properties (gpointer object,
