@@ -96,24 +96,17 @@ dt_get_hwaddr_property (const char *base,
 static NMIPAddress *
 str_addr (const char *str, int *family)
 {
-	struct in_addr inp;
+	NMIPAddr addr_bin;
 
-	if (*family == AF_UNSPEC)
-		*family = guess_ip_address_family (str);
-
-	if (*family == AF_UNSPEC) {
+	if (!nm_utils_parse_inaddr_bin_full (*family,
+	                                     TRUE,
+	                                     str,
+	                                     family,
+	                                     &addr_bin)) {
 		_LOGW (LOGD_CORE, "Malformed IP address: '%s'", str);
 		return NULL;
 	}
-
-	if (*family == AF_INET && inet_aton (str, &inp)) {
-		/* For IPv4, we need to be more tolerant than
-		 * nm_ip_address_new(), to recognize things like
-		 * the extra zeroes in "255.255.255.000" */
-		return nm_ip_address_new_binary (*family, &inp, 0, NULL);
-	}
-
-	return nm_ip_address_new (*family, str, 0, NULL);
+	return nm_ip_address_new_binary (*family, &addr_bin, 0, NULL);
 }
 
 NMConnection *
