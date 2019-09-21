@@ -51,40 +51,24 @@ dt_get_ipaddr_property (const char *base,
                         const char *prop,
                         int *family)
 {
-	NMIPAddress *addr;
 	gs_free char *buf = NULL;
 	size_t len;
-	gs_free_error GError *error = NULL;
+	int f;
 
 	if (!dt_get_property (base, dev, prop, &buf, &len))
 		return NULL;
 
-	switch (len) {
-	case 4:
-		if (*family == AF_UNSPEC)
-			*family = AF_INET;
-		break;
-	case 16:
-		if (*family == AF_UNSPEC)
-			*family = AF_INET6;
-		break;
-	default:
-		break;
-	}
-
-	if (*family == AF_UNSPEC) {
+	f = nm_utils_addr_family_from_size (len);
+	if (   f == AF_UNSPEC
+	    || (   *family != AF_UNSPEC
+	        && *family != f)) {
 		_LOGW (LOGD_CORE, "%s: Address %s has unrecognized length (%zd)",
 		       dev, prop, len);
 		return NULL;
 	}
 
-	addr = nm_ip_address_new_binary (*family, buf, 0, &error);
-	if (!addr) {
-		_LOGW (LOGD_CORE, "%s: Address %s is malformed: %s",
-		       dev, prop, error->message);
-	}
-
-	return addr;
+	*family = f;
+	return nm_ip_address_new_binary (f, buf, 0, NULL);
 }
 
 static char *
