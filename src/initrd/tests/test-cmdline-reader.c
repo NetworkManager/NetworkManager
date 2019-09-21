@@ -789,6 +789,18 @@ test_ignore_extra (void)
 	g_assert_cmpint (g_hash_table_size (connections), ==, 0);
 }
 
+static void
+test_rd_znet (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=10.11.12.13::10.11.12.1:24:foo.example.com:enc800:none",
+	                                                 "rd.znet=ctc,0.0.0800,0.0.0801,layer2=0,portno=0", NULL });
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -811,6 +823,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/bridge/default", test_bridge_default);
 	g_test_add_func ("/initrd/cmdline/ibft", test_ibft);
 	g_test_add_func ("/initrd/cmdline/ignore_extra", test_ignore_extra);
+	g_test_add_func ("/initrd/cmdline/rd_zdnet", test_rd_znet);
 
 	return g_test_run ();
 }
