@@ -1611,13 +1611,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_FUZZY_IGNORE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_SEEN_BSSIDS],
-	                                   G_VARIANT_TYPE_STRING_ARRAY,
-	                                   _to_dbus_fcn_seen_bssids,
-	                                   NULL,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override,
+	                               obj_properties[PROP_SEEN_BSSIDS],
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type             = G_VARIANT_TYPE_STRING_ARRAY,
+	                                   .to_dbus_fcn           = _to_dbus_fcn_seen_bssids,
+	                               ));
 
 	/**
 	 * NMSettingWireless:mtu:

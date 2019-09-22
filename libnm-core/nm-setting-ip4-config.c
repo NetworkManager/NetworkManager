@@ -820,13 +820,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 *   for that subnet.
 	 * ---end---
 	 */
-	_properties_override_add_override (properties_override,
-	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                 NM_SETTING_IP_CONFIG_ADDRESSES),
-	                                   NM_G_VARIANT_TYPE ("aau"),
-	                                   ip4_addresses_get,
-	                                   ip4_addresses_set,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override,
+	                               g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                             NM_SETTING_IP_CONFIG_ADDRESSES),
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = NM_G_VARIANT_TYPE ("aau"),
+	                                   .to_dbus_fcn   = ip4_addresses_get,
+	                                   .from_dbus_fcn = ip4_addresses_set,
+	                               ));
 	_properties_override_add_virt (properties_override,
 	                               "address-labels",
 	                               NM_SETT_INFO_PROPERT_TYPE (
@@ -868,13 +869,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 *   property.)
 	 * ---end---
 	 */
-	_properties_override_add_override (properties_override,
-	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                 NM_SETTING_IP_CONFIG_ROUTES),
-	                                   NM_G_VARIANT_TYPE ("aau"),
-	                                   ip4_routes_get,
-	                                   ip4_routes_set,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override,
+	                               g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                             NM_SETTING_IP_CONFIG_ROUTES),
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = NM_G_VARIANT_TYPE ("aau"),
+	                                   .to_dbus_fcn   = ip4_routes_get,
+	                                   .from_dbus_fcn = ip4_routes_set,
+	                               ));
 
 	/* ---dbus---
 	 * property: route-data

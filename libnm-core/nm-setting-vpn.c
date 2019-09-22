@@ -1151,12 +1151,13 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_SECRET |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_SECRETS],
-	                                   NM_G_VARIANT_TYPE ("a{ss}"),
-	                                   vpn_secrets_to_dbus,
-	                                   vpn_secrets_from_dbus,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override,
+	                               obj_properties[PROP_SECRETS],
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = NM_G_VARIANT_TYPE ("a{ss}"),
+	                                   .to_dbus_fcn   = vpn_secrets_to_dbus,
+	                                   .from_dbus_fcn = vpn_secrets_from_dbus,
+	                               ));
 
 	/**
 	 * NMSettingVpn:timeout:

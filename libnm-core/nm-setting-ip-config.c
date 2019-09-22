@@ -5194,12 +5194,12 @@ _nm_sett_info_property_override_create_array_ip_config (void)
 {
 	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_GATEWAY],
-	                                   G_VARIANT_TYPE_STRING,
-	                                   NULL,
-	                                   ip_gateway_set,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override,
+	                               obj_properties[PROP_GATEWAY],
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = G_VARIANT_TYPE_STRING,
+	                                   .from_dbus_fcn = ip_gateway_set,
+	                               ));
 
 	/* ---dbus---
 	 * property: routing-rules

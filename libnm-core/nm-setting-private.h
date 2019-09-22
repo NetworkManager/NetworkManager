@@ -171,56 +171,6 @@ void _properties_override_add_struct (GArray *properties_override,
 #define _properties_override_add_virt(properties_override, p_name, p_property_type) \
 	_properties_override_add ((properties_override), .name = (p_name), .property_type = (p_property_type))
 
-/**
- * _properties_override_add_override:
- * @properties_override: an array collecting the overrides
- * @p_param_spec: the name of the property to override
- * @p_dbus_type: the type of the property (in its D-Bus representation)
- * @p_to_dbus_fcn: (allow-none): function to call to get the value of the property
- * @p_from_dbus_fcn: (allow-none): function to call to set the value of the property
- * @p_missing_from_dbus_fcn: (allow-none): function to call to indicate the property was not set
- *
- * Overrides the D-Bus representation of the #GObject property that shares the
- * same name as @p_param_spec.
- *
- * When serializing a setting to D-Bus, if @p_to_dbus_fcn is non-%NULL, then it will
- * be called to get the property's value. If it returns a #GVariant, the
- * property will be added to the hash, and if it returns %NULL, the property
- * will be omitted. (If @p_to_dbus_fcn is %NULL, the property will be read normally
- * with g_object_get_property(), and added to the hash if it is not the default
- * value.)
- *
- * When deserializing a D-Bus representation into a setting, if a value with
- * the name of @p_param_spec is present, then @p_from_dbus_fcn will be called to set it.
- * (If @p_from_dbus_fcn is %NULL then the property will be set normally with
- * g_object_set_property().)
- *
- * If @p_missing_from_dbus_fcn is non-%NULL, then it will be called when deserializing a
- * representation that does NOT contain a value for the property. This can be used,
- * eg, if a new property needs to be initialized from some older deprecated property
- * when it is not present.
- */
-#define _properties_override_add_override(properties_override, \
-                                          p_param_spec, \
-                                          p_dbus_type, \
-                                          p_to_dbus_fcn, \
-                                          p_from_dbus_fcn, \
-                                          p_missing_from_dbus_fcn) \
-	({ \
-		GParamSpec *const _param_spec = (p_param_spec); \
-		\
-		nm_assert (_param_spec); \
-		\
-		_properties_override_add ((properties_override), \
-		                          .param_spec                = (_param_spec), \
-		                          .property_type = NM_SETT_INFO_PROPERT_TYPE ( \
-		                              .dbus_type             = (p_dbus_type), \
-		                              .to_dbus_fcn           = (p_to_dbus_fcn), \
-		                              .from_dbus_fcn         = (p_from_dbus_fcn), \
-		                              .missing_from_dbus_fcn = (p_missing_from_dbus_fcn), \
-		                          )); \
-	})
-
 /*****************************************************************************/
 
 gboolean _nm_setting_use_legacy_property (NMSetting *setting,

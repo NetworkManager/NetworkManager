@@ -908,13 +908,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	                        G_PARAM_CONSTRUCT |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_FLAGS],
-	                                   G_VARIANT_TYPE_UINT32,
-	                                   _override_flags_get,
-	                                   NULL,
-	                                   _override_flags_not_set);
+	_properties_override_add_gobj (properties_override,
+	                               obj_properties[PROP_FLAGS],
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type             = G_VARIANT_TYPE_UINT32,
+	                                   .to_dbus_fcn           = _override_flags_get,
+	                                   .missing_from_dbus_fcn = _override_flags_not_set,
+	                               ));
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
