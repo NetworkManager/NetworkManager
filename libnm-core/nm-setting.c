@@ -442,13 +442,15 @@ has_property_type:
 	sett_info->setting_class = setting_class;
 	if (detail)
 		sett_info->detail = *detail;
+	nm_assert (properties_override->len > 0);
 	sett_info->property_infos_len = properties_override->len;
-	sett_info->property_infos = (const NMSettInfoProperty *) g_array_free (properties_override,
-	                                                                       properties_override->len == 0);
+	sett_info->property_infos = nm_memdup (properties_override->data, sizeof (NMSettInfoProperty) * properties_override->len);
 
 	sett_info->property_infos_sorted = _property_infos_sort (sett_info->property_infos,
 	                                                         sett_info->property_infos_len,
 	                                                         setting_class);
+
+	g_array_free (properties_override, TRUE);
 }
 
 const NMSettInfoProperty *
