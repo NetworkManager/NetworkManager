@@ -825,9 +825,15 @@ _nm_utils_strdict_to_dbus (const GValue *prop_value)
 	if (len == 1)
 		g_variant_builder_add (&builder, "{ss}", key, value);
 	else {
-		gs_free NMUtilsNamedValue *idx = NULL;
+		gs_free NMUtilsNamedValue *idx_free = NULL;
+		NMUtilsNamedValue *idx;
 
-		idx = g_new (NMUtilsNamedValue, len);
+		if (len > 300 / sizeof (NMUtilsNamedValue)) {
+			idx_free = g_new (NMUtilsNamedValue, len);
+			idx = idx_free;
+		} else
+			idx = g_alloca (sizeof (NMUtilsNamedValue) * len);
+
 		i = 0;
 		do {
 			idx[i].name = key;
