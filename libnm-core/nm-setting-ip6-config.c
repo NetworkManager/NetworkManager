@@ -880,12 +880,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 * description: Array of IP addresses of DNS servers (in network byte order)
 	 * ---end---
 	 */
-	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_IP_CONFIG_DNS),
-	                                    NM_G_VARIANT_TYPE ("aay"),
-	                                    ip6_dns_to_dbus,
-	                                    ip6_dns_from_dbus);
+	_properties_override_add_gobj (properties_override,
+	                               g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                             NM_SETTING_IP_CONFIG_DNS),
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type           = NM_G_VARIANT_TYPE ("aay"),
+	                                   .gprop_to_dbus_fcn   = ip6_dns_to_dbus,
+	                                   .gprop_from_dbus_fcn = ip6_dns_from_dbus,
+	                               ));
 
 	/* ---dbus---
 	 * property: addresses

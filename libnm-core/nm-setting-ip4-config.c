@@ -796,12 +796,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 *   integers)
 	 * ---end---
 	 */
-	_properties_override_add_transform (properties_override,
-	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
-	                                                                  NM_SETTING_IP_CONFIG_DNS),
-	                                    NM_G_VARIANT_TYPE ("au"),
-	                                    ip4_dns_to_dbus,
-	                                    ip4_dns_from_dbus);
+	_properties_override_add_gobj (properties_override,
+	                               g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                             NM_SETTING_IP_CONFIG_DNS),
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type           = NM_G_VARIANT_TYPE ("au"),
+	                                   .gprop_to_dbus_fcn   = ip4_dns_to_dbus,
+	                                   .gprop_from_dbus_fcn = ip4_dns_from_dbus,
+	                               ));
 
 	/* ---dbus---
 	 * property: addresses

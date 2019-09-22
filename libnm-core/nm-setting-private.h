@@ -221,41 +221,6 @@ void _properties_override_add_struct (GArray *properties_override,
 		                          )); \
 	})
 
-/**
- * _properties_override_add_transform:
- * @properties_override: an array collecting the overrides
- * @p_param_spec: the param spec of the property to transform.
- * @p_dbus_type: the type of the property (in its D-Bus representation)
- * @p_gprop_to_dbus_fcn: function to convert from object to D-Bus format
- * @p_gprop_from_dbus_fcn: function to convert from D-Bus to object format
- *
- * Indicates that @property on @setting_class does not have the same format as
- * its corresponding D-Bus representation, and so must be transformed when
- * serializing/deserializing.
- *
- * The transformation will also be used by nm_setting_compare(), meaning that
- * the underlying object property does not need to be of a type that
- * nm_property_compare() recognizes, as long as it recognizes @p_dbus_type.
- */
-#define _properties_override_add_transform(properties_override, \
-                                           p_param_spec, \
-                                           p_dbus_type, \
-                                           p_gprop_to_dbus_fcn, \
-                                           p_gprop_from_dbus_fcn) \
-	({ \
-		GParamSpec *const _param_spec = (p_param_spec); \
-		\
-		nm_assert (_param_spec); \
-		\
-		_properties_override_add ((properties_override), \
-		                          .param_spec              = (_param_spec), \
-		                          .property_type = NM_SETT_INFO_PROPERT_TYPE ( \
-		                              .dbus_type           = (p_dbus_type), \
-		                              .gprop_to_dbus_fcn   = (p_gprop_to_dbus_fcn), \
-		                              .gprop_from_dbus_fcn = (p_gprop_from_dbus_fcn), \
-		                          )); \
-	})
-
 /*****************************************************************************/
 
 gboolean _nm_setting_use_legacy_property (NMSetting *setting,
