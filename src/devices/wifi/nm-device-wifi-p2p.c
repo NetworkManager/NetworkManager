@@ -828,6 +828,7 @@ supplicant_group_iface_state_cb (NMSupplicantInterface *iface,
 
 static void
 supplicant_group_iface_group_finished_cb (NMSupplicantInterface *iface,
+                                          const char *iface_path,
                                           void *user_data)
 {
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (user_data);
