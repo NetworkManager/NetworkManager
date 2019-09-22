@@ -974,11 +974,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 *   vlan's interface name.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "interface-name",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    _nm_setting_get_deprecated_virtual_interface_name,
-	                                    NULL);
+	_properties_override_add_virt (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

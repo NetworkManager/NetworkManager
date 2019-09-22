@@ -414,12 +414,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_MAC_ADDRESS],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingInfiniband:mtu:

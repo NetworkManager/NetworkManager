@@ -1376,12 +1376,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_BSSID],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_BSSID], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingWireless:rate:
@@ -1455,12 +1450,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_MAC_ADDRESS],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingWireless:cloned-mac-address:
@@ -1510,13 +1500,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_CLONED_MAC_ADDRESS],
-	                                   G_VARIANT_TYPE_BYTESTRING,
-	                                   _nm_utils_hwaddr_cloned_get,
-	                                   _nm_utils_hwaddr_cloned_set,
-	                                   _nm_utils_hwaddr_cloned_not_set);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_CLONED_MAC_ADDRESS], &nm_sett_info_propert_type_cloned_mac_address);
 
 	/* ---dbus---
 	 * property: assigned-mac-address
@@ -1530,11 +1514,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 *   "cloned-mac-address".
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "assigned-mac-address",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    _nm_utils_hwaddr_cloned_data_synth,
-	                                    _nm_utils_hwaddr_cloned_data_set);
+	_properties_override_add_virt (properties_override, "assigned-mac-address", &nm_sett_info_propert_type_assigned_mac_address);
 
 	/**
 	 * NMSettingWireless:generate-mac-address-mask:

@@ -573,17 +573,10 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_VLANS],
-	                                   NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                   _nm_utils_bridge_vlans_to_dbus,
-	                                   _nm_utils_bridge_vlans_from_dbus,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_VLANS], &nm_sett_info_propert_type_bridge_vlans);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_BRIDGE_PORT,
 	                               NULL, properties_override);
-
 }

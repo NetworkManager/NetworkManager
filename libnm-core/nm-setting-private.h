@@ -69,12 +69,12 @@ gboolean _nm_setting_clear_secrets (NMSetting *setting,
 
 #define NM_SETTING_PARAM_GENDATA_BACKED (1 << (7 + G_PARAM_USER_SHIFT))
 
-GVariant *_nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett_info,
-                                                             guint property_idx,
-                                                             NMConnection *connection,
-                                                             NMSetting *setting,
-                                                             NMConnectionSerializationFlags flags,
-                                                             const NMConnectionSerializationOptions *options);
+extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;
+
+extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_i;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_u;
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           NMConnection *connection,
@@ -164,6 +164,12 @@ void _properties_override_add_struct (GArray *properties_override,
                                  ...) \
 	(_properties_override_add_struct (properties_override, \
 	                                  NM_SETT_INFO_PROPERTY (__VA_ARGS__)))
+
+#define _properties_override_add_gobj(properties_override, p_param_spec, p_property_type) \
+	_properties_override_add ((properties_override), .param_spec = (p_param_spec), .property_type = (p_property_type))
+
+#define _properties_override_add_virt(properties_override, p_name, p_property_type) \
+	_properties_override_add ((properties_override), .name = (p_name), .property_type = (p_property_type))
 
 /**
  * _properties_override_add_dbus_only:

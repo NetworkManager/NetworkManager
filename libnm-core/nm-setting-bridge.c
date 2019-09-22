@@ -1209,12 +1209,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_MAC_ADDRESS],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingBridge:stp:
@@ -1466,13 +1461,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_VLANS],
-	                                   NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                   _nm_utils_bridge_vlans_to_dbus,
-	                                   _nm_utils_bridge_vlans_from_dbus,
-	                                   NULL);
+	_properties_override_add_gobj (properties_override, obj_properties[PROP_VLANS], &nm_sett_info_propert_type_bridge_vlans);
 
 	/* ---dbus---
 	 * property: interface-name
@@ -1482,11 +1471,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 *   bridge's interface name.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "interface-name",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    _nm_setting_get_deprecated_virtual_interface_name,
-	                                    NULL);
+	_properties_override_add_virt (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

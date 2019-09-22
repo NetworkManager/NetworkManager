@@ -406,9 +406,9 @@ _nm_setting_class_commit_full (NMSettingClass *setting_class,
 		else if (vtype == G_TYPE_UCHAR)
 			p->property_type = NM_SETT_INFO_PROPERT_TYPE (.dbus_type = G_VARIANT_TYPE_BYTE);
 		else if (vtype == G_TYPE_INT)
-			p->property_type = NM_SETT_INFO_PROPERT_TYPE (.dbus_type = G_VARIANT_TYPE_INT32);
+			p->property_type = &nm_sett_info_propert_type_plain_i;
 		else if (vtype == G_TYPE_UINT)
-			p->property_type = NM_SETT_INFO_PROPERT_TYPE (.dbus_type = G_VARIANT_TYPE_UINT32);
+			p->property_type = &nm_sett_info_propert_type_plain_u;
 		else if (vtype == G_TYPE_INT64)
 			p->property_type = NM_SETT_INFO_PROPERT_TYPE (.dbus_type = G_VARIANT_TYPE_INT64);
 		else if (vtype == G_TYPE_UINT64)
@@ -2301,7 +2301,7 @@ nm_setting_to_string (NMSetting *setting)
 	return g_string_free (string, FALSE);
 }
 
-GVariant *
+static GVariant *
 _nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett_info,
                                                    guint property_idx,
                                                    NMConnection *connection,
@@ -2323,6 +2323,29 @@ _nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett
 	else
 		return NULL;
 }
+
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name = {
+	.dbus_type   = G_VARIANT_TYPE_STRING,
+	.to_dbus_fcn = _nm_setting_get_deprecated_virtual_interface_name,
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i = {
+	.dbus_type   = G_VARIANT_TYPE_INT32,
+	/* No functions set. This property type is to silently ignore the value on D-Bus. */
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u = {
+	.dbus_type   = G_VARIANT_TYPE_UINT32,
+	/* No functions set. This property type is to silently ignore the value on D-Bus. */
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_plain_i = {
+	.dbus_type   = G_VARIANT_TYPE_INT32,
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_plain_u = {
+	.dbus_type   = G_VARIANT_TYPE_UINT32,
+};
 
 /*****************************************************************************/
 
