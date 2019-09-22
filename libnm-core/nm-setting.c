@@ -202,11 +202,9 @@ _gprop_to_dbus_fcn_flags (const GValue *val)
 	return g_variant_new_uint32 (g_value_get_flags (val));
 }
 
-void
-_properties_override_add_struct (GArray *properties_override,
-                                 const NMSettInfoProperty *prop_info)
+gboolean
+_properties_override_add_assert (const NMSettInfoProperty *prop_info)
 {
-	nm_assert (properties_override);
 	nm_assert (prop_info);
 	nm_assert ((!!prop_info->name) != (!!prop_info->param_spec));
 	nm_assert (!prop_info->param_spec || !prop_info->name || nm_streq0 (prop_info->name, prop_info->param_spec->name));
@@ -230,7 +228,7 @@ _properties_override_add_struct (GArray *properties_override,
 
 #undef _PROPERT_EXTRA
 
-	g_array_append_vals (properties_override, prop_info, 1);
+	return TRUE;
 }
 
 static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
