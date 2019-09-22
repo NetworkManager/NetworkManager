@@ -1132,7 +1132,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                    obj_properties[PROP_DATA],
-	                                    G_VARIANT_TYPE ("a{ss}"),
+	                                    NM_G_VARIANT_TYPE ("a{ss}"),
 	                                    _nm_utils_strdict_to_dbus,
 	                                    _nm_utils_strdict_from_dbus);
 
@@ -1159,7 +1159,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 
 	_properties_override_add_override (properties_override,
 	                                   obj_properties[PROP_SECRETS],
-	                                   G_VARIANT_TYPE ("a{ss}"),
+	                                   NM_G_VARIANT_TYPE ("a{ss}"),
 	                                   vpn_secrets_to_dbus,
 	                                   vpn_secrets_from_dbus,
 	                                   NULL);

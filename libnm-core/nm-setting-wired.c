@@ -1591,7 +1591,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                    obj_properties[PROP_S390_OPTIONS],
-	                                    G_VARIANT_TYPE ("a{ss}"),
+	                                    NM_G_VARIANT_TYPE ("a{ss}"),
 	                                    _nm_utils_strdict_to_dbus,
 	                                    _nm_utils_strdict_from_dbus);
 

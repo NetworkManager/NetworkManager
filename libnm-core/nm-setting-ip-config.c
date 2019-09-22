@@ -5209,7 +5209,7 @@ _nm_sett_info_property_override_create_array_ip_config (void)
 	 */
 	_properties_override_add_dbus_only (properties_override,
 	                                    NM_SETTING_IP_CONFIG_ROUTING_RULES,
-	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                    _routing_rules_dbus_only_synth,
 	                                    _routing_rules_dbus_only_set);
 

@@ -883,7 +883,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	_properties_override_add_transform (properties_override,
 	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
 	                                                                  NM_SETTING_IP_CONFIG_DNS),
-	                                    G_VARIANT_TYPE ("aay"),
+	                                    NM_G_VARIANT_TYPE ("aay"),
 	                                    ip6_dns_to_dbus,
 	                                    ip6_dns_from_dbus);
 
@@ -904,7 +904,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	_properties_override_add_override (properties_override,
 	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
 	                                                                 NM_SETTING_IP_CONFIG_ADDRESSES),
-	                                   G_VARIANT_TYPE ("a(ayuay)"),
+	                                   NM_G_VARIANT_TYPE ("a(ayuay)"),
 	                                   ip6_addresses_get,
 	                                   ip6_addresses_set,
 	                                   NULL);
@@ -920,7 +920,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 */
 	_properties_override_add_dbus_only (properties_override,
 	                                    "address-data",
-	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                    ip6_address_data_get,
 	                                    ip6_address_data_set);
 
@@ -941,7 +941,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	_properties_override_add_override (properties_override,
 	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
 	                                                                 NM_SETTING_IP_CONFIG_ROUTES),
-	                                   G_VARIANT_TYPE ("a(ayuayu)"),
+	                                   NM_G_VARIANT_TYPE ("a(ayuayu)"),
 	                                   ip6_routes_get,
 	                                   ip6_routes_set,
 	                                   NULL);
@@ -961,7 +961,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 */
 	_properties_override_add_dbus_only (properties_override,
 	                                    "route-data",
-	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                    ip6_route_data_get,
 	                                    ip6_route_data_set);
 

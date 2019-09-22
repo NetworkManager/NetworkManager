@@ -538,10 +538,12 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 
 #define _property_override(_properties_override, _param_spec, _variant_type, _is_link_watcher) \
 	_properties_override_add ((_properties_override), \
-	                          .param_spec          = (_param_spec), \
-	                          .dbus_type           = G_VARIANT_TYPE (""_variant_type""), \
-	                          .to_dbus_fcn         = _nm_team_settings_property_to_dbus, \
-	                          .gprop_from_dbus_fcn = ((_is_link_watcher) ? _nm_team_settings_property_from_dbus_link_watchers : NULL))
+	                          .param_spec              = (_param_spec), \
+	                          .property_type = NM_SETT_INFO_PROPERT_TYPE ( \
+	                              .dbus_type           = NM_G_VARIANT_TYPE (""_variant_type""), \
+	                              .to_dbus_fcn         = _nm_team_settings_property_to_dbus, \
+	                              .gprop_from_dbus_fcn = ((_is_link_watcher) ? _nm_team_settings_property_from_dbus_link_watchers : NULL), \
+	                          ))
 
 	/**
 	 * NMSettingTeamPort:config:

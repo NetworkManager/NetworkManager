@@ -1469,7 +1469,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 
 	_properties_override_add_override (properties_override,
 	                                   obj_properties[PROP_VLANS],
-	                                   G_VARIANT_TYPE ("aa{sv}"),
+	                                   NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                   _nm_utils_bridge_vlans_to_dbus,
 	                                   _nm_utils_bridge_vlans_from_dbus,
 	                                   NULL);

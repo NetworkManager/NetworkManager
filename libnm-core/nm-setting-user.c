@@ -574,7 +574,7 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                    obj_properties[PROP_DATA],
-	                                    G_VARIANT_TYPE ("a{ss}"),
+	                                    NM_G_VARIANT_TYPE ("a{ss}"),
 	                                    _nm_utils_strdict_to_dbus,
 	                                    _nm_utils_strdict_from_dbus);
 

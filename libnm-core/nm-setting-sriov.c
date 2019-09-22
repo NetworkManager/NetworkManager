@@ -1329,7 +1329,7 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 
 	_properties_override_add_override (properties_override,
 	                                   obj_properties[PROP_VFS],
-	                                   G_VARIANT_TYPE ("aa{sv}"),
+	                                   NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                   vfs_to_dbus,
 	                                   vfs_from_dbus,
 	                                   NULL);

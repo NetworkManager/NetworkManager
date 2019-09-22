@@ -2573,7 +2573,7 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 */
 	_properties_override_add_dbus_only (properties_override,
 	                                    NM_SETTING_WIREGUARD_PEERS,
-	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                    _peers_dbus_only_synth,
 	                                    _peers_dbus_only_set);
 

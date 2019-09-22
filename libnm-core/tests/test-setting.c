@@ -3387,8 +3387,12 @@ test_setting_metadata (void)
 			if (prop_idx > 0)
 				g_assert_cmpint (strcmp (sis->property_infos[prop_idx - 1].name, sip->name), <, 0);
 
-			g_assert (sip->dbus_type);
-			g_assert (g_variant_type_string_is_valid ((const char *) sip->dbus_type));
+			g_assert (sip->property_type);
+			g_assert (sip->property_type->dbus_type);
+			g_assert (g_variant_type_string_is_valid ((const char *) sip->property_type->dbus_type));
+
+			g_assert (!sip->property_type->to_dbus_fcn || !sip->property_type->gprop_to_dbus_fcn);
+			g_assert (!sip->property_type->from_dbus_fcn || !sip->property_type->gprop_from_dbus_fcn);
 
 			if (!g_hash_table_insert (h_properties, (char *) sip->name, sip->param_spec))
 				g_assert_not_reached ();

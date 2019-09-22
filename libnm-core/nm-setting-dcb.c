@@ -1100,7 +1100,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                   obj_properties[PROP_PRIORITY_FLOW_CONTROL],
-	                                   G_VARIANT_TYPE ("au"),
+	                                   NM_G_VARIANT_TYPE ("au"),
 	                                   _nm_setting_dcb_uint_array_to_dbus,
 	                                   _nm_setting_dcb_uint_array_from_dbus);
 
@@ -1148,7 +1148,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                   obj_properties[PROP_PRIORITY_GROUP_ID],
-	                                   G_VARIANT_TYPE ("au"),
+	                                   NM_G_VARIANT_TYPE ("au"),
 	                                   _nm_setting_dcb_uint_array_to_dbus,
 	                                   _nm_setting_dcb_uint_array_from_dbus);
 
@@ -1175,7 +1175,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                   obj_properties[PROP_PRIORITY_GROUP_BANDWIDTH],
-	                                   G_VARIANT_TYPE ("au"),
+	                                   NM_G_VARIANT_TYPE ("au"),
 	                                   _nm_setting_dcb_uint_array_to_dbus,
 	                                   _nm_setting_dcb_uint_array_from_dbus);
 
@@ -1204,7 +1204,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                   obj_properties[PROP_PRIORITY_BANDWIDTH],
-	                                   G_VARIANT_TYPE ("au"),
+	                                   NM_G_VARIANT_TYPE ("au"),
 	                                   _nm_setting_dcb_uint_array_to_dbus,
 	                                   _nm_setting_dcb_uint_array_from_dbus);
 
@@ -1231,7 +1231,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                   obj_properties[PROP_PRIORITY_STRICT_BANDWIDTH],
-	                                   G_VARIANT_TYPE ("au"),
+	                                   NM_G_VARIANT_TYPE ("au"),
 	                                   _nm_setting_dcb_uint_array_to_dbus,
 	                                   _nm_setting_dcb_uint_array_from_dbus);
 
@@ -1257,7 +1257,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 
 	_properties_override_add_transform (properties_override,
 	                                    obj_properties[PROP_PRIORITY_TRAFFIC_CLASS],
-	                                    G_VARIANT_TYPE ("au"),
+	                                    NM_G_VARIANT_TYPE ("au"),
 	                                    _nm_setting_dcb_uint_array_to_dbus,
 	                                    _nm_setting_dcb_uint_array_from_dbus);
 

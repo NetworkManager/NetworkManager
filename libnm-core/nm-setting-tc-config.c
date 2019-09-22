@@ -1803,7 +1803,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 
 	_properties_override_add_override (properties_override,
 	                                   obj_properties[PROP_QDISCS],
-	                                   G_VARIANT_TYPE ("aa{sv}"),
+	                                   NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                   tc_qdiscs_get,
 	                                   tc_qdiscs_set,
 	                                   NULL);
@@ -1829,7 +1829,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 
 	_properties_override_add_override (properties_override,
 	                                   obj_properties[PROP_TFILTERS],
-	                                   G_VARIANT_TYPE ("aa{sv}"),
+	                                   NM_G_VARIANT_TYPE ("aa{sv}"),
 	                                   tc_tfilters_get,
 	                                   tc_tfilters_set,
 	                                   NULL);
