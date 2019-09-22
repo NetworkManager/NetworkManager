@@ -250,7 +250,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_DHCP_ANYCAST_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_DHCP_ANYCAST_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

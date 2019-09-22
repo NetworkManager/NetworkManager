@@ -908,13 +908,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	                        G_PARAM_CONSTRUCT |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override,
-	                               obj_properties[PROP_FLAGS],
-	                               NM_SETT_INFO_PROPERT_TYPE (
-	                                   .dbus_type             = G_VARIANT_TYPE_UINT32,
-	                                   .to_dbus_fcn           = _override_flags_get,
-	                                   .missing_from_dbus_fcn = _override_flags_not_set,
-	                               ));
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_FLAGS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type             = G_VARIANT_TYPE_UINT32,
+	                                  .to_dbus_fcn           = _override_flags_get,
+	                                  .missing_from_dbus_fcn = _override_flags_not_set,
+	                              ));
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
@@ -974,7 +974,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 *   vlan's interface name.
 	 * ---end---
 	 */
-	_properties_override_add_virt (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
+	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

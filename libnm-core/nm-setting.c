@@ -203,7 +203,7 @@ _gprop_to_dbus_fcn_flags (const GValue *val)
 }
 
 gboolean
-_properties_override_add_assert (const NMSettInfoProperty *prop_info)
+_nm_properties_override_assert (const NMSettInfoProperty *prop_info)
 {
 	nm_assert (prop_info);
 	nm_assert ((!!prop_info->name) != (!!prop_info->param_spec));

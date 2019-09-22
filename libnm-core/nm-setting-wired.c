@@ -1306,12 +1306,12 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override,
-	                               obj_properties[PROP_AUTO_NEGOTIATE],
-	                               NM_SETT_INFO_PROPERT_TYPE (
-	                                   .dbus_type   = G_VARIANT_TYPE_BOOLEAN,
-	                                   .to_dbus_fcn = _override_autoneg_get,
-	                               ));
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_AUTO_NEGOTIATE],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type   = G_VARIANT_TYPE_BOOLEAN,
+	                                  .to_dbus_fcn = _override_autoneg_get,
+	                              ));
 
 	/**
 	 * NMSettingWired:mac-address:
@@ -1343,7 +1343,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingWired:cloned-mac-address:
@@ -1394,7 +1394,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_CLONED_MAC_ADDRESS], &nm_sett_info_propert_type_cloned_mac_address);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_CLONED_MAC_ADDRESS], &nm_sett_info_propert_type_cloned_mac_address);
 
 	/* ---dbus---
 	 * property: assigned-mac-address
@@ -1408,7 +1408,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	 *   "cloned-mac-address".
 	 * ---end---
 	 */
-	_properties_override_add_virt (properties_override, "assigned-mac-address", &nm_sett_info_propert_type_assigned_mac_address);
+	_nm_properties_override_dbus (properties_override, "assigned-mac-address", &nm_sett_info_propert_type_assigned_mac_address);
 
 	/**
 	 * NMSettingWired:generate-mac-address-mask:
@@ -1572,7 +1572,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_S390_OPTIONS], &nm_sett_info_propert_type_strdict);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_S390_OPTIONS], &nm_sett_info_propert_type_strdict);
 
 	/**
 	 * NMSettingWired:wake-on-lan:

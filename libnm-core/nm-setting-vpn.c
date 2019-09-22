@@ -1129,7 +1129,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        G_TYPE_HASH_TABLE,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_DATA], &nm_sett_info_propert_type_strdict);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_DATA], &nm_sett_info_propert_type_strdict);
 
 	/**
 	 * NMSettingVpn:secrets: (type GHashTable(utf8,utf8)):
@@ -1151,13 +1151,13 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_SECRET |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override,
-	                               obj_properties[PROP_SECRETS],
-	                               NM_SETT_INFO_PROPERT_TYPE (
-	                                   .dbus_type     = NM_G_VARIANT_TYPE ("a{ss}"),
-	                                   .to_dbus_fcn   = vpn_secrets_to_dbus,
-	                                   .from_dbus_fcn = vpn_secrets_from_dbus,
-	                               ));
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_SECRETS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("a{ss}"),
+	                                  .to_dbus_fcn   = vpn_secrets_to_dbus,
+	                                  .from_dbus_fcn = vpn_secrets_from_dbus,
+	                              ));
 
 	/**
 	 * NMSettingVpn:timeout:

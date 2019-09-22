@@ -970,7 +970,7 @@ nm_setting_bond_class_init (NMSettingBondClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_OPTIONS], &nm_sett_info_propert_type_strdict);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_OPTIONS], &nm_sett_info_propert_type_strdict);
 
 	 /* ---dbus---
 	  * property: interface-name
@@ -980,7 +980,7 @@ nm_setting_bond_class_init (NMSettingBondClass *klass)
 	  *   bond's interface name.
 	  * ---end---
 	  */
-	_properties_override_add_virt (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
+	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

@@ -556,7 +556,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_CONFIG], &nm_sett_info_propert_type_team_s);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_CONFIG], &nm_sett_info_propert_type_team_s);
 
 	/**
 	 * NMSettingTeamPort:queue-id:
@@ -571,7 +571,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeamPort:prio:
@@ -585,7 +585,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                      G_MININT32, G_MAXINT32, 0,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_PRIO], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_PRIO], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeamPort:sticky:
@@ -599,7 +599,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                          FALSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_STICKY], &nm_sett_info_propert_type_team_b);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_STICKY], &nm_sett_info_propert_type_team_b);
 
 	/**
 	 * NMSettingTeamPort:lacp-prio:
@@ -613,7 +613,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeamPort:lacp-key:
@@ -627,7 +627,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_KEY], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_KEY], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeamPort:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
@@ -648,7 +648,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS], &nm_sett_info_propert_type_team_link_watchers);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS], &nm_sett_info_propert_type_team_link_watchers);
 
 	g_object_class_install_properties (object_class, G_N_ELEMENTS (obj_properties), obj_properties);
 

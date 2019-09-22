@@ -571,7 +571,7 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 	                        G_TYPE_HASH_TABLE,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[PROP_DATA], &nm_sett_info_propert_type_strdict);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_DATA], &nm_sett_info_propert_type_strdict);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

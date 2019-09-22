@@ -1503,7 +1503,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_CONFIG], &nm_sett_info_propert_type_team_s);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_CONFIG], &nm_sett_info_propert_type_team_s);
 
 	/**
 	 * NMSettingTeam:notify-peers-count:
@@ -1517,7 +1517,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:notify-peers-interval:
@@ -1531,7 +1531,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:mcast-rejoin-count:
@@ -1545,7 +1545,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:mcast-rejoin-interval:
@@ -1559,7 +1559,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:runner:
@@ -1575,7 +1575,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER], &nm_sett_info_propert_type_team_s);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER], &nm_sett_info_propert_type_team_s);
 
 	/**
 	 * NMSettingTeam:runner-hwaddr-policy:
@@ -1589,7 +1589,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY], &nm_sett_info_propert_type_team_s);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY], &nm_sett_info_propert_type_team_s);
 
 	/**
 	 * NMSettingTeam:runner-tx-hash:
@@ -1604,7 +1604,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH], &nm_sett_info_propert_type_team_as);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH], &nm_sett_info_propert_type_team_as);
 
 	/**
 	 * NMSettingTeam:runner-tx-balancer:
@@ -1618,7 +1618,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER], &nm_sett_info_propert_type_team_s);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER], &nm_sett_info_propert_type_team_s);
 
 	/**
 	 * NMSettingTeam:runner-tx-balancer-interval:
@@ -1632,7 +1632,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:runner-active:
@@ -1646,7 +1646,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                          TRUE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE], &nm_sett_info_propert_type_team_b);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE], &nm_sett_info_propert_type_team_b);
 
 	/**
 	 * NMSettingTeam:runner-fast-rate:
@@ -1660,7 +1660,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                          FALSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE], &nm_sett_info_propert_type_team_b);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE], &nm_sett_info_propert_type_team_b);
 
 	/**
 	 * NMSettingTeam:runner-sys-prio:
@@ -1674,7 +1674,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:runner-min-ports:
@@ -1688,7 +1688,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                      G_MININT32, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS], &nm_sett_info_propert_type_team_i);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS], &nm_sett_info_propert_type_team_i);
 
 	/**
 	 * NMSettingTeam:runner-agg-select-policy:
@@ -1702,7 +1702,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY], &nm_sett_info_propert_type_team_s);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY], &nm_sett_info_propert_type_team_s);
 
 	/**
 	 * NMSettingTeam:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
@@ -1723,7 +1723,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS);
-	_properties_override_add_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS], &nm_sett_info_propert_type_team_link_watchers);
+	_nm_properties_override_gobj (properties_override, obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS], &nm_sett_info_propert_type_team_link_watchers);
 
 	/* ---dbus---
 	 * property: interface-name
@@ -1733,7 +1733,7 @@ nm_setting_team_class_init (NMSettingTeamClass *klass)
 	 *   team's interface name.
 	 * ---end---
 	 */
-	_properties_override_add_virt (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
+	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
 
 	g_object_class_install_properties (object_class, G_N_ELEMENTS (obj_properties), obj_properties);
 

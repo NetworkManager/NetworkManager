@@ -5194,12 +5194,12 @@ _nm_sett_info_property_override_create_array_ip_config (void)
 {
 	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	_properties_override_add_gobj (properties_override,
-	                               obj_properties[PROP_GATEWAY],
-	                               NM_SETT_INFO_PROPERT_TYPE (
-	                                   .dbus_type     = G_VARIANT_TYPE_STRING,
-	                                   .from_dbus_fcn = ip_gateway_set,
-	                               ));
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_GATEWAY],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = G_VARIANT_TYPE_STRING,
+	                                  .from_dbus_fcn = ip_gateway_set,
+	                              ));
 
 	/* ---dbus---
 	 * property: routing-rules
@@ -5207,13 +5207,13 @@ _nm_sett_info_property_override_create_array_ip_config (void)
 	 * description: Array of dictionaries for routing rules.
 	 * ---end---
 	 */
-	_properties_override_add_virt (properties_override,
-	                               NM_SETTING_IP_CONFIG_ROUTING_RULES,
-	                               NM_SETT_INFO_PROPERT_TYPE (
-	                                   .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                   .to_dbus_fcn   = _routing_rules_dbus_only_synth,
-	                                   .from_dbus_fcn = _routing_rules_dbus_only_set,
-	                               ));
+	_nm_properties_override_dbus (properties_override,
+	                              NM_SETTING_IP_CONFIG_ROUTING_RULES,
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                  .to_dbus_fcn   = _routing_rules_dbus_only_synth,
+	                                  .from_dbus_fcn = _routing_rules_dbus_only_set,
+	                              ));
 
 	return properties_override;
 }
