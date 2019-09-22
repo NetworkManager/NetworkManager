@@ -1735,11 +1735,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 *   NetworkManager daemons.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "security",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    nm_setting_wireless_get_security,
-	                                    NULL);
+	_properties_override_add_virt (properties_override,
+	                               "security",
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = G_VARIANT_TYPE_STRING,
+	                                   .to_dbus_fcn   = nm_setting_wireless_get_security,
+	                               ));
 
 	/**
 	 * NMSettingWireless:wake-on-wlan:

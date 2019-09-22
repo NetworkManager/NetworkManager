@@ -918,11 +918,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 *   also exist on some addresses.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "address-data",
-	                                    NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                    ip6_address_data_get,
-	                                    ip6_address_data_set);
+	_properties_override_add_virt (properties_override,
+	                               "address-data",
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                   .to_dbus_fcn   = ip6_address_data_get,
+	                                   .from_dbus_fcn = ip6_address_data_set,
+	                               ));
 
 	/* ---dbus---
 	 * property: routes
@@ -959,11 +961,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 *   also exist on some routes.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "route-data",
-	                                    NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                    ip6_route_data_get,
-	                                    ip6_route_data_set);
+	_properties_override_add_virt (properties_override,
+	                               "route-data",
+	                               NM_SETT_INFO_PROPERT_TYPE (
+	                                   .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                   .to_dbus_fcn   = ip6_route_data_get,
+	                                   .from_dbus_fcn = ip6_route_data_set,
+	                               ));
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
