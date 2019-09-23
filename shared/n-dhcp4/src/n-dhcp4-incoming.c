@@ -365,10 +365,7 @@ static int n_dhcp4_incoming_query_u32(NDhcp4Incoming *message, uint8_t option, u
 
         memcpy(&be32, data, sizeof(be32));
 
-        if (be32 == (uint32_t)-1)
-                *u32p = 0;
-        else
-                *u32p = ntohl(be32);
+        *u32p = ntohl(be32);
         return 0;
 }
 
