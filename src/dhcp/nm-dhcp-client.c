@@ -805,6 +805,15 @@ maybe_add_option (NMDhcpClient *self,
 	}
 }
 
+void
+nm_dhcp_client_emit_ipv6_prefix_delegated (NMDhcpClient *self,
+                                           const NMPlatformIP6Address *prefix)
+{
+	g_signal_emit (G_OBJECT (self),
+	               signals[SIGNAL_PREFIX_DELEGATED], 0,
+	               prefix);
+}
+
 gboolean
 nm_dhcp_client_handle_event (gpointer unused,
                              const char *iface,
@@ -876,9 +885,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 		/* If we got an IPv6 prefix to delegate, we don't change the state
 		 * of the DHCP client instance. Instead, we just signal the prefix
 		 * to the device. */
-		g_signal_emit (G_OBJECT (self),
-		               signals[SIGNAL_PREFIX_DELEGATED], 0,
-		               &prefix);
+		nm_dhcp_client_emit_ipv6_prefix_delegated (self, &prefix);
 	} else {
 		/* Fail if no valid IP config was received */
 		if (   new_state == NM_DHCP_STATE_BOUND

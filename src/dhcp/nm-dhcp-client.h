@@ -189,6 +189,9 @@ void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
                                        const guint8 *client_id,
                                        gsize len);
 
+void nm_dhcp_client_emit_ipv6_prefix_delegated (NMDhcpClient *self,
+                                                const NMPlatformIP6Address *prefix);
+
 /*****************************************************************************
  * Client data
  *****************************************************************************/

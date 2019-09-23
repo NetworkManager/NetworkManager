@@ -709,6 +709,7 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
                      sd_dhcp6_lease *lease,
                      gboolean info_only,
                      GHashTable **out_options,
+                     gint32 ts,
                      GError **error)
 {
 	gs_unref_object NMIP6Config *ip6_config = NULL;
@@ -719,7 +720,6 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	char **domains;
 	nm_auto_free_gstring GString *str = NULL;
 	int num, i;
-	const gint32 ts = nm_utils_get_monotonic_timestamp_s ();
 
 	g_return_val_if_fail (lease, NULL);
 
@@ -794,10 +794,12 @@ static void
 bound6_handle (NMDhcpSystemd *self)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
+	const gint32 ts = nm_utils_get_monotonic_timestamp_s ();
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
 	gs_unref_object NMIP6Config *ip6_config = NULL;
 	gs_unref_hashtable GHashTable *options = NULL;
 	gs_free_error GError *error = NULL;
+	NMPlatformIP6Address prefix = { 0 };
 	sd_dhcp6_lease *lease;
 
 	if (   sd_dhcp6_client_get_lease (priv->client6, &lease) < 0
@@ -815,6 +817,7 @@ bound6_handle (NMDhcpSystemd *self)
 	                                  lease,
 	                                  nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self)),
 	                                  &options,
+	                                  ts,
 	                                  &error);
 
 	if (!ip6_config) {
@@ -827,6 +830,16 @@ bound6_handle (NMDhcpSystemd *self)
 	                          NM_DHCP_STATE_BOUND,
 	                          NM_IP_CONFIG_CAST (ip6_config),
 	                          options);
+
+	sd_dhcp6_lease_reset_pd_prefix_iter (lease);
+	while (!sd_dhcp6_lease_get_pd (lease,
+	                               &prefix.address,
+	                               &prefix.plen,
+	                               &prefix.preferred,
+	                               &prefix.lifetime)) {
+		prefix.timestamp = ts;
+		nm_dhcp_client_emit_ipv6_prefix_delegated (NM_DHCP_CLIENT (self), &prefix);
+	}
 }
 
 static void
@@ -895,11 +908,6 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	if (needed_prefixes > 0) {
-		_LOGW ("dhcp-client6: prefix delegation not yet supported, won't supply %d prefixes",
-		       needed_prefixes);
-	}
-
 	_LOGT ("dhcp-client6: set %p", sd_client);
 
 	if (nm_dhcp_client_get_info_only (client))
@@ -959,6 +967,18 @@ ip6_start (NMDhcpClient *client,
 		if (_nm_dhcp_option_dhcp6_options[i].include) {
 			r = sd_dhcp6_client_set_request_option (sd_client, _nm_dhcp_option_dhcp6_options[i].option_num);
 			nm_assert (r >= 0 || r == -EEXIST);
+		}
+	}
+
+	if (needed_prefixes > 0) {
+		if (needed_prefixes > 1)
+			_LOGW ("dhcp-client6: only one prefix request is supported");
+		/* FIXME: systemd-networkd API only allows to request a
+		 * single prefix */
+		r = sd_dhcp6_client_set_prefix_delegation (sd_client, TRUE);
+		if (r < 0) {
+			nm_utils_error_set_errno (error, r, "failed to enable prefix delegation: %s");
+			return FALSE;
 		}
 	}
 
