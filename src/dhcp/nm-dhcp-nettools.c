@@ -372,7 +372,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	 */
 	if (nettools_lifetime == G_MAXUINT64) {
 		a_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
-		a_expiry = NM_PLATFORM_LIFETIME_PERMANENT;
+		a_expiry = -1;
 	} else {
 		gint64 ts_time = time (NULL);
 
@@ -383,10 +383,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 		else if (a_lifetime > NM_PLATFORM_LIFETIME_PERMANENT)
 			a_lifetime = NM_PLATFORM_LIFETIME_PERMANENT - 1;
 
-		if (ts_time > NM_PLATFORM_LIFETIME_PERMANENT - a_lifetime)
-			a_expiry = NM_PLATFORM_LIFETIME_PERMANENT - 1;
-		else
-			a_expiry = ts_time + a_lifetime;
+		a_expiry = ts_time + a_lifetime;
 	}
 
 	if (!lease_get_in_addr (lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &a_netmask)) {
@@ -411,10 +408,12 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	                               NM_DHCP_OPTION_DHCP4_IP_ADDRESS_LEASE_TIME,
 	                               (guint64) a_lifetime);
 
-	nm_dhcp_option_add_option_u64 (options,
-	                               _nm_dhcp_option_dhcp4_options,
-	                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
-	                               (guint64) a_expiry);
+	if (a_expiry != -1) {
+		nm_dhcp_option_add_option_u64 (options,
+		                               _nm_dhcp_option_dhcp4_options,
+		                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
+		                               (guint64) a_expiry);
+	}
 
 
 	n_dhcp4_client_lease_get_siaddr (lease, &a_next_server);
