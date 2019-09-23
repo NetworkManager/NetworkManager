@@ -375,7 +375,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	} else {
 		gint64 ts_time = time (NULL);
 
-		a_lifetime = ((gint64) nettools_lifetime - ts_clock_boottime) / NM_UTILS_NS_PER_SECOND;
+		a_lifetime = ((gint64) nettools_lifetime - ts_clock_boottime + (NM_UTILS_NS_PER_SECOND / 2)) / NM_UTILS_NS_PER_SECOND;
 		/* A lease time of 0 is allowed on some dhcp servers, so, let's accept it. */
 		if (a_lifetime < 0)
 			a_lifetime = 0;
