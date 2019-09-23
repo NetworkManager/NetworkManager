@@ -3355,26 +3355,13 @@ static gboolean
 have_connection_for_device (NMSettings *self, NMDevice *device)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	NMSettingWired *s_wired;
-	const char *setting_hwaddr;
-	const char *perm_hw_addr;
 	NMSettingsConnection *sett_conn;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device);
-
-	/* Find a wired connection locked to the given MAC address, if any */
+	/* Find a wired connection matching for the device, if any */
 	c_list_for_each_entry (sett_conn, &priv->connections_lst_head, _connections_lst) {
 		NMConnection *connection = nm_settings_connection_get_connection (sett_conn);
-		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
-		const char *ctype;
-		const char *iface;
-
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (!NM_IN_STRSET (ctype, NM_SETTING_WIRED_SETTING_NAME,
-		                          NM_SETTING_PPPOE_SETTING_NAME))
-			continue;
 
 		if (!nm_device_check_connection_compatible (device, connection, NULL))
 			continue;
@@ -3386,27 +3373,7 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 			continue;
 
-		iface = nm_setting_connection_get_interface_name (s_con);
-		if (!nm_streq0 (iface, nm_device_get_iface (device)))
-			continue;
-
-		s_wired = nm_connection_get_setting_wired (connection);
-		if (   !s_wired
-		    && nm_streq (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
-			/* No wired setting; therefore the PPPoE connection applies to any device */
-			return TRUE;
-		}
-
-		setting_hwaddr = nm_setting_wired_get_mac_address (s_wired);
-		if (setting_hwaddr) {
-			/* A connection mac-locked to this device */
-			if (   perm_hw_addr
-			    && nm_utils_hwaddr_matches (setting_hwaddr, -1, perm_hw_addr, -1))
-				return TRUE;
-		} else {
-			/* A connection that applies to any wired device */
-			return TRUE;
-		}
+		return TRUE;
 	}
 
 	/* See if there's a known non-NetworkManager configuration for the device */
@@ -3462,7 +3429,8 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
 	 */
-	if (   !nm_device_get_managed (device, FALSE)
+	if (   !NM_DEVICE_GET_CLASS (self)->new_default_connection
+	    || !nm_device_get_managed (device, FALSE)
 	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ())
 	    || have_connection_for_device (self, device)
 	    || nm_config_get_no_auto_default_for_device (priv->config, device))
