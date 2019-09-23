@@ -23,7 +23,9 @@ _LOG_DECLARE_SELF(NMDeviceBridge);
 
 struct _NMDeviceBridge {
 	NMDevice parent;
+	GCancellable *bt_cancellable;
 	bool vlan_configured:1;
+	bool bt_registered:1;
 };
 
 struct _NMDeviceBridgeClass {
@@ -51,6 +53,7 @@ check_connection_available (NMDevice *device,
                             const char *specific_object,
                             GError **error)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	NMSettingBluetooth *s_bt;
 
 	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_available (device, connection, flags, specific_object, error))
@@ -67,13 +70,18 @@ check_connection_available (NMDevice *device,
 		}
 
 		bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
-		if (!nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server, bdaddr)) {
+		if (!nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
+		                                                bdaddr,
+		                                                  (   self->bt_cancellable
+		                                                   || self->bt_registered)
+		                                                ? device
+		                                                : NULL)) {
 			if (bdaddr)
 				nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-				                    "not suitable NAP device \"%s\" available", bdaddr);
+				                    "no suitable NAP device \"%s\" available", bdaddr);
 			else
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-				                            "not suitable NAP device available");
+				                            "no suitable NAP device available");
 			return FALSE;
 		}
 	}
@@ -505,9 +513,53 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static void
+_bt_register_bridge_cb (GError *error,
+                        gpointer user_data)
+{
+	NMDeviceBridge *self;
+
+	if (nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	self = user_data;
+
+	g_clear_object (&self->bt_cancellable);
+
+	if (error) {
+		_LOGD (LOGD_DEVICE, "bluetooth NAP server failed to register bridge: %s", error->message);
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
+		return;
+	}
+
+	nm_device_activate_schedule_stage3_ip_config_start (NM_DEVICE (self));
+}
+
+void
+_nm_device_bridge_notify_unregister_bt_nap (NMDevice *device,
+                                            const char *reason)
+{
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
+
+	_LOGD (LOGD_DEVICE, "bluetooth NAP server unregistered from bridge: %s%s",
+	       reason,
+	       self->bt_registered ? "" : " (was no longer registered)");
+
+	nm_clear_g_cancellable (&self->bt_cancellable);
+
+	if (self->bt_registered) {
+		self->bt_registered = FALSE;
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
+	}
+}
+
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	NMConnection *connection;
 	NMSettingBluetooth *s_bt;
 
@@ -515,14 +567,32 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
 	if (s_bt) {
-		if (   !nm_bt_vtable_network_server
-		    || !nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
-		                                                      nm_setting_bluetooth_get_bdaddr (s_bt),
-		                                                      device)) {
-			/* The HCI we could use is no longer present. */
-			*out_failure_reason = NM_DEVICE_STATE_REASON_REMOVED;
+		gs_free_error GError *error = NULL;
+
+		if (!nm_bt_vtable_network_server) {
+			_LOGD (LOGD_DEVICE, "bluetooth NAP server failed because bluetooth plugin not available");
+			*out_failure_reason = NM_DEVICE_STATE_REASON_BT_FAILED;
 			return NM_ACT_STAGE_RETURN_FAILURE;
 		}
+
+		if (self->bt_cancellable)
+			return NM_ACT_STAGE_RETURN_POSTPONE;
+
+		self->bt_cancellable = g_cancellable_new ();
+		if (!nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
+		                                                   nm_setting_bluetooth_get_bdaddr (s_bt),
+		                                                   device,
+		                                                   self->bt_cancellable,
+		                                                   _bt_register_bridge_cb,
+		                                                   device,
+		                                                   &error)) {
+			_LOGD (LOGD_DEVICE, "bluetooth NAP server failed to register bridge: %s", error->message);
+			*out_failure_reason = NM_DEVICE_STATE_REASON_BT_FAILED;
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+
+		self->bt_registered = TRUE;
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -533,11 +603,15 @@ deactivate (NMDevice *device)
 {
 	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 
+	_LOGD (LOGD_DEVICE, "deactivate bridge%s",
+	       self->bt_registered ? " (registered as NAP bluetooth device)" : "");
+
 	self->vlan_configured = FALSE;
 
-	if (nm_bt_vtable_network_server) {
-		/* always call unregister. It does nothing if the device
-		 * isn't registered as a hotspot bridge. */
+	nm_clear_g_cancellable (&self->bt_cancellable);
+
+	if (self->bt_registered) {
+		self->bt_registered = FALSE;
 		nm_bt_vtable_network_server->unregister_bridge (nm_bt_vtable_network_server,
 		                                                device);
 	}

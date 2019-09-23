@@ -416,23 +416,6 @@ typedef struct _NMDeviceClass {
 	                                           int new_ifindex,
 	                                           NMDevice *new_parent);
 
-	/**
-	 * component_added:
-	 * @self: the #NMDevice
-	 * @component: the component (device, modem, etc) which was added
-	 *
-	 * Notifies @self that a new component that a device might be interested
-	 * in was detected by some device factory. It may include an object of
-	 * %GObject subclass to help the devices decide whether it claims that
-	 * particular object itself and the emitting factory should not.
-	 *
-	 * Returns: %TRUE if the component was claimed exclusively and no further
-	 * devices should be notified of the new component.  %FALSE to indicate
-	 * that the component was not exclusively claimed and other devices should
-	 * be notified.
-	 */
-	gboolean        (* component_added) (NMDevice *self, GObject *component);
-
 	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
 
 	NMConnection *  (* new_default_connection) (NMDevice *self);
@@ -809,7 +792,7 @@ gboolean   nm_device_check_connection_available (NMDevice *device,
                                                  const char *specific_object,
                                                  GError **error);
 
-gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
+void nm_device_notify_availability_maybe_changed (NMDevice *self);
 
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
 
@@ -869,12 +852,22 @@ void nm_device_check_connectivity_cancel (NMDeviceConnectivityHandle *handle);
 NMConnectivityState nm_device_get_connectivity_state (NMDevice *self, int addr_family);
 
 typedef struct _NMBtVTableNetworkServer NMBtVTableNetworkServer;
+
+typedef void (*NMBtVTableRegisterCallback) (GError *error,
+                                            gpointer user_data);
+
 struct _NMBtVTableNetworkServer {
 	gboolean (*is_available) (const NMBtVTableNetworkServer *vtable,
-	                          const char *addr);
+	                          const char *addr,
+	                          NMDevice *device_accept_busy);
+
 	gboolean (*register_bridge) (const NMBtVTableNetworkServer *vtable,
 	                             const char *addr,
-	                             NMDevice *device);
+	                             NMDevice *device,
+	                             GCancellable *cancellable,
+	                             NMBtVTableRegisterCallback callback,
+	                             gpointer callback_user_data,
+	                             GError **error);
 	gboolean (*unregister_bridge) (const NMBtVTableNetworkServer *vtable,
 	                               NMDevice *device);
 };

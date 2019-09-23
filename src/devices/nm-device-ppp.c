@@ -81,7 +81,7 @@ ppp_ifindex_set (NMPPPManager *ppp_manager,
 	}
 
 	if (old_name)
-		nm_manager_remove_device (nm_manager_get (), old_name, NM_DEVICE_TYPE_PPP);
+		nm_manager_remove_device (NM_MANAGER_GET, old_name, NM_DEVICE_TYPE_PPP);
 
 	nm_device_activate_schedule_stage3_ip_config_start (device);
 }

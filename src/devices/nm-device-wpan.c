@@ -145,7 +145,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	                                                hwaddr_len);
 	if (   lowpan_plink
 	    && NM_FLAGS_HAS (lowpan_plink->n_ifi_flags, IFF_UP)) {
-		lowpan_device = nm_manager_get_device_by_ifindex (nm_manager_get (),
+		lowpan_device = nm_manager_get_device_by_ifindex (NM_MANAGER_GET,
 		                                                  lowpan_plink->ifindex);
 	}
 

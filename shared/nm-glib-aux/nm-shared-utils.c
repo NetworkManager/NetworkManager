@@ -2288,6 +2288,44 @@ nm_utils_hash_keys_to_array (GHashTable *hash,
 	return keys;
 }
 
+gpointer *
+nm_utils_hash_values_to_array (GHashTable *hash,
+                               GCompareDataFunc compare_func,
+                               gpointer user_data,
+                               guint *out_len)
+{
+	GHashTableIter iter;
+	gpointer value;
+	gpointer *arr;
+	guint i, len;
+
+	if (   !hash
+	    || (len = g_hash_table_size (hash)) == 0u) {
+		NM_SET_OUT (out_len, 0);
+		return NULL;
+	}
+
+	arr = g_new (gpointer, ((gsize) len) + 1);
+	i = 0;
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &value))
+		arr[i++] = value;
+
+	nm_assert (i == len);
+	arr[len] = NULL;
+
+	if (   len > 1
+	    && compare_func) {
+		g_qsort_with_data (arr,
+		                   len,
+		                   sizeof (gpointer),
+		                   compare_func,
+		                   user_data);
+	}
+
+	return arr;
+}
+
 gboolean
 nm_utils_hashtable_same_keys (const GHashTable *a,
                               const GHashTable *b)

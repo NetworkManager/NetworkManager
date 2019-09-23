@@ -1925,7 +1925,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		 * it into an interface name, so that legacy tooling is not confused. */
 		if (!nm_utils_get_testing ()) {
 			/* This is conditional for easier testing. */
-			master_iface = nm_manager_iface_for_uuid (nm_manager_get (), master);
+			master_iface = nm_manager_iface_for_uuid (NM_MANAGER_GET, master);
 		}
 		if (!master_iface) {
 			master_iface = master;

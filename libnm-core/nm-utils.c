@@ -5812,6 +5812,14 @@ nm_utils_version (void)
 
 /*****************************************************************************/
 
+NM_UTILS_FLAGS2STR_DEFINE (nm_bluetooth_capability_to_string, NMBluetoothCapabilities,
+	NM_UTILS_FLAGS2STR (NM_BT_CAPABILITY_NONE, "NONE"),
+	NM_UTILS_FLAGS2STR (NM_BT_CAPABILITY_DUN, "DUN"),
+	NM_UTILS_FLAGS2STR (NM_BT_CAPABILITY_NAP, "NAP"),
+)
+
+/*****************************************************************************/
+
 /**
  * nm_utils_base64secret_decode:
  * @base64_key: the (possibly invalid) base64 encode key.

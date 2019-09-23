@@ -160,7 +160,7 @@ _call_id_new (NMSecretAgent *self,
 		/* self has async requests (that keep self alive). As long as
 		 * we have pending requests, shutdown is blocked. */
 		priv->shutdown_wait_obj_registered = TRUE;
-		nm_shutdown_wait_obj_register (G_OBJECT (self), "secret-agent");
+		nm_shutdown_wait_obj_register_object (G_OBJECT (self), "secret-agent");
 	}
 
 	return call_id;

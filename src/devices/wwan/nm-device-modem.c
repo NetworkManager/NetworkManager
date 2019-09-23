@@ -605,12 +605,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-	NMActRequest *req;
+	nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem);
 
-	req = nm_device_get_act_request (device);
-	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
-
-	return nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, req, out_failure_reason);
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn
@@ -716,7 +713,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 
 	g_return_if_fail (modem != NULL);
 
-	priv->modem = g_object_ref (modem);
+	priv->modem = nm_modem_claim (modem);
 
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
@@ -844,7 +841,7 @@ dispose (GObject *object)
 
 	if (priv->modem) {
 		g_signal_handlers_disconnect_by_data (priv->modem, NM_DEVICE_MODEM (object));
-		g_clear_object (&priv->modem);
+		nm_clear_pointer (&priv->modem, nm_modem_unclaim);
 	}
 
 	g_clear_pointer (&priv->device_id, g_free);

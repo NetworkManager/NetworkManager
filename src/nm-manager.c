@@ -3188,22 +3188,6 @@ factory_device_added_cb (NMDeviceFactory *factory,
 	}
 }
 
-static gboolean
-factory_component_added_cb (NMDeviceFactory *factory,
-                            GObject *component,
-                            gpointer user_data)
-{
-	NMManager *self = user_data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *device;
-
-	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		if (nm_device_notify_component_added (device, component))
-			return TRUE;
-	}
-	return FALSE;
-}
-
 static void
 _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 {
@@ -3213,10 +3197,18 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 	                  NM_DEVICE_FACTORY_DEVICE_ADDED,
 	                  G_CALLBACK (factory_device_added_cb),
 	                  self);
-	g_signal_connect (factory,
-	                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
-	                  G_CALLBACK (factory_component_added_cb),
-	                  self);
+}
+
+/*****************************************************************************/
+
+void
+nm_manager_notify_device_availibility_maybe_changed (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
+
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst)
+		nm_device_notify_availability_maybe_changed (device);
 }
 
 /*****************************************************************************/

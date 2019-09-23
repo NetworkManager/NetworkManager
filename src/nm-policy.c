@@ -166,7 +166,7 @@ static void
 _clear_ip6_subnet (gpointer key, gpointer value, gpointer user_data)
 {
 	NMPlatformIP6Address *subnet = value;
-	NMDevice *device = nm_manager_get_device_by_ifindex (nm_manager_get (),
+	NMDevice *device = nm_manager_get_device_by_ifindex (NM_MANAGER_GET,
 	                                                     GPOINTER_TO_INT (key));
 
 	if (device) {

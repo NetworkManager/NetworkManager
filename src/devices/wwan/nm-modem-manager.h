@@ -38,4 +38,7 @@ void nm_modem_manager_name_owner_unref (NMModemManager *self);
 
 const char *nm_modem_manager_name_owner_get (NMModemManager *self);
 
+NMModem **nm_modem_manager_get_modems (NMModemManager *self,
+                                       guint *out_len);
+
 #endif /* __NETWORKMANAGER_MODEM_MANAGER_H__ */

@@ -206,6 +206,7 @@ test-*.trs
 
 /src/NetworkManager
 /src/NetworkManager.ver
+/src/devices/bluetooth/tests/nm-bt-test
 /src/devices/tests/test-acd
 /src/devices/tests/test-lldp
 /src/devices/wifi/tests/test-devices-wifi

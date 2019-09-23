@@ -881,7 +881,7 @@ nm_iwd_manager_init (NMIwdManager *self)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
-	priv->manager = g_object_ref (nm_manager_get ());
+	priv->manager = g_object_ref (NM_MANAGER_GET);
 	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_ADDED,
 	                  G_CALLBACK (device_added), self);
 

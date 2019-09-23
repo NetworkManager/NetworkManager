@@ -13,7 +13,6 @@
 #define NM_BLUEZ_SERVICE           "org.bluez"
 
 #define NM_BLUEZ_MANAGER_PATH      "/"
-#define NM_OBJECT_MANAGER_INTERFACE "org.freedesktop.DBus.ObjectManager"
 
 #define NM_BLUEZ5_ADAPTER_INTERFACE "org.bluez.Adapter1"
 #define NM_BLUEZ5_DEVICE_INTERFACE  "org.bluez.Device1"

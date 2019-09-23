@@ -31,6 +31,8 @@
 /** The interface supported by most dbus peers */
 #define DBUS_INTERFACE_PEER           "org.freedesktop.DBus.Peer"
 
+#define DBUS_INTERFACE_OBJECT_MANAGER "org.freedesktop.DBus.ObjectManager"
+
 /** This is a special interface whose methods can only be invoked
  * by the local implementation (messages from remote apps aren't
  * allowed to specify this interface).
