@@ -836,7 +836,8 @@ static int n_dhcp4_client_probe_transition_offer(NDhcp4ClientProbe *probe, NDhcp
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
+                /* ignore, but consume message. */
+                n_dhcp4_incoming_free(message);
                 break;
         }
 
@@ -885,7 +886,7 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
                 if (r)
                         return r;
 
-                /* message consumed, don to fail */
+                /* message consumed, do not fail */
 
                 n_dhcp4_client_lease_link(lease, probe);
 
@@ -903,7 +904,8 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
         case N_DHCP4_CLIENT_PROBE_STATE_GRANTED:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
+                /* ignore, but consume message. */
+                n_dhcp4_incoming_free(message);
                 break;
         }
 
