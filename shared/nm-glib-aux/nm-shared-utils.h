@@ -640,7 +640,7 @@ _nm_g_slice_free_fcn_define (12)
 _nm_g_slice_free_fcn_define (16)
 _nm_g_slice_free_fcn_define (32)
 
-#define _nm_g_slice_free_fcn1(mem_size) \
+#define nm_g_slice_free_fcn1(mem_size) \
 	({ \
 		void (*_fcn) (gpointer); \
 		\
@@ -677,9 +677,9 @@ _nm_g_slice_free_fcn_define (32)
  * Returns: a function pointer with GDestroyNotify signature
  *   for g_slice_free(type,*).
  *
- * Only certain types are implemented. You'll get an assertion
- * using the wrong type. */
-#define nm_g_slice_free_fcn(type) (_nm_g_slice_free_fcn1 (sizeof (type)))
+ * Only certain types are implemented. You'll get a compile time
+ * error for the wrong types. */
+#define nm_g_slice_free_fcn(type) (nm_g_slice_free_fcn1 (sizeof (type)))
 
 #define nm_g_slice_free_fcn_gint64 (nm_g_slice_free_fcn (gint64))
 
