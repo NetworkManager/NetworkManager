@@ -218,6 +218,18 @@ _c_public_ void n_dhcp4_client_lease_get_siaddr(NDhcp4ClientLease *lease, struct
 }
 
 /**
+ * n_dhcp4_client_lease_get_basetime() - get the timestamp when the lease was received.
+ * @lease:                      the lease to operate on
+ * @ns_basetimep:               return argument for the base time in nano seconds
+ *
+ * Gets the timestamp when the lease was received in CLOCK_BOOTTIME. This
+ * is also the base timestamp for the expiration of the lifetime and t1/t2.
+ */
+_c_public_ void n_dhcp4_client_lease_get_basetime(NDhcp4ClientLease *lease, uint64_t *ns_basetimep) {
+        *ns_basetimep = lease->message->userdata.base_time;
+}
+
+/**
  * n_dhcp4_client_lease_get_lifetime() - get the lifetime
  * @lease:                      the lease to operate on
  * @ns_lifetimep:               return argument for the lifetime in nano seconds
