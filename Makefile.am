@@ -3486,7 +3486,9 @@ check_local += check-local-devices-bluetooth
 endif
 
 EXTRA_DIST += \
-	src/devices/bluetooth/meson.build
+	src/devices/bluetooth/meson.build \
+	src/devices/bluetooth/tests/meson.build \
+	$(NULL)
 
 ###############################################################################
 # src/devices/wifi

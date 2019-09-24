@@ -34,3 +34,5 @@ test(
   check_exports,
   args: [libnm_device_plugin_bluetooth.full_path(), linker_script_devices],
 )
+
+subdir('tests')
