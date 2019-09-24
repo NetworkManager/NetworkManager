@@ -87,6 +87,7 @@ enum {
         SD_DHCP_OPTION_NEW_POSIX_TIMEZONE          = 100,
         SD_DHCP_OPTION_NEW_TZDB_TIMEZONE           = 101,
         SD_DHCP_OPTION_DOMAIN_SEARCH_LIST          = 119,
+        SD_DHCP_OPTION_SIP_SERVER                  = 120,
         SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE      = 121,
         SD_DHCP_OPTION_PRIVATE_BASE                = 224,
        /* Windows 10 option to send when Anonymize=true */
@@ -177,6 +178,7 @@ int sd_dhcp_client_get_lease(
 int sd_dhcp_client_stop(sd_dhcp_client *client);
 int sd_dhcp_client_start(sd_dhcp_client *client);
 int sd_dhcp_client_send_release(sd_dhcp_client *client);
+int sd_dhcp_client_send_renew(sd_dhcp_client *client);
 
 sd_dhcp_client *sd_dhcp_client_ref(sd_dhcp_client *client);
 sd_dhcp_client *sd_dhcp_client_unref(sd_dhcp_client *client);
