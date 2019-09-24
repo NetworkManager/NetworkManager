@@ -566,10 +566,10 @@ class TestNmcli(NmTestBase):
         if lang is None or lang == 'C':
             lang = 'C'
             language = ''
-        elif lang is 'de':
+        elif lang == 'de':
             lang = 'de_DE.utf8'
             language = 'de'
-        elif lang is 'pl':
+        elif lang == 'pl':
             lang = 'pl_PL.UTF-8'
             language = 'pl'
         else:
