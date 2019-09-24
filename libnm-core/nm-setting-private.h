@@ -67,8 +67,6 @@ gboolean _nm_setting_clear_secrets (NMSetting *setting,
  */
 #define NM_SETTING_PARAM_REAPPLY_IMMEDIATELY (1 << (6 + G_PARAM_USER_SHIFT))
 
-#define NM_SETTING_PARAM_GENDATA_BACKED (1 << (7 + G_PARAM_USER_SHIFT))
-
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;

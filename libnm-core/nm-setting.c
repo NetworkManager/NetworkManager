@@ -590,9 +590,6 @@ property_to_dbus (const NMSettInfoSetting *sett_info,
 		if (!NM_FLAGS_HAS (property->param_spec->flags, G_PARAM_WRITABLE))
 			return NULL;
 
-		if (NM_FLAGS_ANY (property->param_spec->flags, NM_SETTING_PARAM_GENDATA_BACKED))
-			return NULL;
-
 		if (   NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_LEGACY)
 		    && !_nm_utils_is_manager_process)
 			return NULL;
