@@ -3459,8 +3459,6 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(src_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
 ###############################################################################
 
 check_programs_norun += \
