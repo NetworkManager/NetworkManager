@@ -3399,7 +3399,6 @@ EXTRA_DIST += \
 	src/devices/wwan/libnm-wwan.ver \
 	src/devices/wwan/meson.build \
 	src/devices/wwan/tests/test-service-providers.xml \
-	src/devices/wwan/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
@@ -3487,7 +3486,6 @@ endif
 
 EXTRA_DIST += \
 	src/devices/bluetooth/meson.build \
-	src/devices/bluetooth/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
@@ -3560,7 +3558,7 @@ endif
 
 EXTRA_DIST += \
 	src/devices/wifi/meson.build \
-	src/devices/wifi/tests/meson.build
+	$(NULL)
 
 ###############################################################################
 # src/devices/team

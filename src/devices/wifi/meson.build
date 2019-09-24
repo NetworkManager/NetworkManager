@@ -39,5 +39,19 @@ test(
 )
 
 if enable_tests
-  subdir('tests')
+  test_unit = 'test-devices-wifi'
+
+  exe = executable(
+    test_unit,
+    ['tests/' + test_unit + '.c'] + common_sources,
+    dependencies: libnetwork_manager_test_dep,
+    c_args: test_c_flags,
+  )
+
+  test(
+    test_unit,
+    test_script,
+    args: test_args + [exe.full_path()],
+    timeout: default_test_timeout,
+  )
 endif
