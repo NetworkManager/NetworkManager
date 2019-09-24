@@ -586,7 +586,8 @@ property_to_dbus (const NMSettInfoSetting *sett_info,
 	if (!property->param_spec) {
 		if (!property->property_type->to_dbus_fcn)
 			return NULL;
-	} else if (!ignore_flags) {
+	} else if (   !ignore_flags
+	           && !NM_FLAGS_HAS (property->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS)) {
 		if (!NM_FLAGS_HAS (property->param_spec->flags, G_PARAM_WRITABLE))
 			return NULL;
 
@@ -598,13 +599,7 @@ property_to_dbus (const NMSettInfoSetting *sett_info,
 			if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
 				return NULL;
 
-			/* Check agent secrets. Secrets in the vpn.secrets property are special as
-			 * the flag for each of them is specified as a separate key in the
-			 * vpn.data property. They are handled separately in the to_dbus_fcn()
-			 * of VPN setting. */
-			if (   NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)
-			    && !nm_streq (nm_setting_get_name (setting), NM_SETTING_VPN_SETTING_NAME)
-			    && !nm_streq (property->name, NM_SETTING_VPN_SECRETS)) {
+			if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)) {
 				NMSettingSecretFlags f;
 
 				/* see also _nm_connection_serialize_secrets() */

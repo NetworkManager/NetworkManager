@@ -3487,6 +3487,9 @@ test_setting_metadata (void)
 					else
 						g_assert_cmpstr (g_value_get_string (&val), ==, default_value);
 				}
+
+				if (NM_FLAGS_HAS (sip->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))
+					g_assert (sip->property_type->to_dbus_fcn);
 			}
 		}
 

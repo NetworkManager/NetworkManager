@@ -921,6 +921,9 @@ vpn_secrets_to_dbus (const NMSettInfoSetting *sett_info,
 	const char *key, *value;
 	NMSettingSecretFlags secret_flags;
 
+	if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
+		return NULL;
+
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
 	g_object_get (setting, property_name, &secrets, NULL);
 
@@ -1150,6 +1153,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        G_TYPE_HASH_TABLE,
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_SECRET |
+	                        NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS |
 	                        G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override,
 	                              obj_properties[PROP_SECRETS],
