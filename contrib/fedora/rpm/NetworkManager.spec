@@ -7,8 +7,6 @@
 # Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
 
 
-%global wireless_tools_version 1:28-0pre9
-
 %global wpa_supplicant_version 1:1.1
 
 %global ppp_version %(sed -n 's/^#define\\s*VERSION\\s*"\\([^\\s]*\\)"$/\\1/p' %{_includedir}/pppd/patchlevel.h 2>/dev/null | grep . || echo bad)
@@ -183,9 +181,6 @@ BuildRequires: intltool
 BuildRequires: gettext-devel
 
 BuildRequires: dbus-devel >= %{dbus_version}
-%if 0%{?fedora}
-BuildRequires: wireless-tools-devel >= %{wireless_tools_version}
-%endif
 BuildRequires: glib2-devel >= 2.40.0
 BuildRequires: gobject-introspection-devel >= 0.10.3
 %if %{with ppp}
