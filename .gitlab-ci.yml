@@ -84,6 +84,7 @@ t_fedora:28:
   <<: *fedora_install
   image: fedora:28
   <<: *do_build
+  when: manual
 
 t_fedora:29:
   <<: *fedora_install
@@ -101,6 +102,11 @@ t_fedora:29:
 t_fedora:30:
   <<: *fedora_install
   image: fedora:30
+  <<: *do_build
+
+t_fedora:31:
+  <<: *fedora_install
+  image: fedora:31
   <<: *do_build
 
 t_fedora:rawhide:
