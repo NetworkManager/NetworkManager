@@ -84,7 +84,6 @@ install \
     vala-devel \
     vala-tools \
     valgrind \
-    wireless-tools-devel \
     "${EXTRA_PACKAGES[@]}"
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
