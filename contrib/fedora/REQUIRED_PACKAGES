@@ -28,15 +28,23 @@ install_ignore_missing() {
     done
 }
 
+if test "$NM_NO_EXTRA" != 1; then
+    # these packages are convenient for developing, but not necessary
+    # for CI testing.
+    EXTRA_PACKAGES=(
+        bash-completion \
+        cscope \
+    )
+else
+    EXTRA_PACKAGES=()
+fi
+
 install \
     ModemManager-devel \
     ModemManager-glib-devel \
-    mobile-broadband-provider-info-devel \
     audit-libs-devel \
-    bash-completion \
     bluez-libs-devel \
     bzip2 \
-    cscope \
     dbus-devel \
     dbus-python \
     dbus-x11 \
@@ -59,6 +67,7 @@ install \
     libuuid-devel \
     make \
     meson \
+    mobile-broadband-provider-info-devel \
     newt-devel \
     nss-devel \
     polkit-devel \
@@ -76,7 +85,7 @@ install \
     vala-tools \
     valgrind \
     wireless-tools-devel \
-    #end
+    "${EXTRA_PACKAGES[@]}"
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
