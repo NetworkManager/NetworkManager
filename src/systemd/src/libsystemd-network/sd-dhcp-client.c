@@ -1000,15 +1000,14 @@ static int client_send_request(sd_dhcp_client *client) {
         if (r < 0)
                 return r;
 
-        if (client->state == DHCP_STATE_RENEWING) {
+        if (client->state == DHCP_STATE_RENEWING)
                 r = dhcp_network_send_udp_socket(client->fd,
                                                  client->lease->server_address,
                                                  DHCP_PORT_SERVER,
                                                  &request->dhcp,
                                                  sizeof(DHCPMessage) + optoffset);
-        } else {
+        else
                 r = dhcp_client_send_raw(client, request, sizeof(DHCPPacket) + optoffset);
-        }
         if (r < 0)
                 return r;
 
@@ -1216,7 +1215,7 @@ static int client_initialize_time_events(sd_dhcp_client *client) {
         assert(client);
         assert(client->event);
 
-        if (client->start_delay) {
+        if (client->start_delay > 0) {
                 assert_se(sd_event_now(client->event, clock_boottime_or_monotonic(), &usec) >= 0);
                 usec += client->start_delay;
         }
@@ -1885,6 +1884,17 @@ static int client_receive_message_raw(
         len -= DHCP_IP_UDP_SIZE;
 
         return client_handle_message(client, &packet->dhcp, len);
+}
+
+int sd_dhcp_client_send_renew(sd_dhcp_client *client) {
+        assert_return(client, -EINVAL);
+        assert_return(client->fd >= 0, -EINVAL);
+
+        client->start_delay = 0;
+        client->attempt = 1;
+        client->state = DHCP_STATE_RENEWING;
+
+        return client_initialize_time_events(client);
 }
 
 int sd_dhcp_client_start(sd_dhcp_client *client) {
