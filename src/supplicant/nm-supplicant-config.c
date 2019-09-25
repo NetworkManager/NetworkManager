@@ -597,7 +597,7 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	    || (   (s_wsec = nm_connection_get_setting_wireless_security (connection))
 	        && NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wsec),
 	                         "ieee8021x",
-	                         "wpa-eap"))
+	                         "wpa-eap")))
 		bgscan = "simple:30:-65:300";
 
 	return nm_supplicant_config_add_option (self, "bgscan", bgscan, -1, FALSE, error);
