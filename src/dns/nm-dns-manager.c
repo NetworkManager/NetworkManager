@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
  * Copyright (C) 2004 - 2017 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
- *   and others
  */
 
 #include "nm-default.h"

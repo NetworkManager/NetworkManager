@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Pantelis Koukousoulas <pktoss@gmail.com>
  */
 

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* Copyright (C) 2014 - 2018 Red Hat, Inc.
+/*
+ *Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_SD_ADAPT_SHARED_H__

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  * Copyright (C) 2018 Red Hat, Inc.
  */

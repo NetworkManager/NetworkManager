@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-platform.c - Handle runtime kernel networking configuration
- *
+/*
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 

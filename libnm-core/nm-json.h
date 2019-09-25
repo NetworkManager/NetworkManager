@@ -2,6 +2,7 @@
 /*
  * Copyright 2017, 2018 Red Hat, Inc.
  */
+
 #ifndef __NM_JSON_H__
 #define __NM_JSON_H__
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-linux-platform.c - Linux kernel & udev network configuration layer
- *
+/*
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
+
 #include "nm-default.h"
 
 #include "nm-linux-platform.h"

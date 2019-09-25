@@ -1,7 +1,8 @@
 #!/usr/bin/perl -n
 # SPDX-License-Identifier: GPL-2.0+
-
+#
 # Copyright 2018 Red Hat, Inc.
+#
 
 # $ perldoc checkpatch.pl for eye-pleasing view of the manual:
 

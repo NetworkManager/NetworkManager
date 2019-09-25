@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0+
 #
 # Copyright 2018 - 2019 Red Hat, Inc.
+#
 
 # nm-wg-set: modify an existing WireGuard connection profile.
 #

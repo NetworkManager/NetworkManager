@@ -1,6 +1,6 @@
 #!/usr/bin/perl -n
 # SPDX-License-Identifier: GPL-2.0+
-
+#
 # Copyright 2016 Red Hat, Inc.
 #
 

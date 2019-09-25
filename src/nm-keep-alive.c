@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * NetworkManager -- Inhibition management
- *
  * Copyright 2018 Red Hat, Inc.
  */
 

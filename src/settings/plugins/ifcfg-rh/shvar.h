@@ -1,19 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * shvar.h
- *
- * Interface for non-destructively reading/writing files containing
- * only shell variable declarations and full-line comments.
- *
- * Includes explicit inheritance mechanism intended for use with
- * Red Hat Linux ifcfg-* files.  There is no protection against
- * inheritance loops; they will generally cause stack overflows.
- * Furthermore, they are only intended for one level of inheritance;
- * the value setting algorithm assumes this.
- *
  * Copyright 1999 Red Hat, Inc.
- *
  */
+
 #ifndef _SHVAR_H
 #define _SHVAR_H
 

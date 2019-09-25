@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/*
- */
 
 #ifndef __NM_LIBNM_SHARED_UTILS_H__
 #define __NM_LIBNM_SHARED_UTILS_H__

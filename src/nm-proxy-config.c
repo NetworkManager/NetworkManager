@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager
- *
+/*
  * (C) Copyright 2016 Atul Anand <atulhjp@gmail.com>.
  */
 

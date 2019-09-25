@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager system settings service - keyfile plugin
- *
+/*
  * Copyright (C) 2008 - 2017 Red Hat, Inc.
  */
 

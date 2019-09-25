@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager system settings service (ifupdown)
- *
+/*
  * Alexander Sack <asac@ubuntu.com>
- *
  * (C) Copyright 2008 Canonical Ltd.
  */
 

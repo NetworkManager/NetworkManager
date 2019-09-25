@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager system settings service
- *
+/*
  * Copyright 2008 Novell, Inc.
  * Copyright 2008 - 2014 Red Hat, Inc.
  */

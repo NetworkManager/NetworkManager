@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- *  nmcli - command-line tool for controlling NetworkManager
- *  Functions for running NM secret agent.
- *
  * Copyright 2014 Red Hat, Inc.
  */
 

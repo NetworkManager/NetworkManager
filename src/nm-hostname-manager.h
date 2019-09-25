@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager
- *
+/*
  * Søren Sandmann <sandmann@daimi.au.dk>
  * Dan Williams <dcbw@redhat.com>
  * Tambet Ingo <tambet@gmail.com>
- *
  * (C) Copyright 2007 - 2011, 2017 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */

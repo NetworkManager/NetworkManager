@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager audit support
- *
+/*
  * Copyright 2015 Red Hat, Inc.
  */
 

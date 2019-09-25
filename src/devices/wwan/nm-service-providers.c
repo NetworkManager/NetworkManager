@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2009 Novell, Inc.
  * Author: Tambet Ingo (tambet@gmail.com).
- *
  * Copyright (C) 2009 - 2019 Red Hat, Inc.
  * Copyright (C) 2012 Lanedo GmbH
  */
