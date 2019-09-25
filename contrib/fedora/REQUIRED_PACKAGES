@@ -10,24 +10,40 @@
 # Not all of these packages are strictly speaking necessary.
 # This is a generous list of related packages.
 
+set -xe
+
+DNF="$(which dnf &>/dev/null && echo dnf || echo yum)"
+
 install() {
     if [ "$NM_INSTALL" != "" ]; then
         $NM_INSTALL "$@"
     else
-        sudo "$(which dnf &>/dev/null && echo dnf || echo yum)" install -y "$@"
+        sudo "$DNF" install -y "$@"
     fi
 }
 
+install_ignore_missing() {
+    for p; do
+        install "$p" || :
+    done
+}
+
+if test "$NM_NO_EXTRA" != 1; then
+    # these packages are convenient for developing, but not necessary
+    # for CI testing.
+    EXTRA_PACKAGES=(
+        bash-completion \
+        cscope \
+    )
+else
+    EXTRA_PACKAGES=()
+fi
+
 install \
-    \
     ModemManager-devel \
     ModemManager-glib-devel \
-    mobile-broadband-provider-info-devel \
     audit-libs-devel \
-    bash-completion \
     bluez-libs-devel \
-    bzip2 \
-    cscope \
     dbus-devel \
     dbus-python \
     dbus-x11 \
@@ -50,13 +66,13 @@ install \
     libuuid-devel \
     make \
     meson \
+    mobile-broadband-provider-info-devel \
     newt-devel \
     nss-devel \
     polkit-devel \
     ppp \
     ppp-devel \
     pygobject3-base \
-    python-gobject-base \
     python3-dbus \
     python3-gobject \
     qt-devel \
@@ -67,6 +83,9 @@ install \
     vala-devel \
     vala-tools \
     valgrind \
-    wireless-tools-devel \
-    \
+    "${EXTRA_PACKAGES[@]}"
+
+# some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
+install_ignore_missing \
+    python-gobject-base \
     #end

@@ -566,10 +566,10 @@ class TestNmcli(NmTestBase):
         if lang is None or lang == 'C':
             lang = 'C'
             language = ''
-        elif lang is 'de':
+        elif lang == 'de':
             lang = 'de_DE.utf8'
             language = 'de'
-        elif lang is 'pl':
+        elif lang == 'pl':
             lang = 'pl_PL.UTF-8'
             language = 'pl'
         else:
@@ -764,7 +764,7 @@ class TestNmcli(NmTestBase):
                     self.fail("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
 
         if regenerate:
-            content_new = ''.join([r['content'] for r in results])
+            content_new = b''.join([r['content'] for r in results])
             if content_new != content_expect:
                 try:
                     with open(filename, 'wb') as content_file:
