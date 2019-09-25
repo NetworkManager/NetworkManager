@@ -44,7 +44,6 @@ install \
     ModemManager-glib-devel \
     audit-libs-devel \
     bluez-libs-devel \
-    bzip2 \
     dbus-devel \
     dbus-python \
     dbus-x11 \
