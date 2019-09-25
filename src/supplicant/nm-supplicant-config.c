@@ -561,7 +561,6 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	const char *bgscan;
-	gsize num_seen_bssids;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -594,14 +593,12 @@ nm_supplicant_config_add_bgscan (NMSupplicantConfig *self,
 	 * when the signal is still somewhat OK so we have an up-to-date roam
 	 * candidate list when the signal gets bad.
 	 */
-	num_seen_bssids = nm_setting_wireless_get_num_seen_bssids (s_wifi);
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (num_seen_bssids > 1 || s_wsec) {
-		if (num_seen_bssids > 1 || NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wsec),
-		                  "ieee8021x",
-		                  "wpa-eap"))
-			bgscan = "simple:30:-65:300";
-	}
+	if (   nm_setting_wireless_get_num_seen_bssids (s_wifi) > 1
+	    || (   (s_wsec = nm_connection_get_setting_wireless_security (connection))
+	        && NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wsec),
+	                         "ieee8021x",
+	                         "wpa-eap"))
+		bgscan = "simple:30:-65:300";
 
 	return nm_supplicant_config_add_option (self, "bgscan", bgscan, -1, FALSE, error);
 }
