@@ -993,6 +993,8 @@ GSList *nm_utils_g_slist_find_str (const GSList *list,
 
 int nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b);
 
+char *nm_utils_g_slist_strlist_join (const GSList *a, const char *separator);
+
 /*****************************************************************************/
 
 gssize nm_utils_ptrarray_find_binary_search (gconstpointer *list,

@@ -2871,6 +2871,24 @@ nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b)
 	}
 }
 
+char *
+nm_utils_g_slist_strlist_join (const GSList *a, const char *separator)
+{
+	GString *str = NULL;
+
+	if (!a)
+		return NULL;
+
+	for (; a; a = a->next) {
+		if (!str)
+			str = g_string_new (NULL);
+		else
+			g_string_append (str, separator);
+		g_string_append (str, a->data);
+	}
+	return g_string_free (str, FALSE);
+}
+
 /*****************************************************************************/
 
 gpointer
