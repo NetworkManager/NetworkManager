@@ -1,5 +1,5 @@
-size: 377
-location: clients/tests/test-client.py:857:test_002()/1
+size: 373
+location: clients/tests/test-client.py:test_002()/1
 cmd: $NMCLI d
 lang: C
 returncode: 0
@@ -13,8 +13,8 @@ wlan1   wifi      unavailable  --
 wlan1   wifi      unavailable  --         
 
 <<<
-size: 392
-location: clients/tests/test-client.py:857:test_002()/2
+size: 388
+location: clients/tests/test-client.py:test_002()/2
 cmd: $NMCLI d
 lang: pl_PL.UTF-8
 returncode: 0
@@ -28,8 +28,8 @@ wlan1   wifi      niedostępne  --
 wlan1   wifi      niedostępne  --         
 
 <<<
-size: 978
-location: clients/tests/test-client.py:859:test_002()/3
+size: 974
+location: clients/tests/test-client.py:test_002()/3
 cmd: $NMCLI -f all d
 lang: C
 returncode: 0
@@ -43,8 +43,8 @@ wlan1   wifi      unavailable  unknown           unknown           /org/freedesk
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --        --       
 
 <<<
-size: 993
-location: clients/tests/test-client.py:859:test_002()/4
+size: 989
+location: clients/tests/test-client.py:test_002()/4
 cmd: $NMCLI -f all d
 lang: pl_PL.UTF-8
 returncode: 0
@@ -58,8 +58,8 @@ wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedes
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --        --       
 
 <<<
-size: 739
-location: clients/tests/test-client.py:861:test_002()/5
+size: 735
+location: clients/tests/test-client.py:test_002()/5
 cmd: $NMCLI 
 lang: C
 returncode: 0
@@ -94,8 +94,8 @@ Use "nmcli device show" to get complete information about known devices and
 Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.
 
 <<<
-size: 812
-location: clients/tests/test-client.py:861:test_002()/6
+size: 808
+location: clients/tests/test-client.py:test_002()/6
 cmd: $NMCLI 
 lang: pl_PL.UTF-8
 returncode: 0
@@ -132,8 +132,16 @@ Strony podręcznika nmcli(1) i nmcli-examples(7) zawierają pełne informacje
 o użyciu.
 
 <<<
+<<<<<<< HEAD
 size: 1250
 location: clients/tests/test-client.py:863:test_002()/7
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 1424
+location: clients/tests/test-client.py:863:test_002()/7
+=======
+size: 1420
+location: clients/tests/test-client.py:test_002()/7
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: C
 returncode: 0
@@ -165,8 +173,16 @@ AP[3].BARS:                             **
 AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
+<<<<<<< HEAD
 size: 1287
 location: clients/tests/test-client.py:863:test_002()/8
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 1461
+location: clients/tests/test-client.py:863:test_002()/8
+=======
+size: 1457
+location: clients/tests/test-client.py:test_002()/8
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -198,8 +214,16 @@ AP[3].BARS:                             **
 AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
+<<<<<<< HEAD
 size: 1704
 location: clients/tests/test-client.py:864:test_002()/9
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 1878
+location: clients/tests/test-client.py:864:test_002()/9
+=======
+size: 1874
+location: clients/tests/test-client.py:test_002()/9
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: C
 returncode: 0
@@ -237,8 +261,16 @@ AP[3].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 
 <<<
+<<<<<<< HEAD
 size: 1749
 location: clients/tests/test-client.py:864:test_002()/10
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 1923
+location: clients/tests/test-client.py:864:test_002()/10
+=======
+size: 1919
+location: clients/tests/test-client.py:test_002()/10
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -276,8 +308,16 @@ AP[3].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 
 <<<
+<<<<<<< HEAD
 size: 581
 location: clients/tests/test-client.py:865:test_002()/11
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 671
+location: clients/tests/test-client.py:865:test_002()/11
+=======
+size: 667
+location: clients/tests/test-client.py:test_002()/11
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode multiline -t d show wlan0
 lang: C
 returncode: 0
@@ -309,8 +349,16 @@ AP[3].BARS:**
 AP[3].SECURITY:WPA1 WPA2
 
 <<<
+<<<<<<< HEAD
 size: 618
 location: clients/tests/test-client.py:865:test_002()/12
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 708
+location: clients/tests/test-client.py:865:test_002()/12
+=======
+size: 704
+location: clients/tests/test-client.py:test_002()/12
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode multiline -t d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -342,8 +390,16 @@ AP[3].BARS:**
 AP[3].SECURITY:WPA1 WPA2
 
 <<<
+<<<<<<< HEAD
 size: 455
 location: clients/tests/test-client.py:866:test_002()/13
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 531
+location: clients/tests/test-client.py:866:test_002()/13
+=======
+size: 527
+location: clients/tests/test-client.py:test_002()/13
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode tabular d show wlan0
 lang: C
 returncode: 0
@@ -355,8 +411,16 @@ AP[2]          wlan0-ap-1  Infra  1     54 Mbit/s  44      **    WPA1
 AP[3]          wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2 
 
 <<<
+<<<<<<< HEAD
 size: 499
 location: clients/tests/test-client.py:866:test_002()/14
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 575
+location: clients/tests/test-client.py:866:test_002()/14
+=======
+size: 571
+location: clients/tests/test-client.py:test_002()/14
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode tabular d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -368,8 +432,16 @@ AP[2]          wlan0-ap-1  Infrastruktura  1     54 Mb/s  44      **    WPA1
 AP[3]          wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 WPA2 
 
 <<<
+<<<<<<< HEAD
 size: 614
 location: clients/tests/test-client.py:867:test_002()/15
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 709
+location: clients/tests/test-client.py:867:test_002()/15
+=======
+size: 705
+location: clients/tests/test-client.py:test_002()/15
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: C
 returncode: 0
@@ -385,8 +457,16 @@ AP[2]          wlan0-ap-1  Infra  1     54 Mbit/s  44      **    WPA1
 AP[3]          wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2 
 
 <<<
+<<<<<<< HEAD
 size: 694
 location: clients/tests/test-client.py:867:test_002()/16
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 789
+location: clients/tests/test-client.py:867:test_002()/16
+=======
+size: 785
+location: clients/tests/test-client.py:test_002()/16
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -402,8 +482,16 @@ AP[2]          wlan0-ap-1  Infrastruktura  1     54 Mb/s  44      **    WPA1
 AP[3]          wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 WPA2 
 
 <<<
+<<<<<<< HEAD
 size: 309
 location: clients/tests/test-client.py:868:test_002()/17
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 378
+location: clients/tests/test-client.py:868:test_002()/17
+=======
+size: 374
+location: clients/tests/test-client.py:test_002()/17
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode tabular -t d show wlan0
 lang: C
 returncode: 0
@@ -414,8 +502,16 @@ AP[2]: :wlan0-ap-1:Infra:1:54 Mbit/s:44:**  :WPA1
 AP[3]: :wlan0-ap-2:Infra:1:54 Mbit/s:34:**  :WPA1 WPA2
 
 <<<
+<<<<<<< HEAD
 size: 346
 location: clients/tests/test-client.py:868:test_002()/18
+||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+size: 415
+location: clients/tests/test-client.py:868:test_002()/18
+=======
+size: 411
+location: clients/tests/test-client.py:test_002()/18
+>>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f AP -mode tabular -t d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -426,8 +522,8 @@ AP[2]: :wlan0-ap-1:Infrastruktura:1:54 Mb/s:44:**  :WPA1
 AP[3]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:34:**  :WPA1 WPA2
 
 <<<
-size: 1973
-location: clients/tests/test-client.py:870:test_002()/19
+size: 1969
+location: clients/tests/test-client.py:test_002()/19
 cmd: $NMCLI -f ALL d wifi
 lang: C
 returncode: 0
@@ -444,8 +540,8 @@ AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infra  1     2412 MH
 NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
 
 <<<
-size: 2041
-location: clients/tests/test-client.py:870:test_002()/20
+size: 2037
+location: clients/tests/test-client.py:test_002()/20
 cmd: $NMCLI -f ALL d wifi
 lang: pl_PL.UTF-8
 returncode: 0
@@ -462,8 +558,8 @@ AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infrastruktura  1   
 NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
 
 <<<
-size: 246
-location: clients/tests/test-client.py:872:test_002()/21
+size: 242
+location: clients/tests/test-client.py:test_002()/21
 cmd: $NMCLI c
 lang: C
 returncode: 0
@@ -473,8 +569,8 @@ NAME   UUID                                  TYPE      DEVICE
 con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 256
-location: clients/tests/test-client.py:872:test_002()/22
+size: 252
+location: clients/tests/test-client.py:test_002()/22
 cmd: $NMCLI c
 lang: pl_PL.UTF-8
 returncode: 0
@@ -484,8 +580,8 @@ NAME   UUID                                  TYPE      DEVICE
 con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 1267
-location: clients/tests/test-client.py:874:test_002()/23
+size: 1263
+location: clients/tests/test-client.py:test_002()/23
 cmd: $NMCLI c s con-1
 lang: C
 returncode: 0
@@ -517,8 +613,8 @@ connection.llmnr:                       -1 (default)
 connection.wait-device-timeout:         -1
 
 <<<
-size: 1279
-location: clients/tests/test-client.py:874:test_002()/24
+size: 1275
+location: clients/tests/test-client.py:test_002()/24
 cmd: $NMCLI c s con-1
 lang: pl_PL.UTF-8
 returncode: 0
