@@ -166,7 +166,7 @@ print_config (NMConfigCmdLineOptions *config_cli)
 
 	config_data = nm_config_get_data (config);
 	fprintf (stdout, "# NetworkManager configuration: %s\n", nm_config_data_get_config_description (config_data));
-	nm_config_data_log (config_data, "", "", stdout);
+	nm_config_data_log (config_data, "", "", nm_config_get_no_auto_default_file (config), stdout);
 	return 0;
 }
 
@@ -373,7 +373,7 @@ main (int argc, char *argv[])
 	             nm_config_get_first_start (config) ? "for the first time" : "after a restart");
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
-	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
+	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", nm_config_get_no_auto_default_file (config), NULL);
 
 	if (error_invalid_logging_config) {
 		nm_log_warn (LOGD_CORE, "config: invalid logging configuration: %s", error_invalid_logging_config->message);

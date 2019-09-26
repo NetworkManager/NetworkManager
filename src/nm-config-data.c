@@ -82,8 +82,12 @@ typedef struct {
 	int autoconnect_retries_default;
 
 	struct {
+
+		/* from /var/lib/NetworkManager/no-auto-default.state */
 		char **arr;
 		GSList *specs;
+
+		/* from main.no-auto-default setting in NetworkManager.conf. */
 		GSList *specs_config;
 	} no_auto_default;
 
@@ -601,6 +605,7 @@ void
 nm_config_data_log (const NMConfigData *self,
                     const char *prefix,
                     const char *key_prefix,
+                    const char *no_auto_default_file,
                     /* FILE* */ gpointer print_stream)
 {
 	const NMConfigDataPrivate *priv;
@@ -691,6 +696,16 @@ nm_config_data_log (const NMConfigData *self,
 			value = g_key_file_get_value (priv->keyfile, group, key, NULL);
 			_LOG (stream, prefix, "%s%s=%s", key_prefix, key, value);
 		}
+	}
+
+	_LOG (stream, prefix, "");
+	_LOG (stream, prefix, "# no-auto-default file \"%s\"", no_auto_default_file);
+	{
+		gs_free char *msg = NULL;
+
+		msg = nm_utils_g_slist_strlist_join (priv->no_auto_default.specs, ",");
+		if (msg)
+			_LOG (stream, prefix, "# no-auto-default specs \"%s\"", msg);
 	}
 
 #undef _LOG

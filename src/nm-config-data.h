@@ -111,9 +111,10 @@ NMConfigData *nm_config_data_new_update_no_auto_default (const NMConfigData *bas
 NMConfigChangeFlags nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data);
 
 void nm_config_data_log (const NMConfigData *self,
-                               const char *prefix,
-                               const char *key_prefix,
-                               /* FILE* */ gpointer print_stream);
+                         const char *prefix,
+                         const char *key_prefix,
+                         const char *no_auto_default_file,
+                         /* FILE* */ gpointer print_stream);
 
 const char *nm_config_data_get_config_main_file (const NMConfigData *config_data);
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);

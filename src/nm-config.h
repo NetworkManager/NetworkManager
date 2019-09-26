@@ -150,6 +150,8 @@ gboolean nm_config_get_is_debug (NMConfig *config);
 
 gboolean nm_config_get_first_start (NMConfig *config);
 
+const char *nm_config_get_no_auto_default_file (NMConfig *config);
+
 void nm_config_set_values (NMConfig *self,
                            GKeyFile *keyfile_intern_new,
                            gboolean allow_write,
