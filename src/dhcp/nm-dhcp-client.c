@@ -70,7 +70,7 @@ typedef struct _NMDhcpClientPrivate {
 	bool         use_fqdn:1;
 } NMDhcpClientPrivate;
 
-G_DEFINE_TYPE_EXTENDED (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
+G_DEFINE_ABSTRACT_TYPE (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 #define NM_DHCP_CLIENT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMDhcpClient, NM_IS_DHCP_CLIENT)
 

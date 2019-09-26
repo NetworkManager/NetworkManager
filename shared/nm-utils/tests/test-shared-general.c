@@ -16,6 +16,31 @@
 /*****************************************************************************/
 
 static void
+test_gpid (void)
+{
+	const int *int_ptr;
+	GPid pid = 42;
+
+	/* We redefine G_PID_FORMAT, because it's only available since glib 2.53.5.
+	 *
+	 * Also, this is the format for GPid, which for glib is always a typedef
+	 * for "int". Add a check for that here.
+	 *
+	 * G_PID_FORMAT is not about pid_t, which might be a smaller int, and which we would
+	 * check with SIZEOF_PID_T. */
+	G_STATIC_ASSERT (sizeof (GPid) == sizeof (int));
+
+	g_assert_cmpstr (""G_PID_FORMAT, ==, "i");
+
+	/* check that it's really "int". We will get a compiler warning, if that's not
+	 * the case. */
+	int_ptr = &pid;
+	g_assert_cmpint (*int_ptr, ==, 42);
+}
+
+/*****************************************************************************/
+
+static void
 test_monotonic_timestamp (void)
 {
 	g_assert (nm_utils_get_monotonic_timestamp_s () > 0);
@@ -502,6 +527,7 @@ int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/general/test_gpid", test_gpid);
 	g_test_add_func ("/general/test_monotonic_timestamp", test_monotonic_timestamp);
 	g_test_add_func ("/general/test_nmhash", test_nmhash);
 	g_test_add_func ("/general/test_nm_make_strv", test_make_strv);
