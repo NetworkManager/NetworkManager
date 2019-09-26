@@ -1106,6 +1106,13 @@ class TestNmcli(NmTestBase):
 def main():
     global dbus_session_inited
 
+    if sys.version_info.major == 3 and sys.version_info.minor == 8 and sys.version_info.releaselevel == 'beta':
+        # 3.8-beta changed behavior for the line numbers, which
+        # breaks the tests (https://bugs.python.org/issue38283)
+        # skip the test for now.
+        print("WARNING: skip client test with python 3.8-beta")
+        sys.exit(0)
+
     if len(sys.argv) >= 2 and sys.argv[1] == '--started-with-dbus-session':
         dbus_session_inited = True
         del sys.argv[1]
