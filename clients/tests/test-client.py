@@ -61,6 +61,13 @@ ENV_NM_TEST_CLIENT_CHECK_L10N = 'NM_TEST_CLIENT_CHECK_L10N'
 # on disk with the expected output.
 ENV_NM_TEST_REGENERATE        = 'NM_TEST_REGENERATE'
 
+# whether the file location should include the line number. That is useful
+# only for debugging, to correlate the expected output with the test.
+# Obviously, since the expected output is commited to git without line numbers,
+# you'd have to first NM_TEST_REGENERATE the test expected data, with line
+# numbers enabled.
+ENV_NM_TEST_WITH_LINENO       = 'NM_TEST_WITH_LINENO'
+
 #
 ###############################################################################
 
@@ -287,6 +294,8 @@ class Configuration:
             # which we assert. That is useful, if there are intentional changes and
             # we want to regenerate the expected output.
             v = (os.environ.get(ENV_NM_TEST_REGENERATE, '0') == '1')
+        elif name == ENV_NM_TEST_WITH_LINENO:
+            v = (os.environ.get(ENV_NM_TEST_WITH_LINENO, '0') == '1')
         else:
             raise Exception()
         self._values[name] = v
@@ -561,7 +570,10 @@ class TestNmcli(NmTestBase):
         # the file, so that the user can easier find the source (when looking at the .expected files)
         self.assertTrue(os.path.abspath(frame.f_code.co_filename).endswith('/'+PathConfiguration.canonical_script_filename()))
 
-        calling_location = '%s:%d:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_lineno, frame.f_code.co_name, calling_num)
+        if conf.get(ENV_NM_TEST_WITH_LINENO):
+            calling_location = '%s:%d:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_lineno, frame.f_code.co_name, calling_num)
+        else:
+            calling_location = '%s:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_code.co_name, calling_num)
 
         if lang is None or lang == 'C':
             lang = 'C'
@@ -1105,13 +1117,6 @@ class TestNmcli(NmTestBase):
 
 def main():
     global dbus_session_inited
-
-    if sys.version_info.major == 3 and sys.version_info.minor == 8 and sys.version_info.releaselevel == 'beta':
-        # 3.8-beta changed behavior for the line numbers, which
-        # breaks the tests (https://bugs.python.org/issue38283)
-        # skip the test for now.
-        print("WARNING: skip client test with python 3.8-beta")
-        sys.exit(0)
 
     if len(sys.argv) >= 2 and sys.argv[1] == '--started-with-dbus-session':
         dbus_session_inited = True
