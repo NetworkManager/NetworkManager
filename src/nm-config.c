@@ -331,6 +331,12 @@ nm_config_get_first_start (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->cli.first_start;
 }
 
+const char *
+nm_config_get_no_auto_default_file (NMConfig *config)
+{
+	return NM_CONFIG_GET_PRIVATE (config)->no_auto_default_file;
+}
+
 /*****************************************************************************/
 
 static char **
@@ -2690,7 +2696,7 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags re
 		_LOGI ("signal: %s (%s)",
 		       nm_config_change_flags_to_string (changes, NULL, 0),
 		       nm_config_data_get_config_description (new_data));
-		nm_config_data_log (new_data, "CONFIG: ", "  ", NULL);
+		nm_config_data_log (new_data, "CONFIG: ", "  ", priv->no_auto_default_file, NULL);
 		priv->config_data = new_data;
 	} else if (had_new_data)
 		_LOGI ("signal: %s (no changes from disk)", nm_config_change_flags_to_string (changes, NULL, 0));

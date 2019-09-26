@@ -3431,14 +3431,27 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	 */
 	if (   !NM_DEVICE_GET_CLASS (self)->new_default_connection
 	    || !nm_device_get_managed (device, FALSE)
-	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ())
-	    || have_connection_for_device (self, device)
-	    || nm_config_get_no_auto_default_for_device (priv->config, device))
+	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ()))
 		return;
 
-	connection = nm_device_new_default_connection (device);
-	if (!connection)
+	if (nm_config_get_no_auto_default_for_device (priv->config, device)) {
+		_LOGT ("auto-default: cannot create auto-default connection for device %s: disabled by \"no-auto-default\"",
+		       nm_device_get_iface (device));
 		return;
+	}
+
+	if (have_connection_for_device (self, device)) {
+		_LOGT ("auto-default: cannot create auto-default connection for device %s: already has a profile",
+		       nm_device_get_iface (device));
+		return;
+	}
+
+	connection = nm_device_new_default_connection (device);
+	if (!connection) {
+		_LOGT ("auto-default: cannot create auto-default connection for device %s",
+		       nm_device_get_iface (device));
+		return;
+	}
 
 	_LOGT ("auto-default: creating in-memory connection %s (%s) for device %s",
 	       nm_connection_get_uuid (connection),
