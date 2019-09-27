@@ -733,16 +733,20 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 {
 	GHashTable *connections;
 	const char *tag;
-	char *argument;
 	gboolean ignore_bootif = FALSE;
 	gboolean neednet = FALSE;
-	char *bootif = NULL;
+	gs_free char *bootif_val = NULL;
 	int i;
 
 	connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 
 	for (i = 0; argv[i]; i++) {
-		argument = argv[i];
+		gs_free char *argument_clone = NULL;
+		char *argument;
+
+		argument_clone = g_strdup (argv[i]);
+		argument = argument_clone;
+
 		tag = get_word (&argument, '=');
 		if (strcmp (tag, "ip") == 0)
 			parse_ip (connections, sysfs_dir, argument);
@@ -768,15 +772,18 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.znet") == 0)
 			parse_rd_znet (connections, argument);
-		else if (strcasecmp (tag, "BOOTIF") == 0)
-			bootif = argument;
+		else if (strcasecmp (tag, "BOOTIF") == 0) {
+			nm_clear_g_free (&bootif_val);
+			bootif_val = g_strdup (argument);
+		}
 	}
 
 	if (ignore_bootif)
-		bootif = NULL;
-	if (bootif) {
+		nm_clear_g_free (&bootif_val);
+	if (bootif_val) {
 		NMConnection *connection;
 		NMSettingWired *s_wired;
+		const char *bootif = bootif_val;
 
 		if (   !nm_utils_hwaddr_valid (bootif, ETH_ALEN)
 		    && g_str_has_prefix (bootif, "01-")
