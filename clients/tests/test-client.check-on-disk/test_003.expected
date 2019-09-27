@@ -150,16 +150,8 @@ id
 path
 uuid
 <<<
-<<<<<<< HEAD
-size: 4116
-location: clients/tests/test-client.py:911:test_003()/12
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 4159
-location: clients/tests/test-client.py:911:test_003()/12
-=======
-size: 4155
+size: 4112
 location: clients/tests/test-client.py:test_003()/12
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
@@ -255,16 +247,8 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-<<<<<<< HEAD
-size: 4145
-location: clients/tests/test-client.py:911:test_003()/13
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 4189
-location: clients/tests/test-client.py:911:test_003()/13
-=======
-size: 4185
+size: 4141
 location: clients/tests/test-client.py:test_003()/13
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
@@ -908,19 +892,9 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-<<<<<<< HEAD
-size: 1459
-location: clients/tests/test-client.py:951:test_003()/31
-cmd: $NMCLI -f ALL dev s eth0
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 1409
-location: clients/tests/test-client.py:951:test_003()/31
-cmd: $NMCLI -f ALL dev status
-=======
-size: 1405
+size: 1455
 location: clients/tests/test-client.py:test_003()/31
-cmd: $NMCLI -f ALL dev status
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+cmd: $NMCLI -f ALL dev s eth0
 lang: C
 returncode: 0
 stdout: 1272 bytes
@@ -933,24 +907,14 @@ wlan1   wifi      unavailable  unknown           unknown           /org/freedesk
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-<<<<<<< HEAD
 stderr: 24 bytes
 >>>
 Unknown parameter: eth0
 
 <<<
-size: 1474
-location: clients/tests/test-client.py:951:test_003()/32
-cmd: $NMCLI -f ALL dev s eth0
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 1424
-location: clients/tests/test-client.py:951:test_003()/32
-cmd: $NMCLI -f ALL dev status
-=======
-size: 1420
+size: 1470
 location: clients/tests/test-client.py:test_003()/32
-cmd: $NMCLI -f ALL dev status
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+cmd: $NMCLI -f ALL dev s eth0
 lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1277 bytes
@@ -963,21 +927,13 @@ wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedes
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-<<<<<<< HEAD
 stderr: 24 bytes
 >>>
 Nieznany parametr: eth0
 
 <<<
-size: 3494
-location: clients/tests/test-client.py:954:test_003()/33
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 3494
-location: clients/tests/test-client.py:954:test_003()/33
-=======
 size: 3490
 location: clients/tests/test-client.py:test_003()/33
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
@@ -1826,19 +1782,9 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-<<<<<<< HEAD
-size: 1459
-location: clients/tests/test-client.py:951:test_003()/54
-cmd: $NMCLI -f ALL dev s eth0
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 1409
-location: clients/tests/test-client.py:951:test_003()/54
-cmd: $NMCLI -f ALL dev status
-=======
-size: 1405
+size: 1455
 location: clients/tests/test-client.py:test_003()/54
-cmd: $NMCLI -f ALL dev status
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+cmd: $NMCLI -f ALL dev s eth0
 lang: C
 returncode: 0
 stdout: 1272 bytes
@@ -1851,24 +1797,14 @@ wlan1   wifi      unavailable  unknown           unknown           /org/freedesk
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-<<<<<<< HEAD
 stderr: 24 bytes
 >>>
 Unknown parameter: eth0
 
 <<<
-size: 1474
-location: clients/tests/test-client.py:951:test_003()/55
-cmd: $NMCLI -f ALL dev s eth0
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 1424
-location: clients/tests/test-client.py:951:test_003()/55
-cmd: $NMCLI -f ALL dev status
-=======
-size: 1420
+size: 1470
 location: clients/tests/test-client.py:test_003()/55
-cmd: $NMCLI -f ALL dev status
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
+cmd: $NMCLI -f ALL dev s eth0
 lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1277 bytes
@@ -1881,21 +1817,13 @@ wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedes
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 
 <<<
-<<<<<<< HEAD
 stderr: 24 bytes
 >>>
 Nieznany parametr: eth0
 
 <<<
-size: 3494
-location: clients/tests/test-client.py:954:test_003()/56
-||||||| parent of ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
-size: 3494
-location: clients/tests/test-client.py:954:test_003()/56
-=======
 size: 3490
 location: clients/tests/test-client.py:test_003()/56
->>>>>>> ad3ef326aa7a... clients/tests: don't include the source line number with client tests output
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
