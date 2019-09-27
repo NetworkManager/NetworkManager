@@ -686,20 +686,19 @@ parse_rd_peerdns (GHashTable *connections, char *argument)
 static void
 parse_rd_znet (GHashTable *connections, char *argument)
 {
-	const char *nettype = NULL;
-	const char *tmp = NULL;
+	const char *nettype;
 	const char *subchannels[4] = { 0, 0, 0, 0 };
+	const char *tmp;
 	NMConnection *connection;
-	NMSettingWired *s_wired = NULL;
+	NMSettingWired *s_wired;
 
 	nettype = get_word (&argument, ',');
 	subchannels[0] = get_word (&argument, ',');
 	subchannels[1] = get_word (&argument, ',');
-	if (g_strcmp0 (nettype, "ctc") != 0) {
+	if (!nm_streq0 (nettype, "ctc"))
 		subchannels[2] = get_word (&argument, ',');
-	}
 
-	connection = get_conn (connections, NULL, NULL);
+	connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
@@ -707,10 +706,17 @@ parse_rd_znet (GHashTable *connections, char *argument)
 	              NULL);
 
 	while ((tmp = get_word (&argument, ',')) != NULL) {
-		gs_strfreev char ** optval = NULL;
+		char *val;
 
-		optval = g_strsplit (tmp, "=", 2);
-		nm_setting_wired_add_s390_option (s_wired, optval[0], optval[1]);
+		val = strchr (tmp, '=');
+		if (val) {
+			gs_free char *key = NULL;
+
+			key = g_strndup (tmp, val - tmp);
+			val[0] = '\0';
+			val++;
+			nm_setting_wired_add_s390_option (s_wired, key, val);
+		}
 	}
 }
 
