@@ -776,7 +776,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->s390_subchannels) {
-		int len = g_strv_length (priv->s390_subchannels);
+		guint len = g_strv_length (priv->s390_subchannels);
 
 		if (len != 2 && len != 3) {
 			g_set_error_literal (error,
