@@ -3429,7 +3429,7 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
 	 */
-	if (   !NM_DEVICE_GET_CLASS (self)->new_default_connection
+	if (   !NM_DEVICE_GET_CLASS (device)->new_default_connection
 	    || !nm_device_get_managed (device, FALSE)
 	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ()))
 		return;
