@@ -780,29 +780,27 @@ release_slave (NMDevice *device,
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-	gboolean success;
+	gboolean do_release, success;
+	NMSettingTeamPort *s_port;
 	int ifindex_slave;
 	int ifindex;
 
-	if (configure) {
+	do_release = configure;
+	if (do_release) {
 		ifindex = nm_device_get_ifindex (device);
 		if (   ifindex <= 0
 		    || !nm_platform_link_get (nm_device_get_platform (device), ifindex))
-			configure = FALSE;
+			do_release = FALSE;
 	}
 
 	ifindex_slave = nm_device_get_ip_ifindex (slave);
 
 	if (ifindex_slave <= 0) {
 		_LOGD (LOGD_TEAM, "team port %s is already released", nm_device_get_ip_iface (slave));
-		return;
-	}
-
-	if (configure) {
+	} else if (do_release) {
 		success = nm_platform_link_release (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
 		                                    ifindex_slave);
-
 		if (success)
 			_LOGI (LOGD_TEAM, "released team port %s", nm_device_get_ip_iface (slave));
 		else
@@ -823,6 +821,13 @@ release_slave (NMDevice *device,
 		                                                  self);
 	} else
 		_LOGI (LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface (slave));
+
+	/* Delete any port configuration we previously set */
+	if (   configure
+	    && priv->tdc
+	    && (s_port = nm_device_get_applied_setting (slave, NM_TYPE_SETTING_TEAM_PORT))
+	    && (nm_setting_team_port_get_config (s_port)))
+		teamdctl_port_config_update_raw (priv->tdc, nm_device_get_ip_iface (slave), "{}");
 }
 
 static gboolean
