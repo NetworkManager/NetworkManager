@@ -127,7 +127,7 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	connections = nmi_cmdline_reader_parse (sysfs_dir, remaining);
+	connections = nmi_cmdline_reader_parse (sysfs_dir, (const char *const*) remaining);
 	g_hash_table_foreach (connections, output_conn, connections_dir);
 	g_hash_table_destroy (connections);
 

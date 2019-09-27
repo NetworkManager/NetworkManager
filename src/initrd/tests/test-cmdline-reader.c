@@ -39,14 +39,14 @@ static void
 test_auto (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=auto", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=auto");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 
@@ -91,13 +91,13 @@ static void
 test_if_auto_with_mtu (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=eth0:auto:1666", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=eth0:auto:1666");
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 
@@ -126,12 +126,12 @@ static void
 test_if_dhcp6 (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=eth1:dhcp6", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=eth1:dhcp6");
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 	connection = g_hash_table_lookup (connections, "eth1");
@@ -155,13 +155,13 @@ static void
 test_if_auto_with_mtu_and_mac (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=eth2:auto6:2048:00:53:ef:12:34:56", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=eth2:auto6:2048:00:53:ef:12:34:56");
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 
@@ -191,16 +191,15 @@ static void
 test_if_ip4_manual (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){
-		"ip=192.0.2.2::192.0.2.1:255.255.255.0:"
-		"hostname0.example.com:eth3::192.0.2.53",
-		"ip=203.0.113.2::203.0.113.1:26:"
-		"hostname1.example.com:eth4", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2::192.0.2.1:255.255.255.0:"
+	                                       "hostname0.example.com:eth3::192.0.2.53",
+	                                       "ip=203.0.113.2::203.0.113.1:26:"
+	                                       "hostname1.example.com:eth4");
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMIPAddress *ip_addr;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
@@ -248,16 +247,13 @@ static void
 test_if_ip6_manual (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){
-		"ip=[2001:0db8::02]/64::[2001:0db8::01]::"
-		"hostname0.example.com:eth4::[2001:0db8::53]",
-		NULL
-	});
+	const char *const*ARGV = NM_MAKE_STRV ("ip=[2001:0db8::02]/64::[2001:0db8::01]::"
+	                                       "hostname0.example.com:eth4::[2001:0db8::53]");
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip6;
 	NMIPAddress *ip_addr;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 
@@ -286,17 +282,16 @@ static void
 test_multiple (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=192.0.2.2:::::eth0",
-	                                                 "ip=[2001:db8::2]:::::eth0",
-	                                                 "BOOTIF=00:53:AB:cd:02:03",
-	                                                 NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2:::::eth0",
+	                                       "ip=[2001:db8::2]:::::eth0",
+	                                       "BOOTIF=00:53:AB:cd:02:03");
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	NMIPAddress *ip_addr;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 
@@ -332,11 +327,10 @@ static void
 test_some_more (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "bootdev=eth1", "hail", "nameserver=[2001:DB8:3::53]",
-	                                                 "satan", "nameserver=192.0.2.53", "worship",
-	                                                 "BOOTIF=01-00-53-AB-cd-02-03", "doom", "rd.peerdns=0",
-	                                                 "rd.route=[2001:DB8:3::/48]:[2001:DB8:2::1]:ens10",
-	                                                 NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("bootdev=eth1", "hail", "nameserver=[2001:DB8:3::53]",
+	                                       "satan", "nameserver=192.0.2.53", "worship",
+	                                       "BOOTIF=01-00-53-AB-cd-02-03", "doom", "rd.peerdns=0",
+	                                       "rd.route=[2001:DB8:3::/48]:[2001:DB8:2::1]:ens10");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
@@ -344,7 +338,7 @@ test_some_more (void)
 	NMSettingIPConfig *s_ip6;
 	NMIPRoute *ip_route;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
@@ -415,9 +409,9 @@ static void
 test_no_bootif (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "BOOTIF=01-00-53-AB-cd-02-03", "rd.bootif=0", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("BOOTIF=01-00-53-AB-cd-02-03", "rd.bootif=0");
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 0);
 }
@@ -426,10 +420,9 @@ static void
 test_bond (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "rd.route=192.0.2.53::bong0",
-	                                                 "bond=bong0:eth0,eth1:mode=balance-rr",
-	                                                 "nameserver=203.0.113.53",
-	                                                 NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("rd.route=192.0.2.53::bong0",
+	                                       "bond=bong0:eth0,eth1:mode=balance-rr",
+	                                       "nameserver=203.0.113.53");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -438,7 +431,7 @@ test_bond (void)
 	NMIPRoute *ip_route;
 	const char *master_uuid;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 3);
 
@@ -509,7 +502,7 @@ static void
 test_bond_default (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "bond", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("bond");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -517,7 +510,7 @@ test_bond_default (void)
 	NMSettingBond *s_bond;
 	const char *master_uuid;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
@@ -569,7 +562,7 @@ static void
 test_bridge (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "bridge=bridge0:eth0,eth1", "rd.route=192.0.2.53::bridge0", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("bridge=bridge0:eth0,eth1", "rd.route=192.0.2.53::bridge0");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -578,7 +571,7 @@ test_bridge (void)
 	NMIPRoute *ip_route;
 	const char *master_uuid;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 3);
 
@@ -646,7 +639,7 @@ static void
 test_bridge_default (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "bridge", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("bridge");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -654,7 +647,7 @@ test_bridge_default (void)
 	NMSettingBridge *s_bridge;
 	const char *master_uuid;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
@@ -704,7 +697,7 @@ static void
 test_team (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "team=team0:eth0,eth1", "ip=team0:dhcp6", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("team=team0:eth0,eth1", "ip=team0:dhcp6");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -712,7 +705,7 @@ test_team (void)
 	NMSettingTeam *s_team;
 	const char *master_uuid;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 3);
 
@@ -774,10 +767,10 @@ static void
 test_ibft (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=ibft", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("ip=ibft");
 	NMConnection *connection;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
@@ -796,9 +789,9 @@ static void
 test_ignore_extra (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "blabla", "extra", "lalala", NULL });
+	const char *const*ARGV = NM_MAKE_STRV ("blabla", "extra", "lalala");
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 0);
 }
@@ -819,7 +812,7 @@ test_rd_znet (void)
 	};
 	int i_s390_options_keys;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", (char **) ARGV);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
 

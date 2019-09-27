@@ -41,6 +41,6 @@ GHashTable *nmi_ibft_read (const char *sysfs_dir);
 
 gboolean nmi_ibft_update_connection_from_nic (NMConnection *connection, GHashTable *nic, GError **error);
 
-GHashTable *nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv);
+GHashTable *nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv);
 
 #endif  /* __NM_INITRD_GENERATOR_H__ */

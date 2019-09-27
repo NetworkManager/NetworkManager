@@ -735,7 +735,7 @@ _normalize_conn (gpointer key, gpointer value, gpointer user_data)
 }
 
 GHashTable *
-nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
+nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 {
 	GHashTable *connections;
 	const char *tag;
