@@ -1,4 +1,19 @@
 ===============================================
+NetworkManager-1.20.4
+Overview of changes since NetworkManager-1.20.4
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix crash related to Wi-Fi-P2P
+* Support rd.znet option in initrd generator to support s390
+* Fix not creating default-wired-connection when a suitable profile exists
+  that is not tied to the device by interface-name.
+* tui: support WPA3-Personal (SAE)
+* Fixes for OLPC Mesh Wi-Fi
+* Various bug fixes. Notably, fix unit test and build issues.
+
+===============================================
 NetworkManager-1.20.2
 Overview of changes since NetworkManager-1.20.0
 ===============================================
