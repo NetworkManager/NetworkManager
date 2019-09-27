@@ -793,12 +793,59 @@ static void
 test_rd_znet (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	gs_strfreev char **argv = g_strdupv ((char *[]){ "ip=10.11.12.13::10.11.12.1:24:foo.example.com:enc800:none",
-	                                                 "rd.znet=ctc,0.0.0800,0.0.0801,layer2=0,portno=0", NULL });
+	const char *const*const ARGV = NM_MAKE_STRV ("ip=10.11.12.13::10.11.12.1:24:foo.example.com:enc800:none",
+	                                             "rd.znet=ctc,0.0.0800,0.0.0801,layer2=0,portno=1");
+	GHashTableIter h_iter;
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	const char *const*v_subchannels;
+	const NMUtilsNamedValue s390_options[] = {
+		{ .name = "layer2", .value_str = "0" },
+		{ .name = "portno", .value_str = "1" },
+	};
+	int i_s390_options_keys;
 
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", argv);
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", (char **) ARGV);
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+
+	g_hash_table_iter_init (&h_iter, connections);
+	if (!g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &connection))
+		g_assert_not_reached ();
+	if (g_hash_table_iter_next (&h_iter, NULL, NULL))
+		g_assert_not_reached ();
+
+	g_assert (NM_IS_CONNECTION (connection));
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (NM_IS_SETTING_WIRED (s_wired));
+
+	v_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
+	g_assert (v_subchannels);
+	g_assert_cmpstr (v_subchannels[0], ==, "0.0.0800");
+	g_assert_cmpstr (v_subchannels[1], ==, "0.0.0801");
+	g_assert_cmpstr (v_subchannels[2], ==, NULL);
+
+	g_assert_cmpint (nm_setting_wired_get_num_s390_options (s_wired), ==, G_N_ELEMENTS (s390_options));
+	for (i_s390_options_keys = 0; i_s390_options_keys < G_N_ELEMENTS (s390_options); i_s390_options_keys++) {
+		const NMUtilsNamedValue *s390_option = &s390_options[i_s390_options_keys];
+		const char *k;
+		const char *v;
+		const char *v2;
+
+		g_assert (s390_option->name);
+		g_assert (s390_option->value_str);
+		v = nm_setting_wired_get_s390_option_by_key (s_wired, s390_option->name);
+		g_assert (v);
+		g_assert_cmpstr (v, ==, s390_option->value_str);
+
+		if (!nm_setting_wired_get_s390_option (s_wired, i_s390_options_keys, &k, &v2))
+			g_assert_not_reached ();
+		g_assert_cmpstr (k, ==, s390_option->name);
+		g_assert (v == v2);
+		g_assert_cmpstr (v2, ==, s390_option->value_str);
+	}
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
 }
 
 NMTST_DEFINE ();
