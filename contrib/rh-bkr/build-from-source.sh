@@ -2,7 +2,7 @@
 
 set -exv
 
-BUILD_DIR="${BUILD_DIR:-/tmp/nm-build}"
+BUILD_DIR="${BUILD_DIR:-$HOME/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
 BUILD_REPO="${BUILD_REPO-https://github.com/NetworkManager/NetworkManager.git}"
 BUILD_REPO2="${BUILD_REPO2-git://github.com/NetworkManager/NetworkManager.git}"
