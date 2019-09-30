@@ -2283,4 +2283,13 @@ nmtst_keyfile_get_num_keys (GKeyFile *keyfile,
 
 /*****************************************************************************/
 
+static inline gboolean
+nmtst_g_source_assert_not_called (gpointer user_data)
+{
+	g_assert_not_reached ();
+	return G_SOURCE_CONTINUE;
+}
+
+/*****************************************************************************/
+
 #endif /* __NM_TEST_UTILS_H__ */
