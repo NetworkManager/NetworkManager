@@ -25,6 +25,68 @@ loop_quit (gpointer user_data)
 
 /*****************************************************************************/
 
+static NMClient *
+_nm_client_new_sync (void)
+{
+	NMClient *client;
+	guint source_1;
+	GError *error = NULL;
+
+	source_1 = g_idle_add (nmtst_g_source_assert_not_called, NULL);
+
+	client = g_object_new (NM_TYPE_CLIENT, NULL);
+	g_assert (NM_IS_CLIENT (client));
+
+	if (!g_initable_init (G_INITABLE (client), NULL, &error))
+		g_assert_not_reached ();
+
+	g_assert_no_error (error);
+
+	nm_clear_g_source (&source_1);
+	return client;
+}
+
+typedef struct {
+	GMainLoop *loop;
+	NMClient *client;
+} NewSyncInsideDispatchedData;
+
+static gboolean
+_nm_client_new_sync_inside_dispatched_do (gpointer user_data)
+{
+	NewSyncInsideDispatchedData *d = user_data;
+
+	g_assert (d->loop);
+	g_assert (!d->client);
+
+	d->client = _nm_client_new_sync ();
+
+	g_main_loop_quit (d->loop);
+	return G_SOURCE_CONTINUE;
+}
+
+static NMClient *
+_nm_client_new_sync_inside_dispatched (void)
+{
+	NewSyncInsideDispatchedData d = { };
+	guint source_1;
+
+	d.loop = g_main_loop_new (NULL, FALSE);
+	source_1 = g_idle_add (_nm_client_new_sync_inside_dispatched_do, &d);
+
+	g_main_loop_run (d.loop);
+
+	g_assert (NM_IS_CLIENT (d.client));
+
+	nm_clear_g_source (&source_1);
+
+	g_main_loop_unref (d.loop);
+
+	return d.client;
+}
+
+/*****************************************************************************/
+
 static void
 devices_notify_cb (NMClient *c,
                    GParamSpec *pspec,
@@ -1321,8 +1383,9 @@ test_connection_invalid (void)
 	                                       FALSE,
 	                                       &path2);
 
-	client = nm_client_new (NULL, &error);
-	g_assert_no_error (error);
+	client =   nmtst_get_rand_bool ()
+	         ? _nm_client_new_sync ()
+	         : _nm_client_new_sync_inside_dispatched ();
 
 	connections = nm_client_get_connections (client);
 	g_assert (connections);
