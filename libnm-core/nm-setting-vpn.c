@@ -921,6 +921,9 @@ vpn_secrets_to_dbus (const NMSettInfoSetting *sett_info,
 	const char *key, *value;
 	NMSettingSecretFlags secret_flags;
 
+	if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
+		return NULL;
+
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
 	g_object_get (setting, property_name, &secrets, NULL);
 
@@ -1129,12 +1132,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        G_TYPE_HASH_TABLE,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_DATA],
-	                                    G_VARIANT_TYPE ("a{ss}"),
-	                                    _nm_utils_strdict_to_dbus,
-	                                    _nm_utils_strdict_from_dbus);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_DATA], &nm_sett_info_propert_type_strdict);
 
 	/**
 	 * NMSettingVpn:secrets: (type GHashTable(utf8,utf8)):
@@ -1155,14 +1153,15 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	                        G_TYPE_HASH_TABLE,
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_SECRET |
+	                        NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_SECRETS],
-	                                   G_VARIANT_TYPE ("a{ss}"),
-	                                   vpn_secrets_to_dbus,
-	                                   vpn_secrets_from_dbus,
-	                                   NULL);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_SECRETS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("a{ss}"),
+	                                  .to_dbus_fcn   = vpn_secrets_to_dbus,
+	                                  .from_dbus_fcn = vpn_secrets_from_dbus,
+	                              ));
 
 	/**
 	 * NMSettingVpn:timeout:

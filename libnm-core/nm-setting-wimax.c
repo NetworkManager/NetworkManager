@@ -236,12 +236,7 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_MAC_ADDRESS],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

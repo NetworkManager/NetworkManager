@@ -2571,11 +2571,13 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 * description: Array of dictionaries for the WireGuard peers.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    NM_SETTING_WIREGUARD_PEERS,
-	                                    G_VARIANT_TYPE ("aa{sv}"),
-	                                    _peers_dbus_only_synth,
-	                                    _peers_dbus_only_set);
+	_nm_properties_override_dbus (properties_override,
+	                              NM_SETTING_WIREGUARD_PEERS,
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                  .to_dbus_fcn   = _peers_dbus_only_synth,
+	                                  .from_dbus_fcn = _peers_dbus_only_set,
+	                              ));
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

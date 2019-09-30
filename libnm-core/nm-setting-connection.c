@@ -1735,13 +1735,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_INTERFACE_NAME],
-	                                   G_VARIANT_TYPE_STRING,
-	                                   NULL,
-	                                   nm_setting_connection_set_interface_name,
-	                                   nm_setting_connection_no_interface_name);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_INTERFACE_NAME],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type             = G_VARIANT_TYPE_STRING,
+	                                  .from_dbus_fcn         = nm_setting_connection_set_interface_name,
+	                                  .missing_from_dbus_fcn = nm_setting_connection_no_interface_name,
+	                              ));
 
 	/**
 	 * NMSettingConnection:type:
@@ -1920,13 +1920,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_FUZZY_IGNORE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_TIMESTAMP],
-	                                   G_VARIANT_TYPE_UINT64,
-	                                   _to_dbus_fcn_timestamp,
-	                                   NULL,
-	                                   NULL);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_TIMESTAMP],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type   = G_VARIANT_TYPE_UINT64,
+	                                  .to_dbus_fcn = _to_dbus_fcn_timestamp,
+	                              ));
 
 	/**
 	 * NMSettingConnection:read-only:

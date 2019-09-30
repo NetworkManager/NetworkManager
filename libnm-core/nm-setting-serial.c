@@ -288,12 +288,13 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_PARITY],
-	                                    G_VARIANT_TYPE_BYTE,
-	                                    parity_to_dbus,
-	                                    parity_from_dbus);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_PARITY],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type           = G_VARIANT_TYPE_BYTE,
+	                                  .gprop_to_dbus_fcn   = parity_to_dbus,
+	                                  .gprop_from_dbus_fcn = parity_from_dbus,
+	                              ));
 
 	/**
 	 * NMSettingSerial:stopbits:

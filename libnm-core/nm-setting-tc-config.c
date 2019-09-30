@@ -1800,13 +1800,13 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_QDISCS],
-	                                   G_VARIANT_TYPE ("aa{sv}"),
-	                                   tc_qdiscs_get,
-	                                   tc_qdiscs_set,
-	                                   NULL);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_QDISCS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                  .to_dbus_fcn   = tc_qdiscs_get,
+	                                  .from_dbus_fcn = tc_qdiscs_set,
+	                              ));
 
 	/**
 	 * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
@@ -1826,13 +1826,13 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_TFILTERS],
-	                                   G_VARIANT_TYPE ("aa{sv}"),
-	                                   tc_tfilters_get,
-	                                   tc_tfilters_set,
-	                                   NULL);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_TFILTERS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                  .to_dbus_fcn   = tc_tfilters_get,
+	                                  .from_dbus_fcn = tc_tfilters_set,
+	                              ));
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

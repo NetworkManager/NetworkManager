@@ -3318,13 +3318,62 @@ test_empty_setting (void)
 
 /*****************************************************************************/
 
+static guint
+_PROP_IDX_PACK (NMMetaSettingType meta_type,
+                guint idx)
+{
+	return   (((guint) meta_type) & 0xFFu)
+	       | (idx << 8);
+}
+
+static const char *
+_PROP_IDX_OWNER (GHashTable *h_property_types,
+                 const NMSettInfoPropertType *property_type)
+{
+	const NMSettInfoSetting *sett_info_settings = nmtst_sett_info_settings ();
+	const NMSettInfoSetting *sis;
+	const NMMetaSettingInfo *msi;
+	GArray *arr;
+	guint idx;
+	NMMetaSettingType meta_type;
+	guint prop_idx;
+	char sbuf[300];
+
+	g_assert (h_property_types);
+	g_assert (property_type);
+
+	arr = g_hash_table_lookup (h_property_types, property_type);
+
+	g_assert (arr);
+	g_assert (arr->len > 0);
+
+	idx = g_array_index (arr, guint, 0);
+
+	meta_type = (idx & 0xFFu);
+	prop_idx = idx >> 8;
+
+	g_assert (meta_type < _NM_META_SETTING_TYPE_NUM);
+
+	sis = &sett_info_settings[meta_type];
+	msi = &nm_meta_setting_infos[meta_type];
+
+	g_assert (prop_idx < sis->property_infos_len);
+
+	nm_sprintf_buf (sbuf, "%s.%s", msi->setting_name, sis->property_infos[prop_idx].name);
+
+	return g_intern_string (sbuf);
+}
+
 static void
 test_setting_metadata (void)
 {
 	const NMSettInfoSetting *sett_info_settings = nmtst_sett_info_settings ();
 	NMMetaSettingType meta_type;
+	gs_unref_hashtable GHashTable *h_property_types = NULL;
 
 	G_STATIC_ASSERT (_NM_META_SETTING_TYPE_NUM == NM_META_SETTING_TYPE_UNKNOWN);
+
+	h_property_types = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) g_array_unref);
 
 	for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
 		const NMMetaSettingInfo *msi = &nm_meta_setting_infos[meta_type];
@@ -3348,6 +3397,8 @@ test_setting_metadata (void)
 		klass = g_type_class_ref (gtype);
 		g_assert (klass);
 		g_assert (NM_IS_SETTING_CLASS (klass));
+
+		g_assert (msi == klass->setting_info);
 	}
 
 	g_assert (sett_info_settings);
@@ -3381,17 +3432,32 @@ test_setting_metadata (void)
 
 		for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
 			const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
+			GArray *property_types_data;
+			guint prop_idx_val;
 
 			g_assert (sip->name);
 
 			if (prop_idx > 0)
 				g_assert_cmpint (strcmp (sis->property_infos[prop_idx - 1].name, sip->name), <, 0);
 
-			g_assert (sip->dbus_type);
-			g_assert (g_variant_type_string_is_valid ((const char *) sip->dbus_type));
+			g_assert (sip->property_type);
+			g_assert (sip->property_type->dbus_type);
+			g_assert (g_variant_type_string_is_valid ((const char *) sip->property_type->dbus_type));
+
+			g_assert (!sip->property_type->to_dbus_fcn || !sip->property_type->gprop_to_dbus_fcn);
+			g_assert (!sip->property_type->from_dbus_fcn || !sip->property_type->gprop_from_dbus_fcn);
 
 			if (!g_hash_table_insert (h_properties, (char *) sip->name, sip->param_spec))
 				g_assert_not_reached ();
+
+			property_types_data = g_hash_table_lookup (h_property_types, sip->property_type);
+			if (!property_types_data) {
+				property_types_data = g_array_new (FALSE, FALSE, sizeof (guint));
+				if (!g_hash_table_insert (h_property_types, (gpointer) sip->property_type, property_types_data))
+					g_assert_not_reached ();
+			}
+			prop_idx_val = _PROP_IDX_PACK (meta_type, prop_idx);
+			g_array_append_val (property_types_data, prop_idx_val);
 
 			if (sip->param_spec) {
 				nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
@@ -3421,6 +3487,9 @@ test_setting_metadata (void)
 					else
 						g_assert_cmpstr (g_value_get_string (&val), ==, default_value);
 				}
+
+				if (NM_FLAGS_HAS (sip->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))
+					g_assert (sip->property_type->to_dbus_fcn);
 			}
 		}
 
@@ -3468,6 +3537,51 @@ test_setting_metadata (void)
 			g_assert_cmpstr (sis->property_infos[0].name, ==, NM_SETTING_NAME);
 		} else
 			g_assert_cmpint (meta_type, !=, NM_META_SETTING_TYPE_ETHTOOL);
+	}
+
+	{
+		gs_free NMSettInfoPropertType **a_property_types = NULL;
+		guint a_property_types_len;
+		guint prop_idx;
+		guint prop_idx_2;
+
+		a_property_types = (NMSettInfoPropertType **) g_hash_table_get_keys_as_array (h_property_types, &a_property_types_len);
+
+		for (prop_idx = 0; prop_idx < a_property_types_len; prop_idx++) {
+			const NMSettInfoPropertType *pt = a_property_types[prop_idx];
+
+			for (prop_idx_2 = prop_idx + 1; prop_idx_2 < a_property_types_len; prop_idx_2++) {
+				const NMSettInfoPropertType *pt_2 = a_property_types[prop_idx_2];
+
+				if (   !g_variant_type_equal (pt->dbus_type, pt_2->dbus_type)
+				    || pt->to_dbus_fcn != pt_2->to_dbus_fcn
+				    || pt->from_dbus_fcn != pt_2->from_dbus_fcn
+				    || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
+				    || pt->gprop_to_dbus_fcn != pt_2->gprop_to_dbus_fcn
+				    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn)
+					continue;
+
+				if (   (pt   == &nm_sett_info_propert_type_plain_i && pt_2 == &nm_sett_info_propert_type_deprecated_ignore_i)
+				    || (pt_2 == &nm_sett_info_propert_type_plain_i && pt   == &nm_sett_info_propert_type_deprecated_ignore_i)
+				    || (pt   == &nm_sett_info_propert_type_plain_u && pt_2 == &nm_sett_info_propert_type_deprecated_ignore_u)
+				    || (pt_2 == &nm_sett_info_propert_type_plain_u && pt   == &nm_sett_info_propert_type_deprecated_ignore_u)) {
+					/* These are known to be duplicated. This is the case for
+					 *   "gsm.network-type"  and plain properies like "802-11-wireless-security.fils" ("i" D-Bus type)
+					 *   "gsm.allowed-bands" and plain properies like "802-11-olpc-mesh.channel" ("u" D-Bus type)
+					 * While the content/behaviour of the property types are identical, their purpose
+					 * is different. So allowe them.
+					 */
+					continue;
+				}
+
+				/* the property-types with same content should all be shared. Here we have two that
+				 * are the same content, but different instances. Bug. */
+				g_error ("The identical property type for D-Bus type \"%s\" is used by: %s and %s",
+				         (const char *) pt->dbus_type,
+				         _PROP_IDX_OWNER (h_property_types, pt),
+				         _PROP_IDX_OWNER (h_property_types, pt_2));
+			}
+		}
 	}
 }
 
