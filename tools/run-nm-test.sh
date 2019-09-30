@@ -229,6 +229,7 @@ if [[ -n "$BUILDDIR" ]]; then
 fi
 
 if ! _is_true "$NMTST_USE_VALGRIND" 0; then
+    export NM_TEST_UNDER_VALGRIND=0
     "${NMTST_DBUS_RUN_SESSION[@]}" \
     "$TEST" "$@"
     exit $?
@@ -250,6 +251,7 @@ LOGFILE="${TEST}.valgrind-log"
 
 export G_SLICE=always-malloc
 export G_DEBUG=gc-friendly
+export NM_TEST_UNDER_VALGRIND=1
 "${NMTST_DBUS_RUN_SESSION[@]}" \
 "${NMTST_LIBTOOL[@]}" \
 "$NMTST_VALGRIND" \
