@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2013, 2014 Red Hat, Inc.
+ * Copyright (C) 2013, 2014 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_DEVICE_VXLAN_H__

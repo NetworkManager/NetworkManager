@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright (C) 2010 - 2017 Red Hat, Inc.
  */
 
 #ifndef _NM_META_SETTING_ACCESS_H__

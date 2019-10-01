@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright (C) 2015-2018 Red Hat, Inc.
+ * Copyright (C) 2015 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_ACD_MANAGER__

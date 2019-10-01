@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright (C) 2008–2013 Red Hat, Inc.
+ * Copyright (C) 2008 - 2013 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_IP4_CONFIG_H__

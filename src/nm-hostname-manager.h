@@ -3,8 +3,8 @@
  * Søren Sandmann <sandmann@daimi.au.dk>
  * Dan Williams <dcbw@redhat.com>
  * Tambet Ingo <tambet@gmail.com>
- * (C) Copyright 2007 - 2011, 2017 Red Hat, Inc.
- * (C) Copyright 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2011, 2017 Red Hat, Inc.
+ * Copyright (C) 2008 Novell, Inc.
  */
 
 #ifndef __NM_HOSTNAME_MANAGER_H__

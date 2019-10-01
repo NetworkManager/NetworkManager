@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * (C) Copyright 2008 - 2015 Red Hat, Inc.
+ * Copyright (C) 2008 - 2015 Red Hat, Inc.
  * Author: David Zeuthen <davidz@redhat.com>
  * Author: Dan Williams <dcbw@redhat.com>
  * Author: Matthias Clasen

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2011 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #ifndef __NM_SETTING_GSM_H__

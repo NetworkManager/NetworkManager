@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * (C) Copyright 2014 Red Hat, Inc.
+ * Copyright (C) 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_C_LIST_H__

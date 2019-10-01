@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008-2016 Red Hat, Inc.
+ * Copyright (C) 2008 - 2016 Red Hat, Inc.
  */
 
 #ifndef __NM_PPP_STATUS_H__

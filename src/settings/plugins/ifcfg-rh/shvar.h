@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 1999 Red Hat, Inc.
+ * Copyright (C) 1999 Red Hat, Inc.
  */
 
 #ifndef _SHVAR_H

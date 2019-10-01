@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * (C) Copyright 2016 Red Hat, Inc.
+ * Copyright (C) 2016 Red Hat, Inc.
  */
 
 #ifndef __NM_DHCP_HELPER_API_H__

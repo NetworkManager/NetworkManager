@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2012 - 2014 Red Hat, Inc.
+ * Copyright (C) 2012 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_COMMON_H

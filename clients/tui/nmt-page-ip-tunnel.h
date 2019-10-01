@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2016 Red Hat, Inc.
+ * Copyright (C) 2016 Red Hat, Inc.
  */
 
 #ifndef NMT_PAGE_IP_TUNNEL_H

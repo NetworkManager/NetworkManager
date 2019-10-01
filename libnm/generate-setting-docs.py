@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright 2009 - 2017 Red Hat, Inc.
+# Copyright (C) 2009 - 2017 Red Hat, Inc.
 #
 
 from __future__ import print_function

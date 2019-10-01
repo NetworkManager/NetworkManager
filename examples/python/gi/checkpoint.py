@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0+
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright (C) 2017 Red Hat, Inc.
 #
 
 import sys

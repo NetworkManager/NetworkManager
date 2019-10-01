@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # SPDX-License-Identifier: GPL-2.0+
 
-# Copyright 2019 Red Hat, Inc.
+# Copyright (C) 2019 Red Hat, Inc.
 
 # $ perldoc btmodem.pl if you'd like to read the manual, poor you:
 
@@ -275,7 +275,7 @@ L<ModemManager(8)>, L<pppd(8)>, C<modemu.pl>
 
 =head1 COPYRIGHT
 
-Copyright 2019 Lubomir Rintel
+Copyright (C) 2019 Lubomir Rintel
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

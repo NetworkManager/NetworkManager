@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
  * Dan Williams <dcbw@redhat.com>
- * Copyright 2007 - 2018 Red Hat, Inc.
+ * Copyright (C) 2007 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_CRYPTO_IMPL_H__

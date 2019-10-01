@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2018 Red Hat, Inc.
+ * Copyright (C) 2018 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_KEEP_ALIVE_H__

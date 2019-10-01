@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2011 Red Hat, Inc.
- * Copyright 2009 Novell, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2009 Novell, Inc.
  */
 
 #ifndef __NM_WIMAX_NSP_H__

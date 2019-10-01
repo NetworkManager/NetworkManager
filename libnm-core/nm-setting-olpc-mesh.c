@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2009 One Laptop per Child
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2009 One Laptop per Child
  */
 
 #include "nm-default.h"

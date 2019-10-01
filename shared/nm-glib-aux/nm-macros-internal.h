@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * (C) Copyright 2012 Colin Walters <walters@verbum.org>.
- * (C) Copyright 2014 Red Hat, Inc.
+ * Copyright (C) 2012 Colin Walters <walters@verbum.org>.
+ * Copyright (C) 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_MACROS_INTERNAL_H__

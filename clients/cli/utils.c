@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2010 Lennart Poettering
- * Copyright 2010 - 2018 Red Hat, Inc.
+ * Copyright (C) 2010 Lennart Poettering
+ * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"

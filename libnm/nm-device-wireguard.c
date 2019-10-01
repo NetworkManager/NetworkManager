@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2018 Javier Arteaga <jarteaga@jbeta.is>
+ * Copyright (C) 2018 Javier Arteaga <jarteaga@jbeta.is>
  */
 
 #include "nm-default.h"

@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 -- SPDX-License-Identifier: GPL-2.0+
 --
--- Copyright 2015 Red Hat, Inc.
+-- Copyright (C) 2015 Red Hat, Inc.
 --
 
 -- This example changes username in a VPN profile.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2008 Novell, Inc.
- * Copyright 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 Novell, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_REMOTE_SETTINGS_H__

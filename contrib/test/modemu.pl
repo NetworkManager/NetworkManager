@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # SPDX-License-Identifier: GPL-2.0+
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright (C) 2018 Red Hat, Inc.
 #
 
 # $ perldoc modemu.pl for eye-pleasing view of the manual:
@@ -253,7 +253,7 @@ L<ModemManager(8)>, L<pppd(8)>
 
 =head1 COPYRIGHT
 
-Copyright 2018 Lubomir Rintel
+Copyright (C) 2018 Lubomir Rintel
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

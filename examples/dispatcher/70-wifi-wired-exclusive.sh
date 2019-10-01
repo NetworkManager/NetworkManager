@@ -4,8 +4,8 @@
 # Wi-Fi will be set to airplane mode (rfkilled).  When the wired
 # interface is disconnected, Wi-Fi will be turned back on.
 #
-# Copyright 2012 Johannes Buchner <buchner.johannes@gmx.at>
-# Copyright 2012 - 2014 Red Hat, Inc.
+# Copyright (C) 2012 Johannes Buchner <buchner.johannes@gmx.at>
+# Copyright (C) 2012 - 2014 Red Hat, Inc.
 #
 
 export LC_ALL=C

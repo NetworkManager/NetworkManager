@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2016 Atul Anand <atulhjp@gmail.com>.
- * Copyright 2016 - 2017 Red Hat, Inc.
+ * Copyright (C) 2016 Atul Anand <atulhjp@gmail.com>.
+ * Copyright (C) 2016 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_PACRUNNER_MANAGER_H__

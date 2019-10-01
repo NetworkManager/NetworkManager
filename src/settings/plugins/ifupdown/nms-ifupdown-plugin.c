@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Alexander Sack <asac@ubuntu.com>
- * (C) Copyright 2007,2008 Canonical Ltd.
- * (C) Copyright 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007, 2008 Canonical Ltd.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #include "nm-default.h"

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -n
 # SPDX-License-Identifier: GPL-2.0+
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright (C) 2016 Red Hat, Inc.
 #
 
 # This tool formats enums along with their Gtk-Doc comments from a header

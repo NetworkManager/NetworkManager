@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2018 Lubomir Rintel <lkundrak@v3.sk>
+ * Copyright (C) 2018 Lubomir Rintel <lkundrak@v3.sk>
  */
 
 #ifndef __NETWORKMANAGER_DEVICE_WPAN_H__

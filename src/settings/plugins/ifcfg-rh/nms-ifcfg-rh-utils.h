@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * (C) Copyright 2008 - 2017 Red Hat, Inc.
+ * Copyright (C) 2008 - 2017 Red Hat, Inc.
  */
 
 #ifndef _UTILS_H_

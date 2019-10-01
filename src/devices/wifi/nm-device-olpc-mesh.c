@@ -3,9 +3,9 @@
  * Dan Williams <dcbw@redhat.com>
  * Sjoerd Simons <sjoerd.simons@collabora.co.uk>
  * Daniel Drake <dsd@laptop.org>
- * (C) Copyright 2005 - 2014 Red Hat, Inc.
- * (C) Copyright 2008 Collabora Ltd.
- * (C) Copyright 2009 One Laptop per Child
+ * Copyright (C) 2005 - 2014 Red Hat, Inc.
+ * Copyright (C) 2008 Collabora Ltd.
+ * Copyright (C) 2009 One Laptop per Child
  */
 
 #include "nm-default.h"
