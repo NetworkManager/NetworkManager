@@ -4,15 +4,16 @@ sources = files(
 )
 
 deps = [
+  daemon_nm_default_dep,
   jansson_dep,
   libteamdctl_dep,
-  nm_dep,
 ]
 
 libnm_device_plugin_team = shared_module(
   'nm-device-plugin-team',
   sources: sources,
   dependencies: deps,
+  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,
@@ -26,10 +27,3 @@ test(
   check_exports,
   args: [libnm_device_plugin_team.full_path(), linker_script_devices],
 )
-
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so)
-'''

@@ -1,5 +1,16 @@
 libnm_core_inc = include_directories('.')
 
+libnm_core_nm_default_dep = declare_dependency(
+  sources: nm_version_macro_header,
+  include_directories: libnm_core_inc,
+  dependencies: glib_nm_default_dep,
+)
+
+common_c_flags = [
+  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+]
+
 libnm_core_headers = files(
   'nm-connection.h',
   'nm-core-types.h',
@@ -60,6 +71,42 @@ libnm_core_headers = files(
   'nm-vpn-dbus-interface.h',
   'nm-vpn-editor-plugin.h',
   'nm-vpn-plugin-info.h',
+)
+
+enum_types = 'nm-core-enum-types'
+
+libnm_core_enum_sources = gnome.mkenums_simple(
+  enum_types,
+  sources: libnm_core_headers + [nm_version_macro_header],
+  identifier_prefix: nm_id_prefix,
+  install_header: true,
+  install_dir: libnm_pkgincludedir,
+)
+
+libnm_libnm_core_intern = static_library(
+  'nm-libnm-core-intern',
+  sources: nm_ethtool_utils_source + nm_libnm_core_utils_source + [libnm_core_enum_sources[1]],
+  dependencies: libnm_core_nm_default_dep,
+  c_args: common_c_flags,
+)
+
+libnm_libnm_core_intern_dep = declare_dependency(
+  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
+  include_directories: [libnm_core_inc, shared_inc],
+  dependencies: libnm_utils_base_dep,
+  link_with: libnm_libnm_core_intern,
+)
+
+deps = [
+  crypto_dep,
+  libnm_utils_base_dep,
+]
+
+libnm_crypto = static_library(
+  'nm-crypto',
+  sources: 'nm-crypto-@0@.c'.format(crypto),
+  dependencies: deps,
+  c_args: common_c_flags,
 )
 
 libnm_core_settings_sources = files(
@@ -129,75 +176,16 @@ libnm_core_sources = libnm_core_settings_sources + files(
   'nm-vpn-plugin-info.c',
 )
 
-enum_headers = libnm_core_headers + [version_header]
-enum_types = 'nm-core-enum-types'
-
-libnm_core_enum = gnome.mkenums(
-  enum_types,
-  sources: enum_headers,
-  identifier_prefix: nm_id_prefix,
-  c_template: enum_types + '.c.template',
-  h_template: enum_types + '.h.template',
-  install_header: true,
-  install_dir: libnm_pkgincludedir,
-)
-
-libnm_core_enum_dep = declare_dependency(
-  sources: libnm_core_enum[1],
-)
-
-###############################################################################
-
-shared_nm_libnm_core_intern = static_library(
-    'nm-libnm-core-intern',
-    sources: files('../shared/nm-libnm-core-intern/nm-ethtool-utils.c',
-                   '../shared/nm-libnm-core-intern/nm-libnm-core-utils.c'),
-    c_args: [
-        '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-        '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
-    ],
-    include_directories: [
-        top_inc,
-        shared_inc,
-        libnm_core_inc,
-    ],
-    dependencies: [
-        glib_dep,
-        shared_c_siphash_dep,
-        shared_nm_glib_aux_dep,
-        libnm_core_enum_dep,
-    ],
-)
-
-shared_nm_libnm_core_intern_dep = declare_dependency(
-    link_with: shared_nm_libnm_core_intern,
-    include_directories: [
-        top_inc,
-        shared_inc,
-    ],
-    dependencies: [
-        glib_dep,
-        shared_nm_glib_aux_dep,
-        libnm_systemd_shared_dep,
-    ],
-)
-
-###############################################################################
-
 deps = [
   dl_dep,
-  libudev_dep,
+  libnm_systemd_shared_dep,
+  libnm_utils_base_dep,
   uuid_dep,
-  glib_dep,
-  shared_c_siphash_dep,
-  shared_nm_glib_aux_dep,
-  shared_nm_udev_aux_dep,
-  shared_nm_libnm_core_intern_dep,
 ]
 
-cflags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+links = [
+  libnm_crypto,
+  libnm_libnm_core_intern,
 ]
 
 if enable_json_validation
@@ -205,95 +193,43 @@ if enable_json_validation
   deps += jansson_dep
 endif
 
-if (crypto_gnutls_dep.found())
-  libnm_crypto_gnutls = static_library(
-    'nm-crypto-gnutls',
-    sources: [ 'nm-crypto-gnutls.c' ],
-    dependencies: deps + [ crypto_gnutls_dep ],
-    c_args: cflags,
-  )
-endif
-
-if (crypto_nss_dep.found())
-  libnm_crypto_nss = static_library(
-    'nm-crypto-nss',
-    sources: [ 'nm-crypto-nss.c' ],
-    dependencies: deps + [ crypto_nss_dep ],
-    c_args: cflags,
-  )
-endif
-
-if crypto == 'gnutls'
-  libnm_crypto = libnm_crypto_gnutls
-elif crypto == 'nss'
-  libnm_crypto = libnm_crypto_nss
-else
-  error('bug')
-endif
-
-libnm_core_sources_all =  libnm_core_sources
-libnm_core_sources_all += libnm_core_enum
-libnm_core_sources_all += shared_nm_meta_setting_c
-libnm_core_sources_all += [version_header]
-
 libnm_core = static_library(
   'nm-core',
-  sources: libnm_core_sources_all,
+  sources: libnm_core_sources + libnm_core_enum_sources + nm_meta_setting_source + [nm_version_macro_header],
+  include_directories: top_inc,
   dependencies: deps,
-  link_with: libnm_crypto,
-  c_args: cflags,
+  c_args: common_c_flags,
+  link_with: links,
 )
 
 libnm_core_dep = declare_dependency(
-  sources: libnm_core_enum[1],
-  include_directories: libnm_core_inc,
-  dependencies: [
-    shared_nm_libnm_core_intern_dep,
-    shared_nm_glib_aux_dep,
-    shared_c_siphash_dep,
-    libnm_systemd_shared_dep,
-  ],
+  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
+  include_directories: [libnm_core_inc, shared_inc],
+  dependencies: glib_dep,
+  link_with: libnm_core,
 )
 
-###############################################################################
+c_flags = [
+  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+  '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+]
 
-shared_nm_libnm_core_aux = static_library(
-    'nm-libnm-core-aux',
-    sources: files('../shared/nm-libnm-core-aux/nm-libnm-core-aux.c'),
-    c_args: [
-        '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-        '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
-    ],
-    include_directories: [
-        top_inc,
-        shared_inc,
-        libnm_core_inc,
-    ],
-    dependencies: [
-        glib_dep,
-        shared_c_siphash_dep,
-        shared_nm_glib_aux_dep,
-        libnm_core_dep,
-    ],
+libnm_libnm_core_aux = static_library(
+  'nm-libnm-core-aux',
+  sources: nm_libnm_core_aux_source + [libnm_core_enum_sources[1]],
+  dependencies: libnm_utils_base_dep,
+  c_args: c_flags,
+  link_with: libnm_libnm_core_intern,
 )
 
-shared_nm_libnm_core_aux_dep = declare_dependency(
-    link_with: shared_nm_libnm_core_aux,
-    include_directories: [
-        top_inc,
-        shared_inc,
-    ],
-    dependencies: [
-        libnm_core_dep,
-        glib_dep,
-        shared_nm_glib_aux_dep,
-        libnm_systemd_shared_dep,
-    ],
+libnm_libnm_core_aux_dep = declare_dependency(
+  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
+  include_directories: [libnm_core_inc, shared_inc],
+  dependencies: glib_dep,
+  link_with: libnm_libnm_core_aux,
 )
 
-###############################################################################
-
-enums_to_docbook = join_paths(meson.source_root(), 'tools', 'enums-to-docbook.pl')
+enums_to_docbook = join_paths(source_root, 'tools', 'enums-to-docbook.pl')
 
 docbooks = [
   ['nm-dbus-types', 'nm-dbus-interface.h', 'NetworkManager D-Bus API Types'],
@@ -316,8 +252,6 @@ foreach docbook: docbooks
 
   content_files += xml.full_path()
 endforeach
-
-###############################################################################
 
 if enable_tests
   subdir('tests')

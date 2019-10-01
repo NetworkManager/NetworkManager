@@ -4,18 +4,11 @@ examples = [
   ['change-ipv4-addresses', []],
 ]
 
-incs = [
-  top_inc,
-  libnm_core_inc,
-]
-
-qt_core_dep = dependency('QtCore', version: '>= 4')
-
 deps = [
   dbus_dep,
   qt_core_dep,
-  dependency('QtDBus'),
-  dependency('QtNetwork'),
+  qt_dbus_dep,
+  qt_network_dep,
 ]
 
 moc = find_program('moc-qt4', required: false)
@@ -39,7 +32,7 @@ foreach example: examples
   executable(
     example[0],
     example[0] + '.cpp',
-    include_directories: incs,
+    include_directories: libnm_core_inc,
     dependencies: deps,
     link_depends: example[1],
   )

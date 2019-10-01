@@ -6,32 +6,30 @@ data_conf.set('sysconfdir', nm_sysconfdir)
 data_conf.set('DISTRO_NETWORK_SERVICE', (enable_ifcfg_rh ? 'network.service' : ''))
 data_conf.set('NM_MODIFY_SYSTEM_POLICY', (enable_modify_system ? 'yes' : 'auth_admin_keep'))
 
-server = 'server.conf'
-
 configure_file(
-  input: server + '.in',
-  output: server,
+  input: 'server.conf.in',
+  output: '@BASENAME@',
   install_dir: join_paths(nm_datadir, 'doc', nm_name, 'examples'),
   configuration: data_conf,
 )
 
-if install_systemd_unit_dir
+if install_systemdunitdir
   services = [
-    'NetworkManager-dispatcher.service',
-    'NetworkManager.service',
+    'NetworkManager-dispatcher.service.in',
+    'NetworkManager.service.in',
   ]
 
   if have_systemd_200
-    services += ['NetworkManager-wait-online.service']
+    services += ['NetworkManager-wait-online.service.in']
   else
-    services += ['NetworkManager-wait-online-systemd-pre200.service']
+    services += ['NetworkManager-wait-online-systemd-pre200.service.in']
   endif
 
   foreach service: services
     configure_file(
-      input: service + '.in',
-      output: service,
-      install_dir: systemd_system_unit_dir,
+      input: service,
+      output: '@BASENAME@',
+      install_dir: systemd_systemdsystemunitdir,
       configuration: data_conf,
     )
   endforeach
@@ -39,12 +37,12 @@ if install_systemd_unit_dir
   if enable_ovs
     install_data(
       'NetworkManager-ovs.conf',
-      install_dir: join_paths(systemd_system_unit_dir, 'NetworkManager.service.d'),
+      install_dir: join_paths(systemd_systemdsystemunitdir, 'NetworkManager.service.d'),
     )
   endif
 endif
 
-if install_udev_dir
+if install_udevdir
   data = files(
     '84-nm-drivers.rules',
     '85-nm-unmanaged.rules',
@@ -53,7 +51,7 @@ if install_udev_dir
 
   install_data(
     data,
-    install_dir: join_paths(udev_dir, 'rules.d'),
+    install_dir: join_paths(udev_udevdir, 'rules.d'),
   )
 endif
 
@@ -62,16 +60,16 @@ if enable_polkit
 
   policy_in = configure_file(
     input: policy + '.in.in',
-    output: policy + '.in',
+    output: '@BASENAME@',
     configuration: data_conf,
   )
 
   custom_target(
     policy,
     input: policy_in,
-    output: policy,
+    output: '@BASENAME@',
     command: intltool_xml_cmd,
     install: true,
-    install_dir: polkit_dir,
+    install_dir: polkit_gobject_policydir,
   )
 endif

@@ -1,13 +1,6 @@
 name = 'nmtui'
 
-deps = [
-  newt_dep,
-  libnm_core_dep,
-]
-
-cflags = clients_cflags + [
-  '-DG_LOG_DOMAIN="@0@"'.format(name),
-]
+common_c_flags = clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format(name)]
 
 subdir('newt')
 
@@ -54,10 +47,9 @@ sources = files(
   'nmt-widget-list.c',
 )
 
-deps += [
-  libnm_dep,
-  libnmc_dep,
+deps = [
   libnmc_base_dep,
+  libnmc_dep,
   libnmt_newt_dep,
 ]
 
@@ -65,7 +57,8 @@ executable(
   name,
   sources,
   dependencies: deps,
-  c_args: cflags,
+  c_args: common_c_flags,
+  link_with: libnm_systemd_logging_stub,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,

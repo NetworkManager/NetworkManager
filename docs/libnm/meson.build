@@ -1,4 +1,7 @@
-doc_module = libnm_name
+src_dirs = [
+  libnm_core_inc,
+  libnm_inc,
+]
 
 private_headers = [
   'common.h',
@@ -26,29 +29,29 @@ private_headers = [
   'test-general-enums.h',
 ]
 
-configure_file(
-  input: version_xml + '.in',
-  output: version_xml,
+scan_args = [
+  '--rebuild-types',
+  '--rebuild-sections',
+  '--ignore-decorators=NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?',
+  '--ignore-headers=' + ' '.join(private_headers),
+]
+
+version_xml = configure_file(
+  input: 'version.xml.in',
+  output: '@BASENAME@',
   configuration: version_conf,
 )
 
 gnome.gtkdoc(
-  doc_module,
-  main_xml: doc_module + '-docs.xml',
-  src_dir: [
-    libnm_core_inc,
-    libnm_inc,
-  ],
+  libnm_name,
+  main_xml: libnm_name + '-docs.xml',
+  src_dir: src_dirs,
   dependencies: libnm_dep,
-  scan_args: [
-    '--rebuild-types',
-    '--rebuild-sections',
-    '--ignore-decorators=NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?',
-    '--ignore-headers=' + ' '.join(private_headers),
-  ],
+  scan_args: scan_args,
   scanobjs_args: '--type-init-func="g_type_init();"',
-  fixxref_args: '--html-dir=' + join_paths(nm_prefix, gnome.gtkdoc_html_dir(doc_module)),
-  gobject_typesfile: doc_module + '.types',
-  html_assets: doc_module + '.png',
+  fixxref_args: '--html-dir=' + join_paths(nm_prefix, gnome.gtkdoc_html_dir(libnm_name)),
+  gobject_typesfile: libnm_name + '.types',
+  html_assets: 'libnm.png',
+  content_files: version_xml,
   install: true,
 )

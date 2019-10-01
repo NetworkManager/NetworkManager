@@ -1,5 +1,11 @@
 src_inc = include_directories('.')
 
+daemon_nm_default_dep = declare_dependency(
+  sources: libnm_core_enum_sources[1],
+  include_directories: src_inc,
+  dependencies: libnm_core_nm_default_dep,
+)
+
 install_data(
   'org.freedesktop.NetworkManager.conf',
   install_dir: dbus_conf_dir,
@@ -9,15 +15,7 @@ subdir('systemd')
 
 core_plugins = []
 
-nm_cflags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
-
-nm_dep = declare_dependency(
-  include_directories: src_inc,
-  dependencies: libnm_core_dep,
-  compile_args: nm_cflags,
-)
-
-cflags = nm_cflags
+daemon_c_flags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
 
 sources = files(
   'dhcp/nm-dhcp-client.c',
@@ -49,10 +47,13 @@ sources = files(
 )
 
 deps = [
+  daemon_nm_default_dep,
+  libn_dhcp4_dep,
+  libnm_core_dep,
+  libnm_systemd_shared_dep,
+  libnm_udev_aux_dep,
   libsystemd_dep,
   libudev_dep,
-  libnm_core_dep,
-  shared_n_dhcp4_dep,
 ]
 
 if enable_wext
@@ -63,8 +64,7 @@ libnetwork_manager_base = static_library(
   nm_name + 'Base',
   sources: sources,
   dependencies: deps,
-  c_args: cflags,
-  link_with: libnm_core,
+  c_args: daemon_c_flags,
 )
 
 sources = files(
@@ -151,12 +151,18 @@ sources = files(
 )
 
 nm_deps = [
+  daemon_nm_default_dep,
   dl_dep,
+  libn_acd_dep,
   libndp_dep,
   libudev_dep,
-  libnm_core_dep,
-  shared_n_acd_dep,
   logind_dep,
+]
+
+nm_links = [
+  libnetwork_manager_base,
+  libnm_systemd_core,
+  libnm_systemd_shared,
 ]
 
 if enable_concheck
@@ -179,19 +185,15 @@ libnetwork_manager = static_library(
   nm_name,
   sources: sources,
   dependencies: nm_deps,
-  c_args: cflags,
-  link_with: [
-    libnetwork_manager_base,
-    libnm_systemd_core,
-    libnm_systemd_shared,
-  ],
+  c_args: daemon_c_flags,
+  link_with: nm_links,
 )
 
 deps = [
+  daemon_nm_default_dep,
   dl_dep,
   libndp_dep,
   libudev_dep,
-  libnm_core_dep,
 ]
 
 name = 'nm-iface-helper'
@@ -200,12 +202,8 @@ executable(
   name,
   name + '.c',
   dependencies: deps,
-  c_args: cflags,
-  link_with: [
-    libnetwork_manager_base,
-    libnm_systemd_core,
-    libnm_systemd_shared,
-  ],
+  c_args: daemon_c_flags,
+  link_with: nm_links,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
@@ -213,44 +211,28 @@ executable(
 )
 
 if enable_tests
+  test_c_flags = daemon_c_flags + ['-DNETWORKMANAGER_COMPILATION_TEST']
+  if require_root_tests
+    test_c_flags += ['-DREQUIRE_ROOT_TESTS=1']
+  endif
+
   sources = files(
     'ndisc/nm-fake-ndisc.c',
     'platform/tests/test-common.c',
     'platform/nm-fake-platform.c',
   )
 
-  deps = [
-    libudev_dep,
-    libnm_core_dep,
-  ]
-
-  test_cflags = ['-DNETWORKMANAGER_COMPILATION_TEST']
-  if require_root_tests
-    test_cflags += ['-DREQUIRE_ROOT_TESTS=1']
-  endif
-
   libnetwork_manager_test = static_library(
     nm_name + 'Test',
     sources: sources,
-    dependencies: deps,
-    c_args: cflags + test_cflags,
+    dependencies: daemon_nm_default_dep,
+    c_args: test_c_flags,
     link_with: libnetwork_manager,
   )
 
-  test_nm_dep = declare_dependency(
-    dependencies: nm_dep,
-    compile_args: test_cflags,
+  libnetwork_manager_test_dep = declare_dependency(
+    dependencies: daemon_nm_default_dep,
     link_with: libnetwork_manager_test,
-  )
-
-  test_nm_dep_fake = declare_dependency(
-    dependencies: test_nm_dep,
-    compile_args: ['-DSETUP=nm_fake_platform_setup']
-  )
-
-  test_nm_dep_linux = declare_dependency(
-    dependencies: test_nm_dep,
-    compile_args: ['-DSETUP=nm_linux_platform_setup']
   )
 
   subdir('dnsmasq/tests')
@@ -272,7 +254,7 @@ subdir('settings/plugins')
 
 # NetworkManager binary
 
-create_exports_networkmanager = join_paths(meson.source_root(), 'tools', 'create-exports-NetworkManager.sh')
+create_exports_networkmanager = join_paths(source_root, 'tools', 'create-exports-NetworkManager.sh')
 symbol_map_name = 'NetworkManager.ver'
 
 # libNetworkManager.a, as built by meson doesn't contain all symbols
@@ -283,28 +265,30 @@ symbol_map_name = 'NetworkManager.ver'
 network_manager_sym = executable(
   'nm-full-symbols',
   'main.c',
-  c_args: nm_cflags,
-  link_args: '-Wl,--no-gc-sections',
   dependencies: nm_deps,
+  c_args: daemon_c_flags,
+  link_args: '-Wl,--no-gc-sections',
   link_whole: [libnetwork_manager, libnetwork_manager_base, libnm_core],
-  install: false,
 )
 
 # this uses symbols from nm-full-symbols instead of libNetworkManager.a
 ver_script = custom_target(
   symbol_map_name,
   output: symbol_map_name,
-  depends: [ network_manager_sym, core_plugins ],
-  command: [create_exports_networkmanager, '--called-from-build', meson.source_root()],
+  depends: [network_manager_sym, core_plugins],
+  command: [create_exports_networkmanager, '--called-from-build', source_root],
 )
 
-ldflags = ['-rdynamic', '-Wl,--version-script,@0@'.format(ver_script.full_path())]
+ldflags = [
+  '-rdynamic',
+  '-Wl,--version-script,@0@'.format(ver_script.full_path()),
+]
 
 network_manager = executable(
   nm_name,
   'main.c',
   dependencies: nm_deps,
-  c_args: nm_cflags,
+  c_args: daemon_c_flags,
   link_with: libnetwork_manager,
   link_args: ldflags,
   link_depends: ver_script,
@@ -313,16 +297,20 @@ network_manager = executable(
 )
 
 if enable_tests
-  foreach plugin : core_plugins
-    test ('sym/' + plugin.full_path().split('/')[-1],
-          network_manager,
-          args: '--version',
-          env: ['LD_BIND_NOW=1', 'LD_PRELOAD=' + plugin.full_path()])
+  foreach plugin: core_plugins
+    plugin_path = plugin.full_path()
+
+    test(
+      'sym/' + plugin_path.split('/')[-1],
+      network_manager,
+      args: '--version',
+      env: ['LD_BIND_NOW=1', 'LD_PRELOAD=' + plugin_path],
+    )
   endforeach
 endif
 
 test(
   'check-config-options',
-  find_program(join_paths(meson.source_root(), 'tools', 'check-config-options.sh')),
-  args: [meson.source_root()]
+  find_program(join_paths(source_root, 'tools', 'check-config-options.sh')),
+  args: source_root,
 )
