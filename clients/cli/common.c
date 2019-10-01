@@ -1251,6 +1251,8 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv)
 
 		g_object_unref (task);
 	} else {
+		nm_assert (nmc->client == NULL);
+
 		nmc->should_wait++;
 		call = g_slice_new0 (CmdCall);
 		call->cmd = cmd;
