@@ -1476,14 +1476,24 @@ nm_client_deactivate_connection (NMClient *client,
                                  GCancellable *cancellable,
                                  GError **error)
 {
+	const char *active_path;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return TRUE;
+	active_path = nm_object_get_path (NM_OBJECT (active));
+	g_return_val_if_fail (active_path, FALSE);
 
-	return nm_manager_deactivate_connection (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                         active, cancellable, error);
+	return _nm_object_dbus_call_sync_void (client,
+	                                       cancellable,
+	                                       NM_DBUS_PATH,
+	                                       NM_DBUS_INTERFACE,
+	                                       "DeactivateConnection",
+	                                       g_variant_new ("(o)", active_path),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 static void

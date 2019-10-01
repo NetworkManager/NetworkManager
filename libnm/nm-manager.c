@@ -1271,27 +1271,6 @@ checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
 		checkpoint_info_complete (manager, info, checkpoint, NULL);
 }
 
-gboolean
-nm_manager_deactivate_connection (NMManager *manager,
-                                  NMActiveConnection *active,
-                                  GCancellable *cancellable,
-                                  GError **error)
-{
-	const char *path;
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
-
-	path = nm_object_get_path (NM_OBJECT (active));
-	ret = nmdbus_manager_call_deactivate_connection_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                                      path,
-	                                                      cancellable, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
 static void
 deactivated_cb (GObject *object,
                 GAsyncResult *result,

@@ -180,11 +180,6 @@ NMActiveConnection *nm_manager_add_and_activate_connection_finish (NMManager *ma
                                                                    GVariant **out_result,
                                                                    GError **error);
 
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean nm_manager_deactivate_connection        (NMManager *manager,
-                                                  NMActiveConnection *active,
-                                                  GCancellable *cancellable,
-                                                  GError **error);
 void     nm_manager_deactivate_connection_async  (NMManager *manager,
                                                   NMActiveConnection *active,
                                                   GCancellable *cancellable,
