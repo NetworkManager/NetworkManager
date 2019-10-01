@@ -1331,7 +1331,6 @@ test_connection_invalid (void)
 	NMSettingConnection *s_con;
 	gs_unref_object NMClient *client = NULL;
 	const GPtrArray *connections;
-	gs_free_error GError *error = NULL;
 	gs_free char *path0 = NULL;
 	gs_free char *path1 = NULL;
 	gs_free char *path2 = NULL;
