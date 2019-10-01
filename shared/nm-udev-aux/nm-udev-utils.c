@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-udev-utils.c - udev utils functions
- *
+/*
  * Copyright (C) 2017 Red Hat, Inc.
  */
 

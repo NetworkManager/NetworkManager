@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0+
-
 #
 # Copyright 2017 Red Hat, Inc.
+#
 
 #
 # set and show user-data for a connection:

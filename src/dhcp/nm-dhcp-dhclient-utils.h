@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* Copyright (C) 2010 Red Hat, Inc.
+/*
+ * Copyright (C) 2010 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__

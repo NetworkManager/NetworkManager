@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager initrd configuration generator
- *
+/*
  * Copyright 2014 - 2018 Red Hat, Inc.
  */
 

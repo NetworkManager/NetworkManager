@@ -3,11 +3,11 @@
 --
 -- Copyright 2015 Red Hat, Inc.
 --
---
+
 -- Script for importing/converting OpenVPN configuration files for NetworkManager
 -- In general, the implementation follows the logic of import() from
 -- https://git.gnome.org/browse/network-manager-openvpn/tree/properties/import-export.c
---
+
 
 ----------------------
 -- Helper functions --

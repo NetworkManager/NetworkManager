@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2010 Dan Williams <dcbw@redhat.com>
- *
  */
 
 #include "nm-default.h"

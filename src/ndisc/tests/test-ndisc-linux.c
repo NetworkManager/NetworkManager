@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* ndisc.c - test program
- *
+/*
  * Copyright (C) 2013 Red Hat, Inc.
  */
 

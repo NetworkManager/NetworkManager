@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-lndp-ndisc.c - Router discovery implementation using libndp
- *
+/*
  * Copyright (C) 2013 Red Hat, Inc.
  */
 

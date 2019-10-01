@@ -3,6 +3,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  * Author: Pavel Šimerda <psimerda@redhat.com>
  */
+
 #include "nm-default.h"
 
 #include "nm-dns-unbound.h"

@@ -3,11 +3,10 @@
 --
 -- Copyright 2015 Red Hat, Inc.
 --
---
+
 -- Script for importing/converting OpenConnect VPN configuration files for NetworkManager
 -- In general, the implementation follows the logic of import() from
 -- https://git.gnome.org/browse/network-manager-openconnect/tree/properties/nm-openconnect.c
---
 
 ----------------------
 -- Helper functions --

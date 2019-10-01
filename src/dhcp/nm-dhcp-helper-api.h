@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager -- Network link manager
- *
+/*
  * (C) Copyright 2016 Red Hat, Inc.
  */
 

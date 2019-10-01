@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-dhcp-dhclient.c - dhclient specific hooks for NetworkManager
- *
+/*
  * Copyright (C) 2005 - 2012 Red Hat, Inc.
  */
 

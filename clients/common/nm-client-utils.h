@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nmcli - command-line tool to control NetworkManager
- *
+/*
  * Copyright 2010 - 2017 Red Hat, Inc.
  */
 

@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2006 - 2008 Novell, Inc.
  * Copyright (C) 2008 - 2014 Red Hat, Inc.
- *
  */
 
 /*

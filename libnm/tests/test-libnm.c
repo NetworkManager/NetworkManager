@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT SC WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
  * Copyright 2017 Red Hat, Inc.
  */
 

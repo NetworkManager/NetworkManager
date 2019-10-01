@@ -3,11 +3,10 @@
 --
 -- Copyright 2015 Red Hat, Inc.
 --
---
+
 -- Script for importing/converting Cisco VPN configuration files (.pcf) to NetworkManager
 -- In general, the implementation follows the logic of import() from
 -- https://git.gnome.org/browse/network-manager-vpnc/tree/properties/nm-vpnc.c
---
 
 ----------------------
 -- Helper functions --

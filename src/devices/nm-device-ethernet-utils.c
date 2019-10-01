@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* (C) Copyright 2011 Red Hat, Inc.
+/*
+ * (C) Copyright 2011 Red Hat, Inc.
  */
 
 #include "nm-default.h"

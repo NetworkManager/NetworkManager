@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-dhcp-dhcpcanon.c - dhcpcanon specific hooks for NetworkManager
- *
+/*
  * Copyright (C) 2017 juga <juga at riseup dot net>
  */
 
