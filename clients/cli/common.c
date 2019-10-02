@@ -1187,7 +1187,7 @@ command_done (GObject *object, GAsyncResult *res, gpointer user_data)
 {
 	GTask *task = G_TASK (res);
 	NmCli *nmc = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	if (!g_task_propagate_boolean (task, &error)) {
 		nmc->return_value = error->code;
