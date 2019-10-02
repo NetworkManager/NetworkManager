@@ -10,6 +10,7 @@
 
 #include <libudev.h>
 
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-utils.h"
 #include "nm-manager.h"
 #include "nm-dns-manager.h"
@@ -1496,22 +1497,6 @@ nm_client_deactivate_connection (NMClient *client,
 	                                       error);
 }
 
-static void
-deactivated_cb (GObject *object,
-                GAsyncResult *result,
-                gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_manager_deactivate_connection_finish (NM_MANAGER (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 /**
  * nm_client_deactivate_connection_async:
  * @client: a #NMClient
@@ -1529,26 +1514,27 @@ nm_client_deactivate_connection_async (NMClient *client,
                                        GAsyncReadyCallback callback,
                                        gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
+	const char *active_path;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_deactivate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	active_path = nm_object_get_path (NM_OBJECT (active));
+	g_return_if_fail (active_path);
 
-	if (!_nm_client_check_nm_running (client, NULL)) {
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	nm_manager_deactivate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                        active,
-	                                        cancellable, deactivated_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_deactivate_connection_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "DeactivateConnection",
+	                      g_variant_new ("(o)", active_path),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -1566,16 +1552,10 @@ nm_client_deactivate_connection_finish (NMClient *client,
                                         GAsyncResult *result,
                                         GError **error)
 {
-	GSimpleAsyncResult *simple;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_deactivate_connection_async), FALSE);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /*****************************************************************************/

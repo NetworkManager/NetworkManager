@@ -180,15 +180,6 @@ NMActiveConnection *nm_manager_add_and_activate_connection_finish (NMManager *ma
                                                                    GVariant **out_result,
                                                                    GError **error);
 
-void     nm_manager_deactivate_connection_async  (NMManager *manager,
-                                                  NMActiveConnection *active,
-                                                  GCancellable *cancellable,
-                                                  GAsyncReadyCallback callback,
-                                                  gpointer user_data);
-gboolean nm_manager_deactivate_connection_finish (NMManager *manager,
-                                                  GAsyncResult *result,
-                                                  GError **error);
-
 const GPtrArray *nm_manager_get_checkpoints (NMManager *manager);
 void nm_manager_checkpoint_create (NMManager *manager,
                                    const GPtrArray *devices,

@@ -1271,66 +1271,6 @@ checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
 		checkpoint_info_complete (manager, info, checkpoint, NULL);
 }
 
-static void
-deactivated_cb (GObject *object,
-                GAsyncResult *result,
-                gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_deactivate_connection_finish (NMDBUS_MANAGER (object),
-	                                                      result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-void
-nm_manager_deactivate_connection_async (NMManager *manager,
-                                        NMActiveConnection *active,
-                                        GCancellable *cancellable,
-                                        GAsyncReadyCallback callback,
-                                        gpointer user_data)
-{
-	const char *path;
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_deactivate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	path = nm_object_get_path (NM_OBJECT (active));
-	nmdbus_manager_call_deactivate_connection (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                           path,
-	                                           cancellable,
-	                                           deactivated_cb, simple);
-}
-
-gboolean
-nm_manager_deactivate_connection_finish (NMManager *manager,
-                                         GAsyncResult *result,
-                                         GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_deactivate_connection_async), FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
 /*****************************************************************************/
 
 static void
