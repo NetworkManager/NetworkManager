@@ -15,6 +15,12 @@ if printf '%s' "$HEAD" | grep -q '\.\.'; then
 else
     BASE_REF="refs/remotes/origin/"
 
+    if [ "$NM_CHECKPATCH_FETCH_UPSTREAM" == 1 ]; then
+        git remote add nm-upstream https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
+        git fetch nm-upstream || die "failure to fetch from https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"
+        BASE_REF="refs/remotes/nm-upstream/"
+    fi
+
     # the argument is only a single ref (or the default "HEAD").
     # Find all commits that branch off one of the stable branches or master
     # and lead to $HEAD. These are the commits of the feature branch.
