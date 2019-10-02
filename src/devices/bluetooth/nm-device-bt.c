@@ -550,6 +550,9 @@ ip_ifindex_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 
+	if (!nm_device_is_activating (device))
+		return;
+
 	if (!nm_device_set_ip_ifindex (device,
 	                               nm_modem_get_ip_ifindex (modem))) {
 		nm_device_state_changed (device,
