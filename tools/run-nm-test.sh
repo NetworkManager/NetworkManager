@@ -230,8 +230,8 @@ fi
 
 if ! _is_true "$NMTST_USE_VALGRIND" 0; then
     export NM_TEST_UNDER_VALGRIND=0
-    "${NMTST_DBUS_RUN_SESSION[@]}" \
-    exec "$TEST" "$@"
+    exec "${NMTST_DBUS_RUN_SESSION[@]}" \
+    "$TEST" "$@"
 fi
 
 if [[ -z "${NMTST_VALGRIND}" ]]; then
