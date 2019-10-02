@@ -978,70 +978,60 @@ init_common (NMSecretAgentOld *self)
 	                  G_CALLBACK (name_owner_changed), self);
 }
 
-typedef struct {
-	NMSecretAgentOld *self;
-	GCancellable *cancellable;
-	GSimpleAsyncResult *simple;
-} InitData;
-
-static void
-init_async_complete (InitData *init_data, GError *error)
-{
-	if (!error)
-		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
-	else
-		g_simple_async_result_take_error (init_data->simple, error);
-
-	g_simple_async_result_complete_in_idle (init_data->simple);
-
-	g_object_unref (init_data->simple);
-	g_clear_object (&init_data->cancellable);
-	g_slice_free (InitData, init_data);
-}
-
 static void
 init_async_registered (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (object);
-	InitData *init_data = user_data;
+	gs_unref_object GTask *task = user_data;
+	NMSecretAgentOld *self = g_task_get_source_object (task);
 	GError *error = NULL;
 
 	nm_secret_agent_old_register_finish (self, result, &error);
-	init_async_complete (init_data, error);
+
+	if (error)
+		g_task_return_error (task, error);
+	else
+		g_task_return_boolean (task, TRUE);
 }
 
 static void
 init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	InitData *init_data = user_data;
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
+	gs_unref_object GTask *task = user_data;
+	NMSecretAgentOld *self = g_task_get_source_object (task);
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GError *error = NULL;
 
 	priv->manager_proxy = nmdbus_agent_manager_proxy_new_finish (result, &error);
 	if (!priv->manager_proxy) {
-		init_async_complete (init_data, error);
+		g_task_return_error (task, error);
 		return;
 	}
 
-	init_common (init_data->self);
+	init_common (self);
 
-	if (priv->auto_register) {
-		nm_secret_agent_old_register_async (init_data->self, init_data->cancellable,
-		                                    init_async_registered, init_data);
-	} else
-		init_async_complete (init_data, NULL);
+	if (!priv->auto_register) {
+		g_task_return_boolean (task, TRUE);
+		return;
+	}
+
+	nm_secret_agent_old_register_async (self,
+	                                    g_task_get_cancellable (task),
+	                                    init_async_registered,
+	                                    task);
+	g_steal_pointer (&task);
 }
 
 static void
 init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 {
-	InitData *init_data = user_data;
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (init_data->self);
+	gs_unref_object GTask *task = user_data;
+	NMSecretAgentOld *self = g_task_get_source_object (task);
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GError *error = NULL;
 
 	priv->bus = g_bus_get_finish (result, &error);
 	if (!priv->bus) {
-		init_async_complete (init_data, error);
+		g_task_return_error (task, error);
 		return;
 	}
 
@@ -1050,8 +1040,10 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	                                | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                                NM_DBUS_SERVICE,
 	                                NM_DBUS_PATH_AGENT_MANAGER,
-	                                init_data->cancellable,
-	                                init_async_got_proxy, init_data);
+	                                g_task_get_cancellable (task),
+	                                init_async_got_proxy,
+	                                task);
+	g_steal_pointer (&task);
 }
 
 /*****************************************************************************/
@@ -1164,37 +1156,15 @@ init_async (GAsyncInitable *initable, int io_priority,
             GCancellable *cancellable, GAsyncReadyCallback callback,
             gpointer user_data)
 {
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	InitData *init_data;
+	GTask *task;
 
-	init_data = g_slice_new (InitData);
-	*init_data = (InitData) {
-		.self = self,
-		.cancellable = nm_g_object_ref (cancellable),
-		.simple = g_simple_async_result_new (G_OBJECT (initable),
-		                                     callback,
-		                                     user_data,
-		                                     init_async),
-	};
-
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
+	task = g_task_new (initable, cancellable, callback, user_data);
+	g_task_set_priority (task, io_priority);
 
 	g_bus_get (_nm_dbus_bus_type (),
 	           cancellable,
 	           init_async_got_bus,
-	           init_data);
-}
-
-static gboolean
-init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
-{
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return TRUE;
+	           task);
 }
 
 static void
@@ -1320,5 +1290,5 @@ static void
 nm_secret_agent_old_async_initable_iface_init (GAsyncInitableIface *iface)
 {
 	iface->init_async = init_async;
-	iface->init_finish = init_finish;
+	/* Use default implementation for init_finish */
 }

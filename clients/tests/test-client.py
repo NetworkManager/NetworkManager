@@ -425,15 +425,29 @@ class AsyncProcess():
 
         self.start()
 
-        Util.popen_wait(self._p, 2000)
+        error = False
+        try:
+            Util.popen_wait(self._p, 2000)
+        except Exception as e:
+            error = True
+            raise e
+        finally:
+            (returncode, stdout, stderr) = (self._p.returncode,
+                                            self._p.stdout.read(),
+                                            self._p.stderr.read())
 
-        (returncode, stdout, stderr) = (self._p.returncode, self._p.stdout.read(), self._p.stderr.read())
+            self._p.stdout.close()
+            self._p.stderr.close()
+            self._p = None
 
-        self._p.stdout.close()
-        self._p.stderr.close()
-        self._p = None
+            if error:
+                print(stdout)
+                print(stderr)
 
-        self._complete_cb(self, returncode, stdout, stderr)
+        try:
+            self._complete_cb(self, returncode, stdout, stderr)
+        except Exception as e:
+            raise e
 
 ###############################################################################
 
