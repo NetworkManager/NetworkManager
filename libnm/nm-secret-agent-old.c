@@ -1014,9 +1014,10 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 		return;
 	}
 
-	nm_secret_agent_old_register_async (self, g_task_get_cancellable (task),
-																			init_async_registered,
-																			g_object_ref (task));
+	nm_secret_agent_old_register_async (self,
+	                                    g_task_get_cancellable (task),
+	                                    init_async_registered,
+	                                    g_object_ref (task));
 }
 
 static void
