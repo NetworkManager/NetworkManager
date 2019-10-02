@@ -1017,7 +1017,8 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 	nm_secret_agent_old_register_async (self,
 	                                    g_task_get_cancellable (task),
 	                                    init_async_registered,
-	                                    g_object_ref (task));
+	                                    task);
+	g_steal_pointer (&task);
 }
 
 static void
@@ -1041,7 +1042,8 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	                                NM_DBUS_PATH_AGENT_MANAGER,
 	                                g_task_get_cancellable (task),
 	                                init_async_got_proxy,
-	                                g_object_ref (task));
+	                                task);
+	g_steal_pointer (&task);
 }
 
 /*****************************************************************************/
