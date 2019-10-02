@@ -292,6 +292,7 @@ NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
 NMConnectivityState nm_client_get_connectivity          (NMClient *client);
 
 _NM_DEPRECATED_SYNC_METHOD
+NM_DEPRECATED_IN_1_22
 NMConnectivityState nm_client_check_connectivity        (NMClient *client,
                                                          GCancellable *cancellable,
                                                          GError **error);
