@@ -329,8 +329,6 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 
 		if (netmask)
 			nm_ip_address_unref (netmask);
-		if (gateway)
-			nm_ip_address_unref (gateway);
 	}
 
 	if (!ipaddr) {
@@ -377,6 +375,8 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 
 	if (ipaddr)
 		nm_ip_address_unref (ipaddr);
+	if (gateway)
+		nm_ip_address_unref (gateway);
 
 	if (duplex || speed || hwaddr || local_hwaddr) {
 		s_wired = nm_setting_wired_new ();
