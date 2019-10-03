@@ -3021,15 +3021,15 @@ concheck_cb (NMConnectivity *connectivity,
 
 	self_keep_alive = g_object_ref (self);
 
+	/* keep @self alive, while we invoke callbacks. */
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	_LOGT (LOGD_CONCHECK, "connectivity: [Ipv%c] complete check (seq:%llu, state:%s)",
 	       nm_utils_addr_family_to_char (handle->addr_family),
 	       (long long unsigned) handle->seq,
 	       nm_connectivity_state_to_string (state));
 
-	/* keep @self alive, while we invoke callbacks. */
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	nm_assert (!handle || c_list_contains (&priv->concheck_lst_head, &handle->concheck_lst));
+	nm_assert (handle && c_list_contains (&priv->concheck_lst_head, &handle->concheck_lst));
 
 	seq = handle->seq;
 
