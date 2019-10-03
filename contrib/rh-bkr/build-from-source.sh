@@ -4,8 +4,7 @@ set -exv
 
 BUILD_DIR="${BUILD_DIR:-$HOME/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
-BUILD_REPO="${BUILD_REPO-https://github.com/NetworkManager/NetworkManager.git}"
-BUILD_REPO2="${BUILD_REPO2-git://github.com/NetworkManager/NetworkManager.git}"
+BUILD_REPO="${BUILD_REPO}"
 BUILD_SNAPSHOT="${BUILD_SNAPSHOT:-}"
 ARCH="${ARCH:-`arch`}"
 WITH_DEBUG="$WITH_DEBUG"
@@ -92,27 +91,61 @@ fi
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-rm -rf "./NetworkManager"
-
-if ! timeout 10m git clone "$BUILD_REPO"; then
-    git clone "$BUILD_REPO2"
+BUILD_REPO_GITLAB="https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"
+BUILD_REPO_GITHUB="https://github.com/NetworkManager/NetworkManager.git"
+if [ -z "$BUILD_REPO" ]; then
+    BUILD_REPO="$BUILD_REPO_GITLAB"
 fi
 
+rm -rf "./NetworkManager"
+mkdir "./NetworkManager/"
 cd "./NetworkManager/"
+git init .
 
-# enable randomization for unit-tests.
-export NMTST_SEED_RAND=
+git-setup-remote() {
+    local REMOTE="$1"
+    local MY_BUILD_REPO="$2"
 
-# if we fetch from a github repository, we also care about the refs to the pull-requests
-# fetch them too.
-git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
-git config --add remote.origin.fetch '+refs/tags/*:refs/nmbuild-origin/tags/*'
-git config --add remote.origin.fetch '+refs/pull/*:refs/nmbuild-origin/pull/*'
+    git remote add "$REMOTE" "$MY_BUILD_REPO"
+
+    git config remote."$REMOTE".tagOpt --no-tags
+    git config --unset-all remote."$REMOTE".fetch
+    git config --add remote."$REMOTE".fetch "+refs/heads/*:refs/remotes/$REMOTE/*"
+    git config --add remote."$REMOTE".fetch "+refs/heads/*:refs/nmbuild-$REMOTE/heads/*"
+    git config --add remote."$REMOTE".fetch "+refs/tags/*:refs/nmbuild-$REMOTE/tags/*"
+
+    if [ "$REMOTE" == origin ]; then
+        git config --add remote."$REMOTE".fetch '+refs/heads/*:refs/heads/*'
+        git config --add remote."$REMOTE".fetch "+refs/tags/*:refs/tags/*"
+    fi
+    if [ "$MY_BUILD_REPO" == "$BUILD_REPO_GITHUB" ]; then
+        git config --add remote."$REMOTE".fetch "+refs/pull/*/head:refs/remotes/$REMOTE/pr/*"
+    fi
+    if [ "$MY_BUILD_REPO" == "$BUILD_REPO_GITLAB" ]; then
+        git config --add remote."$REMOTE".fetch "+refs/merge-requests/*/head:refs/remotes/$REMOTE/pr/*"
+    fi
+}
+
+git-setup-remote origin "$BUILD_REPO"
+git-setup-remote github "$BUILD_REPO_GITHUB"
+if [ "$BUILD_REPO" != "$BUILD_REPO_GITLAB" ]; then
+    git-setup-remote gitlab "$BUILD_REPO_GITLAB"
+fi
+
+git -c user.email=bogus@nowhere.com -c user.name="Nobody Unperson" commit --allow-empty -m dummy-commit
 git checkout HEAD^{}
-git fetch origin --prune
+
+git fetch github
+git fetch --all
+
+git show-ref
+
 git checkout -B nmbuild "$BUILD_ID"
 
 echo "HEAD is $(git rev-parse HEAD)"
+
+# enable randomization for unit-tests.
+export NMTST_SEED_RAND=
 
 if [[ "$DO_TEST_BUILD" == yes ]]; then
     NOCONFIGURE=yes ./autogen.sh
