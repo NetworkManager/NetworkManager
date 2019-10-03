@@ -155,30 +155,11 @@ const GPtrArray *nm_manager_get_active_connections (NMManager *manager);
 NMActiveConnection *nm_manager_get_primary_connection (NMManager *manager);
 NMActiveConnection *nm_manager_get_activating_connection (NMManager *manager);
 
-void                nm_manager_activate_connection_async  (NMManager *manager,
-                                                           NMConnection *connection,
-                                                           NMDevice *device,
-                                                           const char *specific_object,
-                                                           GCancellable *cancellable,
-                                                           GAsyncReadyCallback callback,
-                                                           gpointer user_data);
-NMActiveConnection *nm_manager_activate_connection_finish (NMManager *manager,
-                                                           GAsyncResult *result,
-                                                           GError **error);
-
-void                nm_manager_add_and_activate_connection_async  (NMManager *manager,
-                                                                   NMConnection *partial,
-                                                                   NMDevice *device,
-                                                                   const char *specific_object,
-                                                                   GVariant *options,
-                                                                   gboolean force_v2,
-                                                                   GCancellable *cancellable,
-                                                                   GAsyncReadyCallback callback,
-                                                                   gpointer user_data);
-NMActiveConnection *nm_manager_add_and_activate_connection_finish (NMManager *manager,
-                                                                   GAsyncResult *result,
-                                                                   GVariant **out_result,
-                                                                   GError **error);
+void nm_manager_wait_for_active_connection (NMManager *self,
+                                            const char *active_path,
+                                            const char *connection_path,
+                                            GVariant *add_and_activate_output_take,
+                                            GTask *task_take);
 
 const GPtrArray *nm_manager_get_checkpoints (NMManager *manager);
 void nm_manager_checkpoint_create (NMManager *manager,
@@ -228,6 +209,9 @@ _NMActivateResult *_nm_activate_result_new (NMActiveConnection *active,
                                             GVariant *add_and_activate_output);
 
 void _nm_activate_result_free (_NMActivateResult *result);
+
+NM_AUTO_DEFINE_FCN0 (_NMActivateResult *, _nm_auto_free_activate_result, _nm_activate_result_free)
+#define nm_auto_free_activate_result nm_auto(_nm_auto_free_activate_result)
 
 /*****************************************************************************/
 
