@@ -13,6 +13,7 @@
 
 #include "nm-object.h"
 #include "nm-client.h"
+#include "nm-libnm-utils.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -25,16 +26,26 @@
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_STARTUP "startup"
 #define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
+
+_NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
-#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+
+_NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL
 #define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
-#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
+
+_NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL
 #define NM_MANAGER_WIMAX_ENABLED "wimax-enabled"
+
+#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
 #define NM_MANAGER_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 #define NM_MANAGER_CONNECTIVITY "connectivity"
 #define NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE "connectivity-check-available"
+
+_NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL
 #define NM_MANAGER_CONNECTIVITY_CHECK_ENABLED "connectivity-check-enabled"
+
 #define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
@@ -71,12 +82,17 @@ NMState   nm_manager_get_state            (NMManager *manager);
 gboolean  nm_manager_get_startup          (NMManager *manager);
 
 gboolean  nm_manager_networking_get_enabled (NMManager *manager);
+
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 gboolean  nm_manager_networking_set_enabled (NMManager *manager,
                                              gboolean enabled,
                                              GError **error);
 
 gboolean  nm_manager_wireless_get_enabled (NMManager *manager);
+
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 void      nm_manager_wireless_set_enabled (NMManager *manager, gboolean enabled);
+
 gboolean  nm_manager_wireless_hardware_get_enabled (NMManager *manager);
 
 gboolean  nm_manager_wwan_get_enabled (NMManager *manager);
@@ -110,6 +126,7 @@ NMClientPermissionResult nm_manager_get_permission_result (NMManager *manager,
 
 NMConnectivityState nm_manager_get_connectivity          (NMManager *manager);
 
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 NMConnectivityState nm_manager_check_connectivity        (NMManager *manager,
                                                           GCancellable *cancellable,
                                                           GError **error);
@@ -160,6 +177,7 @@ NMActiveConnection *nm_manager_add_and_activate_connection_finish (NMManager *ma
                                                                    GVariant **out_result,
                                                                    GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 gboolean nm_manager_deactivate_connection        (NMManager *manager,
                                                   NMActiveConnection *active,
                                                   GCancellable *cancellable,
