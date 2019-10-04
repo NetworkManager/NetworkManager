@@ -34,7 +34,50 @@ GDBusObjectManager *_nm_object_get_dbus_object_manager (NMObject *object);
 
 GQuark _nm_object_obj_nm_quark (void);
 
-/* DBus property accessors */
+GDBusConnection *_nm_object_get_dbus_connection (gpointer self);
+
+const char *_nm_object_get_dbus_name_owner (gpointer self);
+
+GDBusConnection *_nm_client_get_dbus_connection (NMClient *client);
+
+const char *_nm_client_get_dbus_name_owner (NMClient *client);
+
+void _nm_object_dbus_call (gpointer self,
+                           gpointer source_tag,
+                           GCancellable *cancellable,
+                           GAsyncReadyCallback user_callback,
+                           gpointer user_callback_data,
+                           const char *object_path,
+                           const char *interface_name,
+                           const char *method_name,
+                           GVariant *parameters,
+                           const GVariantType *reply_type,
+                           GDBusCallFlags flags,
+                           int timeout_msec,
+                           GAsyncReadyCallback internal_callback);
+
+GVariant *_nm_object_dbus_call_sync (gpointer self,
+                                     GCancellable *cancellable,
+                                     const char *object_path,
+                                     const char *interface_name,
+                                     const char *method_name,
+                                     GVariant *parameters,
+                                     const GVariantType *reply_type,
+                                     GDBusCallFlags flags,
+                                     int timeout_msec,
+                                     gboolean strip_dbus_error,
+                                     GError **error);
+
+gboolean _nm_object_dbus_call_sync_void (gpointer self,
+                                         GCancellable *cancellable,
+                                         const char *object_path,
+                                         const char *interface_name,
+                                         const char *method_name,
+                                         GVariant *parameters,
+                                         GDBusCallFlags flags,
+                                         int timeout_msec,
+                                         gboolean strip_dbus_error,
+                                         GError **error);
 
 void _nm_object_set_property (NMObject *object,
                               const char *interface,
@@ -44,6 +87,9 @@ void _nm_object_set_property (NMObject *object,
 
 GDBusProxy *_nm_object_get_proxy (NMObject   *object,
                                   const char *interface);
+
+GError *_nm_object_new_error_nm_not_running (void);
+void _nm_object_set_error_nm_not_running (GError **error);
 
 struct udev;
 void _nm_device_set_udev (NMDevice *device, struct udev *udev);

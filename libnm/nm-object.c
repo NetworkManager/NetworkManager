@@ -69,6 +69,8 @@ typedef struct {
 
 	CList pending;          /* ordered list of pending property updates. */
 	GPtrArray *proxies;
+
+	char *name_owner_cached;
 } NMObjectPrivate;
 
 enum {
@@ -126,6 +128,211 @@ _nm_object_get_proxy (NMObject   *object,
 
 	return G_DBUS_PROXY (proxy);
 }
+
+/*****************************************************************************/
+
+GDBusConnection *
+_nm_object_get_dbus_connection (gpointer self)
+{
+	NMObjectPrivate *priv;
+
+	nm_assert (NM_IS_OBJECT (self));
+
+	priv = NM_OBJECT_GET_PRIVATE (self);
+
+	return g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+}
+
+const char *
+_nm_object_get_dbus_name_owner (gpointer self)
+{
+	NMObjectPrivate *priv;
+
+	nm_assert (NM_IS_OBJECT (self));
+
+	priv = NM_OBJECT_GET_PRIVATE (self);
+
+	nm_clear_g_free (&priv->name_owner_cached);
+	priv->name_owner_cached = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+	return priv->name_owner_cached;
+}
+
+static gboolean
+_get_dbus_params (gpointer self,
+                  GDBusConnection **out_dbus_connection,
+                  const char **out_name_owner)
+{
+	const char *name_owner;
+	GDBusConnection *dbus_connection = NULL;
+
+	if (NM_IS_OBJECT (self)) {
+		name_owner = _nm_object_get_dbus_name_owner (self);
+		if (name_owner)
+			dbus_connection = _nm_object_get_dbus_connection (self);
+	} else {
+		nm_assert (NM_IS_CLIENT (self));
+		name_owner = _nm_client_get_dbus_name_owner (self);
+		if (name_owner)
+			dbus_connection = _nm_client_get_dbus_connection (self);
+	}
+
+	*out_dbus_connection = dbus_connection;
+	*out_name_owner = name_owner;
+	return !!name_owner;
+}
+
+void
+_nm_object_dbus_call (gpointer self,
+                      gpointer source_tag,
+                      GCancellable *cancellable,
+                      GAsyncReadyCallback user_callback,
+                      gpointer user_callback_data,
+                      const char *object_path,
+                      const char *interface_name,
+                      const char *method_name,
+                      GVariant *parameters,
+                      const GVariantType *reply_type,
+                      GDBusCallFlags flags,
+                      int timeout_msec,
+                      GAsyncReadyCallback internal_callback)
+{
+	gs_unref_object GTask *task = NULL;
+	const char *name_owner;
+	GDBusConnection *dbus_connection;
+
+	nm_assert (G_IS_OBJECT (self));
+	nm_assert (source_tag);
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (internal_callback);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	task = nm_g_task_new (self, cancellable, source_tag, user_callback, user_callback_data);
+
+	if (!_get_dbus_params (self, &dbus_connection, &name_owner)) {
+		nm_g_variant_unref_floating (parameters);
+		g_task_return_error (task, _nm_object_new_error_nm_not_running ());
+		return;
+	}
+
+	g_dbus_connection_call (dbus_connection,
+	                        name_owner,
+	                        object_path,
+	                        interface_name,
+	                        method_name,
+	                        parameters,
+	                        reply_type,
+	                        flags,
+	                        timeout_msec,
+	                        cancellable,
+	                        internal_callback,
+	                        g_steal_pointer (&task));
+}
+
+GVariant *
+_nm_object_dbus_call_sync (gpointer self,
+                           GCancellable *cancellable,
+                           const char *object_path,
+                           const char *interface_name,
+                           const char *method_name,
+                           GVariant *parameters,
+                           const GVariantType *reply_type,
+                           GDBusCallFlags flags,
+                           int timeout_msec,
+                           gboolean strip_dbus_error,
+                           GError **error)
+{
+	gs_unref_variant GVariant *ret = NULL;
+	GDBusConnection *dbus_connection;
+	const char *name_owner;
+
+	nm_assert (G_IS_OBJECT (self));
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (!error || !*error);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	if (!_get_dbus_params (self, &dbus_connection, &name_owner)) {
+		nm_g_variant_unref_floating (parameters);
+		_nm_object_set_error_nm_not_running (error);
+		return NULL;
+	}
+
+	ret = g_dbus_connection_call_sync (dbus_connection,
+	                                   name_owner,
+	                                   object_path,
+	                                   interface_name,
+	                                   method_name,
+	                                   parameters,
+	                                   reply_type,
+	                                   flags,
+	                                   timeout_msec,
+	                                   cancellable,
+	                                   error);
+	if (!ret) {
+		if (error && strip_dbus_error)
+			g_dbus_error_strip_remote_error (*error);
+		return NULL;
+	}
+
+	return g_steal_pointer (&ret);
+}
+
+gboolean
+_nm_object_dbus_call_sync_void (gpointer self,
+                                GCancellable *cancellable,
+                                const char *object_path,
+                                const char *interface_name,
+                                const char *method_name,
+                                GVariant *parameters,
+                                GDBusCallFlags flags,
+                                int timeout_msec,
+                                gboolean strip_dbus_error,
+                                GError **error)
+{
+	gs_unref_variant GVariant *ret = NULL;
+
+	ret = _nm_object_dbus_call_sync (self,
+	                                 cancellable,
+	                                 object_path,
+	                                 interface_name,
+	                                 method_name,
+	                                 parameters,
+	                                 G_VARIANT_TYPE ("()"),
+	                                 flags,
+	                                 timeout_msec,
+	                                 strip_dbus_error,
+	                                 error);
+	return !!ret;
+}
+
+/*****************************************************************************/
+
+GError *
+_nm_object_new_error_nm_not_running (void)
+{
+	return g_error_new_literal (NM_CLIENT_ERROR,
+	                            NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+	                            "NetworkManager is not running");
+}
+
+void
+_nm_object_set_error_nm_not_running (GError **error)
+{
+	if (error) {
+		if (*error)
+			g_return_if_reached ();
+		*error = _nm_object_new_error_nm_not_running ();
+	}
+}
+
+/*****************************************************************************/
 
 typedef enum {
 	NOTIFY_SIGNAL_PENDING_NONE,
@@ -1250,6 +1457,8 @@ finalize (GObject *object)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	g_slist_free_full (priv->property_tables, (GDestroyNotify) g_hash_table_destroy);
+
+	g_free (priv->name_owner_cached);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
 }

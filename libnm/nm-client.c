@@ -100,6 +100,7 @@ typedef struct {
 	NMDnsManager *dns_manager;
 	GDBusObjectManager *object_manager;
 	GCancellable *new_object_manager_cancellable;
+	char *name_owner_cached;
 	struct udev *udev;
 	bool udev_inited:1;
 } NMClientPrivate;
@@ -168,6 +169,41 @@ NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 
 /*****************************************************************************/
 
+GDBusConnection *
+_nm_client_get_dbus_connection (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	nm_assert (NM_IS_CLIENT (client));
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!priv->object_manager)
+		return NULL;
+
+	return g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+}
+
+const char *
+_nm_client_get_dbus_name_owner (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	nm_assert (NM_IS_CLIENT (client));
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	nm_clear_g_free (&priv->name_owner_cached);
+
+	if (!priv->object_manager)
+		return NULL;
+
+	priv->name_owner_cached = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+	return priv->name_owner_cached;
+}
+
+/*****************************************************************************/
+
 static void
 nm_client_init (NMClient *client)
 {
@@ -176,15 +212,11 @@ nm_client_init (NMClient *client)
 static gboolean
 _nm_client_check_nm_running (NMClient *client, GError **error)
 {
-	if (nm_client_get_nm_running (client))
-		return TRUE;
-	else {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
+	if (!nm_client_get_nm_running (client)) {
+		_nm_object_set_error_nm_not_running (error);
 		return FALSE;
 	}
+	return TRUE;
 }
 
 /**
@@ -3468,6 +3500,8 @@ dispose (GObject *object)
 		udev_unref (priv->udev);
 		priv->udev = NULL;
 	}
+
+	nm_clear_g_free (&priv->name_owner_cached);
 }
 
 static void
