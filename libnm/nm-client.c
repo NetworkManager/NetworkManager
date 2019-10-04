@@ -622,8 +622,13 @@ nm_client_connectivity_check_get_uri (NMClient *client)
  * Deprecated: 1.22, use nm_client_get_logging_async() or GDBusConnection
  **/
 gboolean
-nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
+nm_client_get_logging (NMClient *client,
+                       char **level,
+                       char **domains,
+                       GError **error)
 {
+	gs_unref_variant GVariant *ret = NULL;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
@@ -631,11 +636,25 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
 
 	/* FIXME(libnm-async-api): add nm_client_get_logging_async(). */
 
-	if (!_nm_client_check_nm_running (client, error))
+	ret = _nm_object_dbus_call_sync (client,
+	                                 NULL,
+	                                 NM_DBUS_PATH,
+	                                 NM_DBUS_INTERFACE,
+	                                 "GetLogging",
+	                                 g_variant_new ("()"),
+	                                 G_VARIANT_TYPE ("(ss)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
 		return FALSE;
 
-	return nm_manager_get_logging (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                               level, domains, error);
+	g_variant_get (ret,
+	               "(ss)",
+	               level,
+	               domains);
+	return TRUE;
 }
 
 /**
@@ -660,11 +679,18 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 
 	/* FIXME(libnm-async-api): add nm_client_set_logging_async(). */
 
-	if (!_nm_client_check_nm_running (client, error))
-		return FALSE;
-
-	return nm_manager_set_logging (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                               level, domains, error);
+	return _nm_object_dbus_call_sync_void (client,
+	                                       NULL,
+	                                       NM_DBUS_PATH,
+	                                       NM_DBUS_INTERFACE,
+	                                       "SetLogging",
+	                                       g_variant_new ("(ss)",
+	                                                      level ?: "",
+	                                                      domains ?: ""),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 /**

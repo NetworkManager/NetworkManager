@@ -113,18 +113,6 @@ void      nm_manager_connectivity_check_set_enabled (NMManager *manager,
 
 const char *nm_manager_connectivity_check_get_uri (NMManager *manager);
 
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean nm_manager_get_logging (NMManager *manager,
-                                 char **level,
-                                 char **domains,
-                                 GError **error);
-
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean nm_manager_set_logging (NMManager *manager,
-                                 const char *level,
-                                 const char *domains,
-                                 GError **error);
-
 NMClientPermissionResult nm_manager_get_permission_result (NMManager *manager,
                                                            NMClientPermission permission);
 

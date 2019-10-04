@@ -609,51 +609,6 @@ nm_manager_connectivity_check_get_uri (NMManager *manager)
 	return nmdbus_manager_get_connectivity_check_uri (NM_MANAGER_GET_PRIVATE (manager)->proxy);
 }
 
-gboolean
-nm_manager_get_logging (NMManager *manager, char **level, char **domains, GError **error)
-{
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
-	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!level && !domains)
-		return TRUE;
-
-	ret = nmdbus_manager_call_get_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                            level, domains,
-	                                            NULL, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
-gboolean
-nm_manager_set_logging (NMManager *manager, const char *level, const char *domains, GError **error)
-{
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!level && !domains)
-		return TRUE;
-
-	if (!level)
-		level = "";
-	if (!domains)
-		domains = "";
-
-	ret = nmdbus_manager_call_set_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                            level, domains,
-	                                            NULL, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
 NMClientPermissionResult
 nm_manager_get_permission_result (NMManager *manager, NMClientPermission permission)
 {
