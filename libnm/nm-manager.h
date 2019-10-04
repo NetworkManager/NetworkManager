@@ -118,10 +118,9 @@ NMClientPermissionResult nm_manager_get_permission_result (NMManager *manager,
 
 NMConnectivityState nm_manager_get_connectivity          (NMManager *manager);
 
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-NMConnectivityState nm_manager_check_connectivity        (NMManager *manager,
-                                                          GCancellable *cancellable,
-                                                          GError **error);
+void _nm_manager_set_connectivity_hack (NMManager *manager,
+                                        guint32 connectivity);
+
 void                nm_manager_check_connectivity_async  (NMManager *manager,
                                                           GCancellable *cancellable,
                                                           GAsyncReadyCallback callback,

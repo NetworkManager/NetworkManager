@@ -758,13 +758,38 @@ nm_client_check_connectivity (NMClient *client,
                               GCancellable *cancellable,
                               GError **error)
 {
+	gs_unref_variant GVariant *ret = NULL;
+	guint32 connectivity;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
 
-	if (!_nm_client_check_nm_running (client, error))
+	ret = _nm_object_dbus_call_sync (client,
+	                                 cancellable,
+	                                 NM_DBUS_PATH,
+	                                 NM_DBUS_INTERFACE,
+	                                 "CheckConnectivity",
+	                                 g_variant_new ("()"),
+	                                 G_VARIANT_TYPE ("(u)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
 		return NM_CONNECTIVITY_UNKNOWN;
 
-	return nm_manager_check_connectivity (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                      cancellable, error);
+	g_variant_get (ret,
+	               "(u)",
+	               &connectivity);
+
+	/* upon receiving the synchronous response, we hack the NMClient state
+	 * and update the property outside the ordered D-Bus messages (like
+	 * "PropertiesChanged" signals).
+	 *
+	 * This is really ugly, we shouldn't do this. */
+	_nm_manager_set_connectivity_hack (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                                   connectivity);
+
+	return connectivity;
 }
 
 static void

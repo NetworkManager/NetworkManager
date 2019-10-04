@@ -629,30 +629,15 @@ nm_manager_get_connectivity (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->connectivity;
 }
 
-NMConnectivityState
-nm_manager_check_connectivity (NMManager *manager,
-                               GCancellable *cancellable,
-                               GError **error)
+void
+_nm_manager_set_connectivity_hack (NMManager *manager,
+                                   guint32 connectivity)
 {
-	NMManagerPrivate *priv;
-	guint32 connectivity;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_CONNECTIVITY_UNKNOWN);
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (nmdbus_manager_call_check_connectivity_sync (priv->proxy,
-	                                                 &connectivity,
-	                                                 cancellable, error)) {
-		if (connectivity != priv->connectivity) {
-			priv->connectivity = connectivity;
-			g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
-		}
-		return connectivity;
-	}
-	else {
-		if (error && *error)
-			g_dbus_error_strip_remote_error (*error);
-		return NM_CONNECTIVITY_UNKNOWN;
+	if ((NMConnectivityState) connectivity != priv->connectivity) {
+		priv->connectivity = (NMConnectivityState) connectivity;
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
 	}
 }
 
