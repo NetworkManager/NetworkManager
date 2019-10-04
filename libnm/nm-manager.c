@@ -470,18 +470,31 @@ nm_manager_networking_get_enabled (NMManager *manager)
 }
 
 gboolean
-nm_manager_networking_set_enabled (NMManager *manager, gboolean enable, GError **error)
+_nm_manager_networking_set_enabled (GDBusConnection *dbus_connection,
+                                    const char *name_owner,
+                                    gboolean enable,
+                                    GError **error)
 {
-	gboolean ret;
+	gs_unref_variant GVariant *ret = NULL;
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+	ret = g_dbus_connection_call_sync (dbus_connection,
+	                                   name_owner,
+	                                   NM_DBUS_PATH,
+	                                   NM_DBUS_INTERFACE,
+	                                   "Enable",
+	                                   g_variant_new ("(b)", enable),
+	                                   G_VARIANT_TYPE ("()"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                   NULL,
+	                                   error);
+	if (!ret) {
+		if (error)
+			g_dbus_error_strip_remote_error (*error);
+		return FALSE;
+	}
 
-	ret = nmdbus_manager_call_enable_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                       enable,
-	                                       NULL, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
+	return TRUE;
 }
 
 gboolean
@@ -1640,12 +1653,18 @@ set_property (GObject *object, guint prop_id,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
 	gboolean b;
+	const char *name_owner;
 
 	switch (prop_id) {
 	case PROP_NETWORKING_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->networking_enabled != b) {
-			nm_manager_networking_set_enabled (NM_MANAGER (object), b, NULL);
+			if ((name_owner = _nm_object_get_dbus_name_owner (object))) {
+				_nm_manager_networking_set_enabled (_nm_object_get_dbus_connection (object),
+				                                    name_owner,
+				                                    b,
+				                                    NULL);
+			}
 			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;

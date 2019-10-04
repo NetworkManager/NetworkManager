@@ -330,14 +330,22 @@ nm_client_networking_get_enabled (NMClient *client)
 gboolean
 nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
+	const char *name_owner;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	/* FIXME(libnm-async-api): add nm_client_networking_set_enabled_async(). */
-	if (!_nm_client_check_nm_running (client, error))
-		return FALSE;
 
-	return nm_manager_networking_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                          enable, error);
+	name_owner = _nm_client_get_dbus_name_owner (client);
+	if (!name_owner) {
+		_nm_object_set_error_nm_not_running (error);
+		return FALSE;
+	}
+
+	return _nm_manager_networking_set_enabled (_nm_client_get_dbus_connection (client),
+	                                           name_owner,
+	                                           enable,
+	                                           error);
 }
 
 /**

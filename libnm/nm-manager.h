@@ -84,8 +84,9 @@ gboolean  nm_manager_get_startup          (NMManager *manager);
 gboolean  nm_manager_networking_get_enabled (NMManager *manager);
 
 _NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean  nm_manager_networking_set_enabled (NMManager *manager,
-                                             gboolean enabled,
+gboolean _nm_manager_networking_set_enabled (GDBusConnection *dbus_connection,
+                                             const char *name_owner,
+                                             gboolean enable,
                                              GError **error);
 
 gboolean  nm_manager_wireless_get_enabled (NMManager *manager);
