@@ -183,7 +183,7 @@ nm_device_wifi_p2p_start_find (NMDeviceWifiP2P     *device,
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
 
-	task = g_task_new (device, cancellable, callback, user_data);
+	task = nm_g_task_new (device, cancellable, nm_device_wifi_p2p_start_find, callback, user_data);
 
 	if (!options)
 		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
@@ -211,6 +211,9 @@ nm_device_wifi_p2p_start_find_finish (NMDeviceWifiP2P  *device,
                                       GAsyncResult     *result,
                                       GError          **error)
 {
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI_P2P (device), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, device, nm_device_wifi_p2p_start_find), FALSE);
+
 	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
@@ -253,7 +256,7 @@ nm_device_wifi_p2p_stop_find (NMDeviceWifiP2P     *device,
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
 
-	task = g_task_new (device, cancellable, callback, user_data);
+	task = nm_g_task_new (device, cancellable, nm_device_wifi_p2p_stop_find, callback, user_data);
 
 	nmdbus_device_wifi_p2p_call_stop_find (priv->proxy,
 	                                       cancellable,
@@ -278,6 +281,9 @@ nm_device_wifi_p2p_stop_find_finish (NMDeviceWifiP2P  *device,
                                       GAsyncResult     *result,
                                       GError          **error)
 {
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI_P2P (device), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, device, nm_device_wifi_p2p_stop_find), FALSE);
+
 	return g_task_propagate_boolean (G_TASK (result), error);
 }
 

@@ -1296,8 +1296,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 	const NMCCommand *c;
 	gs_unref_object GTask *task = NULL;
 
-	task = g_task_new (NULL, NULL, command_done, nmc);
-	g_task_set_source_tag (task, nmc_do_cmd);
+	task = nm_g_task_new (NULL, NULL, nmc_do_cmd, command_done, nmc);
 	g_task_set_task_data (task, nmc, NULL);
 
 	if (argc == 0 && nmc->complete) {
