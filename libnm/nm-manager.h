@@ -121,14 +121,6 @@ NMConnectivityState nm_manager_get_connectivity          (NMManager *manager);
 void _nm_manager_set_connectivity_hack (NMManager *manager,
                                         guint32 connectivity);
 
-void                nm_manager_check_connectivity_async  (NMManager *manager,
-                                                          GCancellable *cancellable,
-                                                          GAsyncReadyCallback callback,
-                                                          gpointer user_data);
-NMConnectivityState nm_manager_check_connectivity_finish (NMManager *manager,
-                                                          GAsyncResult *result,
-                                                          GError **error);
-
 /* Devices */
 
 const GPtrArray *nm_manager_get_devices    (NMManager *manager);
