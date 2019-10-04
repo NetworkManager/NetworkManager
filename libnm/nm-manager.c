@@ -1496,24 +1496,35 @@ static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMManager *self = NM_MANAGER (initable);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gs_free_error GError *local_error = NULL;
 	gs_unref_variant GVariant *permissions = NULL;
+	const char *name_owner;
 
-	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error)) {
-		/* Never happens. */
+	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error))
 		g_return_val_if_reached (FALSE);
-	}
 
-	if (!nmdbus_manager_call_get_permissions_sync (priv->proxy,
-	                                               &permissions,
-	                                               NULL,
-	                                               &local_error)) {
-		g_dbus_error_strip_remote_error (local_error);
-		g_warning ("Unable to get permissions: %s\n", local_error->message);
-	}
+	name_owner = _nm_object_get_dbus_name_owner (self);
+	if (name_owner) {
+		gs_unref_variant GVariant *ret = NULL;
 
+		ret = g_dbus_connection_call_sync (_nm_object_get_dbus_connection (self),
+		                                   name_owner,
+		                                   NM_DBUS_PATH,
+		                                   NM_DBUS_INTERFACE,
+		                                   "GetPermissions",
+		                                   g_variant_new ("()"),
+		                                   G_VARIANT_TYPE ("(a{ss})"),
+		                                   G_DBUS_CALL_FLAGS_NONE,
+		                                   NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                                   cancellable,
+		                                   NULL);
+		if (ret) {
+			g_variant_get (ret,
+			               "(@a{ss})",
+			               &permissions);
+		}
+	}
 	update_permissions (self, permissions);
+
 	return TRUE;
 }
 
