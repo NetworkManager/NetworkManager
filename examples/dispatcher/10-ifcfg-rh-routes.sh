@@ -16,17 +16,13 @@ if [ "$2" != "pre-up" ] && [ "$2" != "down" ]; then
     exit 0
 fi
 
-dir=$(dirname "$CONNECTION_FILENAME")
-if [ "$dir" != "/etc/sysconfig/network-scripts" ]; then
-    exit 0
-fi
+file_regex='^/etc/sysconfig/network-scripts/ifcfg-([^/]+)$'
 
-profile=$(basename "$CONNECTION_FILENAME" | sed -ne 's/^ifcfg-//p')
-if [ -z "$profile" ]; then
-    exit 0
-fi
+[[ "$CONNECTION_FILENAME" =~ $file_regex ]] || exit 0
 
-if [ ! -f "$dir/rule-$profile" ] && [ ! -f "$dir/rule6-$profile" ]; then
+profile="${BASH_REMATCH[1]}"
+
+if [ ! -f "/etc/sysconfig/network-scripts/rule-$profile" ] && [ ! -f "/etc/sysconfig/network-scripts/rule6-$profile" ]; then
     exit 0
 fi
 
