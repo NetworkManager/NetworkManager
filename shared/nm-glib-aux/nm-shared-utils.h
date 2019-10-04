@@ -1256,4 +1256,30 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
                                    gsize required_len,
                                    gsize *out_len);
 
+/*****************************************************************************/
+
+static inline GTask *
+nm_g_task_new (gpointer source_object,
+               GCancellable *cancellable,
+               gpointer source_tag,
+               GAsyncReadyCallback callback,
+               gpointer callback_data)
+{
+	GTask *task;
+
+	task = g_task_new (source_object, cancellable, callback, callback_data);
+	if (source_tag)
+		g_task_set_source_tag (task, source_tag);
+	return task;
+}
+
+static inline gboolean
+nm_g_task_is_valid (gpointer task,
+                    gpointer source_object,
+                    gpointer source_tag)
+{
+	return    g_task_is_valid (task, source_object)
+	       && g_task_get_source_tag (task) == source_tag;
+}
+
 #endif /* __NM_SHARED_UTILS_H__ */
