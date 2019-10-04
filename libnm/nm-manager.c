@@ -376,46 +376,65 @@ get_permissions_reply (GObject *object,
 {
 	NMManager *self;
 	NMManagerPrivate *priv;
-	GVariant *permissions = NULL;
-	GError *error = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_unref_variant GVariant *permissions = NULL;
+	gs_free_error GError *error = NULL;
 
-	/* WARNING: this may be called after the manager is disposed, so we can't
-	 * look at self/priv until after we've determined that that isn't the case.
-	 */
-
-	nmdbus_manager_call_get_permissions_finish (NMDBUS_MANAGER (object),
-	                                            &permissions,
-	                                            result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		/* @self has been disposed. */
-		g_error_free (error);
-		return;
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
+	if (!ret) {
+		if (nm_utils_error_is_cancelled (error, FALSE))
+			return;
+	} else {
+		g_variant_get (ret,
+		               "(@a{ss})",
+		               &permissions);
 	}
 
 	self = user_data;
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	update_permissions (self, permissions);
-
-	g_clear_pointer (&permissions, g_variant_unref);
-	g_clear_error (&error);
 	g_clear_object (&priv->perm_call_cancellable);
+
+	update_permissions (self, permissions);
 }
 
 static void
-manager_recheck_permissions (NMDBusManager *proxy, gpointer user_data)
+manager_recheck_permissions (NMDBusManager *_unused_proxy, gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	const char *name_owner;
 
-	if (priv->perm_call_cancellable)
+	/* If a request is already pending, then we cancel it. We anyway
+	 * need to make a new request, to be sure that we picked up on all
+	 * the latest changes since the "CheckPermission" signal.
+	 *
+	 * However, we cannot accept more than one "GetPermissions" request
+	 * in flight. That is because NetworkManager needs to ask PolicyKit
+	 * for each permission individually, and some of these permission
+	 * requests might be answered before others. Hence, the collection
+	 * of all permissions is not taken at one point in time. Hence, when
+	 * we would allow for multiple GetPermissions requests in-flight,
+	 * we wouldn't know which response reflects the latest state. */
+	nm_clear_g_cancellable (&priv->perm_call_cancellable);
+
+	name_owner = _nm_object_get_dbus_name_owner (self);
+	if (!name_owner)
 		return;
 
 	priv->perm_call_cancellable = g_cancellable_new ();
-	nmdbus_manager_call_get_permissions (priv->proxy,
-	                                     priv->perm_call_cancellable,
-	                                     get_permissions_reply,
-	                                     self);
+	g_dbus_connection_call (_nm_object_get_dbus_connection (self),
+	                        name_owner,
+	                        NM_DBUS_PATH,
+	                        NM_DBUS_INTERFACE,
+	                        "GetPermissions",
+	                        g_variant_new ("()"),
+	                        G_VARIANT_TYPE ("(a{ss})"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                        priv->perm_call_cancellable,
+	                        get_permissions_reply,
+	                        self);
 }
 
 const char *
@@ -1514,27 +1533,9 @@ init_async_complete (NMManagerInitData *init_data)
 }
 
 static void
-init_async_got_permissions (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMManager *manager = user_data;
-	GVariant *permissions;
-
-	if (nmdbus_manager_call_get_permissions_finish (NMDBUS_MANAGER (object),
-	                                                &permissions,
-	                                                result, NULL)) {
-		update_permissions (manager, permissions);
-		g_variant_unref (permissions);
-	} else
-		update_permissions (manager, NULL);
-
-	g_object_unref (manager);
-}
-
-static void
 init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	NMManagerInitData *init_data = user_data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (init_data->manager);
 	GError *error = NULL;
 
 	if (!nm_manager_parent_async_initable_iface->init_finish (G_ASYNC_INITABLE (source), result, &error)) {
@@ -1543,10 +1544,7 @@ init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_d
 		return;
 	}
 
-	nmdbus_manager_call_get_permissions (priv->proxy,
-	                                     init_data->cancellable,
-	                                     init_async_got_permissions,
-	                                     g_object_ref (init_data->manager));
+	manager_recheck_permissions (NULL, init_data->manager);
 
 	init_async_complete (init_data);
 }
