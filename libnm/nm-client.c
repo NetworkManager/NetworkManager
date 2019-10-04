@@ -577,6 +577,8 @@ nm_client_connectivity_check_get_uri (NMClient *client)
  * Gets NetworkManager current logging level and domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Deprecated: 1.22, use nm_client_get_logging_async() or GDBusConnection
  **/
 gboolean
 nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
@@ -585,6 +587,8 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	/* FIXME(libnm-async-api): add nm_client_get_logging_async(). */
 
 	if (!_nm_client_check_nm_running (client, error))
 		return FALSE;
@@ -604,12 +608,16 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
  * Sets NetworkManager logging level and/or domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Deprecated: 1.22, use nm_client_set_logging_async() or GDBusConnection
  **/
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	/* FIXME(libnm-async-api): add nm_client_set_logging_async(). */
 
 	if (!_nm_client_check_nm_running (client, error))
 		return FALSE;
