@@ -142,16 +142,11 @@ void nm_manager_wait_for_active_connection (NMManager *self,
                                             GTask *task_take);
 
 const GPtrArray *nm_manager_get_checkpoints (NMManager *manager);
-void nm_manager_checkpoint_create (NMManager *manager,
-                                   const GPtrArray *devices,
-                                   guint32 rollback_timeout,
-                                   NMCheckpointCreateFlags flags,
-                                   GCancellable *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data);
-NMCheckpoint *nm_manager_checkpoint_create_finish (NMManager *manager,
-                                                   GAsyncResult *result,
-                                                   GError **error);
+
+void nm_manager_wait_for_checkpoint (NMManager *self,
+                                     const char *checkpoint_path,
+                                     GTask *task_take);
+
 void nm_manager_checkpoint_destroy (NMManager *manager,
                                     const char *checkpoint_path,
                                     GCancellable *cancellable,

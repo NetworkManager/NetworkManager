@@ -2554,25 +2554,6 @@ dns_notify (GObject *object,
 	}
 }
 
-static void
-checkpoint_create_cb (GObject *object,
-                      GAsyncResult *result,
-                      gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	NMCheckpoint *checkpoint;
-	GError *error = NULL;
-
-	checkpoint = nm_manager_checkpoint_create_finish (NM_MANAGER (object), result, &error);
-	if (checkpoint)
-		g_simple_async_result_set_op_res_gpointer (simple, checkpoint, g_object_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 /**
  * nm_client_get_checkpoints:
  * @client: a #NMClient
@@ -2594,6 +2575,35 @@ nm_client_get_checkpoints (NMClient *client)
 		return &empty;
 
 	return nm_manager_get_checkpoints (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+static void
+checkpoint_create_cb (GObject *object,
+                      GAsyncResult *result,
+                      gpointer user_data)
+{
+	NMClient *self;
+	gs_unref_object GTask *task = user_data;
+	gs_unref_variant GVariant *ret = NULL;
+	const char *checkpoint_path;
+	GError *error = NULL;
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
+	if (!ret) {
+		g_dbus_error_strip_remote_error (error);
+		g_task_return_error (task, error);
+		return;
+	}
+
+	g_variant_get (ret,
+	               "(&o)",
+	               &checkpoint_path);
+
+	self = g_task_get_source_object (task);
+
+	nm_manager_wait_for_checkpoint (NM_CLIENT_GET_PRIVATE (self)->manager,
+	                                checkpoint_path,
+	                                g_steal_pointer (&task));
 }
 
 /**
@@ -2623,23 +2633,35 @@ nm_client_checkpoint_create (NMClient *client,
                              GAsyncReadyCallback callback,
                              gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
+	gs_free const char **paths = NULL;
+	guint i;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
+	if (   devices
+	    && devices->len > 0) {
+		paths = g_new (const char *, devices->len + 1);
+		for (i = 0; i < devices->len; i++)
+			paths[i] = nm_object_get_path (NM_OBJECT (devices->pdata[i]));
+		paths[i] = NULL;
 	}
 
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_create);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_create (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                              devices, rollback_timeout, flags,
-	                              cancellable, checkpoint_create_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_create,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointCreate",
+	                      g_variant_new ("(^aouu)",
+	                                     paths ?: NM_PTRARRAY_EMPTY (const char *),
+	                                     rollback_timeout,
+	                                     flags),
+	                      G_VARIANT_TYPE ("(o)"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      checkpoint_create_cb);
 }
 
 /**
@@ -2660,16 +2682,10 @@ nm_client_checkpoint_create_finish (NMClient *client,
                                     GAsyncResult *result,
                                     GError **error)
 {
-	GSimpleAsyncResult *simple;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_create), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 static void

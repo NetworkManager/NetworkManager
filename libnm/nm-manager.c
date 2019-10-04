@@ -46,7 +46,6 @@ typedef struct {
 	GPtrArray *all_devices;
 	GPtrArray *active_connections;
 	GPtrArray *checkpoints;
-	GSList *added_checkpoints;
 	NMConnectivityState connectivity;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
@@ -59,6 +58,8 @@ typedef struct {
 	 * to appear and then their callback to be called.
 	 */
 	CList wait_for_active_connection_lst_head;
+
+	CList wait_for_checkpoint_lst_head;
 
 	gboolean networking_enabled;
 	gboolean wireless_enabled;
@@ -119,21 +120,21 @@ static guint signals[LAST_SIGNAL] = { 0 };
 /*****************************************************************************/
 
 typedef struct {
-	NMManager *manager;
-	GSimpleAsyncResult *simple;
-	char *path;
+	CList lst;
+	NMManager *self;
+	char *checkpoint_path;
+	GTask *task;
+	gulong cancelled_id;
 } CheckpointInfo;
 
 static CheckpointInfo *
-find_checkpoint_info (NMManager *manager, const char *path)
+_wait_for_checkpoint_find_info (NMManager *manager, const char *path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	CheckpointInfo *info;
-	GSList *iter;
 
-	for (iter = priv->added_checkpoints; iter; iter = g_slist_next (iter)) {
-		info = iter->data;
-		if (nm_streq0 (path, info->path))
+	c_list_for_each_entry (info, &priv->wait_for_checkpoint_lst_head, lst) {
+		if (nm_streq (path, info->checkpoint_path))
 			return info;
 	}
 
@@ -141,28 +142,23 @@ find_checkpoint_info (NMManager *manager, const char *path)
 }
 
 static void
-checkpoint_info_complete (NMManager *self,
-                          CheckpointInfo *info,
-                          NMCheckpoint *checkpoint,
-                          GError *error)
+_wait_for_checkpoint_complete (CheckpointInfo *info,
+                               NMCheckpoint *checkpoint,
+                               GError *error)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	c_list_unlink_stale (&info->lst);
 
-	g_return_if_fail (info);
+	nm_clear_g_signal_handler (g_task_get_cancellable (info->task), &info->cancelled_id);
 
-	if (checkpoint) {
-		g_simple_async_result_set_op_res_gpointer (info->simple,
-		                                           g_object_ref (checkpoint),
-		                                           g_object_unref);
-	} else
-		g_simple_async_result_set_from_error (info->simple, error);
-	g_simple_async_result_complete (info->simple);
+	if (!checkpoint)
+		g_task_return_error (info->task, error);
+	else
+		g_task_return_pointer (info->task, g_object_ref (checkpoint), g_object_unref);
 
-	g_object_unref (info->simple);
-	priv->added_checkpoints = g_slist_remove (priv->added_checkpoints, info);
-
-	g_free (info->path);
-	g_slice_free (CheckpointInfo, info);
+	g_object_unref (info->task);
+	g_object_unref (info->self);
+	g_free (info->checkpoint_path);
+	nm_g_slice_free (info);
 }
 
 static void
@@ -171,6 +167,7 @@ nm_manager_init (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	c_list_init (&priv->wait_for_active_connection_lst_head);
+	c_list_init (&priv->wait_for_checkpoint_lst_head);
 
 	priv->state = NM_STATE_UNKNOWN;
 	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
@@ -250,12 +247,12 @@ object_creation_failed (NMObject *object, const char *failed_path)
 	CheckpointInfo *info;
 	GError *add_error;
 
-	info = find_checkpoint_info (self, failed_path);
+	info = _wait_for_checkpoint_find_info (self, failed_path);
 	if (info) {
 		add_error = g_error_new_literal (NM_CLIENT_ERROR,
 		                                 NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
 		                                 _("Checkpoint was removed before it was initialized"));
-		checkpoint_info_complete (self, info, NULL, add_error);
+		_wait_for_checkpoint_complete (info, NULL, add_error);
 		g_error_free (add_error);
 	}
 }
@@ -991,9 +988,9 @@ checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
 {
 	CheckpointInfo *info;
 
-	info = find_checkpoint_info (manager, nm_object_get_path (NM_OBJECT (checkpoint)));
+	info = _wait_for_checkpoint_find_info (manager, nm_object_get_path (NM_OBJECT (checkpoint)));
 	if (info)
-		checkpoint_info_complete (manager, info, checkpoint, NULL);
+		_wait_for_checkpoint_complete (info, checkpoint, NULL);
 }
 
 /*****************************************************************************/
@@ -1016,21 +1013,6 @@ free_active_connections (NMManager *manager)
 
 /*****************************************************************************/
 
-static const char **
-get_device_paths (const GPtrArray *devices)
-{
-	const char **array;
-	guint i;
-
-	array = g_new (const char *, devices->len + 1);
-	for (i = 0; i < devices->len; i++)
-		array[i] = nm_object_get_path (NM_OBJECT (devices->pdata[i]));
-
-	array[i] = NULL;
-
-	return array;
-}
-
 const GPtrArray *
 nm_manager_get_checkpoints (NMManager *manager)
 {
@@ -1040,81 +1022,58 @@ nm_manager_get_checkpoints (NMManager *manager)
 }
 
 static void
-checkpoint_created_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
+_wait_for_checkpoint_cancelled_cb (GCancellable *cancellable,
+                                   gpointer user_data)
 {
 	CheckpointInfo *info = user_data;
-	NMManager *self = info->manager;
 	gs_free_error GError *error = NULL;
-	NMCheckpoint *checkpoint;
 
-	nmdbus_manager_call_checkpoint_create_finish (NMDBUS_MANAGER (object),
-	                                              &info->path, result, &error);
-	if (error) {
-		g_dbus_error_strip_remote_error (error);
-		checkpoint_info_complete (self, info, NULL, error);
+	if (!g_cancellable_set_error_if_cancelled (cancellable, &error))
 		return;
-	}
 
-	checkpoint = get_checkpoint_by_path (self, info->path);
-	if (!checkpoint) {
-		/* this is really problematic. The async request returned, but
-		 * we don't yet have a visible (fully initialized) NMCheckpoint instance
-		 * to return. Wait longer for it to appear. However, it's ugly. */
-		return;
-	}
-
-	checkpoint_info_complete (self, info, checkpoint, NULL);
+	_wait_for_checkpoint_complete (info, NULL, g_steal_pointer (&error));
 }
 
 void
-nm_manager_checkpoint_create (NMManager *manager,
-                              const GPtrArray *devices,
-                              guint32 rollback_timeout,
-                              NMCheckpointCreateFlags flags,
-                              GCancellable *cancellable,
-                              GAsyncReadyCallback callback,
-                              gpointer user_data)
+nm_manager_wait_for_checkpoint (NMManager *self,
+                                const char *checkpoint_path,
+                                GTask *task_take)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	gs_free const char **paths = NULL;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gs_unref_object GTask *task = task_take;
 	CheckpointInfo *info;
+	GCancellable *cancellable;
+	NMCheckpoint *checkpoint;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
+	checkpoint = get_checkpoint_by_path (self, checkpoint_path);
+	if (checkpoint) {
+		g_task_return_pointer (task, g_object_ref (checkpoint), g_object_unref);
+		return;
+	}
 
-	info = g_slice_new0 (CheckpointInfo);
-	info->manager = manager;
-	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                          nm_manager_checkpoint_create);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
-	paths = get_device_paths (devices);
-	nmdbus_manager_call_checkpoint_create (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                       paths,
-	                                       rollback_timeout,
-	                                       flags,
-	                                       cancellable,
-	                                       checkpoint_created_cb,
-	                                       info);
-	priv->added_checkpoints = g_slist_append (priv->added_checkpoints, info);
-}
+	/* FIXME: there is no timeout for how long we wait. But this entire
+	 * code will be reworked, also that we have a suitable GMainContext
+	 * where we can schedule the timeout (we shouldn't use g_main_context_default()). */
 
-NMCheckpoint *
-nm_manager_checkpoint_create_finish (NMManager *manager,
-                                     GAsyncResult *result,
-                                     GError **error)
-{
-	GSimpleAsyncResult *simple;
+	info = g_slice_new (CheckpointInfo);
+	*info = (CheckpointInfo) {
+		.self            = g_object_ref (self),
+		.task            = g_steal_pointer (&task),
+		.checkpoint_path = g_strdup (checkpoint_path),
+	};
+	c_list_link_tail (&priv->wait_for_checkpoint_lst_head, &info->lst);
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	cancellable = g_task_get_cancellable (info->task);
+	if (cancellable) {
+		info->cancelled_id = g_signal_connect (cancellable,
+		                                       "cancelled",
+		                                       G_CALLBACK (_wait_for_checkpoint_cancelled_cb),
+		                                       info);
+		if (g_cancellable_is_cancelled (cancellable)) {
+			_wait_for_checkpoint_cancelled_cb (cancellable, info);
+			return;
+		}
+	}
 }
 
 static void
@@ -1483,6 +1442,7 @@ dispose (GObject *object)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
 
 	nm_assert (c_list_is_empty (&priv->wait_for_active_connection_lst_head));
+	nm_assert (c_list_is_empty (&priv->wait_for_checkpoint_lst_head));
 
 	nm_clear_g_cancellable (&priv->perm_call_cancellable);
 
