@@ -280,25 +280,6 @@ prepare_scan_options (GVariant *options)
 	       ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 }
 
-static gboolean
-_device_wifi_request_scan (NMDeviceWifi *device,
-                           GVariant *options,
-                           GCancellable *cancellable,
-                           GError **error)
-{
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
-
-
-	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                                 prepare_scan_options (g_steal_pointer (&options)),
-	                                                 cancellable, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
 /**
  * nm_device_wifi_request_scan:
  * @device: a #NMDeviceWifi
@@ -319,7 +300,7 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
                              GCancellable *cancellable,
                              GError **error)
 {
-	return _device_wifi_request_scan (device, NULL, cancellable, error);
+	return nm_device_wifi_request_scan_options (device, NULL, cancellable, error);
 }
 
 /**
@@ -350,7 +331,24 @@ nm_device_wifi_request_scan_options (NMDeviceWifi *device,
                                      GCancellable *cancellable,
                                      GError **error)
 {
-	return _device_wifi_request_scan (device, options, cancellable, error);
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
+	g_return_val_if_fail (!options || g_variant_is_of_type (options, G_VARIANT_TYPE_VARDICT), FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (!options)
+		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+
+	return _nm_object_dbus_call_sync_void (device,
+	                                       cancellable,
+	                                       g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy)),
+	                                       NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+	                                       "RequestScan",
+	                                       g_variant_new ("(@a{sv})", options),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_device_wifi_request_scan_options,
