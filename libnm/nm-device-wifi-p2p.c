@@ -7,6 +7,7 @@
 
 #include "nm-device-wifi-p2p.h"
 
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
@@ -137,23 +138,6 @@ nm_device_wifi_p2p_get_peer_by_path (NMDeviceWifiP2P *device,
 	return peer;
 }
 
-static void
-start_find_finished_cb (GObject      *obj,
-                        GAsyncResult *res,
-                        gpointer user_data)
-{
-	NMDBusDeviceWifiP2P *proxy = (NMDBusDeviceWifiP2P*) obj;
-	gs_unref_object GTask *task = G_TASK (user_data);
-	GError *error = NULL;
-	gboolean success;
-
-	success = nmdbus_device_wifi_p2p_call_start_find_finish (proxy, res, &error);
-	if (!success)
-		g_task_return_error (task, error);
-	else
-		g_task_return_boolean (task, TRUE);
-}
-
 /**
  * nm_device_wifi_p2p_start_find:
  * @device: a #NMDeviceWifiP2P
@@ -172,26 +156,32 @@ start_find_finished_cb (GObject      *obj,
  * Since: 1.16
  **/
 void
-nm_device_wifi_p2p_start_find (NMDeviceWifiP2P     *device,
-                               GVariant            *options,
-                               GCancellable        *cancellable,
-                               GAsyncReadyCallback  callback,
-                               gpointer             user_data)
+nm_device_wifi_p2p_start_find (NMDeviceWifiP2P *device,
+                               GVariant *options,
+                               GCancellable *cancellable,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data)
 {
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (device);
-	GTask *task;
-
 	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
-
-	task = nm_g_task_new (device, cancellable, nm_device_wifi_p2p_start_find, callback, user_data);
+	g_return_if_fail (!options || g_variant_is_of_type (options, G_VARIANT_TYPE_VARDICT));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
 	if (!options)
 		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
-	nmdbus_device_wifi_p2p_call_start_find (priv->proxy,
-	                                        options,
-	                                        cancellable,
-	                                        start_find_finished_cb,
-	                                        task);
+
+	_nm_object_dbus_call (device,
+	                      nm_device_wifi_p2p_start_find,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "StartFind",
+	                      g_variant_new ("(@a{sv})", options),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_cb);
 }
 
 /**
@@ -217,23 +207,6 @@ nm_device_wifi_p2p_start_find_finish (NMDeviceWifiP2P  *device,
 	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
-static void
-stop_find_finished_cb (GObject      *obj,
-                       GAsyncResult *res,
-                       gpointer user_data)
-{
-	NMDBusDeviceWifiP2P *proxy = (NMDBusDeviceWifiP2P*) obj;
-	gs_unref_object GTask *task = G_TASK (user_data);
-	GError *error = NULL;
-	gboolean success;
-
-	success = nmdbus_device_wifi_p2p_call_stop_find_finish (proxy, res, &error);
-	if (!success)
-		g_task_return_error (task, error);
-	else
-		g_task_return_boolean (task, TRUE);
-}
-
 /**
  * nm_device_wifi_p2p_stop_find:
  * @device: a #NMDeviceWifiP2P
@@ -251,17 +224,22 @@ nm_device_wifi_p2p_stop_find (NMDeviceWifiP2P     *device,
                               GAsyncReadyCallback  callback,
                               gpointer             user_data)
 {
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (device);
-	GTask *task;
-
 	g_return_if_fail (NM_IS_DEVICE_WIFI_P2P (device));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	task = nm_g_task_new (device, cancellable, nm_device_wifi_p2p_stop_find, callback, user_data);
-
-	nmdbus_device_wifi_p2p_call_stop_find (priv->proxy,
-	                                       cancellable,
-	                                       stop_find_finished_cb,
-	                                       task);
+	_nm_object_dbus_call (device,
+	                      nm_device_wifi_p2p_stop_find,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "StopFind",
+	                      g_variant_new ("()"),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_cb);
 }
 
 /**
