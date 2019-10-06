@@ -10,6 +10,7 @@
 
 #include <libudev.h>
 
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-libnm-utils.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
@@ -2009,40 +2010,31 @@ nm_device_reapply (NMDevice *device,
                    GCancellable *cancellable,
                    GError **error)
 {
-	GVariant *dict = NULL;
-	gboolean ret;
+	GVariant *arg_connection = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	g_return_val_if_fail (!connection || NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	if (connection)
-		dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	if (!dict)
-		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+		arg_connection = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	if (!arg_connection)
+		arg_connection = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 
-	ret = nmdbus_device_call_reapply_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                       dict, version_id, flags, cancellable, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
-static void
-device_reapply_cb (GObject *proxy,
-                   GAsyncResult *result,
-                   gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_device_call_reapply_finish (NMDBUS_DEVICE (proxy), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return _nm_object_dbus_call_sync_void (device,
+	                                       cancellable,
+	                                       g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_DEVICE_GET_PRIVATE (device)->proxy)),
+	                                       NM_DBUS_INTERFACE_DEVICE,
+	                                       "Reapply",
+	                                       g_variant_new ("(@a{sa{sv}}tu)",
+	                                                      arg_connection,
+	                                                      version_id,
+	                                                      flags),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 /**
@@ -2073,24 +2065,33 @@ nm_device_reapply_async (NMDevice *device,
                          GAsyncReadyCallback callback,
                          gpointer user_data)
 {
-	GVariant *dict = NULL;
-	GSimpleAsyncResult *simple;
+	GVariant *arg_connection = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (!connection || NM_IS_CONNECTION (connection));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
 	if (connection)
-		dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	if (!dict)
-		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+		arg_connection = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	if (!arg_connection)
+		arg_connection = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 
-	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
-	                                    nm_device_reapply_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_device_call_reapply (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                            dict, version_id, flags, cancellable,
-	                            device_reapply_cb, simple);
+	_nm_object_dbus_call (device,
+	                      nm_device_reapply_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_DEVICE_GET_PRIVATE (device)->proxy)),
+	                      NM_DBUS_INTERFACE_DEVICE,
+	                      "Reapply",
+	                      g_variant_new ("(@a{sa{sv}}tu)",
+	                                     arg_connection,
+	                                     version_id,
+	                                     flags),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -2111,15 +2112,10 @@ nm_device_reapply_finish (NMDevice *device,
                           GAsyncResult *result,
                           GError **error)
 {
-	GSimpleAsyncResult *simple;
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, device, nm_device_reapply_async), FALSE);
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_reapply_async), FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /*****************************************************************************/
