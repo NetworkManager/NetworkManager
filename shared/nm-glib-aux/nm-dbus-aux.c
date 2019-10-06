@@ -244,3 +244,100 @@ nm_dbus_connection_call_get_managed_objects (GDBusConnection *dbus_connection,
 	                        _nm_dbus_connection_call_get_managed_objects_cb,
 	                        nm_utils_user_data_pack (user_data, callback));
 }
+
+/*****************************************************************************/
+
+static void
+_call_finish_cb (GObject *source,
+                 GAsyncResult *result,
+                 gpointer user_data,
+                 gboolean return_void,
+                 gboolean strip_dbus_error)
+{
+	gs_unref_object GTask *task = user_data;
+	gs_unref_variant GVariant *ret = NULL;
+	GError *error = NULL;
+
+	nm_assert (G_IS_DBUS_CONNECTION (source));
+	nm_assert (G_IS_TASK (user_data));
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+	if (!ret) {
+		if (strip_dbus_error)
+			g_dbus_error_strip_remote_error (error);
+		g_task_return_error (task, error);
+		return;
+	}
+
+	if (!return_void) {
+		nm_assert (!g_variant_is_of_type (ret, G_VARIANT_TYPE ("()")));
+		g_task_return_pointer (task, g_steal_pointer (&ret), (GDestroyNotify) g_variant_unref);
+	} else {
+		nm_assert (g_variant_is_of_type (ret, G_VARIANT_TYPE ("()")));
+		g_task_return_boolean (task, TRUE);
+	}
+}
+
+/**
+ * nm_dbus_connection_call_finish_void_cb:
+ *
+ * A default callback to pass as callback to g_dbus_connection_call().
+ *
+ * - user_data must be a GTask, whose reference will be consumed by the
+ *   callback.
+ * - the return GVariant must be a empty tuple "()".
+ * - the GTask is returned either with error or TRUE boolean.
+ */
+void
+nm_dbus_connection_call_finish_void_cb (GObject *source,
+                                        GAsyncResult *result,
+                                        gpointer user_data)
+{
+	_call_finish_cb (source, result, user_data, TRUE, FALSE);
+}
+
+/**
+ * nm_dbus_connection_call_finish_void_strip_dbus_error_cb:
+ *
+ * Like nm_dbus_connection_call_finish_void_cb(). The difference
+ * is that on error this will first call g_dbus_error_strip_remote_error() on the error.
+ */
+void
+nm_dbus_connection_call_finish_void_strip_dbus_error_cb (GObject *source,
+                                                         GAsyncResult *result,
+                                                         gpointer user_data)
+{
+	_call_finish_cb (source, result, user_data, TRUE, TRUE);
+}
+
+/**
+ * nm_dbus_connection_call_finish_variant_cb:
+ *
+ * A default callback to pass as callback to g_dbus_connection_call().
+ *
+ * - user_data must be a GTask, whose reference will be consumed by the
+ *   callback.
+ * - the return GVariant must not be an empty tuple "()".
+ * - the GTask is returned either with error or with a pointer containing the GVariant.
+ */
+void
+nm_dbus_connection_call_finish_variant_cb (GObject *source,
+                                           GAsyncResult *result,
+                                           gpointer user_data)
+{
+	_call_finish_cb (source, result, user_data, FALSE, FALSE);
+}
+
+/**
+ * nm_dbus_connection_call_finish_variant_strip_dbus_error_cb:
+ *
+ * Like nm_dbus_connection_call_finish_variant_strip_dbus_error_cb(). The difference
+ * is that on error this will first call g_dbus_error_strip_remote_error() on the error.
+ */
+void
+nm_dbus_connection_call_finish_variant_strip_dbus_error_cb (GObject *source,
+                                                            GAsyncResult *result,
+                                                            gpointer user_data)
+{
+	_call_finish_cb (source, result, user_data, FALSE, TRUE);
+}

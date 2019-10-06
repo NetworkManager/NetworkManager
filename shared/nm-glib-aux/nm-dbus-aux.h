@@ -174,4 +174,22 @@ void nm_dbus_connection_call_get_managed_objects (GDBusConnection *dbus_connecti
 
 /*****************************************************************************/
 
+void nm_dbus_connection_call_finish_void_cb (GObject *source,
+                                             GAsyncResult *result,
+                                             gpointer user_data);
+
+void nm_dbus_connection_call_finish_void_strip_dbus_error_cb (GObject *source,
+                                                              GAsyncResult *result,
+                                                              gpointer user_data);
+
+void nm_dbus_connection_call_finish_variant_cb (GObject *source,
+                                                GAsyncResult *result,
+                                                gpointer user_data);
+
+void nm_dbus_connection_call_finish_variant_strip_dbus_error_cb (GObject *source,
+                                                                 GAsyncResult *result,
+                                                                 gpointer user_data);
+
+/*****************************************************************************/
+
 #endif /* __NM_DBUS_AUX_H__ */
