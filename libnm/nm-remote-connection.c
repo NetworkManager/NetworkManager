@@ -527,7 +527,7 @@ nm_remote_connection_delete_finish (NMRemoteConnection *connection,
  * Request the connection's secrets. Note that this is a blocking D-Bus call,
  * not a simple property accessor.
  *
- * Returns: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing
+ * Returns: (transfer full): a #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing
  * @connection's secrets, or %NULL on error.
  *
  * Deprecated: 1.22, use nm_remote_connection_get_secrets_async() or GDBusConnection
