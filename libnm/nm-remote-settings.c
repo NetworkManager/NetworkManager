@@ -394,34 +394,6 @@ nm_remote_settings_add_connection2 (NMRemoteSettings *self,
 	}
 }
 
-gboolean
-nm_remote_settings_load_connections (NMRemoteSettings *settings,
-                                     char **filenames,
-                                     char ***failures,
-                                     GCancellable *cancellable,
-                                     GError **error)
-{
-	NMRemoteSettingsPrivate *priv;
-	gboolean success;
-
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-	g_return_val_if_fail (filenames != NULL, FALSE);
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!nmdbus_settings_call_load_connections_sync (priv->proxy,
-	                                                 (const char * const *) filenames,
-	                                                 &success,
-	                                                 failures,
-	                                                 cancellable, error)) {
-		if (error && *error)
-			g_dbus_error_strip_remote_error (*error);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static void
 load_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {

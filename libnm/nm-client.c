@@ -2082,15 +2082,34 @@ nm_client_load_connections (NMClient *client,
                             GCancellable *cancellable,
                             GError **error)
 {
+	gs_unref_variant GVariant *ret = NULL;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (filenames != NULL, FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	if (!_nm_client_check_nm_running (client, error))
+	ret = _nm_object_dbus_call_sync (client,
+	                                 cancellable,
+	                                 NM_DBUS_PATH_SETTINGS,
+	                                 NM_DBUS_INTERFACE_SETTINGS,
+	                                 "LoadConnections",
+	                                 g_variant_new ("(^as)",
+	                                                filenames ?: NM_PTRARRAY_EMPTY (char *)),
+	                                 G_VARIANT_TYPE ("(bas)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret) {
+		*failures = NULL;
 		return FALSE;
+	}
 
-	return nm_remote_settings_load_connections (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                            filenames, failures,
-	                                            cancellable, error);
+	g_variant_get (ret,
+	               "(b^as)",
+	               NULL,
+	               &failures);
+
+	return TRUE;
 }
 
 static void
