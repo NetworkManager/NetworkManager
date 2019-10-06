@@ -148,7 +148,7 @@ nm_remote_connection_update2 (NMRemoteConnection *connection,
  *
  * Gets the result of a call to nm_remote_connection_commit_changes_async().
  *
- * Returns: on success, a #GVariant of type "a{sv}" with the result. On failure,
+ * Returns: (transfer full): on success, a #GVariant of type "a{sv}" with the result. On failure,
  *   %NULL.
  **/
 GVariant *
