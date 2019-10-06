@@ -1077,66 +1077,6 @@ nm_manager_wait_for_checkpoint (NMManager *self,
 }
 
 static void
-checkpoint_adjust_rollback_timeout_cb (GObject *object,
-                                       GAsyncResult *result,
-                                       gpointer user_data)
-{
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_checkpoint_adjust_rollback_timeout_finish (NMDBUS_MANAGER (object),
-	                                                                   result,
-	                                                                   &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-}
-
-void
-nm_manager_checkpoint_adjust_rollback_timeout (NMManager *manager,
-                                               const char *checkpoint_path,
-                                               guint32 add_timeout,
-                                               GCancellable *cancellable,
-                                               GAsyncReadyCallback callback,
-                                               gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_checkpoint_adjust_rollback_timeout);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_manager_call_checkpoint_adjust_rollback_timeout (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                                        checkpoint_path,
-	                                                        add_timeout,
-	                                                        cancellable,
-	                                                        checkpoint_adjust_rollback_timeout_cb,
-	                                                        simple);
-}
-
-gboolean
-nm_manager_checkpoint_adjust_rollback_timeout_finish (NMManager *manager,
-                                                      GAsyncResult *result,
-                                                      GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_checkpoint_adjust_rollback_timeout),
-	                      FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	return !g_simple_async_result_propagate_error (simple, error);
-}
-
-static void
 reload_cb (GObject *object,
            GAsyncResult *result,
            gpointer user_data)

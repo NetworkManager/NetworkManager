@@ -2832,22 +2832,6 @@ nm_client_checkpoint_rollback_finish (NMClient *client,
 	return hash;
 }
 
-static void
-checkpoint_adjust_rollback_timeout_cb (GObject *object,
-                                       GAsyncResult *result,
-                                       gpointer user_data)
-{
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_manager_checkpoint_adjust_rollback_timeout_finish (NM_MANAGER (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-}
-
 /**
  * nm_client_checkpoint_adjust_rollback_timeout:
  * @client: the %NMClient
@@ -2871,24 +2855,24 @@ nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
                                               GAsyncReadyCallback callback,
                                               gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_rollback);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_adjust_rollback_timeout (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                               checkpoint_path, add_timeout,
-	                                               cancellable, checkpoint_adjust_rollback_timeout_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_adjust_rollback_timeout,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointAdjustRollbackTimeout",
+	                      g_variant_new ("(ou)",
+	                                     checkpoint_path,
+	                                     add_timeout),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -2909,10 +2893,9 @@ nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
                                                      GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_adjust_rollback_timeout), FALSE);
 
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-	                                               error);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static void
