@@ -291,11 +291,13 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	if (orig_contents) {
 		gs_free const char **lines = NULL;
 		gsize line_i;
-		int nest = 0;
+		nm_auto_free_gstring GString *blocks_stack = NULL;
+		guint blocks_skip = 0;
 		gboolean in_alsoreq = FALSE;
 		gboolean in_req = FALSE;
 		char intf[IFNAMSIZ];
 
+		blocks_stack = g_string_new (NULL);
 		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
 		intf[0] = '\0';
 
@@ -313,19 +315,38 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			if (in_req) {
 				/* pass */
 			} else if (strchr (p, '{')) {
-				nest++;
-				if (   !intf[0]
-				    && NM_STR_HAS_PREFIX (p, "interface"))
-					if (read_interface (p, intf, sizeof (intf)))
-						continue;
+				if (   NM_STR_HAS_PREFIX (p, "lease")
+				    || NM_STR_HAS_PREFIX (p, "alias")
+				    || NM_STR_HAS_PREFIX (p, "interface")
+				    || NM_STR_HAS_PREFIX (p, "pseudo")) {
+					/* skip over these blocks, except 'interface' when it
+					 * matches the current interface */
+					blocks_skip++;
+					g_string_append_c (blocks_stack, 'b');
+					if (   !intf[0]
+					    && NM_STR_HAS_PREFIX (p, "interface")) {
+						if (read_interface (p, intf, sizeof (intf)))
+							continue;
+					}
+				} else {
+					/* allow other blocks (conditionals) */
+					if (!strchr (p, '}')) /* '} else {'  */
+						g_string_append_c (blocks_stack, 'c');
+				}
 			} else if (strchr (p, '}')) {
-				if (nest)
-					nest--;
-				intf[0] = '\0';
-				continue;
+				if (blocks_stack->len > 0) {
+					if (blocks_stack->str[blocks_stack->len - 1] == 'b') {
+						g_string_truncate (blocks_stack, blocks_stack->len - 1);
+						nm_assert(blocks_skip > 0);
+						blocks_skip--;
+						intf[0] = '\0';
+						continue;
+					}
+					g_string_truncate (blocks_stack, blocks_stack->len - 1);
+				}
 			}
 
-			if (nest && !intf[0])
+			if (blocks_skip > 0 && !intf[0])
 				continue;
 
 			if (intf[0] && !nm_streq (intf, interface))
