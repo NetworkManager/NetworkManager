@@ -288,7 +288,7 @@ prepare_scan_options (GVariant *options)
 	else {
 		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 		g_variant_iter_init (&iter, options);
-		while (g_variant_iter_loop (&iter, "{sv}", &key, &value))
+		while (g_variant_iter_loop (&iter, "{&sv}", &key, &value))
 		{
 			// FIXME: verify options here?
 			g_variant_builder_add (&builder, "{sv}", key, value);
