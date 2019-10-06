@@ -190,29 +190,32 @@ nm_remote_connection_commit_changes (NMRemoteConnection *connection,
                                      GCancellable *cancellable,
                                      GError **error)
 {
-	NMRemoteConnectionPrivate *priv;
-	gs_unref_variant GVariant *result = NULL;
-	gboolean ret;
-	GVariantBuilder args;
+	gs_unref_variant GVariant *ret = NULL;
 
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+	ret = _nm_object_dbus_call_sync (connection,
+	                                 cancellable,
+	                                 g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                                 "Update2",
+	                                 g_variant_new ("(@a{sa{sv}}u@a{sv})",
+	                                                nm_connection_to_dbus (NM_CONNECTION (connection),
+	                                                                       NM_CONNECTION_SERIALIZE_ALL),
+	                                                (guint32) (  save_to_disk
+	                                                           ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+	                                                           : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY),
+	                                                g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0)),
+	                                 G_VARIANT_TYPE ("(a{sv})"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
+		return FALSE;
 
-	g_variant_builder_init (&args, G_VARIANT_TYPE ("a{sv}"));
-	ret = nmdbus_settings_connection_call_update2_sync (priv->proxy,
-	                                                    nm_connection_to_dbus (NM_CONNECTION (connection),
-	                                                                           NM_CONNECTION_SERIALIZE_ALL),
-	                                                    save_to_disk
-	                                                      ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
-	                                                      : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
-	                                                    g_variant_builder_end (&args),
-	                                                    &result,
-	                                                    cancellable,
-	                                                    error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
+	return TRUE;
 }
 
 static void
