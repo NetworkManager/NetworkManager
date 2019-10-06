@@ -147,14 +147,6 @@ void nm_manager_wait_for_checkpoint (NMManager *self,
                                      const char *checkpoint_path,
                                      GTask *task_take);
 
-void nm_manager_checkpoint_rollback (NMManager *manager,
-                                     const char *checkpoint_path,
-                                     GCancellable *cancellable,
-                                     GAsyncReadyCallback callback,
-                                     gpointer user_data);
-GHashTable *nm_manager_checkpoint_rollback_finish (NMManager *manager,
-                                                   GAsyncResult *result,
-                                                   GError **error);
 void nm_manager_checkpoint_adjust_rollback_timeout (NMManager *manager,
                                                     const char *checkpoint_path,
                                                     guint32 add_timeout,

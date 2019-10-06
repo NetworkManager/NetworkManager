@@ -2749,25 +2749,6 @@ nm_client_checkpoint_destroy_finish (NMClient *client,
 	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
-static void
-checkpoint_rollback_cb (GObject *object,
-                        GAsyncResult *result,
-                        gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GHashTable *hash;
-	GError *error = NULL;
-
-	hash = nm_manager_checkpoint_rollback_finish (NM_MANAGER (object), result, &error);
-	if (hash)
-		g_simple_async_result_set_op_res_gpointer (simple, hash, (GDestroyNotify) g_hash_table_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 /**
  * nm_client_checkpoint_rollback:
  * @client: the %NMClient
@@ -2787,24 +2768,22 @@ nm_client_checkpoint_rollback (NMClient *client,
                                GAsyncReadyCallback callback,
                                gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_rollback);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_rollback (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                checkpoint_path,
-	                                cancellable, checkpoint_rollback_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_rollback,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointRollback",
+	                      g_variant_new ("(o)", checkpoint_path),
+	                      G_VARIANT_TYPE ("(a{su})"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_variant_strip_dbus_error_cb);
 }
 
 /**
@@ -2826,19 +2805,31 @@ nm_client_checkpoint_rollback_finish (NMClient *client,
                                       GAsyncResult *result,
                                       GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_unref_variant GVariant *v_result = NULL;
+	GVariantIter iter;
 	GHashTable *hash;
+	const char *path;
+	guint32 r;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_rollback), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	ret = g_task_propagate_pointer (G_TASK (result), error);
+	if (!ret)
 		return NULL;
-	else {
-		hash = g_simple_async_result_get_op_res_gpointer (simple);
-		return g_hash_table_ref (hash);
-	}
+
+	g_variant_get (ret,
+	               "(@a{su})",
+	               &v_result);
+
+	hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
+
+	g_variant_iter_init (&iter, v_result);
+	while (g_variant_iter_next (&iter, "{&su}", &path, &r))
+		g_hash_table_insert (hash, g_strdup (path), GUINT_TO_POINTER (r));
+
+	return hash;
 }
 
 static void
