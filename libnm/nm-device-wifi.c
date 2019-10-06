@@ -276,27 +276,8 @@ nm_device_wifi_get_last_scan (NMDeviceWifi *device)
 static GVariant *
 prepare_scan_options (GVariant *options)
 {
-
-	GVariant *variant;
-	GVariantIter iter;
-	GVariantBuilder builder;
-	char *key;
-	GVariant *value;
-
-	if (!options)
-		variant = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
-	else {
-		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
-		g_variant_iter_init (&iter, options);
-		while (g_variant_iter_loop (&iter, "{&sv}", &key, &value))
-		{
-			// FIXME: verify options here?
-			g_variant_builder_add (&builder, "{sv}", key, value);
-		}
-		variant = g_variant_builder_end (&builder);
-		nm_g_variant_unref_floating (options);
-	}
-	return variant;
+	return    options
+	       ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 }
 
 static gboolean
@@ -306,14 +287,12 @@ _device_wifi_request_scan (NMDeviceWifi *device,
                            GError **error)
 {
 	gboolean ret;
-	GVariant *variant;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
 
-	variant = prepare_scan_options (g_steal_pointer (&options));
 
 	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                                 variant,
+	                                                 prepare_scan_options (g_steal_pointer (&options)),
 	                                                 cancellable, error);
 	if (error && *error)
 		g_dbus_error_strip_remote_error (*error);
@@ -412,7 +391,6 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	RequestScanInfo *info;
 	GSimpleAsyncResult *simple;
-	GVariant *variant;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
@@ -433,11 +411,9 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 	info->device = device;
 	info->simple = simple;
 
-	variant = prepare_scan_options (g_steal_pointer (&options));
-
 	priv->scan_info = info;
 	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                      variant,
+	                                      prepare_scan_options (g_steal_pointer (&options)),
 	                                      cancellable, request_scan_cb, info);
 }
 
