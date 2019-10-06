@@ -8,6 +8,7 @@
 
 #include "nm-device-wifi.h"
 
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
@@ -27,11 +28,6 @@ void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enable
 static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
 
 typedef struct {
-	NMDeviceWifi *device;
-	GSimpleAsyncResult *simple;
-} RequestScanInfo;
-
-typedef struct {
 	NMDBusDeviceWifi *proxy;
 
 	char *hw_address;
@@ -42,8 +38,6 @@ typedef struct {
 	NMDeviceWifiCapabilities wireless_caps;
 	GPtrArray *aps;
 	gint64 last_scan;
-
-	RequestScanInfo *scan_info;
 } NMDeviceWifiPrivate;
 
 enum {
@@ -273,13 +267,6 @@ nm_device_wifi_get_last_scan (NMDeviceWifi *device)
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->last_scan;
 }
 
-static GVariant *
-prepare_scan_options (GVariant *options)
-{
-	return    options
-	       ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
-}
-
 /**
  * nm_device_wifi_request_scan:
  * @device: a #NMDeviceWifi
@@ -355,66 +342,6 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_device_wifi_request_scan_options,
   (NMDeviceWifi *device, GVariant *options, GCancellable *cancellable, GError **error),
   (device, options, cancellable, error));
 
-static void
-request_scan_cb (GObject *source,
-                 GAsyncResult *result,
-                 gpointer user_data)
-{
-	RequestScanInfo *info = user_data;
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (info->device);
-	GError *error = NULL;
-
-	priv->scan_info = NULL;
-
-	if (nmdbus_device_wifi_call_request_scan_finish (NMDBUS_DEVICE_WIFI (source),
-	                                                 result, &error))
-		g_simple_async_result_set_op_res_gboolean (info->simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (info->simple, error);
-	}
-
-	g_simple_async_result_complete (info->simple);
-	g_object_unref (info->simple);
-	g_slice_free (RequestScanInfo, info);
-}
-
-static void
-_device_wifi_request_scan_async (NMDeviceWifi *device,
-                                   GVariant *options,
-                                   GCancellable *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-	RequestScanInfo *info;
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
-
-	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
-	                                    nm_device_wifi_request_scan_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	/* If a scan is in progress, just return */
-	if (priv->scan_info) {
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	info = g_slice_new0 (RequestScanInfo);
-	info->device = device;
-	info->simple = simple;
-
-	priv->scan_info = info;
-	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                      prepare_scan_options (g_steal_pointer (&options)),
-	                                      cancellable, request_scan_cb, info);
-}
-
 /**
  * nm_device_wifi_request_scan_async:
  * @device: a #NMDeviceWifi
@@ -432,7 +359,7 @@ nm_device_wifi_request_scan_async (NMDeviceWifi *device,
                                    GAsyncReadyCallback callback,
                                    gpointer user_data)
 {
-	_device_wifi_request_scan_async (device, NULL, cancellable, callback, user_data);
+	nm_device_wifi_request_scan_options_async (device, NULL, cancellable, callback, user_data);
 }
 
 /**
@@ -451,6 +378,8 @@ nm_device_wifi_request_scan_async (NMDeviceWifi *device,
  * D-Bus call. Valid options inside the dictionary are:
  * 'ssids' => array of SSIDs (saay)
  *
+ * To complete the request call nm_device_wifi_request_scan_finish().
+ *
  * Since: 1.2
  **/
 void
@@ -460,7 +389,26 @@ nm_device_wifi_request_scan_options_async (NMDeviceWifi *device,
                                            GAsyncReadyCallback callback,
                                            gpointer user_data)
 {
-	_device_wifi_request_scan_async (device, options, cancellable, callback, user_data);
+	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
+	g_return_if_fail (!options || g_variant_is_of_type (options, G_VARIANT_TYPE_VARDICT));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+	if (!options)
+		options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+
+	_nm_object_dbus_call (device,
+	                      nm_device_wifi_request_scan_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy)),
+	                      NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+	                      "RequestScan",
+	                      g_variant_new ("(@a{sv})", options),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 NM_BACKPORT_SYMBOL (libnm_1_0_6, void, nm_device_wifi_request_scan_options_async,
@@ -473,7 +421,8 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, void, nm_device_wifi_request_scan_options_async
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  *
- * Gets the result of a call to nm_device_wifi_request_scan_async().
+ * Gets the result of a call to nm_device_wifi_request_scan_async() and
+ * nm_device_wifi_request_scan_options_async().
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be
  * set.
@@ -483,15 +432,10 @@ nm_device_wifi_request_scan_finish (NMDeviceWifi *device,
                                     GAsyncResult *result,
                                     GError **error)
 {
-	GSimpleAsyncResult *simple;
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, device, nm_device_wifi_request_scan_async), FALSE);
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_wifi_request_scan_async), FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static void
