@@ -294,6 +294,7 @@ prepare_scan_options (GVariant *options)
 			g_variant_builder_add (&builder, "{sv}", key, value);
 		}
 		variant = g_variant_builder_end (&builder);
+		nm_g_variant_unref_floating (options);
 	}
 	return variant;
 }
@@ -309,7 +310,7 @@ _device_wifi_request_scan (NMDeviceWifi *device,
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
 
-	variant = prepare_scan_options (options);
+	variant = prepare_scan_options (g_steal_pointer (&options));
 
 	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
 	                                                 variant,
@@ -432,7 +433,7 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 	info->device = device;
 	info->simple = simple;
 
-	variant = prepare_scan_options (options);
+	variant = prepare_scan_options (g_steal_pointer (&options));
 
 	priv->scan_info = info;
 	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
