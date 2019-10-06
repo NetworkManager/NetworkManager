@@ -62,28 +62,6 @@ typedef struct {
 
 /*****************************************************************************/
 
-static void
-update2_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-	GVariant *v;
-
-	if (nmdbus_settings_connection_call_update2_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
-	                                                    &v,
-	                                                    result,
-	                                                    &error)) {
-		g_simple_async_result_set_op_res_gpointer (simple,
-		                                           v,
-		                                           (GDestroyNotify) g_variant_unref);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 /**
  * nm_remote_connection_update2:
  * @connection: the #NMRemoteConnection
@@ -107,37 +85,32 @@ nm_remote_connection_update2 (NMRemoteConnection *connection,
                               GAsyncReadyCallback callback,
                               gpointer user_data)
 {
-	NMRemoteConnectionPrivate *priv;
-	GSimpleAsyncResult *simple;
-	GVariantBuilder builder;
-
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
 	g_return_if_fail (!settings || g_variant_is_of_type (settings, NM_VARIANT_TYPE_CONNECTION));
 	g_return_if_fail (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+	if (!settings)
+		settings = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+	if (!args)
+		args = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 
-	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
-	                                    nm_remote_connection_update2);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	if (!settings) {
-		g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
-		settings = g_variant_builder_end (&builder);
-	}
-	if (!args) {
-		g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-		args = g_variant_builder_end (&builder);
-	}
-	nmdbus_settings_connection_call_update2 (priv->proxy,
-	                                         settings,
-	                                         flags,
-	                                         args,
-	                                         cancellable,
-	                                         update2_cb,
-	                                         simple);
+	_nm_object_dbus_call (connection,
+	                      nm_remote_connection_update2,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                      NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                      "Update2",
+	                      g_variant_new ("(@a{sa{sv}}u@a{sv})",
+	                                     settings,
+	                                     (guint32) flags,
+	                                     args),
+	                      G_VARIANT_TYPE ("(a{sv})"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_variant_strip_dbus_error_cb);
 }
 
 /**
@@ -156,15 +129,21 @@ nm_remote_connection_update2_finish (NMRemoteConnection *connection,
                                      GAsyncResult *result,
                                      GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *ret = NULL;
+	GVariant *v_result;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_update2), FALSE);
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, connection, nm_remote_connection_update2), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	ret = g_task_propagate_pointer (G_TASK (result), error);
+	if (!ret)
 		return NULL;
-	else
-		return g_variant_ref (g_simple_async_result_get_op_res_gpointer (simple));
+
+	g_variant_get (ret,
+	               "(@a{sv})",
+	               &v_result);
+
+	return v_result;
 }
 
 /*****************************************************************************/
@@ -218,26 +197,6 @@ nm_remote_connection_commit_changes (NMRemoteConnection *connection,
 	return TRUE;
 }
 
-static void
-update_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-	gs_unref_variant GVariant *v = NULL;
-
-	if (nmdbus_settings_connection_call_update2_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
-	                                                    &v,
-	                                                    result,
-	                                                    &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 /**
  * nm_remote_connection_commit_changes_async:
  * @connection: the #NMRemoteConnection
@@ -258,30 +217,19 @@ nm_remote_connection_commit_changes_async (NMRemoteConnection *connection,
                                            GAsyncReadyCallback callback,
                                            gpointer user_data)
 {
-	NMRemoteConnectionPrivate *priv;
-	GSimpleAsyncResult *simple;
-	GVariantBuilder args;
-
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
-
-	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
-	                                    nm_remote_connection_commit_changes_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	g_variant_builder_init (&args, G_VARIANT_TYPE ("a{sv}"));
-	nmdbus_settings_connection_call_update2 (priv->proxy,
-	                                         nm_connection_to_dbus (NM_CONNECTION (connection),
-	                                                                NM_CONNECTION_SERIALIZE_ALL),
-	                                         save_to_disk
-	                                           ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
-	                                           : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
-	                                         g_variant_builder_end (&args),
-	                                         cancellable,
-	                                         update_cb,
-	                                         simple);
+	nm_remote_connection_update2 (connection,
+	                              nm_connection_to_dbus (NM_CONNECTION (connection),
+	                                                     NM_CONNECTION_SERIALIZE_ALL),
+	                                save_to_disk
+	                              ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+	                              : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
+	                              NULL,
+	                              cancellable,
+	                              callback,
+	                              user_data);
 }
 
 /**
@@ -299,15 +247,10 @@ nm_remote_connection_commit_changes_finish (NMRemoteConnection *connection,
                                             GAsyncResult *result,
                                             GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *v_result = NULL;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_commit_changes_async), FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+	v_result = nm_remote_connection_update2_finish (connection, result, error);
+	return !!v_result;
 }
 
 /*****************************************************************************/
