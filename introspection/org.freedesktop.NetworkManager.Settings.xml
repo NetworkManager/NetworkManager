@@ -120,7 +120,7 @@
 
     <!--
         ReloadConnections:
-        @status: Success or failure.
+        @status: This always returns %TRUE.
 
         Tells NetworkManager to reload all connection files from disk, including
         noticing any added or deleted connection files. By default, connections

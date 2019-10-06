@@ -503,10 +503,10 @@ nm_remote_settings_reload_connections (NMRemoteSettings *settings,
 	                                                   cancellable, error)) {
 		if (error && *error)
 			g_dbus_error_strip_remote_error (*error);
-		success = FALSE;
+		return FALSE;
 	}
 
-	return success;
+	return TRUE;
 }
 
 static void
@@ -519,7 +519,7 @@ reload_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (nmdbus_settings_call_reload_connections_finish (NMDBUS_SETTINGS (proxy),
 	                                                    &success,
 	                                                    result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, success);
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 	else {
 		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
