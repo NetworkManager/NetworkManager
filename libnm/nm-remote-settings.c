@@ -416,9 +416,10 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 	                                                 cancellable, error)) {
 		if (error && *error)
 			g_dbus_error_strip_remote_error (*error);
-		success = FALSE;
+		return FALSE;
 	}
-	return success;
+
+	return TRUE;
 }
 
 static void

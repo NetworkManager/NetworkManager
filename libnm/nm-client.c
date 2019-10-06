@@ -1896,8 +1896,16 @@ nm_client_add_connection2_finish (NMClient *client,
  * then @failures will be set to a %NULL-terminated array of the
  * filenames that failed to load.
  *
- * Returns: %TRUE if NetworkManager at least tried to load @filenames,
- * %FALSE if an error occurred (eg, permission denied).
+ * Returns: %TRUE on success.
+ *
+ * Warning: before libnm 1.22, the boolean return value was inconsistent.
+ *   That is made worse, because when running against certain server versions
+ *   before 1.20, the server would return wrong values for success/failure.
+ *   This means, if you use this function in libnm before 1.22, you are advised
+ *   to ignore the boolean return value and only look at @failures and @error.
+ *   With libnm >= 1.22, the boolean return value corresponds to whether @error was
+ *   set. Note that even in the success case, you might have individual @failures.
+ *   With 1.22, the return value is consistent with nm_client_load_connections_finish().
  *
  * Deprecated: 1.22, use nm_client_load_connections_async() or GDBusConnection
  **/
@@ -1988,8 +1996,8 @@ nm_client_load_connections_async (NMClient *client,
 
  * See nm_client_load_connections() for more details.
  *
- * Returns: %TRUE if NetworkManager at least tried to load @filenames,
- * %FALSE if an error occurred (eg, permission denied).
+ * Returns: %TRUE on success.
+ *   Note that even in the success case, you might have individual @failures.
  **/
 gboolean
 nm_client_load_connections_finish (NMClient *client,
@@ -2005,11 +2013,9 @@ nm_client_load_connections_finish (NMClient *client,
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
 		return FALSE;
-	else {
-		if (failures)
-			*failures = g_strdupv (g_simple_async_result_get_op_res_gpointer (simple));
-		return TRUE;
-	}
+	if (failures)
+		*failures = g_strdupv (g_simple_async_result_get_op_res_gpointer (simple));
+	return TRUE;
 }
 
 /**
