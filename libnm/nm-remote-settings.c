@@ -394,64 +394,6 @@ nm_remote_settings_add_connection2 (NMRemoteSettings *self,
 	}
 }
 
-static void
-reload_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	gboolean success;
-	GError *error = NULL;
-
-	if (nmdbus_settings_call_reload_connections_finish (NMDBUS_SETTINGS (proxy),
-	                                                    &success,
-	                                                    result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-void
-nm_remote_settings_reload_connections_async (NMRemoteSettings *settings,
-                                             GCancellable *cancellable,
-                                             GAsyncReadyCallback callback,
-                                             gpointer user_data)
-{
-	NMRemoteSettingsPrivate *priv;
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
-	                                    nm_remote_settings_reload_connections_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_settings_call_reload_connections (priv->proxy, cancellable,
-	                                         reload_connections_cb, simple);
-}
-
-gboolean
-nm_remote_settings_reload_connections_finish (NMRemoteSettings *settings,
-                                              GAsyncResult *result,
-                                              GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (settings), nm_remote_settings_reload_connections_async), FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
 gboolean
 nm_remote_settings_save_hostname (NMRemoteSettings *settings,
                                   const char *hostname,
