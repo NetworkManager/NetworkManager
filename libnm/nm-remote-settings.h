@@ -75,11 +75,6 @@ void nm_remote_settings_add_connection2 (NMRemoteSettings *self,
                                          NMRemoteSettingAddConnection2Callback callback,
                                          gpointer user_data);
 
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean nm_remote_settings_reload_connections        (NMRemoteSettings *settings,
-                                                       GCancellable *cancellable,
-                                                       GError **error);
-
 void     nm_remote_settings_reload_connections_async  (NMRemoteSettings *settings,
                                                        GCancellable *cancellable,
                                                        GAsyncReadyCallback callback,

@@ -394,28 +394,6 @@ nm_remote_settings_add_connection2 (NMRemoteSettings *self,
 	}
 }
 
-gboolean
-nm_remote_settings_reload_connections (NMRemoteSettings *settings,
-                                       GCancellable *cancellable,
-                                       GError **error)
-{
-	NMRemoteSettingsPrivate *priv;
-	gboolean success;
-
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!nmdbus_settings_call_reload_connections_sync (priv->proxy, &success,
-	                                                   cancellable, error)) {
-		if (error && *error)
-			g_dbus_error_strip_remote_error (*error);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static void
 reload_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {

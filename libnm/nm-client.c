@@ -2210,13 +2210,26 @@ nm_client_reload_connections (NMClient *client,
                               GCancellable *cancellable,
                               GError **error)
 {
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	gs_unref_variant GVariant *ret = NULL;
 
-	if (!_nm_client_check_nm_running (client, error))
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
+
+	ret = _nm_object_dbus_call_sync (client,
+	                                 cancellable,
+	                                 NM_DBUS_PATH_SETTINGS,
+	                                 NM_DBUS_INTERFACE_SETTINGS,
+	                                 "ReloadConnections",
+	                                 g_variant_new ("()"),
+	                                 G_VARIANT_TYPE ("(b)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
 		return FALSE;
 
-	return nm_remote_settings_reload_connections (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                              cancellable, error);
+	return TRUE;
 }
 
 static void
