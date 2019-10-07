@@ -4138,10 +4138,11 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 		}
 	}
 	ip4_addr_subnets_destroy_index (plat_subnets, plat_addresses);
-	ip4_addr_subnets_destroy_index (known_subnets, known_addresses);
 
 	if (!known_addresses)
 		return TRUE;
+
+	ip4_addr_subnets_destroy_index (known_subnets, known_addresses);
 
 	ifa_flags =   nm_platform_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
