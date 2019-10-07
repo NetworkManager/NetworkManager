@@ -75,13 +75,4 @@ void nm_remote_settings_add_connection2 (NMRemoteSettings *self,
                                          NMRemoteSettingAddConnection2Callback callback,
                                          gpointer user_data);
 
-void     nm_remote_settings_save_hostname_async  (NMRemoteSettings *settings,
-                                                  const char *hostname,
-                                                  GCancellable *cancellable,
-                                                  GAsyncReadyCallback callback,
-                                                  gpointer user_data);
-gboolean nm_remote_settings_save_hostname_finish (NMRemoteSettings *settings,
-                                                  GAsyncResult *result,
-                                                  GError **error);
-
 #endif /* __NM_REMOTE_SETTINGS_H__ */
