@@ -394,27 +394,6 @@ nm_remote_settings_add_connection2 (NMRemoteSettings *self,
 	}
 }
 
-gboolean
-nm_remote_settings_save_hostname (NMRemoteSettings *settings,
-                                  const char *hostname,
-                                  GCancellable *cancellable,
-                                  GError **error)
-{
-	NMRemoteSettingsPrivate *priv;
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	ret = nmdbus_settings_call_save_hostname_sync (priv->proxy,
-	                                               hostname ?: "",
-	                                               cancellable, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
 static void
 save_hostname_cb (GObject *proxy,
                   GAsyncResult *result,
