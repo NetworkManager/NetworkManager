@@ -60,19 +60,19 @@ NMRemoteConnection *nm_remote_settings_get_connection_by_path (NMRemoteSettings 
 NMRemoteConnection *nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings,
                                                                const char *uuid);
 
-typedef void (*NMRemoteSettingAddConnection2Callback) (NMRemoteSettings *self,
-                                                       NMRemoteConnection *connection,
-                                                       GVariant *results,
-                                                       GError *error,
-                                                       gpointer user_data);
+typedef struct {
+	NMRemoteConnection *connection;
+	GVariant *extra_results;
+} NMAddConnectionResultData;
 
-void nm_remote_settings_add_connection2 (NMRemoteSettings *self,
-                                         GVariant *settings,
-                                         NMSettingsAddConnection2Flags flags,
-                                         GVariant *args,
-                                         gboolean ignore_out_result,
-                                         GCancellable *cancellable,
-                                         NMRemoteSettingAddConnection2Callback callback,
-                                         gpointer user_data);
+void nm_add_connection_result_data_free (NMAddConnectionResultData *result_data);
+
+NM_AUTO_DEFINE_FCN0 (NMAddConnectionResultData *, _nm_auto_free_add_connection_result_data, nm_add_connection_result_data_free)
+#define nm_auto_free_add_connection_result_data nm_auto (_nm_auto_free_add_connection_result_data)
+
+void nm_remote_settings_wait_for_connection (NMRemoteSettings *settings,
+                                             const char *connection_path,
+                                             GVariant *extra_results_take,
+                                             GTask *task_take);
 
 #endif /* __NM_REMOTE_SETTINGS_H__ */

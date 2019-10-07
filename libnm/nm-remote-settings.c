@@ -59,24 +59,20 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	CList add_lst;
 	NMRemoteSettings *self;
-	NMRemoteSettingAddConnection2Callback callback;
-	gpointer user_data;
-	GCancellable *cancellable;
-	char *path;
-	GVariant *results;
+	GTask *task;
+	char *connection_path;
+	GVariant *extra_results;
 	gulong cancellable_id;
-	NMSettingsAddConnection2Flags flags;
-	bool ignore_out_result:1;
 } AddConnectionInfo;
 
 static AddConnectionInfo *
-_add_connection_info_find (NMRemoteSettings *self, const char *path)
+_add_connection_info_find (NMRemoteSettings *self, const char *connection_path)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	AddConnectionInfo *info;
 
 	c_list_for_each_entry (info, &priv->add_lst_head, add_lst) {
-		if (nm_streq0 (info->path, path))
+		if (nm_streq (info->connection_path, connection_path))
 			return info;
 	}
 	return NULL;
@@ -91,38 +87,31 @@ _add_connection_info_complete (AddConnectionInfo *info,
 
 	c_list_unlink_stale (&info->add_lst);
 
-	nm_clear_g_signal_handler (info->cancellable, &info->cancellable_id);
+	nm_clear_g_signal_handler (g_task_get_cancellable (info->task), &info->cancellable_id);
 
-	if (   info->cancellable
-	    && !nm_utils_error_is_cancelled (error_take, FALSE)) {
-		GError *error2 = NULL;
+	if (error_take)
+		g_task_return_error (info->task, error_take);
+	else {
+		NMAddConnectionResultData *result_info;
 
-		if (g_cancellable_set_error_if_cancelled (info->cancellable, &error2)) {
-			g_clear_error (&error_take);
-			error_take = error2;
-			connection = NULL;
-		}
+		result_info = g_slice_new (NMAddConnectionResultData);
+		*result_info = (NMAddConnectionResultData) {
+			.connection    = g_object_ref (connection),
+			.extra_results = g_steal_pointer (&info->extra_results),
+		};
+		g_task_return_pointer (info->task, result_info, (GDestroyNotify) nm_add_connection_result_data_free);
 	}
 
-	info->callback (info->self,
-	                connection,
-	                connection ? info->results : NULL,
-	                error_take,
-	                info->user_data);
-
-	g_clear_error (&error_take);
-
+	g_object_unref (info->task);
 	g_object_unref (info->self);
-	nm_g_object_unref (info->cancellable);
-	nm_clear_g_free (&info->path);
-	nm_g_variant_unref (info->results);
-
+	g_free (info->connection_path);
+	nm_g_variant_unref (info->extra_results);
 	nm_g_slice_free (info);
 }
 
 static void
-_add_connection_info_cancelled (GCancellable *cancellable,
-                                AddConnectionInfo *info)
+_wait_for_connection_cancelled_cb (GCancellable *cancellable,
+                                   AddConnectionInfo *info)
 {
 	_add_connection_info_complete (info,
 	                               NULL,
@@ -246,8 +235,12 @@ connection_added (NMRemoteSettings *self,
 	else
 		g_signal_stop_emission (self, signals[CONNECTION_ADDED], 0);
 
+	/* FIXME: this doesn't look right. Why does it not care about whether the
+	 * connection is visible? Anyway, this will be reworked. */
 	path = nm_connection_get_path (NM_CONNECTION (remote));
-	info = _add_connection_info_find (self, path);
+	info =   path
+	       ? _add_connection_info_find (self, path)
+	       : NULL;
 	if (info)
 		_add_connection_info_complete (info, remote, NULL);
 }
@@ -278,51 +271,42 @@ nm_remote_settings_get_connections (NMRemoteSettings *settings)
 	return NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->visible_connections;
 }
 
-static void
-add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
+void
+nm_remote_settings_wait_for_connection (NMRemoteSettings *self,
+                                        const char *connection_path,
+                                        GVariant *extra_results_take,
+                                        GTask *task_take)
 {
-	AddConnectionInfo *info = user_data;
-	GError *error = NULL;
+	NMRemoteSettingsPrivate *priv;
+	gs_unref_object GTask *task = task_take;
+	gs_unref_variant GVariant *extra_results = extra_results_take;
+	GCancellable *cancellable;
+	AddConnectionInfo *info;
 
-	if (    info->ignore_out_result
-	     && info->flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
-		nmdbus_settings_call_add_connection_finish (NMDBUS_SETTINGS (proxy),
-		                                            &info->path,
-		                                            result,
-		                                            &error);
-	} else if (   info->ignore_out_result
-	           && info->flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY) {
-		nmdbus_settings_call_add_connection_unsaved_finish (NMDBUS_SETTINGS (proxy),
-		                                                    &info->path,
-		                                                    result,
-		                                                    &error);
-	} else {
-		nmdbus_settings_call_add_connection2_finish (NMDBUS_SETTINGS (proxy),
-		                                             &info->path,
-		                                             &info->results,
-		                                             result,
-		                                             &error);
-		if (info->ignore_out_result) {
-			/* despite we have the result, the caller didn't ask for it.
-			 * Through it away, so we consistently don't return a result. */
-			nm_clear_pointer (&info->results, g_variant_unref);
-		}
-	}
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
-	if (error) {
-		g_dbus_error_strip_remote_error (error);
-		_add_connection_info_complete (info, NULL, error);
-		return;
-	}
+	/* FIXME: there is no timeout for how long we wait. But this entire
+	 * code will be reworked, also that we have a suitable GMainContext
+	 * where we can schedule the timeout (we shouldn't use g_main_context_default()). */
 
+	info = g_slice_new (AddConnectionInfo);
+	*info = (AddConnectionInfo) {
+		.self            = g_object_ref (self),
+		.connection_path = g_strdup (connection_path),
+		.task            = g_steal_pointer (&task),
+		.extra_results   = g_steal_pointer (&extra_results),
+	};
+	c_list_link_tail (&priv->add_lst_head, &info->add_lst);
+
+	cancellable = g_task_get_cancellable (info->task);
 	/* On success, we still have to wait until the connection is fully
 	 * initialized before calling the callback.
 	 */
-	if (info->cancellable) {
+	if (cancellable) {
 		gulong id;
 
-		id = g_cancellable_connect (info->cancellable,
-		                            G_CALLBACK (_add_connection_info_cancelled),
+		id = g_cancellable_connect (cancellable,
+		                            G_CALLBACK (_wait_for_connection_cancelled_cb),
 		                            info,
 		                            NULL);
 		if (id == 0) {
@@ -331,67 +315,10 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 		} else
 			info->cancellable_id = id;
 	}
-}
 
-void
-nm_remote_settings_add_connection2 (NMRemoteSettings *self,
-                                    GVariant *settings,
-                                    NMSettingsAddConnection2Flags flags,
-                                    GVariant *args,
-                                    gboolean ignore_out_result,
-                                    GCancellable *cancellable,
-                                    NMRemoteSettingAddConnection2Callback callback,
-                                    gpointer user_data)
-{
-	NMRemoteSettingsPrivate *priv;
-	AddConnectionInfo *info;
-
-	nm_assert (NM_IS_REMOTE_SETTINGS (self));
-	nm_assert (g_variant_is_of_type (settings, G_VARIANT_TYPE ("a{sa{sv}}")));
-	nm_assert (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
-	nm_assert (callback);
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-
-	info = g_slice_new (AddConnectionInfo);
-	*info = (AddConnectionInfo) {
-		.self              = g_object_ref (self),
-		.cancellable       = nm_g_object_ref (cancellable),
-		.flags             = flags,
-		.ignore_out_result = ignore_out_result,
-		.callback          = callback,
-		.user_data         = user_data,
-	};
-	c_list_link_tail (&priv->add_lst_head, &info->add_lst);
-
-	/* Although AddConnection2() being capable to handle also AddConnection() and
-	 * AddConnectionUnsaved() variants, we prefer to use the old D-Bus methods when
-	 * they are sufficient. The reason is that libnm should avoid hard dependencies
-	 * on 1.20 API whenever possible. */
-	if (    ignore_out_result
-	     && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
-		nmdbus_settings_call_add_connection (priv->proxy,
-		                                     settings,
-		                                     cancellable,
-		                                     add_connection_done,
-		                                     info);
-	} else if (   ignore_out_result
-	           && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY) {
-		nmdbus_settings_call_add_connection_unsaved (priv->proxy,
-		                                             settings,
-		                                             cancellable,
-		                                             add_connection_done,
-		                                             info);
-	} else {
-		nmdbus_settings_call_add_connection2 (priv->proxy,
-		                                      settings,
-		                                      flags,
-		                                         args
-		                                      ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
-		                                      cancellable,
-		                                      add_connection_done,
-		                                      info);
-	}
+	/* FIXME: OK, we just assume the the connection is here, and that we are bound
+	 * to get the suitable signal when the connection is fully initalized (or failed).
+	 * Obviously, that needs reworking. */
 }
 
 /*****************************************************************************/
