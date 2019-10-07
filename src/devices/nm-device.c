@@ -17580,14 +17580,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
-
-	/**
-	 * NMDevice:metered:
-	 *
-	 * Whether the connection is metered.
-	 *
-	 * Since: 1.2
-	 **/
 	obj_properties[PROP_METERED] =
 	    g_param_spec_uint (NM_DEVICE_METERED, "", "",
 	                       0, G_MAXUINT32, NM_METERED_UNKNOWN,
