@@ -129,6 +129,9 @@
           <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
           Please refer to the <link linkend='colors' endterm='colors.title' /> section for a
           list of color names supported by <command>nmcli</command>.</para>
+          <para>If the environment variable <literal>NO_COLOR</literal> is set (to any value),
+          then coloring is disabled with mode "auto". Explicitly enabling coloring overrides
+          the environment variable.</para>
         </listitem>
       </varlistentry>
 

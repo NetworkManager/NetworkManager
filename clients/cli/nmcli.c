@@ -456,6 +456,12 @@ check_colors (NmcColorOption color_option,
 		return FALSE;
 	}
 
+	if (   color_option == NMC_USE_COLOR_AUTO
+	    && g_getenv ("NO_COLOR")) {
+		/* https://no-color.org/ */
+		return FALSE;
+	}
+
 	term = g_getenv ("TERM");
 
 	if (color_option == NMC_USE_COLOR_AUTO) {
