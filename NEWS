@@ -23,6 +23,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * libnm: retire deprecated WiMAX API NMDeviceWimax and NMWimaxNsp.
   WiMAX support was removed from NetworkManager in version 1.2 (2016) and no such
   type instances would have been created by NMClient for a while now.
+* DHCP: switch "internal" DHCPv4 plugin from code based on systemd to use nettools'
+  n-dhcp4 library.
 
 =============================================
 NetworkManager-1.20
