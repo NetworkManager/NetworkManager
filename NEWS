@@ -1,3 +1,18 @@
+===============================================
+NetworkManager-1.18.4
+Overview of changes since NetworkManager-1.18.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Improve handling of externally added policy routing rules and for rules
+  that are taken over after a restart of NetworkManager service.
+* Fix taking over OVS devices after restart of NetworkManager.
+* Bugfix reapplying IP configuration while activating.
+* Allow reapplying Wi-Fi profile when seen-bssids changes.
+* Various other bugfixes for minor issues and memory leaks.
+* Various build and test fixes.
+
 =============================================
 NetworkManager-1.18.2
 Overview of changes since NetworkManager-1.18
