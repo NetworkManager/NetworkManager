@@ -12,7 +12,7 @@ usage() {
     echo "Does all the steps from a clean git working directory to an RPM of NetworkManager"
     echo
     echo "This is also the preferred way to create a distribution tarball for release:"
-    echo "  $ $0 -c -S"
+    echo "  $ $0 -r"
     echo
     echo "Options:"
     echo "  -f|--force: force build, even if working directory is not clean and has local modifications"

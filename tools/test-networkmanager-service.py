@@ -2344,8 +2344,10 @@ def main():
         raise AssertionError("Failure to request D-Bus name org.freedesktop.NetworkManager")
 
     # Watch stdin; if it closes, assume our parent has crashed, and exit
-    id1 = GLib.IOChannel(0).add_watch(GLib.IOCondition.HUP,
-                                      lambda io, condition: gl.mainloop.quit() or True)
+    id1 = GLib.io_add_watch(GLib.IOChannel.unix_new(0),
+                            GLib.PRIORITY_DEFAULT,
+                            GLib.IO_HUP,
+                            lambda io, condition: gl.mainloop.quit() or True)
 
     gl.mainloop.run()
 

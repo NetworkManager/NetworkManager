@@ -2765,9 +2765,9 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 static void
 test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 {
-#define P_VAR_RUN                "/var/run"
-#define P_VAR_RUN_NETNS          "/var/run/netns"
-#define P_VAR_RUN_NETNS_BINDNAME "/var/run/netns/"P_NETNS_BINDNAME
+#define P_VAR_RUN                "/run"
+#define P_VAR_RUN_NETNS          "/run/netns"
+#define P_VAR_RUN_NETNS_BINDNAME "/run/netns/"P_NETNS_BINDNAME
 #define P_NETNS_BINDNAME         "nmtst-iproute2-netns"
 	gs_unref_object NMPlatform *platform_0 = NULL;
 	gs_unref_object NMPlatform *platform_1 = NULL;

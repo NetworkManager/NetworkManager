@@ -269,7 +269,7 @@ if enable_introspection
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
+    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
     depends: libnm_gir,
   )
 
@@ -278,7 +278,7 @@ if enable_introspection
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
+    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
     depends: libnm_gir,
   )
 endif
