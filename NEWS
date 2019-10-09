@@ -10,6 +10,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Drop support for BlueZ 4. BlueZ 5 was released in 2012 and should
   nowadays be available everywhere.
+* core: declare "startup complete" when device reaches "connected"
+  state, even if IP addressing methods did not yet fully complete.
+  This changes behavior for unblocking "NetworkManager-wait-online.service",
+  and "network-online.target" earlier. If this causes issues in your
+  setup, you may need to configure "ipv4.may-fail=no" or "ipv6.may-fail=no",
+  which delays reaching "connected" state for the address family accordingly.
 * Various bug fixes and improvements.
 
 =============================================
