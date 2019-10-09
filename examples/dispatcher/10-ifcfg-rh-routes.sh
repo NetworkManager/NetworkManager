@@ -22,10 +22,6 @@ file_regex='^/etc/sysconfig/network-scripts/ifcfg-([^/]+)$'
 
 profile="${BASH_REMATCH[1]}"
 
-if [ ! -f "/etc/sysconfig/network-scripts/rule-$profile" ] && [ ! -f "/etc/sysconfig/network-scripts/rule6-$profile" ]; then
-    exit 0
-fi
-
 MATCH='^[[:space:]]*(\#.*)?$'
 
 handle_file () {
