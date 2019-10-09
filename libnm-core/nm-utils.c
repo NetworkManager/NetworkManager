@@ -1296,24 +1296,18 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		}
 		break;
 	case NMU_SEC_SAE:
+		if (adhoc)
+			return FALSE;
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
-			if (adhoc) {
-				if (!(wifi_caps & NM_WIFI_DEVICE_CAP_IBSS_RSN))
-					return FALSE;
+			if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
+				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
+					return TRUE;
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
-			} else {
-				if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
-					if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
-						return TRUE;
-					if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-						return TRUE;
-				}
 			}
 			return FALSE;
 		}
