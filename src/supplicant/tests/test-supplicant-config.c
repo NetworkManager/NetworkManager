@@ -430,7 +430,6 @@ test_wifi_sae_psk (const char *psk)
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
-	NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '0'");
 	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
 
 	g_test_assert_expected_messages ();
