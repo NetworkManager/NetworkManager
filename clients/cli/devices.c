@@ -3584,19 +3584,17 @@ finish:
 }
 
 static GBytes *
-generate_ssid_for_hotspot (const char *ssid)
+generate_ssid_for_hotspot (void)
 {
 	GBytes *ssid_bytes;
-	char *hotspot_ssid = NULL;
+	char *ssid = NULL;
 
-	if (!ssid) {
-		hotspot_ssid = g_strdup_printf ("Hotspot-%s", g_get_host_name ());
-		if (strlen (hotspot_ssid) > 32)
-			hotspot_ssid[32] = '\0';
-		ssid = hotspot_ssid;
-	}
+	ssid = g_strdup_printf ("Hotspot-%s", g_get_host_name ());
+	if (strlen (ssid) > 32)
+		ssid[32] = '\0';
 	ssid_bytes = g_bytes_new (ssid, strlen (ssid));
-	g_free (hotspot_ssid);
+	g_free (ssid);
+
 	return ssid_bytes;
 }
 
@@ -3710,30 +3708,125 @@ set_wireless_security_for_hotspot (NMSettingWirelessSecurity *s_wsec,
 	return TRUE;
 }
 
-static NMCResultCode
-do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
+static NMConnection *
+find_hotspot_conn (NMDevice *device,
+                   const GPtrArray *connections,
+                   const char *con_name,
+                   GBytes *ssid_bytes,
+                   const char *wifi_mode,
+                   const char *band,
+                   gint64 channel_int)
 {
-	AddAndActivateInfo *info;
-	const char *ifname = NULL;
-	const char *con_name = NULL;
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	int i;
+
+        for (i = 0; i < connections->len; i++) {
+                connection = NM_CONNECTION (connections->pdata[i]);
+
+		s_wifi = nm_connection_get_setting_wireless (connection);
+		if (!s_wifi)
+			continue;
+
+		if (   channel_int != -1
+		    && nm_setting_wireless_get_channel (s_wifi) != channel_int)
+			continue;
+
+		if (g_strcmp0 (nm_setting_wireless_get_mode (s_wifi), wifi_mode) != 0)
+			continue;
+
+		if (band && g_strcmp0 (nm_setting_wireless_get_band (s_wifi), band) != 0)
+			continue;
+
+		if (ssid_bytes && !g_bytes_equal (nm_setting_wireless_get_ssid (s_wifi), ssid_bytes))
+			continue;
+
+		if (!nm_device_connection_compatible (device, connection, NULL))
+			continue;
+
+		return g_object_ref (connection);
+	}
+
+	return NULL;
+}
+
+static NMConnection *
+create_hotspot_conn (const GPtrArray *connections,
+                     const char *con_name,
+                     GBytes *ssid_bytes,
+                     const char *wifi_mode,
+                     const char *band,
+                     gint64 channel_int)
+{
 	char *default_name = NULL;
-	const char *ssid = NULL;
-	const char *wifi_mode;
-	const char *band = NULL;
-	const char *channel = NULL;
-	unsigned long channel_int;
-	const char *password = NULL;
-	gboolean show_password = FALSE;
-	NMDevice *device = NULL;
-	gs_free NMDevice **devices = NULL;
-	NMDeviceWifiCapabilities caps;
-	NMConnection *connection = NULL;
+	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSettingProxy *s_proxy;
-	GBytes *ssid_bytes;
+
+	connection = nm_simple_connection_new ();
+	s_con =  (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+	if (!con_name)
+		con_name = default_name = nmc_unique_connection_name (connections, "Hotspot");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, con_name,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NULL);
+	g_free (default_name);
+
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	g_object_set (s_wifi, NM_SETTING_WIRELESS_MODE, wifi_mode,
+	                      NM_SETTING_WIRELESS_SSID, ssid_bytes,
+	                      NULL);
+
+	if (channel_int != -1) {
+		g_object_set (s_wifi,
+		              NM_SETTING_WIRELESS_CHANNEL, (guint32) channel_int,
+		              NM_SETTING_WIRELESS_BAND, band,
+		              NULL);
+	}
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED, NULL);
+
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	s_proxy = (NMSettingProxy *) nm_setting_proxy_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_proxy));
+	g_object_set (s_proxy, NM_SETTING_PROXY_METHOD, (int) NM_SETTING_PROXY_METHOD_NONE, NULL);
+
+	return connection;
+}
+
+static NMCResultCode
+do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
+{
+	const char *ifname = NULL;
+	const char *con_name = NULL;
+	gs_unref_bytes GBytes *ssid_bytes = NULL;
+	const char *wifi_mode;
+	const char *band = NULL;
+	const char *channel = NULL;
+	gint64 channel_int = -1;
+	const char *password = NULL;
+	gboolean show_password = FALSE;
+	NMDevice *device = NULL;
+	gs_free NMDevice **devices = NULL;
+	NMDeviceWifiCapabilities caps;
+	gs_unref_object NMConnection *connection = NULL;
+	const GPtrArray *connections;
+	NMSettingWirelessSecurity *s_wsec;
 	GError *error = NULL;
 
 	/* Set default timeout waiting for operation completion. */
@@ -3774,11 +3867,11 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-			ssid = *argv;
-			if (strlen (ssid) > 32) {
+			if (strlen (*argv) > 32) {
 				g_string_printf (nmc->return_text, _("Error: ssid is too long."));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
+			ssid_bytes = g_bytes_new (*argv, strlen (*argv));
 		} else if (strcmp (*argv, "band") == 0) {
 			argc--;
 			argv++;
@@ -3834,21 +3927,24 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 			channel = "7";
 	}
 	if (channel) {
+		unsigned long int value;
+
 		if (!band) {
 			g_string_printf (nmc->return_text, _("Error: channel requires band too."));
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
-		if (   !nmc_string_to_uint (channel, TRUE, 1, 5825, &channel_int)
-		    || !nm_utils_wifi_is_channel_valid (channel_int, band)) {
+		if (   !nmc_string_to_uint (channel, TRUE, 1, 5825, &value)
+		    || !nm_utils_wifi_is_channel_valid (value, band)) {
 			g_string_printf (nmc->return_text, _("Error: channel '%s' not valid for band '%s'."),
 			                 channel, band);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
+
+		channel_int = value;
 	}
 
 	/* Find Wi-Fi device. When no ifname is provided, the first Wi-Fi is used. */
 	device = find_wifi_device_by_iface (devices, ifname, NULL);
-
 	if (!device) {
 		if (ifname)
 			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
@@ -3869,65 +3965,34 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_UNKNOWN;
 	}
 
-	/* Create a connection with appropriate parameters */
-	connection = nm_simple_connection_new ();
-	s_con =  (NMSettingConnection *) nm_setting_connection_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
-	if (!con_name)
-		con_name = default_name = nmc_unique_connection_name (nm_client_get_connections (nmc->client), "Hotspot");
-	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, con_name,
-	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
-	              NULL);
-	g_free (default_name);
-
-	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
-	ssid_bytes = generate_ssid_for_hotspot (ssid);
-	g_object_set (s_wifi, NM_SETTING_WIRELESS_MODE, wifi_mode,
-	                      NM_SETTING_WIRELESS_SSID, ssid_bytes,
-	                      NULL);
-	g_bytes_unref (ssid_bytes);
-	if (channel)
-		g_object_set (s_wifi,
-		              NM_SETTING_WIRELESS_CHANNEL, (guint32) channel_int,
-		              NM_SETTING_WIRELESS_BAND, band,
-		              NULL);
-
-	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-	if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, show_password, &error)) {
-		g_object_unref (connection);
-		g_string_printf (nmc->return_text, _("Error: Invalid 'password': %s."), error->message);
-		g_clear_error (&error);
-		return NMC_RESULT_ERROR_UNKNOWN;
+	connections = nm_client_get_connections (nmc->client);
+	connection = find_hotspot_conn (device, connections, con_name, ssid_bytes,
+	                                wifi_mode, band, channel_int);
+	if (!connection) {
+		/* Create a connection with appropriate parameters */
+		if (!ssid_bytes)
+			ssid_bytes = generate_ssid_for_hotspot ();
+		connection = create_hotspot_conn (connections, con_name, ssid_bytes,
+		                                  wifi_mode, band, channel_int);
 	}
 
-	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED, NULL);
+	if (password || !NM_IS_REMOTE_CONNECTION (connection)) {
+		s_wsec = nm_connection_get_setting_wireless_security (connection);
+		g_return_val_if_fail (s_wsec, NMC_RESULT_ERROR_UNKNOWN);
 
-	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
-
-	s_proxy = (NMSettingProxy *) nm_setting_proxy_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_proxy));
-	g_object_set (s_proxy, NM_SETTING_PROXY_METHOD, (int) NM_SETTING_PROXY_METHOD_NONE, NULL);
+		if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, show_password, &error)) {
+			g_object_unref (connection);
+			g_string_printf (nmc->return_text, _("Error: Invalid 'password': %s."), error->message);
+			g_clear_error (&error);
+			return NMC_RESULT_ERROR_UNKNOWN;
+		}
+	}
 
 	/* Activate the connection now */
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = add_and_activate_info_new (nmc, device, TRUE, TRUE, NULL);
-
-	nm_client_add_and_activate_connection_async (nmc->client,
-	                                             connection,
-	                                             device,
-	                                             NULL,
-	                                             NULL,
-	                                             add_and_activate_cb,
-	                                             info);
+	save_and_activate_connection (nmc, device, connection, TRUE, NULL);
 
 	return nmc->return_value;
 }
