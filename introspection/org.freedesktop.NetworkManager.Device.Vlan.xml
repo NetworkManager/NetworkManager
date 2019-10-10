@@ -19,6 +19,9 @@
 
         Indicates whether the physical carrier is found (e.g. whether a cable is
         plugged in or not).
+
+        DEPRECATED: check for the "carrier" flag in the "InterfaceFlags"
+        property on the "org.freedesktop.NetworkManager.Device" interface.
     -->
     <property name="Carrier" type="b" access="read"/>
 
