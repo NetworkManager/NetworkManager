@@ -61,6 +61,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_LLDP_NEIGHBORS,
 	PROP_IP4_CONNECTIVITY,
 	PROP_IP6_CONNECTIVITY,
+	PROP_INTERFACE_FLAGS,
 );
 
 enum {
@@ -110,6 +111,7 @@ typedef struct _NMDevicePrivate {
 	char *physical_port_id;
 	guint32 mtu;
 	GPtrArray *lldp_neighbors;
+	guint32 interface_flags;
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT);
@@ -223,6 +225,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_MTU,               &priv->mtu },
 		{ NM_DEVICE_METERED,           &priv->metered },
 		{ NM_DEVICE_LLDP_NEIGHBORS,    &priv->lldp_neighbors, demarshal_lldp_neighbors },
+		{ NM_DEVICE_INTERFACE_FLAGS,   &priv->interface_flags },
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
@@ -433,6 +436,9 @@ get_property (GObject *object,
 		break;
 	case PROP_IP6_CONNECTIVITY:
 		g_value_set_enum (value, nm_device_get_connectivity (device, AF_INET6));
+		break;
+	case PROP_INTERFACE_FLAGS:
+		g_value_set_uint (value, nm_device_get_interface_flags (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -824,6 +830,19 @@ nm_device_class_init (NMDeviceClass *device_class)
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMDevice:interface-flags:
+	 *
+	 * The interface flags.
+	 *
+	 * Since: 1.22
+	 **/
+	obj_properties[PROP_INTERFACE_FLAGS] =
+	    g_param_spec_uint (NM_DEVICE_INTERFACE_FLAGS, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
@@ -1274,6 +1293,24 @@ nm_device_get_connectivity (NMDevice *device, int addr_family)
 	default:
 		g_return_val_if_reached (NM_CONNECTIVITY_UNKNOWN);
 	}
+}
+
+/**
+ * nm_device_get_interface_flags:
+ * @device: a #NMDevice
+ *
+ * Gets the interface flags of the device.
+ *
+ * Returns: the flags
+ *
+ * Since: 1.22
+ **/
+NMDeviceInterfaceFlags
+nm_device_get_interface_flags (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_INTERFACE_FLAG_NONE);
+
+	return NM_DEVICE_GET_PRIVATE (device)->interface_flags;
 }
 
 /**
