@@ -1281,7 +1281,7 @@ _nm_setting_should_compare_secret_property (NMSetting *setting,
 	}
 
 	/* when @setting has the secret-flags that should be ignored,
-	 * we skip the comparisong if:
+	 * we skip the comparison if:
 	 *
 	 *   - @other is not present,
 	 *   - @other does not have a secret named @secret_name
@@ -1392,6 +1392,18 @@ _compare_property (const NMSettInfoSetting *sett_info,
 	           || !sett_info->property_infos[property_idx].param_spec
 	           || NM_FLAGS_HAS (sett_info->property_infos[property_idx].param_spec->flags, NM_SETTING_PARAM_INFERRABLE)
 	           || compare_result == NM_TERNARY_DEFAULT);
+
+#if NM_MORE_ASSERTS > 10
+	/* assert that compare_property() is symeric. */
+	nm_assert (   !set_b
+	           || compare_result == NM_SETTING_GET_CLASS (set_a)->compare_property (sett_info,
+	                                                                                property_idx,
+	                                                                                con_b,
+	                                                                                set_b,
+	                                                                                con_a,
+	                                                                                set_a,
+	                                                                                flags));
+#endif
 
 	return compare_result;
 }
