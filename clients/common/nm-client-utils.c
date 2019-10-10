@@ -437,7 +437,7 @@ static gboolean
 can_show_graphics (void)
 {
 	static gboolean can_show_graphics_set = FALSE;
-	gboolean can_show_graphics = TRUE;
+	static gboolean can_show_graphics = TRUE;
 	char *locale_str;
 
 	if (G_LIKELY (can_show_graphics_set))
