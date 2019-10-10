@@ -73,15 +73,12 @@ typedef struct {
 	char *name_owner_cached;
 } NMObjectPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PATH,
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_OBJECT,
 	PROP_DBUS_OBJECT_MANAGER,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_object_get_path:
@@ -1469,63 +1466,58 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 
 	g_type_class_add_private (nm_object_class, sizeof (NMObjectPrivate));
 
-	/* virtual methods */
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->set_property = set_property;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
-
-	/* Properties */
 
 	/**
 	 * NMObject:path:
 	 *
 	 * The D-Bus object path.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_OBJECT_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH] =
+	    g_param_spec_string (NM_OBJECT_PATH, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMObject:dbus-connection: (skip)
 	 *
 	 * The #GDBusConnection of the object.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DBUS_CONNECTION,
-	     g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
-	                          G_TYPE_DBUS_CONNECTION,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DBUS_CONNECTION] =
+	    g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
+	                         G_TYPE_DBUS_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMObject:dbus-object: (skip)
 	 *
 	 * The #GDBusObject of the object.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DBUS_OBJECT,
-	     g_param_spec_object (NM_OBJECT_DBUS_OBJECT, "", "",
-	                          G_TYPE_DBUS_OBJECT,
-	                          G_PARAM_WRITABLE |
-	                          G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DBUS_OBJECT] =
+	    g_param_spec_object (NM_OBJECT_DBUS_OBJECT, "", "",
+	                         G_TYPE_DBUS_OBJECT,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMObject:dbus-object-manager: (skip)
 	 *
 	 * The #GDBusObjectManager of the object.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DBUS_OBJECT_MANAGER,
-	     g_param_spec_object (NM_OBJECT_DBUS_OBJECT_MANAGER, "", "",
-	                          G_TYPE_DBUS_OBJECT_MANAGER,
-	                          G_PARAM_WRITABLE |
-	                          G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DBUS_OBJECT_MANAGER] =
+	    g_param_spec_object (NM_OBJECT_DBUS_OBJECT_MANAGER, "", "",
+	                         G_TYPE_DBUS_OBJECT_MANAGER,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

@@ -28,8 +28,7 @@ typedef struct {
 	gboolean multi_queue;
 } NMDeviceTunPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_MODE,
 	PROP_OWNER,
@@ -37,9 +36,7 @@ enum {
 	PROP_NO_PI,
 	PROP_VNET_HDR,
 	PROP_MULTI_QUEUE,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_tun_get_hw_address:
@@ -303,17 +300,14 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 
 	g_type_class_add_private (gre_class, sizeof (NMDeviceTunPrivate));
 
-	/* virtual methods */
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceTun:hw-address:
@@ -322,12 +316,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_TUN_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_TUN_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:mode:
@@ -336,12 +329,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_DEVICE_TUN_MODE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_string (NM_DEVICE_TUN_MODE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:owner:
@@ -350,12 +342,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_OWNER,
-		 g_param_spec_int64 (NM_DEVICE_TUN_OWNER, "", "",
-		                     -1, G_MAXUINT32, -1,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OWNER] =
+	    g_param_spec_int64 (NM_DEVICE_TUN_OWNER, "", "",
+	                        -1, G_MAXUINT32, -1,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:group:
@@ -364,12 +355,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_GROUP,
-		 g_param_spec_int64 (NM_DEVICE_TUN_GROUP, "", "",
-		                     -1, G_MAXUINT32, -1,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GROUP] =
+	    g_param_spec_int64 (NM_DEVICE_TUN_GROUP, "", "",
+	                        -1, G_MAXUINT32, -1,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:no-pi:
@@ -379,12 +369,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NO_PI,
-		 g_param_spec_boolean (NM_DEVICE_TUN_NO_PI, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NO_PI] =
+	    g_param_spec_boolean (NM_DEVICE_TUN_NO_PI, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:vnet-hdr:
@@ -394,12 +383,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_VNET_HDR,
-		 g_param_spec_boolean (NM_DEVICE_TUN_VNET_HDR, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VNET_HDR] =
+	    g_param_spec_boolean (NM_DEVICE_TUN_VNET_HDR, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:multi-queue:
@@ -410,10 +398,11 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MULTI_QUEUE,
-		 g_param_spec_boolean (NM_DEVICE_TUN_MULTI_QUEUE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MULTI_QUEUE] =
+	    g_param_spec_boolean (NM_DEVICE_TUN_MULTI_QUEUE, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

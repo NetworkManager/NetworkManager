@@ -24,14 +24,11 @@ typedef struct {
 	NMWimaxNspNetworkType network_type;
 } NMWimaxNspPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NAME,
 	PROP_SIGNAL_QUALITY,
 	PROP_NETWORK_TYPE,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_wimax_nsp_get_name:
@@ -222,48 +219,44 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 
 	g_type_class_add_private (nsp_class, sizeof (NMWimaxNspPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
-
-	/* properties */
 
 	/**
 	 * NMWimaxNsp:name:
 	 *
 	 * The name of the WiMAX NSP.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_WIMAX_NSP_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NAME] =
+	    g_param_spec_string (NM_WIMAX_NSP_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMWimaxNsp:signal-quality:
 	 *
 	 * The signal quality of the WiMAX NSP.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SIGNAL_QUALITY,
-		 g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY, "", "",
-		                    0, 100, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SIGNAL_QUALITY] =
+	    g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY, "", "",
+	                       0, 100, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMWimaxNsp:network-type:
 	 *
 	 * The network type of the WiMAX NSP.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_enum (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
-		                    NM_TYPE_WIMAX_NSP_NETWORK_TYPE,
-		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NETWORK_TYPE] =
+	    g_param_spec_enum (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
+	                       NM_TYPE_WIMAX_NSP_NETWORK_TYPE,
+	                       NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

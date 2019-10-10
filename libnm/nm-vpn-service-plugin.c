@@ -71,14 +71,11 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DBUS_SERVICE_NAME,
 	PROP_DBUS_WATCH_PEER,
 	PROP_STATE,
-
-	LAST_PROP
-};
+);
 
 static GSList *active_plugins = NULL;
 
@@ -1190,15 +1187,12 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 
 	g_type_class_add_private (object_class, sizeof (NMVpnServicePluginPrivate));
 
-	/* virtual methods */
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
 
 	plugin_class->state_changed = state_changed;
-
-	/* properties */
 
 	/**
 	 * NMVpnServicePlugin:service-name:
@@ -1207,13 +1201,12 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DBUS_SERVICE_NAME,
-		 g_param_spec_string (NM_VPN_SERVICE_PLUGIN_DBUS_SERVICE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DBUS_SERVICE_NAME] =
+	    g_param_spec_string (NM_VPN_SERVICE_PLUGIN_DBUS_SERVICE_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMVpnServicePlugin:watch-peer:
@@ -1222,13 +1215,12 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DBUS_WATCH_PEER,
-		 g_param_spec_boolean (NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DBUS_WATCH_PEER] =
+	    g_param_spec_boolean (NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMVpnServicePlugin:state:
@@ -1237,92 +1229,92 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_VPN_SERVICE_PLUGIN_STATE, "", "",
-		                    NM_TYPE_VPN_SERVICE_STATE,
-		                    NM_VPN_SERVICE_STATE_INIT,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STATE] =
+	    g_param_spec_enum (NM_VPN_SERVICE_PLUGIN_STATE, "", "",
+	                       NM_TYPE_VPN_SERVICE_STATE,
+	                       NM_VPN_SERVICE_STATE_INIT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
 	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, state_changed),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_UINT);
+	    g_signal_new ("state-changed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, state_changed),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_UINT);
 
 	signals[SECRETS_REQUIRED] =
-		g_signal_new ("secrets-required",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRV);
+	    g_signal_new ("secrets-required",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRV);
 
 	signals[CONFIG] =
-		g_signal_new ("config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, config),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_VARIANT);
+	    g_signal_new ("config",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, config),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_VARIANT);
 
 	signals[IP4_CONFIG] =
-		g_signal_new ("ip4-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, ip4_config),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_VARIANT);
+	    g_signal_new ("ip4-config",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, ip4_config),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_VARIANT);
 
 	signals[IP6_CONFIG] =
-		g_signal_new ("ip6-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, ip6_config),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_VARIANT);
+	    g_signal_new ("ip6-config",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, ip6_config),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_VARIANT);
 
 	signals[LOGIN_BANNER] =
-		g_signal_new ("login-banner",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, login_banner),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_STRING);
+	    g_signal_new ("login-banner",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, login_banner),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_STRING);
 
 	signals[FAILURE] =
-		g_signal_new ("failure",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, failure),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_UINT);
+	    g_signal_new ("failure",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, failure),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_UINT);
 
 	signals[QUIT] =
-		g_signal_new ("quit",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVpnServicePluginClass, quit),
-		              NULL, NULL,
-		              NULL,
-		              G_TYPE_NONE, 0,
-		              G_TYPE_NONE);
+	    g_signal_new ("quit",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMVpnServicePluginClass, quit),
+	                  NULL, NULL,
+	                  NULL,
+	                  G_TYPE_NONE, 0,
+	                  G_TYPE_NONE);
 
 	setup_unix_signal_handler ();
 }

@@ -75,8 +75,7 @@ typedef struct {
 	gboolean connectivity_check_enabled;
 } NMManagerPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_VERSION,
 	PROP_STATE,
 	PROP_STARTUP,
@@ -97,9 +96,7 @@ enum {
 	PROP_CHECKPOINTS,
 	PROP_METERED,
 	PROP_ALL_DEVICES,
-
-	LAST_PROP
-};
+);
 
 enum {
 	DEVICE_ADDED,
@@ -1369,134 +1366,113 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
 
-	/* virtual methods */
-	object_class->constructed = constructed;
+	object_class->constructed  = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	nm_object_class->init_dbus              = init_dbus;
 	nm_object_class->object_creation_failed = object_creation_failed;
 
-	manager_class->device_added = device_added;
-	manager_class->device_removed = device_removed;
-	manager_class->active_connection_added = active_connection_added;
+	manager_class->device_added              = device_added;
+	manager_class->device_removed            = device_removed;
+	manager_class->active_connection_added   = active_connection_added;
 	manager_class->active_connection_removed = active_connection_removed;
-	manager_class->checkpoint_added = checkpoint_added;
+	manager_class->checkpoint_added          = checkpoint_added;
 
-	/* properties */
-
-	g_object_class_install_property
-		(object_class, PROP_VERSION,
-		 g_param_spec_string (NM_MANAGER_VERSION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_CLIENT_STATE, "", "",
-		                    NM_TYPE_STATE,
-		                    NM_STATE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_STARTUP,
-		 g_param_spec_boolean (NM_MANAGER_STARTUP, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_NETWORKING_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_NETWORKING_ENABLED, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED, "", "",
-		                       TRUE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_WWAN_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WWAN_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_WWAN_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WWAN_HARDWARE_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_WIMAX_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIMAX_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIMAX_HARDWARE_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CONNECTIONS,
-		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIVITY,
-		 g_param_spec_enum (NM_CLIENT_CONNECTIVITY, "", "",
-		                    NM_TYPE_CONNECTIVITY_STATE,
-		                    NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIVITY_CHECK_AVAILABLE,
-		 g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIVITY_CHECK_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_PRIMARY_CONNECTION,
-		 g_param_spec_object (NM_MANAGER_PRIMARY_CONNECTION, "", "",
-		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_ACTIVATING_CONNECTION,
-		 g_param_spec_object (NM_MANAGER_ACTIVATING_CONNECTION, "", "",
-		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_MANAGER_DEVICES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_CHECKPOINTS,
-		 g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VERSION] =
+	    g_param_spec_string (NM_MANAGER_VERSION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_STATE] =
+	    g_param_spec_enum (NM_CLIENT_STATE, "", "",
+	                       NM_TYPE_STATE,
+	                       NM_STATE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_STARTUP] =
+	    g_param_spec_boolean (NM_MANAGER_STARTUP, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_NETWORKING_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_NETWORKING_ENABLED, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_WIRELESS_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_WIRELESS_HARDWARE_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED, "", "",
+	                          TRUE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_WWAN_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_WWAN_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_WWAN_HARDWARE_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_WWAN_HARDWARE_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_WIMAX_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_WIMAX_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_WIMAX_HARDWARE_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_WIMAX_HARDWARE_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ACTIVE_CONNECTIONS] =
+	    g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CONNECTIVITY] =
+	    g_param_spec_enum (NM_CLIENT_CONNECTIVITY, "", "",
+	                       NM_TYPE_CONNECTIVITY_STATE,
+	                       NM_CONNECTIVITY_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CONNECTIVITY_CHECK_AVAILABLE] =
+	    g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PRIMARY_CONNECTION] =
+	    g_param_spec_object (NM_MANAGER_PRIMARY_CONNECTION, "", "",
+	                         NM_TYPE_ACTIVE_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ACTIVATING_CONNECTION] =
+	    g_param_spec_object (NM_MANAGER_ACTIVATING_CONNECTION, "", "",
+	                         NM_TYPE_ACTIVE_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DEVICES] =
+	    g_param_spec_boxed (NM_MANAGER_DEVICES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_CHECKPOINTS] =
+	    g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	/**
 	 * NMManager:metered:
 	 *
@@ -1504,93 +1480,91 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_METERED,
-		 g_param_spec_uint (NM_MANAGER_METERED, "", "",
-		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_METERED] =
+	    g_param_spec_uint (NM_MANAGER_METERED, "", "",
+	                       0, G_MAXUINT32, NM_METERED_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ALL_DEVICES,
-		 g_param_spec_boxed (NM_MANAGER_ALL_DEVICES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ALL_DEVICES] =
+	    g_param_spec_boxed (NM_MANAGER_ALL_DEVICES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, device_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("device-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMManagerClass, device_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, device_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("device-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMManagerClass, device_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[ANY_DEVICE_ADDED] =
-		g_signal_new ("any-device-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("any-device-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[ANY_DEVICE_REMOVED] =
-		g_signal_new ("any-device-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("any-device-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[ACTIVE_CONNECTION_ADDED] =
-		g_signal_new ("active-connection-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, active_connection_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("active-connection-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMManagerClass, active_connection_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[ACTIVE_CONNECTION_REMOVED] =
-		g_signal_new ("active-connection-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, active_connection_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("active-connection-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMManagerClass, active_connection_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[CHECKPOINT_ADDED] =
-		g_signal_new ("checkpoint-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, checkpoint_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("checkpoint-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMManagerClass, checkpoint_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 	signals[CHECKPOINT_REMOVED] =
-		g_signal_new ("checkpoint-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, checkpoint_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("checkpoint-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMManagerClass, checkpoint_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	signals[PERMISSION_CHANGED] =
-		g_signal_new ("permission-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new ("permission-changed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 static void

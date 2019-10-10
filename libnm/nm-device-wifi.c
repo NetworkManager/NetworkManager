@@ -40,8 +40,7 @@ typedef struct {
 	gint64 last_scan;
 } NMDeviceWifiPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_PERM_HW_ADDRESS,
 	PROP_MODE,
@@ -50,9 +49,7 @@ enum {
 	PROP_WIRELESS_CAPABILITIES,
 	PROP_ACCESS_POINTS,
 	PROP_LAST_SCAN,
-
-	LAST_PROP
-};
+);
 
 enum {
 	ACCESS_POINT_ADDED,
@@ -730,106 +727,96 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 
 	g_type_class_add_private (wifi_class, sizeof (NMDeviceWifiPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	wifi_class->access_point_removed = access_point_removed;
-
-	/* properties */
 
 	/**
 	 * NMDeviceWifi:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:perm-hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PERM_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:mode:
 	 *
 	 * The mode of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_enum (NM_DEVICE_WIFI_MODE, "", "",
-		                    NM_TYPE_802_11_MODE,
-		                    NM_802_11_MODE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_enum (NM_DEVICE_WIFI_MODE, "", "",
+	                       NM_TYPE_802_11_MODE,
+	                       NM_802_11_MODE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:bitrate:
 	 *
 	 * The bit rate of the device in kbit/s.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_BITRATE,
-		 g_param_spec_uint (NM_DEVICE_WIFI_BITRATE, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BITRATE] =
+	    g_param_spec_uint (NM_DEVICE_WIFI_BITRATE, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:active-access-point:
 	 *
 	 * The active #NMAccessPoint of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_ACCESS_POINT,
-		 g_param_spec_object (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
-		                      NM_TYPE_ACCESS_POINT,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_ACCESS_POINT] =
+	    g_param_spec_object (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
+	                         NM_TYPE_ACCESS_POINT,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:wireless-capabilities:
 	 *
 	 * The wireless capabilities of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_CAPABILITIES,
-		 g_param_spec_flags (NM_DEVICE_WIFI_CAPABILITIES, "", "",
-		                     NM_TYPE_DEVICE_WIFI_CAPABILITIES,
-		                     NM_WIFI_DEVICE_CAP_NONE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WIRELESS_CAPABILITIES] =
+	    g_param_spec_flags (NM_DEVICE_WIFI_CAPABILITIES, "", "",
+	                        NM_TYPE_DEVICE_WIFI_CAPABILITIES,
+	                        NM_WIFI_DEVICE_CAP_NONE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:access-points: (type GPtrArray(NMAccessPoint))
 	 *
 	 * List of all Wi-Fi access points the device can see.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACCESS_POINTS,
-		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACCESS_POINTS] =
+	    g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:last-scan:
@@ -840,14 +827,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-	        (object_class, PROP_LAST_SCAN,
-	         g_param_spec_int64 (NM_DEVICE_WIFI_LAST_SCAN, "", "",
-	                             -1, G_MAXINT64, -1,
-	                             G_PARAM_READABLE |
-	                             G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LAST_SCAN] =
+	    g_param_spec_int64 (NM_DEVICE_WIFI_LAST_SCAN, "", "",
+	                        -1, G_MAXINT64, -1,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/**
 	 * NMDeviceWifi::access-point-added:
@@ -857,14 +843,14 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 * Notifies that a #NMAccessPoint is added to the Wi-Fi device.
 	 **/
 	signals[ACCESS_POINT_ADDED] =
-		g_signal_new ("access-point-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("access-point-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	/**
 	 * NMDeviceWifi::access-point-removed:
@@ -874,12 +860,12 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 * Notifies that a #NMAccessPoint is removed from the Wi-Fi device.
 	 **/
 	signals[ACCESS_POINT_REMOVED] =
-		g_signal_new ("access-point-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("access-point-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 }

@@ -22,13 +22,10 @@ typedef struct {
 	GHashTable *options;
 } NMDhcpConfigPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FAMILY,
 	PROP_OPTIONS,
-
-	LAST_PROP
-};
+);
 
 static void
 nm_dhcp_config_init (NMDhcpConfig *config)
@@ -116,13 +113,10 @@ nm_dhcp_config_class_init (NMDhcpConfigClass *config_class)
 
 	g_type_class_add_private (config_class, sizeof (NMDhcpConfigPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
-
-	/* properties */
 
 	/**
 	 * NMDhcpConfig:family:
@@ -130,24 +124,24 @@ nm_dhcp_config_class_init (NMDhcpConfigClass *config_class)
 	 * The IP address family of the configuration; either
 	 * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FAMILY,
-		 g_param_spec_int (NM_DHCP_CONFIG_FAMILY, "", "",
-		                   0, 255, AF_UNSPEC,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FAMILY] =
+	    g_param_spec_int (NM_DHCP_CONFIG_FAMILY, "", "",
+	                      0, 255, AF_UNSPEC,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDhcpConfig:options: (type GHashTable(utf8,utf8)):
 	 *
 	 * The #GHashTable containing options of the configuration.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_OPTIONS,
-		 g_param_spec_boxed (NM_DHCP_CONFIG_OPTIONS, "", "",
-		                     G_TYPE_HASH_TABLE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OPTIONS] =
+	    g_param_spec_boxed (NM_DHCP_CONFIG_OPTIONS, "", "",
+	                        G_TYPE_HASH_TABLE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
 /**

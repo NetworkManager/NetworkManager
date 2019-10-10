@@ -142,8 +142,8 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDevice6LowpanPrivate));
 
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
@@ -157,10 +157,10 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	 * Since: 1.14
 	 **/
 	obj_properties[PROP_PARENT] =
-		g_param_spec_object (NM_DEVICE_6LOWPAN_PARENT, "", "",
-		                     NM_TYPE_DEVICE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_object (NM_DEVICE_6LOWPAN_PARENT, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice6Lowpan:hw-address:
@@ -170,10 +170,10 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	 * Since: 1.14
 	 **/
 	obj_properties[PROP_HW_ADDRESS] =
-		g_param_spec_string (NM_DEVICE_6LOWPAN_HW_ADDRESS, "", "",
-		                     NULL,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_6LOWPAN_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

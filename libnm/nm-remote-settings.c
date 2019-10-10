@@ -36,14 +36,11 @@ typedef struct {
 	gboolean can_modify;
 } NMRemoteSettingsPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_CONNECTIONS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
-
-	LAST_PROP
-};
+);
 
 /* Signals */
 enum {
@@ -432,56 +429,51 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 
 	g_type_class_add_private (class, sizeof (NMRemoteSettingsPrivate));
 
-	/* Virtual methods */
-	object_class->constructor = constructor;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
+	object_class->constructor  = constructor;
+	object_class->dispose      = dispose;
 
-	nm_object_class->init_dbus = init_dbus;
+	nm_object_class->init_dbus              = init_dbus;
 	nm_object_class->object_creation_failed = object_creation_failed;
 
-	class->connection_added = connection_added;
+	class->connection_added   = connection_added;
 	class->connection_removed = connection_removed;
 
-	/* Properties */
+	obj_properties[PROP_CONNECTIONS] =
+	    g_param_spec_boxed (NM_REMOTE_SETTINGS_CONNECTIONS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIONS,
-		 g_param_spec_boxed (NM_REMOTE_SETTINGS_CONNECTIONS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HOSTNAME] =
+	    g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAN_MODIFY] =
+	    g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CAN_MODIFY,
-		 g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	/* Signals */
 	signals[CONNECTION_ADDED] =
-		g_signal_new (NM_REMOTE_SETTINGS_CONNECTION_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRemoteSettingsClass, connection_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_REMOTE_CONNECTION);
+	    g_signal_new (NM_REMOTE_SETTINGS_CONNECTION_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMRemoteSettingsClass, connection_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_REMOTE_CONNECTION);
 
 	signals[CONNECTION_REMOVED] =
-		g_signal_new (NM_REMOTE_SETTINGS_CONNECTION_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRemoteSettingsClass, connection_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_REMOTE_CONNECTION);
+	    g_signal_new (NM_REMOTE_SETTINGS_CONNECTION_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMRemoteSettingsClass, connection_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_REMOTE_CONNECTION);
 }

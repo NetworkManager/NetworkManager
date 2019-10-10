@@ -24,15 +24,12 @@ typedef struct {
 	char *config;
 } NMDeviceTeamPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_SLAVES,
 	PROP_CONFIG,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_team_get_hw_address:
@@ -219,54 +216,48 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 
 	g_type_class_add_private (team_class, sizeof (NMDeviceTeamPrivate));
 
-	/* virtual methods */
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceTeam:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTeam:carrier:
 	 *
 	 * Whether the device has carrier.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_TEAM_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CARRIER] =
+	    g_param_spec_boolean (NM_DEVICE_TEAM_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTeam:slaves: (type GPtrArray(NMDevice))
 	 *
 	 * The devices enslaved to the team device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SLAVES] =
+	    g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTeam:config:
@@ -275,10 +266,11 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 	 *
 	 * Since: 1.4
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CONFIG,
-		 g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONFIG] =
+	    g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

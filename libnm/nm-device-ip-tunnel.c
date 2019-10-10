@@ -32,8 +32,7 @@ typedef struct {
 	guint32 flags;
 } NMDeviceIPTunnelPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MODE,
 	PROP_PARENT,
 	PROP_LOCAL,
@@ -46,9 +45,7 @@ enum {
 	PROP_ENCAPSULATION_LIMIT,
 	PROP_FLOW_LABEL,
 	PROP_FLAGS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_ip_tunnel_get_mode:
@@ -372,16 +369,13 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 
 	g_type_class_add_private (bond_class, sizeof (NMDeviceIPTunnelPrivate));
 
-	/* virtual methods */
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
 
 	/**
 	 * NMDeviceIPTunnel:mode:
@@ -390,12 +384,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_MODE, "", "",
-		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_uint (NM_DEVICE_IP_TUNNEL_MODE, "", "",
+	                       0, G_MAXUINT, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:parent:
@@ -404,12 +397,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_PARENT,
-	     g_param_spec_object (NM_DEVICE_IP_TUNNEL_PARENT, "", "",
-	                          NM_TYPE_DEVICE,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_object (NM_DEVICE_IP_TUNNEL_PARENT, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:local:
@@ -418,12 +410,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LOCAL,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_LOCAL, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LOCAL] =
+	    g_param_spec_string (NM_DEVICE_IP_TUNNEL_LOCAL, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:remote:
@@ -432,12 +423,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REMOTE,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_REMOTE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REMOTE] =
+	    g_param_spec_string (NM_DEVICE_IP_TUNNEL_REMOTE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:ttl:
@@ -447,12 +437,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TTL,
-		 g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TTL, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TTL] =
+	    g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TTL, "", "",
+	                        0, 255, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:tos:
@@ -462,12 +451,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TOS,
-		 g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TOS, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TOS] =
+	    g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TOS, "", "",
+	                        0, 255, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:path-mtu-discovery:
@@ -476,12 +464,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PATH_MTU_DISCOVERY,
-		 g_param_spec_boolean (NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH_MTU_DISCOVERY] =
+	    g_param_spec_boolean (NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:input-key:
@@ -490,12 +477,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_INPUT_KEY,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_INPUT_KEY, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_INPUT_KEY] =
+	    g_param_spec_string (NM_DEVICE_IP_TUNNEL_INPUT_KEY, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:output-key:
@@ -504,12 +490,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_OUTPUT_KEY,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_OUTPUT_KEY, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OUTPUT_KEY] =
+	    g_param_spec_string (NM_DEVICE_IP_TUNNEL_OUTPUT_KEY, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:encapsulation-limit:
@@ -520,12 +505,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ENCAPSULATION_LIMIT,
-		 g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ENCAPSULATION_LIMIT] =
+	    g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT, "", "",
+	                        0, 255, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:flow-label:
@@ -535,12 +519,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FLOW_LABEL,
-		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLOW_LABEL, "", "",
-		                    0, (1 << 20) - 1, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FLOW_LABEL] =
+	    g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLOW_LABEL, "", "",
+	                       0, (1 << 20) - 1, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceIPTunnel:flags:
@@ -549,10 +532,11 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FLAGS,
-		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLAGS, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FLAGS] =
+	    g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLAGS, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

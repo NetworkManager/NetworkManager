@@ -22,14 +22,11 @@ typedef struct {
 	guint32 active_channel;
 } NMDeviceOlpcMeshPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_COMPANION,
 	PROP_ACTIVE_CHANNEL,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_olpc_mesh_get_hw_address:
@@ -185,53 +182,48 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 
 	g_type_class_add_private (olpc_mesh_class, sizeof (NMDeviceOlpcMeshPrivate));
 
-	/* virtual methods */
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceOlpcMesh:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_OLPC_MESH_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_OLPC_MESH_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceOlpcMesh:companion:
 	 *
 	 * The companion device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_COMPANION,
-		 g_param_spec_object (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
-		                      NM_TYPE_DEVICE_WIFI,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_COMPANION] =
+	    g_param_spec_object (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
+	                         NM_TYPE_DEVICE_WIFI,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceOlpcMesh:active-channel:
 	 *
 	 * The device's active channel.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CHANNEL,
-		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_CHANNEL] =
+	    g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

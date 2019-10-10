@@ -39,15 +39,12 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJEC
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
                          )
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_UNSAVED,
 	PROP_FLAGS,
 	PROP_FILENAME,
 	PROP_VISIBLE,
-
-	LAST_PROP
-};
+);
 
 typedef struct {
 	NMDBusSettingsConnection *proxy;
@@ -862,26 +859,23 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 
 	g_type_class_add_private (object_class, sizeof (NMRemoteConnectionPrivate));
 
-	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
+	object_class->constructed  = constructed;
+	object_class->dispose      = dispose;
 
 	nm_object_class->init_dbus = init_dbus;
 
-	/* Properties */
 	/**
 	 * NMRemoteConnection:unsaved:
 	 *
 	 * %TRUE if the remote connection contains changes that have not been saved
 	 * to disk, %FALSE if the connection is the same as its on-disk representation.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_UNSAVED,
-		 g_param_spec_boolean (NM_REMOTE_CONNECTION_UNSAVED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UNSAVED] =
+	    g_param_spec_boolean (NM_REMOTE_CONNECTION_UNSAVED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMRemoteConnection:flags:
@@ -891,12 +885,11 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FLAGS,
-		 g_param_spec_uint (NM_REMOTE_CONNECTION_FLAGS, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FLAGS] =
+	    g_param_spec_uint (NM_REMOTE_CONNECTION_FLAGS, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMRemoteConnection:filename:
@@ -906,12 +899,11 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-	        (object_class, PROP_FILENAME,
-	         g_param_spec_string (NM_REMOTE_CONNECTION_FILENAME, "", "",
-	                              NULL,
-	                              G_PARAM_READABLE |
-	                              G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FILENAME] =
+	    g_param_spec_string (NM_REMOTE_CONNECTION_FILENAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMRemoteConnection:visible:
@@ -924,12 +916,13 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 * to callers, but it is possible for a connection's visibility to change
 	 * after you already have a reference to it.)
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_VISIBLE,
-		 g_param_spec_boolean (NM_REMOTE_CONNECTION_VISIBLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VISIBLE] =
+	    g_param_spec_boolean (NM_REMOTE_CONNECTION_VISIBLE, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
 static void

@@ -37,8 +37,7 @@ typedef struct {
 	gboolean l3miss;
 } NMDeviceVxlanPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_PARENT,
@@ -57,9 +56,7 @@ enum {
 	PROP_RSC,
 	PROP_L2MISS,
 	PROP_L3MISS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_vxlan_get_hw_address:
@@ -523,17 +520,14 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 
 	g_type_class_add_private (vxlan_class, sizeof (NMDeviceVxlanPrivate));
 
-	/* virtual methods */
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceVxlan:hw-address:
@@ -542,12 +536,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_VXLAN_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_VXLAN_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:carrier:
@@ -556,12 +549,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CARRIER] =
+	    g_param_spec_boolean (NM_DEVICE_VXLAN_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:parent:
@@ -570,12 +562,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_PARENT,
-	     g_param_spec_object (NM_DEVICE_VXLAN_PARENT, "", "",
-	                          NM_TYPE_DEVICE,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_object (NM_DEVICE_VXLAN_PARENT, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:id:
@@ -584,12 +575,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ID,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_ID, "", "",
-		                    0, (1 << 24) - 1, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ID] =
+	    g_param_spec_uint (NM_DEVICE_VXLAN_ID, "", "",
+	                       0, (1 << 24) - 1, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:group:
@@ -600,12 +590,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_GROUP,
-		 g_param_spec_string (NM_DEVICE_VXLAN_GROUP, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GROUP] =
+	    g_param_spec_string (NM_DEVICE_VXLAN_GROUP, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:local:
@@ -614,12 +603,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LOCAL,
-		 g_param_spec_string (NM_DEVICE_VXLAN_LOCAL, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LOCAL] =
+	    g_param_spec_string (NM_DEVICE_VXLAN_LOCAL, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:tos:
@@ -628,12 +616,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_TOS,
-		 g_param_spec_uchar (NM_DEVICE_VXLAN_TOS, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TOS] =
+	    g_param_spec_uchar (NM_DEVICE_VXLAN_TOS, "", "",
+	                        0, 255, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:ttl:
@@ -642,12 +629,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_TTL,
-		 g_param_spec_uchar (NM_DEVICE_VXLAN_TTL, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TTL] =
+	    g_param_spec_uchar (NM_DEVICE_VXLAN_TTL, "", "",
+	                        0, 255, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:learning:
@@ -657,12 +643,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LEARNING,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_LEARNING, "", "",
-		                       TRUE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LEARNING] =
+	    g_param_spec_boolean (NM_DEVICE_VXLAN_LEARNING, "", "",
+	                          TRUE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:ageing:
@@ -671,12 +656,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_AGEING,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_AGEING, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AGEING] =
+	    g_param_spec_uint (NM_DEVICE_VXLAN_AGEING, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:limit:
@@ -685,12 +669,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_LIMIT,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_LIMIT, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LIMIT] =
+	    g_param_spec_uint (NM_DEVICE_VXLAN_LIMIT, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:dst-port:
@@ -700,12 +683,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_DST_PORT,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_DST_PORT, "", "",
-		                    0, 65535, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DST_PORT] =
+	    g_param_spec_uint (NM_DEVICE_VXLAN_DST_PORT, "", "",
+	                       0, 65535, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:src-port-min:
@@ -715,12 +697,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_SRC_PORT_MIN,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MIN, "", "",
-		                    0, 65535, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SRC_PORT_MIN] =
+	    g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MIN, "", "",
+	                       0, 65535, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:src-port-max:
@@ -730,12 +711,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_SRC_PORT_MAX,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MAX, "", "",
-		                    0, 65535, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SRC_PORT_MAX] =
+	    g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MAX, "", "",
+	                       0, 65535, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:proxy:
@@ -744,12 +724,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PROXY,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_PROXY, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PROXY] =
+	    g_param_spec_boolean (NM_DEVICE_VXLAN_PROXY, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:rsc:
@@ -758,12 +737,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_RSC,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_RSC, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_RSC] =
+	    g_param_spec_boolean (NM_DEVICE_VXLAN_RSC, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:l2miss:
@@ -772,12 +750,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_L2MISS,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_L2MISS, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_L2MISS] =
+	    g_param_spec_boolean (NM_DEVICE_VXLAN_L2MISS, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:l3miss:
@@ -786,10 +763,11 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 *
 	 * Since: 1.2
 	 */
-	g_object_class_install_property
-		(object_class, PROP_L3MISS,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_L3MISS, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_L3MISS] =
+	    g_param_spec_boolean (NM_DEVICE_VXLAN_L3MISS, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

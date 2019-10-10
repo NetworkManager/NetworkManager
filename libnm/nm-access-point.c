@@ -34,8 +34,7 @@ typedef struct {
 	int last_seen;
 } NMAccessPointPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FLAGS,
 	PROP_WPA_FLAGS,
 	PROP_RSN_FLAGS,
@@ -47,9 +46,7 @@ enum {
 	PROP_STRENGTH,
 	PROP_BSSID,
 	PROP_LAST_SEEN,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_access_point_get_flags:
@@ -474,88 +471,79 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
-
-	/* properties */
 
 	/**
 	 * NMAccessPoint:flags:
 	 *
 	 * The flags of the access point.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FLAGS,
-		 g_param_spec_flags (NM_ACCESS_POINT_FLAGS, "", "",
-		                     NM_TYPE_802_11_AP_FLAGS,
-		                     NM_802_11_AP_FLAGS_NONE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FLAGS] =
+	    g_param_spec_flags (NM_ACCESS_POINT_FLAGS, "", "",
+	                        NM_TYPE_802_11_AP_FLAGS,
+	                        NM_802_11_AP_FLAGS_NONE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:wpa-flags:
 	 *
 	 * The WPA flags of the access point.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WPA_FLAGS,
-		 g_param_spec_flags (NM_ACCESS_POINT_WPA_FLAGS, "", "",
-		                     NM_TYPE_802_11_AP_SECURITY_FLAGS,
-		                     NM_802_11_AP_SEC_NONE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WPA_FLAGS] =
+	    g_param_spec_flags (NM_ACCESS_POINT_WPA_FLAGS, "", "",
+	                        NM_TYPE_802_11_AP_SECURITY_FLAGS,
+	                        NM_802_11_AP_SEC_NONE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:rsn-flags:
 	 *
 	 * The RSN flags of the access point.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_RSN_FLAGS,
-		 g_param_spec_flags (NM_ACCESS_POINT_RSN_FLAGS, "", "",
-		                     NM_TYPE_802_11_AP_SECURITY_FLAGS,
-		                     NM_802_11_AP_SEC_NONE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_RSN_FLAGS] =
+	    g_param_spec_flags (NM_ACCESS_POINT_RSN_FLAGS, "", "",
+	                        NM_TYPE_802_11_AP_SECURITY_FLAGS,
+	                        NM_802_11_AP_SEC_NONE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:ssid:
 	 *
 	 * The SSID of the access point, or %NULL if it is not known.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SSID,
-		 g_param_spec_boxed (NM_ACCESS_POINT_SSID, "", "",
-		                     G_TYPE_BYTES,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SSID] =
+	    g_param_spec_boxed (NM_ACCESS_POINT_SSID, "", "",
+	                        G_TYPE_BYTES,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:frequency:
 	 *
 	 * The frequency of the access point.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FREQUENCY,
-		 g_param_spec_uint (NM_ACCESS_POINT_FREQUENCY, "", "",
-		                    0, 10000, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FREQUENCY] =
+	    g_param_spec_uint (NM_ACCESS_POINT_FREQUENCY, "", "",
+	                       0, 10000, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:bssid:
 	 *
 	 * The BSSID of the access point.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_BSSID,
-		 g_param_spec_string (NM_ACCESS_POINT_BSSID, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BSSID] =
+	    g_param_spec_string (NM_ACCESS_POINT_BSSID, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:hw-address:
@@ -564,12 +552,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 *
 	 * Deprecated: 1.0: use #NMAccessPoint:bssid.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_ACCESS_POINT_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_ACCESS_POINT_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:mode:
@@ -578,37 +565,34 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 * coordinator of the wireless network allowing clients to connect) or
 	 * "ad-hoc" (a network with no central controller).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_enum (NM_ACCESS_POINT_MODE, "", "",
-		                    NM_TYPE_802_11_MODE,
-		                    NM_802_11_MODE_INFRA,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_enum (NM_ACCESS_POINT_MODE, "", "",
+	                       NM_TYPE_802_11_MODE,
+	                       NM_802_11_MODE_INFRA,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:max-bitrate:
 	 *
 	 * The maximum bit rate of the access point in kbit/s.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MAX_BITRATE,
-		 g_param_spec_uint (NM_ACCESS_POINT_MAX_BITRATE, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MAX_BITRATE] =
+	    g_param_spec_uint (NM_ACCESS_POINT_MAX_BITRATE, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:strength:
 	 *
 	 * The current signal strength of the access point.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_STRENGTH,
-		 g_param_spec_uchar (NM_ACCESS_POINT_STRENGTH, "", "",
-		                     0, G_MAXUINT8, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STRENGTH] =
+	    g_param_spec_uchar (NM_ACCESS_POINT_STRENGTH, "", "",
+	                        0, G_MAXUINT8, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMAccessPoint:last-seen:
@@ -619,10 +603,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_LAST_SEEN,
-		 g_param_spec_int (NM_ACCESS_POINT_LAST_SEEN, "", "",
-		                   -1, G_MAXINT, -1,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LAST_SEEN] =
+	    g_param_spec_int (NM_ACCESS_POINT_LAST_SEEN, "", "",
+	                      -1, G_MAXINT, -1,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

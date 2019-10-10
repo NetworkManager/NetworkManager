@@ -106,8 +106,7 @@ typedef struct {
 	bool udev_inited:1;
 } NMClientPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_VERSION,
 	PROP_STATE,
 	PROP_STARTUP,
@@ -135,9 +134,7 @@ enum {
 	PROP_DNS_RC_MANAGER,
 	PROP_DNS_CONFIGURATION,
 	PROP_CHECKPOINTS,
-
-	LAST_PROP
-};
+);
 
 enum {
 	DEVICE_ADDED,
@@ -3429,8 +3426,8 @@ unhook_om (NMClient *self)
 
 		g_signal_handlers_disconnect_by_data (priv->manager, self);
 		g_clear_object (&priv->manager);
-		g_object_notify (G_OBJECT (self), NM_CLIENT_ACTIVE_CONNECTIONS);
-		g_object_notify (G_OBJECT (self), NM_CLIENT_NM_RUNNING);
+		_notify (self, PROP_ACTIVE_CONNECTIONS);
+		_notify (self, PROP_NM_RUNNING);
 	}
 	if (priv->settings) {
 		const GPtrArray *connections;
@@ -3442,9 +3439,9 @@ unhook_om (NMClient *self)
 
 		g_signal_handlers_disconnect_by_data (priv->settings, self);
 		g_clear_object (&priv->settings);
-		g_object_notify (G_OBJECT (self), NM_CLIENT_CONNECTIONS);
-		g_object_notify (G_OBJECT (self), NM_CLIENT_HOSTNAME);
-		g_object_notify (G_OBJECT (self), NM_CLIENT_CAN_MODIFY);
+		_notify (self, PROP_CONNECTIONS);
+		_notify (self, PROP_HOSTNAME);
+		_notify (self, PROP_CAN_MODIFY);
 	}
 	if (priv->dns_manager) {
 		g_signal_handlers_disconnect_by_data (priv->dns_manager, self);
@@ -3791,61 +3788,54 @@ nm_client_class_init (NMClientClass *client_class)
 
 	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
 
-	/* virtual methods */
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-
-	/* properties */
+	object_class->set_property = set_property;
+	object_class->dispose      = dispose;
 
 	/**
 	 * NMClient:version:
 	 *
 	 * The NetworkManager version.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_VERSION,
-		 g_param_spec_string (NM_CLIENT_VERSION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VERSION] =
+	    g_param_spec_string (NM_CLIENT_VERSION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:state:
 	 *
 	 * The current daemon state.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_CLIENT_STATE, "", "",
-		                    NM_TYPE_STATE,
-		                    NM_STATE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STATE] =
+	    g_param_spec_enum (NM_CLIENT_STATE, "", "",
+	                       NM_TYPE_STATE,
+	                       NM_STATE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:startup:
 	 *
 	 * Whether the daemon is still starting up.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_STARTUP,
-		 g_param_spec_boolean (NM_CLIENT_STARTUP, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STARTUP] =
+	    g_param_spec_boolean (NM_CLIENT_STARTUP, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:nm-running:
 	 *
 	 * Whether the daemon is running.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NM_RUNNING,
-		 g_param_spec_boolean (NM_CLIENT_NM_RUNNING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NM_RUNNING] =
+	    g_param_spec_boolean (NM_CLIENT_NM_RUNNING, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:networking-enabled:
@@ -3854,12 +3844,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_NETWORKING_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NETWORKING_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:wireless-enabled:
@@ -3868,24 +3857,22 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WIRELESS_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:wireless-hardware-enabled:
 	 *
 	 * Whether the wireless hardware is enabled.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED, "", "",
-		                       TRUE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WIRELESS_HARDWARE_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED, "", "",
+	                          TRUE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:wwan-enabled:
@@ -3894,24 +3881,22 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WWAN_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WWAN_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:wwan-hardware-enabled:
 	 *
 	 * Whether the WWAN hardware is enabled.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WWAN_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WWAN_HARDWARE_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:wimax-enabled:
@@ -3920,49 +3905,45 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_WIMAX_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WIMAX_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:wimax-hardware-enabled:
 	 *
 	 * Whether the WiMAX hardware is enabled.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WIMAX_HARDWARE_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:active-connections: (type GPtrArray(NMActiveConnection))
 	 *
 	 * The active connections.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CONNECTIONS,
-		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_CONNECTIONS] =
+	    g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:connectivity:
 	 *
 	 * The network connectivity state.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIVITY,
-		 g_param_spec_enum (NM_CLIENT_CONNECTIVITY, "", "",
-		                    NM_TYPE_CONNECTIVITY_STATE,
-		                    NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONNECTIVITY] =
+	    g_param_spec_enum (NM_CLIENT_CONNECTIVITY, "", "",
+	                       NM_TYPE_CONNECTIVITY_STATE,
+	                       NM_CONNECTIVITY_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient::connectivity-check-available
@@ -3971,12 +3952,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Since: 1.10
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIVITY_CHECK_AVAILABLE,
-		 g_param_spec_boolean (NM_CLIENT_CONNECTIVITY_CHECK_AVAILABLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONNECTIVITY_CHECK_AVAILABLE] =
+	    g_param_spec_boolean (NM_CLIENT_CONNECTIVITY_CHECK_AVAILABLE, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient::connectivity-check-enabled
@@ -3987,12 +3967,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIVITY_CHECK_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_CONNECTIVITY_CHECK_ENABLED, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
+	    g_param_spec_boolean (NM_CLIENT_CONNECTIVITY_CHECK_ENABLED, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:primary-connection:
@@ -4000,12 +3979,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 * The #NMActiveConnection of the device with the default route;
 	 * see nm_client_get_primary_connection() for more details.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PRIMARY_CONNECTION,
-		 g_param_spec_object (NM_CLIENT_PRIMARY_CONNECTION, "", "",
-		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PRIMARY_CONNECTION] =
+	    g_param_spec_object (NM_CLIENT_PRIMARY_CONNECTION, "", "",
+	                         NM_TYPE_ACTIVE_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:activating-connection:
@@ -4013,24 +3991,22 @@ nm_client_class_init (NMClientClass *client_class)
 	 * The #NMActiveConnection of the activating connection that is
 	 * likely to become the new #NMClient:primary-connection.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVATING_CONNECTION,
-		 g_param_spec_object (NM_CLIENT_ACTIVATING_CONNECTION, "", "",
-		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVATING_CONNECTION] =
+	    g_param_spec_object (NM_CLIENT_ACTIVATING_CONNECTION, "", "",
+	                         NM_TYPE_ACTIVE_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:devices: (type GPtrArray(NMDevice))
 	 *
 	 * List of real network devices.  Does not include placeholder devices.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_CLIENT_DEVICES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DEVICES] =
+	    g_param_spec_boxed (NM_CLIENT_DEVICES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:all-devices: (type GPtrArray(NMDevice))
@@ -4038,12 +4014,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 * List of both real devices and device placeholders.
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ALL_DEVICES,
-		 g_param_spec_boxed (NM_CLIENT_ALL_DEVICES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ALL_DEVICES] =
+	    g_param_spec_boxed (NM_CLIENT_ALL_DEVICES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:connections: (type GPtrArray(NMRemoteConnection))
@@ -4053,12 +4028,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 * contain the object paths of connections that the user does not have
 	 * permission to read the details of.)
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CONNECTIONS,
-		 g_param_spec_boxed (NM_CLIENT_CONNECTIONS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONNECTIONS] =
+	    g_param_spec_boxed (NM_CLIENT_CONNECTIONS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:hostname:
@@ -4066,24 +4040,22 @@ nm_client_class_init (NMClientClass *client_class)
 	 * The machine hostname stored in persistent configuration. This can be
 	 * modified by calling nm_client_save_hostname().
 	 */
-	g_object_class_install_property
-		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_CLIENT_HOSTNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HOSTNAME] =
+	    g_param_spec_string (NM_CLIENT_HOSTNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:can-modify:
 	 *
 	 * If %TRUE, adding and modifying connections is supported.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CAN_MODIFY,
-		 g_param_spec_boolean (NM_CLIENT_CAN_MODIFY, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAN_MODIFY] =
+	    g_param_spec_boolean (NM_CLIENT_CAN_MODIFY, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:metered:
@@ -4092,12 +4064,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_METERED,
-		 g_param_spec_uint (NM_CLIENT_METERED, "", "",
-		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_METERED] =
+	    g_param_spec_uint (NM_CLIENT_METERED, "", "",
+	                       0, G_MAXUINT32, NM_METERED_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:dns-mode:
@@ -4106,12 +4077,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Since: 1.6
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS_MODE,
-		 g_param_spec_string (NM_CLIENT_DNS_MODE, "", "",
-		                      "",
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DNS_MODE] =
+	    g_param_spec_string (NM_CLIENT_DNS_MODE, "", "",
+	                         "",
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:dns-rc-manager:
@@ -4120,12 +4090,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Since: 1.6
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS_RC_MANAGER,
-		 g_param_spec_string (NM_CLIENT_DNS_RC_MANAGER, "", "",
-		                      "",
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DNS_RC_MANAGER] =
+	    g_param_spec_string (NM_CLIENT_DNS_RC_MANAGER, "", "",
+	                         "",
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:dns-configuration: (type GPtrArray(NMDnsEntry))
@@ -4135,12 +4104,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Since: 1.6
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS_CONFIGURATION,
-		 g_param_spec_boxed (NM_CLIENT_DNS_CONFIGURATION, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DNS_CONFIGURATION] =
+	    g_param_spec_boxed (NM_CLIENT_DNS_CONFIGURATION, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:checkpoints: (type GPtrArray(NMCheckpoint))
@@ -4149,14 +4117,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Since: 1.12
 	 */
-	g_object_class_install_property
-		(object_class, PROP_CHECKPOINTS,
-		 g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CHECKPOINTS] =
+	    g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/**
 	 * NMClient::device-added:
@@ -4167,13 +4134,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * placeholder devices.
 	 **/
 	signals[DEVICE_ADDED] =
-		g_signal_new (NM_CLIENT_DEVICE_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMClientClass, device_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new (NM_CLIENT_DEVICE_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMClientClass, device_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	/**
 	 * NMClient::device-removed:
@@ -4184,13 +4151,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * placeholder devices.
 	 **/
 	signals[DEVICE_REMOVED] =
-		g_signal_new (NM_CLIENT_DEVICE_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMClientClass, device_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new (NM_CLIENT_DEVICE_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMClientClass, device_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	/**
 	 * NMClient::any-device-added:
@@ -4201,13 +4168,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * regular devices and placeholder devices.
 	 **/
 	signals[ANY_DEVICE_ADDED] =
-		g_signal_new (NM_CLIENT_ANY_DEVICE_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMClientClass, any_device_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new (NM_CLIENT_ANY_DEVICE_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMClientClass, any_device_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	/**
 	 * NMClient::any-device-removed:
@@ -4218,13 +4185,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * regular devices and placeholder devices.
 	 **/
 	signals[ANY_DEVICE_REMOVED] =
-		g_signal_new (NM_CLIENT_ANY_DEVICE_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMClientClass, any_device_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new (NM_CLIENT_ANY_DEVICE_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMClientClass, any_device_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	/**
 	 * NMClient::permission-changed:
@@ -4235,11 +4202,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a permission has changed
 	 **/
 	signals[PERMISSION_CHANGED] =
-		g_signal_new (NM_CLIENT_PERMISSION_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new (NM_CLIENT_PERMISSION_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 	/**
 	 * NMClient::connection-added:
 	 * @client: the settings object that received the signal
@@ -4248,13 +4215,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a #NMConnection has been added.
 	 **/
 	signals[CONNECTION_ADDED] =
-		g_signal_new (NM_CLIENT_CONNECTION_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMClientClass, connection_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_REMOTE_CONNECTION);
+	    g_signal_new (NM_CLIENT_CONNECTION_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMClientClass, connection_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_REMOTE_CONNECTION);
 
 	/**
 	 * NMClient::connection-removed:
@@ -4264,13 +4231,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a #NMConnection has been removed.
 	 **/
 	signals[CONNECTION_REMOVED] =
-		g_signal_new (NM_CLIENT_CONNECTION_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMClientClass, connection_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_REMOTE_CONNECTION);
+	    g_signal_new (NM_CLIENT_CONNECTION_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMClientClass, connection_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_REMOTE_CONNECTION);
 
 	/**
 	 * NMClient::active-connection-added:
@@ -4280,12 +4247,12 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a #NMActiveConnection has been added.
 	 **/
 	signals[ACTIVE_CONNECTION_ADDED] =
-		g_signal_new (NM_CLIENT_ACTIVE_CONNECTION_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_ACTIVE_CONNECTION);
+	    g_signal_new (NM_CLIENT_ACTIVE_CONNECTION_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_ACTIVE_CONNECTION);
 
 	/**
 	 * NMClient::active-connection-removed:
@@ -4295,12 +4262,12 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a #NMActiveConnection has been removed.
 	 **/
 	signals[ACTIVE_CONNECTION_REMOVED] =
-		g_signal_new (NM_CLIENT_ACTIVE_CONNECTION_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              NM_TYPE_ACTIVE_CONNECTION);
+	    g_signal_new (NM_CLIENT_ACTIVE_CONNECTION_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1,
+	                  NM_TYPE_ACTIVE_CONNECTION);
 }
 
 static void
