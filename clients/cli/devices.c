@@ -3136,6 +3136,38 @@ activate_update2_cb (GObject *source_object, GAsyncResult *res, gpointer user_da
 	                                     info);
 }
 
+static void
+save_and_activate_connection (NmCli *nmc,
+                              NMDevice *device,
+                              NMConnection *connection,
+                              gboolean hotspot,
+                              const char *specific_object)
+{
+	AddAndActivateInfo *info;
+
+	info = add_and_activate_info_new (nmc, device, hotspot,
+	                                  !NM_IS_REMOTE_CONNECTION (connection),
+	                                  specific_object);
+
+	if (NM_IS_REMOTE_CONNECTION (connection)) {
+		nm_remote_connection_update2 (NM_REMOTE_CONNECTION (connection),
+		                              nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+		                              NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT,
+		                              NULL,
+		                              NULL,
+		                              activate_update2_cb,
+		                              info);
+	} else {
+		nm_client_add_and_activate_connection_async (nmc->client,
+		                                             connection,
+		                                             info->device,
+		                                             info->specific_object,
+		                                             NULL,
+		                                             add_and_activate_cb,
+		                                             info);
+	}
+}
+
 static NMCResultCode
 do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 {
@@ -3144,11 +3176,9 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 	NM80211ApFlags ap_flags;
 	NM80211ApSecurityFlags ap_wpa_flags;
 	NM80211ApSecurityFlags ap_rsn_flags;
-	NMRemoteConnection *remote_con = NULL;
-	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	AddAndActivateInfo *info;
 	const char *param_user = NULL;
 	const char *ifname = NULL;
 	const char *bssid = NULL;
@@ -3399,7 +3429,7 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 
 	avail_cons = nm_device_get_available_connections (device);
 	for (i = 0; i < avail_cons->len; i++) {
-		NMRemoteConnection *avail_con = g_ptr_array_index (avail_cons, i);
+		NMConnection *avail_con = g_ptr_array_index (avail_cons, i);
 		const char *id = nm_connection_get_id (NM_CONNECTION (avail_con));
 
 		if (con_name) {
@@ -3413,19 +3443,18 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 			/* ap has been checked against bssid1, bssid2 and the ssid
 			 * and now avail_con has been checked against ap.
 			 */
-			remote_con = avail_con;
-			connection = NM_CONNECTION (remote_con);
+			connection = g_object_ref (avail_con);
 			break;
 		}
 	}
 
-	if (name_match && !remote_con) {
+	if (name_match && !connection) {
 		g_string_printf (nmc->return_text, _("Error: Connection '%s' exists but properties don't match."), con_name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
 
-	if (!remote_con) {
+	if (!connection) {
 		/* If there are some connection data from user, create a connection and
 		 * fill them into proper settings. */
 		if (con_name || private || bssid2_arr || hidden)
@@ -3540,25 +3569,8 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = add_and_activate_info_new (nmc, device, FALSE, !remote_con, nm_object_get_path (NM_OBJECT (ap)));
-
-	if (remote_con) {
-		nm_remote_connection_update2 (remote_con,
-		                              nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
-		                              NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT,
-		                              NULL,
-		                              NULL,
-		                              activate_update2_cb,
-		                              info);
-	} else {
-		nm_client_add_and_activate_connection_async (nmc->client,
-		                                             connection,
-		                                             info->device,
-		                                             info->specific_object,
-		                                             NULL,
-		                                             add_and_activate_cb,
-		                                             info);
-	}
+	save_and_activate_connection (nmc, device, connection, FALSE,
+	                              nm_object_get_path (NM_OBJECT (ap)));
 
 finish:
 	if (bssid1_arr)
