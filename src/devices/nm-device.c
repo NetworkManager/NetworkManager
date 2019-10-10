@@ -225,6 +225,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_RX_BYTES,
 	PROP_IP4_CONNECTIVITY,
 	PROP_IP6_CONNECTIVITY,
+	PROP_INTERFACE_FLAGS,
 );
 
 typedef struct _NMDevicePrivate {
@@ -583,6 +584,7 @@ typedef struct _NMDevicePrivate {
 	} concheck_x[2];
 
 	guint check_delete_unrealized_id;
+	guint32 interface_flags;
 
 	struct {
 		SriovOp *pending;    /* SR-IOV operation currently running */
@@ -3804,6 +3806,23 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 	g_array_unref (dns_domains);
 }
 
+static void
+device_update_interface_flags (NMDevice *self, const NMPlatformLink *plink)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceInterfaceFlags flags = NM_DEVICE_INTERFACE_FLAG_NONE;
+
+	if (plink && NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP))
+		flags |= NM_DEVICE_INTERFACE_FLAG_UP;
+	if (plink && NM_FLAGS_HAS (plink->n_ifi_flags, IFF_LOWER_UP))
+		flags |= NM_DEVICE_INTERFACE_FLAG_LOWER_UP;
+
+	if (flags != priv->interface_flags) {
+		priv->interface_flags = flags;
+		_notify (self, PROP_INTERFACE_FLAGS);
+	}
+}
+
 static gboolean
 device_link_changed (NMDevice *self)
 {
@@ -3890,6 +3909,8 @@ device_link_changed (NMDevice *self)
 	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
 	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, pllink->connected);
+
+	device_update_interface_flags (self, pllink);
 
 	klass->link_changed (self, pllink);
 
@@ -4243,6 +4264,8 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 		_notify (self, PROP_IFINDEX);
 		NM_DEVICE_GET_CLASS (self)->link_changed (self, plink);
 	}
+
+	device_update_interface_flags (self, plink);
 }
 
 /*****************************************************************************/
@@ -17265,6 +17288,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IP6_CONNECTIVITY:
 		g_value_set_uint (value, priv->concheck_x[0].state);
 		break;
+	case PROP_INTERFACE_FLAGS:
+		g_value_set_uint (value, priv->interface_flags);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -17353,6 +17379,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Real",                 "b",      NM_DEVICE_REAL),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("Ip4Connectivity",      "u",      NM_DEVICE_IP4_CONNECTIVITY),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("Ip6Connectivity",      "u",      NM_DEVICE_IP6_CONNECTIVITY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("InterfaceFlags",       "u",      NM_DEVICE_INTERFACE_FLAGS),
 		),
 	),
 };
@@ -17628,6 +17655,13 @@ nm_device_class_init (NMDeviceClass *klass)
 	                        NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_INTERFACE_FLAGS] =
+	    g_param_spec_uint (NM_DEVICE_INTERFACE_FLAGS, "", "",
+	                       0,
+	                       G_MAXUINT32,
+	                       0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

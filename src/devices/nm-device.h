@@ -132,6 +132,7 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 
 #define NM_DEVICE_IP4_CONNECTIVITY           "ip4-connectivity"
 #define NM_DEVICE_IP6_CONNECTIVITY           "ip6-connectivity"
+#define NM_DEVICE_INTERFACE_FLAGS            "interface-flags"
 
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
