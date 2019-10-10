@@ -958,12 +958,12 @@ stderr: 54 bytes
 Błąd: nieprawidłowy dodatkowy parametr „eth0”.
 
 <<<
-size: 3490
+size: 3578
 location: clients/tests/test-client.py:test_003()/35
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
-stdout: 3354 bytes
+stdout: 3442 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -995,6 +995,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -1024,12 +1026,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3525
+size: 3613
 location: clients/tests/test-client.py:test_003()/36
 cmd: $NMCLI -f ALL dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3379 bytes
+stdout: 3467 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -1061,6 +1063,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -1090,12 +1094,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2235
+size: 2287
 location: clients/tests/test-client.py:test_003()/37
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: C
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -1127,6 +1131,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -1156,12 +1162,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2245
+size: 2297
 location: clients/tests/test-client.py:test_003()/38
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -1193,6 +1199,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -1870,12 +1878,12 @@ stderr: 54 bytes
 Błąd: nieprawidłowy dodatkowy parametr „eth0”.
 
 <<<
-size: 3490
+size: 3578
 location: clients/tests/test-client.py:test_003()/60
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
-stdout: 3354 bytes
+stdout: 3442 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -1907,6 +1915,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -1936,12 +1946,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3525
+size: 3613
 location: clients/tests/test-client.py:test_003()/61
 cmd: $NMCLI -f ALL dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3379 bytes
+stdout: 3467 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -1973,6 +1983,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -2002,12 +2014,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2235
+size: 2287
 location: clients/tests/test-client.py:test_003()/62
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: C
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -2039,6 +2051,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -2068,12 +2082,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2245
+size: 2297
 location: clients/tests/test-client.py:test_003()/63
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -2105,6 +2119,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -2652,12 +2668,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3490
+size: 3578
 location: clients/tests/test-client.py:test_003()/72
 cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3354 bytes
+stdout: 3442 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -2689,6 +2705,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -2718,12 +2736,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3525
+size: 3613
 location: clients/tests/test-client.py:test_003()/73
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3379 bytes
+stdout: 3467 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -2755,6 +2773,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -3302,12 +3322,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3502
+size: 3590
 location: clients/tests/test-client.py:test_003()/82
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3354 bytes
+stdout: 3442 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -3339,6 +3359,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -3368,12 +3390,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3537
+size: 3625
 location: clients/tests/test-client.py:test_003()/83
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3379 bytes
+stdout: 3467 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -3405,6 +3427,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -4024,12 +4048,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4350
+size: 4518
 location: clients/tests/test-client.py:test_003()/92
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4205 bytes
+stdout: 4373 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -4066,6 +4090,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -4101,12 +4128,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4391
+size: 4559
 location: clients/tests/test-client.py:test_003()/93
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4236 bytes
+stdout: 4404 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -4142,6 +4169,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -4768,12 +4798,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4363
+size: 4531
 location: clients/tests/test-client.py:test_003()/102
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4205 bytes
+stdout: 4373 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -4810,6 +4840,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -4845,12 +4878,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4404
+size: 4572
 location: clients/tests/test-client.py:test_003()/103
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4236 bytes
+stdout: 4404 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -4886,6 +4919,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -5436,12 +5472,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2241
+size: 2293
 location: clients/tests/test-client.py:test_003()/112
 cmd: $NMCLI --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -5473,6 +5509,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -5502,12 +5540,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2251
+size: 2303
 location: clients/tests/test-client.py:test_003()/113
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -5539,6 +5577,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -6082,12 +6122,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2253
+size: 2305
 location: clients/tests/test-client.py:test_003()/122
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -6119,6 +6159,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -6148,12 +6190,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2263
+size: 2315
 location: clients/tests/test-client.py:test_003()/123
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -6185,6 +6227,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -6388,18 +6432,21 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 2967
+size: 3032
 location: clients/tests/test-client.py:test_003()/132
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2815 bytes
+stdout: 2880 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  off      --               
@@ -6420,18 +6467,21 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 2998
+size: 3063
 location: clients/tests/test-client.py:test_003()/133
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2836 bytes
+stdout: 2901 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 WIRED-PROPERTIES  wyłączone  --               
@@ -6626,18 +6676,21 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 2979
+size: 3044
 location: clients/tests/test-client.py:test_003()/142
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2815 bytes
+stdout: 2880 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  off      --               
@@ -6658,18 +6711,21 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 3010
+size: 3075
 location: clients/tests/test-client.py:test_003()/143
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2836 bytes
+stdout: 2901 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 WIRED-PROPERTIES  wyłączone  --               
@@ -6936,12 +6992,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4464
+size: 4562
 location: clients/tests/test-client.py:test_003()/152
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4303 bytes
+stdout: 4401 bytes
 >>>
 =========================
   Device details (eth0)
@@ -6953,6 +7009,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -6979,12 +7039,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 4532
+size: 4630
 location: clients/tests/test-client.py:test_003()/153
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4361 bytes
+stdout: 4459 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -6996,6 +7056,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 -----------------------------------------------
@@ -7268,12 +7332,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4476
+size: 4574
 location: clients/tests/test-client.py:test_003()/162
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4303 bytes
+stdout: 4401 bytes
 >>>
 =========================
   Device details (eth0)
@@ -7285,6 +7349,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -7311,12 +7379,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 4544
+size: 4642
 location: clients/tests/test-client.py:test_003()/163
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4361 bytes
+stdout: 4459 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -7328,6 +7396,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 -----------------------------------------------
@@ -7472,15 +7544,16 @@ proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1371
+size: 1395
 location: clients/tests/test-client.py:test_003()/172
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1211 bytes
+stdout: 1235 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -7489,15 +7562,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1381
+size: 1405
 location: clients/tests/test-client.py:test_003()/173
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1211 bytes
+stdout: 1235 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -7624,15 +7698,16 @@ proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1383
+size: 1407
 location: clients/tests/test-client.py:test_003()/182
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1211 bytes
+stdout: 1235 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -7641,15 +7716,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1393
+size: 1417
 location: clients/tests/test-client.py:test_003()/183
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1211 bytes
+stdout: 1235 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -8320,12 +8396,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3508
+size: 3596
 location: clients/tests/test-client.py:test_003()/192
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3354 bytes
+stdout: 3442 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -8357,6 +8433,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -8386,12 +8464,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3543
+size: 3631
 location: clients/tests/test-client.py:test_003()/193
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3379 bytes
+stdout: 3467 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -8423,6 +8501,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -9114,12 +9194,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3520
+size: 3608
 location: clients/tests/test-client.py:test_003()/202
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3354 bytes
+stdout: 3442 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -9151,6 +9231,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -9180,12 +9262,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3555
+size: 3643
 location: clients/tests/test-client.py:test_003()/203
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3379 bytes
+stdout: 3467 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -9217,6 +9299,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -9994,12 +10078,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4368
+size: 4536
 location: clients/tests/test-client.py:test_003()/212
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4205 bytes
+stdout: 4373 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -10036,6 +10120,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -10071,12 +10158,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4409
+size: 4577
 location: clients/tests/test-client.py:test_003()/213
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4236 bytes
+stdout: 4404 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -10112,6 +10199,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -10896,12 +10986,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4380
+size: 4548
 location: clients/tests/test-client.py:test_003()/222
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4205 bytes
+stdout: 4373 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -10938,6 +11028,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -10973,12 +11066,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4421
+size: 4589
 location: clients/tests/test-client.py:test_003()/223
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4236 bytes
+stdout: 4404 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -11014,6 +11107,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -11712,12 +11808,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2258
+size: 2310
 location: clients/tests/test-client.py:test_003()/232
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -11749,6 +11845,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -11778,12 +11876,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2268
+size: 2320
 location: clients/tests/test-client.py:test_003()/233
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -11815,6 +11913,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -12506,12 +12606,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2270
+size: 2322
 location: clients/tests/test-client.py:test_003()/242
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -12543,6 +12643,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -12572,12 +12674,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2280
+size: 2332
 location: clients/tests/test-client.py:test_003()/243
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2096 bytes
+stdout: 2148 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -12609,6 +12711,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -12758,12 +12862,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3511
+size: 3599
 location: clients/tests/test-client.py:test_003()/252
 cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3374 bytes
+stdout: 3462 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -12795,6 +12899,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -12824,12 +12930,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3548
+size: 3636
 location: clients/tests/test-client.py:test_003()/253
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3401 bytes
+stdout: 3489 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -12861,6 +12967,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13010,12 +13118,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3523
+size: 3611
 location: clients/tests/test-client.py:test_003()/262
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3374 bytes
+stdout: 3462 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -13047,6 +13155,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13076,12 +13186,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3560
+size: 3648
 location: clients/tests/test-client.py:test_003()/263
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3401 bytes
+stdout: 3489 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -13113,6 +13223,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13292,12 +13404,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4371
+size: 4539
 location: clients/tests/test-client.py:test_003()/272
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4225 bytes
+stdout: 4393 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -13334,6 +13446,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -13369,12 +13484,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4414
+size: 4582
 location: clients/tests/test-client.py:test_003()/273
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4258 bytes
+stdout: 4426 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13410,6 +13525,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -13596,12 +13714,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4383
+size: 4551
 location: clients/tests/test-client.py:test_003()/282
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4225 bytes
+stdout: 4393 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -13638,6 +13756,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -13673,12 +13794,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4426
+size: 4594
 location: clients/tests/test-client.py:test_003()/283
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4258 bytes
+stdout: 4426 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13714,6 +13835,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -13866,12 +13990,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2261
+size: 2313
 location: clients/tests/test-client.py:test_003()/292
 cmd: $NMCLI --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -13903,6 +14027,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -13932,12 +14058,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2271
+size: 2323
 location: clients/tests/test-client.py:test_003()/293
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -13969,6 +14095,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14114,12 +14242,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2273
+size: 2325
 location: clients/tests/test-client.py:test_003()/302
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14151,6 +14279,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14180,12 +14310,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2283
+size: 2335
 location: clients/tests/test-client.py:test_003()/303
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14217,6 +14347,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14346,18 +14478,21 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 3007
+size: 3072
 location: clients/tests/test-client.py:test_003()/312
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2855 bytes
+stdout: 2920 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  off      --               
@@ -14378,18 +14513,21 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3042
+size: 3107
 location: clients/tests/test-client.py:test_003()/313
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2880 bytes
+stdout: 2945 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 WIRED-PROPERTIES  wyłączone  --               
@@ -14510,18 +14648,21 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 3019
+size: 3084
 location: clients/tests/test-client.py:test_003()/322
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2855 bytes
+stdout: 2920 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (unavailable)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --        no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  off      --               
@@ -14542,18 +14683,21 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3054
+size: 3119
 location: clients/tests/test-client.py:test_003()/323
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2880 bytes
+stdout: 2945 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    20 (niedostępne)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --        nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
 
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 WIRED-PROPERTIES  wyłączone  --               
@@ -14704,12 +14848,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4524
+size: 4622
 location: clients/tests/test-client.py:test_003()/332
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4363 bytes
+stdout: 4461 bytes
 >>>
 =========================
   Device details (eth0)
@@ -14721,6 +14865,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -14747,12 +14895,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4598
+size: 4696
 location: clients/tests/test-client.py:test_003()/333
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4427 bytes
+stdout: 4525 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -14764,6 +14912,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 -----------------------------------------------
@@ -14920,12 +15072,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deza
 
 
 <<<
-size: 4536
+size: 4634
 location: clients/tests/test-client.py:test_003()/342
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4363 bytes
+stdout: 4461 bytes
 >>>
 =========================
   Device details (eth0)
@@ -14937,6 +15089,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  yes  yes      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -14963,12 +15119,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4610
+size: 4708
 location: clients/tests/test-client.py:test_003()/343
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4427 bytes
+stdout: 4525 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -14980,6 +15136,10 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  --      --       virtual  --       
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
+
+NAME             UP   LOWER-UP 
+--------------------------------
+INTERFACE-FLAGS  tak  tak      
 
 NAME              CARRIER    S390-SUBCHANNELS 
 -----------------------------------------------
@@ -15098,15 +15258,16 @@ stdout: 190 bytes
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1391
+size: 1415
 location: clients/tests/test-client.py:test_003()/352
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1231 bytes
+stdout: 1255 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15115,15 +15276,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1401
+size: 1425
 location: clients/tests/test-client.py:test_003()/353
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1231 bytes
+stdout: 1255 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15224,15 +15386,16 @@ stdout: 190 bytes
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1403
+size: 1427
 location: clients/tests/test-client.py:test_003()/362
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1231 bytes
+stdout: 1255 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15241,15 +15404,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1413
+size: 1437
 location: clients/tests/test-client.py:test_003()/363
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1231 bytes
+stdout: 1255 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
+INTERFACE-FLAGS:yes:yes
 WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15520,12 +15684,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3528
+size: 3616
 location: clients/tests/test-client.py:test_003()/372
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3374 bytes
+stdout: 3462 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -15557,6 +15721,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -15586,12 +15752,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3565
+size: 3653
 location: clients/tests/test-client.py:test_003()/373
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3401 bytes
+stdout: 3489 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -15623,6 +15789,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -15914,12 +16082,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3540
+size: 3628
 location: clients/tests/test-client.py:test_003()/382
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3374 bytes
+stdout: 3462 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -15951,6 +16119,8 @@ CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
 WIRED-PROPERTIES.CARRIER:               off
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -15980,12 +16150,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3577
+size: 3665
 location: clients/tests/test-client.py:test_003()/383
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3401 bytes
+stdout: 3489 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -16017,6 +16187,8 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -16350,12 +16522,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4388
+size: 4556
 location: clients/tests/test-client.py:test_003()/392
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4225 bytes
+stdout: 4393 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -16392,6 +16564,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -16427,12 +16602,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4431
+size: 4599
 location: clients/tests/test-client.py:test_003()/393
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4258 bytes
+stdout: 4426 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -16468,6 +16643,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -16808,12 +16986,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4400
+size: 4568
 location: clients/tests/test-client.py:test_003()/402
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4225 bytes
+stdout: 4393 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -16850,6 +17028,9 @@ CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
 -------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     yes
+INTERFACE-FLAGS.LOWER-UP:               yes
+-------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               off
 -------------------------------------------------------------------------------
 IP4.ADDRESS[1]:                         192.168.6.238/29
@@ -16885,12 +17066,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4443
+size: 4611
 location: clients/tests/test-client.py:test_003()/403
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4258 bytes
+stdout: 4426 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -16926,6 +17107,9 @@ CAPABILITIES.CARRIER-DETECT:            nie
 CAPABILITIES.SPEED:                     100 Mb/s
 CAPABILITIES.IS-SOFTWARE:               nie
 CAPABILITIES.SRIOV:                     nie
+-------------------------------------------------------------------------------
+INTERFACE-FLAGS.UP:                     tak
+INTERFACE-FLAGS.LOWER-UP:               tak
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               wyłączone
 -------------------------------------------------------------------------------
@@ -17224,12 +17408,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2278
+size: 2330
 location: clients/tests/test-client.py:test_003()/412
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -17261,6 +17445,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -17290,12 +17476,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2288
+size: 2340
 location: clients/tests/test-client.py:test_003()/413
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -17327,6 +17513,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -17618,12 +17806,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2290
+size: 2342
 location: clients/tests/test-client.py:test_003()/422
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -17655,6 +17843,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -17684,12 +17874,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2300
+size: 2352
 location: clients/tests/test-client.py:test_003()/423
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2116 bytes
+stdout: 2168 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -17721,6 +17911,8 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
+INTERFACE-FLAGS.UP:yes
+INTERFACE-FLAGS.LOWER-UP:yes
 WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
