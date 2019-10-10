@@ -1940,9 +1940,8 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 	nm_auto_free_add_and_activate_info AddAndActivateInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	gs_unref_object NMActiveConnection *active = NULL;
+	NMDevice *device = info->device;
 	GError *error = NULL;
-	const GPtrArray *devices;
-	NMDevice *device;
 
 	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
@@ -1963,16 +1962,6 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 	}
 
 	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
-
-	devices = nm_active_connection_get_devices (active);
-	if (devices->len == 0) {
-		g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
-		return;
-	}
-
-	device = g_ptr_array_index (devices, 0);
 
 	if (nmc->nowait_flag) {
 		quit ();
