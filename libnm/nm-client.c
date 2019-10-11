@@ -76,17 +76,10 @@
 #include "nm-remote-settings.h"
 #include "nm-vpn-connection.h"
 
-void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+/*****************************************************************************/
 
 static void nm_client_initable_iface_init (GInitableIface *iface);
 static void nm_client_async_initable_iface_init (GAsyncInitableIface *iface);
-
-G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_client_initable_iface_init);
-                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_client_async_initable_iface_init);
-                         )
-
-#define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
 	NMClient *client;
@@ -94,17 +87,6 @@ typedef struct {
 	GSimpleAsyncResult *result;
 	int pending_init;
 } NMClientInitData;
-
-typedef struct {
-	NMManager *manager;
-	NMRemoteSettings *settings;
-	NMDnsManager *dns_manager;
-	GDBusObjectManager *object_manager;
-	GCancellable *new_object_manager_cancellable;
-	char *name_owner_cached;
-	struct udev *udev;
-	bool udev_inited:1;
-} NMClientPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_VERSION,
@@ -151,6 +133,30 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	NMManager *manager;
+	NMRemoteSettings *settings;
+	NMDnsManager *dns_manager;
+	GDBusObjectManager *object_manager;
+	GCancellable *new_object_manager_cancellable;
+	char *name_owner_cached;
+	struct udev *udev;
+	bool udev_inited:1;
+} NMClientPrivate;
+
+G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_client_initable_iface_init);
+                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_client_async_initable_iface_init);
+                         )
+
+#define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
+
+/*****************************************************************************/
+
+void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+
+/*****************************************************************************/
 
 static const GPtrArray empty = { 0, };
 
@@ -201,11 +207,6 @@ _nm_client_get_dbus_name_owner (NMClient *client)
 }
 
 /*****************************************************************************/
-
-static void
-nm_client_init (NMClient *client)
-{
-}
 
 static gboolean
 _nm_client_check_nm_running (NMClient *client, GError **error)
@@ -2414,92 +2415,6 @@ nm_client_get_dns_configuration (NMClient *client)
 
 /*****************************************************************************/
 
-/**
- * nm_client_new:
- * @cancellable: a #GCancellable, or %NULL
- * @error: location for a #GError, or %NULL
- *
- * Creates a new #NMClient.
- *
- * Note that this will do blocking D-Bus calls to initialize the
- * client. You can use nm_client_new_async() if you want to avoid
- * that.
- *
- * Returns: a new #NMClient or NULL on an error
- **/
-NMClient *
-nm_client_new (GCancellable  *cancellable,
-               GError       **error)
-{
-	return g_initable_new (NM_TYPE_CLIENT, cancellable, error,
-	                       NULL);
-}
-
-static void
-client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (!g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, &error))
-		g_simple_async_result_take_error (simple, error);
-	else
-		g_simple_async_result_set_op_res_gpointer (simple, source, g_object_unref);
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-/**
- * nm_client_new_async:
- * @cancellable: a #GCancellable, or %NULL
- * @callback: callback to call when the client is created
- * @user_data: data for @callback
- *
- * Creates a new #NMClient and begins asynchronously initializing it.
- * @callback will be called when it is done; use
- * nm_client_new_finish() to get the result. Note that on an error,
- * the callback can be invoked with two first parameters as NULL.
- **/
-void
-nm_client_new_async (GCancellable *cancellable,
-                     GAsyncReadyCallback callback,
-                     gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	g_async_initable_new_async (NM_TYPE_CLIENT, G_PRIORITY_DEFAULT,
-	                            cancellable, client_inited, simple,
-	                            NULL);
-}
-
-/**
- * nm_client_new_finish:
- * @result: a #GAsyncResult
- * @error: location for a #GError, or %NULL
- *
- * Gets the result of an nm_client_new_async() call.
- *
- * Returns: a new #NMClient, or %NULL on error
- **/
-NMClient *
-nm_client_new_finish (GAsyncResult *result, GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, NULL, nm_client_new_async), NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
-}
-
 static void
 subobject_notify (GObject *object,
                   GParamSpec *pspec,
@@ -3328,50 +3243,6 @@ _om_has_name_owner (GDBusObjectManager *object_manager)
 	return !!name_owner;
 }
 
-static gboolean
-init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
-{
-	NMClient *client = NM_CLIENT (initable);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	GList *objects, *iter;
-
-	priv->object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
-	                                                                      G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                                                                      "org.freedesktop.NetworkManager",
-	                                                                      "/org/freedesktop",
-	                                                                      proxy_type, NULL, NULL,
-	                                                                      cancellable, error);
-
-	if (!priv->object_manager)
-		return FALSE;
-
-	if (_om_has_name_owner (priv->object_manager)) {
-		if (!objects_created (client, priv->object_manager, error))
-			return FALSE;
-
-		objects = g_dbus_object_manager_get_objects (priv->object_manager);
-		for (iter = objects; iter; iter = iter->next) {
-			NMObject *obj_nm;
-
-			obj_nm = g_object_get_qdata (iter->data, _nm_object_obj_nm_quark ());
-			if (!obj_nm)
-				continue;
-
-			if (!g_initable_init (G_INITABLE (obj_nm), cancellable, NULL)) {
-				/* This is a can-not-happen situation, the NMObject subclasses are not
-				 * supposed to fail initialization. */
-				g_warn_if_reached ();
-			}
-		}
-		g_list_free_full (objects, g_object_unref);
-	}
-
-	g_signal_connect (priv->object_manager, "notify::name-owner",
-	                  G_CALLBACK (name_owner_changed), client);
-
-	return TRUE;
-}
-
 /* Asynchronous initialization. */
 
 static void
@@ -3563,90 +3434,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	}
 }
 
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data)
-{
-	prepare_object_manager (NM_CLIENT (initable), cancellable, callback, user_data);
-}
-
-static gboolean
-init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
-{
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return TRUE;
-}
-
-static void
-dispose (GObject *object)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
-
-	nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
-
-	if (priv->manager) {
-		g_signal_handlers_disconnect_by_data (priv->manager, object);
-		g_clear_object (&priv->manager);
-	}
-
-	if (priv->settings) {
-		g_signal_handlers_disconnect_by_data (priv->settings, object);
-		g_clear_object (&priv->settings);
-	}
-
-	if (priv->dns_manager) {
-		g_signal_handlers_disconnect_by_data (priv->dns_manager, object);
-		g_clear_object (&priv->dns_manager);
-	}
-
-	if (priv->object_manager) {
-		GList *objects, *iter;
-
-		/* Unhook the NM objects. */
-		objects = g_dbus_object_manager_get_objects (priv->object_manager);
-		for (iter = objects; iter; iter = iter->next)
-			g_object_set_qdata (G_OBJECT (iter->data), _nm_object_obj_nm_quark (), NULL);
-		g_list_free_full (objects, g_object_unref);
-
-		g_signal_handlers_disconnect_by_data (priv->object_manager, object);
-		g_clear_object (&priv->object_manager);
-	}
-
-	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
-
-	if (priv->udev) {
-		udev_unref (priv->udev);
-		priv->udev = NULL;
-	}
-
-	nm_clear_g_free (&priv->name_owner_cached);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_NETWORKING_ENABLED:
-	case PROP_WIRELESS_ENABLED:
-	case PROP_WWAN_ENABLED:
-	case PROP_WIMAX_ENABLED:
-	case PROP_CONNECTIVITY_CHECK_ENABLED:
-		if (priv->manager)
-			g_object_set_property (G_OBJECT (priv->manager), pspec->name, value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -3779,6 +3567,232 @@ get_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_NETWORKING_ENABLED:
+	case PROP_WIRELESS_ENABLED:
+	case PROP_WWAN_ENABLED:
+	case PROP_WIMAX_ENABLED:
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		if (priv->manager)
+			g_object_set_property (G_OBJECT (priv->manager), pspec->name, value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static gboolean
+init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
+{
+	NMClient *client = NM_CLIENT (initable);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	GList *objects, *iter;
+
+	priv->object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
+	                                                                      G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                                                                      "org.freedesktop.NetworkManager",
+	                                                                      "/org/freedesktop",
+	                                                                      proxy_type, NULL, NULL,
+	                                                                      cancellable, error);
+
+	if (!priv->object_manager)
+		return FALSE;
+
+	if (_om_has_name_owner (priv->object_manager)) {
+		if (!objects_created (client, priv->object_manager, error))
+			return FALSE;
+
+		objects = g_dbus_object_manager_get_objects (priv->object_manager);
+		for (iter = objects; iter; iter = iter->next) {
+			NMObject *obj_nm;
+
+			obj_nm = g_object_get_qdata (iter->data, _nm_object_obj_nm_quark ());
+			if (!obj_nm)
+				continue;
+
+			if (!g_initable_init (G_INITABLE (obj_nm), cancellable, NULL)) {
+				/* This is a can-not-happen situation, the NMObject subclasses are not
+				 * supposed to fail initialization. */
+				g_warn_if_reached ();
+			}
+		}
+		g_list_free_full (objects, g_object_unref);
+	}
+
+	g_signal_connect (priv->object_manager, "notify::name-owner",
+	                  G_CALLBACK (name_owner_changed), client);
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+init_async (GAsyncInitable *initable, int io_priority,
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
+{
+	prepare_object_manager (NM_CLIENT (initable), cancellable, callback, user_data);
+}
+
+static gboolean
+init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+nm_client_init (NMClient *client)
+{
+}
+
+/**
+ * nm_client_new:
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Creates a new #NMClient.
+ *
+ * Note that this will do blocking D-Bus calls to initialize the
+ * client. You can use nm_client_new_async() if you want to avoid
+ * that.
+ *
+ * Returns: a new #NMClient or NULL on an error
+ **/
+NMClient *
+nm_client_new (GCancellable  *cancellable,
+               GError       **error)
+{
+	return g_initable_new (NM_TYPE_CLIENT, cancellable, error,
+	                       NULL);
+}
+
+static void
+client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (!g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, &error))
+		g_simple_async_result_take_error (simple, error);
+	else
+		g_simple_async_result_set_op_res_gpointer (simple, source, g_object_unref);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_new_async:
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to call when the client is created
+ * @user_data: data for @callback
+ *
+ * Creates a new #NMClient and begins asynchronously initializing it.
+ * @callback will be called when it is done; use
+ * nm_client_new_finish() to get the result. Note that on an error,
+ * the callback can be invoked with two first parameters as NULL.
+ **/
+void
+nm_client_new_async (GCancellable *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+
+	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+
+	g_async_initable_new_async (NM_TYPE_CLIENT, G_PRIORITY_DEFAULT,
+	                            cancellable, client_inited, simple,
+	                            NULL);
+}
+
+/**
+ * nm_client_new_finish:
+ * @result: a #GAsyncResult
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of an nm_client_new_async() call.
+ *
+ * Returns: a new #NMClient, or %NULL on error
+ **/
+NMClient *
+nm_client_new_finish (GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, NULL, nm_client_new_async), NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+static void
+dispose (GObject *object)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
+
+	if (priv->manager) {
+		g_signal_handlers_disconnect_by_data (priv->manager, object);
+		g_clear_object (&priv->manager);
+	}
+
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_data (priv->settings, object);
+		g_clear_object (&priv->settings);
+	}
+
+	if (priv->dns_manager) {
+		g_signal_handlers_disconnect_by_data (priv->dns_manager, object);
+		g_clear_object (&priv->dns_manager);
+	}
+
+	if (priv->object_manager) {
+		GList *objects, *iter;
+
+		/* Unhook the NM objects. */
+		objects = g_dbus_object_manager_get_objects (priv->object_manager);
+		for (iter = objects; iter; iter = iter->next)
+			g_object_set_qdata (G_OBJECT (iter->data), _nm_object_obj_nm_quark (), NULL);
+		g_list_free_full (objects, g_object_unref);
+
+		g_signal_handlers_disconnect_by_data (priv->object_manager, object);
+		g_clear_object (&priv->object_manager);
+	}
+
+	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
+
+	if (priv->udev) {
+		udev_unref (priv->udev);
+		priv->udev = NULL;
+	}
+
+	nm_clear_g_free (&priv->name_owner_cached);
 }
 
 static void
