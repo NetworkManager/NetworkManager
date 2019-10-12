@@ -444,7 +444,7 @@ class AsyncProcess():
                  args,
                  env,
                  complete_cb,
-                 max_waittime_msec = 2000):
+                 max_waittime_msec = 3000):
         self._args = list(args)
         self._env = env
         self._complete_cb = complete_cb
@@ -471,7 +471,7 @@ class AsyncProcess():
         self.start()
 
         return_code = Util.popen_wait(self._p, timeout)
-        if     return_code is not None \
+        if     return_code is None \
            and self._timeout_remaining_time() <= 0:
             raise Exception("process is still running after timeout: %s" % (' '.join(self._args)))
         return return_code
