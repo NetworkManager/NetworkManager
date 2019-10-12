@@ -1631,6 +1631,7 @@ global:
 
 libnm_1_22_0 {
 global:
+	nm_client_get_dbus_connection;
 	nm_client_reload;
 	nm_client_reload_finish;
 	nm_manager_reload_flags_get_type;

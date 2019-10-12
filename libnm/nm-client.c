@@ -89,6 +89,7 @@ typedef struct {
 } NMClientInitData;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
+	PROP_DBUS_CONNECTION,
 	PROP_VERSION,
 	PROP_STATE,
 	PROP_STARTUP,
@@ -139,6 +140,7 @@ typedef struct {
 	NMManager *manager;
 	NMRemoteSettings *settings;
 	NMDnsManager *dns_manager;
+	GDBusConnection *dbus_connection;
 	GDBusObjectManager *object_manager;
 	GCancellable *new_object_manager_cancellable;
 	char *name_owner_cached;
@@ -177,16 +179,9 @@ NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 GDBusConnection *
 _nm_client_get_dbus_connection (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	nm_assert (NM_IS_CLIENT (client));
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-
-	if (!priv->object_manager)
-		return NULL;
-
-	return g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+	return NM_CLIENT_GET_PRIVATE (client)->dbus_connection;
 }
 
 const char *
@@ -217,6 +212,26 @@ _nm_client_check_nm_running (NMClient *client, GError **error)
 		return FALSE;
 	}
 	return TRUE;
+}
+
+/**
+ * nm_client_get_dbus_connection:
+ * @client: a #NMClient
+ *
+ * Gets the %GDBusConnection of the instance. This can be either passed when
+ * constructing the instance (as "dbus-connection" property), or it will be
+ * automatically initialized during async/sync init.
+ *
+ * Returns: (transfer none): the D-Bus connection of the client, or %NULL if none is set.
+ *
+ * Since: 1.22
+ **/
+GDBusConnection *
+nm_client_get_dbus_connection (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	return NM_CLIENT_GET_PRIVATE (client)->dbus_connection;
 }
 
 /**
@@ -3346,16 +3361,20 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 	GDBusObjectManager *object_manager;
 
-	object_manager = g_dbus_object_manager_client_new_for_bus_finish (result, &error);
+	object_manager = (gpointer) g_async_initable_new_finish (G_ASYNC_INITABLE (object), result, &error);
 	if (object_manager == NULL) {
 		g_simple_async_result_take_error (init_data->result, error);
 		init_async_complete (init_data);
 		return;
 	}
 
+	nm_assert (G_IS_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
+
 	client = init_data->client;
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->object_manager = object_manager;
+	if (!priv->dbus_connection)
+		priv->dbus_connection = g_object_ref (g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager)));
 
 	if (_om_has_name_owner (priv->object_manager)) {
 		if (!objects_created (client, priv->object_manager, &error)) {
@@ -3392,7 +3411,9 @@ prepare_object_manager (NMClient *client,
                         GAsyncReadyCallback callback,
                         gpointer user_data)
 {
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	NMClientInitData *init_data;
+	GBusType bus_type = G_BUS_TYPE_NONE;
 
 	init_data = g_slice_new0 (NMClientInitData);
 	init_data->client = client;
@@ -3403,14 +3424,23 @@ prepare_object_manager (NMClient *client,
 		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
-	g_dbus_object_manager_client_new_for_bus (_nm_dbus_bus_type (),
-	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                                          "org.freedesktop.NetworkManager",
-	                                          "/org/freedesktop",
-	                                          proxy_type, NULL, NULL,
-	                                          init_data->cancellable,
-	                                          got_object_manager,
-	                                          init_data);
+	if (!priv->dbus_connection)
+		bus_type = _nm_dbus_bus_type ();
+
+	g_async_initable_new_async (G_TYPE_DBUS_OBJECT_MANAGER_CLIENT,
+	                            G_PRIORITY_DEFAULT,
+	                            init_data->cancellable,
+	                            got_object_manager,
+	                            init_data,
+	                            "connection", priv->dbus_connection,
+	                            "bus-type", bus_type,
+	                            "flags", G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                            "name", "org.freedesktop.NetworkManager",
+	                            "object-path", "/org/freedesktop",
+	                            "get-proxy-type-func", proxy_type,
+	                            "get-proxy-type-user-data", NULL,
+	                            "get-proxy-type-destroy-notify", NULL,
+	                            NULL);
 }
 
 static void
@@ -3445,6 +3475,10 @@ get_property (GObject *object, guint prop_id,
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_DBUS_CONNECTION:
+		g_value_set_object (value, priv->dbus_connection);
+		break;
+
 	case PROP_NM_RUNNING:
 		g_value_set_boolean (value, nm_client_get_nm_running (self));
 		break;
@@ -3577,6 +3611,10 @@ set_property (GObject *object, guint prop_id,
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_DBUS_CONNECTION:
+		/* construct-only */
+		priv->dbus_connection = g_value_dup_object (value);
+		break;
 	case PROP_NETWORKING_ENABLED:
 	case PROP_WIRELESS_ENABLED:
 	case PROP_WWAN_ENABLED:
@@ -3600,13 +3638,20 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	GList *objects, *iter;
 
-	priv->object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
-	                                                                      G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                                                                      "org.freedesktop.NetworkManager",
-	                                                                      "/org/freedesktop",
-	                                                                      proxy_type, NULL, NULL,
-	                                                                      cancellable, error);
+	if (!priv->dbus_connection) {
+		priv->dbus_connection = g_bus_get_sync (_nm_dbus_bus_type (),
+		                                        cancellable,
+		                                        error);
+		if (!priv->dbus_connection)
+			return FALSE;
+	}
 
+	priv->object_manager = g_dbus_object_manager_client_new_sync (priv->dbus_connection,
+	                                                              G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                                                              "org.freedesktop.NetworkManager",
+	                                                              "/org/freedesktop",
+	                                                              proxy_type, NULL, NULL,
+	                                                              cancellable, error);
 	if (!priv->object_manager)
 		return FALSE;
 
@@ -3803,6 +3848,8 @@ dispose (GObject *object)
 
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 
+	g_clear_object (&priv->dbus_connection);
+
 	nm_clear_g_free (&priv->name_owner_cached);
 }
 
@@ -3817,6 +3864,24 @@ nm_client_class_init (NMClientClass *client_class)
 	object_class->set_property = set_property;
 	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
+
+	/**
+	 * NMClient:dbus-connection:
+	 *
+	 * The #GDBusConnection to use.
+	 *
+	 * If this is not set during object construction, the D-Bus connection will
+	 * automatically be chosen during async/sync initalization via g_bus_get().
+	 *
+	 * Since: 1.22
+	 */
+	obj_properties[PROP_DBUS_CONNECTION] =
+	    g_param_spec_object (NM_CLIENT_DBUS_CONNECTION, "", "",
+	                         G_TYPE_DBUS_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:version:

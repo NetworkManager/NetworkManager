@@ -22,10 +22,11 @@ G_BEGIN_DECLS
 #define NM_IS_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_CLIENT))
 #define NM_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CLIENT, NMClientClass))
 
-#define NM_CLIENT_VERSION "version"
-#define NM_CLIENT_STATE "state"
-#define NM_CLIENT_STARTUP "startup"
-#define NM_CLIENT_NM_RUNNING "nm-running"
+#define NM_CLIENT_VERSION         "version"
+#define NM_CLIENT_STATE           "state"
+#define NM_CLIENT_STARTUP         "startup"
+#define NM_CLIENT_NM_RUNNING      "nm-running"
+#define NM_CLIENT_DBUS_CONNECTION "dbus-connection"
 
 _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
@@ -229,6 +230,9 @@ void      nm_client_new_async  (GCancellable         *cancellable,
                                 gpointer              user_data);
 NMClient *nm_client_new_finish (GAsyncResult         *result,
                                 GError              **error);
+
+NM_AVAILABLE_IN_1_22
+GDBusConnection *nm_client_get_dbus_connection (NMClient *client);
 
 const char *nm_client_get_version    (NMClient *client);
 NMState     nm_client_get_state      (NMClient *client);
