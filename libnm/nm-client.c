@@ -135,6 +135,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
+	GMainContext *main_context;
 	NMManager *manager;
 	NMRemoteSettings *settings;
 	NMDnsManager *dns_manager;
@@ -3660,7 +3661,7 @@ init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 /*****************************************************************************/
 
 static void
-nm_client_init (NMClient *client)
+nm_client_init (NMClient *self)
 {
 }
 
@@ -3751,6 +3752,17 @@ nm_client_new_finish (GAsyncResult *result, GError **error)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMClient *self = NM_CLIENT (object);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	priv->main_context = g_main_context_ref_thread_default ();
+
+	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
@@ -3787,10 +3799,9 @@ dispose (GObject *object)
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 
-	if (priv->udev) {
-		udev_unref (priv->udev);
-		priv->udev = NULL;
-	}
+	nm_clear_pointer (&priv->udev, udev_unref);
+
+	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 
 	nm_clear_g_free (&priv->name_owner_cached);
 }
@@ -3804,6 +3815,7 @@ nm_client_class_init (NMClientClass *client_class)
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
 
 	/**
