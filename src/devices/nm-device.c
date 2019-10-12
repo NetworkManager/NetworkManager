@@ -3604,12 +3604,26 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceState state = nm_device_get_state (self);
+	gboolean notify_flags = FALSE;
 
 	if (priv->carrier == carrier)
 		return;
 
+	if (NM_FLAGS_ALL (priv->capabilities,
+	                    NM_DEVICE_CAP_CARRIER_DETECT
+	                  | NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+		if (carrier)
+			priv->interface_flags |= NM_DEVICE_INTERFACE_FLAG_CARRIER;
+		else
+			priv->interface_flags &= ~NM_DEVICE_INTERFACE_FLAG_CARRIER;
+		notify_flags = TRUE;
+	}
+
 	priv->carrier = carrier;
-	_notify (self, PROP_CARRIER);
+	if (notify_flags)
+		nm_gobject_notify_together (self, PROP_CARRIER, PROP_INTERFACE_FLAGS);
+	else
+		_notify (self, PROP_CARRIER);
 
 	if (priv->carrier) {
 		_LOGI (LOGD_DEVICE, "carrier: link connected");
@@ -3816,6 +3830,16 @@ device_update_interface_flags (NMDevice *self, const NMPlatformLink *plink)
 		flags |= NM_DEVICE_INTERFACE_FLAG_UP;
 	if (plink && NM_FLAGS_HAS (plink->n_ifi_flags, IFF_LOWER_UP))
 		flags |= NM_DEVICE_INTERFACE_FLAG_LOWER_UP;
+
+	if (NM_FLAGS_ALL (priv->capabilities,
+	                    NM_DEVICE_CAP_CARRIER_DETECT
+	                  | NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+		if (priv->carrier)
+			flags |= NM_DEVICE_INTERFACE_FLAG_CARRIER;
+	} else {
+		if (plink && NM_FLAGS_HAS (plink->n_ifi_flags, IFF_LOWER_UP))
+			flags |= NM_DEVICE_INTERFACE_FLAG_CARRIER;
+	}
 
 	if (flags != priv->interface_flags) {
 		priv->interface_flags = flags;

@@ -571,6 +571,9 @@ _metagen_device_detail_interface_flags_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_AR
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_LOWER_UP:
 		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (flags, NM_DEVICE_INTERFACE_FLAG_LOWER_UP),
 		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_CARRIER:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (flags, NM_DEVICE_INTERFACE_FLAG_CARRIER),
+		                                  get_type);
 	default:
 		break;
 	}
@@ -583,6 +586,7 @@ const NmcMetaGenericInfo *const metagen_device_detail_interface_flags[_NMC_GENER
 	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_interface_flags_get_fcn)
 	_METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_UP,       "UP"),
 	_METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_LOWER_UP, "LOWER-UP"),
+	_METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_CARRIER,  "CARRIER"),
 };
 
 /*****************************************************************************/
