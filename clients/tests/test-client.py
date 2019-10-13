@@ -444,7 +444,7 @@ class AsyncProcess():
                  args,
                  env,
                  complete_cb,
-                 max_waittime_msec = 3000):
+                 max_waittime_msec = 20000):
         self._args = list(args)
         self._env = env
         self._complete_cb = complete_cb
