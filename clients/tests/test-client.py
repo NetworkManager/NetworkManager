@@ -181,12 +181,18 @@ class Util:
             except subprocess.TimeoutExpired:
                 return None
         start = NM.utils_get_timestamp_msec()
+        delay = 0.0005
         while True:
             if p.poll() is not None:
                 return p.returncode
-            if timeout == 0 or start + (timeout * 1000) < NM.utils_get_timestamp_msec():
+            if timeout == 0:
                 return None
-            time.sleep(0.05)
+            assert(timeout > 0)
+            remaining = timeout - ((NM.utils_get_timestamp_msec() - start) / 1000.0)
+            if remaining <= 0:
+                return None
+            delay = min(delay * 2, remaining, 0.05)
+            time.sleep(delay)
 
     @staticmethod
     def random_job(jobs):
