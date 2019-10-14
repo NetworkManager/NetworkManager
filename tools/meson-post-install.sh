@@ -49,3 +49,7 @@ if [ "$6" = install_docs ]; then
     ln -f "${DESTDIR}${mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${mandir}/man5/nm-system-settings.conf.5"
 fi
 
+if [ "$8" = create_network_scripts ]; then
+    sysconfdir=$9
+    mkdir -p "${DESTDIR}${sysconfdir}/sysconfig/network-scripts"
+fi

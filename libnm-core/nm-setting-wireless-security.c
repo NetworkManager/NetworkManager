@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2017 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2017 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #include "nm-default.h"
@@ -1811,12 +1811,13 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_WEP_KEY_TYPE],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type         = G_VARIANT_TYPE_UINT32,
+	                                  .gprop_to_dbus_fcn = wep_key_type_to_dbus,
+	                              ));
 
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_WEP_KEY_TYPE],
-	                                    G_VARIANT_TYPE_UINT32,
-	                                    wep_key_type_to_dbus,
-	                                    NULL);
 	/**
 	 * NMSettingWirelessSecurity:wps-method:
 	 *

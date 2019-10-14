@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2005 - 2017 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
@@ -54,9 +53,6 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 }
 
 #define NM_PENDING_ACTION_AUTOACTIVATE              "autoactivate"
-#define NM_PENDING_ACTION_DHCP4                     "dhcp4"
-#define NM_PENDING_ACTION_DHCP6                     "dhcp6"
-#define NM_PENDING_ACTION_AUTOCONF6                 "autoconf6"
 #define NM_PENDING_ACTION_RECHECK_AVAILABLE         "recheck-available"
 #define NM_PENDING_ACTION_CARRIER_WAIT              "carrier-wait"
 #define NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT    "waiting-for-supplicant"
@@ -226,6 +222,10 @@ typedef struct _NMDeviceClass {
 
 	const NMLinkType *link_types;
 
+	/* if the device MTU is set based on parent's one, this specifies
+	 * a delta in the MTU allowed value due the encapsulation overhead */
+	guint16 mtu_parent_delta;
+
 	/* Whether the device type is a master-type. This depends purely on the
 	 * type (NMDeviceClass), not the actual device instance. */
 	bool is_master:1;
@@ -322,7 +322,9 @@ typedef struct _NMDeviceClass {
 	                                  NMSettingsConnection *sett_conn,
 	                                  char **specific_object);
 
-	guint32     (*get_configured_mtu) (NMDevice *self, NMDeviceMtuSource *out_source);
+	guint32     (*get_configured_mtu) (NMDevice *self,
+	                                   NMDeviceMtuSource *out_source,
+	                                   gboolean *out_force);
 
 	/* allow the subclass to overwrite the routing table. This is mainly useful
 	 * to change from partial mode (route-table=0) to full-sync mode (route-table=254). */
@@ -435,6 +437,8 @@ typedef struct _NMDeviceClass {
 
 	guint32         (* get_dhcp_timeout) (NMDevice *self,
 	                                      int addr_family);
+
+	gboolean        (* get_guessed_metered) (NMDevice *self);
 
 	/* Controls, whether to call act_stage2_config() callback also for assuming
 	 * a device or for external activations. In this case, act_stage2_config() must

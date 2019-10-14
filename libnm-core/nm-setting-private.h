@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2011 Red Hat, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_SETTING_PRIVATE_H__
@@ -67,14 +67,16 @@ gboolean _nm_setting_clear_secrets (NMSetting *setting,
  */
 #define NM_SETTING_PARAM_REAPPLY_IMMEDIATELY (1 << (6 + G_PARAM_USER_SHIFT))
 
-#define NM_SETTING_PARAM_GENDATA_BACKED (1 << (7 + G_PARAM_USER_SHIFT))
+/* property_to_dbus() should ignore the property flags, and instead always calls to_dbus_fcn()
+ */
+#define NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS (1 << (7 + G_PARAM_USER_SHIFT))
 
-GVariant *_nm_setting_get_deprecated_virtual_interface_name (const NMSettInfoSetting *sett_info,
-                                                             guint property_idx,
-                                                             NMConnection *connection,
-                                                             NMSetting *setting,
-                                                             NMConnectionSerializationFlags flags,
-                                                             const NMConnectionSerializationOptions *options);
+extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;
+
+extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_i;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_u;
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           NMConnection *connection,
@@ -143,40 +145,44 @@ _nm_setting_class_commit (NMSettingClass *setting_class,
 		__VA_ARGS__ \
 	}))
 
+#define NM_SETT_INFO_PROPERT_TYPE(...) \
+	({ \
+		static const NMSettInfoPropertType _g = { \
+			__VA_ARGS__ \
+		}; \
+		\
+		&_g; \
+	})
+
 #define NM_SETT_INFO_PROPERTY(...) \
 	(&((const NMSettInfoProperty) { \
 		__VA_ARGS__ \
 	}))
 
-void _properties_override_add_struct (GArray *properties_override,
-                                      const NMSettInfoProperty *prop_info);
+gboolean _nm_properties_override_assert (const NMSettInfoProperty *prop_info);
 
-void _properties_override_add__helper (GArray *properties_override,
-                                       NMSettInfoProperty *prop_info);
+static inline void
+_nm_properties_override (GArray *properties_override,
+                         const NMSettInfoProperty *prop_info)
+{
+	nm_assert (properties_override);
+	nm_assert (_nm_properties_override_assert (prop_info));
+	g_array_append_vals (properties_override, prop_info, 1);
+}
 
-#define _properties_override_add(properties_override, \
-                                 ...) \
-	(_properties_override_add_struct (properties_override, \
-	                                  NM_SETT_INFO_PROPERTY (__VA_ARGS__)))
+#define _nm_properties_override_gobj(properties_override, p_param_spec, p_property_type) \
+	_nm_properties_override ((properties_override), \
+	                         NM_SETT_INFO_PROPERTY ( \
+	                             .param_spec = (p_param_spec), \
+	                             .property_type = (p_property_type), \
+	                         ))
 
-void _properties_override_add_dbus_only (GArray *properties_override,
-                                         const char *property_name,
-                                         const GVariantType *dbus_type,
-                                         NMSettInfoPropToDBusFcn to_dbus_fcn,
-                                         NMSettInfoPropFromDBusFcn from_dbus_fcn);
-
-void _properties_override_add_override (GArray *properties_override,
-                                        GParamSpec *param_spec,
-                                        const GVariantType *dbus_type,
-                                        NMSettInfoPropToDBusFcn to_dbus_fcn,
-                                        NMSettInfoPropFromDBusFcn from_dbus_fcn,
-                                        NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn);
-
-void _properties_override_add_transform (GArray *properties_override,
-                                         GParamSpec *param_spec,
-                                         const GVariantType *dbus_type,
-                                         NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn,
-                                         NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn);
+#define _nm_properties_override_dbus(properties_override, p_name, p_property_type) \
+	_nm_properties_override ((properties_override), \
+	                         NM_SETT_INFO_PROPERTY ( \
+	                             .name = (""p_name""), \
+	                             .property_type = (p_property_type), \
+	                         ))
 
 /*****************************************************************************/
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2005 - 2017 Red Hat, Inc.
+ * Copyright (C) 2005 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_H__
@@ -50,6 +50,7 @@ char *      nm_utils_ssid_to_utf8  (const guint8 *ssid, gsize len);
  * @NMU_SEC_WPA_ENTERPRISE: WPA1 is used with 802.1x authentication
  * @NMU_SEC_WPA2_PSK: WPA2/RSN is used with Pre-Shared Keys (PSK)
  * @NMU_SEC_WPA2_ENTERPRISE: WPA2 is used with 802.1x authentication
+ * @NMU_SEC_SAE: is used with WPA3 Enterprise
  *
  * Describes generic security mechanisms that 802.11 access points may offer.
  * Used with nm_utils_security_valid() for checking whether a given access
@@ -64,7 +65,8 @@ typedef enum {
 	NMU_SEC_WPA_PSK,
 	NMU_SEC_WPA_ENTERPRISE,
 	NMU_SEC_WPA2_PSK,
-	NMU_SEC_WPA2_ENTERPRISE
+	NMU_SEC_WPA2_ENTERPRISE,
+	NMU_SEC_SAE,
 } NMUtilsSecurityType;
 
 gboolean nm_utils_security_valid (NMUtilsSecurityType type,

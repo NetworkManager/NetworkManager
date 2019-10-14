@@ -1,14 +1,15 @@
-sources = files(
+nm_service_providers_source = files('nm-service-providers.c')
+
+sources = nm_service_providers_source + files(
   'nm-modem-broadband.c',
   'nm-modem.c',
   'nm-modem-manager.c',
-  'nm-service-providers.c',
 )
 
 deps = [
+  daemon_nm_default_dep,
   libsystemd_dep,
   mm_glib_dep,
-  nm_dep,
 ]
 
 if enable_ofono
@@ -21,9 +22,8 @@ libnm_wwan = shared_module(
   'nm-wwan',
   sources: sources,
   dependencies: deps,
-  link_args: [
-    '-Wl,--version-script,@0@'.format(linker_script),
-  ],
+  c_args: daemon_c_flags,
+  link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
   install: true,
   install_dir: nm_plugindir,
@@ -53,6 +53,7 @@ libnm_device_plugin_wwan = shared_module(
   'nm-device-plugin-wwan',
   sources: sources,
   dependencies: deps,
+  c_args: daemon_c_flags,
   link_with: libnm_wwan,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
@@ -69,15 +70,21 @@ run_target(
   depends: libnm_device_plugin_wwan,
 )
 
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devices/wwan/libnm-wwan.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so)
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-wwan.so)
-'''
-
 if enable_tests
-  subdir('tests')
+  test_unit = 'test-service-providers'
+
+  exe = executable(
+    test_unit,
+    ['tests/' + test_unit + '.c'] + nm_service_providers_source,
+    include_directories: wwan_inc,
+    dependencies: libnetwork_manager_test_dep,
+    c_args: test_c_flags,
+  )
+
+  test(
+    'wwan/' + test_unit,
+    test_script,
+    timeout: default_test_timeout,
+    args: test_args + [exe.full_path()],
+  )
 endif

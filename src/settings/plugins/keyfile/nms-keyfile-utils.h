@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager system settings service
- *
- * (C) Copyright 2010 - 2018 Red Hat, Inc.
+/*
+ * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NMS_KEYFILE_UTILS_H__

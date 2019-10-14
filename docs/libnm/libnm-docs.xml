@@ -172,6 +172,125 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
           <ulink url="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/tree/master/examples">some examples</ulink>.
         </para>
       </simplesect>
+
+      <simplesect id="sync-api">
+        <title>Synchronous API in libnm</title>
+        <para>
+          Libnm contains some synchronous API. This API basically makes a blocking
+          D-Bus call (g_dbus_connection_call_sync()) and is now deprecated.
+        </para>
+        <para>
+          Note that D-Bus is fundamentally asynchronous. Doing blocking calls
+          on top of D-Bus is odd, especially for libnm's NMClient. That is because
+          NMClient essentially is a client-side cache of the objects of the D-Bus
+          interface. This cache should be filled exclusively by (asynchronous) D-Bus
+          events. So, making a blocking D-Bus call means to wait for a response and
+          return it, while queuing everything that happens in between. Basically,
+          there are three options how a synchronous API on NMClient could behave:
+          <orderedlist>
+            <listitem>
+              <para>
+                The call basically calls g_dbus_connection_call_sync(). This means
+                that libnm sends a D-Bus request via GDBusConnection, and blockingly
+                waits for the response. All D-Bus messages that get received in the
+                meantime are queued in the GMainContext that belongs to NMClient.
+                That means, none of these D-Bus events are processed until we
+                iterate the GMainContext after the call returns. The effect is,
+                that NMClient (and all cached objects in there) are unaffected by
+                the D-Bus request.
+                Most of the synchronous API calls in libnm are of this kind.
+                The problem is that the strict ordering of D-Bus events gets
+                violated.
+                For some API this is not an immediate problem. Take for example
+                nm_device_wifi_request_scan(). The call merely blockingly tells
+                NetworkManager to start scanning, but since NetworkManager's D-Bus
+                API does not directly expose any state that tells whether we are
+                currently scanning, this out of order processing of the D-Bus
+                request is a small issue.
+                The problem is more obvious for nm_client_networking_set_enabled().
+                After calling it, NM_CLIENT_NETWORKING_ENABLED is still unaffected
+                and unchanged, because the PropertiesChanged signal from D-Bus
+                is not yet processed.
+                This means, while you make such a blocking call, NMClient's state
+                does not change. But usually you perform the synchronous call
+                to change some state. In this form, the blocking call is not useful,
+                because NMClient only changes the state after iterating the GMainContext,
+                and not after the blocking call returns.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Like 1), but after making the blocking g_dbus_connection_call_sync(),
+                update the NMClient cache artificially. This is what
+                nm_manager_check_connectivity() does, to "fix" bgo#784629.
+                This also has the problem of out-of-order events, but it kinda
+                solves the problem of not changing the state during the blocking
+                call. But it does so by hacking the state of the cache. I think
+                this is really wrong because the state should only be updated from
+                the ordered stream of D-Bus messages. When libnm decides to modify
+                the state, there are already D-Bus messages queued that affect this
+                very state.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Instead of calling g_dbus_connection_call_sync(), use the
+                asynchronous g_dbus_connection_call(). If we would use a sepaate
+                GMainContext for all D-Bus related calls, we could ensure that
+                while we block for the response, we iterate the internal main context.
+                This might be nice, because all events are processed in order and
+                after the blocking call returns, the NMClient state is up to date.
+                The are problems however: current blocking API does not do this,
+                so it's a significant change in behavior. Also, it might be
+                unexpected to the user that during the blocking call the entire
+                content of NMClient's cache might change and all pointers to the
+                cache might be invalidated. Also, of course NMClient would invoke
+                signals for all the changes that happen.
+                Another problem is that this would be more effort to implement
+                and it involves a small performance overhead for all D-Bus related
+                calls (because we have to serialize all events in an internal
+                GMainContext first and then invoke them on the caller's context).
+                Also, if the users wants this, they could implement it themself
+                using their own extra GMainContext and the asynchronous API.
+              </para>
+            </listitem>
+          </orderedlist>
+
+          See also <ulink url="https://smcv.pseudorandom.co.uk/2008/11/nonblocking/">this blog</ulink>
+          for why blocking calls are wrong.
+        </para>
+        <para>
+          All possible behaviors for synchronous API have severe behavioural
+          issues and thus such API is deprecated. Note that "deprecated" here does not
+          mean that the API is going to be removed. Libnm does not break API. The
+          user may:
+
+          <itemizedlist>
+            <listitem>
+              <para>
+                Continue to use this API. It's deprecated, awkward and discouraged,
+                but if it works for you, that's fine.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Use asynchronous API. That's the only sensible way to use D-Bus.
+                If libnm lacks a certain asynchronous counterpart, it should be
+                added.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Use GDBusConnection directly. There really isn't anything wrong
+                with D-Bus or GDBusConnection. This deprecated API is just a wrapper
+                around g_dbus_connection_call_sync(). You may call it directly
+                without feeling dirty.
+              </para>
+            </listitem>
+          </itemizedlist>
+        </para>
+      </simplesect>
+
     </section>
   </chapter>
 

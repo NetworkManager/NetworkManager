@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nmcli - command-line tool to control NetworkManager
- *
+/*
  * Jiri Klimes <jklimes@redhat.com>
- *
- * Copyright 2010 - 2018 Red Hat, Inc.
+ * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -455,6 +453,12 @@ check_colors (NmcColorOption color_option,
 
 	if (!NM_IN_SET (color_option, NMC_USE_COLOR_AUTO, NMC_USE_COLOR_YES)) {
 		/* nothing to do. Colors are disabled. */
+		return FALSE;
+	}
+
+	if (   color_option == NMC_USE_COLOR_AUTO
+	    && g_getenv ("NO_COLOR")) {
+		/* https://no-color.org/ */
 		return FALSE;
 	}
 

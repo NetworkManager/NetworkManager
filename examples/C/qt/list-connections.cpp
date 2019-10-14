@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * (C) Copyright 2011 Eckhart Wörner
+ * Copyright (C) 2011 Eckhart Wörner
  */
 
 /*

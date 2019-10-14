@@ -3,7 +3,7 @@
 /*
  * 802.15.4 netlink interface public header
  *
- * Copyright 2014 Alexander Aring <aar@pengutronix.de>
+ * Copyright (C) 2014 Alexander Aring <aar@pengutronix.de>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

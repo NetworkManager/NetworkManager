@@ -3,7 +3,8 @@ test_unit = 'test-ndisc-fake'
 exe = executable(
   test_unit,
   test_unit + '.c',
-  dependencies: test_nm_dep_fake,
+  dependencies: libnetwork_manager_test_dep,
+  c_args: test_c_flags,
 )
 
 test(
@@ -18,5 +19,6 @@ test = 'test-ndisc-linux'
 exe = executable(
   test,
   test + '.c',
-  dependencies: test_nm_dep_linux,
+  dependencies: libnetwork_manager_test_dep,
+  c_args: test_c_flags,
 )

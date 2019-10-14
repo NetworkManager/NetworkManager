@@ -1,3 +1,5 @@
+test_config_dir = meson.current_source_dir()
+
 test_unit = 'test-config'
 
 sources = files(
@@ -5,12 +7,11 @@ sources = files(
   'test-config.c',
 )
 
-test_config_dir = meson.current_source_dir()
-
 exe = executable(
   test_unit,
   sources,
-  dependencies: test_nm_dep,
+  dependencies: libnetwork_manager_test_dep,
+  c_args: test_c_flags,
 )
 
 test(

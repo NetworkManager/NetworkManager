@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager initrd configuration generator
- *
+/*
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
@@ -684,6 +683,43 @@ parse_rd_peerdns (GHashTable *connections, char *argument)
 }
 
 static void
+parse_rd_znet (GHashTable *connections, char *argument)
+{
+	const char *nettype;
+	const char *subchannels[4] = { 0, 0, 0, 0 };
+	const char *tmp;
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+
+	nettype = get_word (&argument, ',');
+	subchannels[0] = get_word (&argument, ',');
+	subchannels[1] = get_word (&argument, ',');
+	if (!nm_streq0 (nettype, "ctc"))
+		subchannels[2] = get_word (&argument, ',');
+
+	connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, &subchannels,
+	              NULL);
+
+	while ((tmp = get_word (&argument, ',')) != NULL) {
+		char *val;
+
+		val = strchr (tmp, '=');
+		if (val) {
+			gs_free char *key = NULL;
+
+			key = g_strndup (tmp, val - tmp);
+			val[0] = '\0';
+			val++;
+			nm_setting_wired_add_s390_option (s_wired, key, val);
+		}
+	}
+}
+
+static void
 _normalize_conn (gpointer key, gpointer value, gpointer user_data)
 {
 	NMConnection *connection = value;
@@ -692,20 +728,24 @@ _normalize_conn (gpointer key, gpointer value, gpointer user_data)
 }
 
 GHashTable *
-nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
+nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 {
 	GHashTable *connections;
 	const char *tag;
-	char *argument;
 	gboolean ignore_bootif = FALSE;
 	gboolean neednet = FALSE;
-	char *bootif = NULL;
+	gs_free char *bootif_val = NULL;
 	int i;
 
 	connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 
 	for (i = 0; argv[i]; i++) {
-		argument = argv[i];
+		gs_free char *argument_clone = NULL;
+		char *argument;
+
+		argument_clone = g_strdup (argv[i]);
+		argument = argument_clone;
+
 		tag = get_word (&argument, '=');
 		if (strcmp (tag, "ip") == 0)
 			parse_ip (connections, sysfs_dir, argument);
@@ -729,15 +769,20 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, char **argv)
 			ignore_bootif = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.neednet") == 0)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
-		else if (strcasecmp (tag, "BOOTIF") == 0)
-			bootif = argument;
+		else if (strcmp (tag, "rd.znet") == 0)
+			parse_rd_znet (connections, argument);
+		else if (strcasecmp (tag, "BOOTIF") == 0) {
+			nm_clear_g_free (&bootif_val);
+			bootif_val = g_strdup (argument);
+		}
 	}
 
 	if (ignore_bootif)
-		bootif = NULL;
-	if (bootif) {
+		nm_clear_g_free (&bootif_val);
+	if (bootif_val) {
 		NMConnection *connection;
 		NMSettingWired *s_wired;
+		const char *bootif = bootif_val;
 
 		if (   !nm_utils_hwaddr_valid (bootif, ETH_ALEN)
 		    && g_str_has_prefix (bootif, "01-")

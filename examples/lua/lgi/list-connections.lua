@@ -1,15 +1,14 @@
 #!/usr/bin/env lua
 -- SPDX-License-Identifier: GPL-2.0+
 --
--- Copyright 2015 Red Hat, Inc.
+-- Copyright (C) 2015 Red Hat, Inc.
 --
---
+
 -- Getting and printing all NetworkManager connection in Lua.
 -- The example uses libnm library using GObject introspection via Lua lgi module.
 -- Most distribution ship the module as lua-lgi package.
 -- libnm guide:   https://developer.gnome.org/libnm/1.0/
 -- Lua-lgi guide: https://github.com/pavouk/lgi/blob/master/docs/guide.md
---
 
 local lgi = require 'lgi'
 local GLib = lgi.GLib

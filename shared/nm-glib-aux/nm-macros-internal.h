@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager -- Network link manager
- *
- * (C) Copyright 2012 Colin Walters <walters@verbum.org>.
- * (C) Copyright 2014 Red Hat, Inc.
+/*
+ * Copyright (C) 2012 Colin Walters <walters@verbum.org>.
+ * Copyright (C) 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_MACROS_INTERNAL_H__
@@ -1261,6 +1260,14 @@ nm_clear_g_cancellable_disconnect (GCancellable *cancellable, gulong *cancellabl
 }
 
 /*****************************************************************************/
+
+/* GVariantType is basically a C string. But G_VARIANT_TYPE() is not suitable
+ * to initialize a static variable (because it evaluates a function check that
+ * the string is valid). Add an alternative macro that does the plain cast.
+ *
+ * Here you loose the assertion check that G_VARIANT_TYPE() to ensure the
+ * string is valid. */
+#define NM_G_VARIANT_TYPE(fmt) ((const GVariantType *) (""fmt""))
 
 static inline GVariant *
 nm_g_variant_ref (GVariant *v)

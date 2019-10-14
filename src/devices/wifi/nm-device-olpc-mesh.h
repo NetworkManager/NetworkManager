@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Dan Williams <dcbw@redhat.com>
  * Sjoerd Simons <sjoerd.simons@collabora.co.uk>
  * Daniel Drake <dsd@laptop.org>
- *
- * (C) Copyright 2005 Red Hat, Inc.
- * (C) Copyright 2008 Collabora Ltd.
- * (C) Copyright 2009 One Laptop per Child
+ * Copyright (C) 2005 Red Hat, Inc.
+ * Copyright (C) 2008 Collabora Ltd.
+ * Copyright (C) 2009 One Laptop per Child
  */
 
 #ifndef __NETWORKMANAGER_DEVICE_OLPC_MESH_H__

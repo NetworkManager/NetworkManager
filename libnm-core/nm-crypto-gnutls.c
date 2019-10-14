@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
- *
+/*
  * Dan Williams <dcbw@redhat.com>
- *
- * Copyright 2007 - 2015 Red Hat, Inc.
+ * Copyright (C) 2007 - 2015 Red Hat, Inc.
  */
 
 #include "nm-default.h"

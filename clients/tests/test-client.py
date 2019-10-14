@@ -61,6 +61,13 @@ ENV_NM_TEST_CLIENT_CHECK_L10N = 'NM_TEST_CLIENT_CHECK_L10N'
 # on disk with the expected output.
 ENV_NM_TEST_REGENERATE        = 'NM_TEST_REGENERATE'
 
+# whether the file location should include the line number. That is useful
+# only for debugging, to correlate the expected output with the test.
+# Obviously, since the expected output is commited to git without line numbers,
+# you'd have to first NM_TEST_REGENERATE the test expected data, with line
+# numbers enabled.
+ENV_NM_TEST_WITH_LINENO       = 'NM_TEST_WITH_LINENO'
+
 #
 ###############################################################################
 
@@ -86,6 +93,7 @@ import shlex
 import re
 import dbus
 import time
+import random
 import dbus.service
 import dbus.mainloop.glib
 
@@ -164,19 +172,55 @@ class Util:
         return "'" + s.replace("'", "'\"'\"'") + "'"
 
     @staticmethod
-    def popen_wait(p, timeout = None):
-        # wait() has a timeout argument only since 3.3
+    def popen_wait(p, timeout = 0):
         if Util.python_has_version(3, 3):
-            return p.wait(timeout)
-        if timeout is None:
-            return p.wait()
+            if timeout == 0:
+                return p.poll()
+            try:
+                return p.wait(timeout)
+            except subprocess.TimeoutExpired:
+                return None
         start = NM.utils_get_timestamp_msec()
+        delay = 0.0005
         while True:
             if p.poll() is not None:
                 return p.returncode
-            if start + (timeout * 1000) < NM.utils_get_timestamp_msec():
-                raise Exception("timeout expired")
-            time.sleep(0.05)
+            if timeout == 0:
+                return None
+            assert(timeout > 0)
+            remaining = timeout - ((NM.utils_get_timestamp_msec() - start) / 1000.0)
+            if remaining <= 0:
+                return None
+            delay = min(delay * 2, remaining, 0.05)
+            time.sleep(delay)
+
+    @staticmethod
+    def random_job(jobs):
+        jobs = list(jobs)
+        l = len(jobs)
+        t = l * (l + 1) / 2
+        while True:
+            # we return a random jobs from the list, but the indexes at the front of
+            # the list are more likely. The idea is, that those jobs were started first,
+            # and are expected to complete first. As we poll, we want to check more frequently
+            # on the elements at the beginning of the list...
+            #
+            # Let's assign probabilities with an arithmetic series.
+            # That is, if there are 16 jobs, then the first gets weighted
+            # with 16, the second with 15, then 14, and so on, until the
+            # last has weight 1. That means, the first element is 16 times
+            # more probable than the last.
+            # Element at idx (starting with 0) is picked with probability
+            #    1 / (l*(l+1)/2) * (l - idx)
+            r = random.random() * t
+            idx = 0
+            rx = 0
+            while True:
+                rx += (l - idx)
+                if rx >= r or idx == l - 1:
+                    yield jobs[idx]
+                    break
+                idx += 1
 
     @staticmethod
     def iter_single(itr, min_num = 1, max_num = 1):
@@ -287,6 +331,8 @@ class Configuration:
             # which we assert. That is useful, if there are intentional changes and
             # we want to regenerate the expected output.
             v = (os.environ.get(ENV_NM_TEST_REGENERATE, '0') == '1')
+        elif name == ENV_NM_TEST_WITH_LINENO:
+            v = (os.environ.get(ENV_NM_TEST_WITH_LINENO, '0') == '1')
         else:
             raise Exception()
         self._values[name] = v
@@ -327,7 +373,7 @@ class NMStubServer:
             if (NM.utils_get_timestamp_msec() - start) >= 4000:
                 p.stdin.close()
                 p.kill()
-                Util.popen_wait(p, 1000)
+                Util.popen_wait(p, 1)
                 raise Exception("after starting stub service the D-Bus name was not claimed in time")
 
         self._nmobj = nmobj
@@ -335,14 +381,17 @@ class NMStubServer:
         self._p = p
 
     def shutdown(self):
+        conn = self._conn
+        p = self._p
         self._nmobj = None
         self._nmiface = None
         self._conn = None
-        self._p.stdin.close()
-        self._p.kill()
-        Util.popen_wait(self._p, 1000)
         self._p = None
-        if self._conn_get_main_object(self._conn) is not None:
+        p.stdin.close()
+        p.kill()
+        if Util.popen_wait(p, 1) is None:
+            raise Exception("Stub service did not exit in time")
+        if self._conn_get_main_object(conn) is not None:
             raise Exception("Stub service is not still here although it should shut down")
 
     class _MethodProxy:
@@ -400,36 +449,63 @@ class AsyncProcess():
     def __init__(self,
                  args,
                  env,
-                 complete_cb):
-        self._args = args
+                 complete_cb,
+                 max_waittime_msec = 20000):
+        self._args = list(args)
         self._env = env
         self._complete_cb = complete_cb
+        self._max_waittime_msec = max_waittime_msec
 
     def start(self):
         if not hasattr(self, '_p'):
+            self._p_start_timestamp = NM.utils_get_timestamp_msec()
             self._p = subprocess.Popen(self._args,
                                        stdout = subprocess.PIPE,
                                        stderr = subprocess.PIPE,
                                        env = self._env)
 
-    def wait(self):
+    def _timeout_remaining_time(self):
+        # note that we call this during poll() and wait_and_complete().
+        # we don't know the exact time when the process terminated,
+        # so this is only approximately correct, if we call poll/wait
+        # frequently.
+        # Worst case, we will think that the process did not time out,
+        # when in fact it was running longer than max-waittime.
+        return self._max_waittime_msec - (NM.utils_get_timestamp_msec() - self._p_start_timestamp)
 
+    def poll(self, timeout = 0):
         self.start()
 
-        Util.popen_wait(self._p, 2000)
+        return_code = Util.popen_wait(self._p, timeout)
+        if     return_code is None \
+           and self._timeout_remaining_time() <= 0:
+            raise Exception("process is still running after timeout: %s" % (' '.join(self._args)))
+        return return_code
 
-        (returncode, stdout, stderr) = (self._p.returncode, self._p.stdout.read(), self._p.stderr.read())
+    def wait_and_complete(self):
+        self.start()
 
-        self._p.stdout.close()
-        self._p.stderr.close()
+        p = self._p
         self._p = None
 
-        self._complete_cb(self, returncode, stdout, stderr)
+        return_code = Util.popen_wait(p, max(0, self._timeout_remaining_time()) / 1000)
+        (stdout, stderr) = (p.stdout.read(), p.stderr.read())
+        p.stdout.close()
+        p.stderr.close()
+
+        if return_code is None:
+            print(stdout)
+            print(stderr)
+            raise Exception("process did not complete in time: %s" % (' '.join(self._args)))
+
+        self._complete_cb(self, return_code, stdout, stderr)
 
 ###############################################################################
 
 class NmTestBase(unittest.TestCase):
     pass
+
+MAX_JOBS = 15
 
 class TestNmcli(NmTestBase):
 
@@ -561,7 +637,10 @@ class TestNmcli(NmTestBase):
         # the file, so that the user can easier find the source (when looking at the .expected files)
         self.assertTrue(os.path.abspath(frame.f_code.co_filename).endswith('/'+PathConfiguration.canonical_script_filename()))
 
-        calling_location = '%s:%d:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_lineno, frame.f_code.co_name, calling_num)
+        if conf.get(ENV_NM_TEST_WITH_LINENO):
+            calling_location = '%s:%d:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_lineno, frame.f_code.co_name, calling_num)
+        else:
+            calling_location = '%s:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_code.co_name, calling_num)
 
         if lang is None or lang == 'C':
             lang = 'C'
@@ -611,6 +690,9 @@ class TestNmcli(NmTestBase):
             expected_stdout = None
         if expected_stderr is _DEFAULT_ARG:
             expected_stderr = None
+
+        results_idx = len(self._results)
+        self._results.append(None)
 
         def complete_cb(async_job,
                         returncode,
@@ -673,11 +755,11 @@ class TestNmcli(NmTestBase):
                 content = ('size: %s\n' % (len(content))).encode('utf8') + \
                           content
 
-                self._results.append({
+                self._results[results_idx] = {
                     'test_name'        : test_name,
                     'ignore_l10n_diff' : ignore_l10n_diff,
                     'content'          : content,
-                })
+                }
 
         async_job = AsyncProcess(args = args,
                                  env = env,
@@ -685,20 +767,46 @@ class TestNmcli(NmTestBase):
 
         self._async_jobs.append(async_job)
 
-        if sync_barrier:
-            self.async_wait()
-        else:
-            self.async_start()
+        self.async_start(wait_all = sync_barrier)
 
-    def async_start(self):
-        # limit number parallel running jobs
-        for async_job in self._async_jobs[0:15]:
-            async_job.start()
+    def async_start(self, wait_all = False):
+
+        while True:
+
+            while True:
+                for async_job in list(self._async_jobs[0:MAX_JOBS]):
+                    async_job.start()
+                # start up to MAX_JOBS jobs, but poll() and complete those
+                # that are already exited. Retry, until there are no more
+                # jobs to start, or until MAX_JOBS are running.
+                jobs_running = []
+                for async_job in list(self._async_jobs[0:MAX_JOBS]):
+                    if async_job.poll() is not None:
+                        self._async_jobs.remove(async_job)
+                        async_job.wait_and_complete()
+                        continue
+                    jobs_running.append(async_job)
+                if len(jobs_running) >= len(self._async_jobs):
+                    break
+                if len(jobs_running) >= MAX_JOBS:
+                    break
+
+            if not jobs_running:
+                return
+            if not wait_all:
+                return
+
+            # in a loop, indefinitely poll the running jobs until we find one that
+            # completes. Note that poll() itself will raise an exception if a
+            # jobs times out.
+            for async_job in Util.random_job(jobs_running):
+                if async_job.poll(timeout = 0.03) is not None:
+                    self._async_jobs.remove(async_job)
+                    async_job.wait_and_complete()
+                    break
 
     def async_wait(self):
-        while self._async_jobs:
-            self.async_start()
-            self._async_jobs.pop(0).wait()
+        return self.async_start(wait_all = True)
 
     def _nm_test_pre(self):
         self._calling_num = {}
@@ -950,6 +1058,10 @@ class TestNmcli(NmTestBase):
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'status'],
                               replace_stdout = replace_stdout)
 
+            # test invalid call ('s' abbrevates 'status' and not 'show'
+            self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
+                              replace_stdout = replace_stdout)
+
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
                               replace_stdout = replace_stdout)
 
@@ -1105,13 +1217,6 @@ class TestNmcli(NmTestBase):
 
 def main():
     global dbus_session_inited
-
-    if sys.version_info.major == 3 and sys.version_info.minor == 8 and sys.version_info.releaselevel == 'beta':
-        # 3.8-beta changed behavior for the line numbers, which
-        # breaks the tests (https://bugs.python.org/issue38283)
-        # skip the test for now.
-        print("WARNING: skip client test with python 3.8-beta")
-        sys.exit(0)
 
     if len(sys.argv) >= 2 and sys.argv[1] == '--started-with-dbus-session':
         dbus_session_inited = True

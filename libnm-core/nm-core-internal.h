@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * (C) Copyright 2014 - 2018 Red Hat, Inc.
+ * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
 
 #ifndef NM_CORE_NM_INTERNAL_H
@@ -712,10 +712,7 @@ typedef void      (*NMSettInfoPropGPropFromDBusFcn)     (GVariant *from,
 
 const NMSettInfoSetting *nmtst_sett_info_settings (void);
 
-struct _NMSettInfoProperty {
-	const char *name;
-	GParamSpec *param_spec;
-
+typedef struct {
 	const GVariantType *dbus_type;
 
 	NMSettInfoPropToDBusFcn            to_dbus_fcn;
@@ -726,6 +723,14 @@ struct _NMSettInfoProperty {
 	 * on the GValue value of the GObject property. */
 	NMSettInfoPropGPropToDBusFcn       gprop_to_dbus_fcn;
 	NMSettInfoPropGPropFromDBusFcn     gprop_from_dbus_fcn;
+} NMSettInfoPropertType;
+
+struct _NMSettInfoProperty {
+	const char *name;
+
+	GParamSpec *param_spec;
+
+	const NMSettInfoPropertType *property_type;
 };
 
 typedef struct {

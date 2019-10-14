@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2009 Novell, Inc.
+ * Copyright (C) 2009 Novell, Inc.
  */
 
 #ifndef __NM_SETTING_WIMAX_H__

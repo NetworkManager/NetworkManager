@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2011, 2015 Red Hat, Inc.
+ * Copyright (C) 2011, 2015 Red Hat, Inc.
  */
 
 #ifndef NM_VERSION_H
@@ -214,5 +214,31 @@
 #else
 # define NM_AVAILABLE_IN_1_22
 #endif
+
+/*
+ * Synchronous API for calling D-Bus in libnm is deprecated. See
+ * https://developer.gnome.org/libnm/stable/usage.html#sync-api
+ *
+ * Note that "deprecated" here does not really mean that the API is going
+ * to be removed. We don't break API. Just comment that it is awkward and
+ * discouraged. The user may:
+ *
+ *   - continue to use this API. It's deprecated, awkward and discouraged,
+ *     but if it works for you, that's fine.
+ *
+ *   - use asynchronous API. That's the only sensible way to use D-Bus.
+ *     If libnm lacks a certain asynchronous counterpart, it should be
+ *     added.
+ *
+ *   - use GDBusConnection directly. There really isn't anything wrong
+ *     with D-Bus or GDBusConnection. This deprecated API is just a wrapper
+ *     around g_dbus_connection_call_sync(). You may call it directly
+ *     without feeling dirty.
+ *
+ * We don't want to force users away from this API, for that reason the
+ * macro does not yet expand to G_DEPRECATED.
+ */
+#define _NM_DEPRECATED_SYNC_METHOD            /*NM_DEPRECATED_IN_1_22*/
+#define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY /*NM_DEPRECATED_IN_1_22*/
 
 #endif  /* NM_VERSION_H */

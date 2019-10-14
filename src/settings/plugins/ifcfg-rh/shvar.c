@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * shvar.c
- *
- * Implementation of non-destructively reading/writing files containing
- * only shell variable declarations and full-line comments.
- *
- * Copyright 1999,2000 Red Hat, Inc.
- *
+ * Copyright (C) 1999, 2000 Red Hat, Inc.
  */
 
 #include "nm-default.h"

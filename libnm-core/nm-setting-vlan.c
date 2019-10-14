@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2011 - 2014 Red Hat, Inc.
+ * Copyright (C) 2011 - 2014 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -908,13 +908,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	                        G_PARAM_CONSTRUCT |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_FLAGS],
-	                                   G_VARIANT_TYPE_UINT32,
-	                                   _override_flags_get,
-	                                   NULL,
-	                                   _override_flags_not_set);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_FLAGS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type             = G_VARIANT_TYPE_UINT32,
+	                                  .to_dbus_fcn           = _override_flags_get,
+	                                  .missing_from_dbus_fcn = _override_flags_not_set,
+	                              ));
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
@@ -974,11 +974,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 *   vlan's interface name.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "interface-name",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    _nm_setting_get_deprecated_virtual_interface_name,
-	                                    NULL);
+	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * (C) Copyright 2011 Red Hat, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
  */
 
 #include "nm-default.h"

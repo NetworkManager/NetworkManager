@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2018 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -610,6 +610,8 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * NMDevice:autoconnect:
 	 *
 	 * Whether the device can auto-activate a connection.
+	 *
+	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
@@ -1087,11 +1089,15 @@ nm_device_get_managed (NMDevice *device)
  * Enables or disables management of  #NMDevice by NetworkManager.
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.22, use nm_device_set_managed_async() or GDBusConnection
  **/
 void
 nm_device_set_managed (NMDevice *device, gboolean managed)
 {
 	g_return_if_fail (NM_IS_DEVICE (device));
+
+	/* FIXME(libnm-async-api): add nm_device_set_managed_async(). */
 
 	managed = !!managed;
 
@@ -1125,11 +1131,15 @@ nm_device_get_autoconnect (NMDevice *device)
  * @autoconnect: %TRUE to enable autoconnecting
  *
  * Enables or disables automatic activation of the #NMDevice.
+ *
+ * Deprecated: 1.22, use nm_device_set_autoconnect_async() or GDBusConnection
  **/
 void
 nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect)
 {
 	g_return_if_fail (NM_IS_DEVICE (device));
+
+	/* FIXME(libnm-async-api): add nm_device_set_autoconnect_async(). */
 
 	NM_DEVICE_GET_PRIVATE (device)->autoconnect = autoconnect;
 
@@ -1988,6 +1998,8 @@ nm_device_is_software (NMDevice *device)
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.22, use nm_device_reapply_async() or GDBusConnection
  **/
 gboolean
 nm_device_reapply (NMDevice *device,
@@ -2130,6 +2142,8 @@ nm_device_reapply_finish (NMDevice *device,
  * to nm_connection_verify().
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.22, use nm_device_get_applied_connection_async() or GDBusConnection
  **/
 NMConnection *
 nm_device_get_applied_connection (NMDevice *device,
@@ -2302,6 +2316,8 @@ nm_device_get_applied_connection_finish (NMDevice *device,
  * request.
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ *
+ * Deprecated: 1.22, use nm_device_disconnect_async() or GDBusConnection
  **/
 gboolean
 nm_device_disconnect (NMDevice *device,
@@ -2406,6 +2422,8 @@ nm_device_disconnect_finish (NMDevice *device,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error
  * will be set.
+ *
+ * Deprecated: 1.22, use nm_device_delete_async() or GDBusConnection
  **/
 gboolean
 nm_device_delete (NMDevice *device,

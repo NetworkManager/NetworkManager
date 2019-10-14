@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2013 Red Hat, Inc.
- *
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -524,7 +523,7 @@ test_config_confdir (void)
 	g_assert_cmpstr (value, ==, "VAL5");
 	g_free (value);
 
-	nm_config_data_log (nm_config_get_data_orig (config), ">>> TEST: ", " ", NULL);
+	nm_config_data_log (nm_config_get_data_orig (config), ">>> TEST: ", " ", "/test/file/name", NULL);
 }
 
 static void

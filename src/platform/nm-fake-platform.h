@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-fake-platform.h - Fake platform interaction code for testing NetworkManager
- *
+/*
  * Copyright (C) 2012 Red Hat, Inc.
  */
 

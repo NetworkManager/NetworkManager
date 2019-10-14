@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * author: Pantelis Koukousoulas <pktoss@gmail.com>
- * Copyright 2009 - 2011 Red Hat, Inc.
+ * Author: Pantelis Koukousoulas <pktoss@gmail.com>
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #include "nm-default.h"

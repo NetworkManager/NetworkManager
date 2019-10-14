@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2009 - 2014 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
@@ -911,7 +910,9 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 }
 
 guint32
-nm_modem_get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source)
+nm_modem_get_configured_mtu (NMDevice *self,
+                             NMDeviceMtuSource *out_source,
+                             gboolean *out_force)
 {
 	NMConnection *connection;
 	NMSetting *setting;

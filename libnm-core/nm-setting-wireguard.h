@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2018 - 2019 Red Hat, Inc.
+ * Copyright (C) 2018 - 2019 Red Hat, Inc.
  */
 
 #ifndef __NM_SETTING_WIREGUARD_H__

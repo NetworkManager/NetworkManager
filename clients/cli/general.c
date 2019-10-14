@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nmcli - command-line tool to control NetworkManager
- *
- * Copyright 2010 - 2018 Red Hat, Inc.
+/*
+ * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -1415,11 +1414,20 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		state = nm_device_get_state (devices[i]);
 		color = nmc_device_state_to_color (state);
-		tmp = nmc_colorize (&nmc->nmc_config, color, "%s: %s%s%s",
-		                    nm_device_get_iface (devices[i]),
-		                    gettext (nmc_device_state_to_string (state)),
-		                    ac ? " to " : "",
-		                    ac ? nm_active_connection_get_id (ac) : "");
+		if (ac) {
+			/* TRANSLATORS: prints header line for activated device in plain `nmcli` overview output as
+			 * "<interface-name>: <device-state> to <connection-id>" */
+			tmp = nmc_colorize (&nmc->nmc_config, color, C_("nmcli-overview", "%s: %s to %s"),
+			                    nm_device_get_iface (devices[i]),
+			                    gettext (nmc_device_state_to_string (state)),
+			                    nm_active_connection_get_id (ac));
+		} else {
+			/* TRANSLATORS: prints header line for not active device in plain `nmcli` overview output as
+			 * "<interface-name>: <device-state>" */
+			tmp = nmc_colorize (&nmc->nmc_config, color, C_("nmcli-overview", "%s: %s"),
+			                    nm_device_get_iface (devices[i]),
+			                    gettext (nmc_device_state_to_string (state)));
+		}
 		g_print ("%s\n", tmp);
 		g_free (tmp);
 

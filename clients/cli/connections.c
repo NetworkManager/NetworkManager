@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nmcli - command-line tool to control NetworkManager
- *
- * Copyright 2010 - 2018 Red Hat, Inc.
+/*
+ * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -3753,11 +3752,11 @@ set_default_interface_name (NmCli *nmc,
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
 	/* Set a sensible bond/team/bridge interface name by default */
-	if (nm_streq (con_type, NM_SETTING_BOND_SETTING_NAME))
+	if (nm_streq0 (con_type, NM_SETTING_BOND_SETTING_NAME))
 		default_name = "nm-bond";
-	else if (nm_streq (con_type, NM_SETTING_TEAM_SETTING_NAME))
+	else if (nm_streq0 (con_type, NM_SETTING_TEAM_SETTING_NAME))
 		default_name = "nm-team";
-	else if (nm_streq (con_type, NM_SETTING_BRIDGE_SETTING_NAME))
+	else if (nm_streq0 (con_type, NM_SETTING_BRIDGE_SETTING_NAME))
 		default_name = "nm-bridge";
 	else
 		default_name = NULL;

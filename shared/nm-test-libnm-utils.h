@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2014 - 2015 Red Hat, Inc.
+ * Copyright (C) 2014 - 2015 Red Hat, Inc.
  */
 
 #include "NetworkManager.h"

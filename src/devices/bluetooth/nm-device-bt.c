@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
@@ -571,6 +570,9 @@ static void
 ip_ifindex_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+
+	if (!nm_device_is_activating (device))
+		return;
 
 	if (!nm_device_set_ip_ifindex (device,
 	                               nm_modem_get_ip_ifindex (modem))) {

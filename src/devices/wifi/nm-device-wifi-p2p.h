@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager -- Wi-Fi P2P Device
- *
- * (C) Copyright 2018 Red Hat, Inc.
+/*
+ * Copyright (C) 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_WIFI_P2P_H__

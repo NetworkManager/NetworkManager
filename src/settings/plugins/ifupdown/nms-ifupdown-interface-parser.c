@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Tom Parker <palfrey@tevp.net>
- *
- * (C) Copyright 2004 Tom Parker
+ * Copyright (C) 2004 Tom Parker
  */
 
 #include "nm-default.h"

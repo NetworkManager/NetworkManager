@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* Copyright (C) 2005 - 2010 Red Hat, Inc.
+/*
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_DHCP_CLIENT_H__
@@ -188,6 +189,9 @@ void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
                                        guint8 type,
                                        const guint8 *client_id,
                                        gsize len);
+
+void nm_dhcp_client_emit_ipv6_prefix_delegated (NMDhcpClient *self,
+                                                const NMPlatformIP6Address *prefix);
 
 /*****************************************************************************
  * Client data

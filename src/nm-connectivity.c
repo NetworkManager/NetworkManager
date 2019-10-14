@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2011 Thomas Bechtold <thomasbechtold@jpberlin.de>
  * Copyright (C) 2011 Dan Williams <dcbw@redhat.com>
  * Copyright (C) 2016 - 2018 Red Hat, Inc.

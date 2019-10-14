@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2008 Novell, Inc.
- * Copyright 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 Novell, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_REMOTE_SETTINGS_H__
@@ -12,6 +12,7 @@
 #endif
 
 #include "nm-object.h"
+#include "nm-libnm-utils.h"
 
 #define NM_TYPE_REMOTE_SETTINGS            (nm_remote_settings_get_type ())
 #define NM_REMOTE_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettings))
@@ -74,11 +75,13 @@ void nm_remote_settings_add_connection2 (NMRemoteSettings *self,
                                          NMRemoteSettingAddConnection2Callback callback,
                                          gpointer user_data);
 
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 gboolean nm_remote_settings_load_connections        (NMRemoteSettings *settings,
                                                      char **filenames,
                                                      char ***failures,
                                                      GCancellable *cancellable,
                                                      GError **error);
+
 void     nm_remote_settings_load_connections_async  (NMRemoteSettings *settings,
                                                      char **filenames,
                                                      GCancellable *cancellable,
@@ -89,9 +92,11 @@ gboolean nm_remote_settings_load_connections_finish (NMRemoteSettings *settings,
                                                      GAsyncResult *result,
                                                      GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 gboolean nm_remote_settings_reload_connections        (NMRemoteSettings *settings,
                                                        GCancellable *cancellable,
                                                        GError **error);
+
 void     nm_remote_settings_reload_connections_async  (NMRemoteSettings *settings,
                                                        GCancellable *cancellable,
                                                        GAsyncReadyCallback callback,
@@ -100,10 +105,12 @@ gboolean nm_remote_settings_reload_connections_finish (NMRemoteSettings *setting
                                                        GAsyncResult *result,
                                                        GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD_INTERNAL
 gboolean nm_remote_settings_save_hostname        (NMRemoteSettings *settings,
                                                   const char *hostname,
                                                   GCancellable *cancellable,
                                                   GError **error);
+
 void     nm_remote_settings_save_hostname_async  (NMRemoteSettings *settings,
                                                   const char *hostname,
                                                   GCancellable *cancellable,

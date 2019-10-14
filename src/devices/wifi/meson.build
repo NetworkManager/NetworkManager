@@ -19,14 +19,11 @@ if enable_iwd
   )
 endif
 
-deps = [
-  nm_dep,
-]
-
 libnm_device_plugin_wifi = shared_module(
   'nm-device-plugin-wifi',
   sources: sources,
-  dependencies: deps,
+  dependencies: daemon_nm_default_dep,
+  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,
@@ -41,13 +38,20 @@ test(
   args: [libnm_device_plugin_wifi.full_path(), linker_script_devices],
 )
 
-# FIXME: check_so_symbols replacement
-'''
-check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
-  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
-  $(call check_so_symbols,$(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so)
-'''
-
 if enable_tests
-  subdir('tests')
+  test_unit = 'test-devices-wifi'
+
+  exe = executable(
+    test_unit,
+    ['tests/' + test_unit + '.c'] + common_sources,
+    dependencies: libnetwork_manager_test_dep,
+    c_args: test_c_flags,
+  )
+
+  test(
+    test_unit,
+    test_script,
+    args: test_args + [exe.full_path()],
+    timeout: default_test_timeout,
+  )
 endif

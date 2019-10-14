@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2011 Red Hat, Inc.
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
@@ -149,6 +148,8 @@ NMConfigConfigureAndQuitType nm_config_get_configure_and_quit (NMConfig *config)
 gboolean nm_config_get_is_debug (NMConfig *config);
 
 gboolean nm_config_get_first_start (NMConfig *config);
+
+const char *nm_config_get_no_auto_default_file (NMConfig *config);
 
 void nm_config_set_values (NMConfig *self,
                            GKeyFile *keyfile_intern_new,

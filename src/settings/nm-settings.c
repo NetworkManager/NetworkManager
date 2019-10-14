@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager system settings service
- *
+/*
  * Søren Sandmann <sandmann@daimi.au.dk>
  * Dan Williams <dcbw@redhat.com>
  * Tambet Ingo <tambet@gmail.com>
- *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
- * (C) Copyright 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 Novell, Inc.
  */
 
 #include "nm-default.h"
@@ -3429,16 +3427,29 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
 	 */
-	if (   !NM_DEVICE_GET_CLASS (self)->new_default_connection
+	if (   !NM_DEVICE_GET_CLASS (device)->new_default_connection
 	    || !nm_device_get_managed (device, FALSE)
-	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ())
-	    || have_connection_for_device (self, device)
-	    || nm_config_get_no_auto_default_for_device (priv->config, device))
+	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ()))
 		return;
 
-	connection = nm_device_new_default_connection (device);
-	if (!connection)
+	if (nm_config_get_no_auto_default_for_device (priv->config, device)) {
+		_LOGT ("auto-default: cannot create auto-default connection for device %s: disabled by \"no-auto-default\"",
+		       nm_device_get_iface (device));
 		return;
+	}
+
+	if (have_connection_for_device (self, device)) {
+		_LOGT ("auto-default: cannot create auto-default connection for device %s: already has a profile",
+		       nm_device_get_iface (device));
+		return;
+	}
+
+	connection = nm_device_new_default_connection (device);
+	if (!connection) {
+		_LOGT ("auto-default: cannot create auto-default connection for device %s",
+		       nm_device_get_iface (device));
+		return;
+	}
 
 	_LOGT ("auto-default: creating in-memory connection %s (%s) for device %s",
 	       nm_connection_get_uuid (connection),

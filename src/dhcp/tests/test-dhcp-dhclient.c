@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2010 Red Hat, Inc.
- *
  */
 
 #include "nm-default.h"
@@ -983,6 +982,11 @@ test_structured (void)
 		"    request subnet-mask, broadcast-address, time-offset, routers,\n"
 		"        domain-search, domain-name, domain-name-servers, host-name;\n"
 		"    require subnet-mask, domain-name-servers;\n"
+		"    if not option domain-name = \"example.org\" {\n"
+		"        prepend domain-name-servers 127.0.0.1;\n"
+		"    } else {\n"
+		"        prepend domain-name-servers 127.0.0.2;\n"
+		"    }  \n"
 		"    }  \n"
 		"\n"
 		"pseudo \"secondary\" \"eth0\"   {  \n"
@@ -1009,7 +1013,13 @@ test_structured (void)
 		"    interface \"eth0\";\n"
 		"    fixed-address 192.0.2.2;\n"
 		"    option subnet-mask 255.255.255.0;\n"
-		"  }  \n";
+		"  }  \n"
+		"if not option domain-name = \"example.org\" {\n"
+		"  prepend domain-name-servers 127.0.0.1;\n"
+		"  if not option domain-name = \"useless.example.com\" {\n"
+		"    prepend domain-name-servers 127.0.0.2;\n"
+		"  }\n"
+		"}\n";
 
 	static const char *const expected = \
 		"# Created by NetworkManager\n"
@@ -1020,6 +1030,12 @@ test_structured (void)
 		"send dhcp-client-identifier \"sad-and-useless\";\n"
 		"send dhcp-lease-time 8086;\n"
 		"require subnet-mask;\n"
+		"if not option domain-name = \"example.org\" {\n"
+		"prepend domain-name-servers 127.0.0.1;\n"
+		"if not option domain-name = \"useless.example.com\" {\n"
+		"prepend domain-name-servers 127.0.0.2;\n"
+		"}\n"
+		"}\n"
 		"\n"
 		"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 		"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"

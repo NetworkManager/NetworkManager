@@ -2,28 +2,29 @@ common_inc = include_directories('.')
 
 nm_polkit_listener = files('nm-polkit-listener.c')
 
-deps = [
+common_deps = [
   libnm_dep,
-  shared_nm_libnm_core_aux_dep,
+  libnm_nm_default_dep,
 ]
 
-cflags = clients_cflags + [
-  '-DG_LOG_DOMAIN="libnmc"',
-]
+common_c_flags = clients_c_flags + ['-DG_LOG_DOMAIN="libnmc"']
+
+sources = files(
+  'nm-client-utils.c',
+  'nm-secret-agent-simple.c',
+  'nm-vpn-helpers.c',
+)
 
 libnmc_base = static_library(
   'nmc-base',
-  sources: files(
-    'nm-client-utils.c',
-    'nm-secret-agent-simple.c',
-    'nm-vpn-helpers.c',
-  ),
-  dependencies: deps,
-  c_args: cflags,
+  sources: sources,
+  dependencies: common_deps,
+  c_args: common_c_flags,
 )
 
 libnmc_base_dep = declare_dependency(
   include_directories: common_inc,
+  dependencies: common_deps,
   link_with: libnmc_base,
 )
 
@@ -39,31 +40,33 @@ if enable_introspection
 
   test(
     'check-settings-docs',
-    find_program(join_paths(meson.source_root(), 'tools', 'check-settings-docs.sh')),
-    args: [meson.source_root(), meson.build_root(), 'clients/common/' + settings_docs]
+    find_program(join_paths(source_root, 'tools', 'check-settings-docs.sh')),
+    args: [source_root, build_root, 'clients/common/' + settings_docs],
   )
 else
   settings_docs_source = configure_file(
     input: settings_docs + '.in',
-    output: settings_docs,
+    output: '@BASENAME@',
     configuration: configuration_data(),
   )
 endif
 
+sources = nm_meta_setting_source + [settings_docs_source] + files(
+  'nm-meta-setting-access.c',
+  'nm-meta-setting-desc.c',
+)
+
 libnmc = static_library(
   'nmc',
-  sources: files(
-    'nm-meta-setting-access.c',
-    'nm-meta-setting-desc.c',
-  ) + shared_nm_meta_setting_c + [settings_docs_source],
-  dependencies: deps,
-  c_args: cflags,
-  link_with: libnmc_base,
+  sources: sources,
+  dependencies: common_deps + [libnm_libnm_core_aux_dep],
+  c_args: c_flags,
   link_depends: settings_docs_source,
 )
 
 libnmc_dep = declare_dependency(
   include_directories: common_inc,
+  dependencies: common_deps,
   link_with: libnmc,
 )
 

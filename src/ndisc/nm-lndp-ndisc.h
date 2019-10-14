@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-lndp-ndisc.h - Implementation of neighbor discovery using libndp
- *
+/*
  * Copyright (C) 2013 Red Hat, Inc.
  */
 

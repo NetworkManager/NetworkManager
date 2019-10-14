@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2004 Red Hat, Inc.
+ * Copyright (C) 2004 Red Hat, Inc.
  */
 
 /* D-Bus-related definitions for NetworkManager VPN plugins.

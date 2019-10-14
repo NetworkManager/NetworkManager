@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-ndisc.h - Perform IPv6 neighbor discovery
- *
- * Copyright 2015 Red Hat, Inc.
+/*
+ * Copyright (C) 2015 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_NDISC_PRIVATE_H__

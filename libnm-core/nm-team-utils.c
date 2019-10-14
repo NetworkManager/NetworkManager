@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2019 Red Hat, Inc.
+ * Copyright (C) 2019 Red Hat, Inc.
  */
 
 #define NM_VALUE_TYPE_DEFINE_FUNCTIONS
@@ -2420,7 +2420,7 @@ _nm_setting_get_team_setting (struct _NMSetting *setting)
 	return _nm_setting_team_port_get_team_setting (NM_SETTING_TEAM_PORT (setting));
 }
 
-GVariant *
+static GVariant *
 _nm_team_settings_property_to_dbus (const NMSettInfoSetting *sett_info,
                                     guint property_idx,
                                     NMConnection *connection,
@@ -2467,13 +2467,39 @@ _nm_team_settings_property_to_dbus (const NMSettInfoSetting *sett_info,
 	return NULL;
 }
 
-void
+static void
 _nm_team_settings_property_from_dbus_link_watchers (GVariant *dbus_value,
                                                     GValue *prop_value)
 {
 	g_value_take_boxed (prop_value,
 	                    _nm_utils_team_link_watchers_from_variant (dbus_value, FALSE, NULL));
 }
+
+const NMSettInfoPropertType nm_sett_info_propert_type_team_b = {
+	.dbus_type           = G_VARIANT_TYPE_BOOLEAN,
+	.to_dbus_fcn         = _nm_team_settings_property_to_dbus,
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_team_i = {
+	.dbus_type           = G_VARIANT_TYPE_INT32,
+	.to_dbus_fcn         = _nm_team_settings_property_to_dbus,
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_team_s = {
+	.dbus_type           = G_VARIANT_TYPE_STRING,
+	.to_dbus_fcn         = _nm_team_settings_property_to_dbus,
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_team_as = {
+	.dbus_type           = NM_G_VARIANT_TYPE ("as"),
+	.to_dbus_fcn         = _nm_team_settings_property_to_dbus,
+};
+
+const NMSettInfoPropertType nm_sett_info_propert_type_team_link_watchers = {
+	.dbus_type           = NM_G_VARIANT_TYPE ("aa{sv}"),
+	.to_dbus_fcn         = _nm_team_settings_property_to_dbus,
+	.gprop_from_dbus_fcn = _nm_team_settings_property_from_dbus_link_watchers,
+};
 
 /*****************************************************************************/
 

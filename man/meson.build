@@ -9,11 +9,9 @@ common_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT', config_default_logging_a
 common_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER', config_dns_rc_manager_default)
 common_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
 
-common = 'common.ent'
-
 common_ent_file = configure_file(
-  input: common + '.in',
-  output: common,
+  input: 'common.ent.in',
+  output: '@BASENAME@',
   configuration: common_conf,
 )
 

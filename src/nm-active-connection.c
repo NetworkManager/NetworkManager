@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
@@ -708,7 +707,7 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		                  G_CALLBACK (device_metered_changed), self);
 
 		if (priv->activation_type != NM_ACTIVATION_TYPE_EXTERNAL) {
-			priv->pending_activation_id = g_strdup_printf (NM_PENDING_ACTIONPREFIX_ACTIVATION"%p", (void *)self);
+			priv->pending_activation_id = g_strdup_printf (NM_PENDING_ACTIONPREFIX_ACTIVATION"%"G_GUINT64_FORMAT, priv->version_id);
 			nm_device_add_pending_action (device, priv->pending_activation_id, TRUE);
 		}
 	} else {

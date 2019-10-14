@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2014 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #include "nm-default.h"
@@ -1376,12 +1376,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_BSSID],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_BSSID], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingWireless:rate:
@@ -1455,12 +1450,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_MAC_ADDRESS],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingWireless:cloned-mac-address:
@@ -1510,13 +1500,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_CLONED_MAC_ADDRESS],
-	                                   G_VARIANT_TYPE_BYTESTRING,
-	                                   _nm_utils_hwaddr_cloned_get,
-	                                   _nm_utils_hwaddr_cloned_set,
-	                                   _nm_utils_hwaddr_cloned_not_set);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_CLONED_MAC_ADDRESS], &nm_sett_info_propert_type_cloned_mac_address);
 
 	/* ---dbus---
 	 * property: assigned-mac-address
@@ -1530,11 +1514,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 *   "cloned-mac-address".
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "assigned-mac-address",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    _nm_utils_hwaddr_cloned_data_synth,
-	                                    _nm_utils_hwaddr_cloned_data_set);
+	_nm_properties_override_dbus (properties_override, "assigned-mac-address", &nm_sett_info_propert_type_assigned_mac_address);
 
 	/**
 	 * NMSettingWireless:generate-mac-address-mask:
@@ -1631,13 +1611,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	                        G_PARAM_READWRITE |
 	                        NM_SETTING_PARAM_FUZZY_IGNORE |
 	                        G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_override (properties_override,
-	                                   obj_properties[PROP_SEEN_BSSIDS],
-	                                   G_VARIANT_TYPE_STRING_ARRAY,
-	                                   _to_dbus_fcn_seen_bssids,
-	                                   NULL,
-	                                   NULL);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_SEEN_BSSIDS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type             = G_VARIANT_TYPE_STRING_ARRAY,
+	                                  .to_dbus_fcn           = _to_dbus_fcn_seen_bssids,
+	                              ));
 
 	/**
 	 * NMSettingWireless:mtu:
@@ -1755,11 +1734,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 *   NetworkManager daemons.
 	 * ---end---
 	 */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "security",
-	                                    G_VARIANT_TYPE_STRING,
-	                                    nm_setting_wireless_get_security,
-	                                    NULL);
+	_nm_properties_override_dbus (properties_override,
+	                              "security",
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = G_VARIANT_TYPE_STRING,
+	                                  .to_dbus_fcn   = nm_setting_wireless_get_security,
+	                              ));
 
 	/**
 	 * NMSettingWireless:wake-on-wlan:

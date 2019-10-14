@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2004 - 2014 Red Hat, Inc.
+ * Copyright (C) 2004 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_ERRORS_H__

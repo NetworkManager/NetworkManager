@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2010 Dan Williams <dcbw@redhat.com>
  * Copyright (C) 2016 Sjoerd Simons <sjoerd@luon.net>
- *
  */
 
 #include "nm-default.h"

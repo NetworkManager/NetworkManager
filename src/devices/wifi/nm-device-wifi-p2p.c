@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager -- Wi-Fi P2P Device
- *
- * (C) Copyright 2018 Red Hat, Inc.
+/*
+ * Copyright (C) 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -605,7 +604,9 @@ deactivate (NMDevice *device)
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
+get_configured_mtu (NMDevice *device,
+                    NMDeviceMtuSource *out_source,
+                    gboolean *out_force)
 {
 	*out_source = NM_DEVICE_MTU_SOURCE_NONE;
 	return 0;

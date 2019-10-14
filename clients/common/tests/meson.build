@@ -1,43 +1,43 @@
+common_c_flags = clients_c_flags + ['-DNETWORKMANAGER_COMPILATION_TEST']
+
 test_name = 'test-clients-common'
+
+deps = [
+  libnmc_base_dep,
+  libnmc_dep,
+]
 
 exe = executable(
   test_name,
   test_name + '.c',
-  dependencies: [
-    libnm_dep,
-    libnmc_dep,
-    libnmc_base_dep,
-    libnm_core_dep,
-  ],
-  c_args: clients_cflags + [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-  ],
+  dependencies: deps,
+  c_args: common_c_flags,
 )
 
 test(
-  test_name,
+  'clients/common/tests/' + test_name,
   test_script,
   args: test_args + [exe.full_path()],
 )
 
-###############################################################################
+test_name = 'test-libnm-core-aux'
+
+deps = [
+  libnm_dep,
+  libnm_libnm_core_aux_dep,
+  libnm_nm_default_dep,
+]
 
 exe = executable(
-    'test-libnm-core-aux',
-    [ 'test-libnm-core-aux.c', ],
-    c_args: [
-        '-DNETWORKMANAGER_COMPILATION_TEST',
-        '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
-    ],
-    dependencies: [
-        libnm_dep,
-        shared_nm_libnm_core_aux_dep,
-        shared_nm_libnm_core_intern_dep,
-    ],
+  test_name,
+  test_name + '.c',
+  dependencies: deps,
+  c_args: common_c_flags,
+  link_with: libnm_systemd_logging_stub,
 )
 
 test(
-    'clients/common/tests/test-libnm-core-aux',
-    test_script,
-    args: test_args + [exe.full_path()]
+  'clients/common/tests/' + test_name,
+  test_script,
+  args: test_args + [exe.full_path()]
 )

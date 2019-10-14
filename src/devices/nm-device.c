@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
+/*
  * Copyright (C) 2005 - 2018 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
@@ -3022,17 +3021,17 @@ concheck_cb (NMConnectivity *connectivity,
 
 	self_keep_alive = g_object_ref (self);
 
+	/* keep @self alive, while we invoke callbacks. */
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (handle && c_list_contains (&priv->concheck_lst_head, &handle->concheck_lst));
+
+	seq = handle->seq;
+
 	_LOGT (LOGD_CONCHECK, "connectivity: [Ipv%c] complete check (seq:%llu, state:%s)",
 	       nm_utils_addr_family_to_char (handle->addr_family),
 	       (long long unsigned) handle->seq,
 	       nm_connectivity_state_to_string (state));
-
-	/* keep @self alive, while we invoke callbacks. */
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	nm_assert (!handle || c_list_contains (&priv->concheck_lst_head, &handle->concheck_lst));
-
-	seq = handle->seq;
 
 	/* find out, if there are any periodic checks pending (either whether they
 	 * were scheduled before or after @handle. */
@@ -3934,12 +3933,18 @@ device_link_changed (NMDevice *self)
 	if (priv->up && (!was_up || seen_down)) {
 		/* the link was down and just came up. That happens for example, while changing MTU.
 		 * We must restore IP configuration. */
-		if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
-			_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
+		if (NM_IN_SET (priv->ip_state_4, NM_DEVICE_IP_STATE_CONF,
+		                                 NM_DEVICE_IP_STATE_DONE)) {
+			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
+				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
+		}
 
 		priv->linklocal6_dad_counter = 0;
-		if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
-			_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
+		if (NM_IN_SET (priv->ip_state_6, NM_DEVICE_IP_STATE_CONF,
+		                                 NM_DEVICE_IP_STATE_DONE)) {
+			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
+				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
+		}
 	}
 
 	if (update_unmanaged_specs)
@@ -7433,8 +7438,6 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		/* Stop any ongoing DHCP transaction on this device */
 		nm_clear_g_signal_handler (priv->dhcp4.client, &priv->dhcp4.state_sigid);
 
-		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
-
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
 			nm_dhcp_client_stop (priv->dhcp4.client, release);
@@ -7687,8 +7690,6 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 	                           self,
 	                           NULL,
 	                           NULL, NULL, NULL);
-
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	return TRUE;
 }
@@ -8095,8 +8096,6 @@ dhcp4_start (NMDevice *self)
 	                                            G_CALLBACK (dhcp4_state_changed),
 	                                            self);
 
-	nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP4, TRUE);
-
 	if (nm_device_sys_iface_state_is_external_or_assume (self))
 		priv->dhcp4.was_active = TRUE;
 
@@ -8301,8 +8300,6 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		g_clear_object (&priv->dhcp6.client);
 	}
 
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
-
 	if (priv->dhcp6.config) {
 		nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 		_notify (self, PROP_DHCP6_CONFIG);
@@ -8335,8 +8332,6 @@ dhcp6_lease_change (NMDevice *self)
 	                           self,
 	                           NULL,
 	                           NULL, NULL, NULL);
-
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	return TRUE;
 }
@@ -8931,7 +8926,6 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip6;
 
 	nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 	priv->dhcp6.config = nm_dhcp6_config_new ();
@@ -8941,11 +8935,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
 
 	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (!nm_setting_ip_config_get_may_fail (s_ip6) ||
-	    !strcmp (nm_setting_ip_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
-		nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP6, TRUE);
+	g_return_val_if_fail (connection, FALSE);
 
 	if (wait_for_ll) {
 		/* ensure link local is ready... */
@@ -9312,11 +9302,57 @@ nm_device_get_configured_mtu_from_connection (NMDevice *self,
 }
 
 guint32
-nm_device_get_configured_mtu_for_wired (NMDevice *self, NMDeviceMtuSource *out_source)
+nm_device_get_configured_mtu_for_wired (NMDevice *self,
+                                        NMDeviceMtuSource *out_source,
+                                        gboolean *out_force)
 {
 	return nm_device_get_configured_mtu_from_connection (self,
 	                                                     NM_TYPE_SETTING_WIRED,
 	                                                     out_source);
+}
+
+guint32
+nm_device_get_configured_mtu_wired_parent (NMDevice *self,
+                                           NMDeviceMtuSource *out_source,
+                                           gboolean *out_force)
+{
+	guint32 mtu = 0;
+	guint32 parent_mtu = 0;
+	int ifindex;
+
+	ifindex = nm_device_parent_get_ifindex (self);
+	if (ifindex > 0) {
+		parent_mtu = nm_platform_link_get_mtu (nm_device_get_platform (self), ifindex);
+		if (parent_mtu >= NM_DEVICE_GET_CLASS (self)->mtu_parent_delta)
+			parent_mtu -= NM_DEVICE_GET_CLASS (self)->mtu_parent_delta;
+		else
+			parent_mtu = 0;
+	}
+
+	mtu = nm_device_get_configured_mtu_for_wired (self, out_source, NULL);
+
+	if (parent_mtu && mtu > parent_mtu) {
+		/* Trying to set a MTU that is out of range from configuration:
+		 * fall back to the parent MTU and set force flag so that it
+		 * overrides an MTU with higher priority already configured.
+		 */
+		 *out_source = NM_DEVICE_MTU_SOURCE_PARENT;
+		 *out_force = TRUE;
+		 return parent_mtu;
+	}
+
+	if (*out_source != NM_DEVICE_MTU_SOURCE_NONE) {
+		nm_assert (mtu > 0);
+		return mtu;
+	}
+
+	/* Inherit the MTU from parent device, if any */
+	if (parent_mtu) {
+		mtu = parent_mtu;
+		*out_source = NM_DEVICE_MTU_SOURCE_PARENT;
+	}
+
+	return mtu;
 }
 
 /*****************************************************************************/
@@ -9370,15 +9406,34 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 
 	{
 		guint32 mtu = 0;
+		gboolean force = FALSE;
 
-		/* preferably, get the MTU from explicit user-configuration.
-		 * Only if that fails, look at the current @config (which contains
-		 * MTUs from DHCP/PPP) or maybe fallback to a device-specific MTU. */
+		/* We take the MTU from various sources: (in order of increasing
+		 * priority) parent link, IP configuration (which contains the
+		 * MTU from DHCP/PPP), connection profile.
+		 *
+		 * We could just compare it with the platform MTU and apply it
+		 * when different, but this would revert at random times manual
+		 * changes done by the user with the MTU from the connection.
+		 *
+		 * Instead, we remember the source of the currently configured
+		 * MTU and apply the new one only when the new source has a
+		 * higher priority, so that we don't set a MTU from same source
+		 * multiple times. An exception to this is for the PARENT
+		 * source, since we need to keep tracking the parent MTU when it
+		 * changes.
+		 *
+		 * The subclass can set the @force argument to TRUE to signal that the
+		 * returned MTU should be applied even if it has a lower priority. This
+		 * is useful when the value from a lower source should
+		 * preempt the one from higher ones.
+		 */
 
 		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
-			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &source);
+			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &source, &force);
 
 		if (   config
+		    && !force
 		    && source < NM_DEVICE_MTU_SOURCE_IP_CONFIG
 		    && nm_ip4_config_get_mtu (config)) {
 			mtu = nm_ip4_config_get_mtu (config);
@@ -9387,14 +9442,16 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 
 		if (mtu != 0) {
 			_LOGT (LOGD_DEVICE,
-			       "mtu: value %u from source '%s' (%u), current source '%s' (%u)",
+			       "mtu: value %u from source '%s' (%u), current source '%s' (%u)%s",
 			       (guint) mtu,
 			       mtu_source_to_str (source), (guint) source,
-			       mtu_source_to_str (priv->mtu_source), (guint) priv->mtu_source);
+			       mtu_source_to_str (priv->mtu_source), (guint) priv->mtu_source,
+			       force ? " (forced)" : "");
 		}
 
 		if (   mtu != 0
-		    && (   source > priv->mtu_source
+		    && (   force
+		        || source > priv->mtu_source
 		        || (priv->mtu_source == NM_DEVICE_MTU_SOURCE_PARENT && source == priv->mtu_source)))
 			mtu_desired = mtu;
 		else {
@@ -9409,7 +9466,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		s_ip6 = nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 		if (   s_ip6
 		    && !NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip6),
-		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE
+		                      NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 		                      NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
 			/* the interface has IPv6 enabled. The MTU with IPv6 cannot be smaller
 			 * then 1280.
@@ -9788,9 +9845,6 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		                 "IPv6 private addresses. This feature is not available");
 	}
 
-	if (!nm_setting_ip_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
-		nm_device_add_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, TRUE);
-
 	/* ensure link local is ready... */
 	if (!linklocal6_start (self)) {
 		/* wait for the LL address to show up */
@@ -9810,8 +9864,6 @@ addrconf6_cleanup (NMDevice *self)
 	priv->ndisc_started = FALSE;
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_changed_id);
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
-
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 	applied_config_clear (&priv->ac_ip6_config);
 	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
@@ -10813,8 +10865,6 @@ activate_stage5_ip_config_result_4 (NMDevice *self)
 	if (do_announce)
 		nm_device_arp_announce (self);
 
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
-
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_DONE);
 	check_ip_state (self, FALSE, TRUE);
@@ -10976,8 +11026,6 @@ activate_stage5_ip_config_result_6 (NMDevice *self)
 				return;
 			}
 		}
-		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
-		nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 		/* Start IPv6 forwarding if we need it */
 		method = nm_device_get_effective_ip_config_method (self, AF_INET6);
@@ -14086,6 +14134,11 @@ nm_device_update_metered (NMDevice *self)
 		}
 	}
 
+	if (   value == NM_METERED_INVALID
+	    && NM_DEVICE_GET_CLASS (self)->get_guessed_metered
+	    && NM_DEVICE_GET_CLASS (self)->get_guessed_metered (self))
+		value = NM_METERED_GUESS_YES;
+
 	/* Try to guess a value using the metered flag in IP configuration */
 	if (value == NM_METERED_INVALID) {
 		if (   priv->ip_config_4
@@ -14835,6 +14888,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	}
 
 	priv->mtu_source = NM_DEVICE_MTU_SOURCE_NONE;
+	priv->ip6_mtu = 0;
 	if (priv->mtu_initial || priv->ip6_mtu_initial) {
 		ifindex = nm_device_get_ip_ifindex (self);
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -331,6 +331,8 @@ _device_wifi_request_scan (NMDeviceWifi *device,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be
  * set.
+ *
+ * Deprecated: 1.22, use nm_device_wifi_request_scan_async() or GDBusConnection
  **/
 gboolean
 nm_device_wifi_request_scan (NMDeviceWifi *device,
@@ -359,6 +361,8 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
  * set.
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.22, use nm_device_wifi_request_scan_options_async() or GDBusConnection
  **/
 gboolean
 nm_device_wifi_request_scan_options (NMDeviceWifi *device,

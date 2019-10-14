@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (C) 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_TEST_UTILS_H__
@@ -2279,6 +2279,15 @@ nmtst_keyfile_get_num_keys (GKeyFile *keyfile,
 	g_assert_cmpint (NM_PTRARRAY_LEN (keys), ==, l);
 
 	return l;
+}
+
+/*****************************************************************************/
+
+static inline gboolean
+nmtst_g_source_assert_not_called (gpointer user_data)
+{
+	g_assert_not_reached ();
+	return G_SOURCE_CONTINUE;
 }
 
 /*****************************************************************************/

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* NetworkManager -- Network link manager
- *
- * Copyright 2015 Red Hat, Inc.
+/*
+ * Copyright (C) 2015 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -841,7 +840,9 @@ create_and_realize (NMDevice *device,
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
+get_configured_mtu (NMDevice *device,
+                    NMDeviceMtuSource *out_source,
+                    gboolean *out_force)
 {
 	return nm_device_get_configured_mtu_from_connection (device,
 	                                                     NM_TYPE_SETTING_IP_TUNNEL,

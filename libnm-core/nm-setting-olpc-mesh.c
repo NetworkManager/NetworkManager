@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2009 One Laptop per Child
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2009 One Laptop per Child
  */
 
 #include "nm-default.h"
@@ -250,12 +250,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
-
-	_properties_override_add_transform (properties_override,
-	                                    obj_properties[PROP_DHCP_ANYCAST_ADDRESS],
-	                                    G_VARIANT_TYPE_BYTESTRING,
-	                                    _nm_utils_hwaddr_to_dbus,
-	                                    _nm_utils_hwaddr_from_dbus);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_DHCP_ANYCAST_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

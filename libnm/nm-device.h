@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_H__
@@ -32,7 +32,10 @@ G_BEGIN_DECLS
 #define NM_DEVICE_CAPABILITIES "capabilities"
 #define NM_DEVICE_REAL "real"
 #define NM_DEVICE_MANAGED "managed"
+
+_NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_DEVICE_AUTOCONNECT "autoconnect"
+
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
 #define NM_DEVICE_NM_PLUGIN_MISSING "nm-plugin-missing"
 #define NM_DEVICE_IP4_CONFIG "ip4-config"
@@ -97,10 +100,16 @@ const char *         nm_device_get_type_description (NMDevice *device);
 const char *         nm_device_get_hw_address       (NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities     (NMDevice *device);
 gboolean             nm_device_get_managed          (NMDevice *device);
+
 NM_AVAILABLE_IN_1_2
+_NM_DEPRECATED_SYNC_METHOD
 void                 nm_device_set_managed          (NMDevice *device, gboolean managed);
+
 gboolean             nm_device_get_autoconnect      (NMDevice *device);
+
+_NM_DEPRECATED_SYNC_METHOD
 void                 nm_device_set_autoconnect      (NMDevice *device, gboolean autoconnect);
+
 gboolean             nm_device_get_firmware_missing (NMDevice *device);
 NM_AVAILABLE_IN_1_2
 gboolean             nm_device_get_nm_plugin_missing (NMDevice *device);
@@ -130,6 +139,7 @@ GPtrArray *          nm_device_get_lldp_neighbors    (NMDevice *device);
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 NM_AVAILABLE_IN_1_2
+_NM_DEPRECATED_SYNC_METHOD
 gboolean             nm_device_reapply              (NMDevice *device,
                                                      NMConnection *connection,
                                                      guint64 version_id,
@@ -150,6 +160,7 @@ gboolean             nm_device_reapply_finish       (NMDevice *device,
                                                      GError **error);
 
 NM_AVAILABLE_IN_1_2
+_NM_DEPRECATED_SYNC_METHOD
 NMConnection        *nm_device_get_applied_connection (NMDevice *device,
                                                        guint32 flags,
                                                        guint64 *version_id,
@@ -167,6 +178,7 @@ NMConnection        *nm_device_get_applied_connection_finish (NMDevice *device,
                                                               guint64 *version_id,
                                                               GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD
 gboolean             nm_device_disconnect           (NMDevice *device,
                                                      GCancellable *cancellable,
                                                      GError **error);
@@ -178,6 +190,7 @@ gboolean             nm_device_disconnect_finish    (NMDevice *device,
                                                      GAsyncResult *result,
                                                      GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD
 gboolean             nm_device_delete               (NMDevice *device,
                                                      GCancellable *cancellable,
                                                      GError **error);

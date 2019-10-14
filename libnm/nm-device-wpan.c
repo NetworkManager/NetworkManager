@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2018 Lubomir Rintel <lkundrak@v3.sk>
+ * Copyright (C) 2018 Lubomir Rintel <lkundrak@v3.sk>
  */
 
 #include "nm-default.h"

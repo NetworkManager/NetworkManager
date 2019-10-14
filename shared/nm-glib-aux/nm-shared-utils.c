@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
-/* NetworkManager -- Network link manager
- *
- * (C) Copyright 2016 Red Hat, Inc.
+/*
+ * Copyright (C) 2016 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -2869,6 +2868,24 @@ nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b)
 		a = a->next;
 		b = b->next;
 	}
+}
+
+char *
+nm_utils_g_slist_strlist_join (const GSList *a, const char *separator)
+{
+	GString *str = NULL;
+
+	if (!a)
+		return NULL;
+
+	for (; a; a = a->next) {
+		if (!str)
+			str = g_string_new (NULL);
+		else
+			g_string_append (str, separator);
+		g_string_append (str, a->data);
+	}
+	return g_string_free (str, FALSE);
 }
 
 /*****************************************************************************/

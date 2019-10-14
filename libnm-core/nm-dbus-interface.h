@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2004 - 2018 Red Hat, Inc.
+ * Copyright (C) 2004 - 2018 Red Hat, Inc.
  */
 
 /* Definitions related to NetworkManager's D-Bus interfaces.

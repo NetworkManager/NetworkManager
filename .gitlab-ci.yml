@@ -45,7 +45,7 @@ stages:
 
     # iproute2 5.2.0 on debian:sid causes our unit tests to fail.
     # Downgrade to a working version. See https://www.spinics.net/lists/netdev/msg584916.html
-    - date '+%Y%m%d-%H%M%S'; ! ( dpkg -s iproute2 | grep -q '^Version[:] 5.2.0-1$' ) || (curl 'http://ftp.debian.org/debian/pool/main/i/iproute2/iproute2_4.20.0-2_amd64.deb' --output /tmp/iproute2_4.20.0-2_amd64.deb && dpkg -i /tmp/iproute2_4.20.0-2_amd64.deb)
+    - date '+%Y%m%d-%H%M%S'; ! ( dpkg -s iproute2 | grep -q '^Version[:] 5.2.0-1\(ubuntu1\)\?$' ) || (curl 'http://ftp.debian.org/debian/pool/main/i/iproute2/iproute2_4.20.0-2_amd64.deb' --output /tmp/iproute2_4.20.0-2_amd64.deb && dpkg -i /tmp/iproute2_4.20.0-2_amd64.deb)
 
 .do_build: &do_build
   stage: test
@@ -73,7 +73,7 @@ checkpatch:
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; dnf install -y git
-    - date '+%Y%m%d-%H%M%S'; contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
+    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
   allow_failure: true
   artifacts:
     when: on_failure

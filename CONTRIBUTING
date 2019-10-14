@@ -38,12 +38,12 @@ Legal
 -----
 
 NetworkManager is partly licensed under terms of GNU Lesser General Public License
-version 2 or later (LGPL-2.0+). That is for example the case for libnm.
+version 2 or later (LGPL-2.1+). That is for example the case for libnm.
 For historical reasons, the daemon itself is licensed under terms of GNU General
 Public License, version 2 or later (GPL-2.0+). See the license comment in the source
 files.
 Note that all new contributions to NetworkManager MUST be made under terms of
-LGPL-2.0+, that is also the case for parts that are currently licensed GPL-2.0+.
+LGPL-2.1+, that is also the case for parts that are currently licensed GPL-2.0+.
 The reason for that is that we might eventually relicense everything as LGPL and
 new contributions already must agree with that future change.
 

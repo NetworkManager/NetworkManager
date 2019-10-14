@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #include "nm-default.h"
@@ -847,17 +847,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	                       G_PARAM_STATIC_STRINGS);
 
 	/* Ignore incoming deprecated properties */
-	_properties_override_add_dbus_only (properties_override,
-	                                    "allowed-bands",
-	                                    G_VARIANT_TYPE_UINT32,
-	                                    NULL,
-	                                    NULL);
-
-	_properties_override_add_dbus_only (properties_override,
-	                                    "network-type",
-	                                    G_VARIANT_TYPE_INT32,
-	                                    NULL,
-	                                    NULL);
+	_nm_properties_override_dbus (properties_override, "allowed-bands", &nm_sett_info_propert_type_deprecated_ignore_u);
+	_nm_properties_override_dbus (properties_override, "network-type", &nm_sett_info_propert_type_deprecated_ignore_i);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

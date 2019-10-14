@@ -12,6 +12,20 @@
 # This file is derived from scripts 'if{up,down}-routes' from
 # Fedora/RHEL initscripts.
 
+if [ "$2" != "pre-up" ] && [ "$2" != "down" ]; then
+    exit 0
+fi
+
+file_regex='^/etc/sysconfig/network-scripts/ifcfg-([^/]+)$'
+
+[[ "$CONNECTION_FILENAME" =~ $file_regex ]] || exit 0
+
+profile="${BASH_REMATCH[1]}"
+
+if [ ! -f "/etc/sysconfig/network-scripts/rule-$profile" ] && [ ! -f "/etc/sysconfig/network-scripts/rule6-$profile" ]; then
+    exit 0
+fi
+
 MATCH='^[[:space:]]*(\#.*)?$'
 
 handle_file () {
@@ -44,24 +58,6 @@ handle_ip_file() {
     done
 }
 
-
-if [ "$2" != "pre-up" ] && [ "$2" != "down" ]; then
-    exit 0
-fi
-
-dir=$(dirname "$CONNECTION_FILENAME")
-if [ "$dir" != "/etc/sysconfig/network-scripts" ]; then
-    exit 0
-fi
-
-profile=$(basename "$CONNECTION_FILENAME" | sed -ne 's/^ifcfg-//p')
-if [ -z "$profile" ]; then
-    exit 0
-fi
-
-if [ ! -f "$dir/rule-$profile" ] && [ ! -f "$dir/rule6-$profile" ]; then
-    exit 0
-fi
 
 case "$2" in
     pre-up)

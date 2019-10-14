@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_WIFI_H__
@@ -66,10 +66,12 @@ const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *
 NM_AVAILABLE_IN_1_12
 gint64                   nm_device_wifi_get_last_scan            (NMDeviceWifi *device);
 
+_NM_DEPRECATED_SYNC_METHOD
 gboolean                 nm_device_wifi_request_scan             (NMDeviceWifi *device,
                                                                   GCancellable *cancellable,
                                                                   GError **error);
 NM_AVAILABLE_IN_1_2
+_NM_DEPRECATED_SYNC_METHOD
 gboolean                 nm_device_wifi_request_scan_options     (NMDeviceWifi *device,
                                                                   GVariant *options,
                                                                   GCancellable *cancellable,

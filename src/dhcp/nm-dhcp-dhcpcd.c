@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
-/* nm-dhcp-dhcpcd.c - dhcpcd specific hooks for NetworkManager
- *
+/*
  * Copyright (C) 2008 Roy Marples
  * Copyright (C) 2010 Dan Williams <dcbw@redhat.com>
- *
  */
 
 #include "nm-default.h"
