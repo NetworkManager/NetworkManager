@@ -425,10 +425,6 @@ void _nm_utils_set_testing (NMUtilsTestFlags flags);
 
 void nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings);
 
-guint nm_utils_parse_debug_string (const char *string,
-                                   const GDebugKey *keys,
-                                   guint nkeys);
-
 void nm_utils_ifname_cpy (char *dst, const char *name);
 
 guint32 nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,

@@ -1289,4 +1289,8 @@ nm_g_task_is_valid (gpointer task,
 	       && g_task_get_source_tag (task) == source_tag;
 }
 
+guint nm_utils_parse_debug_string (const char *string,
+                                   const GDebugKey *keys,
+                                   guint nkeys);
+
 #endif /* __NM_SHARED_UTILS_H__ */
