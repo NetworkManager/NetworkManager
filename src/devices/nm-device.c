@@ -7438,8 +7438,6 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		/* Stop any ongoing DHCP transaction on this device */
 		nm_clear_g_signal_handler (priv->dhcp4.client, &priv->dhcp4.state_sigid);
 
-		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
-
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
 			nm_dhcp_client_stop (priv->dhcp4.client, release);
@@ -7692,8 +7690,6 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 	                           self,
 	                           NULL,
 	                           NULL, NULL, NULL);
-
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	return TRUE;
 }
@@ -8100,8 +8096,6 @@ dhcp4_start (NMDevice *self)
 	                                            G_CALLBACK (dhcp4_state_changed),
 	                                            self);
 
-	nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP4, TRUE);
-
 	if (nm_device_sys_iface_state_is_external_or_assume (self))
 		priv->dhcp4.was_active = TRUE;
 
@@ -8306,8 +8300,6 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		g_clear_object (&priv->dhcp6.client);
 	}
 
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
-
 	if (priv->dhcp6.config) {
 		nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 		_notify (self, PROP_DHCP6_CONFIG);
@@ -8340,8 +8332,6 @@ dhcp6_lease_change (NMDevice *self)
 	                           self,
 	                           NULL,
 	                           NULL, NULL, NULL);
-
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	return TRUE;
 }
@@ -8936,7 +8926,6 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip6;
 
 	nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 	priv->dhcp6.config = nm_dhcp6_config_new ();
@@ -8946,11 +8935,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
 
 	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (!nm_setting_ip_config_get_may_fail (s_ip6) ||
-	    !strcmp (nm_setting_ip_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
-		nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP6, TRUE);
+	g_return_val_if_fail (connection, FALSE);
 
 	if (wait_for_ll) {
 		/* ensure link local is ready... */
@@ -9860,9 +9845,6 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		                 "IPv6 private addresses. This feature is not available");
 	}
 
-	if (!nm_setting_ip_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
-		nm_device_add_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, TRUE);
-
 	/* ensure link local is ready... */
 	if (!linklocal6_start (self)) {
 		/* wait for the LL address to show up */
@@ -9882,8 +9864,6 @@ addrconf6_cleanup (NMDevice *self)
 	priv->ndisc_started = FALSE;
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_changed_id);
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
-
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 	applied_config_clear (&priv->ac_ip6_config);
 	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
@@ -10885,8 +10865,6 @@ activate_stage5_ip_config_result_4 (NMDevice *self)
 	if (do_announce)
 		nm_device_arp_announce (self);
 
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
-
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_DONE);
 	check_ip_state (self, FALSE, TRUE);
@@ -11048,8 +11026,6 @@ activate_stage5_ip_config_result_6 (NMDevice *self)
 				return;
 			}
 		}
-		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
-		nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 		/* Start IPv6 forwarding if we need it */
 		method = nm_device_get_effective_ip_config_method (self, AF_INET6);
