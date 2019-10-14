@@ -19,11 +19,6 @@
 
 /*****************************************************************************/
 
-typedef struct {
-	NMDeviceWifiP2P *device;
-	GSimpleAsyncResult *simple;
-} RequestScanInfo;
-
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_PEERS,
