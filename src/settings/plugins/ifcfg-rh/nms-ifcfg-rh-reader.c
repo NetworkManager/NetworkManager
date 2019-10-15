@@ -2739,7 +2739,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			/* Hexadecimal WEP key */
 			if (NM_STRCHAR_ANY (value, ch, !g_ascii_isxdigit (ch))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid hexadecimal WEP key.");
+				             "Invalid hexadecimal WEP key");
 				return FALSE;
 			}
 			key = value;
@@ -2748,7 +2748,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			/* ASCII key */
 			if (NM_STRCHAR_ANY (value + 2, ch, !g_ascii_isprint (ch))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid ASCII WEP key.");
+				             "Invalid ASCII WEP key");
 				return FALSE;
 			}
 
@@ -2764,7 +2764,7 @@ add_one_wep_key (shvarFile *ifcfg,
 
 	if (!key) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Invalid WEP key length.");
+		             "Invalid WEP key length");
 		return FALSE;
 	}
 
@@ -2911,7 +2911,7 @@ make_wep_setting (shvarFile *ifcfg,
 		if (auth_alg && !strcmp (auth_alg, "shared")) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "WEP Shared Key authentication is invalid for "
-			             "unencrypted connections.");
+			             "unencrypted connections");
 			return NULL;
 		}
 
@@ -3359,7 +3359,7 @@ eap_fast_reader (const char *eap_method,
 
 	if (!pac_file && !(allow_unauth || allow_auth)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled.");
+		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled");
 		return FALSE;
 	}
 
@@ -3469,7 +3469,7 @@ fill_8021x (shvarFile *ifcfg,
 			 * used with TTLS or PEAP or whatever.
 			 */
 			if (wifi && eap->wifi_phase2_only) {
-				PARSE_WARNING ("ignored invalid IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi.",
+				PARSE_WARNING ("ignored invalid IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi",
 				               lower);
 				goto next;
 			}
@@ -3487,12 +3487,12 @@ next:
 		}
 
 		if (!found)
-			PARSE_WARNING ("ignored unknown IEEE_8021X_EAP_METHOD '%s'.", lower);
+			PARSE_WARNING ("ignored unknown IEEE_8021X_EAP_METHOD '%s'", lower);
 	}
 
 	if (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
+		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS");
 		return NULL;
 	}
 
@@ -4061,7 +4061,7 @@ wireless_connection_from_ifcfg (const char *file,
 
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4580,7 +4580,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_set_error (error,
 		             NM_UTILS_ERROR,
 		             NM_UTILS_ERROR_SETTING_MISSING,
-		             "The setting is missing.");
+		             "The setting is missing");
 		return NULL;
 	}
 
@@ -4606,7 +4606,7 @@ wired_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4684,7 +4684,7 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 
 	if (!ret) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create InfiniBand setting.");
+		             "Failed to create InfiniBand setting");
 	}
 	return ret;
 }
@@ -4758,7 +4758,7 @@ infiniband_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4862,7 +4862,7 @@ bond_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL, _("Bond"));
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4935,7 +4935,7 @@ team_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_TEAM_SETTING_NAME, NULL, _("Team"));
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -5217,7 +5217,7 @@ bridge_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BRIDGE_SETTING_NAME, NULL, _("Bridge"));
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -5385,7 +5385,7 @@ make_vlan_setting (shvarFile *ifcfg,
 	iface_name = svGetValueStr_cp (ifcfg, "DEVICE");
 	if (!iface_name && vlan_id < 0) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "Missing DEVICE property; cannot determine VLAN ID.");
+		                     "Missing DEVICE property; cannot determine VLAN ID");
 		return NULL;
 	}
 
@@ -5428,7 +5428,7 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	if (vlan_id < 0) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "Failed to determine VLAN ID from DEVICE or VLAN_ID.");
+		                     "Failed to determine VLAN ID from DEVICE or VLAN_ID");
 		return NULL;
 	}
 	g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
@@ -5499,7 +5499,7 @@ vlan_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_VLAN_SETTING_NAME, NULL, "Vlan");
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -5642,7 +5642,7 @@ connection_from_file_full (const char *filename,
 	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Ignoring connection '%s' because it's not an ifcfg file.", filename);
+		             "Ignoring connection '%s' because it's not an ifcfg file", filename);
 		return NULL;
 	}
 
@@ -5720,14 +5720,14 @@ connection_from_file_full (const char *filename,
 		device = svGetValueStr_cp (main_ifcfg, "DEVICE");
 		if (!device) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
+			             "File '%s' had neither TYPE nor DEVICE keys", filename);
 			return NULL;
 		}
 
 		if (!strcmp (device, "lo")) {
 			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Ignoring loopback device config.");
+			             "Ignoring loopback device config");
 			g_free (device);
 			return NULL;
 		}
