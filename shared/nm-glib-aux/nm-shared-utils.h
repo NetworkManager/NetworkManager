@@ -894,6 +894,13 @@ nm_g_variant_unref_floating (GVariant *var)
 		g_variant_unref (var);
 }
 
+static inline void
+nm_g_source_destroy_and_unref (GSource *source)
+{
+	g_source_destroy (source);
+	g_source_unref (source);
+}
+
 /*****************************************************************************/
 
 static inline int
