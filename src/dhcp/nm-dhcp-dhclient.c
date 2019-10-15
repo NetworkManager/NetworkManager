@@ -522,6 +522,9 @@ ip6_start (NMDhcpClient *client,
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 
+	if (nm_dhcp_client_get_iaid_explicit (client))
+		_LOGW ("dhclient does not support specifying an IAID for DHCPv6, it will be ignored");
+
 	priv->conf_file = create_dhclient_config (self,
 	                                          AF_INET6,
 	                                          nm_dhcp_client_get_iface (client),
