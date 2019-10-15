@@ -27,6 +27,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_STARTUP         "startup"
 #define NM_CLIENT_NM_RUNNING      "nm-running"
 #define NM_CLIENT_DBUS_CONNECTION "dbus-connection"
+#define NM_CLIENT_DBUS_NAME_OWNER "dbus-name-owner"
 
 _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
@@ -233,6 +234,9 @@ NMClient *nm_client_new_finish (GAsyncResult         *result,
 
 NM_AVAILABLE_IN_1_22
 GDBusConnection *nm_client_get_dbus_connection (NMClient *client);
+
+NM_AVAILABLE_IN_1_22
+const char *nm_client_get_dbus_name_owner (NMClient *client);
 
 const char *nm_client_get_version    (NMClient *client);
 NMState     nm_client_get_state      (NMClient *client);

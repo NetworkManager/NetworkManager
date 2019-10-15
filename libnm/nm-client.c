@@ -90,6 +90,7 @@ typedef struct {
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DBUS_CONNECTION,
+	PROP_DBUS_NAME_OWNER,
 	PROP_VERSION,
 	PROP_STATE,
 	PROP_STARTUP,
@@ -232,6 +233,23 @@ nm_client_get_dbus_connection (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	return NM_CLIENT_GET_PRIVATE (client)->dbus_connection;
+}
+
+/**
+ * nm_client_get_dbus_name_owner:
+ * @client: a #NMClient
+ *
+ * Returns: (transfer none): the current name owner of the D-Bus service of NetworkManager.
+ *
+ * Since: 1.22
+ **/
+const char *
+nm_client_get_dbus_name_owner (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	/* FIXME(release-blocker): not yet implemented. */
+	return NULL;
 }
 
 /**
@@ -3478,7 +3496,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DBUS_CONNECTION:
 		g_value_set_object (value, priv->dbus_connection);
 		break;
-
+	case PROP_DBUS_NAME_OWNER:
+		g_value_set_string (value, nm_client_get_dbus_name_owner (self));
+		break;
 	case PROP_NM_RUNNING:
 		g_value_set_boolean (value, nm_client_get_nm_running (self));
 		break;
@@ -3881,6 +3901,19 @@ nm_client_class_init (NMClientClass *client_class)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMClient:dbus-name-owner:
+	 *
+	 * The name owner of the NetworkManager D-Bus service.
+	 *
+	 * Since: 1.22
+	 **/
+	obj_properties[PROP_DBUS_NAME_OWNER] =
+	    g_param_spec_string (NM_CLIENT_DBUS_NAME_OWNER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
 	/**
