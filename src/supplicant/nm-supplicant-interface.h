@@ -31,6 +31,14 @@ typedef enum {
 	NM_SUPPLICANT_INTERFACE_STATE_DOWN,
 } NMSupplicantInterfaceState;
 
+typedef enum {
+	NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
+	NM_SUPPLICANT_AUTH_STATE_STARTED,
+	NM_SUPPLICANT_AUTH_STATE_SUCCESS,
+	NM_SUPPLICANT_AUTH_STATE_FAILURE,
+	_NM_SUPPLICANT_AUTH_STATE_NUM,
+} NMSupplicantAuthState;
+
 #define NM_TYPE_SUPPLICANT_INTERFACE            (nm_supplicant_interface_get_type ())
 #define NM_SUPPLICANT_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterface))
 #define NM_SUPPLICANT_INTERFACE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
@@ -57,6 +65,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_WFD_SUPPORT      "wfd-support"
 #define NM_SUPPLICANT_INTERFACE_FT_SUPPORT       "ft-support"
 #define NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT   "sha384-support"
+#define NM_SUPPLICANT_INTERFACE_AUTH_STATE       "auth-state"
 
 /* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
@@ -200,5 +209,7 @@ void nm_supplicant_interface_enroll_wps (NMSupplicantInterface *self,
                                          const char *pin);
 
 void nm_supplicant_interface_cancel_wps (NMSupplicantInterface *self);
+
+NMSupplicantAuthState nm_supplicant_interface_get_auth_state (NMSupplicantInterface *self);
 
 #endif /* __NM_SUPPLICANT_INTERFACE_H__ */

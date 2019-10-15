@@ -2739,7 +2739,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			/* Hexadecimal WEP key */
 			if (NM_STRCHAR_ANY (value, ch, !g_ascii_isxdigit (ch))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid hexadecimal WEP key.");
+				             "Invalid hexadecimal WEP key");
 				return FALSE;
 			}
 			key = value;
@@ -2748,7 +2748,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			/* ASCII key */
 			if (NM_STRCHAR_ANY (value + 2, ch, !g_ascii_isprint (ch))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid ASCII WEP key.");
+				             "Invalid ASCII WEP key");
 				return FALSE;
 			}
 
@@ -2764,7 +2764,7 @@ add_one_wep_key (shvarFile *ifcfg,
 
 	if (!key) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Invalid WEP key length.");
+		             "Invalid WEP key length");
 		return FALSE;
 	}
 
@@ -2911,7 +2911,7 @@ make_wep_setting (shvarFile *ifcfg,
 		if (auth_alg && !strcmp (auth_alg, "shared")) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "WEP Shared Key authentication is invalid for "
-			             "unencrypted connections.");
+			             "unencrypted connections");
 			return NULL;
 		}
 
@@ -3145,6 +3145,89 @@ eap_tls_reader (const char *eap_method,
 }
 
 static gboolean
+parse_8021x_phase2_auth (shvarFile *ifcfg,
+                         shvarFile *keys_ifcfg,
+                         NMSetting8021x *s_8021x,
+                         GError **error)
+{
+	gs_free char *inner_auth = NULL;
+	gs_free char *v_free = NULL;
+	const char *v;
+	gs_free const char **list = NULL;
+	const char *const *iter;
+	guint num_auth = 0;
+	guint num_autheap = 0;
+
+	v = svGetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", &v_free);
+	if (!v) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Missing IEEE_8021X_INNER_AUTH_METHODS");
+		return FALSE;
+	}
+
+	inner_auth = g_ascii_strdown (v, -1);
+	list = nm_utils_strsplit_set (inner_auth, " ");
+	for (iter = list; iter && *iter; iter++) {
+		if (NM_IN_STRSET (*iter, "pap",
+		                         "chap",
+		                         "mschap",
+		                         "mschapv2",
+		                         "gtc",
+		                         "otp",
+		                         "md5")) {
+			if (num_auth == 0) {
+				if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
+			}
+			num_auth++;
+		} else if (nm_streq (*iter, "tls")) {
+			if (num_auth == 0) {
+				if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, "tls", NULL);
+			}
+			num_auth++;
+		} else if (NM_IN_STRSET (*iter, "eap-md5",
+		                                "eap-mschapv2",
+		                                "eap-otp",
+		                                "eap-gtc")) {
+			if (num_autheap == 0) {
+				if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + NM_STRLEN ("eap-")), NULL);
+			}
+			num_autheap++;
+		} else if (nm_streq (*iter, "eap-tls")) {
+			if (num_autheap == 0) {
+				if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
+					return FALSE;
+				g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
+			}
+			num_autheap++;
+		} else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'",
+			             *iter);
+			return FALSE;
+		}
+	}
+
+	if (num_auth > 1)
+		PARSE_WARNING ("Discarded extra phase2 authentication methods");
+	if (num_auth > 1)
+		PARSE_WARNING ("Discarded extra phase2 EAP authentication methods");
+
+	if (!num_auth && !num_autheap) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "No phase2 authentication method found");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 eap_peap_reader (const char *eap_method,
                  shvarFile *ifcfg,
                  shvarFile *keys_ifcfg,
@@ -3154,8 +3237,6 @@ eap_peap_reader (const char *eap_method,
 {
 	gs_free char *value = NULL;
 	const char *v;
-	gs_free const char **list = NULL;
-	const char *const *iter;
 
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
@@ -3193,46 +3274,8 @@ eap_peap_reader (const char *eap_method,
 	if (v)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, v, NULL);
 
-	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", &value);
-	if (!v) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+	if (!parse_8021x_phase2_auth (ifcfg, keys_ifcfg, s_8021x, error))
 		return FALSE;
-	}
-
-	/* Handle options for the inner auth method */
-	list = nm_utils_strsplit_set (v, " ");
-	iter = list;
-	if (iter) {
-		if (NM_IN_STRSET (*iter, "MSCHAPV2",
-		                         "MD5",
-		                         "GTC")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-		} else if (nm_streq (*iter, "TLS")) {
-			if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
-			             *iter);
-			return FALSE;
-		}
-
-		{
-			gs_free char *lower = NULL;
-
-			lower = g_ascii_strdown (*iter, -1);
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
-		}
-	}
-
-	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
-		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -3245,11 +3288,8 @@ eap_ttls_reader (const char *eap_method,
                  gboolean phase2,
                  GError **error)
 {
-	gs_free char *inner_auth = NULL;
 	gs_free char *value = NULL;
 	const char *v;
-	gs_free const char **list = NULL;
-	const char *const *iter;
 
 	if (!_cert_set_from_ifcfg (s_8021x,
 	                           ifcfg,
@@ -3269,44 +3309,8 @@ eap_ttls_reader (const char *eap_method,
 	if (v)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, v, NULL);
 
-	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", &value);
-	if (!v) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+	if (!parse_8021x_phase2_auth (ifcfg, keys_ifcfg, s_8021x, error))
 		return FALSE;
-	}
-
-	inner_auth = g_ascii_strdown (v, -1);
-
-	/* Handle options for the inner auth method */
-	list = nm_utils_strsplit_set (inner_auth, " ");
-	iter = list;
-	if (iter) {
-		if (NM_IN_STRSET (*iter, "mschapv2",
-		                         "mschap",
-		                         "pap",
-		                         "chap")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
-		} else if (nm_streq (*iter, "eap-tls")) {
-			if (!eap_tls_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
-		} else if (NM_IN_STRSET (*iter, "eap-mschapv2",
-		                                "eap-md5",
-		                                "eap-gtc")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				return FALSE;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + NM_STRLEN ("eap-")), NULL);
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
-			             *iter);
-			return FALSE;
-		}
-	}
 
 	return TRUE;
 }
@@ -3319,17 +3323,13 @@ eap_fast_reader (const char *eap_method,
                  gboolean phase2,
                  GError **error)
 {
-	char *anon_ident = NULL;
-	char *pac_file = NULL;
-	char *real_pac_path = NULL;
-	char *inner_auth = NULL;
-	char *fast_provisioning = NULL;
-	char *lower;
-	gs_free const char **list = NULL;
+	gs_free char *anon_ident = NULL;
+	gs_free char *pac_file = NULL;
+	gs_free char *real_pac_path = NULL;
+	gs_free char *fast_provisioning = NULL;
 	const char *const *iter;
 	const char *pac_prov_str;
 	gboolean allow_unauth = FALSE, allow_auth = FALSE;
-	gboolean success = FALSE;
 
 	pac_file = svGetValueStr_cp (ifcfg, "IEEE_8021X_PAC_FILE");
 	if (pac_file) {
@@ -3339,10 +3339,10 @@ eap_fast_reader (const char *eap_method,
 
 	fast_provisioning = svGetValueStr_cp (ifcfg, "IEEE_8021X_FAST_PROVISIONING");
 	if (fast_provisioning) {
-		gs_free const char **list1 = NULL;
+		gs_free const char **list = NULL;
 
-		list1 = nm_utils_strsplit_set (fast_provisioning, " \t");
-		for (iter = list1; iter && *iter; iter++) {
+		list = nm_utils_strsplit_set (fast_provisioning, " \t");
+		for (iter = list; iter && *iter; iter++) {
 			if (strcmp (*iter, "allow-unauth") == 0)
 				allow_unauth = TRUE;
 			else if (strcmp (*iter, "allow-auth") == 0)
@@ -3359,56 +3359,18 @@ eap_fast_reader (const char *eap_method,
 
 	if (!pac_file && !(allow_unauth || allow_auth)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled.");
-		goto done;
+		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled");
+		return FALSE;
 	}
 
 	anon_ident = svGetValueStr_cp (ifcfg, "IEEE_8021X_ANON_IDENTITY");
 	if (anon_ident)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
-	inner_auth = svGetValueStr_cp (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS");
-	if (!inner_auth) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
-		goto done;
-	}
+	if (!parse_8021x_phase2_auth (ifcfg, keys_ifcfg, s_8021x, error))
+		return FALSE;
 
-	/* Handle options for the inner auth method */
-	list = nm_utils_strsplit_set (inner_auth, " ");
-	iter = list;
-	if (iter) {
-		if (   !strcmp (*iter, "MSCHAPV2")
-		    || !strcmp (*iter, "GTC")) {
-			if (!eap_simple_reader (*iter, ifcfg, keys_ifcfg, s_8021x, TRUE, error))
-				goto done;
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
-			             *iter);
-			goto done;
-		}
-
-		lower = g_ascii_strdown (*iter, -1);
-		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
-		g_free (lower);
-	}
-
-	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
-		goto done;
-	}
-
-	success = TRUE;
-
-done:
-	g_free (inner_auth);
-	g_free (fast_provisioning);
-	g_free (real_pac_path);
-	g_free (pac_file);
-	g_free (anon_ident);
-	return success;
+	return TRUE;
 }
 
 typedef struct {
@@ -3507,7 +3469,7 @@ fill_8021x (shvarFile *ifcfg,
 			 * used with TTLS or PEAP or whatever.
 			 */
 			if (wifi && eap->wifi_phase2_only) {
-				PARSE_WARNING ("ignored invalid IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi.",
+				PARSE_WARNING ("ignored invalid IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi",
 				               lower);
 				goto next;
 			}
@@ -3525,12 +3487,12 @@ next:
 		}
 
 		if (!found)
-			PARSE_WARNING ("ignored unknown IEEE_8021X_EAP_METHOD '%s'.", lower);
+			PARSE_WARNING ("ignored unknown IEEE_8021X_EAP_METHOD '%s'", lower);
 	}
 
 	if (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
+		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS");
 		return NULL;
 	}
 
@@ -3564,6 +3526,11 @@ next:
 
 	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", 10, 0, G_MAXINT32, 0);
 	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (int) timeout, NULL);
+
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_OPTIONAL,
+	              svGetValueBoolean (ifcfg, "IEEE_8021X_OPTIONAL", FALSE),
+	              NULL);
 
 	return g_steal_pointer (&s_8021x);
 }
@@ -4094,7 +4061,7 @@ wireless_connection_from_ifcfg (const char *file,
 
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4613,7 +4580,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_set_error (error,
 		             NM_UTILS_ERROR,
 		             NM_UTILS_ERROR_SETTING_MISSING,
-		             "The setting is missing.");
+		             "The setting is missing");
 		return NULL;
 	}
 
@@ -4639,7 +4606,7 @@ wired_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4717,7 +4684,7 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 
 	if (!ret) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create InfiniBand setting.");
+		             "Failed to create InfiniBand setting");
 	}
 	return ret;
 }
@@ -4791,7 +4758,7 @@ infiniband_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4895,7 +4862,7 @@ bond_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL, _("Bond"));
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4968,7 +4935,7 @@ team_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_TEAM_SETTING_NAME, NULL, _("Team"));
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -5250,7 +5217,7 @@ bridge_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BRIDGE_SETTING_NAME, NULL, _("Bridge"));
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -5418,7 +5385,7 @@ make_vlan_setting (shvarFile *ifcfg,
 	iface_name = svGetValueStr_cp (ifcfg, "DEVICE");
 	if (!iface_name && vlan_id < 0) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "Missing DEVICE property; cannot determine VLAN ID.");
+		                     "Missing DEVICE property; cannot determine VLAN ID");
 		return NULL;
 	}
 
@@ -5461,7 +5428,7 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	if (vlan_id < 0) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "Failed to determine VLAN ID from DEVICE or VLAN_ID.");
+		                     "Failed to determine VLAN ID from DEVICE or VLAN_ID");
 		return NULL;
 	}
 	g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
@@ -5532,7 +5499,7 @@ vlan_connection_from_ifcfg (const char *file,
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_VLAN_SETTING_NAME, NULL, "Vlan");
 	if (!con_setting) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Failed to create connection setting.");
+		             "Failed to create connection setting");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -5675,7 +5642,7 @@ connection_from_file_full (const char *filename,
 	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Ignoring connection '%s' because it's not an ifcfg file.", filename);
+		             "Ignoring connection '%s' because it's not an ifcfg file", filename);
 		return NULL;
 	}
 
@@ -5753,14 +5720,14 @@ connection_from_file_full (const char *filename,
 		device = svGetValueStr_cp (main_ifcfg, "DEVICE");
 		if (!device) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
+			             "File '%s' had neither TYPE nor DEVICE keys", filename);
 			return NULL;
 		}
 
 		if (!strcmp (device, "lo")) {
 			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Ignoring loopback device config.");
+			             "Ignoring loopback device config");
 			g_free (device);
 			return NULL;
 		}

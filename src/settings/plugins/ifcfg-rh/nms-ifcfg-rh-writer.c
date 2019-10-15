@@ -524,6 +524,11 @@ write_8021x_setting (NMConnection *connection,
 	vint = nm_setting_802_1x_get_auth_timeout (s_8021x);
 	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", vint > 0, vint);
 
+	if (nm_setting_802_1x_get_optional (s_8021x))
+		svSetValueBoolean (ifcfg, "IEEE_8021X_OPTIONAL", TRUE);
+	else
+		svUnsetValue (ifcfg, "IEEE_8021X_OPTIONAL");
+
 	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
 

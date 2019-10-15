@@ -124,6 +124,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSetting8021x,
 	PROP_PIN,
 	PROP_PIN_FLAGS,
 	PROP_SYSTEM_CA_CERTS,
+	PROP_OPTIONAL,
 	PROP_AUTH_TIMEOUT,
 );
 
@@ -172,6 +173,7 @@ typedef struct {
 	NMSettingSecretFlags phase2_private_key_password_flags;
 	gboolean system_ca_certs;
 	int auth_timeout;
+	gboolean optional;
 } NMSetting8021xPrivate;
 
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
@@ -2415,6 +2417,25 @@ nm_setting_802_1x_get_auth_timeout (NMSetting8021x *setting)
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->auth_timeout;
 }
 
+/**
+ * nm_setting_802_1x_get_optional:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the value contained in the #NMSetting8021x:optional property.
+ *
+ * Returns: %TRUE if the activation should proceed even when the 802.1X
+ *     authentication fails; %FALSE otherwise
+ *
+ * Since: 1.22
+ **/
+gboolean
+nm_setting_802_1x_get_optional (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->optional;
+}
+
 /*****************************************************************************/
 
 static void
@@ -2801,6 +2822,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
+	if (   connection
+	    && priv->optional
+	    && !nm_streq0 (nm_connection_get_connection_type (connection), NM_SETTING_WIRED_SETTING_NAME)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("can be enabled only on Ethernet connections"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_OPTIONAL);
+		return FALSE;
+	}
+
 	if (!priv->eap) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -3141,6 +3173,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_AUTH_TIMEOUT:
 		g_value_set_int (value, priv->auth_timeout);
 		break;
+	case PROP_OPTIONAL:
+		g_value_set_boolean (value, priv->optional);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3318,6 +3353,9 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTH_TIMEOUT:
 		priv->auth_timeout = g_value_get_int (value);
+		break;
+	case PROP_OPTIONAL:
+		priv->optional = g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3797,7 +3835,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	/**
 	 * NMSetting8021x:phase2-auth:
 	 *
-	 * Specifies the allowed "phase 2" inner non-EAP authentication methods when
+	 * Specifies the allowed "phase 2" inner non-EAP authentication method when
 	 * an EAP method that uses an inner TLS tunnel is specified in the
 	 * #NMSetting8021x:eap property.  Recognized non-EAP "phase 2" methods are
 	 * "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", and "tls".
@@ -3822,7 +3860,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	/**
 	 * NMSetting8021x:phase2-autheap:
 	 *
-	 * Specifies the allowed "phase 2" inner EAP-based authentication methods
+	 * Specifies the allowed "phase 2" inner EAP-based authentication method
 	 * when an EAP method that uses an inner TLS tunnel is specified in the
 	 * #NMSetting8021x:eap property.  Recognized EAP-based "phase 2" methods are
 	 * "md5", "mschapv2", "otp", "gtc", and "tls". Each "phase 2" inner method
@@ -4387,6 +4425,30 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	                      G_PARAM_READWRITE |
 	                      NM_SETTING_PARAM_FUZZY_IGNORE |
 	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSetting8021x:optional:
+	 *
+	 * Whether the 802.1X authentication is optional. If %TRUE, the activation
+	 * will continue even after a timeout or an authentication failure. Setting
+	 * the property to %TRUE is currently allowed only for Ethernet connections.
+	 * If set to %FALSE, the activation can continue only after a successful
+	 * authentication.
+	 *
+	 * Since: 1.22
+	 **/
+	/* ---ifcfg-rh---
+	 * property: optional
+	 * variable: IEEE_8021X_OPTIONAL(+)
+	 * default=no
+	 * description: whether the 802.1X authentication is optional
+	 * ---end---
+	 */
+	obj_properties[PROP_OPTIONAL] =
+	    g_param_spec_boolean (NM_SETTING_802_1X_OPTIONAL, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
