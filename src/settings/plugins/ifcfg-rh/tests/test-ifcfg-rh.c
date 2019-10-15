@@ -4458,6 +4458,7 @@ test_write_wired_dhcp (void)
 	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "awesome-hostname",
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
+	              NM_SETTING_IP_CONFIG_DHCP_IAID, "2864434397",
 	              NULL);
 
 	nmtst_assert_connection_verifies (connection);

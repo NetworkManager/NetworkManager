@@ -2604,6 +2604,9 @@ write_ip4_setting (NMConnection *connection,
 	value = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
 	svSetValueStr (ifcfg, "DHCP_CLIENT_ID", value);
 
+	value = nm_setting_ip_config_get_dhcp_iaid (s_ip4);
+	svSetValueStr (ifcfg, "DHCP_IAID", value);
+
 	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip4);
 	svSetValueInt64_cond (ifcfg,
 	                      "IPV4_DHCP_TIMEOUT",
@@ -2782,6 +2785,7 @@ write_ip6_setting (NMConnection *connection,
 		svUnsetValue (ifcfg, "IPV6_AUTOCONF");
 		svUnsetValue (ifcfg, "DHCPV6C");
 		svUnsetValue (ifcfg, "DHCPv6_DUID");
+		svUnsetValue (ifcfg, "DHCPv6_IAID");
 		svUnsetValue (ifcfg, "DHCPV6_HOSTNAME");
 		svUnsetValue (ifcfg, "DHCPV6_SEND_HOSTNAME");
 		svUnsetValue (ifcfg, "IPV6_DEFROUTE");
@@ -2831,6 +2835,8 @@ write_ip6_setting (NMConnection *connection,
 
 	svSetValueStr (ifcfg, "DHCPV6_DUID",
 	               nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6)));
+	svSetValueStr (ifcfg, "DHCPV6_IAID",
+	               nm_setting_ip_config_get_dhcp_iaid (s_ip6));
 
 	write_ip6_setting_dhcp_hostname (s_ip6, ifcfg);
 

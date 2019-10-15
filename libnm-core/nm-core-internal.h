@@ -872,4 +872,6 @@ gboolean nm_utils_connection_is_adhoc_wpa (NMConnection *connection);
 
 const char *nm_utils_wifi_freq_to_band (guint32 freq);
 
+gboolean _nm_utils_iaid_verify (const char *str, gint64 *out_value);
+
 #endif
