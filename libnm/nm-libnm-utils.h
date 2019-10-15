@@ -106,6 +106,10 @@ void _nml_dbus_log (NMLDBusLogLevel level,
 
 /*****************************************************************************/
 
+char *nm_utils_wincaps_to_dash (const char *caps);
+
+/*****************************************************************************/
+
 char *nm_utils_fixup_vendor_string (const char *desc);
 char *nm_utils_fixup_product_string (const char *desc);
 

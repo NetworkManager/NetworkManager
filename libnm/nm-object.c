@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include "nm-utils.h"
+#include "nm-libnm-utils.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
@@ -539,28 +540,6 @@ odata_free (gpointer data)
 
 static void object_property_maybe_complete (NMObject *self);
 
-/* Stolen from dbus-glib */
-static char*
-wincaps_to_dash (const char *caps)
-{
-	const char *p;
-	GString *str;
-
-	str = g_string_new (NULL);
-	p = caps;
-	while (*p) {
-		if (g_ascii_isupper (*p)) {
-			if (str->len > 0 && (str->len < 2 || str->str[str->len-2] != '-'))
-				g_string_append_c (str, '-');
-			g_string_append_c (str, g_ascii_tolower (*p));
-		} else
-			g_string_append_c (str, *p);
-		++p;
-	}
-
-	return g_string_free (str, FALSE);
-}
-
 /* Adds object to array if it's not already there */
 static void
 add_to_object_array_unique (GPtrArray *array, GObject *obj)
@@ -877,7 +856,7 @@ handle_property_changed (NMObject *self, const char *dbus_name, GVariant *value)
 	gboolean success = FALSE, found = FALSE;
 	GSList *iter;
 
-	prop_name = wincaps_to_dash (dbus_name);
+	prop_name = nm_utils_wincaps_to_dash (dbus_name);
 
 	/* Iterate through the object and its parents to find the property */
 	for (iter = priv->property_tables; iter; iter = g_slist_next (iter)) {
