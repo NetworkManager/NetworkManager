@@ -1227,7 +1227,8 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 		 g_param_spec_boolean (NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER, "", "",
 		                       FALSE,
 		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMVpnServicePlugin:state:
