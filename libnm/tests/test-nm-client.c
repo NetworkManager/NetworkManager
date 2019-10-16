@@ -1188,7 +1188,7 @@ activate_failed_cb (GObject *object,
 	NMActiveConnection *ac;
 	GError *error = NULL;
 
-	ac = nm_client_activate_connection_finish (client, result, &error);
+	ac = nm_client_add_and_activate_connection_finish (client, result, &error);
 	g_assert (ac == NULL);
 	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
 	g_clear_error (&error);

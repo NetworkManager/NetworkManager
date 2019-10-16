@@ -12,6 +12,8 @@
 
 #include "nm-std-aux/nm-dbus-compat.h"
 
+#define NM_DBUS_DEFAULT_TIMEOUT_MSEC   25000
+
 GBusType _nm_dbus_bus_type (void);
 
 void             _nm_dbus_proxy_replace_match   (GDBusProxy *proxy);

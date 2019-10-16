@@ -10,6 +10,7 @@
 
 #include <libudev.h>
 
+#include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-utils.h"
 #include "nm-manager.h"
 #include "nm-dns-manager.h"
@@ -100,6 +101,7 @@ typedef struct {
 	NMDnsManager *dns_manager;
 	GDBusObjectManager *object_manager;
 	GCancellable *new_object_manager_cancellable;
+	char *name_owner_cached;
 	struct udev *udev;
 	bool udev_inited:1;
 } NMClientPrivate;
@@ -168,6 +170,41 @@ NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 
 /*****************************************************************************/
 
+GDBusConnection *
+_nm_client_get_dbus_connection (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	nm_assert (NM_IS_CLIENT (client));
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!priv->object_manager)
+		return NULL;
+
+	return g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+}
+
+const char *
+_nm_client_get_dbus_name_owner (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	nm_assert (NM_IS_CLIENT (client));
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	nm_clear_g_free (&priv->name_owner_cached);
+
+	if (!priv->object_manager)
+		return NULL;
+
+	priv->name_owner_cached = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+	return priv->name_owner_cached;
+}
+
+/*****************************************************************************/
+
 static void
 nm_client_init (NMClient *client)
 {
@@ -176,15 +213,11 @@ nm_client_init (NMClient *client)
 static gboolean
 _nm_client_check_nm_running (NMClient *client, GError **error)
 {
-	if (nm_client_get_nm_running (client))
-		return TRUE;
-	else {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
+	if (!nm_client_get_nm_running (client)) {
+		_nm_object_set_error_nm_not_running (error);
 		return FALSE;
 	}
+	return TRUE;
 }
 
 /**
@@ -297,14 +330,22 @@ nm_client_networking_get_enabled (NMClient *client)
 gboolean
 nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
+	const char *name_owner;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	/* FIXME(libnm-async-api): add nm_client_networking_set_enabled_async(). */
-	if (!_nm_client_check_nm_running (client, error))
-		return FALSE;
 
-	return nm_manager_networking_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                          enable, error);
+	name_owner = _nm_client_get_dbus_name_owner (client);
+	if (!name_owner) {
+		_nm_object_set_error_nm_not_running (error);
+		return FALSE;
+	}
+
+	return _nm_manager_networking_set_enabled (_nm_client_get_dbus_connection (client),
+	                                           name_owner,
+	                                           enable,
+	                                           error);
 }
 
 /**
@@ -577,20 +618,43 @@ nm_client_connectivity_check_get_uri (NMClient *client)
  * Gets NetworkManager current logging level and domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Deprecated: 1.22, use nm_client_get_logging_async() or GDBusConnection
  **/
 gboolean
-nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
+nm_client_get_logging (NMClient *client,
+                       char **level,
+                       char **domains,
+                       GError **error)
 {
+	gs_unref_variant GVariant *ret = NULL;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!_nm_client_check_nm_running (client, error))
+	/* FIXME(libnm-async-api): add nm_client_get_logging_async(). */
+
+	ret = _nm_object_dbus_call_sync (client,
+	                                 NULL,
+	                                 NM_DBUS_PATH,
+	                                 NM_DBUS_INTERFACE,
+	                                 "GetLogging",
+	                                 g_variant_new ("()"),
+	                                 G_VARIANT_TYPE ("(ss)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
 		return FALSE;
 
-	return nm_manager_get_logging (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                               level, domains, error);
+	g_variant_get (ret,
+	               "(ss)",
+	               level,
+	               domains);
+	return TRUE;
 }
 
 /**
@@ -604,6 +668,8 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
  * Sets NetworkManager logging level and/or domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Deprecated: 1.22, use nm_client_set_logging_async() or GDBusConnection
  **/
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
@@ -611,11 +677,20 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!_nm_client_check_nm_running (client, error))
-		return FALSE;
+	/* FIXME(libnm-async-api): add nm_client_set_logging_async(). */
 
-	return nm_manager_set_logging (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                               level, domains, error);
+	return _nm_object_dbus_call_sync_void (client,
+	                                       NULL,
+	                                       NM_DBUS_PATH,
+	                                       NM_DBUS_INTERFACE,
+	                                       "SetLogging",
+	                                       g_variant_new ("(ss)",
+	                                                      level ?: "",
+	                                                      domains ?: ""),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 /**
@@ -683,33 +758,38 @@ nm_client_check_connectivity (NMClient *client,
                               GCancellable *cancellable,
                               GError **error)
 {
+	gs_unref_variant GVariant *ret = NULL;
+	guint32 connectivity;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
 
-	if (!_nm_client_check_nm_running (client, error))
+	ret = _nm_object_dbus_call_sync (client,
+	                                 cancellable,
+	                                 NM_DBUS_PATH,
+	                                 NM_DBUS_INTERFACE,
+	                                 "CheckConnectivity",
+	                                 g_variant_new ("()"),
+	                                 G_VARIANT_TYPE ("(u)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
 		return NM_CONNECTIVITY_UNKNOWN;
 
-	return nm_manager_check_connectivity (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                      cancellable, error);
-}
+	g_variant_get (ret,
+	               "(u)",
+	               &connectivity);
 
-static void
-check_connectivity_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	NMConnectivityState connectivity;
-	GError *error = NULL;
+	/* upon receiving the synchronous response, we hack the NMClient state
+	 * and update the property outside the ordered D-Bus messages (like
+	 * "PropertiesChanged" signals).
+	 *
+	 * This is really ugly, we shouldn't do this. */
+	_nm_manager_set_connectivity_hack (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                                   connectivity);
 
-	connectivity = nm_manager_check_connectivity_finish (NM_MANAGER (object),
-	                                                     result, &error);
-	if (!error)
-		g_simple_async_result_set_op_res_gssize (simple, connectivity);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return connectivity;
 }
 
 /**
@@ -730,22 +810,22 @@ nm_client_check_connectivity_async (NMClient *client,
                                     GAsyncReadyCallback callback,
                                     gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_check_connectivity_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_check_connectivity_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                     cancellable, check_connectivity_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_check_connectivity_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckConnectivity",
+	                      g_variant_new ("()"),
+	                      G_VARIANT_TYPE ("(u)"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_variant_strip_dbus_error_cb);
 }
 
 /**
@@ -764,16 +844,20 @@ nm_client_check_connectivity_finish (NMClient *client,
                                      GAsyncResult *result,
                                      GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *ret = NULL;
+	guint32 connectivity;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NM_CONNECTIVITY_UNKNOWN);
+	g_return_val_if_fail (nm_g_task_is_valid (client, result, nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
+	ret = g_task_propagate_pointer (G_TASK (result), error);
+	if (!ret)
 		return NM_CONNECTIVITY_UNKNOWN;
-	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
+
+	g_variant_get (ret,
+	               "(u)",
+	               &connectivity);
+	return connectivity;
 }
 
 /**
@@ -798,29 +882,18 @@ nm_client_save_hostname (NMClient *client,
                          GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	if (!_nm_client_check_nm_running (client, error))
-		return FALSE;
-
-	return nm_remote_settings_save_hostname (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                         hostname, cancellable, error);
-}
-
-static void
-save_hostname_cb (GObject *object,
-                  GAsyncResult *result,
-                  gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return _nm_object_dbus_call_sync_void (client,
+	                                       cancellable,
+	                                       NM_DBUS_PATH_SETTINGS,
+	                                       NM_DBUS_INTERFACE_SETTINGS,
+	                                       "SaveHostname",
+	                                       g_variant_new ("(s)", hostname ?: ""),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 /**
@@ -842,23 +915,22 @@ nm_client_save_hostname_async (NMClient *client,
                                GAsyncReadyCallback callback,
                                gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_save_hostname_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_remote_settings_save_hostname_async (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                        hostname,
-	                                        cancellable, save_hostname_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_save_hostname_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH_SETTINGS,
+	                      NM_DBUS_INTERFACE_SETTINGS,
+	                      "SaveHostname",
+	                      g_variant_new ("(s)", hostname ?: ""),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -876,20 +948,14 @@ nm_client_save_hostname_finish (NMClient *client,
                                 GAsyncResult *result,
                                 GError **error)
 {
-	GSimpleAsyncResult *simple;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_save_hostname_async), FALSE);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /*****************************************************************************/
-/* Devices                                                      */
+/* Devices                                                                   */
 /*****************************************************************************/
 
 /**
@@ -1067,22 +1133,32 @@ nm_client_get_activating_connection (NMClient *client)
 }
 
 static void
-activate_cb (GObject *object,
-             GAsyncResult *result,
-             gpointer user_data)
+activate_connection_cb (GObject *object,
+                        GAsyncResult *result,
+                        gpointer user_data)
 {
-	GSimpleAsyncResult *simple = user_data;
-	NMActiveConnection *ac;
+	NMClient *self;
+	gs_unref_object GTask *task = user_data;
+	gs_unref_variant GVariant *ret = NULL;
+	const char *v_active_connection;
 	GError *error = NULL;
 
-	ac = nm_manager_activate_connection_finish (NM_MANAGER (object), result, &error);
-	if (ac)
-		g_simple_async_result_set_op_res_gpointer (simple, ac, g_object_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
+	if (!ret) {
+		g_dbus_error_strip_remote_error (error);
+		g_task_return_error (task, error);
+		return;
+	}
 
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	self = g_task_get_source_object (task);
+
+	g_variant_get (ret, "(&o)", &v_active_connection);
+
+	nm_manager_wait_for_active_connection (NM_CLIENT_GET_PRIVATE (self)->manager,
+	                                       v_active_connection,
+	                                       NULL,
+	                                       NULL,
+	                                       g_steal_pointer (&task));
 }
 
 /**
@@ -1127,27 +1203,39 @@ nm_client_activate_connection_async (NMClient *client,
                                      GAsyncReadyCallback callback,
                                      gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
+	const char *arg_connection = NULL;
+	const char *arg_device = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
-	if (device)
-		g_return_if_fail (NM_IS_DEVICE (device));
-	if (connection)
-		g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
+	if (connection) {
+		g_return_if_fail (NM_IS_CONNECTION (connection));
+		arg_connection = nm_connection_get_path (connection);
+		g_return_if_fail (arg_connection);
 	}
 
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_activate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                      connection, device, specific_object,
-	                                      cancellable, activate_cb, simple);
+	if (device) {
+		g_return_if_fail (NM_IS_DEVICE (device));
+		arg_device = nm_object_get_path (NM_OBJECT (device));
+		g_return_if_fail (arg_device);
+	}
+
+	_nm_object_dbus_call (client,
+	                      nm_client_activate_connection_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "ActivateConnection",
+	                      g_variant_new ("(ooo)",
+	                                     arg_connection ?: "/",
+	                                     arg_device ?: "/",
+	                                     specific_object ?: "/"),
+	                      G_VARIANT_TYPE ("(o)"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      activate_connection_cb);
 }
 
 /**
@@ -1166,37 +1254,153 @@ nm_client_activate_connection_finish (NMClient *client,
                                       GAsyncResult *result,
                                       GError **error)
 {
-	GSimpleAsyncResult *simple;
+	nm_auto_free_activate_result _NMActivateResult *r = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_activate_connection_async), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	r = g_task_propagate_pointer (G_TASK (result), error);
+	if (!r)
 		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	return g_steal_pointer (&r->active);
 }
 
 static void
-add_activate_cb (GObject *object,
-                 GAsyncResult *result,
-                 gpointer user_data)
+_add_and_activate_connection_done (GObject *object,
+                                   GAsyncResult *result,
+                                   gboolean use_add_and_activate_v2,
+                                   GTask *task_take)
 {
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	gs_unref_variant GVariant *result_data = NULL;
-	gs_unref_object NMActiveConnection *ac = NULL;
+	_nm_unused gs_unref_object GTask *task = task_take;
+	NMClient *self;
+	gs_unref_variant GVariant *ret = NULL;
 	GError *error = NULL;
+	const char *v_path;
+	const char *v_active_connection;
+	gs_unref_variant GVariant *v_result = NULL;
 
-	ac = nm_manager_add_and_activate_connection_finish (NM_MANAGER (object), result, &result_data, &error);
-	if (ac) {
-		g_simple_async_result_set_op_res_gpointer (simple,
-		                                           _nm_activate_result_new (ac, result_data),
-		                                           (GDestroyNotify) _nm_activate_result_free);
-	} else
-		g_simple_async_result_take_error (simple, error);
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
+	if (!ret) {
+		g_dbus_error_strip_remote_error (error);
+		g_task_return_error (task, error);
+		return;
+	}
 
-	g_simple_async_result_complete (simple);
+	self = g_task_get_source_object (task);
+
+	if (use_add_and_activate_v2) {
+		g_variant_get (ret,
+		               "(&o&o@a{sv})",
+		               &v_path,
+		               &v_active_connection,
+		               &v_result);
+	} else {
+		g_variant_get (ret,
+		               "(&o&o)",
+		               &v_path,
+		               &v_active_connection);
+	}
+
+	nm_manager_wait_for_active_connection (NM_CLIENT_GET_PRIVATE (self)->manager,
+	                                       v_active_connection,
+	                                       v_path,
+	                                       g_steal_pointer (&v_result),
+	                                       g_steal_pointer (&task));
+}
+
+static void
+_add_and_activate_connection_v1_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	_add_and_activate_connection_done (object, result, FALSE, user_data);
+}
+
+static void
+_add_and_activate_connection_v2_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	_add_and_activate_connection_done (object, result, TRUE, user_data);
+}
+
+static void
+_add_and_activate_connection (NMClient *client,
+                              gboolean is_v2,
+                              NMConnection *partial,
+                              NMDevice *device,
+                              const char *specific_object,
+                              GVariant *options,
+                              GCancellable *cancellable,
+                              GAsyncReadyCallback callback,
+                              gpointer user_data)
+{
+	GVariant *arg_connection = NULL;
+	gboolean use_add_and_activate_v2 = FALSE;
+	const char *arg_device = NULL;
+	gpointer source_tag;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (!partial || NM_IS_CONNECTION (partial));
+
+	if (device) {
+		g_return_if_fail (NM_IS_DEVICE (device));
+		arg_device = nm_object_get_path (NM_OBJECT (device));
+		g_return_if_fail (arg_device);
+	}
+
+	if (partial)
+		arg_connection = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
+	if (!arg_connection)
+		arg_connection = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+	if (is_v2) {
+		if (!options)
+			options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+		use_add_and_activate_v2 = TRUE;
+		source_tag = nm_client_add_and_activate_connection2;
+	} else {
+		if (options) {
+			if (g_variant_n_children (options) > 0)
+				use_add_and_activate_v2 = TRUE;
+			else
+				nm_clear_pointer (&options, nm_g_variant_unref_floating);
+		}
+		source_tag = nm_client_add_and_activate_connection_async;
+	}
+
+	if (use_add_and_activate_v2) {
+		_nm_object_dbus_call (client,
+		                      source_tag,
+		                      cancellable,
+		                      callback,
+		                      user_data,
+		                      NM_DBUS_PATH,
+		                      NM_DBUS_INTERFACE,
+		                      "AddAndActivateConnection2",
+		                      g_variant_new ("(@a{sa{sv}}oo@a{sv})",
+		                                     arg_connection,
+		                                     arg_device ?: "/",
+		                                     specific_object ?: "/",
+		                                     options),
+		                      G_VARIANT_TYPE ("(ooa{sv})"),
+		                      G_DBUS_CALL_FLAGS_NONE,
+		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                      _add_and_activate_connection_v2_cb);
+	} else {
+		_nm_object_dbus_call (client,
+		                      source_tag,
+		                      cancellable,
+		                      callback,
+		                      user_data,
+		                      NM_DBUS_PATH,
+		                      NM_DBUS_INTERFACE,
+		                      "AddAndActivateConnection",
+		                      g_variant_new ("(@a{sa{sv}}oo)",
+		                                     arg_connection,
+		                                     arg_device ?: "/",
+		                                     specific_object ?: "/"),
+		                      G_VARIANT_TYPE ("(oo)"),
+		                      G_DBUS_CALL_FLAGS_NONE,
+		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                      _add_and_activate_connection_v1_cb);
+	}
 }
 
 /**
@@ -1213,6 +1417,7 @@ add_activate_cb (GObject *object,
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.
+ *   If the variant is floating, it will be consumed.
  * @cancellable: a #GCancellable, or %NULL
  * @callback: callback to be called when the activation has started
  * @user_data: caller-specific data passed to @callback
@@ -1237,32 +1442,15 @@ nm_client_add_and_activate_connection_async (NMClient *client,
                                              GAsyncReadyCallback callback,
                                              gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
-	g_return_if_fail (NM_IS_CLIENT (client));
-	g_return_if_fail (NM_IS_DEVICE (device));
-	if (partial)
-		g_return_if_fail (NM_IS_CONNECTION (partial));
-
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_add_and_activate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                              partial,
-	                                              device,
-	                                              specific_object,
-	                                              NULL,
-	                                              FALSE,
-	                                              cancellable,
-	                                              add_activate_cb,
-	                                              simple);
+	_add_and_activate_connection (client,
+	                              FALSE,
+	                              partial,
+	                              device,
+	                              specific_object,
+	                              NULL,
+	                              cancellable,
+	                              callback,
+	                              user_data);
 }
 
 /**
@@ -1284,17 +1472,15 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
                                               GAsyncResult *result,
                                               GError **error)
 {
-	GSimpleAsyncResult *simple;
-	_NMActivateResult *r;
+	nm_auto_free_activate_result _NMActivateResult *r = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_add_and_activate_connection_async), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	r = g_task_propagate_pointer (G_TASK (result), error);
+	if (!r)
 		return NULL;
-	r = g_simple_async_result_get_op_res_gpointer (simple);
-	return g_object_ref (r->active);
+	return g_steal_pointer (&r->active);
 }
 
 /**
@@ -1350,32 +1536,15 @@ nm_client_add_and_activate_connection2 (NMClient *client,
                                         GAsyncReadyCallback callback,
                                         gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
-	g_return_if_fail (NM_IS_CLIENT (client));
-	g_return_if_fail (NM_IS_DEVICE (device));
-	if (partial)
-		g_return_if_fail (NM_IS_CONNECTION (partial));
-
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_add_and_activate_connection2);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                              partial,
-	                                              device,
-	                                              specific_object,
-	                                              options,
-	                                              TRUE,
-	                                              cancellable,
-	                                              add_activate_cb,
-	                                              simple);
+	_add_and_activate_connection (client,
+	                              TRUE,
+	                              partial,
+	                              device,
+	                              specific_object,
+	                              options,
+	                              cancellable,
+	                              callback,
+	                              user_data);
 }
 
 /**
@@ -1401,20 +1570,18 @@ nm_client_add_and_activate_connection2_finish (NMClient *client,
                                                GVariant **out_result,
                                                GError **error)
 {
-	GSimpleAsyncResult *simple;
-	_NMActivateResult *r;
+	nm_auto_free_activate_result _NMActivateResult *r = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_add_and_activate_connection2), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error)) {
+	r = g_task_propagate_pointer (G_TASK (result), error);
+	if (!r) {
 		NM_SET_OUT (out_result, NULL);
 		return NULL;
 	}
-	r = g_simple_async_result_get_op_res_gpointer (simple);
-	NM_SET_OUT (out_result, nm_g_variant_ref (r->add_and_activate_output));
-	return g_object_ref (r->active);
+	NM_SET_OUT (out_result, g_steal_pointer (&r->add_and_activate_output));
+	return g_steal_pointer (&r->active);
 }
 
 /**
@@ -1436,30 +1603,24 @@ nm_client_deactivate_connection (NMClient *client,
                                  GCancellable *cancellable,
                                  GError **error)
 {
+	const char *active_path;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return TRUE;
+	active_path = nm_object_get_path (NM_OBJECT (active));
+	g_return_val_if_fail (active_path, FALSE);
 
-	return nm_manager_deactivate_connection (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                         active, cancellable, error);
-}
-
-static void
-deactivated_cb (GObject *object,
-                GAsyncResult *result,
-                gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_manager_deactivate_connection_finish (NM_MANAGER (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return _nm_object_dbus_call_sync_void (client,
+	                                       cancellable,
+	                                       NM_DBUS_PATH,
+	                                       NM_DBUS_INTERFACE,
+	                                       "DeactivateConnection",
+	                                       g_variant_new ("(o)", active_path),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 /**
@@ -1479,26 +1640,27 @@ nm_client_deactivate_connection_async (NMClient *client,
                                        GAsyncReadyCallback callback,
                                        gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
+	const char *active_path;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_deactivate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	active_path = nm_object_get_path (NM_OBJECT (active));
+	g_return_if_fail (active_path);
 
-	if (!_nm_client_check_nm_running (client, NULL)) {
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	nm_manager_deactivate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                        active,
-	                                        cancellable, deactivated_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_deactivate_connection_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "DeactivateConnection",
+	                      g_variant_new ("(o)", active_path),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -1516,16 +1678,10 @@ nm_client_deactivate_connection_finish (NMClient *client,
                                         GAsyncResult *result,
                                         GError **error)
 {
-	GSimpleAsyncResult *simple;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_deactivate_connection_async), FALSE);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /*****************************************************************************/
@@ -1629,55 +1785,160 @@ nm_client_get_connection_by_uuid (NMClient *client, const char *uuid)
 	return nm_remote_settings_get_connection_by_uuid (NM_CLIENT_GET_PRIVATE (client)->settings, uuid);
 }
 
-typedef struct {
-	NMRemoteConnection *connection;
-	GVariant *results;
-} AddConnection2CbData;
-
 static void
-add_connection2_cb_data_destroy (gpointer user_data)
+_add_connection_cb (GObject *source,
+                    GAsyncResult *result,
+                    gboolean with_extra_arg,
+                    gpointer user_data)
 {
-	AddConnection2CbData *data = user_data;
+	NMClient *self;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_unref_object GTask *task = user_data;
+	gs_unref_variant GVariant *v_result = NULL;
+	const char *v_path;
+	GError *error = NULL;
 
-	g_object_unref (data->connection);
-	nm_g_variant_unref (data->results);
-	nm_g_slice_free (data);
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+	if (!ret) {
+		g_dbus_error_strip_remote_error (error);
+		g_task_return_error (task, error);
+		return;
+	}
+
+	if (with_extra_arg) {
+		g_variant_get (ret,
+		               "(&o@a{sv})",
+		               &v_path,
+		               &v_result);
+	} else {
+		g_variant_get (ret,
+		               "(&o)",
+		               &v_path);
+	}
+
+	self = g_task_get_source_object (task);
+
+	nm_remote_settings_wait_for_connection (NM_CLIENT_GET_PRIVATE (self)->settings,
+	                                        v_path,
+	                                        g_steal_pointer (&v_result),
+	                                        g_steal_pointer (&task));
 }
 
 static void
-add_connection2_cb (NMRemoteSettings *self,
-                    NMRemoteConnection *connection,
-                    GVariant *results,
-                    GError *error,
-                    gpointer user_data)
+_add_connection_cb_without_extra_result (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
+	_add_connection_cb (object, result, FALSE, user_data);
+}
 
-	if (error) {
-		g_simple_async_result_take_error (simple,
-		                                  g_error_new_literal (error->domain,
-		                                                       error->code,
-		                                                       error->message));
-	} else if (g_simple_async_result_get_source_tag (simple) == nm_client_add_connection_async) {
-		g_simple_async_result_set_op_res_gpointer (simple,
-		                                           g_object_ref (connection),
-		                                           g_object_unref);
+static void
+_add_connection_cb_with_extra_result (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	_add_connection_cb (object, result, TRUE, user_data);
+}
+
+static void
+_add_connection_call (NMClient *self,
+                      gpointer source_tag,
+                      gboolean ignore_out_result,
+                      GVariant *settings,
+                      NMSettingsAddConnection2Flags flags,
+                      GVariant *args,
+                      GCancellable *cancellable,
+                      GAsyncReadyCallback callback,
+                      gpointer user_data)
+{
+	g_return_if_fail (NM_IS_CLIENT (self));
+	g_return_if_fail (!settings || g_variant_is_of_type (settings, G_VARIANT_TYPE ("a{sa{sv}}")));
+	g_return_if_fail (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
+
+	if (!settings)
+		settings = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+	/* Although AddConnection2() being capable to handle also AddConnection() and
+	 * AddConnectionUnsaved() variants, we prefer to use the old D-Bus methods when
+	 * they are sufficient. The reason is that libnm should avoid hard dependencies
+	 * on 1.20 API whenever possible. */
+	if (    ignore_out_result
+	     && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
+		_nm_object_dbus_call (self,
+		                      source_tag,
+		                      cancellable,
+		                      callback,
+		                      user_data,
+		                      NM_DBUS_PATH_SETTINGS,
+		                      NM_DBUS_INTERFACE_SETTINGS,
+		                      "AddConnection",
+		                      g_variant_new ("(@a{sa{sv}})", settings),
+		                      G_VARIANT_TYPE ("(o)"),
+		                      G_DBUS_CALL_FLAGS_NONE,
+		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                      _add_connection_cb_without_extra_result);
+	} else if (   ignore_out_result
+	           && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY) {
+		_nm_object_dbus_call (self,
+		                      source_tag,
+		                      cancellable,
+		                      callback,
+		                      user_data,
+		                      NM_DBUS_PATH_SETTINGS,
+		                      NM_DBUS_INTERFACE_SETTINGS,
+		                      "AddConnectionUnsaved",
+		                      g_variant_new ("(@a{sa{sv}})", settings),
+		                      G_VARIANT_TYPE ("(o)"),
+		                      G_DBUS_CALL_FLAGS_NONE,
+		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                      _add_connection_cb_without_extra_result);
 	} else {
-		AddConnection2CbData *data;
+		_nm_object_dbus_call (self,
+		                      source_tag,
+		                      cancellable,
+		                      callback,
+		                      user_data,
+		                      NM_DBUS_PATH_SETTINGS,
+		                      NM_DBUS_INTERFACE_SETTINGS,
+		                      "AddConnection2",
+		                      g_variant_new ("(@a{sa{sv}}u@a{sv})",
+		                                     settings,
+		                                     (guint32) flags,
+		                                        args
+		                                     ?: g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0)),
+		                      G_VARIANT_TYPE ("(oa{sv})"),
+		                      G_DBUS_CALL_FLAGS_NONE,
+		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                      _add_connection_cb_with_extra_result);
+	}
+}
 
-		nm_assert (g_simple_async_result_get_source_tag (simple) == nm_client_add_connection2);
+static NMRemoteConnection *
+_add_connection_call_finish (NMClient *client,
+                             GAsyncResult *result,
+                             gpointer source_tag,
+                             GVariant **out_result,
+                             GError **error)
+{
+	nm_auto_free_add_connection_result_data NMAddConnectionResultData *result_data = NULL;
 
-		data = g_slice_new (AddConnection2CbData);
-		*data = (AddConnection2CbData) {
-			.connection = g_object_ref (connection),
-			.results    = nm_g_variant_ref (results),
-		};
-		g_simple_async_result_set_op_res_gpointer (simple,
-		                                           data,
-		                                           add_connection2_cb_data_destroy);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, source_tag), NULL);
+
+	result_data = g_task_propagate_pointer (G_TASK (result), error);
+	if (!result_data) {
+		NM_SET_OUT (out_result, NULL);
+		return NULL;
 	}
 
-	g_simple_async_result_complete (simple);
+	nm_assert (NM_IS_REMOTE_CONNECTION (result_data->connection));
+
+	NM_SET_OUT (out_result, g_steal_pointer (&result_data->extra_results));
+	return g_steal_pointer (&result_data->connection);
+}
+
+void
+nm_add_connection_result_data_free (NMAddConnectionResultData *result_data)
+{
+	nm_g_object_unref (result_data->connection);
+	nm_g_variant_unref (result_data->extra_results);
+	nm_g_slice_free (result_data);
 }
 
 /**
@@ -1713,32 +1974,19 @@ nm_client_add_connection_async (NMClient *client,
                                 GAsyncReadyCallback callback,
                                 gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
-	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_add_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nm_remote_settings_add_connection2 (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                    nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
-	                                    save_to_disk
-	                                    ? NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
-	                                    : NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY,
-	                                    NULL,
-	                                    TRUE,
-	                                    cancellable,
-	                                    add_connection2_cb,
-	                                    simple);
+	_add_connection_call (client,
+	                      nm_client_add_connection_async,
+	                      TRUE,
+	                      nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL),
+	                        save_to_disk
+	                      ? NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
+	                      : NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY,
+	                      NULL,
+	                      cancellable,
+	                      callback,
+	                      user_data);
 }
 
 /**
@@ -1757,15 +2005,11 @@ nm_client_add_connection_finish (NMClient *client,
                                  GAsyncResult *result,
                                  GError **error)
 {
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_add_connection_async), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	return _add_connection_call_finish (client,
+	                                    result,
+	                                    nm_client_add_connection_async,
+	                                    NULL,
+	                                    error);
 }
 
 /**
@@ -1800,33 +2044,15 @@ nm_client_add_connection2 (NMClient *client,
                            GAsyncReadyCallback callback,
                            gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
-	g_return_if_fail (NM_IS_CLIENT (client));
-	g_return_if_fail (g_variant_is_of_type (settings, G_VARIANT_TYPE ("a{sa{sv}}")));
-	g_return_if_fail (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
-
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client),
-	                                    callback,
-	                                    user_data,
-	                                    nm_client_add_connection2);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nm_remote_settings_add_connection2 (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                    settings,
-	                                    flags,
-	                                    args,
-	                                    ignore_out_result,
-	                                    cancellable,
-	                                    add_connection2_cb,
-	                                    simple);
+	_add_connection_call (client,
+	                      nm_client_add_connection2,
+	                      ignore_out_result,
+	                      settings,
+	                      flags,
+	                      args,
+	                      cancellable,
+	                      callback,
+	                      user_data);
 }
 
 /**
@@ -1850,21 +2076,11 @@ nm_client_add_connection2_finish (NMClient *client,
                                   GVariant **out_result,
                                   GError **error)
 {
-	GSimpleAsyncResult *simple;
-	AddConnection2CbData *data;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_add_connection2), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error)) {
-		NM_SET_OUT (out_result, NULL);
-		return NULL;
-	}
-
-	data = g_simple_async_result_get_op_res_gpointer (simple);
-	NM_SET_OUT (out_result, g_variant_ref (data->results));
-	return g_object_ref (data->connection);
+	return _add_connection_call_finish (client,
+	                                    result,
+	                                    nm_client_add_connection2,
+	                                    out_result,
+	                                    error);
 }
 
 /**
@@ -1888,8 +2104,16 @@ nm_client_add_connection2_finish (NMClient *client,
  * then @failures will be set to a %NULL-terminated array of the
  * filenames that failed to load.
  *
- * Returns: %TRUE if NetworkManager at least tried to load @filenames,
- * %FALSE if an error occurred (eg, permission denied).
+ * Returns: %TRUE on success.
+ *
+ * Warning: before libnm 1.22, the boolean return value was inconsistent.
+ *   That is made worse, because when running against certain server versions
+ *   before 1.20, the server would return wrong values for success/failure.
+ *   This means, if you use this function in libnm before 1.22, you are advised
+ *   to ignore the boolean return value and only look at @failures and @error.
+ *   With libnm >= 1.22, the boolean return value corresponds to whether @error was
+ *   set. Note that even in the success case, you might have individual @failures.
+ *   With 1.22, the return value is consistent with nm_client_load_connections_finish().
  *
  * Deprecated: 1.22, use nm_client_load_connections_async() or GDBusConnection
  **/
@@ -1900,32 +2124,34 @@ nm_client_load_connections (NMClient *client,
                             GCancellable *cancellable,
                             GError **error)
 {
+	gs_unref_variant GVariant *ret = NULL;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (filenames != NULL, FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	if (!_nm_client_check_nm_running (client, error))
+	ret = _nm_object_dbus_call_sync (client,
+	                                 cancellable,
+	                                 NM_DBUS_PATH_SETTINGS,
+	                                 NM_DBUS_INTERFACE_SETTINGS,
+	                                 "LoadConnections",
+	                                 g_variant_new ("(^as)",
+	                                                filenames ?: NM_PTRARRAY_EMPTY (char *)),
+	                                 G_VARIANT_TYPE ("(bas)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret) {
+		*failures = NULL;
 		return FALSE;
+	}
 
-	return nm_remote_settings_load_connections (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                            filenames, failures,
-	                                            cancellable, error);
-}
+	g_variant_get (ret,
+	               "(b^as)",
+	               NULL,
+	               &failures);
 
-static void
-load_connections_cb (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-	char **failures = NULL;
-
-	if (nm_remote_settings_load_connections_finish (NM_REMOTE_SETTINGS (object),
-	                                                &failures, result, &error))
-		g_simple_async_result_set_op_res_gpointer (simple, failures, (GDestroyNotify) g_strfreev);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return TRUE;
 }
 
 /**
@@ -1948,24 +2174,23 @@ nm_client_load_connections_async (NMClient *client,
                                   GAsyncReadyCallback callback,
                                   gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
-	g_return_if_fail (filenames != NULL);
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_load_connections_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_remote_settings_load_connections_async (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                           filenames,
-	                                           cancellable, load_connections_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_load_connections_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH_SETTINGS,
+	                      NM_DBUS_INTERFACE_SETTINGS,
+	                      "LoadConnections",
+	                      g_variant_new ("(^as)",
+	                                     filenames ?: NM_PTRARRAY_EMPTY (char *)),
+	                      G_VARIANT_TYPE ("(bas)"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_variant_strip_dbus_error_cb);
 }
 
 /**
@@ -1980,8 +2205,8 @@ nm_client_load_connections_async (NMClient *client,
 
  * See nm_client_load_connections() for more details.
  *
- * Returns: %TRUE if NetworkManager at least tried to load @filenames,
- * %FALSE if an error occurred (eg, permission denied).
+ * Returns: %TRUE on success.
+ *   Note that even in the success case, you might have individual @failures.
  **/
 gboolean
 nm_client_load_connections_finish (NMClient *client,
@@ -1989,19 +2214,23 @@ nm_client_load_connections_finish (NMClient *client,
                                    GAsyncResult *result,
                                    GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *ret = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_load_connections_async), FALSE);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	ret = g_task_propagate_pointer (G_TASK (result), error);
+	if (!ret) {
+		*failures = NULL;
 		return FALSE;
-	else {
-		if (failures)
-			*failures = g_strdupv (g_simple_async_result_get_op_res_gpointer (simple));
-		return TRUE;
 	}
+
+	g_variant_get (ret,
+	               "(b^as)",
+	               NULL,
+	               &failures);
+
+	return TRUE;
 }
 
 /**
@@ -2023,29 +2252,26 @@ nm_client_reload_connections (NMClient *client,
                               GCancellable *cancellable,
                               GError **error)
 {
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	gs_unref_variant GVariant *ret = NULL;
 
-	if (!_nm_client_check_nm_running (client, error))
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
+
+	ret = _nm_object_dbus_call_sync (client,
+	                                 cancellable,
+	                                 NM_DBUS_PATH_SETTINGS,
+	                                 NM_DBUS_INTERFACE_SETTINGS,
+	                                 "ReloadConnections",
+	                                 g_variant_new ("()"),
+	                                 G_VARIANT_TYPE ("(b)"),
+	                                 G_DBUS_CALL_FLAGS_NONE,
+	                                 NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                 TRUE,
+	                                 error);
+	if (!ret)
 		return FALSE;
 
-	return nm_remote_settings_reload_connections (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                              cancellable, error);
-}
-
-static void
-reload_connections_cb (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_remote_settings_reload_connections_finish (NM_REMOTE_SETTINGS (object),
-	                                                  result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return TRUE;
 }
 
 /**
@@ -2065,22 +2291,22 @@ nm_client_reload_connections_async (NMClient *client,
                                     GAsyncReadyCallback callback,
                                     gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_reload_connections_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_remote_settings_reload_connections_async (NM_CLIENT_GET_PRIVATE (client)->settings,
-	                                             cancellable, reload_connections_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_reload_connections_async,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH_SETTINGS,
+	                      NM_DBUS_INTERFACE_SETTINGS,
+	                      "ReloadConnections",
+	                      g_variant_new ("()"),
+	                      G_VARIANT_TYPE ("(b)"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_variant_strip_dbus_error_cb);
 }
 
 /**
@@ -2098,16 +2324,16 @@ nm_client_reload_connections_finish (NMClient *client,
                                      GAsyncResult *result,
                                      GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *ret = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_reload_connections_async), FALSE);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	ret = g_task_propagate_pointer (G_TASK (result), error);
+	if (!ret)
 		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -2374,25 +2600,6 @@ dns_notify (GObject *object,
 	}
 }
 
-static void
-checkpoint_create_cb (GObject *object,
-                      GAsyncResult *result,
-                      gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	NMCheckpoint *checkpoint;
-	GError *error = NULL;
-
-	checkpoint = nm_manager_checkpoint_create_finish (NM_MANAGER (object), result, &error);
-	if (checkpoint)
-		g_simple_async_result_set_op_res_gpointer (simple, checkpoint, g_object_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 /**
  * nm_client_get_checkpoints:
  * @client: a #NMClient
@@ -2414,6 +2621,35 @@ nm_client_get_checkpoints (NMClient *client)
 		return &empty;
 
 	return nm_manager_get_checkpoints (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+static void
+checkpoint_create_cb (GObject *object,
+                      GAsyncResult *result,
+                      gpointer user_data)
+{
+	NMClient *self;
+	gs_unref_object GTask *task = user_data;
+	gs_unref_variant GVariant *ret = NULL;
+	const char *checkpoint_path;
+	GError *error = NULL;
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
+	if (!ret) {
+		g_dbus_error_strip_remote_error (error);
+		g_task_return_error (task, error);
+		return;
+	}
+
+	g_variant_get (ret,
+	               "(&o)",
+	               &checkpoint_path);
+
+	self = g_task_get_source_object (task);
+
+	nm_manager_wait_for_checkpoint (NM_CLIENT_GET_PRIVATE (self)->manager,
+	                                checkpoint_path,
+	                                g_steal_pointer (&task));
 }
 
 /**
@@ -2443,23 +2679,35 @@ nm_client_checkpoint_create (NMClient *client,
                              GAsyncReadyCallback callback,
                              gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
+	gs_free const char **paths = NULL;
+	guint i;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
+	if (   devices
+	    && devices->len > 0) {
+		paths = g_new (const char *, devices->len + 1);
+		for (i = 0; i < devices->len; i++)
+			paths[i] = nm_object_get_path (NM_OBJECT (devices->pdata[i]));
+		paths[i] = NULL;
 	}
 
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_create);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_create (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                              devices, rollback_timeout, flags,
-	                              cancellable, checkpoint_create_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_create,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointCreate",
+	                      g_variant_new ("(^aouu)",
+	                                     paths ?: NM_PTRARRAY_EMPTY (const char *),
+	                                     rollback_timeout,
+	                                     flags),
+	                      G_VARIANT_TYPE ("(o)"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      checkpoint_create_cb);
 }
 
 /**
@@ -2480,33 +2728,10 @@ nm_client_checkpoint_create_finish (NMClient *client,
                                     GAsyncResult *result,
                                     GError **error)
 {
-	GSimpleAsyncResult *simple;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_create), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
-}
-
-static void
-checkpoint_destroy_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_manager_checkpoint_destroy_finish (NM_MANAGER (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 /**
@@ -2528,24 +2753,22 @@ nm_client_checkpoint_destroy (NMClient *client,
                               GAsyncReadyCallback callback,
                               gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_destroy);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_destroy (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                               checkpoint_path,
-	                               cancellable, checkpoint_destroy_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_destroy,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointDestroy",
+	                      g_variant_new ("(o)", checkpoint_path),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -2566,35 +2789,10 @@ nm_client_checkpoint_destroy_finish (NMClient *client,
                                      GAsyncResult *result,
                                      GError **error)
 {
-	GSimpleAsyncResult *simple;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_destroy), FALSE);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
-static void
-checkpoint_rollback_cb (GObject *object,
-                        GAsyncResult *result,
-                        gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GHashTable *hash;
-	GError *error = NULL;
-
-	hash = nm_manager_checkpoint_rollback_finish (NM_MANAGER (object), result, &error);
-	if (hash)
-		g_simple_async_result_set_op_res_gpointer (simple, hash, (GDestroyNotify) g_hash_table_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
@@ -2616,24 +2814,22 @@ nm_client_checkpoint_rollback (NMClient *client,
                                GAsyncReadyCallback callback,
                                gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_rollback);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_rollback (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                checkpoint_path,
-	                                cancellable, checkpoint_rollback_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_rollback,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointRollback",
+	                      g_variant_new ("(o)", checkpoint_path),
+	                      G_VARIANT_TYPE ("(a{su})"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_variant_strip_dbus_error_cb);
 }
 
 /**
@@ -2655,35 +2851,31 @@ nm_client_checkpoint_rollback_finish (NMClient *client,
                                       GAsyncResult *result,
                                       GError **error)
 {
-	GSimpleAsyncResult *simple;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_unref_variant GVariant *v_result = NULL;
+	GVariantIter iter;
 	GHashTable *hash;
+	const char *path;
+	guint32 r;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_rollback), NULL);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
+	ret = g_task_propagate_pointer (G_TASK (result), error);
+	if (!ret)
 		return NULL;
-	else {
-		hash = g_simple_async_result_get_op_res_gpointer (simple);
-		return g_hash_table_ref (hash);
-	}
-}
 
-static void
-checkpoint_adjust_rollback_timeout_cb (GObject *object,
-                                       GAsyncResult *result,
-                                       gpointer user_data)
-{
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
+	g_variant_get (ret,
+	               "(@a{su})",
+	               &v_result);
 
-	if (nm_manager_checkpoint_adjust_rollback_timeout_finish (NM_MANAGER (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
+	hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
-	g_simple_async_result_complete (simple);
+	g_variant_iter_init (&iter, v_result);
+	while (g_variant_iter_next (&iter, "{&su}", &path, &r))
+		g_hash_table_insert (hash, g_strdup (path), GUINT_TO_POINTER (r));
+
+	return hash;
 }
 
 /**
@@ -2709,24 +2901,24 @@ nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
                                               GAsyncReadyCallback callback,
                                               gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_rollback);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_adjust_rollback_timeout (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                               checkpoint_path, add_timeout,
-	                                               cancellable, checkpoint_adjust_rollback_timeout_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_checkpoint_adjust_rollback_timeout,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "CheckpointAdjustRollbackTimeout",
+	                      g_variant_new ("(ou)",
+	                                     checkpoint_path,
+	                                     add_timeout),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -2747,26 +2939,9 @@ nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
                                                      GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_adjust_rollback_timeout), FALSE);
 
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-	                                               error);
-}
-
-static void
-reload_cb (GObject *object,
-           GAsyncResult *result,
-           gpointer user_data)
-{
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nm_manager_reload_finish (NM_MANAGER (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
@@ -2792,23 +2967,21 @@ nm_client_reload (NMClient *client,
                   GAsyncReadyCallback callback,
                   gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
-
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!_nm_client_check_nm_running (client, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
-		return;
-	}
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_reload);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_reload (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                   flags,
-	                   cancellable, reload_cb, simple);
+	_nm_object_dbus_call (client,
+	                      nm_client_reload,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      NM_DBUS_PATH,
+	                      NM_DBUS_INTERFACE,
+	                      "Reload",
+	                      g_variant_new ("(u)", (guint32) flags),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                      nm_dbus_connection_call_finish_void_strip_dbus_error_cb);
 }
 
 /**
@@ -2829,10 +3002,9 @@ nm_client_reload_finish (NMClient *client,
                          GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_reload), FALSE);
 
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-	                                               error);
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /****************************************************************/
@@ -3454,6 +3626,8 @@ dispose (GObject *object)
 		udev_unref (priv->udev);
 		priv->udev = NULL;
 	}
+
+	nm_clear_g_free (&priv->name_owner_cached);
 }
 
 static void

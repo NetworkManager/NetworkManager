@@ -2821,6 +2821,7 @@ impl_settings_reload_connections (NMDBusObject *obj,
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONNS_RELOAD, NULL, TRUE, NULL, invocation, NULL);
 
+	/* We MUST return %TRUE here, otherwise older libnm versions might misbehave. */
 	g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", TRUE));
 }
 

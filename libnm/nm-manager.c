@@ -46,7 +46,6 @@ typedef struct {
 	GPtrArray *all_devices;
 	GPtrArray *active_connections;
 	GPtrArray *checkpoints;
-	GSList *added_checkpoints;
 	NMConnectivityState connectivity;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
@@ -58,7 +57,9 @@ typedef struct {
 	/* Activations waiting for their NMActiveConnection
 	 * to appear and then their callback to be called.
 	 */
-	CList pending_activations;
+	CList wait_for_active_connection_lst_head;
+
+	CList wait_for_checkpoint_lst_head;
 
 	gboolean networking_enabled;
 	gboolean wireless_enabled;
@@ -119,21 +120,21 @@ static guint signals[LAST_SIGNAL] = { 0 };
 /*****************************************************************************/
 
 typedef struct {
-	NMManager *manager;
-	GSimpleAsyncResult *simple;
-	char *path;
+	CList lst;
+	NMManager *self;
+	char *checkpoint_path;
+	GTask *task;
+	gulong cancelled_id;
 } CheckpointInfo;
 
 static CheckpointInfo *
-find_checkpoint_info (NMManager *manager, const char *path)
+_wait_for_checkpoint_find_info (NMManager *manager, const char *path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	CheckpointInfo *info;
-	GSList *iter;
 
-	for (iter = priv->added_checkpoints; iter; iter = g_slist_next (iter)) {
-		info = iter->data;
-		if (nm_streq0 (path, info->path))
+	c_list_for_each_entry (info, &priv->wait_for_checkpoint_lst_head, lst) {
+		if (nm_streq (path, info->checkpoint_path))
 			return info;
 	}
 
@@ -141,28 +142,23 @@ find_checkpoint_info (NMManager *manager, const char *path)
 }
 
 static void
-checkpoint_info_complete (NMManager *self,
-                          CheckpointInfo *info,
-                          NMCheckpoint *checkpoint,
-                          GError *error)
+_wait_for_checkpoint_complete (CheckpointInfo *info,
+                               NMCheckpoint *checkpoint,
+                               GError *error)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	c_list_unlink_stale (&info->lst);
 
-	g_return_if_fail (info);
+	nm_clear_g_signal_handler (g_task_get_cancellable (info->task), &info->cancelled_id);
 
-	if (checkpoint) {
-		g_simple_async_result_set_op_res_gpointer (info->simple,
-		                                           g_object_ref (checkpoint),
-		                                           g_object_unref);
-	} else
-		g_simple_async_result_set_from_error (info->simple, error);
-	g_simple_async_result_complete (info->simple);
+	if (!checkpoint)
+		g_task_return_error (info->task, error);
+	else
+		g_task_return_pointer (info->task, g_object_ref (checkpoint), g_object_unref);
 
-	g_object_unref (info->simple);
-	priv->added_checkpoints = g_slist_remove (priv->added_checkpoints, info);
-
-	g_free (info->path);
-	g_slice_free (CheckpointInfo, info);
+	g_object_unref (info->task);
+	g_object_unref (info->self);
+	g_free (info->checkpoint_path);
+	nm_g_slice_free (info);
 }
 
 static void
@@ -170,7 +166,8 @@ nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	c_list_init (&priv->pending_activations);
+	c_list_init (&priv->wait_for_active_connection_lst_head);
+	c_list_init (&priv->wait_for_checkpoint_lst_head);
 
 	priv->state = NM_STATE_UNKNOWN;
 	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
@@ -250,12 +247,12 @@ object_creation_failed (NMObject *object, const char *failed_path)
 	CheckpointInfo *info;
 	GError *add_error;
 
-	info = find_checkpoint_info (self, failed_path);
+	info = _wait_for_checkpoint_find_info (self, failed_path);
 	if (info) {
 		add_error = g_error_new_literal (NM_CLIENT_ERROR,
 		                                 NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
 		                                 _("Checkpoint was removed before it was initialized"));
-		checkpoint_info_complete (self, info, NULL, add_error);
+		_wait_for_checkpoint_complete (info, NULL, add_error);
 		g_error_free (add_error);
 	}
 }
@@ -376,46 +373,65 @@ get_permissions_reply (GObject *object,
 {
 	NMManager *self;
 	NMManagerPrivate *priv;
-	GVariant *permissions = NULL;
-	GError *error = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_unref_variant GVariant *permissions = NULL;
+	gs_free_error GError *error = NULL;
 
-	/* WARNING: this may be called after the manager is disposed, so we can't
-	 * look at self/priv until after we've determined that that isn't the case.
-	 */
-
-	nmdbus_manager_call_get_permissions_finish (NMDBUS_MANAGER (object),
-	                                            &permissions,
-	                                            result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		/* @self has been disposed. */
-		g_error_free (error);
-		return;
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
+	if (!ret) {
+		if (nm_utils_error_is_cancelled (error, FALSE))
+			return;
+	} else {
+		g_variant_get (ret,
+		               "(@a{ss})",
+		               &permissions);
 	}
 
 	self = user_data;
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	update_permissions (self, permissions);
-
-	g_clear_pointer (&permissions, g_variant_unref);
-	g_clear_error (&error);
 	g_clear_object (&priv->perm_call_cancellable);
+
+	update_permissions (self, permissions);
 }
 
 static void
-manager_recheck_permissions (NMDBusManager *proxy, gpointer user_data)
+manager_recheck_permissions (NMDBusManager *_unused_proxy, gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	const char *name_owner;
 
-	if (priv->perm_call_cancellable)
+	/* If a request is already pending, then we cancel it. We anyway
+	 * need to make a new request, to be sure that we picked up on all
+	 * the latest changes since the "CheckPermission" signal.
+	 *
+	 * However, we cannot accept more than one "GetPermissions" request
+	 * in flight. That is because NetworkManager needs to ask PolicyKit
+	 * for each permission individually, and some of these permission
+	 * requests might be answered before others. Hence, the collection
+	 * of all permissions is not taken at one point in time. Hence, when
+	 * we would allow for multiple GetPermissions requests in-flight,
+	 * we wouldn't know which response reflects the latest state. */
+	nm_clear_g_cancellable (&priv->perm_call_cancellable);
+
+	name_owner = _nm_object_get_dbus_name_owner (self);
+	if (!name_owner)
 		return;
 
 	priv->perm_call_cancellable = g_cancellable_new ();
-	nmdbus_manager_call_get_permissions (priv->proxy,
-	                                     priv->perm_call_cancellable,
-	                                     get_permissions_reply,
-	                                     self);
+	g_dbus_connection_call (_nm_object_get_dbus_connection (self),
+	                        name_owner,
+	                        NM_DBUS_PATH,
+	                        NM_DBUS_INTERFACE,
+	                        "GetPermissions",
+	                        g_variant_new ("()"),
+	                        G_VARIANT_TYPE ("(a{ss})"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                        priv->perm_call_cancellable,
+	                        get_permissions_reply,
+	                        self);
 }
 
 const char *
@@ -451,18 +467,31 @@ nm_manager_networking_get_enabled (NMManager *manager)
 }
 
 gboolean
-nm_manager_networking_set_enabled (NMManager *manager, gboolean enable, GError **error)
+_nm_manager_networking_set_enabled (GDBusConnection *dbus_connection,
+                                    const char *name_owner,
+                                    gboolean enable,
+                                    GError **error)
 {
-	gboolean ret;
+	gs_unref_variant GVariant *ret = NULL;
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+	ret = g_dbus_connection_call_sync (dbus_connection,
+	                                   name_owner,
+	                                   NM_DBUS_PATH,
+	                                   NM_DBUS_INTERFACE,
+	                                   "Enable",
+	                                   g_variant_new ("(b)", enable),
+	                                   G_VARIANT_TYPE ("()"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                   NULL,
+	                                   error);
+	if (!ret) {
+		if (error)
+			g_dbus_error_strip_remote_error (*error);
+		return FALSE;
+	}
 
-	ret = nmdbus_manager_call_enable_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                       enable,
-	                                       NULL, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
+	return TRUE;
 }
 
 gboolean
@@ -577,51 +606,6 @@ nm_manager_connectivity_check_get_uri (NMManager *manager)
 	return nmdbus_manager_get_connectivity_check_uri (NM_MANAGER_GET_PRIVATE (manager)->proxy);
 }
 
-gboolean
-nm_manager_get_logging (NMManager *manager, char **level, char **domains, GError **error)
-{
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
-	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!level && !domains)
-		return TRUE;
-
-	ret = nmdbus_manager_call_get_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                            level, domains,
-	                                            NULL, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
-gboolean
-nm_manager_set_logging (NMManager *manager, const char *level, const char *domains, GError **error)
-{
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!level && !domains)
-		return TRUE;
-
-	if (!level)
-		level = "";
-	if (!domains)
-		domains = "";
-
-	ret = nmdbus_manager_call_set_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                            level, domains,
-	                                            NULL, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
 NMClientPermissionResult
 nm_manager_get_permission_result (NMManager *manager, NMClientPermission permission)
 {
@@ -642,99 +626,16 @@ nm_manager_get_connectivity (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->connectivity;
 }
 
-NMConnectivityState
-nm_manager_check_connectivity (NMManager *manager,
-                               GCancellable *cancellable,
-                               GError **error)
-{
-	NMManagerPrivate *priv;
-	guint32 connectivity;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_CONNECTIVITY_UNKNOWN);
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (nmdbus_manager_call_check_connectivity_sync (priv->proxy,
-	                                                 &connectivity,
-	                                                 cancellable, error)) {
-		if (connectivity != priv->connectivity) {
-			priv->connectivity = connectivity;
-			g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
-		}
-		return connectivity;
-	}
-	else {
-		if (error && *error)
-			g_dbus_error_strip_remote_error (*error);
-		return NM_CONNECTIVITY_UNKNOWN;
-	}
-}
-
-static void
-check_connectivity_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	guint32 connectivity;
-	GError *error = NULL;
-	NMManager *manager;
-	NMManagerPrivate *priv;
-
-	if (nmdbus_manager_call_check_connectivity_finish (NMDBUS_MANAGER (object),
-	                                                   &connectivity,
-	                                                   result, &error)) {
-		g_simple_async_result_set_op_res_gssize (simple, connectivity);
-
-		manager = NM_MANAGER (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
-		priv = NM_MANAGER_GET_PRIVATE (manager);
-		if (connectivity != priv->connectivity) {
-			priv->connectivity = connectivity;
-			g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
-		}
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
 void
-nm_manager_check_connectivity_async (NMManager *manager,
-                                     GCancellable *cancellable,
-                                     GAsyncReadyCallback callback,
-                                     gpointer user_data)
+_nm_manager_set_connectivity_hack (NMManager *manager,
+                                   guint32 connectivity)
 {
-	NMManagerPrivate *priv;
-	GSimpleAsyncResult *simple;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_check_connectivity_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nmdbus_manager_call_check_connectivity (priv->proxy,
-	                                        cancellable,
-	                                        check_connectivity_cb, simple);
-}
-
-NMConnectivityState
-nm_manager_check_connectivity_finish (NMManager *manager,
-                                      GAsyncResult *result,
-                                      GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NM_CONNECTIVITY_UNKNOWN;
-	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
+	if ((NMConnectivityState) connectivity != priv->connectivity) {
+		priv->connectivity = (NMConnectivityState) connectivity;
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
+	}
 }
 
 /*****************************************************************************/
@@ -850,10 +751,8 @@ typedef enum {
 typedef struct {
 	CList lst;
 	NMManager *manager;
-	GSimpleAsyncResult *simple;
-	GCancellable *cancellable;
+	GTask *task;
 	char *active_path;
-	char *new_connection_path;
 	GVariant *add_and_activate_output;
 	gulong cancelled_id;
 	ActivateType activate_type;
@@ -871,7 +770,7 @@ _nm_activate_result_new (NMActiveConnection *active,
 	r = g_slice_new (_NMActivateResult);
 	*r = (_NMActivateResult) {
 		.active                  = g_object_ref (active),
-		.add_and_activate_output = nm_g_variant_ref (add_and_activate_output),
+		.add_and_activate_output = g_steal_pointer (&add_and_activate_output),
 	};
 	return r;
 }
@@ -879,7 +778,7 @@ _nm_activate_result_new (NMActiveConnection *active,
 void
 _nm_activate_result_free (_NMActivateResult *result)
 {
-	g_object_unref (result->active);
+	nm_g_object_unref (result->active);
 	nm_g_variant_unref (result->add_and_activate_output);
 	g_slice_free (_NMActivateResult, result);
 }
@@ -889,27 +788,27 @@ activate_info_complete (ActivateInfo *info,
                         NMActiveConnection *active,
                         GError *error)
 {
+	nm_assert (info);
+	nm_assert (info->task);
+	nm_assert (G_IS_TASK (info->task));
 	nm_assert ((!error) != (!active));
-
-	nm_clear_g_signal_handler (info->cancellable, &info->cancelled_id);
 
 	c_list_unlink_stale (&info->lst);
 
-	if (active) {
-		g_simple_async_result_set_op_res_gpointer (info->simple,
-		                                           _nm_activate_result_new (active,
-		                                                                    info->add_and_activate_output),
-		                                           (GDestroyNotify) _nm_activate_result_free);
-	} else
-		g_simple_async_result_set_from_error (info->simple, error);
+	nm_clear_g_signal_handler (g_task_get_cancellable (info->task), &info->cancelled_id);
 
-	g_simple_async_result_complete (info->simple);
+	if (error)
+		g_task_return_error (info->task, error);
+	else {
+		g_task_return_pointer (info->task,
+		                       _nm_activate_result_new (active,
+		                                                g_steal_pointer (&info->add_and_activate_output)),
+		                       (GDestroyNotify) _nm_activate_result_free);
+	}
 
 	nm_g_variant_unref (info->add_and_activate_output);
 	g_free (info->active_path);
-	g_free (info->new_connection_path);
-	g_object_unref (info->simple);
-	nm_g_object_unref (info->cancellable);
+	g_object_unref (info->task);
 	g_slice_free (ActivateInfo, info);
 }
 
@@ -931,15 +830,14 @@ find_active_connection_by_path (NMManager *self, const char *ac_path)
 }
 
 static void
-recheck_pending_activations (NMManager *self)
+_wait_for_active_connections_check (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	CList *iter, *safe;
+	CList *iter;
 	NMActiveConnection *candidate;
 	const GPtrArray *devices;
 	NMDevice *device;
-	GDBusObjectManager *object_manager = NULL;
-	GError *error;
+	GDBusObjectManager *object_manager;
 
 	object_manager = _nm_object_get_dbus_object_manager (NM_OBJECT (self));
 
@@ -948,23 +846,23 @@ recheck_pending_activations (NMManager *self)
 	 * device have both updated their properties to point to each other, and
 	 * call the pending connection's callback.
 	 */
-	c_list_for_each_safe (iter, safe, &priv->pending_activations) {
+again:
+	c_list_for_each (iter, &priv->wait_for_active_connection_lst_head) {
 		ActivateInfo *info = c_list_entry (iter, ActivateInfo, lst);
 		gs_unref_object GDBusObject *dbus_obj = NULL;
 
-		if (!info->active_path)
-			continue;
+		nm_assert (info->active_path);
 
 		/* Check that the object manager still knows about the object.
 		 * It could be that it vanished before we even learned its name. */
 		dbus_obj = g_dbus_object_manager_get_object (object_manager, info->active_path);
 		if (!dbus_obj) {
-			error = g_error_new_literal (NM_CLIENT_ERROR,
-			                             NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
-			                             _("Active connection removed before it was initialized"));
-			activate_info_complete (info, NULL, error);
-			g_clear_error (&error);
-			break;
+			activate_info_complete (info,
+			                        NULL,
+			                        g_error_new_literal (NM_CLIENT_ERROR,
+			                                             NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+			                                             _("Active connection removed before it was initialized")));
+			goto again;
 		}
 
 		candidate = find_active_connection_by_path (self, info->active_path);
@@ -983,246 +881,72 @@ recheck_pending_activations (NMManager *self)
 		}
 
 		activate_info_complete (info, candidate, NULL);
-		break;
+		goto again;
 	}
 }
 
 static void
-activation_cancelled (GCancellable *cancellable,
-                      gpointer user_data)
+_wait_for_active_connection_cancelled_cb (GCancellable *cancellable,
+                                          gpointer user_data)
 {
 	ActivateInfo *info = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	if (!g_cancellable_set_error_if_cancelled (cancellable, &error))
 		return;
 
-	activate_info_complete (info, NULL, error);
-	g_clear_error (&error);
-}
-
-static void
-activate_cb (GObject *object,
-             GAsyncResult *result,
-             gpointer user_data)
-{
-	ActivateInfo *info = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_activate_connection_finish (NMDBUS_MANAGER (object),
-	                                                    &info->active_path,
-	                                                    result, &error)) {
-		if (info->cancellable) {
-			info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
-			                                       G_CALLBACK (activation_cancelled), info);
-		}
-
-		recheck_pending_activations (info->manager);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		activate_info_complete (info, NULL, error);
-		g_clear_error (&error);
-	}
+	activate_info_complete (info, NULL, g_steal_pointer (&error));
 }
 
 void
-nm_manager_activate_connection_async (NMManager *manager,
-                                      NMConnection *connection,
-                                      NMDevice *device,
-                                      const char *specific_object,
-                                      GCancellable *cancellable,
-                                      GAsyncReadyCallback callback,
-                                      gpointer user_data)
+nm_manager_wait_for_active_connection (NMManager *self,
+                                       const char *active_path,
+                                       const char *connection_path,
+                                       GVariant *add_and_activate_output_take,
+                                       GTask *task_take)
 {
-	NMManagerPrivate *priv;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gs_unref_object GTask *task = task_take;
+	gs_unref_variant GVariant *add_and_activate_output = add_and_activate_output_take;
 	ActivateInfo *info;
+	GCancellable *cancellable;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	if (device)
-		g_return_if_fail (NM_IS_DEVICE (device));
-	if (connection)
-		g_return_if_fail (NM_IS_CONNECTION (connection));
+	nm_assert (NM_IS_MANAGER (self));
+	nm_assert (active_path);
+	nm_assert (G_IS_TASK (task));
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	/* FIXME: there is no timeout for how long we wait. But this entire
+	 * code will be reworked, also that we have a suitable GMainContext
+	 * where we can schedule the timeout (we shouldn't use g_main_context_default()). */
 
-	info = g_slice_new0 (ActivateInfo);
-	info->activate_type = ACTIVATE_TYPE_ACTIVATE_CONNECTION;
-	info->manager = manager;
-	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                          nm_manager_activate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
-	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+	info = g_slice_new (ActivateInfo);
+	*info = (ActivateInfo) {
+		.manager                 = g_object_ref (self),
+		.task                    = g_steal_pointer (&task),
+		.active_path             = g_strdup (active_path),
+		.add_and_activate_output = g_steal_pointer (&add_and_activate_output),
+	};
+	c_list_link_tail (&priv->wait_for_active_connection_lst_head, &info->lst);
 
-	c_list_link_tail (&priv->pending_activations, &info->lst);
-
-	nmdbus_manager_call_activate_connection (priv->proxy,
-	                                         connection ? nm_connection_get_path (connection) : "/",
-	                                         device ? nm_object_get_path (NM_OBJECT (device)) : "/",
-	                                         specific_object ?: "/",
-	                                         cancellable,
-	                                         activate_cb, info);
-}
-
-NMActiveConnection *
-nm_manager_activate_connection_finish (NMManager *manager,
-                                       GAsyncResult *result,
-                                       GError **error)
-{
-	GSimpleAsyncResult *simple;
-	_NMActivateResult *r;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_activate_connection_async), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-
-	r = g_simple_async_result_get_op_res_gpointer (simple);
-	return g_object_ref (r->active);
-}
-
-static void
-add_activate_cb (GObject *object,
-                 GAsyncResult *result,
-                 gpointer user_data)
-{
-	ActivateInfo *info = user_data;
-	gs_free_error GError *error = NULL;
-	gboolean success;
-
-	nm_assert (info);
-	nm_assert (!info->active_path);
-	nm_assert (!info->add_and_activate_output);
-
-	if (info->activate_type == ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION) {
-		success = nmdbus_manager_call_add_and_activate_connection_finish (NMDBUS_MANAGER (object),
-		                                                                  NULL,
-		                                                                  &info->active_path,
-		                                                                  result,
-		                                                                  &error);
-	} else {
-		success = nmdbus_manager_call_add_and_activate_connection2_finish (NMDBUS_MANAGER (object),
-		                                                                   NULL,
-		                                                                   &info->active_path,
-		                                                                   &info->add_and_activate_output,
-		                                                                   result,
-		                                                                   &error);
-	}
-	if (!success) {
-		g_dbus_error_strip_remote_error (error);
-		activate_info_complete (info, NULL, error);
-		return;
-	}
-
-	if (info->cancellable) {
-		info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
-		                                       G_CALLBACK (activation_cancelled), info);
-	}
-
-	recheck_pending_activations (info->manager);
-}
-
-void
-nm_manager_add_and_activate_connection_async (NMManager *manager,
-                                              NMConnection *partial,
-                                              NMDevice *device,
-                                              const char *specific_object,
-                                              GVariant *options,
-                                              gboolean force_v2,
-                                              GCancellable *cancellable,
-                                              GAsyncReadyCallback callback,
-                                              gpointer user_data)
-{
-	NMManagerPrivate *priv;
-	GVariant *dict = NULL;
-	ActivateInfo *info;
-	ActivateType activate_type = ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_DEVICE (device));
-	if (partial)
-		g_return_if_fail (NM_IS_CONNECTION (partial));
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	info = g_slice_new0 (ActivateInfo);
-	info->manager = manager;
-	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                          nm_manager_add_and_activate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
-	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-
-	c_list_link_tail (&priv->pending_activations, &info->lst);
-
-	if (partial)
-		dict = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
-	if (!dict)
-		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
-	if (force_v2) {
-		if (!options)
-			options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
-		activate_type = ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2;
-	} else {
-		if (options) {
-			if (g_variant_n_children (options) > 0)
-				activate_type = ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2;
-			else
-				nm_g_variant_unref_floating (options);
+	cancellable = g_task_get_cancellable (info->task);
+	if (cancellable) {
+		info->cancelled_id = g_signal_connect (cancellable,
+		                                       "cancelled",
+		                                       G_CALLBACK (_wait_for_active_connection_cancelled_cb),
+		                                       info);
+		if (g_cancellable_is_cancelled (cancellable)) {
+			_wait_for_active_connection_cancelled_cb (cancellable, info);
+			return;
 		}
 	}
 
-	info->activate_type = activate_type;
-
-	if (activate_type == ACTIVATE_TYPE_ADD_AND_ACTIVATE_CONNECTION2) {
-		nmdbus_manager_call_add_and_activate_connection2 (priv->proxy,
-		                                                  dict,
-		                                                  nm_object_get_path (NM_OBJECT (device)),
-		                                                  specific_object ?: "/",
-		                                                  options,
-		                                                  cancellable,
-		                                                  add_activate_cb,
-		                                                  info);
-	} else {
-		nmdbus_manager_call_add_and_activate_connection (priv->proxy,
-		                                                 dict,
-		                                                 nm_object_get_path (NM_OBJECT (device)),
-		                                                 specific_object ?: "/",
-		                                                 cancellable,
-		                                                 add_activate_cb,
-		                                                 info);
-	}
-}
-
-NMActiveConnection *
-nm_manager_add_and_activate_connection_finish (NMManager *manager,
-                                               GAsyncResult *result,
-                                               GVariant **out_result,
-                                               GError **error)
-{
-	GSimpleAsyncResult *simple;
-	_NMActivateResult *r;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_add_and_activate_connection_async), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error)) {
-		NM_SET_OUT (out_result, NULL);
-		return NULL;
-	}
-
-	r = g_simple_async_result_get_op_res_gpointer (simple);
-	NM_SET_OUT (out_result, nm_g_variant_ref (r->add_and_activate_output));
-	return g_object_ref (r->active);
+	_wait_for_active_connections_check (self);
 }
 
 static void
 device_ac_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	NMManager *self = user_data;
-
-	recheck_pending_activations (self);
+	_wait_for_active_connections_check (user_data);
 }
 
 static void
@@ -1241,9 +965,7 @@ device_removed (NMManager *self, NMDevice *device)
 static void
 ac_devices_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	NMManager *self = user_data;
-
-	recheck_pending_activations (self);
+	_wait_for_active_connections_check (user_data);
 }
 
 static void
@@ -1251,14 +973,14 @@ active_connection_added (NMManager *self, NMActiveConnection *ac)
 {
 	g_signal_connect_object (ac, "notify::" NM_ACTIVE_CONNECTION_DEVICES,
 	                         G_CALLBACK (ac_devices_changed), self, 0);
-	recheck_pending_activations (self);
+	_wait_for_active_connections_check (self);
 }
 
 static void
 active_connection_removed (NMManager *self, NMActiveConnection *ac)
 {
 	g_signal_handlers_disconnect_by_func (ac, G_CALLBACK (ac_devices_changed), self);
-	recheck_pending_activations (self);
+	_wait_for_active_connections_check (self);
 }
 
 static void
@@ -1266,90 +988,9 @@ checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
 {
 	CheckpointInfo *info;
 
-	info = find_checkpoint_info (manager, nm_object_get_path (NM_OBJECT (checkpoint)));
+	info = _wait_for_checkpoint_find_info (manager, nm_object_get_path (NM_OBJECT (checkpoint)));
 	if (info)
-		checkpoint_info_complete (manager, info, checkpoint, NULL);
-}
-
-gboolean
-nm_manager_deactivate_connection (NMManager *manager,
-                                  NMActiveConnection *active,
-                                  GCancellable *cancellable,
-                                  GError **error)
-{
-	const char *path;
-	gboolean ret;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
-
-	path = nm_object_get_path (NM_OBJECT (active));
-	ret = nmdbus_manager_call_deactivate_connection_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                                      path,
-	                                                      cancellable, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
-}
-
-static void
-deactivated_cb (GObject *object,
-                GAsyncResult *result,
-                gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_deactivate_connection_finish (NMDBUS_MANAGER (object),
-	                                                      result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-void
-nm_manager_deactivate_connection_async (NMManager *manager,
-                                        NMActiveConnection *active,
-                                        GCancellable *cancellable,
-                                        GAsyncReadyCallback callback,
-                                        gpointer user_data)
-{
-	const char *path;
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_deactivate_connection_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	path = nm_object_get_path (NM_OBJECT (active));
-	nmdbus_manager_call_deactivate_connection (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                           path,
-	                                           cancellable,
-	                                           deactivated_cb, simple);
-}
-
-gboolean
-nm_manager_deactivate_connection_finish (NMManager *manager,
-                                         GAsyncResult *result,
-                                         GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager), nm_manager_deactivate_connection_async), FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+		_wait_for_checkpoint_complete (info, checkpoint, NULL);
 }
 
 /*****************************************************************************/
@@ -1372,21 +1013,6 @@ free_active_connections (NMManager *manager)
 
 /*****************************************************************************/
 
-static const char **
-get_device_paths (const GPtrArray *devices)
-{
-	const char **array;
-	guint i;
-
-	array = g_new (const char *, devices->len + 1);
-	for (i = 0; i < devices->len; i++)
-		array[i] = nm_object_get_path (NM_OBJECT (devices->pdata[i]));
-
-	array[i] = NULL;
-
-	return array;
-}
-
 const GPtrArray *
 nm_manager_get_checkpoints (NMManager *manager)
 {
@@ -1396,330 +1022,58 @@ nm_manager_get_checkpoints (NMManager *manager)
 }
 
 static void
-checkpoint_created_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
+_wait_for_checkpoint_cancelled_cb (GCancellable *cancellable,
+                                   gpointer user_data)
 {
 	CheckpointInfo *info = user_data;
-	NMManager *self = info->manager;
 	gs_free_error GError *error = NULL;
+
+	if (!g_cancellable_set_error_if_cancelled (cancellable, &error))
+		return;
+
+	_wait_for_checkpoint_complete (info, NULL, g_steal_pointer (&error));
+}
+
+void
+nm_manager_wait_for_checkpoint (NMManager *self,
+                                const char *checkpoint_path,
+                                GTask *task_take)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gs_unref_object GTask *task = task_take;
+	CheckpointInfo *info;
+	GCancellable *cancellable;
 	NMCheckpoint *checkpoint;
 
-	nmdbus_manager_call_checkpoint_create_finish (NMDBUS_MANAGER (object),
-	                                              &info->path, result, &error);
-	if (error) {
-		g_dbus_error_strip_remote_error (error);
-		checkpoint_info_complete (self, info, NULL, error);
+	checkpoint = get_checkpoint_by_path (self, checkpoint_path);
+	if (checkpoint) {
+		g_task_return_pointer (task, g_object_ref (checkpoint), g_object_unref);
 		return;
 	}
 
-	checkpoint = get_checkpoint_by_path (self, info->path);
-	if (!checkpoint) {
-		/* this is really problematic. The async request returned, but
-		 * we don't yet have a visible (fully initialized) NMCheckpoint instance
-		 * to return. Wait longer for it to appear. However, it's ugly. */
-		return;
+	/* FIXME: there is no timeout for how long we wait. But this entire
+	 * code will be reworked, also that we have a suitable GMainContext
+	 * where we can schedule the timeout (we shouldn't use g_main_context_default()). */
+
+	info = g_slice_new (CheckpointInfo);
+	*info = (CheckpointInfo) {
+		.self            = g_object_ref (self),
+		.task            = g_steal_pointer (&task),
+		.checkpoint_path = g_strdup (checkpoint_path),
+	};
+	c_list_link_tail (&priv->wait_for_checkpoint_lst_head, &info->lst);
+
+	cancellable = g_task_get_cancellable (info->task);
+	if (cancellable) {
+		info->cancelled_id = g_signal_connect (cancellable,
+		                                       "cancelled",
+		                                       G_CALLBACK (_wait_for_checkpoint_cancelled_cb),
+		                                       info);
+		if (g_cancellable_is_cancelled (cancellable)) {
+			_wait_for_checkpoint_cancelled_cb (cancellable, info);
+			return;
+		}
 	}
-
-	checkpoint_info_complete (self, info, checkpoint, NULL);
-}
-
-void
-nm_manager_checkpoint_create (NMManager *manager,
-                              const GPtrArray *devices,
-                              guint32 rollback_timeout,
-                              NMCheckpointCreateFlags flags,
-                              GCancellable *cancellable,
-                              GAsyncReadyCallback callback,
-                              gpointer user_data)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	gs_free const char **paths = NULL;
-	CheckpointInfo *info;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-
-	info = g_slice_new0 (CheckpointInfo);
-	info->manager = manager;
-	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                          nm_manager_checkpoint_create);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
-	paths = get_device_paths (devices);
-	nmdbus_manager_call_checkpoint_create (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                       paths,
-	                                       rollback_timeout,
-	                                       flags,
-	                                       cancellable,
-	                                       checkpoint_created_cb,
-	                                       info);
-	priv->added_checkpoints = g_slist_append (priv->added_checkpoints, info);
-}
-
-NMCheckpoint *
-nm_manager_checkpoint_create_finish (NMManager *manager,
-                                     GAsyncResult *result,
-                                     GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
-}
-
-static void
-checkpoint_destroy_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_checkpoint_destroy_finish (NMDBUS_MANAGER (object),
-	                                                   result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-void
-nm_manager_checkpoint_destroy (NMManager *manager,
-                               const char *checkpoint_path,
-                               GCancellable *cancellable,
-                               GAsyncReadyCallback callback,
-                               gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_checkpoint_destroy);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_manager_call_checkpoint_destroy (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                        checkpoint_path,
-	                                        cancellable,
-	                                        checkpoint_destroy_cb, simple);
-}
-
-gboolean
-nm_manager_checkpoint_destroy_finish (NMManager *manager,
-                                      GAsyncResult *result,
-                                      GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_checkpoint_destroy),
-	                      FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
-static void
-checkpoint_rollback_cb (GObject *object,
-                        GAsyncResult *result,
-                        gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-	GVariant *variant = NULL;
-	GVariantIter iter;
-	GHashTable *hash;
-	const char *path;
-	guint r;
-
-	if (nmdbus_manager_call_checkpoint_rollback_finish (NMDBUS_MANAGER (object),
-	                                                    &variant,
-	                                                    result,
-	                                                    &error)) {
-		hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
-		g_variant_iter_init (&iter, variant);
-		while (g_variant_iter_next (&iter, "{&su}", &path, &r))
-			g_hash_table_insert (hash, g_strdup (path), GUINT_TO_POINTER (r));
-		g_simple_async_result_set_op_res_gpointer (simple, hash, (GDestroyNotify) g_hash_table_unref);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-void
-nm_manager_checkpoint_rollback (NMManager *manager,
-                                const char *checkpoint_path,
-                                GCancellable *cancellable,
-                                GAsyncReadyCallback callback,
-                                gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_checkpoint_rollback);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_manager_call_checkpoint_rollback (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                         checkpoint_path,
-	                                         cancellable,
-	                                         checkpoint_rollback_cb, simple);
-}
-
-GHashTable *
-nm_manager_checkpoint_rollback_finish (NMManager *manager,
-                                       GAsyncResult *result,
-                                       GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_checkpoint_rollback),
-	                      NULL);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
-	else
-		return g_hash_table_ref (g_simple_async_result_get_op_res_gpointer (simple));
-}
-
-static void
-checkpoint_adjust_rollback_timeout_cb (GObject *object,
-                                       GAsyncResult *result,
-                                       gpointer user_data)
-{
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_checkpoint_adjust_rollback_timeout_finish (NMDBUS_MANAGER (object),
-	                                                                   result,
-	                                                                   &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-}
-
-void
-nm_manager_checkpoint_adjust_rollback_timeout (NMManager *manager,
-                                               const char *checkpoint_path,
-                                               guint32 add_timeout,
-                                               GCancellable *cancellable,
-                                               GAsyncReadyCallback callback,
-                                               gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_checkpoint_adjust_rollback_timeout);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_manager_call_checkpoint_adjust_rollback_timeout (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                                        checkpoint_path,
-	                                                        add_timeout,
-	                                                        cancellable,
-	                                                        checkpoint_adjust_rollback_timeout_cb,
-	                                                        simple);
-}
-
-gboolean
-nm_manager_checkpoint_adjust_rollback_timeout_finish (NMManager *manager,
-                                                      GAsyncResult *result,
-                                                      GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_checkpoint_adjust_rollback_timeout),
-	                      FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	return !g_simple_async_result_propagate_error (simple, error);
-}
-
-static void
-reload_cb (GObject *object,
-           GAsyncResult *result,
-           gpointer user_data)
-{
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_reload_finish (NMDBUS_MANAGER (object),
-	                                       result,
-	                                       &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
-		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
-	}
-	g_simple_async_result_complete (simple);
-}
-
-void
-nm_manager_reload (NMManager *manager,
-                   NMManagerReloadFlags flags,
-                   GCancellable *cancellable,
-                   GAsyncReadyCallback callback,
-                   gpointer user_data)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-
-	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_reload);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
-
-	nmdbus_manager_call_reload (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                            flags,
-	                            cancellable,
-	                            reload_cb,
-	                            simple);
-
-}
-
-gboolean
-nm_manager_reload_finish (NMManager *manager,
-                          GAsyncResult *result,
-                          GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_reload),
-	                      FALSE);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	return !g_simple_async_result_propagate_error (simple, error);
 }
 
 /*****************************************************************************/
@@ -1737,24 +1091,35 @@ static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMManager *self = NM_MANAGER (initable);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gs_free_error GError *local_error = NULL;
 	gs_unref_variant GVariant *permissions = NULL;
+	const char *name_owner;
 
-	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error)) {
-		/* Never happens. */
+	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error))
 		g_return_val_if_reached (FALSE);
-	}
 
-	if (!nmdbus_manager_call_get_permissions_sync (priv->proxy,
-	                                               &permissions,
-	                                               NULL,
-	                                               &local_error)) {
-		g_dbus_error_strip_remote_error (local_error);
-		g_warning ("Unable to get permissions: %s\n", local_error->message);
-	}
+	name_owner = _nm_object_get_dbus_name_owner (self);
+	if (name_owner) {
+		gs_unref_variant GVariant *ret = NULL;
 
+		ret = g_dbus_connection_call_sync (_nm_object_get_dbus_connection (self),
+		                                   name_owner,
+		                                   NM_DBUS_PATH,
+		                                   NM_DBUS_INTERFACE,
+		                                   "GetPermissions",
+		                                   g_variant_new ("()"),
+		                                   G_VARIANT_TYPE ("(a{ss})"),
+		                                   G_DBUS_CALL_FLAGS_NONE,
+		                                   NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                                   cancellable,
+		                                   NULL);
+		if (ret) {
+			g_variant_get (ret,
+			               "(@a{ss})",
+			               &permissions);
+		}
+	}
 	update_permissions (self, permissions);
+
 	return TRUE;
 }
 
@@ -1774,27 +1139,9 @@ init_async_complete (NMManagerInitData *init_data)
 }
 
 static void
-init_async_got_permissions (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMManager *manager = user_data;
-	GVariant *permissions;
-
-	if (nmdbus_manager_call_get_permissions_finish (NMDBUS_MANAGER (object),
-	                                                &permissions,
-	                                                result, NULL)) {
-		update_permissions (manager, permissions);
-		g_variant_unref (permissions);
-	} else
-		update_permissions (manager, NULL);
-
-	g_object_unref (manager);
-}
-
-static void
 init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	NMManagerInitData *init_data = user_data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (init_data->manager);
 	GError *error = NULL;
 
 	if (!nm_manager_parent_async_initable_iface->init_finish (G_ASYNC_INITABLE (source), result, &error)) {
@@ -1803,10 +1150,7 @@ init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_d
 		return;
 	}
 
-	nmdbus_manager_call_get_permissions (priv->proxy,
-	                                     init_data->cancellable,
-	                                     init_async_got_permissions,
-	                                     g_object_ref (init_data->manager));
+	manager_recheck_permissions (NULL, init_data->manager);
 
 	init_async_complete (init_data);
 }
@@ -1848,6 +1192,9 @@ dispose (GObject *object)
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
 
+	nm_assert (c_list_is_empty (&priv->wait_for_active_connection_lst_head));
+	nm_assert (c_list_is_empty (&priv->wait_for_checkpoint_lst_head));
+
 	nm_clear_g_cancellable (&priv->perm_call_cancellable);
 
 	if (priv->devices) {
@@ -1866,11 +1213,6 @@ dispose (GObject *object)
 	g_clear_object (&priv->activating_connection);
 
 	g_clear_object (&priv->proxy);
-
-	/* Each activation should hold a ref on @manager, so if we're being disposed,
-	 * there shouldn't be any pending.
-	 */
-	g_warn_if_fail (c_list_is_empty (&priv->pending_activations));
 
 	g_hash_table_destroy (priv->permissions);
 	priv->permissions = NULL;
@@ -1894,12 +1236,18 @@ set_property (GObject *object, guint prop_id,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
 	gboolean b;
+	const char *name_owner;
 
 	switch (prop_id) {
 	case PROP_NETWORKING_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->networking_enabled != b) {
-			nm_manager_networking_set_enabled (NM_MANAGER (object), b, NULL);
+			if ((name_owner = _nm_object_get_dbus_name_owner (object))) {
+				_nm_manager_networking_set_enabled (_nm_object_get_dbus_connection (object),
+				                                    name_owner,
+				                                    b,
+				                                    NULL);
+			}
 			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;

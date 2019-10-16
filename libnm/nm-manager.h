@@ -84,8 +84,9 @@ gboolean  nm_manager_get_startup          (NMManager *manager);
 gboolean  nm_manager_networking_get_enabled (NMManager *manager);
 
 _NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean  nm_manager_networking_set_enabled (NMManager *manager,
-                                             gboolean enabled,
+gboolean _nm_manager_networking_set_enabled (GDBusConnection *dbus_connection,
+                                             const char *name_owner,
+                                             gboolean enable,
                                              GError **error);
 
 gboolean  nm_manager_wireless_get_enabled (NMManager *manager);
@@ -112,31 +113,13 @@ void      nm_manager_connectivity_check_set_enabled (NMManager *manager,
 
 const char *nm_manager_connectivity_check_get_uri (NMManager *manager);
 
-gboolean nm_manager_get_logging (NMManager *manager,
-                                 char **level,
-                                 char **domains,
-                                 GError **error);
-gboolean nm_manager_set_logging (NMManager *manager,
-                                 const char *level,
-                                 const char *domains,
-                                 GError **error);
-
 NMClientPermissionResult nm_manager_get_permission_result (NMManager *manager,
                                                            NMClientPermission permission);
 
 NMConnectivityState nm_manager_get_connectivity          (NMManager *manager);
 
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-NMConnectivityState nm_manager_check_connectivity        (NMManager *manager,
-                                                          GCancellable *cancellable,
-                                                          GError **error);
-void                nm_manager_check_connectivity_async  (NMManager *manager,
-                                                          GCancellable *cancellable,
-                                                          GAsyncReadyCallback callback,
-                                                          gpointer user_data);
-NMConnectivityState nm_manager_check_connectivity_finish (NMManager *manager,
-                                                          GAsyncResult *result,
-                                                          GError **error);
+void _nm_manager_set_connectivity_hack (NMManager *manager,
+                                        guint32 connectivity);
 
 /* Devices */
 
@@ -152,81 +135,17 @@ const GPtrArray *nm_manager_get_active_connections (NMManager *manager);
 NMActiveConnection *nm_manager_get_primary_connection (NMManager *manager);
 NMActiveConnection *nm_manager_get_activating_connection (NMManager *manager);
 
-void                nm_manager_activate_connection_async  (NMManager *manager,
-                                                           NMConnection *connection,
-                                                           NMDevice *device,
-                                                           const char *specific_object,
-                                                           GCancellable *cancellable,
-                                                           GAsyncReadyCallback callback,
-                                                           gpointer user_data);
-NMActiveConnection *nm_manager_activate_connection_finish (NMManager *manager,
-                                                           GAsyncResult *result,
-                                                           GError **error);
-
-void                nm_manager_add_and_activate_connection_async  (NMManager *manager,
-                                                                   NMConnection *partial,
-                                                                   NMDevice *device,
-                                                                   const char *specific_object,
-                                                                   GVariant *options,
-                                                                   gboolean force_v2,
-                                                                   GCancellable *cancellable,
-                                                                   GAsyncReadyCallback callback,
-                                                                   gpointer user_data);
-NMActiveConnection *nm_manager_add_and_activate_connection_finish (NMManager *manager,
-                                                                   GAsyncResult *result,
-                                                                   GVariant **out_result,
-                                                                   GError **error);
-
-_NM_DEPRECATED_SYNC_METHOD_INTERNAL
-gboolean nm_manager_deactivate_connection        (NMManager *manager,
-                                                  NMActiveConnection *active,
-                                                  GCancellable *cancellable,
-                                                  GError **error);
-void     nm_manager_deactivate_connection_async  (NMManager *manager,
-                                                  NMActiveConnection *active,
-                                                  GCancellable *cancellable,
-                                                  GAsyncReadyCallback callback,
-                                                  gpointer user_data);
-gboolean nm_manager_deactivate_connection_finish (NMManager *manager,
-                                                  GAsyncResult *result,
-                                                  GError **error);
+void nm_manager_wait_for_active_connection (NMManager *self,
+                                            const char *active_path,
+                                            const char *connection_path,
+                                            GVariant *add_and_activate_output_take,
+                                            GTask *task_take);
 
 const GPtrArray *nm_manager_get_checkpoints (NMManager *manager);
-void nm_manager_checkpoint_create (NMManager *manager,
-                                   const GPtrArray *devices,
-                                   guint32 rollback_timeout,
-                                   NMCheckpointCreateFlags flags,
-                                   GCancellable *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data);
-NMCheckpoint *nm_manager_checkpoint_create_finish (NMManager *manager,
-                                                   GAsyncResult *result,
-                                                   GError **error);
-void nm_manager_checkpoint_destroy (NMManager *manager,
-                                    const char *checkpoint_path,
-                                    GCancellable *cancellable,
-                                    GAsyncReadyCallback callback,
-                                    gpointer user_data);
-gboolean nm_manager_checkpoint_destroy_finish (NMManager *manager,
-                                               GAsyncResult *result,
-                                               GError **error);
-void nm_manager_checkpoint_rollback (NMManager *manager,
+
+void nm_manager_wait_for_checkpoint (NMManager *self,
                                      const char *checkpoint_path,
-                                     GCancellable *cancellable,
-                                     GAsyncReadyCallback callback,
-                                     gpointer user_data);
-GHashTable *nm_manager_checkpoint_rollback_finish (NMManager *manager,
-                                                   GAsyncResult *result,
-                                                   GError **error);
-void nm_manager_checkpoint_adjust_rollback_timeout (NMManager *manager,
-                                                    const char *checkpoint_path,
-                                                    guint32 add_timeout,
-                                                    GCancellable *cancellable,
-                                                    GAsyncReadyCallback callback,
-                                                    gpointer user_data);
-gboolean nm_manager_checkpoint_adjust_rollback_timeout_finish (NMManager *manager,
-                                                               GAsyncResult *result,
-                                                               GError **error);
+                                     GTask *task_take);
 
 /*****************************************************************************/
 
@@ -240,15 +159,9 @@ _NMActivateResult *_nm_activate_result_new (NMActiveConnection *active,
 
 void _nm_activate_result_free (_NMActivateResult *result);
 
-/*****************************************************************************/
+NM_AUTO_DEFINE_FCN0 (_NMActivateResult *, _nm_auto_free_activate_result, _nm_activate_result_free)
+#define nm_auto_free_activate_result nm_auto(_nm_auto_free_activate_result)
 
-void nm_manager_reload (NMManager *manager,
-                        NMManagerReloadFlags flags,
-                        GCancellable *cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer user_data);
-gboolean nm_manager_reload_finish (NMManager *manager,
-                                   GAsyncResult *result,
-                                   GError **error);
+/*****************************************************************************/
 
 #endif /* __NM_MANAGER_H__ */

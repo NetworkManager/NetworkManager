@@ -277,10 +277,13 @@ void     nm_client_connectivity_check_set_enabled (NMClient *client,
 NM_AVAILABLE_IN_1_20
 const char *nm_client_connectivity_check_get_uri (NMClient *client);
 
+_NM_DEPRECATED_SYNC_METHOD
 gboolean nm_client_get_logging (NMClient *client,
                                 char **level,
                                 char **domains,
                                 GError **error);
+
+_NM_DEPRECATED_SYNC_METHOD
 gboolean nm_client_set_logging (NMClient *client,
                                 const char *level,
                                 const char *domains,
