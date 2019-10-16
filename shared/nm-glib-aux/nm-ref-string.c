@@ -50,6 +50,7 @@ _ref_string_equal (gconstpointer pa, gconstpointer pb)
 static void
 _ASSERT (const RefString *rstr0)
 {
+#if NM_MORE_ASSERTS
 	int r;
 
 	nm_assert (rstr0);
@@ -62,6 +63,7 @@ _ASSERT (const RefString *rstr0)
 
 	nm_assert (rstr0 == g_hash_table_lookup (gl_hash, rstr0));
 	G_UNLOCK (gl_lock);
+#endif
 }
 
 /**
