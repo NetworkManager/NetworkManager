@@ -13,12 +13,9 @@
 #include "nm-setting-connection.h"
 #include "nm-core-internal.h"
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_SLAVES,
-
-	LAST_PROP
-};
+);
 
 /**
  * NMDeviceOvsBridge:
@@ -151,11 +148,26 @@ nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *ovs_bridge_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (ovs_bridge_class);
 
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
+	object_class->dispose      = dispose;
 
 	nm_object_class->init_dbus = init_dbus;
 
-	device_class->get_type_description = get_type_description;
+	device_class->get_type_description  = get_type_description;
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
+	device_class->get_setting_type      = get_setting_type;
+
+	/**
+	 * NMDeviceOvsBridge:slaves: (type GPtrArray(NMDevice))
+	 *
+	 * Gets the ports currently enslaved to the device.
+	 *
+	 * Since: 1.22
+	 */
+	obj_properties[PROP_SLAVES] =
+	    g_param_spec_boxed (NM_DEVICE_OVS_BRIDGE_SLAVES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
