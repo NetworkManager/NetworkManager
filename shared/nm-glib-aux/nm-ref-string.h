@@ -5,7 +5,7 @@
 
 /*****************************************************************************/
 
-typedef struct {
+typedef struct _NMRefString {
 	const char *const str;
 	const gsize len;
 } NMRefString;
