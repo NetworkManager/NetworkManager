@@ -134,8 +134,8 @@ nm_ref_string_new_len (const char *cstr, gsize len)
 	} else {
 		rstr0 = g_malloc (sizeof (RefString) + 1 + len);
 		rstr0->ref_count = 1;
-		*((gsize *) rstr0->r.len) = len;
-		*((const char **) rstr0->r.str) = rstr0->str_data;
+		*((gsize *) &rstr0->r.len) = len;
+		*((const char **) &rstr0->r.str) = rstr0->str_data;
 		if (len > 0)
 			memcpy (rstr0->str_data, cstr, len);
 		rstr0->str_data[len] = '\0';
