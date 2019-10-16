@@ -10,6 +10,7 @@
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-random-utils.h"
 #include "nm-glib-aux/nm-time-utils.h"
+#include "nm-glib-aux/nm-ref-string.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -521,6 +522,38 @@ test_nm_utils_bin2hexstr (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_ref_string (void)
+{
+	nm_auto_ref_string NMRefString *s1 = NULL;
+	NMRefString *s2;
+
+	s1 = nm_ref_string_new ("hallo");
+	g_assert (s1);
+	g_assert_cmpstr (s1->str, ==, "hallo");
+	g_assert_cmpint (s1->len, ==, strlen ("hallo"));
+
+	s2 = nm_ref_string_new ("hallo");
+	g_assert (s2 == s1);
+	nm_ref_string_unref (s2);
+
+	s2 = nm_ref_string_new (NULL);
+	g_assert (!s2);
+	nm_ref_string_unref (s2);
+
+#define STR_WITH_NUL "hallo\0test\0"
+	s2 = nm_ref_string_new_len (STR_WITH_NUL, NM_STRLEN (STR_WITH_NUL));
+	g_assert (s2);
+	g_assert_cmpstr (s2->str, ==, "hallo");
+	g_assert_cmpint (s2->len, ==, NM_STRLEN (STR_WITH_NUL));
+	g_assert_cmpint (s2->len, >, strlen (s2->str));
+	g_assert_cmpmem (s2->str, s2->len, STR_WITH_NUL, NM_STRLEN (STR_WITH_NUL));
+	g_assert (s2->str[s2->len] == '\0');
+	nm_ref_string_unref (s2);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -538,6 +571,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_strv_cmp", test_strv_cmp);
 	g_test_add_func ("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);
 	g_test_add_func ("/general/test_nm_utils_bin2hexstr", test_nm_utils_bin2hexstr);
+	g_test_add_func ("/general/test_nm_ref_string", test_nm_ref_string);
 
 	return g_test_run ();
 }
