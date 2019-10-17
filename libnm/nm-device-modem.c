@@ -335,7 +335,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * Since: 1.20
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_CURRENT_CAPS,
+		(object_class, PROP_DEVICE_ID,
 		 g_param_spec_string (NM_DEVICE_MODEM_DEVICE_ID, "", "",
 		                     NULL,
 		                     G_PARAM_READABLE |
@@ -347,7 +347,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * Since: 1.20
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_CURRENT_CAPS,
+		(object_class, PROP_OPERATOR_CODE,
 		 g_param_spec_string (NM_DEVICE_MODEM_OPERATOR_CODE, "", "",
 		                     NULL,
 		                     G_PARAM_READABLE |
@@ -359,7 +359,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * Since: 1.20
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_CURRENT_CAPS,
+		(object_class, PROP_APN,
 		 g_param_spec_string (NM_DEVICE_MODEM_APN, "", "",
 		                     NULL,
 		                     G_PARAM_READABLE |
