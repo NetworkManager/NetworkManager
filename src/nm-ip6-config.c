@@ -849,8 +849,17 @@ nm_ip6_config_merge (NMIP6Config *dst,
 	g_object_freeze_notify (G_OBJECT (dst));
 
 	/* addresses */
-	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, src, &address)
-		_add_address (dst, NMP_OBJECT_UP_CAST (address), NULL);
+	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, src, &address) {
+		if (   NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_EXTERNAL)
+		    && !address->external) {
+			NMPlatformIP6Address a;
+
+			a = *address;
+			a.external = TRUE;
+			_add_address (dst, NULL, &a);
+		} else
+			_add_address (dst, NMP_OBJECT_UP_CAST (address), NULL);
+	}
 
 	/* nameservers */
 	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {

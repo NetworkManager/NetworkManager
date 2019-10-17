@@ -7585,7 +7585,7 @@ ip_config_merge_and_apply (NMDevice *self,
 		nm_ip_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT, 0);
 
 	if (priv->ext_ip_config_x[IS_IPv4])
-		nm_ip_config_merge (composite, priv->ext_ip_config_x[IS_IPv4], NM_IP_CONFIG_MERGE_DEFAULT, 0);
+		nm_ip_config_merge (composite, priv->ext_ip_config_x[IS_IPv4], NM_IP_CONFIG_MERGE_EXTERNAL, 0);
 
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
