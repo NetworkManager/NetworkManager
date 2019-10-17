@@ -704,6 +704,9 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 		/* The destination network depends on the peer-address. */
 		network = nm_utils_ip4_address_clear_host_address (my_addr->peer_address, my_addr->plen);
 
+		if (my_addr->external)
+			continue;
+
 		if (_ipv4_is_zeronet (network)) {
 			/* Kernel doesn't add device-routes for destinations that
 			 * start with 0.x.y.z. Skip them. */

@@ -480,6 +480,8 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 		gboolean has_peer;
 		int routes_n, routes_i;
 
+		if (my_addr->external)
+			continue;
 		if (NM_FLAGS_HAS (my_addr->n_ifa_flags, IFA_F_NOPREFIXROUTE))
 			continue;
 		if (my_addr->plen == 0)
