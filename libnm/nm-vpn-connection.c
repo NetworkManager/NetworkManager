@@ -27,7 +27,7 @@ typedef struct {
 	NMVpnConnectionState vpn_state;
 } NMVpnConnectionPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMVpnConnection,
 	PROP_VPN_STATE,
 	PROP_BANNER,
 );
@@ -85,7 +85,7 @@ vpn_state_changed_proxy (NMDBusVpnConnection *proxy,
 	if (priv->vpn_state != vpn_state) {
 		priv->vpn_state = vpn_state;
 		g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
-		g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
+		_notify (connection, PROP_VPN_STATE);
 	}
 }
 

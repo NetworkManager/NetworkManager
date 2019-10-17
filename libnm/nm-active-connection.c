@@ -47,7 +47,7 @@ typedef struct {
 	NMActiveConnectionStateReason reason;
 } NMActiveConnectionPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_CONNECTION,
 	PROP_ID,
 	PROP_UUID,
@@ -392,7 +392,7 @@ state_changed_proxy (NMDBusActiveConnectionProxy *proxy,
 	priv->state = state;
 	priv->reason = reason;
 	g_signal_emit (connection, signals[STATE_CHANGED], 0, state, reason);
-	g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_STATE);
+	_notify (connection, PROP_STATE);
 }
 
 static void

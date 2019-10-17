@@ -75,7 +75,7 @@ typedef struct {
 	gboolean connectivity_check_enabled;
 } NMManagerPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_VERSION,
 	PROP_STATE,
 	PROP_STARTUP,
@@ -631,7 +631,7 @@ _nm_manager_set_connectivity_hack (NMManager *manager,
 
 	if ((NMConnectivityState) connectivity != priv->connectivity) {
 		priv->connectivity = (NMConnectivityState) connectivity;
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
+		_notify (manager, PROP_CONNECTIVITY);
 	}
 }
 

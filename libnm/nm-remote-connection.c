@@ -39,7 +39,7 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJEC
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
                          )
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMRemoteConnection,
 	PROP_UNSAVED,
 	PROP_FLAGS,
 	PROP_FILENAME,
@@ -657,7 +657,7 @@ updated_get_settings_cb (GObject *proxy,
 
 	if (visible != priv->visible) {
 		priv->visible = visible;
-		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_VISIBLE);
+		_notify (self, PROP_VISIBLE);
 	}
 
 	g_object_unref (self);
