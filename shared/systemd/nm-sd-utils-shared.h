@@ -31,4 +31,7 @@ int nm_sd_dns_name_to_wire_format (const char *domain,
                                    size_t len,
                                    gboolean canonical);
 
+int nm_sd_dns_name_is_valid (const char *s);
+gboolean nm_sd_hostname_is_valid(const char *s, bool allow_trailing_dot);
+
 #endif /* __NM_SD_UTILS_SHARED_H__ */
