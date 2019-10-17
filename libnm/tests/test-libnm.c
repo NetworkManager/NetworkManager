@@ -2416,6 +2416,256 @@ test_nm_vpn_service_plugin_read_vpn_details (void)
 
 /*****************************************************************************/
 
+static void
+test_types (void)
+{
+#define G(get_type_fcn) \
+	({ \
+		GType get_type_fcn (void); \
+		\
+		get_type_fcn; \
+	})
+	GType (*get_type_fcns[]) (void) = {
+		G (nm_802_11_ap_flags_get_type),
+		G (nm_802_11_ap_security_flags_get_type),
+		G (nm_802_11_mode_get_type),
+		G (nm_access_point_get_type),
+		G (nm_activation_state_flags_get_type),
+		G (nm_active_connection_get_type),
+		G (nm_active_connection_state_get_type),
+		G (nm_active_connection_state_reason_get_type),
+		G (nm_agent_manager_error_get_type),
+		G (nm_bluetooth_capabilities_get_type),
+		G (nm_bridge_vlan_get_type),
+		G (nm_capability_get_type),
+		G (nm_checkpoint_create_flags_get_type),
+		G (nm_checkpoint_get_type),
+		G (nm_client_error_get_type),
+		G (nm_client_get_type),
+		G (nm_client_permission_get_type),
+		G (nm_client_permission_result_get_type),
+		G (nm_connection_error_get_type),
+		G (nm_connection_get_type),
+		G (nm_connection_multi_connect_get_type),
+		G (nm_connection_serialization_flags_get_type),
+		G (nm_connectivity_state_get_type),
+		G (nm_crypto_error_get_type),
+		G (nm_device_6lowpan_get_type),
+		G (nm_device_adsl_get_type),
+		G (nm_device_bond_get_type),
+		G (nm_device_bridge_get_type),
+		G (nm_device_bt_get_type),
+		G (nm_device_capabilities_get_type),
+		G (nm_device_dummy_get_type),
+		G (nm_device_error_get_type),
+		G (nm_device_ethernet_get_type),
+		G (nm_device_generic_get_type),
+		G (nm_device_get_type),
+		G (nm_device_infiniband_get_type),
+		G (nm_device_ip_tunnel_get_type),
+		G (nm_device_macsec_get_type),
+		G (nm_device_macvlan_get_type),
+		G (nm_device_modem_capabilities_get_type),
+		G (nm_device_modem_get_type),
+		G (nm_device_olpc_mesh_get_type),
+		G (nm_device_ovs_bridge_get_type),
+		G (nm_device_ovs_interface_get_type),
+		G (nm_device_ovs_port_get_type),
+		G (nm_device_ppp_get_type),
+		G (nm_device_state_get_type),
+		G (nm_device_state_reason_get_type),
+		G (nm_device_team_get_type),
+		G (nm_device_tun_get_type),
+		G (nm_device_type_get_type),
+		G (nm_device_vlan_get_type),
+		G (nm_device_vxlan_get_type),
+		G (nm_device_wifi_capabilities_get_type),
+		G (nm_device_wifi_get_type),
+		G (nm_device_wifi_p2p_get_type),
+		G (nm_device_wimax_get_type),
+		G (nm_device_wireguard_get_type),
+		G (nm_device_wpan_get_type),
+		G (nm_dhcp4_config_get_type),
+		G (nm_dhcp6_config_get_type),
+		G (nm_dhcp_config_get_type),
+		G (nm_dns_entry_get_type),
+		G (nm_dns_manager_get_type),
+		G (nm_ip4_config_get_type),
+		G (nm_ip6_config_get_type),
+		G (nm_ip_address_get_type),
+		G (nm_ip_config_get_type),
+		G (nm_ip_route_get_type),
+		G (nm_ip_routing_rule_as_string_flags_get_type),
+		G (nm_ip_routing_rule_get_type),
+		G (nm_ip_tunnel_flags_get_type),
+		G (nm_ip_tunnel_mode_get_type),
+		G (nm_lldp_neighbor_get_type),
+		G (nm_manager_error_get_type),
+		G (nm_manager_get_type),
+		G (nm_manager_reload_flags_get_type),
+		G (nm_metered_get_type),
+		G (nm_object_get_type),
+		G (nm_remote_connection_get_type),
+		G (nm_remote_settings_get_type),
+		G (nm_secret_agent_capabilities_get_type),
+		G (nm_secret_agent_error_get_type),
+		G (nm_secret_agent_get_secrets_flags_get_type),
+		G (nm_secret_agent_old_get_type),
+		G (nm_setting_6lowpan_get_type),
+		G (nm_setting_802_1x_auth_flags_get_type),
+		G (nm_setting_802_1x_ck_format_get_type),
+		G (nm_setting_802_1x_ck_scheme_get_type),
+		G (nm_setting_802_1x_get_type),
+		G (nm_setting_adsl_get_type),
+		G (nm_setting_bluetooth_get_type),
+		G (nm_setting_bond_get_type),
+		G (nm_setting_bridge_get_type),
+		G (nm_setting_bridge_port_get_type),
+		G (nm_setting_cdma_get_type),
+		G (nm_setting_compare_flags_get_type),
+		G (nm_setting_connection_autoconnect_slaves_get_type),
+		G (nm_setting_connection_get_type),
+		G (nm_setting_connection_lldp_get_type),
+		G (nm_setting_connection_llmnr_get_type),
+		G (nm_setting_connection_mdns_get_type),
+		G (nm_setting_dcb_flags_get_type),
+		G (nm_setting_dcb_get_type),
+		G (nm_setting_diff_result_get_type),
+		G (nm_setting_dummy_get_type),
+		G (nm_setting_ethtool_get_type),
+		G (nm_setting_generic_get_type),
+		G (nm_setting_get_type),
+		G (nm_setting_gsm_get_type),
+		G (nm_setting_infiniband_get_type),
+		G (nm_setting_ip4_config_get_type),
+		G (nm_setting_ip6_config_addr_gen_mode_get_type),
+		G (nm_setting_ip6_config_get_type),
+		G (nm_setting_ip6_config_privacy_get_type),
+		G (nm_setting_ip_config_get_type),
+		G (nm_setting_ip_tunnel_get_type),
+		G (nm_setting_mac_randomization_get_type),
+		G (nm_setting_macsec_get_type),
+		G (nm_setting_macsec_mode_get_type),
+		G (nm_setting_macsec_validation_get_type),
+		G (nm_setting_macvlan_get_type),
+		G (nm_setting_macvlan_mode_get_type),
+		G (nm_setting_match_get_type),
+		G (nm_setting_olpc_mesh_get_type),
+		G (nm_setting_ovs_bridge_get_type),
+		G (nm_setting_ovs_dpdk_get_type),
+		G (nm_setting_ovs_interface_get_type),
+		G (nm_setting_ovs_patch_get_type),
+		G (nm_setting_ovs_port_get_type),
+		G (nm_setting_ppp_get_type),
+		G (nm_setting_pppoe_get_type),
+		G (nm_setting_proxy_get_type),
+		G (nm_setting_proxy_method_get_type),
+		G (nm_settings_add_connection2_flags_get_type),
+		G (nm_settings_connection_flags_get_type),
+		G (nm_setting_secret_flags_get_type),
+		G (nm_setting_serial_get_type),
+		G (nm_setting_serial_parity_get_type),
+		G (nm_settings_error_get_type),
+		G (nm_setting_sriov_get_type),
+		G (nm_settings_update2_flags_get_type),
+		G (nm_setting_tc_config_get_type),
+		G (nm_setting_team_get_type),
+		G (nm_setting_team_port_get_type),
+		G (nm_setting_tun_get_type),
+		G (nm_setting_tun_mode_get_type),
+		G (nm_setting_user_get_type),
+		G (nm_setting_vlan_get_type),
+		G (nm_setting_vpn_get_type),
+		G (nm_setting_vxlan_get_type),
+		G (nm_setting_wifi_p2p_get_type),
+		G (nm_setting_wimax_get_type),
+		G (nm_setting_wired_get_type),
+		G (nm_setting_wired_wake_on_lan_get_type),
+		G (nm_setting_wireguard_get_type),
+		G (nm_setting_wireless_get_type),
+		G (nm_setting_wireless_powersave_get_type),
+		G (nm_setting_wireless_security_fils_get_type),
+		G (nm_setting_wireless_security_get_type),
+		G (nm_setting_wireless_security_pmf_get_type),
+		G (nm_setting_wireless_security_wps_method_get_type),
+		G (nm_setting_wireless_wake_on_wlan_get_type),
+		G (nm_setting_wpan_get_type),
+		G (nm_simple_connection_get_type),
+		G (nm_sriov_vf_get_type),
+		G (nm_sriov_vf_vlan_protocol_get_type),
+		G (nm_state_get_type),
+		G (nm_tc_action_get_type),
+		G (nm_tc_qdisc_get_type),
+		G (nm_tc_tfilter_get_type),
+		G (nm_team_link_watcher_arp_ping_flags_get_type),
+		G (nm_team_link_watcher_get_type),
+		G (nm_ternary_get_type),
+		G (nm_utils_security_type_get_type),
+		G (nm_vlan_flags_get_type),
+		G (nm_vlan_priority_map_get_type),
+		G (nm_vpn_connection_get_type),
+		G (nm_vpn_connection_state_get_type),
+		G (nm_vpn_connection_state_reason_get_type),
+		G (nm_vpn_editor_get_type),
+		G (nm_vpn_editor_plugin_capability_get_type),
+		G (nm_vpn_editor_plugin_get_type),
+		G (nm_vpn_plugin_error_get_type),
+		G (nm_vpn_plugin_failure_get_type),
+		G (nm_vpn_plugin_info_get_type),
+		G (nm_vpn_plugin_old_get_type),
+		G (nm_vpn_service_plugin_get_type),
+		G (nm_vpn_service_state_get_type),
+		G (nm_wep_key_type_get_type),
+		G (nm_wifi_p2p_peer_get_type),
+		G (nm_wimax_nsp_get_type),
+		G (nm_wimax_nsp_network_type_get_type),
+		G (nm_wireguard_peer_get_type),
+	};
+	guint i_type;
+
+	for (i_type = 0; i_type < G_N_ELEMENTS (get_type_fcns); i_type++) {
+		nm_auto_unref_gtypeclass GObjectClass *klass_unref = NULL;
+		GType gtype = (get_type_fcns[i_type]) ();
+		GObjectClass *klass;
+
+		g_assert (g_str_has_prefix (g_type_name (gtype), "NM"));
+
+		if (G_TYPE_IS_INTERFACE (gtype)) {
+			if (!NM_IN_STRSET (g_type_name (gtype), "NMConnection",
+			                                        "NMVpnEditor",
+			                                        "NMVpnEditorPlugin"))
+				g_error ("unexpected interface type %s", g_type_name (gtype));
+			continue;
+		}
+
+		if (g_type_is_a (gtype, G_TYPE_BOXED))
+			continue;
+
+		/* We only test parts of the types, and avoid initializing all the types.
+		 * That is so that other unit tests in this process randomly run with either
+		 * the class instance already initialized or not. */
+		if ((nmtst_get_rand_uint () % 5) == 0) {
+			klass = (klass_unref = g_type_class_ref (gtype));
+			g_assert (klass);
+		} else {
+			klass = g_type_class_peek (gtype);
+			if (!klass)
+				continue;
+		}
+
+		if (g_type_is_a (gtype, G_TYPE_ENUM))
+			continue;
+
+		if (g_type_is_a (gtype, G_TYPE_FLAGS))
+			continue;
+
+		g_assert (g_type_is_a (gtype, G_TYPE_OBJECT));
+		g_assert (G_IS_OBJECT_CLASS (klass));
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2425,6 +2675,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/libnm/general/fixup_product_string", test_fixup_product_string);
 	g_test_add_func ("/libnm/general/fixup_vendor_string", test_fixup_vendor_string);
 	g_test_add_func ("/libnm/general/nm_vpn_service_plugin_read_vpn_details", test_nm_vpn_service_plugin_read_vpn_details);
+	g_test_add_func ("/libnm/general/test_types", test_types);
 
 	return g_test_run ();
 }
