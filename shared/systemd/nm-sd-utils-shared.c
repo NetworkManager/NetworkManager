@@ -39,7 +39,7 @@ nm_sd_utils_path_startswith (const char *path, const char *prefix)
 
 /*****************************************************************************/
 
-gboolean
+int
 nm_sd_utils_unbase64char (char ch, gboolean accept_padding_equal)
 {
 	if (   ch == '='
