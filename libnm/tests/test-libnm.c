@@ -12,7 +12,6 @@
 #include <sys/mman.h>
 
 #include "nm-libnm-utils.h"
-
 #include "nm-vpn-service-plugin.h"
 
 #include "nm-utils/nm-test-utils.h"

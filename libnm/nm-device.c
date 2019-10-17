@@ -11,7 +11,6 @@
 #include <libudev.h>
 
 #include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-libnm-utils.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-device-bt.h"

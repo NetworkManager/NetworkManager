@@ -12,7 +12,6 @@
 #include <stdio.h>
 
 #include "nm-utils.h"
-#include "nm-libnm-utils.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
