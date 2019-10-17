@@ -28,8 +28,8 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_MODEM_CAPS,
-	PROP_CURRENT_CAPS,
+	PROP_MODEM_CAPABILITIES,
+	PROP_CURRENT_CAPABILITIES,
 	PROP_DEVICE_ID,
 	PROP_OPERATOR_CODE,
 	PROP_APN,
@@ -245,10 +245,10 @@ get_property (GObject *object,
 	NMDeviceModem *self = NM_DEVICE_MODEM (object);
 
 	switch (prop_id) {
-	case PROP_MODEM_CAPS:
+	case PROP_MODEM_CAPABILITIES:
 		g_value_set_flags (value, nm_device_modem_get_modem_capabilities (self));
 		break;
-	case PROP_CURRENT_CAPS:
+	case PROP_CURRENT_CAPABILITIES:
 		g_value_set_flags (value, nm_device_modem_get_current_capabilities (self));
 		break;
 	case PROP_DEVICE_ID:
@@ -294,7 +294,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * CDMA/EVDO and GSM/UMTS.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_MODEM_CAPS,
+		(object_class, PROP_MODEM_CAPABILITIES,
 		 g_param_spec_flags (NM_DEVICE_MODEM_MODEM_CAPABILITIES, "", "",
 		                     NM_TYPE_DEVICE_MODEM_CAPABILITIES,
 		                     NM_DEVICE_MODEM_CAPABILITY_NONE,
@@ -308,7 +308,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * without a firmware reload or reinitialization.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_CURRENT_CAPS,
+		(object_class, PROP_CURRENT_CAPABILITIES,
 		 g_param_spec_flags (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
 		                     NM_TYPE_DEVICE_MODEM_CAPABILITIES,
 		                     NM_DEVICE_MODEM_CAPABILITY_NONE,
