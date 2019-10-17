@@ -32,6 +32,7 @@
 #include <stdio.h>
 
 #include "nm-glib-aux/nm-dedup-multi.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
@@ -249,6 +250,17 @@ client_start (NMDhcpManager *self,
 		                    NM_UTILS_ERROR_UNKNOWN,
 		                    "invalid MAC address");
 		g_return_val_if_reached (NULL) ;
+	}
+
+	if (hostname) {
+		if (   (hostname_use_fqdn && !nm_sd_dns_name_is_valid (hostname))
+		    || (!hostname_use_fqdn && !nm_sd_hostname_is_valid (hostname, FALSE))) {
+			nm_log_warn (LOGD_DHCP , "dhcp%c: %s '%s' is invalid, will be ignored",
+			             nm_utils_addr_family_to_char (addr_family),
+			             hostname_use_fqdn ? "FQDN" : "hostname",
+			             hostname);
+			hostname = NULL;
+		}
 	}
 
 	nm_assert (g_bytes_get_size (hwaddr) == g_bytes_get_size (bcast_hwaddr));
