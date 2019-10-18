@@ -32,8 +32,7 @@ typedef struct {
 	gboolean new_style_data;
 } NMIPConfigPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FAMILY,
 	PROP_GATEWAY,
 	PROP_ADDRESSES,
@@ -42,9 +41,7 @@ enum {
 	PROP_DOMAINS,
 	PROP_SEARCHES,
 	PROP_WINS_SERVERS,
-
-	LAST_PROP
-};
+);
 
 static void
 nm_ip_config_init (NMIPConfig *config)
@@ -244,13 +241,10 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
 
 	g_type_class_add_private (config_class, sizeof (NMIPConfigPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
-
-	/* properties */
 
 	/**
 	 * NMIPConfig:family:
@@ -258,84 +252,77 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
 	 * The IP address family of the configuration; either
 	 * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_FAMILY,
-	     g_param_spec_int (NM_IP_CONFIG_FAMILY, "", "",
-	                       0, 255, AF_UNSPEC,
-	                       G_PARAM_READABLE |
-	                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FAMILY] =
+	    g_param_spec_int (NM_IP_CONFIG_FAMILY, "", "",
+	                      0, 255, AF_UNSPEC,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:gateway:
 	 *
 	 * The IP gateway address of the configuration as string.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_GATEWAY,
-		 g_param_spec_string (NM_IP_CONFIG_GATEWAY, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_GATEWAY] =
+	    g_param_spec_string (NM_IP_CONFIG_GATEWAY, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:addresses:
 	 *
 	 * A #GPtrArray containing the addresses (#NMIPAddress) of the configuration.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_ADDRESSES,
-	     g_param_spec_boxed (NM_IP_CONFIG_ADDRESSES, "", "",
-	                         G_TYPE_PTR_ARRAY,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ADDRESSES] =
+	    g_param_spec_boxed (NM_IP_CONFIG_ADDRESSES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:routes: (type GPtrArray(NMIPRoute))
 	 *
 	 * A #GPtrArray containing the routes (#NMIPRoute) of the configuration.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_ROUTES,
-	     g_param_spec_boxed (NM_IP_CONFIG_ROUTES, "", "",
-	                         G_TYPE_PTR_ARRAY,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ROUTES] =
+	    g_param_spec_boxed (NM_IP_CONFIG_ROUTES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:nameservers:
 	 *
 	 * The array containing name server IP addresses of the configuration.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_NAMESERVERS,
-	     g_param_spec_boxed (NM_IP_CONFIG_NAMESERVERS, "", "",
-	                         G_TYPE_STRV,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NAMESERVERS] =
+	    g_param_spec_boxed (NM_IP_CONFIG_NAMESERVERS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:domains:
 	 *
 	 * The array containing domain strings of the configuration.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DOMAINS,
-	     g_param_spec_boxed (NM_IP_CONFIG_DOMAINS, "", "",
-	                         G_TYPE_STRV,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DOMAINS] =
+	    g_param_spec_boxed (NM_IP_CONFIG_DOMAINS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:searches:
 	 *
 	 * The array containing DNS search strings of the configuration.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_SEARCHES,
-	     g_param_spec_boxed (NM_IP_CONFIG_SEARCHES, "", "",
-	                         G_TYPE_STRV,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SEARCHES] =
+	    g_param_spec_boxed (NM_IP_CONFIG_SEARCHES, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMIPConfig:wins-servers:
@@ -343,12 +330,13 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
 	 * The array containing WINS server IP addresses of the configuration.
 	 * (This will always be empty for IPv6 configurations.)
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_WINS_SERVERS,
-	     g_param_spec_boxed (NM_IP_CONFIG_WINS_SERVERS, "", "",
-	                         G_TYPE_STRV,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_WINS_SERVERS] =
+	    g_param_spec_boxed (NM_IP_CONFIG_WINS_SERVERS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
 /**

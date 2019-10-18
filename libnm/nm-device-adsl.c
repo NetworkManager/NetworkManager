@@ -21,11 +21,9 @@ typedef struct {
 
 } NMDeviceAdslPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_CARRIER,
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_adsl_get_carrier:
@@ -114,24 +112,23 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
+	device_class->get_setting_type      = get_setting_type;
 
-	/* properties */
 	/**
 	 * NMDeviceAdsl:carrier:
 	 *
 	 * Whether the device has carrier.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_ADSL_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CARRIER] =
+	    g_param_spec_boolean (NM_DEVICE_ADSL_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

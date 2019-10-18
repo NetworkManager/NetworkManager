@@ -30,14 +30,11 @@ G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_OBJECT)
 
 #define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT)
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DEVICES,
 	PROP_CREATED,
 	PROP_ROLLBACK_TIMEOUT,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_checkpoint_get_devices:
@@ -163,7 +160,7 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (checkpoint_class);
 
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
@@ -174,12 +171,11 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_CHECKPOINT_DEVICES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DEVICES] =
+	    g_param_spec_boxed (NM_CHECKPOINT_DEVICES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMCheckpoint:created:
@@ -188,12 +184,11 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CREATED,
-		 g_param_spec_int64 (NM_CHECKPOINT_CREATED, "", "",
-		                     G_MININT64, G_MAXINT64, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CREATED] =
+	    g_param_spec_int64 (NM_CHECKPOINT_CREATED, "", "",
+	                        G_MININT64, G_MAXINT64, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMCheckpoint:rollback-timeout:
@@ -202,10 +197,11 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	 *
 	 * Since: 1.12
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ROLLBACK_TIMEOUT,
-		 g_param_spec_uint (NM_CHECKPOINT_ROLLBACK_TIMEOUT, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ROLLBACK_TIMEOUT] =
+	    g_param_spec_uint (NM_CHECKPOINT_ROLLBACK_TIMEOUT, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

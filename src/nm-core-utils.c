@@ -3744,66 +3744,6 @@ nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings)
 
 /*****************************************************************************/
 
-static gboolean
-debug_key_matches (const char *key,
-                   const char *token,
-                   guint        length)
-{
-	/* may not call GLib functions: see note in g_parse_debug_string() */
-	for (; length; length--, key++, token++) {
-		char k = (*key   == '_') ? '-' : g_ascii_tolower (*key  );
-		char t = (*token == '_') ? '-' : g_ascii_tolower (*token);
-
-		if (k != t)
-			return FALSE;
-	}
-
-	return *key == '\0';
-}
-
-/**
- * nm_utils_parse_debug_string:
- * @string: the string to parse
- * @keys: the debug keys
- * @nkeys: number of entries in @keys
- *
- * Similar to g_parse_debug_string(), but does not special
- * case "help" or "all".
- *
- * Returns: the flags
- */
-guint
-nm_utils_parse_debug_string (const char *string,
-                             const GDebugKey *keys,
-                             guint nkeys)
-{
-	guint i;
-	guint result = 0;
-	const char *q;
-
-	if (string == NULL)
-		return 0;
-
-	while (*string) {
-		q = strpbrk (string, ":;, \t");
-		if (!q)
-			q = string + strlen (string);
-
-		for (i = 0; i < nkeys; i++) {
-			if (debug_key_matches (keys[i].key, string, q - string))
-				result |= keys[i].value;
-		}
-
-		string = q;
-		if (*string)
-			string++;
-	}
-
-	return result;
-}
-
-/*****************************************************************************/
-
 void
 nm_utils_ifname_cpy (char *dst, const char *name)
 {

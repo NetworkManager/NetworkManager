@@ -34,8 +34,7 @@ typedef struct {
 	char *bsid;
 } NMDeviceWimaxPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_ACTIVE_NSP,
 	PROP_CENTER_FREQ,
@@ -44,9 +43,7 @@ enum {
 	PROP_TX_POWER,
 	PROP_BSID,
 	PROP_NSPS,
-
-	LAST_PROP
-};
+);
 
 enum {
 	NSP_ADDED,
@@ -510,19 +507,16 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 
 	g_type_class_add_private (wimax_class, sizeof (NMDeviceWimaxPrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
+	object_class->dispose      = dispose;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	wimax_class->nsp_removed = nsp_removed;
-
-	/* properties */
 
 	/**
 	 * NMDeviceWimax:hw-address:
@@ -531,12 +525,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIMAX_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_WIMAX_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:active-nsp:
@@ -545,12 +538,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_NSP,
-		 g_param_spec_object (NM_DEVICE_WIMAX_ACTIVE_NSP, "", "",
-		                      NM_TYPE_WIMAX_NSP,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_NSP] =
+	    g_param_spec_object (NM_DEVICE_WIMAX_ACTIVE_NSP, "", "",
+	                         NM_TYPE_WIMAX_NSP,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:center-frequency:
@@ -561,12 +553,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CENTER_FREQ,
-		 g_param_spec_uint (NM_DEVICE_WIMAX_CENTER_FREQUENCY, "", "",
-		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CENTER_FREQ] =
+	    g_param_spec_uint (NM_DEVICE_WIMAX_CENTER_FREQUENCY, "", "",
+	                       0, G_MAXUINT, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:rssi:
@@ -578,12 +569,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_RSSI,
-		 g_param_spec_int (NM_DEVICE_WIMAX_RSSI, "", "",
-		                   G_MININT, G_MAXINT, 0,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_RSSI] =
+	    g_param_spec_int (NM_DEVICE_WIMAX_RSSI, "", "",
+	                      G_MININT, G_MAXINT, 0,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:cinr:
@@ -594,12 +584,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CINR,
-		 g_param_spec_int (NM_DEVICE_WIMAX_CINR, "", "",
-		                   G_MININT, G_MAXINT, 0,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CINR] =
+	    g_param_spec_int (NM_DEVICE_WIMAX_CINR, "", "",
+	                      G_MININT, G_MAXINT, 0,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:tx-power:
@@ -610,12 +599,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TX_POWER,
-		 g_param_spec_int (NM_DEVICE_WIMAX_TX_POWER, "", "",
-		                   G_MININT, G_MAXINT, 0,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TX_POWER] =
+	    g_param_spec_int (NM_DEVICE_WIMAX_TX_POWER, "", "",
+	                      G_MININT, G_MAXINT, 0,
+	                      G_PARAM_READABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:bsid:
@@ -625,26 +613,24 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 *
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_BSID,
-		 g_param_spec_string (NM_DEVICE_WIMAX_BSID, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BSID] =
+	    g_param_spec_string (NM_DEVICE_WIMAX_BSID, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWimax:nsps: (type GPtrArray(NMWimaxNsp))
 	 *
 	 * List of all WiMAX Network Service Providers the device can see.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NSPS,
-		 g_param_spec_boxed (NM_DEVICE_WIMAX_NSPS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NSPS] =
+	    g_param_spec_boxed (NM_DEVICE_WIMAX_NSPS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/**
 	 * NMDeviceWimax::nsp-added:
@@ -656,14 +642,14 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
 	signals[NSP_ADDED] =
-		g_signal_new ("nsp-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("nsp-added",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_added),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 
 	/**
 	 * NMDeviceWimax::nsp-removed:
@@ -675,12 +661,12 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
 	signals[NSP_REMOVED] =
-		g_signal_new ("nsp-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+	    g_signal_new ("nsp-removed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_removed),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__OBJECT,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_OBJECT);
 }

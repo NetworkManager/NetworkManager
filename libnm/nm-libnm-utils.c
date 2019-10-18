@@ -10,6 +10,109 @@
 
 /*****************************************************************************/
 
+volatile int _nml_dbus_log_level = 0;
+
+int
+_nml_dbus_log_level_init (void)
+{
+	const GDebugKey keys[] = {
+		{ "trace",   _NML_DBUS_LOG_LEVEL_TRACE },
+		{ "debug",   _NML_DBUS_LOG_LEVEL_DEBUG },
+		{ "warning", _NML_DBUS_LOG_LEVEL_WARN },
+		{ "error",   _NML_DBUS_LOG_LEVEL_ERROR },
+	};
+	int l;
+
+	l =   _NML_DBUS_LOG_LEVEL_INITIALIZED
+	    | nm_utils_parse_debug_string (g_getenv ("LIBNM_CLIENT_DEBUG"),
+	                                   keys,
+	                                   G_N_ELEMENTS (keys));
+
+	if (!g_atomic_int_compare_and_exchange (&_nml_dbus_log_level, 0, l))
+		l = g_atomic_int_get (&_nml_dbus_log_level);
+
+	nm_assert (l & _NML_DBUS_LOG_LEVEL_INITIALIZED);
+	return l;
+}
+
+void
+_nml_dbus_log (NMLDBusLogLevel level,
+               const char *fmt,
+               ...) {
+	NMLDBusLogLevel configured_log_level;
+	gs_free char *msg = NULL;
+	va_list args;
+	const char *prefix = "";
+
+	/* we only call _nml_dbus_log() after nml_dbus_log_enabled(), which already does
+	 * an atomic access to the variable. Since the value is only initialized once and
+	 * never changes, we can just access it without additional locking. */
+	configured_log_level = _nml_dbus_log_level;
+
+	nm_assert (level & configured_log_level);
+
+	va_start (args, fmt);
+	msg = g_strdup_vprintf (fmt, args);
+	va_end (args);
+
+	switch (level) {
+	case NML_DBUS_LOG_LEVEL_TRACE:
+		prefix = "<trace> ";
+		break;
+	case NML_DBUS_LOG_LEVEL_DEBUG:
+		prefix = "<debug> ";
+		break;
+	case NML_DBUS_LOG_LEVEL_WARN:
+		prefix = "<warn > ";
+		if (NM_FLAGS_HAS (configured_log_level, _NML_DBUS_LOG_LEVEL_WARN)) {
+			g_warning ("libnm-dbus: %s%s", prefix, msg);
+			return;
+		}
+		break;
+	case NML_DBUS_LOG_LEVEL_ERROR:
+		prefix = "<error> ";
+		if (NM_FLAGS_HAS (configured_log_level, _NML_DBUS_LOG_LEVEL_ERROR)) {
+			g_critical ("libnm-dbus: %s%s", prefix, msg);
+			return;
+		}
+		if (NM_FLAGS_HAS (configured_log_level, _NML_DBUS_LOG_LEVEL_WARN)) {
+			g_warning ("libnm-dbus: %s%s", prefix, msg);
+			return;
+		}
+		break;
+	default:
+		break;
+	}
+
+	g_printerr ("libnm-dbus: %s%s\n", prefix, msg);
+}
+
+/*****************************************************************************/
+
+/* Stolen from dbus-glib */
+char *
+nm_utils_wincaps_to_dash (const char *caps)
+{
+	const char *p;
+	GString *str;
+
+	str = g_string_new (NULL);
+	p = caps;
+	while (*p) {
+		if (g_ascii_isupper (*p)) {
+			if (str->len > 0 && (str->len < 2 || str->str[str->len-2] != '-'))
+				g_string_append_c (str, '-');
+			g_string_append_c (str, g_ascii_tolower (*p));
+		} else
+			g_string_append_c (str, *p);
+		++p;
+	}
+
+	return g_string_free (str, FALSE);
+}
+
+/*****************************************************************************/
+
 static char *
 _fixup_string (const char *desc,
                const char *const *ignored_phrases,

@@ -12,7 +12,6 @@
 #endif
 
 #include "nm-object.h"
-#include "nm-libnm-utils.h"
 
 #define NM_TYPE_REMOTE_SETTINGS            (nm_remote_settings_get_type ())
 #define NM_REMOTE_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettings))

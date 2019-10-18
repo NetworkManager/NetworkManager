@@ -27,14 +27,11 @@ typedef struct {
 	GPtrArray *configuration;
 } NMDnsManagerPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MODE,
 	PROP_RC_MANAGER,
 	PROP_CONFIGURATION,
-
-	LAST_PROP
-};
+);
 
 /*****************************************************************************
  * NMDnsEntry
@@ -401,32 +398,28 @@ nm_dns_manager_class_init (NMDnsManagerClass *class)
 
 	g_type_class_add_private (class, sizeof (NMDnsManagerPrivate));
 
-	/* Virtual methods */
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
+	object_class->dispose      = dispose;
 
 	nm_object_class->init_dbus = init_dbus;
 
-	/* Properties */
+	obj_properties[PROP_MODE] =
+	    g_param_spec_string (NM_DNS_MANAGER_MODE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_DNS_MANAGER_MODE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_RC_MANAGER] =
+	    g_param_spec_string (NM_DNS_MANAGER_RC_MANAGER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_RC_MANAGER,
-		 g_param_spec_string (NM_DNS_MANAGER_RC_MANAGER, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONFIGURATION] =
+	    g_param_spec_boxed (NM_DNS_MANAGER_CONFIGURATION, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CONFIGURATION,
-		 g_param_spec_boxed (NM_DNS_MANAGER_CONFIGURATION, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

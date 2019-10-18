@@ -748,6 +748,7 @@ CLEANFILES += $(DBUS_INTERFACE_DOCS)
 
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS): $(introspection_sources)
 $(dispatcher_nm_dispatcher_OBJECTS):            $(introspection_sources)
+$(libnm_liblibnm_la_OBJECTS):                   $(introspection_sources)
 $(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
 
 EXTRA_DIST += \
@@ -1327,6 +1328,11 @@ libnm_liblibnm_la_SOURCES = \
 	$(libnm_lib_c_real) \
 	$(NULL)
 
+nodist_libnm_liblibnm_la_SOURCES = \
+	$(libnm_lib_h_pub_mkenums) \
+	$(libnm_lib_c_mkenums) \
+	$(NULL)
+
 libnm_liblibnm_la_LIBADD = \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/libnm-core.la \
@@ -1375,11 +1381,6 @@ libnm_libnm_la_CPPFLAGS = \
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
 	$(libnm_lib_h_priv) \
-	$(NULL)
-
-nodist_libnm_libnm_la_SOURCES = \
-	$(libnm_lib_h_pub_mkenums) \
-	$(libnm_lib_c_mkenums) \
 	$(NULL)
 
 EXTRA_libnm_libnm_la_DEPENDENCIES = \

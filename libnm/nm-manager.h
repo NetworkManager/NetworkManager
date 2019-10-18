@@ -13,7 +13,6 @@
 
 #include "nm-object.h"
 #include "nm-client.h"
-#include "nm-libnm-utils.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))

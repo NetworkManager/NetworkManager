@@ -894,6 +894,13 @@ nm_g_variant_unref_floating (GVariant *var)
 		g_variant_unref (var);
 }
 
+static inline void
+nm_g_source_destroy_and_unref (GSource *source)
+{
+	g_source_destroy (source);
+	g_source_unref (source);
+}
+
 /*****************************************************************************/
 
 static inline int
@@ -1281,5 +1288,9 @@ nm_g_task_is_valid (gpointer task,
 	return    g_task_is_valid (task, source_object)
 	       && g_task_get_source_tag (task) == source_tag;
 }
+
+guint nm_utils_parse_debug_string (const char *string,
+                                   const GDebugKey *keys,
+                                   guint nkeys);
 
 #endif /* __NM_SHARED_UTILS_H__ */

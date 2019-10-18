@@ -19,12 +19,9 @@ typedef struct {
 	char *hw_address;
 } NMDeviceDummyPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
-
-	LAST_PROP
-};
+);
 
 /*****************************************************************************/
 
@@ -143,14 +140,14 @@ nm_device_dummy_class_init (NMDeviceDummyClass *dummy_class)
 
 	g_type_class_add_private (dummy_class, sizeof (NMDeviceDummyPrivate));
 
-	object_class->dispose = dispose;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_hw_address = get_hw_address;
-	device_class->get_setting_type = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
+	device_class->get_setting_type      = get_setting_type;
 
 	/**
 	 * NMDeviceDummy:hw-address:
@@ -159,10 +156,11 @@ nm_device_dummy_class_init (NMDeviceDummyClass *dummy_class)
 	 *
 	 * Since: 1.10
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_DUMMY_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_DUMMY_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

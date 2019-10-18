@@ -24,14 +24,11 @@ typedef struct {
 	guint32 bt_capabilities;
 } NMDeviceBtPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 	PROP_NAME,
 	PROP_BT_CAPABILITIES,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_bt_get_hw_address:
@@ -235,53 +232,48 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 
 	g_type_class_add_private (bt_class, sizeof (NMDeviceBtPrivate));
 
-	/* virtual methods */
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceBt:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_BT_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_BT_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceBt:name:
 	 *
 	 * The name of the bluetooth device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_DEVICE_BT_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NAME] =
+	    g_param_spec_string (NM_DEVICE_BT_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceBt:bt-capabilities:
 	 *
 	 * The device's bluetooth capabilities, a combination of #NMBluetoothCapabilities.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_BT_CAPABILITIES,
-		 g_param_spec_flags (NM_DEVICE_BT_CAPABILITIES, "", "",
-		                     NM_TYPE_BLUETOOTH_CAPABILITIES,
-		                     NM_BT_CAPABILITY_NONE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_BT_CAPABILITIES] =
+	    g_param_spec_flags (NM_DEVICE_BT_CAPABILITIES, "", "",
+	                        NM_TYPE_BLUETOOTH_CAPABILITIES,
+	                        NM_BT_CAPABILITY_NONE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

@@ -9,21 +9,22 @@
 
 #include "nm-dbus-interface.h"
 
-static GBusType nm_bus = G_BUS_TYPE_SYSTEM;
-
 GBusType
 _nm_dbus_bus_type (void)
 {
-	static gsize init_value = 0;
+	static volatile int bus_type = G_BUS_TYPE_NONE;
+	int v;
 
-	if (g_once_init_enter (&init_value)) {
+	v = g_atomic_int_get (&bus_type);
+	if (G_UNLIKELY (v == G_BUS_TYPE_NONE)) {
+		v = G_BUS_TYPE_SYSTEM;
 		if (g_getenv ("LIBNM_USE_SESSION_BUS"))
-			nm_bus = G_BUS_TYPE_SESSION;
-
-		g_once_init_leave (&init_value, 1);
+			v = G_BUS_TYPE_SESSION;
+		if (!g_atomic_int_compare_and_exchange (&bus_type, G_BUS_TYPE_NONE, v))
+			v = g_atomic_int_get (&bus_type);
+		nm_assert (v != G_BUS_TYPE_NONE);
 	}
-
-	return nm_bus;
+	return v;
 }
 
 /* D-Bus has an upper limit on number of Match rules and it's rather easy

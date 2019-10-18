@@ -11,7 +11,6 @@
 #include <libudev.h>
 
 #include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-libnm-utils.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-device-bt.h"
@@ -78,8 +77,7 @@ typedef struct {
 	GPtrArray *lldp_neighbors;
 } NMDevicePrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_INTERFACE,
 	PROP_UDI,
 	PROP_DRIVER,
@@ -109,9 +107,7 @@ enum {
 	PROP_LLDP_NEIGHBORS,
 	PROP_IP4_CONNECTIVITY,
 	PROP_IP6_CONNECTIVITY,
-
-	LAST_PROP
-};
+);
 
 enum {
 	STATE_CHANGED,
@@ -464,29 +460,25 @@ nm_device_class_init (NMDeviceClass *device_class)
 
 	g_type_class_add_private (device_class, sizeof (NMDevicePrivate));
 
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-
-	/* properties */
 
 	/**
 	 * NMDevice:interface:
 	 *
 	 * The interface of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE,
-		 g_param_spec_string (NM_DEVICE_INTERFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_INTERFACE] =
+	    g_param_spec_string (NM_DEVICE_INTERFACE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:ip-interface:
@@ -494,25 +486,23 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * The IP interface of the device which should be used for all IP-related
 	 * operations like addressing and routing.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IP_INTERFACE,
-		 g_param_spec_string (NM_DEVICE_IP_INTERFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP_INTERFACE] =
+	    g_param_spec_string (NM_DEVICE_IP_INTERFACE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:device-type:
 	 *
 	 * The numeric type of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DEVICE_TYPE,
-		 g_param_spec_enum (NM_DEVICE_DEVICE_TYPE, "", "",
-		                    NM_TYPE_DEVICE_TYPE,
-		                    NM_DEVICE_TYPE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DEVICE_TYPE] =
+	    g_param_spec_enum (NM_DEVICE_DEVICE_TYPE, "", "",
+	                       NM_TYPE_DEVICE_TYPE,
+	                       NM_DEVICE_TYPE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 	/**
 	 * NMDevice:udi:
 	 *
@@ -523,61 +513,56 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * such as Bluez or ModemManager, and clients can use this property to
 	 * request more information about the device from those services.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_UDI,
-		 g_param_spec_string (NM_DEVICE_UDI, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UDI] =
+	    g_param_spec_string (NM_DEVICE_UDI, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:driver:
 	 *
 	 * The driver of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DRIVER,
-		 g_param_spec_string (NM_DEVICE_DRIVER, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DRIVER] =
+	    g_param_spec_string (NM_DEVICE_DRIVER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:driver-version:
 	 *
 	 * The version of the device driver.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DRIVER_VERSION,
-		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DRIVER_VERSION] =
+	    g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:firmware-version:
 	 *
 	 * The firmware version of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FIRMWARE_VERSION,
-		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FIRMWARE_VERSION] =
+	    g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:capabilities:
 	 *
 	 * The capabilities of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_flags (NM_DEVICE_CAPABILITIES, "", "",
-		                     NM_TYPE_DEVICE_CAPABILITIES,
-		                     NM_DEVICE_CAP_NONE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAPABILITIES] =
+	    g_param_spec_flags (NM_DEVICE_CAPABILITIES, "", "",
+	                        NM_TYPE_DEVICE_CAPABILITIES,
+	                        NM_DEVICE_CAP_NONE,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:real:
@@ -588,24 +573,22 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_REAL,
-		 g_param_spec_boolean (NM_DEVICE_REAL, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REAL] =
+	    g_param_spec_boolean (NM_DEVICE_REAL, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:managed:
 	 *
 	 * Whether the device is managed by NetworkManager.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MANAGED,
-		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MANAGED] =
+	    g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:autoconnect:
@@ -614,12 +597,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_AUTOCONNECT,
-		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AUTOCONNECT] =
+	    g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:firmware-missing:
@@ -627,12 +609,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * When %TRUE indicates the device is likely missing firmware required
 	 * for its operation.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FIRMWARE_MISSING,
-		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FIRMWARE_MISSING] =
+	    g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:nm-plugin-missing:
@@ -642,60 +623,55 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NM_PLUGIN_MISSING,
-		 g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NM_PLUGIN_MISSING] =
+	    g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:ip4-config:
 	 *
 	 * The #NMIP4Config of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IP4_CONFIG,
-		 g_param_spec_object (NM_DEVICE_IP4_CONFIG, "", "",
-		                      NM_TYPE_IP_CONFIG,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP4_CONFIG] =
+	    g_param_spec_object (NM_DEVICE_IP4_CONFIG, "", "",
+	                         NM_TYPE_IP_CONFIG,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:dhcp4-config:
 	 *
 	 * The IPv4 #NMDhcpConfig of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP4_CONFIG,
-		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG, "", "",
-		                      NM_TYPE_DHCP_CONFIG,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP4_CONFIG] =
+	    g_param_spec_object (NM_DEVICE_DHCP4_CONFIG, "", "",
+	                         NM_TYPE_DHCP_CONFIG,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:ip6-config:
 	 *
 	 * The IPv6 #NMIPConfig of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IP6_CONFIG,
-		 g_param_spec_object (NM_DEVICE_IP6_CONFIG, "", "",
-		                      NM_TYPE_IP_CONFIG,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP6_CONFIG] =
+	    g_param_spec_object (NM_DEVICE_IP6_CONFIG, "", "",
+	                         NM_TYPE_IP_CONFIG,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:dhcp6-config:
 	 *
 	 * The IPv6 #NMDhcpConfig of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP6_CONFIG,
-		 g_param_spec_object (NM_DEVICE_DHCP6_CONFIG, "", "",
-		                      NM_TYPE_DHCP_CONFIG,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DHCP6_CONFIG] =
+	    g_param_spec_object (NM_DEVICE_DHCP6_CONFIG, "", "",
+	                         NM_TYPE_DHCP_CONFIG,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:ip4-connectivity:
@@ -704,13 +680,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IP4_CONNECTIVITY,
-		 g_param_spec_enum (NM_DEVICE_IP4_CONNECTIVITY, "", "",
-		                    NM_TYPE_CONNECTIVITY_STATE,
-		                    NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP4_CONNECTIVITY] =
+	    g_param_spec_enum (NM_DEVICE_IP4_CONNECTIVITY, "", "",
+	                       NM_TYPE_CONNECTIVITY_STATE,
+	                       NM_CONNECTIVITY_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:ip6-connectivity:
@@ -719,86 +694,79 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * Since: 1.16
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IP6_CONNECTIVITY,
-		 g_param_spec_enum (NM_DEVICE_IP6_CONNECTIVITY, "", "",
-		                    NM_TYPE_CONNECTIVITY_STATE,
-		                    NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IP6_CONNECTIVITY] =
+	    g_param_spec_enum (NM_DEVICE_IP6_CONNECTIVITY, "", "",
+	                       NM_TYPE_CONNECTIVITY_STATE,
+	                       NM_CONNECTIVITY_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:state:
 	 *
 	 * The state of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_DEVICE_STATE, "", "",
-		                    NM_TYPE_DEVICE_STATE,
-		                    NM_DEVICE_STATE_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STATE] =
+	    g_param_spec_enum (NM_DEVICE_STATE, "", "",
+	                       NM_TYPE_DEVICE_STATE,
+	                       NM_DEVICE_STATE_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:state-reason:
 	 *
 	 * The reason for the device state.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_STATE_REASON,
-		 g_param_spec_uint (NM_DEVICE_STATE_REASON, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_STATE_REASON] =
+	    g_param_spec_uint (NM_DEVICE_STATE_REASON, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:active-connection:
 	 *
 	 * The #NMActiveConnection object that "owns" this device during activation.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CONNECTION,
-		 g_param_spec_object (NM_DEVICE_ACTIVE_CONNECTION, "", "",
-		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_CONNECTION] =
+	    g_param_spec_object (NM_DEVICE_ACTIVE_CONNECTION, "", "",
+	                         NM_TYPE_ACTIVE_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:available-connections: (type GPtrArray(NMRemoteConnection))
 	 *
 	 * The available connections of the device
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_AVAILABLE_CONNECTIONS,
-		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_AVAILABLE_CONNECTIONS] =
+	    g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:vendor:
 	 *
 	 * The vendor string of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_VENDOR,
-		 g_param_spec_string (NM_DEVICE_VENDOR, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_VENDOR] =
+	    g_param_spec_string (NM_DEVICE_VENDOR, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:product:
 	 *
 	 * The product string of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PRODUCT,
-		 g_param_spec_string (NM_DEVICE_PRODUCT, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PRODUCT] =
+	    g_param_spec_string (NM_DEVICE_PRODUCT, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:physical-port-id:
@@ -806,24 +774,22 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * The physical port ID of the device. (See
 	 * nm_device_get_physical_port_id().)
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PHYSICAL_PORT_ID,
-		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PHYSICAL_PORT_ID] =
+	    g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:mtu:
 	 *
 	 * The MTU of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_DEVICE_MTU, "", "",
-		                    0, G_MAXUINT32, 1500,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_DEVICE_MTU, "", "",
+	                       0, G_MAXUINT32, 1500,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:metered:
@@ -832,26 +798,24 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_METERED,
-		 g_param_spec_uint (NM_DEVICE_METERED, "", "",
-		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_METERED] =
+	    g_param_spec_uint (NM_DEVICE_METERED, "", "",
+	                       0, G_MAXUINT32, NM_METERED_UNKNOWN,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDevice:lldp-neighbors:
 	 *
 	 * The LLDP neighbors.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_LLDP_NEIGHBORS,
-	     g_param_spec_boxed (NM_DEVICE_LLDP_NEIGHBORS, "", "",
-	                         G_TYPE_PTR_ARRAY,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LLDP_NEIGHBORS] =
+	    g_param_spec_boxed (NM_DEVICE_LLDP_NEIGHBORS, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	/**
 	 * NMDevice::state-changed:
@@ -863,13 +827,13 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * Notifies the state change of a #NMDevice.
 	 **/
 	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3,
-		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new ("state-changed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDeviceClass, state_changed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 3,
+	                  G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 /**

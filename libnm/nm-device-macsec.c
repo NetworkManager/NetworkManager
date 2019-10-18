@@ -425,8 +425,8 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 
 	g_type_class_add_private (macsec_class, sizeof (NMDeviceMacsecPrivate));
 
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
@@ -440,10 +440,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_PARENT] =
-		g_param_spec_object (NM_DEVICE_MACSEC_PARENT, "", "",
-		                     NM_TYPE_DEVICE,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_object (NM_DEVICE_MACSEC_PARENT, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:hw-address:
@@ -453,10 +453,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_HW_ADDRESS] =
-		g_param_spec_string (NM_DEVICE_MACSEC_HW_ADDRESS, "", "",
-		                     NULL,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_MACSEC_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:sci:
@@ -466,10 +466,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_SCI] =
-		g_param_spec_uint64 (NM_DEVICE_MACSEC_SCI, "", "",
-		                     0, G_MAXUINT64, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint64 (NM_DEVICE_MACSEC_SCI, "", "",
+	                         0, G_MAXUINT64, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:icv-length:
@@ -479,10 +479,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_ICV_LENGTH] =
-		g_param_spec_uchar (NM_DEVICE_MACSEC_ICV_LENGTH, "", "",
-		                    0, G_MAXUINT8, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uchar (NM_DEVICE_MACSEC_ICV_LENGTH, "", "",
+	                        0, G_MAXUINT8, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:cipher-suite:
@@ -492,10 +492,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_CIPHER_SUITE] =
-		g_param_spec_uint64 (NM_DEVICE_MACSEC_CIPHER_SUITE, "", "",
-		                     0, G_MAXUINT64, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint64 (NM_DEVICE_MACSEC_CIPHER_SUITE, "", "",
+	                         0, G_MAXUINT64, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:window:
@@ -505,10 +505,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_WINDOW] =
-		g_param_spec_uint (NM_DEVICE_MACSEC_WINDOW, "", "",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READABLE |
-		                   G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_DEVICE_MACSEC_WINDOW, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:encoding-sa:
@@ -519,10 +519,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_ENCODING_SA] =
-		g_param_spec_uchar (NM_DEVICE_MACSEC_ENCODING_SA, "", "",
-		                    0, G_MAXUINT8, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uchar (NM_DEVICE_MACSEC_ENCODING_SA, "", "",
+	                        0, G_MAXUINT8, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:validation:
@@ -533,10 +533,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_VALIDATION] =
-		g_param_spec_string (NM_DEVICE_MACSEC_VALIDATION, "", "",
-		                     NULL,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+	    g_param_spec_string (NM_DEVICE_MACSEC_VALIDATION, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:encrypt:
@@ -546,10 +546,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_ENCRYPT] =
-		g_param_spec_boolean (NM_DEVICE_MACSEC_ENCRYPT, "", "",
-		                      FALSE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MACSEC_ENCRYPT, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:protect:
@@ -559,10 +559,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_PROTECT] =
-		g_param_spec_boolean (NM_DEVICE_MACSEC_PROTECT, "", "",
-		                      FALSE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MACSEC_PROTECT, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:include-sci:
@@ -573,10 +573,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_INCLUDE_SCI] =
-		g_param_spec_boolean (NM_DEVICE_MACSEC_INCLUDE_SCI, "", "",
-		                      FALSE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MACSEC_INCLUDE_SCI, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:es:
@@ -587,10 +587,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_ES] =
-		g_param_spec_boolean (NM_DEVICE_MACSEC_ES, "", "",
-		                      FALSE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MACSEC_ES, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:scb:
@@ -601,10 +601,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_SCB] =
-		g_param_spec_boolean (NM_DEVICE_MACSEC_SCB, "", "",
-		                      FALSE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MACSEC_SCB, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacsec:replay-protect:
@@ -614,10 +614,10 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	 * Since: 1.6
 	 **/
 	obj_properties[PROP_REPLAY_PROTECT] =
-		g_param_spec_boolean (NM_DEVICE_MACSEC_REPLAY_PROTECT, "", "",
-		                      FALSE,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_boolean (NM_DEVICE_MACSEC_REPLAY_PROTECT, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

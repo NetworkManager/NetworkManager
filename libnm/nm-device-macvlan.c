@@ -25,16 +25,13 @@ typedef struct {
 	char *hw_address;
 } NMDeviceMacvlanPrivate;
 
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PARENT,
 	PROP_MODE,
 	PROP_NO_PROMISC,
 	PROP_TAP,
 	PROP_HW_ADDRESS,
-
-	LAST_PROP
-};
+);
 
 /**
  * nm_device_macvlan_get_parent:
@@ -240,17 +237,14 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 
 	g_type_class_add_private (gre_class, sizeof (NMDeviceMacvlanPrivate));
 
-	/* virtual methods */
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceMacvlan:parent:
@@ -259,12 +253,11 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_PARENT,
-	     g_param_spec_object (NM_DEVICE_MACVLAN_PARENT, "", "",
-	                          NM_TYPE_DEVICE,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_object (NM_DEVICE_MACVLAN_PARENT, "", "",
+	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacvlan:mode:
@@ -273,12 +266,11 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_DEVICE_MACVLAN_MODE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	    g_param_spec_string (NM_DEVICE_MACVLAN_MODE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacvlan:no-promisc:
@@ -287,12 +279,11 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NO_PROMISC,
-		 g_param_spec_boolean (NM_DEVICE_MACVLAN_NO_PROMISC, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NO_PROMISC] =
+	    g_param_spec_boolean (NM_DEVICE_MACVLAN_NO_PROMISC, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacvlan:tap:
@@ -301,12 +292,11 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TAP,
-		 g_param_spec_boolean (NM_DEVICE_MACVLAN_TAP, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TAP] =
+	    g_param_spec_boolean (NM_DEVICE_MACVLAN_TAP, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceMacvlan:hw-address:
@@ -315,10 +305,11 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	 *
 	 * Since: 1.2
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_MACVLAN_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_MACVLAN_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
