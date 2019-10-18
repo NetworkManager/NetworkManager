@@ -41,4 +41,6 @@ const char *nmc_wifi_strength_bars (guint8 strength);
 
 const char *nmc_password_subst_char (void);
 
+void nmc_print_qrcode (const char *str);
+
 #endif /* __NM_CLIENT_UTILS_H__ */
