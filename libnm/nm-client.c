@@ -149,12 +149,21 @@ typedef struct {
 	bool udev_inited:1;
 } NMClientPrivate;
 
+struct _NMClient {
+	GObject parent;
+	NMClientPrivate _priv;
+};
+
+struct _NMClientClass {
+	GObjectClass parent;
+};
+
 G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_client_initable_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_client_async_initable_iface_init);
                          )
 
-#define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
+#define NM_CLIENT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMClient, NM_IS_CLIENT)
 
 /*****************************************************************************/
 
@@ -3863,8 +3872,6 @@ nm_client_class_init (NMClientClass *client_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (client_class);
 
-	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
-
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->constructed  = constructed;
@@ -4246,8 +4253,7 @@ nm_client_class_init (NMClientClass *client_class)
 	    g_signal_new (NM_CLIENT_DEVICE_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMClientClass, device_added),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);
 
@@ -4263,8 +4269,7 @@ nm_client_class_init (NMClientClass *client_class)
 	    g_signal_new (NM_CLIENT_DEVICE_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMClientClass, device_removed),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);
 
@@ -4280,8 +4285,7 @@ nm_client_class_init (NMClientClass *client_class)
 	    g_signal_new (NM_CLIENT_ANY_DEVICE_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMClientClass, any_device_added),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);
 
@@ -4297,8 +4301,7 @@ nm_client_class_init (NMClientClass *client_class)
 	    g_signal_new (NM_CLIENT_ANY_DEVICE_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMClientClass, any_device_removed),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);
 
@@ -4327,8 +4330,7 @@ nm_client_class_init (NMClientClass *client_class)
 	    g_signal_new (NM_CLIENT_CONNECTION_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMClientClass, connection_added),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1,
 	                  NM_TYPE_REMOTE_CONNECTION);
 
@@ -4343,8 +4345,7 @@ nm_client_class_init (NMClientClass *client_class)
 	    g_signal_new (NM_CLIENT_CONNECTION_REMOVED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMClientClass, connection_removed),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1,
 	                  NM_TYPE_REMOTE_CONNECTION);
 
