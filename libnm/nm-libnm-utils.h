@@ -10,6 +10,10 @@
 #error Cannot use this header.
 #endif
 
+#include "nm-types.h"
+
+/*****************************************************************************/
+
 /* Markers for deprecated sync code in internal API. */
 #define _NM_DEPRECATED_SYNC_METHOD_INTERNAL            NM_DEPRECATED_IN_1_22
 #define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL NM_DEPRECATED_IN_1_22
