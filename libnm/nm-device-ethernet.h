@@ -31,16 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceEthernet:
  */
-struct _NMDeviceEthernet {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceEthernetClass;
+typedef struct _NMDeviceEthernetClass NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type (void);
 

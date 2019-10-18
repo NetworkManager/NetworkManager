@@ -29,16 +29,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceVlan:
  */
-struct _NMDeviceVlan {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceVlanClass;
+typedef struct _NMDeviceVlanClass NMDeviceVlanClass;
 
 GType nm_device_vlan_get_type (void);
 

@@ -11,28 +11,28 @@
 #include "nm-setting-wpan.h"
 #include "nm-setting-connection.h"
 
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
 );
 
 typedef struct {
-        char *hw_address;
+	char *hw_address;
 } NMDeviceWpanPrivate;
 
-/**
- * NMDeviceWpan:
- */
 struct _NMDeviceWpan {
-        NMDevice parent;
+	NMDevice parent;
+	NMDeviceWpanPrivate _priv;
 };
 
-typedef struct {
-        NMDeviceClass parent;
-} NMDeviceWpanClass;
+struct _NMDeviceWpanClass {
+	NMDeviceClass parent;
+};
 
 G_DEFINE_TYPE (NMDeviceWpan, nm_device_wpan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_WPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WPAN, NMDeviceWpanPrivate))
+#define NM_DEVICE_WPAN_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWpan, NM_IS_DEVICE_WPAN, NMObject, NMDevice)
 
 /*****************************************************************************/
 
@@ -132,8 +132,6 @@ nm_device_wpan_class_init (NMDeviceWpanClass *wpan_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (wpan_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wpan_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wpan_class);
-
-	g_type_class_add_private (wpan_class, sizeof (NMDeviceWpanPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

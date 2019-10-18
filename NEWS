@@ -17,6 +17,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   setup, you may need to configure "ipv4.may-fail=no" or "ipv6.may-fail=no",
   which delays reaching "connected" state for the address family accordingly.
 * Various bug fixes and improvements.
+* libnm: hide NMObject and NMClient typedefs from header files. This prevents
+  the user from subclassing these types and is an ABI change (in case somebody
+  was doing so).
 
 =============================================
 NetworkManager-1.20

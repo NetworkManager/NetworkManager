@@ -14,9 +14,15 @@
 #include "nm-utils.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_PERM_HW_ADDRESS,
+	PROP_SPEED,
+	PROP_CARRIER,
+	PROP_S390_SUBCHANNELS,
+);
 
 typedef struct {
 	char *hw_address;
@@ -26,13 +32,20 @@ typedef struct {
 	char **s390_subchannels;
 } NMDeviceEthernetPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_PERM_HW_ADDRESS,
-	PROP_SPEED,
-	PROP_CARRIER,
-	PROP_S390_SUBCHANNELS,
-);
+struct _NMDeviceEthernet {
+	NMDevice parent;
+	NMDeviceEthernetPrivate _priv;
+};
+
+struct _NMDeviceEthernetClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_ETHERNET_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceEthernet, NM_IS_DEVICE_ETHERNET, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_ethernet_get_hw_address:
@@ -332,8 +345,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (eth_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
-
-	g_type_class_add_private (eth_class, sizeof (NMDeviceEthernetPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

@@ -12,9 +12,8 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-connection.h"
 
-/**
- * NMDeviceOvsInterface:
- */
+/*****************************************************************************/
+
 struct _NMDeviceOvsInterface {
 	NMDevice parent;
 };

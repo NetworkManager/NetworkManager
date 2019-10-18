@@ -30,16 +30,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceMacvlan:
  */
-struct _NMDeviceMacvlan {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceMacvlanClass;
+typedef struct _NMDeviceMacvlanClass NMDeviceMacvlanClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_device_macvlan_get_type (void);

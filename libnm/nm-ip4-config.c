@@ -7,9 +7,19 @@
 
 #include "nm-ip4-config.h"
 
-#include "nm-object-private.h"
+/*****************************************************************************/
+
+struct _NMIP4Config {
+	NMIPConfig parent;
+};
+
+struct _NMIP4ConfigClass{
+	NMIPConfigClass parent;
+};
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_IP_CONFIG)
+
+/*****************************************************************************/
 
 static void
 nm_ip4_config_init (NMIP4Config *config)

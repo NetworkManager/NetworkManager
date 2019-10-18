@@ -23,6 +23,9 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_OVS_PORT_SLAVES "slaves"
 
+/**
+ * NMDeviceOvsPort:
+ */
 typedef struct _NMDeviceOvsPortClass NMDeviceOvsPortClass;
 
 NM_AVAILABLE_IN_1_10

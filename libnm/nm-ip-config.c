@@ -16,21 +16,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMIPConfig, nm_ip_config, NM_TYPE_OBJECT)
-
-#define NM_IP_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP_CONFIG, NMIPConfigPrivate))
-
-typedef struct {
-	char *gateway;
-	GPtrArray *addresses;
-	GPtrArray *routes;
-	char **nameservers;
-	char **domains;
-	char **searches;
-	char **wins;
-
-	gboolean new_style_data;
-} NMIPConfigPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FAMILY,
@@ -43,10 +29,32 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_WINS_SERVERS,
 );
 
+typedef struct _NMIPConfigPrivate {
+	char *gateway;
+	GPtrArray *addresses;
+	GPtrArray *routes;
+	char **nameservers;
+	char **domains;
+	char **searches;
+	char **wins;
+
+	gboolean new_style_data;
+} NMIPConfigPrivate;
+
+G_DEFINE_ABSTRACT_TYPE (NMIPConfig, nm_ip_config, NM_TYPE_OBJECT)
+
+#define NM_IP_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMIPConfig, NM_IS_IP_CONFIG, NMObject)
+
+/*****************************************************************************/
+
 static void
-nm_ip_config_init (NMIPConfig *config)
+nm_ip_config_init (NMIPConfig *self)
 {
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (config);
+	NMIPConfigPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_IP_CONFIG, NMIPConfigPrivate);
+
+	self->_priv = priv;
 
 	priv->addresses = g_ptr_array_new ();
 	priv->routes = g_ptr_array_new ();

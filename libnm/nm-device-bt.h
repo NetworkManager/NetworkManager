@@ -29,16 +29,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceBt:
  */
-struct _NMDeviceBt {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceBtClass;
+typedef struct _NMDeviceBtClass NMDeviceBtClass;
 
 GType nm_device_bt_get_type (void);
 

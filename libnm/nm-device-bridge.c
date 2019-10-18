@@ -13,9 +13,13 @@
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgePrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_SLAVES,
+);
 
 typedef struct {
 	char *hw_address;
@@ -23,11 +27,20 @@ typedef struct {
 	GPtrArray *slaves;
 } NMDeviceBridgePrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_SLAVES,
-);
+struct _NMDeviceBridge {
+	NMDevice parent;
+	NMDeviceBridgePrivate _priv;
+};
+
+struct _NMDeviceBridgeClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_BRIDGE_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceBridge, NM_IS_DEVICE_BRIDGE, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_bridge_get_hw_address:
@@ -192,8 +205,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (bridge_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bridge_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bridge_class);
-
-	g_type_class_add_private (bridge_class, sizeof (NMDeviceBridgePrivate));
 
 	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;

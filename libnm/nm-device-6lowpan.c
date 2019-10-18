@@ -6,35 +6,35 @@
 #include "nm-default.h"
 
 #include "nm-device-6lowpan.h"
+
 #include "nm-object-private.h"
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PARENT,
+	PROP_HW_ADDRESS,
+);
 
 typedef struct {
 	NMDevice *parent;
 	char *hw_address;
 } NMDevice6LowpanPrivate;
 
-/**
- * NMDevice6Lowpan:
- */
 struct _NMDevice6Lowpan {
-        NMDevice parent;
+	NMDevice parent;
+	NMDevice6LowpanPrivate _priv;
 };
 
-typedef struct {
-        NMDeviceClass parent;
-
-        /*< private >*/
-        gpointer padding[4];
-} NMDevice6LowpanClass;
+struct _NMDevice6LowpanClass {
+	NMDeviceClass parent;
+};
 
 G_DEFINE_TYPE (NMDevice6Lowpan, nm_device_6lowpan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_6LOWPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_6LOWPAN, NMDevice6LowpanPrivate))
+#define NM_DEVICE_6LOWPAN_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDevice6Lowpan, NM_IS_DEVICE_6LOWPAN, NMObject, NMDevice)
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PARENT,
-	PROP_HW_ADDRESS,
-);
+/*****************************************************************************/
 
 /**
  * nm_device_6lowpan_get_parent:
@@ -139,8 +139,6 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMDevice6LowpanPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

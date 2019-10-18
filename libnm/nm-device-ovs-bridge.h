@@ -23,6 +23,9 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_OVS_BRIDGE_SLAVES "slaves"
 
+/**
+ * NMDeviceOvsBridge:
+ */
 typedef struct _NMDeviceOvsBridgeClass NMDeviceOvsBridgeClass;
 
 NM_AVAILABLE_IN_1_10

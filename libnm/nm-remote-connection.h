@@ -33,16 +33,7 @@ G_BEGIN_DECLS
 /**
  * NMRemoteConnection:
  */
-struct _NMRemoteConnection {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent_class;
-
-	/*< private >*/
-	gpointer padding[8];
-} NMRemoteConnectionClass;
+typedef struct _NMRemoteConnectionClass NMRemoteConnectionClass;
 
 GType nm_remote_connection_get_type (void);
 

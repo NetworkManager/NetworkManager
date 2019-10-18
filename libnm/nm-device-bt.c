@@ -14,9 +14,13 @@
 #include "nm-object-private.h"
 #include "nm-enum-types.h"
 
-G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_NAME,
+	PROP_BT_CAPABILITIES,
+);
 
 typedef struct {
 	char *hw_address;
@@ -24,11 +28,20 @@ typedef struct {
 	guint32 bt_capabilities;
 } NMDeviceBtPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_NAME,
-	PROP_BT_CAPABILITIES,
-);
+struct _NMDeviceBt {
+	NMDevice parent;
+	NMDeviceBtPrivate _priv;
+};
+
+struct _NMDeviceBtClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_BT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceBt, NM_IS_DEVICE_BT, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_bt_get_hw_address:
@@ -229,8 +242,6 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (bt_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bt_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bt_class);
-
-	g_type_class_add_private (bt_class, sizeof (NMDeviceBtPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

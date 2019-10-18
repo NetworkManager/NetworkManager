@@ -32,16 +32,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceTun:
  */
-struct _NMDeviceTun {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceTunClass;
+typedef struct _NMDeviceTunClass NMDeviceTunClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_device_tun_get_type (void);

@@ -28,16 +28,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceBridge:
  */
-struct _NMDeviceBridge {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceBridgeClass;
+typedef struct _NMDeviceBridgeClass NMDeviceBridgeClass;
 
 GType        nm_device_bridge_get_type (void);
 

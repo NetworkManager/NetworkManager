@@ -13,9 +13,14 @@
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_SLAVES,
+	PROP_CONFIG,
+);
 
 typedef struct {
 	char *hw_address;
@@ -24,12 +29,20 @@ typedef struct {
 	char *config;
 } NMDeviceTeamPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_SLAVES,
-	PROP_CONFIG,
-);
+struct _NMDeviceTeam {
+	NMDevice parent;
+	NMDeviceTeamPrivate _priv;
+};
+
+struct _NMDeviceTeamClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_TEAM_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceTeam, NM_IS_DEVICE_TEAM, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_team_get_hw_address:
@@ -213,8 +226,6 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (team_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (team_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (team_class);
-
-	g_type_class_add_private (team_class, sizeof (NMDeviceTeamPrivate));
 
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;

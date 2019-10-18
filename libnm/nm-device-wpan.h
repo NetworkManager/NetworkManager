@@ -23,6 +23,11 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_WPAN_HW_ADDRESS "hw-address"
 
+/**
+ * NMDeviceWpan:
+ */
+typedef struct _NMDeviceWpanClass NMDeviceWpanClass;
+
 NM_AVAILABLE_IN_1_14
 GType nm_device_wpan_get_type (void);
 

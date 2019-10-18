@@ -31,16 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceModem:
  */
-struct _NMDeviceModem {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceModemClass;
+typedef struct _NMDeviceModemClass NMDeviceModemClass;
 
 GType nm_device_modem_get_type (void);
 

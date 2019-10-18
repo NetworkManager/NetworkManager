@@ -13,9 +13,22 @@
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceIPTunnel, nm_device_ip_tunnel, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_IP_TUNNEL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_IP_TUNNEL, NMDeviceIPTunnelPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MODE,
+	PROP_PARENT,
+	PROP_LOCAL,
+	PROP_REMOTE,
+	PROP_TTL,
+	PROP_TOS,
+	PROP_PATH_MTU_DISCOVERY,
+	PROP_INPUT_KEY,
+	PROP_OUTPUT_KEY,
+	PROP_ENCAPSULATION_LIMIT,
+	PROP_FLOW_LABEL,
+	PROP_FLAGS,
+);
 
 typedef struct {
 	NMIPTunnelMode mode;
@@ -32,20 +45,20 @@ typedef struct {
 	guint32 flags;
 } NMDeviceIPTunnelPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_MODE,
-	PROP_PARENT,
-	PROP_LOCAL,
-	PROP_REMOTE,
-	PROP_TTL,
-	PROP_TOS,
-	PROP_PATH_MTU_DISCOVERY,
-	PROP_INPUT_KEY,
-	PROP_OUTPUT_KEY,
-	PROP_ENCAPSULATION_LIMIT,
-	PROP_FLOW_LABEL,
-	PROP_FLAGS,
-);
+struct _NMDeviceIPTunnel {
+	NMDevice parent;
+	NMDeviceIPTunnelPrivate _priv;
+};
+
+struct _NMDeviceIPTunnelClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceIPTunnel, nm_device_ip_tunnel, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceIPTunnel, NM_IS_DEVICE_IP_TUNNEL, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_ip_tunnel_get_mode:
@@ -366,8 +379,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (bond_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bond_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bond_class);
-
-	g_type_class_add_private (bond_class, sizeof (NMDeviceIPTunnelPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

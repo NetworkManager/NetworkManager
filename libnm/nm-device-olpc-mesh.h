@@ -28,16 +28,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceOlpcMesh:
  */
-struct _NMDeviceOlpcMesh {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceOlpcMeshClass;
+typedef struct _NMDeviceOlpcMeshClass NMDeviceOlpcMeshClass;
 
 GType nm_device_olpc_mesh_get_type (void);
 

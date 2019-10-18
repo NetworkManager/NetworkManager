@@ -24,6 +24,11 @@ G_BEGIN_DECLS
 #define NM_DEVICE_6LOWPAN_PARENT          "parent"
 #define NM_DEVICE_6LOWPAN_HW_ADDRESS      "hw-address"
 
+/**
+ * NMDevice6Lowpan:
+ */
+typedef struct _NMDevice6LowpanClass NMDevice6LowpanClass;
+
 NM_AVAILABLE_IN_1_14
 GType nm_device_6lowpan_get_type (void);
 

@@ -58,32 +58,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 /**
  * NMDevice:
  */
-struct _NMDevice {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/* Signals */
-	void (*state_changed) (NMDevice *device,
-	                       NMDeviceState new_state,
-	                       NMDeviceState old_state,
-	                       NMDeviceStateReason reason);
-
-	/* Methods */
-	gboolean (*connection_compatible) (NMDevice *device,
-	                                   NMConnection *connection,
-	                                   GError **error);
-
-	const char * (*get_type_description) (NMDevice *device);
-	const char * (*get_hw_address) (NMDevice *device);
-
-	GType (*get_setting_type) (NMDevice *device);
-
-	/*< private >*/
-	gpointer padding[8];
-} NMDeviceClass;
+typedef struct _NMDeviceClass NMDeviceClass;
 
 typedef struct _NMLldpNeighbor NMLldpNeighbor;
 

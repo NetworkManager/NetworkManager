@@ -14,23 +14,31 @@
 #include "nm-object-private.h"
 #include "nm-utils.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMDhcpConfig, nm_dhcp_config, NM_TYPE_OBJECT)
-
-#define NM_DHCP_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_CONFIG, NMDhcpConfigPrivate))
-
-typedef struct {
-	GHashTable *options;
-} NMDhcpConfigPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FAMILY,
 	PROP_OPTIONS,
 );
 
+typedef struct _NMDhcpConfigPrivate {
+	GHashTable *options;
+} NMDhcpConfigPrivate;
+
+G_DEFINE_ABSTRACT_TYPE (NMDhcpConfig, nm_dhcp_config, NM_TYPE_OBJECT)
+
+#define NM_DHCP_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDhcpConfig, NM_IS_DHCP_CONFIG, NMObject)
+
+/*****************************************************************************/
+
 static void
-nm_dhcp_config_init (NMDhcpConfig *config)
+nm_dhcp_config_init (NMDhcpConfig *self)
 {
-	NMDhcpConfigPrivate *priv = NM_DHCP_CONFIG_GET_PRIVATE (config);
+	NMDhcpConfigPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DHCP_CONFIG, NMDhcpConfigPrivate);
+
+	self->_priv = priv;
 
 	priv->options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 }

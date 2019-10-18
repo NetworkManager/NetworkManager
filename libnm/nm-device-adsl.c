@@ -12,18 +12,30 @@
 #include "nm-setting-adsl.h"
 #include "nm-setting-connection.h"
 
-G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ADSL, NMDeviceAdslPrivate))
-
-typedef struct {
-	gboolean carrier;
-
-} NMDeviceAdslPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_CARRIER,
 );
+
+typedef struct {
+	gboolean carrier;
+} NMDeviceAdslPrivate;
+
+struct _NMDeviceAdsl {
+	NMDevice parent;
+	NMDeviceAdslPrivate _priv;
+};
+
+struct _NMDeviceAdslClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_ADSL_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceAdsl, NM_IS_DEVICE_ADSL, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_adsl_get_carrier:
@@ -109,8 +121,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (adsl_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (adsl_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (adsl_class);
-
-	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
 
 	object_class->get_property = get_property;
 

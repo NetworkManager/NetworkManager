@@ -12,9 +12,13 @@
 #include "nm-object-private.h"
 #include "nm-device-wifi.h"
 
-G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMeshPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_COMPANION,
+	PROP_ACTIVE_CHANNEL,
+);
 
 typedef struct {
 	char *hw_address;
@@ -22,11 +26,20 @@ typedef struct {
 	guint32 active_channel;
 } NMDeviceOlpcMeshPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_COMPANION,
-	PROP_ACTIVE_CHANNEL,
-);
+struct _NMDeviceOlpcMesh {
+	NMDevice parent;
+	NMDeviceOlpcMeshPrivate _priv;
+};
+
+struct _NMDeviceOlpcMeshClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_OLPC_MESH_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceOlpcMesh, NM_IS_DEVICE_OLPC_MESH, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_olpc_mesh_get_hw_address:
@@ -179,8 +192,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (olpc_mesh_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (olpc_mesh_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (olpc_mesh_class);
-
-	g_type_class_add_private (olpc_mesh_class, sizeof (NMDeviceOlpcMeshPrivate));
 
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;

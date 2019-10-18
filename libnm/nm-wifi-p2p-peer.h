@@ -32,6 +32,9 @@ G_BEGIN_DECLS
 #define NM_WIFI_P2P_PEER_STRENGTH             "strength"
 #define NM_WIFI_P2P_PEER_LAST_SEEN            "last-seen"
 
+/**
+ * NMWifiP2PPeer:
+ */
 typedef struct _NMWifiP2PPeerClass NMWifiP2PPeerClass;
 
 NM_AVAILABLE_IN_1_16

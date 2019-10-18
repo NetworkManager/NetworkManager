@@ -14,9 +14,15 @@
 #include "nm-object-private.h"
 #include "nm-enum-types.h"
 
-G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MODEM_CAPABILITIES,
+	PROP_CURRENT_CAPABILITIES,
+	PROP_DEVICE_ID,
+	PROP_OPERATOR_CODE,
+	PROP_APN,
+);
 
 typedef struct {
 	NMDeviceModemCapabilities caps;
@@ -26,13 +32,20 @@ typedef struct {
 	char *apn;
 } NMDeviceModemPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_MODEM_CAPABILITIES,
-	PROP_CURRENT_CAPABILITIES,
-	PROP_DEVICE_ID,
-	PROP_OPERATOR_CODE,
-	PROP_APN,
-);
+struct _NMDeviceModem {
+	NMDevice parent;
+	NMDeviceModemPrivate _priv;
+};
+
+struct _NMDeviceModemClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_MODEM_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceModem, NM_IS_DEVICE_MODEM, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_modem_get_modem_capabilities:
@@ -270,8 +283,6 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (modem_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (modem_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (modem_class);
-
-	g_type_class_add_private (modem_class, sizeof (NMDeviceModemPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

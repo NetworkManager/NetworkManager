@@ -34,20 +34,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceWifi:
  */
-struct _NMDeviceWifi {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/* Signals */
-	void (*access_point_added) (NMDeviceWifi *device, NMAccessPoint *ap);
-	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceWifiClass;
+typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
 
 GType nm_device_wifi_get_type (void);
 

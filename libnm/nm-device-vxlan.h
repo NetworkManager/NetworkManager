@@ -43,16 +43,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceVxlan:
  */
-struct _NMDeviceVxlan {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceVxlanClass;
+typedef struct _NMDeviceVxlanClass NMDeviceVxlanClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_device_vxlan_get_type (void);

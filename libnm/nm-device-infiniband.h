@@ -27,16 +27,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceInfiniband:
  */
-struct _NMDeviceInfiniband {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceInfinibandClass;
+typedef struct _NMDeviceInfinibandClass NMDeviceInfinibandClass;
 
 GType nm_device_infiniband_get_type (void);
 

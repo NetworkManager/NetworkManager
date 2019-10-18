@@ -25,16 +25,7 @@ G_BEGIN_DECLS
 /**
  * NMIPConfig:
  */
-struct _NMIPConfig {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[8];
-} NMIPConfigClass;
+typedef struct _NMIPConfigClass NMIPConfigClass;
 
 #define NM_IP_CONFIG_FAMILY "family"
 #define NM_IP_CONFIG_GATEWAY "gateway"

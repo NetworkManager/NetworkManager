@@ -38,16 +38,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceIPTunnel:
  */
-struct _NMDeviceIPTunnel {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceIPTunnelClass;
+typedef struct _NMDeviceIPTunnelClass NMDeviceIPTunnelClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_device_ip_tunnel_get_type (void);

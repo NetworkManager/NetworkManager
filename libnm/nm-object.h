@@ -30,26 +30,7 @@ G_BEGIN_DECLS
 /**
  * NMObject:
  */
-struct _NMObject {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Methods */
-	void (*init_dbus) (NMObject *object);
-
-	/* The "object-creation-failed" method is PRIVATE for libnm and
-	 * is not meant for any external usage.  It indicates that an error
-	 * occurred during creation of an object.
-	 */
-	void (*object_creation_failed) (NMObject *master_object,
-	                                const char *failed_path);
-
-	/*< private >*/
-	gpointer padding[8];
-} NMObjectClass;
+typedef struct _NMObjectClass NMObjectClass;
 
 GType nm_object_get_type (void);
 

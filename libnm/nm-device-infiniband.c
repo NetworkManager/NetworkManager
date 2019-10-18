@@ -12,19 +12,32 @@
 #include "nm-utils.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+);
 
 typedef struct {
 	char *hw_address;
 	gboolean carrier;
 } NMDeviceInfinibandPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-);
+struct _NMDeviceInfiniband {
+	NMDevice parent;
+	NMDeviceInfinibandPrivate _priv;
+};
+
+struct _NMDeviceInfinibandClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_INFINIBAND_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceInfiniband, NM_IS_DEVICE_INFINIBAND, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_infiniband_get_hw_address:
@@ -167,8 +180,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *ib_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (ib_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ib_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (ib_class);
-
-	g_type_class_add_private (ib_class, sizeof (NMDeviceInfinibandPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

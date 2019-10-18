@@ -25,6 +25,11 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_P2P_PEERS               "peers"
 #define NM_DEVICE_WIFI_P2P_WFDIES              "wfdies"
 
+/**
+ * NMDeviceWifiP2P:
+ *
+ * Since: 1.16
+ */
 typedef struct _NMDeviceWifiP2PClass NMDeviceWifiP2PClass;
 
 NM_AVAILABLE_IN_1_16

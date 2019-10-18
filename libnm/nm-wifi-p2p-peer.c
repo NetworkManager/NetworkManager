@@ -47,9 +47,6 @@ typedef struct {
 	guint8 strength;
 } NMWifiP2PPeerPrivate;
 
-/**
- * NMWifiP2PPeer:
- */
 struct _NMWifiP2PPeer {
 	NMObject parent;
 	NMWifiP2PPeerPrivate _priv;

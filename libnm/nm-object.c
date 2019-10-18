@@ -19,27 +19,21 @@
 #include "nm-core-internal.h"
 #include "c-list/src/c-list.h"
 
+/*****************************************************************************/
+
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
 
 NM_CACHED_QUARK_FCN ("nm-obj-nm", _nm_object_obj_nm_quark)
 
-static void nm_object_initable_iface_init (GInitableIface *iface);
-static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
+/*****************************************************************************/
 
-typedef struct {
-	GSList *interfaces;
-} NMObjectClassPrivate;
-
-#define NM_OBJECT_CLASS_GET_PRIVATE(k) (G_TYPE_CLASS_GET_PRIVATE ((k), NM_TYPE_OBJECT, NMObjectClassPrivate))
-
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
-                                  g_type_add_class_private (g_define_type_id, sizeof (NMObjectClassPrivate));
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
-                                  )
-
-#define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PATH,
+	PROP_DBUS_CONNECTION,
+	PROP_DBUS_OBJECT,
+	PROP_DBUS_OBJECT_MANAGER,
+);
 
 typedef struct {
 	PropertyMarshalFunc func;
@@ -48,10 +42,7 @@ typedef struct {
 	const char *signal_prefix;
 } PropertyInfo;
 
-static void reload_complete (NMObject *object, gboolean emit_now);
-static gboolean demarshal_generic (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field);
-
-typedef struct {
+typedef struct _NMObjectPrivate {
 	GDBusObject *object;
 	GDBusObjectManager *object_manager;
 
@@ -73,12 +64,29 @@ typedef struct {
 	char *name_owner_cached;
 } NMObjectPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PATH,
-	PROP_DBUS_CONNECTION,
-	PROP_DBUS_OBJECT,
-	PROP_DBUS_OBJECT_MANAGER,
-);
+typedef struct {
+	GSList *interfaces;
+} NMObjectClassPrivate;
+
+static void nm_object_initable_iface_init (GInitableIface *iface);
+static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
+                                  g_type_add_class_private (g_define_type_id, sizeof (NMObjectClassPrivate));
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
+                                  )
+
+#define NM_OBJECT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMObject, NM_IS_OBJECT)
+
+#define NM_OBJECT_CLASS_GET_PRIVATE(k) (G_TYPE_CLASS_GET_PRIVATE ((k), NM_TYPE_OBJECT, NMObjectClassPrivate))
+
+/*****************************************************************************/
+
+static void reload_complete (NMObject *object, gboolean emit_now);
+static gboolean demarshal_generic (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field);
+
+/*****************************************************************************/
 
 /**
  * nm_object_get_path:
@@ -1308,7 +1316,8 @@ static gboolean
 init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 {
 	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (initable);
+	NMObject *self = NM_OBJECT (initable);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
 	priv->inited = TRUE;
 
@@ -1345,7 +1354,12 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 static void
 nm_object_init (NMObject *object)
 {
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMObject *self = NM_OBJECT (object);
+	NMObjectPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_OBJECT, NMObjectPrivate);
+
+	self->_priv = priv;
 
 	c_list_init (&priv->notify_items);
 	c_list_init (&priv->pending);

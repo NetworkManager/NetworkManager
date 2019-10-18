@@ -42,11 +42,6 @@ typedef struct {
 	GPtrArray   *peers;
 } NMDeviceWifiP2PPrivate;
 
-/**
- * NMDeviceWifiP2P:
- *
- * Since: 1.16
- */
 struct _NMDeviceWifiP2P {
 	NMDevice parent;
 	NMDeviceWifiP2PPrivate _priv;
