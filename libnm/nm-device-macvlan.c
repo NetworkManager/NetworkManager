@@ -28,7 +28,6 @@ typedef struct {
 	char *mode;
 	gboolean no_promisc;
 	gboolean tap;
-	char *hw_address;
 } NMDeviceMacvlanPrivate;
 
 struct _NMDeviceMacvlan {
@@ -127,13 +126,15 @@ nm_device_macvlan_get_tap (NMDeviceMacvlan *device)
  * device, and must not be modified.
  *
  * Since: 1.2
+ *
+ * This property is not implemented yet, and the function always return NULL.
  **/
 const char *
 nm_device_macvlan_get_hw_address (NMDeviceMacvlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACVLAN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_MACVLAN_GET_PRIVATE (device)->hw_address);
+	return NULL;
 }
 
 static gboolean
@@ -188,7 +189,6 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_MACVLAN_MODE,        &priv->mode },
 		{ NM_DEVICE_MACVLAN_NO_PROMISC,  &priv->no_promisc },
 		{ NM_DEVICE_MACVLAN_TAP,         &priv->tap },
-		{ NM_DEVICE_MACVLAN_HW_ADDRESS,  &priv->hw_address },
 		{ NULL },
 	};
 
@@ -205,7 +205,6 @@ finalize (GObject *object)
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
 
 	g_free (priv->mode);
-	g_free (priv->hw_address);
 	g_clear_object (&priv->parent);
 
 	G_OBJECT_CLASS (nm_device_macvlan_parent_class)->finalize (object);
@@ -315,6 +314,8 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	 * The hardware (MAC) address of the device.
 	 *
 	 * Since: 1.2
+	 *
+	 * This property is not implemented yet, and the function always return NULL.
 	 **/
 	obj_properties[PROP_HW_ADDRESS] =
 	    g_param_spec_string (NM_DEVICE_MACVLAN_HW_ADDRESS, "", "",
