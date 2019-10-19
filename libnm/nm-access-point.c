@@ -579,7 +579,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	obj_properties[PROP_MODE] =
 	    g_param_spec_enum (NM_ACCESS_POINT_MODE, "", "",
 	                       NM_TYPE_802_11_MODE,
-	                       NM_802_11_MODE_INFRA,
+	                       NM_802_11_MODE_UNKNOWN,
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
