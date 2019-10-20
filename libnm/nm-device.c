@@ -797,7 +797,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	obj_properties[PROP_MTU] =
 	    g_param_spec_uint (NM_DEVICE_MTU, "", "",
-	                       0, G_MAXUINT32, 1500,
+	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
