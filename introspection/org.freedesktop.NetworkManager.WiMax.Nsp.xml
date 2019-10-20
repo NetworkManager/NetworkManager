@@ -4,6 +4,7 @@
       org.freedesktop.NetworkManager.WiMax.Nsp:
       @short_description: WiMax Network Service Provider
 
+      DEPRECATED: NetworkManager no longer supports WiMAX since version 1.2. This interface is no longer used.
   -->
   <interface name="org.freedesktop.NetworkManager.WiMax.Nsp">
 

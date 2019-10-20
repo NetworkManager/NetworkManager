@@ -28,18 +28,25 @@ G_BEGIN_DECLS
 
 /**
  * NMWimaxNsp:
+ *
+ * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
  */
 typedef struct _NMWimaxNspClass NMWimaxNspClass;
 
 GType nm_wimax_nsp_get_type (void);
 
+NM_DEPRECATED_IN_1_22
 const char           * nm_wimax_nsp_get_name           (NMWimaxNsp *nsp);
+NM_DEPRECATED_IN_1_22
 guint32                nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp);
+NM_DEPRECATED_IN_1_22
 NMWimaxNspNetworkType  nm_wimax_nsp_get_network_type   (NMWimaxNsp *nsp);
 
+NM_DEPRECATED_IN_1_22
 GPtrArray *            nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp,
                                                         const GPtrArray *connections);
 
+NM_DEPRECATED_IN_1_22
 gboolean               nm_wimax_nsp_connection_valid   (NMWimaxNsp *nsp,
                                                         NMConnection *connection);
 

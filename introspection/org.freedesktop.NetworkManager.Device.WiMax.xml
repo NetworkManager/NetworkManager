@@ -4,6 +4,7 @@
       org.freedesktop.NetworkManager.Device.WiMax:
       @short_description: WiMax Device
 
+      DEPRECATED: NetworkManager no longer supports WiMAX since version 1.2. This interface is no longer used.
   -->
   <interface name="org.freedesktop.NetworkManager.Device.WiMax">
 

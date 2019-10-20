@@ -3080,8 +3080,6 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_DEVICE_VXLAN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIRELESS) == 0)
 			type = NM_TYPE_DEVICE_WIFI;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIMAX) == 0)
-			type = NM_TYPE_DEVICE_WIMAX;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIREGUARD) == 0)
 			type = NM_TYPE_DEVICE_WIREGUARD;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DHCP4_CONFIG) == 0)
@@ -3102,8 +3100,6 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_DNS_MANAGER;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_VPN_CONNECTION) == 0)
 			type = NM_TYPE_VPN_CONNECTION;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_WIMAX_NSP) == 0)
-			type = NM_TYPE_WIMAX_NSP;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_CHECKPOINT) == 0)
 			type = NM_TYPE_CHECKPOINT;
 

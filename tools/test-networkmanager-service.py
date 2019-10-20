@@ -330,7 +330,6 @@ IFACE_OBJECT_MANAGER    = 'org.freedesktop.DBus.ObjectManager'
 IFACE_CONNECTION        = 'org.freedesktop.NetworkManager.Settings.Connection'
 IFACE_DEVICE            = 'org.freedesktop.NetworkManager.Device'
 IFACE_WIFI              = 'org.freedesktop.NetworkManager.Device.Wireless'
-IFACE_WIMAX             = 'org.freedesktop.NetworkManager.Device.WiMax'
 IFACE_TEST              = 'org.freedesktop.NetworkManager.LibnmGlibTest'
 IFACE_NM                = 'org.freedesktop.NetworkManager'
 IFACE_SETTINGS          = 'org.freedesktop.NetworkManager.Settings'
@@ -339,7 +338,6 @@ IFACE_AGENT             = 'org.freedesktop.NetworkManager.SecretAgent'
 IFACE_WIRED             = 'org.freedesktop.NetworkManager.Device.Wired'
 IFACE_VLAN              = 'org.freedesktop.NetworkManager.Device.Vlan'
 IFACE_WIFI_AP           = 'org.freedesktop.NetworkManager.AccessPoint'
-IFACE_WIMAX_NSP         = 'org.freedesktop.NetworkManager.WiMax.Nsp'
 IFACE_ACTIVE_CONNECTION = 'org.freedesktop.NetworkManager.Connection.Active'
 IFACE_VPN_CONNECTION    = 'org.freedesktop.NetworkManager.VPN.Connection'
 IFACE_DNS_MANAGER       = 'org.freedesktop.NetworkManager.DnsManager'
@@ -375,9 +373,6 @@ class BusErr:
 
     class ApNotFoundException(dbus.DBusException):
         _dbus_error_name = IFACE_WIFI + '.AccessPointNotFound'
-
-    class NspNotFoundException(dbus.DBusException):
-        _dbus_error_name = IFACE_WIMAX + '.NspNotFound'
 
     class PermissionDeniedException(dbus.DBusException):
         _dbus_error_name = IFACE_NM + '.PermissionDenied'
@@ -1086,108 +1081,6 @@ class WifiDevice(Device):
 
 ###############################################################################
 
-PRP_WIMAX_NSP_NAME = "Name"
-PRP_WIMAX_NSP_SIGNAL_QUALITY = "SignalQuality"
-PRP_WIMAX_NSP_NETWORK_TYPE = "NetworkType"
-
-class WimaxNsp(ExportedObj):
-
-    path_counter_next = 1
-    path_prefix = "/org/freedesktop/NetworkManager/Nsp/"
-
-    def __init__(self, name):
-
-        ExportedObj.__init__(self, ExportedObj.create_path(WimaxNsp))
-
-        strength = Util.random_int(self.path, 100)
-
-        props = {
-            PRP_WIMAX_NSP_NAME:           name,
-            PRP_WIMAX_NSP_SIGNAL_QUALITY: dbus.UInt32(strength),
-            PRP_WIMAX_NSP_NETWORK_TYPE:   dbus.UInt32(NM.WimaxNspNetworkType.HOME),
-        }
-
-        self.dbus_interface_add(IFACE_WIMAX_NSP, props, WimaxNsp.PropertiesChanged)
-
-    @dbus.service.signal(IFACE_WIMAX_NSP, signature='a{sv}')
-    def PropertiesChanged(self, changed):
-        pass
-
-###############################################################################
-
-PRP_WIMAX_NSPS = "Nsps"
-PRP_WIMAX_HW_ADDRESS = "HwAddress"
-PRP_WIMAX_CENTER_FREQUENCY = "CenterFrequency"
-PRP_WIMAX_RSSI = "Rssi"
-PRP_WIMAX_CINR = "Cinr"
-PRP_WIMAX_TX_POWER = "TxPower"
-PRP_WIMAX_BSID = "Bsid"
-PRP_WIMAX_ACTIVE_NSP = "ActiveNsp"
-
-class WimaxDevice(Device):
-    def __init__(self, iface, ident = None):
-        Device.__init__(self, iface, NM.DeviceType.WIMAX, ident)
-
-        mac = Util.random_mac(self.ident)
-        bsid = Util.random_mac(self.ident + '.bsid')
-
-        self.nsps = []
-
-        props = {
-            PRP_WIMAX_HW_ADDRESS:       mac,
-            PRP_WIMAX_CENTER_FREQUENCY: dbus.UInt32(2525),
-            PRP_WIMAX_RSSI:             dbus.Int32(-48),
-            PRP_WIMAX_CINR:             dbus.Int32(24),
-            PRP_WIMAX_TX_POWER:         dbus.Int32(9),
-            PRP_WIMAX_BSID:             bsid,
-            PRP_WIMAX_NSPS:             ExportedObj.to_path_array(self.nsps),
-            PRP_WIMAX_ACTIVE_NSP:       ExportedObj.to_path(None),
-        }
-
-        self.dbus_interface_add(IFACE_WIMAX, props, WimaxDevice.PropertiesChanged)
-
-    @dbus.service.method(dbus_interface=IFACE_WIMAX, in_signature='', out_signature='ao')
-    def GetNspList(self):
-        return ExportedObj.to_path_array(self.nsps)
-
-    @dbus.service.signal(IFACE_WIMAX, signature='o')
-    def NspAdded(self, nsp_path):
-        pass
-
-    def add_nsp(self, nsp):
-        nsp.export()
-        self.nsps.append(nsp)
-        self._dbus_property_set(IFACE_WIMAX, PRP_WIMAX_NSPS, ExportedObj.to_path_array(self.nsps))
-        self.NspAdded(ExportedObj.to_path(nsp))
-
-    def remove_nsp(self, nsp):
-        self.nsps.remove(nsp)
-        self._dbus_property_set(IFACE_WIMAX, PRP_WIMAX_NSPS, ExportedObj.to_path_array(self.nsps))
-        self.NspRemoved(ExportedObj.to_path(nsp))
-        nsp.unexport()
-
-    @dbus.service.signal(IFACE_WIMAX, signature='o')
-    def NspRemoved(self, nsp_path):
-        pass
-
-    @dbus.service.signal(IFACE_WIMAX, signature='a{sv}')
-    def PropertiesChanged(self, changed):
-        pass
-
-    def add_test_nsp(self, name):
-        nsp = WimaxNsp(name)
-        self.add_nsp(nsp)
-        return nsp
-
-    def remove_nsp_by_path(self, path):
-        for nsp in self.nsps:
-            if nsp.path == path:
-                self.remove_nsp(nsp)
-                return
-        raise BusErr.NspNotFoundException("NSP %s not found" % path)
-
-###############################################################################
-
 PRP_ACTIVE_CONNECTION_CONNECTION = "Connection"
 PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT = "SpecificObject"
 PRP_ACTIVE_CONNECTION_ID = "Id"
@@ -1603,11 +1496,6 @@ class NetworkManager(ExportedObj):
         dev = WifiDevice(ifname)
         return ExportedObj.to_path(self.add_device(dev))
 
-    @dbus.service.method(IFACE_TEST, in_signature='s', out_signature='o')
-    def AddWimaxDevice(self, ifname):
-        dev = WimaxDevice(ifname)
-        return ExportedObj.to_path(self.add_device(dev))
-
     @dbus.service.method(IFACE_TEST, in_signature='o', out_signature='')
     def RemoveDevice(self, path):
         d = self.find_device_first(path = path, require = TestError)
@@ -1623,16 +1511,6 @@ class NetworkManager(ExportedObj):
     def RemoveWifiAp(self, ident, ap_path):
         d = self.find_device_first(ident = ident, require = TestError)
         d.remove_ap_by_path(ap_path)
-
-    @dbus.service.method(IFACE_TEST, in_signature='ss', out_signature='o')
-    def AddWimaxNsp(self, ident, name):
-        d = self.find_device_first(ident = ident, require = TestError)
-        return ExportedObj.to_path(d.add_test_nsp(name))
-
-    @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')
-    def RemoveWimaxNsp(self, ident, nsp_path):
-        d = self.find_device_first(ident = ident, require = TestError)
-        d.remove_nsp_by_path(nsp_path)
 
     @dbus.service.method(IFACE_TEST, in_signature='', out_signature='')
     def AutoRemoveNextConnection(self):

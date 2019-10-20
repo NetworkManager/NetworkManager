@@ -20,6 +20,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * libnm: hide NMObject and NMClient typedefs from header files. This prevents
   the user from subclassing these types and is an ABI change (in case somebody
   was doing so).
+* libnm: retire deprecated WiMAX API NMDeviceWimax and NMWimaxNsp.
+  WiMAX support was removed from NetworkManager in version 1.2 (2016) and no such
+  type instances would have been created by NMClient for a while now.
 
 =============================================
 NetworkManager-1.20
