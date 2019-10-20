@@ -609,7 +609,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	obj_properties[PROP_AUTOCONNECT] =
 	    g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
-	                          TRUE,
+	                          FALSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
 
