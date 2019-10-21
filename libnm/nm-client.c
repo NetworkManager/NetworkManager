@@ -3958,7 +3958,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 */
 	obj_properties[PROP_NETWORKING_ENABLED] =
 	    g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED, "", "",
-	                          TRUE,
+	                          FALSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -3982,7 +3982,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	obj_properties[PROP_WIRELESS_HARDWARE_ENABLED] =
 	    g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED, "", "",
-	                          TRUE,
+	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
