@@ -44,6 +44,7 @@ NM_CLONED_MAC_IS_SPECIAL (const char *str)
 #define NM_IAID_MAC                "mac"
 #define NM_IAID_PERM_MAC           "perm-mac"
 #define NM_IAID_IFNAME             "ifname"
+#define NM_IAID_STABLE             "stable"
 
 static inline gboolean
 NM_IAID_IS_SPECIAL (const char *str)
@@ -51,7 +52,8 @@ NM_IAID_IS_SPECIAL (const char *str)
 	return NM_IN_STRSET (str,
 	                     NM_IAID_MAC,
 	                     NM_IAID_PERM_MAC,
-	                     NM_IAID_IFNAME);
+	                     NM_IAID_IFNAME,
+	                     NM_IAID_STABLE);
 }
 /*****************************************************************************/
 

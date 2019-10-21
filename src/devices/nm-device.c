@@ -7987,6 +7987,29 @@ dhcp_get_iaid (NMDevice *self,
 
 		iaid = unaligned_read_be32 (&hwaddr_buf[hwaddr_len - 4]);
 		goto out_good;
+	}  else if (nm_streq (iaid_str, "stable")) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+		guint32 salted_header;
+		const guint8 *host_id;
+		gsize host_id_len;
+
+		stable_id = _get_stable_id (self, connection, &stable_type);
+		salted_header = htonl (53390459 + stable_type);
+		nm_utils_host_id_get (&host_id, &host_id_len);
+		iface = nm_device_get_ip_iface (self);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA1);
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+		g_checksum_update (sum, (const guchar *) iface, strlen (iface) + 1);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
+		nm_utils_checksum_get_digest (sum, digest);
+
+		iaid = unaligned_read_be32 (digest);
+		goto out_good;
 	} else if ((iaid = _nm_utils_ascii_str_to_int64 (iaid_str, 10, 0, G_MAXUINT32, -1)) != -1) {
 		goto out_good;
 	} else {

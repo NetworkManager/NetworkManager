@@ -5823,14 +5823,16 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * A string containing the "Identity Association Identifier" (IAID) used
 	 * by the DHCP client. The property is a 32-bit decimal value or a
-	 * special value among "mac", "perm-mac" and "ifname". When set to "mac"
-	 * (or "perm-mac"), the last 4 bytes of the current (or permanent) MAC
-	 * address are used as IAID. When set to "ifname", the IAID is computed
-	 * by hashing the interface name. When unset, the value from global
-	 * configuration is used; if no global default is set then the IAID is
-	 * assumed to be "ifname". Note that at the moment this property is
-	 * ignored for IPv6 by dhclient, which always derives the IAID from
-	 * the MAC address.
+	 * special value among "mac", "perm-mac", "ifname" and "stable". When
+	 * set to "mac" (or "perm-mac"), the last 4 bytes of the current (or
+	 * permanent) MAC address are used as IAID. When set to "ifname", the
+	 * IAID is computed by hashing the interface name. The special value
+	 * "stable" can be used to generate an IAID based on the stable-id (see
+	 * connection.stable-id), a per-host key and the interface name. When
+	 * the property is unset, the value from global configuration is used;
+	 * if no global default is set then the IAID is assumed to be
+	 * "ifname". Note that at the moment this property is ignored for IPv6
+	 * by dhclient, which always derives the IAID from the MAC address.
 	 *
 	 * Since: 1.22
 	 **/
