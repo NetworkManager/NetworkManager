@@ -801,7 +801,7 @@ test_rd_znet (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
 	const char *const*const ARGV = NM_MAKE_STRV ("ip=10.11.12.13::10.11.12.1:24:foo.example.com:enc800:none",
-	                                             "rd.znet=ctc,0.0.0800,0.0.0801,layer2=0,portno=1");
+	                                             "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1");
 	GHashTableIter h_iter;
 	NMConnection *connection;
 	NMSettingWired *s_wired;
@@ -830,7 +830,8 @@ test_rd_znet (void)
 	g_assert (v_subchannels);
 	g_assert_cmpstr (v_subchannels[0], ==, "0.0.0800");
 	g_assert_cmpstr (v_subchannels[1], ==, "0.0.0801");
-	g_assert_cmpstr (v_subchannels[2], ==, NULL);
+	g_assert_cmpstr (v_subchannels[2], ==, "0.0.0802");
+	g_assert_cmpstr (v_subchannels[3], ==, NULL);
 
 	g_assert_cmpint (nm_setting_wired_get_num_s390_options (s_wired), ==, G_N_ELEMENTS (s390_options));
 	for (i_s390_options_keys = 0; i_s390_options_keys < G_N_ELEMENTS (s390_options); i_s390_options_keys++) {
