@@ -163,7 +163,7 @@ nm_access_point_get_bssid (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	return nm_str_not_empty (NM_ACCESS_POINT_GET_PRIVATE (ap)->bssid);
+	return _nml_coerce_property_str_not_empty (NM_ACCESS_POINT_GET_PRIVATE (ap)->bssid);
 }
 
 /**

@@ -67,7 +67,7 @@ nm_vpn_connection_get_banner (NMVpnConnection *vpn)
 {
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
 
-	return nm_str_not_empty (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->banner);
+	return _nml_coerce_property_str_not_empty (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->banner);
 }
 
 /**

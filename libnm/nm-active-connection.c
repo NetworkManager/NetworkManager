@@ -109,7 +109,7 @@ nm_active_connection_get_id (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return nm_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->id);
+	return _nml_coerce_property_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->id);
 }
 
 /**
@@ -126,7 +126,7 @@ nm_active_connection_get_uuid (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return nm_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid);
+	return _nml_coerce_property_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid);
 }
 
 /**
@@ -143,7 +143,7 @@ nm_active_connection_get_connection_type (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return nm_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->type);
+	return _nml_coerce_property_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->type);
 }
 
 /**
