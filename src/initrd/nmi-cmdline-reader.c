@@ -688,16 +688,33 @@ parse_rd_znet (GHashTable *connections, char *argument)
 	const char *nettype;
 	const char *subchannels[4] = { 0, 0, 0, 0 };
 	const char *tmp;
+	const char *ifname, *prefix;
+	const char *bus_id;
+	size_t bus_id_len;
+	size_t bus_id_start;
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 
 	nettype = get_word (&argument, ',');
 	subchannels[0] = get_word (&argument, ',');
-	subchannels[1] = get_word (&argument, ',');
-	if (!nm_streq0 (nettype, "ctc"))
-		subchannels[2] = get_word (&argument, ',');
 
-	connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
+	/* The following logic is taken from names_ccw() in systemd/src/udev/udev-builtin-net_id.c */
+	bus_id = subchannels[0];
+	bus_id_len = strlen (bus_id);
+	bus_id_start = strspn (bus_id, ".0");
+	bus_id += bus_id_start < bus_id_len ? bus_id_start : bus_id_len - 1;
+
+	subchannels[1] = get_word (&argument, ',');
+
+	if (nm_streq0 (nettype, "ctc")) {
+		prefix = "sl";
+	} else {
+		subchannels[2] = get_word (&argument, ',');
+		prefix = "en";
+	}
+
+	ifname = g_strdup_printf ("%sc%s", prefix, bus_id);
+	connection = get_conn (connections, ifname, NM_SETTING_WIRED_SETTING_NAME);
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
