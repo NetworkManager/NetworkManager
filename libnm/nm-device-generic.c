@@ -11,19 +11,32 @@
 #include "nm-setting-generic.h"
 #include "nm-setting-connection.h"
 
-G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GENERIC, NMDeviceGenericPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_TYPE_DESCRIPTION,
+);
 
 typedef struct {
 	char *hw_address;
 	char *type_description;
 } NMDeviceGenericPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_TYPE_DESCRIPTION,
-);
+struct _NMDeviceGeneric {
+	NMDevice parent;
+	NMDeviceGenericPrivate _priv;
+};
+
+struct _NMDeviceGenericClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_GENERIC_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceGeneric, NM_IS_DEVICE_GENERIC, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_generic_get_hw_address:
@@ -151,8 +164,6 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMDeviceGenericPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

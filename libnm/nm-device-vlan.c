@@ -13,9 +13,14 @@
 #include "nm-utils.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VLAN, NMDeviceVlanPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_PARENT,
+	PROP_VLAN_ID,
+);
 
 typedef struct {
 	char *hw_address;
@@ -24,12 +29,20 @@ typedef struct {
 	guint vlan_id;
 } NMDeviceVlanPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_PARENT,
-	PROP_VLAN_ID,
-);
+struct _NMDeviceVlan {
+	NMDevice parent;
+	NMDeviceVlanPrivate _priv;
+};
+
+struct _NMDeviceVlanClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_VLAN_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceVlan, NM_IS_DEVICE_VLAN, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_vlan_get_hw_address:
@@ -216,8 +229,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *vlan_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (vlan_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (vlan_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (vlan_class);
-
-	g_type_class_add_private (vlan_class, sizeof (NMDeviceVlanPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

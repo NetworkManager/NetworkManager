@@ -39,16 +39,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceMacsec:
  */
-struct _NMDeviceMacsec {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceMacsecClass;
+typedef struct _NMDeviceMacsecClass NMDeviceMacsecClass;
 
 NM_AVAILABLE_IN_1_6
 GType nm_device_macsec_get_type (void);

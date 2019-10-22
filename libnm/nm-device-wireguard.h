@@ -21,6 +21,9 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIREGUARD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_WIREGUARD))
 #define NM_DEVICE_WIREGUARD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIREGUARD, NMDeviceWireGuardClass))
 
+/**
+ * NMDeviceWireGuard:
+ */
 typedef struct _NMDeviceWireGuardClass NMDeviceWireGuardClass;
 
 #define NM_DEVICE_WIREGUARD_PUBLIC_KEY   "public-key"

@@ -15,24 +15,7 @@
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxPrivate))
-
-void _nm_device_wimax_set_wireless_enabled (NMDeviceWimax *wimax, gboolean enabled);
-static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
-
-typedef struct {
-	char *hw_address;
-	NMWimaxNsp *active_nsp;
-	GPtrArray *nsps;
-
-	guint center_freq;
-	int rssi;
-	int cinr;
-	int tx_power;
-	char *bsid;
-} NMDeviceWimaxPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_HW_ADDRESS,
@@ -51,7 +34,42 @@ enum {
 
 	LAST_SIGNAL
 };
+
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	char *hw_address;
+	NMWimaxNsp *active_nsp;
+	GPtrArray *nsps;
+
+	guint center_freq;
+	int rssi;
+	int cinr;
+	int tx_power;
+	char *bsid;
+} NMDeviceWimaxPrivate;
+
+struct _NMDeviceWimax {
+	NMDevice parent;
+	NMDeviceWimaxPrivate _priv;
+};
+
+struct _NMDeviceWimaxClass {
+	NMDeviceClass parent;
+
+	void (*nsp_removed) (NMDeviceWimax *self, NMWimaxNsp *nsp);
+};
+
+G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_WIMAX_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWimax, NM_IS_DEVICE_WIMAX, NMObject, NMDevice)
+
+/*****************************************************************************/
+
+void _nm_device_wimax_set_wireless_enabled (NMDeviceWimax *wimax, gboolean enabled);
+static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
+
+/*****************************************************************************/
 
 /**
  * nm_device_wimax_get_hw_address:
@@ -505,8 +523,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wimax_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wimax_class);
 
-	g_type_class_add_private (wimax_class, sizeof (NMDeviceWimaxPrivate));
-
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
 
@@ -645,8 +661,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	    g_signal_new ("nsp-added",
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_added),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);

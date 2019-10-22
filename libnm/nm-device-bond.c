@@ -13,9 +13,13 @@
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BOND, NMDeviceBondPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_SLAVES,
+);
 
 typedef struct {
 	char *hw_address;
@@ -23,11 +27,20 @@ typedef struct {
 	GPtrArray *slaves;
 } NMDeviceBondPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_SLAVES,
-);
+struct _NMDeviceBond {
+	NMDevice parent;
+	NMDeviceBondPrivate _priv;
+};
+
+struct _NMDeviceBondClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_BOND_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceBond, NM_IS_DEVICE_BOND, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_bond_get_hw_address:
@@ -187,8 +200,6 @@ nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (bond_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bond_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bond_class);
-
-	g_type_class_add_private (bond_class, sizeof (NMDeviceBondPrivate));
 
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;

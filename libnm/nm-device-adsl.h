@@ -26,16 +26,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceAdsl:
  */
-struct _NMDeviceAdsl {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceAdslClass;
+typedef struct _NMDeviceAdslClass NMDeviceAdslClass;
 
 GType nm_device_adsl_get_type (void);
 

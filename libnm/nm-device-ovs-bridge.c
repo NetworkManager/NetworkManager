@@ -13,16 +13,19 @@
 #include "nm-setting-connection.h"
 #include "nm-core-internal.h"
 
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_SLAVES,
 );
 
-/**
- * NMDeviceOvsBridge:
- */
+typedef struct {
+	GPtrArray *slaves;
+} NMDeviceOvsBridgePrivate;
+
 struct _NMDeviceOvsBridge {
 	NMDevice parent;
-	GPtrArray *slaves;
+	NMDeviceOvsBridgePrivate _priv;
 };
 
 struct _NMDeviceOvsBridgeClass {
@@ -30,6 +33,8 @@ struct _NMDeviceOvsBridgeClass {
 };
 
 G_DEFINE_TYPE (NMDeviceOvsBridge, nm_device_ovs_bridge, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_OVS_BRIDGE_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceOvsBridge, NM_IS_DEVICE_OVS_BRIDGE, NMObject, NMDevice)
 
 /*****************************************************************************/
 
@@ -50,7 +55,7 @@ nm_device_ovs_bridge_get_slaves (NMDeviceOvsBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OVS_BRIDGE (device), FALSE);
 
-	return device->slaves;
+	return NM_DEVICE_OVS_BRIDGE_GET_PRIVATE (device)->slaves;
 }
 
 static const char *
@@ -96,7 +101,7 @@ init_dbus (NMObject *object)
 {
 	NMDeviceOvsBridge *device = NM_DEVICE_OVS_BRIDGE (object);
 	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_OVS_BRIDGE_SLAVES, &device->slaves, NULL, NM_TYPE_DEVICE },
+		{ NM_DEVICE_OVS_BRIDGE_SLAVES, &device->_priv.slaves, NULL, NM_TYPE_DEVICE },
 		{ NULL },
 	};
 
@@ -133,9 +138,9 @@ nm_device_ovs_bridge_init (NMDeviceOvsBridge *device)
 static void
 dispose (GObject *object)
 {
-	NMDeviceOvsBridge *device = NM_DEVICE_OVS_BRIDGE (object);
+	NMDeviceOvsBridgePrivate *priv = NM_DEVICE_OVS_BRIDGE_GET_PRIVATE (object);
 
-	g_clear_pointer (&device->slaves, g_ptr_array_unref);
+	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_device_ovs_bridge_parent_class)->dispose (object);
 }

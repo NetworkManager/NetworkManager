@@ -23,29 +23,7 @@
 
 #include "introspection/org.freedesktop.NetworkManager.Connection.Active.h"
 
-G_DEFINE_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT);
-
-#define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
-
-typedef struct {
-	NMRemoteConnection *connection;
-	char *id;
-	char *uuid;
-	char *type;
-	char *specific_object_path;
-	GPtrArray *devices;
-	NMActiveConnectionState state;
-	guint state_flags;
-	gboolean is_default;
-	NMIPConfig *ip4_config;
-	NMDhcpConfig *dhcp4_config;
-	gboolean is_default6;
-	NMIPConfig *ip6_config;
-	NMDhcpConfig *dhcp6_config;
-	gboolean is_vpn;
-	NMDevice *master;
-	NMActiveConnectionStateReason reason;
-} NMActiveConnectionPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_CONNECTION,
@@ -73,6 +51,32 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct _NMActiveConnectionPrivate {
+	NMRemoteConnection *connection;
+	char *id;
+	char *uuid;
+	char *type;
+	char *specific_object_path;
+	GPtrArray *devices;
+	NMActiveConnectionState state;
+	guint state_flags;
+	gboolean is_default;
+	NMIPConfig *ip4_config;
+	NMDhcpConfig *dhcp4_config;
+	gboolean is_default6;
+	NMIPConfig *ip6_config;
+	NMDhcpConfig *dhcp6_config;
+	gboolean is_vpn;
+	NMDevice *master;
+	NMActiveConnectionStateReason reason;
+} NMActiveConnectionPrivate;
+
+G_DEFINE_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT);
+
+#define NM_ACTIVE_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMActiveConnection, NM_IS_ACTIVE_CONNECTION, NMObject)
+
+/*****************************************************************************/
 
 /**
  * nm_active_connection_get_connection:
@@ -373,9 +377,13 @@ nm_active_connection_get_master (NMActiveConnection *connection)
 }
 
 static void
-nm_active_connection_init (NMActiveConnection *connection)
+nm_active_connection_init (NMActiveConnection *self)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	NMActiveConnectionPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
+
+	self->_priv = priv;
 
 	priv->devices = g_ptr_array_new ();
 }

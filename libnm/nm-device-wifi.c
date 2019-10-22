@@ -20,12 +20,18 @@
 
 #include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
 
-G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIFI, NMDeviceWifiPrivate))
-
-void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
-static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_PERM_HW_ADDRESS,
+	PROP_MODE,
+	PROP_BITRATE,
+	PROP_ACTIVE_ACCESS_POINT,
+	PROP_WIRELESS_CAPABILITIES,
+	PROP_ACCESS_POINTS,
+	PROP_LAST_SCAN,
+);
 
 typedef struct {
 	NMDBusDeviceWifi *proxy;
@@ -40,24 +46,37 @@ typedef struct {
 	gint64 last_scan;
 } NMDeviceWifiPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_PERM_HW_ADDRESS,
-	PROP_MODE,
-	PROP_BITRATE,
-	PROP_ACTIVE_ACCESS_POINT,
-	PROP_WIRELESS_CAPABILITIES,
-	PROP_ACCESS_POINTS,
-	PROP_LAST_SCAN,
-);
-
 enum {
 	ACCESS_POINT_ADDED,
 	ACCESS_POINT_REMOVED,
 
 	LAST_SIGNAL
 };
+
 static guint signals[LAST_SIGNAL] = { 0 };
+
+
+struct _NMDeviceWifi {
+	NMDevice parent;
+	NMDeviceWifiPrivate _priv;
+};
+
+struct _NMDeviceWifiClass {
+	NMDeviceClass parent;
+
+	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
+};
+
+G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_WIFI_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWifi, NM_IS_DEVICE_WIFI, NMObject, NMDevice)
+
+/*****************************************************************************/
+
+void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
+
+/*****************************************************************************/
 
 /**
  * nm_device_wifi_get_hw_address:
@@ -725,8 +744,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wifi_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wifi_class);
 
-	g_type_class_add_private (wifi_class, sizeof (NMDeviceWifiPrivate));
-
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
@@ -846,8 +863,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	    g_signal_new ("access-point-added",
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
-	                  NULL, NULL,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);

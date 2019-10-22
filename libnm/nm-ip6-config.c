@@ -7,9 +7,19 @@
 
 #include "nm-ip6-config.h"
 
-#include "nm-object-private.h"
+/*****************************************************************************/
+
+struct _NMIP6Config {
+	NMIPConfig parent;
+};
+
+struct _NMIP6ConfigClass{
+	NMIPConfigClass parent;
+};
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_IP_CONFIG)
+
+/*****************************************************************************/
 
 static void
 nm_ip6_config_init (NMIP6Config *config)

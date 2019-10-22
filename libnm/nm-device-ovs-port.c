@@ -13,16 +13,19 @@
 #include "nm-setting-connection.h"
 #include "nm-core-internal.h"
 
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_SLAVES,
 );
 
-/**
- * NMDeviceOvsPort:
- */
+typedef struct {
+	GPtrArray *slaves;
+} NMDeviceOvsPortPrivate;
+
 struct _NMDeviceOvsPort {
 	NMDevice parent;
-	GPtrArray *slaves;
+	NMDeviceOvsPortPrivate _priv;
 };
 
 struct _NMDeviceOvsPortClass {
@@ -30,6 +33,8 @@ struct _NMDeviceOvsPortClass {
 };
 
 G_DEFINE_TYPE (NMDeviceOvsPort, nm_device_ovs_port, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_OVS_PORT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceOvsPort, NM_IS_DEVICE_OVS_PORT, NMObject, NMDevice)
 
 /*****************************************************************************/
 
@@ -50,7 +55,7 @@ nm_device_ovs_port_get_slaves (NMDeviceOvsPort *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OVS_PORT (device), FALSE);
 
-	return device->slaves;
+	return NM_DEVICE_OVS_PORT_GET_PRIVATE (device)->slaves;
 }
 
 static const char *
@@ -95,8 +100,9 @@ static void
 init_dbus (NMObject *object)
 {
 	NMDeviceOvsPort *device = NM_DEVICE_OVS_PORT (object);
+	NMDeviceOvsPortPrivate *priv = NM_DEVICE_OVS_PORT_GET_PRIVATE (device);
 	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_OVS_PORT_SLAVES, &device->slaves, NULL, NM_TYPE_DEVICE },
+		{ NM_DEVICE_OVS_PORT_SLAVES, &priv->slaves, NULL, NM_TYPE_DEVICE },
 		{ NULL },
 	};
 
@@ -133,9 +139,9 @@ nm_device_ovs_port_init (NMDeviceOvsPort *device)
 static void
 dispose (GObject *object)
 {
-	NMDeviceOvsPort *device = NM_DEVICE_OVS_PORT (object);
+	NMDeviceOvsPortPrivate *priv = NM_DEVICE_OVS_PORT_GET_PRIVATE (object);
 
-	g_clear_pointer (&device->slaves, g_ptr_array_unref);
+	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_device_ovs_port_parent_class)->dispose (object);
 }

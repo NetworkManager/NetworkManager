@@ -26,16 +26,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceDummy:
  */
-struct _NMDeviceDummy {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceDummyClass;
+typedef struct _NMDeviceDummyClass NMDeviceDummyClass;
 
 GType nm_device_dummy_get_type (void);
 NM_AVAILABLE_IN_1_10

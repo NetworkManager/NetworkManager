@@ -34,20 +34,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceWimax:
  */
-struct _NMDeviceWimax {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/* Signals */
-	void (*nsp_added)   (NMDeviceWimax *self, NMWimaxNsp *nsp);
-	void (*nsp_removed) (NMDeviceWimax *self, NMWimaxNsp *nsp);
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceWimaxClass;
+typedef struct _NMDeviceWimaxClass NMDeviceWimaxClass;
 
 NM_DEPRECATED_IN_1_2
 GType nm_device_wimax_get_type (void);

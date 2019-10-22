@@ -11,6 +11,14 @@
 #include "nm-device.h"
 #include "nm-object-private.h"
 
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_DEVICES,
+	PROP_CREATED,
+	PROP_ROLLBACK_TIMEOUT,
+);
+
 typedef struct {
 	GPtrArray *devices;
 	gint64 created;
@@ -28,13 +36,9 @@ struct _NMCheckpointClass {
 
 G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_OBJECT)
 
-#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT)
+#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT, NMObject)
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_DEVICES,
-	PROP_CREATED,
-	PROP_ROLLBACK_TIMEOUT,
-);
+/*****************************************************************************/
 
 /**
  * nm_checkpoint_get_devices:

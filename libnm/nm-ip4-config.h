@@ -23,13 +23,8 @@
 /**
  * NMIP4Config:
  */
-typedef struct {
-	NMIPConfig parent;
-} NMIP4Config;
-
-typedef struct {
-	NMIPConfigClass parent;
-} NMIP4ConfigClass;
+typedef struct _NMIP4Config NMIP4Config;
+typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 
 GType nm_ip4_config_get_type (void);
 

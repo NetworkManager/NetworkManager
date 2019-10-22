@@ -19,6 +19,9 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_PPP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_PPP))
 #define NM_DEVICE_PPP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_PPP, NMDevicePppClass))
 
+/**
+ * NMDevicePpp:
+ */
 typedef struct _NMDevicePppClass NMDevicePppClass;
 
 GType nm_device_ppp_get_type (void);

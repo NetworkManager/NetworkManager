@@ -14,9 +14,17 @@
 #include "nm-utils.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TUN, NMDeviceTunPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_MODE,
+	PROP_OWNER,
+	PROP_GROUP,
+	PROP_NO_PI,
+	PROP_VNET_HDR,
+	PROP_MULTI_QUEUE,
+);
 
 typedef struct {
 	char *hw_address;
@@ -28,15 +36,20 @@ typedef struct {
 	gboolean multi_queue;
 } NMDeviceTunPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_MODE,
-	PROP_OWNER,
-	PROP_GROUP,
-	PROP_NO_PI,
-	PROP_VNET_HDR,
-	PROP_MULTI_QUEUE,
-);
+struct _NMDeviceTun {
+	NMDevice parent;
+	NMDeviceTunPrivate _priv;
+};
+
+struct _NMDeviceTunClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_TUN_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceTun, NM_IS_DEVICE_TUN, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_tun_get_hw_address:
@@ -297,8 +310,6 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (gre_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (gre_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (gre_class);
-
-	g_type_class_add_private (gre_class, sizeof (NMDeviceTunPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

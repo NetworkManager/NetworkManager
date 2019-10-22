@@ -21,6 +21,9 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_OVS_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_OVS_INTERFACE))
 #define NM_DEVICE_OVS_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_OVS_INTERFACE, NMDeviceOvsInterfaceClass))
 
+/**
+ * NMDeviceOvsInterface:
+ */
 typedef struct _NMDeviceOvsInterfaceClass NMDeviceOvsInterfaceClass;
 
 NM_AVAILABLE_IN_1_10

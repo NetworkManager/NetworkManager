@@ -199,27 +199,7 @@ gboolean            nm_dns_entry_get_vpn (NMDnsEntry *entry);
 /**
  * NMClient:
  */
-struct _NMClient {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Signals */
-	void (*device_added) (NMClient *client, NMDevice *device);
-	void (*device_removed) (NMClient *client, NMDevice *device);
-	void (*any_device_added) (NMClient *client, NMDevice *device);
-	void (*any_device_removed) (NMClient *client, NMDevice *device);
-	void (*permission_changed) (NMClient *client,
-	                            NMClientPermission permission,
-	                            NMClientPermissionResult result);
-	void (*connection_added)   (NMClient *client, NMRemoteConnection *connection);
-	void (*connection_removed) (NMClient *client, NMRemoteConnection *connection);
-
-	/*< private >*/
-	gpointer padding[6];
-} NMClientClass;
+typedef struct _NMClientClass NMClientClass;
 
 GType nm_client_get_type (void);
 

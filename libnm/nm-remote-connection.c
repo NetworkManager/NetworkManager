@@ -27,17 +27,7 @@
  * NetworkManager D-Bus interface.
  **/
 
-static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
-static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
-static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
-static GInitableIface *nm_remote_connection_parent_initable_iface;
-static GAsyncInitableIface *nm_remote_connection_parent_async_initable_iface;
-
-G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_remote_connection_connection_iface_init);
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_remote_connection_initable_iface_init);
-                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
-                         )
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMRemoteConnection,
 	PROP_UNSAVED,
@@ -56,7 +46,30 @@ typedef struct {
 	gboolean visible;
 } NMRemoteConnectionPrivate;
 
-#define NM_REMOTE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionPrivate))
+struct _NMRemoteConnection {
+	NMObject parent;
+	NMRemoteConnectionPrivate _priv;
+};
+
+struct _NMRemoteConnectionClass {
+	NMObjectClass parent_class;
+};
+
+static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
+static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
+static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_remote_connection_connection_iface_init);
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_remote_connection_initable_iface_init);
+                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
+                         )
+#define NM_REMOTE_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMRemoteConnection, NM_IS_REMOTE_CONNECTION, NMObject)
+
+/*****************************************************************************/
+
+static GInitableIface *nm_remote_connection_parent_initable_iface;
+static GAsyncInitableIface *nm_remote_connection_parent_async_initable_iface;
 
 /*****************************************************************************/
 
@@ -700,7 +713,7 @@ static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMRemoteConnection *self = NM_REMOTE_CONNECTION (initable);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 	GVariant *settings;
 
 	priv->proxy = NMDBUS_SETTINGS_CONNECTION (_nm_object_get_proxy (NM_OBJECT (initable), NM_DBUS_INTERFACE_SETTINGS_CONNECTION));
@@ -758,7 +771,8 @@ init_get_settings_cb (GObject *proxy,
                       gpointer user_data)
 {
 	NMRemoteConnectionInitData *init_data = user_data;
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->initable);
+	NMRemoteConnection *self = NM_REMOTE_CONNECTION (init_data->initable);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 	GVariant *settings;
 	GError *error = NULL;
 
@@ -781,7 +795,8 @@ init_async (GAsyncInitable *initable, int io_priority,
             gpointer user_data)
 {
 	NMRemoteConnectionInitData *init_data;
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
+	NMRemoteConnection *self = NM_REMOTE_CONNECTION (initable);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	init_data = g_slice_new0 (NMRemoteConnectionInitData);
 	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
@@ -798,7 +813,7 @@ init_async (GAsyncInitable *initable, int io_priority,
 	g_signal_connect_object (priv->proxy, "updated",
 	                         G_CALLBACK (updated_cb), initable, 0);
 
-	nmdbus_settings_connection_call_get_settings (NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->initable)->proxy,
+	nmdbus_settings_connection_call_get_settings (NM_REMOTE_CONNECTION_GET_PRIVATE (NM_REMOTE_CONNECTION (init_data->initable))->proxy,
 	                                              init_data->cancellable,
 	                                              init_get_settings_cb, init_data);
 }
@@ -856,8 +871,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (remote_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (remote_class);
-
-	g_type_class_add_private (object_class, sizeof (NMRemoteConnectionPrivate));
 
 	object_class->get_property = get_property;
 	object_class->constructed  = constructed;

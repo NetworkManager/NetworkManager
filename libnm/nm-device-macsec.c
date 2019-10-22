@@ -11,9 +11,24 @@
 #include "nm-object-private.h"
 #include "nm-utils.h"
 
-G_DEFINE_TYPE (NMDeviceMacsec, nm_device_macsec, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_MACSEC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MACSEC, NMDeviceMacsecPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PARENT,
+	PROP_HW_ADDRESS,
+	PROP_SCI,
+	PROP_CIPHER_SUITE,
+	PROP_ICV_LENGTH,
+	PROP_WINDOW,
+	PROP_ENCODING_SA,
+	PROP_ENCRYPT,
+	PROP_PROTECT,
+	PROP_INCLUDE_SCI,
+	PROP_ES,
+	PROP_SCB,
+	PROP_REPLAY_PROTECT,
+	PROP_VALIDATION,
+);
 
 typedef struct {
 	NMDevice *parent;
@@ -32,22 +47,20 @@ typedef struct {
 	char *validation;
 } NMDeviceMacsecPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PARENT,
-	PROP_HW_ADDRESS,
-	PROP_SCI,
-	PROP_CIPHER_SUITE,
-	PROP_ICV_LENGTH,
-	PROP_WINDOW,
-	PROP_ENCODING_SA,
-	PROP_ENCRYPT,
-	PROP_PROTECT,
-	PROP_INCLUDE_SCI,
-	PROP_ES,
-	PROP_SCB,
-	PROP_REPLAY_PROTECT,
-	PROP_VALIDATION,
-);
+struct _NMDeviceMacsec {
+	NMDevice parent;
+	NMDeviceMacsecPrivate _priv;
+};
+
+struct _NMDeviceMacsecClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceMacsec, nm_device_macsec, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_MACSEC_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceMacsec, NM_IS_DEVICE_MACSEC, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_macsec_get_parent:
@@ -422,8 +435,6 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (macsec_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (macsec_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (macsec_class);
-
-	g_type_class_add_private (macsec_class, sizeof (NMDeviceMacsecPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

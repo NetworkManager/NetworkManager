@@ -28,16 +28,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceBond:
  */
-struct _NMDeviceBond {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceBondClass;
+typedef struct _NMDeviceBondClass NMDeviceBondClass;
 
 GType nm_device_bond_get_type (void);
 

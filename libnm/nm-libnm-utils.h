@@ -6,10 +6,6 @@
 #ifndef __NM_LIBNM_UTILS_H__
 #define __NM_LIBNM_UTILS_H__
 
-#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
-#error Cannot use this header.
-#endif
-
 #include "nm-types.h"
 
 /*****************************************************************************/
@@ -116,5 +112,97 @@ char *nm_utils_wincaps_to_dash (const char *caps);
 
 char *nm_utils_fixup_vendor_string (const char *desc);
 char *nm_utils_fixup_product_string (const char *desc);
+
+/*****************************************************************************/
+
+struct _NMObjectPrivate;
+
+struct _NMObject {
+	GObject parent;
+	struct _NMObjectPrivate *_priv;
+};
+
+struct _NMObjectClass {
+	GObjectClass parent;
+
+	void (*init_dbus) (struct _NMObject *object);
+
+	/* The "object-creation-failed" method is PRIVATE for libnm and
+	 * is not meant for any external usage.  It indicates that an error
+	 * occurred during creation of an object.
+	 */
+	void (*object_creation_failed) (struct _NMObject *master_object,
+	                                const char *failed_path);
+};
+
+/*****************************************************************************/
+
+struct _NMDevicePrivate;
+
+struct _NMDevice {
+	NMObject parent;
+	struct _NMDevicePrivate *_priv;
+};
+
+struct _NMDeviceClass {
+	struct _NMObjectClass parent;
+
+	/* Signals */
+	void (*state_changed) (NMDevice *device,
+	                       NMDeviceState new_state,
+	                       NMDeviceState old_state,
+	                       NMDeviceStateReason reason);
+
+	/* Methods */
+	gboolean (*connection_compatible) (NMDevice *device,
+	                                   NMConnection *connection,
+	                                   GError **error);
+
+	const char * (*get_type_description) (NMDevice *device);
+	const char * (*get_hw_address) (NMDevice *device);
+
+	GType (*get_setting_type) (NMDevice *device);
+};
+
+/*****************************************************************************/
+
+struct _NMActiveConnectionPrivate;
+
+struct _NMActiveConnection {
+	NMObject parent;
+	struct _NMActiveConnectionPrivate *_priv;
+};
+
+struct _NMActiveConnectionClass {
+	struct _NMObjectClass parent;
+};
+
+/*****************************************************************************/
+
+struct _NMDhcpConfigPrivate;
+
+struct _NMDhcpConfig {
+	NMObject parent;
+	struct _NMDhcpConfigPrivate *_priv;
+};
+
+struct _NMDhcpConfigClass {
+	struct _NMObjectClass parent;
+};
+
+/*****************************************************************************/
+
+struct _NMIPConfigPrivate;
+
+struct _NMIPConfig {
+	NMObject parent;
+	struct _NMIPConfigPrivate *_priv;
+};
+
+struct _NMIPConfigClass {
+	struct _NMObjectClass parent;
+};
+
+/*****************************************************************************/
 
 #endif /* __NM_LIBNM_UTILS_H__ */

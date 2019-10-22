@@ -11,17 +11,28 @@
 #include "nm-setting-dummy.h"
 #include "nm-setting-connection.h"
 
-G_DEFINE_TYPE (NMDeviceDummy, nm_device_dummy, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_DUMMY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_DUMMY, NMDeviceDummyPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+);
 
 typedef struct {
 	char *hw_address;
 } NMDeviceDummyPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-);
+struct _NMDeviceDummy {
+	NMDevice parent;
+	NMDeviceDummyPrivate _priv;
+};
+
+struct _NMDeviceDummyClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceDummy, nm_device_dummy, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_DUMMY_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceDummy, NM_IS_DEVICE_DUMMY, NMObject, NMDevice)
 
 /*****************************************************************************/
 
@@ -137,8 +148,6 @@ nm_device_dummy_class_init (NMDeviceDummyClass *dummy_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (dummy_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (dummy_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (dummy_class);
-
-	g_type_class_add_private (dummy_class, sizeof (NMDeviceDummyPrivate));
 
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;

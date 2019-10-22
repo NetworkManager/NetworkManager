@@ -17,22 +17,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
-
-#define NM_ACCESS_POINT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACCESS_POINT, NMAccessPointPrivate))
-
-typedef struct {
-	NM80211ApFlags flags;
-	NM80211ApSecurityFlags wpa_flags;
-	NM80211ApSecurityFlags rsn_flags;
-	GBytes *ssid;
-	guint32 frequency;
-	char *bssid;
-	NM80211Mode mode;
-	guint32 max_bitrate;
-	guint8 strength;
-	int last_seen;
-} NMAccessPointPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FLAGS,
@@ -47,6 +32,34 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_BSSID,
 	PROP_LAST_SEEN,
 );
+
+typedef struct {
+	NM80211ApFlags flags;
+	NM80211ApSecurityFlags wpa_flags;
+	NM80211ApSecurityFlags rsn_flags;
+	GBytes *ssid;
+	guint32 frequency;
+	char *bssid;
+	NM80211Mode mode;
+	guint32 max_bitrate;
+	guint8 strength;
+	int last_seen;
+} NMAccessPointPrivate;
+
+struct _NMAccessPoint {
+	NMObject parent;
+	NMAccessPointPrivate _priv;
+};
+
+struct _NMAccessPointClass {
+	NMObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
+
+#define NM_ACCESS_POINT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMAccessPoint, NM_IS_ACCESS_POINT, NMObject)
+
+/*****************************************************************************/
 
 /**
  * nm_access_point_get_flags:
@@ -468,8 +481,6 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
-
-	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

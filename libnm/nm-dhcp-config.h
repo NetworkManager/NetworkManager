@@ -24,16 +24,7 @@ G_BEGIN_DECLS
 /**
  * NMDhcpConfig:
  */
-struct _NMDhcpConfig {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[8];
-} NMDhcpConfigClass;
+typedef struct _NMDhcpConfigClass NMDhcpConfigClass;
 
 #define NM_DHCP_CONFIG_FAMILY  "family"
 #define NM_DHCP_CONFIG_OPTIONS "options"

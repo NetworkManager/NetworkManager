@@ -29,16 +29,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceTeam:
  */
-struct _NMDeviceTeam {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceTeamClass;
+typedef struct _NMDeviceTeamClass NMDeviceTeamClass;
 
 GType nm_device_team_get_type (void);
 

@@ -29,16 +29,7 @@ G_BEGIN_DECLS
 /**
  * NMWimaxNsp:
  */
-struct _NMWimaxNsp {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMWimaxNspClass;
+typedef struct _NMWimaxNspClass NMWimaxNspClass;
 
 GType nm_wimax_nsp_get_type (void);
 

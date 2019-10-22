@@ -14,9 +14,13 @@
 #include "nm-object-private.h"
 #include "nm-enum-types.h"
 
-G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_WIMAX_NSP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_WIMAX_NSP, NMWimaxNspPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_NAME,
+	PROP_SIGNAL_QUALITY,
+	PROP_NETWORK_TYPE,
+);
 
 typedef struct {
 	char *name;
@@ -24,11 +28,20 @@ typedef struct {
 	NMWimaxNspNetworkType network_type;
 } NMWimaxNspPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_NAME,
-	PROP_SIGNAL_QUALITY,
-	PROP_NETWORK_TYPE,
-);
+struct _NMWimaxNsp {
+	NMObject parent;
+	NMWimaxNspPrivate _priv;
+};
+
+struct _NMWimaxNspClass {
+	NMObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
+
+#define NM_WIMAX_NSP_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMWimaxNsp, NM_IS_WIMAX_NSP, NMObject)
+
+/*****************************************************************************/
 
 /**
  * nm_wimax_nsp_get_name:
@@ -216,8 +229,6 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (nsp_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (nsp_class);
-
-	g_type_class_add_private (nsp_class, sizeof (NMWimaxNspPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

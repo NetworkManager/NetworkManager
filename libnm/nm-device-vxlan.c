@@ -12,9 +12,28 @@
 #include "nm-utils.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_VXLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VXLAN, NMDeviceVxlanPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_PARENT,
+	PROP_ID,
+	PROP_GROUP,
+	PROP_LOCAL,
+	PROP_TOS,
+	PROP_TTL,
+	PROP_LIMIT,
+	PROP_LEARNING,
+	PROP_AGEING,
+	PROP_DST_PORT,
+	PROP_SRC_PORT_MIN,
+	PROP_SRC_PORT_MAX,
+	PROP_PROXY,
+	PROP_RSC,
+	PROP_L2MISS,
+	PROP_L3MISS,
+);
 
 typedef struct {
 	NMDevice *parent;
@@ -37,26 +56,20 @@ typedef struct {
 	gboolean l3miss;
 } NMDeviceVxlanPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_PARENT,
-	PROP_ID,
-	PROP_GROUP,
-	PROP_LOCAL,
-	PROP_TOS,
-	PROP_TTL,
-	PROP_LIMIT,
-	PROP_LEARNING,
-	PROP_AGEING,
-	PROP_DST_PORT,
-	PROP_SRC_PORT_MIN,
-	PROP_SRC_PORT_MAX,
-	PROP_PROXY,
-	PROP_RSC,
-	PROP_L2MISS,
-	PROP_L3MISS,
-);
+struct _NMDeviceVxlan {
+	NMDevice parent;
+	NMDeviceVxlanPrivate _priv;
+};
+
+struct _NMDeviceVxlanClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_VXLAN_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceVxlan, NM_IS_DEVICE_VXLAN, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_vxlan_get_hw_address:
@@ -517,8 +530,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (vxlan_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (vxlan_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (vxlan_class);
-
-	g_type_class_add_private (vxlan_class, sizeof (NMDeviceVxlanPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

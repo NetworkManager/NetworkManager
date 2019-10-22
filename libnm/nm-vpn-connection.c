@@ -16,16 +16,7 @@
 
 #include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
 
-G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
-
-#define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVpnConnectionPrivate))
-
-G_STATIC_ASSERT (sizeof (NMVpnConnectionStateReason) == sizeof (NMActiveConnectionStateReason));
-
-typedef struct {
-	char *banner;
-	NMVpnConnectionState vpn_state;
-} NMVpnConnectionPrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMVpnConnection,
 	PROP_VPN_STATE,
@@ -39,6 +30,28 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	char *banner;
+	NMVpnConnectionState vpn_state;
+} NMVpnConnectionPrivate;
+
+struct _NMVpnConnection {
+	NMActiveConnection parent;
+	NMVpnConnectionPrivate _priv;
+};
+
+struct _NMVpnConnectionClass {
+	NMActiveConnectionClass parent;
+};
+
+G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
+
+#define NM_VPN_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMVpnConnection, NM_IS_VPN_CONNECTION, NMObject, NMActiveConnection)
+
+G_STATIC_ASSERT (sizeof (NMVpnConnectionStateReason) == sizeof (NMActiveConnectionStateReason));
+
+/*****************************************************************************/
 
 /**
  * nm_vpn_connection_get_banner:
@@ -159,8 +172,6 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (connection_class);
 
-	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
-
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
@@ -196,8 +207,7 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	    g_signal_new ("vpn-state-changed",
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMVpnConnectionClass, vpn_state_changed),
-	                  NULL, NULL, NULL,
+	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2,
 	                  G_TYPE_UINT, G_TYPE_UINT);
 	G_GNUC_END_IGNORE_DEPRECATIONS

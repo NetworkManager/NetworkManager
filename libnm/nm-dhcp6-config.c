@@ -7,9 +7,19 @@
 
 #include "nm-dhcp6-config.h"
 
-#include "nm-object-private.h"
+/*****************************************************************************/
+
+struct _NMDhcp6Config {
+	NMDhcpConfig parent;
+};
+
+struct _NMDhcp6ConfigClass{
+	NMDhcpConfigClass parent;
+};
 
 G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_DHCP_CONFIG)
+
+/*****************************************************************************/
 
 static void
 nm_dhcp6_config_init (NMDhcp6Config *config)

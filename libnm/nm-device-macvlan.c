@@ -13,9 +13,15 @@
 #include "nm-device-macvlan.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_MACVLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PARENT,
+	PROP_MODE,
+	PROP_NO_PROMISC,
+	PROP_TAP,
+	PROP_HW_ADDRESS,
+);
 
 typedef struct {
 	NMDevice *parent;
@@ -25,13 +31,20 @@ typedef struct {
 	char *hw_address;
 } NMDeviceMacvlanPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PARENT,
-	PROP_MODE,
-	PROP_NO_PROMISC,
-	PROP_TAP,
-	PROP_HW_ADDRESS,
-);
+struct _NMDeviceMacvlan {
+	NMDevice parent;
+	NMDeviceMacvlanPrivate _priv;
+};
+
+struct _NMDeviceMacvlanClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_MACVLAN_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceMacvlan, NM_IS_DEVICE_MACVLAN, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_macvlan_get_parent:
@@ -234,8 +247,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (gre_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (gre_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (gre_class);
-
-	g_type_class_add_private (gre_class, sizeof (NMDeviceMacvlanPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

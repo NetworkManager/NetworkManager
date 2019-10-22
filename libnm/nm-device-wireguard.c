@@ -6,7 +6,16 @@
 #include "nm-default.h"
 
 #include "nm-device-wireguard.h"
+
 #include "nm-object-private.h"
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PUBLIC_KEY,
+	PROP_LISTEN_PORT,
+	PROP_FWMARK,
+);
 
 typedef struct {
 	GBytes *public_key;
@@ -14,11 +23,9 @@ typedef struct {
 	guint fwmark;
 } NMDeviceWireGuardPrivate;
 
-/**
- * NMDeviceWireGuard:
- */
 struct _NMDeviceWireGuard {
 	NMDevice parent;
+	NMDeviceWireGuardPrivate _priv;
 };
 
 struct _NMDeviceWireGuardClass {
@@ -27,13 +34,9 @@ struct _NMDeviceWireGuardClass {
 
 G_DEFINE_TYPE (NMDeviceWireGuard, nm_device_wireguard, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_WIREGUARD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIREGUARD, NMDeviceWireGuardPrivate))
+#define NM_DEVICE_WIREGUARD_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWireGuard, NM_IS_DEVICE_WIREGUARD, NMObject, NMDevice)
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PUBLIC_KEY,
-	PROP_LISTEN_PORT,
-	PROP_FWMARK,
-);
+/*****************************************************************************/
 
 /**
  * nm_device_wireguard_get_public_key:
@@ -155,8 +158,6 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *wireguard_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wireguard_class);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wireguard_class);
-
-	g_type_class_add_private (wireguard_class, sizeof (NMDeviceWireGuardPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;

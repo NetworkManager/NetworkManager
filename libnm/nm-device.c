@@ -29,53 +29,7 @@
 
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 
-static gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
-static NMLldpNeighbor *nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor);
-
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT);
-
-#define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
-
-typedef struct {
-	NMDBusDevice *proxy;
-
-	char *iface;
-	char *ip_iface;
-	NMDeviceType device_type;
-	char *udi;
-	char *driver;
-	char *driver_version;
-	char *firmware_version;
-	char *type_description;
-	NMMetered metered;
-	NMDeviceCapabilities capabilities;
-	gboolean real;
-	gboolean managed;
-	gboolean firmware_missing;
-	gboolean nm_plugin_missing;
-	gboolean autoconnect;
-	NMIPConfig *ip4_config;
-	NMDhcpConfig *dhcp4_config;
-	NMIPConfig *ip6_config;
-	NMDhcpConfig *dhcp6_config;
-	NMConnectivityState ip4_connectivity;
-	NMConnectivityState ip6_connectivity;
-	NMDeviceState state;
-	NMDeviceState last_seen_state;
-	NMDeviceStateReason reason;
-
-	NMActiveConnection *active_connection;
-	GPtrArray *available_connections;
-
-	struct udev *udev;
-	char *product;
-	char *vendor, *short_vendor;
-	char *description, *bus_name;
-
-	char *physical_port_id;
-	guint32 mtu;
-	GPtrArray *lldp_neighbors;
-} NMDevicePrivate;
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_INTERFACE,
@@ -117,6 +71,58 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+typedef struct _NMDevicePrivate {
+	NMDBusDevice *proxy;
+
+	char *iface;
+	char *ip_iface;
+	NMDeviceType device_type;
+	char *udi;
+	char *driver;
+	char *driver_version;
+	char *firmware_version;
+	char *type_description;
+	NMMetered metered;
+	NMDeviceCapabilities capabilities;
+	gboolean real;
+	gboolean managed;
+	gboolean firmware_missing;
+	gboolean nm_plugin_missing;
+	gboolean autoconnect;
+	NMIPConfig *ip4_config;
+	NMDhcpConfig *dhcp4_config;
+	NMIPConfig *ip6_config;
+	NMDhcpConfig *dhcp6_config;
+	NMConnectivityState ip4_connectivity;
+	NMConnectivityState ip6_connectivity;
+	NMDeviceState state;
+	NMDeviceState last_seen_state;
+	NMDeviceStateReason reason;
+
+	NMActiveConnection *active_connection;
+	GPtrArray *available_connections;
+
+	struct udev *udev;
+	char *product;
+	char *vendor, *short_vendor;
+	char *description, *bus_name;
+
+	char *physical_port_id;
+	guint32 mtu;
+	GPtrArray *lldp_neighbors;
+} NMDevicePrivate;
+
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT);
+
+#define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE, NMObject)
+
+/*****************************************************************************/
+
+static gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
+static NMLldpNeighbor *nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor);
+
+/*****************************************************************************/
+
 struct _NMLldpNeighbor {
 	guint refcount;
 	GHashTable *attrs;
@@ -125,9 +131,13 @@ struct _NMLldpNeighbor {
 G_DEFINE_BOXED_TYPE (NMLldpNeighbor, nm_lldp_neighbor, nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
 
 static void
-nm_device_init (NMDevice *device)
+nm_device_init (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDevicePrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DEVICE, NMDevicePrivate);
+
+	self->_priv = priv;
 
 	priv->ip4_connectivity = NM_CONNECTIVITY_UNKNOWN;
 	priv->ip6_connectivity = NM_CONNECTIVITY_UNKNOWN;

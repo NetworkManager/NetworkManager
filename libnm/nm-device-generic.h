@@ -27,16 +27,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceGeneric:
  */
-struct _NMDeviceGeneric {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceGenericClass;
+typedef struct _NMDeviceGenericClass NMDeviceGenericClass;
 
 GType nm_device_generic_get_type (void);
 

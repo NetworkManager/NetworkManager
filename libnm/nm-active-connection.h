@@ -42,16 +42,7 @@ G_BEGIN_DECLS
 /**
  * NMActiveConnection:
  */
-struct _NMActiveConnection {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[8];
-} NMActiveConnectionClass;
+typedef struct _NMActiveConnectionClass NMActiveConnectionClass;
 
 GType nm_active_connection_get_type (void);
 

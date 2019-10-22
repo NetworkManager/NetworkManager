@@ -23,13 +23,8 @@
 /**
  * NMIP6Config:
  */
-typedef struct {
-	NMIPConfig parent;
-} NMIP6Config;
-
-typedef struct {
-	NMIPConfigClass parent;
-} NMIP6ConfigClass;
+typedef struct _NMIP6Config NMIP6Config;
+typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 
 GType nm_ip6_config_get_type (void);
 
