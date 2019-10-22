@@ -4230,7 +4230,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Since: 1.12
 	 */
 	obj_properties[PROP_CHECKPOINTS] =
-	    g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
+	    g_param_spec_boxed (NM_CLIENT_CHECKPOINTS, "", "",
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);

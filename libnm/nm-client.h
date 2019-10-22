@@ -61,6 +61,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_DNS_MODE "dns-mode"
 #define NM_CLIENT_DNS_RC_MANAGER "dns-rc-manager"
 #define NM_CLIENT_DNS_CONFIGURATION "dns-configuration"
+#define NM_CLIENT_CHECKPOINTS "checkpoints"
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
 #define NM_CLIENT_DEVICE_REMOVED "device-removed"
