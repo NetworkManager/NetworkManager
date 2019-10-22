@@ -1787,23 +1787,27 @@ reapply_connection (NMDevice *device,
 	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (self);
 	gs_unref_object NMIPConfig *ip4_config = NULL;
 	gs_unref_object NMIPConfig *ip6_config = NULL;
-
-	priv->auto_default_route_refresh = TRUE;
-
-	ip4_config = _get_dev2_ip_config (self, AF_INET);
-	ip6_config = _get_dev2_ip_config (self, AF_INET6);
-
-	nm_device_set_dev2_ip_config (device, AF_INET, ip4_config);
-	nm_device_set_dev2_ip_config (device, AF_INET6, ip6_config);
+	NMDeviceState state = nm_device_get_state (device);
 
 	NM_DEVICE_CLASS (nm_device_wireguard_parent_class)->reapply_connection (device,
 	                                                                        con_old,
 	                                                                        con_new);
 
-	link_config (NM_DEVICE_WIREGUARD (device),
-	             "reapply",
-	             LINK_CONFIG_MODE_REAPPLY,
-	             NULL);
+	if (state >= NM_DEVICE_STATE_CONFIG) {
+		priv->auto_default_route_refresh = TRUE;
+		link_config (NM_DEVICE_WIREGUARD (device),
+		             "reapply",
+		             LINK_CONFIG_MODE_REAPPLY,
+		             NULL);
+	}
+
+	if (state >= NM_DEVICE_STATE_IP_CONFIG) {
+		ip4_config = _get_dev2_ip_config (self, AF_INET);
+		ip6_config = _get_dev2_ip_config (self, AF_INET6);
+
+		nm_device_set_dev2_ip_config (device, AF_INET, ip4_config);
+		nm_device_set_dev2_ip_config (device, AF_INET6, ip6_config);
+	}
 }
 
 /*****************************************************************************/

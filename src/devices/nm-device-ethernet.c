@@ -1696,6 +1696,7 @@ static void
 reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_new)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceState state = nm_device_get_state (device);
 
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->reapply_connection (device,
 	                                                                       con_old,
@@ -1703,8 +1704,10 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 
 	_LOGD (LOGD_DEVICE, "reapplying wired settings");
 
-	link_negotiation_set (device);
-	wake_on_lan_enable (device);
+	if (state >= NM_DEVICE_STATE_PREPARE)
+		link_negotiation_set (device);
+	if (state >= NM_DEVICE_STATE_CONFIG)
+		wake_on_lan_enable (device);
 }
 
 static void

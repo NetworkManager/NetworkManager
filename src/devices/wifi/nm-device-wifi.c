@@ -3209,6 +3209,7 @@ static void
 reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_new)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceState state = nm_device_get_state (device);
 
 	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->reapply_connection (device,
 	                                                                   con_old,
@@ -3216,7 +3217,8 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 
 	_LOGD (LOGD_DEVICE, "reapplying wireless settings");
 
-	if (!wake_on_wlan_enable (self))
+	if (   state >= NM_DEVICE_STATE_CONFIG
+	    && !wake_on_wlan_enable (self))
 		_LOGW (LOGD_DEVICE | LOGD_WIFI, "Cannot configure WoWLAN.");
 }
 

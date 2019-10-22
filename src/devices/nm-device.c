@@ -11561,7 +11561,8 @@ check_and_reapply_connection (NMDevice *self,
 	NMSettingIPConfig *s_ip6_old, *s_ip6_new;
 	GHashTableIter iter;
 
-	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
+	if (   priv->state < NM_DEVICE_STATE_PREPARE
+	    || priv->state > NM_DEVICE_STATE_ACTIVATED) {
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_NOT_ACTIVE,
@@ -11674,24 +11675,31 @@ check_and_reapply_connection (NMDevice *self,
 	 *************************************************************************/
 	klass->reapply_connection (self, con_old, con_new);
 
-	nm_device_update_firewall_zone (self);
-	nm_device_update_metered (self);
-	lldp_init (self, FALSE);
+	if (priv->state >= NM_DEVICE_STATE_CONFIG)
+		lldp_init (self, FALSE);
 
-	s_ip4_old = nm_connection_get_setting_ip4_config (con_old);
-	s_ip4_new = nm_connection_get_setting_ip4_config (con_new);
-	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
-	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
+	if (priv->state >= NM_DEVICE_STATE_IP_CONFIG) {
+		s_ip4_old = nm_connection_get_setting_ip4_config (con_old);
+		s_ip4_new = nm_connection_get_setting_ip4_config (con_new);
+		s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
+		s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
 
-	/* Allow reapply of MTU */
-	priv->mtu_source = NM_DEVICE_MTU_SOURCE_NONE;
+		/* Allow reapply of MTU */
+		priv->mtu_source = NM_DEVICE_MTU_SOURCE_NONE;
 
-	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
-	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
+		nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
+		nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
 
-	_routing_rules_sync (self, NM_TERNARY_TRUE);
+		_routing_rules_sync (self, NM_TERNARY_TRUE);
 
-	reactivate_proxy_config (self);
+		reactivate_proxy_config (self);
+	}
+
+	if (priv->state >= NM_DEVICE_STATE_IP_CHECK)
+		nm_device_update_firewall_zone (self);
+
+	if (priv->state >= NM_DEVICE_STATE_ACTIVATED)
+		nm_device_update_metered (self);
 
 	return TRUE;
 }
@@ -11788,7 +11796,8 @@ impl_device_reapply (NMDBusObject *obj,
 		return;
 	}
 
-	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
+	if (   priv->state < NM_DEVICE_STATE_PREPARE
+	    || priv->state > NM_DEVICE_STATE_ACTIVATED) {
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_NOT_ACTIVE,
 		                             "Device is not activated");
