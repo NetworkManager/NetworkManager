@@ -699,16 +699,29 @@ parse_rd_znet (GHashTable *connections, char *argument, gboolean net_ifnames)
 	const char *prefix;
 	NMConnection *connection;
 	NMSettingWired *s_wired;
+	static int count_ctc = 0;
+	static int count_eth = 0;
+	int index;
 
 	nettype = get_word (&argument, ',');
 	subchannels[0] = get_word (&argument, ',');
 	subchannels[1] = get_word (&argument, ',');
 
 	if (nm_streq0 (nettype, "ctc")) {
-		prefix = "sl";
+		if (net_ifnames == TRUE) {
+			prefix = "sl";
+		} else {
+			prefix = "ctc";
+			index = count_ctc++;
+		}
 	} else {
 		subchannels[2] = get_word (&argument, ',');
-		prefix = "en";
+		if (net_ifnames == TRUE) {
+			prefix = "en";
+		} else {
+			prefix = "eth";
+			index = count_eth++;
+		}
 	}
 
 	if (net_ifnames == TRUE) {
@@ -723,6 +736,8 @@ parse_rd_znet (GHashTable *connections, char *argument, gboolean net_ifnames)
 		bus_id += bus_id_start < bus_id_len ? bus_id_start : bus_id_len - 1;
 
 		ifname = g_strdup_printf ("%sc%s", prefix, bus_id);
+	} else {
+		ifname = g_strdup_printf ("%s%d", prefix, index);
 	}
 
 	connection = get_conn (connections, ifname, NM_SETTING_WIRED_SETTING_NAME);
