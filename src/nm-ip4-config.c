@@ -713,6 +713,13 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 			continue;
 		}
 
+		if (   my_addr->plen == 32
+		    && my_addr->address == my_addr->peer_address) {
+			/* Kernel doesn't add device-routes for /32 addresses unless
+			 * they have a peer. */
+			continue;
+		}
+
 		r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
 		route = NMP_OBJECT_CAST_IP4_ROUTE (r);
 
