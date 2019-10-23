@@ -1382,7 +1382,7 @@ msgstr ""
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "Der er %d valgfrie indstillinger til %s.\n"
-msgstr[1] "Der er %d valgfrie indstillinger til %s."
+msgstr[1] "Der er %d valgfrie indstillinger til %s.\n"
 
 #: ../clients/cli/connections.c:5052
 #, c-format
