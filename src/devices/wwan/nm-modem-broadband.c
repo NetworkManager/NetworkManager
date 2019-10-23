@@ -341,15 +341,25 @@ connect_ready (MMModemSimple *simple_iface,
                GAsyncResult *res,
                NMModemBroadband *self)
 {
-	ConnectContext *ctx = self->_priv.ctx;
+	ConnectContext *ctx;
 	GError *error = NULL;
 	NMModemIPMethod ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
 	NMModemIPMethod ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
+	MMBearer *bearer;
 
-	self->_priv.bearer = mm_modem_simple_connect_finish (simple_iface, res, &error);
+	bearer = mm_modem_simple_connect_finish (simple_iface, res, &error);
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		g_error_free (error);
+		return;
+	}
+
+	ctx = self->_priv.ctx;
 
 	if (!ctx)
 		return;
+
+	self->_priv.bearer = bearer;
 
 	if (!self->_priv.bearer) {
 		if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
@@ -619,7 +629,7 @@ connect_context_step (NMModemBroadband *self)
 
 			mm_modem_simple_connect (self->_priv.simple_iface,
 			                         ctx->connect_properties,
-			                         NULL,
+			                         ctx->cancellable,
 			                         (GAsyncReadyCallback) connect_ready,
 			                         self);
 			break;
