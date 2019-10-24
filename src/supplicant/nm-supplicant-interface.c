@@ -1543,7 +1543,7 @@ p2p_props_changed_cb (GDBusProxy *proxy,
 	if (g_variant_lookup (changed_properties, "Group", "&o", &path)) {
 		if (priv->group_proxy && g_strcmp0 (path, g_dbus_proxy_get_object_path (priv->group_proxy)) == 0) {
 			/* We already have the proxy, nothing to do. */
-		} else if (path && g_strcmp0 (path, "/") != 0) {
+		} else if (nm_dbus_path_not_empty (path)) {
 			if (priv->group_proxy != NULL) {
 				_LOGW ("P2P: Unexpected update of the group object path");
 				priv->group_proxy_acquired = FALSE;

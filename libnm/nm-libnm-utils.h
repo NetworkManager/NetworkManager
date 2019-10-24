@@ -124,9 +124,7 @@ _nml_coerce_property_object_path (NMRefString *path)
 {
 	if (!path)
 		return NULL;
-	if (nm_streq (path->str, "/"))
-		return NULL;
-	return path->str;
+	return nm_dbus_path_not_empty (path->str);
 }
 
 static inline const char *const*
