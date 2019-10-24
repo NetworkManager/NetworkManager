@@ -1268,6 +1268,17 @@ nm_clear_g_cancellable_disconnect (GCancellable *cancellable, gulong *cancellabl
 
 /*****************************************************************************/
 
+static inline const char *
+nm_dbus_path_not_empty (const char *str)
+{
+	nm_assert (!str || str[0] == '/');
+	return !str || (str[0] == '/' && str[1] == '\0')
+	       ? NULL
+	       : str;
+}
+
+/*****************************************************************************/
+
 /* GVariantType is basically a C string. But G_VARIANT_TYPE() is not suitable
  * to initialize a static variable (because it evaluates a function check that
  * the string is valid). Add an alternative macro that does the plain cast.
