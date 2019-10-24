@@ -18,6 +18,7 @@
 # lrintel <lrintel@redhat.com>, 2017. #zanata
 # tchuang <tchuang@redhat.com>, 2017. #zanata
 # lrintel <lrintel@redhat.com>, 2018. #zanata
+# maxbachmann <kontakt@maxbachmann.de>, 2019
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
@@ -2218,7 +2219,7 @@ msgstr "Tippen Sie »help« oder »?«, um verfügbare Befehle anzuzeigen."
 #, c-format
 msgid "Type 'print' to show all the connection properties."
 msgstr ""
-"Geben Sie \"Drucken\" ein, um alle Verbindungseigenschaften anzuzeigen."
+"Geben Sie \"print\" ein, um alle Verbindungseigenschaften anzuzeigen."
 
 #: ../clients/cli/connections.c:8326
 #, c-format
