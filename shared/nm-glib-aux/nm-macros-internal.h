@@ -636,6 +636,13 @@ NM_G_ERROR_MSG (GError *error)
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC
+#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) (_Generic ((((container *) NULL)->field), \
+                                                                        type: G_STRUCT_OFFSET (container, field)))
+#else
+#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) G_STRUCT_OFFSET (container, field)
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
 /* these macros cast (value) to
  *  - "const char **"      (for "MC", mutable-const)
  *  - "const char *const*" (for "CC", const-const)
