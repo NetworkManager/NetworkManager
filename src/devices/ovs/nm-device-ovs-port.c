@@ -101,6 +101,7 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection, gboo
 {
 	NMActiveConnection *ac_port = NULL;
 	NMActiveConnection *ac_bridge = NULL;
+	NMDevice *bridge_device;
 
 	if (!configure)
 		return TRUE;
@@ -110,10 +111,14 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection, gboo
 	if (!ac_bridge)
 		ac_bridge = ac_port;
 
+	bridge_device = nm_active_connection_get_device (ac_bridge);
+
 	nm_ovsdb_add_interface (nm_ovsdb_get (),
 	                        nm_active_connection_get_applied_connection (ac_bridge),
 	                        nm_device_get_applied_connection (device),
 	                        nm_device_get_applied_connection (slave),
+	                        bridge_device,
+	                        slave,
 	                        add_iface_cb, g_object_ref (slave));
 
 	return TRUE;
