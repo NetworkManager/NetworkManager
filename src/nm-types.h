@@ -204,11 +204,20 @@ typedef enum {
 	NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
 } NMPObjectType;
 
+/**
+ * NMIPConfigMergeFlags:
+ * @NM_IP_CONFIG_MERGE_DEFAULT: no flags set
+ * @NM_IP_CONFIG_MERGE_NO_ROUTES: don't merge routes
+ * @NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES: don't merge default routes
+ * @NM_IP_CONFIG_MERGE_NO_DNS: don't merge DNS information
+ * @NM_IP_CONFIG_MERGE_EXTERNAL: mark new addresses as external
+ */
 typedef enum {
 	NM_IP_CONFIG_MERGE_DEFAULT                  = 0,
 	NM_IP_CONFIG_MERGE_NO_ROUTES                = (1LL << 0),
 	NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES        = (1LL << 1),
 	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 2),
+	NM_IP_CONFIG_MERGE_EXTERNAL                 = (1LL << 3),
 } NMIPConfigMergeFlags;
 
 /**

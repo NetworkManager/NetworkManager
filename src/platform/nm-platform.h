@@ -306,6 +306,8 @@ typedef enum {
 	guint32 n_ifa_flags; \
 	\
 	guint8 plen; \
+	\
+	bool external:1; \
 	;
 
 /**

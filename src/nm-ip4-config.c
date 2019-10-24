@@ -704,9 +704,19 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 		/* The destination network depends on the peer-address. */
 		network = nm_utils_ip4_address_clear_host_address (my_addr->peer_address, my_addr->plen);
 
+		if (my_addr->external)
+			continue;
+
 		if (_ipv4_is_zeronet (network)) {
 			/* Kernel doesn't add device-routes for destinations that
 			 * start with 0.x.y.z. Skip them. */
+			continue;
+		}
+
+		if (   my_addr->plen == 32
+		    && my_addr->address == my_addr->peer_address) {
+			/* Kernel doesn't add device-routes for /32 addresses unless
+			 * they have a peer. */
 			continue;
 		}
 
@@ -1163,8 +1173,17 @@ nm_ip4_config_merge (NMIP4Config *dst,
 	g_object_freeze_notify (G_OBJECT (dst));
 
 	/* addresses */
-	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, src, &address)
-		_add_address (dst, NMP_OBJECT_UP_CAST (address), NULL);
+	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, src, &address) {
+		if (   NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_EXTERNAL)
+		    && !address->external) {
+			NMPlatformIP4Address a;
+
+			a = *address;
+			a.external = TRUE;
+			_add_address (dst, NULL, &a);
+		} else
+			_add_address (dst, NMP_OBJECT_UP_CAST (address), NULL);
+	}
 
 	/* nameservers */
 	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
