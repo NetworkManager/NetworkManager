@@ -42,6 +42,7 @@ GType nm_ovsdb_get_type (void);
 
 void nm_ovsdb_add_interface (NMOvsdb *self,
                              NMConnection *bridge, NMConnection *port, NMConnection *interface,
+                             NMDevice *bridge_device, NMDevice *interface_device,
                              NMOvsdbCallback callback, gpointer user_data);
 
 void nm_ovsdb_del_interface (NMOvsdb *self, const char *ifname,
