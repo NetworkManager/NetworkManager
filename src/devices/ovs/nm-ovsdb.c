@@ -1068,7 +1068,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 	OvsdbMethodCall *call = NULL;
 	OvsdbMethodCallback callback;
 	gpointer user_data;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 
 	if (json_unpack_ex (msg, &json_error, 0, "{s?:o, s?:s, s?:o, s?:o, s?:o}",
 	                    "id", &json_id,
