@@ -94,7 +94,7 @@ msgid ""
 msgstr ""
 "Aufruf: nmcli agent all { help }\n"
 "\n"
-"nmcli auführen als NetworkManager-Passwort und polkit-Agent.\n"
+"nmcli ausführen als NetworkManager-Passwort und polkit-Agent.\n"
 "\n"
 
 #: ../clients/cli/agent.c:159
@@ -359,7 +359,7 @@ msgstr ""
 "\n"
 "  import [--temporary] type <Typ> file <Importdatei>\n"
 "\n"
-"  export [id | uuid | path] <KENNUNG> [<Augabedatei>]\n"
+"  export [id | uuid | path] <KENNUNG> [<Ausgabedatei>]\n"
 "\n"
 
 #: ../clients/cli/connections.c:890
@@ -652,7 +652,7 @@ msgstr ""
 "                  [con-name <Verbindungsname>]\n"
 "                  [autoconnect yes|no]\n"
 "                  [save yes|no]\n"
-"                  [master <master (Schnittstellenname oder Vebindungs-UUID "
+"                  [master <master (Schnittstellenname oder Verbindungs-UUID "
 "oder Name)>]\n"
 "                  [slave-type <master-Verbindungstyp>]\n"
 "\n"
@@ -865,7 +865,7 @@ msgstr ""
 "PARAMETER := [--temporary] [id | uuid | path] <KENNUNG> <Neuer Name>\n"
 "\n"
 "Dupliziert ein bestehendes Verbindungsprofil. Die neue Verbindung wird eine\n"
-"exacte Kopie von <KENNUNG>, mit Ausnahme der Eigenschaft uuid (wird neu "
+"exakte Kopie von <KENNUNG>, mit Ausnahme der Eigenschaft uuid (wird neu "
 "erzeugt)\n"
 "und der id (wird als Parameter <Neuer Name> angegeben).\n"
 "\n"
@@ -1616,7 +1616,7 @@ msgstr ""
 "das Verbindungsprofil dauerhaft speichern. Spätere Änderungen sind\n"
 "ebenfalls entweder vorübergehend oder dauerhaft, aber vorübergehende\n"
 "Änderungen gehen nach einem Neustart verloren. Wenn Sie die dauerhafte\n"
-"Verbindung volständig löschen möchten, so muss das Verbindungsprofil\n"
+"Verbindung vollständig löschen möchten, so muss das Verbindungsprofil\n"
 "gelöscht werden.\n"
 
 #: ../clients/cli/connections.c:6439
@@ -3280,7 +3280,7 @@ msgstr "wird getrennt"
 msgid "disconnected"
 msgstr "nicht verbunden"
 
-# Könnte auch Legitimierung sein. Der kontext entscheidet. -ck
+# Könnte auch Legitimierung sein. Der Kontext entscheidet. -ck
 # Sieht entweder nach lausigen Englischkenntnissen oder nach einem irrtümlicherweise als übersetzbar markierten String aus.
 #: ../clients/cli/general.c:138
 msgid "auth"
