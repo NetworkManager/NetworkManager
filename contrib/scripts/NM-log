@@ -13,7 +13,7 @@
 #
 # You can pass multiple filenames.
 
-if [[ "$_" == "$0" ]]; then
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     NM_not_sourced=1
 else
     unset NM_not_sourced
