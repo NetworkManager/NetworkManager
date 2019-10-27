@@ -684,6 +684,30 @@ _nm_g_slice_free_fcn_define (32)
 
 /*****************************************************************************/
 
+static inline void
+nm_g_set_error_take (GError **error, GError *error_take)
+{
+	if (!error_take)
+		g_return_if_reached ();
+	if (!error) {
+		g_error_free (error_take);
+		return;
+	}
+	if (*error) {
+		g_error_free (error_take);
+		g_return_if_reached ();
+	}
+	*error = error_take;
+}
+
+#define nm_g_set_error_take_lazy(error, error_take_lazy) \
+	G_STMT_START { \
+		GError **_error = (error); \
+		\
+		if (_error) \
+			nm_g_set_error_take (_error, (error_take_lazy)); \
+	} G_STMT_END
+
 /**
  * NMUtilsError:
  * @NM_UTILS_ERROR_UNKNOWN: unknown or unclassified error
