@@ -643,6 +643,7 @@ _metagen_con_active_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_UUID:
 		return nm_active_connection_get_uuid (ac);
 	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEVICES:
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_IP_IFACE:
 		{
 			GString *str = NULL;
 			const GPtrArray *devices;
@@ -651,10 +652,15 @@ _metagen_con_active_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 			devices = nm_active_connection_get_devices (ac);
 			if (devices) {
 				for (i = 0; i < devices->len; i++) {
-					NMDevice *device = devices->pdata[i];
+					NMDevice *device = g_ptr_array_index (devices, i);
 					const char *iface;
 
-					iface = nm_device_get_iface (device);
+					if (info->info_type == NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEVICES) {
+						iface = nm_device_get_iface (device);
+					} else {
+						iface = nm_device_get_ip_iface (device);
+					}
+
 					if (!iface)
 						continue;
 					if (!s) {
@@ -706,6 +712,7 @@ const NmcMetaGenericInfo *const metagen_con_active_general[_NMC_GENERIC_INFO_TYP
 	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NAME,        "NAME"),
 	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_UUID,        "UUID"),
 	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEVICES,     "DEVICES"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_IP_IFACE,    "IP-IFACE"),
 	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_STATE,       "STATE"),
 	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEFAULT,     "DEFAULT"),
 	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEFAULT6,    "DEFAULT6"),
