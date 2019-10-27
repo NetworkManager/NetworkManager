@@ -1663,7 +1663,7 @@ set_property (GObject *object,
 				specs = g_slist_prepend (specs, spec);
 			}
 
-			priv->no_auto_default.arr = nm_utils_strv_dup (value_arr, j);
+			priv->no_auto_default.arr = nm_utils_strv_dup (value_arr, j, TRUE);
 			priv->no_auto_default.specs = g_slist_reverse (specs);
 		}
 		break;

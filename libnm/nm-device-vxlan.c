@@ -38,7 +38,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	NMDevice *parent;
 	char *hw_address;
-	gboolean carrier;
 	guint id;
 	char *group;
 	char *local;
@@ -87,7 +86,7 @@ nm_device_vxlan_get_hw_address (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->hw_address);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -99,13 +98,16 @@ nm_device_vxlan_get_hw_address (NMDeviceVxlan *device)
  * Returns: %TRUE if the device has carrier.
  *
  * Since: 1.2
+ *
+ * This property is not implemented yet, and the function always returns
+ * FALSE.
  **/
 gboolean
 nm_device_vxlan_get_carrier (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), FALSE);
 
-	return NM_DEVICE_VXLAN_GET_PRIVATE (device)->carrier;
+	return FALSE;
 }
 
 /**
@@ -154,7 +156,7 @@ nm_device_vxlan_get_group (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->group);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->group);
 }
 
 /**
@@ -170,7 +172,7 @@ nm_device_vxlan_get_local (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->local);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->local);
 }
 
 /**
@@ -415,7 +417,6 @@ init_dbus (NMObject *object)
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_VXLAN_HW_ADDRESS,   &priv->hw_address },
-		{ NM_DEVICE_VXLAN_CARRIER,      &priv->carrier },
 		{ NM_DEVICE_VXLAN_PARENT,       &priv->parent, NULL, NM_TYPE_DEVICE },
 		{ NM_DEVICE_VXLAN_ID,           &priv->id },
 		{ NM_DEVICE_VXLAN_GROUP,        &priv->group },
@@ -559,6 +560,8 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *vxlan_class)
 	 * Whether the device has carrier.
 	 *
 	 * Since: 1.2
+	 *
+	 * This property is not implemented yet, and the property is always FALSE.
 	 **/
 	obj_properties[PROP_CARRIER] =
 	    g_param_spec_boolean (NM_DEVICE_VXLAN_CARRIER, "", "",

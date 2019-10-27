@@ -49,4 +49,23 @@ nm_ref_string_get_len (NMRefString *rstr)
 	return rstr ? rstr->len : 0u;
 }
 
+static inline gboolean
+NM_IS_REF_STRING (const NMRefString *rstr)
+{
+#if NM_MORE_ASSERTS > 10
+	if (rstr) {
+		nm_auto_ref_string NMRefString *r2 = NULL;
+
+		r2 = nm_ref_string_new_len (rstr->str, rstr->len);
+		nm_assert (rstr == r2);
+	}
+#endif
+
+	/* Technically, %NULL is also a valid NMRefString (according to nm_ref_string_new(),
+	 * nm_ref_string_get_str() and nm_ref_string_unref()). However, NM_IS_REF_STRING()
+	 * does not think so. If callers want to allow %NULL, they need to check
+	 * separately. */
+	return !!rstr;
+}
+
 #endif /* __NM_REF_STRING_H__ */

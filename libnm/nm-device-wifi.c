@@ -92,7 +92,7 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->hw_address);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -109,7 +109,7 @@ nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->perm_hw_address);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->perm_hw_address);
 }
 
 /**

@@ -7,6 +7,7 @@
 #define __NM_LIBNM_UTILS_H__
 
 #include "nm-types.h"
+#include "nm-glib-aux/nm-ref-string.h"
 
 /*****************************************************************************/
 
@@ -103,6 +104,36 @@ void _nml_dbus_log (NMLDBusLogLevel level,
 #define NML_NMCLIENT_LOG_D(self, ...) NML_NMCLIENT_LOG (NML_DBUS_LOG_LEVEL_DEBUG, self, __VA_ARGS__)
 #define NML_NMCLIENT_LOG_W(self, ...) NML_NMCLIENT_LOG (NML_DBUS_LOG_LEVEL_WARN,  self, __VA_ARGS__)
 #define NML_NMCLIENT_LOG_E(self, ...) NML_NMCLIENT_LOG (NML_DBUS_LOG_LEVEL_ERROR, self, __VA_ARGS__)
+
+/*****************************************************************************/
+
+static inline const char *
+_nml_coerce_property_str_not_null (const char *str)
+{
+	return str ?: "";
+}
+
+static inline const char *
+_nml_coerce_property_str_not_empty (const char *str)
+{
+	return str && str[0] ? str : NULL;
+}
+
+static inline const char *
+_nml_coerce_property_object_path (NMRefString *path)
+{
+	if (!path)
+		return NULL;
+	if (nm_streq (path->str, "/"))
+		return NULL;
+	return path->str;
+}
+
+static inline const char *const*
+_nml_coerce_property_strv_not_null (char **strv)
+{
+	return ((const char *const*) strv) ?: NM_PTRARRAY_EMPTY (const char *);
+}
 
 /*****************************************************************************/
 

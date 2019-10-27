@@ -1728,7 +1728,9 @@ nm_utils_ip6_dns_to_variant (char **dns)
  * @value: a #GVariant of type 'aay'
  *
  * Utility function to convert a #GVariant of type 'aay' representing a list of
- * IPv6 addresses into an array of IP address strings.
+ * IPv6 addresses into an array of IP address strings. Each "ay" entry must be
+ * a IPv6 address in binary form (16 bytes long). Invalid entries are silently
+ * ignored.
  *
  * Returns: (transfer full) (type utf8): a %NULL-terminated array of IP address strings.
  **/
@@ -1750,14 +1752,9 @@ nm_utils_ip6_dns_from_variant (GVariant *value)
 		gsize length;
 		const struct in6_addr *ip = g_variant_get_fixed_array (ip_var, &length, 1);
 
-		if (length != sizeof (struct in6_addr)) {
-			g_warning ("%s: ignoring invalid IP6 address of length %d",
-			           __func__, (int) length);
-			g_variant_unref (ip_var);
-			continue;
-		}
+		if (length == sizeof (struct in6_addr))
+			dns[i++] = nm_utils_inet6_ntop_dup (ip);
 
-		dns[i++] = nm_utils_inet6_ntop_dup (ip);
 		g_variant_unref (ip_var);
 	}
 	dns[i] = NULL;

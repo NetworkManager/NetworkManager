@@ -3958,7 +3958,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 */
 	obj_properties[PROP_NETWORKING_ENABLED] =
 	    g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED, "", "",
-	                          TRUE,
+	                          FALSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -3982,7 +3982,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	obj_properties[PROP_WIRELESS_HARDWARE_ENABLED] =
 	    g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED, "", "",
-	                          TRUE,
+	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -4191,7 +4191,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	obj_properties[PROP_DNS_MODE] =
 	    g_param_spec_string (NM_CLIENT_DNS_MODE, "", "",
-	                         "",
+	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -4204,7 +4204,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	obj_properties[PROP_DNS_RC_MANAGER] =
 	    g_param_spec_string (NM_CLIENT_DNS_RC_MANAGER, "", "",
-	                         "",
+	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -4230,7 +4230,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Since: 1.12
 	 */
 	obj_properties[PROP_CHECKPOINTS] =
-	    g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
+	    g_param_spec_boxed (NM_CLIENT_CHECKPOINTS, "", "",
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);

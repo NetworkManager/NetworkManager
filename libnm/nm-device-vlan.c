@@ -58,7 +58,7 @@ nm_device_vlan_get_hw_address (NMDeviceVlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address);
 }
 
 /**

@@ -2393,6 +2393,10 @@ nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
  *   is negative or zero (in which case %NULL will be returned).
  * @len: the length of strings in @str. If negative, strv is assumed
  *   to be a NULL terminated array.
+ * @deep_copied: if %TRUE, clones the individual strings. In that case,
+ *   the returned array must be freed with g_strfreev(). Otherwise, the
+ *   strings themself are not copied. You must take care of who owns the
+ *   strings yourself.
  *
  * Like g_strdupv(), with two differences:
  *
@@ -2407,10 +2411,13 @@ nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
  * array with g_strfreev(). Allowing that would be error prone.
  *
  * Returns: (transfer full): a clone of the strv array. Always
- *   %NULL terminated.
+ *   %NULL terminated. Depending on @deep_copied, the strings are
+ *   cloned or not.
  */
 char **
-nm_utils_strv_dup (gpointer strv, gssize len)
+nm_utils_strv_dup (gpointer strv,
+                   gssize len,
+                   gboolean deep_copied)
 {
 	gsize i, l;
 	char **v;
@@ -2438,7 +2445,10 @@ nm_utils_strv_dup (gpointer strv, gssize len)
 			g_return_val_if_reached (v);
 		}
 
-		v[i] = g_strdup (src[i]);
+		if (deep_copied)
+			v[i] = g_strdup (src[i]);
+		else
+			v[i] = (char *) src[i];
 	}
 	v[l] = NULL;
 	return v;

@@ -67,7 +67,7 @@ nm_device_tun_get_hw_address (NMDeviceTun *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TUN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_TUN_GET_PRIVATE (device)->hw_address);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_TUN_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -85,7 +85,7 @@ nm_device_tun_get_mode (NMDeviceTun *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TUN (device), NULL);
 
-	return nm_str_not_empty (NM_DEVICE_TUN_GET_PRIVATE (device)->mode);
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_TUN_GET_PRIVATE (device)->mode);
 }
 
 /**
