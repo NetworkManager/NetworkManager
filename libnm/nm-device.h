@@ -77,11 +77,13 @@ NMDeviceCapabilities nm_device_get_capabilities     (NMDevice *device);
 gboolean             nm_device_get_managed          (NMDevice *device);
 
 NM_AVAILABLE_IN_1_2
+NM_DEPRECATED_IN_1_22
 _NM_DEPRECATED_SYNC_METHOD
 void                 nm_device_set_managed          (NMDevice *device, gboolean managed);
 
 gboolean             nm_device_get_autoconnect      (NMDevice *device);
 
+NM_DEPRECATED_IN_1_22
 _NM_DEPRECATED_SYNC_METHOD
 void                 nm_device_set_autoconnect      (NMDevice *device, gboolean autoconnect);
 

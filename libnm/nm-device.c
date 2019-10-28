@@ -1066,6 +1066,10 @@ nm_device_get_managed (NMDevice *device)
  * Since: 1.2
  *
  * Deprecated: 1.22, use nm_device_set_managed_async() or GDBusConnection
+ *
+ * This function is deprecated because it calls a synchronous D-Bus method
+ * and modifies the content of the NMClient cache client side. Also, it does
+ * not emit a property changed signal.
  **/
 void
 nm_device_set_managed (NMDevice *device, gboolean managed)
@@ -1108,6 +1112,9 @@ nm_device_get_autoconnect (NMDevice *device)
  * Enables or disables automatic activation of the #NMDevice.
  *
  * Deprecated: 1.22, use nm_device_set_autoconnect_async() or GDBusConnection
+ *
+ * This function is deprecated because it calls a synchronous D-Bus method
+ * and modifies the content of the NMClient cache client side.
  **/
 void
 nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect)
