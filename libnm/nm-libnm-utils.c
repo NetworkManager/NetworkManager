@@ -8,6 +8,8 @@
 
 #include "nm-libnm-utils.h"
 
+#include "nm-glib-aux/nm-time-utils.h"
+
 /*****************************************************************************/
 
 volatile int _nml_dbus_log_level = 0;
@@ -43,6 +45,7 @@ _nml_dbus_log (NMLDBusLogLevel level,
 	gs_free char *msg = NULL;
 	va_list args;
 	const char *prefix = "";
+	gint64 ts;
 
 	/* we only call _nml_dbus_log() after nml_dbus_log_enabled(), which already does
 	 * an atomic access to the variable. Since the value is only initialized once and
@@ -84,7 +87,13 @@ _nml_dbus_log (NMLDBusLogLevel level,
 		break;
 	}
 
-	g_printerr ("libnm-dbus: %s%s\n", prefix, msg);
+	ts = nm_utils_clock_gettime_ns (CLOCK_BOOTTIME);
+
+	g_printerr ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
+	            prefix,
+	            ts / NM_UTILS_NS_PER_SECOND,
+	            (ts / (NM_UTILS_NS_PER_SECOND / 10000)) % 10000,
+	            msg);
 }
 
 /*****************************************************************************/
