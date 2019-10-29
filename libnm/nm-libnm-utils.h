@@ -8,12 +8,19 @@
 
 #include "nm-types.h"
 #include "nm-glib-aux/nm-ref-string.h"
+#include "nm-client.h"
 
 /*****************************************************************************/
 
 /* Markers for deprecated sync code in internal API. */
 #define _NM_DEPRECATED_SYNC_METHOD_INTERNAL            NM_DEPRECATED_IN_1_22
 #define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL NM_DEPRECATED_IN_1_22
+
+/*****************************************************************************/
+
+NMClientPermission nm_permission_to_client (const char *nm);
+
+NMClientPermissionResult nm_permission_result_to_client (const char *nm);
 
 /*****************************************************************************/
 
