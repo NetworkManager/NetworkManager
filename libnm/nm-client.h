@@ -245,11 +245,14 @@ void     nm_client_wwan_set_enabled (NMClient *client, gboolean enabled);
 
 gboolean nm_client_wwan_hardware_get_enabled (NMClient *client);
 
+NM_DEPRECATED_IN_1_22
 gboolean nm_client_wimax_get_enabled (NMClient *client);
 
+NM_DEPRECATED_IN_1_22
 _NM_DEPRECATED_SYNC_METHOD
 void     nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
 
+NM_DEPRECATED_IN_1_22
 gboolean nm_client_wimax_hardware_get_enabled (NMClient *client);
 
 NM_AVAILABLE_IN_1_10

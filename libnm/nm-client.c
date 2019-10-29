@@ -511,16 +511,15 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
  * Determines whether WiMAX is enabled.
  *
  * Returns: %TRUE if WiMAX is enabled
+ *
+ * Deprecated: 1.22 This function always returns FALSE because WiMax is no longer supported
  **/
 gboolean
 nm_client_wimax_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_wimax_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return FALSE;
 }
 
 /**
@@ -529,16 +528,13 @@ nm_client_wimax_get_enabled (NMClient *client)
  * @enabled: %TRUE to enable WiMAX
  *
  * Enables or disables WiMAX devices.
+ *
+ * Deprecated: 1.22 This function does nothing because WiMax is no longer supported
  **/
 void
 nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	if (!nm_client_get_nm_running (client))
-		return;
-
-	nm_manager_wimax_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager, enabled);
 }
 
 /**
@@ -548,16 +544,15 @@ nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
  * Determines whether the WiMAX hardware is enabled.
  *
  * Returns: %TRUE if the WiMAX hardware is enabled
+ *
+ * Deprecated: 1.22 This function always returns FALSE because WiMax is no longer supported
  **/
 gboolean
 nm_client_wimax_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_wimax_hardware_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return FALSE;
 }
 
 /**
@@ -3540,13 +3535,10 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boolean (value, FALSE);
 		break;
 	case PROP_WIMAX_ENABLED:
-		g_value_set_boolean (value, nm_client_wimax_get_enabled (self));
+		g_value_set_boolean (value, FALSE);
 		break;
 	case PROP_WIMAX_HARDWARE_ENABLED:
-		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
-		else
-			g_value_set_boolean (value, FALSE);
+		g_value_set_boolean (value, FALSE);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_active_connections (self)));
@@ -3643,10 +3635,11 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NETWORKING_ENABLED:
 	case PROP_WIRELESS_ENABLED:
 	case PROP_WWAN_ENABLED:
-	case PROP_WIMAX_ENABLED:
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
 		if (priv->manager)
 			g_object_set_property (G_OBJECT (priv->manager), pspec->name, value);
+		break;
+	case PROP_WIMAX_ENABLED:
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -4015,7 +4008,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * Whether WiMAX functionality is enabled.
 	 *
-	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+	 * Deprecated: 1.22: WiMAX is no longer supported and this always returns FALSE. The setter has no effect.
 	 */
 	obj_properties[PROP_WIMAX_ENABLED] =
 	    g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED, "", "",
@@ -4027,6 +4020,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:wimax-hardware-enabled:
 	 *
 	 * Whether the WiMAX hardware is enabled.
+	 *
+	 * Deprecated: 1.22: WiMAX is no longer supported and this always returns FALSE.
 	 **/
 	obj_properties[PROP_WIMAX_HARDWARE_ENABLED] =
 	    g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED, "", "",
