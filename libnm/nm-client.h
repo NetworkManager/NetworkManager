@@ -45,6 +45,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 #define NM_CLIENT_CONNECTIVITY "connectivity"
+#define NM_CLIENT_CONNECTIVITY_CHECK_URI "connectivity-check-uri"
 #define NM_CLIENT_CONNECTIVITY_CHECK_AVAILABLE "connectivity-check-available"
 
 _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
@@ -223,6 +224,9 @@ const char *nm_client_get_version    (NMClient *client);
 NMState     nm_client_get_state      (NMClient *client);
 gboolean    nm_client_get_startup    (NMClient *client);
 gboolean    nm_client_get_nm_running (NMClient *client);
+
+NM_AVAILABLE_IN_1_22
+NMMetered   nm_client_get_metered (NMClient *client);
 
 gboolean nm_client_networking_get_enabled (NMClient *client);
 

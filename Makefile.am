@@ -1274,15 +1274,17 @@ libnm_lib_h_priv = \
 	libnm/nm-dns-manager.h \
 	libnm/nm-ip4-config.h \
 	libnm/nm-ip6-config.h \
-	libnm/nm-manager.h \
 	libnm/nm-object-private.h \
 	libnm/nm-remote-connection-private.h \
-	libnm/nm-remote-settings.h
+	$(NULL)
 libnm_lib_c_real = \
-	libnm/nm-access-point.c \
-	libnm/nm-active-connection.c \
-	libnm/nm-checkpoint.c \
 	libnm/nm-client.c \
+	libnm/nm-object.c \
+	libnm/nm-device.c \
+	libnm/nm-active-connection.c \
+	\
+	libnm/nm-access-point.c \
+	libnm/nm-checkpoint.c \
 	libnm/nm-dbus-helpers.c \
 	libnm/nm-device-6lowpan.c \
 	libnm/nm-device-adsl.c \
@@ -1311,7 +1313,6 @@ libnm_lib_c_real = \
 	libnm/nm-device-wimax.c \
 	libnm/nm-device-wireguard.c \
 	libnm/nm-device-wpan.c \
-	libnm/nm-device.c \
 	libnm/nm-dhcp-config.c \
 	libnm/nm-dhcp4-config.c \
 	libnm/nm-dhcp6-config.c \
@@ -1320,10 +1321,7 @@ libnm_lib_c_real = \
 	libnm/nm-ip4-config.c \
 	libnm/nm-ip6-config.c \
 	libnm/nm-libnm-utils.c \
-	libnm/nm-manager.c \
-	libnm/nm-object.c \
 	libnm/nm-remote-connection.c \
-	libnm/nm-remote-settings.c \
 	libnm/nm-secret-agent-old.c \
 	libnm/nm-vpn-connection.c \
 	libnm/nm-vpn-editor.c \

@@ -49,7 +49,6 @@ IGNORE_HFILES= \
 	nm-object-private.h \
 	nm-property-compare.h \
 	nm-remote-connection-private.h \
-	nm-remote-settings.h \
 	nm-setting-private.h \
 	nm-utils-private.h \
 	nm-core-tests-enum-types.h \

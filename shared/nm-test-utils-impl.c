@@ -528,11 +528,52 @@ _nmtstc_client_new_inside_loop (gboolean sync)
 	return d.client;
 }
 
+static NMClient *
+_nmtstc_client_new_extra_context (void)
+{
+	GMainContext *inner_context;
+	NMClient *client;
+	GSource *source;
+	guint key_idx;
+
+	inner_context = g_main_context_new ();
+	g_main_context_push_thread_default (inner_context);
+
+	client = nmtstc_client_new (TRUE);
+
+	source = nm_utils_g_main_context_create_integrate_source (inner_context);
+
+	g_main_context_pop_thread_default (inner_context);
+	g_main_context_unref (inner_context);
+
+	g_source_attach (source, g_main_context_get_thread_default ());
+
+	for (key_idx = 0; TRUE; key_idx++) {
+		char s[100];
+
+		/* nmtstc_client_new() may call _nmtstc_client_new_extra_context() repeatedly. We
+		 * need to attach the source to a previously unused key. */
+		nm_sprintf_buf (s, "nm-test-extra-context-%u", key_idx);
+		if (!g_object_get_data (G_OBJECT (client), s)) {
+			g_object_set_data_full (G_OBJECT (client),
+			                        s,
+			                        source,
+			                        (GDestroyNotify) nm_g_source_destroy_and_unref);
+			break;
+		}
+	}
+
+	return client;
+}
+
 NMClient *
 nmtstc_client_new (gboolean allow_iterate_main_context)
 {
 	gboolean inside_loop;
 	gboolean sync;
+
+	if (nmtst_get_rand_uint32 () % 5 == 0)
+		return _nmtstc_client_new_extra_context ();
 
 	if (!allow_iterate_main_context) {
 		sync = TRUE;

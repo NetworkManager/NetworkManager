@@ -21,8 +21,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	NMLDBusPropertyO companion;
 	char *hw_address;
-	NMDeviceWifi *companion;
 	guint32 active_channel;
 } NMDeviceOlpcMeshPrivate;
 
@@ -71,7 +71,7 @@ nm_device_olpc_mesh_get_companion (NMDeviceOlpcMesh *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OLPC_MESH (device), NULL);
 
-	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->companion;
+	return nml_dbus_property_o_get_obj (&NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->companion);
 }
 
 /**
@@ -125,34 +125,6 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_OLPC_MESH_HW_ADDRESS,     &priv->hw_address },
-		{ NM_DEVICE_OLPC_MESH_COMPANION,      &priv->companion, NULL, NM_TYPE_DEVICE_WIFI },
-		{ NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, &priv->active_channel },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_OLPC_MESH,
-	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
-
-	g_clear_object (&priv->companion);
-
-	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
@@ -186,18 +158,30 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_olpcmesh = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_OLPC_MESH,
+	nm_device_olpc_mesh_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_U      ("ActiveChannel", PROP_ACTIVE_CHANNEL, NMDeviceOlpcMesh, _priv.active_channel                         ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Companion",     PROP_COMPANION,      NMDeviceOlpcMesh, _priv.companion,     nm_device_wifi_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress",     PROP_HW_ADDRESS,     NMDeviceOlpcMesh, _priv.hw_address                             ),
+	),
+);
+
 static void
-nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
+nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (olpc_mesh_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (olpc_mesh_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (olpc_mesh_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceOlpcMesh);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDeviceOlpcMeshPrivate, companion);
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -236,5 +220,5 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_olpcmesh);
 }

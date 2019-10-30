@@ -16,8 +16,6 @@
 
 GBusType _nm_dbus_bus_type (void);
 
-void             _nm_dbus_proxy_replace_match   (GDBusProxy *proxy);
-
 void _nm_dbus_bind_properties (gpointer object,
                                gpointer skeleton);
 

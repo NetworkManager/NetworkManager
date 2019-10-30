@@ -10,6 +10,7 @@
 
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
+#include "nm-object.h"
 
 /*****************************************************************************/
 
@@ -740,4 +741,206 @@ nm_permission_result_to_client (const char *nm)
 	if (nm_streq (nm, "auth"))
 		return NM_CLIENT_PERMISSION_RESULT_AUTH;
 	return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+}
+
+/*****************************************************************************/
+
+const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[] = {
+	&_nml_dbus_meta_iface_nm,
+	&_nml_dbus_meta_iface_nm_accesspoint,
+	&_nml_dbus_meta_iface_nm_agentmanager,
+	&_nml_dbus_meta_iface_nm_checkpoint,
+	&_nml_dbus_meta_iface_nm_connection_active,
+	&_nml_dbus_meta_iface_nm_dhcp4config,
+	&_nml_dbus_meta_iface_nm_dhcp6config,
+	&_nml_dbus_meta_iface_nm_device,
+	&_nml_dbus_meta_iface_nm_device_adsl,
+	&_nml_dbus_meta_iface_nm_device_bluetooth,
+	&_nml_dbus_meta_iface_nm_device_bond,
+	&_nml_dbus_meta_iface_nm_device_bridge,
+	&_nml_dbus_meta_iface_nm_device_dummy,
+	&_nml_dbus_meta_iface_nm_device_generic,
+	&_nml_dbus_meta_iface_nm_device_iptunnel,
+	&_nml_dbus_meta_iface_nm_device_infiniband,
+	&_nml_dbus_meta_iface_nm_device_lowpan,
+	&_nml_dbus_meta_iface_nm_device_macsec,
+	&_nml_dbus_meta_iface_nm_device_macvlan,
+	&_nml_dbus_meta_iface_nm_device_modem,
+	&_nml_dbus_meta_iface_nm_device_olpcmesh,
+	&_nml_dbus_meta_iface_nm_device_ovsbridge,
+	&_nml_dbus_meta_iface_nm_device_ovsinterface,
+	&_nml_dbus_meta_iface_nm_device_ovsport,
+	&_nml_dbus_meta_iface_nm_device_ppp,
+	&_nml_dbus_meta_iface_nm_device_statistics,
+	&_nml_dbus_meta_iface_nm_device_team,
+	&_nml_dbus_meta_iface_nm_device_tun,
+	&_nml_dbus_meta_iface_nm_device_veth,
+	&_nml_dbus_meta_iface_nm_device_vlan,
+	&_nml_dbus_meta_iface_nm_device_vxlan,
+	&_nml_dbus_meta_iface_nm_device_wifip2p,
+	&_nml_dbus_meta_iface_nm_device_wireguard,
+	&_nml_dbus_meta_iface_nm_device_wired,
+	&_nml_dbus_meta_iface_nm_device_wireless,
+	&_nml_dbus_meta_iface_nm_device_wpan,
+	&_nml_dbus_meta_iface_nm_dnsmanager,
+	&_nml_dbus_meta_iface_nm_ip4config,
+	&_nml_dbus_meta_iface_nm_ip6config,
+	&_nml_dbus_meta_iface_nm_settings,
+	&_nml_dbus_meta_iface_nm_settings_connection,
+	&_nml_dbus_meta_iface_nm_vpn_connection,
+	&_nml_dbus_meta_iface_nm_wifip2ppeer,
+};
+
+#define COMMON_PREFIX "org.freedesktop.NetworkManager"
+
+static int
+_strcmp_common_prefix (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const NMLDBusMetaIface *iface = a;
+	const char *dbus_iface_name = b;
+
+	nm_assert (g_str_has_prefix (iface->dbus_iface_name, COMMON_PREFIX));
+
+	return strcmp (&iface->dbus_iface_name[NM_STRLEN (COMMON_PREFIX)], dbus_iface_name);
+}
+
+const NMLDBusMetaIface *
+nml_dbus_meta_iface_get (const char *dbus_iface_name)
+{
+	gssize idx;
+
+	nm_assert (dbus_iface_name);
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMLDBusMetaIface, dbus_iface_name) == 0);
+
+	/* we assume that NetworkManager only uses unique interface names. E.g. one
+	 * interface name always has one particular meaning (and offers one set of
+	 * properties, signals and methods). This is a convenient assumption, and
+	 * we sure would never violate it when extending NM's D-Bus API. */
+
+	if (NM_STR_HAS_PREFIX (dbus_iface_name, COMMON_PREFIX)) {
+		/* optimize, that in fact all our interfaces have the same prefix. */
+		idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) _nml_dbus_meta_ifaces,
+		                                            G_N_ELEMENTS (_nml_dbus_meta_ifaces),
+		                                            &dbus_iface_name[NM_STRLEN (COMMON_PREFIX)],
+		                                            _strcmp_common_prefix,
+		                                            NULL,
+		                                            NULL,
+		                                            NULL);
+	} else
+		return NULL;
+
+	if (idx < 0)
+		return NULL;
+	return _nml_dbus_meta_ifaces[idx];
+}
+
+const NMLDBusMetaProperty *
+nml_dbus_meta_property_get (const NMLDBusMetaIface *meta_iface,
+                            const char *dbus_property_name,
+                            guint *out_idx)
+{
+	gssize idx;
+
+	nm_assert (meta_iface);
+	nm_assert (dbus_property_name);
+
+	idx = nm_utils_array_find_binary_search (meta_iface->dbus_properties,
+	                                         sizeof (meta_iface->dbus_properties[0]),
+	                                         meta_iface->n_dbus_properties,
+	                                         &dbus_property_name,
+	                                         nm_strcmp_p_with_data,
+	                                         NULL);
+	if (idx < 0) {
+		NM_SET_OUT (out_idx, meta_iface->n_dbus_properties);
+		return NULL;
+	}
+	NM_SET_OUT (out_idx, idx);
+	return &meta_iface->dbus_properties[idx];
+}
+
+void
+_nml_dbus_meta_class_init_with_properties_impl (GObjectClass *object_class,
+                                                const NMLDBusMetaIface *const*meta_ifaces)
+{
+	int i_iface;
+
+	nm_assert (G_IS_OBJECT_CLASS (object_class));
+	nm_assert (meta_ifaces);
+	nm_assert (meta_ifaces[0]);
+
+	for (i_iface = 0; meta_ifaces[i_iface]; i_iface++) {
+		const NMLDBusMetaIface *meta_iface = meta_ifaces[i_iface];
+		guint8 *reverse_idx;
+		guint8 i;
+
+		nm_assert (g_type_is_a (meta_iface->get_type_fcn (), G_OBJECT_CLASS_TYPE (object_class)));
+		nm_assert (meta_iface->n_obj_properties > 0);
+		nm_assert (meta_iface->obj_properties);
+		nm_assert (meta_iface->obj_properties_reverse_idx[0] == 0);
+		nm_assert (meta_iface->obj_properties == meta_ifaces[0]->obj_properties);
+
+		if (i_iface == 0)
+			g_object_class_install_properties (object_class, meta_iface->n_obj_properties, (GParamSpec **) meta_iface->obj_properties);
+
+		reverse_idx = (guint8 *) meta_iface->obj_properties_reverse_idx;
+
+		for (i = 0; i < meta_iface->n_obj_properties; i++)
+			reverse_idx[i] = 0xFFu;
+		for (i = 0; i < meta_iface->n_dbus_properties; i++) {
+			const NMLDBusMetaProperty *mpr = &meta_iface->dbus_properties[i];
+
+			if (   mpr->obj_properties_idx != 0
+			    && !mpr->obj_property_no_reverse_idx) {
+				nm_assert (mpr->obj_properties_idx < meta_iface->n_obj_properties);
+				nm_assert (reverse_idx[mpr->obj_properties_idx] == 0xFFu);
+
+				reverse_idx[mpr->obj_properties_idx] = i;
+			}
+		}
+	}
+}
+
+gboolean
+nm_utils_g_param_spec_is_default (const GParamSpec *pspec)
+{
+	g_return_val_if_fail (pspec, FALSE);
+
+	if (pspec->value_type == G_TYPE_BOOLEAN)
+		return ((((GParamSpecBoolean *) pspec)->default_value) == FALSE);
+	if (pspec->value_type == G_TYPE_UCHAR)
+		return ((((GParamSpecUChar *) pspec)->default_value) == 0u);
+	if (pspec->value_type == G_TYPE_INT)
+		return ((((GParamSpecInt *) pspec)->default_value) == 0);
+	if (pspec->value_type == G_TYPE_UINT)
+		return ((((GParamSpecUInt *) pspec)->default_value) == 0u);
+	if (pspec->value_type == G_TYPE_INT64)
+		return ((((GParamSpecInt64 *) pspec)->default_value) == 0);
+	if (pspec->value_type == G_TYPE_UINT64)
+		return ((((GParamSpecUInt64 *) pspec)->default_value) == 0u);
+	if (g_type_is_a (pspec->value_type, G_TYPE_ENUM))
+		return ((((GParamSpecEnum *) pspec)->default_value) == 0);
+	if (g_type_is_a (pspec->value_type, G_TYPE_FLAGS))
+		return ((((GParamSpecFlags *) pspec)->default_value) == 0u);
+	if (pspec->value_type == G_TYPE_STRING)
+		return ((((GParamSpecString *) pspec)->default_value) == NULL);
+	if (NM_IN_SET (pspec->value_type, G_TYPE_BYTES,
+	                                  G_TYPE_PTR_ARRAY,
+	                                  G_TYPE_HASH_TABLE,
+	                                  G_TYPE_STRV)) {
+		/* boxed types have NULL default. */
+		g_return_val_if_fail (G_IS_PARAM_SPEC_BOXED (pspec), FALSE);
+		g_return_val_if_fail (G_TYPE_IS_BOXED (pspec->value_type), FALSE);
+		return TRUE;
+	}
+	if (g_type_is_a (pspec->value_type, NM_TYPE_OBJECT)) {
+		/* object types have NULL default. */
+		g_return_val_if_fail (G_IS_PARAM_SPEC_OBJECT (pspec), FALSE);
+		g_return_val_if_fail (G_TYPE_IS_OBJECT (pspec->value_type), FALSE);
+		return TRUE;
+	}
+
+	/* This function is only used for asserting/testing. It thus
+	 * strictly asserts and only support argument types that we expect. */
+	g_return_val_if_reached (FALSE);
 }

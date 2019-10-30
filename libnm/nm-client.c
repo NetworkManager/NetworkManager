@@ -10,34 +10,16 @@
 
 #include <libudev.h>
 
+#include "nm-std-aux/c-list-util.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-utils.h"
-#include "nm-manager.h"
-#include "nm-dns-manager.h"
-#include "nm-remote-settings.h"
-#include "nm-device-ethernet.h"
-#include "nm-device-wifi.h"
-#include "nm-core-internal.h"
-#include "nm-active-connection.h"
-#include "nm-vpn-connection.h"
-#include "nm-remote-connection.h"
-#include "nm-dbus-helpers.h"
-#include "nm-wimax-nsp.h"
-#include "nm-object-private.h"
-
-#include "introspection/org.freedesktop.NetworkManager.h"
-#include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
-#include "introspection/org.freedesktop.NetworkManager.Device.WifiP2P.h"
-#include "introspection/org.freedesktop.NetworkManager.Device.h"
-#include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
-#include "introspection/org.freedesktop.NetworkManager.Settings.h"
-#include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
-#include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
-#include "introspection/org.freedesktop.NetworkManager.Connection.Active.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 
 #include "nm-access-point.h"
 #include "nm-active-connection.h"
 #include "nm-checkpoint.h"
+#include "nm-core-internal.h"
+#include "nm-dbus-helpers.h"
 #include "nm-device-6lowpan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-bond.h"
@@ -62,31 +44,93 @@
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi-p2p.h"
 #include "nm-device-wifi.h"
-#include "nm-device-wimax.h"
 #include "nm-device-wireguard.h"
 #include "nm-device-wpan.h"
 #include "nm-dhcp-config.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
+#include "nm-dns-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-manager.h"
-#include "nm-wifi-p2p-peer.h"
+#include "nm-object-private.h"
 #include "nm-remote-connection.h"
-#include "nm-remote-settings.h"
+#include "nm-utils.h"
 #include "nm-vpn-connection.h"
+#include "nm-wifi-p2p-peer.h"
 
 /*****************************************************************************/
 
-static void nm_client_initable_iface_init (GInitableIface *iface);
-static void nm_client_async_initable_iface_init (GAsyncInitableIface *iface);
+typedef struct {
+
+	/* It is quite wasteful to require 2 pointers per property (of an instance) only to track whether
+	 * the property got changed. But it's convenient! */
+	CList changed_prop_lst;
+
+	GVariant *prop_data_value;
+} NMLDBusObjPropData;
 
 typedef struct {
-	NMClient *client;
+	CList iface_lst;
+	union {
+		const NMLDBusMetaIface *meta;
+		NMRefString *name;
+	} dbus_iface;
+
+	CList changed_prop_lst_head;
+
+	/* We also keep track of non-well known interfaces. The presence of a D-Bus interface
+	 * is what makes a D-Bus alive or not. As we should track all D-Bus objects, we also
+	 * need to track whether there are any interfaces on it -- even if we otherwise don't
+	 * care about the interface. */
+	bool dbus_iface_is_wellknown:1;
+
+	/* if TRUE, the interface is about to be removed. */
+	bool iface_removed:1;
+
+	bool nmobj_checked:1;
+	bool nmobj_compatible:1;
+
+	NMLDBusObjPropData prop_datas[];
+} NMLDBusObjIfaceData;
+
+/* The dbus_path must be the first element, so when we hash the object by the dbus_path,
+ * we also can lookup the object by only having a NMRefString at hand
+ * using nm_pdirect_hash()/nm_pdirect_equal(). */
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMLDBusObject, dbus_path) == 0);
+
+typedef void (*NMLDBusObjWatchNotifyFcn) (NMClient *client,
+                                          gpointer obj_watcher);
+
+struct _NMLDBusObjWatcher {
+	NMLDBusObject *dbobj;
+	struct {
+		CList watcher_lst;
+		NMLDBusObjWatchNotifyFcn notify_fcn;
+	} _priv;
+};
+
+typedef struct {
+	NMLDBusObjWatcher parent;
+	gpointer user_data;
+} NMLDBusObjWatcherWithPtr;
+
+/*****************************************************************************/
+
+typedef struct {
 	GCancellable *cancellable;
-	GSimpleAsyncResult *result;
-	int pending_init;
-} NMClientInitData;
+	GSource *cancel_on_idle_source;
+	gulong cancelled_id;
+	union {
+		struct {
+			GTask *task;
+		} async;
+		struct {
+			GMainLoop *main_loop;
+			GError **error_location;
+		} sync;
+	} data;
+	bool is_sync:1;
+} InitData;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DBUS_CONNECTION,
@@ -104,6 +148,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_CONNECTIVITY_CHECK_URI,
 	PROP_CONNECTIVITY_CHECK_AVAILABLE,
 	PROP_CONNECTIVITY_CHECK_ENABLED,
 	PROP_PRIMARY_CONNECTION,
@@ -136,27 +181,110 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+enum {
+	PROPERTY_O_IDX_NM_ACTIVATING_CONNECTION = 0,
+	PROPERTY_O_IDX_NM_PRIMAY_CONNECTION,
+	_PROPERTY_O_IDX_NM_NUM,
+};
+
+enum {
+	PROPERTY_AO_IDX_DEVICES = 0,
+	PROPERTY_AO_IDX_ALL_DEVICES,
+	PROPERTY_AO_IDX_ACTIVE_CONNECTIONS,
+	PROPERTY_AO_IDX_CHECKPOINTS,
+	_PROPERTY_AO_IDX_NM_NUM,
+};
+
 typedef struct {
-	GMainContext *main_context;
-	NMManager *manager;
-	NMRemoteSettings *settings;
-	NMDnsManager *dns_manager;
-	GDBusConnection *dbus_connection;
-	GDBusObjectManager *object_manager;
-	GCancellable *new_object_manager_cancellable;
-	char *name_owner_cached;
 	struct udev *udev;
+	GMainContext *main_context;
+	GMainContext *dbus_context;
+	GSource *dbus_context_integration;
+	GDBusConnection *dbus_connection;
+	InitData *init_data;
+	GHashTable *dbus_objects;
+	CList obj_changed_lst_head;
+	GCancellable *name_owner_get_cancellable;
+	GCancellable *get_managed_objects_cancellable;
+
+	CList queue_notify_lst_head;
+	CList notify_event_lst_head;
+
+	CList dbus_objects_lst_head_watched_only;
+	CList dbus_objects_lst_head_on_dbus;
+	CList dbus_objects_lst_head_with_nmobj_not_ready;
+	CList dbus_objects_lst_head_with_nmobj_ready;
+
+	NMLDBusObject *dbobj_nm;
+	NMLDBusObject *dbobj_settings;
+	NMLDBusObject *dbobj_dns_manager;
+
+	GHashTable *permissions;
+	GCancellable *permissions_cancellable;
+
+	char *name_owner;
+	guint name_owner_changed_id;
+	guint dbsid_nm_object_manager;
+	guint dbsid_dbus_properties_properties_changed;
+	guint dbsid_nm_settings_connection_updated;
+	guint dbsid_nm_connection_active_state_changed;
+	guint dbsid_nm_vpn_connection_state_changed;
+	guint dbsid_nm_check_permissions;
+
 	bool udev_inited:1;
+	bool notify_event_lst_changed:1;
+	bool check_dbobj_visible_all:1;
+	bool nm_running:1;
+
+	struct {
+		NMLDBusPropertyO property_o[_PROPERTY_O_IDX_NM_NUM];
+		NMLDBusPropertyAO property_ao[_PROPERTY_AO_IDX_NM_NUM];
+		char *connectivity_check_uri;
+		char *version;
+		guint32 connectivity;
+		guint32 state;
+		guint32 metered;
+		bool connectivity_check_available;
+		bool connectivity_check_enabled;
+		bool networking_enabled;
+		bool startup;
+		bool wireless_enabled;
+		bool wireless_hardware_enabled;
+		bool wwan_enabled;
+		bool wwan_hardware_enabled;
+	} nm;
+
+	struct {
+		NMLDBusPropertyAO connections;
+		char *hostname;
+		bool can_modify;
+	} settings;
+
+	struct {
+		GPtrArray *configuration;
+		char *mode;
+		char *rc_manager;
+	} dns_manager;
+
 } NMClientPrivate;
 
 struct _NMClient {
-	GObject parent;
+	union {
+		GObject parent;
+		NMObjectBase obj_base;
+	};
 	NMClientPrivate _priv;
 };
 
 struct _NMClientClass {
-	GObjectClass parent;
+	union {
+		GObjectClass parent;
+		NMObjectBaseClass obj_base;
+	};
 };
+
+static void nm_client_initable_iface_init (GInitableIface *iface);
+static void nm_client_async_initable_iface_init (GAsyncInitableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_client_initable_iface_init);
@@ -167,11 +295,38 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
 
 /*****************************************************************************/
 
-void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+static void _init_start_check_complete (NMClient *self);
+
+static void name_owner_changed_cb (GDBusConnection *connection,
+                                   const char *sender_name,
+                                   const char *object_path,
+                                   const char *interface_name,
+                                   const char *signal_name,
+                                   GVariant *parameters,
+                                   gpointer user_data);
+
+static void name_owner_get_cb (const char *name_owner,
+                               GError *error,
+                               gpointer user_data);
+
+static void _set_nm_running (NMClient *self);
 
 /*****************************************************************************/
 
-static const GPtrArray empty = { 0, };
+static NMRefString *_dbus_path_nm          = NULL;
+static NMRefString *_dbus_path_settings    = NULL;
+static NMRefString *_dbus_path_dns_manager = NULL;
+
+/*****************************************************************************/
+
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nml_dbus_obj_state_to_string, NMLDBusObjState,
+	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
+	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_UNLINKED,             "unlinked"),
+	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_WATCHED_ONLY,         "watched-only"),
+	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_ON_DBUS,              "on-dbus"),
+	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY, "not-ready"),
+	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY,     "ready"),
+);
 
 /*****************************************************************************/
 
@@ -186,43 +341,3254 @@ NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 
 /*****************************************************************************/
 
-GDBusConnection *
-_nm_client_get_dbus_connection (NMClient *client)
+static InitData *
+_init_data_new_sync (GCancellable *cancellable,
+                     GMainLoop *main_loop,
+                     GError **error_location)
 {
-	nm_assert (NM_IS_CLIENT (client));
+	InitData *init_data;
 
-	return NM_CLIENT_GET_PRIVATE (client)->dbus_connection;
+	init_data = g_slice_new (InitData);
+	*init_data = (InitData) {
+		.cancellable = nm_g_object_ref (cancellable),
+		.is_sync     = TRUE,
+		.data.sync   = {
+			.main_loop      = main_loop,
+			.error_location = error_location,
+		},
+	};
+	return init_data;
 }
 
-const char *
-_nm_client_get_dbus_name_owner (NMClient *client)
+static InitData *
+_init_data_new_async (GCancellable *cancellable,
+                      GTask *task_take)
 {
-	NMClientPrivate *priv;
+	InitData *init_data;
 
-	nm_assert (NM_IS_CLIENT (client));
-
-	priv = NM_CLIENT_GET_PRIVATE (client);
-
-	nm_clear_g_free (&priv->name_owner_cached);
-
-	if (!priv->object_manager)
-		return NULL;
-
-	priv->name_owner_cached = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
-	return priv->name_owner_cached;
+	init_data = g_slice_new (InitData);
+	*init_data = (InitData) {
+		.cancellable = nm_g_object_ref (cancellable),
+		.is_sync     = FALSE,
+		.data.async  = {
+			.task = g_steal_pointer (&task_take),
+		},
+	};
+	return init_data;
 }
 
 /*****************************************************************************/
 
-static gboolean
-_nm_client_check_nm_running (NMClient *client, GError **error)
+GError *
+_nm_client_new_error_nm_not_running (void)
 {
-	if (!nm_client_get_nm_running (client)) {
-		_nm_object_set_error_nm_not_running (error);
-		return FALSE;
+	return g_error_new_literal (NM_CLIENT_ERROR,
+	                            NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+	                            "NetworkManager is not running");
+}
+
+GError *
+_nm_client_new_error_nm_not_cached (void)
+{
+	return g_error_new_literal (NM_CLIENT_ERROR,
+	                            NM_CLIENT_ERROR_FAILED,
+	                            "Object is no longer in the client cache");
+}
+
+void
+_nm_client_dbus_call_simple (NMClient *self,
+                             GCancellable *cancellable,
+                             const char *object_path,
+                             const char *interface_name,
+                             const char *method_name,
+                             GVariant *parameters,
+                             const GVariantType *reply_type,
+                             GDBusCallFlags flags,
+                             int timeout_msec,
+                             GAsyncReadyCallback callback,
+                             gpointer user_data)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
+
+	nm_assert (priv->name_owner);
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (callback);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
+
+	g_dbus_connection_call (priv->dbus_connection,
+	                        priv->name_owner,
+	                        object_path,
+	                        interface_name,
+	                        method_name,
+	                        parameters,
+	                        reply_type,
+	                        flags,
+	                        timeout_msec,
+	                        cancellable,
+	                        callback,
+	                        user_data);
+}
+
+void
+_nm_client_dbus_call (NMClient *self,
+                      gpointer source_obj,
+                      gpointer source_tag,
+                      GCancellable *cancellable,
+                      GAsyncReadyCallback user_callback,
+                      gpointer user_callback_data,
+                      const char *object_path,
+                      const char *interface_name,
+                      const char *method_name,
+                      GVariant *parameters,
+                      const GVariantType *reply_type,
+                      GDBusCallFlags flags,
+                      int timeout_msec,
+                      GAsyncReadyCallback internal_callback)
+{
+	NMClientPrivate *priv;
+	gs_unref_object GTask *task = NULL;
+
+	nm_assert (!source_obj || G_IS_OBJECT (source_obj));
+	nm_assert (source_tag);
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (internal_callback);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	task = nm_g_task_new (source_obj, cancellable, source_tag, user_callback, user_callback_data);
+
+	if (!self) {
+		nm_g_variant_unref_floating (parameters);
+		g_task_return_error (task, _nm_client_new_error_nm_not_cached ());
+		return;
 	}
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	if (!priv->name_owner) {
+		nm_g_variant_unref_floating (parameters);
+		g_task_return_error (task, _nm_client_new_error_nm_not_running ());
+		return;
+	}
+
+	_nm_client_dbus_call_simple (self,
+	                             cancellable,
+	                             object_path,
+	                             interface_name,
+	                             method_name,
+	                             parameters,
+	                             reply_type,
+	                             flags,
+	                             timeout_msec,
+	                             internal_callback,
+	                             g_steal_pointer (&task));
+}
+
+GVariant *
+_nm_client_dbus_call_sync (NMClient *self,
+                           GCancellable *cancellable,
+                           const char *object_path,
+                           const char *interface_name,
+                           const char *method_name,
+                           GVariant *parameters,
+                           const GVariantType *reply_type,
+                           GDBusCallFlags flags,
+                           int timeout_msec,
+                           gboolean strip_dbus_error,
+                           GError **error)
+{
+	NMClientPrivate *priv;
+	gs_unref_variant GVariant *ret = NULL;
+
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (!error || !*error);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	if (!self) {
+		nm_g_variant_unref_floating (parameters);
+		nm_g_set_error_take_lazy (error, _nm_client_new_error_nm_not_cached ());
+		return NULL;
+	}
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	if (!priv->name_owner) {
+		nm_g_variant_unref_floating (parameters);
+		nm_g_set_error_take_lazy (error, _nm_client_new_error_nm_not_running ());
+		return NULL;
+	}
+
+	ret = g_dbus_connection_call_sync (priv->dbus_connection,
+	                                   priv->name_owner,
+	                                   object_path,
+	                                   interface_name,
+	                                   method_name,
+	                                   parameters,
+	                                   reply_type,
+	                                   flags,
+	                                   timeout_msec,
+	                                   cancellable,
+	                                   error);
+	if (!ret) {
+		if (error && strip_dbus_error)
+			g_dbus_error_strip_remote_error (*error);
+		return NULL;
+	}
+
+	return g_steal_pointer (&ret);
+}
+
+gboolean
+_nm_client_dbus_call_sync_void (NMClient *self,
+                                GCancellable *cancellable,
+                                const char *object_path,
+                                const char *interface_name,
+                                const char *method_name,
+                                GVariant *parameters,
+                                GDBusCallFlags flags,
+                                int timeout_msec,
+                                gboolean strip_dbus_error,
+                                GError **error)
+{
+	gs_unref_variant GVariant *ret = NULL;
+
+	ret = _nm_client_dbus_call_sync (self,
+	                                 cancellable,
+	                                 object_path,
+	                                 interface_name,
+	                                 method_name,
+	                                 parameters,
+	                                 G_VARIANT_TYPE ("()"),
+	                                 flags,
+	                                 timeout_msec,
+	                                 strip_dbus_error,
+	                                 error);
+	return !!ret;
+}
+
+void
+_nm_client_set_property_sync_legacy (NMClient *self,
+                                     const char *object_path,
+                                     const char *interface_name,
+                                     const char *property_name,
+                                     const char *format_string,
+                                     ...)
+{
+	NMClientPrivate *priv;
+	GVariant *val;
+	gs_unref_variant GVariant *ret = NULL;
+	va_list ap;
+
+	nm_assert (!self || NM_IS_CLIENT (self));
+	nm_assert (interface_name);
+	nm_assert (property_name);
+	nm_assert (format_string);
+
+	if (!self)
+		return;
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	if (!priv->name_owner)
+		return;
+
+	va_start (ap, format_string);
+	val = g_variant_new_va (format_string, NULL, &ap);
+	va_end (ap);
+
+	nm_assert (val);
+
+	/* A synchronous D-Bus call that is not cancellable an ignores the return value.
+	 * This function only exists for backward compatibility. */
+	ret = g_dbus_connection_call_sync (priv->dbus_connection,
+	                                   priv->name_owner,
+	                                   object_path,
+	                                   DBUS_INTERFACE_PROPERTIES,
+	                                   "Set",
+	                                   g_variant_new ("(ssv)",
+	                                                  interface_name,
+	                                                  property_name,
+	                                                  val),
+	                                   NULL,
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   2000,
+	                                   NULL,
+	                                   NULL);
+}
+
+/*****************************************************************************/
+
+#define _assert_main_context_is_current_source(self, x_context) \
+	G_STMT_START { \
+		if (NM_MORE_ASSERTS > 0) { \
+			GSource *_source = g_main_current_source (); \
+			\
+			if (_source) { \
+				NMClientPrivate *_priv = NM_CLIENT_GET_PRIVATE (self); \
+				\
+				nm_assert (g_source_get_context (_source) == _priv->x_context); \
+				nm_assert (g_main_context_is_owner (_priv->x_context)); \
+			} \
+		} \
+	} G_STMT_END
+
+#define _assert_main_context_is_current_thread_default(self, x_context) \
+	G_STMT_START { \
+		if (NM_MORE_ASSERTS > 0) { \
+			NMClientPrivate *_priv = NM_CLIENT_GET_PRIVATE (self); \
+			\
+			nm_assert ((g_main_context_get_thread_default () ?: g_main_context_default ()) == _priv->x_context); \
+			nm_assert (g_main_context_is_owner (_priv->x_context)); \
+		} \
+	} G_STMT_END
+
+/*****************************************************************************/
+
+void
+_nm_client_queue_notify_object (NMClient *self,
+                                gpointer nmobj,
+                                const GParamSpec *pspec)
+{
+	NMObjectBase *base;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NM_IS_OBJECT (nmobj) || NM_IS_CLIENT (nmobj));
+
+	base = (NMObjectBase *) nmobj;
+	if (c_list_is_empty (&base->queue_notify_lst)) {
+		c_list_link_tail (&NM_CLIENT_GET_PRIVATE (self)->queue_notify_lst_head,
+		                  &base->queue_notify_lst);
+		g_object_ref (nmobj);
+		g_object_freeze_notify (nmobj);
+	}
+
+	if (pspec)
+		g_object_notify_by_pspec (nmobj, (GParamSpec *) pspec);
+}
+
+/*****************************************************************************/
+
+gpointer
+_nm_client_notify_event_queue (NMClient *self,
+                               int priority,
+                               NMClientNotifyEventCb callback,
+                               gsize event_size)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMClientNotifyEvent *notify_event;
+
+	nm_assert (callback);
+	nm_assert (event_size > sizeof (NMClientNotifyEvent));
+
+	notify_event = g_malloc (event_size);
+	notify_event->priority = priority;
+	notify_event->callback = callback;
+	c_list_link_tail (&priv->notify_event_lst_head, &notify_event->lst);
+	priv->notify_event_lst_changed = TRUE;
+	return notify_event;
+}
+
+NMClientNotifyEventWithPtr *
+_nm_client_notify_event_queue_with_ptr (NMClient *self,
+                                        int priority,
+                                        NMClientNotifyEventWithPtrCb callback,
+                                        gpointer user_data)
+{
+	NMClientNotifyEventWithPtr *notify_event;
+
+	notify_event = _nm_client_notify_event_queue (self,
+	                                              priority,
+	                                              (NMClientNotifyEventCb) callback,
+	                                              sizeof (NMClientNotifyEventWithPtr));
+	notify_event->user_data = user_data;
+	return notify_event;
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	NMClientNotifyEvent parent;
+	GObject *source;
+	NMObject *obj;
+	guint signal_id;
+} NMClientNotifyEventObjAddedRemove;
+
+static void
+_nm_client_notify_event_queue_emit_obj_signal_cb (NMClient *self,
+                                                  gpointer notify_event_base)
+{
+	NMClientNotifyEventObjAddedRemove *notify_event = notify_event_base;
+
+	NML_NMCLIENT_LOG_T (self, "[%s] emit \"%s\" signal for %s",
+	                      NM_IS_CLIENT (notify_event->source)
+	                    ? "nmclient"
+	                    : _nm_object_get_path (notify_event->source),
+	                    g_signal_name (notify_event->signal_id),
+	                    _nm_object_get_path (notify_event->obj));
+
+	nm_assert (   NM_IS_OBJECT (notify_event->source)
+	           || NM_IS_CLIENT (notify_event->source));
+
+	g_signal_emit (notify_event->source,
+	               notify_event->signal_id,
+	               0,
+	               notify_event->obj);
+
+	g_object_unref (notify_event->obj);
+	g_object_unref (notify_event->source);
+}
+
+void
+_nm_client_notify_event_queue_emit_obj_signal (NMClient *self,
+                                               GObject *source,
+                                               NMObject *nmobj,
+                                               gboolean is_added /* or else removed */,
+                                               int prio_offset,
+                                               guint signal_id)
+{
+	NMClientNotifyEventObjAddedRemove *notify_event;
+
+	nm_assert (prio_offset >= 0);
+	nm_assert (prio_offset < 20);
+	nm_assert (   NM_IS_OBJECT (source)
+	           || NM_IS_CLIENT (source));
+	nm_assert (NM_IS_OBJECT (nmobj));
+
+	if (((NMObjectBase *) source)->is_disposing) {
+		nm_assert (NM_IS_CLIENT (source));
+		return;
+	}
+
+	notify_event = _nm_client_notify_event_queue (self,
+	                                                is_added
+	                                              ? NM_CLIENT_NOTIFY_EVENT_PRIO_AFTER - 20 + prio_offset
+	                                              : NM_CLIENT_NOTIFY_EVENT_PRIO_BEFORE + 20 - prio_offset,
+	                                              _nm_client_notify_event_queue_emit_obj_signal_cb,
+	                                              sizeof (NMClientNotifyEventObjAddedRemove));
+	notify_event->source    = g_object_ref (source);
+	notify_event->obj       = g_object_ref (nmobj);
+	notify_event->signal_id = signal_id;
+}
+
+/*****************************************************************************/
+
+static int
+_nm_client_notify_event_cmp (const CList *a,
+                             const CList *b,
+                             const void *user_data)
+{
+	NM_CMP_DIRECT (c_list_entry (a, NMClientNotifyEvent, lst)->priority,
+	               c_list_entry (b, NMClientNotifyEvent, lst)->priority);
+	return 0;
+}
+
+static void
+_nm_client_notify_event_emit_parts (NMClient *self,
+                                    int max_priority /* included! */)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMClientNotifyEvent *notify_event;
+
+	while (TRUE) {
+		if (priv->notify_event_lst_changed) {
+			priv->notify_event_lst_changed = FALSE;
+			c_list_sort (&priv->notify_event_lst_head, _nm_client_notify_event_cmp, NULL);
+		}
+		notify_event = c_list_first_entry (&priv->notify_event_lst_head, NMClientNotifyEvent, lst);
+		if (!notify_event)
+			return;
+		if (notify_event->priority > max_priority)
+			return;
+		c_list_unlink_stale (&notify_event->lst);
+		notify_event->callback (self, notify_event);
+		g_free (notify_event);
+	}
+}
+
+static void
+_nm_client_notify_event_emit (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMObjectBase *base;
+
+	_nm_client_notify_event_emit_parts (self, NM_CLIENT_NOTIFY_EVENT_PRIO_GPROP);
+
+	while ((base = c_list_first_entry (&priv->queue_notify_lst_head, NMObjectBase, queue_notify_lst))) {
+		c_list_unlink (&base->queue_notify_lst);
+		g_object_thaw_notify (G_OBJECT (base));
+		g_object_unref (base);
+	}
+
+	_nm_client_notify_event_emit_parts (self, G_MAXINT);
+}
+
+/*****************************************************************************/
+
+GDBusConnection *
+_nm_client_get_dbus_connection (NMClient *self)
+{
+	return NM_CLIENT_GET_PRIVATE (self)->dbus_connection;
+}
+
+const char *
+_nm_client_get_dbus_name_owner (NMClient *self)
+{
+	return NM_CLIENT_GET_PRIVATE (self)->name_owner;
+}
+
+GMainContext *
+_nm_client_get_context_main (NMClient *self)
+{
+	return NM_CLIENT_GET_PRIVATE (self)->main_context;
+}
+
+GMainContext *
+_nm_client_get_context_dbus (NMClient *self)
+{
+	return NM_CLIENT_GET_PRIVATE (self)->dbus_context;
+}
+
+struct udev *
+_nm_client_get_udev (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (!priv->udev_inited)) {
+		priv->udev_inited = TRUE;
+		/* for testing, we don't want to use udev in libnm. */
+		if (!nm_streq0 (g_getenv ("LIBNM_USE_NO_UDEV"), "1"))
+			priv->udev = udev_new ();
+	}
+
+	return priv->udev;
+}
+
+/*****************************************************************************/
+
+static void
+_ASSERT_dbobj (NMLDBusObject *dbobj,
+               NMClient *self)
+{
+#if NM_MORE_ASSERTS > 5
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NML_IS_DBUS_OBJECT (dbobj));
+	nm_assert (dbobj == g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (self)->dbus_objects, dbobj));
+#endif
+}
+
+static NMLDBusObject *
+nml_dbus_object_new (NMRefString *dbus_path_take)
+{
+	NMLDBusObject *dbobj;
+
+	nm_assert (NM_IS_REF_STRING (dbus_path_take));
+
+	dbobj = g_slice_new (NMLDBusObject);
+	*dbobj = (NMLDBusObject) {
+		.dbus_path        = g_steal_pointer (&dbus_path_take),
+		.ref_count        = 1,
+		.dbus_objects_lst = C_LIST_INIT (dbobj->dbus_objects_lst),
+		.iface_lst_head   = C_LIST_INIT (dbobj->iface_lst_head),
+		.watcher_lst_head = C_LIST_INIT (dbobj->watcher_lst_head),
+		.obj_changed_lst  = C_LIST_INIT (dbobj->obj_changed_lst),
+		.obj_state        = NML_DBUS_OBJ_STATE_UNLINKED,
+	};
+	return dbobj;
+}
+
+NMLDBusObject *
+nml_dbus_object_ref (NMLDBusObject *dbobj)
+{
+	nm_assert (dbobj);
+	nm_assert (dbobj->ref_count > 0);
+
+	dbobj->ref_count++;
+	return dbobj;
+}
+
+void
+nml_dbus_object_unref (NMLDBusObject *dbobj)
+{
+	nm_assert (dbobj);
+	nm_assert (dbobj->ref_count > 0);
+
+	if (--dbobj->ref_count > 0)
+		return;
+
+	nm_assert (c_list_is_empty (&dbobj->obj_changed_lst));
+	nm_assert (c_list_is_empty (&dbobj->iface_lst_head));
+	nm_assert (c_list_is_empty (&dbobj->watcher_lst_head));
+	nm_assert (!dbobj->nmobj);
+
+	nm_ref_string_unref (dbobj->dbus_path);
+	nm_g_slice_free (dbobj);
+}
+
+static NMLDBusObjIfaceData *
+nml_dbus_object_iface_data_get (NMLDBusObject *dbobj,
+                                const char *dbus_iface_name,
+                                gboolean allow_create)
+{
+	const NMLDBusMetaIface *meta_iface;
+	NMLDBusObjIfaceData *db_iface_data;
+	NMLDBusObjPropData *db_prop_data;
+	guint count = 0;
+	guint i;
+
+	nm_assert (NML_IS_DBUS_OBJECT (dbobj));
+	nm_assert (dbus_iface_name);
+
+#if NM_MORE_ASSERTS > 10
+	{
+		gboolean expect_well_known = TRUE;
+
+		/* all well-known interfaces must come first in the list. */
+		c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+			if (db_iface_data->dbus_iface_is_wellknown == expect_well_known)
+				continue;
+			nm_assert (expect_well_known);
+			expect_well_known = FALSE;
+		}
+	}
+#endif
+
+	meta_iface = nml_dbus_meta_iface_get (dbus_iface_name);
+	if (meta_iface) {
+		c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+			if (!db_iface_data->dbus_iface_is_wellknown)
+				break;
+			if (db_iface_data->iface_removed)
+				continue;
+			if (db_iface_data->dbus_iface.meta == meta_iface)
+				return db_iface_data;
+			count++;
+		}
+	} else {
+		nm_c_list_for_each_entry_prev (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+			if (db_iface_data->dbus_iface_is_wellknown)
+				break;
+			if (db_iface_data->iface_removed)
+				continue;
+			if (nm_streq (db_iface_data->dbus_iface.name->str, dbus_iface_name))
+				return db_iface_data;
+			count++;
+		}
+	}
+
+	if (!allow_create)
+		return NULL;
+
+	if (count > 20) {
+		/* We track the list of interfaces that an object has in a linked list.
+		 * That is efficient and convenient, if we assume that each object only has a small
+		 * number of interfaces (which very much should be the case). Here, something is very
+		 * odd, maybe there is a bug or the server side is misbehaving. Anyway, error out. */
+		return NULL;
+	}
+
+	db_iface_data = g_malloc (  G_STRUCT_OFFSET (NMLDBusObjIfaceData, prop_datas)
+	                          + (meta_iface ? (sizeof (NMLDBusObjPropData) * meta_iface->n_dbus_properties): 0u));
+	if (meta_iface) {
+		*db_iface_data = (NMLDBusObjIfaceData) {
+			.dbus_iface.meta         = meta_iface,
+			.dbus_iface_is_wellknown = TRUE,
+			.changed_prop_lst_head   = C_LIST_INIT (db_iface_data->changed_prop_lst_head),
+			.iface_removed           = FALSE,
+		};
+		db_prop_data = &db_iface_data->prop_datas[0];
+		for (i = 0; i < meta_iface->n_dbus_properties; i++, db_prop_data++) {
+			*db_prop_data = (NMLDBusObjPropData) {
+				.prop_data_value  = NULL,
+				.changed_prop_lst = C_LIST_INIT (db_prop_data->changed_prop_lst),
+			};
+		}
+		c_list_link_front (&dbobj->iface_lst_head, &db_iface_data->iface_lst);
+	} else {
+		/* Intentionally don't initialize the other fields. We are not supposed
+		 * to touch them, and a valgrind warning would be preferable. */
+		db_iface_data->dbus_iface.name         = nm_ref_string_new (dbus_iface_name);
+		db_iface_data->dbus_iface_is_wellknown = FALSE;
+		db_iface_data->iface_removed           = FALSE;
+		c_list_link_tail (&dbobj->iface_lst_head, &db_iface_data->iface_lst);
+	}
+
+	return db_iface_data;
+}
+
+static void
+nml_dbus_obj_iface_data_destroy (NMLDBusObjIfaceData *db_iface_data)
+{
+	guint i;
+
+	nm_assert (db_iface_data);
+	nm_assert (c_list_is_empty (&db_iface_data->iface_lst));
+
+	if (db_iface_data->dbus_iface_is_wellknown) {
+		for (i = 0; i < db_iface_data->dbus_iface.meta->n_dbus_properties; i++)
+			nm_g_variant_unref (db_iface_data->prop_datas[i].prop_data_value);
+	} else
+		nm_ref_string_unref (db_iface_data->dbus_iface.name);
+
+	g_free (db_iface_data);
+}
+
+gpointer
+nml_dbus_object_get_property_location (NMLDBusObject *dbobj,
+                                       const NMLDBusMetaIface *meta_iface,
+                                       const NMLDBusMetaProperty *meta_property)
+{
+	char *target_c;
+
+	target_c = (char *) dbobj->nmobj;
+	if (meta_iface->base_struct_offset > 0)
+		target_c = *((gpointer *) (&target_c[meta_iface->base_struct_offset]));
+	return &target_c[meta_property->prop_struct_offset];
+}
+
+static void
+nml_dbus_object_set_obj_state (NMLDBusObject *dbobj,
+                               NMLDBusObjState obj_state,
+                               NMClient *self)
+{
+	NMClientPrivate *priv;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NML_IS_DBUS_OBJECT  (dbobj));
+
+#if NM_MORE_ASSERTS > 10
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	switch (dbobj->obj_state) {
+	case NML_DBUS_OBJ_STATE_UNLINKED:               nm_assert (c_list_is_empty (&dbobj->dbus_objects_lst));                                                    break;
+	case NML_DBUS_OBJ_STATE_WATCHED_ONLY:           nm_assert (c_list_contains (&priv->dbus_objects_lst_head_watched_only,           &dbobj->dbus_objects_lst)); break;
+	case NML_DBUS_OBJ_STATE_ON_DBUS:                nm_assert (c_list_contains (&priv->dbus_objects_lst_head_on_dbus,                &dbobj->dbus_objects_lst)); break;
+	case NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY:   nm_assert (c_list_contains (&priv->dbus_objects_lst_head_with_nmobj_not_ready,   &dbobj->dbus_objects_lst)); break;
+	case NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY:       nm_assert (c_list_contains (&priv->dbus_objects_lst_head_with_nmobj_ready,       &dbobj->dbus_objects_lst)); break;
+	}
+#endif
+
+	if (dbobj->obj_state == obj_state)
+		return;
+
+	NML_NMCLIENT_LOG_T (self, "[%s]: set D-Bus object state %s", dbobj->dbus_path->str, nml_dbus_obj_state_to_string (obj_state));
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	dbobj->obj_state = obj_state;
+	switch (obj_state) {
+	case NML_DBUS_OBJ_STATE_UNLINKED:
+		c_list_unlink (&dbobj->dbus_objects_lst);
+		c_list_unlink (&dbobj->obj_changed_lst);
+		dbobj->obj_changed_type = NML_DBUS_OBJ_CHANGED_TYPE_NONE;
+		break;
+	case NML_DBUS_OBJ_STATE_WATCHED_ONLY:           nm_c_list_move_tail (&priv->dbus_objects_lst_head_watched_only,           &dbobj->dbus_objects_lst); break;
+	case NML_DBUS_OBJ_STATE_ON_DBUS:                nm_c_list_move_tail (&priv->dbus_objects_lst_head_on_dbus,                &dbobj->dbus_objects_lst); break;
+	case NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY:   nm_c_list_move_tail (&priv->dbus_objects_lst_head_with_nmobj_not_ready,   &dbobj->dbus_objects_lst); break;
+	case NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY:       nm_c_list_move_tail (&priv->dbus_objects_lst_head_with_nmobj_ready,       &dbobj->dbus_objects_lst); break;
+	default:
+		nm_assert_not_reached ();
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nml_dbus_object_obj_changed_link (NMClient *self,
+                                  NMLDBusObject *dbobj,
+                                  NMLDBusObjChangedType changed_type)
+{
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NML_IS_DBUS_OBJECT (dbobj));
+	nm_assert (changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
+
+	if (!NM_FLAGS_ALL ((NMLDBusObjChangedType ) dbobj->obj_changed_type, changed_type))
+		NML_NMCLIENT_LOG_T (self, "[%s] changed-type 0x%02x linked", dbobj->dbus_path->str, (guint) changed_type);
+
+	if (dbobj->obj_changed_type == NML_DBUS_OBJ_CHANGED_TYPE_NONE) {
+		NMClientPrivate *priv;
+
+		/* We set the changed-type flag. Need to queue the object in the
+		 * changed list. */
+		nm_assert (c_list_is_empty (&dbobj->obj_changed_lst));
+		priv = NM_CLIENT_GET_PRIVATE (self);
+		c_list_link_tail (&priv->obj_changed_lst_head, &dbobj->obj_changed_lst);
+	} else {
+		/* The object has changes flags and must be linked already. Note that
+		 * this may be priv->obj_changed_lst_head, or a temporary list on the
+		 * stack.
+		 *
+		 * This dance with the temporary list is done to ensure we can enqueue
+		 * objects while we process the changes. */
+		nm_assert (!c_list_is_empty (&dbobj->obj_changed_lst));
+	}
+
+	dbobj->obj_changed_type |= changed_type;
+
+	nm_assert (NM_FLAGS_ALL (dbobj->obj_changed_type, changed_type));
+}
+
+static NMLDBusObjChangedType
+nml_dbus_object_obj_changed_consume (NMClient *self,
+                                     NMLDBusObject *dbobj,
+                                     NMLDBusObjChangedType changed_type)
+{
+	NMClientPrivate *priv;
+	NMLDBusObjChangedType changed_type_res;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NML_IS_DBUS_OBJECT (dbobj));
+	nm_assert (changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
+	nm_assert (dbobj->obj_changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
+	nm_assert (!c_list_is_empty (&dbobj->obj_changed_lst));
+
+	changed_type_res = dbobj->obj_changed_type & changed_type;
+
+	dbobj->obj_changed_type &= ~changed_type;
+
+	if (dbobj->obj_changed_type == NML_DBUS_OBJ_CHANGED_TYPE_NONE) {
+		c_list_unlink (&dbobj->obj_changed_lst);
+		nm_assert (changed_type_res != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
+		NML_NMCLIENT_LOG_T (self, "[%s] changed-type 0x%02x consumed", dbobj->dbus_path->str, (guint) changed_type_res);
+		return changed_type_res;
+	}
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	nm_assert (!c_list_contains (&priv->obj_changed_lst_head, &dbobj->obj_changed_lst));
+	nm_c_list_move_tail (&priv->obj_changed_lst_head, &dbobj->obj_changed_lst);
+	NML_NMCLIENT_LOG_T (self, "[%s] changed-type 0x%02x consumed  (still has 0x%02x)", dbobj->dbus_path->str, (guint) changed_type_res, (guint) dbobj->obj_changed_type);
+	return changed_type_res;
+}
+
+static gboolean
+nml_dbus_object_obj_changed_any_linked (NMClient *self,
+                                        NMLDBusObjChangedType changed_type)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMLDBusObject *dbobj;
+
+	nm_assert (changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
+
+	c_list_for_each_entry (dbobj, &priv->obj_changed_lst_head, obj_changed_lst) {
+		nm_assert (dbobj->obj_changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
+		if (NM_FLAGS_ANY (dbobj->obj_changed_type, changed_type))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/*****************************************************************************/
+
+static void
+_dbobjs_notify_watchers_for_dbobj (NMClient *self,
+                                   NMLDBusObject *dbobj)
+{
+	NMLDBusObjWatcher *obj_watcher;
+	NMLDBusObjWatcher *obj_watcher_safe;
+
+	c_list_for_each_entry_safe (obj_watcher, obj_watcher_safe, &dbobj->watcher_lst_head, _priv.watcher_lst)
+		obj_watcher->_priv.notify_fcn (self, obj_watcher);
+}
+
+static gboolean
+_dbobjs_check_dbobj_ready (NMClient *self,
+                           NMLDBusObject *dbobj)
+{
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NML_IS_DBUS_OBJECT (dbobj));
+	nm_assert (G_IS_OBJECT (dbobj->nmobj));
+	nm_assert (   NM_IS_OBJECT (dbobj->nmobj)
+	           || NM_IS_CLIENT (dbobj->nmobj));
+	nm_assert (NM_IN_SET ((NMLDBusObjState) dbobj->obj_state, NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY,
+	                                                          NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY));
+
+	if (G_LIKELY (dbobj->obj_state == NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY))
+		return TRUE;
+
+	if (!NM_OBJECT_GET_CLASS (dbobj->nmobj)->is_ready (NM_OBJECT (dbobj->nmobj)))
+		return FALSE;
+
+	nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY, self);
+
+	nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+	_dbobjs_notify_watchers_for_dbobj (self, dbobj);
+
 	return TRUE;
 }
+
+void
+_nm_client_notify_object_changed (NMClient *self,
+                                  NMLDBusObject *dbobj)
+{
+	nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+	_dbobjs_notify_watchers_for_dbobj (self, dbobj);
+}
+
+/*****************************************************************************/
+
+static NMLDBusObject *
+_dbobjs_dbobj_get_r (NMClient *self,
+                     NMRefString *dbus_path_r)
+{
+	nm_assert (NM_IS_REF_STRING (dbus_path_r));
+
+	return g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (self)->dbus_objects, &dbus_path_r);
+}
+
+static NMLDBusObject *
+_dbobjs_dbobj_get_s (NMClient *self,
+                     const char *dbus_path)
+{
+	nm_auto_ref_string NMRefString *dbus_path_r = NULL;
+
+	nm_assert (dbus_path);
+	dbus_path_r = nm_ref_string_new (dbus_path);
+	return _dbobjs_dbobj_get_r (self, dbus_path_r);
+}
+
+static NMLDBusObject *
+_dbobjs_dbobj_create (NMClient *self,
+                      NMRefString *dbus_path_take)
+{
+	nm_auto_ref_string NMRefString *dbus_path = g_steal_pointer (&dbus_path_take);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMLDBusObject *dbobj;
+
+	nm_assert (!_dbobjs_dbobj_get_r (self, dbus_path));
+
+	dbobj = nml_dbus_object_new (g_steal_pointer (&dbus_path));
+	if (!g_hash_table_add (priv->dbus_objects, dbobj))
+		nm_assert_not_reached ();
+	return dbobj;
+}
+
+static NMLDBusObject *
+_dbobjs_dbobj_get_or_create (NMClient *self,
+                             NMRefString *dbus_path_take)
+{
+	nm_auto_ref_string NMRefString *dbus_path = g_steal_pointer (&dbus_path_take);
+	NMLDBusObject *dbobj;
+
+	dbobj = _dbobjs_dbobj_get_r (self, dbus_path);
+	if (dbobj)
+		return dbobj;
+	return _dbobjs_dbobj_create (self, g_steal_pointer (&dbus_path));
+}
+
+static NMLDBusObject *
+_dbobjs_get_nmobj (NMClient *self,
+                   const char *dbus_path,
+                   GType gtype)
+{
+	NMLDBusObject *dbobj;
+
+	nm_assert (   gtype == G_TYPE_NONE
+	           || g_type_is_a (gtype, NM_TYPE_OBJECT));
+
+	dbobj = _dbobjs_dbobj_get_s (self, dbus_path);
+
+	if (!dbobj)
+		return NULL;
+	if (!dbobj->nmobj)
+		return NULL;
+
+	if (   gtype != G_TYPE_NONE
+	    && !g_type_is_a (G_OBJECT_TYPE (dbobj->nmobj), gtype))
+		return NULL;
+
+	return dbobj;
+}
+
+static gpointer
+_dbobjs_get_nmobj_unpack_visible (NMClient *self,
+                                  const char *dbus_path,
+                                  GType gtype)
+{
+	NMLDBusObject *dbobj;
+
+	dbobj = _dbobjs_get_nmobj (self, dbus_path, gtype);
+	if (!dbobj)
+		return NULL;
+	if (dbobj->obj_state != NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY)
+		return NULL;
+	return dbobj->nmobj;
+}
+
+/*****************************************************************************/
+
+static gpointer
+_dbobjs_obj_watcher_register_o (NMClient *self,
+                                NMLDBusObject *dbobj,
+                                NMLDBusObjWatchNotifyFcn notify_fcn,
+                                gsize struct_size)
+{
+	NMLDBusObjWatcher *obj_watcher;
+
+	nm_assert (NM_IS_CLIENT (self));
+	_ASSERT_dbobj (dbobj, self);
+	nm_assert (notify_fcn);
+	nm_assert (struct_size > sizeof (NMLDBusObjWatcher));
+
+	obj_watcher = g_malloc (struct_size);
+	obj_watcher->dbobj = dbobj;
+	obj_watcher->_priv.notify_fcn = notify_fcn;
+
+	/* we must enqueue the item in the front of the list. That is, because while
+	 * invoking notify_fcn(), we iterate the watchers front-to-end. As we want to
+	 * allow the callee to register new watches and unregister itself, this is
+	 * the right way to do it. */
+	c_list_link_front (&dbobj->watcher_lst_head, &obj_watcher->_priv.watcher_lst);
+
+	return obj_watcher;
+}
+
+static gpointer
+_dbobjs_obj_watcher_register_r (NMClient *self,
+                                NMRefString *dbus_path_take,
+                                NMLDBusObjWatchNotifyFcn notify_fcn,
+                                gsize struct_size)
+{
+	nm_auto_ref_string NMRefString *dbus_path = g_steal_pointer (&dbus_path_take);
+	NMLDBusObject *dbobj;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (notify_fcn);
+
+	dbobj = _dbobjs_dbobj_get_or_create (self, g_steal_pointer (&dbus_path));
+	if (dbobj->obj_state == NML_DBUS_OBJ_STATE_UNLINKED)
+		nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_WATCHED_ONLY, self);
+	return _dbobjs_obj_watcher_register_o (self, dbobj, notify_fcn, struct_size);
+}
+
+static void
+_dbobjs_obj_watcher_unregister (NMClient *self,
+                                gpointer obj_watcher_base)
+{
+	NMLDBusObjWatcher *obj_watcher = obj_watcher_base;
+	NMLDBusObject *dbobj;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (obj_watcher);
+	nm_assert (NML_IS_DBUS_OBJECT (obj_watcher->dbobj));
+	nm_assert (g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (self)->dbus_objects, obj_watcher->dbobj) == obj_watcher->dbobj);
+	nm_assert (c_list_contains (&obj_watcher->dbobj->watcher_lst_head, &obj_watcher->_priv.watcher_lst));
+
+	c_list_unlink (&obj_watcher->_priv.watcher_lst);
+
+	dbobj = obj_watcher->dbobj;
+
+	g_free (obj_watcher);
+
+	if (   c_list_is_empty (&dbobj->iface_lst_head)
+	    && c_list_is_empty (&dbobj->watcher_lst_head)) {
+		NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+		NML_NMCLIENT_LOG_T (self, "[%s]: drop D-Bus watcher", dbobj->dbus_path->str);
+		nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_UNLINKED, self);
+		if (!g_hash_table_steal (priv->dbus_objects, dbobj))
+			nm_assert_not_reached ();
+		nml_dbus_object_unref (dbobj);
+	}
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	NMLDBusObjWatcher parent;
+	NMLDBusPropertyO *pr_o;
+} PropertyOData;
+
+gpointer
+nml_dbus_property_o_get_obj (NMLDBusPropertyO *pr_o)
+{
+	nm_assert (   !pr_o->nmobj
+	           || nml_dbus_property_o_is_ready (pr_o));
+	return pr_o->nmobj;
+}
+
+gboolean
+nml_dbus_property_o_is_ready (const NMLDBusPropertyO *pr_o)
+{
+	return    pr_o->is_ready
+	       || !pr_o->owner_dbobj;
+}
+
+static void
+nml_dbus_property_o_notify_changed (NMLDBusPropertyO *pr_o,
+                                    NMClient *self)
+{
+	const NMLDBusPropertVTableO *vtable;
+	GObject *nmobj = NULL;
+	gboolean is_ready = TRUE;
+	gboolean changed_ready;
+	GType gtype;
+
+	nm_assert (pr_o);
+	nm_assert (NM_IS_CLIENT (self));
+
+	if (!pr_o->owner_dbobj)
+		return;
+
+	if (!pr_o->is_changed) {
+		if (pr_o->is_ready)
+			return;
+		goto done;
+	}
+
+	pr_o->is_changed = FALSE;
+
+	if (!pr_o->obj_watcher)
+		goto done;
+
+	if (!pr_o->obj_watcher->dbobj->nmobj) {
+		if (pr_o->obj_watcher->dbobj->obj_state >= NML_DBUS_OBJ_STATE_ON_DBUS) {
+			NML_NMCLIENT_LOG_W (self, "[%s]: property %s references %s but object is not created",
+			                    pr_o->owner_dbobj->dbus_path->str,
+			                    pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].dbus_property_name,
+			                    pr_o->obj_watcher->dbobj->dbus_path->str);
+		} else {
+			NML_NMCLIENT_LOG_E (self, "[%s]: property %s references %s but object is not present on D-Bus",
+			                    pr_o->owner_dbobj->dbus_path->str,
+			                    pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].dbus_property_name,
+			                    pr_o->obj_watcher->dbobj->dbus_path->str);
+		}
+		goto done;
+	}
+
+	vtable = pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].extra.property_vtable_o;
+
+	gtype = vtable->get_o_type_fcn ();
+	if (!g_type_is_a (G_OBJECT_TYPE (pr_o->obj_watcher->dbobj->nmobj), gtype)) {
+		NML_NMCLIENT_LOG_E (self, "[%s]: property %s references %s with unexpected GObject type %s instead of %s",
+		                    pr_o->owner_dbobj->dbus_path->str,
+		                    pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].dbus_property_name,
+		                    pr_o->obj_watcher->dbobj->dbus_path->str,
+		                    G_OBJECT_TYPE_NAME (pr_o->obj_watcher->dbobj->nmobj),
+		                    g_type_name (gtype));
+		goto done;
+	}
+
+	if (pr_o->obj_watcher->dbobj == pr_o->owner_dbobj) {
+		NML_NMCLIENT_LOG_W (self, "[%s]: property %s references itself",
+		                    pr_o->owner_dbobj->dbus_path->str,
+		                    pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].dbus_property_name);
+		nmobj = pr_o->owner_dbobj->nmobj;
+		goto done;
+	}
+
+	pr_o->block_is_changed = TRUE;
+	is_ready = _dbobjs_check_dbobj_ready (self, pr_o->obj_watcher->dbobj);
+	pr_o->block_is_changed = FALSE;
+
+	if (!is_ready) {
+		is_ready = vtable->is_always_ready;
+		goto done;
+	}
+
+	nmobj = pr_o->obj_watcher->dbobj->nmobj;
+
+done:
+	changed_ready = FALSE;
+	if (!pr_o->is_ready && is_ready) {
+		pr_o->is_ready = TRUE;
+		changed_ready = TRUE;
+	}
+	if (pr_o->nmobj != nmobj) {
+		pr_o->nmobj = nmobj;
+		_nm_client_queue_notify_object (self,
+		                                pr_o->owner_dbobj->nmobj,
+		                                pr_o->meta_iface->obj_properties[pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].obj_properties_idx]);
+	}
+	if (   changed_ready
+	    && pr_o->owner_dbobj->obj_state == NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY)
+		nml_dbus_object_obj_changed_link (self, pr_o->owner_dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+}
+
+void
+nml_dbus_property_o_notify_changed_many (NMLDBusPropertyO *ptr,
+                                         guint len,
+                                         NMClient *self)
+{
+	while (len-- > 0)
+		nml_dbus_property_o_notify_changed (ptr++, self);
+}
+
+static void
+nml_dbus_property_o_notify_watch_cb (NMClient *self,
+                                     gpointer obj_watcher)
+{
+	PropertyOData *pr_o_data = obj_watcher;
+	NMLDBusPropertyO *pr_o = pr_o_data->pr_o;
+
+	nm_assert (pr_o->obj_watcher == obj_watcher);
+
+	if (   !pr_o->block_is_changed
+	    && !pr_o->is_changed) {
+		pr_o->is_changed = TRUE;
+		nml_dbus_object_obj_changed_link (self, pr_o->owner_dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+	}
+}
+
+static NMLDBusNotifyUpdatePropFlags
+nml_dbus_property_o_notify (NMClient *self,
+                            NMLDBusPropertyO *pr_o,
+                            NMLDBusObject *dbobj,
+                            const NMLDBusMetaIface *meta_iface,
+                            guint dbus_property_idx,
+                            GVariant *value)
+{
+	const char *dbus_path = NULL;
+	gboolean changed = FALSE;
+
+	if (!pr_o->owner_dbobj) {
+		nm_assert (!pr_o->meta_iface);
+		nm_assert (pr_o->dbus_property_idx == 0);
+		nm_assert (!pr_o->is_ready);
+		pr_o->owner_dbobj = dbobj;
+		pr_o->meta_iface = meta_iface;
+		pr_o->dbus_property_idx = dbus_property_idx;
+	} else {
+		nm_assert (pr_o->owner_dbobj == dbobj);
+		nm_assert (pr_o->meta_iface == meta_iface);
+		nm_assert (pr_o->dbus_property_idx == dbus_property_idx);
+	}
+
+	if (value)
+		dbus_path = nm_dbus_path_not_empty (g_variant_get_string (value, NULL));
+
+	if (   pr_o->obj_watcher
+	    && (   !dbus_path
+	        || !nm_streq (dbus_path, pr_o->obj_watcher->dbobj->dbus_path->str))) {
+		_dbobjs_obj_watcher_unregister (self,
+		                                g_steal_pointer (&pr_o->obj_watcher));
+		changed = TRUE;
+	}
+	if (   !pr_o->obj_watcher
+	    && dbus_path) {
+		pr_o->obj_watcher = _dbobjs_obj_watcher_register_r (self,
+		                                                    nm_ref_string_new (dbus_path),
+		                                                    nml_dbus_property_o_notify_watch_cb,
+		                                                    sizeof (PropertyOData));
+		((PropertyOData *) pr_o->obj_watcher)->pr_o = pr_o;
+		changed = TRUE;
+	}
+
+	if (   changed
+	    && !pr_o->is_changed) {
+		pr_o->is_changed = TRUE;
+		nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+	}
+
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+}
+
+void
+nml_dbus_property_o_clear (NMLDBusPropertyO *pr_o,
+                           NMClient *self)
+{
+	if (pr_o->obj_watcher) {
+		nm_assert (NM_IS_CLIENT (self));
+		_dbobjs_obj_watcher_unregister (self,
+		                                g_steal_pointer (&pr_o->obj_watcher));
+	}
+	if (   pr_o->nmobj
+	    && pr_o->owner_dbobj
+	    && pr_o->owner_dbobj->nmobj) {
+		_nm_client_queue_notify_object (self,
+		                                pr_o->owner_dbobj->nmobj,
+		                                pr_o->meta_iface->obj_properties[pr_o->meta_iface->dbus_properties[pr_o->dbus_property_idx].obj_properties_idx]);
+	}
+	pr_o->owner_dbobj = NULL;
+	pr_o->meta_iface = NULL;
+	pr_o->dbus_property_idx = 0;
+	pr_o->is_ready = TRUE;
+}
+
+void
+nml_dbus_property_o_clear_many (NMLDBusPropertyO *pr_o,
+                                guint len,
+                                NMClient *self)
+{
+	while (len-- > 0)
+		nml_dbus_property_o_clear (pr_o++, self);
+}
+
+/*****************************************************************************/
+
+typedef struct _NMLDBusPropertyAOData {
+	NMLDBusObjWatcher obj_watcher;
+	NMLDBusPropertyAO *parent;
+	CList data_lst;
+	GObject *nmobj;
+	struct _NMLDBusPropertyAOData *changed_next;
+	bool is_ready:1;
+	bool is_notified:1;
+	bool is_changed:1;
+	bool block_is_changed:1;
+} PropertyAOData;
+
+static void
+_ASSERT_pr_ao (NMLDBusPropertyAO *pr_ao)
+{
+	nm_assert (pr_ao);
+
+#if NM_MORE_ASSERTS > 10
+	if (pr_ao->owner_dbobj) {
+		guint n_not_ready = 0;
+		guint n_is_changed = 0;
+		guint n_is_changed_2;
+		PropertyAOData *pr_ao_data;
+
+		c_list_for_each_entry (pr_ao_data, &pr_ao->data_lst_head, data_lst) {
+			if (pr_ao_data->is_changed)
+				n_is_changed++;
+			if (!pr_ao_data->is_ready)
+				n_not_ready++;
+		}
+		nm_assert (n_not_ready == pr_ao->n_not_ready);
+
+		n_is_changed_2 = 0;
+		pr_ao_data = pr_ao->changed_head;
+		while (pr_ao_data) {
+			nm_assert (pr_ao_data->is_changed);
+			n_is_changed_2++;
+			pr_ao_data = pr_ao_data->changed_next;
+		}
+		nm_assert (n_is_changed == n_is_changed_2);
+	}
+#endif
+}
+
+static gboolean
+nml_dbus_property_ao_notify_changed_ao (PropertyAOData *pr_ao_data,
+                                        NMClient *self,
+                                        gboolean is_added /* or else removed */)
+{
+	NMLDBusPropertyAO *pr_ao;
+	const NMLDBusPropertVTableAO *vtable;
+
+	if (!pr_ao_data->nmobj)
+		return FALSE;
+
+	nm_assert (pr_ao_data->is_ready);
+
+	if (is_added) {
+		if (pr_ao_data->is_notified)
+			return FALSE;
+		pr_ao_data->is_notified = TRUE;
+	} else {
+		if (!pr_ao_data->is_notified)
+			return FALSE;
+		pr_ao_data->is_notified = FALSE;
+	}
+
+	pr_ao = pr_ao_data->parent;
+
+	vtable = pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].extra.property_vtable_ao;
+
+	if (vtable->notify_changed_ao)
+		vtable->notify_changed_ao (pr_ao, self, NM_OBJECT (pr_ao_data->nmobj), is_added);
+	return TRUE;
+}
+
+const GPtrArray *
+nml_dbus_property_ao_get_objs_as_ptrarray (NMLDBusPropertyAO *pr_ao)
+{
+	if (!pr_ao->arr) {
+		PropertyAOData *pr_ao_data;
+		gsize n;
+
+		n = 0;
+		if (pr_ao->owner_dbobj) {
+			c_list_for_each_entry (pr_ao_data, &pr_ao->data_lst_head, data_lst) {
+				if (pr_ao_data->nmobj)
+					n++;
+			}
+		}
+
+		pr_ao->arr = g_ptr_array_new_full (n, g_object_unref);
+		if (pr_ao->owner_dbobj) {
+			c_list_for_each_entry (pr_ao_data, &pr_ao->data_lst_head, data_lst) {
+				if (pr_ao_data->nmobj)
+					g_ptr_array_add (pr_ao->arr, g_object_ref (pr_ao_data->nmobj));
+			}
+		}
+	}
+	return pr_ao->arr;
+}
+
+gboolean
+nml_dbus_property_ao_is_ready (const NMLDBusPropertyAO *pr_ao)
+{
+	return pr_ao->n_not_ready == 0;
+}
+
+static void
+nml_dbus_property_ao_notify_changed (NMLDBusPropertyAO *pr_ao,
+                                     NMClient *self)
+{
+	gboolean changed_prop = FALSE;
+	gboolean changed_ready = FALSE;
+	PropertyAOData *pr_ao_data;
+
+	nm_assert (NM_IS_CLIENT (self));
+	_ASSERT_pr_ao (pr_ao);
+
+	if (!pr_ao->owner_dbobj)
+		return;
+
+	if (!pr_ao->is_changed) {
+		if (pr_ao->n_not_ready == 0)
+			return;
+		goto done;
+	}
+
+	pr_ao->is_changed = FALSE;
+
+	while (pr_ao->changed_head) {
+		const NMLDBusPropertVTableAO *vtable;
+		GObject *nmobj = NULL;
+		gboolean is_ready = TRUE;
+		GType gtype;
+
+		pr_ao_data = g_steal_pointer (&pr_ao->changed_head);
+		nm_assert (pr_ao_data->is_changed);
+
+		pr_ao->changed_head = pr_ao_data->changed_next;
+		pr_ao_data->is_changed = FALSE;
+
+		if (!pr_ao_data->obj_watcher.dbobj->nmobj) {
+			if (pr_ao_data->obj_watcher.dbobj->obj_state >= NML_DBUS_OBJ_STATE_ON_DBUS) {
+				NML_NMCLIENT_LOG_W (self, "[%s]: property %s references %s but object is not created",
+				                    pr_ao->owner_dbobj->dbus_path->str,
+				                    pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].dbus_property_name,
+				                    pr_ao_data->obj_watcher.dbobj->dbus_path->str);
+			} else {
+				NML_NMCLIENT_LOG_E (self, "[%s]: property %s references %s but object is not present on D-Bus",
+				                    pr_ao->owner_dbobj->dbus_path->str,
+				                    pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].dbus_property_name,
+				                    pr_ao_data->obj_watcher.dbobj->dbus_path->str);
+			}
+			goto done_pr_ao_data;
+		}
+
+		vtable = pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].extra.property_vtable_ao;
+
+		gtype = vtable->get_o_type_fcn ();
+		if (!g_type_is_a (G_OBJECT_TYPE (pr_ao_data->obj_watcher.dbobj->nmobj), gtype)) {
+			NML_NMCLIENT_LOG_E (self, "[%s]: property %s references %s with unexpected GObject type %s instead of %s",
+			                    pr_ao->owner_dbobj->dbus_path->str,
+			                    pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].dbus_property_name,
+			                    pr_ao_data->obj_watcher.dbobj->dbus_path->str,
+			                    G_OBJECT_TYPE_NAME (pr_ao_data->obj_watcher.dbobj->nmobj),
+			                    g_type_name (gtype));
+			goto done_pr_ao_data;
+		}
+
+		if (pr_ao_data->obj_watcher.dbobj == pr_ao->owner_dbobj) {
+			NML_NMCLIENT_LOG_W (self, "[%s]: property %s references itself",
+			                    pr_ao->owner_dbobj->dbus_path->str,
+			                    pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].dbus_property_name);
+			nmobj = pr_ao->owner_dbobj->nmobj;
+			goto done_pr_ao_data;
+		}
+
+		pr_ao_data->block_is_changed = TRUE;
+		is_ready = _dbobjs_check_dbobj_ready (self, pr_ao_data->obj_watcher.dbobj);
+		pr_ao_data->block_is_changed = FALSE;
+
+		if (!is_ready) {
+			is_ready = vtable->is_always_ready;
+			goto done_pr_ao_data;
+		}
+
+		if (   vtable->check_nmobj_visible_fcn
+		    && !vtable->check_nmobj_visible_fcn (pr_ao_data->obj_watcher.dbobj->nmobj)) {
+			is_ready = TRUE;
+			goto done_pr_ao_data;
+		}
+
+		nmobj = pr_ao_data->obj_watcher.dbobj->nmobj;
+
+done_pr_ao_data:
+
+		if (   !pr_ao_data->is_ready
+		    && is_ready) {
+			nm_assert (pr_ao->n_not_ready > 0);
+			pr_ao->n_not_ready--;
+			pr_ao_data->is_ready = TRUE;
+			changed_ready = TRUE;
+		}
+
+		if (pr_ao_data->nmobj != nmobj) {
+			if (nml_dbus_property_ao_notify_changed_ao (pr_ao_data, self, FALSE))
+				changed_prop = TRUE;
+			pr_ao_data->nmobj = nmobj;
+		}
+
+		if (!pr_ao_data->is_notified) {
+			if (nml_dbus_property_ao_notify_changed_ao (pr_ao_data, self, TRUE))
+				changed_prop = TRUE;
+		}
+	}
+
+	_ASSERT_pr_ao (pr_ao);
+
+done:
+	if (changed_prop) {
+		nm_clear_pointer (&pr_ao->arr, g_ptr_array_unref);
+		_nm_client_queue_notify_object (self,
+		                                pr_ao->owner_dbobj->nmobj,
+		                                pr_ao->meta_iface->obj_properties[pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].obj_properties_idx]);
+	}
+	if (   changed_ready
+	    && pr_ao->n_not_ready == 0
+	    && pr_ao->owner_dbobj->obj_state == NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY)
+		nml_dbus_object_obj_changed_link (self, pr_ao->owner_dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+}
+
+void
+nml_dbus_property_ao_notify_changed_many (NMLDBusPropertyAO *ptr,
+                                          guint len,
+                                          NMClient *self)
+{
+	while (len-- > 0)
+		nml_dbus_property_ao_notify_changed (ptr++, self);
+}
+
+static void
+nml_dbus_property_ao_notify_watch_cb (NMClient *self,
+                                      gpointer obj_watcher)
+{
+	PropertyAOData *pr_ao_data = obj_watcher;
+	NMLDBusPropertyAO *pr_ao = pr_ao_data->parent;
+
+	nm_assert (g_hash_table_lookup (pr_ao->hash, pr_ao_data) == pr_ao_data);
+
+	if (   !pr_ao_data->block_is_changed
+	    && !pr_ao_data->is_changed) {
+		pr_ao_data->is_changed = TRUE;
+		pr_ao_data->changed_next = pr_ao->changed_head;
+		pr_ao->changed_head = pr_ao_data;
+		if (!pr_ao->is_changed) {
+			pr_ao->is_changed = TRUE;
+			nml_dbus_object_obj_changed_link (self, pr_ao->owner_dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+		}
+	}
+
+	_ASSERT_pr_ao (pr_ao);
+}
+
+static NMLDBusNotifyUpdatePropFlags
+nml_dbus_property_ao_notify (NMClient *self,
+                             NMLDBusPropertyAO *pr_ao,
+                             NMLDBusObject *dbobj,
+                             const NMLDBusMetaIface *meta_iface,
+                             guint dbus_property_idx,
+                             GVariant *value)
+{
+	CList stale_lst_head = C_LIST_INIT (stale_lst_head);
+	PropertyAOData *pr_ao_data;
+	gboolean changed_prop = FALSE;
+	gboolean changed_obj = FALSE;
+
+	if (!pr_ao->owner_dbobj) {
+		nm_assert (!pr_ao->data_lst_head.next);
+		nm_assert (!pr_ao->data_lst_head.prev);
+		nm_assert (!pr_ao->hash);
+		nm_assert (!pr_ao->meta_iface);
+		nm_assert (pr_ao->dbus_property_idx == 0);
+		nm_assert (pr_ao->n_not_ready == 0);
+		nm_assert (!pr_ao->changed_head);
+		nm_assert (!pr_ao->is_changed);
+
+		c_list_init (&pr_ao->data_lst_head);
+		pr_ao->hash = g_hash_table_new (nm_ppdirect_hash, nm_ppdirect_equal);
+		pr_ao->owner_dbobj = dbobj;
+		pr_ao->meta_iface = meta_iface;
+		pr_ao->dbus_property_idx = dbus_property_idx;
+	} else {
+		nm_assert (pr_ao->data_lst_head.next);
+		nm_assert (pr_ao->data_lst_head.prev);
+		nm_assert (pr_ao->hash);
+		nm_assert (pr_ao->meta_iface == meta_iface);
+		nm_assert (pr_ao->dbus_property_idx == dbus_property_idx);
+	}
+
+	c_list_splice (&stale_lst_head, &pr_ao->data_lst_head);
+
+	if (value) {
+		GVariantIter iter;
+		const char *path;
+
+		g_variant_iter_init (&iter, value);
+		while (g_variant_iter_next (&iter, "&o", &path)) {
+			nm_auto_ref_string NMRefString *dbus_path_r = NULL;
+			gpointer p_dbus_path_1;
+
+			G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (PropertyAOData, obj_watcher) == 0);
+			G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMLDBusObjWatcher, dbobj) == 0);
+			G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMLDBusObject, dbus_path) == 0);
+
+			if (!nm_dbus_path_not_empty (path)) {
+				/* should not happen. Anyway, silently skip empty paths. */
+				continue;
+			}
+
+			dbus_path_r = nm_ref_string_new (path);
+			p_dbus_path_1 = &dbus_path_r;
+			pr_ao_data = g_hash_table_lookup (pr_ao->hash, &p_dbus_path_1);
+
+			if (pr_ao_data) {
+				/* With this implementation we cannot track the same path multiple times.
+				 * Of course, for none of the properties where we use this, the server
+				 * should expose the same path more than once, so this limitation is fine
+				 * (maybe even preferable to drop duplicates form NMClient's API). */
+				nm_assert (pr_ao_data->obj_watcher.dbobj->dbus_path == dbus_path_r);
+				if (   !changed_prop
+				    && pr_ao_data->is_notified) {
+					/* The order of a notified entry changed. That means, we need to signal
+					 * a change of the property. This detection of a change is not always
+					 * correct, in particular we might detect some changes when there were
+					 * none. That's not a serious problem, and fixing it would be expensive
+					 * to implement. */
+					changed_prop = (c_list_first (&stale_lst_head) != &pr_ao_data->data_lst);
+				}
+				nm_c_list_move_tail (&pr_ao->data_lst_head, &pr_ao_data->data_lst);
+			} else {
+				pr_ao_data = _dbobjs_obj_watcher_register_r (self,
+				                                             g_steal_pointer (&dbus_path_r),
+				                                             nml_dbus_property_ao_notify_watch_cb,
+				                                             sizeof (PropertyAOData)),
+				pr_ao_data->parent = pr_ao;
+				pr_ao_data->nmobj = NULL;
+				pr_ao_data->changed_next = NULL;
+				pr_ao_data->is_changed = TRUE;
+				pr_ao_data->block_is_changed = FALSE;
+				pr_ao_data->is_ready = FALSE;
+				pr_ao_data->is_notified = FALSE;
+				c_list_link_tail (&pr_ao->data_lst_head, &pr_ao_data->data_lst);
+				if (!g_hash_table_add (pr_ao->hash, pr_ao_data))
+					nm_assert_not_reached ();
+				nm_assert (pr_ao->n_not_ready < G_MAXUINT);
+				pr_ao->n_not_ready++;
+			}
+
+#if NM_MORE_ASSERTS > 10
+			{
+				nm_auto_ref_string NMRefString *p = nm_ref_string_new (path);
+				gpointer pp = &p;
+
+				nm_assert (g_hash_table_lookup (pr_ao->hash, &pp) == pr_ao_data);
+			}
+#endif
+		}
+	}
+
+	pr_ao->changed_head = NULL;
+	c_list_for_each_entry (pr_ao_data, &pr_ao->data_lst_head, data_lst) {
+		if (pr_ao_data->is_changed) {
+			pr_ao_data->changed_next = pr_ao->changed_head;
+			pr_ao->changed_head = pr_ao_data;
+			changed_obj = TRUE;
+		}
+	}
+
+	while ((pr_ao_data = c_list_first_entry (&stale_lst_head, PropertyAOData, data_lst))) {
+		changed_obj = TRUE;
+		c_list_unlink (&pr_ao_data->data_lst);
+		if (!g_hash_table_remove (pr_ao->hash, pr_ao_data))
+			nm_assert_not_reached ();
+		if (!pr_ao_data->is_ready) {
+			nm_assert (pr_ao->n_not_ready > 0);
+			pr_ao->n_not_ready--;
+		} else {
+			if (nml_dbus_property_ao_notify_changed_ao (pr_ao_data, self, FALSE))
+				changed_prop = TRUE;
+		}
+		_dbobjs_obj_watcher_unregister (self, pr_ao_data);
+	}
+
+	_ASSERT_pr_ao (pr_ao);
+
+	if (changed_obj) {
+		pr_ao->is_changed = TRUE;
+		nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+	}
+
+	if (changed_prop) {
+		nm_clear_pointer (&pr_ao->arr, g_ptr_array_unref);
+		_nm_client_queue_notify_object (self,
+		                                pr_ao->owner_dbobj->nmobj,
+		                                pr_ao->meta_iface->obj_properties[pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].obj_properties_idx]);
+	}
+
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+}
+
+void
+nml_dbus_property_ao_clear (NMLDBusPropertyAO *pr_ao,
+                            NMClient *self)
+{
+	_ASSERT_pr_ao (pr_ao);
+
+	if (!pr_ao->owner_dbobj) {
+		nm_assert (pr_ao->n_not_ready == 0);
+		nm_assert (   (!pr_ao->data_lst_head.next && !pr_ao->data_lst_head.prev)
+		           || (pr_ao->data_lst_head.next == pr_ao->data_lst_head.prev));
+		nm_assert (!pr_ao->hash);
+		nm_assert (!pr_ao->meta_iface);
+		nm_assert (pr_ao->dbus_property_idx == 0);
+		nm_assert (!pr_ao->is_changed);
+	} else {
+		PropertyAOData *pr_ao_data;
+		gboolean changed_prop = FALSE;
+
+		nm_assert (NM_IS_CLIENT (self));
+		nm_assert (pr_ao->data_lst_head.next);
+		nm_assert (pr_ao->data_lst_head.prev);
+		nm_assert (pr_ao->hash);
+		nm_assert (pr_ao->meta_iface);
+
+		while ((pr_ao_data = c_list_first_entry (&pr_ao->data_lst_head, PropertyAOData, data_lst))) {
+			if (!pr_ao_data->is_ready) {
+				nm_assert (pr_ao->n_not_ready > 0);
+				pr_ao->n_not_ready--;
+			} else {
+				if (nml_dbus_property_ao_notify_changed_ao (pr_ao_data, self, FALSE))
+					changed_prop = TRUE;
+			}
+			c_list_unlink (&pr_ao_data->data_lst);
+			if (!g_hash_table_remove (pr_ao->hash, pr_ao_data))
+				nm_assert_not_reached ();
+			_dbobjs_obj_watcher_unregister (self, pr_ao_data);
+		}
+
+		nm_assert (c_list_is_empty (&pr_ao->data_lst_head));
+		nm_assert (pr_ao->n_not_ready == 0);
+		nm_assert (g_hash_table_size (pr_ao->hash) == 0);
+
+		if (   changed_prop
+		    && pr_ao->owner_dbobj->nmobj) {
+			_nm_client_queue_notify_object (self,
+			                                pr_ao->owner_dbobj->nmobj,
+			                                pr_ao->meta_iface->obj_properties[pr_ao->meta_iface->dbus_properties[pr_ao->dbus_property_idx].obj_properties_idx]);
+		}
+
+		nm_assert (c_list_is_empty (&pr_ao->data_lst_head));
+		nm_assert (pr_ao->n_not_ready == 0);
+		nm_assert (g_hash_table_size (pr_ao->hash) == 0);
+		nm_clear_pointer (&pr_ao->hash, g_hash_table_unref);
+		pr_ao->owner_dbobj = NULL;
+		pr_ao->meta_iface = NULL;
+		pr_ao->dbus_property_idx = 0;
+		pr_ao->data_lst_head.next = NULL;
+		pr_ao->data_lst_head.prev = NULL;
+		pr_ao->is_changed = FALSE;
+	}
+
+	nm_clear_pointer (&pr_ao->arr, g_ptr_array_unref);
+}
+
+void
+nml_dbus_property_ao_clear_many (NMLDBusPropertyAO *pr_ao,
+                                 guint len,
+                                 NMClient *self)
+{
+	while (len-- > 0)
+		nml_dbus_property_ao_clear (pr_ao++, self);
+}
+
+/*****************************************************************************/
+
+NMLDBusNotifyUpdatePropFlags
+_nml_dbus_notify_update_prop_ignore (NMClient *self,
+                                     NMLDBusObject *dbobj,
+                                     const NMLDBusMetaIface *meta_iface,
+                                     guint dbus_property_idx,
+                                     GVariant *value)
+{
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+}
+
+NMLDBusNotifyUpdatePropFlags
+_nml_dbus_notify_update_prop_o (NMClient *self,
+                                NMLDBusObject *dbobj,
+                                const NMLDBusMetaIface *meta_iface,
+                                guint dbus_property_idx,
+                                GVariant *value)
+{
+	const char *path = NULL;
+	NMRefString **p_property;
+
+	if (value)
+		path = g_variant_get_string (value, NULL);
+
+	p_property = nml_dbus_object_get_property_location (dbobj,
+	                                                    meta_iface,
+	                                                    &meta_iface->dbus_properties[dbus_property_idx]);
+
+	if (!nm_streq0 (nm_ref_string_get_str (*p_property), path)) {
+		nm_ref_string_unref (*p_property);
+		*p_property = nm_ref_string_new (path);
+	}
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+}
+
+/*****************************************************************************/
+
+static void
+_obj_handle_dbus_prop_changes (NMClient *self,
+                               NMLDBusObject *dbobj,
+                               NMLDBusObjIfaceData *db_iface_data,
+                               guint dbus_property_idx,
+                               GVariant *value)
+{
+	const NMLDBusMetaIface *meta_iface = db_iface_data->dbus_iface.meta;
+	const NMLDBusMetaProperty *meta_property = &meta_iface->dbus_properties[dbus_property_idx];
+	gpointer p_property;
+	const char *dbus_type_s;
+	const GParamSpec *param_spec;
+	NMLDBusNotifyUpdatePropFlags notify_update_prop_flags;
+
+	nm_assert (G_IS_OBJECT (dbobj->nmobj));
+
+	if (   value
+	    && !g_variant_is_of_type (value, meta_property->dbus_type)) {
+		NML_NMCLIENT_LOG_E (self, "[%s] property %s.%s expected of type \"%s\" but is \"%s\". Ignore",
+		                    dbobj->dbus_path->str,
+		                    meta_iface->dbus_iface_name,
+		                    meta_property->dbus_property_name,
+		                    (const char *) meta_property->dbus_type,
+		                    (const char *) g_variant_get_type (value));
+		value = NULL;
+	}
+
+	if (meta_property->use_notify_update_prop) {
+		notify_update_prop_flags = meta_property->notify_update_prop (self,
+		                                                              dbobj,
+		                                                              meta_iface,
+		                                                              dbus_property_idx,
+		                                                              value);
+		if (notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE)
+			return;
+
+		nm_assert (notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY);
+		nm_assert (G_IS_OBJECT (dbobj->nmobj));
+		nm_assert (meta_iface->obj_properties);
+		nm_assert (meta_property->obj_properties_idx > 0);
+		param_spec = meta_iface->obj_properties[meta_property->obj_properties_idx];
+		goto notify;
+	}
+
+	p_property = nml_dbus_object_get_property_location (dbobj, meta_iface, meta_property);
+
+	dbus_type_s = (const char *) meta_property->dbus_type;
+
+	nm_assert (G_IS_OBJECT (dbobj->nmobj));
+	nm_assert (meta_iface->obj_properties);
+	nm_assert (meta_property->obj_properties_idx > 0);
+	param_spec = meta_iface->obj_properties[meta_property->obj_properties_idx];
+
+	notify_update_prop_flags = NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+
+	switch (dbus_type_s[0]) {
+	case 'b':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((bool *) p_property) = g_variant_get_boolean (value);
+		else if (param_spec->value_type == G_TYPE_BOOLEAN)
+			*((bool *) p_property) = ((GParamSpecBoolean *) param_spec)->default_value;
+		else {
+			nm_assert_not_reached ();
+			*((bool *) p_property) = FALSE;
+		}
+		break;
+	case 'y':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((guint8 *) p_property) = g_variant_get_byte (value);
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((guint8 *) p_property) = 0;
+		}
+		break;
+	case 'q':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((guint16 *) p_property) = g_variant_get_uint16 (value);
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((guint16 *) p_property) = 0;
+		}
+		break;
+	case 'i':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((gint32 *) p_property) = g_variant_get_int32 (value);
+		else if (param_spec->value_type == G_TYPE_INT)
+			*((gint32 *) p_property) = ((GParamSpecInt *) param_spec)->default_value;
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((gint32 *) p_property) = 0;
+		}
+		break;
+	case 'u':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((guint32 *) p_property) = g_variant_get_uint32 (value);
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((guint32 *) p_property) = 0;
+		}
+		break;
+	case 'x':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((gint64 *) p_property) = g_variant_get_int64 (value);
+		else if (param_spec->value_type == G_TYPE_INT64)
+			*((gint64 *) p_property) = ((GParamSpecInt64 *) param_spec)->default_value;
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((gint64 *) p_property) = 0;
+		}
+		break;
+	case 't':
+		nm_assert (dbus_type_s[1] == '\0');
+		if (value)
+			*((guint64 *) p_property) = g_variant_get_uint64 (value);
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((guint64 *) p_property) = 0;
+		}
+		break;
+	case 's':
+		nm_assert (dbus_type_s[1] == '\0');
+		nm_clear_g_free ((char **) p_property);
+		if (value)
+			*((char **) p_property) = g_variant_dup_string (value, NULL);
+		else {
+			nm_assert (nm_utils_g_param_spec_is_default (param_spec));
+			*((char **) p_property) = NULL;
+		}
+		break;
+	case 'o':
+		nm_assert (dbus_type_s[1] == '\0');
+		notify_update_prop_flags = nml_dbus_property_o_notify (self,
+		                                                       p_property,
+		                                                       dbobj,
+		                                                       meta_iface,
+		                                                       dbus_property_idx,
+		                                                       value);
+		break;
+	case 'a':
+		switch (dbus_type_s[1]) {
+		case 'y':
+			nm_assert (dbus_type_s[2] == '\0');
+			{
+				gconstpointer v;
+				gsize l;
+				GBytes *b = NULL;
+
+				if (value) {
+					v = g_variant_get_fixed_array (value, &l, 1);
+
+					if (l > 0) {
+						/* empty arrays are coerced to NULL. */
+						b = g_bytes_new (v, l);
+					}
+				}
+
+				nm_clear_pointer ((GBytes **) p_property, g_bytes_unref);
+				*((GBytes **) p_property) = b;
+			}
+			break;
+		case 's':
+			nm_assert (dbus_type_s[2] == '\0');
+			nm_assert (param_spec->value_type == G_TYPE_STRV);
+
+			g_strfreev (*((char ***) p_property));
+			if (value)
+				*((char ***) p_property) = g_variant_dup_strv (value, NULL);
+			else
+				*((char ***) p_property) = NULL;
+			break;
+		case 'o':
+			nm_assert (dbus_type_s[2] == '\0');
+			notify_update_prop_flags = nml_dbus_property_ao_notify (self,
+			                                                        p_property,
+			                                                        dbobj,
+			                                                        meta_iface,
+			                                                        dbus_property_idx,
+			                                                        value);
+			break;
+		default:
+			nm_assert_not_reached ();
+		}
+		break;
+	default:
+		nm_assert_not_reached ();
+	}
+
+notify:
+	if (NM_FLAGS_HAS (notify_update_prop_flags, NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY))
+		g_object_notify_by_pspec (dbobj->nmobj, (GParamSpec *) param_spec);
+}
+
+static void
+_obj_handle_dbus_iface_changes (NMClient *self,
+                                NMLDBusObject *dbobj,
+                                NMLDBusObjIfaceData *db_iface_data)
+{
+	NMLDBusObjPropData *db_prop_data;
+	gboolean is_self = (G_OBJECT (self) == dbobj->nmobj);
+	gboolean is_removed;
+	gboolean type_compatible;
+	guint8 i_prop;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (is_self || NM_IS_OBJECT (dbobj->nmobj));
+
+	if (G_UNLIKELY (!db_iface_data->nmobj_checked)) {
+		db_iface_data->nmobj_checked = TRUE;
+		type_compatible =    db_iface_data->dbus_iface.meta->get_type_fcn
+		                  && g_type_is_a (G_OBJECT_TYPE (dbobj->nmobj), db_iface_data->dbus_iface.meta->get_type_fcn ());
+		db_iface_data->nmobj_compatible = type_compatible;
+	} else
+		type_compatible = db_iface_data->nmobj_compatible;
+
+	if (!type_compatible) {
+		/* on D-Bus, we have this interface associate with the object, but apparently
+		 * it is not compatible. This is either a bug, or NetworkManager exposed an
+		 * unexpected interface on D-Bus object for which we create a certain NMObject
+		 * type. */
+		return;
+	}
+
+	is_removed = c_list_is_empty (&db_iface_data->iface_lst);
+
+	nm_assert (   is_removed
+	           || !c_list_is_empty (&db_iface_data->changed_prop_lst_head));
+
+	_nm_client_queue_notify_object (self, dbobj->nmobj, NULL);
+
+	if (is_removed) {
+		for (i_prop = 0; i_prop < db_iface_data->dbus_iface.meta->n_dbus_properties; i_prop++) {
+			_obj_handle_dbus_prop_changes (self,
+			                               dbobj,
+			                               db_iface_data,
+			                               i_prop,
+			                               NULL);
+		}
+	} else {
+		while ((db_prop_data = c_list_first_entry (&db_iface_data->changed_prop_lst_head, NMLDBusObjPropData, changed_prop_lst))) {
+			gs_unref_variant GVariant *prop_data_value = NULL;
+
+			c_list_unlink (&db_prop_data->changed_prop_lst);
+
+			nm_assert (db_prop_data >= db_iface_data->prop_datas);
+			nm_assert (db_prop_data < &db_iface_data->prop_datas[db_iface_data->dbus_iface.meta->n_dbus_properties]);
+			nm_assert (db_prop_data->prop_data_value);
+
+			/* Currently NMLDBusObject forgets about the variant. Theoretically, it could cache
+			 * it, but there is no need because we update the property in nmobj (which extracts and
+			 * keeps the property value itself).
+			 *
+			 * Note that we only consume the variant here when we process it.
+			 * That implies that we already created a NMObject for the dbobj
+			 * instance. Unless that happens, we cache the last seen property values. */
+			prop_data_value = g_steal_pointer (&db_prop_data->prop_data_value);
+
+			i_prop = (db_prop_data - &db_iface_data->prop_datas[0]);
+			_obj_handle_dbus_prop_changes (self,
+			                               dbobj,
+			                               db_iface_data,
+			                               i_prop,
+			                               prop_data_value);
+		}
+	}
+}
+
+static void
+_obj_handle_dbus_changes (NMClient *self,
+                          NMLDBusObject *dbobj)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMLDBusObjIfaceData *db_iface_data;
+	NMLDBusObjIfaceData *db_iface_data_safe;
+	gs_unref_object GObject *nmobj_unregistering = NULL;
+
+	_ASSERT_dbobj (dbobj, self);
+
+	/* In a first step we only remember all the changes that that a D-Bus message brings
+	 * and queue the object to process them.
+	 *
+	 * Here (in step 2) we look at what changed on D-Bus and propagate those changes
+	 * to the NMObject instance.
+	 *
+	 * Note that here we still must not emit any GObject signals. That follows later,
+	 * and again if the object changes, we will just queue that we handle the changes
+	 * later. */
+
+	c_list_for_each_entry_safe (db_iface_data, db_iface_data_safe, &dbobj->iface_lst_head, iface_lst) {
+		if (!db_iface_data->iface_removed)
+			continue;
+		c_list_unlink (&db_iface_data->iface_lst);
+		if (   db_iface_data->dbus_iface_is_wellknown
+		    && dbobj->nmobj)
+			_obj_handle_dbus_iface_changes (self, dbobj, db_iface_data);
+		nml_dbus_obj_iface_data_destroy (db_iface_data);
+	}
+
+	if (   G_UNLIKELY (!dbobj->nmobj)
+	    && !c_list_is_empty (&dbobj->iface_lst_head)) {
+
+		/* Try to create a NMObject for this D-Bus object. Note that we detect the type
+		 * based on the interfaces that it has, and if we make a choice once, we don't
+		 * change. That means, one D-Bus object can only be of one type. */
+
+		if (NM_IN_SET (dbobj->dbus_path, _dbus_path_nm,
+		                                 _dbus_path_settings,
+		                                 _dbus_path_dns_manager)) {
+			/* For the main types, we don't detect them based on the interfaces present,
+			 * but on the path names. Of course, both should correspond anyway. */
+			NML_NMCLIENT_LOG_T (self, "[%s]: register NMClient for D-Bus object",
+			                    dbobj->dbus_path->str);
+			dbobj->nmobj = G_OBJECT (self);
+			if (dbobj->dbus_path == _dbus_path_nm) {
+				nm_assert (!priv->dbobj_nm);
+				priv->dbobj_nm = dbobj;
+			} else if (dbobj->dbus_path == _dbus_path_settings) {
+				nm_assert (!priv->dbobj_settings);
+				priv->dbobj_settings = dbobj;
+			} else {
+				nm_assert (dbobj->dbus_path == _dbus_path_dns_manager);
+				nm_assert (!priv->dbobj_dns_manager);
+				priv->dbobj_dns_manager = dbobj;
+			}
+			nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY, self);
+		} else {
+			GType gtype = G_TYPE_NONE;
+			NMLDBusMetaInteracePrio curr_prio = NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW - 1;
+
+			c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+				nm_assert (!db_iface_data->iface_removed);
+				if (!db_iface_data->dbus_iface_is_wellknown)
+					break;
+				if (db_iface_data->dbus_iface.meta->interface_prio <= curr_prio)
+					continue;
+				curr_prio = db_iface_data->dbus_iface.meta->interface_prio;
+				gtype = db_iface_data->dbus_iface.meta->get_type_fcn ();
+			}
+			if (gtype != G_TYPE_NONE) {
+				dbobj->nmobj = g_object_new (gtype, NULL);
+
+				NML_NMCLIENT_LOG_T (self, "[%s]: register new NMObject "NM_HASH_OBFUSCATE_PTR_FMT" of type %s",
+				                    dbobj->dbus_path->str,
+				                    NM_HASH_OBFUSCATE_PTR (dbobj->nmobj),
+				                    g_type_name (gtype));
+
+				nm_assert (NM_IS_OBJECT (dbobj->nmobj));
+				NM_OBJECT_GET_CLASS (dbobj->nmobj)->register_client (NM_OBJECT (dbobj->nmobj), self, dbobj);
+				nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY, self);
+			}
+		}
+	}
+
+	c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+		nm_assert (!db_iface_data->iface_removed);
+		if (!db_iface_data->dbus_iface_is_wellknown)
+			break;
+		if (c_list_is_empty (&db_iface_data->changed_prop_lst_head))
+			continue;
+		if (dbobj->nmobj)
+			_obj_handle_dbus_iface_changes (self, dbobj, db_iface_data);
+	}
+
+	if (   c_list_is_empty (&dbobj->iface_lst_head)
+	    && dbobj->nmobj) {
+
+		if (dbobj->nmobj == G_OBJECT (self)) {
+			dbobj->nmobj = NULL;
+			NML_NMCLIENT_LOG_T (self, "[%s]: unregister NMClient from D-Bus object",
+			                    dbobj->dbus_path->str);
+			if (dbobj->dbus_path == _dbus_path_nm) {
+				nm_assert (priv->dbobj_nm == dbobj);
+				priv->dbobj_nm = NULL;
+				nml_dbus_property_o_clear_many (priv->nm.property_o, G_N_ELEMENTS (priv->nm.property_o), self);
+				nml_dbus_property_ao_clear_many (priv->nm.property_ao, G_N_ELEMENTS (priv->nm.property_ao), self);
+			} else if (dbobj->dbus_path == _dbus_path_settings) {
+				nm_assert (priv->dbobj_settings == dbobj);
+				priv->dbobj_settings = NULL;
+				nml_dbus_property_ao_clear (&priv->settings.connections, self);
+			} else {
+				nm_assert (dbobj->dbus_path == _dbus_path_dns_manager);
+				nm_assert (priv->dbobj_dns_manager == dbobj);
+				priv->dbobj_dns_manager = NULL;
+			}
+		} else {
+			nmobj_unregistering = g_steal_pointer (&dbobj->nmobj);
+			nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_WATCHED_ONLY, self);
+			NML_NMCLIENT_LOG_T (self, "[%s]: unregister NMObject "NM_HASH_OBFUSCATE_PTR_FMT" of type %s",
+			                    dbobj->dbus_path->str,
+			                    NM_HASH_OBFUSCATE_PTR (nmobj_unregistering),
+			                    g_type_name (G_OBJECT_TYPE (nmobj_unregistering)));
+			NM_OBJECT_GET_CLASS (nmobj_unregistering)->unregister_client (NM_OBJECT (nmobj_unregistering), self, dbobj);
+		}
+	}
+
+	nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ);
+}
+
+/*****************************************************************************/
+
+static void
+_dbus_handle_obj_changed_nmobj (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	NMLDBusObject *dbobj;
+	CList obj_changed_tmp_lst_head = C_LIST_INIT (obj_changed_tmp_lst_head);
+
+	nm_assert (!nml_dbus_object_obj_changed_any_linked (self, ~NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ));
+
+	/* First we notify all watchers that these objects changed. Note that we only do that
+	 * here for the list before processing the changes below in a loop. That is, because
+	 * processing changes can again enqueue changed objects, and we only want to want to
+	 * notify watchers for the events that happened earlier (not repeatedly notify them). */
+	c_list_splice (&obj_changed_tmp_lst_head, &priv->obj_changed_lst_head);
+	while ((dbobj = c_list_first_entry (&obj_changed_tmp_lst_head, NMLDBusObject, obj_changed_lst))) {
+		nm_c_list_move_tail (&priv->obj_changed_lst_head, &dbobj->obj_changed_lst);
+		_dbobjs_notify_watchers_for_dbobj (self, dbobj);
+	}
+
+again:
+
+	nm_assert (!nml_dbus_object_obj_changed_any_linked (self, ~NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ));
+
+	c_list_splice (&obj_changed_tmp_lst_head, &priv->obj_changed_lst_head);
+
+	while ((dbobj = c_list_first_entry (&obj_changed_tmp_lst_head, NMLDBusObject, obj_changed_lst))) {
+
+		if (!nml_dbus_object_obj_changed_consume (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ)) {
+			nm_assert_not_reached ();
+			continue;
+		}
+
+		if (!dbobj->nmobj)
+			continue;
+
+		if (dbobj->nmobj == G_OBJECT (self)) {
+			if (dbobj == priv->dbobj_nm) {
+				nml_dbus_property_o_notify_changed_many (priv->nm.property_o, G_N_ELEMENTS (priv->nm.property_o), self);
+				nml_dbus_property_ao_notify_changed_many (priv->nm.property_ao, G_N_ELEMENTS (priv->nm.property_ao), self);
+			} else if (dbobj == priv->dbobj_settings)
+				nml_dbus_property_ao_notify_changed (&priv->settings.connections, self);
+			else
+				nm_assert (dbobj == priv->dbobj_dns_manager);
+		} else
+			NM_OBJECT_GET_CLASS (dbobj->nmobj)->obj_changed_notify (NM_OBJECT (dbobj->nmobj));
+
+		_dbobjs_check_dbobj_ready (self, dbobj);
+	}
+
+	if (!c_list_is_empty (&priv->obj_changed_lst_head)) {
+		nm_assert (nml_dbus_object_obj_changed_any_linked (self, NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ));
+		/* we got new changes enqueued. Need to check again. */
+		goto again;
+	}
+}
+
+static void
+_dbus_handle_obj_changed_dbus (NMClient *self,
+                               const char *log_context)
+{
+	NMClientPrivate *priv;
+	NMLDBusObject *dbobj;
+	CList obj_changed_tmp_lst_head = C_LIST_INIT (obj_changed_tmp_lst_head);
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	/* We move the changed list onto a temporary list and consume that.
+	 * Note that nml_dbus_object_obj_changed_consume() will move the object
+	 * back to the original list if there are changes of another type.
+	 *
+	 * This is done so that we can enqueue more changes while processing the
+	 * change list. */
+	c_list_splice (&obj_changed_tmp_lst_head, &priv->obj_changed_lst_head);
+
+	while ((dbobj = c_list_first_entry (&obj_changed_tmp_lst_head, NMLDBusObject, obj_changed_lst))) {
+		nm_auto_unref_nml_dbusobj NMLDBusObject *dbobj_unref = NULL;
+
+		if (!nml_dbus_object_obj_changed_consume (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_DBUS))
+			continue;
+
+		nm_assert (dbobj->obj_state >= NML_DBUS_OBJ_STATE_ON_DBUS);
+
+		dbobj_unref = nml_dbus_object_ref (dbobj);
+
+		_obj_handle_dbus_changes (self, dbobj);
+
+		if (dbobj->obj_state == NML_DBUS_OBJ_STATE_UNLINKED)
+			continue;
+
+		if (   c_list_is_empty (&dbobj->iface_lst_head)
+		    && c_list_is_empty (&dbobj->watcher_lst_head)) {
+			NML_NMCLIENT_LOG_T (self, "[%s]: drop D-Bus instance", dbobj->dbus_path->str);
+			nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_UNLINKED, self);
+			if (!g_hash_table_steal (priv->dbus_objects, dbobj))
+				nm_assert_not_reached ();
+			nml_dbus_object_unref (dbobj);
+		}
+	}
+
+	/* D-Bus changes can only be enqueued in an earlier stage. We don't expect
+	 * anymore changes of type D-Bus at this point. */
+	nm_assert (!nml_dbus_object_obj_changed_any_linked (self, NML_DBUS_OBJ_CHANGED_TYPE_DBUS));
+}
+
+static void
+_dbus_handle_changes_commit (NMClient *self,
+                             gboolean allow_init_start_check_complete)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
+
+	_dbus_handle_obj_changed_nmobj (self);
+
+	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->main_context);
+
+	_nm_client_notify_event_emit (self);
+
+	_set_nm_running (self);
+
+	if (allow_init_start_check_complete)
+		_init_start_check_complete (self);
+}
+
+static void
+_dbus_handle_changes (NMClient *self,
+                      const char *log_context,
+                      gboolean allow_init_start_check_complete)
+{
+	_dbus_handle_obj_changed_dbus (self, log_context);
+	_dbus_handle_changes_commit (self, allow_init_start_check_complete);
+}
+
+static gboolean
+_dbus_handle_properties_changed (NMClient *self,
+                                 const char *log_context,
+                                 const char *object_path,
+                                 const char *interface_name,
+                                 gboolean allow_add_iface,
+                                 GVariant *changed_properties,
+                                 NMLDBusObject **inout_dbobj)
+{
+	NMLDBusObject *dbobj = NULL;
+	NMLDBusObjIfaceData *db_iface_data = NULL;
+	nm_auto_ref_string NMRefString *dbus_path = NULL;
+
+	nm_assert (!changed_properties || g_variant_is_of_type (changed_properties, G_VARIANT_TYPE ("a{sv}")));
+
+	{
+		gs_free char *ss = NULL;
+
+		NML_NMCLIENT_LOG_T (self, "[%s]: %s: properties changed for interface %s { %s }",
+		                    object_path, log_context, interface_name,
+		                    (ss = g_variant_print (changed_properties, TRUE)));
+	}
+
+	if (inout_dbobj) {
+		dbobj = *inout_dbobj;
+		nm_assert (!dbobj || nm_streq (object_path, dbobj->dbus_path->str));
+	}
+	if (!dbobj) {
+		dbus_path = nm_ref_string_new (object_path);
+		dbobj = _dbobjs_dbobj_get_r (self, dbus_path);
+	}
+
+	if (dbobj)
+		db_iface_data = nml_dbus_object_iface_data_get (dbobj, interface_name, allow_add_iface);
+	else if (allow_add_iface) {
+		dbobj = _dbobjs_dbobj_create (self, g_steal_pointer (&dbus_path));
+		nml_dbus_object_set_obj_state (dbobj, NML_DBUS_OBJ_STATE_ON_DBUS, self);
+		db_iface_data = nml_dbus_object_iface_data_get (dbobj, interface_name, TRUE);
+	}
+
+	NM_SET_OUT (inout_dbobj, dbobj);
+
+	if (!db_iface_data) {
+		if (allow_add_iface)
+			NML_NMCLIENT_LOG_E (self, "%s: [%s] too many interfaces on object. Something is very wrong", log_context, object_path);
+		else
+			NML_NMCLIENT_LOG_E (self, "%s: [%s] property changed signal for non existing interface %s", log_context, object_path, interface_name);
+		nm_assert (   !dbobj
+		           || dbobj->obj_state != NML_DBUS_OBJ_STATE_UNLINKED);
+		return FALSE;
+	}
+
+	if (!db_iface_data->dbus_iface_is_wellknown)
+		NML_NMCLIENT_LOG_W (self, "%s: [%s] ignore unknown interface %s", log_context, object_path, interface_name);
+	else if (changed_properties) {
+		GVariantIter iter_prop;
+		const char *property_name;
+		GVariant *property_value_tmp;
+
+		g_variant_iter_init (&iter_prop, changed_properties);
+		while (g_variant_iter_next (&iter_prop, "{&sv}", &property_name, &property_value_tmp)) {
+			_nm_unused gs_unref_variant GVariant *property_value = property_value_tmp;
+			const NMLDBusMetaProperty *meta_property;
+			NMLDBusObjPropData *db_propdata;
+			guint property_idx;
+
+			meta_property = nml_dbus_meta_property_get (db_iface_data->dbus_iface.meta, property_name, &property_idx);
+			if (!meta_property) {
+				NML_NMCLIENT_LOG_W (self, "%s: [%s]: ignore unknown property %s.%s", log_context, object_path, interface_name, property_name);
+				continue;
+			}
+
+			db_propdata = &db_iface_data->prop_datas[property_idx];
+
+			NML_NMCLIENT_LOG_T (self, "[%s]: %s: %s property %s.%s",
+			                    object_path, log_context,
+			                    db_propdata->prop_data_value ? "update" : "set",
+			                    interface_name, property_name);
+
+			nm_g_variant_unref (db_propdata->prop_data_value);
+			db_propdata->prop_data_value = g_steal_pointer (&property_value);
+			nm_c_list_move_tail (&db_iface_data->changed_prop_lst_head, &db_propdata->changed_prop_lst);
+		}
+	}
+
+	nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_DBUS);
+	return TRUE;
+}
+
+static gboolean
+_dbus_handle_interface_added (NMClient *self,
+                              const char *log_context,
+                              const char *object_path,
+                              GVariant *ifaces)
+{
+	gboolean changed = FALSE;
+	const char *interface_name;
+	GVariant *changed_properties;
+	GVariantIter iter_ifaces;
+	NMLDBusObject *dbobj = NULL;
+
+	nm_assert (g_variant_is_of_type (ifaces, G_VARIANT_TYPE ("a{sa{sv}}")));
+
+	g_variant_iter_init (&iter_ifaces, ifaces);
+	while (g_variant_iter_next (&iter_ifaces, "{&s@a{sv}}", &interface_name, &changed_properties)) {
+		_nm_unused gs_unref_variant GVariant *changed_properties_free = changed_properties;
+
+		if (_dbus_handle_properties_changed (self, log_context, object_path, interface_name, TRUE, changed_properties, &dbobj))
+			changed = TRUE;
+	}
+
+	return changed;
+}
+
+static gboolean
+_dbus_handle_interface_removed (NMClient *self,
+                                const char *log_context,
+                                const char *object_path,
+                                NMLDBusObject **inout_dbobj,
+                                const char *const*removed_interfaces)
+{
+	gboolean changed = FALSE;
+	NMLDBusObject *dbobj;
+	gsize i;
+
+	if (   inout_dbobj
+	    && *inout_dbobj) {
+		dbobj = *inout_dbobj;
+		nm_assert (dbobj == _dbobjs_dbobj_get_s (self, object_path));
+	} else {
+		dbobj = _dbobjs_dbobj_get_s (self, object_path);
+		if (!dbobj) {
+			NML_NMCLIENT_LOG_E (self, "%s: [%s]: receive interface removed event for non existing object", log_context, object_path);
+			return FALSE;
+		}
+		NM_SET_OUT (inout_dbobj, dbobj);
+	}
+
+	for (i = 0; removed_interfaces[i]; i++) {
+		NMLDBusObjIfaceData *db_iface_data;
+		const char *interface_name = removed_interfaces[i];
+
+		db_iface_data = nml_dbus_object_iface_data_get (dbobj, interface_name, FALSE);
+		if (!db_iface_data) {
+			NML_NMCLIENT_LOG_E (self, "%s: [%s] receive interface remove event for unexpected interface %s", log_context, object_path, interface_name);
+			continue;
+		}
+
+		NML_NMCLIENT_LOG_T (self, "%s: [%s] receive interface remove event for interface %s", log_context, object_path, interface_name);
+		db_iface_data->iface_removed = TRUE;
+		changed = TRUE;
+	}
+
+	if (changed)
+		nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_DBUS);
+
+	return changed;
+}
+
+static void
+_dbus_managed_objects_changed_cb (const char *object_path,
+                                  GVariant *added_interfaces_and_properties,
+                                  const char *const*removed_interfaces,
+                                  gpointer user_data)
+{
+	NMClient *self = user_data;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	const char *log_context;
+	gboolean changed;
+
+	if (priv->get_managed_objects_cancellable) {
+		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
+		return;
+	}
+
+	if (!added_interfaces_and_properties) {
+		log_context = "interfaces-removed";
+		changed = _dbus_handle_interface_removed (self, log_context, object_path, NULL, removed_interfaces);
+	} else {
+		log_context = "interfaces-added";
+		changed = _dbus_handle_interface_added (self, log_context, object_path, added_interfaces_and_properties);
+	}
+
+	if (changed)
+		_dbus_handle_changes (self, log_context, TRUE);
+}
+
+static void
+_dbus_properties_changed_cb (GDBusConnection *connection,
+                             const char *sender_name,
+                             const char *object_path,
+                             const char *signal_interface_name,
+                             const char *signal_name,
+                             GVariant *parameters,
+                             gpointer user_data)
+{
+	NMClient *self = user_data;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	const char *interface_name;
+	gs_unref_variant GVariant *changed_properties = NULL;
+	gs_free const char **invalidated_properties = NULL;
+	const char *log_context = "properties-changed";
+
+	if (priv->get_managed_objects_cancellable) {
+		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
+		return;
+	}
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sa{sv}as)")))
+		return;
+
+	g_variant_get (parameters,
+	               "(&s@a{sv}^a&s)",
+	               &interface_name,
+	               &changed_properties,
+	               &invalidated_properties);
+
+	if (invalidated_properties && invalidated_properties[0]) {
+		NML_NMCLIENT_LOG_W (self, "%s: [%s] ignore invalidated properties on interface %s",
+		                    log_context, object_path, interface_name);
+	}
+
+	if (_dbus_handle_properties_changed (self, log_context, object_path, interface_name, FALSE, changed_properties, NULL))
+		_dbus_handle_changes (self, log_context, TRUE);
+}
+
+static void
+_dbus_get_managed_objects_cb (GVariant *result,
+                              GError *error,
+                              gpointer user_data)
+{
+	NMClient *self;
+	NMClientPrivate *priv;
+
+	if (   !result
+	    && nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	self = user_data;
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	g_clear_object (&priv->get_managed_objects_cancellable);
+
+	if (!result) {
+		NML_NMCLIENT_LOG_D (self, "GetManagedObjects() call failed: %s", error->message);
+		/* hm, now that's odd. Maybe NetworkManager just quit and we are about to get
+		 * a name-owner changed signal soon. Treat this as if we got no managed objects at all. */
+	} else
+		NML_NMCLIENT_LOG_D (self, "GetManagedObjects() completed");
+
+	if (result) {
+		GVariantIter iter;
+		const char *object_path;
+		GVariant *ifaces_tmp;
+
+		g_variant_iter_init (&iter, result);
+		while (g_variant_iter_next (&iter, "{&o@a{sa{sv}}}", &object_path, &ifaces_tmp)) {
+			gs_unref_variant GVariant *ifaces = ifaces_tmp;
+
+			_dbus_handle_interface_added (self, "get-managed-objects", object_path, ifaces);
+		}
+	}
+
+	/* always call _dbus_handle_changes(), even if nothing changed. We need this to complete
+	 * initialization. */
+	_dbus_handle_changes (self, "get-managed-objects", TRUE);
+}
+
+/*****************************************************************************/
+
+static void
+_nm_client_get_settings_call_cb (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	NMRemoteConnection *remote_connection;
+	NMClient *self;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *settings = NULL;
+	NMLDBusObject *dbobj;
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+	if (   !ret
+	    && nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	remote_connection = user_data;
+
+	self = _nm_object_get_client (remote_connection);
+
+	dbobj = _nm_object_get_dbobj (remote_connection);
+
+	_ASSERT_dbobj (dbobj, self);
+
+	if (!ret) {
+		NML_NMCLIENT_LOG_T (self, "[%s] GetSettings() completed with error: %s",
+		                    dbobj->dbus_path->str,
+		                    error->message);
+	} else {
+		NML_NMCLIENT_LOG_T (self, "[%s] GetSettings() completed with success",
+		                    dbobj->dbus_path->str);
+		g_variant_get (ret,
+		               "(@a{sa{sv}})",
+		               &settings);
+	}
+
+	_nm_remote_settings_get_settings_commit (remote_connection, settings);
+
+	_dbus_handle_changes_commit (self, TRUE);
+}
+
+void
+_nm_client_get_settings_call (NMClient *self,
+                              NMLDBusObject *dbobj)
+{
+	GCancellable *cancellable;
+
+	cancellable = _nm_remote_settings_get_settings_prepare (NM_REMOTE_CONNECTION (dbobj->nmobj));
+
+	_nm_client_dbus_call_simple (self,
+	                             cancellable,
+	                             dbobj->dbus_path->str,
+	                             NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                             "GetSettings",
+	                             g_variant_new ("()"),
+	                             G_VARIANT_TYPE ("(a{sa{sv}})"),
+	                             G_DBUS_CALL_FLAGS_NONE,
+	                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                             _nm_client_get_settings_call_cb,
+	                             dbobj->nmobj);
+}
+
+static void
+_dbus_settings_updated_cb (GDBusConnection *connection,
+                           const char *sender_name,
+                           const char *object_path,
+                           const char *signal_interface_name,
+                           const char *signal_name,
+                           GVariant *parameters,
+                           gpointer user_data)
+{
+	NMClient *self = user_data;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	const char *log_context = "settings-updated";
+	NMLDBusObject *dbobj;
+
+	if (priv->get_managed_objects_cancellable) {
+		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
+		return;
+	}
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("()")))
+		return;
+
+	dbobj = _dbobjs_dbobj_get_s (self, object_path);
+
+	if (   !dbobj
+	    || !NM_IS_REMOTE_CONNECTION (dbobj->nmobj)) {
+		NML_NMCLIENT_LOG_W (self, "%s: [%s] ignore Updated signal for non-existing setting",
+		                    log_context, object_path);
+		return;
+	}
+
+	NML_NMCLIENT_LOG_T (self, "%s: [%s] Updated signal received",
+	                    log_context, object_path);
+
+	_nm_client_get_settings_call (self, dbobj);
+}
+
+/*****************************************************************************/
+
+static void
+_dbus_nm_connection_active_state_changed_cb (GDBusConnection *connection,
+                                             const char *sender_name,
+                                             const char *object_path,
+                                             const char *signal_interface_name,
+                                             const char *signal_name,
+                                             GVariant *parameters,
+                                             gpointer user_data)
+{
+	NMClient *self = user_data;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	const char *log_context = "active-connection-state-changed";
+	NMLDBusObject *dbobj;
+	guint32 state;
+	guint32 reason;
+
+	if (priv->get_managed_objects_cancellable) {
+		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
+		return;
+	}
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(uu)"))) {
+		NML_NMCLIENT_LOG_E (self, "%s: [%s] ignore StateChanged signal with unexpected signature",
+		                    log_context, object_path);
+		return;
+	}
+
+	dbobj = _dbobjs_dbobj_get_s (self, object_path);
+
+	if (   !dbobj
+	    || !NM_IS_ACTIVE_CONNECTION (dbobj->nmobj)) {
+		NML_NMCLIENT_LOG_E (self, "%s: [%s] ignore StateChanged signal for non-existing active connection",
+		                    log_context, object_path);
+		return;
+	}
+
+	g_variant_get (parameters, "(uu)", &state, &reason);
+
+	NML_NMCLIENT_LOG_T (self, "%s: [%s] StateChanged signal received",
+	                    log_context, object_path);
+
+	_nm_active_connection_state_changed_commit (NM_ACTIVE_CONNECTION (dbobj->nmobj),
+	                                            state,
+	                                            reason);
+
+	_dbus_handle_changes_commit (self, TRUE);
+}
+
+/*****************************************************************************/
+
+static void
+_dbus_nm_vpn_connection_state_changed_cb (GDBusConnection *connection,
+                                          const char *sender_name,
+                                          const char *object_path,
+                                          const char *signal_interface_name,
+                                          const char *signal_name,
+                                          GVariant *parameters,
+                                          gpointer user_data)
+{
+	NMClient *self = user_data;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	const char *log_context = "vpn-connection-state-changed";
+	NMLDBusObject *dbobj;
+	guint32 state;
+	guint32 reason;
+
+	if (priv->get_managed_objects_cancellable) {
+		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
+		return;
+	}
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(uu)"))) {
+		NML_NMCLIENT_LOG_E (self, "%s: [%s] ignore VpnStateChanged signal with unexpected signature",
+		                    log_context, object_path);
+		return;
+	}
+
+	dbobj = _dbobjs_dbobj_get_s (self, object_path);
+
+	if (   !dbobj
+	    || !NM_IS_VPN_CONNECTION (dbobj->nmobj)) {
+		NML_NMCLIENT_LOG_E (self, "%s: [%s] ignore VpnStateChanged signal for non-existing vpn connection",
+		                    log_context, object_path);
+		return;
+	}
+
+	g_variant_get (parameters, "(uu)", &state, &reason);
+
+	NML_NMCLIENT_LOG_T (self, "%s: [%s] VpnStateChanged signal received",
+	                    log_context, object_path);
+
+	_nm_vpn_connection_state_changed_commit (NM_VPN_CONNECTION (dbobj->nmobj),
+	                                         state,
+	                                         reason);
+
+	_dbus_handle_changes_commit (self, TRUE);
+}
+
+/*****************************************************************************/
+
+static void
+_emit_permissions_changed (NMClient *self,
+                           GHashTable *permissions,
+                           gboolean force_unknown)
+{
+	GHashTableIter iter;
+	gpointer key;
+	gpointer value;
+
+	if (!permissions)
+		return;
+	if (self->obj_base.is_disposing)
+		return;
+
+	g_hash_table_iter_init (&iter, permissions);
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
+		g_signal_emit (self,
+		               signals[PERMISSION_CHANGED],
+		               0,
+		               GPOINTER_TO_UINT (key),
+		                 force_unknown
+		               ? (guint) NM_CLIENT_PERMISSION_NONE
+		               : GPOINTER_TO_UINT (value));
+	}
+}
+
+
+static void
+_dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
+	NMClient *self;
+	NMClientPrivate *priv;
+	gs_unref_variant GVariant *ret = NULL;
+	nm_auto_free_variant_iter GVariantIter *v_permissions = NULL;
+	gs_unref_hashtable GHashTable *old_permissions = NULL;
+	gs_free_error GError *error = NULL;
+	const char *pkey;
+	const char *pvalue;
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+	if (   !ret
+	    && nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	self = user_data;
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	g_clear_object (&priv->permissions_cancellable);
+
+	if (!ret) {
+		NML_NMCLIENT_LOG_T (self, "GetPermissions call failed: %s", error->message);
+		return;
+	}
+
+	NML_NMCLIENT_LOG_T (self, "GetPermissions call finished with success");
+
+	/* get list of old permissions for change notification */
+	old_permissions = g_steal_pointer (&priv->permissions);
+	priv->permissions = g_hash_table_new (nm_direct_hash, NULL);
+
+	g_variant_get (ret, "(a{ss})", &v_permissions);
+	while (g_variant_iter_next (v_permissions, "{&s&s}", &pkey, &pvalue)) {
+		NMClientPermission perm;
+		NMClientPermissionResult perm_result;
+
+		perm = nm_permission_to_client (pkey);
+		if (perm == NM_CLIENT_PERMISSION_NONE)
+			continue;
+
+		perm_result = nm_permission_result_to_client (pvalue);
+
+		g_hash_table_insert (priv->permissions,
+		                     GUINT_TO_POINTER (perm),
+		                     GUINT_TO_POINTER (perm_result));
+		if (old_permissions) {
+			g_hash_table_remove (old_permissions,
+			                     GUINT_TO_POINTER (perm));
+		}
+	}
+
+	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->main_context);
+	_emit_permissions_changed (self, priv->permissions, FALSE);
+	_emit_permissions_changed (self, old_permissions, TRUE);
+}
+
+static void
+_dbus_check_permissions_start (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	nm_clear_g_cancellable (&priv->permissions_cancellable);
+	priv->permissions_cancellable = g_cancellable_new ();
+
+	NML_NMCLIENT_LOG_T (self, "GetPermissions() call started...");
+
+	_nm_client_dbus_call_simple (self,
+	                             priv->permissions_cancellable,
+	                             NM_DBUS_PATH,
+	                             NM_DBUS_INTERFACE,
+	                             "GetPermissions",
+	                             g_variant_new ("()"),
+	                             G_VARIANT_TYPE ("(a{ss})"),
+	                             G_DBUS_CALL_FLAGS_NONE,
+	                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                             _dbus_check_permissions_start_cb,
+	                             self);
+}
+
+static void
+_dbus_nm_check_permissions_cb (GDBusConnection *connection,
+                               const char *sender_name,
+                               const char *object_path,
+                               const char *signal_interface_name,
+                               const char *signal_name,
+                               GVariant *parameters,
+                               gpointer user_data)
+{
+	NMClient *self = user_data;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("()"))) {
+		NML_NMCLIENT_LOG_E (self, "ignore CheckPermissions signal with unexpected signature %s",
+		                    g_variant_get_type_string (parameters));
+		return;
+	}
+
+	_dbus_check_permissions_start (self);
+}
+
+/*****************************************************************************/
+
+static void
+_property_ao_notify_changed_connections_cb (NMLDBusPropertyAO *pr_ao,
+                                            NMClient *self,
+                                            NMObject *nmobj,
+                                            gboolean is_added /* or else removed */)
+{
+	_nm_client_notify_event_queue_emit_obj_signal (self,
+	                                               G_OBJECT (self),
+	                                               nmobj,
+	                                               is_added,
+	                                               5,
+	                                                 is_added
+	                                               ? signals[CONNECTION_ADDED]
+	                                               : signals[CONNECTION_REMOVED]);
+}
+
+static void
+_property_ao_notify_changed_all_devices_cb (NMLDBusPropertyAO *pr_ao,
+                                            NMClient *self,
+                                            NMObject *nmobj,
+                                            gboolean is_added /* or else removed */)
+{
+	_nm_client_notify_event_queue_emit_obj_signal (self,
+	                                               G_OBJECT (self),
+	                                               nmobj,
+	                                               is_added,
+	                                               6,
+	                                                 is_added
+	                                               ? signals[ANY_DEVICE_ADDED]
+	                                               : signals[ANY_DEVICE_REMOVED]);
+}
+
+static void
+_property_ao_notify_changed_devices_cb (NMLDBusPropertyAO *pr_ao,
+                                        NMClient *self,
+                                        NMObject *nmobj,
+                                        gboolean is_added /* or else removed */)
+{
+	_nm_client_notify_event_queue_emit_obj_signal (self,
+	                                               G_OBJECT (self),
+	                                               nmobj,
+	                                               is_added,
+	                                               7,
+	                                                 is_added
+	                                               ? signals[DEVICE_ADDED]
+	                                               : signals[DEVICE_REMOVED]);
+}
+
+static void
+_property_ao_notify_changed_active_connections_cb (NMLDBusPropertyAO *pr_ao,
+                                                  NMClient *self,
+                                                  NMObject *nmobj,
+                                                  gboolean is_added /* or else removed */)
+{
+	_nm_client_notify_event_queue_emit_obj_signal (self,
+	                                               G_OBJECT (self),
+	                                               nmobj,
+	                                               is_added,
+	                                               8,
+	                                                 is_added
+	                                               ? signals[ACTIVE_CONNECTION_ADDED]
+	                                               : signals[ACTIVE_CONNECTION_REMOVED]);
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	NMLDBusObjWatcherWithPtr *obj_watcher;
+	const char *op_name;
+	NMLDBusObject *dbobj;
+	GTask *task;
+	GVariant *extra_results;
+	gpointer result;
+	GType gtype;
+	gulong cancellable_id;
+} RequestWaitData;
+
+static void
+_request_wait_data_free (RequestWaitData *request_data)
+{
+	nm_assert (!request_data->obj_watcher);
+	nm_assert (request_data->cancellable_id == 0);
+	nm_assert (!request_data->task || G_IS_TASK (request_data->task));
+
+	nm_g_object_unref (request_data->task);
+	nm_g_object_unref (request_data->result);
+	nm_g_variant_unref (request_data->extra_results);
+	if (request_data->dbobj)
+		nml_dbus_object_unref (request_data->dbobj);
+	nm_g_slice_free (request_data);
+}
+
+static void
+_request_wait_task_return (RequestWaitData *request_data)
+{
+	gs_unref_object GTask *task = NULL;
+
+	nm_assert (request_data);
+	nm_assert (G_IS_TASK (request_data->task));
+	nm_assert (request_data->dbobj);
+	nm_assert (NM_IS_OBJECT (request_data->dbobj->nmobj));
+	nm_assert (!request_data->result);
+
+	task = g_steal_pointer (&request_data->task);
+
+	request_data->result = g_object_ref (request_data->dbobj->nmobj);
+	nm_clear_g_signal_handler (g_task_get_cancellable (task), &request_data->cancellable_id);
+	nm_clear_pointer (&request_data->dbobj, nml_dbus_object_unref);
+	g_task_return_pointer (task, request_data, (GDestroyNotify) _request_wait_data_free);
+}
+
+static gboolean
+_request_wait_complete (NMClient *self,
+                        RequestWaitData *request_data,
+                        gboolean force_complete)
+{
+	NMLDBusObject *dbobj;
+
+	nm_assert (request_data);
+	nm_assert (!request_data->result);
+	nm_assert (!request_data->obj_watcher);
+	nm_assert (request_data->dbobj);
+
+	dbobj = request_data->dbobj;
+
+	if (dbobj->obj_state == NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY) {
+		NML_NMCLIENT_LOG_D (self, "%s() succeeded with %s", request_data->op_name, dbobj->dbus_path->str);
+		nm_assert (G_TYPE_CHECK_INSTANCE_TYPE (dbobj->nmobj, request_data->gtype));
+		_request_wait_task_return (request_data);
+		return TRUE;
+	}
+
+	if (   force_complete
+	    || dbobj->obj_state != NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY) {
+		if (force_complete)
+			NML_NMCLIENT_LOG_D (self, "%s() succeeded with %s but object is in an unsuitable state", request_data->op_name, dbobj->dbus_path->str);
+		else
+			NML_NMCLIENT_LOG_W (self, "%s() succeeded with %s but object is in an unsuitable state", request_data->op_name, dbobj->dbus_path->str);
+
+		g_task_return_error (request_data->task, g_error_new (NM_CLIENT_ERROR,
+		                                                      NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+		                                                      _("request succeeded with %s but object is in an unsuitable state"),
+		                                                      dbobj->dbus_path->str));
+		_request_wait_data_free (request_data);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static void
+_request_wait_complete_cb (NMClient *self,
+                           NMClientNotifyEventWithPtr *notify_event)
+{
+	_request_wait_complete (self,
+	                        notify_event->user_data,
+	                        TRUE);
+}
+
+static void
+_request_wait_obj_watcher_cb (NMClient *self,
+                              gpointer obj_watcher_base)
+{
+	NMLDBusObjWatcherWithPtr *obj_watcher = obj_watcher_base;
+	RequestWaitData *request_data = obj_watcher->user_data;
+	NMLDBusObject *dbobj;
+
+	dbobj = request_data->dbobj;
+
+	if (dbobj->obj_state == NML_DBUS_OBJ_STATE_WITH_NMOBJ_NOT_READY)
+		return;
+
+	nm_assert (NM_IN_SET ((NMLDBusObjState) dbobj->obj_state, NML_DBUS_OBJ_STATE_WATCHED_ONLY,
+	                                                          NML_DBUS_OBJ_STATE_ON_DBUS,
+	                                                          NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY));
+
+	_dbobjs_obj_watcher_unregister (self, g_steal_pointer (&request_data->obj_watcher));
+
+	nm_clear_g_signal_handler (g_task_get_cancellable (request_data->task), &request_data->cancellable_id);
+
+	_nm_client_notify_event_queue_with_ptr (self,
+	                                        NM_CLIENT_NOTIFY_EVENT_PRIO_AFTER + 30,
+	                                        _request_wait_complete_cb,
+	                                        request_data);
+}
+
+static void
+_request_wait_cancelled_cb (GCancellable *cancellable,
+                            gpointer user_data)
+{
+	RequestWaitData *request_data = user_data;
+	NMClient *self;
+	GError *error = NULL;
+
+	nm_assert (cancellable == g_task_get_cancellable (request_data->task));
+
+	nm_utils_error_set_cancelled (&error, FALSE, NULL);
+
+	self = g_task_get_source_object (request_data->task);
+
+	nm_clear_g_signal_handler (cancellable, &request_data->cancellable_id);
+
+	_dbobjs_obj_watcher_unregister (self, g_steal_pointer (&request_data->obj_watcher));
+
+	g_task_return_error (request_data->task, error);
+
+	_request_wait_data_free (request_data);
+}
+
+static void
+_request_wait_start (GTask *task_take,
+                     const char *op_name,
+                     GType gtype,
+                     const char *dbus_path,
+                     GVariant *extra_results_take)
+{
+	NMClient *self;
+	gs_unref_object GTask *task = g_steal_pointer (&task_take);
+	RequestWaitData *request_data;
+	GCancellable *cancellable;
+	NMLDBusObject *dbobj;
+
+	nm_assert (G_IS_TASK (task));
+
+	self = g_task_get_source_object (task);
+
+	dbobj = _dbobjs_get_nmobj (self, dbus_path, gtype);
+
+	if (!dbobj) {
+		NML_NMCLIENT_LOG_E (self, "%s() succeeded with %s but object does not exist", op_name, dbus_path);
+		g_task_return_error (task, g_error_new (NM_CLIENT_ERROR,
+		                                        NM_CLIENT_ERROR_FAILED,
+		                                        _("operation succeeded but object %s does not exist"),
+		                                        dbus_path));
+		return;
+	}
+
+	request_data = g_slice_new (RequestWaitData);
+	*request_data = (RequestWaitData) {
+		.task           = g_steal_pointer (&task),
+		.op_name        = op_name,
+		.gtype          = gtype,
+		.dbobj          = nml_dbus_object_ref (dbobj),
+		.obj_watcher    = NULL,
+		.extra_results  = g_steal_pointer (&extra_results_take),
+		.result         = NULL,
+		.cancellable_id = 0,
+	};
+
+	if (_request_wait_complete (self, request_data, FALSE))
+		return;
+
+	NML_NMCLIENT_LOG_T (self, "%s() succeeded with %s. Wait for object to become ready", op_name, dbobj->dbus_path->str);
+
+	request_data->obj_watcher = _dbobjs_obj_watcher_register_o (self,
+	                                                            dbobj,
+	                                                            _request_wait_obj_watcher_cb,
+	                                                            sizeof (NMLDBusObjWatcherWithPtr));
+	request_data->obj_watcher->user_data = request_data;
+
+	cancellable = g_task_get_cancellable (request_data->task);
+	if (cancellable) {
+		gulong id;
+
+		id = g_cancellable_connect (cancellable,
+		                            G_CALLBACK (_request_wait_cancelled_cb),
+		                            request_data,
+		                            NULL);
+		if (id == 0) {
+			/* the callback was invoked synchronously, which destroyed @request_data.
+			 * We must not touch @info anymore. */
+		} else
+			request_data->cancellable_id = id;
+	}
+}
+
+static gpointer *
+_request_wait_finish (NMClient *client,
+                      GAsyncResult *result,
+                      gpointer source_tag,
+                      GVariant **out_result,
+                      GError **error)
+{
+	RequestWaitData *request_data = NULL;
+	gpointer r;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, source_tag), NULL);
+
+	request_data = g_task_propagate_pointer (G_TASK (result), error);
+	if (!request_data) {
+		NM_SET_OUT (out_result, NULL);
+		return NULL;
+	}
+
+	nm_assert (NM_IS_OBJECT (request_data->result));
+
+	NM_SET_OUT (out_result, g_steal_pointer (&request_data->extra_results));
+	r = g_steal_pointer (&request_data->result);
+
+	_request_wait_data_free (request_data);
+	return r;
+}
+
+/*****************************************************************************/
 
 /**
  * nm_client_get_dbus_connection:
@@ -257,8 +3623,7 @@ nm_client_get_dbus_name_owner (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	/* FIXME(release-blocker): not yet implemented. */
-	return NULL;
+	return NM_CLIENT_GET_PRIVATE (client)->name_owner;
 }
 
 /**
@@ -274,10 +3639,7 @@ nm_client_get_version (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return nm_manager_get_version (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.version;
 }
 
 /**
@@ -293,10 +3655,7 @@ nm_client_get_state (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
 
-	if (!nm_client_get_nm_running (client))
-		return NM_STATE_UNKNOWN;
-
-	return nm_manager_get_state (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.state;
 }
 
 /**
@@ -313,10 +3672,20 @@ nm_client_get_startup (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
+	return NM_CLIENT_GET_PRIVATE (client)->nm.startup;
+}
 
-	return nm_manager_get_startup (NM_CLIENT_GET_PRIVATE (client)->manager);
+static void
+_set_nm_running (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	gboolean nm_running;
+
+	nm_running = priv->name_owner && !priv->get_managed_objects_cancellable;
+	if (priv->nm_running != nm_running) {
+		priv->nm_running = nm_running;
+		_notify (self, PROP_NM_RUNNING);
+	}
 }
 
 /**
@@ -332,7 +3701,23 @@ nm_client_get_nm_running (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	return NM_CLIENT_GET_PRIVATE (client)->manager != NULL;
+	return NM_CLIENT_GET_PRIVATE (client)->nm_running;
+}
+
+/**
+ * nm_client_get_metered:
+ * @client: a #NMClient
+ *
+ * Returns: whether the default route is metered.
+ *
+ * Since: 1.22
+ */
+NMMetered
+nm_client_get_metered (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_METERED_UNKNOWN);
+
+	return NM_CLIENT_GET_PRIVATE (client)->nm.metered;
 }
 
 /**
@@ -348,10 +3733,7 @@ nm_client_networking_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_networking_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.networking_enabled;
 }
 
 /**
@@ -371,22 +3753,20 @@ nm_client_networking_get_enabled (NMClient *client)
 gboolean
 nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
-	const char *name_owner;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	/* FIXME(libnm-async-api): add nm_client_networking_set_enabled_async(). */
 
-	name_owner = _nm_client_get_dbus_name_owner (client);
-	if (!name_owner) {
-		_nm_object_set_error_nm_not_running (error);
-		return FALSE;
-	}
-
-	return _nm_manager_networking_set_enabled (_nm_client_get_dbus_connection (client),
-	                                           name_owner,
-	                                           enable,
-	                                           error);
+	return _nm_client_dbus_call_sync_void (client,
+	                                       NULL,
+	                                       NM_DBUS_PATH,
+	                                       NM_DBUS_INTERFACE,
+	                                       "Enable",
+	                                       g_variant_new ("(b)", enable),
+	                                       G_DBUS_CALL_FLAGS_NONE,
+	                                       NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                       TRUE,
+	                                       error);
 }
 
 /**
@@ -402,10 +3782,7 @@ nm_client_wireless_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_wireless_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.wireless_enabled;
 }
 
 /**
@@ -423,10 +3800,13 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 	g_return_if_fail (NM_IS_CLIENT (client));
 
 	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
-	if (!nm_client_get_nm_running (client))
-		return;
 
-	nm_manager_wireless_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager, enabled);
+	_nm_client_set_property_sync_legacy (client,
+	                                     NM_DBUS_PATH,
+	                                     NM_DBUS_INTERFACE,
+	                                     "WirelessEnabled",
+	                                     "b",
+	                                     enabled);
 }
 
 /**
@@ -442,10 +3822,7 @@ nm_client_wireless_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_wireless_hardware_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.wireless_hardware_enabled;
 }
 
 /**
@@ -461,10 +3838,7 @@ nm_client_wwan_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_wwan_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.wwan_enabled;
 }
 
 /**
@@ -479,10 +3853,14 @@ nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!_nm_client_check_nm_running (client, NULL))
-		return;
+	/* FIXME(libnm-async-api): add nm_client_wwan_set_enabled_async(). */
 
-	nm_manager_wwan_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager, enabled);
+	_nm_client_set_property_sync_legacy (client,
+	                                     NM_DBUS_PATH,
+	                                     NM_DBUS_INTERFACE,
+	                                     "WwanEnabled",
+	                                     "b",
+	                                     enabled);
 }
 
 /**
@@ -498,10 +3876,7 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_wwan_hardware_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.wwan_hardware_enabled;
 }
 
 /**
@@ -572,10 +3947,7 @@ nm_client_connectivity_check_get_available (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_connectivity_check_get_available (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.connectivity_check_available;
 }
 
 /**
@@ -593,10 +3965,7 @@ nm_client_connectivity_check_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client))
-		return FALSE;
-
-	return nm_manager_connectivity_check_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.connectivity_check_enabled;
 }
 
 /**
@@ -615,10 +3984,14 @@ nm_client_connectivity_check_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!nm_client_get_nm_running (client))
-		return;
+	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
 
-	nm_manager_connectivity_check_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager, enabled);
+	_nm_client_set_property_sync_legacy (client,
+	                                     NM_DBUS_PATH,
+	                                     NM_DBUS_INTERFACE,
+	                                     "ConnectivityCheckEnabled",
+	                                     "b",
+	                                     enabled);
 }
 
 /**
@@ -637,10 +4010,7 @@ nm_client_connectivity_check_get_uri (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return nm_manager_connectivity_check_get_uri (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.connectivity_check_uri;
 }
 
 /**
@@ -672,7 +4042,7 @@ nm_client_get_logging (NMClient *client,
 
 	/* FIXME(libnm-async-api): add nm_client_get_logging_async(). */
 
-	ret = _nm_object_dbus_call_sync (client,
+	ret = _nm_client_dbus_call_sync (client,
 	                                 NULL,
 	                                 NM_DBUS_PATH,
 	                                 NM_DBUS_INTERFACE,
@@ -715,7 +4085,7 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 
 	/* FIXME(libnm-async-api): add nm_client_set_logging_async(). */
 
-	return _nm_object_dbus_call_sync_void (client,
+	return _nm_client_dbus_call_sync_void (client,
 	                                       NULL,
 	                                       NM_DBUS_PATH,
 	                                       NM_DBUS_INTERFACE,
@@ -742,12 +4112,19 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 NMClientPermissionResult
 nm_client_get_permission_result (NMClient *client, NMClientPermission permission)
 {
+	NMClientPrivate *priv;
+	gpointer result;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
 
-	if (!nm_client_get_nm_running (client))
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (   !priv->permissions
+	    || !g_hash_table_lookup_extended (priv->permissions,
+	                                      GUINT_TO_POINTER (permission),
+	                                      NULL,
+	                                      &result))
 		return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
-
-	return nm_manager_get_permission_result (NM_CLIENT_GET_PRIVATE (client)->manager, permission);
+	return GPOINTER_TO_UINT (result);
 }
 
 /**
@@ -766,10 +4143,7 @@ nm_client_get_connectivity (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
 
-	if (!nm_client_get_nm_running (client))
-		return NM_CONNECTIVITY_UNKNOWN;
-
-	return nm_manager_get_connectivity (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return NM_CLIENT_GET_PRIVATE (client)->nm.connectivity;
 }
 
 /**
@@ -794,12 +4168,13 @@ nm_client_check_connectivity (NMClient *client,
                               GCancellable *cancellable,
                               GError **error)
 {
+	NMClientPrivate *priv;
 	gs_unref_variant GVariant *ret = NULL;
 	guint32 connectivity;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
 
-	ret = _nm_object_dbus_call_sync (client,
+	ret = _nm_client_dbus_call_sync (client,
 	                                 cancellable,
 	                                 NM_DBUS_PATH,
 	                                 NM_DBUS_INTERFACE,
@@ -822,8 +4197,13 @@ nm_client_check_connectivity (NMClient *client,
 	 * "PropertiesChanged" signals).
 	 *
 	 * This is really ugly, we shouldn't do this. */
-	_nm_manager_set_connectivity_hack (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                   connectivity);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (priv->nm.connectivity != connectivity) {
+		priv->nm.connectivity = connectivity;
+		_notify (client, PROP_CONNECTIVITY);
+	}
 
 	return connectivity;
 }
@@ -849,7 +4229,8 @@ nm_client_check_connectivity_async (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_check_connectivity_async,
 	                      cancellable,
 	                      callback,
@@ -920,7 +4301,7 @@ nm_client_save_hostname (NMClient *client,
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	return _nm_object_dbus_call_sync_void (client,
+	return _nm_client_dbus_call_sync_void (client,
 	                                       cancellable,
 	                                       NM_DBUS_PATH_SETTINGS,
 	                                       NM_DBUS_INTERFACE_SETTINGS,
@@ -954,7 +4335,8 @@ nm_client_save_hostname_async (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_save_hostname_async,
 	                      cancellable,
 	                      callback,
@@ -1012,10 +4394,7 @@ nm_client_get_devices (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return &empty;
-
-	return nm_manager_get_devices (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_CLIENT_GET_PRIVATE (client)->nm.property_ao[PROPERTY_AO_IDX_DEVICES]);
 }
 
 /**
@@ -1043,10 +4422,7 @@ nm_client_get_all_devices (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return &empty;
-
-	return nm_manager_get_all_devices (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_CLIENT_GET_PRIVATE (client)->nm.property_ao[PROPERTY_AO_IDX_ALL_DEVICES]);
 }
 
 /**
@@ -1064,10 +4440,7 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 	g_return_val_if_fail (object_path, NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return nm_manager_get_device_by_path (NM_CLIENT_GET_PRIVATE (client)->manager, object_path);
+	return _dbobjs_get_nmobj_unpack_visible (client, object_path, NM_TYPE_DEVICE);
 }
 
 /**
@@ -1082,13 +4455,21 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 NMDevice *
 nm_client_get_device_by_iface (NMClient *client, const char *iface)
 {
+	const GPtrArray *devices;
+	guint i;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 	g_return_val_if_fail (iface, NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
+	devices = nm_client_get_devices (client);
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *candidate = g_ptr_array_index (devices, i);
 
-	return nm_manager_get_device_by_iface (NM_CLIENT_GET_PRIVATE (client)->manager, iface);
+		if (nm_streq0 (nm_device_get_iface (candidate), iface))
+			return candidate;
+	}
+
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -1110,10 +4491,7 @@ nm_client_get_active_connections (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return &empty;
-
-	return nm_manager_get_active_connections (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_CLIENT_GET_PRIVATE (client)->nm.property_ao[PROPERTY_AO_IDX_ACTIVE_CONNECTIONS]);
 }
 
 /**
@@ -1140,10 +4518,7 @@ nm_client_get_primary_connection (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return nm_manager_get_primary_connection (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return nml_dbus_property_o_get_obj (&NM_CLIENT_GET_PRIVATE (client)->nm.property_o[PROPERTY_O_IDX_NM_PRIMAY_CONNECTION]);
 }
 
 /**
@@ -1162,18 +4537,16 @@ nm_client_get_activating_connection (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return nm_manager_get_activating_connection (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return nml_dbus_property_o_get_obj (&NM_CLIENT_GET_PRIVATE (client)->nm.property_o[PROPERTY_O_IDX_NM_ACTIVATING_CONNECTION]);
 }
+
+/*****************************************************************************/
 
 static void
 activate_connection_cb (GObject *object,
                         GAsyncResult *result,
                         gpointer user_data)
 {
-	NMClient *self;
 	gs_unref_object GTask *task = user_data;
 	gs_unref_variant GVariant *ret = NULL;
 	const char *v_active_connection;
@@ -1181,20 +4554,19 @@ activate_connection_cb (GObject *object,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
 	if (!ret) {
-		g_dbus_error_strip_remote_error (error);
+		if (!nm_utils_error_is_cancelled (error, FALSE))
+			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
 	}
 
-	self = g_task_get_source_object (task);
-
 	g_variant_get (ret, "(&o)", &v_active_connection);
 
-	nm_manager_wait_for_active_connection (NM_CLIENT_GET_PRIVATE (self)->manager,
-	                                       v_active_connection,
-	                                       NULL,
-	                                       NULL,
-	                                       g_steal_pointer (&task));
+	_request_wait_start (g_steal_pointer (&task),
+	                     "ActivateConnection",
+	                     NM_TYPE_ACTIVE_CONNECTION,
+	                     v_active_connection,
+	                     NULL);
 }
 
 /**
@@ -1256,7 +4628,13 @@ nm_client_activate_connection_async (NMClient *client,
 		g_return_if_fail (arg_device);
 	}
 
-	_nm_object_dbus_call (client,
+	NML_NMCLIENT_LOG_T (client, "ActivateConnection() for connection \"%s\", device \"%s\", specific_object \"%s",
+	                    arg_connection ?: "/",
+	                    arg_device ?: "/",
+	                    specific_object ?: "/");
+
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_activate_connection_async,
 	                      cancellable,
 	                      callback,
@@ -1290,16 +4668,14 @@ nm_client_activate_connection_finish (NMClient *client,
                                       GAsyncResult *result,
                                       GError **error)
 {
-	nm_auto_free_activate_result _NMActivateResult *r = NULL;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_activate_connection_async), NULL);
-
-	r = g_task_propagate_pointer (G_TASK (result), error);
-	if (!r)
-		return NULL;
-	return g_steal_pointer (&r->active);
+	return NM_ACTIVE_CONNECTION (_request_wait_finish (client,
+	                                                   result,
+	                                                   nm_client_activate_connection_async,
+	                                                   NULL,
+	                                                   error));
 }
+
+/*****************************************************************************/
 
 static void
 _add_and_activate_connection_done (GObject *object,
@@ -1308,21 +4684,19 @@ _add_and_activate_connection_done (GObject *object,
                                    GTask *task_take)
 {
 	_nm_unused gs_unref_object GTask *task = task_take;
-	NMClient *self;
 	gs_unref_variant GVariant *ret = NULL;
 	GError *error = NULL;
-	const char *v_path;
-	const char *v_active_connection;
 	gs_unref_variant GVariant *v_result = NULL;
+	const char *v_active_connection;
+	const char *v_path;
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
 	if (!ret) {
-		g_dbus_error_strip_remote_error (error);
+		if (!nm_utils_error_is_cancelled (error, FALSE))
+			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
 	}
-
-	self = g_task_get_source_object (task);
 
 	if (use_add_and_activate_v2) {
 		g_variant_get (ret,
@@ -1337,11 +4711,11 @@ _add_and_activate_connection_done (GObject *object,
 		               &v_active_connection);
 	}
 
-	nm_manager_wait_for_active_connection (NM_CLIENT_GET_PRIVATE (self)->manager,
-	                                       v_active_connection,
-	                                       v_path,
-	                                       g_steal_pointer (&v_result),
-	                                       g_steal_pointer (&task));
+	_request_wait_start (g_steal_pointer (&task),
+	                     "AddAndActivateConnection",
+	                     NM_TYPE_ACTIVE_CONNECTION,
+	                     v_active_connection,
+	                     g_steal_pointer (&v_result));
 }
 
 static void
@@ -1357,7 +4731,7 @@ _add_and_activate_connection_v2_cb (GObject *object, GAsyncResult *result, gpoin
 }
 
 static void
-_add_and_activate_connection (NMClient *client,
+_add_and_activate_connection (NMClient *self,
                               gboolean is_v2,
                               NMConnection *partial,
                               NMDevice *device,
@@ -1372,7 +4746,7 @@ _add_and_activate_connection (NMClient *client,
 	const char *arg_device = NULL;
 	gpointer source_tag;
 
-	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_CLIENT (self));
 	g_return_if_fail (!partial || NM_IS_CONNECTION (partial));
 
 	if (device) {
@@ -1401,8 +4775,11 @@ _add_and_activate_connection (NMClient *client,
 		source_tag = nm_client_add_and_activate_connection_async;
 	}
 
+	NML_NMCLIENT_LOG_D (self, "AddAndActivateConnection() started...");
+
 	if (use_add_and_activate_v2) {
-		_nm_object_dbus_call (client,
+		_nm_client_dbus_call (self,
+		                      self,
 		                      source_tag,
 		                      cancellable,
 		                      callback,
@@ -1420,7 +4797,8 @@ _add_and_activate_connection (NMClient *client,
 		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
 		                      _add_and_activate_connection_v2_cb);
 	} else {
-		_nm_object_dbus_call (client,
+		_nm_client_dbus_call (self,
+		                      self,
 		                      source_tag,
 		                      cancellable,
 		                      callback,
@@ -1508,15 +4886,11 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
                                               GAsyncResult *result,
                                               GError **error)
 {
-	nm_auto_free_activate_result _NMActivateResult *r = NULL;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_add_and_activate_connection_async), NULL);
-
-	r = g_task_propagate_pointer (G_TASK (result), error);
-	if (!r)
-		return NULL;
-	return g_steal_pointer (&r->active);
+	return NM_ACTIVE_CONNECTION (_request_wait_finish (client,
+	                                                   result,
+	                                                   nm_client_add_and_activate_connection_async,
+	                                                   NULL,
+	                                                   error));
 }
 
 /**
@@ -1606,19 +4980,14 @@ nm_client_add_and_activate_connection2_finish (NMClient *client,
                                                GVariant **out_result,
                                                GError **error)
 {
-	nm_auto_free_activate_result _NMActivateResult *r = NULL;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_add_and_activate_connection2), NULL);
-
-	r = g_task_propagate_pointer (G_TASK (result), error);
-	if (!r) {
-		NM_SET_OUT (out_result, NULL);
-		return NULL;
-	}
-	NM_SET_OUT (out_result, g_steal_pointer (&r->add_and_activate_output));
-	return g_steal_pointer (&r->active);
+	return NM_ACTIVE_CONNECTION (_request_wait_finish (client,
+	                                                   result,
+	                                                   nm_client_add_connection2,
+	                                                   out_result,
+	                                                   error));
 }
+
+/*****************************************************************************/
 
 /**
  * nm_client_deactivate_connection:
@@ -1647,7 +5016,7 @@ nm_client_deactivate_connection (NMClient *client,
 	active_path = nm_object_get_path (NM_OBJECT (active));
 	g_return_val_if_fail (active_path, FALSE);
 
-	return _nm_object_dbus_call_sync_void (client,
+	return _nm_client_dbus_call_sync_void (client,
 	                                       cancellable,
 	                                       NM_DBUS_PATH,
 	                                       NM_DBUS_INTERFACE,
@@ -1684,7 +5053,8 @@ nm_client_deactivate_connection_async (NMClient *client,
 	active_path = nm_object_get_path (NM_OBJECT (active));
 	g_return_if_fail (active_path);
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_deactivate_connection_async,
 	                      cancellable,
 	                      callback,
@@ -1740,10 +5110,7 @@ nm_client_get_connections (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return &empty;
-
-	return nm_remote_settings_get_connections (NM_CLIENT_GET_PRIVATE (client)->settings);
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_CLIENT_GET_PRIVATE (client)->settings.connections);
 }
 
 /**
@@ -1762,13 +5129,20 @@ nm_client_get_connections (NMClient *client)
 NMRemoteConnection *
 nm_client_get_connection_by_id (NMClient *client, const char *id)
 {
+	const GPtrArray *arr;
+	guint i;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (id != NULL, NULL);
+	g_return_val_if_fail (id, NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
+	arr = nm_client_get_connections (client);
+	for (i = 0; i < arr->len; i++) {
+		NMRemoteConnection *c = NM_REMOTE_CONNECTION (arr->pdata[i]);
 
-	return nm_remote_settings_get_connection_by_id (NM_CLIENT_GET_PRIVATE (client)->settings, id);
+		if (nm_streq0 (id, nm_connection_get_id (NM_CONNECTION (c))))
+			return c;
+	}
+	return NULL;
 }
 
 /**
@@ -1790,10 +5164,7 @@ nm_client_get_connection_by_path (NMClient *client, const char *path)
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return nm_remote_settings_get_connection_by_path (NM_CLIENT_GET_PRIVATE (client)->settings, path);
+	return _dbobjs_get_nmobj_unpack_visible (client, path, NM_TYPE_REMOTE_CONNECTION);
 }
 
 /**
@@ -1812,14 +5183,23 @@ nm_client_get_connection_by_path (NMClient *client, const char *path)
 NMRemoteConnection *
 nm_client_get_connection_by_uuid (NMClient *client, const char *uuid)
 {
+	const GPtrArray *arr;
+	guint i;
+
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (uuid != NULL, NULL);
+	g_return_val_if_fail (uuid, NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return NULL;
+	arr = nm_client_get_connections (client);
+	for (i = 0; i < arr->len; i++) {
+		NMRemoteConnection *c = NM_REMOTE_CONNECTION (arr->pdata[i]);
 
-	return nm_remote_settings_get_connection_by_uuid (NM_CLIENT_GET_PRIVATE (client)->settings, uuid);
+		if (nm_streq0 (uuid, nm_connection_get_uuid (NM_CONNECTION (c))))
+			return c;
+	}
+	return NULL;
 }
+
+/*****************************************************************************/
 
 static void
 _add_connection_cb (GObject *source,
@@ -1827,7 +5207,6 @@ _add_connection_cb (GObject *source,
                     gboolean with_extra_arg,
                     gpointer user_data)
 {
-	NMClient *self;
 	gs_unref_variant GVariant *ret = NULL;
 	gs_unref_object GTask *task = user_data;
 	gs_unref_variant GVariant *v_result = NULL;
@@ -1836,7 +5215,8 @@ _add_connection_cb (GObject *source,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (!ret) {
-		g_dbus_error_strip_remote_error (error);
+		if (!nm_utils_error_is_cancelled (error, FALSE))
+			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
 	}
@@ -1852,12 +5232,11 @@ _add_connection_cb (GObject *source,
 		               &v_path);
 	}
 
-	self = g_task_get_source_object (task);
-
-	nm_remote_settings_wait_for_connection (NM_CLIENT_GET_PRIVATE (self)->settings,
-	                                        v_path,
-	                                        g_steal_pointer (&v_result),
-	                                        g_steal_pointer (&task));
+	_request_wait_start (g_steal_pointer (&task),
+	                     "AddConnection",
+	                     NM_TYPE_REMOTE_CONNECTION,
+	                     v_path,
+	                     g_steal_pointer (&v_result));
 }
 
 static void
@@ -1887,6 +5266,8 @@ _add_connection_call (NMClient *self,
 	g_return_if_fail (!settings || g_variant_is_of_type (settings, G_VARIANT_TYPE ("a{sa{sv}}")));
 	g_return_if_fail (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
 
+	NML_NMCLIENT_LOG_D (self, "AddConnection() started...");
+
 	if (!settings)
 		settings = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 
@@ -1896,7 +5277,8 @@ _add_connection_call (NMClient *self,
 	 * on 1.20 API whenever possible. */
 	if (    ignore_out_result
 	     && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
-		_nm_object_dbus_call (self,
+		_nm_client_dbus_call (self,
+		                      self,
 		                      source_tag,
 		                      cancellable,
 		                      callback,
@@ -1911,7 +5293,8 @@ _add_connection_call (NMClient *self,
 		                      _add_connection_cb_without_extra_result);
 	} else if (   ignore_out_result
 	           && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY) {
-		_nm_object_dbus_call (self,
+		_nm_client_dbus_call (self,
+		                      self,
 		                      source_tag,
 		                      cancellable,
 		                      callback,
@@ -1925,7 +5308,8 @@ _add_connection_call (NMClient *self,
 		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
 		                      _add_connection_cb_without_extra_result);
 	} else {
-		_nm_object_dbus_call (self,
+		_nm_client_dbus_call (self,
+		                      self,
 		                      source_tag,
 		                      cancellable,
 		                      callback,
@@ -1943,38 +5327,6 @@ _add_connection_call (NMClient *self,
 		                      NM_DBUS_DEFAULT_TIMEOUT_MSEC,
 		                      _add_connection_cb_with_extra_result);
 	}
-}
-
-static NMRemoteConnection *
-_add_connection_call_finish (NMClient *client,
-                             GAsyncResult *result,
-                             gpointer source_tag,
-                             GVariant **out_result,
-                             GError **error)
-{
-	nm_auto_free_add_connection_result_data NMAddConnectionResultData *result_data = NULL;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (nm_g_task_is_valid (result, client, source_tag), NULL);
-
-	result_data = g_task_propagate_pointer (G_TASK (result), error);
-	if (!result_data) {
-		NM_SET_OUT (out_result, NULL);
-		return NULL;
-	}
-
-	nm_assert (NM_IS_REMOTE_CONNECTION (result_data->connection));
-
-	NM_SET_OUT (out_result, g_steal_pointer (&result_data->extra_results));
-	return g_steal_pointer (&result_data->connection);
-}
-
-void
-nm_add_connection_result_data_free (NMAddConnectionResultData *result_data)
-{
-	nm_g_object_unref (result_data->connection);
-	nm_g_variant_unref (result_data->extra_results);
-	nm_g_slice_free (result_data);
 }
 
 /**
@@ -2041,11 +5393,11 @@ nm_client_add_connection_finish (NMClient *client,
                                  GAsyncResult *result,
                                  GError **error)
 {
-	return _add_connection_call_finish (client,
-	                                    result,
-	                                    nm_client_add_connection_async,
-	                                    NULL,
-	                                    error);
+	return NM_REMOTE_CONNECTION (_request_wait_finish (client,
+	                                                   result,
+	                                                   nm_client_add_connection_async,
+	                                                   NULL,
+	                                                   error));
 }
 
 /**
@@ -2112,12 +5464,14 @@ nm_client_add_connection2_finish (NMClient *client,
                                   GVariant **out_result,
                                   GError **error)
 {
-	return _add_connection_call_finish (client,
-	                                    result,
-	                                    nm_client_add_connection2,
-	                                    out_result,
-	                                    error);
+	return NM_REMOTE_CONNECTION (_request_wait_finish (client,
+	                                                   result,
+	                                                   nm_client_add_connection2,
+	                                                   out_result,
+	                                                   error));
 }
+
+/*****************************************************************************/
 
 /**
  * nm_client_load_connections:
@@ -2165,7 +5519,7 @@ nm_client_load_connections (NMClient *client,
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	ret = _nm_object_dbus_call_sync (client,
+	ret = _nm_client_dbus_call_sync (client,
 	                                 cancellable,
 	                                 NM_DBUS_PATH_SETTINGS,
 	                                 NM_DBUS_INTERFACE_SETTINGS,
@@ -2213,7 +5567,8 @@ nm_client_load_connections_async (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_load_connections_async,
 	                      cancellable,
 	                      callback,
@@ -2293,7 +5648,7 @@ nm_client_reload_connections (NMClient *client,
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	ret = _nm_object_dbus_call_sync (client,
+	ret = _nm_client_dbus_call_sync (client,
 	                                 cancellable,
 	                                 NM_DBUS_PATH_SETTINGS,
 	                                 NM_DBUS_INTERFACE_SETTINGS,
@@ -2330,7 +5685,8 @@ nm_client_reload_connections_async (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_reload_connections_async,
 	                      cancellable,
 	                      callback,
@@ -2388,15 +5744,9 @@ nm_client_reload_connections_finish (NMClient *client,
 const char *
 nm_client_get_dns_mode (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (priv->dns_manager)
-		return nm_dns_manager_get_mode (priv->dns_manager);
-	else
-		return NULL;
+	return NM_CLIENT_GET_PRIVATE (client)->dns_manager.mode;
 }
 
 /**
@@ -2413,15 +5763,9 @@ nm_client_get_dns_mode (NMClient *client)
 const char *
 nm_client_get_dns_rc_manager (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (priv->dns_manager)
-		return nm_dns_manager_get_rc_manager (priv->dns_manager);
-	else
-		return NULL;
+	return NM_CLIENT_GET_PRIVATE (client)->dns_manager.rc_manager;
 }
 
 /**
@@ -2440,115 +5784,88 @@ nm_client_get_dns_rc_manager (NMClient *client)
 const GPtrArray *
 nm_client_get_dns_configuration (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (priv->dns_manager)
-		return nm_dns_manager_get_configuration (priv->dns_manager);
-	else
-		return NULL;
+	return NM_CLIENT_GET_PRIVATE (client)->dns_manager.configuration;
+}
+
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_dns_manager_configuration (NMClient *self,
+                                              NMLDBusObject *dbobj,
+                                              const NMLDBusMetaIface *meta_iface,
+                                              guint dbus_property_idx,
+                                              GVariant *value)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	gs_unref_ptrarray GPtrArray *configuration_old = NULL;
+	gs_unref_ptrarray GPtrArray *configuration_new = NULL;
+
+	nm_assert (G_OBJECT (self) == dbobj->nmobj);
+
+	if (value) {
+		GVariant *entry_var_tmp;
+		GVariantIter iter;
+		GPtrArray *array;
+
+		configuration_new = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_dns_entry_unref);
+
+		g_variant_iter_init (&iter, value);
+		while (g_variant_iter_next (&iter, "@a{sv}", &entry_var_tmp)) {
+			gs_unref_variant GVariant *entry_var = entry_var_tmp;
+			nm_auto_free_variant_iter GVariantIter *iterp_nameservers = NULL;
+			nm_auto_free_variant_iter GVariantIter *iterp_domains = NULL;
+			gs_free char **nameservers = NULL;
+			gs_free char **domains = NULL;
+			gboolean vpn = FALSE;
+			NMDnsEntry *entry;
+			char *interface = NULL;
+			char *str;
+			gint32 priority = 0;
+
+			if (   !g_variant_lookup (entry_var, "nameservers", "as", &iterp_nameservers)
+			    || !g_variant_lookup (entry_var, "priority", "i", &priority)) {
+				g_warning ("Ignoring invalid DNS configuration");
+				continue;
+			}
+
+			array = g_ptr_array_new ();
+			while (g_variant_iter_next (iterp_nameservers, "&s", &str))
+				g_ptr_array_add (array, str);
+			g_ptr_array_add (array, NULL);
+			nameservers = (char **) g_ptr_array_free (array, FALSE);
+
+			if (g_variant_lookup (entry_var, "domains", "as", &iterp_domains)) {
+				array = g_ptr_array_new ();
+				while (g_variant_iter_next (iterp_domains, "&s", &str))
+					g_ptr_array_add (array, str);
+				g_ptr_array_add (array, NULL);
+				domains = (char **) g_ptr_array_free (array, FALSE);
+			}
+
+			g_variant_lookup (entry_var, "interface", "&s", &interface);
+			g_variant_lookup (entry_var, "vpn", "b", &vpn);
+
+			entry = nm_dns_entry_new (interface,
+			                          (const char *const*) nameservers,
+			                          (const char *const*) domains,
+			                          priority,
+			                          vpn);
+			if (!entry) {
+				g_warning ("Ignoring invalid DNS entry");
+				continue;
+			}
+
+			g_ptr_array_add (configuration_new, entry);
+		}
+	}
+
+	configuration_old = priv->dns_manager.configuration;
+	priv->dns_manager.configuration = g_steal_pointer (&configuration_new);
+
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
 }
 
 /*****************************************************************************/
-
-static void
-subobject_notify (GObject *object,
-                  GParamSpec *pspec,
-                  gpointer client)
-{
-	if (!g_str_has_suffix (pspec->name, "-internal"))
-		g_object_notify (client, pspec->name);
-}
-
-static void
-manager_device_added (NMManager *manager,
-                      NMDevice *device,
-                      gpointer client)
-{
-	g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
-}
-
-static void
-manager_device_removed (NMManager *manager,
-                        NMDevice *device,
-                        gpointer client)
-{
-	g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-}
-
-static void
-manager_any_device_added (NMManager *manager,
-                          NMDevice *device,
-                          gpointer client)
-{
-	g_signal_emit (client, signals[ANY_DEVICE_ADDED], 0, device);
-}
-
-static void
-manager_any_device_removed (NMManager *manager,
-                            NMDevice *device,
-                            gpointer client)
-{
-	g_signal_emit (client, signals[ANY_DEVICE_REMOVED], 0, device);
-}
-
-static void
-manager_permission_changed (NMManager *manager,
-                            NMClientPermission permission,
-                            NMClientPermissionResult result,
-                            gpointer client)
-{
-	g_signal_emit (client, signals[PERMISSION_CHANGED], 0, permission, result);
-}
-
-static void
-settings_connection_added (NMRemoteSettings *manager,
-                           NMRemoteConnection *connection,
-                           gpointer client)
-{
-	g_signal_emit (client, signals[CONNECTION_ADDED], 0, connection);
-}
-static void
-settings_connection_removed (NMRemoteSettings *manager,
-                             NMRemoteConnection *connection,
-                             gpointer client)
-{
-	g_signal_emit (client, signals[CONNECTION_REMOVED], 0, connection);
-}
-
-static void
-manager_active_connection_added (NMManager *manager,
-                                 NMActiveConnection *active_connection,
-                                 gpointer client)
-{
-	g_signal_emit (client, signals[ACTIVE_CONNECTION_ADDED], 0, active_connection);
-}
-
-static void
-manager_active_connection_removed (NMManager *manager,
-                                   NMActiveConnection *active_connection,
-                                   gpointer client)
-{
-	g_signal_emit (client, signals[ACTIVE_CONNECTION_REMOVED], 0, active_connection);
-}
-
-static void
-dns_notify (GObject *object,
-            GParamSpec *pspec,
-            gpointer client)
-{
-	char pname[128];
-
-	if (NM_IN_STRSET (pspec->name,
-	                  NM_DNS_MANAGER_MODE,
-	                  NM_DNS_MANAGER_RC_MANAGER,
-	                  NM_DNS_MANAGER_CONFIGURATION)) {
-		nm_sprintf_buf (pname, "dns-%s", pspec->name);
-		g_object_notify (client, pname);
-	}
-}
 
 /**
  * nm_client_get_checkpoints:
@@ -2567,10 +5884,7 @@ nm_client_get_checkpoints (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	if (!nm_client_get_nm_running (client))
-		return &empty;
-
-	return nm_manager_get_checkpoints (NM_CLIENT_GET_PRIVATE (client)->manager);
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_CLIENT_GET_PRIVATE (client)->nm.property_ao[PROPERTY_AO_IDX_CHECKPOINTS]);
 }
 
 static void
@@ -2578,28 +5892,28 @@ checkpoint_create_cb (GObject *object,
                       GAsyncResult *result,
                       gpointer user_data)
 {
-	NMClient *self;
 	gs_unref_object GTask *task = user_data;
 	gs_unref_variant GVariant *ret = NULL;
-	const char *checkpoint_path;
+	const char *v_checkpoint_path;
 	GError *error = NULL;
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
 	if (!ret) {
-		g_dbus_error_strip_remote_error (error);
+		if (!nm_utils_error_is_cancelled (error, FALSE))
+			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
 	}
 
 	g_variant_get (ret,
 	               "(&o)",
-	               &checkpoint_path);
+	               &v_checkpoint_path);
 
-	self = g_task_get_source_object (task);
-
-	nm_manager_wait_for_checkpoint (NM_CLIENT_GET_PRIVATE (self)->manager,
-	                                checkpoint_path,
-	                                g_steal_pointer (&task));
+	_request_wait_start (g_steal_pointer (&task),
+	                     "CheckpointCreate",
+	                     NM_TYPE_CHECKPOINT,
+	                     v_checkpoint_path,
+	                     NULL);
 }
 
 /**
@@ -2642,7 +5956,8 @@ nm_client_checkpoint_create (NMClient *client,
 		paths[i] = NULL;
 	}
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_checkpoint_create,
 	                      cancellable,
 	                      callback,
@@ -2678,10 +5993,11 @@ nm_client_checkpoint_create_finish (NMClient *client,
                                     GAsyncResult *result,
                                     GError **error)
 {
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_checkpoint_create), NULL);
-
-	return g_task_propagate_pointer (G_TASK (result), error);
+	return NM_CHECKPOINT (_request_wait_finish (client,
+	                                            result,
+	                                            nm_client_checkpoint_create,
+	                                            NULL,
+	                                            error));
 }
 
 /**
@@ -2706,7 +6022,8 @@ nm_client_checkpoint_destroy (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_checkpoint_destroy,
 	                      cancellable,
 	                      callback,
@@ -2767,7 +6084,8 @@ nm_client_checkpoint_rollback (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_checkpoint_rollback,
 	                      cancellable,
 	                      callback,
@@ -2854,7 +6172,8 @@ nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_checkpoint_adjust_rollback_timeout,
 	                      cancellable,
 	                      callback,
@@ -2919,7 +6238,8 @@ nm_client_reload (NMClient *client,
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	_nm_object_dbus_call (client,
+	_nm_client_dbus_call (client,
+	                      client,
 	                      nm_client_reload,
 	                      cancellable,
 	                      callback,
@@ -2957,530 +6277,459 @@ nm_client_reload_finish (NMClient *client,
 	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
-/****************************************************************/
-/* Object Initialization                                        */
-/****************************************************************/
-
-static GType
-proxy_type (GDBusObjectManagerClient *manager,
-            const char *object_path,
-            const char *interface_name,
-            gpointer user_data)
-{
-	/* ObjectManager asks us for an object proxy. Unfortunately, we can't
-	 * decide that by interface name and GDBusObjectManager doesn't allow
-	 * us to look at the known interface list. Thus we need to create a
-	 * generic GDBusObject and only couple a NMObject subclass later. */
-	if (!interface_name)
-		return G_TYPE_DBUS_OBJECT_PROXY;
-
-	/* An interface proxy */
-	if (strcmp (interface_name, NM_DBUS_INTERFACE) == 0)
-		return NMDBUS_TYPE_MANAGER_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DEVICE_WIRELESS) == 0)
-		return NMDBUS_TYPE_DEVICE_WIFI_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DEVICE_WIFI_P2P) == 0)
-		return NMDBUS_TYPE_DEVICE_WIFI_P2P_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DEVICE) == 0)
-		return NMDBUS_TYPE_DEVICE_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_SETTINGS_CONNECTION) == 0)
-		return NMDBUS_TYPE_SETTINGS_CONNECTION_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_SETTINGS) == 0)
-		return NMDBUS_TYPE_SETTINGS_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DNS_MANAGER) == 0)
-		return NMDBUS_TYPE_DNS_MANAGER_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_VPN_CONNECTION) == 0)
-		return NMDBUS_TYPE_VPN_CONNECTION_PROXY;
-	else if (strcmp (interface_name, NM_DBUS_INTERFACE_ACTIVE_CONNECTION) == 0)
-		return NMDBUS_TYPE_ACTIVE_CONNECTION_PROXY;
-
-	/* Use a generic D-Bus Proxy whenever we can. The typed GDBusProxy
-	 * subclasses actually use quite some memory, so they're better avoided. */
-	return G_TYPE_DBUS_PROXY;
-}
-
-static NMObject *
-obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager *object_manager)
-{
-	NMClientPrivate *priv;
-	GList *interfaces;
-	GList *l;
-	GType type = G_TYPE_INVALID;
-	NMObject *obj_nm;
-
-	g_return_val_if_fail (G_IS_DBUS_OBJECT_PROXY (object), NULL);
-
-	interfaces = g_dbus_object_get_interfaces (object);
-	for (l = interfaces; l; l = l->next) {
-		GDBusProxy *proxy = G_DBUS_PROXY (l->data);
-		const char *ifname = g_dbus_proxy_get_interface_name (proxy);
-
-		/* This is a performance/scalability hack. It makes sense to call it
-		 * from here, since this is in the common object creation path. */
-		_nm_dbus_proxy_replace_match (proxy);
-
-		if (strcmp (ifname, NM_DBUS_INTERFACE) == 0)
-			type = NM_TYPE_MANAGER;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_ACCESS_POINT) == 0)
-			type = NM_TYPE_ACCESS_POINT;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_ACTIVE_CONNECTION) == 0 && type != NM_TYPE_VPN_CONNECTION)
-			type = NM_TYPE_ACTIVE_CONNECTION;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_6LOWPAN) == 0)
-			type = NM_TYPE_DEVICE_6LOWPAN;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_ADSL) == 0)
-			type = NM_TYPE_DEVICE_ADSL;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_BOND) == 0)
-			type = NM_TYPE_DEVICE_BOND;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_BRIDGE) == 0)
-			type = NM_TYPE_DEVICE_BRIDGE;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_BLUETOOTH) == 0)
-			type = NM_TYPE_DEVICE_BT;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_DUMMY) == 0)
-			type = NM_TYPE_DEVICE_DUMMY;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIRED) == 0)
-			type = NM_TYPE_DEVICE_ETHERNET;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_GENERIC) == 0)
-			type = NM_TYPE_DEVICE_GENERIC;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_INFINIBAND) == 0)
-			type = NM_TYPE_DEVICE_INFINIBAND;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL) == 0)
-			type = NM_TYPE_DEVICE_IP_TUNNEL;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_MACSEC) == 0)
-			type = NM_TYPE_DEVICE_MACSEC;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_MACVLAN) == 0)
-			type = NM_TYPE_DEVICE_MACVLAN;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_MODEM) == 0)
-			type = NM_TYPE_DEVICE_MODEM;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_OLPC_MESH) == 0)
-			type = NM_TYPE_DEVICE_OLPC_MESH;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_OVS_INTERFACE) == 0)
-			type = NM_TYPE_DEVICE_OVS_INTERFACE;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_OVS_PORT) == 0)
-			type = NM_TYPE_DEVICE_OVS_PORT;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE) == 0)
-			type = NM_TYPE_DEVICE_OVS_BRIDGE;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIFI_P2P) == 0)
-			type = NM_TYPE_DEVICE_WIFI_P2P;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_PPP) == 0)
-			type = NM_TYPE_DEVICE_PPP;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_TEAM) == 0)
-			type = NM_TYPE_DEVICE_TEAM;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_TUN) == 0)
-			type = NM_TYPE_DEVICE_TUN;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_VLAN) == 0)
-			type = NM_TYPE_DEVICE_VLAN;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WPAN) == 0)
-			type = NM_TYPE_DEVICE_WPAN;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_VXLAN) == 0)
-			type = NM_TYPE_DEVICE_VXLAN;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIRELESS) == 0)
-			type = NM_TYPE_DEVICE_WIFI;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIREGUARD) == 0)
-			type = NM_TYPE_DEVICE_WIREGUARD;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DHCP4_CONFIG) == 0)
-			type = NM_TYPE_DHCP4_CONFIG;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DHCP6_CONFIG) == 0)
-			type = NM_TYPE_DHCP6_CONFIG;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_IP4_CONFIG) == 0)
-			type = NM_TYPE_IP4_CONFIG;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_IP6_CONFIG) == 0)
-			type = NM_TYPE_IP6_CONFIG;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_WIFI_P2P_PEER) == 0)
-			type = NM_TYPE_WIFI_P2P_PEER;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_SETTINGS_CONNECTION) == 0)
-			type = NM_TYPE_REMOTE_CONNECTION;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_SETTINGS) == 0)
-			type = NM_TYPE_REMOTE_SETTINGS;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_DNS_MANAGER) == 0)
-			type = NM_TYPE_DNS_MANAGER;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_VPN_CONNECTION) == 0)
-			type = NM_TYPE_VPN_CONNECTION;
-		else if (strcmp (ifname, NM_DBUS_INTERFACE_CHECKPOINT) == 0)
-			type = NM_TYPE_CHECKPOINT;
-
-		if (type != G_TYPE_INVALID)
-			break;
-	}
-
-	g_list_free_full (interfaces, g_object_unref);
-	if (type == G_TYPE_INVALID)
-		return NULL;
-
-	obj_nm = g_object_new (type,
-	                       NM_OBJECT_DBUS_OBJECT, object,
-	                       NM_OBJECT_DBUS_OBJECT_MANAGER, object_manager,
-	                       NULL);
-	if (NM_IS_DEVICE (obj_nm)) {
-		priv = NM_CLIENT_GET_PRIVATE (self);
-		if (G_UNLIKELY (!priv->udev_inited)) {
-			priv->udev_inited = TRUE;
-			/* for testing, we don't want to use udev in libnm. */
-			if (!nm_streq0 (g_getenv ("LIBNM_USE_NO_UDEV"), "1"))
-				priv->udev = udev_new ();
-		}
-		if (priv->udev)
-			_nm_device_set_udev (NM_DEVICE (obj_nm), priv->udev);
-	}
-	g_object_set_qdata_full (G_OBJECT (object), _nm_object_obj_nm_quark (),
-	                         obj_nm, g_object_unref);
-	return obj_nm;
-}
+/*****************************************************************************/
 
 static void
-obj_nm_inited (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, NULL)) {
-		/* This is a can-not-happen situation, the NMObject subclasses are not
-		 * supposed to fail initialization. */
-		g_warn_if_reached ();
-	}
-}
-
-static void
-object_added (GDBusObjectManager *object_manager, GDBusObject *object, gpointer user_data)
-{
-	NMClient *client = user_data;
-	NMObject *obj_nm;
-
-	obj_nm = obj_nm_for_gdbus_object (client, object, object_manager);
-	if (obj_nm) {
-		g_async_initable_init_async (G_ASYNC_INITABLE (obj_nm),
-		                             G_PRIORITY_DEFAULT, NULL,
-		                             obj_nm_inited, NULL);
-	}
-}
-
-static void
-object_removed (GDBusObjectManager *object_manager, GDBusObject *object, gpointer user_data)
-{
-	g_object_set_qdata (G_OBJECT (object), _nm_object_obj_nm_quark (), NULL);
-}
-
-static gboolean
-objects_created (NMClient *client, GDBusObjectManager *object_manager, GError **error)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gs_unref_object GDBusObject *manager = NULL;
-	gs_unref_object GDBusObject *settings = NULL;
-	gs_unref_object GDBusObject *dns_manager = NULL;
-	NMObject *obj_nm;
-	GList *objects, *iter;
-
-	/* First just ensure all the NMObjects for known GDBusObjects exist. */
-	objects = g_dbus_object_manager_get_objects (object_manager);
-	for (iter = objects; iter; iter = iter->next)
-		obj_nm_for_gdbus_object (client, iter->data, object_manager);
-	g_list_free_full (objects, g_object_unref);
-
-	manager = g_dbus_object_manager_get_object (object_manager, NM_DBUS_PATH);
-	if (!manager) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "Manager object not found");
-		return FALSE;
-	}
-
-	obj_nm = g_object_get_qdata (G_OBJECT (manager), _nm_object_obj_nm_quark ());
-	if (!obj_nm) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "Manager object lacks the proper interface");
-		return FALSE;
-	}
-
-	priv->manager = NM_MANAGER (g_object_ref (obj_nm));
-
-	g_signal_connect (priv->manager, "notify",
-	                  G_CALLBACK (subobject_notify), client);
-	g_signal_connect (priv->manager, "device-added",
-	                  G_CALLBACK (manager_device_added), client);
-	g_signal_connect (priv->manager, "device-removed",
-	                  G_CALLBACK (manager_device_removed), client);
-	g_signal_connect (priv->manager, "any-device-added",
-	                  G_CALLBACK (manager_any_device_added), client);
-	g_signal_connect (priv->manager, "any-device-removed",
-	                  G_CALLBACK (manager_any_device_removed), client);
-	g_signal_connect (priv->manager, "permission-changed",
-	                  G_CALLBACK (manager_permission_changed), client);
-	g_signal_connect (priv->manager, "active-connection-added",
-	                  G_CALLBACK (manager_active_connection_added), client);
-	g_signal_connect (priv->manager, "active-connection-removed",
-	                  G_CALLBACK (manager_active_connection_removed), client);
-
-	settings = g_dbus_object_manager_get_object (object_manager, NM_DBUS_PATH_SETTINGS);
-	if (!settings) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "Settings object not found");
-		return FALSE;
-	}
-
-	obj_nm = g_object_get_qdata (G_OBJECT (settings), _nm_object_obj_nm_quark ());
-	if (!obj_nm) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "Settings object lacks the proper interface");
-		return FALSE;
-	}
-
-	priv->settings = NM_REMOTE_SETTINGS (g_object_ref (obj_nm));
-
-	g_signal_connect (priv->settings, "notify",
-	                  G_CALLBACK (subobject_notify), client);
-	g_signal_connect (priv->settings, "connection-added",
-	                  G_CALLBACK (settings_connection_added), client);
-	g_signal_connect (priv->settings, "connection-removed",
-	                  G_CALLBACK (settings_connection_removed), client);
-
-	dns_manager = g_dbus_object_manager_get_object (object_manager, NM_DBUS_PATH_DNS_MANAGER);
-	if (dns_manager) {
-		obj_nm = g_object_get_qdata (G_OBJECT (dns_manager), _nm_object_obj_nm_quark ());
-		if (!obj_nm) {
-			g_set_error_literal (error,
-			                     NM_CLIENT_ERROR,
-			                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-			                     "DNS manager object lacks the proper interface");
-			return FALSE;
-		}
-		priv->dns_manager = NM_DNS_MANAGER (g_object_ref (obj_nm));
-
-		g_signal_connect (priv->dns_manager, "notify",
-		                  G_CALLBACK (dns_notify), client);
-	}
-
-	/* The handlers don't really use the client instance. However
-	 * it makes it convenient to unhook them by data. */
-	g_signal_connect (object_manager, "object-added",
-	                  G_CALLBACK (object_added), client);
-	g_signal_connect (object_manager, "object-removed",
-	                  G_CALLBACK (object_removed), client);
-
-	return TRUE;
-}
-
-/* Synchronous initialization. */
-
-static void name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
-
-static gboolean
-_om_has_name_owner (GDBusObjectManager *object_manager)
-{
-	gs_free char *name_owner = NULL;
-
-	nm_assert (G_IS_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
-
-	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
-	return !!name_owner;
-}
-
-/* Asynchronous initialization. */
-
-static void
-init_async_complete (NMClientInitData *init_data)
-{
-	if (init_data->pending_init > 0)
-		return;
-	g_simple_async_result_complete (init_data->result);
-	g_object_unref (init_data->result);
-	g_clear_object (&init_data->cancellable);
-	g_slice_free (NMClientInitData, init_data);
-}
-
-static void
-async_inited_obj_nm (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMClientInitData *init_data = user_data;
-	GError *error = NULL;
-
-	nm_assert (init_data && init_data->pending_init > 0);
-
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error))
-		g_simple_async_result_take_error (init_data->result, error);
-
-	init_data->pending_init--;
-	init_async_complete (init_data);
-}
-
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data);
-
-static void
-unhook_om (NMClient *self)
+_init_fetch_all (NMClient *self)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-	GList *objects, *iter;
+	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
 
-	if (priv->manager) {
-		const GPtrArray *active_connections;
-		const GPtrArray *devices;
-		int i;
+	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
 
-		active_connections = nm_manager_get_active_connections (priv->manager);
-		for (i = 0; i < active_connections->len; i++)
-			g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active_connections->pdata[i]);
+	NML_NMCLIENT_LOG_D (self, "fetch all");
 
-		devices = nm_manager_get_all_devices (priv->manager);
-		for (i = 0; i < devices->len; i++)
-			g_signal_emit (self, signals[DEVICE_REMOVED], 0, devices->pdata[i]);
+	nm_assert (!priv->get_managed_objects_cancellable);
 
-		g_signal_handlers_disconnect_by_data (priv->manager, self);
-		g_clear_object (&priv->manager);
-		_notify (self, PROP_ACTIVE_CONNECTIONS);
-		_notify (self, PROP_NM_RUNNING);
-	}
-	if (priv->settings) {
-		const GPtrArray *connections;
-		guint i;
+	priv->get_managed_objects_cancellable = g_cancellable_new ();
 
-		connections = nm_remote_settings_get_connections (priv->settings);
-		for (i = 0; i < connections->len; i++)
-			g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connections->pdata[i]);
+	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager (priv->dbus_connection,
+	                                                                                    priv->name_owner,
+	                                                                                    "/org/freedesktop",
+	                                                                                    _dbus_managed_objects_changed_cb,
+	                                                                                    self,
+	                                                                                    NULL);
 
-		g_signal_handlers_disconnect_by_data (priv->settings, self);
-		g_clear_object (&priv->settings);
-		_notify (self, PROP_CONNECTIONS);
-		_notify (self, PROP_HOSTNAME);
-		_notify (self, PROP_CAN_MODIFY);
-	}
-	if (priv->dns_manager) {
-		g_signal_handlers_disconnect_by_data (priv->dns_manager, self);
-		g_clear_object (&priv->dns_manager);
-	}
+	priv->dbsid_dbus_properties_properties_changed = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
+	                                                                                                         priv->name_owner,
+	                                                                                                         NULL,
+	                                                                                                         NULL,
+	                                                                                                         _dbus_properties_changed_cb,
+	                                                                                                         self,
+	                                                                                                         NULL);
 
-	objects = g_dbus_object_manager_get_objects (priv->object_manager);
-	for (iter = objects; iter; iter = iter->next)
-		g_object_set_qdata (iter->data, _nm_object_obj_nm_quark (), NULL);
-	g_list_free_full (objects, g_object_unref);
+	priv->dbsid_nm_settings_connection_updated = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                                                 priv->name_owner,
+	                                                                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                                                                                 "Updated",
+	                                                                                 NULL,
+	                                                                                 NULL,
+	                                                                                 G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                                                 _dbus_settings_updated_cb,
+	                                                                                 self,
+	                                                                                 NULL);
+
+	priv->dbsid_nm_connection_active_state_changed = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                                                     priv->name_owner,
+	                                                                                     NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+	                                                                                     "StateChanged",
+	                                                                                     NULL,
+	                                                                                     NULL,
+	                                                                                     G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                                                     _dbus_nm_connection_active_state_changed_cb,
+	                                                                                     self,
+	                                                                                     NULL);
+
+	priv->dbsid_nm_vpn_connection_state_changed = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                                                  priv->name_owner,
+	                                                                                  NM_DBUS_INTERFACE_VPN_CONNECTION,
+	                                                                                  "VpnStateChanged",
+	                                                                                  NULL,
+	                                                                                  NULL,
+	                                                                                  G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                                                  _dbus_nm_vpn_connection_state_changed_cb,
+	                                                                                  self,
+	                                                                                  NULL);
+
+	priv->dbsid_nm_check_permissions = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                                       priv->name_owner,
+	                                                                       NM_DBUS_INTERFACE,
+	                                                                       "CheckPermissions",
+	                                                                       NULL,
+	                                                                       NULL,
+	                                                                       G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                                       _dbus_nm_check_permissions_cb,
+	                                                                       self,
+	                                                                       NULL);
+
+	nm_dbus_connection_call_get_managed_objects (priv->dbus_connection,
+	                                             priv->name_owner,
+	                                             "/org/freedesktop",
+	                                             G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                             priv->get_managed_objects_cancellable,
+	                                             _dbus_get_managed_objects_cb,
+	                                             self);
+
+	_dbus_check_permissions_start (self);
 }
 
 static void
-new_object_manager (GObject *source_object, GAsyncResult *res, gpointer user_data)
+_init_release_all (NMClient *self)
 {
-	NMClient *self = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	CList **dbus_objects_lst_heads;
+	NMLDBusObject *dbobj;
+	int i;
 
-	g_clear_object (&priv->new_object_manager_cancellable);
-	_notify (user_data, PROP_NM_RUNNING);
-}
+	NML_NMCLIENT_LOG_D (self, "release all");
 
-static void
-got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMClientInitData *init_data = user_data;
-	NMClient *client;
-	NMClientPrivate *priv;
-	GList *objects, *iter;
-	GError *error = NULL;
-	GDBusObjectManager *object_manager;
+	nm_clear_g_cancellable (&priv->permissions_cancellable);
+	nm_clear_g_cancellable (&priv->get_managed_objects_cancellable);
 
-	object_manager = (gpointer) g_async_initable_new_finish (G_ASYNC_INITABLE (object), result, &error);
-	if (object_manager == NULL) {
-		g_simple_async_result_take_error (init_data->result, error);
-		init_async_complete (init_data);
-		return;
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->dbsid_nm_object_manager);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->dbsid_dbus_properties_properties_changed);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->dbsid_nm_settings_connection_updated);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->dbsid_nm_connection_active_state_changed);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->dbsid_nm_vpn_connection_state_changed);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->dbsid_nm_check_permissions);
+
+	if (priv->permissions) {
+		gs_unref_hashtable GHashTable *old_permissions = g_steal_pointer (&priv->permissions);
+
+		_emit_permissions_changed (self, old_permissions, TRUE);
 	}
 
-	nm_assert (G_IS_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
+	nm_assert (c_list_is_empty (&priv->obj_changed_lst_head));
 
-	client = init_data->client;
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	priv->object_manager = object_manager;
-	if (!priv->dbus_connection)
-		priv->dbus_connection = g_object_ref (g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager)));
+	dbus_objects_lst_heads = ((CList *[]) {
+		&priv->dbus_objects_lst_head_on_dbus,
+		&priv->dbus_objects_lst_head_with_nmobj_not_ready,
+		&priv->dbus_objects_lst_head_with_nmobj_ready,
+		NULL,
+	});
+	for (i = 0; dbus_objects_lst_heads[i]; i++) {
+		c_list_for_each_entry (dbobj, dbus_objects_lst_heads[i], dbus_objects_lst) {
+			NMLDBusObjIfaceData *db_iface_data;
 
-	if (_om_has_name_owner (priv->object_manager)) {
-		if (!objects_created (client, priv->object_manager, &error)) {
-			g_simple_async_result_take_error (init_data->result, error);
-			init_async_complete (init_data);
-			return;
+			nm_assert (c_list_is_empty (&dbobj->obj_changed_lst));
+			c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst)
+				db_iface_data->iface_removed = TRUE;
+			nml_dbus_object_obj_changed_link (self, dbobj, NML_DBUS_OBJ_CHANGED_TYPE_DBUS);
 		}
-
-		objects = g_dbus_object_manager_get_objects (priv->object_manager);
-		for (iter = objects; iter; iter = iter->next) {
-			NMObject *obj_nm;
-
-			obj_nm = g_object_get_qdata (iter->data, _nm_object_obj_nm_quark ());
-			if (!obj_nm)
-				continue;
-
-			init_data->pending_init++;
-			g_async_initable_init_async (G_ASYNC_INITABLE (obj_nm),
-			                             G_PRIORITY_DEFAULT, init_data->cancellable,
-			                             async_inited_obj_nm, init_data);
-		}
-		g_list_free_full (objects, g_object_unref);
 	}
 
-	init_async_complete (init_data);
+	_dbus_handle_changes (self, "release-all", FALSE);
 
-	g_signal_connect (priv->object_manager, "notify::name-owner",
-	                  G_CALLBACK (name_owner_changed), client);
+	/* We require that when we remove all D-Bus interfaces, that all object will go
+	 * away. Note that a NMLDBusObject can be alive due to a NMLDBusObjWatcher, but
+	 * even those should be all cleaned up. */
+	nm_assert (c_list_is_empty (&priv->obj_changed_lst_head));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_watched_only));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_on_dbus));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_with_nmobj_not_ready));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_with_nmobj_ready));
+	nm_assert (g_hash_table_size (priv->dbus_objects) == 0);
 }
 
+/*****************************************************************************/
+
 static void
-prepare_object_manager (NMClient *client,
-                        GCancellable *cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer user_data)
+name_owner_changed (NMClient *self,
+                    const char *name_owner)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	NMClientInitData *init_data;
-	GBusType bus_type = G_BUS_TYPE_NONE;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	gboolean changed;
+	gs_free char *old_name_owner_free = NULL;
+	const char *old_name_owner;
+	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
 
-	init_data = g_slice_new0 (NMClientInitData);
-	init_data->client = client;
-	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-	init_data->result = g_simple_async_result_new (G_OBJECT (client), callback,
-	                                               user_data, init_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
-	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
+	name_owner = nm_str_not_empty (name_owner);
 
-	if (!priv->dbus_connection)
-		bus_type = _nm_dbus_bus_type ();
+	changed = !nm_streq0 (priv->name_owner, name_owner);
 
-	g_async_initable_new_async (G_TYPE_DBUS_OBJECT_MANAGER_CLIENT,
-	                            G_PRIORITY_DEFAULT,
-	                            init_data->cancellable,
-	                            got_object_manager,
-	                            init_data,
-	                            "connection", priv->dbus_connection,
-	                            "bus-type", bus_type,
-	                            "flags", G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                            "name", "org.freedesktop.NetworkManager",
-	                            "object-path", "/org/freedesktop",
-	                            "get-proxy-type-func", proxy_type,
-	                            "get-proxy-type-user-data", NULL,
-	                            "get-proxy-type-destroy-notify", NULL,
-	                            NULL);
+	if (   !name_owner
+	    && priv->main_context != priv->dbus_context) {
+
+		NML_NMCLIENT_LOG_D (self, "resync main context as we have no name owner");
+
+		nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+		                                   &priv->name_owner_changed_id);
+
+		/* Our instance was initialized synchronously. Usually we must henceforth
+		 * stick to a internal main context. But now we have no name-owner...
+		 * at this point, we anyway are going to do a full resync. Swap the main
+		 * contexts again. */
+
+		g_main_context_ref (priv->main_context);
+		g_main_context_unref (priv->dbus_context);
+		priv->dbus_context = priv->main_context;
+
+		nm_clear_pointer (&priv->dbus_context_integration, nm_g_source_destroy_and_unref);
+
+		dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
+
+		/* we need to sync again... */
+
+		_assert_main_context_is_current_thread_default (self, dbus_context);
+
+		priv->name_owner_changed_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
+		                                                                                      NM_DBUS_SERVICE,
+		                                                                                      name_owner_changed_cb,
+		                                                                                      self,
+		                                                                                      NULL);
+		priv->name_owner_get_cancellable = g_cancellable_new ();
+		nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
+		                                        NM_DBUS_SERVICE,
+		                                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                                        priv->name_owner_get_cancellable,
+		                                        name_owner_get_cb,
+		                                        self);
+	} else
+		dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
+
+	if (changed) {
+		NML_NMCLIENT_LOG_D (self, "name owner changed: %s%s%s -> %s%s%s",
+		                    NM_PRINT_FMT_QUOTE_STRING (priv->name_owner),
+		                    NM_PRINT_FMT_QUOTE_STRING (name_owner));
+		old_name_owner_free = priv->name_owner;
+		priv->name_owner = g_strdup (name_owner);
+		old_name_owner = old_name_owner_free;
+	} else
+		old_name_owner = priv->name_owner;
+
+	if (changed)
+		_notify (self, PROP_DBUS_NAME_OWNER);
+
+	if (   changed
+	    && old_name_owner)
+		_init_release_all (self);
+
+	if (   changed
+	    && priv->name_owner)
+		_init_fetch_all (self);
+
+	_set_nm_running (self);
+
+	if (priv->init_data) {
+		nm_auto_pop_gmaincontext GMainContext *main_context = NULL;
+
+		if (priv->main_context != priv->dbus_context)
+			main_context = nm_g_main_context_push_thread_default_if_necessary (priv->main_context);
+		_init_start_check_complete (self);
+	}
 }
 
 static void
-name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
+name_owner_changed_cb (GDBusConnection *connection,
+                       const char *sender_name,
+                       const char *object_path,
+                       const char *interface_name,
+                       const char *signal_name,
+                       GVariant *parameters,
+                       gpointer user_data)
 {
 	NMClient *self = user_data;
+	NMClientPrivate *priv;
+	const char *new_owner;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sss)")))
+		return;
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	if (priv->name_owner_get_cancellable)
+		return;
+
+	g_variant_get (parameters,
+	               "(&s&s&s)",
+	               NULL,
+	               NULL,
+	               &new_owner);
+
+	name_owner_changed (self, new_owner);
+}
+
+static void
+name_owner_get_cb (const char *name_owner,
+                   GError *error,
+                   gpointer user_data)
+{
+	NMClient *self;
+	NMClientPrivate *priv;
+
+	if (   !name_owner
+	    && nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	self = user_data;
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	g_clear_object (&priv->name_owner_get_cancellable);
+
+	name_owner_changed (self, name_owner);
+}
+
+/*****************************************************************************/
+
+static void
+_init_start_complete (NMClient *self,
+                      GError *error_take)
+{
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-	GDBusObjectManager *object_manager = G_DBUS_OBJECT_MANAGER (object);
+	InitData *init_data;
 
-	nm_assert (object_manager == priv->object_manager);
+	init_data = g_steal_pointer (&priv->init_data);
 
-	if (_om_has_name_owner (object_manager)) {
-		g_signal_handlers_disconnect_by_data (priv->object_manager, self);
-		g_clear_object (&priv->object_manager);
-		nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
-		priv->new_object_manager_cancellable = g_cancellable_new ();
-		prepare_object_manager (self, priv->new_object_manager_cancellable,
-		                        new_object_manager, self);
+	NML_NMCLIENT_LOG_D (self, "%s init complete with %s%s%s",
+	                   init_data->is_sync ? "sync" : "async",
+	                   NM_PRINT_FMT_QUOTED (error_take, "error: ", error_take->message, "", "success"));
+
+	nm_clear_pointer (&init_data->cancel_on_idle_source, nm_g_source_destroy_and_unref);
+	nm_clear_g_signal_handler (init_data->cancellable, &init_data->cancelled_id);
+
+	if (init_data->is_sync) {
+		if (error_take)
+			g_propagate_error (init_data->data.sync.error_location, error_take);
+		g_main_loop_quit (init_data->data.sync.main_loop);
 	} else {
-		g_signal_handlers_disconnect_by_func (object_manager, object_added, self);
-		unhook_om (self);
+		if (error_take)
+			g_task_return_error (init_data->data.async.task, error_take);
+		else
+			g_task_return_boolean (init_data->data.async.task, TRUE);
+		g_object_unref (init_data->data.async.task);
 	}
+	nm_g_object_unref (init_data->cancellable);
+	nm_g_slice_free (init_data);
+}
+
+static void
+_init_start_check_complete (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	_assert_main_context_is_current_thread_default (self, main_context);
+
+	if (!priv->init_data)
+		return;
+
+	if (priv->get_managed_objects_cancellable) {
+		/* still initializing. Wait. */
+		return;
+	}
+
+#if NM_MORE_ASSERTS > 10
+	{
+		NMLDBusObject *dbobj;
+
+		c_list_for_each_entry (dbobj, &priv->dbus_objects_lst_head_with_nmobj_not_ready, dbus_objects_lst) {
+			NML_NMCLIENT_LOG_T (self, "init-start waiting for %s", dbobj->dbus_path->str);
+			break;
+		}
+	}
+#endif
+
+	if (!c_list_is_empty (&priv->dbus_objects_lst_head_with_nmobj_not_ready))
+		return;
+
+	_init_start_complete (self, NULL);
+}
+
+static void
+_init_start_cancelled_cb (GCancellable *cancellable,
+                          gpointer user_data)
+{
+	NMClient *self = user_data;
+	GError *error;
+
+	nm_assert (NM_IS_CLIENT (self));
+	nm_assert (NM_CLIENT_GET_PRIVATE (self)->init_data);
+	nm_assert (NM_CLIENT_GET_PRIVATE (self)->init_data->cancellable == cancellable);
+
+	nm_utils_error_set_cancelled (&error, FALSE, NULL);
+	_init_start_complete (self, error);
+}
+
+static gboolean
+_init_start_cancel_on_idle_cb (gpointer user_data)
+{
+	NMClient *self = user_data;
+	GError *error;
+
+	nm_utils_error_set_cancelled (&error, FALSE, NULL);
+	_init_start_complete (self, error);
+	return G_SOURCE_CONTINUE;
+}
+
+static void
+_init_start_with_bus (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	if (priv->init_data->cancellable) {
+		priv->init_data->cancelled_id = g_signal_connect (priv->init_data->cancellable,
+		                                                  "cancelled",
+		                                                  G_CALLBACK (_init_start_cancelled_cb),
+		                                                  self);
+		if (g_cancellable_is_cancelled (priv->init_data->cancellable)) {
+			priv->init_data->cancel_on_idle_source = g_idle_source_new ();
+			g_source_set_callback (priv->init_data->cancel_on_idle_source, _init_start_cancel_on_idle_cb, self, NULL);
+			g_source_attach (priv->init_data->cancel_on_idle_source, priv->main_context);
+			return;
+		}
+	}
+
+	_assert_main_context_is_current_thread_default (self, dbus_context);
+
+	priv->name_owner_changed_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
+	                                                                                      NM_DBUS_SERVICE,
+	                                                                                      name_owner_changed_cb,
+	                                                                                      self,
+	                                                                                      NULL);
+	priv->name_owner_get_cancellable = g_cancellable_new ();
+	nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
+	                                        NM_DBUS_SERVICE,
+	                                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                                        priv->name_owner_get_cancellable,
+	                                        name_owner_get_cb,
+	                                        self);
+}
+
+static void
+_init_start_bus_get_cb (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	NMClient *self = user_data;
+	NMClientPrivate *priv;
+	GDBusConnection *dbus_connection;
+	GError *error = NULL;
+
+	nm_assert (NM_IS_CLIENT (self));
+
+	dbus_connection = g_bus_get_finish (result, &error);
+
+	if (!dbus_connection) {
+		_init_start_complete (self, error);
+		return;
+	}
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+	priv->dbus_connection = dbus_connection;
+
+	_init_start_with_bus (self);
+}
+
+static void
+_init_start (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	NML_NMCLIENT_LOG_D (self, "starting %s initialization...",
+	                    priv->init_data->is_sync ? "sync" : "async");
+
+	if (!priv->dbus_connection) {
+		g_bus_get (_nm_dbus_bus_type (),
+		           priv->init_data->cancellable,
+		           _init_start_bus_get_cb,
+		           self);
+		return;
+	}
+
+	_init_start_with_bus (self);
 }
 
 /*****************************************************************************/
@@ -3520,19 +6769,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_client_wireless_get_enabled (self));
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
-		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
-		else
-			g_value_set_boolean (value, FALSE);
+		g_value_set_boolean (value, nm_client_wireless_hardware_get_enabled (self));
 		break;
 	case PROP_WWAN_ENABLED:
 		g_value_set_boolean (value, nm_client_wwan_get_enabled (self));
 		break;
 	case PROP_WWAN_HARDWARE_ENABLED:
-		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
-		else
-			g_value_set_boolean (value, FALSE);
+		g_value_set_boolean (value, nm_client_wwan_hardware_get_enabled (self));
 		break;
 	case PROP_WIMAX_ENABLED:
 		g_value_set_boolean (value, FALSE);
@@ -3552,6 +6795,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
 		g_value_set_boolean (value, nm_client_connectivity_check_get_enabled (self));
 		break;
+	case PROP_CONNECTIVITY_CHECK_URI:
+		g_value_set_string (value, nm_client_connectivity_check_get_uri (self));
+		break;
 	case PROP_PRIMARY_CONNECTION:
 		g_value_set_object (value, nm_client_get_primary_connection (self));
 		break;
@@ -3562,59 +6808,39 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_devices (self)));
 		break;
 	case PROP_METERED:
-		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
-		else
-			g_value_set_uint (value, NM_METERED_UNKNOWN);
+		g_value_set_uint (value, nm_client_get_metered (self));
 		break;
 	case PROP_ALL_DEVICES:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_all_devices (self)));
 		break;
 	case PROP_CHECKPOINTS:
-		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
-		else
-			g_value_take_boxed (value, g_ptr_array_new ());
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_checkpoints (self)));
 		break;
 
 	/* Settings properties. */
 	case PROP_CONNECTIONS:
-		if (priv->settings)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
-		else
-			g_value_take_boxed (value, _nm_utils_copy_object_array (&empty));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_connections (self)));
 		break;
 	case PROP_HOSTNAME:
-		if (priv->settings)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
-		else
-			g_value_set_string (value, NULL);
+		g_value_set_string (value, priv->settings.hostname);
 		break;
 	case PROP_CAN_MODIFY:
-		if (priv->settings)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
-		else
-			g_value_set_boolean (value, FALSE);
+		g_value_set_boolean (value, priv->settings.can_modify);
 		break;
 
 	/* DNS properties */
 	case PROP_DNS_MODE:
+		g_value_set_string (value, nm_client_get_dns_mode (self));
+		break;
 	case PROP_DNS_RC_MANAGER:
-		g_return_if_fail (pspec->name && strlen (pspec->name) > NM_STRLEN ("dns-"));
-		if (priv->dns_manager)
-			g_object_get_property (G_OBJECT (priv->dns_manager),
-			                       &pspec->name[NM_STRLEN ("dns-")], value);
-		else
-			g_value_set_string (value, NULL);
+		g_value_set_string (value, nm_client_get_dns_rc_manager (self));
 		break;
 	case PROP_DNS_CONFIGURATION:
-		if (priv->dns_manager) {
-			g_object_get_property (G_OBJECT (priv->dns_manager),
-			                       NM_DNS_MANAGER_CONFIGURATION,
-			                       value);
-		} else
-			g_value_take_boxed (value, NULL);
+		g_value_take_boxed (value, _nm_utils_copy_array (nm_client_get_dns_configuration (self),
+		                                                 (NMUtilsCopyFunc) nm_dns_entry_dup,
+		                                                 (GDestroyNotify) nm_dns_entry_unref));
 		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3625,19 +6851,45 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+	NMClient *self = NM_CLIENT (object);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	gboolean b;
 
 	switch (prop_id) {
 	case PROP_DBUS_CONNECTION:
 		/* construct-only */
 		priv->dbus_connection = g_value_dup_object (value);
 		break;
+
 	case PROP_NETWORKING_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->nm.networking_enabled != b) {
+			nm_client_networking_set_enabled (self,
+			                                  b,
+			                                  NULL);
+			/* Let the property value flip when we get the change signal from NM */
+		}
+		break;
 	case PROP_WIRELESS_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->nm.wireless_enabled != b) {
+			nm_client_wireless_set_enabled (self, b);
+			/* Let the property value flip when we get the change signal from NM */
+		}
+		break;
 	case PROP_WWAN_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->nm.wwan_enabled != b) {
+			nm_client_wwan_set_enabled (self, b);
+			/* Let the property value flip when we get the change signal from NM */
+		}
+		break;
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
-		if (priv->manager)
-			g_object_set_property (G_OBJECT (priv->manager), pspec->name, value);
+		b = g_value_get_boolean (value);
+		if (priv->nm.connectivity_check_enabled != b) {
+			nm_client_connectivity_check_set_enabled (self, b);
+			/* Let the property value flip when we get the change signal from NM */
+		}
 		break;
 	case PROP_WIMAX_ENABLED:
 		break;
@@ -3652,73 +6904,113 @@ set_property (GObject *object, guint prop_id,
 static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
-	NMClient *client = NM_CLIENT (initable);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	GList *objects, *iter;
+	gs_unref_object NMClient *self = NULL;
+	NMClientPrivate *priv;
+	GMainContext *dbus_context;
+	GError *local_error = NULL;
+	GMainLoop *main_loop;
 
-	if (!priv->dbus_connection) {
-		priv->dbus_connection = g_bus_get_sync (_nm_dbus_bus_type (),
-		                                        cancellable,
-		                                        error);
-		if (!priv->dbus_connection)
-			return FALSE;
+	g_return_val_if_fail (NM_IS_CLIENT (initable), FALSE);
+
+	self = g_object_ref (NM_CLIENT (initable)); /* keep instance alive. */
+
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	g_return_val_if_fail (!priv->dbus_context, FALSE);
+
+	/* when using init_sync(), we use a separate internal GMainContext for
+	 * all D-Bus operations and use our regular async-init code. That means,
+	 * also in sync-init, we don't actually block waiting for our D-Bus requests,
+	 * instead, we only block (g_main_loop_run()) for the overall result.
+	 *
+	 * Doing this has a performance overhead. Also, we cannot ever fall back
+	 * to the regular main-context (not unless we lose the main-owner and
+	 * need to re-initialize). The reason is that we receive events on our
+	 * dbus_context, and this cannot be brought in sync -- short of full
+	 * reinitalizing. Therefor, using sync init not only is slower during
+	 * construction of the object, but NMClient will stick to the dual GMainContext
+	 * mode.
+	 *
+	 * Aside from this downside, the solution is good:
+	 *
+	 * - we don't duplicate the implementation of async-init.
+	 * - we don't iterate the main-context of the caller while waiting for
+	 *   initialization to happen
+	 * - we still invoke all changes under the main_context of the caller.
+	 * - all D-Bus events strictly go through dbus_context and are in order.
+	 */
+
+	dbus_context = g_main_context_new ();
+	priv->dbus_context = g_main_context_ref (dbus_context);
+
+	g_main_context_push_thread_default (dbus_context);
+
+	main_loop = g_main_loop_new (dbus_context, FALSE);
+
+	priv->init_data = _init_data_new_sync (cancellable, main_loop, &local_error);
+
+	_init_start (self);
+
+	g_main_loop_run (main_loop);
+
+	g_main_loop_unref (main_loop);
+
+	g_main_context_pop_thread_default (dbus_context);
+
+	if (priv->main_context != priv->dbus_context) {
+		priv->dbus_context_integration = nm_utils_g_main_context_create_integrate_source (priv->dbus_context);
+		g_source_attach (priv->dbus_context_integration, priv->main_context);
 	}
 
-	priv->object_manager = g_dbus_object_manager_client_new_sync (priv->dbus_connection,
-	                                                              G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                                                              "org.freedesktop.NetworkManager",
-	                                                              "/org/freedesktop",
-	                                                              proxy_type, NULL, NULL,
-	                                                              cancellable, error);
-	if (!priv->object_manager)
+	g_main_context_unref (dbus_context);
+
+	if (local_error) {
+		g_propagate_error (error, local_error);
 		return FALSE;
-
-	if (_om_has_name_owner (priv->object_manager)) {
-		if (!objects_created (client, priv->object_manager, error))
-			return FALSE;
-
-		objects = g_dbus_object_manager_get_objects (priv->object_manager);
-		for (iter = objects; iter; iter = iter->next) {
-			NMObject *obj_nm;
-
-			obj_nm = g_object_get_qdata (iter->data, _nm_object_obj_nm_quark ());
-			if (!obj_nm)
-				continue;
-
-			if (!g_initable_init (G_INITABLE (obj_nm), cancellable, NULL)) {
-				/* This is a can-not-happen situation, the NMObject subclasses are not
-				 * supposed to fail initialization. */
-				g_warn_if_reached ();
-			}
-		}
-		g_list_free_full (objects, g_object_unref);
 	}
-
-	g_signal_connect (priv->object_manager, "notify::name-owner",
-	                  G_CALLBACK (name_owner_changed), client);
-
 	return TRUE;
 }
 
 /*****************************************************************************/
 
 static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
+init_async (GAsyncInitable *initable,
+            int io_priority,
+            GCancellable *cancellable,
+            GAsyncReadyCallback callback,
             gpointer user_data)
 {
-	prepare_object_manager (NM_CLIENT (initable), cancellable, callback, user_data);
+	NMClientPrivate *priv;
+	NMClient *self;
+	nm_auto_pop_gmaincontext GMainContext *context = NULL;
+	GTask *task;
+
+	g_return_if_fail (NM_IS_CLIENT (initable));
+
+	self = NM_CLIENT (initable);
+	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->dbus_context);
+
+	priv->dbus_context = g_main_context_ref (priv->main_context);
+
+	context = nm_g_main_context_push_thread_default_if_necessary (priv->main_context);
+
+	task = nm_g_task_new (self, cancellable, init_async, callback, user_data);
+	g_task_set_priority (task, io_priority);
+
+	priv->init_data = _init_data_new_async (cancellable, g_steal_pointer (&task));
+
+	_init_start (self);
 }
 
 static gboolean
 init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 {
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+	g_return_val_if_fail (NM_IS_CLIENT (initable), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, initable, init_async), FALSE);
 
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return TRUE;
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /*****************************************************************************/
@@ -3726,6 +7018,18 @@ init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 static void
 nm_client_init (NMClient *self)
 {
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	c_list_init (&self->obj_base.queue_notify_lst);
+	c_list_init (&priv->queue_notify_lst_head);
+	c_list_init (&priv->notify_event_lst_head);
+
+	priv->dbus_objects = g_hash_table_new (nm_pdirect_hash, nm_pdirect_equal);
+	c_list_init (&priv->dbus_objects_lst_head_watched_only);
+	c_list_init (&priv->dbus_objects_lst_head_on_dbus);
+	c_list_init (&priv->dbus_objects_lst_head_with_nmobj_not_ready);
+	c_list_init (&priv->dbus_objects_lst_head_with_nmobj_ready);
+	c_list_init (&priv->obj_changed_lst_head);
 }
 
 /**
@@ -3808,58 +7112,137 @@ constructed (GObject *object)
 	priv->main_context = g_main_context_ref_thread_default ();
 
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
+
+	NML_NMCLIENT_LOG_D (self, "new NMClient instance");
 }
 
 static void
 dispose (GObject *object)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+	NMClient *self = NM_CLIENT (object);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
-	nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
+	nm_assert (!priv->init_data);
 
-	if (priv->manager) {
-		g_signal_handlers_disconnect_by_data (priv->manager, object);
-		g_clear_object (&priv->manager);
-	}
+	self->obj_base.is_disposing = TRUE;
 
-	if (priv->settings) {
-		g_signal_handlers_disconnect_by_data (priv->settings, object);
-		g_clear_object (&priv->settings);
-	}
+	nm_clear_g_cancellable (&priv->name_owner_get_cancellable);
 
-	if (priv->dns_manager) {
-		g_signal_handlers_disconnect_by_data (priv->dns_manager, object);
-		g_clear_object (&priv->dns_manager);
-	}
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->name_owner_changed_id);
 
-	if (priv->object_manager) {
-		GList *objects, *iter;
+	nm_clear_g_free (&priv->name_owner);
 
-		/* Unhook the NM objects. */
-		objects = g_dbus_object_manager_get_objects (priv->object_manager);
-		for (iter = objects; iter; iter = iter->next)
-			g_object_set_qdata (G_OBJECT (iter->data), _nm_object_obj_nm_quark (), NULL);
-		g_list_free_full (objects, g_object_unref);
+	_init_release_all (self);
 
-		g_signal_handlers_disconnect_by_data (priv->object_manager, object);
-		g_clear_object (&priv->object_manager);
-	}
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_watched_only));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_on_dbus));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_with_nmobj_not_ready));
+	nm_assert (c_list_is_empty (&priv->dbus_objects_lst_head_with_nmobj_ready));
+
+	nm_assert (c_list_is_empty (&priv->queue_notify_lst_head));
+	nm_assert (c_list_is_empty (&priv->notify_event_lst_head));
+	nm_assert (c_list_is_empty (&self->obj_base.queue_notify_lst));
+	nm_assert (!priv->dbus_objects || g_hash_table_size (priv->dbus_objects) == 0);
+
+	nml_dbus_property_o_clear_many (priv->nm.property_o, G_N_ELEMENTS (priv->nm.property_o), NULL);
+	nml_dbus_property_ao_clear_many (priv->nm.property_ao, G_N_ELEMENTS (priv->nm.property_ao), NULL);
+
+	nm_clear_g_free (&priv->nm.connectivity_check_uri);
+	nm_clear_g_free (&priv->nm.version);
+
+	nml_dbus_property_ao_clear (&priv->settings.connections, NULL);
+	nm_clear_g_free (&priv->settings.hostname);
+
+	nm_clear_pointer (&priv->dns_manager.configuration, g_ptr_array_unref);
+	nm_clear_g_free (&priv->dns_manager.mode);
+	nm_clear_g_free (&priv->dns_manager.rc_manager);
+
+	nm_clear_pointer (&priv->dbus_objects, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 
 	nm_clear_pointer (&priv->udev, udev_unref);
 
+	nm_clear_pointer (&priv->dbus_context_integration, nm_g_source_destroy_and_unref);
+	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
+
+	nm_clear_pointer (&priv->permissions, g_hash_table_unref);
 
 	g_clear_object (&priv->dbus_connection);
 
-	nm_clear_g_free (&priv->name_owner_cached);
+	nm_clear_g_free (&priv->name_owner);
 }
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_agentmanager = NML_DBUS_META_IFACE_INIT (
+	NM_DBUS_INTERFACE_AGENT_MANAGER,
+	NULL,
+	NML_DBUS_META_INTERFACE_PRIO_NONE,
+);
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE,
+	nm_client_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_O_PROP  ("ActivatingConnection",       PROP_ACTIVATING_CONNECTION,        NMClient, _priv.nm.property_o[PROPERTY_O_IDX_NM_ACTIVATING_CONNECTION], nm_active_connection_get_type                                                                         ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("ActiveConnections",          PROP_ACTIVE_CONNECTIONS,           NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_ACTIVE_CONNECTIONS],     nm_active_connection_get_type, .notify_changed_ao = _property_ao_notify_changed_active_connections_cb ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("AllDevices",                 PROP_ALL_DEVICES,                  NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_ALL_DEVICES],            nm_device_get_type,            .notify_changed_ao = _property_ao_notify_changed_all_devices_cb        ),
+		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("Capabilities",               "au"                                                                                                                                                                                                             ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Checkpoints",                PROP_CHECKPOINTS,                  NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_CHECKPOINTS],            nm_checkpoint_get_type                                                                                ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("Connectivity",               PROP_CONNECTIVITY,                 NMClient, _priv.nm.connectivity                                                                                                                                               ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("ConnectivityCheckAvailable", PROP_CONNECTIVITY_CHECK_AVAILABLE, NMClient, _priv.nm.connectivity_check_available                                                                                                                               ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("ConnectivityCheckEnabled",   PROP_CONNECTIVITY_CHECK_ENABLED,   NMClient, _priv.nm.connectivity_check_enabled                                                                                                                                 ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("ConnectivityCheckUri",       PROP_CONNECTIVITY_CHECK_URI,       NMClient, _priv.nm.connectivity_check_uri                                                                                                                                     ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Devices",                    PROP_DEVICES,                      NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_DEVICES],                nm_device_get_type,            .notify_changed_ao = _property_ao_notify_changed_devices_cb            ),
+		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("GlobalDnsConfiguration",     "a{sv}"                                                                                                                                                                                                          ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("Metered",                    PROP_METERED,                      NMClient, _priv.nm.metered                                                                                                                                                    ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("NetworkingEnabled",          PROP_NETWORKING_ENABLED,           NMClient, _priv.nm.networking_enabled                                                                                                                                         ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP  ("PrimaryConnection",          PROP_PRIMARY_CONNECTION,           NMClient, _priv.nm.property_o[PROPERTY_O_IDX_NM_PRIMAY_CONNECTION],     nm_active_connection_get_type                                                                         ),
+		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("PrimaryConnectionType",      "s"                                                                                                                                                                                                              ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("Startup",                    PROP_STARTUP,                      NMClient, _priv.nm.startup                                                                                                                                                    ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("State",                      PROP_STATE,                        NMClient, _priv.nm.state                                                                                                                                                      ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("Version",                    PROP_VERSION,                      NMClient, _priv.nm.version                                                                                                                                                    ),
+		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("WimaxEnabled",               "b"                                                                                                                                                                                                              ),
+		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("WimaxHardwareEnabled",       "b"                                                                                                                                                                                                              ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("WirelessEnabled",            PROP_WIRELESS_ENABLED,             NMClient, _priv.nm.wireless_enabled                                                                                                                                           ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("WirelessHardwareEnabled",    PROP_WIRELESS_HARDWARE_ENABLED,    NMClient, _priv.nm.wireless_hardware_enabled                                                                                                                                  ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("WwanEnabled",                PROP_WWAN_ENABLED,                 NMClient, _priv.nm.wwan_enabled                                                                                                                                               ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("WwanHardwareEnabled",        PROP_WWAN_HARDWARE_ENABLED,        NMClient, _priv.nm.wwan_hardware_enabled                                                                                                                                      ),
+	),
+);
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_settings = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_SETTINGS,
+	nm_client_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_B       ("CanModify",   PROP_CAN_MODIFY,  NMClient, _priv.settings.can_modify                                                                                                                                                                                          ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Connections", PROP_CONNECTIONS, NMClient, _priv.settings.connections, nm_remote_connection_get_type, .notify_changed_ao = _property_ao_notify_changed_connections_cb, .check_nmobj_visible_fcn = (gboolean (*) (GObject *)) nm_remote_connection_get_visible ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("Hostname",    PROP_HOSTNAME,    NMClient, _priv.settings.hostname                                                                                                                                                                                            ),
+	),
+);
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_dnsmanager = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DNS_MANAGER,
+	nm_client_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_FCN ("Configuration", PROP_DNS_CONFIGURATION, "aa{sv}", _notify_update_prop_dns_manager_configuration ),
+		NML_DBUS_META_PROPERTY_INIT_S   ("Mode",          PROP_DNS_MODE,          NMClient, _priv.dns_manager.mode                        ),
+		NML_DBUS_META_PROPERTY_INIT_S   ("RcManager",     PROP_DNS_RC_MANAGER,    NMClient, _priv.dns_manager.rc_manager                  ),
+	),
+);
 
 static void
 nm_client_class_init (NMClientClass *client_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (client_class);
+
+	_dbus_path_nm          = nm_ref_string_new (NM_DBUS_PATH);
+	_dbus_path_settings    = nm_ref_string_new (NM_DBUS_PATH_SETTINGS);
+	_dbus_path_dns_manager = nm_ref_string_new (NM_DBUS_PATH_DNS_MANAGER);
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -4081,6 +7464,19 @@ nm_client_class_init (NMClientClass *client_class)
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
+	 * NMClient:connectivity-check-uri:
+	 *
+	 * The used URI for connectivity checking.
+	 *
+	 * Since: 1.22
+	 **/
+	obj_properties[PROP_CONNECTIVITY_CHECK_URI] =
+	    g_param_spec_string (NM_CLIENT_CONNECTIVITY_CHECK_URI, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
 	 * NMClient:primary-connection:
 	 *
 	 * The #NMActiveConnection of the device with the default route;
@@ -4230,7 +7626,9 @@ nm_client_class_init (NMClientClass *client_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm,
+	                                                         &_nml_dbus_meta_iface_nm_settings,
+	                                                         &_nml_dbus_meta_iface_nm_dnsmanager);
 
 	/**
 	 * NMClient::device-added:

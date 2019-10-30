@@ -19,7 +19,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	gboolean carrier;
+	bool carrier;
 } NMDeviceAdslPrivate;
 
 struct _NMDeviceAdsl {
@@ -82,22 +82,6 @@ nm_device_adsl_init (NMDeviceAdsl *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_ADSL_CARRIER, &priv->carrier },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_adsl_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_ADSL,
-	                                property_info);
-}
-
-static void
 get_property (GObject *object,
               guint prop_id,
               GValue *value,
@@ -115,16 +99,22 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_adsl = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_ADSL,
+	nm_device_adsl_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_B ("Carrier", PROP_CARRIER, NMDeviceAdsl, _priv.carrier),
+	),
+);
+
 static void
 nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (adsl_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (adsl_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (adsl_class);
 
 	object_class->get_property = get_property;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -140,5 +130,5 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_adsl);
 }

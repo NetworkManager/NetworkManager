@@ -184,24 +184,6 @@ nm_device_bt_init (NMDeviceBt *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_BT_HW_ADDRESS,   &priv->hw_address },
-		{ NM_DEVICE_BT_NAME,         &priv->name },
-		{ NM_DEVICE_BT_CAPABILITIES, &priv->bt_capabilities },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_bt_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
@@ -236,17 +218,25 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_bluetooth = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
+	nm_device_bt_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_U ("BtCapabilities", PROP_BT_CAPABILITIES, NMDeviceBt, _priv.bt_capabilities ),
+		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress",      PROP_HW_ADDRESS,      NMDeviceBt, _priv.hw_address      ),
+		NML_DBUS_META_PROPERTY_INIT_S ("Name",           PROP_NAME,            NMDeviceBt, _priv.name            ),
+	),
+);
+
 static void
 nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (bt_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bt_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bt_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -286,5 +276,5 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_bluetooth);
 }

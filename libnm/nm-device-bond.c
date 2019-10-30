@@ -22,9 +22,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	NMLDBusPropertyAO slaves;
 	char *hw_address;
-	gboolean carrier;
-	GPtrArray *slaves;
+	bool carrier;
 } NMDeviceBondPrivate;
 
 struct _NMDeviceBond {
@@ -90,7 +90,7 @@ nm_device_bond_get_slaves (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), FALSE);
 
-	return NM_DEVICE_BOND_GET_PRIVATE (device)->slaves;
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_DEVICE_BOND_GET_PRIVATE (device)->slaves);
 }
 
 static gboolean
@@ -127,37 +127,6 @@ get_hw_address (NMDevice *device)
 static void
 nm_device_bond_init (NMDeviceBond *device)
 {
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
-
-	priv->slaves = g_ptr_array_new ();
-}
-
-static void
-init_dbus (NMObject *object)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_BOND_HW_ADDRESS, &priv->hw_address },
-		{ NM_DEVICE_BOND_CARRIER,    &priv->carrier },
-		{ NM_DEVICE_BOND_SLAVES,     &priv->slaves, NULL, NM_TYPE_DEVICE },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_bond_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_BOND,
-	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (object);
-
-	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
-
-	G_OBJECT_CLASS (nm_device_bond_parent_class)->dispose (object);
 }
 
 static void
@@ -194,18 +163,30 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_bond = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_BOND,
+	nm_device_bond_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceBond, _priv.carrier                        ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress", PROP_HW_ADDRESS, NMDeviceBond, _priv.hw_address                     ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceBond, _priv.slaves,     nm_device_get_type ),
+	),
+);
+
 static void
-nm_device_bond_class_init (NMDeviceBondClass *bond_class)
+nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (bond_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bond_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (bond_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceBond);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1 (nm_object_class, NMDeviceBondPrivate, slaves);
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -244,5 +225,5 @@ nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_bond);
 }

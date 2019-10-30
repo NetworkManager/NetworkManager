@@ -27,65 +27,6 @@ _nm_dbus_bus_type (void)
 	return v;
 }
 
-/* D-Bus has an upper limit on number of Match rules and it's rather easy
- * to hit as the proxy likes to add one for each object. Let's remove the Match
- * rule the proxy added and ensure a less granular rule is present instead.
- *
- * Also, don't do this immediately since it has a performance penalty.
- * Still better than losing the signals altogether.
- *
- * Ideally, we should be able to tell glib not to hook its rules:
- * https://bugzilla.gnome.org/show_bug.cgi?id=758749
- */
-void
-_nm_dbus_proxy_replace_match (GDBusProxy *proxy)
-{
-	GDBusConnection *connection = g_dbus_proxy_get_connection (proxy);
-	static unsigned match_counter = 1024;
-	char *match;
-
-	if (match_counter == 1) {
-		/* If we hit the low matches watermark, install a
-		 * less granular one. */
-		g_dbus_connection_call (connection,
-		                        "org.freedesktop.DBus",
-		                        "/org/freedesktop/DBus",
-		                        "org.freedesktop.DBus",
-		                        "AddMatch",
-		                        g_variant_new ("(s)", "type='signal',sender='" NM_DBUS_SERVICE "'"),
-		                        NULL,
-		                        G_DBUS_CALL_FLAGS_NONE,
-		                        -1,
-		                        NULL,
-		                        NULL,
-		                        NULL);
-	}
-
-	if (match_counter)
-		match_counter--;
-	if (match_counter)
-		return;
-
-	/* Remove what this proxy added. */
-	match = g_strdup_printf ("type='signal',sender='" NM_DBUS_SERVICE "',"
-	                         "interface='%s',path='%s'",
-	                         g_dbus_proxy_get_interface_name (proxy),
-	                         g_dbus_proxy_get_object_path (proxy));
-	g_dbus_connection_call (connection,
-	                        "org.freedesktop.DBus",
-	                        "/org/freedesktop/DBus",
-	                        "org.freedesktop.DBus",
-	                        "RemoveMatch",
-	                        g_variant_new ("(s)", match),
-	                        NULL,
-	                        G_DBUS_CALL_FLAGS_NONE,
-	                        -1,
-	                        NULL,
-	                        NULL,
-	                        NULL);
-	g_free (match);
-}
-
 /* Binds the properties on a generated server-side GDBus object to the
  * corresponding properties on the public object.
  */

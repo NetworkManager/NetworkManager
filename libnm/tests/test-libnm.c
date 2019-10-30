@@ -11,7 +11,16 @@
 
 #include <sys/mman.h>
 
+#include "NetworkManager.h"
+#include "nm-access-point.h"
+#include "nm-checkpoint.h"
+#include "nm-dhcp4-config.h"
+#include "nm-dhcp6-config.h"
+#include "nm-dns-manager.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-libnm-utils.h"
+#include "nm-object.h"
 #include "nm-vpn-service-plugin.h"
 
 #include "nm-utils/nm-test-utils.h"
@@ -2488,7 +2497,6 @@ test_types (void)
 		G (nm_dhcp6_config_get_type),
 		G (nm_dhcp_config_get_type),
 		G (nm_dns_entry_get_type),
-		G (nm_dns_manager_get_type),
 		G (nm_ip4_config_get_type),
 		G (nm_ip6_config_get_type),
 		G (nm_ip_address_get_type),
@@ -2500,12 +2508,10 @@ test_types (void)
 		G (nm_ip_tunnel_mode_get_type),
 		G (nm_lldp_neighbor_get_type),
 		G (nm_manager_error_get_type),
-		G (nm_manager_get_type),
 		G (nm_manager_reload_flags_get_type),
 		G (nm_metered_get_type),
 		G (nm_object_get_type),
 		G (nm_remote_connection_get_type),
-		G (nm_remote_settings_get_type),
 		G (nm_secret_agent_capabilities_get_type),
 		G (nm_secret_agent_error_get_type),
 		G (nm_secret_agent_get_secrets_flags_get_type),
@@ -2665,6 +2671,401 @@ test_types (void)
 
 /*****************************************************************************/
 
+static void
+test_nml_dbus_meta (void)
+{
+	const NMLDBusMetaIface *meta_iface;
+	const NMLDBusMetaProperty *meta_property;
+	guint prop_idx;
+	gsize i, j;
+	guint l, m;
+
+	for (i = 0; i < G_N_ELEMENTS (_nml_dbus_meta_ifaces); i++) {
+		const NMLDBusMetaIface *mif = _nml_dbus_meta_ifaces[i];
+		nm_auto_unref_gtypeclass GObjectClass *klass_unref = NULL;
+		GObjectClass *klass;
+		GType gtype;
+
+#define COMMON_PREFIX "org.freedesktop.NetworkManager"
+
+		g_assert (mif);
+		g_assert (mif->dbus_iface_name);
+		g_assert (   g_str_has_prefix (mif->dbus_iface_name, COMMON_PREFIX)
+		          && !g_str_has_suffix (mif->dbus_iface_name, ".")
+		          && NM_IN_SET (mif->dbus_iface_name[NM_STRLEN (COMMON_PREFIX)], '\0', '.'));
+		for (j = i + 1; j < G_N_ELEMENTS (_nml_dbus_meta_ifaces); j++)
+			g_assert (mif != _nml_dbus_meta_ifaces[j]);
+		if (i > 0) {
+			if (strcmp (_nml_dbus_meta_ifaces[i - 1]->dbus_iface_name, mif->dbus_iface_name) >= 0) {
+				g_error ("meta-ifaces are not properly sorted: [%zu] \"%s\" should be after [%zu] \"%s\"",
+				         i - 1, _nml_dbus_meta_ifaces[i - 1]->dbus_iface_name, i, mif->dbus_iface_name);
+			}
+		}
+
+		g_assert ((mif->n_dbus_properties > 0) == (!!mif->dbus_properties));
+
+		if (mif->interface_prio == NML_DBUS_META_INTERFACE_PRIO_NONE) {
+			g_assert (!mif->get_type_fcn);
+			g_assert (!mif->obj_properties);
+			g_assert (mif->n_obj_properties == 0);
+			g_assert (!mif->obj_properties_reverse_idx);
+			if (!NM_IN_STRSET (mif->dbus_iface_name, NM_DBUS_INTERFACE_AGENT_MANAGER,
+			                                         NM_DBUS_INTERFACE_DEVICE_STATISTICS,
+			                                         NM_DBUS_INTERFACE_DEVICE_VETH))
+				g_error ("D-Bus interface \"%s\" is unexpectedly empty", mif->dbus_iface_name);
+			if (mif->n_dbus_properties == 0)
+				continue;
+			gtype = G_TYPE_NONE;
+			klass = NULL;
+			goto check_dbus_properties;
+		}
+
+		g_assert (NM_IN_SET ((NMLDBusMetaInteracePrio) mif->interface_prio, NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,
+		                                                                    NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE,
+		                                                                    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW,
+		                                                                    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH));
+
+		g_assert (mif->get_type_fcn);
+		gtype = mif->get_type_fcn ();
+		g_assert (g_type_is_a (gtype, G_TYPE_OBJECT));
+
+		if (mif->interface_prio == NML_DBUS_META_INTERFACE_PRIO_NMCLIENT)
+			g_assert (gtype == NM_TYPE_CLIENT);
+		else
+			g_assert (g_type_is_a (gtype, NM_TYPE_OBJECT));
+
+		/* We only test parts of the types, and avoid initializing all the types.
+		 * That is so that other unit tests in this process randomly run with either
+		 * the class instance already initialized or not. */
+		if ((nmtst_get_rand_uint () % 5) == 0) {
+			klass = (klass_unref = g_type_class_ref (gtype));
+			g_assert (klass);
+		} else
+			klass = g_type_class_peek (gtype);
+
+		if (klass) {
+			if (NM_IS_OBJECT_CLASS (klass)) {
+				NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+				const _NMObjectClassFieldInfo *p_prev;
+				const _NMObjectClassFieldInfo *p;
+
+				p_prev = NULL;
+				for (p = nm_object_class->property_o_info; p; p_prev = p, p = p->parent) {
+					g_assert (p->num > 0);
+					g_assert (NM_IS_OBJECT_CLASS (p->klass));
+					g_assert (g_type_is_a (gtype, G_TYPE_FROM_CLASS (p->klass)));
+					g_assert (p->klass->property_o_info == p);
+					if (p_prev) {
+						g_assert (g_type_is_a (G_TYPE_FROM_CLASS (p_prev->klass), G_TYPE_FROM_CLASS (p->klass)));
+						g_assert (p_prev->klass != p->klass);
+					}
+				}
+			} else
+				g_assert (NM_IS_CLIENT_CLASS (klass));
+		}
+
+		if (!mif->obj_properties) {
+			g_assert_cmpint (mif->n_obj_properties, ==, 0);
+			g_assert (!mif->obj_properties_reverse_idx);
+		} else {
+			g_assert (mif->obj_properties);
+			g_assert (mif->obj_properties[0] == 0);
+			g_assert_cmpint (mif->n_obj_properties, >, 1);
+			if (klass) {
+				for (l = 1; l < mif->n_obj_properties; l++) {
+					const GParamSpec *sp = mif->obj_properties[l];
+
+					g_assert (sp);
+					g_assert (sp->name);
+					g_assert (strlen (sp->name) > 0);
+				}
+			}
+
+			g_assert (mif->obj_properties_reverse_idx);
+			if (klass) {
+				g_assert (mif->obj_properties_reverse_idx[0] == 0xFFu);
+				for (l = 0; l < mif->n_obj_properties; l++) {
+					guint8 ridx = mif->obj_properties_reverse_idx[l];
+
+					if (ridx != 0xFFu) {
+						g_assert_cmpint (ridx, <=, mif->n_dbus_properties);
+						for (m = l + 1; m < mif->n_obj_properties; m++)
+							g_assert_cmpint (ridx, !=, mif->obj_properties_reverse_idx[m]);
+					}
+				}
+			}
+		}
+
+check_dbus_properties:
+		for (l = 0; l < mif->n_dbus_properties; l++) {
+			const NMLDBusMetaProperty *mpr = &mif->dbus_properties[l];
+			gs_free char *obj_property_name = NULL;
+			const struct {
+				const char *dbus_type;
+				GType default_gtype;
+			} *p_expected_type, *p_expected_type_2, expected_types[] = {
+				{ "b",         G_TYPE_BOOLEAN },
+				{ "q",         G_TYPE_UINT },
+				{ "y",         G_TYPE_UCHAR },
+				{ "i",         G_TYPE_INT },
+				{ "u",         G_TYPE_UINT },
+				{ "x",         G_TYPE_INT64 },
+				{ "t",         G_TYPE_UINT64 },
+				{ "s",         G_TYPE_STRING },
+				{ "o",         G_TYPE_STRING },
+				{ "ay",        G_TYPE_BYTES },
+				{ "as",        G_TYPE_STRV },
+				{ "ao",        G_TYPE_PTR_ARRAY },
+				{ "a{sv}",     G_TYPE_HASH_TABLE },
+				{ "aa{sv}",    G_TYPE_PTR_ARRAY },
+
+				{ "(uu)",      G_TYPE_NONE },
+				{ "aau",       G_TYPE_NONE },
+				{ "au",        G_TYPE_NONE },
+				{ "a(ayuay)",  G_TYPE_NONE },
+				{ "aay",       G_TYPE_NONE },
+				{ "a(ayuayu)", G_TYPE_NONE },
+
+				{ "u",         G_TYPE_FLAGS },
+				{ "u",         G_TYPE_ENUM },
+				{ "o",         NM_TYPE_OBJECT },
+			};
+			const GParamSpec *pspec = NULL;
+
+			g_assert (mpr->dbus_property_name);
+			g_assert (g_variant_type_string_is_valid ((const char *) mpr->dbus_type));
+			if (l > 0) {
+				if (strcmp (mif->dbus_properties[l - 1].dbus_property_name, mpr->dbus_property_name) >= 0) {
+					g_error ("meta-ifaces[%s] must have property #%u \"%s\" after #%u \"%s\"",
+					         mif->dbus_iface_name, l - 1, mif->dbus_properties[l - 1].dbus_property_name, l, mpr->dbus_property_name);
+				}
+			}
+
+			obj_property_name = nm_utils_wincaps_to_dash (mpr->dbus_property_name);
+			g_assert (obj_property_name);
+
+			for (p_expected_type = &expected_types[0]; TRUE; ) {
+				if (nm_streq ((const char *) mpr->dbus_type, p_expected_type->dbus_type))
+					break;
+				p_expected_type++;
+				if (p_expected_type >= &expected_types[G_N_ELEMENTS (expected_types)]) {
+					g_error ("D-Bus type \"%s\" is not implemented (in property %s.%s)",
+					         (const char *) mpr->dbus_type,
+					         mif->dbus_iface_name,
+					         mpr->dbus_property_name);
+				}
+			}
+
+			if (   klass
+			    && mpr->obj_properties_idx > 0) {
+				g_assert_cmpint (mpr->obj_properties_idx, <, mif->n_obj_properties);
+				if (!mpr->obj_property_no_reverse_idx)
+					g_assert_cmpint (mif->obj_properties_reverse_idx[mpr->obj_properties_idx], ==, l);
+				else {
+					g_assert_cmpint (mif->obj_properties_reverse_idx[mpr->obj_properties_idx], !=, l);
+					g_assert_cmpint (mif->obj_properties_reverse_idx[mpr->obj_properties_idx], !=, 0xFFu);
+				}
+				pspec = mif->obj_properties[mpr->obj_properties_idx];
+			}
+
+			if (mpr->use_notify_update_prop) {
+				g_assert (mpr->notify_update_prop);
+			} else {
+				if (klass)
+					g_assert (pspec);
+			}
+
+			if (pspec) {
+				const char *expected_property_name;
+
+				if (   mif == &_nml_dbus_meta_iface_nm_connection_active
+				    && nm_streq (pspec->name, NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH)) {
+					g_assert_cmpstr (obj_property_name, ==, "specific-object");
+					expected_property_name = NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH;
+				} else if (   mif == &_nml_dbus_meta_iface_nm_accesspoint
+				           && nm_streq (pspec->name, NM_ACCESS_POINT_BSSID)) {
+					g_assert_cmpstr (obj_property_name, ==, "hw-address");
+					expected_property_name = NM_ACCESS_POINT_BSSID;
+				} else if (   mif == &_nml_dbus_meta_iface_nm_device_wireguard
+				           && nm_streq (pspec->name, NM_DEVICE_WIREGUARD_FWMARK)) {
+					g_assert_cmpstr (obj_property_name, ==, "fw-mark");
+					expected_property_name = NM_DEVICE_WIREGUARD_FWMARK;
+				} else if (   NM_IN_SET (mif, &_nml_dbus_meta_iface_nm_ip4config,
+				                              &_nml_dbus_meta_iface_nm_ip6config)
+				           && nm_streq (pspec->name, NM_IP_CONFIG_ADDRESSES)) {
+					g_assert (NM_IN_STRSET (obj_property_name, "addresses", "address-data"));
+					expected_property_name = NM_IP_CONFIG_ADDRESSES;
+				} else if (   NM_IN_SET (mif, &_nml_dbus_meta_iface_nm_ip4config,
+				                              &_nml_dbus_meta_iface_nm_ip6config)
+				           && nm_streq (pspec->name, NM_IP_CONFIG_ROUTES)) {
+					g_assert (NM_IN_STRSET (obj_property_name, "routes", "route-data"));
+					expected_property_name = NM_IP_CONFIG_ROUTES;
+				} else if (   NM_IN_SET (mif, &_nml_dbus_meta_iface_nm_ip4config,
+				                              &_nml_dbus_meta_iface_nm_ip6config)
+				           && nm_streq (pspec->name, NM_IP_CONFIG_NAMESERVERS)) {
+					g_assert (NM_IN_STRSET (obj_property_name, "nameservers", "nameserver-data"));
+					expected_property_name = NM_IP_CONFIG_NAMESERVERS;
+				} else if (   mif == &_nml_dbus_meta_iface_nm_ip4config
+				           && nm_streq (pspec->name, NM_IP_CONFIG_WINS_SERVERS)) {
+					g_assert (NM_IN_STRSET (obj_property_name, "wins-servers", "wins-server-data"));
+					expected_property_name = NM_IP_CONFIG_WINS_SERVERS;
+				} else if (   mif == &_nml_dbus_meta_iface_nm_dnsmanager
+				           && nm_streq (pspec->name, NM_CLIENT_DNS_CONFIGURATION)) {
+					g_assert_cmpstr (obj_property_name, ==, "configuration");
+					expected_property_name = NM_CLIENT_DNS_CONFIGURATION;
+				} else if (   mif == &_nml_dbus_meta_iface_nm_dnsmanager
+				           && nm_streq (pspec->name, NM_CLIENT_DNS_MODE)) {
+					g_assert_cmpstr (obj_property_name, ==, "mode");
+					expected_property_name = NM_CLIENT_DNS_MODE;
+				} else if (   mif == &_nml_dbus_meta_iface_nm_dnsmanager
+				           && nm_streq (pspec->name, NM_CLIENT_DNS_RC_MANAGER)) {
+					g_assert_cmpstr (obj_property_name, ==, "rc-manager");
+					expected_property_name = NM_CLIENT_DNS_RC_MANAGER;
+				} else
+					expected_property_name = obj_property_name;
+
+				g_assert_cmpstr (expected_property_name, ==, pspec->name);
+
+				if (!mpr->use_notify_update_prop) {
+					for (p_expected_type_2 = &expected_types[0]; p_expected_type_2 < &expected_types[G_N_ELEMENTS (expected_types)]; p_expected_type_2++) {
+						if (!nm_streq ((const char *) mpr->dbus_type, p_expected_type_2->dbus_type))
+							continue;
+						if (   pspec->value_type == p_expected_type_2->default_gtype
+						    || (   p_expected_type_2->default_gtype == G_TYPE_ENUM
+						        && g_type_is_a (pspec->value_type, G_TYPE_ENUM))
+						    || (   p_expected_type_2->default_gtype == G_TYPE_FLAGS
+						        && g_type_is_a (pspec->value_type, G_TYPE_FLAGS))
+						    || (   p_expected_type_2->default_gtype == NM_TYPE_OBJECT
+						        && nm_streq ((const char *) mpr->dbus_type, "o")
+						        && g_type_is_a (pspec->value_type, NM_TYPE_OBJECT)))
+							break;
+					}
+					if (p_expected_type_2 >= &expected_types[G_N_ELEMENTS (expected_types)]) {
+						g_error ("D-Bus property \"%s.%s\" (type \"%s\") maps to property \"%s\", but that has an unexpected property type %s (expected %s)",
+						         mif->dbus_iface_name,
+						         mpr->dbus_property_name,
+						         (const char *) mpr->dbus_type,
+						         pspec->name,
+						         g_type_name (pspec->value_type),
+						         g_type_name (p_expected_type->default_gtype));
+					}
+				}
+
+				if (!nm_utils_g_param_spec_is_default (pspec)) {
+					/* We expect our properties to have a default value of zero/NULL.
+					 * Except those whitelisted here: */
+					if (   (   mif == &_nml_dbus_meta_iface_nm_accesspoint
+					        && nm_streq (pspec->name, NM_ACCESS_POINT_LAST_SEEN))
+					    || (   mif == &_nml_dbus_meta_iface_nm_device_vxlan
+					        && nm_streq (pspec->name, NM_DEVICE_VXLAN_LEARNING))
+					    || (   mif == &_nml_dbus_meta_iface_nm_device_wireless
+					        && nm_streq (pspec->name, NM_DEVICE_WIFI_LAST_SCAN))
+					    || (   mif == &_nml_dbus_meta_iface_nm_wifip2ppeer
+					        && nm_streq (pspec->name, NM_WIFI_P2P_PEER_LAST_SEEN))
+					    || (   mif == &_nml_dbus_meta_iface_nm_device_tun
+					        && NM_IN_STRSET (pspec->name, NM_DEVICE_TUN_GROUP,
+					                                      NM_DEVICE_TUN_OWNER))) {
+						/* pass */
+					} else {
+						g_error ("property %s.%s (%s.%s) does not have a default value of zero",
+						         mif->dbus_iface_name,
+						         mpr->dbus_property_name,
+						         g_type_name (gtype),
+						         pspec->name);
+					}
+				}
+			}
+		}
+
+		if (klass) {
+			for (l = 0; l < mif->n_obj_properties; l++) {
+				guint8 ridx = mif->obj_properties_reverse_idx[l];
+
+				if (ridx != 0xFFu)
+					g_assert_cmpint (mif->dbus_properties[ridx].obj_properties_idx, ==, l);
+			}
+		}
+
+		g_assert (mif == nml_dbus_meta_iface_get (mif->dbus_iface_name));
+	}
+
+	meta_iface = nml_dbus_meta_iface_get (NM_DBUS_INTERFACE);
+	g_assert (meta_iface);
+	g_assert (meta_iface == &_nml_dbus_meta_iface_nm);
+	g_assert_cmpstr (meta_iface->dbus_iface_name, ==, NM_DBUS_INTERFACE);
+
+	meta_property = nml_dbus_meta_property_get (meta_iface, "Version", &prop_idx);
+	g_assert (meta_property);
+	g_assert_cmpstr (meta_property->dbus_property_name, ==, "Version");
+	g_assert (&meta_iface->dbus_properties[prop_idx] == meta_property);
+}
+
+/*****************************************************************************/
+
+static void
+test_dbus_meta_types (void)
+{
+	struct list_data {
+		const char *dbus_iface_name;
+		GType gtype;
+		NMLDBusMetaInteracePrio interface_prio;
+	} list[] = {
+		{ NM_DBUS_INTERFACE,                      NM_TYPE_CLIENT,               NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,         },
+		{ NM_DBUS_INTERFACE_ACCESS_POINT,         NM_TYPE_ACCESS_POINT,         NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_ACTIVE_CONNECTION,    NM_TYPE_ACTIVE_CONNECTION,    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW,  }, /* otherwise, NM_TYPE_VPN_CONNECTION. */
+		{ NM_DBUS_INTERFACE_DEVICE_6LOWPAN,       NM_TYPE_DEVICE_6LOWPAN,       NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_ADSL,          NM_TYPE_DEVICE_ADSL,          NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_BOND,          NM_TYPE_DEVICE_BOND,          NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_BRIDGE,        NM_TYPE_DEVICE_BRIDGE,        NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,     NM_TYPE_DEVICE_BT,            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_DUMMY,         NM_TYPE_DEVICE_DUMMY,         NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_WIRED,         NM_TYPE_DEVICE_ETHERNET,      NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_GENERIC,       NM_TYPE_DEVICE_GENERIC,       NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_INFINIBAND,    NM_TYPE_DEVICE_INFINIBAND,    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL,     NM_TYPE_DEVICE_IP_TUNNEL,     NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_MACSEC,        NM_TYPE_DEVICE_MACSEC,        NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_MACVLAN,       NM_TYPE_DEVICE_MACVLAN,       NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_MODEM,         NM_TYPE_DEVICE_MODEM,         NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_OLPC_MESH,     NM_TYPE_DEVICE_OLPC_MESH,     NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_OVS_INTERFACE, NM_TYPE_DEVICE_OVS_INTERFACE, NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_OVS_PORT,      NM_TYPE_DEVICE_OVS_PORT,      NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,    NM_TYPE_DEVICE_OVS_BRIDGE,    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_WIFI_P2P,      NM_TYPE_DEVICE_WIFI_P2P,      NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_PPP,           NM_TYPE_DEVICE_PPP,           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_TEAM,          NM_TYPE_DEVICE_TEAM,          NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_TUN,           NM_TYPE_DEVICE_TUN,           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_VLAN,          NM_TYPE_DEVICE_VLAN,          NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_WPAN,          NM_TYPE_DEVICE_WPAN,          NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_VXLAN,         NM_TYPE_DEVICE_VXLAN,         NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_WIRELESS,      NM_TYPE_DEVICE_WIFI,          NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DEVICE_WIREGUARD,     NM_TYPE_DEVICE_WIREGUARD,     NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DHCP4_CONFIG,         NM_TYPE_DHCP4_CONFIG,         NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_DHCP6_CONFIG,         NM_TYPE_DHCP6_CONFIG,         NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_IP4_CONFIG,           NM_TYPE_IP4_CONFIG,           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_IP6_CONFIG,           NM_TYPE_IP6_CONFIG,           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_WIFI_P2P_PEER,        NM_TYPE_WIFI_P2P_PEER,        NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_SETTINGS_CONNECTION,  NM_TYPE_REMOTE_CONNECTION,    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_SETTINGS,             NM_TYPE_CLIENT,               NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,         },
+		{ NM_DBUS_INTERFACE_DNS_MANAGER,          NM_TYPE_CLIENT,               NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,         },
+		{ NM_DBUS_INTERFACE_VPN_CONNECTION,       NM_TYPE_VPN_CONNECTION,       NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+		{ NM_DBUS_INTERFACE_CHECKPOINT,           NM_TYPE_CHECKPOINT,           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, },
+	};
+	guint i;
+
+	/* These iface<->gtype associations are copied from "nm-client.c"'s obj_nm_for_gdbus_object().
+	 * This is redundant to the meta-data, still check that the meta data matches. */
+	for (i = 0; i < G_N_ELEMENTS (list); i++) {
+		const struct list_data *d = &list[i];
+		const NMLDBusMetaIface *meta_iface;
+
+		meta_iface = nml_dbus_meta_iface_get (d->dbus_iface_name);
+		g_assert (meta_iface);
+		g_assert_cmpint (meta_iface->interface_prio, ==, d->interface_prio);
+		g_assert (meta_iface->get_type_fcn() == d->gtype);
+	}
+}
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2675,6 +3076,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/libnm/general/fixup_vendor_string", test_fixup_vendor_string);
 	g_test_add_func ("/libnm/general/nm_vpn_service_plugin_read_vpn_details", test_nm_vpn_service_plugin_read_vpn_details);
 	g_test_add_func ("/libnm/general/test_types", test_types);
+	g_test_add_func ("/libnm/general/test_nml_dbus_meta", test_nml_dbus_meta);
+	g_test_add_func ("/libnm/general/test_dbus_meta_types", test_dbus_meta_types);
 
 	return g_test_run ();
 }

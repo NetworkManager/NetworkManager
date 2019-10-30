@@ -17,8 +17,6 @@
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
-
 /**
  * SECTION:nm-remote-connection
  * @short_description: A connection managed by NetworkManager server
@@ -37,13 +35,14 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMRemoteConnection,
 );
 
 typedef struct {
-	NMDBusSettingsConnection *proxy;
+	GCancellable *get_settings_cancellable;
 
-	gboolean unsaved;
-	guint32 flags;
 	char *filename;
+	guint32 flags;
+	bool unsaved;
 
-	gboolean visible;
+	bool visible:1;
+	bool is_initialized:1;
 } NMRemoteConnectionPrivate;
 
 struct _NMRemoteConnection {
@@ -56,20 +55,12 @@ struct _NMRemoteConnectionClass {
 };
 
 static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
-static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
-static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_remote_connection_connection_iface_init);
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_remote_connection_initable_iface_init);
-                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
                          )
+
 #define NM_REMOTE_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMRemoteConnection, NM_IS_REMOTE_CONNECTION, NMObject)
-
-/*****************************************************************************/
-
-static GInitableIface *nm_remote_connection_parent_initable_iface;
-static GAsyncInitableIface *nm_remote_connection_parent_async_initable_iface;
 
 /*****************************************************************************/
 
@@ -106,12 +97,13 @@ nm_remote_connection_update2 (NMRemoteConnection *connection,
 	if (!args)
 		args = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 
-	_nm_object_dbus_call (connection,
+	_nm_client_dbus_call (_nm_object_get_client (connection),
+	                      connection,
 	                      nm_remote_connection_update2,
 	                      cancellable,
 	                      callback,
 	                      user_data,
-	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                      _nm_object_get_path (connection),
 	                      NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                      "Update2",
 	                      g_variant_new ("(@a{sa{sv}}u@a{sv})",
@@ -185,9 +177,9 @@ nm_remote_connection_commit_changes (NMRemoteConnection *connection,
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	ret = _nm_object_dbus_call_sync (connection,
+	ret = _nm_client_dbus_call_sync (_nm_object_get_client (connection),
 	                                 cancellable,
-	                                 g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                                 _nm_object_get_path (connection),
 	                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                                 "Update2",
 	                                 g_variant_new ("(@a{sa{sv}}u@a{sv})",
@@ -287,9 +279,9 @@ nm_remote_connection_save (NMRemoteConnection *connection,
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
 
-	return _nm_object_dbus_call_sync_void (connection,
+	return _nm_client_dbus_call_sync_void (_nm_object_get_client (connection),
 	                                       cancellable,
-	                                       g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                                       _nm_object_get_path (connection),
 	                                       NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                                       "Save",
 	                                       g_variant_new ("()"),
@@ -318,12 +310,13 @@ nm_remote_connection_save_async (NMRemoteConnection *connection,
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (connection,
+	_nm_client_dbus_call (_nm_object_get_client (connection),
+	                      connection,
 	                      nm_remote_connection_save_async,
 	                      cancellable,
 	                      callback,
 	                      user_data,
-	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                      _nm_object_get_path (connection),
 	                      NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                      "Save",
 	                      g_variant_new ("()"),
@@ -375,9 +368,9 @@ nm_remote_connection_delete (NMRemoteConnection *connection,
 {
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
-	return _nm_object_dbus_call_sync_void (connection,
+	return _nm_client_dbus_call_sync_void (_nm_object_get_client (connection),
 	                                       cancellable,
-	                                       g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                                       _nm_object_get_path (connection),
 	                                       NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                                       "Delete",
 	                                       g_variant_new ("()"),
@@ -405,12 +398,13 @@ nm_remote_connection_delete_async (NMRemoteConnection *connection,
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (connection,
+	_nm_client_dbus_call (_nm_object_get_client (connection),
+	                      connection,
 	                      nm_remote_connection_delete_async,
 	                      cancellable,
 	                      callback,
 	                      user_data,
-	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                      _nm_object_get_path (connection),
 	                      NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                      "Delete",
 	                      g_variant_new ("()"),
@@ -469,9 +463,9 @@ nm_remote_connection_get_secrets (NMRemoteConnection *connection,
 	g_return_val_if_fail (setting_name, NULL);
 	g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), NULL);
 
-	ret = _nm_object_dbus_call_sync (connection,
+	ret = _nm_client_dbus_call_sync (_nm_object_get_client (connection),
 	                                 cancellable,
-	                                 g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                                 _nm_object_get_path (connection),
 	                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                                 "GetSecrets",
 	                                 g_variant_new ("(s)", setting_name),
@@ -511,12 +505,13 @@ nm_remote_connection_get_secrets_async (NMRemoteConnection *connection,
 	g_return_if_fail (setting_name);
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-	_nm_object_dbus_call (connection,
+	_nm_client_dbus_call (_nm_object_get_client (connection),
+	                      connection,
 	                      nm_remote_connection_get_secrets_async,
 	                      cancellable,
 	                      callback,
 	                      user_data,
-	                      g_dbus_proxy_get_object_path (G_DBUS_PROXY (NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->proxy)),
+	                      _nm_object_get_path (connection),
 	                      NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                      "GetSecrets",
 	                      g_variant_new ("(s)", setting_name),
@@ -633,195 +628,94 @@ nm_remote_connection_get_visible (NMRemoteConnection *connection)
 
 /*****************************************************************************/
 
-static void
-replace_settings (NMRemoteConnection *self, GVariant *new_settings)
+GCancellable *
+_nm_remote_settings_get_settings_prepare (NMRemoteConnection *self)
 {
-	GError *error = NULL;
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
-	if (!_nm_connection_replace_settings ((NMConnection *) self,
-	                                      new_settings,
-	                                      NM_SETTING_PARSE_FLAGS_BEST_EFFORT,
-	                                      &error))
-		g_clear_error (&error);
+	nm_clear_g_cancellable (&priv->get_settings_cancellable);
+	priv->get_settings_cancellable = g_cancellable_new ();
+	return priv->get_settings_cancellable;
 }
 
-static void
-updated_get_settings_cb (GObject *proxy,
-                         GAsyncResult *result,
-                         gpointer user_data)
+void
+_nm_remote_settings_get_settings_commit (NMRemoteConnection *self,
+                                         GVariant *settings)
 {
-	NMRemoteConnection *self = user_data;
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-	GVariant *new_settings;
-	gboolean visible;
+	GError *error = NULL;
+	gboolean visible = FALSE;
+	gboolean changed = FALSE;
 
-	if (!nmdbus_settings_connection_call_get_settings_finish (priv->proxy, &new_settings,
-	                                                          result, NULL)) {
-		/* Connection is no longer visible to this user. */
+	g_clear_object (&priv->get_settings_cancellable);
+
+	if (!priv->is_initialized) {
+		changed = TRUE;
+		priv->is_initialized = TRUE;
+	}
+
+	if (settings) {
+		if (!_nm_connection_replace_settings ((NMConnection *) self,
+		                                      settings,
+		                                      NM_SETTING_PARSE_FLAGS_BEST_EFFORT,
+		                                      &error)) {
+			NML_NMCLIENT_LOG_E (_nm_object_get_client (self), "[%s] failure to update settings: %s",
+			                    _nm_object_get_path (self),
+			                    error->message);
+			g_clear_error (&error);
+		} else
+			visible = TRUE;
+	} else
 		nm_connection_clear_settings (NM_CONNECTION (self));
 
-		visible = FALSE;
-	} else {
-		replace_settings (self, new_settings);
-		g_variant_unref (new_settings);
-
-		visible = TRUE;
-	}
-
-	if (visible != priv->visible) {
+	if (priv->visible != visible) {
 		priv->visible = visible;
-		_notify (self, PROP_VISIBLE);
+		_nm_client_queue_notify_object (_nm_object_get_client (self),
+		                                self,
+		                                obj_properties[PROP_VISIBLE]);
+		changed = TRUE;
 	}
 
-	g_object_unref (self);
+	if (changed)
+		_nm_client_notify_object_changed (_nm_object_get_client (self), _nm_object_get_dbobj (self));
 }
 
-static void
-updated_cb (NMDBusSettingsConnection *proxy, gpointer user_data)
-{
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (user_data);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+/*****************************************************************************/
 
-	/* The connection got updated; request the replacement settings */
-	nmdbus_settings_connection_call_get_settings (priv->proxy,
-	                                              NULL,
-	                                              updated_get_settings_cb,
-	                                              g_object_ref (self));
+static gboolean
+is_ready (NMObject *nmobj)
+{
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (nmobj);
+
+	if (!priv->is_initialized)
+		return FALSE;;
+
+	return NM_OBJECT_CLASS (nm_remote_connection_parent_class)->is_ready (nmobj);
 }
 
 /*****************************************************************************/
 
 static void
-init_dbus (NMObject *object)
+register_client (NMObject *nmobj,
+                 NMClient *client,
+                 NMLDBusObject *dbobj)
 {
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_REMOTE_CONNECTION_UNSAVED, &priv->unsaved },
-		{ NM_REMOTE_CONNECTION_FLAGS, &priv->flags },
-		{ NM_REMOTE_CONNECTION_FILENAME, &priv->filename },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_remote_connection_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
-	                                property_info);
-}
-
-static gboolean
-init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
-{
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (initable);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-	GVariant *settings;
-
-	priv->proxy = NMDBUS_SETTINGS_CONNECTION (_nm_object_get_proxy (NM_OBJECT (initable), NM_DBUS_INTERFACE_SETTINGS_CONNECTION));
-	g_signal_connect_object (priv->proxy, "updated", G_CALLBACK (updated_cb), initable, 0);
-
-	if (nmdbus_settings_connection_call_get_settings_sync (priv->proxy,
-	                                                       &settings,
-	                                                       cancellable,
-	                                                       NULL)) {
-		priv->visible = TRUE;
-		replace_settings (self, settings);
-		g_variant_unref (settings);
-	}
-
-	if (!nm_remote_connection_parent_initable_iface->init (initable, cancellable, error))
-		return FALSE;
-
-	return TRUE;
-}
-
-typedef struct {
-	NMRemoteConnection *connection;
-	GCancellable *cancellable;
-	GSimpleAsyncResult *result;
-	GAsyncInitable *initable;
-	int io_priority;
-} NMRemoteConnectionInitData;
-
-static void
-init_async_complete (NMRemoteConnectionInitData *init_data, GError *error)
-{
-	if (error)
-		g_simple_async_result_take_error (init_data->result, error);
-	else
-		g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
-
-	g_simple_async_result_complete (init_data->result);
-	g_object_unref (init_data->result);
-	g_clear_object (&init_data->cancellable);
-	g_slice_free (NMRemoteConnectionInitData, init_data);
+	NM_OBJECT_CLASS (nm_remote_connection_parent_class)->register_client (nmobj, client, dbobj);
+	nm_connection_set_path (NM_CONNECTION (nmobj),
+	                        dbobj->dbus_path->str);
+	_nm_client_get_settings_call (client, dbobj);
 }
 
 static void
-init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_data)
+unregister_client (NMObject *nmobj,
+                   NMClient *client,
+                   NMLDBusObject *dbobj)
 {
-	NMRemoteConnectionInitData *init_data = user_data;
-	GError *error = NULL;
-
-	init_async_complete (init_data, error);
+	nm_clear_g_cancellable (&NM_REMOTE_CONNECTION_GET_PRIVATE (nmobj)->get_settings_cancellable);
+	NM_OBJECT_CLASS (nm_remote_connection_parent_class)->unregister_client (nmobj, client, dbobj);
 }
 
-static void
-init_get_settings_cb (GObject *proxy,
-                      GAsyncResult *result,
-                      gpointer user_data)
-{
-	NMRemoteConnectionInitData *init_data = user_data;
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (init_data->initable);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-	GVariant *settings;
-	GError *error = NULL;
-
-	if (!nmdbus_settings_connection_call_get_settings_finish (priv->proxy, &settings,
-	                                                          result, &error)) {
-		g_error_free (error);
-	} else {
-		priv->visible = TRUE;
-		replace_settings (NM_REMOTE_CONNECTION (init_data->initable), settings);
-		g_variant_unref (settings);
-	}
-
-	nm_remote_connection_parent_async_initable_iface->
-		init_async (init_data->initable, init_data->io_priority, init_data->cancellable, init_async_parent_inited, init_data);
-}
-
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data)
-{
-	NMRemoteConnectionInitData *init_data;
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (initable);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-
-	init_data = g_slice_new0 (NMRemoteConnectionInitData);
-	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
-	                                               user_data, init_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
-	init_data->initable = initable;
-	init_data->io_priority = io_priority;
-
-	priv->proxy = NMDBUS_SETTINGS_CONNECTION (_nm_object_get_proxy (NM_OBJECT (initable),
-	                                          NM_DBUS_INTERFACE_SETTINGS_CONNECTION));
-
-	g_signal_connect_object (priv->proxy, "updated",
-	                         G_CALLBACK (updated_cb), initable, 0);
-
-	nmdbus_settings_connection_call_get_settings (NM_REMOTE_CONNECTION_GET_PRIVATE (NM_REMOTE_CONNECTION (init_data->initable))->proxy,
-	                                              init_data->cancellable,
-	                                              init_get_settings_cb, init_data);
-}
-
-static void
-nm_remote_connection_init (NMRemoteConnection *self)
-{
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -846,13 +740,11 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-constructed (GObject *object)
-{
-	G_OBJECT_CLASS (nm_remote_connection_parent_class)->constructed (object);
+/*****************************************************************************/
 
-	nm_connection_set_path (NM_CONNECTION (object),
-	                        nm_object_get_path (NM_OBJECT (object)));
+static void
+nm_remote_connection_init (NMRemoteConnection *self)
+{
 }
 
 static void
@@ -860,23 +752,34 @@ dispose (GObject *object)
 {
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 
-	g_clear_object (&priv->proxy);
 	nm_clear_g_free (&priv->filename);
 
 	G_OBJECT_CLASS (nm_remote_connection_parent_class)->dispose (object);
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_settings_connection = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	nm_remote_connection_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S ("Filename", PROP_FILENAME, NMRemoteConnection, _priv.filename ),
+		NML_DBUS_META_PROPERTY_INIT_U ("Flags",    PROP_FLAGS,    NMRemoteConnection, _priv.flags    ),
+		NML_DBUS_META_PROPERTY_INIT_B ("Unsaved",  PROP_UNSAVED,  NMRemoteConnection, _priv.unsaved  ),
+	),
+);
+
 static void
-nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
+nm_remote_connection_class_init (NMRemoteConnectionClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (remote_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (remote_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
 
-	nm_object_class->init_dbus = init_dbus;
+	nm_object_class->is_ready          = is_ready;
+	nm_object_class->register_client   = register_client;
+	nm_object_class->unregister_client = unregister_client;
 
 	/**
 	 * NMRemoteConnection:unsaved:
@@ -935,26 +838,10 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_settings_connection);
 }
 
 static void
 nm_remote_connection_connection_iface_init (NMConnectionInterface *iface)
 {
-}
-
-static void
-nm_remote_connection_initable_iface_init (GInitableIface *iface)
-{
-	nm_remote_connection_parent_initable_iface = g_type_interface_peek_parent (iface);
-
-	iface->init = init_sync;
-}
-
-static void
-nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface)
-{
-	nm_remote_connection_parent_async_initable_iface = g_type_interface_peek_parent (iface);
-
-	iface->init_async = init_async;
 }

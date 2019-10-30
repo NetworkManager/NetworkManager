@@ -25,11 +25,11 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMDeviceModemCapabilities caps;
-	NMDeviceModemCapabilities current_caps;
 	char *device_id;
 	char *operator_code;
 	char *apn;
+	guint32 modem_capabilities;
+	guint32 current_capabilities;
 } NMDeviceModemPrivate;
 
 struct _NMDeviceModem {
@@ -62,7 +62,7 @@ nm_device_modem_get_modem_capabilities (NMDeviceModem *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
-	return NM_DEVICE_MODEM_GET_PRIVATE (self)->caps;
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->modem_capabilities;
 }
 
 /**
@@ -81,7 +81,7 @@ nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
-	return NM_DEVICE_MODEM_GET_PRIVATE (self)->current_caps;
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->current_capabilities;
 }
 
 /**
@@ -216,26 +216,6 @@ nm_device_modem_init (NMDeviceModem *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_MODEM_MODEM_CAPABILITIES,   &priv->caps },
-		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, &priv->current_caps },
-		{ NM_DEVICE_MODEM_DEVICE_ID,            &priv->device_id },
-		{ NM_DEVICE_MODEM_OPERATOR_CODE,        &priv->operator_code },
-		{ NM_DEVICE_MODEM_APN,                  &priv->apn },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_modem_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_MODEM,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
@@ -277,17 +257,27 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_modem = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_MODEM,
+	nm_device_modem_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S ("Apn",                 PROP_APN,                   NMDeviceModem, _priv.apn                  ),
+		NML_DBUS_META_PROPERTY_INIT_U ("CurrentCapabilities", PROP_CURRENT_CAPABILITIES,  NMDeviceModem, _priv.current_capabilities ),
+		NML_DBUS_META_PROPERTY_INIT_S ("DeviceId",            PROP_DEVICE_ID,             NMDeviceModem, _priv.device_id            ),
+		NML_DBUS_META_PROPERTY_INIT_U ("ModemCapabilities",   PROP_MODEM_CAPABILITIES,    NMDeviceModem, _priv.modem_capabilities   ),
+		NML_DBUS_META_PROPERTY_INIT_S ("OperatorCode",        PROP_OPERATOR_CODE,         NMDeviceModem, _priv.operator_code        ),
+	),
+);
+
 static void
 nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (modem_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (modem_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (modem_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	device_class->get_type_description  = get_type_description;
 	device_class->connection_compatible = connection_compatible;
@@ -354,5 +344,5 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_modem);
 }

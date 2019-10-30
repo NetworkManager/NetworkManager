@@ -106,6 +106,7 @@ libnm-core/nm-team-utils.c
 libnm-core/nm-utils.c
 libnm-core/nm-vpn-editor-plugin.c
 libnm-core/nm-vpn-plugin-info.c
+libnm/nm-client.c
 libnm/nm-device-6lowpan.c
 libnm/nm-device-adsl.c
 libnm/nm-device-bond.c
@@ -131,10 +132,8 @@ libnm/nm-device-wifi.c
 libnm/nm-device-wimax.c
 libnm/nm-device-wpan.c
 libnm/nm-device.c
-libnm/nm-manager.c
 libnm/nm-object.c
 libnm/nm-remote-connection.c
-libnm/nm-remote-settings.c
 libnm/nm-vpn-plugin-old.c
 libnm/nm-vpn-service-plugin.c
 data/org.freedesktop.NetworkManager.policy.in.in

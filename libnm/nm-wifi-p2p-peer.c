@@ -30,20 +30,15 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	GBytes *wfd_ies;
 	char *name;
 	char *manufacturer;
 	char *model;
 	char *model_number;
 	char *serial;
-
-	GBytes *wfd_ies;
-
 	char *hw_address;
-
-	int last_seen;
-
-	NM80211ApFlags flags;
-
+	gint32 last_seen;
+	guint32 flags;
 	guint8 strength;
 } NMWifiP2PPeerPrivate;
 
@@ -340,33 +335,6 @@ nm_wifi_p2p_peer_filter_connections (NMWifiP2PPeer *peer, const GPtrArray *conne
 /*****************************************************************************/
 
 static void
-init_dbus (NMObject *object)
-{
-	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_WIFI_P2P_PEER_FLAGS,        &priv->flags },
-		{ NM_WIFI_P2P_PEER_NAME,         &priv->name },
-		{ NM_WIFI_P2P_PEER_MANUFACTURER, &priv->manufacturer },
-		{ NM_WIFI_P2P_PEER_MODEL,        &priv->model },
-		{ NM_WIFI_P2P_PEER_MODEL_NUMBER, &priv->model_number },
-		{ NM_WIFI_P2P_PEER_SERIAL,       &priv->serial },
-		{ NM_WIFI_P2P_PEER_WFD_IES,      &priv->wfd_ies },
-		{ NM_WIFI_P2P_PEER_HW_ADDRESS,   &priv->hw_address },
-		{ NM_WIFI_P2P_PEER_STRENGTH,     &priv->strength },
-		{ NM_WIFI_P2P_PEER_LAST_SEEN,    &priv->last_seen },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_wifi_p2p_peer_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_WIFI_P2P_PEER,
-	                                property_info);
-}
-
-/*****************************************************************************/
-
-static void
 get_property (GObject *object,
               guint prop_id,
               GValue *value,
@@ -429,7 +397,6 @@ finalize (GObject *object)
 	g_free (priv->model);
 	g_free (priv->model_number);
 	g_free (priv->serial);
-
 	g_free (priv->hw_address);
 
 	g_bytes_unref (priv->wfd_ies);
@@ -437,16 +404,30 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_wifi_p2p_peer_parent_class)->finalize (object);
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_wifip2ppeer = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_WIFI_P2P_PEER,
+	nm_wifi_p2p_peer_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_U  ("Flags",        PROP_FLAGS,        NMWifiP2PPeer, _priv.flags        ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("HwAddress",    PROP_HW_ADDRESS,   NMWifiP2PPeer, _priv.hw_address   ),
+		NML_DBUS_META_PROPERTY_INIT_I  ("LastSeen",     PROP_LAST_SEEN,    NMWifiP2PPeer, _priv.last_seen    ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("Manufacturer", PROP_MANUFACTURER, NMWifiP2PPeer, _priv.manufacturer ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("Model",        PROP_MODEL,        NMWifiP2PPeer, _priv.model        ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("ModelNumber",  PROP_MODEL_NUMBER, NMWifiP2PPeer, _priv.model_number ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("Serial",       PROP_SERIAL,       NMWifiP2PPeer, _priv.serial       ),
+		NML_DBUS_META_PROPERTY_INIT_Y  ("Strength",     PROP_STRENGTH,     NMWifiP2PPeer, _priv.strength     ),
+		NML_DBUS_META_PROPERTY_INIT_AY ("WfdIEs",       PROP_WFD_IES,      NMWifiP2PPeer, _priv.wfd_ies      ),
+	),
+);
+
 static void
 nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	/**
 	 * NMWifiP2PPeer:flags:
@@ -579,5 +560,5 @@ nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *klass)
 	                      G_PARAM_READABLE |
 	                      G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_wifip2ppeer);
 }

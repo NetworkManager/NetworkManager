@@ -109,23 +109,6 @@ nm_device_generic_init (NMDeviceGeneric *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_GENERIC_HW_ADDRESS, &priv->hw_address },
-		{ NM_DEVICE_GENERIC_TYPE_DESCRIPTION, &priv->type_description },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_generic_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_GENERIC,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (object);
@@ -158,17 +141,24 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_generic = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_GENERIC,
+	nm_device_generic_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress",       PROP_HW_ADDRESS,       NMDeviceGeneric, _priv.hw_address       ),
+		NML_DBUS_META_PROPERTY_INIT_S ("TypeDescription", PROP_TYPE_DESCRIPTION, NMDeviceGeneric, _priv.type_description ),
+	),
+);
+
 static void
 nm_device_generic_class_init (NMDeviceGenericClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	device_class->get_type_description  = get_type_description;
 	device_class->get_hw_address        = get_hw_address;
@@ -198,5 +188,5 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_generic);
 }

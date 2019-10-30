@@ -14,8 +14,6 @@
 #include "nm-active-connection.h"
 #include "nm-dbus-helpers.h"
 
-#include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
-
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMVpnConnection,
@@ -33,7 +31,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	char *banner;
-	NMVpnConnectionState vpn_state;
+	guint32 vpn_state;
+	guint32 reason;
 } NMVpnConnectionPrivate;
 
 struct _NMVpnConnection {
@@ -86,20 +85,48 @@ nm_vpn_connection_get_vpn_state (NMVpnConnection *vpn)
 	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->vpn_state;
 }
 
-static void
-vpn_state_changed_proxy (NMDBusVpnConnection *proxy,
-                         guint vpn_state,
-                         guint reason,
-                         gpointer user_data)
-{
-	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+/*****************************************************************************/
 
-	if (priv->vpn_state != vpn_state) {
-		priv->vpn_state = vpn_state;
-		g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
-		_notify (connection, PROP_VPN_STATE);
+static void
+_notify_event_state_changed (NMClient *client,
+                             NMClientNotifyEventWithPtr *notify_event)
+{
+	gs_unref_object NMVpnConnection *self = notify_event->user_data;
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	/* we expose here the value cache in @priv. In practice, this is the same
+	 * value as we received from the signal. In the unexpected case where they
+	 * differ, the cached value of the current instance would still be more correct. */
+	g_signal_emit (self,
+	               signals[VPN_STATE_CHANGED],
+	               0,
+	               (guint) priv->vpn_state,
+	               (guint) priv->reason);
+}
+
+void
+_nm_vpn_connection_state_changed_commit (NMVpnConnection *self,
+                                         guint32 state,
+                                         guint32 reason)
+{
+	NMClient *client;
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	client = _nm_object_get_client (self);
+
+	if (priv->vpn_state != state) {
+		priv->vpn_state = state;
+		_nm_client_queue_notify_object (client,
+		                                self,
+		                                obj_properties[PROP_VPN_STATE]);
 	}
+
+	priv->reason = reason;
+
+	_nm_client_notify_event_queue_with_ptr (client,
+	                                        NM_CLIENT_NOTIFY_EVENT_PRIO_GPROP + 1,
+	                                        _notify_event_state_changed,
+	                                        g_object_ref (self));
 }
 
 /*****************************************************************************/
@@ -107,32 +134,6 @@ vpn_state_changed_proxy (NMDBusVpnConnection *proxy,
 static void
 nm_vpn_connection_init (NMVpnConnection *connection)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-
-	priv->vpn_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
-}
-
-static void
-init_dbus (NMObject *object)
-{
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_VPN_CONNECTION_BANNER,    &priv->banner },
-		{ NM_VPN_CONNECTION_VPN_STATE, &priv->vpn_state },
-		{ NULL },
-	};
-	GDBusProxy *proxy;
-
-	NM_OBJECT_CLASS (nm_vpn_connection_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_VPN_CONNECTION,
-	                                property_info);
-
-	proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE_VPN_CONNECTION);
-	g_signal_connect_object (proxy, "vpn-state-changed",
-	                         G_CALLBACK (vpn_state_changed_proxy), object, 0);
-	g_object_unref (proxy);
 }
 
 static void
@@ -166,16 +167,23 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_vpn_connection = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_VPN_CONNECTION,
+	nm_vpn_connection_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S ("Banner",   PROP_BANNER,    NMVpnConnection, _priv.banner    ),
+		NML_DBUS_META_PROPERTY_INIT_U ("VpnState", PROP_VPN_STATE, NMVpnConnection, _priv.vpn_state ),
+	),
+);
+
 static void
 nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (connection_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	/**
 	 * NMVpnConnection:vpn-state:
@@ -200,7 +208,13 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_vpn_connection);
+
+	/* TODO: the state reason should also be exposed as a property in libnm's NMVpnConnection,
+	 * like done for NMDevice's state reason. */
+
+	/* TODO: the D-Bus API should also expose the state-reason as a property instead of
+	 * a "VpnStateChanged" signal. Like done for Device's "StateReason".  */
 
 	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	signals[VPN_STATE_CHANGED] =
