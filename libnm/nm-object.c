@@ -947,14 +947,24 @@ properties_changed (GDBusProxy *proxy,
 	}
 }
 
-#define HANDLE_TYPE(vtype, ctype, getter) \
-	G_STMT_START { \
+#define HANDLE_TYPE_CHECK(vtype, ctype, getter) \
+	({ \
+		gboolean _success = FALSE; \
+		\
 		if (g_variant_is_of_type (value, vtype)) { \
 			ctype *param = (ctype *) field; \
 			ctype newval = getter (value); \
 			different = *param != newval; \
 			*param = newval; \
-		} else { \
+			_success = TRUE; \
+		} \
+		\
+		_success; \
+	})
+
+#define HANDLE_TYPE(vtype, ctype, getter) \
+	G_STMT_START { \
+		if (!HANDLE_TYPE_CHECK (vtype, ctype, getter)) {\
 			success = FALSE; \
 			goto done; \
 		} \
@@ -1066,9 +1076,11 @@ demarshal_generic (NMObject *object,
 		NM_PRAGMA_WARNING_REENABLE
 	} else if (pspec->value_type == G_TYPE_INT)
 		HANDLE_TYPE (G_VARIANT_TYPE_INT32, int, g_variant_get_int32);
-	else if (pspec->value_type == G_TYPE_UINT)
-		HANDLE_TYPE (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32);
-	else if (pspec->value_type == G_TYPE_INT64)
+	else if (pspec->value_type == G_TYPE_UINT) {
+		if (   !HANDLE_TYPE_CHECK (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32)
+		    && !HANDLE_TYPE_CHECK (G_VARIANT_TYPE_UINT16, guint, g_variant_get_uint16))
+			success = FALSE;
+	} else if (pspec->value_type == G_TYPE_INT64)
 		HANDLE_TYPE (G_VARIANT_TYPE_INT64, gint64, g_variant_get_int64);
 	else if (pspec->value_type == G_TYPE_UINT64)
 		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, guint64, g_variant_get_uint64);
