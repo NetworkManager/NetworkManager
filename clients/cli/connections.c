@@ -8006,6 +8006,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				ap_nsp = ap_nsp && ap_nsp[0] == '/' ? ap_nsp + 1 : ap_nsp;
 
 			if (is_connection_dirty (connection, rem_con)) {
+				/* TRANSLATORS: do not translate 'save', leave it as it is */
 				g_print (_("Error: connection is not saved. Type 'save' first.\n"));
 				break;
 			}
@@ -8429,10 +8430,13 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	else
 		g_print (_("Adding a new '%s' connection"), connection_type);
 	g_print ("\n\n");
+	/* TRANSLATORS: do not translate 'help', leave it as it is */
 	g_print (_("Type 'help' or '?' for available commands."));
 	g_print ("\n");
+	/* TRANSLATORS: do not translate 'print', leave it as it is */
 	g_print (_("Type 'print' to show all the connection properties."));
 	g_print ("\n");
+	/* TRANSLATORS: do not translate 'describe', leave it as it is */
 	g_print (_("Type 'describe [<setting>.<prop>]' for detailed property description."));
 	g_print ("\n\n");
 
