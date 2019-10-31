@@ -672,6 +672,7 @@ PRP_DEVICE_UDI                   = "Udi"
 PRP_DEVICE_IFACE                 = "Interface"
 PRP_DEVICE_DRIVER                = "Driver"
 PRP_DEVICE_STATE                 = "State"
+PRP_DEVICE_STATE_REASON          = "StateReason"
 PRP_DEVICE_ACTIVE_CONNECTION     = "ActiveConnection"
 PRP_DEVICE_IP4_CONFIG            = "Ip4Config"
 PRP_DEVICE_IP6_CONFIG            = "Ip6Config"
@@ -700,11 +701,14 @@ class Device(ExportedObj):
         self.dhcp4_config = None
         self.dhcp6_config = None
 
+        self.prp_state = NM.DeviceState.UNAVAILABLE
+
         props = {
             PRP_DEVICE_UDI:                   "/sys/devices/virtual/%s" % (iface),
             PRP_DEVICE_IFACE:                 iface,
             PRP_DEVICE_DRIVER:                "virtual",
-            PRP_DEVICE_STATE:                 dbus.UInt32(NM.DeviceState.UNAVAILABLE),
+            PRP_DEVICE_STATE:                 dbus.UInt32(self.prp_state),
+            PRP_DEVICE_STATE_REASON:          dbus.Struct((dbus.UInt32(self.prp_state), dbus.UInt32(NM.DeviceStateReason.NONE))),
             PRP_DEVICE_ACTIVE_CONNECTION:     ExportedObj.to_path(None),
             PRP_DEVICE_IP4_CONFIG:            ExportedObj.to_path(self.ip4_config),
             PRP_DEVICE_IP6_CONFIG:            ExportedObj.to_path(self.ip6_config),
