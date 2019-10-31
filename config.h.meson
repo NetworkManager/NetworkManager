@@ -218,6 +218,9 @@
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
 
+/* Define to path of pppd binary */
+#mesondefine PPPD_PATH
+
 /* Whether compilation of ibft setting plugin is enabled */
 #mesondefine WITH_SETTINGS_PLUGIN_IBFT
 
