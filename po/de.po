@@ -2219,7 +2219,7 @@ msgstr "Tippen Sie »help« oder »?«, um verfügbare Befehle anzuzeigen."
 #, c-format
 msgid "Type 'print' to show all the connection properties."
 msgstr ""
-"Geben Sie \"print\" ein, um alle Verbindungseigenschaften anzuzeigen."
+"Geben Sie »print« ein, um alle Verbindungseigenschaften anzuzeigen."
 
 #: ../clients/cli/connections.c:8326
 #, c-format
