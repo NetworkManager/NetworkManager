@@ -227,6 +227,9 @@
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
 
+/* Define to path of pppd binary */
+#mesondefine PPPD_PATH
+
 /* Define if you have iwd support */
 #mesondefine WITH_IWD
 
