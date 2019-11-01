@@ -600,6 +600,9 @@ permission_changed (NMClient *client,
 	if (got_permissions (nmc)) {
 		/* Defer the printing, so that we have a chance to process the other
 		 * permission-changed signals. */
+		g_signal_handlers_disconnect_by_func (nmc->client,
+		                                      G_CALLBACK (permission_changed),
+		                                      nmc);
 		g_idle_remove_by_data (nmc);
 		g_idle_add (print_permissions, nmc);
 	}
@@ -616,7 +619,7 @@ show_nm_permissions (NmCli *nmc)
 
 	/* The client didn't get the permissions reply yet. Subscribe to changes. */
 	g_signal_connect (nmc->client, NM_CLIENT_PERMISSION_CHANGED,
-                          G_CALLBACK (permission_changed), nmc);
+	                  G_CALLBACK (permission_changed), nmc);
 
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
