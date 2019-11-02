@@ -1010,6 +1010,34 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 }
 #define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
 
+static inline gboolean
+_nmtst_main_context_iterate_until_timeout (gpointer user_data)
+{
+	gboolean *p_had_pointer = user_data;
+
+	g_assert (!*p_had_pointer);
+	*p_had_pointer = TRUE;
+	return G_SOURCE_CONTINUE;
+}
+
+#define nmtst_main_context_iterate_until(context, timeout_ms, condition) \
+	G_STMT_START { \
+		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
+		GMainContext *_context = (context); \
+		gboolean _had_timeout = FALSE; \
+		\
+		_source = g_timeout_source_new (timeout_ms); \
+		g_source_set_callback (_source, _nmtst_main_context_iterate_until_timeout, &_had_timeout, NULL); \
+		g_source_attach (_source, _context); \
+		\
+		while (TRUE) { \
+			if (condition) \
+				break; \
+			g_main_context_iteration (_context, TRUE); \
+			g_assert (!_had_timeout && #condition); \
+		} \
+	} G_STMT_END
+
 /*****************************************************************************/
 
 static inline const char *
