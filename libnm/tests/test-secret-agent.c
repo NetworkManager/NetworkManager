@@ -234,8 +234,9 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	if (!sadata->sinfo)
 		return;
 
-	sadata->client = nm_client_new (NULL, &error);
-	g_assert_no_error (error);
+	g_assert (g_main_context_get_thread_default () == NULL);
+
+	sadata->client = nmtstc_client_new (TRUE);
 
 	sadata->loop = g_main_loop_new (NULL, FALSE);
 	sadata->timeout_id = g_timeout_add_seconds (5, timeout_assert, NULL);

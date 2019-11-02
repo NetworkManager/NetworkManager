@@ -8,12 +8,16 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#include "nm-glib-aux/nm-time-utils.h"
+
 #include "nm-test-libnm-utils.h"
 
-static NMTstcServiceInfo *sinfo;
-static NMClient *client = NULL;
-GDBusConnection *bus = NULL;
-NMRemoteConnection *remote = NULL;
+static struct {
+	NMTstcServiceInfo *sinfo;
+	NMClient *client;
+	GDBusConnection *bus;
+	NMRemoteConnection *remote;
+} gl = { };
 
 /*****************************************************************************/
 
@@ -25,17 +29,17 @@ add_cb (GObject *s,
 	gboolean *done = user_data;
 	GError *error = NULL;
 
-	remote = nm_client_add_connection_finish (client, result, &error);
+	gl.remote = nm_client_add_connection_finish (gl.client, result, &error);
 	g_assert_no_error (error);
 
 	*done = TRUE;
-	g_object_add_weak_pointer (G_OBJECT (remote), (void **) &remote);
+	g_object_add_weak_pointer (G_OBJECT (gl.remote), (void **) &gl.remote);
 
 	/* nm_client_add_connection_finish() adds a ref to @remote, but we
 	 * want the weak pointer to be cleared as soon as @client drops its own ref.
 	 * So drop ours.
 	 */
-	g_object_unref (remote);
+	g_object_unref (gl.remote);
 }
 
 #define TEST_CON_ID "blahblahblah"
@@ -44,32 +48,27 @@ static void
 test_add_connection (void)
 {
 	NMConnection *connection;
-	time_t start, now;
 	gboolean done = FALSE;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
 	connection = nmtst_create_minimal_connection (TEST_CON_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
-	nm_client_add_connection_async (client,
+	nm_client_add_connection_async (gl.client,
 	                                connection,
 	                                TRUE,
 	                                NULL,
 	                                add_cb,
 	                                &done);
 
-	start = time (NULL);
-	do {
-		now = time (NULL);
-		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
-	g_assert (done == TRUE);
-	g_assert (remote != NULL);
+	nmtst_main_context_iterate_until (NULL, 5000, done);
+
+	g_assert (gl.remote != NULL);
 
 	/* Make sure the connection is the same as what we added */
 	g_assert (nm_connection_compare (connection,
-	                                 NM_CONNECTION (remote),
+	                                 NM_CONNECTION (gl.remote),
 	                                 NM_SETTING_COMPARE_FLAG_EXACT) == TRUE);
 	g_object_unref (connection);
 }
@@ -99,7 +98,7 @@ visible_changed_cb (GObject *object, GParamSpec *pspec, gboolean *done)
 static void
 connection_removed_cb (NMClient *s, NMRemoteConnection *connection, gboolean *done)
 {
-	if (connection == remote)
+	if (connection == gl.remote)
 		*done = TRUE;
 }
 
@@ -116,7 +115,6 @@ invis_has_settings_cb (NMSetting *setting,
 static void
 test_make_invisible (void)
 {
-	time_t start, now;
 	const GPtrArray *conns;
 	int i;
 	GDBusProxy *proxy;
@@ -124,17 +122,17 @@ test_make_invisible (void)
 	gboolean has_settings = FALSE;
 	char *path;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
-	g_assert (remote != NULL);
+	g_assert (gl.remote != NULL);
 
 	/* Listen for the remove event when the connection becomes invisible */
-	g_signal_connect (remote, "notify::" NM_REMOTE_CONNECTION_VISIBLE, G_CALLBACK (visible_changed_cb), &visible_changed);
-	g_signal_connect (client, "connection-removed", G_CALLBACK (connection_removed_cb), &connection_removed);
+	g_signal_connect (gl.remote, "notify::" NM_REMOTE_CONNECTION_VISIBLE, G_CALLBACK (visible_changed_cb), &visible_changed);
+	g_signal_connect (gl.client, "connection-removed", G_CALLBACK (connection_removed_cb), &connection_removed);
 
-	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
-	proxy = g_dbus_proxy_new_sync (bus,
+	path = g_strdup (nm_connection_get_path (NM_CONNECTION (gl.remote)));
+	proxy = g_dbus_proxy_new_sync (gl.bus,
 	                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                               NULL,
 	                               NM_DBUS_SERVICE,
@@ -153,29 +151,23 @@ test_make_invisible (void)
 	                   set_visible_cb, NULL);
 
 	/* Wait for the connection to be removed */
-	start = time (NULL);
-	do {
-		now = time (NULL);
-		g_main_context_iteration (NULL, FALSE);
-	} while ((!visible_changed || !connection_removed) && (now - start < 5));
-	g_assert (visible_changed == TRUE);
-	g_assert (connection_removed == TRUE);
+	nmtst_main_context_iterate_until (NULL, 5000, visible_changed && connection_removed);
 
-	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (visible_changed_cb), &visible_changed);
-	g_signal_handlers_disconnect_by_func (client, G_CALLBACK (connection_removed_cb), &connection_removed);
+	g_signal_handlers_disconnect_by_func (gl.remote, G_CALLBACK (visible_changed_cb), &visible_changed);
+	g_signal_handlers_disconnect_by_func (gl.client, G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	/* Ensure NMClient no longer has the connection */
-	conns = nm_client_get_connections (client);
+	conns = nm_client_get_connections (gl.client);
 	for (i = 0; i < conns->len; i++) {
 		NMConnection *candidate = NM_CONNECTION (conns->pdata[i]);
 
-		g_assert ((gpointer) remote != (gpointer) candidate);
+		g_assert ((gpointer) gl.remote != (gpointer) candidate);
 		g_assert (strcmp (path, nm_connection_get_path (candidate)) != 0);
 	}
 
 	/* And ensure the invisible connection no longer has any settings */
-	g_assert (remote);
-	nm_connection_for_each_setting_value (NM_CONNECTION (remote),
+	g_assert (gl.remote);
+	nm_connection_for_each_setting_value (NM_CONNECTION (gl.remote),
 	                                      invis_has_settings_cb,
 	                                      &has_settings);
 	g_assert (has_settings == FALSE);
@@ -197,7 +189,6 @@ vis_new_connection_cb (NMClient *foo,
 static void
 test_make_visible (void)
 {
-	time_t start, now;
 	const GPtrArray *conns;
 	int i;
 	GDBusProxy *proxy;
@@ -205,17 +196,17 @@ test_make_visible (void)
 	char *path;
 	NMRemoteConnection *new = NULL;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
-	g_assert (remote != NULL);
+	g_assert (gl.remote != NULL);
 
 	/* Wait for the new-connection signal when the connection is visible again */
-	g_signal_connect (client, NM_CLIENT_CONNECTION_ADDED,
+	g_signal_connect (gl.client, NM_CLIENT_CONNECTION_ADDED,
 	                  G_CALLBACK (vis_new_connection_cb), &new);
 
-	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
-	proxy = g_dbus_proxy_new_sync (bus,
+	path = g_strdup (nm_connection_get_path (NM_CONNECTION (gl.remote)));
+	proxy = g_dbus_proxy_new_sync (gl.bus,
 	                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                               NULL,
 	                               NM_DBUS_SERVICE,
@@ -234,24 +225,19 @@ test_make_visible (void)
 	                   set_visible_cb, NULL);
 
 	/* Wait for the settings service to announce the connection again */
-	start = time (NULL);
-	do {
-		now = time (NULL);
-		g_main_context_iteration (NULL, FALSE);
-	} while ((new == NULL) && (now - start < 5));
+	nmtst_main_context_iterate_until (NULL, 5000, new);
 
 	/* Ensure the new connection is the same as the one we made visible again */
-	g_assert (new);
-	g_assert (new == remote);
+	g_assert (new == gl.remote);
 
-	g_signal_handlers_disconnect_by_func (client, G_CALLBACK (vis_new_connection_cb), &new);
+	g_signal_handlers_disconnect_by_func (gl.client, G_CALLBACK (vis_new_connection_cb), &new);
 
 	/* Ensure NMClient has the connection */
-	conns = nm_client_get_connections (client);
+	conns = nm_client_get_connections (gl.client);
 	for (i = 0; i < conns->len; i++) {
 		NMConnection *candidate = NM_CONNECTION (conns->pdata[i]);
 
-		if ((gpointer) remote == (gpointer) candidate) {
+		if ((gpointer) gl.remote == (gpointer) candidate) {
 			g_assert_cmpstr (path, ==, nm_connection_get_path (candidate));
 			g_assert_cmpstr (TEST_CON_ID, ==, nm_connection_get_id (candidate));
 			found = TRUE;
@@ -282,7 +268,7 @@ deleted_cb (GObject *proxy,
 static void
 removed_cb (NMClient *s, NMRemoteConnection *connection, gboolean *done)
 {
-	if (connection == remote)
+	if (connection == gl.remote)
 		*done = TRUE;
 }
 
@@ -290,27 +276,26 @@ static void
 test_remove_connection (void)
 {
 	NMRemoteConnection *connection;
-	time_t start, now;
 	const GPtrArray *conns;
 	int i;
 	GDBusProxy *proxy;
 	gboolean done = FALSE;
 	char *path;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
 	/* Find a connection to delete */
-	conns = nm_client_get_connections (client);
+	conns = nm_client_get_connections (gl.client);
 	g_assert_cmpint (conns->len, >, 0);
 
 	connection = NM_REMOTE_CONNECTION (conns->pdata[0]);
 	g_assert (connection);
-	g_assert (remote == connection);
+	g_assert (gl.remote == connection);
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
-	g_signal_connect (client, "connection-removed", G_CALLBACK (removed_cb), &done);
+	g_signal_connect (gl.client, "connection-removed", G_CALLBACK (removed_cb), &done);
 
-	proxy = g_dbus_proxy_new_sync (bus,
+	proxy = g_dbus_proxy_new_sync (gl.bus,
 	                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                               NULL,
 	                               NM_DBUS_SERVICE,
@@ -328,18 +313,10 @@ test_remove_connection (void)
 	                   NULL,
 	                   deleted_cb, NULL);
 
-	start = time (NULL);
-	do {
-		now = time (NULL);
-		g_main_context_iteration (NULL, FALSE);
-		if (done && !remote)
-			break;
-	} while (now - start < 5);
-	g_assert (done == TRUE);
-	g_assert (!remote);
+	nmtst_main_context_iterate_until (NULL, 5000, done && !gl.remote);
 
 	/* Ensure NMClient no longer has the connection */
-	conns = nm_client_get_connections (client);
+	conns = nm_client_get_connections (gl.client);
 	for (i = 0; i < conns->len; i++) {
 		NMConnection *candidate = NM_CONNECTION (conns->pdata[i]);
 
@@ -364,7 +341,7 @@ add_remove_cb (GObject *s,
 	gboolean *done = user_data;
 	gs_free_error GError *error = NULL;
 
-	connection = nm_client_add_connection_finish (client, result, &error);
+	connection = nm_client_add_connection_finish (gl.client, result, &error);
 	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
 	g_assert (connection == NULL);
 
@@ -374,43 +351,34 @@ add_remove_cb (GObject *s,
 static void
 test_add_remove_connection (void)
 {
-	GVariant *ret;
+	gs_unref_variant GVariant *ret = NULL;
 	GError *error = NULL;
-	NMConnection *connection;
-	time_t start, now;
+	gs_unref_object NMConnection *connection = NULL;
 	gboolean done = FALSE;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
 	/* This will cause the test server to immediately delete the connection
 	 * after creating it.
 	 */
-	ret = g_dbus_proxy_call_sync (sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (gl.sinfo->proxy,
 	                              "AutoRemoveNextConnection",
 	                              NULL,
 	                              G_DBUS_CALL_FLAGS_NONE, -1,
 	                              NULL,
 	                              &error);
-	g_assert_no_error (error);
-	g_variant_unref (ret);
+	nmtst_assert_success (ret, error);
 
 	connection = nmtst_create_minimal_connection (TEST_ADD_REMOVE_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
-	nm_client_add_connection_async (client,
+	nm_client_add_connection_async (gl.client,
 	                                connection,
 	                                TRUE,
 	                                NULL,
 	                                add_remove_cb,
 	                                &done);
 
-	start = time (NULL);
-	do {
-		now = time (NULL);
-		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
-	g_assert (done == TRUE);
-
-	g_object_unref (connection);
+	nmtst_main_context_iterate_until (NULL, 5000, done);
 }
 
 /*****************************************************************************/
@@ -423,7 +391,7 @@ add_bad_cb (GObject *s,
 	gboolean *done = user_data;
 	gs_free_error GError *error = NULL;
 
-	remote = nm_client_add_connection_finish (client, result, &error);
+	gl.remote = nm_client_add_connection_finish (gl.client, result, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 
 	*done = TRUE;
@@ -432,31 +400,25 @@ add_bad_cb (GObject *s,
 static void
 test_add_bad_connection (void)
 {
-	NMConnection *connection;
-	time_t start, now;
+	gs_unref_object NMConnection *connection = NULL;
 	gboolean done = FALSE;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
 	/* The test daemon doesn't support bond connections */
 	connection = nmtst_create_minimal_connection ("bad connection test", NULL, NM_SETTING_BOND_SETTING_NAME, NULL);
 
-	nm_client_add_connection_async (client,
+	nm_client_add_connection_async (gl.client,
 	                                connection,
 	                                TRUE,
 	                                NULL,
 	                                add_bad_cb,
 	                                &done);
-	g_object_unref (connection);
+	g_clear_object (&connection);
 
-	start = time (NULL);
-	do {
-		now = time (NULL);
-		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
-	g_assert (done == TRUE);
-	g_assert (remote == NULL);
+	nmtst_main_context_iterate_until (NULL, 5000, done);
+	g_assert (gl.remote == NULL);
 }
 
 /*****************************************************************************/
@@ -469,7 +431,7 @@ save_hostname_cb (GObject *s,
 	gboolean *done = user_data;
 	gs_free_error GError *error = NULL;
 
-	nm_client_save_hostname_finish (client, result, &error);
+	nm_client_save_hostname_finish (gl.client, result, &error);
 	g_assert_no_error (error);
 
 	*done = TRUE;
@@ -478,27 +440,30 @@ save_hostname_cb (GObject *s,
 static void
 test_save_hostname (void)
 {
-	time_t start, now;
+	gint64 until_ts;
 	gboolean done = FALSE;
 	GError *error = NULL;
 
-	if (!nmtstc_service_available (sinfo))
+	if (!nmtstc_service_available (gl.sinfo))
 		return;
 
 	/* test-networkmanager-service.py requires the hostname to contain a '.' */
-	nm_client_save_hostname (client, "foo", NULL, &error);
+	nm_client_save_hostname (gl.client, "foo", NULL, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_HOSTNAME);
 	g_clear_error (&error);
 
-	nm_client_save_hostname_async (client, "example.com", NULL, save_hostname_cb, &done);
+	nm_client_save_hostname_async (gl.client, "example.com", NULL, save_hostname_cb, &done);
 
-	start = time (NULL);
-	do {
-		now = time (NULL);
+	until_ts = nm_utils_get_monotonic_timestamp_ms () + 5000;
+	while (TRUE) {
 		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
-	g_assert (done == TRUE);
-	g_assert (remote == NULL);
+		if (done)
+			break;
+		if (nm_utils_get_monotonic_timestamp_ms () >= until_ts)
+			g_assert_not_reached ();
+	}
+
+	g_assert (gl.remote == NULL);
 }
 
 /*****************************************************************************/
@@ -515,14 +480,12 @@ main (int argc, char **argv)
 
 	nmtst_init (&argc, &argv, TRUE);
 
-	bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-	g_assert_no_error (error);
+	gl.bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+	nmtst_assert_success (gl.bus, error);
 
-	sinfo = nmtstc_service_init ();
+	gl.sinfo = nmtstc_service_init ();
 
-	client = nm_client_new (NULL, &error);
-	g_assert_no_error (error);
-	g_assert (client != NULL);
+	gl.client = nmtstc_client_new (TRUE);
 
 	/* FIXME: these tests assume that they get run in order, but g_test_run()
 	 * does not actually guarantee that!
@@ -537,9 +500,9 @@ main (int argc, char **argv)
 
 	ret = g_test_run ();
 
-	nmtstc_service_cleanup (sinfo);
-	g_object_unref (client);
-	g_object_unref (bus);
+	nm_clear_pointer (&gl.sinfo, nmtstc_service_cleanup);
+	g_clear_object (&gl.client);
+	g_clear_object (&gl.bus);
 
 	return ret;
 }
