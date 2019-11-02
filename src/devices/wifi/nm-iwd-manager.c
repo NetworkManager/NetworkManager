@@ -150,6 +150,11 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	network = g_dbus_object_manager_get_interface (priv->object_manager,
 	                                               network_path,
 	                                               NM_IWD_NETWORK_INTERFACE);
+	if (!network) {
+		_LOGE ("unable to find the network object");
+		return;
+	}
+
 
 	device_path = get_property_string_or_null (G_DBUS_PROXY (network), "Device");
 	if (!device_path) {
@@ -273,6 +278,11 @@ register_agent (NMIwdManager *self)
 	agent_manager = g_dbus_object_manager_get_interface (priv->object_manager,
 	                                                     "/",
 	                                                     NM_IWD_AGENT_MANAGER_INTERFACE);
+
+	if (!agent_manager) {
+		_LOGE ("unable to register the IWD Agent: PSK/8021x Wi-Fi networks may not work");
+		return;
+	}
 
 	/* Register our agent */
 	g_dbus_proxy_call (G_DBUS_PROXY (agent_manager),
