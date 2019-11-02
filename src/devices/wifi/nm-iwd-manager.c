@@ -262,8 +262,16 @@ register_agent (NMIwdManager *self)
 	GDBusInterface *agent_manager;
 
 	agent_manager = g_dbus_object_manager_get_interface (priv->object_manager,
-	                                                     "/",
+	                                                     "/net/connman/iwd",
 	                                                     NM_IWD_AGENT_MANAGER_INTERFACE);
+
+	if (!agent_manager) {
+		/* IWD prior to 1.0 dated 30 October, 2019 has the agent manager on a
+		 * different path. */
+		agent_manager = g_dbus_object_manager_get_interface (priv->object_manager,
+		                                                     "/",
+		                                                     NM_IWD_AGENT_MANAGER_INTERFACE);
+	}
 
 	if (!agent_manager) {
 		_LOGE ("unable to register the IWD Agent: PSK/8021x Wi-Fi networks may not work");
