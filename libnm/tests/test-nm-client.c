@@ -887,48 +887,6 @@ test_activate_virtual (void)
 }
 
 static void
-activate_failed_cb (GObject *object,
-                    GAsyncResult *result,
-                    gpointer user_data)
-{
-	NMClient *client = NM_CLIENT (object);
-	NMActiveConnection *ac;
-	GError *error = NULL;
-
-	ac = nm_client_add_and_activate_connection_finish (client, result, &error);
-	g_assert (ac == NULL);
-	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
-	g_clear_error (&error);
-
-	g_main_loop_quit (gl.loop);
-}
-
-static void
-test_activate_failed (void)
-{
-	nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-	gs_unref_object NMClient *client = NULL;
-	NMDevice *device;
-	gs_unref_object NMConnection *conn = NULL;
-
-	sinfo = nmtstc_service_init ();
-	if (!nmtstc_service_available (sinfo))
-		return;
-
-	client = nmtstc_client_new (TRUE);
-
-	device = nmtstc_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
-
-	/* Note that test-networkmanager-service.py checks for this exact name */
-	conn = nmtst_create_minimal_connection ("object-creation-failed-test", NULL,
-	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
-
-	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
-	                                             NULL, activate_failed_cb, NULL);
-	g_main_loop_run (gl.loop);
-}
-
-static void
 test_device_connection_compatibility (void)
 {
 	nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
@@ -1354,7 +1312,6 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/client-nm-running", test_client_nm_running);
 	g_test_add_func ("/libnm/active-connections", test_active_connections);
 	g_test_add_func ("/libnm/activate-virtual", test_activate_virtual);
-	g_test_add_func ("/libnm/activate-failed", test_activate_failed);
 	g_test_add_func ("/libnm/device-connection-compatibility", test_device_connection_compatibility);
 	g_test_add_func ("/libnm/connection/invalid", test_connection_invalid);
 

@@ -1306,14 +1306,6 @@ class NetworkManager(ExportedObj):
 
         ac = ActiveConnection(device, con_inst, None)
         self.active_connection_add(ac)
-
-        if NmUtil.con_hash_get_id(con_hash) == 'object-creation-failed-test':
-            # FIXME: this is not the right test, to delete the active-connection
-            # before returning it. It's the wrong order of what NetworkManager
-            # would do.
-            self.active_connection_remove(ac)
-            return ExportedObj.to_path(ac)
-
         return ExportedObj.to_path(ac)
 
     def active_connection_add(self, ac):
