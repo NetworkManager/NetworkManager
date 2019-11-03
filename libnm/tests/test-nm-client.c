@@ -606,6 +606,9 @@ typedef struct {
 	NMActiveConnection *ac;
 
 	int remaining;
+
+	NMDevice *device;
+	gulong ac_signal_id;
 } TestACInfo;
 
 static void
@@ -768,9 +771,12 @@ client_devices_changed_cb (GObject *client,
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0.1");
 
 	if (!nm_device_get_active_connection (device)) {
+		g_assert (info->ac_signal_id == 0);
 		info->remaining++;
-		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
-		                  G_CALLBACK (device_ac_changed_cb), info);
+		info->device = device;
+		g_object_add_weak_pointer (G_OBJECT (device), (gpointer *) &info->device);
+		info->ac_signal_id = g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
+		                                       G_CALLBACK (device_ac_changed_cb), info);
 	}
 
 	info->remaining--;
@@ -872,8 +878,12 @@ test_activate_virtual (void)
 	g_signal_handlers_disconnect_by_func (client, client_devices_changed_cb, &info);
 
 	g_assert (info.ac != NULL);
+	g_clear_object (&info.ac);
 
-	g_object_unref (info.ac);
+	if (info.device) {
+		g_object_remove_weak_pointer (G_OBJECT (info.device), (gpointer *) &info.device);
+		nm_clear_g_signal_handler (info.device, &info.ac_signal_id);
+	}
 }
 
 static void
