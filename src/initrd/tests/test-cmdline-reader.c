@@ -801,9 +801,10 @@ test_rd_znet (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
 	const char *const*const ARGV = NM_MAKE_STRV ("ip=10.11.12.13::10.11.12.1:24:foo.example.com:enc800:none",
-	                                             "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1");
-	GHashTableIter h_iter;
+	                                             "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1",
+	                                             "rd.znet=ctc,0.0.0600,0.0.0601,layer2=0,portno=0");
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	const char *const*v_subchannels;
 	const NMUtilsNamedValue s390_options[] = {
@@ -814,15 +815,17 @@ test_rd_znet (void)
 
 	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
 	g_assert (connections);
-	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
-	g_hash_table_iter_init (&h_iter, connections);
-	if (!g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &connection))
-		g_assert_not_reached ();
-	if (g_hash_table_iter_next (&h_iter, NULL, NULL))
-		g_assert_not_reached ();
-
+	connection = g_hash_table_lookup (connections, "enc800");
 	g_assert (NM_IS_CONNECTION (connection));
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (NM_IS_SETTING_CONNECTION (s_con));
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "enc800");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "enc800");
+
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (NM_IS_SETTING_WIRED (s_wired));
 
@@ -854,7 +857,66 @@ test_rd_znet (void)
 	}
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	connection = g_hash_table_lookup (connections, "slc600");
+	g_assert (NM_IS_CONNECTION (connection));
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (NM_IS_SETTING_CONNECTION (s_con));
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "slc600");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "slc600");
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (NM_IS_SETTING_WIRED (s_wired));
+
+	v_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
+	g_assert (v_subchannels);
+	g_assert_cmpstr (v_subchannels[0], ==, "0.0.0600");
+	g_assert_cmpstr (v_subchannels[1], ==, "0.0.0601");
+	g_assert_cmpstr (v_subchannels[2], ==, NULL);
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
 }
+
+static void
+test_rd_znet_legacy (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*const ARGV = NM_MAKE_STRV ("ip=10.11.12.13::10.11.12.1:24:foo.example.com:eth0:none",
+	                                             "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1",
+	                                             "rd.znet=ctc,0.0.0600,0.0.0601,layer2=0,portno=0",
+	                                             "net.ifnames=0");
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
+
+	connection = g_hash_table_lookup (connections, "eth0");
+	g_assert (NM_IS_CONNECTION (connection));
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (NM_IS_SETTING_CONNECTION (s_con));
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "eth0");
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	connection = g_hash_table_lookup (connections, "ctc0");
+	g_assert (NM_IS_CONNECTION (connection));
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (NM_IS_SETTING_CONNECTION (s_con));
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "ctc0");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "ctc0");
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+}
+
 
 NMTST_DEFINE ();
 
@@ -878,7 +940,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/bridge/default", test_bridge_default);
 	g_test_add_func ("/initrd/cmdline/ibft", test_ibft);
 	g_test_add_func ("/initrd/cmdline/ignore_extra", test_ignore_extra);
-	g_test_add_func ("/initrd/cmdline/rd_zdnet", test_rd_znet);
+	g_test_add_func ("/initrd/cmdline/rd_znet", test_rd_znet);
+	g_test_add_func ("/initrd/cmdline/rd_znet/legacy", test_rd_znet_legacy);
 
 	return g_test_run ();
 }
