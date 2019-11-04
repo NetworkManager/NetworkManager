@@ -683,21 +683,57 @@ parse_rd_peerdns (GHashTable *connections, char *argument)
 }
 
 static void
-parse_rd_znet (GHashTable *connections, char *argument)
+parse_rd_znet (GHashTable *connections, char *argument, gboolean net_ifnames)
 {
 	const char *nettype;
 	const char *subchannels[4] = { 0, 0, 0, 0 };
 	const char *tmp;
+	gs_free char *ifname = NULL;
+	const char *prefix;
 	NMConnection *connection;
 	NMSettingWired *s_wired;
+	static int count_ctc = 0;
+	static int count_eth = 0;
+	int index;
 
 	nettype = get_word (&argument, ',');
 	subchannels[0] = get_word (&argument, ',');
 	subchannels[1] = get_word (&argument, ',');
-	if (!nm_streq0 (nettype, "ctc"))
-		subchannels[2] = get_word (&argument, ',');
 
-	connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
+	if (nm_streq0 (nettype, "ctc")) {
+		if (net_ifnames == TRUE) {
+			prefix = "sl";
+		} else {
+			prefix = "ctc";
+			index = count_ctc++;
+		}
+	} else {
+		subchannels[2] = get_word (&argument, ',');
+		if (net_ifnames == TRUE) {
+			prefix = "en";
+		} else {
+			prefix = "eth";
+			index = count_eth++;
+		}
+	}
+
+	if (net_ifnames == TRUE) {
+		const char *bus_id;
+		size_t bus_id_len;
+		size_t bus_id_start;
+
+		/* The following logic is taken from names_ccw() in systemd/src/udev/udev-builtin-net_id.c */
+		bus_id = subchannels[0];
+		bus_id_len = strlen (bus_id);
+		bus_id_start = strspn (bus_id, ".0");
+		bus_id += bus_id_start < bus_id_len ? bus_id_start : bus_id_len - 1;
+
+		ifname = g_strdup_printf ("%sc%s", prefix, bus_id);
+	} else {
+		ifname = g_strdup_printf ("%s%d", prefix, index);
+	}
+
+	connection = get_conn (connections, ifname, NM_SETTING_WIRED_SETTING_NAME);
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
@@ -735,9 +771,17 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 	gboolean ignore_bootif = FALSE;
 	gboolean neednet = FALSE;
 	gs_free char *bootif_val = NULL;
+	gboolean net_ifnames = TRUE;
 	int i;
 
 	connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
+
+	for (i = 0; argv[i]; i++) {
+		if (strcmp (argv[i], "net.ifnames=0") == 0)
+			net_ifnames = FALSE;
+		else if (g_str_has_prefix (argv[i], "net.ifnames="))
+			net_ifnames = TRUE;
+	}
 
 	for (i = 0; argv[i]; i++) {
 		gs_free char *argument_clone = NULL;
@@ -770,7 +814,7 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		else if (strcmp (tag, "rd.neednet") == 0)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.znet") == 0)
-			parse_rd_znet (connections, argument);
+			parse_rd_znet (connections, argument, net_ifnames);
 		else if (strcasecmp (tag, "BOOTIF") == 0) {
 			nm_clear_g_free (&bootif_val);
 			bootif_val = g_strdup (argument);
