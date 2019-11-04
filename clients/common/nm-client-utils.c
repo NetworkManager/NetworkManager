@@ -561,9 +561,9 @@ nmc_print_qrcode (const char *str)
 
 	if (term_linux) {
 		/* G1 alternate character set on Linux console. */
-		for (y = 0; y < size; y += 1) {
+		for (y = -1; y < size + 1; y += 1) {
 			g_print ("  \033[37;40;1m\016");
-			for (x = 0; x < size; x++) {
+			for (x = -1; x < size + 1; x++) {
 				g_print (  qrcodegen_getModule (qrcode, x, y)
 				         ? "  " : "\060\060");
 			}
