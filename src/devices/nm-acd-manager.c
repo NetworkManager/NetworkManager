@@ -344,6 +344,8 @@ nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 	if (success)
 		self->state = STATE_PROBING;
 
+	nm_assert (!self->channel);
+	nm_assert (self->event_id == 0);
 	n_acd_get_fd (self->acd, &fd);
 	self->channel = g_io_channel_unix_new (fd);
 	self->event_id = g_io_add_watch (self->channel, G_IO_IN, acd_event, self);
@@ -389,6 +391,7 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 	GHashTableIter iter;
 	AddressInfo *info;
 	int r;
+	int fd;
 	gboolean success = TRUE;
 
 	r = acd_init (self);
@@ -426,6 +429,13 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 			} else
 				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, sbuf));
 		}
+	}
+
+	if (!self->channel) {
+		nm_assert (self->event_id == 0);
+		n_acd_get_fd (self->acd, &fd);
+		self->channel = g_io_channel_unix_new (fd);
+		self->event_id = g_io_add_watch (self->channel, G_IO_IN, acd_event, self);
 	}
 
 	return success ? 0 : -NME_UNSPEC;
