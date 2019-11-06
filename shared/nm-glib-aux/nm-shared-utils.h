@@ -928,6 +928,42 @@ nm_g_source_destroy_and_unref (GSource *source)
 NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_destroy_and_unref);
 #define nm_auto_destroy_and_unref_gsource nm_auto(_nm_auto_destroy_and_unref_gsource)
 
+NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default)
+#define nm_auto_pop_gmaincontext nm_auto (_nm_auto_pop_gmaincontext)
+
+static inline GMainContext *
+nm_g_main_context_push_thread_default (GMainContext *context)
+{
+	/* This function is to work together with nm_auto_pop_gmaincontext. */
+	if (G_UNLIKELY (!context))
+		context = g_main_context_default ();
+	g_main_context_push_thread_default (context);
+	return context;
+}
+
+static inline GMainContext *
+nm_g_main_context_push_thread_default_if_necessary (GMainContext *context)
+{
+	GMainContext *cur_context;
+
+	cur_context = g_main_context_get_thread_default ();
+	if (cur_context == context)
+		return NULL;
+
+	if (G_UNLIKELY (!cur_context)) {
+		cur_context = g_main_context_default ();
+		if (cur_context == context)
+			return NULL;
+	} else if (G_UNLIKELY (!context)) {
+		context = g_main_context_default ();
+		if (cur_context == context)
+			return NULL;
+	}
+
+	g_main_context_push_thread_default (context);
+	return context;
+}
+
 /*****************************************************************************/
 
 static inline int
