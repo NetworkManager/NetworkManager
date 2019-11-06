@@ -670,6 +670,7 @@ class TestNmcli(NmTestBase):
         env['TERM'] = 'linux'
         env['ASAN_OPTIONS'] = 'detect_leaks=0'
         env['XDG_CONFIG_HOME'] = PathConfiguration.srcdir()
+        env['NM_TEST_CALLING_NUM'] = str(calling_num)
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
             env['G_DEBUG'] = 'fatal-warnings'
 
