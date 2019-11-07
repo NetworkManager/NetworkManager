@@ -156,6 +156,7 @@ NDhcp4ClientLease *n_dhcp4_client_lease_ref(NDhcp4ClientLease *lease);
 NDhcp4ClientLease *n_dhcp4_client_lease_unref(NDhcp4ClientLease *lease);
 
 void n_dhcp4_client_lease_get_yiaddr(NDhcp4ClientLease *lease, struct in_addr *yiaddr);
+void n_dhcp4_client_lease_get_siaddr(NDhcp4ClientLease *lease, struct in_addr *siaddr);
 void n_dhcp4_client_lease_get_lifetime(NDhcp4ClientLease *lease, uint64_t *ns_lifetimep);
 int n_dhcp4_client_lease_query(NDhcp4ClientLease *lease, uint8_t option, uint8_t **datap, size_t *n_datap);
 
