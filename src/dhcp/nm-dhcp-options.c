@@ -180,6 +180,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	/* Internal values */
 	REQ (NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS,                     "ip_address",                      FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NM_EXPIRY,                         "expiry",                          FALSE ),
+	REQ (NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,                    "next_server",                     FALSE ),
 
 	{ 0 }
 };

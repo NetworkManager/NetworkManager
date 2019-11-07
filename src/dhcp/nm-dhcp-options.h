@@ -164,6 +164,7 @@ typedef enum {
 	/* Internal values */
 	NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS                  = 1024,
 	NM_DHCP_OPTION_DHCP4_NM_EXPIRY                      = 1025,
+	NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER                 = 1026,
 } NMDhcpOptionDhcp4Options;
 
 typedef enum {
