@@ -473,7 +473,10 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 }
 
 static void
-parse_master (GHashTable *connections, char *argument, const char *type_name)
+parse_master (GHashTable *connections,
+              char *argument,
+              const char *type_name,
+              const char *default_name)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -489,7 +492,7 @@ parse_master (GHashTable *connections, char *argument, const char *type_name)
 
 	master = get_word (&argument, ':');
 	if (!master)
-		master = master_to_free = g_strdup_printf ("%s0", type_name);
+		master = master_to_free = g_strdup_printf ("%s0", default_name ?: type_name);
 	slaves = get_word (&argument, ':');
 
 	connection = get_conn (connections, master, type_name);
@@ -796,11 +799,11 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		else if (strcmp (tag, "rd.route") == 0)
 			parse_rd_route (connections, argument);
 		else if (strcmp (tag, "bridge") == 0)
-			parse_master (connections, argument, NM_SETTING_BRIDGE_SETTING_NAME);
+			parse_master (connections, argument, NM_SETTING_BRIDGE_SETTING_NAME, "br");
 		else if (strcmp (tag, "bond") == 0)
-			parse_master (connections, argument, NM_SETTING_BOND_SETTING_NAME);
+			parse_master (connections, argument, NM_SETTING_BOND_SETTING_NAME, NULL);
 		else if (strcmp (tag, "team") == 0)
-			parse_master (connections, argument, NM_SETTING_TEAM_SETTING_NAME);
+			parse_master (connections, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
 		else if (strcmp (tag, "vlan") == 0)
 			parse_vlan (connections, argument);
 		else if (strcmp (tag, "bootdev") == 0)

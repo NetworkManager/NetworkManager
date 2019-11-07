@@ -636,12 +636,12 @@ test_bridge_default (void)
 	g_assert (connections);
 	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
 
-	connection = g_hash_table_lookup (connections, "bridge0");
+	connection = g_hash_table_lookup (connections, "br0");
 
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_connection_type (connection), ==, NM_SETTING_BRIDGE_SETTING_NAME);
-	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bridge0");
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "br0");
 	master_uuid = nm_connection_get_uuid (connection);
 	g_assert (master_uuid);
 
