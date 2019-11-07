@@ -637,6 +637,13 @@ parse_bootdev (GHashTable *connections, char *argument)
 
 	connection = get_conn (connections, NULL, NULL);
 
+	if (   nm_connection_get_interface_name (connection)
+	    && strcmp (nm_connection_get_interface_name (connection), argument) != 0) {
+		/* If the default connection already has an interface name,
+		 * we should not overwrite it. Create a new one instead. */
+		connection = get_conn (connections, argument, NULL);
+	}
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, argument,
