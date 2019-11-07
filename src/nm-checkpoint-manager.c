@@ -209,7 +209,7 @@ nm_checkpoint_manager_destroy (NMCheckpointManager *self,
 	g_return_val_if_fail (path && path[0] == '/', FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	if (nm_streq (path, "/")) {
+	if (!nm_dbus_path_not_empty (path)) {
 		nm_checkpoint_manager_destroy_all (self);
 		return TRUE;
 	}

@@ -684,6 +684,30 @@ _nm_g_slice_free_fcn_define (32)
 
 /*****************************************************************************/
 
+static inline void
+nm_g_set_error_take (GError **error, GError *error_take)
+{
+	if (!error_take)
+		g_return_if_reached ();
+	if (!error) {
+		g_error_free (error_take);
+		return;
+	}
+	if (*error) {
+		g_error_free (error_take);
+		g_return_if_reached ();
+	}
+	*error = error_take;
+}
+
+#define nm_g_set_error_take_lazy(error, error_take_lazy) \
+	G_STMT_START { \
+		GError **_error = (error); \
+		\
+		if (_error) \
+			nm_g_set_error_take (_error, (error_take_lazy)); \
+	} G_STMT_END
+
 /**
  * NMUtilsError:
  * @NM_UTILS_ERROR_UNKNOWN: unknown or unclassified error
@@ -899,6 +923,45 @@ nm_g_source_destroy_and_unref (GSource *source)
 {
 	g_source_destroy (source);
 	g_source_unref (source);
+}
+
+NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_destroy_and_unref);
+#define nm_auto_destroy_and_unref_gsource nm_auto(_nm_auto_destroy_and_unref_gsource)
+
+NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default)
+#define nm_auto_pop_gmaincontext nm_auto (_nm_auto_pop_gmaincontext)
+
+static inline GMainContext *
+nm_g_main_context_push_thread_default (GMainContext *context)
+{
+	/* This function is to work together with nm_auto_pop_gmaincontext. */
+	if (G_UNLIKELY (!context))
+		context = g_main_context_default ();
+	g_main_context_push_thread_default (context);
+	return context;
+}
+
+static inline GMainContext *
+nm_g_main_context_push_thread_default_if_necessary (GMainContext *context)
+{
+	GMainContext *cur_context;
+
+	cur_context = g_main_context_get_thread_default ();
+	if (cur_context == context)
+		return NULL;
+
+	if (G_UNLIKELY (!cur_context)) {
+		cur_context = g_main_context_default ();
+		if (cur_context == context)
+			return NULL;
+	} else if (G_UNLIKELY (!context)) {
+		context = g_main_context_default ();
+		if (cur_context == context)
+			return NULL;
+	}
+
+	g_main_context_push_thread_default (context);
+	return context;
 }
 
 /*****************************************************************************/

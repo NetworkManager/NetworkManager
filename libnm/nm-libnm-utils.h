@@ -8,12 +8,19 @@
 
 #include "nm-types.h"
 #include "nm-glib-aux/nm-ref-string.h"
+#include "nm-client.h"
 
 /*****************************************************************************/
 
 /* Markers for deprecated sync code in internal API. */
 #define _NM_DEPRECATED_SYNC_METHOD_INTERNAL            NM_DEPRECATED_IN_1_22
 #define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY_INTERNAL NM_DEPRECATED_IN_1_22
+
+/*****************************************************************************/
+
+NMClientPermission nm_permission_to_client (const char *nm);
+
+NMClientPermissionResult nm_permission_result_to_client (const char *nm);
 
 /*****************************************************************************/
 
@@ -124,9 +131,7 @@ _nml_coerce_property_object_path (NMRefString *path)
 {
 	if (!path)
 		return NULL;
-	if (nm_streq (path->str, "/"))
-		return NULL;
-	return path->str;
+	return nm_dbus_path_not_empty (path->str);
 }
 
 static inline const char *const*

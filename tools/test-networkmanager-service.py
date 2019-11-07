@@ -672,6 +672,7 @@ PRP_DEVICE_UDI                   = "Udi"
 PRP_DEVICE_IFACE                 = "Interface"
 PRP_DEVICE_DRIVER                = "Driver"
 PRP_DEVICE_STATE                 = "State"
+PRP_DEVICE_STATE_REASON          = "StateReason"
 PRP_DEVICE_ACTIVE_CONNECTION     = "ActiveConnection"
 PRP_DEVICE_IP4_CONFIG            = "Ip4Config"
 PRP_DEVICE_IP6_CONFIG            = "Ip6Config"
@@ -700,11 +701,14 @@ class Device(ExportedObj):
         self.dhcp4_config = None
         self.dhcp6_config = None
 
+        self.prp_state = NM.DeviceState.UNAVAILABLE
+
         props = {
             PRP_DEVICE_UDI:                   "/sys/devices/virtual/%s" % (iface),
             PRP_DEVICE_IFACE:                 iface,
             PRP_DEVICE_DRIVER:                "virtual",
-            PRP_DEVICE_STATE:                 dbus.UInt32(NM.DeviceState.UNAVAILABLE),
+            PRP_DEVICE_STATE:                 dbus.UInt32(self.prp_state),
+            PRP_DEVICE_STATE_REASON:          dbus.Struct((dbus.UInt32(self.prp_state), dbus.UInt32(NM.DeviceStateReason.NONE))),
             PRP_DEVICE_ACTIVE_CONNECTION:     ExportedObj.to_path(None),
             PRP_DEVICE_IP4_CONFIG:            ExportedObj.to_path(self.ip4_config),
             PRP_DEVICE_IP6_CONFIG:            ExportedObj.to_path(self.ip6_config),
@@ -1302,14 +1306,6 @@ class NetworkManager(ExportedObj):
 
         ac = ActiveConnection(device, con_inst, None)
         self.active_connection_add(ac)
-
-        if NmUtil.con_hash_get_id(con_hash) == 'object-creation-failed-test':
-            # FIXME: this is not the right test, to delete the active-connection
-            # before returning it. It's the wrong order of what NetworkManager
-            # would do.
-            self.active_connection_remove(ac)
-            return ExportedObj.to_path(ac)
-
         return ExportedObj.to_path(ac)
 
     def active_connection_add(self, ac):
@@ -1596,6 +1592,9 @@ class Connection(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='a{sa{sv}}')
     def GetSettings(self):
+        if hasattr(self, '_remove_next_connection_cb'):
+            self._remove_next_connection_cb()
+            raise BusErr.UnknownConnectionException("Connection not found")
         if not self.visible:
             raise BusErr.PermissionDeniedException()
         return self.con_hash
@@ -1698,11 +1697,21 @@ class Settings(ExportedObj):
         self.NewConnection(con_inst.path)
         self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.get_connection_paths(), 'o'))
 
+        gl.manager.devices_available_connections_update()
+
         if self.remove_next_connection:
             self.remove_next_connection = False
-            self.delete_connection(con_inst)
-
-        gl.manager.devices_available_connections_update()
+            def cb():
+                if hasattr(con_inst, '_remove_next_connection_cb'):
+                    del con_inst._remove_next_connection_cb
+                    self.delete_connection(con_inst)
+                return False
+            # We will delete the connection right away on an idle handler. However,
+            # the test races with initializing the connection (calling GetSettings()).
+            # To avoid the race, we will check in GetSettings() whether the profile
+            # is about to be deleted, and delete it first.
+            con_inst._remove_next_connection_cb = cb
+            GLib.idle_add(cb)
 
         return con_inst.path
 

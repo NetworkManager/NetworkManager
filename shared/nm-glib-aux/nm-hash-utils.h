@@ -279,11 +279,19 @@ gboolean nm_pstr_equal (gconstpointer a, gconstpointer b);
 /*****************************************************************************/
 
 /* this hashes/compares the pointer value that we point to. Basically,
- * (((const void *const*) a) == ((const void *const*) b)). */
+ * (*((const void *const*) a) == *((const void *const*) b)). */
 
 guint nm_pdirect_hash (gconstpointer p);
 
 gboolean nm_pdirect_equal (gconstpointer a, gconstpointer b);
+
+/* this hashes/compares the direct pointer value by following pointers to
+ * pointers 2 times.
+ * (**((const void *const*const*) a) == **((const void *const*const*) b)). */
+
+guint nm_ppdirect_hash (gconstpointer p);
+
+gboolean nm_ppdirect_equal (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 

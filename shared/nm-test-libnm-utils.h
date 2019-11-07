@@ -67,3 +67,4 @@ void nmtstc_service_update_connection_variant (NMTstcServiceInfo *sinfo,
                                                GVariant *connection,
                                                gboolean verify_connection);
 
+NMClient *nmtstc_client_new (gboolean allow_iterate_main_context);

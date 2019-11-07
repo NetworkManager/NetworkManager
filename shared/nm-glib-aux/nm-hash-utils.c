@@ -206,3 +206,34 @@ nm_pdirect_equal (gconstpointer a, gconstpointer b)
 	           && s2
 	           && *s1 == *s2);
 }
+
+guint
+nm_ppdirect_hash (gconstpointer p)
+{
+	const void *const*const*s = p;
+
+	if (!s)
+		return nm_hash_static (396534869u);
+	if (!*s)
+		return nm_hash_static (1476102263u);
+	return nm_direct_hash (**s);
+}
+
+gboolean
+nm_ppdirect_equal (gconstpointer a, gconstpointer b)
+{
+	const void *const*const*s1 = a;
+	const void *const*const*s2 = b;
+
+	if (s1 == s2)
+		return TRUE;
+	if (!s1 || !s2)
+		return FALSE;
+
+	if (*s1 == *s2)
+		return TRUE;
+	if (!*s1 || !*s2)
+		return FALSE;
+
+	return **s1 == **s2;
+}

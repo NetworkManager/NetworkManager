@@ -8,6 +8,9 @@
 
 #include "nm-libnm-utils.h"
 
+#include "nm-glib-aux/nm-time-utils.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
+
 /*****************************************************************************/
 
 volatile int _nml_dbus_log_level = 0;
@@ -43,6 +46,7 @@ _nml_dbus_log (NMLDBusLogLevel level,
 	gs_free char *msg = NULL;
 	va_list args;
 	const char *prefix = "";
+	gint64 ts;
 
 	/* we only call _nml_dbus_log() after nml_dbus_log_enabled(), which already does
 	 * an atomic access to the variable. Since the value is only initialized once and
@@ -84,7 +88,13 @@ _nml_dbus_log (NMLDBusLogLevel level,
 		break;
 	}
 
-	g_printerr ("libnm-dbus: %s%s\n", prefix, msg);
+	ts = nm_utils_clock_gettime_ns (CLOCK_BOOTTIME);
+
+	g_printerr ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
+	            prefix,
+	            ts / NM_UTILS_NS_PER_SECOND,
+	            (ts / (NM_UTILS_NS_PER_SECOND / 10000)) % 10000,
+	            msg);
 }
 
 /*****************************************************************************/
@@ -648,4 +658,86 @@ nm_utils_fixup_product_string (const char *desc)
 	nm_assert (g_utf8_validate (desc_full, -1, NULL));
 
 	return desc_full;
+}
+
+/*****************************************************************************/
+
+NMClientPermission
+nm_permission_to_client (const char *nm)
+{
+	static const struct {
+		const char *name;
+		NMClientPermission perm;
+	} list[] = {
+		{ NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK,               NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK               },
+		{ NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK, NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK },
+		{ NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK,            NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK            },
+		{ NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS,         NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS         },
+		{ NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI,               NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI               },
+		{ NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX,              NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX              },
+		{ NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN,               NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN               },
+		{ NM_AUTH_PERMISSION_NETWORK_CONTROL,                   NM_CLIENT_PERMISSION_NETWORK_CONTROL                   },
+		{ NM_AUTH_PERMISSION_RELOAD,                            NM_CLIENT_PERMISSION_RELOAD                            },
+		{ NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS,        NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS        },
+		{ NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME,          NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME          },
+		{ NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN,               NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN               },
+		{ NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM,            NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM            },
+		{ NM_AUTH_PERMISSION_SLEEP_WAKE,                        NM_CLIENT_PERMISSION_SLEEP_WAKE                        },
+		{ NM_AUTH_PERMISSION_WIFI_SCAN,                         NM_CLIENT_PERMISSION_WIFI_SCAN                         },
+		{ NM_AUTH_PERMISSION_WIFI_SHARE_OPEN,                   NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN                   },
+		{ NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED,              NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED              },
+	};
+	gssize idx;
+
+#if NM_MORE_ASSERTS > 10
+	{
+		static gboolean checked = FALSE;
+		int i, j;
+
+		if (!checked) {
+			checked = TRUE;
+
+			for (i = 0; i < G_N_ELEMENTS (list); i++) {
+
+				nm_assert (list[i].perm != NM_CLIENT_PERMISSION_NONE);
+				nm_assert (list[i].name && list[i].name[0]);
+				if (i > 0) {
+					if (strcmp (list[i - 1].name, list[i].name) >= 0) {
+						g_error ("list is not sorted by name: #%d (%s) should be after #%d (%s)",
+						         i - 1, list[i - 1].name, i, list[i].name);
+					}
+				}
+				for (j = i + 1; j < G_N_ELEMENTS (list); j++) {
+					nm_assert (list[i].perm != list[j].perm);
+				}
+			}
+		}
+	}
+#endif
+
+	if (nm) {
+		idx = nm_utils_array_find_binary_search (list,
+		                                         sizeof (list[0]),
+		                                         G_N_ELEMENTS (list),
+		                                         &nm,
+		                                         nm_strcmp_p_with_data,
+		                                         NULL);
+		if (idx >= 0)
+			return list[idx].perm;
+	}
+	return NM_CLIENT_PERMISSION_NONE;
+}
+
+NMClientPermissionResult
+nm_permission_result_to_client (const char *nm)
+{
+	if (!nm)
+		return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+	if (nm_streq (nm, "yes"))
+		return NM_CLIENT_PERMISSION_RESULT_YES;
+	if (nm_streq (nm, "no"))
+		return NM_CLIENT_PERMISSION_RESULT_NO;
+	if (nm_streq (nm, "auth"))
+		return NM_CLIENT_PERMISSION_RESULT_AUTH;
+	return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
 }

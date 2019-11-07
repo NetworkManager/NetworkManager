@@ -180,8 +180,14 @@ _nm_ref_string_unref_non_null (NMRefString *rstr)
 	/* in the fast-path above, we already decremented the ref-count to zero.
 	 * We need recheck that the ref-count is still zero. */
 
-	if (g_atomic_int_get (&rstr0->ref_count) == 0)
-		g_hash_table_remove (gl_hash, rstr0);
+	if (g_atomic_int_get (&rstr0->ref_count) == 0) {
+		if (!g_hash_table_remove (gl_hash, rstr0))
+			nm_assert_not_reached ();
+	} else {
+#if NM_MORE_ASSERTS > 5
+		nm_assert (g_hash_table_lookup (gl_hash, rstr0) == rstr0);
+#endif
+	}
 
 	G_UNLOCK (gl_lock);
 }

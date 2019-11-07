@@ -91,11 +91,13 @@ import itertools
 import subprocess
 import shlex
 import re
+import fcntl
 import dbus
 import time
 import random
 import dbus.service
 import dbus.mainloop.glib
+import io
 
 ###############################################################################
 
@@ -173,26 +175,52 @@ class Util:
 
     @staticmethod
     def popen_wait(p, timeout = 0):
-        if Util.python_has_version(3, 3):
-            if timeout == 0:
-                return p.poll()
-            try:
-                return p.wait(timeout)
-            except subprocess.TimeoutExpired:
-                return None
+        (res, b_stdout, b_stderr) = Util.popen_wait_read(p, timeout = timeout, read_std_pipes = False)
+        return res
+
+    @staticmethod
+    def popen_wait_read(p, timeout = 0, read_std_pipes = True):
         start = NM.utils_get_timestamp_msec()
         delay = 0.0005
+        b_stdout = b''
+        b_stderr = b''
+        res = None
         while True:
+            if read_std_pipes:
+                b_stdout += Util.buffer_read(p.stdout)
+                b_stderr += Util.buffer_read(p.stderr)
             if p.poll() is not None:
-                return p.returncode
+                res = p.returncode
+                break
             if timeout == 0:
-                return None
+                break
             assert(timeout > 0)
             remaining = timeout - ((NM.utils_get_timestamp_msec() - start) / 1000.0)
             if remaining <= 0:
-                return None
+                break
             delay = min(delay * 2, remaining, 0.05)
             time.sleep(delay)
+        return (res, b_stdout, b_stderr)
+
+    @staticmethod
+    def buffer_read(buf):
+        b = b''
+        while True:
+            try:
+                b1 = buf.read()
+            except io.BlockingIOError:
+                b1 = b''
+            except IOError:
+                b1 = b''
+            if not b1:
+                return b
+            b += b1
+
+    @staticmethod
+    def buffer_set_nonblock(buf):
+        fd = buf.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
     @staticmethod
     def random_job(jobs):
@@ -459,10 +487,14 @@ class AsyncProcess():
     def start(self):
         if not hasattr(self, '_p'):
             self._p_start_timestamp = NM.utils_get_timestamp_msec()
+            self._p_stdout_buf = b''
+            self._p_stderr_buf = b''
             self._p = subprocess.Popen(self._args,
                                        stdout = subprocess.PIPE,
                                        stderr = subprocess.PIPE,
                                        env = self._env)
+            Util.buffer_set_nonblock(self._p.stdout)
+            Util.buffer_set_nonblock(self._p.stderr)
 
     def _timeout_remaining_time(self):
         # note that we call this during poll() and wait_and_complete().
@@ -476,7 +508,11 @@ class AsyncProcess():
     def poll(self, timeout = 0):
         self.start()
 
-        return_code = Util.popen_wait(self._p, timeout)
+        (return_code, b_stdout, b_stderr) = Util.popen_wait_read(self._p, timeout)
+
+        self._p_stdout_buf += b_stdout
+        self._p_stderr_buf += b_stderr
+
         if     return_code is None \
            and self._timeout_remaining_time() <= 0:
             raise Exception("process is still running after timeout: %s" % (' '.join(self._args)))
@@ -488,10 +524,15 @@ class AsyncProcess():
         p = self._p
         self._p = None
 
-        return_code = Util.popen_wait(p, max(0, self._timeout_remaining_time()) / 1000)
+        (return_code, b_stdout, b_stderr) = Util.popen_wait_read(p, max(0, self._timeout_remaining_time()) / 1000)
         (stdout, stderr) = (p.stdout.read(), p.stderr.read())
         p.stdout.close()
         p.stderr.close()
+
+        stdout = self._p_stdout_buf + b_stdout + stdout
+        stderr = self._p_stderr_buf + b_stderr + stderr
+        del self._p_stdout_buf
+        del self._p_stderr_buf
 
         if return_code is None:
             print(stdout)
@@ -670,6 +711,7 @@ class TestNmcli(NmTestBase):
         env['TERM'] = 'linux'
         env['ASAN_OPTIONS'] = 'detect_leaks=0'
         env['XDG_CONFIG_HOME'] = PathConfiguration.srcdir()
+        env['NM_TEST_CALLING_NUM'] = str(calling_num)
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
             env['G_DEBUG'] = 'fatal-warnings'
 
