@@ -309,6 +309,39 @@ test_multiple (void)
 }
 
 static void
+test_bootdev (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("vlan=vlan2:ens5", "bootdev=ens3");
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 2);
+
+	connection = g_hash_table_lookup (connections, "ens3");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "ens3");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "ens3");
+
+	connection = g_hash_table_lookup (connections, "vlan2");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_VLAN_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "vlan2");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "vlan2");
+}
+
+static void
 test_some_more (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
@@ -917,6 +950,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/if_ip6_manual", test_if_ip6_manual);
 	g_test_add_func ("/initrd/cmdline/multiple", test_multiple);
 	g_test_add_func ("/initrd/cmdline/some_more", test_some_more);
+	g_test_add_func ("/initrd/cmdline/bootdev", test_bootdev);
 	g_test_add_func ("/initrd/cmdline/no_bootif", test_no_bootif);
 	g_test_add_func ("/initrd/cmdline/bond", test_bond);
 	g_test_add_func ("/initrd/cmdline/bond/default", test_bond_default);
