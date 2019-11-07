@@ -97,6 +97,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	gint64 ts_time = time (NULL);
 	struct in_addr a_address;
 	struct in_addr a_netmask;
+	struct in_addr a_next_server;
 	struct in_addr server_id;
 	struct in_addr broadcast;
 	const struct in_addr *a_router;
@@ -147,6 +148,14 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	                               _nm_dhcp_option_dhcp4_options,
 	                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
 	                               (guint64) (ts_time + a_lifetime));
+
+	if (sd_dhcp_lease_get_next_server (lease, &a_next_server) == 0) {
+		nm_utils_inet4_ntop (a_next_server.s_addr, addr_str);
+		nm_dhcp_option_add_option (options,
+		                           _nm_dhcp_option_dhcp4_options,
+		                           NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,
+		                           addr_str);
+	}
 
 	nm_ip4_config_add_address (ip4_config,
 	                           &((const NMPlatformIP4Address) {
