@@ -528,12 +528,12 @@ con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      wlan0
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 4721
+size: 4764
 location: clients/tests/test-client.py:test_004()/21
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4590 bytes
+stdout: 4633 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -614,6 +614,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -633,12 +634,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4747
+size: 4790
 location: clients/tests/test-client.py:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4606 bytes
+stdout: 4649 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -719,6 +720,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -738,12 +740,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4727
+size: 4770
 location: clients/tests/test-client.py:test_004()/23
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -824,6 +826,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -843,12 +846,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4757
+size: 4800
 location: clients/tests/test-client.py:test_004()/24
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -929,6 +932,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -948,12 +952,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4727
+size: 4770
 location: clients/tests/test-client.py:test_004()/25
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1034,6 +1038,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -1053,12 +1058,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4757
+size: 4800
 location: clients/tests/test-client.py:test_004()/26
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1139,6 +1144,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -1358,16 +1364,17 @@ vpn.persistent:                         nie
 vpn.timeout:                            0
 
 <<<
-size: 808
+size: 851
 location: clients/tests/test-client.py:test_004()/31
 cmd: $NMCLI -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -1379,16 +1386,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 821
+size: 864
 location: clients/tests/test-client.py:test_004()/32
 cmd: $NMCLI -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 670 bytes
+stdout: 713 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3776,12 +3784,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 4739
+size: 4782
 location: clients/tests/test-client.py:test_004()/71
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3862,6 +3870,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -3881,12 +3890,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4769
+size: 4812
 location: clients/tests/test-client.py:test_004()/72
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3967,6 +3976,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3986,12 +3996,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4739
+size: 4782
 location: clients/tests/test-client.py:test_004()/73
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4072,6 +4082,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -4091,12 +4102,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4769
+size: 4812
 location: clients/tests/test-client.py:test_004()/74
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4177,6 +4188,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -4396,16 +4408,17 @@ vpn.persistent:                         nie
 vpn.timeout:                            0
 
 <<<
-size: 820
+size: 863
 location: clients/tests/test-client.py:test_004()/79
 cmd: $NMCLI --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -4417,16 +4430,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 833
+size: 876
 location: clients/tests/test-client.py:test_004()/80
 cmd: $NMCLI --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 670 bytes
+stdout: 713 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -6814,12 +6828,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 5749
+size: 5792
 location: clients/tests/test-client.py:test_004()/119
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -6911,6 +6925,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -6932,12 +6947,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5791
+size: 5834
 location: clients/tests/test-client.py:test_004()/120
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7029,6 +7044,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -7050,12 +7066,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5749
+size: 5792
 location: clients/tests/test-client.py:test_004()/121
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7147,6 +7163,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -7168,12 +7185,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5791
+size: 5834
 location: clients/tests/test-client.py:test_004()/122
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7265,6 +7282,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -7510,12 +7528,12 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1131
+size: 1175
 location: clients/tests/test-client.py:test_004()/127
 cmd: $NMCLI --pretty -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 980 bytes
+stdout: 1023 bytes
 >>>
 ===============================================================================
       Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -7523,6 +7541,7 @@ stdout: 980 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -7535,12 +7554,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1151
+size: 1195
 location: clients/tests/test-client.py:test_004()/128
 cmd: $NMCLI --pretty -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 990 bytes
+stdout: 1033 bytes
 >>>
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -7548,6 +7567,7 @@ stdout: 990 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -10466,12 +10486,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 5761
+size: 5804
 location: clients/tests/test-client.py:test_004()/167
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10563,6 +10583,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -10584,12 +10605,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5803
+size: 5846
 location: clients/tests/test-client.py:test_004()/168
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10681,6 +10702,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -10702,12 +10724,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5761
+size: 5804
 location: clients/tests/test-client.py:test_004()/169
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10799,6 +10821,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -10820,12 +10843,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5803
+size: 5846
 location: clients/tests/test-client.py:test_004()/170
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10917,6 +10940,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -11162,12 +11186,12 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1143
+size: 1187
 location: clients/tests/test-client.py:test_004()/175
 cmd: $NMCLI --pretty --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 980 bytes
+stdout: 1023 bytes
 >>>
 ===============================================================================
       Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -11175,6 +11199,7 @@ stdout: 980 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -11187,12 +11212,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1163
+size: 1207
 location: clients/tests/test-client.py:test_004()/176
 cmd: $NMCLI --pretty --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 990 bytes
+stdout: 1033 bytes
 >>>
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -11200,6 +11225,7 @@ stdout: 990 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -14118,12 +14144,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 2390
+size: 2408
 location: clients/tests/test-client.py:test_004()/215
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14204,6 +14230,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -14223,12 +14250,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2400
+size: 2418
 location: clients/tests/test-client.py:test_004()/216
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14309,6 +14336,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -14328,12 +14356,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2390
+size: 2408
 location: clients/tests/test-client.py:test_004()/217
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14414,6 +14442,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -14433,12 +14462,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2400
+size: 2418
 location: clients/tests/test-client.py:test_004()/218
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14519,6 +14548,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -14738,16 +14768,17 @@ vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 520
+size: 538
 location: clients/tests/test-client.py:test_004()/223
 cmd: $NMCLI --terse -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -14759,16 +14790,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 530
+size: 548
 location: clients/tests/test-client.py:test_004()/224
 cmd: $NMCLI --terse -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17126,12 +17158,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2402
+size: 2420
 location: clients/tests/test-client.py:test_004()/263
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17212,6 +17244,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17231,12 +17264,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2412
+size: 2430
 location: clients/tests/test-client.py:test_004()/264
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17317,6 +17350,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17336,12 +17370,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2402
+size: 2420
 location: clients/tests/test-client.py:test_004()/265
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17422,6 +17456,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17441,12 +17476,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2412
+size: 2430
 location: clients/tests/test-client.py:test_004()/266
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -17527,6 +17562,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17746,16 +17782,17 @@ vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 532
+size: 550
 location: clients/tests/test-client.py:test_004()/271
 cmd: $NMCLI --terse --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17767,16 +17804,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 542
+size: 560
 location: clients/tests/test-client.py:test_004()/272
 cmd: $NMCLI --terse --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -20134,12 +20172,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 3075
+size: 3095
 location: clients/tests/test-client.py:test_004()/311
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2928 bytes
+stdout: 2948 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -20156,19 +20194,19 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3098
+size: 3118
 location: clients/tests/test-client.py:test_004()/312
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2941 bytes
+stdout: 2961 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -20185,19 +20223,19 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3075
+size: 3095
 location: clients/tests/test-client.py:test_004()/313
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2928 bytes
+stdout: 2948 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -20214,19 +20252,19 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3098
+size: 3118
 location: clients/tests/test-client.py:test_004()/314
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2941 bytes
+stdout: 2961 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -20243,8 +20281,8 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
@@ -20320,26 +20358,26 @@ name  service-type                            user-name  data                   
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
-size: 639
+size: 659
 location: clients/tests/test-client.py:test_004()/319
 cmd: $NMCLI --mode tabular -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 482 bytes
+stdout: 502 bytes
 >>>
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
-size: 651
+size: 671
 location: clients/tests/test-client.py:test_004()/320
 cmd: $NMCLI --mode tabular -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 484 bytes
+stdout: 504 bytes
 >>>
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
 size: 394
@@ -21648,12 +21686,12 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 3087
+size: 3107
 location: clients/tests/test-client.py:test_004()/359
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2928 bytes
+stdout: 2948 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -21670,19 +21708,19 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3110
+size: 3130
 location: clients/tests/test-client.py:test_004()/360
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2941 bytes
+stdout: 2961 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -21699,19 +21737,19 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3087
+size: 3107
 location: clients/tests/test-client.py:test_004()/361
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2928 bytes
+stdout: 2948 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -21728,19 +21766,19 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3110
+size: 3130
 location: clients/tests/test-client.py:test_004()/362
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2941 bytes
+stdout: 2961 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -21757,8 +21795,8 @@ vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
@@ -21834,26 +21872,26 @@ name  service-type                            user-name  data                   
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
-size: 651
+size: 671
 location: clients/tests/test-client.py:test_004()/367
 cmd: $NMCLI --mode tabular --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 482 bytes
+stdout: 502 bytes
 >>>
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
-size: 663
+size: 683
 location: clients/tests/test-client.py:test_004()/368
 cmd: $NMCLI --mode tabular --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 484 bytes
+stdout: 504 bytes
 >>>
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
 size: 566
@@ -23162,12 +23200,12 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 4890
+size: 4920
 location: clients/tests/test-client.py:test_004()/407
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4734 bytes
+stdout: 4764 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -23195,21 +23233,21 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ======================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 --------------------------------------------------------------------------------------------------------------------------------
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4946
+size: 4976
 location: clients/tests/test-client.py:test_004()/408
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4780 bytes
+stdout: 4810 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -23237,21 +23275,21 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===========================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4890
+size: 4920
 location: clients/tests/test-client.py:test_004()/409
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4734 bytes
+stdout: 4764 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -23279,21 +23317,21 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ======================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 --------------------------------------------------------------------------------------------------------------------------------
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4946
+size: 4976
 location: clients/tests/test-client.py:test_004()/410
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4780 bytes
+stdout: 4810 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -23321,9 +23359,9 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===========================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
@@ -23424,34 +23462,34 @@ name  service-type                            user-name  data                   
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
-size: 1101
+size: 1131
 location: clients/tests/test-client.py:test_004()/415
 cmd: $NMCLI --mode tabular --pretty -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 935 bytes
+stdout: 965 bytes
 >>>
 ======================================================================
   Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ======================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
-size: 1133
+size: 1163
 location: clients/tests/test-client.py:test_004()/416
 cmd: $NMCLI --mode tabular --pretty -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 957 bytes
+stdout: 987 bytes
 >>>
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===========================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
 size: 532
@@ -25272,12 +25310,12 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 4902
+size: 4932
 location: clients/tests/test-client.py:test_004()/455
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4734 bytes
+stdout: 4764 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25305,21 +25343,21 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ======================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 --------------------------------------------------------------------------------------------------------------------------------
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4958
+size: 4988
 location: clients/tests/test-client.py:test_004()/456
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4780 bytes
+stdout: 4810 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -25347,21 +25385,21 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===========================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4902
+size: 4932
 location: clients/tests/test-client.py:test_004()/457
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4734 bytes
+stdout: 4764 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25389,21 +25427,21 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ======================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE          CFG                                     
 --------------------------------------------------------------------------------------------------------------------------------
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4958
+size: 4988
 location: clients/tests/test-client.py:test_004()/458
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4780 bytes
+stdout: 4810 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -25431,9 +25469,9 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===========================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE            CFG                                     
 ----------------------------------------------------------------------------------------------------------------------------------
@@ -25534,34 +25572,34 @@ name  service-type                            user-name  data                   
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
-size: 1113
+size: 1143
 location: clients/tests/test-client.py:test_004()/463
 cmd: $NMCLI --mode tabular --pretty --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 935 bytes
+stdout: 965 bytes
 >>>
 ======================================================================
   Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ======================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
-size: 1145
+size: 1175
 location: clients/tests/test-client.py:test_004()/464
 cmd: $NMCLI --mode tabular --pretty --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 957 bytes
+stdout: 987 bytes
 >>>
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===========================================================================
-GROUP    NAME       UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    --        aktywowano  nie      nie       --           tak  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
 
 <<<
 size: 704
@@ -27382,67 +27420,67 @@ eth0    chassis1           44:44:44:44:44:44  GigabitEthernet #2  test2.example.
 eth0    00:11:22:33:44:22  port1              GigabitEthernet #3  test3.example.com  Test system #3      40 (wlan-access-point,telephone)                                                                                                            
 
 <<<
-size: 789
+size: 790
 location: clients/tests/test-client.py:test_004()/503
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 799
+size: 800
 location: clients/tests/test-client.py:test_004()/504
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 789
+size: 790
 location: clients/tests/test-client.py:test_004()/505
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 799
+size: 800
 location: clients/tests/test-client.py:test_004()/506
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
@@ -27494,24 +27532,24 @@ stdout: 96 bytes
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 
 <<<
-size: 354
+size: 355
 location: clients/tests/test-client.py:test_004()/511
 cmd: $NMCLI --mode tabular --terse -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 
 <<<
-size: 364
+size: 365
 location: clients/tests/test-client.py:test_004()/512
 cmd: $NMCLI --mode tabular --terse -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 
 <<<
 size: 279
@@ -28258,67 +28296,67 @@ eth0:chassis1:44\:44\:44\:44\:44\:44:GigabitEthernet #2:test2.example.com:Test s
 eth0:00\:11\:22\:33\:44\:22:port1:GigabitEthernet #3:test3.example.com:Test system #3:40 (wlan-access-point,telephone)
 
 <<<
-size: 801
+size: 802
 location: clients/tests/test-client.py:test_004()/551
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 811
+size: 812
 location: clients/tests/test-client.py:test_004()/552
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 801
+size: 802
 location: clients/tests/test-client.py:test_004()/553
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 811
+size: 812
 location: clients/tests/test-client.py:test_004()/554
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 635 bytes
+stdout: 636 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
@@ -28370,24 +28408,24 @@ stdout: 96 bytes
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 
 <<<
-size: 366
+size: 367
 location: clients/tests/test-client.py:test_004()/559
 cmd: $NMCLI --mode tabular --terse --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 
 <<<
-size: 376
+size: 377
 location: clients/tests/test-client.py:test_004()/560
 cmd: $NMCLI --mode tabular --terse --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0::activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 
 <<<
 size: 451
@@ -29134,12 +29172,12 @@ eth0:chassis1:44\:44\:44\:44\:44\:44:GigabitEthernet #2:test2.example.com:Test s
 eth0:00\:11\:22\:33\:44\:22:port1:GigabitEthernet #3:test3.example.com:Test system #3:40 (wlan-access-point,telephone)
 
 <<<
-size: 4745
+size: 4788
 location: clients/tests/test-client.py:test_004()/599
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29220,6 +29258,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -29239,12 +29278,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4775
+size: 4818
 location: clients/tests/test-client.py:test_004()/600
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29325,6 +29364,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -29344,12 +29384,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4745
+size: 4788
 location: clients/tests/test-client.py:test_004()/601
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29430,6 +29470,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -29449,12 +29490,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4775
+size: 4818
 location: clients/tests/test-client.py:test_004()/602
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -29535,6 +29576,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -29754,16 +29796,17 @@ vpn.persistent:                         nie
 vpn.timeout:                            0
 
 <<<
-size: 826
+size: 869
 location: clients/tests/test-client.py:test_004()/607
 cmd: $NMCLI --mode multiline -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -29775,16 +29818,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 839
+size: 882
 location: clients/tests/test-client.py:test_004()/608
 cmd: $NMCLI --mode multiline -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 670 bytes
+stdout: 713 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -32672,12 +32716,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 4757
+size: 4800
 location: clients/tests/test-client.py:test_004()/647
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32758,6 +32802,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -32777,12 +32822,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4787
+size: 4830
 location: clients/tests/test-client.py:test_004()/648
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32863,6 +32908,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -32882,12 +32928,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4757
+size: 4800
 location: clients/tests/test-client.py:test_004()/649
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4596 bytes
+stdout: 4639 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32968,6 +33014,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -32987,12 +33034,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4787
+size: 4830
 location: clients/tests/test-client.py:test_004()/650
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4616 bytes
+stdout: 4659 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -33073,6 +33120,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -33292,16 +33340,17 @@ vpn.persistent:                         nie
 vpn.timeout:                            0
 
 <<<
-size: 838
+size: 881
 location: clients/tests/test-client.py:test_004()/655
 cmd: $NMCLI --mode multiline --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -33313,16 +33362,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 851
+size: 894
 location: clients/tests/test-client.py:test_004()/656
 cmd: $NMCLI --mode multiline --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 670 bytes
+stdout: 713 bytes
 >>>
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -36210,12 +36260,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:         Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 
 <<<
-size: 5766
+size: 5809
 location: clients/tests/test-client.py:test_004()/695
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -36307,6 +36357,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -36328,12 +36379,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5808
+size: 5851
 location: clients/tests/test-client.py:test_004()/696
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -36425,6 +36476,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -36446,12 +36498,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5766
+size: 5809
 location: clients/tests/test-client.py:test_004()/697
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -36543,6 +36595,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -36564,12 +36617,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5808
+size: 5851
 location: clients/tests/test-client.py:test_004()/698
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -36661,6 +36714,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -36906,12 +36960,12 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1148
+size: 1192
 location: clients/tests/test-client.py:test_004()/703
 cmd: $NMCLI --mode multiline --pretty -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 980 bytes
+stdout: 1023 bytes
 >>>
 ===============================================================================
       Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -36919,6 +36973,7 @@ stdout: 980 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -36931,12 +36986,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1168
+size: 1212
 location: clients/tests/test-client.py:test_004()/704
 cmd: $NMCLI --mode multiline --pretty -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 990 bytes
+stdout: 1033 bytes
 >>>
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -36944,6 +36999,7 @@ stdout: 990 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -40392,12 +40448,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 5778
+size: 5821
 location: clients/tests/test-client.py:test_004()/743
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -40489,6 +40545,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -40510,12 +40567,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5820
+size: 5863
 location: clients/tests/test-client.py:test_004()/744
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40607,6 +40664,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -40628,12 +40686,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5778
+size: 5821
 location: clients/tests/test-client.py:test_004()/745
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5608 bytes
+stdout: 5651 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -40725,6 +40783,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -40746,12 +40805,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5820
+size: 5863
 location: clients/tests/test-client.py:test_004()/746
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5640 bytes
+stdout: 5683 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -40843,6 +40902,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -41088,12 +41148,12 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1160
+size: 1204
 location: clients/tests/test-client.py:test_004()/751
 cmd: $NMCLI --mode multiline --pretty --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 980 bytes
+stdout: 1023 bytes
 >>>
 ===============================================================================
       Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -41101,6 +41161,7 @@ stdout: 980 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -41113,12 +41174,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1180
+size: 1224
 location: clients/tests/test-client.py:test_004()/752
 cmd: $NMCLI --mode multiline --pretty --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 990 bytes
+stdout: 1033 bytes
 >>>
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-con-vpn-1-REPLACED-REPLACED-REP)
@@ -41126,6 +41187,7 @@ stdout: 990 bytes
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:                        wlan0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -44574,12 +44636,12 @@ NEIGHBOR[2].SYSTEM-CAPABILITIES:        40 (wlan-access-point,telephone)
 -------------------------------------------------------------------------------
 
 <<<
-size: 2407
+size: 2425
 location: clients/tests/test-client.py:test_004()/791
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44660,6 +44722,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -44679,12 +44742,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2417
+size: 2435
 location: clients/tests/test-client.py:test_004()/792
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44765,6 +44828,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -44784,12 +44848,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2407
+size: 2425
 location: clients/tests/test-client.py:test_004()/793
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44870,6 +44934,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -44889,12 +44954,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2417
+size: 2435
 location: clients/tests/test-client.py:test_004()/794
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44975,6 +45040,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -45194,16 +45260,17 @@ vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 537
+size: 555
 location: clients/tests/test-client.py:test_004()/799
 cmd: $NMCLI --mode multiline --terse -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -45215,16 +45282,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 547
+size: 565
 location: clients/tests/test-client.py:test_004()/800
 cmd: $NMCLI --mode multiline --terse -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -48112,12 +48180,12 @@ NEIGHBOR[2].SYSTEM-DESCRIPTION:Test system #3
 NEIGHBOR[2].SYSTEM-CAPABILITIES:40 (wlan-access-point,telephone)
 
 <<<
-size: 2419
+size: 2437
 location: clients/tests/test-client.py:test_004()/839
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48198,6 +48266,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -48217,12 +48286,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2429
+size: 2447
 location: clients/tests/test-client.py:test_004()/840
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48303,6 +48372,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -48322,12 +48392,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2419
+size: 2437
 location: clients/tests/test-client.py:test_004()/841
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48408,6 +48478,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -48427,12 +48498,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2429
+size: 2447
 location: clients/tests/test-client.py:test_004()/842
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2250 bytes
+stdout: 2268 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48513,6 +48584,7 @@ proxy.pac-script:
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -48732,16 +48804,17 @@ vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 549
+size: 567
 location: clients/tests/test-client.py:test_004()/847
 cmd: $NMCLI --mode multiline --terse --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -48753,16 +48826,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 559
+size: 577
 location: clients/tests/test-client.py:test_004()/848
 cmd: $NMCLI --mode multiline --terse --color yes -f GENERAL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:con-vpn-1
 GENERAL.UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.DEVICES:wlan0
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no

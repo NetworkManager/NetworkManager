@@ -684,12 +684,12 @@ stdout: 51 bytes
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 4587
+size: 4630
 location: clients/tests/test-client.py:test_003()/29
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 4457 bytes
+stdout: 4500 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -778,6 +778,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -789,12 +790,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4619
+size: 4662
 location: clients/tests/test-client.py:test_003()/30
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4479 bytes
+stdout: 4522 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -883,6 +884,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -1558,12 +1560,12 @@ GENERAL.STATE:                          aktywowano
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5252
+size: 5338
 location: clients/tests/test-client.py:test_003()/54
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5122 bytes
+stdout: 5208 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1652,6 +1654,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -1665,6 +1668,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -1676,12 +1680,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5288
+size: 5374
 location: clients/tests/test-client.py:test_003()/55
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5148 bytes
+stdout: 5234 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1770,6 +1774,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -1783,6 +1788,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -2166,12 +2172,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5255
+size: 5341
 location: clients/tests/test-client.py:test_003()/68
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5125 bytes
+stdout: 5211 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2260,6 +2266,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -2273,6 +2280,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -2284,12 +2292,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5292
+size: 5378
 location: clients/tests/test-client.py:test_003()/69
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5152 bytes
+stdout: 5238 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2378,6 +2386,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -2391,6 +2400,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -2402,12 +2412,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4630
+size: 4673
 location: clients/tests/test-client.py:test_003()/70
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4460 bytes
+stdout: 4503 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2496,6 +2506,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -2507,12 +2518,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4663
+size: 4706
 location: clients/tests/test-client.py:test_003()/71
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4483 bytes
+stdout: 4526 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2601,6 +2612,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -2802,12 +2814,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5267
+size: 5353
 location: clients/tests/test-client.py:test_003()/78
 cmd: $NMCLI --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5125 bytes
+stdout: 5211 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2896,6 +2908,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -2909,6 +2922,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -2920,12 +2934,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5304
+size: 5390
 location: clients/tests/test-client.py:test_003()/79
 cmd: $NMCLI --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5152 bytes
+stdout: 5238 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3014,6 +3028,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3027,6 +3042,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3038,12 +3054,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4642
+size: 4685
 location: clients/tests/test-client.py:test_003()/80
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4460 bytes
+stdout: 4503 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3132,6 +3148,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -3143,12 +3160,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4675
+size: 4718
 location: clients/tests/test-client.py:test_003()/81
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4483 bytes
+stdout: 4526 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3237,6 +3254,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3454,12 +3472,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6509
+size: 6595
 location: clients/tests/test-client.py:test_003()/88
 cmd: $NMCLI --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6370 bytes
+stdout: 6456 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -3559,6 +3577,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -3576,6 +3595,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -3588,12 +3608,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6565
+size: 6651
 location: clients/tests/test-client.py:test_003()/89
 cmd: $NMCLI --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6416 bytes
+stdout: 6502 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -3693,6 +3713,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3710,6 +3731,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -3722,12 +3744,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5571
+size: 5614
 location: clients/tests/test-client.py:test_003()/90
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5392 bytes
+stdout: 5435 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -3827,6 +3849,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -3839,12 +3862,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5616
+size: 5659
 location: clients/tests/test-client.py:test_003()/91
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5427 bytes
+stdout: 5470 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -3944,6 +3967,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -4184,12 +4208,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6521
+size: 6607
 location: clients/tests/test-client.py:test_003()/98
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6370 bytes
+stdout: 6456 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4289,6 +4313,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -4306,6 +4331,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -4318,12 +4344,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6577
+size: 6663
 location: clients/tests/test-client.py:test_003()/99
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6416 bytes
+stdout: 6502 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4423,6 +4449,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -4440,6 +4467,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -4452,12 +4480,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5584
+size: 5627
 location: clients/tests/test-client.py:test_003()/100
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5392 bytes
+stdout: 5435 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4557,6 +4585,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -4569,12 +4598,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5629
+size: 5672
 location: clients/tests/test-client.py:test_003()/101
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5427 bytes
+stdout: 5470 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4674,6 +4703,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -4894,12 +4924,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 2837
+size: 2873
 location: clients/tests/test-client.py:test_003()/108
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4988,6 +5018,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5001,6 +5032,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5012,12 +5044,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2847
+size: 2883
 location: clients/tests/test-client.py:test_003()/109
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5106,6 +5138,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5119,6 +5152,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5130,12 +5164,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2509
+size: 2527
 location: clients/tests/test-client.py:test_003()/110
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5224,6 +5258,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5235,12 +5270,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2519
+size: 2537
 location: clients/tests/test-client.py:test_003()/111
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5329,6 +5364,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5526,12 +5562,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 2849
+size: 2885
 location: clients/tests/test-client.py:test_003()/118
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5620,6 +5656,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5633,6 +5670,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5644,12 +5682,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2859
+size: 2895
 location: clients/tests/test-client.py:test_003()/119
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5738,6 +5776,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5751,6 +5790,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5762,12 +5802,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2521
+size: 2539
 location: clients/tests/test-client.py:test_003()/120
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5856,6 +5896,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -5867,12 +5908,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2531
+size: 2549
 location: clients/tests/test-client.py:test_003()/121
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5961,6 +6002,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -6162,12 +6204,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 3514
+size: 3554
 location: clients/tests/test-client.py:test_003()/128
 cmd: $NMCLI --mode tabular con s ethernet
 lang: C
 returncode: 0
-stdout: 3368 bytes
+stdout: 3408 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -6184,21 +6226,21 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 3548
+size: 3588
 location: clients/tests/test-client.py:test_003()/129
 cmd: $NMCLI --mode tabular con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3392 bytes
+stdout: 3432 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -6215,21 +6257,21 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 3072
+size: 3092
 location: clients/tests/test-client.py:test_003()/130
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2886 bytes
+stdout: 2906 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -6246,17 +6288,17 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 3104
+size: 3124
 location: clients/tests/test-client.py:test_003()/131
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2908 bytes
+stdout: 2928 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -6273,8 +6315,8 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -6400,12 +6442,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 3526
+size: 3566
 location: clients/tests/test-client.py:test_003()/138
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3368 bytes
+stdout: 3408 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -6422,21 +6464,21 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 3560
+size: 3600
 location: clients/tests/test-client.py:test_003()/139
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3392 bytes
+stdout: 3432 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -6453,21 +6495,21 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 3084
+size: 3104
 location: clients/tests/test-client.py:test_003()/140
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2886 bytes
+stdout: 2906 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
@@ -6484,17 +6526,17 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 3116
+size: 3136
 location: clients/tests/test-client.py:test_003()/141
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2908 bytes
+stdout: 2928 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
@@ -6511,8 +6553,8 @@ ipv6  auto    --   --          --           0             --         --       --
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -6654,12 +6696,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5756
+size: 5816
 location: clients/tests/test-client.py:test_003()/148
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 5601 bytes
+stdout: 5661 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -6687,26 +6729,26 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 5850
+size: 5910
 location: clients/tests/test-client.py:test_003()/149
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5685 bytes
+stdout: 5745 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -6734,26 +6776,26 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 4862
+size: 4892
 location: clients/tests/test-client.py:test_003()/150
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4667 bytes
+stdout: 4697 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -6781,18 +6823,18 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 4934
+size: 4964
 location: clients/tests/test-client.py:test_003()/151
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4729 bytes
+stdout: 4759 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -6820,9 +6862,9 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -6986,12 +7028,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5768
+size: 5828
 location: clients/tests/test-client.py:test_003()/158
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5601 bytes
+stdout: 5661 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -7019,26 +7061,26 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 5862
+size: 5922
 location: clients/tests/test-client.py:test_003()/159
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5685 bytes
+stdout: 5745 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -7066,26 +7108,26 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     --        aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 4874
+size: 4904
 location: clients/tests/test-client.py:test_003()/160
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4667 bytes
+stdout: 4697 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -7113,18 +7155,18 @@ proxy  none    no            --       --
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 4946
+size: 4976
 location: clients/tests/test-client.py:test_003()/161
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4729 bytes
+stdout: 4759 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -7152,9 +7194,9 @@ proxy  none    nie           --       --
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -7298,68 +7340,68 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 827
+size: 829
 location: clients/tests/test-client.py:test_003()/168
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 674 bytes
+stdout: 676 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1::activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 837
+size: 839
 location: clients/tests/test-client.py:test_003()/169
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 674 bytes
+stdout: 676 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1::activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 680
+size: 681
 location: clients/tests/test-client.py:test_003()/170
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 487 bytes
+stdout: 488 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 690
+size: 691
 location: clients/tests/test-client.py:test_003()/171
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 487 bytes
+stdout: 488 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
 size: 1371
@@ -7450,68 +7492,68 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 839
+size: 841
 location: clients/tests/test-client.py:test_003()/178
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 674 bytes
+stdout: 676 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1::activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 849
+size: 851
 location: clients/tests/test-client.py:test_003()/179
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 674 bytes
+stdout: 676 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1::activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 692
+size: 693
 location: clients/tests/test-client.py:test_003()/180
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 487 bytes
+stdout: 488 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 702
+size: 703
 location: clients/tests/test-client.py:test_003()/181
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 487 bytes
+stdout: 488 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default:
 ipv4:auto::::0::::-1:0::no:no::0:yes:::no:yes:-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy::yes::
 proxy:none:no::
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
 size: 1383
@@ -7750,12 +7792,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 5273
+size: 5359
 location: clients/tests/test-client.py:test_003()/188
 cmd: $NMCLI --mode multiline con s ethernet
 lang: C
 returncode: 0
-stdout: 5125 bytes
+stdout: 5211 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7844,6 +7886,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -7857,6 +7900,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -7868,12 +7912,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5310
+size: 5396
 location: clients/tests/test-client.py:test_003()/189
 cmd: $NMCLI --mode multiline con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5152 bytes
+stdout: 5238 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7962,6 +8006,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -7975,6 +8020,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -7986,12 +8032,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4648
+size: 4691
 location: clients/tests/test-client.py:test_003()/190
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4460 bytes
+stdout: 4503 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8080,6 +8126,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -8091,12 +8138,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4681
+size: 4724
 location: clients/tests/test-client.py:test_003()/191
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4483 bytes
+stdout: 4526 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8185,6 +8232,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -8530,12 +8578,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 5285
+size: 5371
 location: clients/tests/test-client.py:test_003()/198
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5125 bytes
+stdout: 5211 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8624,6 +8672,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -8637,6 +8686,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -8648,12 +8698,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5322
+size: 5408
 location: clients/tests/test-client.py:test_003()/199
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5152 bytes
+stdout: 5238 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8742,6 +8792,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -8755,6 +8806,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -8766,12 +8818,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4660
+size: 4703
 location: clients/tests/test-client.py:test_003()/200
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4460 bytes
+stdout: 4503 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8860,6 +8912,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -8871,12 +8924,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 4693
+size: 4736
 location: clients/tests/test-client.py:test_003()/201
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4483 bytes
+stdout: 4526 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8965,6 +9018,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -9340,12 +9394,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 6527
+size: 6613
 location: clients/tests/test-client.py:test_003()/208
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6370 bytes
+stdout: 6456 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -9445,6 +9499,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -9462,6 +9517,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -9474,12 +9530,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6583
+size: 6669
 location: clients/tests/test-client.py:test_003()/209
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6416 bytes
+stdout: 6502 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -9579,6 +9635,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -9596,6 +9653,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -9608,12 +9666,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5589
+size: 5632
 location: clients/tests/test-client.py:test_003()/210
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5392 bytes
+stdout: 5435 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -9713,6 +9771,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -9725,12 +9784,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5634
+size: 5677
 location: clients/tests/test-client.py:test_003()/211
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5427 bytes
+stdout: 5470 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -9830,6 +9889,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -10228,12 +10288,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 6539
+size: 6625
 location: clients/tests/test-client.py:test_003()/218
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6370 bytes
+stdout: 6456 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -10333,6 +10393,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -10350,6 +10411,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -10362,12 +10424,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6595
+size: 6681
 location: clients/tests/test-client.py:test_003()/219
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6416 bytes
+stdout: 6502 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -10467,6 +10529,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -10484,6 +10547,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -10496,12 +10560,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5601
+size: 5644
 location: clients/tests/test-client.py:test_003()/220
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5392 bytes
+stdout: 5435 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -10601,6 +10665,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -10613,12 +10678,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5646
+size: 5689
 location: clients/tests/test-client.py:test_003()/221
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5427 bytes
+stdout: 5470 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -10718,6 +10783,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -11086,12 +11152,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 2854
+size: 2890
 location: clients/tests/test-client.py:test_003()/228
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11180,6 +11246,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11193,6 +11260,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11204,12 +11272,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2864
+size: 2900
 location: clients/tests/test-client.py:test_003()/229
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11298,6 +11366,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11311,6 +11380,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11322,12 +11392,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2526
+size: 2544
 location: clients/tests/test-client.py:test_003()/230
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11416,6 +11486,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11427,12 +11498,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2536
+size: 2554
 location: clients/tests/test-client.py:test_003()/231
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11521,6 +11592,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11866,12 +11938,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 2866
+size: 2902
 location: clients/tests/test-client.py:test_003()/238
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11960,6 +12032,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11973,6 +12046,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -11984,12 +12058,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2876
+size: 2912
 location: clients/tests/test-client.py:test_003()/239
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2698 bytes
+stdout: 2734 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12078,6 +12152,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
+GENERAL.IP-IFACE:
 GENERAL.STATE:activated
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -12091,6 +12166,7 @@ GENERAL.MASTER-PATH:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -12102,12 +12178,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2538
+size: 2556
 location: clients/tests/test-client.py:test_003()/240
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12196,6 +12272,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -12207,12 +12284,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2548
+size: 2566
 location: clients/tests/test-client.py:test_003()/241
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2330 bytes
+stdout: 2348 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12301,6 +12378,7 @@ proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -12520,16 +12598,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 837
+size: 880
 location: clients/tests/test-client.py:test_003()/250
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -12541,16 +12620,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 852
+size: 895
 location: clients/tests/test-client.py:test_003()/251
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 672 bytes
+stdout: 715 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -12770,16 +12850,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 849
+size: 892
 location: clients/tests/test-client.py:test_003()/260
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -12791,16 +12872,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 864
+size: 907
 location: clients/tests/test-client.py:test_003()/261
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 672 bytes
+stdout: 715 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -13036,12 +13118,12 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 1373
+size: 1416
 location: clients/tests/test-client.py:test_003()/270
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 1193 bytes
+stdout: 1236 bytes
 >>>
 ===============================================================================
                           Connection profile details
@@ -13052,6 +13134,7 @@ stdout: 1193 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -13064,12 +13147,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1400
+size: 1443
 location: clients/tests/test-client.py:test_003()/271
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1210 bytes
+stdout: 1253 bytes
 >>>
 ===============================================================================
                          Szczegóły profilu połączenia
@@ -13080,6 +13163,7 @@ stdout: 1210 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -13338,12 +13422,12 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 1385
+size: 1428
 location: clients/tests/test-client.py:test_003()/280
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 1193 bytes
+stdout: 1236 bytes
 >>>
 ===============================================================================
                           Connection profile details
@@ -13354,6 +13438,7 @@ stdout: 1193 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -13366,12 +13451,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1412
+size: 1455
 location: clients/tests/test-client.py:test_003()/281
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1210 bytes
+stdout: 1253 bytes
 >>>
 ===============================================================================
                          Szczegóły profilu połączenia
@@ -13382,6 +13467,7 @@ stdout: 1210 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -13620,16 +13706,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 548
+size: 566
 location: clients/tests/test-client.py:test_003()/290
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -13641,16 +13728,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 558
+size: 576
 location: clients/tests/test-client.py:test_003()/291
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -13866,16 +13954,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 560
+size: 578
 location: clients/tests/test-client.py:test_003()/300
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -13887,16 +13976,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 570
+size: 588
 location: clients/tests/test-client.py:test_003()/301
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -14116,27 +14206,27 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 672
+size: 692
 location: clients/tests/test-client.py:test_003()/310
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 487 bytes
+stdout: 507 bytes
 >>>
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 686
+size: 706
 location: clients/tests/test-client.py:test_003()/311
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 491 bytes
+stdout: 511 bytes
 >>>
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -14280,27 +14370,27 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 684
+size: 704
 location: clients/tests/test-client.py:test_003()/320
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 487 bytes
+stdout: 507 bytes
 >>>
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 698
+size: 718
 location: clients/tests/test-client.py:test_003()/321
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 491 bytes
+stdout: 511 bytes
 >>>
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -14460,12 +14550,12 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 1228
+size: 1258
 location: clients/tests/test-client.py:test_003()/330
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 1033 bytes
+stdout: 1063 bytes
 >>>
 ==============================
   Connection profile details
@@ -14473,18 +14563,18 @@ stdout: 1033 bytes
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 1273
+size: 1303
 location: clients/tests/test-client.py:test_003()/331
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1068 bytes
+stdout: 1098 bytes
 >>>
 ================================
   Szczegóły profilu połączenia
@@ -14492,9 +14582,9 @@ stdout: 1068 bytes
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -14676,12 +14766,12 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 1240
+size: 1270
 location: clients/tests/test-client.py:test_003()/340
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 1033 bytes
+stdout: 1063 bytes
 >>>
 ==============================
   Connection profile details
@@ -14689,18 +14779,18 @@ stdout: 1033 bytes
 ======================================================================
   Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ======================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
-size: 1285
+size: 1315
 location: clients/tests/test-client.py:test_003()/341
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1068 bytes
+stdout: 1098 bytes
 >>>
 ================================
   Szczegóły profilu połączenia
@@ -14708,9 +14798,9 @@ stdout: 1068 bytes
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
-GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
+GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     --        dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/4  --    --          
 
 
 <<<
@@ -14872,24 +14962,24 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 382
+size: 383
 location: clients/tests/test-client.py:test_003()/350
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 392
+size: 393
 location: clients/tests/test-client.py:test_003()/351
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
 size: 1391
@@ -14998,24 +15088,24 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 394
+size: 395
 location: clients/tests/test-client.py:test_003()/360
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 404
+size: 405
 location: clients/tests/test-client.py:test_003()/361
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 189 bytes
+stdout: 190 bytes
 >>>
-GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0::deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
 size: 1403
@@ -15270,16 +15360,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 854
+size: 897
 location: clients/tests/test-client.py:test_003()/370
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -15291,16 +15382,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 869
+size: 912
 location: clients/tests/test-client.py:test_003()/371
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 672 bytes
+stdout: 715 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -15662,16 +15754,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 866
+size: 909
 location: clients/tests/test-client.py:test_003()/380
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 710 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -15683,16 +15776,17 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 881
+size: 924
 location: clients/tests/test-client.py:test_003()/381
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 672 bytes
+stdout: 715 bytes
 >>>
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -16082,12 +16176,12 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 1390
+size: 1433
 location: clients/tests/test-client.py:test_003()/390
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 1193 bytes
+stdout: 1236 bytes
 >>>
 ===============================================================================
                           Connection profile details
@@ -16098,6 +16192,7 @@ stdout: 1193 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -16110,12 +16205,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1417
+size: 1460
 location: clients/tests/test-client.py:test_003()/391
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1210 bytes
+stdout: 1253 bytes
 >>>
 ===============================================================================
                          Szczegóły profilu połączenia
@@ -16126,6 +16221,7 @@ stdout: 1210 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -16538,12 +16634,12 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 1402
+size: 1445
 location: clients/tests/test-client.py:test_003()/400
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 1193 bytes
+stdout: 1236 bytes
 >>>
 ===============================================================================
                           Connection profile details
@@ -16554,6 +16650,7 @@ stdout: 1193 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          deactivating
 GENERAL.DEFAULT:                        no
 GENERAL.DEFAULT6:                       no
@@ -16566,12 +16663,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 1429
+size: 1472
 location: clients/tests/test-client.py:test_003()/401
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1210 bytes
+stdout: 1253 bytes
 >>>
 ===============================================================================
                          Szczegóły profilu połączenia
@@ -16582,6 +16679,7 @@ stdout: 1210 bytes
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
+GENERAL.IP-IFACE:                       --
 GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
@@ -16966,16 +17064,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 565
+size: 583
 location: clients/tests/test-client.py:test_003()/410
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -16987,16 +17086,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 575
+size: 593
 location: clients/tests/test-client.py:test_003()/411
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17358,16 +17458,17 @@ stderr: 58 bytes
 Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<
-size: 577
+size: 595
 location: clients/tests/test-client.py:test_003()/420
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
@@ -17379,16 +17480,17 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 587
+size: 605
 location: clients/tests/test-client.py:test_003()/421
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 370 bytes
+stdout: 388 bytes
 >>>
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
+GENERAL.IP-IFACE:
 GENERAL.STATE:deactivating
 GENERAL.DEFAULT:no
 GENERAL.DEFAULT6:no
