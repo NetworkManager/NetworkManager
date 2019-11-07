@@ -371,6 +371,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	const gint64 ts_clock_boottime = nm_utils_monotonic_timestamp_as_boottime (ts, 1);
 	struct in_addr a_address;
 	struct in_addr a_netmask;
+	struct in_addr a_next_server;
 	guint32 a_plen;
 	guint64 nettools_lifetime;
 	gint64 a_lifetime;
@@ -439,6 +440,16 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	                               _nm_dhcp_option_dhcp4_options,
 	                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
 	                               (guint64) a_expiry);
+
+
+	n_dhcp4_client_lease_get_siaddr (lease, &a_next_server);
+	if (a_next_server.s_addr != INADDR_ANY) {
+		nm_utils_inet4_ntop (a_next_server.s_addr, addr_str);
+		nm_dhcp_option_add_option (options,
+		                           _nm_dhcp_option_dhcp4_options,
+		                           NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,
+		                           addr_str);
+	}
 
 	nm_ip4_config_add_address (ip4_config,
 	                           &((const NMPlatformIP4Address) {
