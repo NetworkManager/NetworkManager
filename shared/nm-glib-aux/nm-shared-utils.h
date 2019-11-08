@@ -963,6 +963,9 @@ nm_g_source_attach (GSource *source,
 	return source;
 }
 
+NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref)
+#define nm_auto_unref_gmaincontext nm_auto (_nm_auto_unref_gmaincontext)
+
 static inline GMainContext *
 nm_g_main_context_push_thread_default (GMainContext *context)
 {
