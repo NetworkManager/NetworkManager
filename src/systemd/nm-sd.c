@@ -18,7 +18,6 @@ typedef struct SDEventSource {
 	GSource source;
 	GPollFD pollfd;
 	sd_event *event;
-	guint *default_source_id;
 } SDEventSource;
 
 static gboolean
@@ -36,41 +35,49 @@ event_check (GSource *source)
 static gboolean
 event_dispatch (GSource *source, GSourceFunc callback, gpointer user_data)
 {
-	return sd_event_dispatch (((SDEventSource *)source)->event) > 0;
+	return sd_event_dispatch (((SDEventSource *) source)->event) > 0;
 }
 
 static void
 event_finalize (GSource *source)
 {
-	SDEventSource *s;
+	SDEventSource *s = (SDEventSource *) source;
 
-	s = (SDEventSource *) source;
 	sd_event_unref (s->event);
-	if (s->default_source_id)
-		*s->default_source_id = 0;
 }
 
 static SDEventSource *
-event_create_source (sd_event *event, guint *default_source_id)
+event_create_source (sd_event *event)
 {
-	static GSourceFuncs event_funcs = {
+	static const GSourceFuncs event_funcs = {
 		.prepare = event_prepare,
 		.check = event_check,
 		.dispatch = event_dispatch,
 		.finalize = event_finalize,
 	};
 	SDEventSource *source;
+	gboolean is_default_event = FALSE;
+	int r;
 
-	g_return_val_if_fail (event, NULL);
+	if (!event) {
+		is_default_event = TRUE;
+		r = sd_event_default (&event);
+		if (r < 0)
+			g_return_val_if_reached (NULL);
+	}
 
-	source = (SDEventSource *) g_source_new (&event_funcs, sizeof (SDEventSource));
+	source = (SDEventSource *) g_source_new ((GSourceFuncs *) &event_funcs, sizeof (SDEventSource));
 
-	source->event = sd_event_ref (event);
-	source->pollfd.fd = sd_event_get_fd (event);
-	source->pollfd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-	source->default_source_id = default_source_id;
+	source->event =   is_default_event
+	                ? g_steal_pointer (&event)
+	                : sd_event_ref (event);
 
-	g_source_add_poll ((GSource *) source, &source->pollfd);
+	source->pollfd = (GPollFD) {
+	    .fd     = sd_event_get_fd (source->event),
+	    .events = G_IO_IN | G_IO_HUP | G_IO_ERR,
+	};
+
+	g_source_add_poll (&source->source, &source->pollfd);
 
 	return source;
 }
@@ -80,35 +87,15 @@ event_attach (sd_event *event, GMainContext *context)
 {
 	SDEventSource *source;
 	guint id;
-	int r;
-	sd_event *e = event;
-	guint *p_default_source_id = NULL;
 
-	if (!e) {
-		static guint default_source_id = 0;
+	source = event_create_source (event);
 
-		if (default_source_id) {
-			/* The default event cannot be registered multiple times. */
-			g_return_val_if_reached (0);
-		}
+	g_return_val_if_fail (source, 0);
 
-		r = sd_event_default (&e);
-		if (r < 0)
-			g_return_val_if_reached (0);
-
-		p_default_source_id = &default_source_id;
-	}
-
-	source = event_create_source (e, p_default_source_id);
 	id = g_source_attach ((GSource *) source, context);
 	g_source_unref ((GSource *) source);
 
-	if (!event) {
-		*p_default_source_id = id;
-		sd_event_unref (e);
-	}
-
-	g_return_val_if_fail (id, 0);
+	nm_assert (id != 0);
 	return id;
 }
 
