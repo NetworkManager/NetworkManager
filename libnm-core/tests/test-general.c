@@ -6547,6 +6547,11 @@ test_nm_utils_ascii_str_to_int64 (void)
 	test_nm_utils_ascii_str_to_int64_do ("080",  0, G_MININT64, G_MAXINT64, -1, EINVAL, -1);
 	test_nm_utils_ascii_str_to_int64_do ("070",  0, G_MININT64, G_MAXINT64, -1, 0, 7*8);
 	test_nm_utils_ascii_str_to_int64_do ("0x70",  0, G_MININT64, G_MAXINT64, -1, 0, 0x70);
+
+	g_assert_cmpint (21, ==, _nm_utils_ascii_str_to_int64 ("025", 0, 0, 1000, -1));
+	g_assert_cmpint (21, ==, _nm_utils_ascii_str_to_int64 ("0025", 0, 0, 1000, -1));
+	g_assert_cmpint (25, ==, _nm_utils_ascii_str_to_int64 ("025", 10, 0, 1000, -1));
+	g_assert_cmpint (25, ==, _nm_utils_ascii_str_to_int64 ("0025", 10, 0, 1000, -1));
 }
 
 /*****************************************************************************/
