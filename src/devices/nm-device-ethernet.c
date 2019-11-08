@@ -87,6 +87,7 @@ typedef enum {
 
 typedef struct _NMDeviceEthernetPrivate {
 	guint32             speed;
+	gulong              carrier_id;
 
 	Supplicant          supplicant;
 	guint               supplicant_timeout_id;
@@ -891,7 +892,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 }
 
 static NMActStageReturn
-nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure_reason)
+supplicant_check_secrets_needed (NMDeviceEthernet *self, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -900,7 +901,6 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	security = nm_connection_get_setting_802_1x (connection);
@@ -937,6 +937,44 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure
 	}
 
 	return ret;
+}
+
+static void
+carrier_changed (NMSupplicantInterface *iface,
+                 GParamSpec *pspec,
+                 NMDeviceEthernet *self)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMDeviceStateReason reason;
+	NMActStageReturn ret;
+
+	if (nm_device_has_carrier (NM_DEVICE (self))) {
+		_LOGD (LOGD_DEVICE | LOGD_ETHER, "got carrier, initializing supplicant");
+		nm_clear_g_signal_handler (self, &priv->carrier_id);
+		ret = supplicant_check_secrets_needed (self, &reason);
+		if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_FAILED,
+			                         reason);
+		}
+	}
+}
+
+static NMActStageReturn
+nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure_reason)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	if (!nm_device_has_carrier (NM_DEVICE (self))) {
+		_LOGD (LOGD_DEVICE | LOGD_ETHER, "delay supplicant initialization until carrier goes up");
+		priv->carrier_id = g_signal_connect (self,
+		                                     "notify::" NM_DEVICE_CARRIER,
+		                                     G_CALLBACK (carrier_changed),
+		                                     self);
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
+	return supplicant_check_secrets_needed (self, out_failure_reason);
 }
 
 /*****************************************************************************/
@@ -1354,6 +1392,7 @@ deactivate (NMDevice *device)
 	GError *error = NULL;
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
+	nm_clear_g_signal_handler (self, &priv->carrier_id);
 
 	if (priv->ppp_manager) {
 		nm_ppp_manager_stop (priv->ppp_manager, NULL, NULL, NULL);
@@ -1698,6 +1737,8 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
 	nm_clear_g_source (&priv->dcb_timeout_id);
+
+	nm_clear_g_signal_handler (self, &priv->carrier_id);
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }
