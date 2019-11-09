@@ -1043,7 +1043,7 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const property_enums_t
 		g_object_thaw_notify ((GObject *) obj); \
 } \
 \
-static inline void \
+_nm_unused static inline void \
 _notify (obj_type *obj, property_enums_type prop) \
 { \
 	_nm_gobject_notify_together_impl (obj, 1, &prop); \
