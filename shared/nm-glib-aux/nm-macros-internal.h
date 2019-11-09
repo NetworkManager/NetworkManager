@@ -635,8 +635,8 @@ NM_G_ERROR_MSG (GError *error)
 #define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
 #endif
 
-#if _NM_CC_SUPPORT_GENERIC
-#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) (_Generic ((((container *) NULL)->field), \
+#if _NM_CC_SUPPORT_GENERIC && ( !defined (__clang__) || __clang_major__ > 3 )
+#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) (_Generic ( (&(((container *) NULL)->field))[0] , \
                                                                         type: G_STRUCT_OFFSET (container, field)))
 #else
 #define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) G_STRUCT_OFFSET (container, field)
