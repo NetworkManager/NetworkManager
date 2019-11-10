@@ -1790,11 +1790,34 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			goto out_fail;
 		}
 
+		if (   !is_connection_known_network (connection)
+		    && nm_setting_wireless_get_hidden (s_wireless)) {
+			gs_free char *ssid_str = NULL;
+
+			/* Use Station.ConnectHiddenNetwork method instead of Network proxy. */
+			ssid_str = _nm_utils_ssid_to_utf8 (nm_setting_wireless_get_ssid (s_wireless));
+			g_dbus_proxy_call (priv->dbus_station_proxy,
+			                   "ConnectHiddenNetwork",
+			                   g_variant_new ("(s)", ssid_str),
+			                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+			                   priv->cancellable,
+			                   network_connect_cb,
+			                   self);
+			return NM_ACT_STAGE_RETURN_POSTPONE;
+		}
+
+		if (!nm_wifi_ap_get_supplicant_path (ap)) {
+			_LOGW (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) network is provisioned but dbus supplicant path for AP unknown");
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+			goto out_fail;
+		}
+
 		network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
 		                                                   nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)),
 		                                                   NM_IWD_NETWORK_INTERFACE);
 		if (!network_proxy) {
-			_LOGE (LOGD_DEVICE | LOGD_WIFI,
+			_LOGW (LOGD_DEVICE | LOGD_WIFI,
 			       "Activation: (wifi) could not get Network interface proxy for %s",
 			       nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)));
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
