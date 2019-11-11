@@ -47,6 +47,49 @@ _connection_matches_type (gpointer key, gpointer value, gpointer user_data)
 }
 
 static NMConnection *
+add_conn (GHashTable *connections,
+          const char *basename,
+          const char *id,
+          const char *ifname,
+          const char *type_name,
+          NMConnectionMultiConnect multi_connect)
+{
+	NMConnection *connection;
+	NMSetting *setting;
+
+	connection = nm_simple_connection_new ();
+	g_hash_table_insert (connections, g_strdup (basename), connection);
+
+	/* Start off assuming dynamic IP configurations. */
+
+	setting = nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, setting);
+	g_object_set (setting,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	setting = nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, setting);
+	g_object_set (setting,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	setting = nm_setting_connection_new ();
+	nm_connection_add_setting (connection, setting);
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, id,
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
+	              NM_SETTING_CONNECTION_TYPE, type_name,
+	              NM_SETTING_CONNECTION_MULTI_CONNECT, multi_connect,
+	              NULL);
+
+	return connection;
+}
+
+static NMConnection *
 get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 {
 	NMConnection *connection;
@@ -76,40 +119,15 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 		                                (gpointer) type_name);
 	}
 
-	if (connection) {
-		setting = (NMSetting *)nm_connection_get_setting_connection (connection);
-	} else {
-		connection = nm_simple_connection_new ();
-		g_hash_table_insert (connections, g_strdup (basename), connection);
-
-		/* Start off assuming dynamic IP configurations. */
-
-		setting = nm_setting_ip4_config_new ();
-		nm_connection_add_setting (connection, setting);
-		g_object_set (setting,
-		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-		              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
-		              NULL);
-
-		setting = nm_setting_ip6_config_new ();
-		nm_connection_add_setting (connection, setting);
-		g_object_set (setting,
-		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-		              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
-		              NULL);
-
-		setting = nm_setting_connection_new ();
-		nm_connection_add_setting (connection, setting);
-		g_object_set (setting,
-		              NM_SETTING_CONNECTION_ID, ifname ?: "Wired Connection",
-		              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
-		              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
-		              NM_SETTING_CONNECTION_MULTI_CONNECT, multi_connect,
-		              NULL);
-
+	if (!connection) {
 		if (!type_name)
 			type_name = NM_SETTING_WIRED_SETTING_NAME;
+
+		connection = add_conn (connections, basename,
+		                       ifname ?: "Wired Connection",
+		                       ifname, type_name, multi_connect);
 	}
+	setting = (NMSetting *)nm_connection_get_setting_connection (connection);
 
 	if (type_name) {
 		g_object_set (setting, NM_SETTING_CONNECTION_TYPE, type_name, NULL);
@@ -856,7 +874,6 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		}
 
 		connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
-
 		s_wired = nm_connection_get_setting_wired (connection);
 		g_object_set (s_wired,
 		              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
