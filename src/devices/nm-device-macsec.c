@@ -66,6 +66,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceMacsec,
 typedef struct {
 	NMPlatformLnkMacsec props;
 	gulong parent_state_id;
+	gulong parent_mtu_id;
 	Supplicant supplicant;
 	guint supplicant_timeout_id;
 	NMActRequestGetSecretsCallId *macsec_secrets_id;
@@ -114,6 +115,17 @@ parent_state_changed (NMDevice *parent,
 }
 
 static void
+parent_mtu_maybe_changed (NMDevice *parent,
+                          GParamSpec *pspec,
+                          gpointer user_data)
+{
+	/* the MTU of a MACsec device is limited by the parent's MTU.
+	 *
+	 * When the parent's MTU changes, try to re-set the MTU. */
+	nm_device_commit_mtu (user_data);
+}
+
+static void
 parent_changed_notify (NMDevice *device,
                        int old_ifindex,
                        NMDevice *old_parent,
@@ -133,12 +145,16 @@ parent_changed_notify (NMDevice *device,
 	 *  because NMDevice's dispose() will unset the parent, which in turn calls
 	 *  parent_changed_notify(). */
 	nm_clear_g_signal_handler (old_parent, &priv->parent_state_id);
+	nm_clear_g_signal_handler (old_parent, &priv->parent_mtu_id);
 
 	if (new_parent) {
 		priv->parent_state_id = g_signal_connect (new_parent,
 		                                          NM_DEVICE_STATE_CHANGED,
 		                                          G_CALLBACK (parent_state_changed),
 		                                          device);
+		priv->parent_mtu_id = g_signal_connect (new_parent, "notify::" NM_DEVICE_MTU,
+		                                        G_CALLBACK (parent_mtu_maybe_changed), device);
+
 
 		/* Set parent-dependent unmanaged flag */
 		nm_device_set_unmanaged_by_flags (device,
@@ -791,11 +807,15 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceMacsec *self = NM_DEVICE_MACSEC (object);
+	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 
 	macsec_secrets_cancel (self);
 	supplicant_interface_release (self);
 
 	G_OBJECT_CLASS (nm_device_macsec_parent_class)->dispose (object);
+
+	nm_assert (priv->parent_state_id == 0);
+	nm_assert (priv->parent_mtu_id == 0);
 }
 
 static const NMDBusInterfaceInfoExtended interface_info_device_macsec = {
@@ -838,6 +858,7 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	device_class->connection_type_supported = NM_SETTING_MACSEC_SETTING_NAME;
 	device_class->connection_type_check_compatible = NM_SETTING_MACSEC_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_MACSEC);
+	device_class->mtu_parent_delta = 32;
 
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->create_and_realize = create_and_realize;
@@ -847,7 +868,7 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	device_class->is_available = is_available;
 	device_class->parent_changed_notify = parent_changed_notify;
 	device_class->state_changed = device_state_changed;
-	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_wired_parent;
 
 	obj_properties[PROP_SCI] =
 	    g_param_spec_uint64 (NM_DEVICE_MACSEC_SCI, "", "",
