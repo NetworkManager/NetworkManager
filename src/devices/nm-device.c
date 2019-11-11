@@ -1347,6 +1347,7 @@ _get_stable_id (NMDevice *self,
 		       NM_PRINT_FMT_QUOTED (stable_type == NM_UTILS_STABLE_TYPE_GENERATED, " from \"", generated, "\"", ""));
 	}
 
+	nm_assert (priv->current_stable_id);
 	*out_stable_type = priv->current_stable_id_type;
 	return priv->current_stable_id;
 }
@@ -7995,11 +7996,7 @@ dhcp4_get_client_id (NMDevice *self,
 		gsize host_id_len;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (!stable_id)
-			g_return_val_if_reached (NULL);
-
 		salted_header = htonl (2011610591 + stable_type);
-
 		nm_utils_host_id_get (&host_id, &host_id_len);
 
 		sum = g_checksum_new (G_CHECKSUM_SHA1);
@@ -8723,8 +8720,6 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		} digest;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (!stable_id)
-			g_return_val_if_reached (NULL);
 
 		if (NM_IN_STRSET (duid, "stable-ll", "stable-llt")) {
 			/* for stable LL/LLT DUIDs, we still need a hardware address to detect
@@ -9162,13 +9157,12 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		const char *stable_id;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (   !stable_id
-		    || !nm_utils_ipv6_addr_set_stable_privacy (stable_type,
-		                                               &lladdr,
-		                                               nm_device_get_iface (self),
-		                                               stable_id,
-		                                               priv->linklocal6_dad_counter++,
-		                                               &error)) {
+		if (!nm_utils_ipv6_addr_set_stable_privacy (stable_type,
+		                                            &lladdr,
+		                                            nm_device_get_iface (self),
+		                                            stable_id,
+		                                            priv->linklocal6_dad_counter++,
+		                                            &error)) {
 			_LOGW (LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
 			g_clear_error (&error);
 			linklocal6_failed (self);
@@ -9822,7 +9816,6 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	g_assert (s_ip6);
 
 	stable_id = _get_stable_id (self, connection, &stable_type);
-	g_assert (stable_id);
 	priv->ndisc = nm_lndp_ndisc_new (nm_device_get_platform (self),
 	                                 nm_device_get_ip_ifindex (self),
 	                                 nm_device_get_ip_iface (self),
@@ -14981,7 +14974,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	g_ptr_array_add (argv, g_strdup (nm_connection_get_uuid (connection)));
 
 	stable_id = _get_stable_id (self, connection, &stable_type);
-	if (stable_id && stable_type != NM_UTILS_STABLE_TYPE_UUID) {
+	if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
 		g_ptr_array_add (argv, g_strdup ("--stable-id"));
 		g_ptr_array_add (argv, g_strdup_printf ("%d %s", (int) stable_type, stable_id));
 	}
@@ -16269,12 +16262,10 @@ _hw_addr_get_cloned (NMDevice *self, NMConnection *connection, gboolean is_wifi,
 		}
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (stable_id) {
-			hw_addr_generated = nm_utils_hw_addr_gen_stable_eth (stable_type, stable_id,
-			                                                     nm_device_get_ip_iface (self),
-			                                                     nm_device_get_initial_hw_address (self),
-			                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
-		}
+		hw_addr_generated = nm_utils_hw_addr_gen_stable_eth (stable_type, stable_id,
+		                                                     nm_device_get_ip_iface (self),
+		                                                     nm_device_get_initial_hw_address (self),
+		                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
 		if (!hw_addr_generated) {
 			g_set_error (error,
 			             NM_DEVICE_ERROR,
