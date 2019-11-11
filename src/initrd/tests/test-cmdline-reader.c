@@ -421,17 +421,6 @@ test_some_more (void)
 }
 
 static void
-test_no_bootif (void)
-{
-	gs_unref_hashtable GHashTable *connections = NULL;
-	const char *const*ARGV = NM_MAKE_STRV ("BOOTIF=01-00-53-AB-cd-02-03", "rd.bootif=0");
-
-	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
-	g_assert (connections);
-	g_assert_cmpint (g_hash_table_size (connections), ==, 0);
-}
-
-static void
 test_bond (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
@@ -1025,6 +1014,17 @@ test_bootif_hwtype (void)
 	g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 }
 
+static void
+test_bootif_off (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("BOOTIF=01-00-53-AB-cd-02-03", "rd.bootif=0");
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 0);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -1040,7 +1040,6 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/multiple", test_multiple);
 	g_test_add_func ("/initrd/cmdline/some_more", test_some_more);
 	g_test_add_func ("/initrd/cmdline/bootdev", test_bootdev);
-	g_test_add_func ("/initrd/cmdline/no_bootif", test_no_bootif);
 	g_test_add_func ("/initrd/cmdline/bond", test_bond);
 	g_test_add_func ("/initrd/cmdline/bond/default", test_bond_default);
 	g_test_add_func ("/initrd/cmdline/team", test_team);
@@ -1052,6 +1051,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/rd_znet/legacy", test_rd_znet_legacy);
 	g_test_add_func ("/initrd/cmdline/bootif", test_bootif);
 	g_test_add_func ("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);
+	g_test_add_func ("/initrd/cmdline/bootif/off", test_bootif_off);
 
 	return g_test_run ();
 }
