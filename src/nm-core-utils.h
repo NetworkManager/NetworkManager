@@ -389,13 +389,12 @@ guint32 nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
                                    gsize interface_id_len);
 
 GBytes *nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
-                                                            const guint8 *interface_id,
-                                                            gsize interface_id_len,
+                                                            guint32 iaid,
                                                             const guint8 *machine_id,
                                                             gsize machine_id_len);
 
 GBytes *nm_utils_dhcp_client_id_systemd_node_specific (gboolean legacy_unstable_byteorder,
-                                                       const char *ifname);
+                                                       guint32 iaid);
 
 /*****************************************************************************/
 

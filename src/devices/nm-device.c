@@ -1347,6 +1347,7 @@ _get_stable_id (NMDevice *self,
 		       NM_PRINT_FMT_QUOTED (stable_type == NM_UTILS_STABLE_TYPE_GENERATED, " from \"", generated, "\"", ""));
 	}
 
+	nm_assert (priv->current_stable_id);
 	*out_stable_type = priv->current_stable_id_type;
 	return priv->current_stable_id;
 }
@@ -7904,6 +7905,144 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
+/**
+ * dhcp_get_iaid:
+ * @self: the #NMDevice
+ * @addr_family: the address family
+ * @connection: the connection
+ * @out_is_explicit: on return, %TRUE if the user set a valid IAID in
+ *   the connection or in global configuration; %FALSE if the connection
+ *   property was empty and no valid global configuration was provided.
+ *
+ * Returns: a IAID value for this device and the given connection.
+ */
+static guint32
+dhcp_get_iaid (NMDevice *self,
+               int addr_family,
+               NMConnection *connection,
+               gboolean *out_is_explicit)
+{
+	NMSettingIPConfig *s_ip;
+	const char *iaid_str;
+	gs_free char *iaid_str_free = NULL;
+	guint32 iaid;
+	const char *iface;
+	const char *fail_reason;
+	gboolean is_explicit = TRUE;
+
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+	iaid_str = nm_setting_ip_config_get_dhcp_iaid (s_ip);
+	if (!iaid_str) {
+		iaid_str_free = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                                         addr_family == AF_INET
+		                                                       ? NM_CON_DEFAULT ("ipv4.dhcp-iaid")
+		                                                       : NM_CON_DEFAULT ("ipv6.dhcp-iaid"),
+		                                                       self);
+		iaid_str = iaid_str_free;
+		if (!iaid_str) {
+			iaid_str = NM_IAID_IFNAME;
+			is_explicit = FALSE;
+		} else if (!_nm_utils_iaid_verify (iaid_str, NULL)) {
+			_LOGW (LOGD_DEVICE, "invalid global default '%s' for ipv%c.dhcp-iaid",
+			       iaid_str,
+			       nm_utils_addr_family_to_char (addr_family));
+			iaid_str = NM_IAID_IFNAME;
+			is_explicit = FALSE;
+		}
+	}
+
+	if (nm_streq0 (iaid_str, NM_IAID_MAC)) {
+		const NMPlatformLink *pllink;
+
+		pllink = nm_platform_link_get (nm_device_get_platform (self),
+		                               nm_device_get_ip_ifindex (self));
+		if (!pllink || pllink->l_address.len < 4) {
+			fail_reason = "invalid link-layer address";
+			goto out_fail;
+		}
+
+		/* @iaid is in native endianness. Use unaligned_read_be32()
+		 * so that the IAID for a given MAC address is the same on
+		 * BE and LE machines. */
+		iaid = unaligned_read_be32 (&pllink->l_address.data[pllink->l_address.len - 4]);
+		goto out_good;
+	} else if (nm_streq0 (iaid_str, NM_IAID_PERM_MAC)) {
+		guint8 hwaddr_buf[NM_UTILS_HWADDR_LEN_MAX];
+		const char *hwaddr_str;
+		gsize hwaddr_len;
+
+		hwaddr_str = nm_device_get_permanent_hw_address (self);
+		if (!hwaddr_str) {
+			fail_reason = "no permanent link-layer address";
+			goto out_fail;
+		}
+
+		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_buf, sizeof (hwaddr_buf), &hwaddr_len))
+			g_return_val_if_reached (0);
+
+		if (hwaddr_len < 4) {
+			fail_reason = "invalid link-layer address";
+			goto out_fail;
+		}
+
+		iaid = unaligned_read_be32 (&hwaddr_buf[hwaddr_len - 4]);
+		goto out_good;
+	}  else if (nm_streq (iaid_str, "stable")) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+		guint32 salted_header;
+		const guint8 *host_id;
+		gsize host_id_len;
+
+		stable_id = _get_stable_id (self, connection, &stable_type);
+		salted_header = htonl (53390459 + stable_type);
+		nm_utils_host_id_get (&host_id, &host_id_len);
+		iface = nm_device_get_ip_iface (self);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA1);
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+		g_checksum_update (sum, (const guchar *) iface, strlen (iface) + 1);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
+		nm_utils_checksum_get_digest (sum, digest);
+
+		iaid = unaligned_read_be32 (digest);
+		goto out_good;
+	} else if ((iaid = _nm_utils_ascii_str_to_int64 (iaid_str, 10, 0, G_MAXUINT32, -1)) != -1) {
+		goto out_good;
+	} else {
+		iface = nm_device_get_ip_iface (self);
+		iaid = nm_utils_create_dhcp_iaid (TRUE,
+		                                  (const guint8 *) iface,
+		                                  strlen (iface));
+		goto out_good;
+	}
+
+out_fail:
+	nm_assert (fail_reason);
+	_LOGW (  addr_family == AF_INET
+	       ? (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4)
+	       : (LOGD_DEVICE | LOGD_DHCP6 | LOGD_IP6),
+	       "ipv%c.dhcp-iaid: failure to generate IAID: %s. Using interface-name based IAID",
+	       nm_utils_addr_family_to_char (addr_family), fail_reason);
+	is_explicit = FALSE;
+	iface = nm_device_get_ip_iface (self);
+	iaid = nm_utils_create_dhcp_iaid (TRUE,
+	                                  (const guint8 *) iface,
+	                                  strlen (iface));
+out_good:
+	_LOGD (  addr_family == AF_INET
+	       ? (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4)
+	       : (LOGD_DEVICE | LOGD_DHCP6 | LOGD_IP6),
+	       "ipv%c.dhcp-iaid: using %u (0x%08x) IAID (str: '%s', explicit %d)",
+	       nm_utils_addr_family_to_char (addr_family), iaid, iaid,
+	       iaid_str, is_explicit);
+	NM_SET_OUT (out_is_explicit, is_explicit);
+	return iaid;
+}
+
 static GBytes *
 dhcp4_get_client_id (NMDevice *self,
                      NMConnection *connection,
@@ -7980,8 +8119,10 @@ dhcp4_get_client_id (NMDevice *self,
 	}
 
 	if (nm_streq (client_id, "duid")) {
+		guint32 iaid = dhcp_get_iaid (self, AF_INET, connection, NULL);
+
 		result = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
-		                                                        nm_device_get_ip_iface (self));
+		                                                        iaid);
 		goto out_good;
 	}
 
@@ -7995,11 +8136,7 @@ dhcp4_get_client_id (NMDevice *self,
 		gsize host_id_len;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (!stable_id)
-			g_return_val_if_reached (NULL);
-
 		salted_header = htonl (2011610591 + stable_type);
-
 		nm_utils_host_id_get (&host_id, &host_id_len);
 
 		sum = g_checksum_new (G_CHECKSUM_SHA1);
@@ -8723,8 +8860,6 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		} digest;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (!stable_id)
-			g_return_val_if_reached (NULL);
 
 		if (NM_IN_STRSET (duid, "stable-ll", "stable-llt")) {
 			/* for stable LL/LLT DUIDs, we still need a hardware address to detect
@@ -8853,6 +8988,8 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	gboolean enforce_duid = FALSE;
 	const NMPlatformLink *pllink;
 	GError *error = NULL;
+	guint32 iaid;
+	gboolean iaid_explicit;
 
 	const NMPlatformIP6Address *ll_addr = NULL;
 
@@ -8877,6 +9014,8 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		bcast_hwaddr = nmp_link_address_get_as_bytes (&pllink->l_broadcast);
 	}
 
+	iaid = dhcp_get_iaid (self, AF_INET6, connection, &iaid_explicit);
+
 	duid = dhcp6_get_duid (self, connection, hwaddr, &enforce_duid);
 	priv->dhcp6.client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
 	                                                nm_device_get_multi_index (self),
@@ -8892,6 +9031,8 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                duid,
 	                                                enforce_duid,
+	                                                iaid,
+	                                                iaid_explicit,
 	                                                get_dhcp_timeout (self, AF_INET6),
 	                                                priv->dhcp_anycast_address,
 	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
@@ -9162,13 +9303,12 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		const char *stable_id;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (   !stable_id
-		    || !nm_utils_ipv6_addr_set_stable_privacy (stable_type,
-		                                               &lladdr,
-		                                               nm_device_get_iface (self),
-		                                               stable_id,
-		                                               priv->linklocal6_dad_counter++,
-		                                               &error)) {
+		if (!nm_utils_ipv6_addr_set_stable_privacy (stable_type,
+		                                            &lladdr,
+		                                            nm_device_get_iface (self),
+		                                            stable_id,
+		                                            priv->linklocal6_dad_counter++,
+		                                            &error)) {
 			_LOGW (LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
 			g_clear_error (&error);
 			linklocal6_failed (self);
@@ -9822,7 +9962,6 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	g_assert (s_ip6);
 
 	stable_id = _get_stable_id (self, connection, &stable_type);
-	g_assert (stable_id);
 	priv->ndisc = nm_lndp_ndisc_new (nm_device_get_platform (self),
 	                                 nm_device_get_ip_ifindex (self),
 	                                 nm_device_get_ip_iface (self),
@@ -14981,7 +15120,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	g_ptr_array_add (argv, g_strdup (nm_connection_get_uuid (connection)));
 
 	stable_id = _get_stable_id (self, connection, &stable_type);
-	if (stable_id && stable_type != NM_UTILS_STABLE_TYPE_UUID) {
+	if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
 		g_ptr_array_add (argv, g_strdup ("--stable-id"));
 		g_ptr_array_add (argv, g_strdup_printf ("%d %s", (int) stable_type, stable_id));
 	}
@@ -16269,12 +16408,10 @@ _hw_addr_get_cloned (NMDevice *self, NMConnection *connection, gboolean is_wifi,
 		}
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (stable_id) {
-			hw_addr_generated = nm_utils_hw_addr_gen_stable_eth (stable_type, stable_id,
-			                                                     nm_device_get_ip_iface (self),
-			                                                     nm_device_get_initial_hw_address (self),
-			                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
-		}
+		hw_addr_generated = nm_utils_hw_addr_gen_stable_eth (stable_type, stable_id,
+		                                                     nm_device_get_ip_iface (self),
+		                                                     nm_device_get_initial_hw_address (self),
+		                                                     _get_generate_mac_address_mask_setting (self, connection, is_wifi, &generate_mac_address_mask_tmp));
 		if (!hw_addr_generated) {
 			g_set_error (error,
 			             NM_DEVICE_ERROR,

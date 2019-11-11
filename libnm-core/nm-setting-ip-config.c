@@ -3584,6 +3584,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingIPConfig,
 	PROP_MAY_FAIL,
 	PROP_DAD_TIMEOUT,
 	PROP_DHCP_TIMEOUT,
+	PROP_DHCP_IAID,
 );
 
 typedef struct {
@@ -3606,6 +3607,7 @@ typedef struct {
 	gboolean may_fail;
 	int dad_timeout;
 	int dhcp_timeout;
+	char *dhcp_iaid;
 } NMSettingIPConfigPrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
@@ -4860,6 +4862,25 @@ nm_setting_ip_config_get_dhcp_timeout (NMSettingIPConfig *setting)
 	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dhcp_timeout;
 }
 
+/**
+ * nm_setting_ip_config_get_dhcp_iaid:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-iaid
+ * property.
+ *
+ * Returns: the configured DHCP IAID (Identity Association Identifier)
+ *
+ * Since: 1.22
+ **/
+const char *
+nm_setting_ip_config_get_dhcp_iaid (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dhcp_iaid;
+}
+
 static gboolean
 verify_label (const char *label)
 {
@@ -5018,6 +5039,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				return FALSE;
 			}
 		}
+	}
+
+	if (   priv->dhcp_iaid
+	    && !_nm_utils_iaid_verify (priv->dhcp_iaid, NULL)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not a valid IAID"),
+		             priv->dhcp_iaid);
+		g_prefix_error (error, "%s.%s: ",
+		                nm_setting_get_name (setting),
+		                NM_SETTING_IP_CONFIG_DHCP_IAID);
+		return FALSE;
 	}
 
 	if (priv->gateway && priv->never_default) {
@@ -5286,6 +5320,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DHCP_TIMEOUT:
 		g_value_set_int (value, nm_setting_ip_config_get_dhcp_timeout (setting));
 		break;
+	case PROP_DHCP_IAID:
+		g_value_set_string (value, nm_setting_ip_config_get_dhcp_iaid (setting));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -5386,6 +5423,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DHCP_TIMEOUT:
 		priv->dhcp_timeout = g_value_get_int (value);
 		break;
+	case PROP_DHCP_IAID:
+		priv->dhcp_iaid = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -5415,6 +5455,7 @@ finalize (GObject *object)
 	g_free (priv->method);
 	g_free (priv->gateway);
 	g_free (priv->dhcp_hostname);
+	g_free (priv->dhcp_iaid);
 
 	g_ptr_array_unref (priv->dns);
 	g_ptr_array_unref (priv->dns_search);
@@ -5776,6 +5817,30 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	                      G_PARAM_READWRITE |
 	                      NM_SETTING_PARAM_FUZZY_IGNORE |
 	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingIPConfig:dhcp-iaid:
+	 *
+	 * A string containing the "Identity Association Identifier" (IAID) used
+	 * by the DHCP client. The property is a 32-bit decimal value or a
+	 * special value among "mac", "perm-mac", "ifname" and "stable". When
+	 * set to "mac" (or "perm-mac"), the last 4 bytes of the current (or
+	 * permanent) MAC address are used as IAID. When set to "ifname", the
+	 * IAID is computed by hashing the interface name. The special value
+	 * "stable" can be used to generate an IAID based on the stable-id (see
+	 * connection.stable-id), a per-host key and the interface name. When
+	 * the property is unset, the value from global configuration is used;
+	 * if no global default is set then the IAID is assumed to be
+	 * "ifname". Note that at the moment this property is ignored for IPv6
+	 * by dhclient, which always derives the IAID from the MAC address.
+	 *
+	 * Since: 1.22
+	 **/
+	obj_properties[PROP_DHCP_IAID] =
+	    g_param_spec_string (NM_SETTING_IP_CONFIG_DHCP_IAID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

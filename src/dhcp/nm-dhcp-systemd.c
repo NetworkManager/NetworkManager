@@ -883,7 +883,6 @@ ip6_start (NMDhcpClient *client,
 	nm_auto (sd_dhcp6_client_unrefp) sd_dhcp6_client *sd_client = NULL;
 	GBytes *hwaddr;
 	const char *hostname;
-	const char *iface;
 	int r, i;
 	const guint8 *duid_arr;
 	gsize duid_len;
@@ -913,12 +912,8 @@ ip6_start (NMDhcpClient *client,
 	if (nm_dhcp_client_get_info_only (client))
 		sd_dhcp6_client_set_information_request (sd_client, 1);
 
-	iface = nm_dhcp_client_get_iface (client);
-
 	r = sd_dhcp6_client_set_iaid (sd_client,
-	                              nm_utils_create_dhcp_iaid (TRUE,
-	                                                         (const guint8 *) iface,
-	                                                         strlen (iface)));
+	                              nm_dhcp_client_get_iaid (client));
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to set IAID: %s");
 		return FALSE;

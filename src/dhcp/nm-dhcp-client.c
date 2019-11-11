@@ -46,6 +46,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_ROUTE_TABLE,
 	PROP_TIMEOUT,
 	PROP_UUID,
+	PROP_IAID,
+	PROP_IAID_EXPLICIT,
 	PROP_HOSTNAME,
 );
 
@@ -65,9 +67,11 @@ typedef struct _NMDhcpClientPrivate {
 	guint32      route_table;
 	guint32      route_metric;
 	guint32      timeout;
+	guint32      iaid;
 	NMDhcpState  state;
 	bool         info_only:1;
 	bool         use_fqdn:1;
+	bool         iaid_explicit:1;
 } NMDhcpClientPrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
@@ -184,6 +188,22 @@ nm_dhcp_client_get_timeout (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), 0);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->timeout;
+}
+
+guint32
+nm_dhcp_client_get_iaid (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), 0);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->iaid;
+}
+
+gboolean
+nm_dhcp_client_get_iaid_explicit (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->iaid_explicit;
 }
 
 GBytes *
@@ -928,6 +948,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_value_set_string (value, priv->uuid);
 		break;
+	case PROP_IAID:
+		g_value_set_uint (value, priv->iaid);
+		break;
+	case PROP_IAID_EXPLICIT:
+		g_value_set_boolean (value, priv->iaid_explicit);
+		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
@@ -996,6 +1022,14 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		/* construct-only */
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_IAID:
+		/* construct-only */
+		priv->iaid = g_value_get_uint (value);
+		break;
+	case PROP_IAID_EXPLICIT:
+		/* construct-only */
+		priv->iaid_explicit = g_value_get_boolean (value);
 		break;
 	case PROP_HOSTNAME:
 		/* construct-only */
@@ -1115,6 +1149,18 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_IAID] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_IAID, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_IAID_EXPLICIT] =
+	    g_param_spec_boolean (NM_DHCP_CLIENT_IAID_EXPLICIT, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_HOSTNAME] =
 	    g_param_spec_string (NM_DHCP_CLIENT_HOSTNAME, "", "",

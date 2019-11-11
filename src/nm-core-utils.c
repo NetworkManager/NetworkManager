@@ -3621,9 +3621,7 @@ nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
  * @legacy_unstable_byteorder: historically, the code would generate a iaid
  *   dependent on host endianness. This is undesirable, if backward compatibility
  *   are not a concern, generate stable endianness.
- * @interface_id: a binary identifier that is hashed into the DUID.
- *   Comonly this is the interface-name, but it may be the MAC address.
- * @interface_id_len: the length of @interface_id.
+ * @iaid: the IAID (identity association identifier) in native byte order
  * @machine_id: the binary identifier for the machine. It is hashed
  *   into the DUID. It commonly is /etc/machine-id (parsed in binary as NMUuid).
  * @machine_id_len: the length of the @machine_id.
@@ -3636,8 +3634,7 @@ nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
  */
 GBytes *
 nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
-                                                    const guint8 *interface_id,
-                                                    gsize interface_id_len,
+                                                    guint32 iaid,
                                                     const guint8 *machine_id,
                                                     gsize machine_id_len)
 {
@@ -3658,24 +3655,15 @@ nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byt
 		} duid;
 	} *client_id;
 	guint64 u64;
-	guint32 u32;
 
-	g_return_val_if_fail (interface_id, NULL);
-	g_return_val_if_fail (interface_id_len > 0, NULL);
 	g_return_val_if_fail (machine_id, NULL);
 	g_return_val_if_fail (machine_id_len > 0, NULL);
 
 	client_id = g_malloc (sizeof (*client_id));
 
 	client_id->type = 255;
-
-	u32 = nm_utils_create_dhcp_iaid (legacy_unstable_byteorder,
-	                                 interface_id,
-	                                 interface_id_len);
-	unaligned_write_be32 (&client_id->iaid, u32);
-
+	unaligned_write_be32 (&client_id->iaid, iaid);
 	unaligned_write_be16 (&client_id->duid.type, DUID_TYPE_EN);
-
 	unaligned_write_be32 (&client_id->duid.en.pen, SYSTEMD_PEN);
 
 	u64 = htole64 (c_siphash_hash (HASH_KEY, machine_id, machine_id_len));
@@ -3687,13 +3675,10 @@ nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byt
 
 GBytes *
 nm_utils_dhcp_client_id_systemd_node_specific (gboolean legacy_unstable_byteorder,
-                                               const char *ifname)
+                                               guint32 iaid)
 {
-	g_return_val_if_fail (ifname && ifname[0], NULL);
-
 	return nm_utils_dhcp_client_id_systemd_node_specific_full (legacy_unstable_byteorder,
-	                                                           (const guint8 *) ifname,
-	                                                           strlen (ifname),
+	                                                           iaid,
 	                                                           (const guint8 *) nm_utils_machine_id_bin (),
 	                                                           sizeof (NMUuid));
 }

@@ -1628,6 +1628,11 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (v)
 		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, v, NULL);
 
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "DHCP_IAID", &value);
+	if (v)
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_IAID, v, NULL);
+
 	/* Read static IP addresses.
 	 * Read them even for AUTO method - in this case the addresses are
 	 * added to the automatic ones. Note that this is not currently supported by
@@ -2060,6 +2065,11 @@ make_ip6_setting (shvarFile *ifcfg,
 	v = svGetValueStr (ifcfg, "DHCPV6_DUID", &value);
 	if (v)
 		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_DHCP_DUID, v, NULL);
+
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "DHCPV6_IAID", &value);
+	if (v)
+		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_IAID, v, NULL);
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "DHCPV6_HOSTNAME", &value);

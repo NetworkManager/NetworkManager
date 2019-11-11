@@ -34,6 +34,8 @@
 #define NM_DHCP_CLIENT_ROUTE_TABLE      "route-table"
 #define NM_DHCP_CLIENT_TIMEOUT          "timeout"
 #define NM_DHCP_CLIENT_UUID             "uuid"
+#define NM_DHCP_CLIENT_IAID             "iaid"
+#define NM_DHCP_CLIENT_IAID_EXPLICIT    "iaid-explicit"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -129,6 +131,10 @@ guint32 nm_dhcp_client_get_route_metric (NMDhcpClient *self);
 void nm_dhcp_client_set_route_metric (NMDhcpClient *self, guint32 route_metric);
 
 guint32 nm_dhcp_client_get_timeout (NMDhcpClient *self);
+
+guint32 nm_dhcp_client_get_iaid (NMDhcpClient *self);
+
+gboolean nm_dhcp_client_get_iaid_explicit (NMDhcpClient *self);
 
 GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
