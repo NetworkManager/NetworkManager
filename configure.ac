@@ -1014,6 +1014,17 @@ else
 fi
 AM_CONDITIONAL(BUILD_NMCLI, test "$build_nmcli" = yes)
 
+AC_ARG_WITH(nm-cloud-setup,
+            AS_HELP_STRING([--with-nm-cloud-setup=yes|no], [Build nm-cloud-setup]))
+if test "$with_nm_cloud_setup" != no; then
+	PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0], [have_libcurl=yes], [have_libcurl=no])
+	if test "$have_libcurl" != "yes"; then
+		AC_MSG_ERROR(--with-nm-cloud-setup requires libcurl library.)
+	fi
+	with_nm_cloud_setup=yes
+fi
+AM_CONDITIONAL(BUILD_NM_CLOUD_SETUP, test "$with_nm_cloud_setup" == yes)
+
 AC_ARG_WITH(nmtui,
             AS_HELP_STRING([--with-nmtui=yes|no], [Build nmtui]))
 if test "$with_nmtui" != no; then
@@ -1303,6 +1314,7 @@ echo "  libteamdctl: $enable_teamdctl"
 echo "  ovs: $enable_ovs"
 echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
+echo "  nm-cloud-setup: $with_nm_cloud_setup"
 echo "  iwd: $ac_with_iwd"
 echo
 

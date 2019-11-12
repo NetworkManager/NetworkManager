@@ -661,9 +661,10 @@ if enable_libpsl
 endif
 config_h.set10('WITH_LIBPSL', enable_libpsl)
 
+libcurl_dep = dependency('libcurl', version: '>= 7.24.0', required: false)
+
 enable_concheck = get_option('concheck')
 if enable_concheck
-  libcurl_dep = dependency('libcurl', version: '>= 7.24.0', required: false)
   assert(libcurl_dep.found(), 'concheck requires libcurl library. Use -Dconcheck=false to disable it')
 endif
 config_h.set10('WITH_CONCHECK', enable_concheck)
@@ -692,6 +693,11 @@ enable_nmtui = get_option('nmtui')
 if enable_nmtui
   newt_dep = dependency('libnewt', version: '>= 0.52.15', required: false)
   assert(newt_dep.found(), 'You must have libnewt installed to build nmtui. Use -Dnmtui=false to disable it')
+endif
+
+enable_nm_cloud_setup = get_option('nm_cloud_setup')
+if enable_nm_cloud_setup
+  assert(libcurl_dep.found(), 'nm-cloud-setup requires libcurl library. Use -Dnm_cloud_setup=false to disable it')
 endif
 
 more_asserts = get_option('more_asserts')
@@ -910,6 +916,8 @@ meson.add_install_script(
   nm_sysconfdir,
   enable_docs ? '1' : '0',
   enable_ifcfg_rh ? '1' : '0',
+  enable_nm_cloud_setup ? '1' : '0',
+  install_systemdunitdir ? '1' : '0',
 )
 
 output = '\nSystem paths:\n'
@@ -954,6 +962,7 @@ output += '  libteamdctl: ' + enable_teamdctl.to_string() + '\n'
 output += '  ovs: ' + enable_ovs.to_string() + '\n'
 output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
+output += '  nm-cloud-setup: ' + enable_nm_cloud_setup.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'

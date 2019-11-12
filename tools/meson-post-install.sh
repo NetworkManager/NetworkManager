@@ -9,6 +9,8 @@ nm_mandir="$6"
 nm_sysconfdir="$7"
 enable_docs="$8"
 enable_ifcfg_rh="$9"
+enable_nm_cloud_setup="${10}"
+install_systemdunitdir="${11}"
 
 [ -n "$DESTDIR" ] && DESTDIR="${DESTDIR%%/}/"
 
@@ -55,3 +57,8 @@ fi
 if [ "$enable_ifcfg_rh" = 1 ]; then
     mkdir -p "${DESTDIR}${nm_sysconfdir}/sysconfig/network-scripts"
 fi
+
+if [ "$enable_nm_cloud_setup" = 1 -a "$install_systemdunitdir" = 1 ]; then
+    ln -s 'no-wait.d/90-nm-cloud-setup.sh' "${DESTDIR}${nm_pkglibdir}/dispatcher.d/90-nm-cloud-setup.sh"
+fi
+

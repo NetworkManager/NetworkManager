@@ -4637,6 +4637,87 @@ EXTRA_DIST += \
 	clients/tui/newt/meson.build
 
 ###############################################################################
+# clients/nm-cloud-setup
+###############################################################################
+
+if BUILD_NM_CLOUD_SETUP
+
+libexec_PROGRAMS += clients/cloud-setup/nm-cloud-setup
+
+clients_cloud_setup_nm_cloud_setup_SOURCES = \
+	clients/cloud-setup/main.c \
+	clients/cloud-setup/nm-cloud-setup-utils.c \
+	clients/cloud-setup/nm-cloud-setup-utils.h \
+	clients/cloud-setup/nm-http-client.c \
+	clients/cloud-setup/nm-http-client.h \
+	clients/cloud-setup/nmcs-provider.c \
+	clients/cloud-setup/nmcs-provider.h \
+	clients/cloud-setup/nmcs-provider-ec2.c \
+	clients/cloud-setup/nmcs-provider-ec2.h \
+	$(NULL)
+
+clients_cloud_setup_nm_cloud_setup_CPPFLAGS = \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""nm-cloud-setup"\" \
+	$(LIBCURL_CFLAGS) \
+	$(NULL)
+
+clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+clients_cloud_setup_nm_cloud_setup_LDADD = \
+	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
+	libnm/libnm.la \
+	$(GLIB_LIBS) \
+	$(LIBCURL_LIBS) \
+	$(NULL)
+
+$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(libnm_lib_h_pub_mkenums)
+
+if HAVE_SYSTEMD
+
+systemdsystemunit_DATA += \
+	clients/cloud-setup/nm-cloud-setup.service \
+	clients/cloud-setup/nm-cloud-setup.timer \
+	$(NULL)
+
+clients/cloud-setup/nm-cloud-setup.service: $(srcdir)/clients/cloud-setup/nm-cloud-setup.service.in
+	$(AM_V_GEN) $(data_edit) $< >$@
+
+install-data-hook-cloud-setup: install-data-hook-dispatcher
+	$(INSTALL_SCRIPT) "$(srcdir)/clients/cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/"
+	ln -fs no-wait.d/90-nm-cloud-setup.sh "$(DESTDIR)$(nmlibdir)/dispatcher.d/90-nm-cloud-setup.sh"
+
+install_data_hook += install-data-hook-cloud-setup
+
+uninstall-hook-cloud-setup:
+	rm -f "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh"
+	rm -f "$(DESTDIR)$(nmlibdir)/dispatcher.d/90-nm-cloud-setup.sh"
+
+uninstall_hook += uninstall-hook-cloud-setup
+
+endif
+
+EXTRA_DIST += \
+	clients/cloud-setup/90-nm-cloud-setup.sh \
+	clients/cloud-setup/meson.build \
+	clients/cloud-setup/nm-cloud-setup.service.in \
+	clients/cloud-setup/nm-cloud-setup.timer \
+	$(NULL)
+
+CLEANFILES += \
+	clients/cloud-setup/nm-cloud-setup.service
+
+endif
+
+###############################################################################
 # clients/tests
 ###############################################################################
 

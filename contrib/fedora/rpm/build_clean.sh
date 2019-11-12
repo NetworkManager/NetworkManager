@@ -154,6 +154,7 @@ if [[ $NO_DIST != 1 ]]; then
         --with-config-logging-backend-default=syslog \
         --with-libaudit=yes-disabled-by-default \
         --enable-polkit=yes \
+        --with-nm-cloud-setup=yes \
         --with-config-dhcp-default=internal \
         --with-config-dns-rc-manager-default=symlink \
         || die "Error autogen.sh"

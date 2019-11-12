@@ -65,6 +65,8 @@ test-*.trs
 /dispatcher/tests/test-dispatcher-envp
 
 /clients/cli/nmcli
+/clients/cloud-setup/nm-cloud-setup
+/clients/cloud-setup/nm-cloud-setup.service
 /clients/common/settings-docs.h
 /clients/common/tests/test-clients-common
 /clients/common/tests/test-libnm-core-aux

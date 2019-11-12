@@ -42,6 +42,8 @@
 
 %global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service
 
+%global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
+
 ###############################################################################
 
 %bcond_with meson
@@ -53,6 +55,7 @@
 %bcond_without ovs
 %bcond_without ppp
 %bcond_without nmtui
+%bcond_without nm_cloud_setup
 %bcond_without regen_docs
 %bcond_with    debug
 %bcond_with    test
@@ -480,6 +483,19 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 
 
+%if %{with nm_cloud_setup}
+%package cloud-setup
+Summary: Automatically configure NetworkManager in cloud
+Group: System Environment/Base
+Requires: %{name} = %{epoch}:%{version}-%{release}
+Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
+
+%description cloud-setup
+Installs a nm-cloud-setup tool that can automatically configure
+NetworkManager in cloud setups. Currently only EC2 is supported.
+%endif
+
+
 %prep
 %autosetup -p1 -n NetworkManager-%{real_version}
 
@@ -538,6 +554,11 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dnmtui=true \
 %else
 	-Dnmtui=false \
+%endif
+%if %{with nm_cloud_setup}
+	-Dnm_cloud_setup=true \
+%else
+	-Dnm_cloud_setup=false \
 %endif
 	-Dvapi=true \
 	-Dintrospection=true \
@@ -659,6 +680,11 @@ intltoolize --automake --copy --force
 	--with-nmtui=yes \
 %else
 	--with-nmtui=no \
+%endif
+%if %{with nm_cloud_setup}
+	--with-nm-cloud-setup=yes \
+%else
+	--with-nm-cloud-setup=no \
 %endif
 	--enable-vala=yes \
 	--enable-introspection \
@@ -801,6 +827,12 @@ else
 fi
 
 
+%if %{with nm_cloud_setup}
+%post cloud-setup
+%systemd_post %{systemd_units_cloud_setup}
+%endif
+
+
 %preun
 if [ $1 -eq 0 ]; then
     # Package removal, not upgrade
@@ -814,6 +846,12 @@ fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service
 
 
+%if %{with nm_cloud_setup}
+%preun cloud-setup
+%systemd_preun %{systemd_units_cloud_setup}
+%endif
+
+
 %postun
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
@@ -824,6 +862,12 @@ fi
 %if (0%{?fedora} && 0%{?fedora} < 28) || 0%{?rhel}
 %post   libnm -p /sbin/ldconfig
 %postun libnm -p /sbin/ldconfig
+%endif
+
+
+%if %{with nm_cloud_setup}
+%postun cloud-setup
+%systemd_postun %{systemd_units_cloud_setup}
 %endif
 
 
@@ -992,6 +1036,16 @@ fi
 %{_bindir}/nmtui-connect
 %{_bindir}/nmtui-hostname
 %{_mandir}/man1/nmtui*
+%endif
+
+
+%if %{with nm_cloud_setup}
+%files cloud-setup
+%{_libexecdir}/nm-cloud-setup
+%{systemd_dir}/nm-cloud-setup.service
+%{systemd_dir}/nm-cloud-setup.timer
+%{nmlibdir}/dispatcher.d/90-nm-cloud-setup.sh
+%{nmlibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh
 %endif
 
 
