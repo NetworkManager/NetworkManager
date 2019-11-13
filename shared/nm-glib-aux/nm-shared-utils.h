@@ -931,6 +931,31 @@ NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_
 NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default)
 #define nm_auto_pop_gmaincontext nm_auto (_nm_auto_pop_gmaincontext)
 
+GSource *nm_g_idle_source_new (int priority,
+                               GSourceFunc func,
+                               gpointer user_data,
+                               GDestroyNotify destroy_notify);
+
+GSource *nm_g_timeout_source_new (guint timeout_ms,
+                                  int priority,
+                                  GSourceFunc func,
+                                  gpointer user_data,
+                                  GDestroyNotify destroy_notify);
+
+GSource *nm_g_unix_signal_source_new (int signum,
+                                      int priority,
+                                      GSourceFunc handler,
+                                      gpointer user_data,
+                                      GDestroyNotify notify);
+
+static inline GSource *
+nm_g_source_attach (GSource *source,
+                    GMainContext *context)
+{
+	g_source_attach (source, context);
+	return source;
+}
+
 static inline GMainContext *
 nm_g_main_context_push_thread_default (GMainContext *context)
 {

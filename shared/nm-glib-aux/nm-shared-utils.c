@@ -11,6 +11,7 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
+#include <glib-unix.h>
 
 #include "nm-errno.h"
 
@@ -3387,4 +3388,54 @@ nm_utils_parse_debug_string (const char *string,
 	}
 
 	return result;
+}
+
+/*****************************************************************************/
+
+GSource *
+nm_g_idle_source_new (int priority,
+                      GSourceFunc func,
+                      gpointer user_data,
+                      GDestroyNotify destroy_notify)
+{
+	GSource *source;
+
+	source = g_idle_source_new ();
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, func, user_data, destroy_notify);
+	return source;
+}
+
+GSource *
+nm_g_timeout_source_new (guint timeout_ms,
+                         int priority,
+                         GSourceFunc func,
+                         gpointer user_data,
+                         GDestroyNotify destroy_notify)
+{
+	GSource *source;
+
+	source = g_timeout_source_new (timeout_ms);
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, func, user_data, destroy_notify);
+	return source;
+}
+
+GSource *
+nm_g_unix_signal_source_new (int signum,
+                             int priority,
+                             GSourceFunc handler,
+                             gpointer user_data,
+                             GDestroyNotify notify)
+{
+	GSource *source;
+
+	source = g_unix_signal_source_new (signum);
+
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, handler, user_data, notify);
+	return source;
 }
