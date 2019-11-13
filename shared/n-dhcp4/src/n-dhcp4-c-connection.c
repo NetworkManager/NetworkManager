@@ -955,6 +955,31 @@ int n_dhcp4_c_connection_release_new(NDhcp4CConnection *connection,
         return 0;
 }
 
+static const char *message_type_to_str(uint8_t type) {
+        switch (type) {
+        case N_DHCP4_MESSAGE_DISCOVER:
+                return "DISCOVER";
+        case N_DHCP4_MESSAGE_OFFER:
+                return "OFFER";
+        case N_DHCP4_MESSAGE_REQUEST:
+                return "REQUEST";
+        case N_DHCP4_MESSAGE_DECLINE:
+                return "DECLINE";
+        case N_DHCP4_MESSAGE_ACK:
+                return "ACK";
+        case N_DHCP4_MESSAGE_NAK:
+                return "NACK";
+        case N_DHCP4_MESSAGE_RELEASE:
+                return "RELEASE";
+        case N_DHCP4_MESSAGE_INFORM:
+                return "INFORM";
+        case N_DHCP4_MESSAGE_FORCERENEW:
+                return "FORCERENEW";
+        default:
+                return "UNKNOWN";
+        }
+}
+
 static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
                                              NDhcp4Outgoing *request,
                                              uint64_t timestamp) {
@@ -1066,6 +1091,8 @@ int n_dhcp4_c_connection_dispatch_timer(NDhcp4CConnection *connection,
 int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                      NDhcp4Incoming **messagep) {
         _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = NULL;
+        char serv_addr[INET_ADDRSTRLEN];
+        char client_addr[INET_ADDRSTRLEN];
         uint8_t type;
         int r;
 
@@ -1117,6 +1144,22 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
         r = n_dhcp4_c_connection_verify_incoming(connection, message, &type);
         if (r)
                 return r;
+
+        if (type == N_DHCP4_MESSAGE_OFFER || type == N_DHCP4_MESSAGE_ACK) {
+                n_dhcp4_c_log(connection->client_config, LOG_INFO,
+                              "received %s of %s from %s",
+                              message_type_to_str(type),
+                              inet_ntop(AF_INET, &message->message.header.yiaddr,
+                                        client_addr, sizeof(client_addr)),
+                              inet_ntop(AF_INET, &message->message.header.siaddr,
+                                        serv_addr, sizeof(serv_addr)));
+        } else {
+                n_dhcp4_c_log(connection->client_config, LOG_INFO,
+                              "received %s from %s",
+                              message_type_to_str(type),
+                              inet_ntop(AF_INET, &message->message.header.siaddr,
+                                        serv_addr, sizeof(serv_addr)));
+        }
 
         switch (type) {
         case N_DHCP4_MESSAGE_OFFER:

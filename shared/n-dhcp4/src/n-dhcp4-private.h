@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <syslog.h>
 #include "n-dhcp4.h"
 
 typedef struct NDhcp4CConnection NDhcp4CConnection;
