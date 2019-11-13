@@ -199,6 +199,8 @@ struct NDhcp4Outgoing {
 
         struct {
                 uint8_t type;
+                uint8_t message_type;
+                uint32_t client_addr;
                 uint64_t start_time;
                 uint64_t base_time;
                 uint64_t send_time;

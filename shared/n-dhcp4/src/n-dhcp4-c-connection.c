@@ -513,6 +513,7 @@ static int n_dhcp4_c_connection_new_message(NDhcp4CConnection *connection,
         n_dhcp4_c_connection_init_header(connection, header);
 
         message->userdata.type = type;
+        message->userdata.message_type = message_type;
 
         /*
          * Note that some implementations expect the MESSAGE_TYPE option to be
@@ -690,6 +691,7 @@ int n_dhcp4_c_connection_select_new(NDhcp4CConnection *connection,
          */
         message->userdata.start_time = offer->userdata.start_time;
         message->userdata.base_time = offer->userdata.base_time;
+        message->userdata.client_addr = client.s_addr;
         n_dhcp4_incoming_get_xid(offer, &xid);
         n_dhcp4_outgoing_set_xid(message, xid);
 
@@ -763,6 +765,7 @@ int n_dhcp4_c_connection_renew_new(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
+        message->userdata.client_addr = connection->client_ip;
         *requestp = message;
         message = NULL;
         return 0;
@@ -796,6 +799,7 @@ int n_dhcp4_c_connection_rebind_new(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
+        message->userdata.client_addr = connection->client_ip;
         *requestp = message;
         message = NULL;
         return 0;
@@ -847,6 +851,7 @@ int n_dhcp4_c_connection_decline_new(NDhcp4CConnection *connection,
                         return r;
         }
 
+        message->userdata.client_addr = client.s_addr;
         *requestp = message;
         message = NULL;
         return 0;
@@ -889,6 +894,7 @@ int n_dhcp4_c_connection_inform_new(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
+        message->userdata.client_addr = connection->client_ip;
         *requestp = message;
         message = NULL;
         return 0;
@@ -983,6 +989,8 @@ static const char *message_type_to_str(uint8_t type) {
 static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
                                              NDhcp4Outgoing *request,
                                              uint64_t timestamp) {
+        char server_addr[INET_ADDRSTRLEN];
+        char client_addr[INET_ADDRSTRLEN];
         int r;
 
         /*
@@ -1038,6 +1046,22 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
                 break;
         default:
                 c_assert(0);
+        }
+
+        if (request->userdata.client_addr == INADDR_ANY) {
+                n_dhcp4_c_log(connection->client_config, LOG_INFO,
+                              "sent %s to %s",
+                              message_type_to_str(request->userdata.message_type),
+                              inet_ntop(AF_INET, &connection->server_ip,
+                                        server_addr, sizeof(server_addr)));
+        } else {
+                n_dhcp4_c_log(connection->client_config, LOG_INFO,
+                              "sent %s of %s to %s",
+                              message_type_to_str(request->userdata.message_type),
+                              inet_ntop(AF_INET, &request->userdata.client_addr,
+                                        client_addr, sizeof(client_addr)),
+                              inet_ntop(AF_INET, &connection->server_ip,
+                                        server_addr, sizeof(server_addr)));
         }
 
         ++request->userdata.n_send;
