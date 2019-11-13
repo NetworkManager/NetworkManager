@@ -94,6 +94,9 @@ int n_dhcp4_client_config_dup(NDhcp4ClientConfig *config, NDhcp4ClientConfig **d
         dup->n_mac = config->n_mac;
         memcpy(dup->broadcast_mac, config->broadcast_mac, sizeof(dup->broadcast_mac));
         dup->n_broadcast_mac = config->n_broadcast_mac;
+        dup->log.level = config->log.level;
+        dup->log.func = config->log.func;
+        dup->log.data = config->log.data;
 
         r = n_dhcp4_client_config_set_client_id(dup,
                                                 config->client_id,
@@ -246,6 +249,15 @@ _c_public_ int n_dhcp4_client_config_set_client_id(NDhcp4ClientConfig *config, c
         config->client_id[n_id] = 0; /* safety 0 for debugging */
 
         return 0;
+}
+
+_c_public_ void n_dhcp4_client_config_set_log_level(NDhcp4ClientConfig *config, int level) {
+        config->log.level = level;
+}
+
+_c_public_ void n_dhcp4_client_config_set_log_func(NDhcp4ClientConfig *config, NDhcp4LogFunc func, void *data) {
+        config->log.func = func;
+        config->log.data = data;
 }
 
 /**

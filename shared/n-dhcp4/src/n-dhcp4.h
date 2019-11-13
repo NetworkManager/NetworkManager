@@ -29,6 +29,8 @@ typedef struct NDhcp4ServerEvent NDhcp4ServerEvent;
 typedef struct NDhcp4ServerIp NDhcp4ServerIp;
 typedef struct NDhcp4ServerLease NDhcp4ServerLease;
 
+typedef void (*NDhcp4LogFunc)(int level, void *data, const char *fmt, ...);
+
 #define N_DHCP4_CLIENT_START_DELAY_RFC2131 (UINT64_C(9000))
 
 enum {
@@ -111,6 +113,8 @@ void n_dhcp4_client_config_set_request_broadcast(NDhcp4ClientConfig *config, boo
 void n_dhcp4_client_config_set_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac);
 void n_dhcp4_client_config_set_broadcast_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac);
 int n_dhcp4_client_config_set_client_id(NDhcp4ClientConfig *config, const uint8_t *id, size_t n_id);
+void n_dhcp4_client_config_set_log_level(NDhcp4ClientConfig *config, int level);
+void n_dhcp4_client_config_set_log_func(NDhcp4ClientConfig *config, NDhcp4LogFunc func, void *data);
 
 /* client-probe configs */
 
