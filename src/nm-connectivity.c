@@ -13,6 +13,7 @@
 #include <curl/curl.h>
 #endif
 #include <linux/rtnetlink.h>
+#include <glib-unix.h>
 
 #include "c-list/src/c-list.h"
 #include "nm-core-internal.h"
@@ -426,7 +427,8 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 
 typedef struct {
 	NMConnectivityCheckHandle *cb_data;
-	GIOChannel *ch;
+
+	GSource *source;
 
 	/* this is a very simplistic weak-pointer. If ConCurlSockData gets
 	 * destroyed, it will set *destroy_notify to TRUE.
@@ -435,15 +437,15 @@ typedef struct {
 	 * safely access @fdp after _con_curl_check_connectivity(). */
 	gboolean *destroy_notify;
 
-	guint ev;
 } ConCurlSockData;
 
 static gboolean
-_con_curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_data)
+_con_curl_socketevent_cb (int fd,
+                          GIOCondition condition,
+                          gpointer user_data)
 {
 	ConCurlSockData *fdp = user_data;
 	NMConnectivityCheckHandle *cb_data = fdp->cb_data;
-	int fd = g_io_channel_unix_get_fd (ch);
 	int action = 0;
 	gboolean fdp_destroyed = FALSE;
 	gboolean success;
@@ -467,12 +469,12 @@ _con_curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_
 		nm_assert (fdp->destroy_notify == &fdp_destroyed);
 		fdp->destroy_notify = NULL;
 		if (!success)
-			fdp->ev = 0;
+			nm_clear_g_source_inst (&fdp->source);
 	}
 
 	_complete_queued (cb_data->self);
 
-	return success ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+	return G_SOURCE_CONTINUE;
 }
 
 static int
@@ -480,7 +482,6 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 {
 	NMConnectivityCheckHandle *cb_data = userdata;
 	ConCurlSockData *fdp = socketp;
-	GIOCondition condition = 0;
 
 	(void) _NM_ENSURE_TYPE (int, fd);
 
@@ -488,19 +489,21 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 		if (fdp) {
 			if (fdp->destroy_notify)
 				*fdp->destroy_notify = TRUE;
+			nm_clear_g_source_inst (&fdp->source);
 			curl_multi_assign (cb_data->concheck.curl_mhandle, fd, NULL);
-			nm_clear_g_source (&fdp->ev);
-			g_io_channel_unref (fdp->ch);
 			g_slice_free (ConCurlSockData, fdp);
 		}
 	} else {
+		GIOCondition condition;
+
 		if (!fdp) {
-			fdp = g_slice_new0 (ConCurlSockData);
-			fdp->cb_data = cb_data;
-			fdp->ch = g_io_channel_unix_new (fd);
+			fdp = g_slice_new (ConCurlSockData);
+			*fdp = (ConCurlSockData) {
+				.cb_data = cb_data,
+			};
 			curl_multi_assign (cb_data->concheck.curl_mhandle, fd, fdp);
 		} else
-			nm_clear_g_source (&fdp->ev);
+			nm_clear_g_source_inst (&fdp->source);
 
 		if (what == CURL_POLL_IN)
 			condition = G_IO_IN;
@@ -508,9 +511,14 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 			condition = G_IO_OUT;
 		else if (what == CURL_POLL_INOUT)
 			condition = G_IO_IN | G_IO_OUT;
+		else
+			condition = 0;
 
-		if (condition)
-			fdp->ev = g_io_add_watch (fdp->ch, condition, _con_curl_socketevent_cb, fdp);
+		if (condition) {
+			fdp->source = g_unix_fd_source_new (fd, condition);
+			g_source_set_callback (fdp->source, G_SOURCE_FUNC (_con_curl_socketevent_cb), fdp, NULL);
+			g_source_attach (fdp->source, NULL);
+		}
 	}
 
 	return CURLM_OK;
