@@ -314,7 +314,6 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 {
 	NMConnectivityCheckHandle *cb_data;
 	CURLMsg *msg;
-	CURLcode eret;
 	int m_left;
 	long response_code;
 	CURLMcode ret;
@@ -323,12 +322,13 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 
 	ret = curl_multi_socket_action (mhandle, sockfd, ev_bitmask, &running_handles);
 	if (ret != CURLM_OK) {
-		_LOGD ("connectivity check failed: (%d) %s", ret, curl_easy_strerror (ret));
+		_LOGD ("connectivity check failed: (%d) %s", ret, curl_multi_strerror (ret));
 		success = FALSE;
 	}
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
 		const char *response;
+		CURLcode eret;
 
 		if (msg->msg != CURLMSG_DONE)
 			continue;
