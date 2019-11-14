@@ -925,6 +925,8 @@ nm_g_source_destroy_and_unref (GSource *source)
 	g_source_unref (source);
 }
 
+#define nm_clear_g_source_inst(ptr) (nm_clear_pointer ((ptr), nm_g_source_destroy_and_unref))
+
 NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_destroy_and_unref);
 #define nm_auto_destroy_and_unref_gsource nm_auto(_nm_auto_destroy_and_unref_gsource)
 
