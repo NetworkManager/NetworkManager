@@ -4276,14 +4276,15 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	gsize l;
 
 	if (hwaddr1_len == -1) {
-		g_return_val_if_fail (hwaddr1 != NULL, FALSE);
-
-		if (!hwaddr_aton (hwaddr1, buf1, sizeof (buf1), &l)) {
+		if (hwaddr1 == NULL) {
+			hwaddr1_len = 0;
+		} else if (hwaddr_aton (hwaddr1, buf1, sizeof (buf1), &l)) {
+			hwaddr1 = buf1;
+			hwaddr1_len = l;
+		} else {
 			g_return_val_if_fail ((hwaddr2_len == -1 && hwaddr2) || (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX), FALSE);
 			return FALSE;
 		}
-		hwaddr1 = buf1;
-		hwaddr1_len = l;
 	} else {
 		g_return_val_if_fail (hwaddr1_len > 0 && hwaddr1_len <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
 
@@ -4294,9 +4295,9 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	}
 
 	if (hwaddr2_len == -1) {
-		g_return_val_if_fail (hwaddr2 != NULL, FALSE);
-
-		if (!hwaddr_aton (hwaddr2, buf2, sizeof (buf2), &l))
+		if (hwaddr2 == NULL)
+			l = 0;
+		else if (!hwaddr_aton (hwaddr2, buf2, sizeof (buf2), &l))
 			return FALSE;
 		if (l != hwaddr1_len)
 			return FALSE;
