@@ -2727,6 +2727,12 @@ recheck_assume_connection (NMManager *self,
 			activation_type_assume = TRUE;
 
 			if (generated) {
+				/* Reset the IPv4 setting to empty method=auto, regardless of what assumption guessed. */
+				nm_connection_add_setting (nm_settings_connection_get_connection (sett_conn),
+				                           g_object_new (NM_TYPE_SETTING_IP4_CONFIG,
+				                                         NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+				                                         NULL));
+
 				nm_settings_connection_update (sett_conn,
 				                               NULL,
 				                               NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
