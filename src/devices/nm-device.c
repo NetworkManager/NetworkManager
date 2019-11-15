@@ -9667,6 +9667,18 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
 		nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (nm_device_get_platform (self), nm_device_get_ip_iface (self), rdata->hop_limit);
 
+	if (changed & NM_NDISC_CONFIG_REACHABLE_TIME) {
+		nm_platform_sysctl_ip_neigh_set_ipv6_reachable_time (nm_device_get_platform (self),
+		                                                     nm_device_get_ip_iface (self),
+		                                                     rdata->reachable_time_ms);
+	}
+
+	if (changed & NM_NDISC_CONFIG_RETRANS_TIMER) {
+		nm_platform_sysctl_ip_neigh_set_ipv6_retrans_time (nm_device_get_platform (self),
+		                                                   nm_device_get_ip_iface (self),
+		                                                   rdata->retrans_timer_ms);
+	}
+
 	if (changed & NM_NDISC_CONFIG_MTU) {
 		if (priv->ip6_mtu != rdata->mtu) {
 			_LOGD (LOGD_DEVICE, "mtu: set IPv6 MTU to %u", (guint) rdata->mtu);
@@ -9728,24 +9740,11 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
 
-	/* FIXME: These sysctls would probably be better set by the lndp ndisc itself. */
-	switch (nm_ndisc_get_node_type (priv->ndisc)) {
-	case NM_NDISC_NODE_TYPE_HOST:
-		/* Accepting prefixes from discovered routers. */
-		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "1");
-		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_defrtr", "0");
-		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_pinfo", "0");
-		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_rtr_pref", "0");
-		break;
-	case NM_NDISC_NODE_TYPE_ROUTER:
-		/* We're the router. */
+	if (nm_ndisc_get_node_type (priv->ndisc) == NM_NDISC_NODE_TYPE_ROUTER) {
 		nm_device_sysctl_ip_conf_set (self, AF_INET6, "forwarding", "1");
 		nm_device_activate_schedule_ip_config_result (self, AF_INET6, NULL);
 		priv->needs_ip6_subnet = TRUE;
 		g_signal_emit (self, signals[IP6_SUBNET_NEEDED], 0);
-		break;
-	default:
-		g_assert_not_reached ();
 	}
 
 	priv->ndisc_changed_id = g_signal_connect (priv->ndisc,
@@ -9856,9 +9855,6 @@ save_ip6_properties (NMDevice *self)
 {
 	static const char *const ip6_properties_to_save[] = {
 		"accept_ra",
-		"accept_ra_defrtr",
-		"accept_ra_pinfo",
-		"accept_ra_rtr_pref",
 		"forwarding",
 		"disable_ipv6",
 		"hop_limit",
@@ -10183,6 +10179,7 @@ act_stage3_ip_config_start (NMDevice *self,
 			set_nm_ipv6ll (self, TRUE);
 
 		/* Re-enable IPv6 on the interface */
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "0");
 		set_disable_ipv6 (self, "0");
 
 		/* Synchronize external IPv6 configuration with kernel, since
@@ -14811,7 +14808,6 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	/* Turn off kernel IPv6 */
 	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 		set_disable_ipv6 (self, "1");
-		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "0");
 		nm_device_sysctl_ip_conf_set (self, AF_INET6, "use_tempaddr", "0");
 	}
 
@@ -15103,9 +15099,7 @@ ip6_managed_setup (NMDevice *self)
 {
 	set_nm_ipv6ll (self, TRUE);
 	set_disable_ipv6 (self, "1");
-	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_defrtr", "0");
-	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_pinfo", "0");
-	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra_rtr_pref", "0");
+	nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "0");
 	nm_device_sysctl_ip_conf_set (self, AF_INET6, "use_tempaddr", "0");
 	nm_device_sysctl_ip_conf_set (self, AF_INET6, "forwarding", "0");
 }

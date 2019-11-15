@@ -116,6 +116,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int offset;
 	int hop_limit;
+	guint32 val;
 
 	/* Router discovery is subject to the following RFC documents:
 	 *
@@ -292,6 +293,18 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	if (rdata->public.hop_limit != hop_limit) {
 		rdata->public.hop_limit = hop_limit;
 		changed |= NM_NDISC_CONFIG_HOP_LIMIT;
+	}
+
+	val = ndp_msgra_reachable_time (msgra);
+	if (val && rdata->public.reachable_time_ms != val) {
+		rdata->public.reachable_time_ms = val;
+		changed |= NM_NDISC_CONFIG_REACHABLE_TIME;
+	}
+
+	val = ndp_msgra_retransmit_time (msgra);
+	if (val && rdata->public.retrans_timer_ms != val) {
+		rdata->public.retrans_timer_ms = val;
+		changed |= NM_NDISC_CONFIG_RETRANS_TIMER;
 	}
 
 	/* MTU */

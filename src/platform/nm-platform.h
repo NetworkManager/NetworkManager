@@ -1353,6 +1353,12 @@ gboolean nm_platform_sysctl_ip_conf_set_int64 (NMPlatform *self,
 gboolean nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe (NMPlatform *self,
                                                              const char *iface,
                                                              int value);
+gboolean nm_platform_sysctl_ip_neigh_set_ipv6_reachable_time (NMPlatform *self,
+                                                              const char *iface,
+                                                              guint value_ms);
+gboolean nm_platform_sysctl_ip_neigh_set_ipv6_retrans_time (NMPlatform *self,
+                                                            const char *iface,
+                                                            guint value_ms);
 int nm_platform_sysctl_ip_conf_get_rp_filter_ipv4 (NMPlatform *platform,
                                                    const char *iface,
                                                    gboolean consider_all,
