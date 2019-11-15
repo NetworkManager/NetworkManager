@@ -345,11 +345,12 @@ check_ip6_method (NMConnection *orig,
 		 */
 		allow = TRUE;
 	} else if (   NM_IN_STRSET (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	                                             NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
 	                                             NM_SETTING_IP6_CONFIG_METHOD_AUTO)
 	           && nm_streq0 (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-		/* If the generated connection method is 'link-local' or 'auto' and the candidate
-		 * method is 'ignore' we can take the connection, because NM didn't simply take care
-		 * of IPv6.
+		/* If the generated connection method is 'link-local', disabled' or 'auto' and
+		 * the candidate method is 'ignore' we can take the connection, because NM didn't
+		 * simply take care of IPv6.
 		 */
 		allow = TRUE;
 	}
