@@ -302,7 +302,7 @@ add_wireless_secrets (RequestData *request,
 	const char *key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
 	NMSecretAgentSimpleSecret *secret;
 
-	if (!key_mgmt)
+	if (!key_mgmt || nm_streq (key_mgmt, "owe"))
 		return FALSE;
 
 	if (NM_IN_STRSET (key_mgmt, "wpa-psk", "sae")) {
