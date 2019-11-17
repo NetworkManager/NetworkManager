@@ -3035,6 +3035,45 @@ test_read_wifi_sae (void)
 }
 
 static void
+test_read_wifi_owe (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	GBytes *ssid;
+	const char *expected_ssid = "blahblah_owe";
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-owe",
+	                                    NULL, TYPE_WIRELESS, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System blahblah_owe (test-wifi-owe)");
+
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
+
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wireless);
+
+	g_assert_cmpint (nm_setting_wireless_get_mtu (s_wireless), ==, 0);
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	g_assert (ssid);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
+
+	g_assert (!nm_setting_wireless_get_bssid (s_wireless));
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wireless), ==, "infrastructure");
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	g_assert (s_wsec);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "owe");
+	g_assert (!nm_setting_wireless_security_get_psk (s_wsec));
+	g_assert (!nm_setting_wireless_security_get_auth_alg (s_wsec));
+}
+
+static void
 test_read_wifi_wpa_psk_2 (void)
 {
 	NMConnection *connection;
@@ -10322,6 +10361,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/read/wpa-psk/adhoc", test_read_wifi_wpa_psk_adhoc);
 	g_test_add_func (TPATH "wifi/read/wpa-psk/hex", test_read_wifi_wpa_psk_hex);
 	g_test_add_func (TPATH "wifi/read/sae", test_read_wifi_sae);
+	g_test_add_func (TPATH "wifi/read/owe", test_read_wifi_owe);
 	g_test_add_func (TPATH "wifi/read/dynamic-wep/leap", test_read_wifi_dynamic_wep_leap);
 	g_test_add_func (TPATH "wifi/read/wpa/eap/tls", test_read_wifi_wpa_eap_tls);
 	g_test_add_func (TPATH "wifi/read/wpa/eap/ttls/tls", test_read_wifi_wpa_eap_ttls_tls);

@@ -3643,7 +3643,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	gs_unref_object NMSettingWirelessSecurity *wsec = NULL;
 	gs_free char *value = NULL;
 	const char *v;
-	gboolean wpa_psk = FALSE, wpa_sae = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
+	gboolean wpa_psk = FALSE, wpa_sae = FALSE, wpa_owe = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
 	int i_val;
 	GError *local = NULL;
 
@@ -3652,10 +3652,12 @@ make_wpa_setting (shvarFile *ifcfg,
 	v = svGetValueStr (ifcfg, "KEY_MGMT", &value);
 	wpa_psk = nm_streq0 (v, "WPA-PSK");
 	wpa_sae = nm_streq0 (v, "SAE");
+	wpa_owe = nm_streq0 (v, "OWE");
 	wpa_eap = nm_streq0 (v, "WPA-EAP");
 	ieee8021x = nm_streq0 (v, "IEEE8021X");
 	if (   !wpa_psk
 	    && !wpa_sae
+	    && !wpa_owe
 	    && !wpa_eap
 	    && !ieee8021x)
 		return NULL; /* Not WPA or Dynamic WEP */
@@ -3671,7 +3673,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	              NULL);
 
 	/* Pairwise and Group ciphers (only relevant for WPA/RSN) */
-	if (wpa_psk || wpa_sae || wpa_eap) {
+	if (wpa_psk || wpa_sae || wpa_owe || wpa_eap) {
 		fill_wpa_ciphers (ifcfg, wsec, FALSE, adhoc);
 		fill_wpa_ciphers (ifcfg, wsec, TRUE, adhoc);
 	}
@@ -3720,7 +3722,7 @@ make_wpa_setting (shvarFile *ifcfg,
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae", NULL);
 		}
 	} else {
-		nm_assert (wpa_eap || ieee8021x);
+		nm_assert (wpa_eap || ieee8021x || wpa_owe);
 
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
 		if (adhoc) {
@@ -3729,14 +3731,17 @@ make_wpa_setting (shvarFile *ifcfg,
 			return NULL;
 		}
 
-		*s_8021x = fill_8021x (ifcfg, file, v, TRUE, error);
-		if (!*s_8021x)
-			return NULL;
+		if (wpa_owe) {
+			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "owe", NULL);
+		} else {
+			*s_8021x = fill_8021x (ifcfg, file, v, TRUE, error);
+			if (!*s_8021x)
+				return NULL;
 
-		{
-			gs_free char *lower = g_ascii_strdown (v, -1);
-
-			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, lower, NULL);
+			{
+				gs_free char *lower = g_ascii_strdown (v, -1);
+				g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, lower, NULL);
+			}
 		}
 	}
 
