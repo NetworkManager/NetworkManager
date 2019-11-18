@@ -204,6 +204,20 @@ _c_public_ void n_dhcp4_client_lease_get_yiaddr(NDhcp4ClientLease *lease, struct
 }
 
 /**
+ * n_dhcp4_client_lease_get_siaddr() - get the server IP address
+ * @lease:                      the lease to operate on
+ * @siaddr:                     return argument for the IP address
+ *
+ * Gets the server IP address cotained in the lease. Or INADDR_ANY if the
+ * lease does not contain an IP address.
+ */
+_c_public_ void n_dhcp4_client_lease_get_siaddr(NDhcp4ClientLease *lease, struct in_addr *siaddr) {
+        NDhcp4Header *header = n_dhcp4_incoming_get_header(lease->message);
+
+        siaddr->s_addr = header->siaddr;
+}
+
+/**
  * n_dhcp4_client_lease_get_lifetime() - get the lifetime
  * @lease:                      the lease to operate on
  * @ns_lifetimep:               return argument for the lifetime in nano seconds
