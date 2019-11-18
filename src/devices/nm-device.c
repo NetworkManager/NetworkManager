@@ -12357,7 +12357,7 @@ _carrier_wait_check_queued_act_request (NMDevice *self)
 		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
 		_clear_queued_act_request (priv,
 		                           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
-	} else {
+	} else if (priv->state == NM_DEVICE_STATE_DISCONNECTED) {
 		gs_unref_object NMActRequest *queued_req = NULL;
 
 		_LOGD (LOGD_DEVICE, "Activate queued activation request as we now have carrier");
