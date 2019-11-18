@@ -1102,16 +1102,17 @@ int n_dhcp4_client_probe_dispatch_timer(NDhcp4ClientProbe *probe, uint64_t ns_no
                         r = n_dhcp4_client_probe_transition_lifetime(probe);
                         if (r)
                                 return r;
-                } else if (ns_now >= probe->current_lease->t2) {
+                } else if (ns_now >= probe->current_lease->t2 &&
+                           probe->state != N_DHCP4_CLIENT_PROBE_STATE_REBINDING) {
                         r = n_dhcp4_client_probe_transition_t2(probe, ns_now);
                         if (r)
                                 return r;
-                } else if (ns_now >= probe->current_lease->t1) {
+                } else if (ns_now >= probe->current_lease->t1 &&
+                           probe->state == N_DHCP4_CLIENT_PROBE_STATE_BOUND) {
                         r = n_dhcp4_client_probe_transition_t1(probe, ns_now);
                         if (r)
                                 return r;
                 }
-
                 break;
         default:
                 /* ignore */
