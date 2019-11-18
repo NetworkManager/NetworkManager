@@ -587,6 +587,9 @@ connect_context_step (NMModemBroadband *self)
 		if (!try_create_connect_properties (self))
 			break;
 
+		if (!self->_priv.ctx)
+			break;
+
 		/* Build up list of IP types that we need to use in the retries */
 		ctx->ip_types = nm_modem_get_connection_ip_type (NM_MODEM (self), ctx->connection, &error);
 		if (!ctx->ip_types) {
