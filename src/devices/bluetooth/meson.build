@@ -35,11 +35,13 @@ test(
   args: [libnm_device_plugin_bluetooth.full_path(), linker_script_devices],
 )
 
-test_unit = 'nm-bt-test'
+if enable_tests
+  test_unit = 'nm-bt-test'
 
-executable(
-  test_unit,
-  'tests/' + test_unit + '.c',
-  dependencies: libnetwork_manager_test_dep,
-  c_args: test_c_flags,
-)
+  executable(
+    test_unit,
+    'tests/' + test_unit + '.c',
+    dependencies: libnetwork_manager_test_dep,
+    c_args: test_c_flags,
+  )
+endif
