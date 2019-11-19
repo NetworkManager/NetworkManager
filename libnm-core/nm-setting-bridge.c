@@ -209,8 +209,8 @@ _nm_bridge_vlan_dup_and_seal (const NMBridgeVlan *vlan)
 /**
  * nm_bridge_vlan_get_vid_range:
  * @vlan: the #NMBridgeVlan
- * @vid_start: location to store the VLAN id range start.
- * @vid_end: location to store the VLAN id range end
+ * @vid_start: (out): location to store the VLAN id range start.
+ * @vid_end: (out): location to store the VLAN id range end
  *
  * Gets the VLAN id range.
  *
