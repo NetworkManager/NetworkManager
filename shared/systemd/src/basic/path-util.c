@@ -4,8 +4,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 /* When we include libgen.h because we need dirname() we immediately
@@ -20,7 +18,6 @@
 #include "glob-util.h"
 #include "log.h"
 #include "macro.h"
-#include "missing.h"
 #include "nulstr-util.h"
 #include "parse-util.h"
 #include "path-util.h"
@@ -273,7 +270,7 @@ char **path_strv_resolve(char **l, const char *root) {
                 } else
                         t = *s;
 
-                r = chase_symlinks(t, root, 0, &u);
+                r = chase_symlinks(t, root, 0, &u, NULL);
                 if (r == -ENOENT) {
                         if (root) {
                                 u = TAKE_PTR(orig);
@@ -651,7 +648,9 @@ int find_binary(const char *name, char **ret) {
                         return 0;
                 }
 
-                last_error = -errno;
+                /* PATH entries which we don't have access to are ignored, as per tradition. */
+                if (errno != EACCES)
+                        last_error = -errno;
         }
 
         return last_error;

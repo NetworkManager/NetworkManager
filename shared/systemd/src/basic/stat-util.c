@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 
-#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <linux/magic.h>
 #include <sched.h>
-#include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -15,7 +12,8 @@
 #include "fd-util.h"
 #include "fs-util.h"
 #include "macro.h"
-#include "missing.h"
+#include "missing_fs.h"
+#include "missing_magic.h"
 #include "parse-util.h"
 #include "stat-util.h"
 #include "string-util.h"
@@ -335,7 +333,7 @@ int device_path_make_canonical(mode_t mode, dev_t devno, char **ret) {
         if (r < 0)
                 return r;
 
-        return chase_symlinks(p, NULL, 0, ret);
+        return chase_symlinks(p, NULL, 0, ret, NULL);
 }
 
 int device_path_parse_major_minor(const char *path, mode_t *ret_mode, dev_t *ret_devno) {
