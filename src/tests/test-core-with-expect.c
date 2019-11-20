@@ -44,10 +44,13 @@ test_nm_utils_monotonic_timestamp_as_boottime (void)
 		g_assert_cmpint (now_boottime_2, >=, now_boottime);
 		g_assert_cmpint (now_boottime_2 - now_boottime, <=, NM_UTILS_NS_PER_SECOND / 10);
 
+		g_assert_cmpint (now, ==, nm_utils_monotonic_timestamp_from_boottime (now_boottime_2, 1));
+
 		for (timestamp_ns_per_tick = 1; timestamp_ns_per_tick <= NM_UTILS_NS_PER_SECOND; timestamp_ns_per_tick *= 10) {
 			now_boottime_3 = nm_utils_monotonic_timestamp_as_boottime (now / timestamp_ns_per_tick, timestamp_ns_per_tick);
 
 			g_assert_cmpint (now_boottime_2 / timestamp_ns_per_tick, ==, now_boottime_3);
+			g_assert_cmpint (now / timestamp_ns_per_tick, ==, nm_utils_monotonic_timestamp_from_boottime (now_boottime_3, timestamp_ns_per_tick));
 		}
 	}
 }

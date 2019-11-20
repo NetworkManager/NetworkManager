@@ -265,6 +265,52 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 	return timestamp - offset;
 }
 
+/**
+ * nm_utils_monotonic_timestamp_from_boottime:
+ * @boottime: the timestamp from CLOCK_BOOTTIME (or CLOCK_MONOTONIC, if
+ *   kernel does not support CLOCK_BOOTTIME and monotonic timestamps are based
+ *   on CLOCK_MONOTONIC).
+ * @timestamp_ns_per_tick: the scale in which @boottime is. If @boottime is in
+ *   nano seconds, this should be 1. If it is in milli seconds, this should be
+ *   %NM_UTILS_NS_PER_SECOND/1000, etc.
+ *
+ * Returns: the same timestamp in monotonic timestamp scale.
+ *
+ * Note that commonly monotonic timestamps are positive. But they may not
+ * be positive in this case. That's when boottime is taken from a time before
+ * the monotonic timestamps started counting. So, that means a zero or negative
+ * value is still a valid timestamp.
+ *
+ * This is the inverse of nm_utils_monotonic_timestamp_as_boottime().
+ */
+gint64
+nm_utils_monotonic_timestamp_from_boottime (guint64 boottime, gint64 timestamp_ns_per_tick)
+{
+	const GlobalState *p;
+	gint64 offset;
+
+	/* only support ns-per-tick being a multiple of 10. */
+	g_return_val_if_fail (timestamp_ns_per_tick == 1
+	                      || (timestamp_ns_per_tick > 0 &&
+	                          timestamp_ns_per_tick <= NM_UTILS_NS_PER_SECOND &&
+	                          timestamp_ns_per_tick % 10 == 0),
+	                      -1);
+
+	p = _t_get_global_state ();
+
+	nm_assert (p->offset_sec <= 0);
+
+	/* calculate the offset of monotonic-timestamp to boottime. offset_s is <= 1. */
+	offset = p->offset_sec * (NM_UTILS_NS_PER_SECOND / timestamp_ns_per_tick);
+
+	nm_assert (offset <= 0 && offset > G_MININT64);
+
+	/* check for overflow (note that offset is non-positive). */
+	g_return_val_if_fail (boottime < G_MAXINT64, G_MAXINT64);
+
+	return (gint64) boottime + offset;
+}
+
 gint64
 nm_utils_clock_gettime_ns (clockid_t clockid)
 {
