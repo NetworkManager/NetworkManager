@@ -800,7 +800,8 @@ static int n_dhcp4_client_probe_transition_lifetime(NDhcp4ClientProbe *probe) {
         return 0;
 }
 
-static int n_dhcp4_client_probe_transition_offer(NDhcp4ClientProbe *probe, NDhcp4Incoming *message) {
+static int n_dhcp4_client_probe_transition_offer(NDhcp4ClientProbe *probe, NDhcp4Incoming *message_take) {
+        _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = message_take;
         _c_cleanup_(n_dhcp4_client_lease_unrefp) NDhcp4ClientLease *lease = NULL;
         NDhcp4CEventNode *node;
         int r;
@@ -818,7 +819,7 @@ static int n_dhcp4_client_probe_transition_offer(NDhcp4ClientProbe *probe, NDhcp
                 if (r)
                         return r;
 
-                /* message consumed, do not fail */
+                message = NULL; /* consumed */
 
                 n_dhcp4_client_lease_link(lease, probe);
 
@@ -843,7 +844,8 @@ static int n_dhcp4_client_probe_transition_offer(NDhcp4ClientProbe *probe, NDhcp
         return 0;
 }
 
-static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4Incoming *message) {
+static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4Incoming *message_take) {
+        _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = message_take;
         _c_cleanup_(n_dhcp4_client_lease_unrefp) NDhcp4ClientLease *lease = NULL;
         NDhcp4CEventNode *node;
         int r;
@@ -862,7 +864,7 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
                 if (r)
                         return r;
 
-                /* message consumed, do not fail */
+                message = NULL; /* consumed */
 
                 n_dhcp4_client_lease_link(lease, probe);
 
@@ -885,7 +887,7 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
                 if (r)
                         return r;
 
-                /* message consumed, don to fail */
+                message = NULL; /* consumed */
 
                 n_dhcp4_client_lease_link(lease, probe);
 
@@ -1167,17 +1169,15 @@ int n_dhcp4_client_probe_dispatch_io(NDhcp4ClientProbe *probe, uint32_t events) 
         switch (type) {
         case N_DHCP4_MESSAGE_OFFER:
                 r = n_dhcp4_client_probe_transition_offer(probe, message);
+                message = NULL; /* consumed */
                 if (r)
                         return r;
-                else
-                        message = NULL; /* consumed */
                 break;
         case N_DHCP4_MESSAGE_ACK:
                 r = n_dhcp4_client_probe_transition_ack(probe, message);
+                message = NULL; /* consumed */
                 if (r)
                         return r;
-                else
-                        message = NULL; /* consumed */
                 break;
         case N_DHCP4_MESSAGE_NAK:
                 r = n_dhcp4_client_probe_transition_nak(probe);
