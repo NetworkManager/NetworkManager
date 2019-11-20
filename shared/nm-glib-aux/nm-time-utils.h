@@ -27,6 +27,7 @@ gint64 nm_utils_get_monotonic_timestamp_us (void);
 gint64 nm_utils_get_monotonic_timestamp_ms (void);
 gint32 nm_utils_get_monotonic_timestamp_s (void);
 gint64 nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ticks_per_ns);
+gint64 nm_utils_monotonic_timestamp_from_boottime (guint64 boottime, gint64 timestamp_ns_per_tick);
 
 static inline gint64
 nm_utils_get_monotonic_timestamp_ns_cached (gint64 *cache_now)

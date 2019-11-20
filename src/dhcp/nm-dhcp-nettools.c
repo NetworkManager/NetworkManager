@@ -348,15 +348,14 @@ lease_parse_address (NDhcp4ClientLease *lease,
                      GError **error)
 {
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
-	const gint64 ts = nm_utils_get_monotonic_timestamp_ns ();
-	const gint64 ts_clock_boottime = nm_utils_monotonic_timestamp_as_boottime (ts, 1);
 	struct in_addr a_address;
 	struct in_addr a_netmask;
 	struct in_addr a_next_server;
 	guint32 a_plen;
 	guint64 nettools_lifetime;
-	gint64 a_lifetime;
-	gint64 a_expiry;
+	guint32 a_lifetime;
+	guint32 a_timestamp;
+	guint64 a_expiry;
 
 	n_dhcp4_client_lease_get_yiaddr (lease, &a_address);
 	if (a_address.s_addr == INADDR_ANY) {
@@ -364,29 +363,47 @@ lease_parse_address (NDhcp4ClientLease *lease,
 		return FALSE;
 	}
 
-	/* n_dhcp4_client_lease_get_lifetime() never fails */
 	n_dhcp4_client_lease_get_lifetime (lease, &nettools_lifetime);
-	/* FIXME: n_dhcp4_client_lease_get_lifetime() returns the time in nsec of CLOCK_BOOTTIME.
-	 * We want to retrieve the original lifetime value in seconds, so we approximate it in a_lifetime.
-	 * Use a nettools API to retrieve the original value as passed by the server.
-	 */
+
 	if (nettools_lifetime == G_MAXUINT64) {
+		a_timestamp = 0;
 		a_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
-		a_expiry = NM_PLATFORM_LIFETIME_PERMANENT;
+		a_expiry = G_MAXUINT64;
 	} else {
-		gint64 ts_time = time (NULL);
+		guint64 nettools_basetime;
+		guint64 lifetime;
+		gint64 ts;
 
-		a_lifetime = ((gint64) nettools_lifetime - ts_clock_boottime + (NM_UTILS_NS_PER_SECOND / 2)) / NM_UTILS_NS_PER_SECOND;
-		/* A lease time of 0 is allowed on some dhcp servers, so, let's accept it. */
-		if (a_lifetime < 0)
-			a_lifetime = 0;
-		else if (a_lifetime > NM_PLATFORM_LIFETIME_PERMANENT)
-			a_lifetime = NM_PLATFORM_LIFETIME_PERMANENT - 1;
+		n_dhcp4_client_lease_get_basetime (lease, &nettools_basetime);
 
-		if (ts_time > NM_PLATFORM_LIFETIME_PERMANENT - a_lifetime)
-			a_expiry = NM_PLATFORM_LIFETIME_PERMANENT - 1;
-		else
-			a_expiry = ts_time + a_lifetime;
+		/* usually we shouldn't assert against external libraries like n-dhcp4.
+		 * Here we still do it... it seems safe enough. */
+		nm_assert (nettools_basetime > 0);
+		nm_assert (nettools_lifetime >= nettools_basetime);
+		nm_assert (((nettools_lifetime - nettools_basetime) % NM_UTILS_NS_PER_SECOND) == 0);
+		nm_assert ((nettools_lifetime - nettools_basetime) <= G_MAXUINT32);
+
+		if (nettools_lifetime <= nettools_basetime) {
+			/* A lease time of 0 is allowed on some dhcp servers, so, let's accept it. */
+			lifetime = 0;
+		} else {
+			lifetime = nettools_lifetime - nettools_basetime;
+
+			/* we "ceil" the value to the next second. In practice, we don't expect any sub-second values
+			 * from n-dhcp4 anyway, so this should have no effect. */
+			lifetime += NM_UTILS_NS_PER_SECOND - 1;
+		}
+
+		ts = nm_utils_monotonic_timestamp_from_boottime (nettools_basetime, 1);
+
+		/* the timestamp must be positive, because we only started nettools DHCP client
+		 * after obtaining the first monotonic timestamp. Hence, the lease must have been
+		 * received afterwards. */
+		nm_assert (ts >= NM_UTILS_NS_PER_SECOND);
+
+		a_timestamp = ts / NM_UTILS_NS_PER_SECOND;
+		a_lifetime = NM_MIN (lifetime / NM_UTILS_NS_PER_SECOND, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+		a_expiry = time (NULL) + ((lifetime - (nm_utils_clock_gettime_ns (CLOCK_BOOTTIME) - nettools_basetime)) / NM_UTILS_NS_PER_SECOND);
 	}
 
 	if (!lease_get_in_addr (lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &a_netmask)) {
@@ -411,10 +428,12 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	                               NM_DHCP_OPTION_DHCP4_IP_ADDRESS_LEASE_TIME,
 	                               (guint64) a_lifetime);
 
-	nm_dhcp_option_add_option_u64 (options,
-	                               _nm_dhcp_option_dhcp4_options,
-	                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
-	                               (guint64) a_expiry);
+	if (a_expiry != G_MAXUINT64) {
+		nm_dhcp_option_add_option_u64 (options,
+		                               _nm_dhcp_option_dhcp4_options,
+		                               NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
+		                               a_expiry);
+	}
 
 
 	n_dhcp4_client_lease_get_siaddr (lease, &a_next_server);
@@ -432,7 +451,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	                                   .peer_address = a_address.s_addr,
 	                                   .plen         = a_plen,
 	                                   .addr_source  = NM_IP_CONFIG_SOURCE_DHCP,
-	                                   .timestamp    = ts / NM_UTILS_NS_PER_SECOND,
+	                                   .timestamp    = a_timestamp,
 	                                   .lifetime     = a_lifetime,
 	                                   .preferred    = a_lifetime,
 	                           }));
