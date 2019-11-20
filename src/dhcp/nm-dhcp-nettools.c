@@ -381,7 +381,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 		nm_assert (nettools_basetime > 0);
 		nm_assert (nettools_lifetime >= nettools_basetime);
 		nm_assert (((nettools_lifetime - nettools_basetime) % NM_UTILS_NS_PER_SECOND) == 0);
-		nm_assert ((nettools_lifetime - nettools_basetime) <= G_MAXUINT32);
+		nm_assert ((nettools_lifetime - nettools_basetime) / NM_UTILS_NS_PER_SECOND <= G_MAXUINT32);
 
 		if (nettools_lifetime <= nettools_basetime) {
 			/* A lease time of 0 is allowed on some dhcp servers, so, let's accept it. */
