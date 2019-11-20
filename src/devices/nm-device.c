@@ -50,6 +50,7 @@
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
 #include "nm-setting-ethtool.h"
+#include "nm-setting-user.h"
 #include "nm-auth-utils.h"
 #include "nm-keep-alive.h"
 #include "nm-netns.h"
@@ -11651,6 +11652,7 @@ can_reapply_change (NMDevice *self,
 		                                          NM_SETTING_CONNECTION_MDNS,
 		                                          NM_SETTING_CONNECTION_LLMNR);
 	} else if (NM_IN_STRSET (setting_name,
+	                         NM_SETTING_USER_SETTING_NAME,
 	                         NM_SETTING_PROXY_SETTING_NAME,
 	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                         NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
