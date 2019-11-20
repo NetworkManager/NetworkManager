@@ -1,20 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2004 - 2014 Red Hat, Inc.
+ * Copyright (C) 2004 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_ERRORS_H__
@@ -63,21 +49,21 @@ GQuark nm_agent_manager_error_quark (void);
  *   was attempted on a non-secret property
  * @NM_CONNECTION_ERROR_MISSING_SETTING: the #NMConnection object is missing an
  *   #NMSetting which is required for its configuration. The error message will
- *   always be prefixed with "<setting-name>: ", where "<setting-name>" is the
+ *   always be prefixed with "&lt;setting-name>: ", where "&lt;setting-name>" is the
  *   name of the setting that is missing.
  * @NM_CONNECTION_ERROR_INVALID_SETTING: the #NMConnection object contains an
  *   invalid or inappropriate #NMSetting. The error message will always be
- *   prefixed with "<setting-name>: ", where "<setting-name>" is the name of the
+ *   prefixed with "&lt;setting-name>: ", where "&lt;setting-name>" is the name of the
  *   setting that is invalid.
  * @NM_CONNECTION_ERROR_MISSING_PROPERTY: the #NMConnection object is invalid
  *   because it is missing a required property. The error message will always be
- *   prefixed with "<setting-name>.<property-name>: ", where "<setting-name>" is
- *   the name of the setting with the missing property, and "<property-name>" is
+ *   prefixed with "&lt;setting-name>.&lt;property-name>: ", where "&lt;setting-name>" is
+ *   the name of the setting with the missing property, and "&lt;property-name>" is
  *   the property that is missing.
  * @NM_CONNECTION_ERROR_INVALID_PROPERTY: the #NMConnection object is invalid
  *   because a property has an invalid value. The error message will always be
- *   prefixed with "<setting-name>.<property-name>: ", where "<setting-name>" is
- *   the name of the setting with the invalid property, and "<property-name>" is
+ *   prefixed with "&lt;setting-name>.&lt;property-name>: ", where "&lt;setting-name>" is
+ *   the name of the setting with the invalid property, and "&lt;property-name>" is
  *   the property that is invalid.
  *
  * Describes errors that may result from operations involving a #NMConnection
@@ -142,6 +128,10 @@ GQuark nm_crypto_error_quark (void);
  * @NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND: the "specific object" in the
  *   activation request (eg, the #NMAccessPoint or #NMWimaxNsp) was not
  *   found.
+ * @NM_DEVICE_ERROR_VERSION_ID_MISMATCH: the version id did not match.
+ * @NM_DEVICE_ERROR_MISSING_DEPENDENCIES: the requested operation could not
+ *   be completed due to missing dependencies.
+ * @NM_DEVICE_ERROR_INVALID_ARGUMENT: invalid argument. Since: 1.16
  *
  * Device-related errors.
  *
@@ -158,6 +148,9 @@ typedef enum {
 	NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
 	NM_DEVICE_ERROR_NOT_ALLOWED,               /*< nick=NotAllowed >*/
 	NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND, /*< nick=SpecificObjectNotFound >*/
+	NM_DEVICE_ERROR_VERSION_ID_MISMATCH,       /*< nick=VersionIdMismatch >*/
+	NM_DEVICE_ERROR_MISSING_DEPENDENCIES,      /*< nick=MissingDependencies >*/
+	NM_DEVICE_ERROR_INVALID_ARGUMENT,          /*< nick=InvalidArgument >*/
 } NMDeviceError;
 
 #define NM_DEVICE_ERROR nm_device_error_quark ()
@@ -183,6 +176,9 @@ GQuark nm_device_error_quark (void);
  *   enabled/disabled.
  * @NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL: Unknown log level in SetLogging
  * @NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN: Unknown log domain in SetLogging
+ * @NM_MANAGER_ERROR_INVALID_ARGUMENTS: Invalid arguments for D-Bus request
+ * @NM_MANAGER_ERROR_MISSING_PLUGIN: A plug-in was needed to complete the
+ *   activation but is not available.
  *
  * Errors related to the main "network management" interface of NetworkManager.
  * These may be returned from #NMClient methods that invoke D-Bus operations on
@@ -202,6 +198,8 @@ typedef enum {
 	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
 	NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,           /*< nick=UnknownLogLevel >*/
 	NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,          /*< nick=UnknownLogDomain >*/
+	NM_MANAGER_ERROR_INVALID_ARGUMENTS,           /*< nick=InvalidArguments >*/
+	NM_MANAGER_ERROR_MISSING_PLUGIN,              /*< nick=MissingPlugin >*/
 } NMManagerError;
 
 GQuark nm_manager_error_quark (void);
@@ -251,6 +249,7 @@ GQuark nm_secret_agent_error_quark (void);
  * @NM_SETTINGS_ERROR_READ_ONLY_CONNECTION: attempted to modify a read-only connection
  * @NM_SETTINGS_ERROR_UUID_EXISTS: a connection with that UUID already exists
  * @NM_SETTINGS_ERROR_INVALID_HOSTNAME: attempted to set an invalid hostname
+ * @NM_SETTINGS_ERROR_INVALID_ARGUMENTS: invalid arguments
  *
  * Errors related to the settings/persistent configuration interface of
  * NetworkManager.
@@ -267,6 +266,7 @@ typedef enum {
 	NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, /*< nick=ReadOnlyConnection >*/
 	NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
 	NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
+	NM_SETTINGS_ERROR_INVALID_ARGUMENTS,    /*< nick=InvalidArguments >*/
 } NMSettingsError;
 
 GQuark nm_settings_error_quark (void);

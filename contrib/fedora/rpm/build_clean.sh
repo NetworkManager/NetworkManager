@@ -7,14 +7,24 @@ die() {
 }
 
 usage() {
-    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-Q|--quick]"
+    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-S|--srpm] [-g|--git] [-Q|--quick] [-N|--no-dist] [[-w|--with OPTION] ...] [[-W|--without OPTION] ...]"
     echo
-    echo "Does all the steps from a clean working directory to an RPM of NetworkManager"
+    echo "Does all the steps from a clean git working directory to an RPM of NetworkManager"
+    echo
+    echo "This is also the preferred way to create a distribution tarball for release:"
+    echo "  $ $0 -r"
     echo
     echo "Options:"
-    echo "  --force: force build, even if working directory is not clean and has local modifications"
-    echo "  --clean: run \`git-clean -fdx :/\` before build"
-    echo "  --quick: only run \`make dist\` instead of \`make distcheck\`"
+    echo "  -f|--force: force build, even if working directory is not clean and has local modifications"
+    echo "  -c|--clean: run \`git-clean -fdx :/\` before build"
+    echo "  -S|--srpm: only build the SRPM"
+    echo "  -g|--git: create tarball from current git HEAD (skips make dist)"
+    echo "  -Q|--quick: only run \`make dist\` instead of \`make distcheck\`"
+    echo "  -N|--no-dist: skip creating the source tarball if you already did \`make dist\`"
+    echo "  -w|--with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
+    echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
+    echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
+    echo "  -r|--release: built a release tarball (this option must be alone)"
 }
 
 
@@ -30,8 +40,18 @@ cd "$GITDIR" || die "could not change to $GITDIR"
 IGNORE_DIRTY=0
 GIT_CLEAN=0
 QUICK=0
+NO_DIST=0
+WITH_LIST=()
+SOURCE_FROM_GIT=0
+SNAPSHOT="$NM_BUILD_SNAPSHOT"
 
-for A; do
+ADD_WITH_TEST=1
+
+NARGS=$#
+
+while [[ $# -gt 0 ]]; do
+    A="$1"
+    shift
     case "$A" in
         -h|--help|-\?|help)
             usage
@@ -40,11 +60,50 @@ for A; do
         -f|--force)
             IGNORE_DIRTY=1
             ;;
+        -r|--release)
+            [[ $NARGS -eq 1 ]] || die "--release option must be alone"
+            export NMTST_CHECK_GTK_DOC=1
+            BUILDTYPE=SRPM
+            ;;
         -c|--clean)
             GIT_CLEAN=1
             ;;
+        -S|--srpm)
+            BUILDTYPE=SRPM
+            ;;
+        -s|--snapshot)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            SNAPSHOT="$1"
+            shift
+            ;;
+        -g|--git)
+            NO_DIST=1
+            IGNORE_DIRTY=1
+            SOURCE_FROM_GIT=1
+            ;;
         -Q|--quick)
             QUICK=1
+            ;;
+        -N|--no-dist)
+            NO_DIST=1
+            IGNORE_DIRTY=1
+            SOURCE_FROM_GIT=0
+            ;;
+        -w|--with)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            WITH_LIST=("${WITH_LIST[@]}" "--with" "$1")
+            if [[ "$1" == test ]]; then
+                ADD_WITH_TEST=0
+            fi
+            shift
+            ;;
+        -W|--without)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            WITH_LIST=("${WITH_LIST[@]}" "--without" "$1")
+            if [[ "$1" == test ]]; then
+                ADD_WITH_TEST=0
+            fi
+            shift
             ;;
         *)
             usage
@@ -61,7 +120,7 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
     # check for a clean working directory.
     # We ignore the /contrib directory, because this is where the automation
     # scripts and the build results will be.
-    if [[ "x$(LANG=C git clean -ndx | grep '^Would remove contrib/.*$' -v)" != x ]]; then
+    if [[ "x$(LANG=C git clean -ndx | grep '^Would \(remove contrib/\|skip repository libgsystem/\).*$' -v)" != x ]]; then
         die "The working directory is not clean. Refuse to run. Try \`$0 --force\`, \`$0 --clean\`, or \`git clean -e :/contrib -dx -n\`"
     fi
     if [[ "x$(git status --porcelain)" != x ]]; then
@@ -69,20 +128,50 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
     fi
 fi
 
-./autogen.sh --enable-gtk-doc || die "Error autogen.sh"
-
-if [[ $QUICK == 1 ]]; then
-    make -C include || die "Error make -C include"
-    make -C introspection || die "Error make -C introspection"
-    make -C libnm-core || die "Error make -C libnm-core"
-    make -C libnm || die "Error make -C libnm"
-    make -C libnm-util || die "Error make -C libnm-util"
-    make -C libnm-glib || die "Error make -C libnm-glib"
-    make dist || die "Error make distcheck"
-else
-    make -j 10 || die "Error make"
-    make distcheck || die "Error make distcheck"
+if [[ $NO_DIST != 1 ]]; then
+    ./autogen.sh \
+        --with-runstatedir=/run \
+        --program-prefix= \
+        --prefix=/usr \
+        --exec-prefix=/usr \
+        --bindir=/usr/bin \
+        --sbindir=/usr/sbin \
+        --sysconfdir=/etc \
+        --datadir=/usr/share \
+        --includedir=/usr/include \
+        --libdir=/usr/lib \
+        --libexecdir=/usr/libexec \
+        --localstatedir=/var \
+        --sharedstatedir=/var/lib \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        \
+        --disable-dependency-tracking \
+        --enable-gtk-doc \
+        --enable-introspection \
+        --enable-ifcfg-rh \
+        --enable-ifupdown \
+        --with-config-logging-backend-default=syslog \
+        --with-libaudit=yes-disabled-by-default \
+        --enable-polkit=yes \
+        --with-config-dhcp-default=internal \
+        --with-config-dns-rc-manager-default=symlink \
+        || die "Error autogen.sh"
+    if [[ $QUICK == 1 ]]; then
+        make dist -j 7 || die "Error make dist"
+    else
+        make distcheck -j 7 || die "Error make distcheck"
+    fi
 fi
+
+if [[ "$ADD_WITH_TEST" == 1 ]]; then
+    WITH_LIST=("${WITH_LIST[@]}" "--with" "test")
+fi
+
+export SOURCE_FROM_GIT
+export BUILDTYPE
+export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
+export SNAPSHOT
 
 "$SCRIPTDIR"/build.sh
 

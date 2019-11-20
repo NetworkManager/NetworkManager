@@ -1,25 +1,12 @@
 #!/usr/bin/env python
-# -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
-# vim: ft=python ts=4 sts=4 sw=4 et ai
+# SPDX-License-Identifier: GPL-2.0+
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Copyright 2013 - 2014 Red Hat, Inc.
+# Copyright (C) 2013 - 2014 Red Hat, Inc.
 #
 
 import sys
+import gi
+gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
 
 #
@@ -48,8 +35,8 @@ if __name__ == "__main__":
         sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
 
     main_loop = GLib.MainLoop()
-    settings = NM.RemoteSettings.new(None)
-    connections = settings.list_connections()
+    client = NM.Client.new(None)
+    connections = client.get_connections()
 
     con_name = sys.argv[1]
     if len(sys.argv) == 3:
@@ -75,5 +62,5 @@ if __name__ == "__main__":
                 print("'%s' zone set to '%s'") % (c.get_id(), new_zone)
             break
     if not found:
-        print ("Error: connection '%s' not found.") % (con_name)
+        sys.stderr.write("Error: connection '%s' not found.\n") % (con_name)
         main_loop.quit()

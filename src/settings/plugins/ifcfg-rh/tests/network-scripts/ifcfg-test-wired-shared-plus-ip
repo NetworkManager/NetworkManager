@@ -1,0 +1,19 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=shared
+ONBOOT=no
+IPV6INIT=yes
+
+# additional IPs
+IPADDR=10.20.30.5
+PREFIX=24
+GATEWAY=1.1.1.1
+
+# these are ignored for shared method
+IPADDR1=6.7.8.9
+PREFIX1=16
+IPADDR2=3.3.3.3
+PREFIX2=24
+

@@ -1,46 +1,38 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager -- Network link manager
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+// SPDX-License-Identifier: GPL-2.0+
+/*
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#ifndef _NM_BLUEZ5_UTILS_H_
-#define _NM_BLUEZ5_UTILS_H_
-
-#include <glib.h>
-#include <gio/gio.h>
+#ifndef __NM_BLUEZ5_DUN_H__
+#define __NM_BLUEZ5_DUN_H__
 
 typedef struct _NMBluez5DunContext NMBluez5DunContext;
 
-typedef void (*NMBluez5DunFunc) (NMBluez5DunContext *context,
-                                 const char *rfcomm_dev,
-                                 GError *error,
-                                 gpointer user_data);
+#if WITH_BLUEZ5_DUN
 
-NMBluez5DunContext *nm_bluez5_dun_new (const char *adapter,
-                                       const char *remote);
+typedef void (*NMBluez5DunConnectCb) (NMBluez5DunContext *context,
+                                      const char *rfcomm_dev,
+                                      GError *error,
+                                      gpointer user_data);
 
-void nm_bluez5_dun_connect (NMBluez5DunContext *context,
-                            NMBluez5DunFunc callback, gpointer user_data);
+typedef void (*NMBluez5DunNotifyTtyHangupCb) (NMBluez5DunContext *context,
+                                              gpointer user_data);
 
-/* Clean up connection resources */
-void nm_bluez5_dun_cleanup (NMBluez5DunContext *context);
+gboolean nm_bluez5_dun_connect (const char *adapter,
+                                const char *remote,
+                                GCancellable *cancellable,
+                                NMBluez5DunConnectCb callback,
+                                gpointer callback_user_data,
+                                NMBluez5DunNotifyTtyHangupCb notify_tty_hangup_cb,
+                                gpointer notify_tty_hangup_user_data,
+                                GError **error);
 
-/* Clean up and dispose all resources */
-void nm_bluez5_dun_free (NMBluez5DunContext *context);
+void nm_bluez5_dun_disconnect (NMBluez5DunContext *context);
 
-#endif  /* _NM_BLUEZ5_UTILS_H_ */
+const char *nm_bluez5_dun_context_get_adapter (const NMBluez5DunContext *context);
+const char *nm_bluez5_dun_context_get_remote (const NMBluez5DunContext *context);
+const char *nm_bluez5_dun_context_get_rfcomm_dev (const NMBluez5DunContext *context);
+
+#endif /* WITH_BLUEZ5_DUN */
+
+#endif  /* __NM_BLUEZ5_DUN_H__ */

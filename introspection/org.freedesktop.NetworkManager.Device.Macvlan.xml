@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Macvlan:
+      @short_description: MAC VLAN Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Macvlan">
+
+    <!--
+        Parent:
+
+        The object path of the parent device.
+    -->
+    <property name="Parent" type="o" access="read"/>
+
+    <!--
+        Mode:
+
+        The macvlan mode, one of "private", "vepa", "bridge", or "passthru".
+    -->
+    <property name="Mode" type="s" access="read"/>
+
+    <!--
+        NoPromisc:
+
+        Whether the device is blocked from going into promiscuous mode.
+    -->
+    <property name="NoPromisc" type="b" access="read"/>
+
+    <!--
+        Tap:
+
+        Whether the device is a macvtap.
+    -->
+    <property name="Tap" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

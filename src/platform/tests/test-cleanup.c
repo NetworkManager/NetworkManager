@@ -1,6 +1,11 @@
-#include "test-common.h"
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright (C) 2016 Red Hat, Inc.
+ */
 
-#define DEVICE_NAME "nm-test-device"
+#include "nm-default.h"
+
+#include "test-common.h"
 
 static void
 test_cleanup_internal (void)
@@ -9,8 +14,8 @@ test_cleanup_internal (void)
 	int ifindex;
 	GArray *addresses4;
 	GArray *addresses6;
-	GArray *routes4;
-	GArray *routes6;
+	GPtrArray *routes4;
+	GPtrArray *routes6;
 	in_addr_t addr4;
 	in_addr_t network4;
 	int plen4 = 24;
@@ -23,7 +28,7 @@ test_cleanup_internal (void)
 	int preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 	int metric = 20;
 	int mss = 1000;
-	guint flags = 0;
+	guint32 flags = 0;
 
 	inet_pton (AF_INET, "192.0.2.1", &addr4);
 	inet_pton (AF_INET, "192.0.3.0", &network4);
@@ -33,62 +38,83 @@ test_cleanup_internal (void)
 	inet_pton (AF_INET6, "2001:db8:e:f:1:2:3:4", &gateway6);
 
 	/* Create and set up device */
-	g_assert (nm_platform_dummy_add (DEVICE_NAME));
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL)));
 	accept_signal (link_added);
 	free_signal (link_added);
-	g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (DEVICE_NAME)));
-	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME), NULL));
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	g_assert (ifindex > 0);
 
-	/* Add routes and addresses */
-	g_assert (nm_platform_ip4_address_add (ifindex, addr4, 0, plen4, lifetime, preferred, NULL));
-	g_assert (nm_platform_ip6_address_add (ifindex, addr6, in6addr_any, plen6, lifetime, preferred, flags));
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, gateway4, 32, INADDR_ANY, metric, mss));
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network4, plen4, gateway4, metric, mss));
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway4, metric, mss));
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, gateway6, 128, in6addr_any, metric, mss));
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network6, plen6, gateway6, metric, mss));
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway6, metric, mss));
+	/* wait for kernel to add the IPv6 link local address... it takes a bit. */
+	NMTST_WAIT_ASSERT (300, {
+		gs_unref_array GArray *addrs = NULL;
+		const NMPlatformIP6Address *a;
 
-	addresses4 = nm_platform_ip4_address_get_all (ifindex);
-	addresses6 = nm_platform_ip6_address_get_all (ifindex);
-	routes4 = nm_platform_ip4_route_get_all (ifindex, TRUE);
-	routes6 = nm_platform_ip6_route_get_all (ifindex, TRUE);
+		if (nmtst_wait_iteration > 0) {
+			nmtstp_wait_for_signal (NM_PLATFORM_GET, nmtst_wait_remaining_us / 1000);
+			nm_platform_process_events (NM_PLATFORM_GET);
+		}
+		addrs = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+		if (   addrs->len == 1
+		    && (a = &g_array_index (addrs, NMPlatformIP6Address, 0))
+		    && IN6_IS_ADDR_LINKLOCAL (&a->address))
+			break;
+	});
+
+	/* Add routes and addresses */
+	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr4, plen4, addr4, lifetime, preferred, 0, NULL));
+	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr6, plen6, in6addr_any, lifetime, preferred, flags));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway4, 32, INADDR_ANY, 0, metric, mss);
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network4, plen4, gateway4, 0, metric, mss);
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway4, 0, metric, mss);
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway6, 128, in6addr_any, in6addr_any, metric, mss);
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network6, plen6, gateway6, in6addr_any, metric, mss);
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway6, in6addr_any, metric, mss);
+
+	addresses4 = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses6 = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+	routes4 = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
+	routes6 = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, ifindex);
 
 	g_assert_cmpint (addresses4->len, ==, 1);
-	g_assert_cmpint (addresses6->len, ==, 1);
+	g_assert_cmpint (addresses6->len, ==, 2); /* also has a IPv6 LL address. */
 	g_assert_cmpint (routes4->len, ==, 3);
 	g_assert_cmpint (routes6->len, ==, 3);
 
 	g_array_unref (addresses4);
 	g_array_unref (addresses6);
-	g_array_unref (routes4);
-	g_array_unref (routes6);
+	g_ptr_array_unref (routes4);
+	g_ptr_array_unref (routes6);
 
 	/* Delete interface with all addresses and routes */
-	g_assert (nm_platform_link_delete (ifindex));
+	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 
-	addresses4 = nm_platform_ip4_address_get_all (ifindex);
-	addresses6 = nm_platform_ip6_address_get_all (ifindex);
-	routes4 = nm_platform_ip4_route_get_all (ifindex, TRUE);
-	routes6 = nm_platform_ip6_route_get_all (ifindex, TRUE);
+	addresses4 = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses6 = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+	routes4 = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
+	routes6 = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, ifindex);
 
 	g_assert_cmpint (addresses4->len, ==, 0);
 	g_assert_cmpint (addresses6->len, ==, 0);
-	g_assert_cmpint (routes4->len, ==, 0);
-	g_assert_cmpint (routes6->len, ==, 0);
+	g_assert (!routes4);
+	g_assert (!routes6);
 
 	g_array_unref (addresses4);
 	g_array_unref (addresses6);
-	g_array_unref (routes4);
-	g_array_unref (routes6);
+}
+
+NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
+
+void
+_nmtstp_init_tests (int *argc, char ***argv)
+{
+	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void
-setup_tests (void)
+_nmtstp_setup_tests (void)
 {
-	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
-	g_assert (!nm_platform_link_exists (DEVICE_NAME));
+	nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, DEVICE_NAME, FALSE);
 
 	g_test_add_func ("/internal", test_cleanup_internal);
 	/* FIXME: add external cleanup check */

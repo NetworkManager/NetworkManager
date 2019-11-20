@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -26,9 +13,7 @@
  * #NmtNewtForm containing an #NmtNewtListbox to select from.
  */
 
-#include "config.h"
-
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-newt-popup.h"
 #include "nmt-newt-form.h"
@@ -147,12 +132,27 @@ nmt_newt_popup_activated (NmtNewtWidget *widget)
 	for (i = 0; i < priv->entries->len; i++)
 		nmt_newt_listbox_append (NMT_NEWT_LISTBOX (listbox), entries[i].label, NULL);
 	nmt_newt_listbox_set_active (NMT_NEWT_LISTBOX (listbox), priv->active);
+	nmt_newt_widget_set_padding (listbox, 1, 0, 1, 0);
 
 	nmt_newt_widget_size_request (listbox, &list_w, &list_h);
+
+	g_object_get (nmt_newt_widget_get_form (widget),
+	              "x", &window_x,
+	              "y", &window_y,
+	              NULL);
 	newtComponentGetPosition (nmt_newt_component_get_component (NMT_NEWT_COMPONENT (widget)),
 	                          &button_x, &button_y);
-	window_x = button_x + 4;
-	window_y = button_y + 2 - priv->active;
+	/* (window_x + button_x) is the screen X coordinate of the newtComponent. A
+	 * newtButton labelled "Foo" is rendered as " <Foo>" (with a preceding
+	 * space), so the "F" is at (window_x + button_x + 2). We've added 1 column
+	 * of padding to the left of the listbox, so we need to position the popup
+	 * at (window_x + button_x + 1) in order for its text to be aligned with the
+	 * button's text. (The x and y coordinates given to NmtNewtForm are the
+	 * coordinates of the top left of the window content, ignoring the border
+	 * graphics.)
+	 */
+	window_x += button_x + 1;
+	window_y += button_y - priv->active;
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM,
 	                     "x", window_x,

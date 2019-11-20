@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.OlpcMesh:
+      @short_description: OLPC Wireless Mesh Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.OlpcMesh">
+
+    <!--
+        HwAddress:
+
+        The hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Companion:
+
+        The object path of the companion device.
+    -->
+    <property name="Companion" type="o" access="read"/>
+
+    <!--
+        ActiveChannel:
+
+        The currently active channel.
+    -->
+    <property name="ActiveChannel" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary containing the FIXME: check changed parameters.
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

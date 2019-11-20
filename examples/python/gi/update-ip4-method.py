@@ -1,22 +1,7 @@
 #!/usr/bin/env python
-# -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
-# vim: ft=python ts=4 sts=4 sw=4 et ai
+# SPDX-License-Identifier: GPL-2.0+
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Copyright 2014 Red Hat, Inc.
+# Copyright (C) 2014 Red Hat, Inc.
 #
 
 #
@@ -24,32 +9,23 @@
 # using the libnm GObject-based convenience APIs.
 #
 # Configuration settings are described at
-# https://developer.gnome.org/NetworkManager/0.9/ref-settings.html
+# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
 #
 
+import gi
+gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
-import sys, struct, socket
-
-def ip_to_int(ip_string):
-    return struct.unpack("=I", socket.inet_aton(ip_string))[0]
-
-# callback function
-def commit_cb(connection, error, data):
-    if error is (None):
-        print("The connection profile has been updated.")
-    else:
-        print(error)
-    main_loop.quit()
+import sys, socket
 
 if __name__ == "__main__":
     # parse and validate arguments
     if len(sys.argv) < 3:
-        print "Usage: %s <uuid> <auto|static> [address prefix gateway]" % sys.argv[0]
+        print("Usage: %s <uuid> <auto|static> [address prefix gateway]" % sys.argv[0])
         sys.exit(1)
 
     method = sys.argv[2]
-    if method == "static" or method == "manual" and len(sys.argv) < 5:
-        print "Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1])
+    if (method == "static" or method == "manual") and len(sys.argv) < 5:
+        print("Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1]))
         sys.exit(1)
 
     uuid = sys.argv[1]
@@ -60,10 +36,10 @@ if __name__ == "__main__":
 
     main_loop = GLib.MainLoop()
 
-    # create RemoteSettings object
-    settings = NM.RemoteSettings.new(None)
+    # create Client object
+    client = NM.Client.new(None)
 
-    all_connections = settings.list_connections()
+    all_connections = client.get_connections()
     for c in all_connections:
         if c.get_uuid() != uuid:
             continue
@@ -75,21 +51,22 @@ if __name__ == "__main__":
             c.add_setting(s_ip4)
 
         # set the method and change properties
-        s_ip4.set_property(NM.SETTING_IP4_CONFIG_METHOD, method)
+        s_ip4.set_property(NM.SETTING_IP_CONFIG_METHOD, method)
         if method == "auto":
-            # remove addresses
+            # remove addresses and gateway
             s_ip4.clear_addresses()
+            s_ip4.props.gateway = None
         elif method == "manual":
             # Add the static IP address, prefix, and (optional) gateway
-            addr = NM.IP4Address.new()
-            addr.set_address(ip_to_int(sys.argv[3]))
-            addr.set_prefix(int(sys.argv[4]))
-            if len(sys.argv) == 6:
-                addr.set_gateway(ip_to_int(sys.argv[5]))
+            addr = NM.IPAddress.new(socket.AF_INET, sys.argv[3], int(sys.argv[4]))
             s_ip4.add_address(addr)
+            if len(sys.argv) == 6:
+                s_ip4.props.gateway = sys.argv[5]
 
-        c.commit_changes(commit_cb, None)
-
-    # run main loop
-    main_loop.run()
+        try:
+            c.commit_changes(True, None)
+            print("The connection profile has been updated.")
+        except Exception as e:
+            sys.stderr.write("Error: %s\n" % e)
+        break
 

@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device:
+      @short_description: Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device">
+
+    <!--
+        Udi:
+
+        Operating-system specific transient device hardware identifier. This is an
+        opaque string representing the underlying hardware for the device, and
+        shouldn't be used to keep track of individual devices. For some device
+        types (Bluetooth, Modems) it is an identifier used by the hardware service
+        (ie bluez or ModemManager) to refer to that device, and client programs
+        use it get additional information from those services which NM does not
+        provide. The Udi is not guaranteed to be consistent across reboots or
+        hotplugs of the hardware. If you're looking for a way to uniquely track
+        each device in your application, use the object path. If you're looking
+        for a way to track a specific piece of hardware across reboot or hotplug,
+        use a MAC address or USB serial number.
+
+        Note that non-UTF-8 characters are backslash escaped. Use g_strcompress()
+        to obtain the true (non-UTF-8) string.
+    -->
+    <property name="Udi" type="s" access="read"/>
+
+    <!--
+        Interface:
+
+        The name of the device's control (and often data) interface.
+        Note that non UTF-8 characters are backslash escaped, so the
+        resulting name may be longer then 15 characters. Use g_strcompress()
+        to revert the escaping.
+    -->
+    <property name="Interface" type="s" access="read"/>
+
+    <!--
+        IpInterface:
+
+        The name of the device's data interface when available. This property may
+        not refer to the actual data interface until the device has successfully
+        established a data connection, indicated by the device's State becoming
+        ACTIVATED.
+        Note that non UTF-8 characters are backslash escaped, so the
+        resulting name may be longer then 15 characters. Use g_strcompress()
+        to revert the escaping.
+    -->
+    <property name="IpInterface" type="s" access="read"/>
+
+    <!--
+        Driver:
+
+        The driver handling the device.
+        Non-UTF-8 sequences are backslash escaped. Use g_strcompress()
+        to revert.
+    -->
+    <property name="Driver" type="s" access="read"/>
+
+    <!--
+        DriverVersion:
+
+        The version of the driver handling the device.
+        Non-UTF-8 sequences are backslash escaped. Use g_strcompress()
+        to revert.
+    -->
+    <property name="DriverVersion" type="s" access="read"/>
+
+    <!--
+        FirmwareVersion:
+
+        The firmware version for the device.
+        Non-UTF-8 sequences are backslash escaped. Use g_strcompress()
+        to revert.
+    -->
+    <property name="FirmwareVersion" type="s" access="read"/>
+
+    <!--
+        Capabilities:
+
+        Flags describing the capabilities of the device.
+
+        Returns: <link linkend="NMDeviceCapabilities">NMDeviceCapabilities</link>
+    -->
+    <property name="Capabilities" type="u" access="read"/>
+
+    <!--
+        Ip4Address:
+
+        DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object
+        instead.
+    -->
+    <property name="Ip4Address" type="u" access="read"/>
+
+    <!--
+        State:
+
+        The current state of the device.
+
+        Returns: <link linkend="NMDeviceState">NMDeviceState</link>
+    -->
+    <property name="State" type="u" access="read"/>
+
+    <!--
+        StateReason:
+
+        The current state and reason for changing to that state.
+
+        Returns: A tuple of  <link linkend="NMDeviceState">NMDeviceState</link> and  <link linkend="NMDeviceStateReason">NMDeviceStateReason</link>.
+    -->
+    <property name="StateReason" type="(uu)" access="read"/>
+
+    <!--
+        ActiveConnection:
+
+        Object path of an ActiveConnection object that "owns" this device during
+        activation. The ActiveConnection object tracks the life-cycle of a
+        connection to a specific network and implements the
+        org.freedesktop.NetworkManager.Connection.Active D-Bus interface.
+    -->
+    <property name="ActiveConnection" type="o" access="read"/>
+
+    <!--
+        Ip4Config:
+
+        Object path of the Ip4Config object describing the configuration of the
+        device. Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED
+        state.
+    -->
+    <property name="Ip4Config" type="o" access="read"/>
+
+    <!--
+        Dhcp4Config:
+
+        Object path of the Dhcp4Config object describing the DHCP options returned
+        by the DHCP server. Only valid when the device is in the
+        NM_DEVICE_STATE_ACTIVATED state.
+    -->
+    <property name="Dhcp4Config" type="o" access="read"/>
+
+    <!--
+        Ip6Config:
+
+        Object path of the Ip6Config object describing the configuration of the
+        device. Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED
+        state.
+    -->
+    <property name="Ip6Config" type="o" access="read"/>
+
+    <!--
+        Dhcp6Config:
+
+        Object path of the Dhcp6Config object describing the DHCP options returned
+        by the DHCP server. Only valid when the device is in the
+        NM_DEVICE_STATE_ACTIVATED state.
+    -->
+    <property name="Dhcp6Config" type="o" access="read"/>
+
+    <!--
+        Managed:
+
+        Whether or not this device is managed by NetworkManager. Setting this
+        property has a similar effect to configuring the device as unmanaged via
+        the keyfile.unmanaged-devices setting in NetworkManager.conf. Changes to
+        this value are not persistent and lost after NetworkManager restart.
+    -->
+    <property name="Managed" type="b" access="readwrite"/>
+
+    <!--
+        Autoconnect:
+
+        If TRUE, indicates the device is allowed to autoconnect. If FALSE, manual
+        intervention is required before the device will automatically connect to a
+        known network, such as activating a connection using the device, or
+        setting this property to TRUE. This property cannot be set to TRUE for
+        default-unmanaged devices, since they never autoconnect.
+    -->
+    <property name="Autoconnect" type="b" access="readwrite"/>
+
+    <!--
+        FirmwareMissing:
+
+        If TRUE, indicates the device is likely missing firmware necessary for its
+        operation.
+    -->
+    <property name="FirmwareMissing" type="b" access="read"/>
+
+    <!--
+        NmPluginMissing:
+
+        If TRUE, indicates the NetworkManager plugin for the device is likely
+        missing or misconfigured.
+    -->
+    <property name="NmPluginMissing" type="b" access="read"/>
+
+    <!--
+        DeviceType:
+
+        The general type of the network device; ie Ethernet, Wi-Fi, etc.
+
+        Returns: <link linkend="NMDeviceType">NMDeviceType</link>
+    -->
+    <property name="DeviceType" type="u" access="read"/>
+
+    <!--
+        AvailableConnections:
+
+        An array of object paths of every configured connection that is currently
+        'available' through this device.
+    -->
+    <property name="AvailableConnections" type="ao" access="read"/>
+
+    <!--
+        PhysicalPortId:
+
+        If non-empty, an (opaque) indicator of the physical network port
+        associated with the device. This can be used to recognize when two
+        seemingly-separate hardware devices are actually just different virtual
+        interfaces to the same physical port.
+    -->
+    <property name="PhysicalPortId" type="s" access="read"/>
+
+    <!--
+        Mtu:
+
+        The device MTU (maximum transmission unit).
+    -->
+    <property name="Mtu" type="u" access="read"/>
+
+    <!--
+        Metered:
+
+        Whether the amount of traffic flowing through the device is subject to
+        limitations, for example set by service providers.
+
+        Returns: <link linkend="NMMetered">NMMetered</link>
+    -->
+    <property name="Metered" type="u" access="read"/>
+
+    <!--
+        LldpNeighbors:
+
+        Array of LLDP neighbors; each element is a dictionary mapping LLDP TLV
+        names to variant boxed values.
+    -->
+    <property name="LldpNeighbors" type="aa{sv}" access="read"/>
+
+    <!--
+        Real:
+
+        True if the device exists, or False for placeholder devices that do not
+        yet exist but could be automatically created by NetworkManager if one of
+        their AvailableConnections was activated.
+    -->
+    <property name="Real" type="b" access="read"/>
+
+    <!--
+        Ip4Connectivity:
+
+        The result of the last IPv4 connectivity check.
+
+        Since: 1.16
+
+        Returns: <link linkend="NMConnectivityState">NMConnectivityState</link>
+    -->
+    <property name="Ip4Connectivity" type="u" access="read"/>
+
+    <!--
+        Ip6Connectivity:
+
+        The result of the last IPv6 connectivity check.
+
+        Since: 1.16
+
+        Returns: <link linkend="NMConnectivityState">NMConnectivityState</link>
+    -->
+    <property name="Ip6Connectivity" type="u" access="read"/>
+
+    <!--
+        Reapply:
+        @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarly differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
+        @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows to catch concurrent modifications between the GetAppliedConnection call and Reapply.
+        @flags: Flags which would modify the behavior of the Reapply call. There are no flags defined currently and the users should use the value of 0.
+
+        Attempts to update the configuration of a device without deactivating it.
+        NetworkManager has the concept of connections, which are profiles that
+        contain the configuration for a networking device. Those connections are
+        exposed via D-Bus as individual objects that can be created, modified and
+        deleted. When activating such a settings-connection on a device, the
+        settings-connection is cloned to become an applied-connection and used to
+        configure the device (see GetAppliedConnection). Subsequent modification
+        of the settings-connection don't propagate automatically to the device's
+        applied-connection (with exception of the firewall-zone and the metered
+        property). For the changes to take effect, you can either re-activate the
+        settings-connection, or call Reapply. The Reapply call allows you to
+        directly update the applied-connection and reconfigure the device. Reapply
+        can also be useful if the currently applied-connection is equal to the
+        connection that is about to be reapplied. This allows to reconfigure the
+        device and revert external changes like removing or adding an IP address
+        (which NetworkManager doesn't revert automatically because it is assumed
+        that the user made these changes intentionally outside of NetworkManager).
+        Reapply can make the applied-connection different from the
+        settings-connection, just like updating the settings-connection can make
+        them different.
+    -->
+    <method name="Reapply">
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="version_id" type="t" direction="in"/>
+      <arg name="flags" type="u" direction="in"/>
+      </method>
+
+    <!--
+        GetAppliedConnection:
+        @flags: Flags which would modify the behavior of the GetAppliedConnection call. There are no flags defined currently and the users should use the value of 0.
+        @connection: The effective connection settings that the connection has currently applied.
+        @version_id: The version-id of the currently applied connection. This can be specified during Reapply to avoid races where you first fetch the applied connection, modify it and try to reapply it. If the applied connection is modified in the meantime, the version_id gets incremented and Reapply will fail.
+
+        Get the currently applied connection on the device. This is a snapshot of
+        the last activated connection on the device, that is the configuration
+        that is currently applied on the device. Usually this is the same as
+        GetSettings of the referenced settings connection. However, it can differ
+        if the settings connection was subsequently modified or the applied
+        connection was modified by Reapply. The applied connection is set when
+        activating a device or when calling Reapply.
+    -->
+    <method name="GetAppliedConnection">
+      <arg name="flags" type="u" direction="in"/>
+      <arg name="connection" type="a{sa{sv}}" direction="out"/>
+      <arg name="version_id" type="t" direction="out"/>
+      </method>
+
+    <!--
+        Disconnect:
+
+        Disconnects a device and prevents the device from automatically activating
+        further connections without user intervention.
+    -->
+    <method name="Disconnect"/>
+
+    <!--
+        Delete:
+
+        Deletes a software device from NetworkManager and removes the interface
+        from the system. The method returns an error when called for a hardware
+        device.
+    -->
+    <method name="Delete"/>
+
+    <!--
+        StateChanged:
+        @new_state: (<link linkend="NMDeviceState">NMDeviceState</link>) The new state of the device.
+        @old_state: (<link linkend="NMDeviceState">NMDeviceState</link>) The previous state of the device.
+        @reason: (<link linkend="NMDeviceStateReason">NMDeviceStateReason</link>) A reason for the state transition.
+    -->
+    <signal name="StateChanged">
+      <arg name="new_state" type="u"/>
+      <arg name="old_state" type="u"/>
+      <arg name="reason" type="u"/>
+    </signal>
+  </interface>
+</node>

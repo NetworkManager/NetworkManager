@@ -1,22 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #ifndef __NM_OBJECT_H__
@@ -26,7 +11,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-types.h>
+#include "nm-types.h"
 
 G_BEGIN_DECLS
 
@@ -39,27 +24,13 @@ G_BEGIN_DECLS
 
 #define NM_OBJECT_PATH "path"
 #define NM_OBJECT_DBUS_CONNECTION "dbus-connection"
+#define NM_OBJECT_DBUS_OBJECT "dbus-object"
+#define NM_OBJECT_DBUS_OBJECT_MANAGER "dbus-object-manager"
 
-struct _NMObject {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Methods */
-	void (*init_dbus) (NMObject *object);
-
-	/* The "object-creation-failed" method is PRIVATE for libnm and
-	 * is not meant for any external usage.  It indicates that an error
-	 * occured during creation of an object.
-	 */
-	void (*object_creation_failed) (NMObject *master_object,
-	                                const char *failed_path);
-
-	/*< private >*/
-	gpointer padding[8];
-} NMObjectClass;
+/**
+ * NMObject:
+ */
+typedef struct _NMObjectClass NMObjectClass;
 
 GType nm_object_get_type (void);
 

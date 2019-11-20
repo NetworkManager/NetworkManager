@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Infiniband:
+      @short_description: Infiniband Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Infiniband">
+
+    <!--
+        HwAddress:
+
+        Hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Carrier:
+
+        Indicates whether the physical carrier is found (e.g. whether a cable is
+        plugged in or not).
+    -->
+    <property name="Carrier" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

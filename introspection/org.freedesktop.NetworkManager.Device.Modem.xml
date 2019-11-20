@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Modem:
+      @short_description: Modem Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Modem">
+    <!--
+        ModemCapabilities:
+
+        The generic family of access technologies the modem supports. Not all
+        capabilities are available at the same time however; some modems require a
+        firmware reload or other reinitialization to switch between eg CDMA/EVDO
+        and GSM/UMTS.
+
+        Returns: <link linkend="NMDeviceModemCapabilities">NMDeviceModemCapabilities</link>
+    -->
+    <property name="ModemCapabilities" type="u" access="read"/>
+
+    <!--
+        CurrentCapabilities:
+
+        The generic family of access technologies the modem currently supports
+        without a firmware reload or reinitialization.
+
+        Returns: <link linkend="NMDeviceModemCapabilities">NMDeviceModemCapabilities</link>
+    -->
+    <property name="CurrentCapabilities" type="u" access="read"/>
+
+    <!--
+        DeviceId:
+
+        An identifier used by the modem backend (ModemManager) that aims to
+        uniquely identify the a device. Can be used to match a connection to a
+        particular device.
+
+        Since: 1.20
+    -->
+    <property name="DeviceId" type="s" access="read" />
+
+    <!--
+        OperatorCode:
+
+        The MCC and MNC (concatenated) of the network the modem is connected to.
+        Blank if disconnected or not a 3GPP modem.
+
+        Since: 1.20
+    -->
+    <property name="OperatorCode" type="s" access="read" />
+
+    <!--
+        Apn:
+
+        The access point name the modem is connected to. Blank if disconnected.
+
+        Since: 1.20
+    -->
+    <property name="Apn" type="s" access="read" />
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}"/>
+    </signal>
+
+  </interface>
+</node>

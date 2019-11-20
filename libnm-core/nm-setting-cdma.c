@@ -1,28 +1,12 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#include <string.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-cdma.h"
+
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
@@ -36,41 +20,29 @@
  * networks, including those using CDMA2000/EVDO technology.
  */
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING,
-                         _nm_register_setting (CDMA, 1))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CDMA)
+/*****************************************************************************/
 
-#define NM_SETTING_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CDMA, NMSettingCdmaPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_NUMBER,
+	PROP_USERNAME,
+	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
+	PROP_MTU,
+);
 
 typedef struct {
 	char *number; /* For dialing, duh */
 	char *username;
 	char *password;
 	NMSettingSecretFlags password_flags;
+	guint32 mtu;
 } NMSettingCdmaPrivate;
 
-enum {
-	PROP_0,
-	PROP_NUMBER,
-	PROP_USERNAME,
-	PROP_PASSWORD,
-	PROP_PASSWORD_FLAGS,
+G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CDMA, NMSettingCdmaPrivate))
 
-/**
- * nm_setting_cdma_new:
- *
- * Creates a new #NMSettingCdma object with default values.
- *
- * Returns: the new empty #NMSettingCdma object
- **/
-NMSetting *
-nm_setting_cdma_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CDMA, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_cdma_get_number:
@@ -128,6 +100,22 @@ nm_setting_cdma_get_password_flags (NMSettingCdma *setting)
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password_flags;
 }
 
+/**
+ * nm_setting_cdma_get_mtu:
+ * @setting: the #NMSettingCdma
+ *
+ * Returns: the #NMSettingCdma:mtu property of the setting
+ *
+ * Since: 1.8
+ **/
+guint32
+nm_setting_cdma_get_mtu (NMSettingCdma *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), 0);
+
+	return NM_SETTING_CDMA_GET_PRIVATE (setting)->mtu;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -144,7 +132,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty'"));
+		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
 		return FALSE;
 	}
@@ -158,16 +146,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->password && !strlen (priv->password)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_PASSWORD);
-		return FALSE;
-	}
-
 	return TRUE;
+}
+
+static gboolean
+verify_secrets (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	return _nm_setting_verify_secret_string (NM_SETTING_CDMA_GET_PRIVATE (setting)->password,
+	                                         NM_SETTING_CDMA_SETTING_NAME,
+	                                         NM_SETTING_CDMA_PASSWORD,
+	                                         error);
 }
 
 static GPtrArray *
@@ -176,7 +164,7 @@ need_secrets (NMSetting *setting)
 	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (setting);
 	GPtrArray *secrets = NULL;
 
-	if (priv->password)
+	if (priv->password && *priv->password)
 		return NULL;
 
 	if (priv->username) {
@@ -189,21 +177,34 @@ need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static void
-nm_setting_cdma_init (NMSettingCdma *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (object);
+	NMSettingCdma *setting = NM_SETTING_CDMA (object);
 
-	g_free (priv->number);
-	g_free (priv->username);
-	g_free (priv->password);
-
-	G_OBJECT_CLASS (nm_setting_cdma_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_NUMBER:
+		g_value_set_string (value, nm_setting_cdma_get_number (setting));
+		break;
+	case PROP_USERNAME:
+		g_value_set_string (value, nm_setting_cdma_get_username (setting));
+		break;
+	case PROP_PASSWORD:
+		g_value_set_string (value, nm_setting_cdma_get_password (setting));
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_flags (value, nm_setting_cdma_get_password_flags (setting));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_cdma_get_mtu (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -228,30 +229,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD_FLAGS:
 		priv->password_flags = g_value_get_flags (value);
 		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingCdma *setting = NM_SETTING_CDMA (object);
-
-	switch (prop_id) {
-	case PROP_NUMBER:
-		g_value_set_string (value, nm_setting_cdma_get_number (setting));
-		break;
-	case PROP_USERNAME:
-		g_value_set_string (value, nm_setting_cdma_get_username (setting));
-		break;
-	case PROP_PASSWORD:
-		g_value_set_string (value, nm_setting_cdma_get_password (setting));
-		break;
-	case PROP_PASSWORD_FLAGS:
-		g_value_set_flags (value, nm_setting_cdma_get_password_flags (setting));
+	case PROP_MTU:
+		priv->mtu = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -259,22 +238,53 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
+nm_setting_cdma_init (NMSettingCdma *setting)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+}
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingCdmaPrivate));
+/**
+ * nm_setting_cdma_new:
+ *
+ * Creates a new #NMSettingCdma object with default values.
+ *
+ * Returns: the new empty #NMSettingCdma object
+ **/
+NMSetting *
+nm_setting_cdma_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CDMA, NULL);
+}
 
-	/* virtual methods */
-	object_class->set_property = set_property;
+static void
+finalize (GObject *object)
+{
+	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (object);
+
+	g_free (priv->number);
+	g_free (priv->username);
+	g_free (priv->password);
+
+	G_OBJECT_CLASS (nm_setting_cdma_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (NMSettingCdmaPrivate));
+
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->need_secrets = need_secrets;
 
-	/* Properties */
+	setting_class->verify         = verify;
+	setting_class->verify_secrets = verify_secrets;
+	setting_class->need_secrets   = need_secrets;
 
 	/**
 	 * NMSettingCdma:number:
@@ -283,12 +293,11 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	 * broadband network, if any.  If not specified, the default number (#777)
 	 * is used when required.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NUMBER,
-		 g_param_spec_string (NM_SETTING_CDMA_NUMBER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NUMBER] =
+	    g_param_spec_string (NM_SETTING_CDMA_NUMBER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:username:
@@ -297,12 +306,11 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	 * providers do not require a username, or accept any username.  But if a
 	 * username is required, it is specified here.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_CDMA_USERNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_USERNAME] =
+	    g_param_spec_string (NM_SETTING_CDMA_USERNAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:password:
@@ -311,24 +319,42 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	 * providers do not require a password, or accept any password.  But if a
 	 * password is required, it is specified here.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_CDMA_PASSWORD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_SECRET |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD] =
+	    g_param_spec_string (NM_SETTING_CDMA_PASSWORD, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_SECRET |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingCdma:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingCdma:password property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_flags (NM_SETTING_CDMA_PASSWORD_FLAGS, "", "",
-		                     NM_TYPE_SETTING_SECRET_FLAGS,
-		                     NM_SETTING_SECRET_FLAG_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PASSWORD_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_CDMA_PASSWORD_FLAGS, "", "",
+	                        NM_TYPE_SETTING_SECRET_FLAGS,
+	                        NM_SETTING_SECRET_FLAG_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingCdma:mtu:
+	 *
+	 * If non-zero, only transmit packets of the specified size or smaller,
+	 * breaking larger packets up into multiple frames.
+	 *
+	 * Since: 1.8
+	 **/
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_CDMA_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_CDMA);
 }

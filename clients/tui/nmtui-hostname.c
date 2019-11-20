@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -23,9 +10,7 @@
  * nmtui-hostname implements the "set hostname" functionality
  */
 
-#include "config.h"
-
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-newt.h"
 
@@ -98,7 +83,7 @@ hostname_set (GObject      *object,
 }
 
 NmtNewtForm *
-nmtui_hostname (int argc, char **argv)
+nmtui_hostname (gboolean is_top, int argc, char **argv)
 {
 	const char *hostname;
 	char *tmp = NULL;
@@ -114,7 +99,7 @@ nmtui_hostname (int argc, char **argv)
 		nmt_sync_op_init (&op);
 		nm_client_save_hostname_async (nm_client, hostname, NULL, hostname_set, &op);
 		if (nmt_sync_op_wait_boolean (&op, &error)) {
-			/* Translators: this indicates the result. ie, "I have set the hostname to ..." */
+			/* TRANSLATORS: this indicates the result. ie, "I have set the hostname to ..." */
 			nmt_newt_message_dialog (_("Set hostname to '%s'"), hostname);
 		} else {
 			nmt_newt_message_dialog (_("Unable to set hostname: %s"), error->message);

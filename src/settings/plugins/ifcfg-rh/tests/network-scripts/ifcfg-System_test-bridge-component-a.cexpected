@@ -1,0 +1,8 @@
+HWADDR=00:22:15:59:62:97
+TYPE=Ethernet
+BRIDGING_OPTS="priority=28 hairpin_mode=1"
+NAME="System test-bridge-component"
+UUID=${UUID}
+DEVICE=eth0
+ONBOOT=no
+BRIDGE=br0

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Wpan:
+      @short_description: IEEE 802.15.4 (WPAN) MAC Layer Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Wpan">
+
+    <!--
+        HwAddress:
+
+        The active hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+  </interface>
+</node>

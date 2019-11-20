@@ -1,0 +1,82 @@
+/*
+ * libnm vala API.
+ *
+ * The API is still unstable
+ */
+
+* cheader_filename="NetworkManager.h"
+
+Setting.get_secret_flags#virtual_method skip
+Setting.set_secret_flags#virtual_method skip
+Setting.verify#virtual_method skip
+VpnEditorPlugin.get_vt#virtual_method skip
+
+SETTING_802_1X_*            parent="NM.Setting8021x"                name="SETTING_802_1X_(.+)"
+SETTING_ADSL_*              parent="NM.SettingAdsl"                 name="SETTING_ADSL_(.+)"
+SETTING_BLUETOOTH_*         parent="NM.SettingBluetooth"            name="SETTING_BLUETOOTH_(.+)"
+SETTING_BOND_*              parent="NM.SettingBond"                 name="SETTING_BOND_(.+)"
+SETTING_BRIDGE_*            parent="NM.SettingBridge"               name="SETTING_BRIDGE_(.+)"
+SETTING_CDMA_*              parent="NM.SettingCdma"                 name="SETTING_CDMA_(.+)"
+SETTING_CONNECTION_*        parent="NM.SettingConnection"           name="SETTING_CONNECTION_(.+)"
+SETTING_DCB_*               parent="NM.SettingDcb"                  name="SETTING_DCB_(.+)"
+SETTING_GENERIC_*           parent="NM.SettingGeneric"              name="SETTING_GENERIC_(.+)"
+SETTING_GSM_*               parent="NM.SettingGsm"                  name="SETTING_GSM_(.+)"
+SETTING_INFINIBAND_*        parent="NM.SettingInfiniband"           name="SETTING_INFINIBAND_(.+)"
+SETTING_IP4_CONFIG_*        parent="NM.SettingIP4Config"            name="SETTING_IP4_CONFIG_(.+)"
+SETTING_IP6_CONFIG_*        parent="NM.SettingIP6Config"            name="SETTING_IP6_CONFIG_(.+)"
+SETTING_IP_CONFIG_*         parent="NM.SettingIPConfig"             name="SETTING_IP_CONFIG_(.+)"
+SETTING_IP_TUNNEL_*         parent="NM.SettingIPTunnel"             name="SETTING_IP_TUNNEL_(.+)"
+SETTING_MACVLAN_*           parent="NM.SettingMacvlan"              name="SETTING_MACVLAN_(.+)"
+SETTING_OLPC_MESH_*         parent="NM.SettingOlpcMesh"             name="SETTING_OLPC_MESH_(.+)"
+SETTING_PPPOE_*             parent="NM.SettingPppoe"                name="SETTING_PPPOE_(.+)"
+SETTING_PPP_*               parent="NM.SettingPpp"                  name="SETTING_PPP_(.+)"
+SETTING_PROXY_*             parent="NM.SettingProxy"                name="SETTING_PROXY_(.+)"
+SETTING_SERIAL_*            parent="NM.SettingSerial"               name="SETTING_SERIAL_(.+)"
+SETTING_TEAM_*              parent="NM.SettingTeam"                 name="SETTING_TEAM_(.+)"
+SETTING_TUN_*               parent="NM.SettingTun"                  name="SETTING_TUN_(.+)"
+SETTING_VLAN_*              parent="NM.SettingVlan"                 name="SETTING_VLAN_(.+)"
+SETTING_VPN_*               parent="NM.SettingVpn"                  name="SETTING_VPN_(.+)"
+SETTING_VXLAN_*             parent="NM.SettingVxlan"                name="SETTING_VXLAN_(.+)"
+SETTING_WIFI_P2P_*          parent="NM.SettingWifiP2P"              name="SETTING_WIFI_P2P_(.+)"
+SETTING_WIMAX_*             parent="NM.SettingWimax"                name="SETTING_WIMAX_(.+)"
+SETTING_WIRED_*             parent="NM.SettingWired"                name="SETTING_WIRED_(.+)"
+SETTING_WIRELESS_*          parent="NM.SettingWireless"             name="SETTING_WIRELESS_(.+)"
+
+VPN_*                       parent="NM.Vpn"                         name="VPN_(.+)"
+
+connection_error_quark      parent="NM.Connection"                  name="connection_(.+)"
+
+SETTING_PARAM_*             parent="NM.Setting"                     name="SETTING_PARAM_(.+)"
+utils_*                     parent="NM.Utils"                       name="utils_(.+)"
+UTILS_*                     parent="NM.Utils"                       name="UTILS_(.+)"
+UtilsSecurityType           parent="NM.Utils"                       name="SecurityType"
+
+Client.new_finish           symbol_type="function"
+
+ACTIVE_CONNECTION_*         parent="NM.ActiveConnection"            name="ACTIVE_CONNECTION_(.+)"
+CLIENT_*                    parent="NM.Client"                      name="CLIENT_(.+)"
+ACCESS_POINT_*              parent="NM.AccessPoint"                 name="ACCESS_POINT_(.+)"
+
+DEVICE_*                    parent="NM.Device"                      name="DEVICE_(.+)"
+DEVICE_ADSL_*               parent="NM.DeviceAdsl"                  name="DEVICE_ADSL_(.+)"
+DEVICE_BOND_*               parent="NM.DeviceBond"                  name="DEVICE_BOND_(.+)"
+DEVICE_BRIDGE_*             parent="NM.DeviceBridge"                name="DEVICE_BRIDGE_(.+)"
+DEVICE_BT_*                 parent="NM.DeviceBt"                    name="DEVICE_BT_(.+)"
+DEVICE_ETHERNET_*           parent="NM.DeviceEthernet"              name="DEVICE_ETHERNET_(.+)"
+DEVICE_GENERIC_*            parent="NM.DeviceGeneric"               name="DEVICE_GENERIC_(.+)"
+DEVICE_TEAM_*               parent="NM.DeviceTeam"                  name="DEVICE_TEAM_(.+)"
+DEVICE_INFINIBAND_*         parent="NM.DeviceInfiniband"            name="DEVICE_INFINIBAND_(.+)"
+DEVICE_MODEM_*              parent="NM.DeviceModem"                 name="DEVICE_MODEM_(.+)"
+DEVICE_OLPC_MESH_*          parent="NM.DeviceOlpcMesh"              name="DEVICE_OLPC_(.+)"
+DEVICE_VLAN_*               parent="NM.DeviceVlan"                  name="DEVICE_VLAN_(.+)"
+DEVICE_WIFI_*               parent="NM.DeviceWifi"                  name="DEVICE_WIFI_(.+)"
+DEVICE_WIMAX_*              parent="NM.DeviceWimax"                 name="DEVICE_WIMAX_(.+)"
+
+
+DHCP_CONFIG_OPTIONS         parent="NM.DhcpConfig"                  name="DHCP_CONFIG_(.+)"
+IP_CONFIG_*                 parent="NM.IPConfig"                    name="IP_CONFIG_(.+)"
+OBJECT_*                    parent="NM.Object"                      name="OBJECT_(.+)"
+REMOTE_CONNECTION_*         parent="NM.RemoteConnection"            name="REMOTE_CONNECTION_(.+)"
+VPN_CONNECTION_*            parent="NM.VpnConnection"               name="VPN_CONNECTION_(.+)"
+WIMAX_NSP_*                 parent="NM.WimaxNsp"                    name="WIMAX_NSP_(.+)"
+

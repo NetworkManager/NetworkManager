@@ -1,2 +1,0 @@
-SUBDIRS= dbus gi
-

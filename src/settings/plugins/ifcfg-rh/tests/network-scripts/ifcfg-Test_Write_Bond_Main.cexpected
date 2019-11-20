@@ -1,0 +1,17 @@
+BONDING_OPTS="downdelay=5 miimon=100 mode=balance-rr updelay=10"
+TYPE=Bond
+BONDING_MASTER=yes
+HWADDR=
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPADDR=1.1.1.3
+PREFIX=24
+GATEWAY=1.1.1.1
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="Test Write Bond Main"
+UUID=${UUID}
+DEVICE=bond0
+ONBOOT=yes

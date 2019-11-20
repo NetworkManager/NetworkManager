@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+
+  <!--
+      org.freedesktop.NetworkManager.VPN.Plugin:
+      @short_description: VPN Service
+
+      This interface is provided by plugins providing VPN services to the
+      NetworkManager daemon.
+  -->
+  <interface name="org.freedesktop.NetworkManager.VPN.Plugin">
+    <annotation name="org.gtk.GDBus.C.Name" value="VpnPlugin"/>
+
+    <!--
+        Connect:
+        @connection: Describes the connection to be established.
+
+        Tells the plugin to connect. Interactive secrets requests (eg, emitting
+        the SecretsRequired signal) are not allowed.
+    -->
+    <method name="Connect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect"/>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+    </method>
+
+    <!--
+        ConnectInteractive:
+        @connection: Describes the connection to be established.
+        @details: Additional details about the Connect process.
+
+        Tells the plugin to connect, allowing interactive secrets requests (eg the
+        plugin is allowed to emit the SecretsRequired signal if the VPN service
+        indicates that it needs additional secrets during the connect process).
+    -->
+    <method name="ConnectInteractive">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect_interactive"/>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="details" type="a{sv}" direction="in"/>
+    </method>
+
+    <!--
+        NeedSecrets:
+        @settings: Describes the connection that may need secrets.
+        @setting_name: The setting name within the provided connection that requires secrets, if any.
+
+        Asks the plugin whether the provided connection will require secrets to
+        connect successfully.
+    -->
+    <method name="NeedSecrets">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_need_secrets"/>
+      <arg name="settings" type="a{sa{sv}}" direction="in"/>
+      <arg name="setting_name" type="s" direction="out"/>
+    </method>
+
+    <!--
+        Disconnect:
+
+        Disconnect the plugin.
+    -->
+    <method name="Disconnect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_disconnect"/>
+    </method>
+
+    <!--
+        SetConfig:
+        @config: Generic configuration details for the connection.
+
+        Set generic connection details on the connection.
+    -->
+    <method name="SetConfig">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_config"/>
+      <arg name="config" type="a{sv}" direction="in"/>
+    </method>
+
+    <!--
+        SetIp4Config:
+        @config: Ip4Config details for the connection. You must call SetConfig() before calling this.
+
+        Set IPv4 details on the connection.
+    -->
+    <method name="SetIp4Config">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_ip4_config"/>
+      <arg name="config" type="a{sv}" direction="in"/>
+    </method>
+
+    <!--
+        SetIp6Config:
+        @config: Ip6Config details for the connection. You must call SetConfig() before calling this.
+
+        Set IPv6 details on the connection.
+    -->
+    <method name="SetIp6Config">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_ip6_config"/>
+      <arg name="config" type="a{sv}" direction="in"/>
+    </method>
+
+    <!--
+        SetFailure:
+        @reason: The reason for the failure.
+
+        Indicate a failure to the plugin.
+    -->
+    <method name="SetFailure">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_failure"/>
+      <arg name="reason" type="s" direction="in"/>
+    </method>
+
+    <!--
+        State:
+
+        The state of the plugin.
+
+        Returns: <link linkend="NMVpnServiceState">NMVpnServiceState</link>
+    -->
+    <property name="State" type="u" access="read"/>
+
+    <!--
+        StateChanged:
+        @state: (<link linkend="NMVpnServiceState">NMVpnServiceState</link>) The new state of the plugin.
+
+        Emitted when the plugin state changes.
+    -->
+    <signal name="StateChanged">
+      <arg name="state" type="u"/>
+    </signal>
+
+    <!--
+        SecretsRequired:
+        @message: Informational message, if any, about the request. For example, if a second PIN is required, could indicate to the user to wait for the token code to change until entering the next PIN.
+        @secrets: Array of strings of VPN secret names which the plugin thinks secrets may be required for, or other VPN-specific data to be processed by the VPN's front-end.
+
+        Emitted during an ongoing ConnectInteractive() request when the plugin has
+        determined that new secrets are required. NetworkManager will then call
+        the NewSecrets() method with a connection hash including the new secrets.
+    -->
+    <signal name="SecretsRequired">
+      <arg name="message" type="s" direction="out"/>
+      <arg name="secrets" type="as" direction="out"/>
+    </signal>
+
+    <!--
+        NewSecrets:
+        @connection: Describes the connection including the new secrets.
+
+        Called in response to a SecretsRequired signal to deliver updated secrets
+        or other information to the plugin.
+    -->
+    <method name="NewSecrets">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_new_secrets"/>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+    </method>
+
+    <!--
+        Config:
+        @config: The configuration information.
+
+        The plugin obtained generic configuration information.
+    -->
+    <signal name="Config">
+      <arg name="config" type="a{sv}"/>
+    </signal>
+
+    <!--
+        Ip4Config:
+        @ip4config: The IPv4 configuration.
+
+        The plugin obtained an IPv4 configuration.
+    -->
+    <signal name="Ip4Config">
+      <arg name="ip4config" type="a{sv}"/>
+    </signal>
+
+    <!--
+        Ip6Config:
+        @ip6config: The IPv6 configuration.
+
+        The plugin obtained an IPv6 configuration.
+    -->
+    <signal name="Ip6Config">
+      <arg name="ip6config" type="a{sv}"/>
+    </signal>
+
+    <!--
+        LoginBanner:
+        @banner: The login banner string.
+
+        Emitted when the plugin receives a login banner from the VPN service.
+    -->
+    <signal name="LoginBanner">
+      <arg name="banner" type="s"/>
+    </signal>
+
+    <!--
+        Failure:
+        @reason: (<link linkend="NMVpnPluginFailure">NMVpnPluginFailure</link>) Reason code for the failure.
+
+        Emitted when a failure in the VPN plugin occurs.
+    -->
+    <signal name="Failure">
+      <arg name="reason" type="u"/>
+    </signal>
+  </interface>
+</node>

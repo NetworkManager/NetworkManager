@@ -1,5 +1,6 @@
 [Unit]
 Description=Network Manager Wait Online
+Documentation=man:nm-online(1)
 Requisite=NetworkManager.service
 After=NetworkManager.service
 Wants=network.target
@@ -8,6 +9,7 @@ Before=network.target
 [Service]
 Type=oneshot
 ExecStart=@bindir@/nm-online -s -q --timeout=30
+RemainAfterExit=yes
 
 [Install]
 WantedBy=network.target

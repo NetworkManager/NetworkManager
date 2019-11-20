@@ -1,23 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2014 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #ifndef __NM_SETTING_CONNECTION_H__
@@ -46,24 +30,101 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CONNECTION_ID             "id"
 #define NM_SETTING_CONNECTION_UUID           "uuid"
+#define NM_SETTING_CONNECTION_STABLE_ID      "stable-id"
 #define NM_SETTING_CONNECTION_INTERFACE_NAME "interface-name"
 #define NM_SETTING_CONNECTION_TYPE           "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT    "autoconnect"
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY "autoconnect-priority"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES "autoconnect-retries"
+#define NM_SETTING_CONNECTION_MULTI_CONNECT  "multi-connect"
 #define NM_SETTING_CONNECTION_TIMESTAMP      "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY      "read-only"
 #define NM_SETTING_CONNECTION_PERMISSIONS    "permissions"
 #define NM_SETTING_CONNECTION_ZONE           "zone"
 #define NM_SETTING_CONNECTION_MASTER         "master"
 #define NM_SETTING_CONNECTION_SLAVE_TYPE     "slave-type"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES "autoconnect-slaves"
 #define NM_SETTING_CONNECTION_SECONDARIES    "secondaries"
 #define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT "gateway-ping-timeout"
+#define NM_SETTING_CONNECTION_METERED        "metered"
+#define NM_SETTING_CONNECTION_LLDP           "lldp"
+#define NM_SETTING_CONNECTION_AUTH_RETRIES   "auth-retries"
+#define NM_SETTING_CONNECTION_MDNS           "mdns"
+#define NM_SETTING_CONNECTION_LLMNR          "llmnr"
+#define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT "wait-device-timeout"
+
+/* Types for property values */
+/**
+ * NMSettingConnectionAutoconnectSlaves:
+ * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO: slaves are not brought up when
+ *   master is activated
+ * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES: slaves are brought up when
+ *   master is activated
+ *
+ * #NMSettingConnectionAutoconnectSlaves values indicate whether slave connections
+ * should be activated when master is activated.
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT = -1,
+	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO = 0,
+	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES = 1,
+} NMSettingConnectionAutoconnectSlaves;
+
+/**
+ * NMSettingConnectionLldp:
+ * @NM_SETTING_CONNECTION_LLDP_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_LLDP_DISABLE: disable LLDP
+ * @NM_SETTING_CONNECTION_LLDP_ENABLE_RX: enable reception of LLDP frames
+ *
+ * #NMSettingConnectionLldp values indicate whether LLDP should be enabled.
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_LLDP_DEFAULT = -1,
+	NM_SETTING_CONNECTION_LLDP_DISABLE = 0,
+	NM_SETTING_CONNECTION_LLDP_ENABLE_RX = 1,
+} NMSettingConnectionLldp;
+
+/**
+ * NMSettingConnectionMdns:
+ * @NM_SETTING_CONNECTION_MDNS_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_MDNS_NO: disable mDNS
+ * @NM_SETTING_CONNECTION_MDNS_RESOLVE: support only resolving, do not register hostname
+ * @NM_SETTING_CONNECTION_MDNS_YES: enable mDNS
+ *
+ * #NMSettingConnectionMdns values indicate whether mDNS should be enabled.
+ *
+ * Since: 1.12
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_MDNS_DEFAULT      = -1,
+	NM_SETTING_CONNECTION_MDNS_NO           = 0,
+	NM_SETTING_CONNECTION_MDNS_RESOLVE      = 1,
+	NM_SETTING_CONNECTION_MDNS_YES          = 2,
+} NMSettingConnectionMdns;
+
+/**
+ * NMSettingConnectionLlmnr:
+ * @NM_SETTING_CONNECTION_LLMNR_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_LLMNR_NO: disable LLMNR
+ * @NM_SETTING_CONNECTION_LLMNR_RESOLVE: support only resolving, do not register hostname
+ * @NM_SETTING_CONNECTION_LLMNR_YES: enable LLMNR
+ *
+ * #NMSettingConnectionLlmnr values indicate whether LLMNR should be enabled.
+ *
+ * Since: 1.14
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_LLMNR_DEFAULT      = -1,
+	NM_SETTING_CONNECTION_LLMNR_NO           = 0,
+	NM_SETTING_CONNECTION_LLMNR_RESOLVE      = 1,
+	NM_SETTING_CONNECTION_LLMNR_YES          = 2,
+} NMSettingConnectionLlmnr;
 
 /**
  * NMSettingConnection:
  *
- * The NMSettingConnection struct contains only private data.
- * It should only be accessed through the functions described below.
+ * General Connection Profile Settings
  */
 struct _NMSettingConnection {
 	NMSetting parent;
@@ -81,10 +142,16 @@ GType nm_setting_connection_get_type (void);
 NMSetting * nm_setting_connection_new                  (void);
 const char *nm_setting_connection_get_id               (NMSettingConnection *setting);
 const char *nm_setting_connection_get_uuid             (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_4
+const char *nm_setting_connection_get_stable_id        (NMSettingConnection *setting);
 const char *nm_setting_connection_get_interface_name   (NMSettingConnection *setting);
 const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
-gint        nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting);
+int         nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_6
+int         nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_14
+NMConnectionMultiConnect nm_setting_connection_get_multi_connect (NMSettingConnection *setting);
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
 
@@ -111,6 +178,8 @@ const char *nm_setting_connection_get_master           (NMSettingConnection *set
 gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
                                                         const char *type);
 const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_2
+NMSettingConnectionAutoconnectSlaves nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting);
 
 guint32     nm_setting_connection_get_num_secondaries  (NMSettingConnection *setting);
 const char *nm_setting_connection_get_secondary        (NMSettingConnection *setting, guint32 idx);
@@ -119,6 +188,21 @@ void        nm_setting_connection_remove_secondary     (NMSettingConnection *set
 gboolean    nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting, const char *sec_uuid);
 
 guint32     nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_2
+NMMetered   nm_setting_connection_get_metered (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_2
+NMSettingConnectionLldp nm_setting_connection_get_lldp (NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_10
+int         nm_setting_connection_get_auth_retries     (NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_12
+NMSettingConnectionMdns   nm_setting_connection_get_mdns (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_14
+NMSettingConnectionLlmnr  nm_setting_connection_get_llmnr (NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_20
+gint32 nm_setting_connection_get_wait_device_timeout (NMSettingConnection *setting);
 
 G_END_DECLS
 

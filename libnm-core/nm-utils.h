@@ -1,21 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2005 - 2013 Red Hat, Inc.
+ * Copyright (C) 2005 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_H__
@@ -33,15 +18,16 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-dbus-interface.h"
 #include "nm-core-enum-types.h"
+#include "nm-setting-sriov.h"
+#include "nm-setting-tc-config.h"
 #include "nm-setting-wireless-security.h"
 
 G_BEGIN_DECLS
 
-/* init, deinit nm_utils */
-gboolean nm_utils_init (GError **error);
-void     nm_utils_deinit (void);
+/*****************************************************************************/
+
+typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
 
 /* SSID helpers */
 gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, gsize len);
@@ -64,6 +50,7 @@ char *      nm_utils_ssid_to_utf8  (const guint8 *ssid, gsize len);
  * @NMU_SEC_WPA_ENTERPRISE: WPA1 is used with 802.1x authentication
  * @NMU_SEC_WPA2_PSK: WPA2/RSN is used with Pre-Shared Keys (PSK)
  * @NMU_SEC_WPA2_ENTERPRISE: WPA2 is used with 802.1x authentication
+ * @NMU_SEC_SAE: is used with WPA3 Enterprise
  *
  * Describes generic security mechanisms that 802.11 access points may offer.
  * Used with nm_utils_security_valid() for checking whether a given access
@@ -78,7 +65,8 @@ typedef enum {
 	NMU_SEC_WPA_PSK,
 	NMU_SEC_WPA_ENTERPRISE,
 	NMU_SEC_WPA2_PSK,
-	NMU_SEC_WPA2_ENTERPRISE
+	NMU_SEC_WPA2_ENTERPRISE,
+	NMU_SEC_SAE,
 } NMUtilsSecurityType;
 
 gboolean nm_utils_security_valid (NMUtilsSecurityType type,
@@ -95,10 +83,15 @@ gboolean nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 gboolean nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type);
 gboolean nm_utils_wpa_psk_valid (const char *psk);
 
+NM_AVAILABLE_IN_1_6
+gboolean nm_utils_is_json_object (const char *str, GError **error);
+
 GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
 char     **nm_utils_ip4_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip4_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip4_routes_from_variant (GVariant *value);
 
@@ -108,30 +101,48 @@ guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
 
 GVariant  *nm_utils_ip6_dns_to_variant (char **dns);
 char     **nm_utils_ip6_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip6_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip6_routes_from_variant (GVariant *value);
 
-char *nm_utils_uuid_generate (void);
-char *nm_utils_uuid_generate_from_string (const char *s);
+GVariant  *nm_utils_ip_addresses_to_variant (GPtrArray *addresses);
+GPtrArray *nm_utils_ip_addresses_from_variant (GVariant *value,
+                                               int family);
+GVariant  *nm_utils_ip_routes_to_variant (GPtrArray *routes);
+GPtrArray *nm_utils_ip_routes_from_variant (GVariant *value,
+                                            int family);
 
-GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
-                                      gsize len,
-                                      const char *in_password,
-                                      char **out_password,
-                                      GError **error);
-GByteArray *nm_utils_rsa_key_encrypt_aes (const guint8 *data,
-                                          gsize len,
-                                          const char *in_password,
-                                          char **out_password,
-                                          GError **error);
+char *nm_utils_uuid_generate (void);
+
+gboolean nm_utils_file_is_certificate (const char *filename);
+gboolean nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted);
 gboolean nm_utils_file_is_pkcs12 (const char *filename);
+
+typedef gboolean (*NMUtilsFileSearchInPathsPredicate) (const char *filename, gpointer user_data);
+
+struct stat;
+
+typedef gboolean (*NMUtilsCheckFilePredicate) (const char *filename, const struct stat *stat, gpointer user_data, GError **error);
+
+const char *nm_utils_file_search_in_paths (const char *progname,
+                                           const char *try_first,
+                                           const char *const *paths,
+                                           GFileTest file_test_flags,
+                                           NMUtilsFileSearchInPathsPredicate predicate,
+                                           gpointer user_data,
+                                           GError **error);
 
 guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
 guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
 guint32 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band);
 gboolean nm_utils_wifi_is_channel_valid (guint32 channel, const char *band);
+NM_AVAILABLE_IN_1_2
+const guint *nm_utils_wifi_2ghz_freqs (void);
+NM_AVAILABLE_IN_1_2
+const guint *nm_utils_wifi_5ghz_freqs (void);
 
 const char *nm_utils_wifi_strength_bars (guint8 strength);
 
@@ -156,11 +167,13 @@ gboolean    nm_utils_hwaddr_matches   (gconstpointer hwaddr1,
                                        gconstpointer hwaddr2,
                                        gssize        hwaddr2_len);
 
-char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
-int   nm_utils_hex2byte   (const char *hex);
-char *nm_utils_hexstr2bin (const char *hex, size_t len);
+char *nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len);
+GBytes *nm_utils_hexstr2bin (const char *hex);
 
-gboolean    nm_utils_iface_valid_name(const char *name);
+NM_DEPRECATED_IN_1_6_FOR(nm_utils_is_valid_iface_name)
+gboolean    nm_utils_iface_valid_name (const char *name);
+NM_AVAILABLE_IN_1_6
+gboolean    nm_utils_is_valid_iface_name (const char *name, GError **error);
 
 gboolean nm_utils_is_uuid (const char *str);
 
@@ -174,7 +187,73 @@ gboolean nm_utils_is_uuid (const char *str);
 const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
 const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
 
+gboolean nm_utils_ipaddr_valid (int family, const char *ip);
+
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
+
+NM_AVAILABLE_IN_1_2
+int nm_utils_bond_mode_string_to_int (const char *mode);
+NM_AVAILABLE_IN_1_2
+const char *nm_utils_bond_mode_int_to_string (int mode);
+
+NM_AVAILABLE_IN_1_2
+char *nm_utils_enum_to_str (GType type, int value);
+
+NM_AVAILABLE_IN_1_2
+gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, char **err_token);
+
+NM_AVAILABLE_IN_1_2
+const char **nm_utils_enum_get_values (GType type, int from, int to);
+
+NM_AVAILABLE_IN_1_6
+guint nm_utils_version (void);
+
+NM_AVAILABLE_IN_1_8
+GHashTable * nm_utils_parse_variant_attributes (const char *string,
+                                                char attr_separator,
+                                                char key_value_separator,
+                                                gboolean ignore_unknown,
+                                                const NMVariantAttributeSpec *const *spec,
+                                                GError **error);
+
+NM_AVAILABLE_IN_1_8
+char * nm_utils_format_variant_attributes (GHashTable *attributes,
+                                           char attr_separator,
+                                           char key_value_separator);
+
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_12
+NMTCQdisc *nm_utils_tc_qdisc_from_str      (const char *str, GError **error);
+NM_AVAILABLE_IN_1_12
+char *nm_utils_tc_qdisc_to_str             (NMTCQdisc *qdisc, GError **error);
+
+NM_AVAILABLE_IN_1_12
+NMTCAction *nm_utils_tc_action_from_str    (const char *str, GError **error);
+NM_AVAILABLE_IN_1_12
+char *nm_utils_tc_action_to_str            (NMTCAction *action, GError **error);
+
+NM_AVAILABLE_IN_1_12
+NMTCTfilter *nm_utils_tc_tfilter_from_str  (const char *str, GError **error);
+NM_AVAILABLE_IN_1_12
+char *nm_utils_tc_tfilter_to_str           (NMTCTfilter *tfilter, GError **error);
+
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_14
+char *nm_utils_sriov_vf_to_str (const NMSriovVF *vf, gboolean omit_index, GError **error);
+NM_AVAILABLE_IN_1_14
+NMSriovVF *nm_utils_sriov_vf_from_str (const char *str, GError **error);
+
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_12
+gint64 nm_utils_get_timestamp_msec         (void);
+
+NM_AVAILABLE_IN_1_16
+gboolean nm_utils_base64secret_decode (const char *base64_key,
+                                       gsize required_key_len,
+                                       guint8 *out_key);
 
 G_END_DECLS
 

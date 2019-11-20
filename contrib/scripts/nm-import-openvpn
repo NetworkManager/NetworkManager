@@ -1,0 +1,543 @@
+#!/usr/bin/env lua
+-- SPDX-License-Identifier: GPL-2.0+
+--
+-- Copyright (C) 2015 Red Hat, Inc.
+--
+
+-- Script for importing/converting OpenVPN configuration files for NetworkManager
+-- In general, the implementation follows the logic of import() from
+-- https://git.gnome.org/browse/network-manager-openvpn/tree/properties/import-export.c
+
+
+----------------------
+-- Helper functions --
+----------------------
+function read_all(in_file)
+  local f, msg = io.open(in_file, "r")
+  if not f then return nil, msg; end
+  local content = f:read("*all")
+  f:close()
+  return content
+end
+
+function uuid()
+  math.randomseed(os.time())
+  local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+  local uuid = string.gsub(template, '[xy]', function (c)
+    local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
+    return string.format('%x', v)
+  end)
+  return uuid
+end
+
+function unquote(str)
+  return (string.gsub(str, "^([\"\'])(.*)%1$", "%2"))
+end
+
+function parse_ipv4_to_bytes(ip_addr)
+  local b1,b2,b3,b4 = ip_addr:match("^(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)$")
+  b1 = tonumber(b1)
+  b2 = tonumber(b2)
+  b3 = tonumber(b3)
+  b4 = tonumber(b4)
+  return b1, b2, b3, b4
+end
+
+function is_ipv4(ip_addr)
+  local b1,b2,b3,b4 = parse_ipv4_to_bytes(ip_addr)
+  if not b1 or (b1 > 255) then return false end
+  if not b2 or (b2 > 255) then return false end
+  if not b3 or (b3 > 255) then return false end
+  if not b4 or (b4 > 255) then return false end
+  return true
+end
+
+function ip_mask_to_prefix(mask)
+  local b, prefix
+  local b1,b2,b3,b4 = parse_ipv4_to_bytes(mask)
+
+  if b4 ~= 0 then
+    prefix = 24
+    b = b4
+  elseif b3 ~= 0 then
+    prefix = 16
+    b = b3
+  elseif b2 ~= 0 then
+    prefix = 8
+    b = b2
+  else
+    prefix = 0
+    b = b1
+  end
+  while b ~= 0 do
+    prefix = prefix + 1
+    b = bit32.band(0x000000FF, bit32.lshift(b, 1))
+  end
+  return prefix
+end
+
+function vpn_settings_to_text(vpn_settings)
+  local t = {}
+  for k,v in pairs(vpn_settings) do
+    t[#t+1] = k.."="..v
+  end
+  return table.concat(t, "\n")
+end
+
+function usage()
+  local basename = string.match(arg[0], '[^/\\]+$') or arg[0]
+  print(basename .. " - convert/import OpenVPN configuration to NetworkManager")
+  print("Usage:")
+  print("  " .. basename .. " <input-file> <output-file>")
+  print("    - converts OpenVPN config to NetworkManager keyfile")
+  print("")
+  print("  " .. basename .. " --import <input-file1> <input-file2> ...")
+  print("    - imports OpenVPN config(s) to NetworkManager")
+  os.exit(1)
+end
+
+
+-------------------------------------------
+-- Functions for VPN options translation --
+-------------------------------------------
+function set_bool(t, option, value)
+  g_switches[option] = true
+end
+function handle_yes(t, option, value)
+  t[option] = "yes"
+end
+function handle_generic(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  t[option] = value[2]
+end
+function handle_generic_unquote(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  t[option] = unquote(value[2])
+end
+function handle_number(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  if not tonumber(value[2]) then
+    io.stderr:write(string.format("Warning: ignoring not numeric value '%s' for option '%s'\n", value[2], value[1]))
+    return
+  end
+  t[option] = value[2]
+end
+function handle_proto(t, option, value)
+  if not value[2] then io.stderr:write("Warning: ignoring invalid option 'proto'\n") end
+  if value[2] == "tcp" or value[3] == "tcp-client" or value[2] == "tcp-server" then
+    t[option] = "yes"
+  end
+end
+function handle_comp_lzo(t, option, value)
+  value[2] = value[2] or "adaptive"
+  if value[2] == "no" then
+    value[2] = "no-by-default"
+  elseif value[2] ~= "yes" and value[2] ~= "adaptive" then
+    io.stderr:write(string.format("Warning: ignoring invalid argument '%s' in option 'comp-lzo'\n", value[2]))
+    return
+  end
+  t[option] = value[2]
+end
+function handle_dev_type(t, option, value)
+  if value[2] ~= "tun" and value[2] ~= "tap" then
+    io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1]))
+  end
+  t[option] = value[2]
+end
+function handle_remote(t, option, value)
+  local rem
+  if not value[2] then io.stderr:write("Warning: ignoring invalid option 'remote'\n") return end
+  rem = value[2]
+  if tonumber(value[3]) then
+    rem = rem .. ":" .. value[3]
+  end
+  if value[4] == "udp" or value[4] == "tcp" then
+    rem = rem .. ":" .. value[4]
+  end
+  if t[option] then
+    t[option] = t[option] .. " " .. rem
+  else
+    t[option] = rem
+  end
+  g_switches[value[1]] = true
+end
+function handle_port(t, option, value)
+  if tonumber(value[2]) then
+    t[option] = value[2]
+  end
+end
+function handle_proxy(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  if value[4] then io.stderr:write(string.format("Warning: the third argument of '%s' is not supported yet\n", value[1])) end
+  t[option[1]] = string.gsub(value[1], "-proxy", "")
+  t[option[2]] = value[2]
+  t[option[3]] = value[3]
+end
+function handle_ifconfig(t, option, value)
+  if not (value[2] and value[3]) then io.stderr:write("Warning: ignoring invalid option 'ifconfig'\n") return end
+  t[option[1]] = value[2]
+  t[option[2]] = value[3]
+end
+function handle_keepalive(t, option, value)
+  if (not (value[2] and value[3])) or (not tonumber(value[2]) or not tonumber(value[3])) then
+    io.stderr:write("Warning: ignoring invalid option 'keepalive'; two numbers required\n")
+    return
+  end
+  t[option[1]] = value[2]
+  t[option[2]] = value[3]
+end
+function handle_path(t, option, value)
+  if value[1] == "pkcs12" then
+    t["ca"] = value[2]
+    t["cert"] = value[2]
+    t["key"] = value[2]
+  else
+    t[option] = value[2]
+  end
+end
+function handle_secret(t, option, value)
+  t[option[1]] = value[2]
+  t[option[2]] = value[3]
+  g_switches[value[1]]= true
+end
+function handle_remote_cert_tls(t, option, value)
+  if value[2] ~= "client" and value[2] ~= "server" then
+    io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1]))
+    return
+  end
+  t[option] = value[2]
+end
+function handle_routes(t, option, value)
+  if not value[2] then io.stderr:write("Warning: invalid option 'route'\n") return end
+  netmask = (value[3] and value[3] ~= "default") and value[3] or "255.255.255.255"
+  gateway = (value[4] and value[4] ~= "default") and value[4] or "0.0.0.0"
+  metric  = (value[5] and value[5] ~= "default") and value[5] or "0"
+
+  if not is_ipv4(value[2]) then
+    if value[2] == "vpn_gateway" or value[2] == "net_gateway" or value[2] == "remote_host" then
+      io.stderr:write(string.format("Warning: sorry, the '%s' keyword is not supported by NetworkManager in option '%s'\n",
+                      value[2], value[1]))
+    else
+      io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 address in option '%s'\n", value[2], value[1]))
+    end
+    return
+  end
+  if not is_ipv4(netmask) then
+    io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 netmask in option '%s'\n", netmask, value[1]))
+    return
+  end
+  if not is_ipv4(gateway) then
+    if gateway == "vpn_gateway" or gateway == "net_gateway" or gateway == "remote_host" then
+      io.stderr:write(string.format("Warning: sorry, the '%s' keyword is not supported by NetworkManager in option '%s'\n",
+                      gateway, value[1]))
+    else
+      io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 gateway in option '%s'\n", gateway, value[1]))
+    end
+    return
+  end
+  if not tonumber(metric) then
+    io.stderr:write(string.format("Warning: '%s' is not a valid metric in option '%s'\n", metric, value[1]))
+    return
+  end
+
+  if not t[option] then t[option] = {} end
+  t[option][#t[option]+1] = {value[2], netmask, gateway, metric}
+end
+function handle_verify_x509_name(t, option, value)
+  if not value[2] then io.stderr:write("Warning: missing argument in option 'verify-x509-name'\n") return end
+  value[2] = unquote(value[2])
+  value[3] = value[3] or "subject"
+  if value[3] ~= "subject" and value[3] ~= "name" and value[3] ~= "name-prefix" then
+    io.stderr:write(string.format("Warning: ignoring invalid value '%s' for type in option '%s'\n", value[3], value[1]))
+    return
+  end
+  t[option] = value[3] .. ":" .. value[2]
+end
+
+-- global variables
+g_vpn_data = {}
+g_ip4_data = {}
+g_switches = {}
+
+vpn2nm = {
+  ["auth"]              = { nm_opt="auth",             func=handle_generic,         tbl=g_vpn_data },
+  ["auth-user-pass"]    = { nm_opt="auth-user-pass",   func=set_bool,               tbl={} },
+  ["ca"]                = { nm_opt="ca",               func=handle_path,            tbl=g_vpn_data },
+  ["cert"]              = { nm_opt="cert",             func=handle_path,            tbl=g_vpn_data },
+  ["cipher"]            = { nm_opt="cipher",           func=handle_generic,         tbl=g_vpn_data },
+  ["client"]            = { nm_opt="client",           func=set_bool,               tbl={} },
+  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_comp_lzo,        tbl=g_vpn_data },
+  ["dev"]               = { nm_opt="dev",              func=handle_generic,         tbl=g_vpn_data },
+  ["dev-type"]          = { nm_opt="dev-type",         func=handle_dev_type,        tbl=g_vpn_data },
+  ["float"]             = { nm_opt="float",            func=handle_yes,             tbl=g_vpn_data },
+  ["fragment"]          = { nm_opt="fragment-size",    func=handle_generic,         tbl=g_vpn_data },
+  ["http-proxy"]        = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
+  ["http-proxy-retry"]  = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
+  ["ifconfig"]          = { nm_opt={"local-ip", "remote-ip"}, func=handle_ifconfig, tbl=g_vpn_data },
+  ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive, tbl=g_vpn_data },
+  ["key"]               = { nm_opt="key",              func=handle_path,            tbl=g_vpn_data },
+  ["keysize"]           = { nm_opt="keysize",          func=handle_generic,         tbl=g_vpn_data },
+  ["max-routes"]        = { nm_opt="max-routes",       func=handle_number,          tbl=g_vpn_data },
+  ["mssfix"]            = { nm_opt="mssfix",           func=handle_yes,             tbl=g_vpn_data },
+  ["ns-cert-type"]      = { nm_opt="ns-cert-type",     func=handle_remote_cert_tls, tbl=g_vpn_data },
+  ["ping"]              = { nm_opt="ping",             func=handle_number,          tbl=g_vpn_data },
+  ["ping-exit"]         = { nm_opt="ping-exit",        func=handle_number,          tbl=g_vpn_data },
+  ["ping-restart"]      = { nm_opt="ping-restart",     func=handle_number,          tbl=g_vpn_data },
+  ["pkcs12"]            = { nm_opt="client",           func=handle_path,            tbl=g_vpn_data },
+  ["port"]              = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
+  ["proto"]             = { nm_opt="proto-tcp",        func=handle_proto,           tbl=g_vpn_data },
+  ["remote"]            = { nm_opt="remote",           func=handle_remote,          tbl=g_vpn_data },
+  ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls, tbl=g_vpn_data },
+  ["remote-random"]     = { nm_opt="remote-random",    func=handle_yes,             tbl=g_vpn_data },
+  ["reneg-sec"]         = { nm_opt="reneg-seconds",    func=handle_generic,         tbl=g_vpn_data },
+  ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data },
+  ["rport"]             = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
+  ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret, tbl=g_vpn_data },
+  ["socks-proxy"]       = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
+  ["socks-proxy-retry"] = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
+  ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret,          tbl=g_vpn_data },
+  ["tls-cipher"]        = { nm_opt="tls-cipher",       func=handle_generic_unquote, tbl=g_vpn_data },
+  ["tls-client"]        = { nm_opt="client",           func=set_bool,               tbl={} },
+  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_generic_unquote, tbl=g_vpn_data },
+  ["tun-ipv6"]          = { nm_opt="tun-ipv6",         func=handle_yes,             tbl=g_vpn_data },
+  ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic,         tbl=g_vpn_data },
+  ["verify-x509-name"]  = { nm_opt="verify-x509-name", func=handle_verify_x509_name,tbl=g_vpn_data },
+}
+
+------------------------------------------------------------
+-- Read and convert the config into the global g_vpn_data --
+-----------------------------------------------------------
+function read_and_convert(in_file)
+  local function line_split(line)
+    local t={}
+    local i, idx = 1, 1
+    local delim = "\""
+    while true do
+      local a,b = line:find("%S+", idx)
+      if not a then break end
+
+      local str = line:sub(a,b)
+      local quote = nil
+      if str:sub(1,1) == delim and str:sub(#str,#str) ~= delim then
+        quote = (line.." "):find(delim.."%s", b + 1)
+      end
+
+      if quote then
+        t[i] = line:sub(a, quote)
+        idx = quote + 1
+      else
+        t[i] = str
+        idx = b + 1
+      end
+      i = i + 1
+    end
+    return t
+  end
+
+  in_text, msg = read_all(in_file)
+  if not in_text then return false, msg end
+
+  -- loop through the config and convert it
+  for line in in_text:gmatch("[^\r\n]+") do
+    repeat
+      -- skip comments and empty lines
+      if line:find("^%s*[#;]") or line:find("^%s*$") then break end
+      -- trim leading and trailing spaces
+      line = line:find("^%s*$") and "" or line:match("^%s*(.*%S)")
+
+      local words = line_split(line)
+      local val = vpn2nm[words[1]]
+      if val then
+        if type(val) == "table" then val.func(val.tbl, val.nm_opt, words)
+        else print(string.format("debug: '%s' : val=%s"..val)) end
+      end
+    until true
+  end
+
+  -- check some inter-option dependencies
+  if not g_switches["client"] and not g_switches["secret"] then
+    local msg = in_file .. ": Not a valid OpenVPN client configuration"
+    return false, msg
+  end
+  if not g_switches["remote"] then
+    local msg = in_file .. ": Not a valid OpenVPN configuration (no remote)"
+    return false, msg
+  end
+
+  -- set 'connection-type'
+  g_vpn_data["connection-type"] = "tls"
+  have_sk = g_switches["secret"] ~= nil
+  have_ca = g_vpn_data["ca"] ~= nil
+  have_certs = ve_ca and g_vpn_data["cert"] and g_vpn_data["key"]
+  if g_switches["auth-user-pass"] then
+    if have_certs then
+      g_vpn_data["connection-type"] = "password-tls"
+    elseif have_ca then
+      g_vpn_data["connection-type"] = "tls"
+    end
+  elseif have_certs then g_vpn_data["connection-type"] = "tls"
+  elseif have_sk then g_vpn_data["connection-type"] = "static-key"
+  end
+  return true
+end
+
+
+--------------------------------------------------------
+-- Create and write connection file in keyfile format --
+--------------------------------------------------------
+function write_vpn_to_keyfile(in_file, out_file)
+  connection = [[
+[connection]
+id=__NAME_PLACEHOLDER__
+uuid=__UUID_PLACEHOLDER__
+type=vpn
+autoconnect=no
+
+[ipv4]
+method=auto
+never-default=true
+__ROUTES_PLACEHOLDER__
+
+[ipv6]
+method=auto
+
+[vpn]
+service-type=org.freedesktop.NetworkManager.openvpn
+]]
+  connection = connection .. vpn_settings_to_text(g_vpn_data)
+
+  local routes = ""
+  for idx, r in ipairs(g_ip4_data["routes"] or {}) do
+    routes = routes .. string.format("routes%d=%s/%s,%s,%s\n",
+                                     idx, r[1], ip_mask_to_prefix(r[2]), r[3], r[4])
+  end
+
+  connection = string.gsub(connection, "__NAME_PLACEHOLDER__", (out_file:gsub(".*/", "")))
+  connection = string.gsub(connection, "__UUID_PLACEHOLDER__", uuid())
+  connection = string.gsub(connection, "__ROUTES_PLACEHOLDER__\n", routes)
+
+  -- write output file
+  local f, err = io.open(out_file, "w")
+  if not f then io.stderr:write(err) return false end
+  f:write(connection)
+  f:close()
+
+  local ofname = out_file:gsub(".*/", "")
+  io.stderr:write("Successfully converted VPN configuration: " .. in_file .. " => " .. out_file .. "\n")
+  io.stderr:write("To use the connection, do:\n")
+  io.stderr:write("# cp " .. out_file .. " /etc/NetworkManager/system-connections\n")
+  io.stderr:write("# chmod 600 /etc/NetworkManager/system-connections/" .. ofname .. "\n")
+  io.stderr:write("# nmcli con load /etc/NetworkManager/system-connections/" .. ofname .. "\n")
+  return true
+end
+
+---------------------------------------------
+-- Import VPN connection to NetworkManager --
+---------------------------------------------
+function import_vpn_to_NM(filename)
+  local lgi = require 'lgi'
+  local GLib = lgi.GLib
+  local NM = lgi.NM
+
+  -- function creating NMConnection
+  local function create_profile(name)
+    local profile = NM.SimpleConnection.new()
+
+    s_con = NM.SettingConnection.new()
+    s_ip4 = NM.SettingIP4Config.new()
+    s_vpn = NM.SettingVpn.new()
+    s_con[NM.SETTING_CONNECTION_ID] = name
+    s_con[NM.SETTING_CONNECTION_UUID] = uuid()
+    s_ip4[NM.SETTING_IP_CONFIG_METHOD] = NM.SETTING_IP4_CONFIG_METHOD_AUTO
+    s_con[NM.SETTING_CONNECTION_TYPE] = "vpn"
+    s_vpn[NM.SETTING_VPN_SERVICE_TYPE] = "org.freedesktop.NetworkManager.openvpn"
+
+    -- add routes
+    local AF_INET = 2
+    for _, r in ipairs(g_ip4_data["routes"] or {}) do
+      route = NM.IPRoute.new(AF_INET, r[1], ip_mask_to_prefix(r[2]), r[3], r[4])
+      s_ip4:add_route(route)
+    end
+
+    -- add vpn data
+    for k,v in pairs(g_vpn_data) do
+      s_vpn:add_data_item(k, v)
+    end
+
+    profile:add_setting(s_con)
+    profile:add_setting(s_vpn)
+    profile:add_setting(s_ip4)
+    return profile
+  end
+
+  -- callback function for add_connection()
+  local function added_cb(client, result, data)
+    local con,err,code = client:add_connection_finish(result)
+    if con then
+      print(string.format("%s: Imported to NetworkManager: %s - %s",
+                          filename, con:get_uuid(), con:get_id()))
+    else
+      io.stderr:write(code .. ": " .. err .. "\n");
+      return false
+    end
+    main_loop:quit()
+  end
+
+  local profile_name = string.match(filename, '[^/\\]+$') or filename
+  main_loop = GLib.MainLoop(nil, false)
+  local con = create_profile(profile_name)
+  local client = NM.Client.new()
+
+  -- send the connection to NetworkManager
+  client:add_connection_async(con, true, nil, added_cb, nil)
+
+  -- run main loop so that the callback could be called
+  main_loop:run()
+  return true
+end
+
+
+---------------------------
+-- Main code starts here --
+---------------------------
+local import_mode = false
+local infile, outfile
+
+-- parse command-line arguments
+if not arg[1] or arg[1] == "--help" or arg[1] == "-h" then usage() end
+if arg[1] == "--import" or arg[1] == "-i" then
+  infile = arg[2]
+  if not infile then usage() end
+  import_mode = true
+else
+  infile  = arg[1]
+  outfile = arg[2]
+  if not infile or not outfile then usage() end
+  if arg[3] then usage() end
+end
+
+if import_mode then
+  -- check if lgi is available
+  local success,msg = pcall(require, 'lgi')
+  if not success then
+    io.stderr:write("Lua lgi module is not available, please install it (usually lua-lgi package)\n")
+    -- print(msg)
+    os.exit(1)
+  end
+  -- read configs, convert them and import to NM
+  for i = 2, #arg do
+    ok, err_msg = read_and_convert(arg[i])
+    if ok then import_vpn_to_NM(arg[i])
+    else io.stderr:write(err_msg .. "\n") end
+    -- reset global vars
+    g_vpn_data = {}
+    g_ip4_data = {}
+    g_switches = {}
+  end
+else
+  -- read configs, convert them and write as NM keyfile connection
+  ok, err_msg = read_and_convert(infile)
+  if ok then write_vpn_to_keyfile(infile, outfile)
+  else io.stderr:write(err_msg .. "\n") end
+end
+

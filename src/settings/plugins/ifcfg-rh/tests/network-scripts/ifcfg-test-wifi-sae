@@ -1,0 +1,5 @@
+TYPE=Wireless
+DEVICE=wlan1
+ESSID=blahblah
+MODE=Managed
+KEY_MGMT=SAE

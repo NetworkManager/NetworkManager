@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Tun:
+      @short_description: Userspace Tunneling Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Tun">
+
+    <!--
+        Owner:
+
+        The uid of the tunnel owner, or -1 if it has no owner.
+    -->
+    <property name="Owner" type="x" access="read"/>
+
+    <!--
+        Group:
+
+        The gid of the tunnel group, or -1 if it has no owner.
+    -->
+    <property name="Group" type="x" access="read"/>
+
+    <!--
+        Mode:
+
+        The tunnel mode, either "tun" or "tap".
+    -->
+    <property name="Mode" type="s" access="read"/>
+
+    <!--
+        NoPi:
+
+        The tunnel's "TUN_NO_PI" flag; true if no protocol info is prepended to
+        the tunnel packets.
+    -->
+    <property name="NoPi" type="b" access="read"/>
+
+    <!--
+        VnetHdr:
+
+        The tunnel's "TUN_VNET_HDR" flag; true if the tunnel packets include a
+        virtio network header.
+    -->
+    <property name="VnetHdr" type="b" access="read"/>
+
+    <!--
+        MultiQueue:
+
+        The tunnel's "TUN_TAP_MQ" flag; true if callers can connect to the tap
+        device multiple times, for multiple send/receive queues.
+    -->
+    <property name="MultiQueue" type="b" access="read"/>
+
+    <!--
+        HwAddress:
+
+        Hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

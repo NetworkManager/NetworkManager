@@ -1,0 +1,88 @@
+language: c
+dist: trusty
+sudo: required
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+    - autoconf
+    - libtool
+    - pkg-config
+    - intltool
+    - libdbus-1-dev
+    - libiw-dev
+    - libglib2.0-dev
+    - libmm-glib-dev
+    - ppp
+    - ppp-dev
+    - libpolkit-gobject-1-dev
+    - libgnutls-dev
+    - libgcrypt11-dev
+    - uuid-dev
+    - libudev-dev
+    - libgirepository1.0-dev
+    - gobject-introspection
+    - gtk-doc-tools
+    - libglib2.0-doc
+    - libreadline-dev
+    - libnewt-dev
+    - libnss3-dev
+    - iptables
+    - make
+    - python-software-properties
+    - python-gi
+    - python-dbus
+    - dbus
+    - dbus-x11
+    - libjansson4
+    - libjansson-dev
+    - libndp-dev
+    - automake
+    - dnsmasq
+    - libcurl4-gnutls-dev
+    - python3-pip
+    - mobile-broadband-provider-info
+  coverity_scan:
+    project:
+      name: NetworkManager/NetworkManager
+    build_command_prepend: sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --disable-ovs
+    build_command: make -j4
+    branch_pattern: .*coverity.*
+
+before_install:
+    - sudo dbus-uuidgen --ensure
+    - |
+      if test "$BUILD_TYPE" == 'meson'; then
+          git clone https://github.com/ninja-build/ninja &&
+          pushd ninja &&
+              ./configure.py --bootstrap &&
+              sudo cp ninja /usr/bin/ &&
+          popd
+
+          # Recent meson requires python 3.5, which isn't in Ubuntu 14.04.
+          # Hence we cannot install it via `pip3 install meson`. Install the latest
+          # working release.
+          #
+          # Wouldn't it be nice to have a build system that supports everything
+          # that NetworkManager would like to support?
+          wget https://github.com/mesonbuild/meson/releases/download/0.44.1/meson-0.44.1.tar.gz -O /tmp/meson.tar.gz
+          tar -C /tmp -xvzf /tmp/meson.tar.gz
+          pushd /tmp/meson-0.44.1
+              sudo python3 setup.py install
+          popd
+      fi
+    - sudo chmod o+x /usr/sbin/pppd
+    - sudo locale-gen pl_PL.UTF-8
+
+script:
+    - CI=travis contrib/scripts/nm-ci-run.sh
+
+env:
+  matrix:
+    - BUILD_TYPE=autotools
+    - BUILD_TYPE=meson
+  global:
+    secure: K36MXkcsuDZ0msuEj5zHMmHfv6O725lsXuFdP6AJ3rYWKuLYE1+iNLgIRndNWDK9ckkNQFaCxDY4Z/NCfCYQTGAS9oXR5AwNqNbhOq8XrqdaZ2GX35sob8Tp4B3IsoREkN/UbIkXQKYlA5rUhgtSifUg3EwfeOiFvnLCwHcp0rYHnvT/jaq5vodBbA1jChjezcMHsp43kvPXHpybKRkipb9EzV/V3VtDLLWh9WQBvQNawpsHnT+MXSke1yU1zfNMyD9XiD7VDzCwaTs6LzjoFBLc86QS5U/9W72s0rFe6SbecntQHftknRzSrGiJDNe64wDZN/Wxq1MHxEOFCwDi6vcSwQ+RoTdhyshhfPVY2Mm5soj2w7Dx43Cz0dDZDCMhu5xxzFAFgkieJSfwXbuxga0ds58Ph8MgtDSp3fBRewZwI+vMuzl7a1hGkcqJojrm1lfgAKbNgrNUzQRwbVYAyrpa6/vCbd6ZH4PEtITwLaRf2mz8PG71xiMQguDDDXS8WF0U7Looe+G9ybAUwDS5hqHfeP+3q6bfN5Sg5Zs5QkBIN5LZbeWbPYldOEEDTvo3VI7e84bk7U5qEoUKc0w/tqVF1B5KgNUq6nIkCkmoBx8RFnmjpOHh99IfeRG9nQTRpCaEDvAM4fcRzITzId8dIIfAW/45P3ozzfz/HYiie+o=

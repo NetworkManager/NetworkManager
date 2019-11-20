@@ -1,22 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2009 Novell, Inc.
+ * Copyright (C) 2009 Novell, Inc.
  */
 
 #ifndef __NM_SETTING_WIMAX_H__
@@ -26,7 +10,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 
@@ -42,6 +26,11 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIMAX_NETWORK_NAME "network-name"
 #define NM_SETTING_WIMAX_MAC_ADDRESS  "mac-address"
 
+/**
+ * NMSettingWimax:
+ *
+ * WiMax Settings
+ */
 struct _NMSettingWimax {
 	NMSetting parent;
 };
@@ -53,10 +42,14 @@ typedef struct {
 	gpointer padding[4];
 } NMSettingWimaxClass;
 
+NM_DEPRECATED_IN_1_2
 GType nm_setting_wimax_get_type (void);
 
+NM_DEPRECATED_IN_1_2
 NMSetting        *nm_setting_wimax_new              (void);
+NM_DEPRECATED_IN_1_2
 const char       *nm_setting_wimax_get_network_name (NMSettingWimax *setting);
+NM_DEPRECATED_IN_1_2
 const char       *nm_setting_wimax_get_mac_address  (NMSettingWimax *setting);
 
 G_END_DECLS

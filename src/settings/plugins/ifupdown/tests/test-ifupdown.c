@@ -1,32 +1,43 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
  * Copyright (C) 2010 Red Hat, Inc.
- *
  */
 
-#include <glib.h>
-#include <string.h>
+#include "nm-default.h"
 
 #include "nm-core-internal.h"
-#include "nm-logging.h"
-#include "interface_parser.h"
-#include "parser.h"
 
-#include "nm-test-utils.h"
+#include "settings/plugins/ifupdown/nms-ifupdown-interface-parser.h"
+#include "settings/plugins/ifupdown/nms-ifupdown-parser.h"
+
+#include "nm-test-utils-core.h"
+
+#define TEST_DIR       NM_BUILD_SRCDIR"/src/settings/plugins/ifupdown/tests"
+
+/*****************************************************************************/
+
+#define _connection_from_if_block(block) \
+	({ \
+		NMConnection *_con; \
+		if_block *_block = (block); \
+		GError *_local = NULL; \
+		\
+		g_assert (_block); \
+		_con = ifupdown_new_connection_from_if_block (_block, FALSE, &_local); \
+		nmtst_assert_success (NM_IS_CONNECTION (_con), _local); \
+		nmtst_assert_connection_verifies_without_normalization (_con); \
+		_con; \
+	})
+
+#define _connection_first_from_parser(parser) \
+	({ \
+		if_parser *_parser = (parser); \
+		\
+		g_assert (_parser); \
+		_connection_from_if_block (ifparser_getfirst (_parser)); \
+	})
+
+/*****************************************************************************/
 
 typedef struct {
 	char *key;
@@ -124,57 +135,64 @@ expected_free (Expected *e)
 	g_free (e);
 }
 
+NM_AUTO_DEFINE_FCN_VOID0 (Expected *, _nm_auto_free_expected, expected_free)
+#define nm_auto_free_expected nm_auto(_nm_auto_free_expected)
+
 static void
-compare_expected_to_ifparser (Expected *e)
+compare_expected_to_ifparser (if_parser *parser, Expected *e)
 {
 	if_block *n;
 	GSList *biter, *kiter;
 
-	g_assert_cmpint (g_slist_length (e->blocks), ==, ifparser_get_num_blocks ());
+	g_assert_cmpint (g_slist_length (e->blocks), ==, ifparser_get_num_blocks (parser));
 
-	for (n = ifparser_getfirst (), biter = e->blocks;
-	     n && biter;
-	     n = n->next, biter = g_slist_next (biter)) {
+	biter = e->blocks;
+	c_list_for_each_entry (n, &parser->block_lst_head, block_lst) {
 		if_data *m;
 		ExpectedBlock *b = biter->data;
 
 		g_assert (b->type && n->type);
 		g_assert_cmpstr (b->type, ==, n->type);
-		g_assert (b->name && n->name);
+		g_assert (b->name);
 		g_assert_cmpstr (b->name, ==, n->name);
 
 		g_assert_cmpint (g_slist_length (b->keys), ==, ifparser_get_num_info (n));
 
-		for (m = n->info, kiter = b->keys;
-		     m && kiter;
-		     m = m->next, kiter = g_slist_next (kiter)) {
+		kiter = b->keys;
+		c_list_for_each_entry (m, &n->data_lst_head, data_lst) {
 			ExpectedKey *k = kiter->data;
 
-			g_assert (k->key && m->key);
+			g_assert (k->key);
 			g_assert_cmpstr (k->key, ==, m->key);
 			g_assert (k->data && m->data);
 			g_assert_cmpstr (k->data, ==, m->data);
+
+			kiter = g_slist_next (kiter);
 		}
+		g_assert (!kiter);
+
+		biter = g_slist_next (biter);
 	}
+	g_assert (!biter);
 }
 
 static void
-dump_blocks (void)
+dump_blocks (if_parser *parser)
 {
 	if_block *n;
 
 	g_message ("\n***************************************************");
-	for (n = ifparser_getfirst (); n != NULL; n = n->next) {
+	c_list_for_each_entry (n, &parser->block_lst_head, block_lst) {
 		if_data *m;
 
-		// each block start with its type & name 
+		// each block start with its type & name
 		// (single quotes used to show typ & name baoundaries)
 		g_print("'%s' '%s'\n", n->type, n->name);
 
 		// each key-value pair within a block is indented & separated by a tab
 		// (single quotes used to show typ & name baoundaries)
-		for (m = n->info; m != NULL; m = m->next)
-			   g_print("\t'%s'\t'%s'\n", m->key, m->data);
+		c_list_for_each_entry (m, &n->data_lst_head, data_lst)
+			g_print("\t'%s'\t'%s'\n", m->key, m->data);
 
 		// blocks are separated by an empty line
 		g_print("\n");
@@ -182,21 +200,24 @@ dump_blocks (void)
 	g_message ("##################################################\n");
 }
 
-static void
-init_ifparser_with_file (const char *path, const char *file)
+static if_parser *
+init_ifparser_with_file (const char *file)
 {
-	char *tmp;
+	if_parser *parser;
+	gs_free char *tmp = NULL;
 
-	tmp = g_strdup_printf ("%s/%s", path, file);
-	ifparser_init (tmp, 1);
-	g_free (tmp);
+	tmp = g_strdup_printf ("%s/%s", TEST_DIR, file);
+	parser = ifparser_parse (tmp, 1);
+	g_assert (parser);
+	return parser;
 }
 
 static void
-test1_ignore_line_before_first_block (const char *path)
+test1_ignore_line_before_first_block (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test1");
 
 	e = expected_new ();
 	b = expected_block_new ("auto", "eth0");
@@ -205,35 +226,29 @@ test1_ignore_line_before_first_block (const char *path)
 	expected_add_block (e, b);
 	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
 
-	init_ifparser_with_file (path, "test1");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test2_wrapped_line (const char *path)
+test2_wrapped_line (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test2");
 
 	e = expected_new ();
 	b = expected_block_new ("auto", "lo");
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test2");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test3_wrapped_multiline_multiarg (const char *path)
+test3_wrapped_multiline_multiarg (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test3");
 
 	e = expected_new ();
 	b = expected_block_new ("allow-hotplug", "eth0");
@@ -243,35 +258,29 @@ test3_wrapped_multiline_multiarg (const char *path)
 	b = expected_block_new ("allow-hotplug", "bnep0");
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test3");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test4_allow_auto_is_auto (const char *path)
+test4_allow_auto_is_auto (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test4");
 
 	e = expected_new ();
 	b = expected_block_new ("auto", "eth0");
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test4");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test5_allow_auto_multiarg (const char *path)
+test5_allow_auto_multiarg (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test5");
 
 	e = expected_new ();
 	b = expected_block_new ("allow-hotplug", "eth0");
@@ -279,52 +288,46 @@ test5_allow_auto_multiarg (const char *path)
 	b = expected_block_new ("allow-hotplug", "wlan0");
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test5");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test6_mixed_whitespace (const char *path)
+test6_mixed_whitespace (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test6");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "lo");
 	expected_block_add_key (b, expected_key_new ("inet", "loopback"));
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test6");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test7_long_line (const char *path)
+test7_long_line (void)
 {
-	init_ifparser_with_file (path, "test7");
-	g_assert_cmpint (ifparser_get_num_blocks (), ==, 0);
-	ifparser_destroy ();
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test7");
+
+	g_assert_cmpint (ifparser_get_num_blocks (parser), ==, 0);
 }
 
 static void
-test8_long_line_wrapped (const char *path)
+test8_long_line_wrapped (void)
 {
-	init_ifparser_with_file (path, "test8");
-	g_assert_cmpint (ifparser_get_num_blocks (), ==, 0);
-	ifparser_destroy ();
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test8");
+
+	g_assert_cmpint (ifparser_get_num_blocks (parser), ==, 0);
 }
 
 static void
-test9_wrapped_lines_in_block (const char *path)
+test9_wrapped_lines_in_block (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test9");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "eth0");
@@ -335,18 +338,15 @@ test9_wrapped_lines_in_block (const char *path)
 	expected_block_add_key (b, expected_key_new ("broadcast", "10.250.2.63"));
 	expected_block_add_key (b, expected_key_new ("gateway", "10.250.2.50"));
 
-	init_ifparser_with_file (path, "test9");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test11_complex_wrap (const char *path)
+test11_complex_wrap (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test11");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "pppoe");
@@ -354,18 +354,15 @@ test11_complex_wrap (const char *path)
 	expected_block_add_key (b, expected_key_new ("inet", "manual"));
 	expected_block_add_key (b, expected_key_new ("pre-up", "/sbin/ifconfig eth0 up"));
 
-	init_ifparser_with_file (path, "test11");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test12_complex_wrap_split_word (const char *path)
+test12_complex_wrap_split_word (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test12");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "pppoe");
@@ -373,36 +370,30 @@ test12_complex_wrap_split_word (const char *path)
 	expected_block_add_key (b, expected_key_new ("inet", "manual"));
 	expected_block_add_key (b, expected_key_new ("up", "ifup ppp0=dsl"));
 
-	init_ifparser_with_file (path, "test12");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test13_more_mixed_whitespace (const char *path)
+test13_more_mixed_whitespace (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test13");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "dsl");
 	expected_block_add_key (b, expected_key_new ("inet", "ppp"));
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test13");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test14_mixed_whitespace_block_start (const char *path)
+test14_mixed_whitespace_block_start (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test14");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "wlan0");
@@ -415,467 +406,145 @@ test14_mixed_whitespace_block_start (const char *path)
 	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test14");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test15_trailing_space (const char *path)
+test15_trailing_space (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test15");
 
 	e = expected_new ();
 	b = expected_block_new ("iface", "bnep0");
 	expected_block_add_key (b, expected_key_new ("inet", "static"));
 	expected_add_block (e, b);
 
-	init_ifparser_with_file (path, "test15");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
 
 static void
-test16_missing_newline (const char *path)
+test16_missing_newline (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test16");
 
 	e = expected_new ();
 	expected_add_block (e, expected_block_new ("mapping", "eth0"));
 
-	init_ifparser_with_file (path, "test16");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
+
 static void
-test17_read_static_ipv4 (const char *path)
+test17_read_static_ipv4 (void)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSettingWired *s_wired;
-	char *unmanaged = NULL;
-	GError *error = NULL;
-	const char* tmp;
-	const char *expected_address = "10.0.0.3";
-	const char *expected_id = "Ifupdown (eth0)";
-	const char *expected_search1 = "example.com";
-	const char *expected_search2 = "foo.example.com";
-	guint32 expected_prefix = 8;
-	NMIP4Address *ip4_addr;
-	guint32 addr;
-#define TEST17_NAME "wired-static-verify-ip4"
-	if_block *block = NULL;
+	NMIPAddress *ip4_addr;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test17-wired-static-verify-ip4");
 
-	const char* file = "test17-" TEST17_NAME;
-
-	init_ifparser_with_file (path, file);
-	block = ifparser_getfirst ();
-	connection = nm_simple_connection_new();
-	ifupdown_update_connection_from_if_block(connection, block, &error);
-
-	ASSERT (connection != NULL,
-			TEST17_NAME, "failed to read %s: %s", file, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-			TEST17_NAME, "failed to verify %s: %s", file, error->message);
-
-	ASSERT (unmanaged == NULL,
-			TEST17_NAME, "failed to verify %s: unexpected unmanaged value", file);
+	connection = _connection_first_from_parser (parser);
 
 	/* ===== CONNECTION SETTING ===== */
-
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-			TEST17_NAME, "failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_CONNECTION_SETTING_NAME);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-			TEST17_NAME, "failed to verify %s: missing %s / %s key",
-			file,
-			NM_SETTING_CONNECTION_SETTING_NAME,
-			NM_SETTING_CONNECTION_ID);
-	ASSERT (strcmp (tmp, expected_id) == 0,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value: %s",
-			file,
-			NM_SETTING_CONNECTION_SETTING_NAME,
-			NM_SETTING_CONNECTION_ID, tmp);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Ifupdown (eth0)");
 
 	/* ===== WIRED SETTING ===== */
-
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-			TEST17_NAME, "failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv4 SETTING ===== */
-
-	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
-			TEST17_NAME, "failed to verify %s: couldn't convert IP address #1",
-			file);
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-			TEST17_NAME, "failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
-	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_METHOD);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "10.0.0.3");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 
-	/* IP addresses */
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "10.0.0.1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "10.0.0.2");
 
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	ASSERT (ip4_addr,
-			TEST17_NAME, "failed to verify %s: missing IP4 address #1",
-			file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
-			TEST17_NAME, "failed to verify %s: unexpected IP4 address prefix",
-			file);
-
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-			TEST17_NAME, "failed to verify %s: unexpected IP4 address: %s",
-			file, addr);
-
-	/* DNS Addresses */
-	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	ASSERT (!strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "10.0.0.1"),
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #1",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	ASSERT (!strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "10.0.0.2"),
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #2",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	/* DNS search domains */
-	ASSERT (nm_setting_ip4_config_get_num_dns_searches (s_ip4) == 2,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 0);
-	ASSERT (tmp != NULL,
-			TEST17_NAME, "failed to verify %s: missing %s / %s key",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
-	ASSERT (strcmp (tmp, expected_search1) == 0,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
-
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 1);
-	ASSERT (tmp != NULL,
-			TEST17_NAME, "failed to verify %s: missing %s / %s key",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
-
-	ASSERT (strcmp (tmp, expected_search2) == 0,
-			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
-
-	g_object_unref (connection);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 0), ==, "example.com");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 1), ==, "foo.example.com");
 }
 
 static void
-test18_read_static_ipv6 (const char *path)
+test18_read_static_ipv6 (void)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	NMSettingWired *s_wired;
-	char *unmanaged = NULL;
-	GError *error = NULL;
-	const char* tmp;
-	const char *expected_address = "fc00::1";
-	const char *expected_id = "Ifupdown (myip6tunnel)";
-	const char *expected_search1 = "example.com";
-	const char *expected_search2 = "foo.example.com";
-	guint32 expected_prefix = 64;
-	NMIP6Address *ip6_addr;
-	struct in6_addr addr;
-	if_block *block = NULL;
-#define TEST18_NAME "wired-static-verify-ip6"
-	const char* file = "test18-" TEST18_NAME;
+	NMIPAddress *ip6_addr;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test18-wired-static-verify-ip6");
 
-	init_ifparser_with_file (path, file);
-	block = ifparser_getfirst ();
-	connection = nm_simple_connection_new();
-	ifupdown_update_connection_from_if_block(connection, block, &error);
-
-	ASSERT (connection != NULL,
-			TEST18_NAME
-			"failed to read %s: %s", file, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-			TEST18_NAME,
-			"failed to verify %s: %s", file, error->message);
-
-	ASSERT (unmanaged == NULL,
-			TEST18_NAME,
-			"failed to verify %s: unexpected unmanaged value", file);
+	connection = _connection_first_from_parser (parser);
 
 	/* ===== CONNECTION SETTING ===== */
-
 	s_con = nm_connection_get_setting_connection (connection);
-	ASSERT (s_con != NULL,
-			TEST18_NAME, "failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_CONNECTION_SETTING_NAME);
-
-	/* ID */
-	tmp = nm_setting_connection_get_id (s_con);
-	ASSERT (tmp != NULL,
-			TEST18_NAME,
-			"failed to verify %s: missing %s / %s key",
-			file,
-			NM_SETTING_CONNECTION_SETTING_NAME,
-			NM_SETTING_CONNECTION_ID);
-
-	ASSERT (strcmp (tmp, expected_id) == 0,
-			TEST18_NAME,
-			"failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_CONNECTION_SETTING_NAME,
-			NM_SETTING_CONNECTION_ID);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Ifupdown (myip6tunnel)");
 
 	/* ===== WIRED SETTING ===== */
-
 	s_wired = nm_connection_get_setting_wired (connection);
-	ASSERT (s_wired != NULL,
-			TEST18_NAME, "failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_WIRED_SETTING_NAME);
+	g_assert (s_wired);
 
 	/* ===== IPv6 SETTING ===== */
-
-	ASSERT (inet_pton (AF_INET6, expected_address, &addr) > 0,
-			TEST18_NAME,
-			"failed to verify %s: couldn't convert IP address #1",
-			file);
-
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-			TEST18_NAME,
-			"failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 
-	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
-			TEST18_NAME,
-			"failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_METHOD);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 1);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
+	g_assert (ip6_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "fc00::1");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 64);
 
-	/* IP addresses */
-	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 1,
-			TEST18_NAME,
-			"failed to verify %s: unexpected number of %s / %s",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "fc00::2");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 1), ==, "fc00::3");
 
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
-	ASSERT (ip6_addr,
-			TEST18_NAME,
-			"failed to verify %s: missing %s / %s #1",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
-
-	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix,
-			TEST18_NAME
-			"failed to verify %s: unexpected %s / %s prefix",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
-
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr),
-								&addr),
-			TEST18_NAME,
-			"failed to verify %s: unexpected %s / %s",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
-
-	/* DNS Addresses */
-	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
-			TEST18_NAME,
-			"failed to verify %s: unexpected number of %s / %s values",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS);
-
-	ASSERT (!strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "fc00::2"),
-			TEST18_NAME,
-			"failed to verify %s: unexpected %s / %s #1",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS);
-
-	ASSERT (!strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "fc00::3"),
-			TEST18_NAME, "failed to verify %s: unexpected %s / %s #2",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS);
-
-	/* DNS search domains */
-	ASSERT (nm_setting_ip6_config_get_num_dns_searches (s_ip6) == 2,
-			TEST18_NAME,
-			"failed to verify %s: unexpected number of %s / %s values",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-
-	tmp = nm_setting_ip6_config_get_dns_search (s_ip6, 0);
-	ASSERT (tmp != NULL,
-			"wired-ipv6-manual-verify-ip6",
-			"failed to verify %s: missing %s / %s #1",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-
-	ASSERT (strcmp (tmp, expected_search1) == 0,
-			"wired-ipv6-manual-verify-ip6",
-			"failed to verify %s: unexpected %s / %s #1",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-
-	tmp = nm_setting_ip6_config_get_dns_search (s_ip6, 1);
-	ASSERT (tmp != NULL,
-			TEST18_NAME,
-			"failed to verify %s: missing %s / %s #2",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-
-	ASSERT (strcmp (tmp, expected_search2) == 0,
-			TEST18_NAME,
-			"failed to verify %s: unexpected %s / %s #2",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-
-	g_free (unmanaged);
-	g_object_unref (connection);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip6), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 0), ==, "example.com");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 1), ==, "foo.example.com");
 }
 
 static void
-test19_read_static_ipv4_plen (const char *path)
+test19_read_static_ipv4_plen (void)
 {
-	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-	char *unmanaged = NULL;
-	GError *error = NULL;
-	const char *expected_address = "10.0.0.3";
-	guint32 expected_prefix = 8;
-	NMIP4Address *ip4_addr;
-	guint32 addr;
-#define TEST19_NAME "wired-static-verify-ip4-plen"
-	if_block *block = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *ip4_addr;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test19-wired-static-verify-ip4-plen");
 
-	const char* file = "test19-" TEST19_NAME;
-
-	init_ifparser_with_file (path, file);
-	block = ifparser_getfirst ();
-	connection = nm_simple_connection_new();
-	ifupdown_update_connection_from_if_block(connection, block, &error);
-
-	ASSERT (connection != NULL,
-			TEST19_NAME, "failed to read %s: %s", file, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-			TEST19_NAME, "failed to verify %s: %s", file, error->message);
-
-	ASSERT (unmanaged == NULL,
-			TEST19_NAME, "failed to verify %s: unexpected unmanaged value", file);
+	connection = _connection_first_from_parser (parser);
 
 	/* ===== IPv4 SETTING ===== */
-
-	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
-			TEST19_NAME, "failed to verify %s: couldn't convert IP address #1",
-			file);
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-			TEST19_NAME, "failed to verify %s: missing %s setting",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
-	/* IP addresses */
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
-			TEST19_NAME, "failed to verify %s: unexpected %s / %s key value",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_ADDRESSES);
-
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	ASSERT (ip4_addr,
-			TEST19_NAME, "failed to verify %s: missing IP4 address #1",
-			file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
-			TEST19_NAME, "failed to verify %s: unexpected IP4 address prefix",
-			file);
-
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-			TEST19_NAME, "failed to verify %s: unexpected IP4 address: %s",
-			file, addr);
-
-	g_object_unref (connection);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "10.0.0.3");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 }
 
 static void
-test20_source_stanza (const char *path)
+test20_source_stanza (void)
 {
-	Expected *e;
+	nm_auto_free_expected Expected *e = NULL;
 	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test20-source-stanza");
 
 	e = expected_new ();
 
@@ -891,70 +560,83 @@ test20_source_stanza (const char *path)
 	expected_add_block (e, b);
 	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
 
-	init_ifparser_with_file (path, "test20-source-stanza");
-	compare_expected_to_ifparser (e);
-
-	ifparser_destroy ();
-	expected_free (e);
+	compare_expected_to_ifparser (parser, e);
 }
+
+static void
+test21_source_dir_stanza (void)
+{
+	nm_auto_free_expected Expected *e = NULL;
+	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test21-source-dir-stanza");
+
+	e = expected_new ();
+
+	b = expected_block_new ("auto", "eth0");
+	expected_add_block (e, b);
+	b = expected_block_new ("iface", "eth0");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "dhcp"));
+
+	compare_expected_to_ifparser (parser, e);
+}
+
+static void
+test22_duplicate_stanzas (void)
+{
+	nm_auto_free_expected Expected *e = NULL;
+	ExpectedBlock *b;
+	nm_auto_ifparser if_parser *parser = init_ifparser_with_file ("test22-duplicate-stanzas");
+
+	e = expected_new ();
+
+	b = expected_block_new ("iface", "br10");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "manual"));
+	expected_block_add_key (b, expected_key_new ("bridge-ports", "enp6s0.15"));
+	expected_block_add_key (b, expected_key_new ("bridge-stp", "off"));
+	expected_block_add_key (b, expected_key_new ("bridge-maxwait", "0"));
+	expected_block_add_key (b, expected_key_new ("bridge-fd", "0"));
+	b = expected_block_new ("iface", "br10");
+	expected_add_block (e, b);
+	expected_block_add_key (b, expected_key_new ("inet", "auto"));
+	expected_block_add_key (b, expected_key_new ("bridge-ports", "enp6s0.15"));
+
+	compare_expected_to_ifparser (parser, e);
+}
+
+/*****************************************************************************/
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
 {
-	GError *error = NULL;
+	nmtst_init_assert_logging (&argc, &argv, "WARN", "DEFAULT");
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	(void) dump_blocks;
 
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
-	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
-
-	g_test_init (&argc, &argv, NULL);
-
-	if (0)
-		dump_blocks ();
-
-	g_test_add_data_func ("/ifupdate/ignore_line_before_first_block", TEST_ENI_DIR,
-	                      (GTestDataFunc) test1_ignore_line_before_first_block);
-	g_test_add_data_func ("/ifupdate/wrapped_line", TEST_ENI_DIR,
-	                      (GTestDataFunc) test2_wrapped_line);
-	g_test_add_data_func ("/ifupdate/wrapped_multiline_multiarg", TEST_ENI_DIR,
-	                      (GTestDataFunc) test3_wrapped_multiline_multiarg);
-	g_test_add_data_func ("/ifupdate/allow_auto_is_auto", TEST_ENI_DIR,
-	                      (GTestDataFunc) test4_allow_auto_is_auto);
-	g_test_add_data_func ("/ifupdate/allow_auto_multiarg", TEST_ENI_DIR,
-	                      (GTestDataFunc) test5_allow_auto_multiarg);
-	g_test_add_data_func ("/ifupdate/mixed_whitespace", TEST_ENI_DIR,
-	                      (GTestDataFunc) test6_mixed_whitespace);
-	g_test_add_data_func ("/ifupdate/long_line", TEST_ENI_DIR,
-	                      (GTestDataFunc) test7_long_line);
-	g_test_add_data_func ("/ifupdate/long_line_wrapped", TEST_ENI_DIR,
-	                      (GTestDataFunc) test8_long_line_wrapped);
-	g_test_add_data_func ("/ifupdate/wrapped_lines_in_block", TEST_ENI_DIR,
-	                      (GTestDataFunc) test9_wrapped_lines_in_block);
-	g_test_add_data_func ("/ifupdate/complex_wrap", TEST_ENI_DIR,
-	                      (GTestDataFunc) test11_complex_wrap);
-	g_test_add_data_func ("/ifupdate/complex_wrap_split_word", TEST_ENI_DIR,
-	                      (GTestDataFunc) test12_complex_wrap_split_word);
-	g_test_add_data_func ("/ifupdate/more_mixed_whitespace", TEST_ENI_DIR,
-	                      (GTestDataFunc) test13_more_mixed_whitespace);
-	g_test_add_data_func ("/ifupdate/mixed_whitespace_block_start", TEST_ENI_DIR,
-	                      (GTestDataFunc) test14_mixed_whitespace_block_start);
-	g_test_add_data_func ("/ifupdate/trailing_space", TEST_ENI_DIR,
-	                      (GTestDataFunc) test15_trailing_space);
-	g_test_add_data_func ("/ifupdate/missing_newline", TEST_ENI_DIR,
-	                      (GTestDataFunc) test16_missing_newline);
-	g_test_add_data_func ("/ifupdate/read_static_ipv4", TEST_ENI_DIR,
-	                      (GTestDataFunc) test17_read_static_ipv4);
-	g_test_add_data_func ("/ifupdate/read_static_ipv6", TEST_ENI_DIR,
-	                      (GTestDataFunc) test18_read_static_ipv6);
-	g_test_add_data_func ("/ifupdate/read_static_ipv4_plen", TEST_ENI_DIR,
-	                      (GTestDataFunc) test19_read_static_ipv4_plen);
-	g_test_add_data_func ("/ifupdate/source_stanza", TEST_ENI_DIR,
-	                      (GTestDataFunc) test20_source_stanza);
+	g_test_add_func ("/ifupdate/ignore_line_before_first_block", test1_ignore_line_before_first_block);
+	g_test_add_func ("/ifupdate/wrapped_line",                   test2_wrapped_line);
+	g_test_add_func ("/ifupdate/wrapped_multiline_multiarg",     test3_wrapped_multiline_multiarg);
+	g_test_add_func ("/ifupdate/allow_auto_is_auto",             test4_allow_auto_is_auto);
+	g_test_add_func ("/ifupdate/allow_auto_multiarg",            test5_allow_auto_multiarg);
+	g_test_add_func ("/ifupdate/mixed_whitespace",               test6_mixed_whitespace);
+	g_test_add_func ("/ifupdate/long_line",                      test7_long_line);
+	g_test_add_func ("/ifupdate/long_line_wrapped",              test8_long_line_wrapped);
+	g_test_add_func ("/ifupdate/wrapped_lines_in_block",         test9_wrapped_lines_in_block);
+	g_test_add_func ("/ifupdate/complex_wrap",                   test11_complex_wrap);
+	g_test_add_func ("/ifupdate/complex_wrap_split_word",        test12_complex_wrap_split_word);
+	g_test_add_func ("/ifupdate/more_mixed_whitespace",          test13_more_mixed_whitespace);
+	g_test_add_func ("/ifupdate/mixed_whitespace_block_start",   test14_mixed_whitespace_block_start);
+	g_test_add_func ("/ifupdate/trailing_space",                 test15_trailing_space);
+	g_test_add_func ("/ifupdate/missing_newline",                test16_missing_newline);
+	g_test_add_func ("/ifupdate/read_static_ipv4",               test17_read_static_ipv4);
+	g_test_add_func ("/ifupdate/read_static_ipv6",               test18_read_static_ipv6);
+	g_test_add_func ("/ifupdate/read_static_ipv4_plen",          test19_read_static_ipv4_plen);
+	g_test_add_func ("/ifupdate/source_stanza",                  test20_source_stanza);
+	g_test_add_func ("/ifupdate/source_dir_stanza",              test21_source_dir_stanza);
+	g_test_add_func ("/ifupdate/test22-duplicate-stanzas",       test22_duplicate_stanzas);
 
 	return g_test_run ();
 }
-

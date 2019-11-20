@@ -1,20 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2004 Red Hat, Inc.
+ * Copyright (C) 2004 Red Hat, Inc.
  */
 
 /* D-Bus-related definitions for NetworkManager VPN plugins.
@@ -25,6 +11,12 @@
 
 #ifndef __NM_VPN_DBUS_INTERFACE_H__
 #define __NM_VPN_DBUS_INTERFACE_H__
+
+#include "nm-dbus-interface.h"
+
+#ifndef NM_VERSION_H
+#define NM_DEPRECATED_IN_1_8_FOR(n)
+#endif
 
 /*
  * dbus services details
@@ -54,7 +46,6 @@
 #define NM_DBUS_VPN_BAD_ARGUMENTS             "BadArguments"
 #define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED "InteractiveNotSupported"
 
-
 /*
  * VPN daemon signals
  */
@@ -78,8 +69,6 @@
  * @NM_VPN_SERVICE_STATE_STOPPED: The plugin has disconnected from the VPN server.
  *
  * VPN daemon states
- *
- * (Corresponds to the NM_VPN_SERVICE_STATE type in nm-vpn-connection.xml.)
  */
 typedef enum {
 	NM_VPN_SERVICE_STATE_UNKNOWN = 0,
@@ -90,7 +79,6 @@ typedef enum {
 	NM_VPN_SERVICE_STATE_STOPPING,
 	NM_VPN_SERVICE_STATE_STOPPED
 } NMVpnServiceState;
-
 
 /**
  * NMVpnConnectionState:
@@ -108,8 +96,6 @@ typedef enum {
  * @NM_VPN_CONNECTION_STATE_DISCONNECTED: The VPN connection is disconnected.
  *
  * VPN connection states
- *
- * (Corresponds to the NM_VPN_CONNECTION_STATE type in nm-vpn-connection.xml.)
  */
 typedef enum {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
@@ -150,22 +136,21 @@ typedef enum {
  *   deleted from settings.
  *
  * VPN connection state reasons
- *
- * (Corresponds to the NM_VPN_CONNECTION_STATE_REASON type in nm-vpn-connection.xml.)
  */
+NM_DEPRECATED_IN_1_8_FOR(NMActiveConnectionStateReason)
 typedef enum {
-	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN = 0,
-	NM_VPN_CONNECTION_STATE_REASON_NONE,
-	NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,
-	NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,
-	NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED,
-	NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID,
-	NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT,
-	NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT,
-	NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED,
-	NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS,
-	NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED,
-	NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED
+	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN                  = NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	NM_VPN_CONNECTION_STATE_REASON_NONE                     = NM_ACTIVE_CONNECTION_STATE_REASON_NONE,
+	NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED        = NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED,
+	NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED      = NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,
+	NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED          = NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED,
+	NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID        = NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID,
+	NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT          = NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT,
+	NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT    = NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT,
+	NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED     = NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED,
+	NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS               = NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS,
+	NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED             = NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED,
+	NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED       = NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED,
 } NMVpnConnectionStateReason;
 
 /**
@@ -176,8 +161,6 @@ typedef enum {
  *   the VPN plugin.
  *
  * VPN plugin failure reasons
- *
- * (Corresponds to the NM_VPN_PLUGIN_FAILURE type in nm-vpn-plugin.xml.)
  */
 typedef enum {
 	NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED,
@@ -185,11 +168,17 @@ typedef enum {
 	NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG
 } NMVpnPluginFailure;
 
+#ifndef NM_VERSION_H
+#undef NM_DEPRECATED_IN_1_8_FOR
+#endif
 
 /*** Generic config ***/
 
 /* string: VPN interface name (tun0, tap0, etc) */
 #define NM_VPN_PLUGIN_CONFIG_TUNDEV      "tundev"
+
+/* string: Proxy PAC */
+#define NM_VPN_PLUGIN_CONFIG_PROXY_PAC   "pac"
 
 /* string: Login message */
 #define NM_VPN_PLUGIN_CONFIG_BANNER      "banner"
@@ -210,7 +199,6 @@ typedef enum {
  * link changes and VPN server dropouts.
  */
 #define NM_VPN_PLUGIN_CAN_PERSIST        "can-persist"
-
 
 /*** Ip4Config ***/
 
@@ -250,6 +238,9 @@ typedef enum {
  */
 #define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES      "routes"
 
+/* whether the previous IP4 routing configuration should be preserved. */
+#define NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES "preserve-routes"
+
 /* boolean: prevent this VPN connection from ever getting the default route */
 #define NM_VPN_PLUGIN_IP4_CONFIG_NEVER_DEFAULT "never-default"
 
@@ -264,7 +255,6 @@ typedef enum {
 #define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY
 #define NM_VPN_PLUGIN_IP4_CONFIG_MTU         NM_VPN_PLUGIN_CONFIG_MTU
 #define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      NM_VPN_PLUGIN_CONFIG_TUNDEV
-
 
 /*** Ip6Config ***/
 
@@ -300,6 +290,9 @@ typedef enum {
  *         by nm_utils_ip6_routes_to/from_gvalue
  */
 #define NM_VPN_PLUGIN_IP6_CONFIG_ROUTES      "routes"
+
+/* whether the previous IP6 routing configuration should be preserved. */
+#define NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES "preserve-routes"
 
 /* boolean: prevent this VPN connection from ever getting the default route */
 #define NM_VPN_PLUGIN_IP6_CONFIG_NEVER_DEFAULT "never-default"

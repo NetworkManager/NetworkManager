@@ -1,23 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #ifndef __NM_SETTING_VPN_H__
@@ -27,7 +11,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 
@@ -45,7 +29,13 @@ G_BEGIN_DECLS
 #define NM_SETTING_VPN_PERSISTENT   "persistent"
 #define NM_SETTING_VPN_DATA         "data"
 #define NM_SETTING_VPN_SECRETS      "secrets"
+#define NM_SETTING_VPN_TIMEOUT      "timeout"
 
+/**
+ * NMSettingVpn:
+ *
+ * VPN Settings
+ */
 struct _NMSettingVpn {
 	NMSetting parent;
 };
@@ -84,6 +74,9 @@ gboolean          nm_setting_vpn_remove_data_item  (NMSettingVpn *setting,
 void              nm_setting_vpn_foreach_data_item (NMSettingVpn *setting,
                                                     NMVpnIterFunc func,
                                                     gpointer user_data);
+NM_AVAILABLE_IN_1_12
+const char **     nm_setting_vpn_get_data_keys     (NMSettingVpn *setting,
+                                                    guint *out_length);
 
 guint32           nm_setting_vpn_get_num_secrets   (NMSettingVpn *setting);
 void              nm_setting_vpn_add_secret        (NMSettingVpn *setting,
@@ -96,6 +89,12 @@ gboolean          nm_setting_vpn_remove_secret     (NMSettingVpn *setting,
 void              nm_setting_vpn_foreach_secret    (NMSettingVpn *setting,
                                                     NMVpnIterFunc func,
                                                     gpointer user_data);
+NM_AVAILABLE_IN_1_12
+const char **     nm_setting_vpn_get_secret_keys   (NMSettingVpn *setting,
+                                                    guint *out_length);
+
+NM_AVAILABLE_IN_1_2
+guint32           nm_setting_vpn_get_timeout       (NMSettingVpn *setting);
 
 G_END_DECLS
 

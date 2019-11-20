@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -24,21 +11,16 @@
  * nmtui_edit(), and nmtui_hostname().
  */
 
-#include "config.h"
+#include "nm-default.h"
+
+#include "nmtui.h"
 
 #include <locale.h>
 #include <stdlib.h>
-#include <string.h>
-
-#include <glib.h>
-#include <glib/gi18n-lib.h>
-
-#include <NetworkManager.h>
 
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"
 
-#include "nmtui.h"
 #include "nmtui-edit.h"
 #include "nmtui-connect.h"
 #include "nmtui-hostname.h"
@@ -46,7 +28,7 @@
 NMClient *nm_client;
 static GMainLoop *loop;
 
-typedef NmtNewtForm * (*NmtuiSubprogram) (int argc, char **argv);
+typedef NmtNewtForm * (*NmtuiSubprogram) (gboolean is_top, int argc, char **argv);
 
 static const struct {
 	const char *name, *shortcut, *arg;
@@ -64,22 +46,43 @@ static const struct {
 	  nmtui_hostname }
 };
 static const int num_subprograms = G_N_ELEMENTS (subprograms);
+static NmtNewtForm *toplevel_form;
 
-static void
+static NmtNewtForm *
 quit_func (int argc, char **argv)
 {
+	if (toplevel_form)
+		nmt_newt_form_quit (toplevel_form);
+
 	nmtui_quit ();
+
+	return NULL;
+}
+
+static void
+main_list_activated (NmtNewtWidget *widget, NmtNewtListbox *listbox)
+{
+	NmtNewtForm *form;
+	NmtuiSubprogram sub;
+
+	sub = nmt_newt_listbox_get_active_key (listbox);
+	if (sub) {
+		form = sub (FALSE, 0, NULL);
+		if (form) {
+			nmt_newt_form_show (form);
+			g_object_unref (form);
+		}
+	}
 }
 
 static NmtNewtForm *
-nmtui_main (int argc, char **argv)
+nmtui_main (gboolean is_top, int argc, char **argv)
 {
 	NmtNewtForm *form;
 	NmtNewtWidget *widget, *ok;
 	NmtNewtGrid *grid;
 	NmtNewtListbox *listbox;
 	NmtNewtButtonBox *bbox;
-	NmtuiSubprogram subprogram = NULL;
 	int i;
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM,
@@ -100,8 +103,9 @@ nmtui_main (int argc, char **argv)
 	                       NULL);
 	nmt_newt_grid_add (grid, widget, 0, 1);
 	nmt_newt_widget_set_padding (widget, 0, 1, 0, 1);
-	nmt_newt_widget_set_exit_on_activate (widget, TRUE);
 	listbox = NMT_NEWT_LISTBOX (widget);
+	g_signal_connect (widget, "activated",
+	                  G_CALLBACK (main_list_activated), listbox);
 
 	for (i = 0; i < num_subprograms; i++) {
 		nmt_newt_listbox_append (listbox, _(subprograms[i].display_name),
@@ -115,17 +119,12 @@ nmtui_main (int argc, char **argv)
 	bbox = NMT_NEWT_BUTTON_BOX (widget);
 
 	ok = nmt_newt_button_box_add_end (bbox, _("OK"));
-	nmt_newt_widget_set_exit_on_activate (ok, TRUE);
+	g_signal_connect (ok, "activated",
+	                  G_CALLBACK (main_list_activated), listbox);
 
-	widget = nmt_newt_form_run_sync (form);
-	if (widget)
-		subprogram = nmt_newt_listbox_get_active_key (listbox);
-	g_object_unref (form);
+	toplevel_form = form;
 
-	if (subprogram)
-		return subprogram (argc, argv);
-	else
-		return NULL;
+	return form;
 }
 
 /**
@@ -182,7 +181,7 @@ idle_run_subprogram (gpointer user_data)
 	NmtuiStartupData *data = user_data;
 	NmtNewtForm *form;
 
-	form = data->subprogram (data->argc, data->argv);
+	form = data->subprogram (TRUE, data->argc, data->argv);
 	if (form) {
 		g_signal_connect (form, "quit", G_CALLBACK (toplevel_form_quit), NULL);
 		nmt_newt_form_show (form);
@@ -214,7 +213,7 @@ main (int argc, char **argv)
 	int i;
 
 	setlocale (LC_ALL, "");
-	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 

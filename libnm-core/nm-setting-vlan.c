@@ -1,30 +1,17 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2011 - 2014 Red Hat, Inc.
+ * Copyright (C) 2011 - 2014 Red Hat, Inc.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-vlan.h"
+
+#include <stdlib.h>
+
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 #include "nm-utils.h"
+#include "nm-core-types-internal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 #include "nm-setting-wired.h"
@@ -38,11 +25,15 @@
  * necessary for connection to VLAN interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING,
-                         _nm_register_setting (VLAN, 1))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VLAN)
+/*****************************************************************************/
 
-#define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVlan,
+	PROP_PARENT,
+	PROP_ID,
+	PROP_FLAGS,
+	PROP_INGRESS_PRIORITY_MAP,
+	PROP_EGRESS_PRIORITY_MAP,
+);
 
 typedef struct {
 	char *parent;
@@ -52,36 +43,14 @@ typedef struct {
 	GSList *egress_priority_map;
 } NMSettingVlanPrivate;
 
-enum {
-	PROP_0,
-	PROP_PARENT,
-	PROP_ID,
-	PROP_FLAGS,
-	PROP_INGRESS_PRIORITY_MAP,
-	PROP_EGRESS_PRIORITY_MAP,
-	LAST_PROP
-};
+G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)
+
+#define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
+
+/*****************************************************************************/
 
 #define MAX_SKB_PRIO   G_MAXUINT32
 #define MAX_8021P_PRIO 7  /* Max 802.1p priority */
-
-typedef struct {
-	guint32 from;
-	guint32 to;
-} PriorityMap;
-
-/**
- * nm_setting_vlan_new:
- *
- * Creates a new #NMSettingVlan object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingVlan object
- **/
-NMSetting *
-nm_setting_vlan_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VLAN, NULL);
-}
 
 /**
  * nm_setting_vlan_get_parent:
@@ -122,50 +91,33 @@ nm_setting_vlan_get_flags (NMSettingVlan *setting)
 	return NM_SETTING_VLAN_GET_PRIVATE (setting)->flags;
 }
 
-static guint32
-get_max_prio (NMVlanPriorityMap map, gboolean from)
+static NMVlanQosMapping *
+priority_map_new (guint32 from, guint32 to)
 {
-	if (map == NM_VLAN_INGRESS_MAP)
-		return from ? MAX_8021P_PRIO : MAX_SKB_PRIO;
-	else if (map == NM_VLAN_EGRESS_MAP)
-		return from ? MAX_SKB_PRIO : MAX_8021P_PRIO;
-	g_assert_not_reached ();
+	NMVlanQosMapping *mapping;
+
+	mapping = g_new (NMVlanQosMapping, 1);
+	*mapping = (NMVlanQosMapping) {
+		.from = from,
+		.to   = to,
+	};
+	return mapping;
 }
 
-static PriorityMap *
+static NMVlanQosMapping *
 priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 {
-	PriorityMap *p = NULL;
-	gchar **t = NULL;
-	guint32 len;
-	guint64 from, to;
+	guint32 from, to;
 
-	g_return_val_if_fail (str && str[0], NULL);
-
-	t = g_strsplit (str, ":", 0);
-	len = g_strv_length (t);
-	if (len == 2) {
-		from = g_ascii_strtoull (t[0], NULL, 10);
-		to = g_ascii_strtoull (t[1], NULL, 10);
-
-		if ((from <= get_max_prio (map, TRUE)) && (to <= get_max_prio (map, FALSE))) {
-			p = g_malloc0 (sizeof (PriorityMap));
-			p->from = from;
-			p->to = to;
-		}
-	} else {
-		/* Warn */
-		g_warn_if_fail (len == 2);
-	}
-
-	g_strfreev (t);
-	return p;
+	if (!nm_utils_vlan_priority_map_parse_str (map, str, FALSE, &from, &to, NULL))
+		return NULL;
+	return priority_map_new (from, to);
 }
 
 static void
-priority_map_free (PriorityMap *map)
+priority_map_free (NMVlanQosMapping *map)
 {
-	g_return_if_fail (map != NULL);
+	nm_assert (map);
 	g_free (map);
 }
 
@@ -176,21 +128,72 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 		return NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map;
 	else if (map == NM_VLAN_EGRESS_MAP)
 		return NM_SETTING_VLAN_GET_PRIVATE (self)->egress_priority_map;
-	g_assert_not_reached ();
+	nm_assert_not_reached ();
 	return NULL;
+}
+
+static int
+prio_map_compare (gconstpointer p_a, gconstpointer p_b)
+{
+	const NMVlanQosMapping *a = p_a;
+	const NMVlanQosMapping *b = p_b;
+
+	return a->from < b->from
+	       ? -1
+	       : (a->from > b->from
+	          ? 1
+	          : (a->to < b->to ? -1 : (a->to > b->to ? 1 : 0)));
 }
 
 static void
 set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 {
+	/* Assert that the list is sorted */
+#if NM_MORE_ASSERTS >= 2
+	{
+		GSList *iter, *last;
+
+		last = list;
+		iter = list ? list->next : NULL;
+		while (iter) {
+			const NMVlanQosMapping *l = last->data;
+			const NMVlanQosMapping *m = iter->data;
+
+			nm_assert (prio_map_compare (last->data, iter->data) < 0);
+
+			/* Also reject duplicates (based on "from") */
+			nm_assert (l->from < m->from);
+
+			last = iter;
+			iter = iter->next;
+		}
+	}
+#endif
+
 	if (map == NM_VLAN_INGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map = list;
-		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+		_notify (self, PROP_INGRESS_PRIORITY_MAP);
 	} else if (map == NM_VLAN_EGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->egress_priority_map = list;
-		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+		_notify (self, PROP_EGRESS_PRIORITY_MAP);
 	} else
-		g_assert_not_reached ();
+		nm_assert_not_reached ();
+}
+
+static gboolean
+check_replace_duplicate_priority (GSList *list, guint32 from, guint32 to)
+{
+	GSList *iter;
+	NMVlanQosMapping *p;
+
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		p = iter->data;
+		if (p->from == from) {
+			p->to = to;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**
@@ -204,41 +207,37 @@ set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
  * the Linux SKB priorities to 802.1p priorities.
  *
  * Returns: %TRUE if the entry was successfully added to the list, or it
- * overwrote the old value, %FALSE if error
+ * overwrote the old value, %FALSE if @str is not a valid mapping.
  */
 gboolean
 nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
                                   NMVlanPriorityMap map,
                                   const char *str)
 {
-	GSList *list = NULL, *iter = NULL;
-	PriorityMap *item = NULL;
+	GSList *list = NULL;
+	NMVlanQosMapping *item = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 	g_return_val_if_fail (str && str[0], FALSE);
 
+	item = priority_map_new_from_str (map, str);
+	if (!item)
+		return FALSE;
+
 	list = get_map (setting, map);
 
-	item = priority_map_new_from_str (map, str);
-	g_return_val_if_fail (item != NULL, FALSE);
-
 	/* Duplicates get replaced */
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PriorityMap *p = iter->data;
-
-		if (p->from == item->from) {
-			p->to = item->to;
-			g_free (item);
-			if (map == NM_VLAN_INGRESS_MAP)
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
-			else
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
-			return TRUE;
-		}
+	if (check_replace_duplicate_priority (list, item->from, item->to)) {
+		g_free (item);
+		if (map == NM_VLAN_INGRESS_MAP)
+			_notify (setting, PROP_INGRESS_PRIORITY_MAP);
+		else
+			_notify (setting, PROP_EGRESS_PRIORITY_MAP);
+		return TRUE;
 	}
 
-	set_map (setting, map, g_slist_append (list, item));
+	set_map (setting, map, g_slist_insert_sorted (list, item, prio_map_compare));
 	return TRUE;
 }
 
@@ -247,11 +246,11 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  *
- * Returns the number of entires in the
+ * Returns the number of entries in the
  * #NMSettingVlan:ingress_priority_map or #NMSettingVlan:egress_priority_map
  * properties of this setting.
  *
- * Returns: return the number of ingress/egress priority entries, -1 if error
+ * Returns: return the number of ingress/egress priority entries.
  **/
 gint32
 nm_setting_vlan_get_num_priorities (NMSettingVlan *setting, NMVlanPriorityMap map)
@@ -267,13 +266,13 @@ nm_setting_vlan_get_num_priorities (NMSettingVlan *setting, NMVlanPriorityMap ma
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  * @idx: the zero-based index of the ingress/egress priority map entry
- * @out_from: (out): on return the value of the priority map's 'from' item
- * @out_to: (out): on return the value of priority map's 'to' item
+ * @out_from: (out) (allow-none): on return the value of the priority map's 'from' item
+ * @out_to: (out) (allow-none): on return the value of priority map's 'to' item
  *
  * Retrieve one of the entries of the #NMSettingVlan:ingress_priority_map
  * or #NMSettingVlan:egress_priority_map properties of this setting.
  *
- * Returns: %TRUE if a priority map was returned, %FALSE if error
+ * Returns: returns %TRUE if @idx is in range. Otherwise %FALSE.
  **/
 gboolean
 nm_setting_vlan_get_priority (NMSettingVlan *setting,
@@ -282,21 +281,23 @@ nm_setting_vlan_get_priority (NMSettingVlan *setting,
                               guint32 *out_from,
                               guint32 *out_to)
 {
-	GSList *list = NULL;
-	PriorityMap *item = NULL;
+	NMVlanQosMapping *item;
+	GSList *list;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
-	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
-	g_return_val_if_fail (out_from != NULL, FALSE);
-	g_return_val_if_fail (out_to != NULL, FALSE);
+	g_return_val_if_fail (NM_IN_SET (map, NM_VLAN_INGRESS_MAP, NM_VLAN_EGRESS_MAP), FALSE);
 
 	list = get_map (setting, map);
-	g_return_val_if_fail (idx < g_slist_length (list), FALSE);
-
 	item = g_slist_nth_data (list, idx);
-	g_assert (item);
-	*out_from = item->from;
-	*out_to = item->to;
+
+	if (!item) {
+		NM_SET_OUT (out_from, 0);
+		NM_SET_OUT (out_to, 0);
+		return FALSE;
+	}
+
+	NM_SET_OUT (out_from, item->from);
+	NM_SET_OUT (out_to, item->to);
 	return TRUE;
 }
 
@@ -318,8 +319,7 @@ nm_setting_vlan_get_priority (NMSettingVlan *setting,
  * If @map is #NM_VLAN_EGRESS_MAP then @from is the Linux SKB priority value and
  * @to is the outgoing 802.1q VLAN Priority Code Point (PCP) value.
  *
- * Returns: %TRUE if the new priority mapping was successfully added to the
- * list, %FALSE if error
+ * Returns: %TRUE.
  */
 gboolean
 nm_setting_vlan_add_priority (NMSettingVlan *setting,
@@ -327,31 +327,109 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
                               guint32 from,
                               guint32 to)
 {
-	GSList *list = NULL, *iter = NULL;
-	PriorityMap *item;
+	GSList *list = NULL;
+	NMVlanQosMapping *item;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 
 	list = get_map (setting, map);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		item = iter->data;
-		if (item->from == from) {
-			item->to = to;
-			if (map == NM_VLAN_INGRESS_MAP)
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
-			else
-				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
-			return TRUE;
+	if (check_replace_duplicate_priority (list, from, to)) {
+		if (map == NM_VLAN_INGRESS_MAP)
+			_notify (setting, PROP_INGRESS_PRIORITY_MAP);
+		else
+			_notify (setting, PROP_EGRESS_PRIORITY_MAP);
+		return TRUE;
+	}
+
+	item = g_malloc0 (sizeof (NMVlanQosMapping));
+	item->from = from;
+	item->to = to;
+	set_map (setting, map, g_slist_insert_sorted (list, item, prio_map_compare));
+
+	return TRUE;
+}
+
+gboolean
+_nm_setting_vlan_set_priorities (NMSettingVlan *setting,
+                                 NMVlanPriorityMap map,
+                                 const NMVlanQosMapping *qos_map,
+                                 guint n_qos_map)
+{
+	gboolean has_changes = FALSE;
+	GSList *map_prev, *map_new;
+	guint i;
+	gint64 from_last;
+
+	map_prev = get_map (setting, map);
+
+	if (n_qos_map != g_slist_length (map_prev))
+		has_changes = TRUE;
+	else {
+		const GSList *iter;
+
+		iter = map_prev;
+		for (i = 0; i < n_qos_map; i++, iter = iter->next) {
+			const NMVlanQosMapping *m = iter->data;
+
+			if (   m->from != qos_map[i].from
+			    || m->to != qos_map[i].to) {
+				has_changes = TRUE;
+				break;
+			}
 		}
 	}
 
-	item = g_malloc0 (sizeof (PriorityMap));
-	item->from = from;
-	item->to = to;
-	set_map (setting, map, g_slist_append (list, item));
+	if (!has_changes)
+		return FALSE;
+
+	map_new = NULL;
+	from_last = G_MAXINT64;
+	for (i = n_qos_map; i > 0;) {
+		const NMVlanQosMapping *m = &qos_map[--i];
+		NMVlanQosMapping *item;
+
+		/* We require the array to be presorted. */
+		if (m->from >= from_last)
+			g_return_val_if_reached (FALSE);
+		from_last = m->from;
+
+		item = g_malloc0 (sizeof (NMVlanQosMapping));
+		item->from = m->from;
+		item->to = m->to;
+		map_new = g_slist_prepend (map_new, item);
+	}
+
+	g_slist_free_full (map_prev, g_free);
+	set_map (setting, map, map_new);
 
 	return TRUE;
+}
+
+void
+_nm_setting_vlan_get_priorities (NMSettingVlan *setting,
+                                 NMVlanPriorityMap map,
+                                 NMVlanQosMapping **out_qos_map,
+                                 guint *out_n_qos_map)
+{
+	GSList *list;
+	NMVlanQosMapping *qos_map = NULL;
+	guint n_qos_map, i;
+
+	list = get_map (setting, map);
+
+	n_qos_map = g_slist_length (list);
+
+	if (n_qos_map > 0) {
+		qos_map = g_new (NMVlanQosMapping, n_qos_map);
+
+		for (i = 0; list; i++, list = list->next) {
+			nm_assert (i < n_qos_map);
+			qos_map[i] = *((const NMVlanQosMapping *) list->data);
+		}
+	}
+	*out_qos_map = qos_map;
+	*out_n_qos_map = n_qos_map;
 }
 
 /**
@@ -378,8 +456,38 @@ nm_setting_vlan_remove_priority (NMSettingVlan *setting,
 	g_return_if_fail (idx < g_slist_length (list));
 
 	item = g_slist_nth (list, idx);
-	priority_map_free ((PriorityMap *) (item->data));
+	priority_map_free ((NMVlanQosMapping *) (item->data));
 	set_map (setting, map, g_slist_delete_link (list, item));
+}
+
+static gboolean
+priority_map_remove_by_value (NMSettingVlan *setting,
+                              NMVlanPriorityMap map,
+                              guint32 from,
+                              guint32 to,
+                              gboolean wildcard_to)
+{
+	GSList *list = NULL, *iter = NULL;
+	NMVlanQosMapping *item;
+
+	nm_assert (NM_IS_SETTING_VLAN (setting));
+	nm_assert (NM_IN_SET (map, NM_VLAN_INGRESS_MAP, NM_VLAN_EGRESS_MAP));
+
+	list = get_map (setting, map);
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		item = iter->data;
+
+		if (item->from != from)
+			continue;
+		if (   !wildcard_to
+		    && item->to != to)
+			continue;
+
+		priority_map_free ((NMVlanQosMapping *) (iter->data));
+		set_map (setting, map, g_slist_delete_link (list, iter));
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /**
@@ -401,22 +509,10 @@ nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
                                           guint32 from,
                                           guint32 to)
 {
-	GSList *list = NULL, *iter = NULL;
-	PriorityMap *item;
-
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 
-	list = get_map (setting, map);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		item = iter->data;
-		if (item->from == from && item->to == to) {
-			priority_map_free ((PriorityMap *) (iter->data));
-			set_map (setting, map, g_slist_delete_link (list, iter));
-			return TRUE;
-		}
-	}
-	return FALSE;
+	return priority_map_remove_by_value (setting, map, from, to, FALSE);
 }
 
 /**
@@ -436,19 +532,15 @@ nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
                                               NMVlanPriorityMap map,
                                               const char *str)
 {
-	PriorityMap *item;
-	gboolean found;
+	gboolean is_wildcard_to;
+	guint32 from, to;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 
-	item = priority_map_new_from_str (map, str);
-	if (!item)
+	if (!nm_utils_vlan_priority_map_parse_str (map, str, TRUE, &from, &to, &is_wildcard_to))
 		return FALSE;
-
-	found = nm_setting_vlan_remove_priority_by_value (setting, map, item->from, item->to);
-	g_free (item);
-	return found;
+	return priority_map_remove_by_value (setting, map, from, to, is_wildcard_to);
 }
 
 /**
@@ -456,7 +548,7 @@ nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  *
- * Clear all the entires from #NMSettingVlan:ingress_priority_map or
+ * Clear all the entries from #NMSettingVlan:ingress_priority_map or
  * #NMSettingVlan:egress_priority_map properties.
  */
 void
@@ -472,14 +564,9 @@ nm_setting_vlan_clear_priorities (NMSettingVlan *setting, NMVlanPriorityMap map)
 	set_map (setting, map, NULL);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
-static void
-nm_setting_vlan_init (NMSettingVlan *setting)
-{
-}
-
-static gboolean
+static int
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
@@ -516,7 +603,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 					return FALSE;
 				}
 			}
-		} else if (!nm_utils_iface_valid_name (priv->parent)) {
+		} else if (!nm_utils_is_valid_iface_name (priv->parent, NULL)) {
 			/* parent must be either a UUID or an interface name */
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -542,9 +629,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->flags & ~(NM_VLAN_FLAG_REORDER_HEADERS |
-	                    NM_VLAN_FLAG_GVRP |
-	                    NM_VLAN_FLAG_LOOSE_BINDING)) {
+	if (priv->id >= 4095) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("the vlan id must be in range 0-4094 but is %u"),
+		             priv->id);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_ID);
+		return FALSE;
+	}
+
+	if (priv->flags & ~NM_VLAN_FLAGS_ALL) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -553,6 +648,44 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (connection && !s_wired) {
+		/* technically, a VLAN setting does not require an ethernet setting. However,
+		 * the ifcfg-rh reader always adds a ethernet setting when reading a vlan setting.
+		 * Thus, in order to be consistent, always add one via normalization. */
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+		                     _("vlan setting should have a ethernet setting as well"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_FLAGS);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	return TRUE;
+}
+
+static GVariant *
+_override_flags_get (const NMSettInfoSetting *sett_info,
+                     guint property_idx,
+                     NMConnection *connection,
+                     NMSetting *setting,
+                     NMConnectionSerializationFlags flags,
+                     const NMConnectionSerializationOptions *options)
+{
+	return g_variant_new_uint32 (nm_setting_vlan_get_flags ((NMSettingVlan *) setting));
+}
+
+static gboolean
+_override_flags_not_set (NMSetting *setting,
+                         GVariant *connection_dict,
+                         const char *property,
+                         NMSettingParseFlags parse_flags,
+                         GError **error)
+{
+	/* we changed the default value for FLAGS. When an older client
+	 * doesn't serialize the property, we assume it is the old default. */
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_VLAN_FLAGS, (NMVlanFlags) 0,
+	              NULL);
 	return TRUE;
 }
 
@@ -560,50 +693,18 @@ static GSList *
 priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 {
 	GSList *list = NULL;
-	int i;
+	gsize i;
 
-	for (i = 0; strv[i]; i++) {
-		PriorityMap *item;
+	for (i = 0; strv && strv[i]; i++) {
+		guint32 from, to;
 
-		item = priority_map_new_from_str (map, strv[i]);
-		if (item)
-			list = g_slist_prepend (list, item);
+		if (!nm_utils_vlan_priority_map_parse_str (map, strv[i], FALSE, &from, &to, NULL))
+			continue;
+		if (check_replace_duplicate_priority (list, from, to))
+			continue;
+		list = g_slist_prepend (list, priority_map_new (from, to));
 	}
-	return g_slist_reverse (list);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingVlan *setting = NM_SETTING_VLAN (object);
-	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
-
-	switch (prop_id) {
-	case PROP_PARENT:
-		g_free (priv->parent);
-		priv->parent = g_value_dup_string (value);
-		break;
-	case PROP_ID:
-		priv->id = g_value_get_uint (value);
-		break;
-	case PROP_FLAGS:
-		priv->flags = g_value_get_flags (value);
-		break;
-	case PROP_INGRESS_PRIORITY_MAP:
-		g_slist_free_full (priv->ingress_priority_map, g_free);
-		priv->ingress_priority_map =
-			priority_strv_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
-		break;
-	case PROP_EGRESS_PRIORITY_MAP:
-		g_slist_free_full (priv->egress_priority_map, g_free);
-		priv->egress_priority_map =
-			priority_strv_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	return g_slist_sort (list, prio_map_compare);
 }
 
 static char **
@@ -615,7 +716,7 @@ priority_maplist_to_strv (GSList *list)
 	strv = g_ptr_array_new ();
 
 	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PriorityMap *item = iter->data;
+		NMVlanQosMapping *item = iter->data;
 
 		g_ptr_array_add (strv, g_strdup_printf ("%d:%d", item->from, item->to));
 	}
@@ -623,6 +724,8 @@ priority_maplist_to_strv (GSList *list)
 
 	return (char **) g_ptr_array_free (strv, FALSE);
 }
+
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -654,6 +757,58 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingVlan *setting = NM_SETTING_VLAN (object);
+	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_PARENT:
+		g_free (priv->parent);
+		priv->parent = g_value_dup_string (value);
+		break;
+	case PROP_ID:
+		priv->id = g_value_get_uint (value);
+		break;
+	case PROP_FLAGS:
+		priv->flags = g_value_get_flags (value);
+		break;
+	case PROP_INGRESS_PRIORITY_MAP:
+		g_slist_free_full (priv->ingress_priority_map, g_free);
+		priv->ingress_priority_map = priority_strv_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
+		break;
+	case PROP_EGRESS_PRIORITY_MAP:
+		g_slist_free_full (priv->egress_priority_map, g_free);
+		priv->egress_priority_map = priority_strv_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_setting_vlan_init (NMSettingVlan *setting)
+{
+}
+
+/**
+ * nm_setting_vlan_new:
+ *
+ * Creates a new #NMSettingVlan object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingVlan object
+ **/
+NMSetting *
+nm_setting_vlan_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VLAN, NULL);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMSettingVlan *setting = NM_SETTING_VLAN (object);
@@ -667,20 +822,19 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
+nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingVlanPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingVlanPrivate));
 
-	/* virtual methods */
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingVlan:parent:
@@ -690,29 +844,39 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * not specified, the connection must contain an #NMSettingWired setting
 	 * with a #NMSettingWired:mac-address property.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: parent
+	 * variable: DEVICE or PHYSDEV
+	 * description: Parent interface of the VLAN.
+	 * ---end---
+	 */
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingVlan:id:
 	 *
 	 * The VLAN identifier that the interface created by this connection should
-	 * be assigned.
+	 * be assigned. The valid range is from 0 to 4094, without the reserved id 4095.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ID,
-		 g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
-		                    0, 4095, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: id
+	 * variable: VLAN_ID or DEVICE
+	 * description: VLAN identifier.
+	 * ---end---
+	 */
+	obj_properties[PROP_ID] =
+	    g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
+	                       0, 4095, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingVlan:flags:
@@ -721,17 +885,36 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
 	 * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
 	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
-	 * master device's operating state).
+	 * master device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
+	 * protocol).
+	 *
+	 * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,
+	 * but it used to be 0. To preserve backward compatibility, the default-value
+	 * in the D-Bus API continues to be 0 and a missing property on D-Bus
+	 * is still considered as 0.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_FLAGS,
-		 g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
-		                     NM_TYPE_VLAN_FLAGS,
-		                     0,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_CONSTRUCT |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: flags
+	 * variable: GVRP, MVRP, VLAN_FLAGS
+	 * values: "yes or "no" for GVRP and MVRP; "LOOSE_BINDING" and "NO_REORDER_HDR" for VLAN_FLAGS
+	 * description: VLAN flags.
+	 * ---end---
+	 */
+	obj_properties[PROP_FLAGS] =
+	    g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
+	                        NM_TYPE_VLAN_FLAGS,
+	                        NM_VLAN_FLAG_REORDER_HEADERS,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_CONSTRUCT |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_FLAGS],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type             = G_VARIANT_TYPE_UINT32,
+	                                  .to_dbus_fcn           = _override_flags_get,
+	                                  .missing_from_dbus_fcn = _override_flags_not_set,
+	                              ));
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
@@ -740,13 +923,19 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * SKB priorities.  The mapping is given in the format "from:to" where both
 	 * "from" and "to" are unsigned integers, ie "7:3".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_INGRESS_PRIORITY_MAP,
-		 g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: ingress-priority-map
+	 * variable: VLAN_INGRESS_PRIORITY_MAP
+	 * description: Ingress priority mapping.
+	 * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
+	 * ---end---
+	 */
+	obj_properties[PROP_INGRESS_PRIORITY_MAP] =
+	    g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingVlan:egress-priority-map:
@@ -755,16 +944,40 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * 802.1p priorities.  The mapping is given in the format "from:to" where
 	 * both "from" and "to" are unsigned integers, ie "7:3".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_EGRESS_PRIORITY_MAP,
-		 g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: egress-priority-map
+	 * variable: VLAN_EGRESS_PRIORITY_MAP
+	 * description: Egress priority mapping.
+	 * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
+	 * ---end---
+	 */
+	obj_properties[PROP_EGRESS_PRIORITY_MAP] =
+	    g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
-	                                          G_VARIANT_TYPE_STRING,
-	                                          _nm_setting_get_deprecated_virtual_interface_name,
-	                                          NULL);
+	/* ---ifcfg-rh---
+	 * property: interface-name
+	 * variable: PHYSDEV and VLAN_ID, or DEVICE
+	 * description: VLAN interface name.
+	 *   If all variables are set, parent device from PHYSDEV takes precedence over DEVICE,
+	 *   but VLAN id from DEVICE takes precedence over VLAN_ID.
+	 * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
+	 * ---end---
+	 * ---dbus---
+	 * property: interface-name
+	 * format: string
+	 * description: Deprecated in favor of connection.interface-name, but can
+	 *   be used for backward-compatibility with older daemons, to set the
+	 *   vlan's interface name.
+	 * ---end---
+	 */
+	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_VLAN,
+	                               NULL, properties_override);
 }

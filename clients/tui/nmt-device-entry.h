@@ -1,29 +1,12 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 #ifndef NMT_DEVICE_ENTRY_H
 #define NMT_DEVICE_ENTRY_H
 
-#include "nmt-page-grid.h"
-
-#include <NetworkManager.h>
-
-G_BEGIN_DECLS
+#include "nmt-editor-grid.h"
 
 #define NMT_TYPE_DEVICE_ENTRY            (nmt_device_entry_get_type ())
 #define NMT_DEVICE_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntry))
@@ -33,12 +16,12 @@ G_BEGIN_DECLS
 #define NMT_DEVICE_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntryClass))
 
 typedef struct {
-	NmtPageGrid parent;
+	NmtEditorGrid parent;
 
 } NmtDeviceEntry;
 
 typedef struct {
-	NmtPageGridClass parent;
+	NmtEditorGridClass parent;
 
 } NmtDeviceEntryClass;
 
@@ -54,7 +37,5 @@ typedef gboolean (*NmtDeviceEntryDeviceFilter) (NmtDeviceEntry *deventry,
 void nmt_device_entry_set_device_filter (NmtDeviceEntry             *deventry,
                                          NmtDeviceEntryDeviceFilter  filter,
                                          gpointer                    user_data);
-
-G_END_DECLS
 
 #endif /* NMT_DEVICE_ENTRY_H */

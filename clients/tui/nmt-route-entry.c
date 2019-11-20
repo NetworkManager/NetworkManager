@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -26,14 +13,11 @@
  * This is used as a building block by #NmtRouteTable.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-
-#include <glib/gi18n-lib.h>
-#include <NetworkManager.h>
 
 #include "nmt-route-entry.h"
 #include "nmt-ip-entry.h"
@@ -49,8 +33,7 @@ typedef struct {
 
 	int family;
 	int ip_entry_width, metric_entry_width;
-	NMIP4Route *ip4_route;
-	NMIP6Route *ip6_route;
+	NMIPRoute *route;
 } NmtRouteEntryPrivate;
 
 enum {
@@ -58,8 +41,7 @@ enum {
 	PROP_FAMILY,
 	PROP_IP_ENTRY_WIDTH,
 	PROP_METRIC_ENTRY_WIDTH,
-	PROP_IP4_ROUTE,
-	PROP_IP6_ROUTE,
+	PROP_ROUTE,
 
 	LAST_PROP
 };
@@ -129,7 +111,7 @@ nmt_route_entry_constructed (GObject *object)
 
 	priv->dest = nmt_ip_entry_new (priv->ip_entry_width, priv->family, TRUE, FALSE);
 	priv->next_hop = nmt_ip_entry_new (priv->ip_entry_width, priv->family, FALSE, TRUE);
-	priv->metric = nmt_newt_entry_numeric_new (priv->metric_entry_width, 0, 65535);
+	priv->metric = nmt_newt_entry_numeric_new_full (priv->metric_entry_width, 0, G_MAXUINT32, TRUE);
 
 	nmt_newt_grid_add (grid, priv->dest, 0, 0);
 	warning_label = create_warning_label (priv->dest);
@@ -143,20 +125,12 @@ nmt_route_entry_constructed (GObject *object)
 	nmt_newt_grid_add (grid, priv->metric, 4, 0);
 	nmt_newt_widget_set_padding (priv->metric, 1, 0, 0, 0);
 
-	if (priv->family == AF_INET) {
-		nm_editor_bind_ip4_route_to_strings (object, "ip4-route",
-		                                     priv->dest, "text",
-		                                     priv->next_hop, "text",
-		                                     priv->metric, "text",
-		                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	} else if (priv->family == AF_INET6) {
-		nm_editor_bind_ip6_route_to_strings (object, "ip6-route",
-		                                     priv->dest, "text",
-		                                     priv->next_hop, "text",
-		                                     priv->metric, "text",
-		                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	} else
-		g_assert_not_reached ();
+	nm_editor_bind_ip_route_to_strings (priv->family,
+	                                    object, "route",
+	                                    priv->dest, "text",
+	                                    priv->next_hop, "text",
+	                                    priv->metric, "text",
+	                                    G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
 	G_OBJECT_CLASS (nmt_route_entry_parent_class)->constructed (object);
 }
@@ -165,7 +139,7 @@ static newtComponent
 nmt_route_entry_get_focus_component (NmtNewtWidget *widget)
 {
 	NmtRouteEntryPrivate *priv = NMT_ROUTE_ENTRY_GET_PRIVATE (widget);
-	
+
 	return nmt_newt_widget_get_focus_component (priv->dest);
 }
 
@@ -174,8 +148,7 @@ nmt_route_entry_finalize (GObject *object)
 {
 	NmtRouteEntryPrivate *priv = NMT_ROUTE_ENTRY_GET_PRIVATE (object);
 
-	g_clear_pointer (&priv->ip4_route, nm_ip4_route_unref);
-	g_clear_pointer (&priv->ip6_route, nm_ip6_route_unref);
+	g_clear_pointer (&priv->route, nm_ip_route_unref);
 
 	G_OBJECT_CLASS (nmt_route_entry_parent_class)->finalize (object);
 }
@@ -198,17 +171,10 @@ nmt_route_entry_set_property (GObject      *object,
 	case PROP_METRIC_ENTRY_WIDTH:
 		priv->metric_entry_width = g_value_get_int (value);
 		break;
-	case PROP_IP4_ROUTE:
-		g_return_if_fail (priv->family == AF_INET);
-		if (priv->ip4_route)
-			nm_ip4_route_unref (priv->ip4_route);
-		priv->ip4_route = g_value_dup_boxed (value);
-		break;
-	case PROP_IP6_ROUTE:
-		g_return_if_fail (priv->family == AF_INET6);
-		if (priv->ip6_route)
-			nm_ip6_route_unref (priv->ip6_route);
-		priv->ip6_route = g_value_dup_boxed (value);
+	case PROP_ROUTE:
+		if (priv->route)
+			nm_ip_route_unref (priv->route);
+		priv->route = g_value_dup_boxed (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -234,13 +200,8 @@ nmt_route_entry_get_property (GObject    *object,
 	case PROP_METRIC_ENTRY_WIDTH:
 		g_value_set_int (value, priv->metric_entry_width);
 		break;
-	case PROP_IP4_ROUTE:
-		g_return_if_fail (priv->family == AF_INET);
-		g_value_set_boxed (value, priv->ip4_route);
-		break;
-	case PROP_IP6_ROUTE:
-		g_return_if_fail (priv->family == AF_INET6);
-		g_value_set_boxed (value, priv->ip6_route);
+	case PROP_ROUTE:
+		g_value_set_boxed (value, priv->route);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -301,27 +262,14 @@ nmt_route_entry_class_init (NmtRouteEntryClass *entry_class)
 		                   G_PARAM_CONSTRUCT_ONLY |
 		                   G_PARAM_STATIC_STRINGS));
 	/**
-	 * NmtRouteEntry:ip4-route:
+	 * NmtRouteEntry:route:
 	 *
-	 * The contents of the entries, as an #NMIP4Route. Only valid
-	 * if #NmtRouteEntry:family is %AF_INET.
+	 * The contents of the entries, as an #NMIPRoute.
 	 */
 	g_object_class_install_property
-		(object_class, PROP_IP4_ROUTE,
-		 g_param_spec_boxed ("ip4-route", "", "",
-		                     nm_ip4_route_get_type (),
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtRouteEntry:ip6-route:
-	 *
-	 * The contents of the entries, as an #NMIP6Route. Only valid
-	 * if #NmtRouteEntry:family is %AF_INET6.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_IP6_ROUTE,
-		 g_param_spec_boxed ("ip6-route", "", "",
-		                     nm_ip6_route_get_type (),
+		(object_class, PROP_ROUTE,
+		 g_param_spec_boxed ("route", "", "",
+		                     nm_ip_route_get_type (),
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 }

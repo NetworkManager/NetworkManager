@@ -1,0 +1,22 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=none
+ONBOOT=yes
+USERCTL=yes
+MTU=1492
+NM_CONTROLLED=yes
+DNS1=4.2.2.1
+DNS2=4.2.2.2
+IPADDR=192.168.1.5
+NETMASK=255.255.255.0
+GATEWAY=192.168.1.1
+IPV6INIT=yes
+IPV6_AUTOCONF=no
+IPV6ADDR=dead:beaf::1
+IPV6ADDR_SECONDARIES="dead:beaf::2/56"
+DNS3=1:2:3:4::a
+DNS4=1:2:3:4::b
+RES_OPTIONS=
+ETHTOOL_OPTS="speed 100 duplex full wol apgs sopass 00:11:22:33:44:55 autoneg off"

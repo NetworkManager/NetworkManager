@@ -1,22 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_ACCESS_POINT_H__
@@ -26,7 +11,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-object.h>
+#include "nm-object.h"
 
 G_BEGIN_DECLS
 
@@ -46,21 +31,15 @@ G_BEGIN_DECLS
 #define NM_ACCESS_POINT_MODE        "mode"
 #define NM_ACCESS_POINT_MAX_BITRATE "max-bitrate"
 #define NM_ACCESS_POINT_STRENGTH    "strength"
+#define NM_ACCESS_POINT_LAST_SEEN   "last-seen"
 
 /* DEPRECATED */
 #define NM_ACCESS_POINT_HW_ADDRESS  "hw-address"
 
-
-struct _NMAccessPoint {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMAccessPointClass;
+/**
+ * NMAccessPoint:
+ */
+typedef struct _NMAccessPointClass NMAccessPointClass;
 
 GType nm_access_point_get_type (void);
 
@@ -73,6 +52,8 @@ guint32                nm_access_point_get_frequency    (NMAccessPoint *ap);
 NM80211Mode            nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32                nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
 guint8                 nm_access_point_get_strength     (NMAccessPoint *ap);
+NM_AVAILABLE_IN_1_2
+int                    nm_access_point_get_last_seen    (NMAccessPoint *ap);
 
 GPtrArray *            nm_access_point_filter_connections (NMAccessPoint *ap,
                                                            const GPtrArray *connections);

@@ -5,3 +5,5 @@ default via dead::beaf
 
 # routes without "via" are valid
 abbe::cafe/64 metric 777
+
+aaaa::cccc/64 from 1111::2222/48 via 3333::4444 src 5555::6666 mtu lock 1450 cwnd 13

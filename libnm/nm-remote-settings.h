@@ -1,30 +1,17 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2008 Novell, Inc.
- * Copyright 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 Novell, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_REMOTE_SETTINGS_H__
 #define __NM_REMOTE_SETTINGS_H__
 
-#include <nm-object.h>
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
+#error Cannot use this header.
+#endif
 
-G_BEGIN_DECLS
+#include "nm-object.h"
 
 #define NM_TYPE_REMOTE_SETTINGS            (nm_remote_settings_get_type ())
 #define NM_REMOTE_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettings))
@@ -43,6 +30,9 @@ G_BEGIN_DECLS
 typedef struct _NMRemoteSettings NMRemoteSettings;
 typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
 
+/**
+ * NMRemoteSettings:
+ */
 struct _NMRemoteSettings {
 	NMObject parent;
 };
@@ -50,14 +40,10 @@ struct _NMRemoteSettings {
 struct _NMRemoteSettingsClass {
 	NMObjectClass parent;
 
-	/* Signals */
 	void (*connection_added)   (NMRemoteSettings *settings,
 	                            NMRemoteConnection *connection);
 	void (*connection_removed) (NMRemoteSettings *settings,
 	                            NMRemoteConnection *connection);
-
-	/*< private >*/
-	gpointer padding[8];
 };
 
 GType nm_remote_settings_get_type (void);
@@ -73,55 +59,19 @@ NMRemoteConnection *nm_remote_settings_get_connection_by_path (NMRemoteSettings 
 NMRemoteConnection *nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings,
                                                                const char *uuid);
 
-void                nm_remote_settings_add_connection_async  (NMRemoteSettings *settings,
-                                                              NMConnection *connection,
-                                                              gboolean save_to_disk,
-                                                              GCancellable *cancellable,
-                                                              GAsyncReadyCallback callback,
-                                                              gpointer user_data);
-NMRemoteConnection *nm_remote_settings_add_connection_finish (NMRemoteSettings *settings,
-                                                              GAsyncResult *result,
-                                                              GError **error);
+typedef struct {
+	NMRemoteConnection *connection;
+	GVariant *extra_results;
+} NMAddConnectionResultData;
 
-gboolean nm_remote_settings_load_connections        (NMRemoteSettings *settings,
-                                                     char **filenames,
-                                                     char ***failures,
-                                                     GCancellable *cancellable,
-                                                     GError **error);
-void     nm_remote_settings_load_connections_async  (NMRemoteSettings *settings,
-                                                     char **filenames,
-                                                     GCancellable *cancellable,
-                                                     GAsyncReadyCallback callback,
-                                                     gpointer user_data);
-gboolean nm_remote_settings_load_connections_finish (NMRemoteSettings *settings,
-                                                     char ***failures,
-                                                     GAsyncResult *result,
-                                                     GError **error);
+void nm_add_connection_result_data_free (NMAddConnectionResultData *result_data);
 
-gboolean nm_remote_settings_reload_connections        (NMRemoteSettings *settings,
-                                                       GCancellable *cancellable,
-                                                       GError **error);
-void     nm_remote_settings_reload_connections_async  (NMRemoteSettings *settings,
-                                                       GCancellable *cancellable,
-                                                       GAsyncReadyCallback callback,
-                                                       gpointer user_data);
-gboolean nm_remote_settings_reload_connections_finish (NMRemoteSettings *settings,
-                                                       GAsyncResult *result,
-                                                       GError **error);
+NM_AUTO_DEFINE_FCN0 (NMAddConnectionResultData *, _nm_auto_free_add_connection_result_data, nm_add_connection_result_data_free)
+#define nm_auto_free_add_connection_result_data nm_auto (_nm_auto_free_add_connection_result_data)
 
-gboolean nm_remote_settings_save_hostname        (NMRemoteSettings *settings,
-                                                  const char *hostname,
-                                                  GCancellable *cancellable,
-                                                  GError **error);
-void     nm_remote_settings_save_hostname_async  (NMRemoteSettings *settings,
-                                                  const char *hostname,
-                                                  GCancellable *cancellable,
-                                                  GAsyncReadyCallback callback,
-                                                  gpointer user_data);
-gboolean nm_remote_settings_save_hostname_finish (NMRemoteSettings *settings,
-                                                  GAsyncResult *result,
-                                                  GError **error);
-
-G_END_DECLS
+void nm_remote_settings_wait_for_connection (NMRemoteSettings *settings,
+                                             const char *connection_path,
+                                             GVariant *extra_results_take,
+                                             GTask *task_take);
 
 #endif /* __NM_REMOTE_SETTINGS_H__ */

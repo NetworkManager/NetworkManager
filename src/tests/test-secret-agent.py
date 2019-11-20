@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-# -*- Mode: python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 
-import glib
-import gobject
+from gi.repository import GLib
 import sys
 import dbus
 import dbus.service
@@ -31,7 +29,7 @@ class Agent(dbus.service.Object):
         if uid != 0:
             raise NotAuthorizedException("UID %d not authorized" % uid)
 
-        print "Secrets requested path '%s' setting '%s' hints '%s' new %d" % (connection_path, setting_name, str(hints), request_new)
+        print("Secrets requested path '%s' setting '%s' hints '%s' new %d" % (connection_path, setting_name, str(hints), request_new))
 
         # return some random GSM secrets
         s_gsm = dbus.Dictionary({'password': 'asdfadfasdfaf'})
@@ -40,7 +38,7 @@ class Agent(dbus.service.Object):
 
 def register(proxy):
     proxy.Register("test.agent.id", dbus_interface=IFACE_AGENT_MANAGER)
-    print "Registered!"
+    print("Registered!")
     return False
 
 def unregister(proxy, loop):
@@ -56,17 +54,17 @@ def main():
     proxy = bus.get_object("org.freedesktop.NetworkManager",
                            "/org/freedesktop/NetworkManager/AgentManager")
 
-    mainloop = gobject.MainLoop()
+    mainloop = GLib.MainLoop()
 
-    gobject.idle_add(register, proxy)
-    print "Running test secret agent" 
+    GLib.idle_add(register, proxy)
+    print("Running test secret agent")
 
     try:
         mainloop.run()
-    except KeyboardInterrupt, e:
+    except KeyboardInterrupt:
         pass
 
-    print "Unregistering..."
+    print("Unregistering...")
     unregister(proxy, mainloop);
 
 if __name__ == '__main__':

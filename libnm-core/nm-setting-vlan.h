@@ -1,22 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2011 - 2014 Red Hat, Inc.
+ * Copyright (C) 2011 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_SETTING_VLAN_H__
@@ -46,6 +30,11 @@ G_BEGIN_DECLS
 #define NM_SETTING_VLAN_INGRESS_PRIORITY_MAP "ingress-priority-map"
 #define NM_SETTING_VLAN_EGRESS_PRIORITY_MAP  "egress-priority-map"
 
+/**
+ * NMSettingVlan:
+ *
+ * VLAN Settings
+ */
 struct _NMSettingVlan {
 	NMSetting parent;
 };
@@ -75,10 +64,12 @@ typedef enum {
  * @NM_VLAN_FLAG_REORDER_HEADERS: indicates that this interface should reorder
  *  outgoing packet headers to look more like a non-VLAN Ethernet interface
  * @NM_VLAN_FLAG_GVRP: indicates that this interface should use GVRP to register
- *  itself with it's switch
+ *  itself with its switch
  * @NM_VLAN_FLAG_LOOSE_BINDING: indicates that this interface's operating
  *  state is tied to the underlying network interface but other details
  *  (like routing) are not.
+ * @NM_VLAN_FLAG_MVRP: indicates that this interface should use MVRP to register
+ *  itself with its switch
  *
  * #NMVlanFlags values control the behavior of the VLAN interface.
  **/
@@ -86,9 +77,18 @@ typedef enum { /*< flags >*/
 	NM_VLAN_FLAG_REORDER_HEADERS = 0x1,
 	NM_VLAN_FLAG_GVRP            = 0x2,
 	NM_VLAN_FLAG_LOOSE_BINDING   = 0x4,
+	NM_VLAN_FLAG_MVRP            = 0x8,
 
 	/* NOTE: if adding flags update nm-setting-vlan.c::verify() */
+
+	/* NOTE: these flags must correspond to the value from the kernel
+	 * header files. */
 } NMVlanFlags;
+
+#define NM_VLAN_FLAGS_ALL  (NM_VLAN_FLAG_REORDER_HEADERS | \
+                            NM_VLAN_FLAG_GVRP | \
+                            NM_VLAN_FLAG_LOOSE_BINDING | \
+                            NM_VLAN_FLAG_MVRP)
 
 GType nm_setting_vlan_get_type (void);
 NMSetting *nm_setting_vlan_new (void);

@@ -1,0 +1,184 @@
+# Quick syntax check:
+# python -c 'import sys, yaml; yaml.dump (yaml.load (sys.stdin), sys.stdout)' <.gitlab-ci.yml
+
+# If things don't seem to work, this can help:
+# https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/ci/lint
+
+stages:
+  - test
+  - deploy
+
+.fedora_install: &fedora_install
+  before_script:
+
+    # enable EPEL on CentOS
+    - date '+%Y%m%d-%H%M%S'; ! grep -q '^NAME=.*\(CentOS\)' /etc/os-release || yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+    - date '+%Y%m%d-%H%M%S'; ! grep -q '^NAME=.*\(CentOS\)' /etc/os-release || (yum install -y glibc-common && localedef -c -i pl_PL -f UTF-8 pl_PL.UTF-8 && locale -a)
+
+    - date '+%Y%m%d-%H%M%S'; NM_NO_EXTRA=1 NM_INSTALL="yum install -y" ./contrib/fedora/REQUIRED_PACKAGES
+    - date '+%Y%m%d-%H%M%S'; yum install -y glibc-langpack-pl ccache clang which
+
+    # containers have "tsflags=nodocs" in /etc/dnf/dnf.conf. We need /usr/shared/gtk-doc/html
+    # to generate proper documentation.
+    - date '+%Y%m%d-%H%M%S'; yum reinstall -y --setopt='tsflags=' glib2-doc
+
+    - date '+%Y%m%d-%H%M%S'; ! grep -q '^NAME=.*\(CentOS\)' /etc/os-release || yum install -y python36-dbus python36-gobject-base
+
+    - date '+%Y%m%d-%H%M%S'; ! which dnf || dnf install -y python3-dnf-plugins-core
+    - date '+%Y%m%d-%H%M%S'; ! which dnf || dnf debuginfo-install -y glib2
+    - date '+%Y%m%d-%H%M%S';   which dnf || debuginfo-install -y glib2
+
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-ci-patch-gtkdoc.sh || true
+
+    - date '+%Y%m%d-%H%M%S'; test -x /usr/bin/ninja || ! test -x /usr/bin/ninja-build || ln -s /usr/bin/ninja-build /usr/bin/ninja
+
+.debian_install: &debian_install
+  before_script:
+    - date '+%Y%m%d-%H%M%S'; apt-get update
+    - date '+%Y%m%d-%H%M%S'; NM_INSTALL="apt-get -qq install -y" ./contrib/debian/REQUIRED_PACKAGES
+    - date '+%Y%m%d-%H%M%S'; dbus-uuidgen --ensure
+    - date '+%Y%m%d-%H%M%S'; sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen ; true
+    - date '+%Y%m%d-%H%M%S'; locale-gen pl_PL.UTF-8
+    - date '+%Y%m%d-%H%M%S'; pip3 install meson
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-ci-install-valgrind-in-ubuntu1604.sh
+
+    # iproute2 5.2.0 on debian:sid causes our unit tests to fail.
+    # Downgrade to a working version. See https://www.spinics.net/lists/netdev/msg584916.html
+    - date '+%Y%m%d-%H%M%S'; ! ( dpkg -s iproute2 | grep -q '^Version[:] 5.2.0-1\(ubuntu1\)\?$' ) || (curl 'http://ftp.debian.org/debian/pool/main/i/iproute2/iproute2_4.20.0-2_amd64.deb' --output /tmp/iproute2_4.20.0-2_amd64.deb && dpkg -i /tmp/iproute2_4.20.0-2_amd64.deb)
+
+.do_build: &do_build
+  stage: test
+  script:
+    - date '+%Y%m%d-%H%M%S'; uname -a
+    - date '+%Y%m%d-%H%M%S'; locale -a
+    - date '+%Y%m%d-%H%M%S'; env
+    - date '+%Y%m%d-%H%M%S'; meson --version
+    - date '+%Y%m%d-%H%M%S'; ! which dpkg || dpkg -l
+    - date '+%Y%m%d-%H%M%S'; ! which yum  || yum list installed
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; rm -rf /tmp/nm-docs-html; mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=autotools CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; BUILD_TYPE=meson     CC=clang WITH_DOCS=0 contrib/scripts/nm-ci-run.sh
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; ! grep -q '^NAME=.*\(Fedora\|CentOS\)' /etc/os-release || ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; ! grep -q '^NAME=.*\(Fedora\)'         /etc/os-release || ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx ; test "$NM_BUILD_TARBALL" != 1 || ( ./contrib/fedora/rpm/build_clean.sh -r && mv ./NetworkManager-1*.tar.xz /tmp/ && mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm /tmp/ )
+    - date '+%Y%m%d-%H%M%S'; git clean -fdx
+    - date '+%Y%m%d-%H%M%S'; mv /tmp/nm-docs-html ./docs-html
+    - date '+%Y%m%d-%H%M%S'; test "$NM_BUILD_TARBALL" != 1 || mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
+
+checkpatch:
+  image: fedora:29
+  stage: test
+  script:
+    - date '+%Y%m%d-%H%M%S'; dnf install -y git
+    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
+  allow_failure: true
+  artifacts:
+    when: on_failure
+    paths:
+      - checkpatch-out.txt
+
+t_fedora:28:
+  <<: *fedora_install
+  image: fedora:28
+  <<: *do_build
+  when: manual
+
+t_fedora:29:
+  <<: *fedora_install
+  image: fedora:29
+  <<: *do_build
+  variables:
+    NM_BUILD_TARBALL: 1
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - docs-html
+      - NetworkManager-1*.tar.xz
+      - NetworkManager-1*.src.rpm
+
+t_fedora:30:
+  <<: *fedora_install
+  image: fedora:30
+  <<: *do_build
+
+t_fedora:31:
+  <<: *fedora_install
+  image: fedora:31
+  <<: *do_build
+
+t_fedora:rawhide:
+  <<: *fedora_install
+  image: fedora:rawhide
+  <<: *do_build
+  allow_failure: true
+  when: manual
+
+t_centos:7.5.1804:
+  <<: *fedora_install
+  image: centos:7.5.1804
+  <<: *do_build
+  when: manual
+
+t_centos:7.6.1810:
+  <<: *fedora_install
+  image: centos:7.6.1810
+  <<: *do_build
+
+t_ubuntu:16.04:
+  <<: *debian_install
+  image: ubuntu:16.04
+  <<: *do_build
+
+t_ubuntu:18.04:
+  <<: *debian_install
+  image: ubuntu:18.04
+  <<: *do_build
+
+t_ubuntu:rolling:
+  <<: *debian_install
+  image: ubuntu:rolling
+  <<: *do_build
+  when: manual
+
+t_ubuntu:devel:
+  <<: *debian_install
+  image: ubuntu:devel
+  <<: *do_build
+  when: manual
+
+t_debian:9:
+  <<: *debian_install
+  image: debian:stretch
+  <<: *do_build
+
+t_debian:10:
+  <<: *debian_install
+  image: debian:stretch
+  <<: *do_build
+
+t_debian:testing:
+  <<: *debian_install
+  image: debian:testing
+  <<: *do_build
+  when: manual
+
+t_debian:sid:
+  <<: *debian_install
+  image: debian:sid
+  <<: *do_build
+
+pages:
+  stage: deploy
+  dependencies:
+    - t_fedora:29
+  script:
+    - mv docs-html public
+  artifacts:
+    expire_in: 20 days
+    paths:
+      - public
+  only:
+    - master

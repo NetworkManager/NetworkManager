@@ -1,66 +1,39 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
-#include <string.h>
-#include <gio/gio.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
+
+#include "nm-object.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <nm-utils.h>
+
+#include "nm-utils.h"
 #include "nm-dbus-interface.h"
-#include "nm-object.h"
-#include "nm-object-cache.h"
 #include "nm-object-private.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
+#include "nm-core-internal.h"
+#include "c-list/src/c-list.h"
+
+/*****************************************************************************/
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
 
-static void nm_object_initable_iface_init (GInitableIface *iface);
-static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
+NM_CACHED_QUARK_FCN ("nm-obj-nm", _nm_object_obj_nm_quark)
 
-typedef struct {
-	NMObjectDecideTypeFunc type_func;
-	char *interface;
-	char *property;
-} NMObjectTypeFuncData;
+/*****************************************************************************/
 
-static GHashTable *type_funcs;
-
-typedef struct {
-	GSList *interfaces;
-} NMObjectClassPrivate;
-
-#define NM_OBJECT_CLASS_GET_PRIVATE(k) (G_TYPE_CLASS_GET_PRIVATE ((k), NM_TYPE_OBJECT, NMObjectClassPrivate))
-
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
-                                  type_funcs = g_hash_table_new (NULL, NULL);
-                                  g_type_add_class_private (g_define_type_id, sizeof (NMObjectClassPrivate));
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
-                                  )
-
-#define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PATH,
+	PROP_DBUS_CONNECTION,
+	PROP_DBUS_OBJECT,
+	PROP_DBUS_OBJECT_MANAGER,
+);
 
 typedef struct {
 	PropertyMarshalFunc func;
@@ -69,61 +42,51 @@ typedef struct {
 	const char *signal_prefix;
 } PropertyInfo;
 
+typedef struct _NMObjectPrivate {
+	GDBusObject *object;
+	GDBusObjectManager *object_manager;
+
+	GSList *property_tables;
+	NMObject *parent;
+
+	gboolean inited;        /* async init finished? */
+	GSList *waiters;        /* if async init did not finish, users of this object need
+	                         * to defer their notifications by adding themselves here. */
+
+	CList notify_items;
+	guint notify_id;
+
+	guint reload_remaining;
+
+	CList pending;          /* ordered list of pending property updates. */
+	GPtrArray *proxies;
+
+	char *name_owner_cached;
+} NMObjectPrivate;
+
+typedef struct {
+	GSList *interfaces;
+} NMObjectClassPrivate;
+
+static void nm_object_initable_iface_init (GInitableIface *iface);
+static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
+                                  g_type_add_class_private (g_define_type_id, sizeof (NMObjectClassPrivate));
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
+                                  )
+
+#define NM_OBJECT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMObject, NM_IS_OBJECT)
+
+#define NM_OBJECT_CLASS_GET_PRIVATE(k) (G_TYPE_CLASS_GET_PRIVATE ((k), NM_TYPE_OBJECT, NMObjectClassPrivate))
+
+/*****************************************************************************/
+
 static void reload_complete (NMObject *object, gboolean emit_now);
 static gboolean demarshal_generic (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field);
 
-typedef struct {
-	GDBusConnection *connection;
-	gboolean nm_running;
-
-	char *path;
-	GHashTable *proxies;
-	GDBusProxy *properties_proxy;
-	GSList *property_tables;
-	NMObject *parent;
-	gboolean suppress_property_updates;
-
-	GSList *notify_items;
-	guint32 notify_id;
-
-	GSList *reload_results;
-	guint reload_remaining;
-	GError *reload_error;
-} NMObjectPrivate;
-
-enum {
-	PROP_0,
-	PROP_PATH,
-	PROP_DBUS_CONNECTION,
-	PROP_NM_RUNNING,
-
-	LAST_PROP
-};
-
-/**
- * _nm_object_class_add_interface:
- * @object_class: an #NMObjectClass
- * @interface: a D-Bus interface name
- *
- * Registers that @object_class implements @interface. A proxy for that
- * interface will automatically be created at construction time, and can
- * be retrieved with _nm_object_get_proxy().
- */
-void
-_nm_object_class_add_interface (NMObjectClass *object_class,
-                                const char    *interface)
-{
-	NMObjectClassPrivate *cpriv;
-
-	g_return_if_fail (NM_IS_OBJECT_CLASS (object_class));
-	g_return_if_fail (interface);
-
-	cpriv = NM_OBJECT_CLASS_GET_PRIVATE (object_class);
-
-	g_return_if_fail (g_slist_find_custom (cpriv->interfaces, interface, (GCompareFunc) g_strcmp0) == NULL);
-
-	cpriv->interfaces = g_slist_prepend (cpriv->interfaces, g_strdup (interface));
-}
+/*****************************************************************************/
 
 /**
  * nm_object_get_path:
@@ -132,14 +95,14 @@ _nm_object_class_add_interface (NMObjectClass *object_class,
  * Gets the DBus path of the #NMObject.
  *
  * Returns: the object's path. This is the internal string used by the
- * device, and must not be modified.
+ * object, and must not be modified.
  **/
 const char *
 nm_object_get_path (NMObject *object)
 {
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
-	return NM_OBJECT_GET_PRIVATE (object)->path;
+	return g_dbus_object_get_object_path (NM_OBJECT_GET_PRIVATE (object)->object);
 }
 
 /**
@@ -155,14 +118,225 @@ GDBusProxy *
 _nm_object_get_proxy (NMObject   *object,
                       const char *interface)
 {
-	GDBusProxy *proxy;
+	NMObjectPrivate *priv;
+	GDBusInterface *proxy;
 
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
-	proxy = g_hash_table_lookup (NM_OBJECT_GET_PRIVATE (object)->proxies, interface);
+	priv = NM_OBJECT_GET_PRIVATE (object);
+	if (priv->object == NULL)
+		return NULL;
+
+	proxy = g_dbus_object_get_interface (priv->object, interface);
 	g_return_val_if_fail (proxy != NULL, NULL);
-	return proxy;
+
+	return G_DBUS_PROXY (proxy);
 }
+
+/*****************************************************************************/
+
+GDBusConnection *
+_nm_object_get_dbus_connection (gpointer self)
+{
+	NMObjectPrivate *priv;
+
+	nm_assert (NM_IS_OBJECT (self));
+
+	priv = NM_OBJECT_GET_PRIVATE (self);
+
+	return g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+}
+
+const char *
+_nm_object_get_dbus_name_owner (gpointer self)
+{
+	NMObjectPrivate *priv;
+
+	nm_assert (NM_IS_OBJECT (self));
+
+	priv = NM_OBJECT_GET_PRIVATE (self);
+
+	nm_clear_g_free (&priv->name_owner_cached);
+	priv->name_owner_cached = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+	return priv->name_owner_cached;
+}
+
+static gboolean
+_get_dbus_params (gpointer self,
+                  GDBusConnection **out_dbus_connection,
+                  const char **out_name_owner)
+{
+	const char *name_owner;
+	GDBusConnection *dbus_connection = NULL;
+
+	if (NM_IS_OBJECT (self)) {
+		name_owner = _nm_object_get_dbus_name_owner (self);
+		if (name_owner)
+			dbus_connection = _nm_object_get_dbus_connection (self);
+	} else {
+		nm_assert (NM_IS_CLIENT (self));
+		name_owner = _nm_client_get_dbus_name_owner (self);
+		if (name_owner)
+			dbus_connection = _nm_client_get_dbus_connection (self);
+	}
+
+	*out_dbus_connection = dbus_connection;
+	*out_name_owner = name_owner;
+	return !!name_owner;
+}
+
+void
+_nm_object_dbus_call (gpointer self,
+                      gpointer source_tag,
+                      GCancellable *cancellable,
+                      GAsyncReadyCallback user_callback,
+                      gpointer user_callback_data,
+                      const char *object_path,
+                      const char *interface_name,
+                      const char *method_name,
+                      GVariant *parameters,
+                      const GVariantType *reply_type,
+                      GDBusCallFlags flags,
+                      int timeout_msec,
+                      GAsyncReadyCallback internal_callback)
+{
+	gs_unref_object GTask *task = NULL;
+	const char *name_owner;
+	GDBusConnection *dbus_connection;
+
+	nm_assert (G_IS_OBJECT (self));
+	nm_assert (source_tag);
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (internal_callback);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	task = nm_g_task_new (self, cancellable, source_tag, user_callback, user_callback_data);
+
+	if (!_get_dbus_params (self, &dbus_connection, &name_owner)) {
+		nm_g_variant_unref_floating (parameters);
+		g_task_return_error (task, _nm_object_new_error_nm_not_running ());
+		return;
+	}
+
+	g_dbus_connection_call (dbus_connection,
+	                        name_owner,
+	                        object_path,
+	                        interface_name,
+	                        method_name,
+	                        parameters,
+	                        reply_type,
+	                        flags,
+	                        timeout_msec,
+	                        cancellable,
+	                        internal_callback,
+	                        g_steal_pointer (&task));
+}
+
+GVariant *
+_nm_object_dbus_call_sync (gpointer self,
+                           GCancellable *cancellable,
+                           const char *object_path,
+                           const char *interface_name,
+                           const char *method_name,
+                           GVariant *parameters,
+                           const GVariantType *reply_type,
+                           GDBusCallFlags flags,
+                           int timeout_msec,
+                           gboolean strip_dbus_error,
+                           GError **error)
+{
+	gs_unref_variant GVariant *ret = NULL;
+	GDBusConnection *dbus_connection;
+	const char *name_owner;
+
+	nm_assert (G_IS_OBJECT (self));
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+	nm_assert (!error || !*error);
+	nm_assert (object_path);
+	nm_assert (interface_name);
+	nm_assert (method_name);
+	nm_assert (parameters);
+	nm_assert (reply_type);
+
+	if (!_get_dbus_params (self, &dbus_connection, &name_owner)) {
+		nm_g_variant_unref_floating (parameters);
+		_nm_object_set_error_nm_not_running (error);
+		return NULL;
+	}
+
+	ret = g_dbus_connection_call_sync (dbus_connection,
+	                                   name_owner,
+	                                   object_path,
+	                                   interface_name,
+	                                   method_name,
+	                                   parameters,
+	                                   reply_type,
+	                                   flags,
+	                                   timeout_msec,
+	                                   cancellable,
+	                                   error);
+	if (!ret) {
+		if (error && strip_dbus_error)
+			g_dbus_error_strip_remote_error (*error);
+		return NULL;
+	}
+
+	return g_steal_pointer (&ret);
+}
+
+gboolean
+_nm_object_dbus_call_sync_void (gpointer self,
+                                GCancellable *cancellable,
+                                const char *object_path,
+                                const char *interface_name,
+                                const char *method_name,
+                                GVariant *parameters,
+                                GDBusCallFlags flags,
+                                int timeout_msec,
+                                gboolean strip_dbus_error,
+                                GError **error)
+{
+	gs_unref_variant GVariant *ret = NULL;
+
+	ret = _nm_object_dbus_call_sync (self,
+	                                 cancellable,
+	                                 object_path,
+	                                 interface_name,
+	                                 method_name,
+	                                 parameters,
+	                                 G_VARIANT_TYPE ("()"),
+	                                 flags,
+	                                 timeout_msec,
+	                                 strip_dbus_error,
+	                                 error);
+	return !!ret;
+}
+
+/*****************************************************************************/
+
+GError *
+_nm_object_new_error_nm_not_running (void)
+{
+	return g_error_new_literal (NM_CLIENT_ERROR,
+	                            NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+	                            "NetworkManager is not running");
+}
+
+void
+_nm_object_set_error_nm_not_running (GError **error)
+{
+	if (error) {
+		if (*error)
+			g_return_if_reached ();
+		*error = _nm_object_new_error_nm_not_running ();
+	}
+}
+
+/*****************************************************************************/
 
 typedef enum {
 	NOTIFY_SIGNAL_PENDING_NONE,
@@ -172,6 +346,7 @@ typedef enum {
 } NotifySignalPending;
 
 typedef struct {
+	CList lst;
 	const char *property;
 	const char *signal_prefix;
 	NotifySignalPending pending;
@@ -181,6 +356,7 @@ typedef struct {
 static void
 notify_item_free (NotifyItem *item)
 {
+	c_list_unlink_stale (&item->lst);
 	g_clear_object (&item->changed);
 	g_slice_free (NotifyItem, item);
 }
@@ -191,7 +367,8 @@ deferred_notify_cb (gpointer data)
 	NMObject *object = NM_OBJECT (data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	NMObjectClass *object_class = NM_OBJECT_GET_CLASS (object);
-	GSList *props, *iter;
+	CList props;
+	CList *iter, *safe;
 
 	priv->notify_id = 0;
 
@@ -204,24 +381,18 @@ deferred_notify_cb (gpointer data)
 	 * during the g_object_notify() call separately from the property
 	 * list we're iterating.
 	 */
-	props = g_slist_reverse (priv->notify_items);
-	priv->notify_items = NULL;
+	c_list_link_after (&priv->notify_items, &props);
+	c_list_unlink (&priv->notify_items);
 
 	g_object_ref (object);
 
-	/* Emit property change notifications first */
-	for (iter = props; iter; iter = g_slist_next (iter)) {
-		NotifyItem *item = iter->data;
-
-		if (item->property)
-			g_object_notify (G_OBJECT (object), item->property);
-	}
-
-	/* And added/removed signals second */
-	for (iter = props; iter; iter = g_slist_next (iter)) {
-		NotifyItem *item = iter->data;
+	/* Emit added/removed signals first since some of our internal objects
+	 * use the added/removed signals for new object processing.
+	 */
+	c_list_for_each (iter, &props) {
+		NotifyItem *item = c_list_entry (iter, NotifyItem, lst);
 		char buf[50];
-		gint ret = 0;
+		int ret = 0;
 
 		switch (item->pending) {
 		case NOTIFY_SIGNAL_PENDING_ADDED:
@@ -243,9 +414,20 @@ deferred_notify_cb (gpointer data)
 			g_signal_emit_by_name (object, buf, item->changed);
 		}
 	}
+
+	/* Emit property change notifications second */
+	c_list_for_each (iter, &props) {
+		NotifyItem *item = c_list_entry (iter, NotifyItem, lst);
+
+		if (item->property)
+			g_object_notify (G_OBJECT (object), item->property);
+	}
+
 	g_object_unref (object);
 
-	g_slist_free_full (props, (GDestroyNotify) notify_item_free);
+	c_list_for_each_safe (iter, safe, &props)
+		notify_item_free (c_list_entry (iter, NotifyItem, lst));
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -267,7 +449,7 @@ _nm_object_queue_notify_full (NMObject *object,
 {
 	NMObjectPrivate *priv;
 	NotifyItem *item;
-	GSList *iter;
+	CList *iter;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (!signal_prefix != !property);
@@ -278,8 +460,8 @@ _nm_object_queue_notify_full (NMObject *object,
 
 	property = g_intern_string (property);
 	signal_prefix = g_intern_string (signal_prefix);
-	for (iter = priv->notify_items; iter; iter = g_slist_next (iter)) {
-		item = iter->data;
+	c_list_for_each (iter, &priv->notify_items) {
+		item = c_list_entry (iter, NotifyItem, lst);
 
 		if (property && (property == item->property))
 			return;
@@ -331,7 +513,7 @@ _nm_object_queue_notify_full (NMObject *object,
 		item->pending = added ? NOTIFY_SIGNAL_PENDING_ADDED : NOTIFY_SIGNAL_PENDING_REMOVED;
 		item->changed = changed ? g_object_ref (changed) : NULL;
 	}
-	priv->notify_items = g_slist_prepend (priv->notify_items, item);
+	c_list_link_tail (&priv->notify_items, &item->lst);
 }
 
 void
@@ -340,259 +522,30 @@ _nm_object_queue_notify (NMObject *object, const char *property)
 	_nm_object_queue_notify_full (object, property, NULL, FALSE, NULL);
 }
 
-void
-_nm_object_register_type_func (GType base_type,
-                               NMObjectDecideTypeFunc type_func,
-                               const char *interface,
-                               const char *property)
-{
-	NMObjectTypeFuncData *type_data;
-
-	g_return_if_fail (type_func != NULL);
-	g_return_if_fail (interface != NULL);
-	g_return_if_fail (property != NULL);
-
-	type_data = g_slice_new (NMObjectTypeFuncData);
-	type_data->type_func = type_func;
-	type_data->interface = g_strdup (interface);
-	type_data->property = g_strdup (property);
-
-	g_hash_table_insert (type_funcs,
-	                     GSIZE_TO_POINTER (base_type),
-	                     type_data);
-}
-
-static GObject *
-_nm_object_create (GType type, GDBusConnection *connection, const char *path)
-{
-	NMObjectTypeFuncData *type_data;
-	GObject *object;
-	GError *error = NULL;
-
-	type_data = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
-	if (type_data) {
-		GDBusProxy *proxy;
-		GVariant *ret, *value;
-
-		proxy = _nm_dbus_new_proxy_for_connection (connection, path,
-		                                           DBUS_INTERFACE_PROPERTIES,
-		                                           NULL, &error);
-		if (!proxy) {
-			g_warning ("Could not create proxy for %s: %s.", path, error->message);
-			g_error_free (error);
-			return NULL;
-		}
-
-		ret = g_dbus_proxy_call_sync (proxy,
-		                              "Get",
-		                              g_variant_new ("(ss)",
-		                                             type_data->interface,
-		                                             type_data->property),
-		                              G_DBUS_CALL_FLAGS_NONE, -1,
-		                              NULL, &error);
-		g_object_unref (proxy);
-		if (!ret) {
-			dbgmsg ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
-			           type_data->property, type_data->interface, path, error->message);
-			g_error_free (error);
-			return NULL;
-		}
-
-		g_variant_get (ret, "(v)", &value);
-		type = type_data->type_func (value);
-		g_variant_unref (value);
-		g_variant_unref (ret);
-	}
-
-	if (type == G_TYPE_INVALID) {
-		dbgmsg ("Could not create object for %s: unknown object type", path);
-		return NULL;
-	}
-
-	object = g_object_new (type,
-	                       NM_OBJECT_PATH, path,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NULL);
-	/* Cache the object before initializing it (and in particular, loading its
-	 * property values); this is necessary to make circular references work (eg,
-	 * when creating an NMActiveConnection, it will create an NMDevice which
-	 * will in turn try to create the parent NMActiveConnection). Since we don't
-	 * support multi-threaded use, we know that we will have inited the object
-	 * before any external code sees it.
-	 */
-	_nm_object_cache_add (NM_OBJECT (object));
-	if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
-		dbgmsg ("Could not create object for %s: %s", path, error->message);
-		g_error_free (error);
-		g_clear_object (&object);
-	}
-
-	return object;
-}
-
-typedef void (*NMObjectCreateCallbackFunc) (GObject *, const char *, gpointer);
 typedef struct {
-	char *path;
-	NMObjectCreateCallbackFunc callback;
-	gpointer user_data;
-	NMObjectTypeFuncData *type_data;
-	GDBusConnection *connection;
-} NMObjectTypeAsyncData;
+	CList lst_pending;
+	NMObject *self;
+	PropertyInfo *pi;
+
+	GObject **objects;
+	int length, remaining;
+
+	gboolean array;
+	const char *property_name;
+} ObjectCreatedData;
 
 static void
-create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
+odata_free (gpointer data)
 {
-	async_data->callback (object, async_data->path, async_data->user_data);
+	ObjectCreatedData *odata = data;
 
-	g_free (async_data->path);
-	g_object_unref (async_data->connection);
-	g_slice_free (NMObjectTypeAsyncData, async_data);
+	c_list_unlink_stale (&odata->lst_pending);
+	g_object_unref (odata->self);
+	g_free (odata->objects);
+	g_slice_free (ObjectCreatedData, odata);
 }
 
-static void
-create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectTypeAsyncData *async_data = user_data;
-	GError *error = NULL;
-
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
-		dbgmsg ("Could not create object for %s: %s",
-		        nm_object_get_path (NM_OBJECT (object)),
-		        error->message);
-		g_error_free (error);
-		g_clear_object (&object);
-	}
-
-	create_async_complete (object, async_data);
-}
-
-static void
-create_async_got_type (NMObjectTypeAsyncData *async_data, GType type)
-{
-	GObject *object;
-
-	/* Ensure we don't have the object already; we may get multiple type
-	 * requests for the same object if there are multiple properties on
-	 * other objects that refer to the object at this path.  One of those
-	 * other requests may have already completed.
-	 */
-	object = (GObject *) _nm_object_cache_get (async_data->path);
-	if (object) {
-		create_async_complete (object, async_data);
-		return;
-	}
-
-	if (type == G_TYPE_INVALID) {
-		/* Don't know how to create this object */
-		create_async_complete (NULL, async_data);
-		return;
-	}
-
-	object = g_object_new (type,
-	                       NM_OBJECT_PATH, async_data->path,
-	                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
-	                       NULL);
-	_nm_object_cache_add (NM_OBJECT (object));
-	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
-	                             NULL, create_async_inited, async_data);
-}
-
-static void
-create_async_got_property (GObject *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectTypeAsyncData *async_data = user_data;
-	NMObjectTypeFuncData *type_data = async_data->type_data;
-	GVariant *ret, *value;
-	GError *error = NULL;
-	GType type;
-
-	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
-	if (ret) {
-		g_variant_get (ret, "(v)", &value);
-		type = type_data->type_func (value);
-		g_variant_unref (value);
-		g_variant_unref (ret);
-	} else {
-		dbgmsg ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
-		           type_data->property, type_data->interface, async_data->path,
-		           error->message);
-		g_clear_error (&error);
-		type = G_TYPE_INVALID;
-	}
-
-	create_async_got_type (async_data, type);
-}
-
-static void
-create_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectTypeAsyncData *async_data = user_data;
-	GDBusProxy *proxy;
-	GError *error = NULL;
-
-	proxy = _nm_dbus_new_proxy_for_connection_finish (result, &error);
-	if (!proxy) {
-		g_warning ("Could not create proxy for %s: %s.", async_data->path, error->message);
-		g_error_free (error);
-		create_async_complete (NULL, async_data);
-		return;
-	}
-
-	g_dbus_proxy_call (proxy,
-	                   "Get",
-	                   g_variant_new ("(ss)",
-	                                  async_data->type_data->interface,
-	                                  async_data->type_data->property),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   NULL,
-	                   create_async_got_property, async_data);
-}
-
-static void
-_nm_object_create_async (GType type, GDBusConnection *connection, const char *path,
-                         NMObjectCreateCallbackFunc callback, gpointer user_data)
-{
-	NMObjectTypeAsyncData *async_data;
-
-	async_data = g_slice_new (NMObjectTypeAsyncData);
-	async_data->path = g_strdup (path);
-	async_data->callback = callback;
-	async_data->user_data = user_data;
-	async_data->connection = g_object_ref (connection);
-
-	async_data->type_data = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
-	if (async_data->type_data) {
-		_nm_dbus_new_proxy_for_connection_async (connection, path,
-		                                         DBUS_INTERFACE_PROPERTIES,
-		                                         NULL,
-		                                         create_async_got_proxy, async_data);
-		return;
-	}
-
-	create_async_got_type (async_data, type);
-}
-
-/* Stolen from dbus-glib */
-static char*
-wincaps_to_dash (const char *caps)
-{
-	const char *p;
-	GString *str;
-
-	str = g_string_new (NULL);
-	p = caps;
-	while (*p) {
-		if (g_ascii_isupper (*p)) {
-			if (str->len > 0 && (str->len < 2 || str->str[str->len-2] != '-'))
-				g_string_append_c (str, '-');
-			g_string_append_c (str, g_ascii_tolower (*p));
-		} else
-			g_string_append_c (str, *p);
-		++p;
-	}
-
-	return g_string_free (str, FALSE);
-}
+static void object_property_maybe_complete (NMObject *self);
 
 /* Adds object to array if it's not already there */
 static void
@@ -612,17 +565,6 @@ add_to_object_array_unique (GPtrArray *array, GObject *obj)
 		g_ptr_array_add (array, obj);
 	}
 }
-
-typedef struct {
-	NMObject *self;
-	PropertyInfo *pi;
-
-	GObject **objects;
-	int length, remaining;
-
-	gboolean array;
-	const char *property_name;
-} ObjectCreatedData;
 
 /* Places items from 'needles' that are not in 'haystack' into 'diff' */
 static void
@@ -657,90 +599,136 @@ queue_added_removed_signal (NMObject *self,
 	_nm_object_queue_notify_full (self, NULL, signal_prefix, added, changed);
 }
 
-static void
-object_property_complete (ObjectCreatedData *odata)
+static gboolean
+already_awaits (ObjectCreatedData *odata, GObject *object)
 {
 	NMObject *self = odata->self;
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	PropertyInfo *pi = odata->pi;
-	gboolean different = TRUE;
+	GSList *iter;
 
-	if (odata->array) {
-		GPtrArray *old = *((GPtrArray **) pi->field);
-		GPtrArray *new;
-		int i;
+	if ((GObject *)odata->self == object)
+		return TRUE;
 
-		/* Build up new array */
-		new = g_ptr_array_new_full (odata->length, g_object_unref);
-		for (i = 0; i < odata->length; i++)
-			add_to_object_array_unique (new, odata->objects[i]);
-
-		if (pi->signal_prefix) {
-			GPtrArray *added = g_ptr_array_sized_new (3);
-			GPtrArray *removed = g_ptr_array_sized_new (3);
-
-			if (old) {
-				/* Find objects in 'old' that do not exist in 'new' */
-				array_diff (old, new, removed);
-
-				/* Find objects in 'new' that do not exist in old */
-				array_diff (new, old, added);
-			} else {
-				for (i = 0; i < new->len; i++)
-					g_ptr_array_add (added, g_ptr_array_index (new, i));
-			}
-
-			*((GPtrArray **) pi->field) = new;
-
-			/* Emit added & removed */
-			for (i = 0; i < removed->len; i++) {
-				queue_added_removed_signal (self,
-				                            pi->signal_prefix,
-				                            g_ptr_array_index (removed, i),
-				                            FALSE);
-			}
-
-			for (i = 0; i < added->len; i++) {
-				queue_added_removed_signal (self,
-				                            pi->signal_prefix,
-				                            g_ptr_array_index (added, i),
-				                            TRUE);
-			}
-
-			different = removed->len || added->len;
-			g_ptr_array_unref (added);
-			g_ptr_array_unref (removed);
-		} else {
-			/* No added/removed signals to send, just replace the property with
-			 * the new values.
-			 */
-			*((GPtrArray **) pi->field) = new;
-			different = TRUE;
-		}
-
-		/* Free old array last since it will release references, thus freeing
-		 * any objects in the 'removed' array.
-		 */
-		if (old)
-			g_ptr_array_unref (old);
-	} else {
-		GObject **obj_p = pi->field;
-
-		different = (*obj_p != odata->objects[0]);
-		if (*obj_p)
-			g_object_unref (*obj_p);
-		*obj_p = odata->objects[0];
+	for (iter = priv->waiters; iter; iter = g_slist_next (iter)) {
+		if (already_awaits (iter->data, object))
+			return TRUE;
 	}
 
-	if (different && odata->property_name)
-		_nm_object_queue_notify (self, odata->property_name);
+	return FALSE;
+}
 
-	if (--priv->reload_remaining == 0)
-		reload_complete (self, FALSE);
+static void
+object_property_maybe_complete (NMObject *self)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	/* The odata may hold the last reference. */
+	_nm_unused gs_unref_object NMObject *self_keep_alive = g_object_ref (self);
+	int i;
+	CList *iter, *safe;
 
-	g_object_unref (self);
-	g_free (odata->objects);
-	g_slice_free (ObjectCreatedData, odata);
+	c_list_for_each_safe (iter, safe, &priv->pending) {
+		ObjectCreatedData *odata = c_list_entry (iter, ObjectCreatedData, lst_pending);
+		PropertyInfo *pi = odata->pi;
+		gboolean different = TRUE;
+
+		if (odata->remaining > 0)
+			return;
+
+		/* Only complete the array property load when all the objects are initialized. */
+		for (i = 0; i < odata->length; i++) {
+			GObject *obj = odata->objects[i];
+			NMObjectPrivate *obj_priv;
+
+			/* Could not load the object. Perhaps it was removed. */
+			if (!obj)
+				continue;
+
+			obj_priv = NM_OBJECT_GET_PRIVATE (obj);
+			if (!obj_priv->inited) {
+
+				/* The object is not finished because we block its creation. */
+				if (already_awaits (odata, obj))
+					continue;
+
+				if (!g_slist_find (obj_priv->waiters, odata))
+					obj_priv->waiters = g_slist_prepend (obj_priv->waiters, odata);
+				return;
+			}
+		}
+
+		if (odata->array) {
+			GPtrArray *old = *((GPtrArray **) pi->field);
+			GPtrArray *new;
+
+			/* Build up new array */
+			new = g_ptr_array_new_full (odata->length, g_object_unref);
+			for (i = 0; i < odata->length; i++)
+				add_to_object_array_unique (new, odata->objects[i]);
+
+			*((GPtrArray **) pi->field) = new;
+
+			if (pi->signal_prefix) {
+				GPtrArray *added = g_ptr_array_sized_new (3);
+				GPtrArray *removed = g_ptr_array_sized_new (3);
+
+				if (old) {
+					/* Find objects in 'old' that do not exist in 'new' */
+					array_diff (old, new, removed);
+
+					/* Find objects in 'new' that do not exist in old */
+					array_diff (new, old, added);
+				} else {
+					for (i = 0; i < new->len; i++)
+						g_ptr_array_add (added, g_ptr_array_index (new, i));
+				}
+
+				/* Emit added & removed */
+				for (i = 0; i < removed->len; i++) {
+					queue_added_removed_signal (self,
+					                            pi->signal_prefix,
+					                            g_ptr_array_index (removed, i),
+					                            FALSE);
+				}
+
+				for (i = 0; i < added->len; i++) {
+					queue_added_removed_signal (self,
+					                            pi->signal_prefix,
+					                            g_ptr_array_index (added, i),
+					                            TRUE);
+				}
+
+				different = removed->len || added->len;
+				g_ptr_array_unref (added);
+				g_ptr_array_unref (removed);
+			} else {
+				/* No added/removed signals to send, just replace the property with
+				 * the new values.
+				 */
+				different = TRUE;
+			}
+
+			/* Free old array last since it will release references, thus freeing
+			 * any objects in the 'removed' array.
+			 */
+			if (old)
+				g_ptr_array_unref (old);
+		} else {
+			GObject **obj_p = pi->field;
+
+			different = (*obj_p != odata->objects[0]);
+			if (*obj_p)
+				g_object_unref (*obj_p);
+			*obj_p = odata->objects[0];
+		}
+
+		if (different && odata->property_name)
+			_nm_object_queue_notify (self, odata->property_name);
+
+		if (--priv->reload_remaining == 0)
+			reload_complete (self, TRUE);
+
+		odata_free (odata);
+	}
 }
 
 static void
@@ -757,16 +745,16 @@ object_created (GObject *obj, const char *path, gpointer user_data)
 			object_class->object_creation_failed (odata->self, path);
 	}
 
-	odata->objects[--odata->remaining] = obj;
-	if (!odata->remaining)
-		object_property_complete (odata);
+	odata->objects[odata->length - odata->remaining--] = obj ? g_object_ref (obj) : NULL;
+	object_property_maybe_complete (odata->self);
 }
 
 static gboolean
 handle_object_property (NMObject *self, const char *property_name, GVariant *value,
-                        PropertyInfo *pi, gboolean synchronously)
+                        PropertyInfo *pi)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	gs_unref_object GDBusObject *object = NULL;
 	GObject *obj;
 	const char *path;
 	ObjectCreatedData *odata;
@@ -774,10 +762,12 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 	odata = g_slice_new (ObjectCreatedData);
 	odata->self = g_object_ref (self);
 	odata->pi = pi;
-	odata->objects = g_new (GObject *, 1);
+	odata->objects = g_new0 (GObject *, 1);
 	odata->length = odata->remaining = 1;
 	odata->array = FALSE;
 	odata->property_name = property_name;
+
+	c_list_link_tail (&priv->pending, &odata->lst_pending);
 
 	priv->reload_remaining++;
 
@@ -788,31 +778,40 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 		return TRUE;
 	}
 
-	obj = G_OBJECT (_nm_object_cache_get (path));
-	if (obj) {
-		object_created (obj, path, odata);
-		return TRUE;
-	} else if (synchronously) {
-		obj = _nm_object_create (pi->object_type, priv->connection, path);
-		object_created (obj, path, odata);
-		return obj != NULL;
-	} else {
-		_nm_object_create_async (pi->object_type, priv->connection, path,
-		                         object_created, odata);
-		/* Assume success */
-		return TRUE;
+	object = g_dbus_object_manager_get_object (priv->object_manager, path);
+	if (!object) {
+		/* This is a server bug -- a dangling object path for an object
+		 * that does not exist.
+		 *
+		 * NOTE: We've ignored this before and the server hits the condition
+		 * more often that it should. Given we're able to recover from
+		 * the error, let's lower the severity of the log message to
+		 * avoid unnecessarily bothering the user. This can be removed
+		 * once the issue is fixed on the server. */
+#if NM_MORE_ASSERTS
+#define __nm_log_debug g_warning
+#else
+#define __nm_log_debug g_debug
+#endif
+		__nm_log_debug ("No object known for %s", path);
+#undef __nm_log_debug
+		return FALSE;
 	}
+
+	obj = g_object_get_qdata (G_OBJECT (object), _nm_object_obj_nm_quark ());
+	object_created (obj, path, odata);
+
+	return TRUE;
 }
 
 static gboolean
 handle_object_array_property (NMObject *self, const char *property_name, GVariant *value,
-                              PropertyInfo *pi, gboolean synchronously)
+                              PropertyInfo *pi)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	GObject *obj;
 	GVariantIter iter;
 	gsize npaths;
-	GPtrArray **array = pi->field;
 	const char *path;
 	ObjectCreatedData *odata;
 
@@ -826,43 +825,36 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	odata->array = TRUE;
 	odata->property_name = property_name;
 
+	c_list_link_tail (&priv->pending, &odata->lst_pending);
+
 	priv->reload_remaining++;
 
 	if (npaths == 0) {
-		object_property_complete (odata);
+		object_property_maybe_complete (self);
 		return TRUE;
 	}
 
 	g_variant_iter_init (&iter, value);
 	while (g_variant_iter_next (&iter, "&o", &path)) {
-		if (!strcmp (path, "/")) {
-			/* FIXME: can't happen? */
-			continue;
-		}
+		gs_unref_object GDBusObject *object = NULL;
 
-		obj = G_OBJECT (_nm_object_cache_get (path));
-		if (obj) {
-			object_created (obj, path, odata);
-		} else if (synchronously) {
-			obj = _nm_object_create (pi->object_type, priv->connection, path);
+		object = g_dbus_object_manager_get_object (priv->object_manager, path);
+		if (object) {
+			obj = g_object_get_qdata (G_OBJECT (object), _nm_object_obj_nm_quark ());
 			object_created (obj, path, odata);
 		} else {
-			_nm_object_create_async (pi->object_type, priv->connection, path,
-			                         object_created, odata);
+			g_warning ("no object known for %s\n", path);
+			odata->remaining--;
+			odata->length--;
+			object_property_maybe_complete (self);
 		}
 	}
 
-	if (!synchronously) {
-		/* Assume success */
-		return TRUE;
-	}
-
-	return *array && ((*array)->len == npaths);
+	return TRUE;
 }
 
 static void
-handle_property_changed (NMObject *self, const char *dbus_name,
-                         GVariant *value, gboolean synchronously)
+handle_property_changed (NMObject *self, const char *dbus_name, GVariant *value)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	char *prop_name;
@@ -871,7 +863,7 @@ handle_property_changed (NMObject *self, const char *dbus_name,
 	gboolean success = FALSE, found = FALSE;
 	GSList *iter;
 
-	prop_name = wincaps_to_dash (dbus_name);
+	prop_name = nm_utils_wincaps_to_dash (dbus_name);
 
 	/* Iterate through the object and its parents to find the property */
 	for (iter = priv->property_tables; iter; iter = g_slist_next (iter)) {
@@ -914,11 +906,11 @@ handle_property_changed (NMObject *self, const char *dbus_name,
 		g_free (s);
 	}
 
-	if (pi->object_type) {
+	if (pspec && pi->object_type) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH))
-			success = handle_object_property (self, pspec->name, value, pi, synchronously);
+			success = handle_object_property (self, pspec->name, value, pi);
 		else if (g_variant_is_of_type (value, G_VARIANT_TYPE ("ao")))
-			success = handle_object_array_property (self, pspec->name, value, pi, synchronously);
+			success = handle_object_array_property (self, pspec->name, value, pi);
 		else {
 			g_warn_if_reached ();
 			goto out;
@@ -938,44 +930,41 @@ out:
 }
 
 static void
-process_properties_changed (NMObject *self, GVariant *properties, gboolean synchronously)
+properties_changed (GDBusProxy *proxy,
+                    GVariant   *changed_properties,
+                    GStrv       invalidated_properties,
+                    gpointer    user_data)
 {
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	NMObject *self = NM_OBJECT (user_data);
 	GVariantIter iter;
 	const char *name;
 	GVariant *value;
 
-	if (priv->suppress_property_updates)
-		return;
-
-	g_variant_iter_init (&iter, properties);
-	while (g_variant_iter_next (&iter, "{&sv}", &name, &value))
-		handle_property_changed (self, name, value, synchronously);
+	g_variant_iter_init (&iter, changed_properties);
+	while (g_variant_iter_next (&iter, "{&sv}", &name, &value)) {
+		handle_property_changed (self, name, value);
+		g_variant_unref (value);
+	}
 }
 
-static void
-property_proxy_signal (GDBusProxy *proxy,
-                       const char *sender_name,
-                       const char *signal_name,
-                       GVariant   *parameters,
-                       gpointer    user_data)
-{
-	GVariant *properties;
-
-	if (strcmp (signal_name, "PropertiesChanged") != 0)
-		return;
-
-	g_variant_get (parameters, "(@a{sv})", &properties);
-	process_properties_changed (NM_OBJECT (user_data), properties, FALSE);
-	g_variant_unref (properties);
-}
+#define HANDLE_TYPE_CHECK(vtype, ctype, getter) \
+	({ \
+		gboolean _success = FALSE; \
+		\
+		if (g_variant_is_of_type (value, vtype)) { \
+			ctype *param = (ctype *) field; \
+			ctype newval = getter (value); \
+			different = *param != newval; \
+			*param = newval; \
+			_success = TRUE; \
+		} \
+		\
+		_success; \
+	})
 
 #define HANDLE_TYPE(vtype, ctype, getter) \
 	G_STMT_START { \
-		if (g_variant_is_of_type (value, vtype)) { \
-			ctype *param = (ctype *) field; \
-			*param = getter (value); \
-		} else { \
+		if (!HANDLE_TYPE_CHECK (vtype, ctype, getter)) {\
 			success = FALSE; \
 			goto done; \
 		} \
@@ -988,20 +977,29 @@ demarshal_generic (NMObject *object,
                    gpointer field)
 {
 	gboolean success = TRUE;
+	gboolean different = FALSE;
 
 	if (pspec->value_type == G_TYPE_STRING) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING)) {
 			char **param = (char **) field;
-			g_free (*param);
-			*param = g_variant_dup_string (value, NULL);
+			const char *newval = g_variant_get_string (value, NULL);
+
+			different = !!g_strcmp0 (*param, newval);
+			if (different) {
+				g_free (*param);
+				*param = g_strdup (newval);
+			}
 		} else if (g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH)) {
 			char **param = (char **) field;
-			g_free (*param);
-			*param = g_variant_dup_string (value, NULL);
+			const char *newval = g_variant_get_string (value, NULL);
+
 			/* Handle "NULL" object paths */
-			if (g_strcmp0 (*param, "/") == 0) {
+			if (g_strcmp0 (newval, "/") == 0)
+				newval = NULL;
+			different = !!g_strcmp0 (*param, newval);
+			if (different) {
 				g_free (*param);
-				*param = NULL;
+				*param = g_strdup (newval);
 			}
 		} else {
 			success = FALSE;
@@ -1009,59 +1007,85 @@ demarshal_generic (NMObject *object,
 		}
 	} else if (pspec->value_type == G_TYPE_STRV) {
 		char ***param = (char ***)field;
-		if (*param)
-			g_strfreev (*param);
-		*param = g_variant_dup_strv (value, NULL);
+		const char **newval;
+		gsize i;
+
+		newval = g_variant_get_strv (value, NULL);
+		if (!*param)
+			different = TRUE;
+		else {
+			if (!_nm_utils_strv_equal ((char **) newval, *param)) {
+				different = TRUE;
+				g_strfreev (*param);
+			}
+		}
+		if (different) {
+			for (i = 0; newval[i]; i++)
+				newval[i] = g_strdup (newval[i]);
+			*param = (char **) newval;
+		} else
+			g_free (newval);
 	} else if (pspec->value_type == G_TYPE_BYTES) {
 		GBytes **param = (GBytes **)field;
 		gconstpointer val;
-		gsize length;
+		gsize length = 0;
 
-		if (*param)
-			g_bytes_unref (*param);
 		val = g_variant_get_fixed_array (value, &length, 1);
-		if (length)
-			*param = g_bytes_new (val, length);
-		else
-			*param = NULL;
+
+		different = !nm_utils_gbytes_equal_mem (*param, val, length);
+		if (different) {
+			if (*param)
+				g_bytes_unref (*param);
+			*param = length > 0 ? g_bytes_new (val, length) : NULL;
+		}
 	} else if (G_IS_PARAM_SPEC_ENUM (pspec)) {
 		int *param = (int *) field;
+		int newval = 0;
 
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
-			*param = g_variant_get_int32 (value);
+			newval = g_variant_get_int32 (value);
 		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
-			*param = g_variant_get_uint32 (value);
+			newval = g_variant_get_uint32 (value);
 		else {
 			success = FALSE;
 			goto done;
 		}
+		different = *param != newval;
+		*param = newval;
 	} else if (G_IS_PARAM_SPEC_FLAGS (pspec)) {
 		guint *param = (guint *) field;
+		guint newval = 0;
 
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
-			*param = g_variant_get_int32 (value);
+			newval = g_variant_get_int32 (value);
 		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
-			*param = g_variant_get_uint32 (value);
+			newval = g_variant_get_uint32 (value);
 		else {
 			success = FALSE;
 			goto done;
 		}
+		different = *param != newval;
+		*param = newval;
 	} else if (pspec->value_type == G_TYPE_BOOLEAN)
 		HANDLE_TYPE (G_VARIANT_TYPE_BOOLEAN, gboolean, g_variant_get_boolean);
 	else if (pspec->value_type == G_TYPE_UCHAR)
 		HANDLE_TYPE (G_VARIANT_TYPE_BYTE, guchar, g_variant_get_byte);
-	else if (pspec->value_type == G_TYPE_DOUBLE)
-		HANDLE_TYPE (G_VARIANT_TYPE_DOUBLE, gdouble, g_variant_get_double);
-	else if (pspec->value_type == G_TYPE_INT)
-		HANDLE_TYPE (G_VARIANT_TYPE_INT32, gint, g_variant_get_int32);
-	else if (pspec->value_type == G_TYPE_UINT)
-		HANDLE_TYPE (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32);
-	else if (pspec->value_type == G_TYPE_INT64)
-		HANDLE_TYPE (G_VARIANT_TYPE_INT64, gint, g_variant_get_int64);
+	else if (pspec->value_type == G_TYPE_DOUBLE) {
+		NM_PRAGMA_WARNING_DISABLE("-Wfloat-equal")
+		HANDLE_TYPE (G_VARIANT_TYPE_DOUBLE, double, g_variant_get_double);
+		NM_PRAGMA_WARNING_REENABLE
+	} else if (pspec->value_type == G_TYPE_INT)
+		HANDLE_TYPE (G_VARIANT_TYPE_INT32, int, g_variant_get_int32);
+	else if (pspec->value_type == G_TYPE_UINT) {
+		if (   !HANDLE_TYPE_CHECK (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32)
+		    && !HANDLE_TYPE_CHECK (G_VARIANT_TYPE_UINT16, guint, g_variant_get_uint16))
+			success = FALSE;
+	} else if (pspec->value_type == G_TYPE_INT64)
+		HANDLE_TYPE (G_VARIANT_TYPE_INT64, gint64, g_variant_get_int64);
 	else if (pspec->value_type == G_TYPE_UINT64)
-		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, guint, g_variant_get_uint64);
+		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, guint64, g_variant_get_uint64);
 	else if (pspec->value_type == G_TYPE_LONG)
-		HANDLE_TYPE (G_VARIANT_TYPE_INT64, glong, g_variant_get_int64);
+		HANDLE_TYPE (G_VARIANT_TYPE_INT64, long, g_variant_get_int64);
 	else if (pspec->value_type == G_TYPE_ULONG)
 		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, gulong, g_variant_get_uint64);
 	else {
@@ -1075,7 +1099,8 @@ demarshal_generic (NMObject *object,
 
 done:
 	if (success) {
-		_nm_object_queue_notify (object, pspec->name);
+		if (different)
+			_nm_object_queue_notify (object, pspec->name);
 	} else {
 		dbgmsg ("%s: %s:%s (type %s) couldn't be set from D-Bus type %s.",
 		        __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
@@ -1108,12 +1133,11 @@ _nm_object_register_properties (NMObject *object,
 	}
 
 	proxy = _nm_object_get_proxy (object, interface);
-	g_return_if_fail (proxy != NULL);
+	g_signal_connect (proxy, "g-properties-changed",
+	                  G_CALLBACK (properties_changed), object);
+	g_ptr_array_add (priv->proxies, proxy);
 
-	g_signal_connect (proxy, "g-signal",
-	                  G_CALLBACK (property_proxy_signal), object);
-
-	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	instance = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
 
 	for (tmp = (NMPropertiesInfo *) info; tmp->name; tmp++) {
@@ -1125,97 +1149,12 @@ _nm_object_register_properties (NMObject *object,
 		}
 
 		pi = g_malloc0 (sizeof (PropertyInfo));
-		pi->func = tmp->func ? tmp->func : demarshal_generic;
+		pi->func = tmp->func ?: demarshal_generic;
 		pi->object_type = tmp->object_type;
 		pi->field = tmp->field;
 		pi->signal_prefix = tmp->signal_prefix;
 		g_hash_table_insert (instance, g_strdup (tmp->name), pi);
 	}
-}
-
-static gboolean
-_nm_object_reload_properties (NMObject *object, GError **error)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GVariant *ret, *props;
-	GHashTableIter iter;
-	const char *interface;
-	GDBusProxy *proxy;
-
-	if (!g_hash_table_size (priv->proxies) || !priv->nm_running)
-		return TRUE;
-
-	priv->reload_remaining++;
-
-	g_hash_table_iter_init (&iter, priv->proxies);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &interface, (gpointer *) &proxy)) {
-		ret = g_dbus_proxy_call_sync (priv->properties_proxy,
-		                              "GetAll",
-		                              g_variant_new ("(s)", interface),
-		                              G_DBUS_CALL_FLAGS_NONE, -1,
-		                              NULL, error);
-		if (!ret) {
-			if (error && *error)
-				g_dbus_error_strip_remote_error (*error);
-			return FALSE;
-		}
-
-		g_variant_get (ret, "(@a{sv})", &props);
-		process_properties_changed (object, props, TRUE);
-		g_variant_unref (props);
-		g_variant_unref (ret);
-	}
-
-	if (--priv->reload_remaining == 0)
-		reload_complete (object, TRUE);
-
-	return TRUE;
-}
-
-void
-_nm_object_suppress_property_updates (NMObject *object, gboolean suppress)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
-	priv->suppress_property_updates = suppress;
-}
-
-
-void
-_nm_object_reload_property (NMObject *object,
-                            const char *interface,
-                            const char *prop_name)
-{
-	GVariant *ret, *value;
-	GError *err = NULL;
-
-	g_return_if_fail (NM_IS_OBJECT (object));
-	g_return_if_fail (interface != NULL);
-	g_return_if_fail (prop_name != NULL);
-
-	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
-		return;
-
-	ret = g_dbus_proxy_call_sync (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
-	                              "Get",
-	                              g_variant_new ("(ss)", interface, prop_name),
-	                              G_DBUS_CALL_FLAGS_NONE, 15000,
-	                              NULL, &err);
-	if (!ret) {
-		dbgmsg ("%s: Error getting '%s' for %s: (%d) %s\n",
-		        __func__,
-		        prop_name,
-		        nm_object_get_path (object),
-		        err->code,
-		        err->message);
-		g_clear_error (&err);
-		return;
-	}
-
-	g_variant_get (ret, "(v)", &value);
-	handle_property_changed (object, prop_name, value, TRUE);
-	g_variant_unref (value);
-	g_variant_unref (ret);
 }
 
 void
@@ -1226,6 +1165,7 @@ _nm_object_set_property (NMObject *object,
                          ...)
 {
 	GVariant *val, *ret;
+	GDBusProxy *proxy;
 	va_list ap;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
@@ -1233,192 +1173,70 @@ _nm_object_set_property (NMObject *object,
 	g_return_if_fail (prop_name != NULL);
 	g_return_if_fail (format_string != NULL);
 
-	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
-		return;
-
 	va_start (ap, format_string);
 	val = g_variant_new_va (format_string, NULL, &ap);
 	va_end (ap);
 	g_return_if_fail (val != NULL);
 
-	ret = g_dbus_proxy_call_sync (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
-	                              "Set",
+	proxy = _nm_object_get_proxy (object, interface);
+	ret = g_dbus_proxy_call_sync (proxy,
+	                              DBUS_INTERFACE_PROPERTIES ".Set",
 	                              g_variant_new ("(ssv)", interface, prop_name, val),
 	                              G_DBUS_CALL_FLAGS_NONE, 2000,
 	                              NULL, NULL);
 	/* Ignore errors. */
 	if (ret)
 		g_variant_unref (ret);
+	g_object_unref (proxy);
 }
 
 static void
 reload_complete (NMObject *object, gboolean emit_now)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GSimpleAsyncResult *simple;
-	GSList *results, *iter;
-	GError *error;
 
 	if (emit_now) {
-		if (priv->notify_id) {
-			g_source_remove (priv->notify_id);
-			priv->notify_id = 0;
-		}
+		nm_clear_g_source (&priv->notify_id);
 		deferred_notify_cb (object);
 	} else
 		_nm_object_defer_notify (object);
-
-	results = priv->reload_results;
-	priv->reload_results = NULL;
-	error = priv->reload_error;
-	priv->reload_error = NULL;
-
-	for (iter = results; iter; iter = iter->next) {
-		simple = iter->data;
-
-		if (error)
-			g_simple_async_result_set_from_error (simple, error);
-		else
-			g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-
-		g_simple_async_result_complete (simple);
-		g_object_unref (simple);
-	}
-	g_slist_free (results);
-	g_clear_error (&error);
 }
 
-static void
-reload_got_properties (GObject *proxy,
-                       GAsyncResult *result,
-                       gpointer user_data)
+GDBusObjectManager *
+_nm_object_get_dbus_object_manager (NMObject *self)
 {
-	NMObject *object = user_data;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GVariant *ret, *props;
-	GError *error = NULL;
-
-	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
-	if (ret) {
-		g_variant_get (ret, "(@a{sv})", &props);
-		process_properties_changed (object, props, FALSE);
-		g_variant_unref (props);
-		g_variant_unref (ret);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		if (priv->reload_error)
-			g_error_free (error);
-		else
-			priv->reload_error = error;
-	}
-
-	if (--priv->reload_remaining == 0)
-		reload_complete (object, FALSE);
+	return NM_OBJECT_GET_PRIVATE (self)->object_manager;
 }
 
-void
-_nm_object_reload_properties_async (NMObject *object,
-                                    GCancellable *cancellable,
-                                    GAsyncReadyCallback callback,
-                                    gpointer user_data)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GSimpleAsyncResult *simple;
-	GHashTableIter iter;
-	const char *interface;
-	GDBusProxy *proxy;
-
-	simple = g_simple_async_result_new (G_OBJECT (object), callback,
-	                                    user_data, _nm_object_reload_properties_async);
-
-	if (!g_hash_table_size (priv->proxies) || !priv->nm_running) {
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	priv->reload_results = g_slist_prepend (priv->reload_results, simple);
-
-	/* If there was already a reload happening, we don't need to
-	 * re-read the properties again, we just need to wait for the
-	 * existing reload to finish.
-	 */
-	if (priv->reload_results->next)
-		return;
-
-	g_hash_table_iter_init (&iter, priv->proxies);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &interface, (gpointer *) &proxy)) {
-		priv->reload_remaining++;
-		g_dbus_proxy_call (priv->properties_proxy,
-		                   "GetAll",
-		                   g_variant_new ("(s)", interface),
-		                   G_DBUS_CALL_FLAGS_NONE, -1,
-		                   cancellable,
-		                   reload_got_properties, object);
-	}
-}
-
-gboolean
-_nm_object_reload_properties_finish (NMObject *object, GAsyncResult *result, GError **error)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (NM_IS_OBJECT (object), FALSE);
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (object), _nm_object_reload_properties_async), FALSE);
-
-	/* NM might have disappeared meanwhile. That would cause a NoReply error to be emitted,
-	 * but we don't care if property updates were disabled. */
-	if (priv->suppress_property_updates)
-		return TRUE;
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-
-	return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
-gboolean
-_nm_object_get_nm_running (NMObject *self)
-{
-	return NM_OBJECT_GET_PRIVATE (self)->nm_running;
-}
-
-/**************************************************************/
-
-static void
-on_name_owner_changed (GObject    *proxy,
-                       GParamSpec *pspec,
-                       gpointer    user_data)
-{
-	NMObject *self = NM_OBJECT (user_data);
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	gboolean now_running;
-	char *owner;
-
-	now_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
-	g_free (owner);
-	if (now_running != priv->nm_running) {
-		priv->nm_running = now_running;
-		g_object_notify (G_OBJECT (self), NM_OBJECT_NM_RUNNING);
-	}
-}
+/*****************************************************************************/
 
 static void
 init_dbus (NMObject *object)
 {
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	char *owner;
+}
 
-	if (_nm_dbus_is_connection_private (priv->connection))
-		priv->nm_running = TRUE;
-	else {
-		priv->nm_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
-		g_free (owner);
-		g_signal_connect (priv->properties_proxy, "notify::g-name-owner",
-		                  G_CALLBACK (on_name_owner_changed), object);
+static void
+init_if (GDBusProxy *proxy, NMObject *self)
+{
+	char **props;
+	char **prop;
+	GVariant *val;
+	char *str;
+
+	nm_assert (G_IS_DBUS_PROXY (proxy));
+	nm_assert (NM_IS_OBJECT (self));
+
+	props = g_dbus_proxy_get_cached_property_names (proxy);
+
+	for (prop = props; prop && *prop; prop++) {
+		val = g_dbus_proxy_get_cached_property (proxy, *prop);
+		str = g_variant_print (val, TRUE);
+		handle_property_changed (self, *prop, val);
+		g_variant_unref (val);
+		g_free (str);
 	}
+
+	g_strfreev (props);
 }
 
 static gboolean
@@ -1426,45 +1244,36 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMObject *self = NM_OBJECT (initable);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (self));
-	GSList *iter;
+        GList *interfaces;
 
-	if (!priv->path) {
-		g_set_error_literal (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
-		                     _("Caller did not specify D-Bus path for object"));
-		return FALSE;
-	}
-
-	if (!priv->connection)
-		priv->connection = _nm_dbus_new_connection (cancellable, error);
-	if (!priv->connection)
-		return FALSE;
-
-	/* Create proxies */
-	for (iter = cpriv->interfaces; iter; iter = iter->next) {
-		const char *interface = iter->data;
-		GDBusProxy *proxy;
-
-		proxy = _nm_dbus_new_proxy_for_connection (priv->connection, priv->path, interface,
-		                                           cancellable, error);
-		if (!proxy)
-			return FALSE;
-		g_hash_table_insert (priv->proxies, (char *) interface, proxy);
-	}
-
-	priv->properties_proxy = _nm_dbus_new_proxy_for_connection (priv->connection,
-	                                                            priv->path,
-	                                                            DBUS_INTERFACE_PROPERTIES,
-	                                                            cancellable, error);
-	if (!priv->properties_proxy)
-		return FALSE;
+	g_assert (priv->object && priv->object_manager);
 
 	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
 
-	return _nm_object_reload_properties (self, error);
+	priv->reload_remaining++;
+
+	interfaces = g_dbus_object_get_interfaces (priv->object);
+	g_list_foreach (interfaces, (GFunc) init_if, self);
+	g_list_free_full (interfaces, g_object_unref);
+
+	priv->inited = TRUE;
+
+	if (--priv->reload_remaining == 0)
+		reload_complete (self, TRUE);
+
+	/* There are some object properties whose creation couldn't proceed
+	 * because it depended on this object. */
+	while (priv->waiters) {
+		ObjectCreatedData *odata = priv->waiters->data;
+
+		priv->waiters = g_slist_remove (priv->waiters, odata);
+		object_property_maybe_complete (odata->self);
+	}
+
+	return TRUE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMObject *object;
@@ -1481,85 +1290,10 @@ init_async_complete (NMObjectInitData *init_data)
 		g_simple_async_result_take_error (init_data->simple, init_data->error);
 	else
 		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
-	g_simple_async_result_complete (init_data->simple);
+	g_simple_async_result_complete_in_idle (init_data->simple);
 	g_object_unref (init_data->simple);
 	g_clear_object (&init_data->cancellable);
 	g_slice_free (NMObjectInitData, init_data);
-}
-
-static void
-init_async_got_properties (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectInitData *init_data = user_data;
-
-	_nm_object_reload_properties_finish (NM_OBJECT (object), result, &init_data->error);
-	init_async_complete (init_data);
-}
-
-static void
-init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectInitData *init_data = user_data;
-	NMObject *self = init_data->object;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	GDBusProxy *proxy;
-
-	if (!init_data->error) {
-		proxy = _nm_dbus_new_proxy_for_connection_finish (result, &init_data->error);
-		if (proxy) {
-			const char *interface = g_dbus_proxy_get_interface_name (proxy);
-
-			if (!strcmp (interface, DBUS_INTERFACE_PROPERTIES))
-				priv->properties_proxy = proxy;
-			else
-				g_hash_table_insert (priv->proxies, (char *) interface, proxy);
-		}
-	}
-
-	init_data->proxies_pending--;
-	if (init_data->proxies_pending)
-		return;
-
-	if (init_data->error) {
-		init_async_complete (init_data);
-		return;
-	}
-
-	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
-
-	_nm_object_reload_properties_async (init_data->object, init_data->cancellable, init_async_got_properties, init_data);
-}
-
-static void
-init_async_got_bus (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectInitData *init_data = user_data;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (init_data->object);
-	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (init_data->object));
-	GSList *iter;
-
-	priv->connection = _nm_dbus_new_connection_finish (result, &init_data->error);
-	if (!priv->connection) {
-		init_async_complete (init_data);
-		return;
-	}
-
-	for (iter = cpriv->interfaces; iter; iter = iter->next) {
-		const char *interface = iter->data;
-
-		_nm_dbus_new_proxy_for_connection_async (priv->connection,
-		                                         priv->path, interface,
-		                                         init_data->cancellable,
-		                                         init_async_got_proxy, init_data);
-		init_data->proxies_pending++;
-	}
-
-	_nm_dbus_new_proxy_for_connection_async (priv->connection,
-	                                         priv->path,
-	                                         DBUS_INTERFACE_PROPERTIES,
-	                                         init_data->cancellable,
-	                                         init_async_got_proxy, init_data);
-	init_data->proxies_pending++;
 }
 
 static void
@@ -1570,29 +1304,43 @@ init_async (GAsyncInitable *initable, int io_priority,
 	NMObject *self = NM_OBJECT (initable);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	NMObjectInitData *init_data;
+        GList *interfaces;
 
-	if (!priv->path) {
-		g_simple_async_report_error_in_idle (G_OBJECT (initable),
-		                                     callback, user_data,
-		                                     NM_CLIENT_ERROR,
-		                                     NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
-		                                     "%s",
-		                                     _("Caller did not specify D-Bus path for object"));
-		return;
-	}
+	g_assert (priv->object && priv->object_manager);
+
+	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
 
 	init_data = g_slice_new0 (NMObjectInitData);
 	init_data->object = self;
 	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
 	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
-	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
+	interfaces = g_dbus_object_get_interfaces (priv->object);
+	g_list_foreach (interfaces, (GFunc) init_if, self);
+	g_list_free_full (interfaces, g_object_unref);
+
+	init_async_complete (init_data);
 }
 
 static gboolean
 init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 {
 	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+	NMObject *self = NM_OBJECT (initable);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+
+	priv->inited = TRUE;
+
+	/* There are some object properties whose creation couldn't proceed
+	 * because it depended on this object. */
+	while (priv->waiters) {
+		ObjectCreatedData *odata = priv->waiters->data;
+
+		priv->waiters = g_slist_remove (priv->waiters, odata);
+		object_property_maybe_complete (odata->self);
+	}
 
 	if (g_simple_async_result_propagate_error (simple, error))
 		return FALSE;
@@ -1600,7 +1348,7 @@ init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 		return TRUE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_object_initable_iface_init (GInitableIface *iface)
@@ -1618,9 +1366,16 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 static void
 nm_object_init (NMObject *object)
 {
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMObject *self = NM_OBJECT (object);
+	NMObjectPrivate *priv;
 
-	priv->proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_OBJECT, NMObjectPrivate);
+
+	self->_priv = priv;
+
+	c_list_init (&priv->notify_items);
+	c_list_init (&priv->pending);
+	priv->proxies = g_ptr_array_new ();
 }
 
 static void
@@ -1630,13 +1385,15 @@ set_property (GObject *object, guint prop_id,
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_PATH:
-		/* Construct only */
-		priv->path = g_value_dup_string (value);
+	case PROP_DBUS_OBJECT:
+		/* construct-only */
+		priv->object = g_value_dup_object (value);
+		if (!priv->object)
+			g_return_if_reached ();
 		break;
-	case PROP_DBUS_CONNECTION:
-		/* Construct only */
-		priv->connection = g_value_dup_object (value);
+	case PROP_DBUS_OBJECT_MANAGER:
+		/* construct-only */
+		priv->object_manager = g_value_dup_object (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1652,13 +1409,10 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PATH:
-		g_value_set_string (value, priv->path);
+		g_value_set_string (value, nm_object_get_path (NM_OBJECT (object)));
 		break;
 	case PROP_DBUS_CONNECTION:
-		g_value_set_object (value, priv->connection);
-		break;
-	case PROP_NM_RUNNING:
-		g_value_set_boolean (value, priv->nm_running);
+		g_value_set_object (value, g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1670,19 +1424,29 @@ static void
 dispose (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	CList *iter, *safe;
+	guint i;
 
-	if (priv->notify_id) {
-		g_source_remove (priv->notify_id);
-		priv->notify_id = 0;
+	nm_clear_g_source (&priv->notify_id);
+
+	c_list_for_each_safe (iter, safe, &priv->notify_items)
+		notify_item_free (c_list_entry (iter, NotifyItem, lst));
+
+	g_slist_free_full (priv->waiters, odata_free);
+
+	g_clear_object (&priv->object);
+	g_clear_object (&priv->object_manager);
+
+	if (priv->proxies) {
+		for (i = 0; i < priv->proxies->len; i++) {
+			g_signal_handlers_disconnect_by_func (priv->proxies->pdata[i],
+			                                      properties_changed,
+			                                      object);
+			g_object_unref (priv->proxies->pdata[i]);
+		}
+		g_ptr_array_free (priv->proxies, TRUE);
+		priv->proxies = NULL;
 	}
-
-	g_slist_free_full (priv->notify_items, (GDestroyNotify) notify_item_free);
-	priv->notify_items = NULL;
-
-	g_clear_pointer (&priv->proxies, g_hash_table_unref);
-	g_clear_object (&priv->properties_proxy);
-
-	g_clear_object (&priv->connection);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
 }
@@ -1693,7 +1457,8 @@ finalize (GObject *object)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	g_slist_free_full (priv->property_tables, (GDestroyNotify) g_hash_table_destroy);
-	g_free (priv->path);
+
+	g_free (priv->name_owner_cached);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
 }
@@ -1705,52 +1470,58 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 
 	g_type_class_add_private (nm_object_class, sizeof (NMObjectPrivate));
 
-	/* virtual methods */
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->set_property = set_property;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
-
-	/* Properties */
 
 	/**
 	 * NMObject:path:
 	 *
 	 * The D-Bus object path.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_OBJECT_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH] =
+	    g_param_spec_string (NM_OBJECT_PATH, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMObject:dbus-connection: (skip)
 	 *
 	 * The #GDBusConnection of the object.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DBUS_CONNECTION,
-	     g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
-	                          G_TYPE_DBUS_CONNECTION,
-	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_DBUS_CONNECTION] =
+	    g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
+	                         G_TYPE_DBUS_CONNECTION,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
-	 * NMObject:manager-running: (skip)
+	 * NMObject:dbus-object: (skip)
 	 *
-	 * Internal use only.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_NM_RUNNING,
-		 g_param_spec_boolean (NM_OBJECT_NM_RUNNING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-}
+	 * The #GDBusObject of the object.
+	 **/
+	obj_properties[PROP_DBUS_OBJECT] =
+	    g_param_spec_object (NM_OBJECT_DBUS_OBJECT, "", "",
+	                         G_TYPE_DBUS_OBJECT,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
+	/**
+	 * NMObject:dbus-object-manager: (skip)
+	 *
+	 * The #GDBusObjectManager of the object.
+	 **/
+	obj_properties[PROP_DBUS_OBJECT_MANAGER] =
+	    g_param_spec_object (NM_OBJECT_DBUS_OBJECT_MANAGER, "", "",
+	                         G_TYPE_DBUS_OBJECT_MANAGER,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+}

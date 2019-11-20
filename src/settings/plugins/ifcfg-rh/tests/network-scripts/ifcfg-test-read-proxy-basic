@@ -1,0 +1,15 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=dhcp
+ONBOOT=yes
+USERCTL=yes
+IPV6INIT=no
+NM_CONTROLLED=yes
+PEERDNS=no
+
+# proxy configuration
+PROXY_METHOD=auto
+PAC_URL=http://wpad.mycompany.com/wpad.dat
+BROWSER_ONLY=yes

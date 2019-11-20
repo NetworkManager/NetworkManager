@@ -1,28 +1,14 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2011 - 2013 Red Hat, Inc.
+ * Copyright (C) 2011 - 2013 Red Hat, Inc.
  */
 
-#include <stdlib.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-infiniband.h"
+
+#include <stdlib.h>
+
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -36,11 +22,15 @@
  * necessary for connection to IP-over-InfiniBand networks.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
-                         _nm_register_setting (INFINIBAND, 1))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
+/*****************************************************************************/
 
-#define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MAC_ADDRESS,
+	PROP_MTU,
+	PROP_TRANSPORT_MODE,
+	PROP_P_KEY,
+	PROP_PARENT,
+);
 
 typedef struct {
 	char *mac_address;
@@ -50,29 +40,11 @@ typedef struct {
 	char *parent, *virtual_iface_name;
 } NMSettingInfinibandPrivate;
 
-enum {
-	PROP_0,
-	PROP_MAC_ADDRESS,
-	PROP_MTU,
-	PROP_TRANSPORT_MODE,
-	PROP_P_KEY,
-	PROP_PARENT,
+G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
 
-/**
- * nm_setting_infiniband_new:
- *
- * Creates a new #NMSettingInfiniband object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingInfiniband object
- **/
-NMSetting *
-nm_setting_infiniband_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_INFINIBAND, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_infiniband_get_mac_address:
@@ -180,9 +152,8 @@ nm_setting_infiniband_get_virtual_interface_name (NMSettingInfiniband *setting)
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
+	NMSettingConnection *s_con = NULL;
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
-	guint32 normerr_max_mtu = 0;
 
 	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, INFINIBAND_ALEN)) {
 		g_set_error_literal (error,
@@ -193,13 +164,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!g_strcmp0 (priv->transport_mode, "datagram")) {
-		if (priv->mtu > 2044)
-			normerr_max_mtu = 2044;
-	} else if (!g_strcmp0 (priv->transport_mode, "connected")) {
-		if (priv->mtu > 65520)
-			normerr_max_mtu = 65520;
-	} else {
+	if (!NM_IN_STRSET (priv->transport_mode, "datagram",
+	                                         "connected")) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -209,12 +175,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->parent) {
-		if (!nm_utils_iface_valid_name (priv->parent)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("not a valid interface name"));
+		GError *tmp_error = NULL;
+
+		if (!nm_utils_is_valid_iface_name (priv->parent, &tmp_error)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             "'%s': %s", priv->parent, tmp_error->message);
 			g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_PARENT);
+			g_error_free (tmp_error);
 			return FALSE;
 		}
 		if (priv->p_key == -1) {
@@ -237,13 +206,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	s_con = nm_connection_get_setting_connection (connection);
+	if (connection)
+		s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		const char *interface_name = nm_setting_connection_get_interface_name (s_con);
+		GError *tmp_error = NULL;
 
 		if (!interface_name)
 			;
-		else if (!nm_utils_iface_valid_name (interface_name)) {
+		else if (!nm_utils_is_valid_iface_name (interface_name, &tmp_error)) {
 			/* report the error for NMSettingConnection:interface-name, because
 			 * it's that property that is invalid -- although we currently verify()
 			 * NMSettingInfiniband.
@@ -251,9 +222,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid interface name"),
-			             interface_name);
+			             "'%s': %s", interface_name, tmp_error->message);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+			g_error_free (tmp_error);
 			return FALSE;
 		} else {
 			if (priv->p_key != -1) {
@@ -278,12 +249,21 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
-	if (normerr_max_mtu > 0) {
+	if (priv->mtu > NM_INFINIBAND_MAX_MTU) {
+		/* Traditionally, MTU for "datagram" mode was limited to 2044
+		 * and for "connected" mode it was 65520.
+		 *
+		 * This is no longer the case, and both transport modes use the same
+		 * maximum of 65520 (NM_INFINIBAND_MAX_MTU).
+		 *
+		 * Note that this is the MTU in the connection profile. Whether
+		 * we will be able to configure large MTUs later (during activation)
+		 * is unknown at this point. */
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("mtu for transport mode '%s' can be at most %d but it is %d"),
-		             priv->transport_mode, normerr_max_mtu, priv->mtu);
+		             _("mtu can be at most %u but it is %u"),
+		             NM_INFINIBAND_MAX_MTU, priv->mtu);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MTU);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
@@ -291,22 +271,34 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_infiniband_init (NMSettingInfiniband *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
+	NMSettingInfiniband *setting = NM_SETTING_INFINIBAND (object);
 
-	g_free (priv->transport_mode);
-	g_free (priv->mac_address);
-	g_free (priv->parent);
-	g_free (priv->virtual_iface_name);
-
-	G_OBJECT_CLASS (nm_setting_infiniband_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_MAC_ADDRESS:
+		g_value_set_string (value, nm_setting_infiniband_get_mac_address (setting));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_infiniband_get_mtu (setting));
+		break;
+	case PROP_TRANSPORT_MODE:
+		g_value_set_string (value, nm_setting_infiniband_get_transport_mode (setting));
+		break;
+	case PROP_P_KEY:
+		g_value_set_int (value, nm_setting_infiniband_get_p_key (setting));
+		break;
+	case PROP_PARENT:
+		g_value_set_string (value, nm_setting_infiniband_get_parent (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -343,50 +335,54 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingInfiniband *setting = NM_SETTING_INFINIBAND (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, nm_setting_infiniband_get_mac_address (setting));
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, nm_setting_infiniband_get_mtu (setting));
-		break;
-	case PROP_TRANSPORT_MODE:
-		g_value_set_string (value, nm_setting_infiniband_get_transport_mode (setting));
-		break;
-	case PROP_P_KEY:
-		g_value_set_int (value, nm_setting_infiniband_get_p_key (setting));
-		break;
-	case PROP_PARENT:
-		g_value_set_string (value, nm_setting_infiniband_get_parent (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_infiniband_init (NMSettingInfiniband *setting)
+{
+}
+
+/**
+ * nm_setting_infiniband_new:
+ *
+ * Creates a new #NMSettingInfiniband object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingInfiniband object
+ **/
+NMSetting *
+nm_setting_infiniband_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_INFINIBAND, NULL);
 }
 
 static void
-nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
+finalize (GObject *object)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingInfinibandPrivate));
+	g_free (priv->transport_mode);
+	g_free (priv->mac_address);
+	g_free (priv->parent);
+	g_free (priv->virtual_iface_name);
 
-	/* virtual methods */
-	object_class->set_property = set_property;
+	G_OBJECT_CLASS (nm_setting_infiniband_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+
+	g_type_class_add_private (klass, sizeof (NMSettingInfinibandPrivate));
+
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify       = verify;
+	setting_class->verify = verify;
 
-	/* Properties */
 	/**
 	 * NMSettingInfiniband:mac-address:
 	 *
@@ -394,17 +390,31 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * permanent MAC address matches. This property does not change the MAC
 	 * address of the device (i.e. MAC spoofing).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+	/* ---keyfile---
+	 * property: mac-address
+	 * format: usual hex-digits-and-colons notation
+	 * description: MAC address in traditional hex-digits-and-colons notation, or
+	 *   or semicolon separated list of 20 decimal bytes (obsolete)
+	 * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: mac-address
+	 * variable: HWADDR
+	 * description: IBoIP 20-byte hardware address of the device (in traditional
+	 *    hex-digits-and-colons notation).
+	 *    Note that for initscripts this is the current MAC address of the device as found
+	 *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
+	 *    permanent MAC address exists, the MAC address initially configured on the device.
+	 * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
+	 * ---end---
+	 */
+	obj_properties[PROP_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingInfiniband:mtu:
@@ -412,14 +422,19 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * If non-zero, only transmit packets of the specified size or smaller,
 	 * breaking larger packets up into multiple frames.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: mtu
+	 * variable: MTU
+	 * description: MTU of the interface.
+	 * ---end---
+	 */
+	obj_properties[PROP_MTU] =
+	    g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingInfiniband:transport-mode:
@@ -427,14 +442,21 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * The IP-over-InfiniBand transport mode. Either "datagram" or
 	 * "connected".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TRANSPORT_MODE,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: transport-mode
+	 * variable: CONNECTED_MODE
+	 * default: CONNECTED_MODE=no
+	 * description: CONNECTED_MODE=yes for "connected" mode, CONNECTED_MODE=no for
+	 *   "datagram" mode
+	 * ---end---
+	 */
+	obj_properties[PROP_TRANSPORT_MODE] =
+	    g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingInfiniband:p-key:
@@ -444,14 +466,23 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * unsigned integer, whose high bit is set if it is a "full membership"
 	 * P_Key.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_P_KEY,
-		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
-		                   -1, 0xFFFF, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   NM_SETTING_PARAM_INFERRABLE |
-		                   G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: p-key
+	 * variable: PKEY_ID (and PKEY=yes)
+	 * default: PKEY=no
+	 * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
+	 *   or a decimal number.
+	 *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
+	 * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
+	 * ---end---
+	 */
+	obj_properties[PROP_P_KEY] =
+	    g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
+	                      -1, 0xFFFF, -1,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      NM_SETTING_PARAM_INFERRABLE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingInfiniband:parent:
@@ -461,13 +492,24 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * specify the base device by setting either this property or
 	 * #NMSettingInfiniband:mac-address.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: parent
+	 * variable: PHYSDEV (PKEY=yes)
+	 * default: PKEY=no
+	 * description: InfiniBand parent device.
+	 * example: PHYSDEV=ib0
+	 * ---end---
+	 */
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_INFINIBAND,
+	                               NULL, properties_override);
 }

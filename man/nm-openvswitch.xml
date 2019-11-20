@@ -1,0 +1,204 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
+
+<!--
+  nm-openvswitch(7) manual page
+
+  Copyright 2017 Red Hat, Inc.
+
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. You may obtain a copy of the GNU Free Documentation License
+  from the Free Software Foundation by visiting their Web site or by
+  writing to:
+
+  Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<refentry id="nm-openvswitch">
+  <refentryinfo>
+    <title>nm-openvswitch</title>
+    <author>NetworkManager Open vSwitch support</author>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>nm-openvswitch</refentrytitle>
+    <manvolnum>7</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">Open vSwitch support overview</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>nm-openvswitch</refname>
+    <refpurpose>overview of NetworkManager Open vSwitch support</refpurpose>
+  </refnamediv>
+
+  <refsect1>
+    <title>Overview</title>
+
+    <para>NetworkManager includes basic Open vSwitch support, good enough
+    to be capable of setting up simple Open vSwitch configurations. It is not
+    extensive and does not expose all functionality of Open vSwitch provides.
+    For large or complicated deployments users are advised to use native tools
+    shipped with Open vSwitch. This document seeks to provide overview of
+    functionality currently provided by NetworkManager, its capabilities and
+    limitations.</para>
+
+    <para>First and foremost: NetworkManager applies the configuration by
+    modifying the OVSDB directly. Its configuration model follows the OVSDB
+    database model closely and it does not provide the level of abstraction
+    <command>ovs-vsctl</command> provides.</para>
+
+    <para>In practical terms it means the following:
+      <itemizedlist>
+        <listitem>
+          <para>NetworkManager only ever talks to a single OVSDB instance via an
+          UNIX domain socket.</para>
+        </listitem>
+        <listitem>
+          <para>The configuration is made up of Bridges, Ports and
+          Interfaces. Interfaces are always enslaved to Ports, and Ports are always
+          enslaved to Bridges.</para>
+        </listitem>
+        <listitem>
+          <para>NetworkManager only creates Bridges, Ports and Interfaces
+          you ask it to. Unlike <command>ovs-vsctl</command>, it doesn't create the
+          local interface nor its port automatically.</para>
+        </listitem>
+        <listitem>
+          <para>You can't enslave Interface directly to a Bridge. You
+          always need a Port, even if it has just one interface.</para>
+        </listitem>
+        <listitem>
+          <para>There are no VLANs. The VLAN tagging is enabled by setting a
+          <link linkend="nm-settings.property.ovs-port.tag">ovs-port.tag</link>
+          property on a Port.</para>
+        </listitem>
+        <listitem>
+          <para>There are no bonds either. The bonding is enabled by
+          enslaving multiple Interfaces to a Port and configured by setting
+          properties on a port.</para>
+        </listitem>
+      </itemizedlist>
+    </para>
+
+    <refsect2>
+      <title>Bridges</title>
+
+      <para>Bridges are represented by connections of ovs-bridge
+      <link linkend="nm-settings.property.connection.type">type</link>.
+      Due to the limitations of OVSDB, "empty" Bridges (with no Ports) can't exist.
+      NetworkManager inserts the records for Bridges into OVSDB when a Port is
+      enslaved.
+      </para>
+    </refsect2>
+
+    <refsect2>
+      <title>Ports</title>
+
+      <para>Ports are represented by connections of ovs-port
+      <link linkend="nm-settings.property.connection.type">type</link>.
+      Due to the limitations of OVSDB, "empty" Ports (with no Interfaces) can't
+      exist.  Ports can also be configured to do VLAN tagging or Bonding.
+      NetworkManager inserts the records for Ports into OVSDB when an Interface is
+      enslaved. Ports must be enslaved to a Bridge.</para>
+    </refsect2>
+
+    <refsect2>
+      <title>Interfaces</title>
+
+      <para>Interfaces are represented by a connections enslaved to a Port. The
+      system interfaces (that have a corresponding Linux link) have a respective
+      <link linkend="nm-settings.property.connection.type">connection.type</link>
+      of the link (e.g. "wired", "bond", "dummy", etc.). Other interfaces ("internal"
+      or "patch" interfaces) are of ovs-interface type. The OVSDB entries are
+      inserted upon enslavement to a Port.</para>
+    </refsect2>
+  </refsect1>
+
+
+  <refsect1>
+    <title>Examples</title>
+
+    <example><title>Creating a Bridge with a single internal Interface</title>
+<screen><prompt>$ </prompt><userinput>nmcli conn add type ovs-bridge conn.interface bridge0</userinput>
+Connection 'ovs-bridge-bridge0' (d10fc64d-1d48-4394-a1b8-e1aea72f27d5) successfully added.
+<prompt>$ </prompt><userinput>nmcli conn add type ovs-port conn.interface port0 master bridge0</userinput>
+Connection 'ovs-port-port0' (5ae22bae-bba4-4815-9ade-7e635633e1f0) successfully added.
+<prompt>$ </prompt><userinput>nmcli conn add type ovs-interface slave-type ovs-port conn.interface iface0 \
+  master port0 ipv4.method manual ipv4.address 192.0.2.1/24</userinput>
+Connection 'ovs-interface-iface0' (3640d2a1-a2fd-4718-92f1-cffadb5b6cdc) successfully added.
+</screen>
+      <para>As said above, you need to create a Port even for a single interface.
+      Also, before you add the Interface, the Bridge and Port devices appear active,
+      but are not configured in OVSDB yet. You can inspect the results with
+      <command>ovs-vsctl show</command>.</para>
+    </example>
+
+    <example><title>Adding a Linux interface to a Bridge</title>
+<screen><prompt>$ </prompt><userinput>nmcli conn add type ovs-port conn.interface port1 master bridge0</userinput>
+Connection 'ovs-port-port1' (67d041eb-8e7b-4458-afee-a1d07c9c4552) successfully added.
+<prompt>$ </prompt><userinput>nmcli conn add type ethernet conn.interface eth0 master port1</userinput>
+Connection 'ovs-slave-eth0' (d459c45c-cf78-4c1c-b4b7-505e71379624) successfully added.
+</screen>
+<para>Again, you need a port.</para>
+    </example>
+
+    <example><title>Creating a VLAN</title>
+<screen><prompt>$ </prompt><userinput>nmcli conn add type ovs-port conn.interface port2 master bridge0 ovs-port.tag 120</userinput>
+Connection 'ovs-port-port2' (3994c093-4ef7-4549-a4fd-627b831c3cb8) successfully added.
+<prompt>$ </prompt><userinput>nmcli conn add type ethernet conn.interface eth1 master port2</userinput>
+Connection 'ovs-slave-eth1' (099be06e-71ad-484d-8d5a-fcadc5f207f5) successfully added.
+</screen>
+      <para>It's just a port with a tag.</para>
+    </example>
+
+    <example><title>Creating a Bond</title>
+<screen><prompt>$ </prompt><userinput>nmcli conn add type ovs-port conn.interface bond0 master bridge0</userinput>
+Connection 'ovs-port-bond0' (d154ebf9-e999-4e1b-a084-a3de53d25d8a) successfully added.
+<prompt>$ </prompt><userinput>nmcli conn add type ethernet conn.interface eth2 master bond0</userinput>
+Connection 'ovs-slave-eth2' (475ac1bf-30b2-4534-a877-27f33f58b082) successfully added.
+<prompt>$ </prompt><userinput>nmcli conn add type ethernet conn.interface eth3 master bond0</userinput>
+Connection 'ovs-slave-eth3' (8dedeecb-ed12-482b-b77a-24a4fb835136) successfully added.
+</screen>
+      <para>It's just a Port with multiple interfaces. See nm-settings manual for
+      Bonding options you can use with "nmcli c add" or "nmcli c modify". You could
+      even set a VLAN tag on the same Port to do VLAN tagging and bonding at the same
+      time.</para>
+    </example>
+  </refsect1>
+
+  <refsect1>
+    <title>Bugs</title>
+
+    <itemizedlist>
+       <listitem>
+          <para>Not all Open vSwitch capabilities are supported.</para>
+       </listitem>
+       <listitem>
+          <para>Open vSwitch devices don't expose many useful properties on D-Bus.</para>
+       </listitem>
+    </itemizedlist>
+    <para>Probably many more.</para>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <ulink url="https://www.rfc-editor.org/rfc/rfc7047.txt">RFC 7047: The Open vSwitch Database Management Protocol</ulink>,
+      <citerefentry><refentrytitle>ovs-vsctl</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>ovs-vswitchd.conf.db</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+      <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+      <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>
+    </para>
+  </refsect1>
+</refentry>

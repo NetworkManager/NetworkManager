@@ -1,21 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
+ * Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
 #ifndef __NM_DEVICE_TEAM_H__
@@ -25,7 +10,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-device.h>
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -39,23 +24,20 @@ G_BEGIN_DECLS
 #define NM_DEVICE_TEAM_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_TEAM_CARRIER     "carrier"
 #define NM_DEVICE_TEAM_SLAVES      "slaves"
+#define NM_DEVICE_TEAM_CONFIG      "config"
 
-struct _NMDeviceTeam {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceTeamClass;
+/**
+ * NMDeviceTeam:
+ */
+typedef struct _NMDeviceTeamClass NMDeviceTeamClass;
 
 GType nm_device_team_get_type (void);
 
 const char      *nm_device_team_get_hw_address (NMDeviceTeam *device);
 gboolean         nm_device_team_get_carrier    (NMDeviceTeam *device);
 const GPtrArray *nm_device_team_get_slaves     (NMDeviceTeam *device);
+NM_AVAILABLE_IN_1_4
+const char      *nm_device_team_get_config     (NMDeviceTeam *device);
 
 G_END_DECLS
 

@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -21,16 +8,13 @@
  * @short_description: The editor page for Team connections
  */
 
-#include "config.h"
-
-#include <glib.h>
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-page-team.h"
 
 #include "nmt-slave-list.h"
 
-G_DEFINE_TYPE (NmtPageTeam, nmt_page_team, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageTeam, nmt_page_team, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_TEAM, NmtPageTeamPrivate))
 
@@ -42,13 +26,12 @@ typedef struct {
 
 } NmtPageTeamPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_team_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_TEAM,
 	                     "connection", conn,
-	                     "title", _("TEAM"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -125,13 +108,14 @@ edit_clicked (NmtNewtButton *button,
 	              NM_SETTING_TEAM_CONFIG, new_config,
 	              NULL);
 	g_free (new_config);
-}	
+}
 
 static void
 nmt_page_team_constructed (GObject *object)
 {
 	NmtPageTeam *team = NMT_PAGE_TEAM (object);
 	NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE (team);
+	NmtEditorSection *section;
 	NmtNewtGrid *grid;
 	NMSettingTeam *s_team;
 	NmtNewtWidget *widget;
@@ -145,8 +129,10 @@ nmt_page_team_constructed (GObject *object)
 	}
 	priv->s_team = s_team;
 
+	section = nmt_editor_section_new (_("TEAM"), NULL, TRUE);
+
 	widget = nmt_newt_grid_new ();
-	nmt_page_grid_append (NMT_PAGE_GRID (team), NULL, widget, NULL);
+	nmt_editor_grid_append (nmt_editor_section_get_body (section), NULL, widget, NULL);
 
 	grid = NMT_NEWT_GRID (widget);
 
@@ -175,15 +161,27 @@ nmt_page_team_constructed (GObject *object)
 	g_signal_connect (widget, "clicked", G_CALLBACK (edit_clicked), team);
 	nmt_newt_grid_add (grid, widget, 0, 4);
 
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (team), section);
+
 	G_OBJECT_CLASS (nmt_page_team_parent_class)->constructed (object);
+}
+
+static void
+nmt_page_team_saved (NmtEditorPage *editor_page)
+{
+	NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE (editor_page);
+
+	nmt_edit_connection_list_recommit (NMT_EDIT_CONNECTION_LIST (priv->slaves));
 }
 
 static void
 nmt_page_team_class_init (NmtPageTeamClass *team_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (team_class);
+	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS (team_class);
 
 	g_type_class_add_private (team_class, sizeof (NmtPageTeamPrivate));
 
 	object_class->constructed = nmt_page_team_constructed;
+	editor_page_class->saved = nmt_page_team_saved;
 }

@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -25,17 +12,15 @@
  * can't just use #GBinding.
  */
 
-#include "config.h"
-
-#include <glib.h>
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-page-bond.h"
 
+#include "nmt-mac-entry.h"
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"
 
-G_DEFINE_TYPE (NmtPageBond, nmt_page_bond, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageBond, nmt_page_bond, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_BOND, NmtPageBondPrivate))
 
@@ -48,6 +33,9 @@ typedef enum {
 typedef struct {
 	NmtSlaveList *slaves;
 
+	/* Note: when adding new options to the UI also ensure they are
+	 * initialized in bond_connection_setup_func()
+	 */
 	NmtNewtPopup *mode;
 	NmtNewtEntry *primary;
 	NmtNewtPopup *monitoring;
@@ -64,13 +52,12 @@ typedef struct {
 	gboolean updating;
 } NmtPageBondPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_bond_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_BOND,
 	                     "connection", conn,
-	                     "title", _("BOND"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -206,21 +193,21 @@ slaves_changed (GObject    *object,
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->mode), TRUE);
 }
 
-#define WIDGET_CHANGED_FUNC(widget, func, option)							\
-static void																	\
-widget ## _widget_changed (GObject    *object,								\
-                           GParamSpec *pspec,								\
-                           gpointer    user_data)							\
-{																			\
-	NmtPageBond *bond = NMT_PAGE_BOND (user_data);							\
-	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);			\
-																			\
-	if (priv->updating)														\
-		return;																\
-																			\
-	priv->updating = TRUE;													\
-	nm_setting_bond_add_option (priv->s_bond, option, func (priv->widget));	\
-	priv->updating = FALSE;													\
+#define WIDGET_CHANGED_FUNC(widget, func, option) \
+static void \
+widget ## _widget_changed (GObject    *object, \
+                           GParamSpec *pspec, \
+                           gpointer    user_data) \
+{ \
+    NmtPageBond *bond = NMT_PAGE_BOND (user_data); \
+    NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond); \
+    \
+    if (priv->updating) \
+        return; \
+    \
+    priv->updating = TRUE; \
+    nm_setting_bond_add_option (priv->s_bond, option, func (priv->widget)); \
+    priv->updating = FALSE; \
 }
 
 WIDGET_CHANGED_FUNC (primary, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_PRIMARY)
@@ -338,7 +325,9 @@ nmt_page_bond_constructed (GObject *object)
 {
 	NmtPageBond *bond = NMT_PAGE_BOND (object);
 	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);
-	NmtPageGrid *grid;
+	NmtEditorSection *section;
+	NmtEditorGrid *grid;
+	NMSettingWired *s_wired;
 	NMSettingBond *s_bond;
 	NmtNewtWidget *widget, *label;
 	NMConnection *conn;
@@ -351,84 +340,109 @@ nmt_page_bond_constructed (GObject *object)
 	}
 	priv->s_bond = s_bond;
 
-	grid = NMT_PAGE_GRID (bond);
+	s_wired = nm_connection_get_setting_wired (conn);
+	if (!s_wired) {
+		nm_connection_add_setting (conn, nm_setting_wired_new ());
+		s_wired = nm_connection_get_setting_wired (conn);
+	}
+
+	section = nmt_editor_section_new (_("BOND"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_separator_new ();
-	nmt_page_grid_append (grid, _("Slaves"), widget, NULL);
-	nmt_page_grid_set_row_flags (grid, widget, NMT_PAGE_GRID_ROW_LABEL_ALIGN_LEFT);
+	nmt_editor_grid_append (grid, _("Slaves"), widget, NULL);
+	nmt_editor_grid_set_row_flags (grid, widget, NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT);
 
 	widget = nmt_slave_list_new (conn, bond_connection_type_filter, bond);
 	g_signal_connect (widget, "notify::connections",
 	                  G_CALLBACK (slaves_changed), bond);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 	priv->slaves = NMT_SLAVE_LIST (widget);
 
 	widget = nmt_newt_popup_new (bond_mode);
 	g_signal_connect (widget, "notify::active-id",
 	                  G_CALLBACK (mode_widget_changed), bond);
-	nmt_page_grid_append (grid, _("Mode"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Mode"), widget, NULL);
 	priv->mode = NMT_NEWT_POPUP (widget);
 
 	widget = nmt_newt_entry_new (40, 0);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (primary_widget_changed), bond);
-	nmt_page_grid_append (grid, _("Primary"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Primary"), widget, NULL);
 	priv->primary = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_popup_new (bond_monitoring);
 	g_signal_connect (widget, "notify::active",
 	                  G_CALLBACK (monitoring_widget_changed), bond);
-	nmt_page_grid_append (grid, _("Link monitoring"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Link monitoring"), widget, NULL);
 	priv->monitoring = NMT_NEWT_POPUP (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (miimon_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Monitoring frequency"), widget, label);
+	nmt_editor_grid_append (grid, _("Monitoring frequency"), widget, label);
 	priv->miimon = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (updelay_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Link up delay"), widget, label);
+	nmt_editor_grid_append (grid, _("Link up delay"), widget, label);
 	priv->updelay = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (downdelay_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Link down delay"), widget, label);
+	nmt_editor_grid_append (grid, _("Link down delay"), widget, label);
 	priv->downdelay = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (arp_interval_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Monitoring frequency"), widget, label);
+	nmt_editor_grid_append (grid, _("Monitoring frequency"), widget, label);
 	priv->arp_interval = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP4);
 	g_signal_connect (widget, "notify::strings",
 	                  G_CALLBACK (arp_ip_target_widget_changed), bond);
-	nmt_page_grid_append (grid, _("ARP targets"), widget, NULL);
+	nmt_editor_grid_append (grid, _("ARP targets"), widget, NULL);
 	priv->arp_ip_target = NMT_ADDRESS_LIST (widget);
+
+	widget = nmt_mac_entry_new (40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED);
+	g_object_bind_property (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	                        widget, "mac-address",
+	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nmt_editor_grid_append (grid, _("Cloned MAC address"), widget, NULL);
 
 	g_signal_connect (s_bond, "notify::" NM_SETTING_BOND_OPTIONS,
 	                  G_CALLBACK (bond_options_changed), bond);
 	bond_options_changed (G_OBJECT (s_bond), NULL, bond);
 	slaves_changed (G_OBJECT (priv->slaves), NULL, bond);
 
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (bond), section);
+
 	G_OBJECT_CLASS (nmt_page_bond_parent_class)->constructed (object);
+}
+
+static void
+nmt_page_bond_saved (NmtEditorPage *editor_page)
+{
+	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (editor_page);
+
+	nmt_edit_connection_list_recommit (NMT_EDIT_CONNECTION_LIST (priv->slaves));
 }
 
 static void
 nmt_page_bond_class_init (NmtPageBondClass *bond_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (bond_class);
+	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS (bond_class);
 
 	g_type_class_add_private (bond_class, sizeof (NmtPageBondPrivate));
 
 	object_class->constructed = nmt_page_bond_constructed;
+	editor_page_class->saved = nmt_page_bond_saved;
 }

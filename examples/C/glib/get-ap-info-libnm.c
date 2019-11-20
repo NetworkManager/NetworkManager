@@ -1,20 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2010 Red Hat, Inc.
+ * Copyright (C) 2010 Red Hat, Inc.
  */
 
 /*
@@ -22,7 +8,7 @@
  * libnm.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` get-ap-info-libnm.c -o get-ap-info-libnm
+ *   gcc -Wall get-ap-info-libnm.c -o get-ap-info-libnm `pkg-config --libs --cflags libnm`
  */
 
 #include <glib.h>
@@ -79,7 +65,7 @@ show_access_point_info (NMAccessPoint *ap)
 {
 	guint32 flags, wpa_flags, rsn_flags, freq, bitrate;
 	guint8 strength;
-	GBytes *ssid; 
+	GBytes *ssid;
 	const char *hwaddr;
 	NM80211Mode mode;
 	char *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
@@ -158,7 +144,7 @@ show_wifi_device_info (NMDevice *device)
 	const char *iface;
 	const char *driver;
 	guint32 speed;
-	GBytes *active_ssid; 
+	GBytes *active_ssid;
 	char *active_ssid_str = NULL;
 	int i;
 
@@ -180,7 +166,7 @@ show_wifi_device_info (NMDevice *device)
 	speed /= 1000;
 
 	printf ("Device: %s  ----  Driver: %s  ----  Speed: %d Mbit/s  ----  Active AP: %s\n",
-	         iface, driver, speed, active_ssid_str ? active_ssid_str : "none");
+	         iface, driver, speed, active_ssid_str ?: "none");
 	printf ("=================================================================================\n");
 	g_free (active_ssid_str);
 
@@ -201,11 +187,6 @@ main (int argc, char *argv[])
 	const GPtrArray *devices;
 	int i;
 	GError *error = NULL;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
 
 	/* Get NMClient object */
 	client = nm_client_new (NULL, &error);

@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -24,11 +11,9 @@
  * including presenting a password dialog if necessary.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
-
-#include <glib/gi18n-lib.h>
 
 #include "nmt-newt.h"
 
@@ -36,40 +21,156 @@
 #include "nmtui-connect.h"
 #include "nmt-connect-connection-list.h"
 #include "nmt-password-dialog.h"
-#include "nmt-secret-agent.h"
+#include "nm-secret-agent-simple.h"
+#include "nm-vpn-helpers.h"
+#include "nm-client-utils.h"
 #include "nmt-utils.h"
 
+/**
+ * Runs openconnect to authenticate. The current screen state is saved
+ * before starting the command and restored after it returns.
+ */
+static gboolean
+openconnect_authenticate (NMConnection *connection, char **cookie, char **gateway, char **gwcert)
+{
+	GError *error = NULL;
+	NMSettingVpn *s_vpn;
+	gboolean ret;
+	int status = 0;
+	const char *gw, *port;
+
+	nmt_newt_message_dialog (_("openconnect will be run to authenticate.\nIt will return to nmtui when completed."));
+
+	/* Get port */
+	s_vpn = nm_connection_get_setting_vpn (connection);
+	gw = nm_setting_vpn_get_data_item (s_vpn, "gateway");
+	port = gw ? strrchr (gw, ':') : NULL;
+
+	newtSuspend ();
+
+	ret = nm_vpn_openconnect_authenticate_helper (gw, cookie, gateway, gwcert, &status, &error);
+
+	newtResume ();
+
+	if (!ret) {
+		nmt_newt_message_dialog (_("Error: openconnect failed: %s"), error->message);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	if (WIFEXITED (status)) {
+		if (WEXITSTATUS (status) != 0) {
+			nmt_newt_message_dialog (_("openconnect failed with status %d"), WEXITSTATUS (status));
+			return FALSE;
+		}
+	} else if (WIFSIGNALED (status)) {
+		nmt_newt_message_dialog (_("openconnect failed with signal %d"), WTERMSIG (status));
+		return FALSE;
+	}
+
+	if (gateway && *gateway && port) {
+		char *tmp = *gateway;
+		*gateway = g_strdup_printf ("%s%s", *gateway, port);
+		g_free (tmp);
+	}
+
+	return TRUE;
+}
+
 static void
-secrets_requested (NmtSecretAgent *agent,
-                   const char     *request_id,
-                   const char     *title,
-                   const char     *msg,
-                   GPtrArray      *secrets,
-                   gpointer        user_data)
+secrets_requested (NMSecretAgentSimple *agent,
+                   const char          *request_id,
+                   const char          *title,
+                   const char          *msg,
+                   GPtrArray           *secrets,
+                   gpointer             user_data)
 {
 	NmtNewtForm *form;
+	NMConnection *connection = NM_CONNECTION (user_data);
+	int i;
+
+	/* Get secrets for OpenConnect VPN */
+	if (   connection
+	    && nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
+		NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (connection);
+
+		if (nm_streq0 (nm_setting_vpn_get_service_type (s_vpn), NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT)) {
+			gs_free char *cookie = NULL;
+			gs_free char *gateway = NULL;
+			gs_free char *gwcert = NULL;
+
+			openconnect_authenticate (connection, &cookie, &gateway, &gwcert);
+
+			for (i = 0; i < secrets->len; i++) {
+				NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+
+				if (secret->secret_type != NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET)
+					continue;
+				if (!nm_streq0 (secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
+					continue;
+				if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "cookie")) {
+					g_free (secret->value);
+					secret->value = g_steal_pointer (&cookie);
+				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gateway")) {
+					g_free (secret->value);
+					secret->value = g_steal_pointer (&gateway);
+				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
+					g_free (secret->value);
+					secret->value = g_steal_pointer (&gwcert);
+				}
+			}
+		}
+	}
 
 	form = nmt_password_dialog_new (request_id, title, msg, secrets);
 	nmt_newt_form_run_sync (form);
 
 	if (nmt_password_dialog_succeeded (NMT_PASSWORD_DIALOG (form)))
-		nmt_secret_agent_response (agent, request_id, secrets);
+		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else
-		nmt_secret_agent_response (agent, request_id, NULL);
+		nm_secret_agent_simple_response (agent, request_id, NULL);
 
 	g_object_unref (form);
 }
+
+typedef struct {
+	NMDevice *device;
+	NMActiveConnection *active;
+	NmtSyncOp *op;
+} ActivateConnectionInfo;
 
 static void
 connect_cancelled (NmtNewtForm *form,
                    gpointer     user_data)
 {
-	NmtSyncOp *op = user_data;
+	ActivateConnectionInfo *info = user_data;
 	GError *error = NULL;
 
 	error = g_error_new_literal (G_IO_ERROR, G_IO_ERROR_CANCELLED, "Cancelled");
-	nmt_sync_op_complete_boolean (op, FALSE, error);
+	nmt_sync_op_complete_boolean (info->op, FALSE, error);
 	g_clear_error (&error);
+}
+
+static void
+check_activated (ActivateConnectionInfo *info)
+{
+	NMActiveConnectionState ac_state;
+	const char *reason = NULL;
+	gs_free_error GError *error = NULL;
+
+	ac_state = nmc_activation_get_effective_state (info->active, info->device, &reason);
+	if (!NM_IN_SET (ac_state,
+	                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED))
+		return;
+
+	if (ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+		nm_assert (reason);
+		error = g_error_new (NM_CLIENT_ERROR, NM_CLIENT_ERROR_FAILED,
+		                     _("Activation failed: %s"), reason);
+	}
+
+	nmt_sync_op_complete_boolean (info->op, error == NULL, error);
 }
 
 static void
@@ -77,21 +178,15 @@ activate_ac_state_changed (GObject    *object,
                            GParamSpec *pspec,
                            gpointer    user_data)
 {
-	NmtSyncOp *op = user_data;
-	NMActiveConnectionState state;
-	GError *error = NULL;
+	check_activated (user_data);
+}
 
-	state = nm_active_connection_get_state (NM_ACTIVE_CONNECTION (object));
-	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		return;
-
-	if (state != NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		error = g_error_new_literal (NM_CLIENT_ERROR, NM_CLIENT_ERROR_FAILED,
-		                             _("Activation failed"));
-	}
-
-	nmt_sync_op_complete_boolean (op, error == NULL, error);
-	g_clear_error (&error);
+static void
+activate_device_state_changed (GObject    *object,
+                               GParamSpec *pspec,
+                               gpointer    user_data)
+{
+	check_activated (user_data);
 }
 
 static void
@@ -132,12 +227,13 @@ activate_connection (NMConnection *connection,
                      NMObject     *specific_object)
 {
 	NmtNewtForm *form;
-	NMSecretAgent *agent;
+	gs_unref_object NMSecretAgentSimple *agent = NULL;
 	NmtNewtWidget *label;
 	NmtSyncOp op;
 	const char *specific_object_path;
 	NMActiveConnection *ac;
 	GError *error = NULL;
+	ActivateConnectionInfo info = { };
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM,
 	                     "escape-exits", TRUE,
@@ -145,8 +241,17 @@ activate_connection (NMConnection *connection,
 	label = nmt_newt_label_new (_("Connecting..."));
 	nmt_newt_form_set_content (form, label);
 
-	agent = nmt_secret_agent_new ();
-	g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
+	agent = nm_secret_agent_simple_new ("nmtui");
+	if (agent) {
+		if (connection) {
+			nm_secret_agent_simple_enable (agent,
+			                               nm_object_get_path (NM_OBJECT (connection)));
+		}
+		g_signal_connect (agent,
+		                  NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+		                  G_CALLBACK (secrets_requested),
+		                  connection);
+	}
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;
 
@@ -182,15 +287,29 @@ activate_connection (NMConnection *connection,
 		goto done;
 	}
 
+	if (agent && !connection) {
+		connection = NM_CONNECTION (nm_active_connection_get_connection (ac));
+		if (connection) {
+			nm_secret_agent_simple_enable (agent,
+			                               nm_object_get_path (NM_OBJECT (connection)));
+		}
+	}
+
 	/* Now wait for the connection to actually reach the ACTIVATED state,
 	 * allowing the user to cancel if it takes too long.
 	 */
-
 	nmt_sync_op_init (&op);
+	info.active = ac;
+	info.device = device;
+	info.op = &op;
 
-	g_signal_connect (form, "quit", G_CALLBACK (connect_cancelled), &op);
+	g_signal_connect (form, "quit", G_CALLBACK (connect_cancelled), &info);
 	g_signal_connect (ac, "notify::" NM_ACTIVE_CONNECTION_STATE,
-	                  G_CALLBACK (activate_ac_state_changed), &op);
+	                  G_CALLBACK (activate_ac_state_changed), &info);
+	if (device) {
+		g_signal_connect (device, "notify::" NM_DEVICE_STATE,
+		                  G_CALLBACK (activate_device_state_changed), &info);
+	}
 
 	if (!nmt_sync_op_wait_boolean (&op, &error)) {
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -198,16 +317,18 @@ activate_connection (NMConnection *connection,
 		g_clear_error (&error);
 	}
 
-	g_signal_handlers_disconnect_by_func (form, G_CALLBACK (connect_cancelled), &op);
-	g_signal_handlers_disconnect_by_func (ac, G_CALLBACK (activate_ac_state_changed), &op);
+	g_signal_handlers_disconnect_by_func (form, G_CALLBACK (connect_cancelled), &info);
+	g_signal_handlers_disconnect_by_func (ac, G_CALLBACK (activate_ac_state_changed), &info);
+	if (device)
+		g_signal_handlers_disconnect_by_func (device, G_CALLBACK (activate_device_state_changed), &info);
 
  done:
 	if (nmt_newt_widget_get_realized (NMT_NEWT_WIDGET (form)))
 		nmt_newt_form_quit (form);
 	g_object_unref (form);
 
-	nm_secret_agent_unregister (agent, NULL, NULL);
-	g_object_unref (agent);
+	if (agent)
+		nm_secret_agent_old_unregister (NM_SECRET_AGENT_OLD (agent), NULL, NULL);
 }
 
 static void
@@ -276,7 +397,7 @@ listbox_active_changed (GObject    *object,
 }
 
 static NmtNewtForm *
-nmt_connect_connection_list (void)
+nmt_connect_connection_list (gboolean is_top)
 {
 	int screen_width, screen_height;
 	NmtNewtForm *form;
@@ -308,7 +429,7 @@ nmt_connect_connection_list (void)
 	listbox_active_changed (G_OBJECT (list), NULL, activate);
 	g_signal_connect (activate, "clicked", G_CALLBACK (activate_clicked), list);
 
-	quit = nmt_newt_button_box_add_end (NMT_NEWT_BUTTON_BOX (bbox), _("Quit"));
+	quit = nmt_newt_button_box_add_end (NMT_NEWT_BUTTON_BOX (bbox), is_top ? _("Quit") : _("Back"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
 
 	nmt_newt_form_set_content (form, grid);
@@ -342,10 +463,10 @@ nmt_connect_connection (const char *identifier)
 }
 
 NmtNewtForm *
-nmtui_connect (int argc, char **argv)
+nmtui_connect (gboolean is_top, int argc, char **argv)
 {
 	if (argc == 2)
 		return nmt_connect_connection (argv[1]);
 	else
-		return nmt_connect_connection_list ();
+		return nmt_connect_connection_list (is_top);
 }

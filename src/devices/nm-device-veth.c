@@ -1,122 +1,99 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager -- Network link manager
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2013 Red Hat, Inc.
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
-#include <errno.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <linux/sockios.h>
-#include <sys/ioctl.h>
 
 #include "nm-device-veth.h"
 #include "nm-device-private.h"
-#include "nm-logging.h"
 #include "nm-manager.h"
-#include "nm-platform.h"
-#include "nm-dbus-manager.h"
+#include "platform/nm-platform.h"
 #include "nm-device-factory.h"
-
-#include "nm-device-veth-glue.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVeth);
 
-G_DEFINE_TYPE (NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
+/*****************************************************************************/
 
-#define NM_DEVICE_VETH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VETH, NMDeviceVethPrivate))
-
-typedef struct {
-	NMDevice *peer;
-	gboolean ever_had_peer;
-} NMDeviceVethPrivate;
-
-enum {
-	PROP_0,
-	PROP_PEER,
-
-	LAST_PROP
+struct _NMDeviceVeth {
+	NMDeviceEthernet parent;
 };
 
-/**************************************************************/
+struct _NMDeviceVethClass {
+	NMDeviceEthernetClass parent;
+};
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVeth,
+	PROP_PEER,
+);
+
+/*****************************************************************************/
+
+G_DEFINE_TYPE (NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
+
+/*****************************************************************************/
 
 static void
-set_peer (NMDeviceVeth *self, NMDevice *peer)
+update_properties (NMDevice *device)
 {
-	NMDeviceVethPrivate *priv = NM_DEVICE_VETH_GET_PRIVATE (self);
+	NMDevice *peer;
+	int ifindex, peer_ifindex;
 
-	if (!priv->peer) {
-		priv->ever_had_peer = TRUE;
-		priv->peer = peer;
-		g_object_add_weak_pointer (G_OBJECT (peer), (gpointer *) &priv->peer);
+	ifindex = nm_device_get_ifindex (device);
 
-		g_object_notify (G_OBJECT (self), NM_DEVICE_VETH_PEER);
-	}
+	if (!nm_platform_link_veth_get_properties (nm_device_get_platform (device), ifindex, &peer_ifindex))
+		peer_ifindex = 0;
+
+	nm_device_parent_set_ifindex (device, peer_ifindex);
+
+	peer = nm_device_parent_get_device (device);
+	if (   peer
+	    && NM_IS_DEVICE_VETH (peer)
+	    && nm_device_parent_get_ifindex (peer) <= 0)
+		update_properties (peer);
 }
 
-static NMDevice *
-get_peer (NMDeviceVeth *self)
+static gboolean
+can_unmanaged_external_down (NMDevice *self)
 {
-	NMDeviceVethPrivate *priv = NM_DEVICE_VETH_GET_PRIVATE (self);
-	NMDevice *device = NM_DEVICE (self), *peer = NULL;
-	NMPlatformVethProperties props;
-
-	if (priv->ever_had_peer)
-		return priv->peer;
-
-	if (!nm_platform_veth_get_properties (nm_device_get_ifindex (device), &props)) {
-		_LOGW (LOGD_HW, "could not read veth properties");
-		return NULL;
-	}
-
-	peer = nm_manager_get_device_by_ifindex (nm_manager_get (), props.peer);
-	if (peer && NM_IS_DEVICE_VETH (peer)) {
-		set_peer (self, peer);
-		set_peer (NM_DEVICE_VETH (peer), device);
-	}
-
-	return priv->peer;
+	/* Unless running in a container, an udev rule causes these to be
+	 * unmanaged. If there's no udev then we're probably in a container
+	 * and should IFF_UP and configure the veth ourselves even if we
+	 * didn't create it. */
+	return FALSE;
 }
 
+static void
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
+{
+	NM_DEVICE_CLASS (nm_device_veth_parent_class)->link_changed (device, pllink);
+	update_properties (device);
+}
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_veth_init (NMDeviceVeth *self)
 {
-	nm_device_set_initial_unmanaged_flag (NM_DEVICE (self), NM_UNMANAGED_DEFAULT, TRUE);
 }
 
 static void
-dispose (GObject *object)
+parent_changed_notify (NMDevice *device,
+                       int old_ifindex,
+                       NMDevice *old_parent,
+                       int new_ifindex,
+                       NMDevice *new_parent)
 {
-	NMDeviceVeth *self = NM_DEVICE_VETH (object);
-	NMDeviceVethPrivate *priv = NM_DEVICE_VETH_GET_PRIVATE (self);
-
-	if (priv->peer) {
-		g_object_remove_weak_pointer (G_OBJECT (priv->peer), (gpointer *) &priv->peer);
-		priv->peer = NULL;
-	}
-
-	G_OBJECT_CLASS (nm_device_veth_parent_class)->dispose (object);
+	NM_DEVICE_CLASS (nm_device_veth_parent_class)->parent_changed_notify (device,
+	                                                                      old_ifindex,
+	                                                                      old_parent,
+	                                                                      new_ifindex,
+	                                                                      new_parent);
+	_notify (NM_DEVICE_VETH (device), PROP_PEER);
 }
 
 static void
@@ -128,8 +105,10 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PEER:
-		peer = get_peer (self);
-		g_value_set_boxed (value, peer ? nm_device_get_path (peer) : "/");
+		peer = nm_device_parent_get_device (NM_DEVICE (self));
+		if (peer && !NM_IS_DEVICE_VETH (peer))
+			peer = NULL;
+		nm_dbus_utils_g_value_set_object_path (value, peer);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -137,48 +116,67 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_veth = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_VETH,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Peer", "o", NM_DEVICE_VETH_PEER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_veth_class_init (NMDeviceVethClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMDeviceVethPrivate));
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_PEER,
-		 g_param_spec_boxed (NM_DEVICE_VETH_PEER, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_veth);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
-	                                        &dbus_glib_nm_device_veth_object_info);
+	device_class->connection_type_supported = NULL;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_VETH);
+
+	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
+	device_class->link_changed = link_changed;
+	device_class->parent_changed_notify = parent_changed_notify;
+
+	obj_properties[PROP_PEER] =
+	    g_param_spec_string (NM_DEVICE_VETH_PEER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
-#define NM_TYPE_VETH_FACTORY (nm_veth_factory_get_type ())
-#define NM_VETH_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VETH_FACTORY, NMVethFactory))
+#define NM_TYPE_VETH_DEVICE_FACTORY (nm_veth_device_factory_get_type ())
+#define NM_VETH_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VETH_DEVICE_FACTORY, NMVethDeviceFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               const NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
-	if (plink->type == NM_LINK_TYPE_VETH) {
-		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
-		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
-		                                  NM_DEVICE_TYPE_DESC, "Veth",
-		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
-		                                  NULL);
-	}
-	return NULL;
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
+	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_TYPE_DESC, "Veth",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VETH,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_VETH,
+	                                  NULL);
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(VETH, Veth, veth, ETHERNET, \
-	factory_iface->new_link = new_link; \
-	)
-
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (VETH, Veth, veth,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_VETH),
+	factory_class->create_device = create_device;
+);

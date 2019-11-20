@@ -1,29 +1,15 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
  * Copyright (C) 2010 Red Hat, Inc.
- *
  */
 
-#include <glib.h>
-#include <glib-object.h>
+#include "nm-default.h"
 
-#include <nm-simple-connection.h>
-#include <nm-setting-connection.h>
-#include "nm-device-ethernet-utils.h"
+#include "nm-simple-connection.h"
+#include "nm-setting-connection.h"
+#include "devices/nm-device-ethernet-utils.h"
+
+#include "nm-test-utils-core.h"
 
 static NMConnection *
 _new_connection (const char *id)
@@ -38,60 +24,75 @@ _new_connection (const char *id)
 	return a;
 }
 
-/*******************************************/
+/*****************************************************************************/
+
+static char *
+_get_default_wired_name (GSList *list)
+{
+	gs_unref_hashtable GHashTable *existing_ids = NULL;
+
+	if (list) {
+		existing_ids = g_hash_table_new (nm_str_hash, g_str_equal);
+		for (; list; list = list->next)
+			g_hash_table_add (existing_ids, (char *) nm_connection_get_id (list->data));
+	}
+	return nm_device_ethernet_utils_get_default_wired_name (existing_ids);
+}
+
+/*****************************************************************************/
 
 static void
 test_defname_no_connections (void)
 {
-	char *name;
+	gs_free char *name = NULL;
 
-	name = nm_device_ethernet_utils_get_default_wired_name (NULL);
+	name = _get_default_wired_name (NULL);
 	g_assert_cmpstr (name, ==, "Wired connection 1");
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_no_conflict (void)
 {
 	GSList *list = NULL;
-	char *name;
+	gs_free char *name = NULL;
 
 	list = g_slist_append (list, _new_connection ("asdfasdfasdfadf"));
 	list = g_slist_append (list, _new_connection ("work wifi"));
 	list = g_slist_append (list, _new_connection ("random gsm connection"));
 
-	name = nm_device_ethernet_utils_get_default_wired_name (list);
+	name = _get_default_wired_name (list);
 	g_assert_cmpstr (name, ==, "Wired connection 1");
 
 	g_slist_free_full (list, g_object_unref);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_conflict (void)
 {
 	GSList *list = NULL;
-	char *name;
+	gs_free char *name = NULL;
 
 	list = g_slist_append (list, _new_connection ("asdfasdfasdfadf"));
 	list = g_slist_append (list, _new_connection ("Wired connection 1"));
 	list = g_slist_append (list, _new_connection ("random gsm connection"));
 
-	name = nm_device_ethernet_utils_get_default_wired_name (list);
+	name = _get_default_wired_name (list);
 	g_assert_cmpstr (name, ==, "Wired connection 2");
 
 	g_slist_free_full (list, g_object_unref);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_multiple_conflicts (void)
 {
 	GSList *list = NULL;
-	char *name;
+	gs_free char *name = NULL;
 
 	list = g_slist_append (list, _new_connection ("random gsm connection"));
 	list = g_slist_append (list, _new_connection ("home wifi"));
@@ -101,22 +102,20 @@ test_defname_multiple_conflicts (void)
 	list = g_slist_append (list, _new_connection ("work wifi"));
 	list = g_slist_append (list, _new_connection ("a vpn"));
 
-	name = nm_device_ethernet_utils_get_default_wired_name (list);
+	name = _get_default_wired_name (list);
 	g_assert_cmpstr (name, ==, "Wired connection 4");
 
 	g_slist_free_full (list, g_object_unref);
 }
 
-/*******************************************/
+/*****************************************************************************/
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
 {
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/defname/no_connections", test_defname_no_connections);
 	g_test_add_func ("/defname/no_conflict", test_defname_no_conflict);

@@ -1,18 +1,5 @@
 #!/usr/bin/env python
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0+
 #
 # Copyright (C) 2011 - 2012 Red Hat, Inc.
 #
@@ -22,7 +9,7 @@
 # Update() method. The method replaces all previous settings with new ones
 # including possible secrets.
 # So, we get all settings using GetSettings() and then find out what secrets
-# are associated with the connection using GetSecrets(), ask for new secret 
+# are associated with the connection using GetSecrets(), ask for new secret
 # values, and add them to the settings that we pass to Update().
 #
 
@@ -37,16 +24,16 @@ def change_secrets_in_one_setting(proxy, config, setting_name):
         # returns a dict of dicts mapping name::setting, where setting is a dict
         # mapping key::value.  Each member of the 'setting' dict is a secret
         secrets = proxy.GetSecrets(setting_name)
-        print "Current secrets:", secrets
+        print("Current secrets:" + secrets)
 
         # Ask user for new secrets and put them into our connection config
         for setting in secrets:
             for key in secrets[setting]:
                 new_secret = raw_input ("Enter new secret for '%s' in '%s': " % (key, setting))
                 config[setting_name][key] = new_secret
-    except Exception, e:
+    except Exception as e:
         #code = str(e).split(':')[0]
-        #print "Exception:", str(e)
+        #print("Exception:" + str(e))
         pass
 
 def change_secrets(con_path, config):
@@ -76,7 +63,7 @@ def find_connection(name):
         connection = dbus.Interface(con_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
         try:
             config = connection.GetSettings()
-        except Exception, e:
+        except Exception as e:
             pass
 
         # Find connection by the id
@@ -101,10 +88,10 @@ if len(sys.argv) != 2:
 # Find the connection
 con = find_connection(sys.argv[1])
 
-print "Connection found: ", con_path
+print("Connection found: " + con_path)
 
 if con:
-    # Obtain new secrets and put then into connection dict 
+    # Obtain new secrets and put then into connection dict
     change_secrets(con_path, con)
 
     # Change the connection with Update()

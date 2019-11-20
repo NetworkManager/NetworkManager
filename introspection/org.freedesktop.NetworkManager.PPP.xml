@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.PPP:
+      @short_description: Helper interface for a PPP plugin
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.PPP">
+    <annotation name="org.gtk.GDBus.C.Name" value="PPP_Manager"/>
+
+    <method name="NeedSecrets">
+      <arg name="username" type="s" direction="out"/>
+      <arg name="password" type="s" direction="out"/>
+    </method>
+
+    <method name="SetIp4Config">
+      <arg name="config" type="a{sv}" direction="in"/>
+    </method>
+
+    <method name="SetIp6Config">
+      <arg name="config" type="a{sv}" direction="in"/>
+    </method>
+
+    <method name="SetState">
+      <arg name="state" type="u" direction="in"/>
+    </method>
+
+    <method name="SetIfindex">
+      <arg name="ifindex" type="i" direction="in"/>
+    </method>
+
+  </interface>
+</node>

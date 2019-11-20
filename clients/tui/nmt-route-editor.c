@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -25,10 +12,7 @@
  * wide to fit into the main window.
  */
 
-#include "config.h"
-
-#include <glib.h>
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-route-editor.h"
 #include "nmt-route-table.h"
@@ -77,21 +61,15 @@ save_routes_and_exit (NmtNewtButton *button,
 {
 	NmtRouteEditor *editor = user_data;
 	NmtRouteEditorPrivate *priv = NMT_ROUTE_EDITOR_GET_PRIVATE (editor);
-	const char *property;
-	GBinding *binding;
+	GPtrArray *routes;
 
-	if (NM_IS_SETTING_IP4_CONFIG (priv->edit_setting))
-		property = NM_SETTING_IP4_CONFIG_ROUTES;
-	else
-		property = NM_SETTING_IP6_CONFIG_ROUTES;
-
-	/* Because of the complicated dbus-glib GTypes, it's easier to cheat
-	 * and use GBinding to do this than it is to copy the value by hand.
-	 */
-	binding = g_object_bind_property (priv->edit_setting, property,
-	                                  priv->orig_setting, property,
-	                                  G_BINDING_SYNC_CREATE);
-	g_object_unref (binding);
+	g_object_get (priv->edit_setting,
+	              NM_SETTING_IP_CONFIG_ROUTES, &routes,
+	              NULL);
+	g_object_set (priv->orig_setting,
+	              NM_SETTING_IP_CONFIG_ROUTES, routes,
+	              NULL);
+	g_ptr_array_unref (routes);
 
 	nmt_newt_form_quit (NMT_NEWT_FORM (editor));
 }
@@ -106,17 +84,13 @@ nmt_route_editor_constructed (GObject *object)
 	if (G_OBJECT_CLASS (nmt_route_editor_parent_class)->constructed)
 		G_OBJECT_CLASS (nmt_route_editor_parent_class)->constructed (object);
 
-	if (NM_IS_SETTING_IP4_CONFIG (priv->edit_setting)) {
+	if (NM_IS_SETTING_IP4_CONFIG (priv->edit_setting))
 		routes = nmt_route_table_new (AF_INET);
-		g_object_bind_property (priv->edit_setting, NM_SETTING_IP4_CONFIG_ROUTES,
-		                        routes, "ip4-routes",
-		                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-	} else {
+	else
 		routes = nmt_route_table_new (AF_INET6);
-		g_object_bind_property (priv->edit_setting, NM_SETTING_IP6_CONFIG_ROUTES,
-		                        routes, "ip6-routes",
-		                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-	}
+	g_object_bind_property (priv->edit_setting, NM_SETTING_IP_CONFIG_ROUTES,
+	                        routes, "routes",
+	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
 	vbox = nmt_newt_grid_new ();
 	nmt_newt_grid_add (NMT_NEWT_GRID (vbox), routes, 0, 0);

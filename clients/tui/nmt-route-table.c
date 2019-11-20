@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -24,14 +11,11 @@
  * and buttons to add and remove entries.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-
-#include <glib/gi18n-lib.h>
-#include <NetworkManager.h>
 
 #include "nmt-route-table.h"
 #include "nmt-route-entry.h"
@@ -54,8 +38,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_FAMILY,
-	PROP_IP4_ROUTES,
-	PROP_IP6_ROUTES,
+	PROP_ROUTES,
 
 	LAST_PROP
 };
@@ -85,7 +68,7 @@ route_list_transform_to_route (GBinding     *binding,
 	NmtRouteTable *table = NMT_ROUTE_TABLE (g_binding_get_source (binding));
 	NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE (table);
 	int n = GPOINTER_TO_INT (user_data);
-	gpointer route;
+	NMIPRoute *route;
 
 	if (n >= priv->routes->len)
 		return FALSE;
@@ -105,24 +88,17 @@ route_list_transform_from_route (GBinding     *binding,
 	NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE (table);
 	int n = GPOINTER_TO_INT (user_data);
 	GPtrArray *routes;
-	gpointer route;
+	NMIPRoute *route;
 
 	if (n >= priv->routes->len)
 		return FALSE;
 	route = priv->routes->pdata[n];
 
 	routes = priv->routes;
-	if (priv->family == AF_INET)
-		priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
-	else
-		priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_route_unref);
+	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 
-	if (route) {
-		if (priv->family == AF_INET)
-			nm_ip4_route_unref (route);
-		else if (priv->family == AF_INET6)
-			nm_ip6_route_unref (route);
-	}
+	if (route)
+		nm_ip_route_unref (route);
 	routes->pdata[n] = g_value_dup_boxed (source_value);
 
 	g_value_take_boxed (target_value, routes);
@@ -141,21 +117,12 @@ create_route_entry (NmtWidgetList *list,
 	                             priv->ip_entry_width,
 	                             priv->metric_entry_width);
 
-	if (priv->family == AF_INET) {
-		g_object_bind_property_full (table, "ip4-routes",
-		                             entry, "ip4-route",
-		                             G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE,
-		                             route_list_transform_to_route,
-		                             route_list_transform_from_route,
-		                             GINT_TO_POINTER (num), NULL);
-	} else {
-		g_object_bind_property_full (table, "ip6-routes",
-		                             entry, "ip6-route",
-		                             G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE,
-		                             route_list_transform_to_route,
-		                             route_list_transform_from_route,
-		                             GINT_TO_POINTER (num), NULL);
-	}
+	g_object_bind_property_full (table, "routes",
+	                             entry, "route",
+	                             G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE,
+	                             route_list_transform_to_route,
+	                             route_list_transform_from_route,
+	                             GINT_TO_POINTER (num), NULL);
 	return entry;
 }
 
@@ -164,24 +131,15 @@ add_route (NmtWidgetList *list,
            gpointer       table)
 {
 	NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE (table);
+	NMIPRoute *route;
 
-	if (priv->family == AF_INET) {
-		NMIP4Route *route;
-
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_prefix (route, 32);
-		g_ptr_array_add (priv->routes, route);
-		nmt_widget_list_set_length (list, priv->routes->len);
-		g_object_notify (table, "ip4-routes");
-	} else {
-		NMIP6Route *route;
-
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_prefix (route, 128);
-		g_ptr_array_add (priv->routes, route);
-		nmt_widget_list_set_length (list, priv->routes->len);
-		g_object_notify (table, "ip6-routes");
-	}
+	if (priv->family == AF_INET)
+		route = nm_ip_route_new (AF_INET, "0.0.0.0", 32, NULL, -1, NULL);
+	else
+		route = nm_ip_route_new (AF_INET6, "::", 128, NULL, -1, NULL);
+	g_ptr_array_add (priv->routes, route);
+	nmt_widget_list_set_length (list, priv->routes->len);
+	g_object_notify (table, "routes");
 }
 
 static void
@@ -190,19 +148,14 @@ remove_route (NmtWidgetList *list,
               gpointer       table)
 {
 	NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE (table);
-	gpointer route;
 
 	if (num >= priv->routes->len)
 		return;
 
-	route = priv->routes->pdata[num];
 	g_ptr_array_remove_index (priv->routes, num);
 	nmt_widget_list_set_length (list, priv->routes->len);
 
-	if (priv->family == AF_INET)
-		g_object_notify (table, "ip4-routes");
-	else
-		g_object_notify (table, "ip6-routes");
+	g_object_notify (table, "routes");
 }
 
 static void
@@ -213,6 +166,8 @@ nmt_route_table_init (NmtRouteTable *table)
 	NmtNewtWidget *dest_prefix_label, *next_hop_label, *metric_label;
 	int dest_prefix_width, next_hop_width, metric_width;
 	char *text;
+
+	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 
 	header = nmt_newt_grid_new ();
 
@@ -283,27 +238,12 @@ nmt_route_table_set_property (GObject      *object,
 	switch (prop_id) {
 	case PROP_FAMILY:
 		priv->family = g_value_get_int (value);
-		if (priv->family == AF_INET)
-			priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
-		else
-			priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_route_unref);
 		break;
-	case PROP_IP4_ROUTES:
-		g_return_if_fail (priv->family == AF_INET);
+	case PROP_ROUTES:
 		array = g_value_get_boxed (value);
 		g_ptr_array_set_size (priv->routes, 0);
 		for (i = 0; i < array->len; i++) {
-			nm_ip4_route_ref (array->pdata[i]);
-			g_ptr_array_add (priv->routes, array->pdata[i]);
-		}
-		nmt_widget_list_set_length (NMT_WIDGET_LIST (priv->list), priv->routes->len);
-		break;
-	case PROP_IP6_ROUTES:
-		g_return_if_fail (priv->family == AF_INET6);
-		array = g_value_get_boxed (value);
-		g_ptr_array_set_size (priv->routes, 0);
-		for (i = 0; i < array->len; i++) {
-			nm_ip6_route_ref (array->pdata[i]);
+			nm_ip_route_ref (array->pdata[i]);
 			g_ptr_array_add (priv->routes, array->pdata[i]);
 		}
 		nmt_widget_list_set_length (NMT_WIDGET_LIST (priv->list), priv->routes->len);
@@ -326,12 +266,7 @@ nmt_route_table_get_property (GObject    *object,
 	case PROP_FAMILY:
 		g_value_set_int (value, priv->family);
 		break;
-	case PROP_IP4_ROUTES:
-		g_return_if_fail (priv->family == AF_INET);
-		g_value_set_boxed (value, priv->routes);
-		break;
-	case PROP_IP6_ROUTES:
-		g_return_if_fail (priv->family == AF_INET6);
+	case PROP_ROUTES:
 		g_value_set_boxed (value, priv->routes);
 		break;
 	default:
@@ -365,34 +300,16 @@ nmt_route_table_class_init (NmtRouteTableClass *table_class)
 		                   G_PARAM_CONSTRUCT_ONLY |
 		                   G_PARAM_STATIC_STRINGS));
 	/**
-	 * NmtRouteTable:ip4-routes:
+	 * NmtRouteTable:routes:
 	 *
-	 * The array of routes, suitable for binding to
-	 * #NMSettingIP4Config:routes.
+	 * The array of routes, suitable for binding to #NMSettingIP4Config:routes
+	 * or #NMSettingIP6Config:routes.
 	 *
-	 * Only valid if #NmtRouteTable:family is %AF_INET
-	 *
-	 * Element-type: NMIP4Route
+	 * Element-type: NMIPRoute
 	 */
 	g_object_class_install_property
-		(object_class, PROP_IP4_ROUTES,
-		 g_param_spec_boxed ("ip4-routes", "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtRouteTable:ip6-routes:
-	 *
-	 * The array of routes, suitable for binding to
-	 * #NMSettingIP6Config:routes.
-	 *
-	 * Only valid if #NmtRouteTable:family is %AF_INET6
-	 *
-	 * Element-type: NMIP6Route
-	 */
-	g_object_class_install_property
-		(object_class, PROP_IP6_ROUTES,
-		 g_param_spec_boxed ("ip6-routes", "", "",
+		(object_class, PROP_ROUTES,
+		 g_param_spec_boxed ("routes", "", "",
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));

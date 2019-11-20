@@ -6,11 +6,12 @@ type=bridge
 [bridge]
 interface-name=br0
 stp=true
-forward-delay=0
+forward-delay=2
 priority=32744
 hello-time=7
 max-age=39
 ageing-time=235352
+multicast-snooping=false
 
 [ipv4]
 method=auto

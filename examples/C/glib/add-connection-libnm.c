@@ -1,20 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2011 Red Hat, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
  */
 
 /*
@@ -24,7 +10,7 @@
  * much of the low-level stuff for you.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
+ *   gcc -Wall add-connection-libnm.c -o add-connection-libnm `pkg-config --libs --cflags libnm`
  */
 
 #include <glib.h>
@@ -37,7 +23,7 @@ added_cb (GObject *client,
 {
 	GMainLoop *loop = user_data;
 	NMRemoteConnection *remote;
-	GError *error;
+	GError *error = NULL;
 
 	/* NM responded to our request; either handle the resulting error or
 	 * print out the object path of the connection we just added.
@@ -86,7 +72,7 @@ add_connection (NMClient *client, GMainLoop *loop, const char *con_name)
 	/* Build up the 'ipv4' Setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
@@ -97,18 +83,12 @@ add_connection (NMClient *client, GMainLoop *loop, const char *con_name)
 	g_object_unref (connection);
 }
 
-
 int
 main (int argc, char *argv[])
 {
 	NMClient *client;
 	GMainLoop *loop;
 	GError *error = NULL;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
 
 	loop = g_main_loop_new (NULL, FALSE);
 

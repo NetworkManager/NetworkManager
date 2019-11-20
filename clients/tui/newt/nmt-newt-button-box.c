@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -29,11 +16,10 @@
  * within each of the two sections.
  */
 
-#include "config.h"
-
-#include <string.h>
+#include "nm-default.h"
 
 #include "nmt-newt-button-box.h"
+
 #include "nmt-newt-button.h"
 
 G_DEFINE_TYPE (NmtNewtButtonBox, nmt_newt_button_box, NMT_TYPE_NEWT_CONTAINER)
@@ -264,12 +250,10 @@ nmt_newt_button_box_size_request (NmtNewtWidget *widget,
 	size_request_buttons (bbox, priv->start_buttons, width, height);
 	size_request_buttons (bbox, priv->end_buttons, width, height);
 
-	if (priv->start_buttons && priv->end_buttons) {
-		if (priv->orientation == NMT_NEWT_BUTTON_BOX_HORIZONTAL)
-			*width += 1;
-		else
-			*height += 1;
-	}
+	if (priv->orientation == NMT_NEWT_BUTTON_BOX_HORIZONTAL)
+		*width += 1;
+	else
+		*height += 1;
 }
 
 static void

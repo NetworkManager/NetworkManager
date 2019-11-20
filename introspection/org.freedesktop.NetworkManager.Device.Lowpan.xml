@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Lowpan:
+      @short_description: 6LoWPAN Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Lowpan">
+
+    <!--
+        HwAddress:
+
+        The active hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Parent:
+
+        The object path of the parent device.
+    -->
+    <property name="Parent" type="o" access="read"/>
+  </interface>
+</node>

@@ -1,30 +1,15 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2011 - 2013 Red Hat, Inc.
- * Copyright 2009 Novell, Inc.
+ * Copyright (C) 2011 - 2013 Red Hat, Inc.
+ * Copyright (C) 2009 Novell, Inc.
  */
 
-#include <string.h>
-#include <net/ethernet.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-wimax.h"
+
+#include <net/ethernet.h>
+
 #include "nm-setting-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -35,39 +20,29 @@
  *
  * The #NMSettingWimax object is a #NMSetting subclass that describes properties
  * necessary for connection to 802.16e Mobile WiMAX networks.
+ *
+ * NetworkManager no longer supports WiMAX; while this API remains available for
+ * backward-compatibility reasons, it serves no real purpose, since WiMAX
+ * connections cannot be activated.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING,
-                         _nm_register_setting (WIMAX, 1))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIMAX)
+/*****************************************************************************/
 
-#define NM_SETTING_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIMAX, NMSettingWimaxPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_NETWORK_NAME,
+	PROP_MAC_ADDRESS,
+);
 
 typedef struct {
 	char *network_name;
 	char *mac_address;
 } NMSettingWimaxPrivate;
 
-enum {
-	PROP_0,
-	PROP_NETWORK_NAME,
-	PROP_MAC_ADDRESS,
+G_DEFINE_TYPE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIMAX, NMSettingWimaxPrivate))
 
-/**
- * nm_setting_wimax_new:
- *
- * Creates a new #NMSettingWimax object with default values.
- *
- * Returns: the new empty #NMSettingWimax object
- **/
-NMSetting *
-nm_setting_wimax_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIMAX, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_wimax_get_network_name:
@@ -77,6 +52,8 @@ nm_setting_wimax_new (void)
  * specific WiMAX network this setting describes a connection to.
  *
  * Returns: the WiMAX NSP name
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
  **/
 const char *
 nm_setting_wimax_get_network_name (NMSettingWimax *setting)
@@ -94,6 +71,8 @@ nm_setting_wimax_get_network_name (NMSettingWimax *setting)
  * to.
  *
  * Returns: the MAC address
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
  **/
 const char *
 nm_setting_wimax_get_mac_address (NMSettingWimax *setting)
@@ -138,20 +117,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-static void
-nm_setting_wimax_init (NMSettingWimax *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE (object);
+	NMSettingWimax *setting = NM_SETTING_WIMAX (object);
 
-	g_free (priv->network_name);
-	g_free (priv->mac_address);
-
-	G_OBJECT_CLASS (nm_setting_wimax_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_NETWORK_NAME:
+		g_value_set_string (value, nm_setting_wimax_get_network_name (setting));
+		break;
+	case PROP_MAC_ADDRESS:
+		g_value_set_string (value, nm_setting_wimax_get_mac_address (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -176,52 +160,67 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingWimax *setting = NM_SETTING_WIMAX (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_NETWORK_NAME:
-		g_value_set_string (value, nm_setting_wimax_get_network_name (setting));
-		break;
-	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, nm_setting_wimax_get_mac_address (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_wimax_init (NMSettingWimax *setting)
+{
+}
+
+/**
+ * nm_setting_wimax_new:
+ *
+ * Creates a new #NMSettingWimax object with default values.
+ *
+ * Returns: the new empty #NMSettingWimax object
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
+ **/
+NMSetting *
+nm_setting_wimax_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIMAX, NULL);
 }
 
 static void
-nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
+finalize (GObject *object)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE (object);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingWimaxPrivate));
+	g_free (priv->network_name);
+	g_free (priv->mac_address);
 
-	/* virtual methods */
-	object_class->set_property = set_property;
+	G_OBJECT_CLASS (nm_setting_wimax_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_wimax_class_init (NMSettingWimaxClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+
+	g_type_class_add_private (klass, sizeof (NMSettingWimaxPrivate));
+
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
+
 	/**
 	 * NMSettingWimax:network-name:
 	 *
 	 * Network Service Provider (NSP) name of the WiMAX network this connection
 	 * should use.
+	 *
+	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_NETWORK_NAME,
-		 g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NETWORK_NAME] =
+	    g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingWimax:mac-address:
@@ -229,15 +228,18 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	 * If specified, this connection will only apply to the WiMAX device whose
 	 * MAC address matches. This property does not change the MAC address of the
 	 * device (known as MAC spoofing).
+	 *
+	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIMAX_MAC_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+	obj_properties[PROP_MAC_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_WIMAX,
+	                               NULL, properties_override);
 }

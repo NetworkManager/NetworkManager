@@ -1,0 +1,66 @@
+.\" nmtui (1) manual page
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public Licence along
+.\" with this manual; if not, write to the Free Software Foundation, Inc.,
+.\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+.\"
+.\" Copyright 2014 Red Hat, Inc.
+.\"
+.TH NMTUI "1" "2014-11-06" "NetworkManager 1.2"
+
+.SH NAME
+nmtui \- Text User Interface for controlling NetworkManager
+.SH SYNOPSIS
+.B nmtui
+.RI " [ " edit " | " connect " | " hostname " ] [ ... ] "
+.P
+.B nmtui\-edit
+.RI " [ " connection-id " | " connection-name " ] "
+.P
+.B nmtui\-connect
+.RI " [ " connection-name " | " connection-uuid " | " device-name " | " Wi-Fi-SSID " ] "
+.P
+.B nmtui\-hostname
+
+.SH DESCRIPTION
+.B nmtui
+is a curses\(hybased TUI application for interacting with \fINetworkManager\fP.
+.P
+When starting \fInmtui\fP, the user is prompted to choose the activity to perform
+unless it was specified as the first argument.
+.P
+The supported activities are:
+.IP \(em 4
+\fIedit\fP: show a connection editor that supports adding, modifying, viewing and deleting
+connections. It provides similar functionality as \fInm\-connection\-editor\fP.
+.IP \(em 4
+\fIconnect\fP: show a list of available connections, with the option to activate or deactivate
+them. It provides similar functionality as \fInm\-applet\fP.
+.IP \(em 4
+\fIhostname\fP: set the system hostname.
+
+.P
+Corresponding to above activities, \fInmtui\fP also comes with binaries named
+\fInmtui\-edit\fP, \fInmtui\-connect\fP, and \fInmtui-hostname\fP to skip the selection
+of the activities.
+
+.SH SEE ALSO
+.BR NetworkManager(8),
+.BR nmcli(1).
+.BR nm\-applet(1).
+.BR nm\-connection\-editor(1).

@@ -1,0 +1,71 @@
+# system paths
+option('systemdsystemunitdir', type: 'string', value: '', description: 'Directory for systemd service files')
+option('system_ca_path', type: 'string', value: '/etc/ssl/certs', description: 'path to system CA certificates')
+option('udev_dir', type: 'string', value: '', description: 'Absolute path of the udev base directory. Set to \'no\' not to install the udev rule')
+option('dbus_conf_dir', type: 'string', value: '', description: 'where D-Bus system.d directory is')
+option('kernel_firmware_dir', type: 'string', value: '/lib/firmware', description: 'where kernel firmware directory is (default is /lib/firmware)')
+option('iptables', type: 'string', value: '', description: 'path to iptables')
+option('dnsmasq', type: 'string', value: '', description: 'path to dnsmasq')
+option('dnssec_trigger', type: 'string', value: '', description: 'path to unbound dnssec-trigger-script')
+
+# platform
+option('dist_version', type: 'string', value: '', description: 'Define the NM\'s distribution version string')
+option('session_tracking_consolekit', type: 'boolean', value: true, description: 'Support consolekit session tracking')
+option('session_tracking', type: 'combo', choices: ['systemd', 'elogind', 'no'], value: 'systemd', description: 'Compatibility option to choose one session tracking module')
+option('suspend_resume', type: 'combo', choices: ['upower', 'systemd', 'elogind', 'consolekit', 'auto'], value: 'auto', description: 'Build NetworkManager with specific suspend/resume support')
+option('polkit', type: 'boolean', value: true, description: 'User auth-polkit configuration option.')
+option('modify_system', type: 'boolean', value: false, description: 'Allow users to modify system connections')
+option('polkit_agent', type: 'boolean', value: false, description: 'enable polkit agent for clients')
+option('selinux', type: 'boolean', value: true, description: 'Build with SELinux')
+option('systemd_journal', type: 'boolean', value: true, description: 'Use systemd journal for logging')
+option('config_logging_backend_default', type: 'combo', choices: ['default', 'syslog', 'journal'], value: 'default', description: 'Default value for logging.backend')
+option('hostname_persist', type: 'combo', choices: ['default', 'suse', 'gentoo', 'slackware'], value: 'default', description: 'Hostname persist method')
+option('libaudit', type: 'combo', choices: ['yes', 'yes-disabled-by-default', 'no'], value: 'yes', description: 'Build with audit daemon support. yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf')
+
+# features
+option('wext', type: 'boolean', value: true, description: 'Enable or disable Linux Wireless Extensions')
+option('wifi', type: 'boolean', value: true, description: 'enable Wi-Fi support')
+option('iwd', type: 'boolean', value: false, description: 'enable iwd support (experimental)')
+option('ppp', type: 'boolean', value: true, description: 'enable PPP/PPPoE support')
+option('pppd', type: 'string', value: '', description: 'path to pppd binary')
+option('pppd_plugin_dir', type: 'string', value: '', description: 'path to the pppd plugins directory')
+option('modem_manager', type: 'boolean', value: true, description: 'Enable new ModemManager1 interface support')
+option('ofono', type: 'boolean', value: false, description: 'Enable oFono support (experimental)')
+option('concheck', type: 'boolean', value: true, description: 'enable connectivity checking support')
+option('teamdctl', type: 'boolean', value: false, description: 'enable Teamd control support')
+option('ovs', type: 'boolean', value: true, description: 'enable Open vSwitch support')
+option('nmcli', type: 'boolean', value: true, description: 'Build nmcli')
+option('nmtui', type: 'boolean', value: true, description: 'Build nmtui')
+option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 DUN support')
+option('ebpf', type: 'combo', choices : ['auto', 'true', 'false'], description: 'Enable eBPF support')
+
+# configuration plugins
+option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
+option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL)')
+option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
+
+# handlers for resolv.conf
+option('resolvconf', type: 'string', value: '', description: 'Enable resolvconf support')
+option('netconfig', type: 'string', value: '', description: 'Enable SUSE netconfig support')
+option('config_dns_rc_manager_default', type: 'combo', choices: ['symlink', 'file', 'netconfig', 'resolvconf'], value: 'symlink', description: 'Configure default value for main.rc-manager setting')
+
+# dhcp clients
+option('dhclient', type: 'string', value: '', description: 'Enable dhclient support')
+option('dhcpcanon', type: 'string', value: '', description: 'Enable dhcpcanon support (experimental)')
+option('dhcpcd', type: 'string', value: '', description: 'Enable dhcpcd support')
+option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 'dhcpcd', 'internal', 'nettools'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
+
+# miscellaneous
+option('introspection', type: 'boolean', value: true, description: 'Enable introspection for this build')
+option('vapi', type : 'combo', choices : ['auto', 'true', 'false'], description: 'build Vala bindings')
+option('docs', type: 'boolean', value: false, description: 'use to build documentation')
+option('tests', type: 'combo', choices: ['yes', 'no', 'root'], value: 'yes', description: 'Build NetworkManager tests')
+option('more_asserts', type: 'string', value: 'all', description: 'Enable more assertions for debugging (0 = none, 100 = all, default: all)')
+option('more_logging', type: 'boolean', value: true, description: 'Enable more debug logging')
+option('valgrind', type: 'array', value: ['no'], description: 'Use valgrind to memory-check the tests')
+option('valgrind_suppressions', type: 'string', value: '', description: 'Use specific valgrind suppression file')
+option('ld_gc', type: 'boolean', value: true, description: 'Enable garbage collection of unused symbols on linking')
+option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl')
+option('json_validation', type: 'boolean', value: true, description: 'Enable JSON validation in libnm')
+option('crypto', type: 'combo', choices: ['nss', 'gnutls'], value: 'nss', description: 'Cryptography library to use for certificate and key operations')
+option('qt', type: 'boolean', value: true, description: 'enable Qt examples')

@@ -1,23 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2018 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #ifndef __NM_CONNECTION_H__
@@ -27,9 +11,9 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-core-types.h>
-#include <nm-setting.h>
-#include <nm-errors.h>
+#include "nm-core-types.h"
+#include "nm-setting.h"
+#include "nm-errors.h"
 
 G_BEGIN_DECLS
 
@@ -45,7 +29,7 @@ G_BEGIN_DECLS
 
 /*
  * NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD: overwrite the ip6 method
- * when normalizing ip6 configuration. If omited, this defaults to
+ * when normalizing ip6 configuration. If omitted, this defaults to
  * @NM_SETTING_IP6_CONFIG_METHOD_AUTO.
  */
 #define NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD "ip6-config-method"
@@ -57,6 +41,13 @@ G_BEGIN_DECLS
  * client side, and #NMSettingsConnection on the daemon side.
  */
 
+/**
+ * NMConnectionInterface:
+ * @parent: the parent interface struct
+ * @secrets_updated: emitted when the connection's secrets are updated
+ * @secrets_cleared: emitted when the connection's secrets are cleared
+ * @changed: emitted when any change to the connection's settings occurs
+ */
 typedef struct {
 	GTypeInterface parent;
 
@@ -106,14 +97,17 @@ NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
  * @NM_CONNECTION_SERIALIZE_ALL: serialize all properties (including secrets)
  * @NM_CONNECTION_SERIALIZE_NO_SECRETS: do not include secrets
  * @NM_CONNECTION_SERIALIZE_ONLY_SECRETS: only serialize secrets
+ * @NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED: if set, only secrets that
+ *   are agent owned will be serialized. Since: 1.20
  *
  * These flags determine which properties are serialized when calling when
  * calling nm_connection_to_dbus().
  **/
 typedef enum { /*< flags >*/
-	NM_CONNECTION_SERIALIZE_ALL = 0x00000000,
-	NM_CONNECTION_SERIALIZE_NO_SECRETS = 0x00000001,
-	NM_CONNECTION_SERIALIZE_ONLY_SECRETS = 0x00000002,
+	NM_CONNECTION_SERIALIZE_ALL                      = 0x00000000,
+	NM_CONNECTION_SERIALIZE_NO_SECRETS               = 0x00000001,
+	NM_CONNECTION_SERIALIZE_ONLY_SECRETS             = 0x00000002,
+	NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED = 0x00000004,
 } NMConnectionSerializationFlags;
 
 GVariant     *nm_connection_to_dbus       (NMConnection *connection,
@@ -138,6 +132,8 @@ gboolean      nm_connection_diff          (NMConnection *a,
                                            GHashTable **out_settings);
 
 gboolean      nm_connection_verify        (NMConnection *connection, GError **error);
+NM_AVAILABLE_IN_1_2
+gboolean      nm_connection_verify_secrets (NMConnection *connection, GError **error);
 gboolean      nm_connection_normalize     (NMConnection *connection,
                                            GHashTable *parameters,
                                            gboolean *modified,
@@ -170,6 +166,10 @@ void          nm_connection_for_each_setting_value (NMConnection *connection,
                                                     NMSettingValueIterFn func,
                                                     gpointer user_data);
 
+NM_AVAILABLE_IN_1_10
+NMSetting **  nm_connection_get_settings (NMConnection *connection,
+                                          guint *out_length);
+
 void          nm_connection_dump          (NMConnection *connection);
 
 /* Helpers */
@@ -190,15 +190,36 @@ NMSettingBridgePort *      nm_connection_get_setting_bridge_port       (NMConnec
 NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);
 NMSettingConnection *      nm_connection_get_setting_connection        (NMConnection *connection);
 NMSettingDcb *             nm_connection_get_setting_dcb               (NMConnection *connection);
+NM_AVAILABLE_IN_1_8
+NMSettingDummy *           nm_connection_get_setting_dummy             (NMConnection *connection);
 NMSettingGeneric *         nm_connection_get_setting_generic           (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
 NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);
-NMSettingIP4Config *       nm_connection_get_setting_ip4_config        (NMConnection *connection);
-NMSettingIP6Config *       nm_connection_get_setting_ip6_config        (NMConnection *connection);
+NM_AVAILABLE_IN_1_2
+NMSettingIPTunnel *        nm_connection_get_setting_ip_tunnel         (NMConnection *connection);
+NMSettingIPConfig *        nm_connection_get_setting_ip4_config        (NMConnection *connection);
+NMSettingIPConfig *        nm_connection_get_setting_ip6_config        (NMConnection *connection);
+NM_AVAILABLE_IN_1_6
+NMSettingMacsec *          nm_connection_get_setting_macsec            (NMConnection *connection);
+NM_AVAILABLE_IN_1_2
+NMSettingMacvlan *         nm_connection_get_setting_macvlan           (NMConnection *connection);
 NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);
+NM_AVAILABLE_IN_1_10
+NMSettingOvsBridge *       nm_connection_get_setting_ovs_bridge        (NMConnection *connection);
+NM_AVAILABLE_IN_1_10
+NMSettingOvsInterface *    nm_connection_get_setting_ovs_interface     (NMConnection *connection);
+NMSettingOvsPatch *        nm_connection_get_setting_ovs_patch         (NMConnection *connection);
+NM_AVAILABLE_IN_1_10
+NMSettingOvsPort *         nm_connection_get_setting_ovs_port          (NMConnection *connection);
 NMSettingPpp *             nm_connection_get_setting_ppp               (NMConnection *connection);
 NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnection *connection);
+NM_AVAILABLE_IN_1_6
+NMSettingProxy *           nm_connection_get_setting_proxy             (NMConnection *connection);
 NMSettingSerial *          nm_connection_get_setting_serial            (NMConnection *connection);
+NM_AVAILABLE_IN_1_12
+NMSettingTCConfig *        nm_connection_get_setting_tc_config         (NMConnection *connection);
+NM_AVAILABLE_IN_1_2
+NMSettingTun *             nm_connection_get_setting_tun               (NMConnection *connection);
 NMSettingVpn *             nm_connection_get_setting_vpn               (NMConnection *connection);
 NMSettingWimax *           nm_connection_get_setting_wimax             (NMConnection *connection);
 NMSettingAdsl *            nm_connection_get_setting_adsl              (NMConnection *connection);
@@ -206,6 +227,8 @@ NMSettingWired *           nm_connection_get_setting_wired             (NMConnec
 NMSettingWireless *        nm_connection_get_setting_wireless          (NMConnection *connection);
 NMSettingWirelessSecurity *nm_connection_get_setting_wireless_security (NMConnection *connection);
 NMSettingVlan *            nm_connection_get_setting_vlan              (NMConnection *connection);
+NM_AVAILABLE_IN_1_2
+NMSettingVxlan *           nm_connection_get_setting_vxlan             (NMConnection *connection);
 
 G_END_DECLS
 

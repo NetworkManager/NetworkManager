@@ -1,27 +1,12 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 #ifndef NMT_NEWT_ENTRY_NUMERIC_H
 #define NMT_NEWT_ENTRY_NUMERIC_H
 
 #include "nmt-newt-entry.h"
-
-G_BEGIN_DECLS
 
 #define NMT_TYPE_NEWT_ENTRY_NUMERIC            (nmt_newt_entry_numeric_get_type ())
 #define NMT_NEWT_ENTRY_NUMERIC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_NEWT_ENTRY_NUMERIC, NmtNewtEntryNumeric))
@@ -43,9 +28,12 @@ typedef struct {
 GType nmt_newt_entry_numeric_get_type (void);
 
 NmtNewtWidget *nmt_newt_entry_numeric_new (int width,
-                                           int min,
-                                           int max);
+                                           gint64 min,
+                                           gint64 max);
 
-G_END_DECLS
+NmtNewtWidget *nmt_newt_entry_numeric_new_full (int width,
+                                                gint64 min,
+                                                gint64 max,
+                                                gboolean optional);
 
 #endif /* NMT_NEWT_ENTRY_NUMERIC_H */

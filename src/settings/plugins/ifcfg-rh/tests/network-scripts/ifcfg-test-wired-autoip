@@ -1,0 +1,5 @@
+TYPE=Ethernet
+DEVICE=eth0
+BOOTPROTO=autoip
+IPV4_FAILURE_FATAL=yes
+PEERDNS=no

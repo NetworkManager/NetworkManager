@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -21,10 +8,7 @@
  * @short_description: The editor page for Team ports.
  */
 
-#include "config.h"
-
-#include <glib.h>
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-page-team-port.h"
 
@@ -37,12 +21,11 @@ typedef struct {
 
 } NmtPageTeamPortPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_team_port_new (NMConnection *conn)
 {
 	return g_object_new (NMT_TYPE_PAGE_TEAM_PORT,
 	                     "connection", conn,
-	                     "title", _("TEAM PORT"),
 	                     NULL);
 }
 
@@ -72,13 +55,14 @@ edit_clicked (NmtNewtButton *button,
 	              NM_SETTING_TEAM_PORT_CONFIG, new_config,
 	              NULL);
 	g_free (new_config);
-}	
+}
 
 static void
 nmt_page_team_port_constructed (GObject *object)
 {
 	NmtPageTeamPort *team = NMT_PAGE_TEAM_PORT (object);
 	NmtPageTeamPortPrivate *priv = NMT_PAGE_TEAM_PORT_GET_PRIVATE (team);
+	NmtEditorSection *section;
 	NmtNewtGrid *grid;
 	NMSettingTeamPort *s_port;
 	NmtNewtWidget *widget;
@@ -92,8 +76,10 @@ nmt_page_team_port_constructed (GObject *object)
 	}
 	priv->s_port = s_port;
 
+	section = nmt_editor_section_new (_("TEAM PORT"), NULL, TRUE);
+
 	widget = nmt_newt_grid_new ();
-	nmt_page_grid_append (NMT_PAGE_GRID (team), NULL, widget, NULL);
+	nmt_editor_grid_append (nmt_editor_section_get_body (section), NULL, widget, NULL);
 
 	grid = NMT_NEWT_GRID (widget);
 
@@ -110,6 +96,8 @@ nmt_page_team_port_constructed (GObject *object)
 	widget = nmt_newt_button_new (_("Edit..."));
 	g_signal_connect (widget, "clicked", G_CALLBACK (edit_clicked), team);
 	nmt_newt_grid_add (grid, widget, 0, 4);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (team), section);
 
 	G_OBJECT_CLASS (nmt_page_team_port_parent_class)->constructed (object);
 }

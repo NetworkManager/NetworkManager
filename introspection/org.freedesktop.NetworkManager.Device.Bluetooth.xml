@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Bluetooth:
+      @short_description: Bluetooth Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Bluetooth">
+
+    <!--
+        HwAddress:
+
+        Bluetooth hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Name:
+
+        Bluetooth name of the device.
+    -->
+    <property name="Name" type="s" access="read"/>
+
+    <!--
+        BtCapabilities:
+
+        Bluetooth capabilities of the device (either DUN or NAP).
+
+        Returns: <link linkend="NMBluetoothCapabilities">NMBluetoothCapabilities</link>
+    -->
+    <property name="BtCapabilities" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

@@ -1,0 +1,102 @@
+#!/bin/sh
+
+# Test for MACsec in PSK mode
+
+if [ "$#" = 2 ]; then
+    # DHCP helper
+    dev=$1
+    addr=$2
+    net=${addr%.*}
+
+    while [ ! -d "/sys/class/net/$dev" ]; do
+	    sleep 1
+    done
+
+    ip a add $addr/24 dev "$dev"
+
+    dnsmasq --conf-file --no-hosts --keep-in-foreground --listen-address=$addr \
+            --dhcp-range=$net.250,$net.255,60m  -i "$dev" \
+            --bind-interface --except-interface=lo
+
+    exit 0
+fi
+
+TMPDIR=$(mktemp -d /tmp/macsec-XXXXXX)
+ADDR=172.16.10.1
+MKA_CAK=00112233445566778899001122334455
+MKA_CKN=5544332211009988776655443322110055443322110099887766554433221100
+
+trap 'rm -rf "$TMPDIR"; kill $(jobs -p)' EXIT
+
+echo "* Setup..."
+
+# Clean up
+ip netns del macsec-ns 2> /dev/null
+ip link del macsec-veth 2> /dev/null
+# Create namespace
+ip netns add macsec-ns
+# Create interfaces
+ip link add macsec-veth type veth peer name macsec-vethp
+# Move interfaces into namespace
+ip link set macsec-vethp netns macsec-ns
+# Bring up interfaces
+ip link set macsec-veth up
+ip -n macsec-ns link set macsec-vethp up
+
+echo "* Start wpa_supplicant..."
+
+cat <<EOF > $TMPDIR/wpa_supplicant.conf
+ctrl_interface=/run/hostapd1
+eapol_version=3
+ap_scan=0
+fast_reauth=1
+network={
+	key_mgmt=NONE
+	eapol_flags=0
+	macsec_policy=1
+	mka_cak=$MKA_CAK
+	mka_ckn=$MKA_CKN
+}
+EOF
+ip netns exec macsec-ns wpa_supplicant \
+   -c "$TMPDIR/wpa_supplicant.conf" -i macsec-vethp -Dmacsec_linux -dd > /dev/null 2>&1 &
+ip netns exec macsec-ns $0 macsec0 $ADDR > /dev/null 2>&1 &
+
+echo "* Create connections..."
+
+nmcli connection delete test-macsec+ test-veth+ > /dev/null 2>&1
+nmcli connection add type ethernet ifname macsec-veth con-name test-veth+ \
+      ipv4.method disabled ipv6.method ignore
+nmcli connection add type macsec con-name test-macsec+ ifname macsec0 \
+      connection.autoconnect no \
+      macsec.parent macsec-veth macsec.mode psk \
+      macsec.mka-cak $MKA_CAK \
+      macsec.mka-cak-flags 0 \
+      macsec.mka-ckn $MKA_CKN
+
+echo "* Bring up connections..."
+nmcli connection up test-veth+
+nmcli connection up test-macsec+
+
+echo "* Test connectivity..."
+ping $ADDR -c2 -q > /dev/null
+res=$?
+
+echo "* Clean up..."
+
+nmcli connection delete test-macsec+ test-veth+ > /dev/null 2>&1
+ip link del macsec-veth 2> /dev/null
+ip netns del macsec-ns 2> /dev/null
+
+echo
+
+if [ "$res" = 0 ]; then
+	echo "Success"
+else
+	echo "Failure"
+fi
+
+exit $res
+
+
+

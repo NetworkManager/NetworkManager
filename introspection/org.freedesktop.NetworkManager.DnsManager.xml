@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/org/freedesktop/NetworkManager/DnsManager">
+
+  <!--
+      org.freedesktop.NetworkManager.DnsManager:
+      @short_description: DNS Configuration State
+
+      The interface contains DNS-related information.
+  -->
+  <interface name="org.freedesktop.NetworkManager.DnsManager">
+
+    <!--
+        Mode:
+
+        The current DNS processing mode.
+    -->
+    <property name="Mode" type="s" access="read"/>
+
+    <!--
+        RcManager:
+
+        The current resolv.conf management mode.
+    -->
+    <property name="RcManager" type="s" access="read"/>
+
+    <!--
+        Configuration:
+
+        The current DNS configuration represented as an array of
+        dictionaries.  Each dictionary has the "nameservers",
+        "priority" keys and, optionally, "interface" and "vpn".
+        "nameservers" is the list of DNS servers, "priority" their
+        relative priority, "interface" the interface on which these
+        servers are contacted, "vpn" a boolean telling whether the
+        configuration was obtained from a VPN connection.
+    -->
+    <property name="Configuration" type="aa{sv}" access="read"/>
+
+  </interface>
+</node>

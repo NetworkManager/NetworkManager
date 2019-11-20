@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -21,16 +8,12 @@
  * @short_description: Utility functions
  */
 
-#include "config.h"
+#include "nm-default.h"
 
-#include <errno.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include <glib/gi18n-lib.h>
-
-#include "nm-glib-compat.h"
 #include "nmt-newt-utils.h"
 
 static void
@@ -68,9 +51,9 @@ nmt_newt_dialog_g_log_handler (const char     *log_domain,
 	}
 
 	full_message = g_strdup_printf ("%s%s%s%s%s",
-	                                log_domain ? log_domain : "",
+	                                log_domain ?: "",
 	                                log_domain && level_name ? " " : "",
-	                                level_name ? level_name : "",
+	                                level_name ?: "",
 	                                log_domain || level_name ? ": " : "",
 	                                message);
 
@@ -90,7 +73,7 @@ nmt_newt_dialog_g_log_handler (const char     *log_domain,
 	newtGridSetField (grid, 0, 1, NEWT_GRID_COMPONENT, ok, 0, 1, 0, 0,
 	                  NEWT_ANCHOR_RIGHT, 0);
 
-	newtGridWrappedWindow (grid, (char *) (level_name ? level_name : ""));
+	newtGridWrappedWindow (grid, (char *) (level_name ?: ""));
 	newtGridFree (grid, TRUE);
 
 	form = newtForm (NULL, NULL, 0);
@@ -339,7 +322,7 @@ nmt_newt_edit_string (const char *data)
 		len -= nwrote;
 		data += nwrote;
 	}
-	close (fd);
+	nm_close (fd);
 
 	argv[0] = (char *) g_getenv ("VISUAL");
 	if (!argv[0])
@@ -362,21 +345,11 @@ nmt_newt_edit_string (const char *data)
 		goto done;
 	}
 
-#if GLIB_CHECK_VERSION (2, 34, 0)
-	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	if (!g_spawn_check_exit_status (status, &error)) {
 		nmt_newt_message_dialog (_("Editor failed: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}
-	G_GNUC_END_IGNORE_DEPRECATIONS
-#else
-	if (WIFEXITED (status)) {
-		if (WEXITSTATUS (status) != 0)
-			nmt_newt_message_dialog (_("Editor failed with status %d"), WEXITSTATUS (status));
-	} else if (WIFSIGNALED (status))
-		nmt_newt_message_dialog (_("Editor failed with signal %d"), WTERMSIG (status));
-#endif
 
 	if (!g_file_get_contents (filename, &new_data, NULL, &error)) {
 		nmt_newt_message_dialog (_("Could not re-read file: %s"), error->message);
@@ -389,5 +362,5 @@ nmt_newt_edit_string (const char *data)
 	g_free (filename);
 
 	return new_data;
-}	
+}
 

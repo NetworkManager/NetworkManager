@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Adsl:
+      @short_description: ADSL Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Adsl">
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+
+    <!--
+        Carrier:
+
+        Indicates whether the physical carrier is found.
+    -->
+    <property name="Carrier" type="b" access="read"/>
+  </interface>
+</node>

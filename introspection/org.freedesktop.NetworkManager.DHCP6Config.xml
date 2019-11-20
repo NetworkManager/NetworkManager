@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+
+  <!--
+      org.freedesktop.NetworkManager.DHCP6Config:
+      @short_description: IPv6 DHCP Client State
+
+      Options and configuration returned by the IPv6 DHCP server.
+  -->
+  <interface name="org.freedesktop.NetworkManager.DHCP6Config">
+    <annotation name="org.gtk.GDBus.C.Name" value="Dhcp6Config"/>
+
+    <!--
+        Options:
+
+        Configuration options returned by a DHCP server, if any.
+    -->
+    <property name="Options" type="a{sv}" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.IPTunnel:
+      @short_description: IP Tunneling Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.IPTunnel">
+
+    <!--
+        Mode:
+
+        The tunneling mode.
+    -->
+    <property name="Mode" type="u" access="read"/>
+
+    <!--
+        Parent:
+
+        The object path of the parent device.
+    -->
+    <property name="Parent" type="o" access="read"/>
+
+    <!--
+        Local:
+
+        The local endpoint of the tunnel.
+    -->
+    <property name="Local" type="s" access="read"/>
+
+    <!--
+        Remote:
+
+        The remote endpoint of the tunnel.
+    -->
+    <property name="Remote" type="s" access="read"/>
+
+    <!--
+        Ttl:
+
+        The TTL assigned to tunneled packets. 0 is a special value meaning that
+        packets inherit the TTL value
+    -->
+    <property name="Ttl" type="y" access="read"/>
+
+    <!--
+        Tos:
+
+        The type of service (IPv4) or traffic class (IPv6) assigned to tunneled
+        packets.
+    -->
+    <property name="Tos" type="y" access="read"/>
+
+    <!--
+        PathMtuDiscovery:
+
+        Whether path MTU discovery is enabled on this tunnel.
+    -->
+    <property name="PathMtuDiscovery" type="b" access="read"/>
+
+    <!--
+        InputKey:
+
+        The key used for incoming packets.
+    -->
+    <property name="InputKey" type="s" access="read"/>
+
+    <!--
+        OutputKey:
+
+        The key used for outgoing packets.
+    -->
+    <property name="OutputKey" type="s" access="read"/>
+
+    <!--
+        EncapsulationLimit:
+
+        How many additional levels of encapsulation are permitted to be prepended
+        to packets. This property applies only to IPv6 tunnels.
+    -->
+    <property name="EncapsulationLimit" type="y" access="read"/>
+
+    <!--
+        FlowLabel:
+
+        The flow label to assign to tunnel packets. This property applies only to
+        IPv6 tunnels.
+    -->
+    <property name="FlowLabel" type="u" access="read"/>
+
+    <!--
+        Flags:
+
+        Tunnel flags.
+    -->
+    <property name="Flags" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

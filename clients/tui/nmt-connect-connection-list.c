@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 - 2017 Red Hat, Inc.
  */
 
 /**
@@ -24,15 +11,13 @@
  * access points displayed by "nmtui connect".
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
-#include <glib/gi18n-lib.h>
-
-#include <NetworkManager.h>
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
+#include "nm-client-utils.h"
 
 G_DEFINE_TYPE (NmtConnectConnectionList, nmt_connect_connection_list, NMT_TYPE_NEWT_LISTBOX)
 
@@ -89,6 +74,7 @@ nmt_connect_connection_free (NmtConnectConnection *nmtconn)
 	g_clear_object (&nmtconn->ap);
 	g_clear_object (&nmtconn->active);
 	g_free (nmtconn->ssid);
+	g_slice_free (NmtConnectConnection, nmtconn);
 }
 
 static void
@@ -98,6 +84,7 @@ nmt_connect_device_free (NmtConnectDevice *nmtdev)
 	g_clear_object (&nmtdev->device);
 
 	g_slist_free_full (nmtdev->conns, (GDestroyNotify) nmt_connect_connection_free);
+	g_slice_free (NmtConnectDevice, nmtdev);
 }
 
 static const char *device_sort_order[] = {
@@ -108,6 +95,7 @@ static const char *device_sort_order[] = {
 	NM_SETTING_BOND_SETTING_NAME,
 	NM_SETTING_TEAM_SETTING_NAME,
 	NM_SETTING_BRIDGE_SETTING_NAME,
+	NM_SETTING_IP_TUNNEL_SETTING_NAME,
 	"NMDeviceModem",
 	"NMDeviceBt"
 };
@@ -272,7 +260,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	if (!aps->len)
 		return;
 
-	seen_ssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	seen_ssids = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 	for (i = 0; i < aps->len; i++) {
 		ap = aps->pdata[i];
@@ -306,7 +294,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		}
 
 		if (!nmtconn->name)
-			nmtconn->name = nmtconn->ssid ? nmtconn->ssid : "<unknown>";
+			nmtconn->name = nmtconn->ssid ?: "<unknown>";
 
 		nmtdev->conns = g_slist_prepend (nmtdev->conns, nmtconn);
 	}
@@ -360,7 +348,7 @@ append_nmt_devices_for_virtual_devices (GSList          *nmt_devices,
 	NmtConnectConnection *nmtconn;
 	int sort_order;
 
-	devices_by_name = g_hash_table_new (g_str_hash, g_str_equal);
+	devices_by_name = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	for (i = 0; i < connections->len; i++) {
 		conn = connections->pdata[i];
@@ -375,7 +363,7 @@ append_nmt_devices_for_virtual_devices (GSList          *nmt_devices,
 			g_free (name);
 		else {
 			nmtdev = g_slice_new0 (NmtConnectDevice);
-			nmtdev->name = name ? name : g_strdup ("Unknown");
+			nmtdev->name = name ?: g_strdup("Unknown");
 			nmtdev->sort_order = sort_order;
 
 			g_hash_table_insert (devices_by_name, nmtdev->name, nmtdev);
@@ -503,9 +491,11 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	for (diter = nmt_devices; diter; diter = diter->next) {
 		nmtdev = diter->data;
 
-		if (diter != nmt_devices)
-			nmt_newt_listbox_append (listbox, "", NULL);
-		nmt_newt_listbox_append (listbox, nmtdev->name, NULL);
+		if (nmtdev->conns) {
+			if (diter != nmt_devices)
+				nmt_newt_listbox_append (listbox, "", NULL);
+			nmt_newt_listbox_append (listbox, nmtdev->name, NULL);
+		}
 
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
@@ -521,7 +511,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 			if (nmtconn->ap) {
 				guint8 strength = nm_access_point_get_strength (nmtconn->ap);
 
-				strength_col = nm_utils_wifi_strength_bars (strength);
+				strength_col = nmc_wifi_strength_bars (strength);
 			} else
 				strength_col = NULL;
 
@@ -530,7 +520,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 			                       nmtconn->name,
 			                       (int)(max_width - nmt_newt_text_width (nmtconn->name)), "",
 			                       strength_col ? " " : "",
-			                       strength_col ? strength_col : "");
+			                       strength_col ?: "");
 
 			nmt_newt_listbox_append (listbox, row, nmtconn);
 			g_free (row);
@@ -544,17 +534,9 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 }
 
 static void
-rebuild_on_acs_changed (GObject    *object,
-                        GParamSpec *spec,
-                        gpointer    list)
-{
-	nmt_connect_connection_list_rebuild (list);
-}
-
-static void
-rebuild_on_devices_changed (NMClient *client,
-                            NMDevice *device,
-                            gpointer  list)
+rebuild_on_property_changed (GObject    *object,
+                             GParamSpec *spec,
+                             gpointer    list)
 {
 	nmt_connect_connection_list_rebuild (list);
 }
@@ -565,11 +547,11 @@ nmt_connect_connection_list_constructed (GObject *object)
 	NmtConnectConnectionList *list = NMT_CONNECT_CONNECTION_LIST (object);
 
 	g_signal_connect (nm_client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
-	                  G_CALLBACK (rebuild_on_acs_changed), list);
-	g_signal_connect (nm_client, "device-added",
-	                  G_CALLBACK (rebuild_on_devices_changed), list);
-	g_signal_connect (nm_client, "device-removed",
-	                  G_CALLBACK (rebuild_on_devices_changed), list);
+	                  G_CALLBACK (rebuild_on_property_changed), list);
+	g_signal_connect (nm_client, "notify::" NM_CLIENT_CONNECTIONS,
+	                  G_CALLBACK (rebuild_on_property_changed), list);
+	g_signal_connect (nm_client, "notify::" NM_CLIENT_DEVICES,
+	                  G_CALLBACK (rebuild_on_property_changed), list);
 
 	nmt_connect_connection_list_rebuild (list);
 
@@ -583,8 +565,7 @@ nmt_connect_connection_list_finalize (GObject *object)
 
 	g_slist_free_full (priv->nmt_devices, (GDestroyNotify) nmt_connect_device_free);
 
-	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (rebuild_on_acs_changed), object);
-	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (rebuild_on_devices_changed), object);
+	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (rebuild_on_property_changed), object);
 
 	G_OBJECT_CLASS (nmt_connect_connection_list_parent_class)->finalize (object);
 }
@@ -646,11 +627,13 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 			if (conn) {
 				if (conn == nmtconn->conn)
 					goto found;
-			} else if (nmtconn->ssid && !strcmp (identifier, nmtconn->ssid))
+			} else if (nm_streq0 (identifier, nmtconn->ssid))
 				goto found;
 		}
 
-		if (!conn && nmtdev->device && !strcmp (identifier, nm_device_get_ip_iface (nmtdev->device))) {
+		if (   !conn
+		    && nmtdev->device
+		    && nm_streq0 (identifier, nm_device_get_ip_iface (nmtdev->device))) {
 			nmtconn = nmtdev->conns->data;
 			goto found;
 		}
@@ -658,7 +641,7 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 
 	return FALSE;
 
- found:
+found:
 	if (connection)
 		*connection = nmtconn->conn;
 	if (device)

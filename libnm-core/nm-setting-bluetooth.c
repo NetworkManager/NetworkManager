@@ -1,30 +1,16 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#include <string.h>
-#include <net/ethernet.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-bluetooth.h"
+
+#include <net/ethernet.h>
+
+#include "nm-connection-private.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-private.h"
@@ -41,36 +27,23 @@
  * Point (NAP) profiles.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING,
-                         _nm_register_setting (BLUETOOTH, 1))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BLUETOOTH)
+/*****************************************************************************/
 
-#define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_BDADDR,
+	PROP_TYPE,
+);
 
 typedef struct {
 	char *bdaddr;
 	char *type;
 } NMSettingBluetoothPrivate;
 
-enum {
-	PROP_0,
-	PROP_BDADDR,
-	PROP_TYPE,
+G_DEFINE_TYPE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING)
 
-	LAST_PROP
-};
+#define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
 
-/**
- * nm_setting_bluetooth_new:
- *
- * Creates a new #NMSettingBluetooth object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingBluetooth object
- **/
-NMSetting *nm_setting_bluetooth_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BLUETOOTH, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_bluetooth_get_connection_type:
@@ -79,7 +52,8 @@ NMSetting *nm_setting_bluetooth_new (void)
  * Returns the connection method for communicating with the remote device (i.e.
  * either DUN to a DUN-capable device or PANU to a NAP-capable device).
  *
- * Returns: the type, either %NM_SETTING_BLUETOOTH_PANU or %NM_SETTING_BLUETOOTH_DUN
+ * Returns: the type, either %NM_SETTING_BLUETOOTH_TYPE_PANU,
+ * %NM_SETTING_BLUETOOTH_TYPE_NAP or %NM_SETTING_BLUETOOTH_TYPE_DUN
  **/
 const char *
 nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
@@ -110,17 +84,10 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (setting);
+	const char *type;
+	gboolean missing_nap_bridge = FALSE;
 
-	if (!priv->bdaddr) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
-		return FALSE;
-	}
-
-	if (!nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
+	if (priv->bdaddr && !nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -129,27 +96,38 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->type) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
-		return FALSE;
-	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
-	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+	type = priv->type;
+	if (!type) {
+		if (connection) {
+			/* We may infer the type from the (non-)existence of gsm/cdma/bridge settings. */
+			type = _nm_connection_detect_bluetooth_type (connection);
+		}
+		if (!type) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
+			return FALSE;
+		}
+	}
+
+	if (!NM_IN_STRSET (type, NM_SETTING_BLUETOOTH_TYPE_DUN,
+	                         NM_SETTING_BLUETOOTH_TYPE_NAP,
+	                         NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+		nm_assert (priv->type == type);
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
-		             priv->type);
+		             type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	}
 
 	/* Make sure the corresponding 'type' setting is present */
 	if (   connection
-	    && !strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN)) {
+	    && nm_streq (type, NM_SETTING_BLUETOOTH_TYPE_DUN)) {
 		gboolean gsm = FALSE, cdma = FALSE;
 
 		gsm = !!nm_connection_get_setting_gsm (connection);
@@ -174,23 +152,70 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	 * is required at the interface level.
 	 */
 
+	/* NAP mode needs a bridge setting, and a bridge needs a name. */
+	if (nm_streq (type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		if (!_nm_connection_verify_required_interface_name (connection, error))
+			return FALSE;
+		if (   connection
+		    && !nm_connection_get_setting_bridge (connection))
+			missing_nap_bridge = TRUE;
+	} else {
+		if (!priv->bdaddr) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
+			return FALSE;
+		}
+	}
+
+	/* errors form here are normalizable. */
+
+	if (!priv->type) {
+		/* as determined above, we can detect the bluetooth type. */
+		nm_assert (!missing_nap_bridge);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	if (missing_nap_bridge) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_SETTING,
+		             _("'%s' connection requires '%s' setting"),
+		             NM_SETTING_BLUETOOTH_TYPE_NAP,
+		             NM_SETTING_BRIDGE_SETTING_NAME);
+		g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
 	return TRUE;
 }
 
-static void
-nm_setting_bluetooth_init (NMSettingBluetooth *setting)
-{
-}
+/*****************************************************************************/
 
 static void
-finalize (GObject *object)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (object);
+	NMSettingBluetooth *setting = NM_SETTING_BLUETOOTH (object);
 
-	g_free (priv->bdaddr);
-	g_free (priv->type);
-
-	G_OBJECT_CLASS (nm_setting_bluetooth_parent_class)->finalize (object);
+	switch (prop_id) {
+	case PROP_BDADDR:
+		g_value_set_string (value, nm_setting_bluetooth_get_bdaddr (setting));
+		break;
+	case PROP_TYPE:
+		g_value_set_string (value, nm_setting_bluetooth_get_connection_type (setting));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -214,57 +239,63 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingBluetooth *setting = NM_SETTING_BLUETOOTH (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_BDADDR:
-		g_value_set_string (value, nm_setting_bluetooth_get_bdaddr (setting));
-		break;
-	case PROP_TYPE:
-		g_value_set_string (value, nm_setting_bluetooth_get_connection_type (setting));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_setting_bluetooth_init (NMSettingBluetooth *setting)
+{
+}
+
+/**
+ * nm_setting_bluetooth_new:
+ *
+ * Creates a new #NMSettingBluetooth object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingBluetooth object
+ **/
+NMSetting *nm_setting_bluetooth_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BLUETOOTH, NULL);
 }
 
 static void
-nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
+finalize (GObject *object)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (object);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingBluetoothPrivate));
+	g_free (priv->bdaddr);
+	g_free (priv->type);
 
-	/* virtual methods */
-	object_class->set_property = set_property;
+	G_OBJECT_CLASS (nm_setting_bluetooth_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+
+	g_type_class_add_private (klass, sizeof (NMSettingBluetoothPrivate));
+
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingBluetooth:bdaddr:
 	 *
 	 * The Bluetooth address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_BDADDR,
-		 g_param_spec_string (NM_SETTING_BLUETOOTH_BDADDR, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_BLUETOOTH_BDADDR,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+	obj_properties[PROP_BDADDR] =
+	    g_param_spec_string (NM_SETTING_BLUETOOTH_BDADDR, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_BDADDR], &nm_sett_info_propert_type_mac_addrees);
 
 	/**
 	 * NMSettingBluetooth:type:
@@ -272,11 +303,15 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	 * Either "dun" for Dial-Up Networking connections or "panu" for Personal
 	 * Area Networking connections to devices supporting the NAP profile.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TYPE,
-		 g_param_spec_string (NM_SETTING_BLUETOOTH_TYPE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TYPE] =
+	    g_param_spec_string (NM_SETTING_BLUETOOTH_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_BLUETOOTH,
+	                               NULL, properties_override);
 }

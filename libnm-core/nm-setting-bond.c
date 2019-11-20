@@ -1,36 +1,23 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2011 - 2013 Red Hat, Inc.
+ * Copyright (C) 2011 - 2013 Red Hat, Inc.
  */
 
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-bond.h"
+
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
 #include "nm-setting-infiniband.h"
+#include "nm-core-internal.h"
+
+/*****************************************************************************/
 
 /**
  * SECTION:nm-setting-bond
@@ -40,29 +27,22 @@
  * necessary for bond connections.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING,
-                         _nm_register_setting (BOND, 1))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BOND)
+/*****************************************************************************/
 
-#define NM_SETTING_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BOND, NMSettingBondPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBond,
+	PROP_OPTIONS,
+);
 
 typedef struct {
 	GHashTable *options;
+	NMUtilsNamedValue *options_idx_cache;
 } NMSettingBondPrivate;
 
-enum {
-	PROP_0,
-	PROP_OPTIONS,
-	LAST_PROP
-};
+G_DEFINE_TYPE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING)
 
-enum {
-	TYPE_INT,
-	TYPE_STR,
-	TYPE_BOTH,
-	TYPE_IP,
-	TYPE_IFNAME,
-};
+#define NM_SETTING_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BOND, NMSettingBondPrivate))
+
+/*****************************************************************************/
 
 typedef struct {
 	const char *opt;
@@ -74,42 +54,43 @@ typedef struct {
 } BondDefault;
 
 static const BondDefault defaults[] = {
-	{ NM_SETTING_BOND_OPTION_MODE,             "balance-rr", TYPE_BOTH, 0, 6,
+	{ NM_SETTING_BOND_OPTION_MODE,             "balance-rr", NM_BOND_OPTION_TYPE_BOTH, 0, 6,
 	  { "balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb", NULL } },
-	{ NM_SETTING_BOND_OPTION_MIIMON,           "100",        TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_DOWNDELAY,        "0",          TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_UPDELAY,          "0",          TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,     "0",          TYPE_INT, 0, G_MAXINT },
-	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,    "",           TYPE_IP },
-	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,     "0",          TYPE_BOTH, 0, 3,
-	  { "none", "active", "backup", "all", NULL } },
-	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           TYPE_IFNAME },
-	{ NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_MIIMON,           "100",        NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_DOWNDELAY,        "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_UPDELAY,          "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,     "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,    "",           NM_BOND_OPTION_TYPE_IP },
+	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,     "none",       NM_BOND_OPTION_TYPE_BOTH, 0, 6,
+	  { "none", "active", "backup", "all", "filter", "filter_active", "filter_backup", NULL } },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           NM_BOND_OPTION_TYPE_IFNAME },
+	{ NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, "always",     NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "always", "better", "failure", NULL } },
-	{ NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,    "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,    "none",       NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "none", "active", "follow", NULL } },
-	{ NM_SETTING_BOND_OPTION_USE_CARRIER,      "1",          TYPE_INT, 0, 1 },
-	{ NM_SETTING_BOND_OPTION_AD_SELECT,        "0",          TYPE_BOTH, 0, 2,
+	{ NM_SETTING_BOND_OPTION_USE_CARRIER,      "1",          NM_BOND_OPTION_TYPE_INT, 0, 1 },
+	{ NM_SETTING_BOND_OPTION_AD_SELECT,        "stable",     NM_BOND_OPTION_TYPE_BOTH, 0, 2,
 	  { "stable", "bandwidth", "count", NULL } },
-	{ NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, "0",          TYPE_BOTH, 0, 2,
-	  { "layer2", "layer3+4", "layer2+3", NULL } },
-	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          TYPE_INT, 0, 255 },
-	{ NM_SETTING_BOND_OPTION_LACP_RATE,        "0",          TYPE_BOTH, 0, 1,
+	{ NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, "layer2",     NM_BOND_OPTION_TYPE_BOTH, 0, 4,
+	  { "layer2", "layer3+4", "layer2+3", "encap2+3", "encap3+4", NULL } },
+	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_LACP_RATE,        "slow",       NM_BOND_OPTION_TYPE_BOTH, 0, 1,
 	  { "slow", "fast", NULL } },
+	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,     "",           NM_BOND_OPTION_TYPE_IFNAME },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO,"65535",      NM_BOND_OPTION_TYPE_INT, 1, 65535 },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,  NULL,         NM_BOND_OPTION_TYPE_MAC },
+	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, "0",          NM_BOND_OPTION_TYPE_INT, 0, 1023},
+	{ NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE,"0",          NM_BOND_OPTION_TYPE_INT, 0, 1},
+	{ NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS,  "any",        NM_BOND_OPTION_TYPE_BOTH, 0, 1, {"any", "all"}},
+	{ NM_SETTING_BOND_OPTION_MIN_LINKS,        "0",          NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,     "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_NUM_UNSOL_NA,     "1",          NM_BOND_OPTION_TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE,"1",          NM_BOND_OPTION_TYPE_INT, 0, 65535 },
+	{ NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,   "1",          NM_BOND_OPTION_TYPE_INT, 0, 1 },
+	{ NM_SETTING_BOND_OPTION_LP_INTERVAL,      "1",          NM_BOND_OPTION_TYPE_INT, 1, G_MAXINT },
 };
 
-/**
- * nm_setting_bond_new:
- *
- * Creates a new #NMSettingBond object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingBond object
- **/
-NMSetting *
-nm_setting_bond_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BOND, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_bond_get_num_options:
@@ -134,10 +115,11 @@ nm_setting_bond_get_num_options (NMSettingBond *setting)
  * @setting: the #NMSettingBond
  * @idx: index of the desired option, from 0 to
  * nm_setting_bond_get_num_options() - 1
- * @out_name: (out): on return, the name of the bonding option; this
- * value is owned by the setting and should not be modified
- * @out_value: (out): on return, the value of the name of the bonding
- * option; this value is owned by the setting and should not be modified
+ * @out_name: (out) (transfer none): on return, the name of the bonding option;
+ *   this value is owned by the setting and should not be modified
+ * @out_value: (out) (transfer none): on return, the value of the name of the
+ *   bonding option; this value is owned by the setting and should not be
+ *   modified
  *
  * Given an index, return the value of the bonding option at that index.  Indexes
  * are *not* guaranteed to be static across modifications to options done by
@@ -156,45 +138,35 @@ nm_setting_bond_get_option (NMSettingBond *setting,
                             const char **out_value)
 {
 	NMSettingBondPrivate *priv;
-	GList *keys;
-	const char *_key = NULL, *_value = NULL;
+	guint len;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 
-	if (idx >= nm_setting_bond_get_num_options (setting))
+	len = g_hash_table_size (priv->options);
+	if (idx >= len)
 		return FALSE;
 
-	keys = g_hash_table_get_keys (priv->options);
-	_key = g_list_nth_data (keys, idx);
-	_value = g_hash_table_lookup (priv->options, _key);
+	if (!G_UNLIKELY (priv->options_idx_cache))
+		priv->options_idx_cache = nm_utils_named_values_from_str_dict (priv->options, NULL);
 
-	if (out_name)
-		*out_name = _key;
-	if (out_value)
-		*out_value = _value;
-
-	g_list_free (keys);
+	NM_SET_OUT (out_name, priv->options_idx_cache[idx].name);
+	NM_SET_OUT (out_value, priv->options_idx_cache[idx].value_str);
 	return TRUE;
 }
 
 static gboolean
 validate_int (const char *name, const char *value, const BondDefault *def)
 {
-	glong num;
-	guint i;
+	guint64 num;
 
-	for (i = 0; i < strlen (value); i++) {
-		if (!g_ascii_isdigit (value[i]) && value[i] != '-')
-			return FALSE;
-	}
-
-	errno = 0;
-	num = strtol (value, NULL, 10);
-	if (errno)
+	if (!NM_STRCHAR_ALL (value, ch, g_ascii_isdigit (ch)))
 		return FALSE;
-	if (num < def->min || num > def->max)
+
+	num = _nm_utils_ascii_str_to_uint64 (value, 10, def->min, def->max, G_MAXUINT64);
+	if (   num == G_MAXUINT64
+	    && errno != 0)
 		return FALSE;
 
 	return TRUE;
@@ -217,19 +189,34 @@ validate_list (const char *name, const char *value, const BondDefault *def)
 static gboolean
 validate_ip (const char *name, const char *value)
 {
-	char **ips, **iter;
-	gboolean success = TRUE;
+	gs_free char *value_clone = NULL;
 	struct in_addr addr;
 
 	if (!value || !value[0])
 		return FALSE;
 
-	ips = g_strsplit_set (value, ",", 0);
-	for (iter = ips; iter && *iter && success; iter++)
-		success = !!inet_aton (*iter, &addr);
-	g_strfreev (ips);
+	value_clone = g_strdup (value);
+	value = value_clone;
+	for (;;) {
+		char *eow;
 
-	return success;
+		/* we do not skip over empty words. E.g
+		 * "192.168.1.1," is an error.
+		 *
+		 * ... for no particular reason. */
+
+		eow = strchr (value, ',');
+		if (eow)
+			*eow = '\0';
+
+		if (inet_pton (AF_INET, value, &addr) != 1)
+			return FALSE;
+
+		if (!eow)
+			break;
+		value = eow + 1;
+	}
+	return TRUE;
 }
 
 static gboolean
@@ -238,7 +225,7 @@ validate_ifname (const char *name, const char *value)
 	if (!value || !value[0])
 		return FALSE;
 
-	return nm_utils_iface_valid_name (value);
+	return nm_utils_is_valid_iface_name (value, NULL);
 }
 
 /**
@@ -266,16 +253,18 @@ nm_setting_bond_validate_option (const char *name,
 			if (value == NULL)
 				return TRUE;
 			switch (defaults[i].opt_type) {
-			case TYPE_INT:
+			case NM_BOND_OPTION_TYPE_INT:
 				return validate_int (name, value, &defaults[i]);
-			case TYPE_STR:
+			case NM_BOND_OPTION_TYPE_STRING:
 				return validate_list (name, value, &defaults[i]);
-			case TYPE_BOTH:
+			case NM_BOND_OPTION_TYPE_BOTH:
 				return (   validate_int (name, value, &defaults[i])
 				        || validate_list (name, value, &defaults[i]));
-			case TYPE_IP:
+			case NM_BOND_OPTION_TYPE_IP:
 				return validate_ip (name, value);
-			case TYPE_IFNAME:
+			case NM_BOND_OPTION_TYPE_MAC:
+				return nm_utils_hwaddr_valid (value, ETH_ALEN);
+			case NM_BOND_OPTION_TYPE_IFNAME:
 				return validate_ifname (name, value);
 			}
 			return FALSE;
@@ -338,6 +327,7 @@ nm_setting_bond_add_option (NMSettingBond *setting,
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 
+	nm_clear_g_free (&priv->options_idx_cache);
 	g_hash_table_insert (priv->options, g_strdup (name), g_strdup (value));
 
 	if (   !strcmp (name, NM_SETTING_BOND_OPTION_MIIMON)
@@ -351,7 +341,7 @@ nm_setting_bond_add_option (NMSettingBond *setting,
 		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_UPDELAY);
 	}
 
-	g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
+	_notify (setting, PROP_OPTIONS);
 
 	return TRUE;
 }
@@ -371,6 +361,7 @@ gboolean
 nm_setting_bond_remove_option (NMSettingBond *setting,
                                const char *name)
 {
+	NMSettingBondPrivate *priv;
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
@@ -378,17 +369,22 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
 	if (!nm_setting_bond_validate_option (name, NULL))
 		return FALSE;
 
-	found = g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
+	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+
+	nm_clear_g_free (&priv->options_idx_cache);
+	found = g_hash_table_remove (priv->options, name);
 	if (found)
-		g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
+		_notify (setting, PROP_OPTIONS);
 	return found;
 }
 
 /**
  * nm_setting_bond_get_valid_options:
- * @setting: the #NMSettingBond
+ * @setting: (allow-none): the #NMSettingBond
  *
  * Returns a list of valid bond options.
+ *
+ * The @setting argument is unused and may be passed as %NULL.
  *
  * Returns: (transfer none): a %NULL-terminated array of strings of valid bond options.
  **/
@@ -418,10 +414,21 @@ nm_setting_bond_get_valid_options  (NMSettingBond *setting)
 const char *
 nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 {
+	const char *mode;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
 	g_return_val_if_fail (nm_setting_bond_validate_option (name, NULL), NULL);
+
+	if (nm_streq (name, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
+		/* The default value depends on the current mode */
+		mode = nm_setting_bond_get_option_by_name (setting, NM_SETTING_BOND_OPTION_MODE);
+		if (   nm_streq0 (mode, "4")
+		    || nm_streq0 (mode, "802.3ad"))
+			return "00:00:00:00:00:00";
+		else
+			return "";
+	}
 
 	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
 		if (g_strcmp0 (defaults[i].opt, name) == 0)
@@ -431,24 +438,99 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 	g_assert_not_reached ();
 }
 
+/**
+ * nm_setting_bond_get_option_type:
+ * @setting: the #NMSettingBond
+ * @name: the name of the option
+ *
+ * Returns: the type of the bond option.
+ **/
+NMBondOptionType
+_nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NM_BOND_OPTION_TYPE_INT);
+	g_return_val_if_fail (nm_setting_bond_validate_option (name, NULL), NM_BOND_OPTION_TYPE_INT);
+
+	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
+		if (nm_streq0 (defaults[i].opt, name))
+			return defaults[i].opt_type;
+	}
+	/* Any option that passes nm_setting_bond_validate_option() should also be found in defaults */
+	g_assert_not_reached ();
+}
+
+NMBondMode
+_nm_setting_bond_mode_from_string (const char *str)
+{
+	g_return_val_if_fail (str, NM_BOND_MODE_UNKNOWN);
+
+	if (nm_streq (str, "balance-rr"))
+		return NM_BOND_MODE_ROUNDROBIN;
+	if (nm_streq (str, "active-backup"))
+		return NM_BOND_MODE_ACTIVEBACKUP;
+	if (nm_streq (str, "balance-xor"))
+		return NM_BOND_MODE_XOR;
+	if (nm_streq (str, "broadcast"))
+		return NM_BOND_MODE_BROADCAST;
+	if (nm_streq (str, "802.3ad"))
+		return NM_BOND_MODE_8023AD;
+	if (nm_streq (str, "balance-tlb"))
+		return NM_BOND_MODE_TLB;
+	if (nm_streq (str, "balance-alb"))
+		return NM_BOND_MODE_ALB;
+
+	return NM_BOND_MODE_UNKNOWN;
+}
+
+/*****************************************************************************/
+
+#define BIT(x) (1 << (x))
+
+static const struct {
+	const char *option;
+	NMBondMode unsupp_modes;
+} bond_unsupp_modes[] = {
+	{ NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, ~(BIT (NM_BOND_MODE_ROUNDROBIN)) },
+	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,      BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,      BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
+	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,     BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
+	{ NM_SETTING_BOND_OPTION_LACP_RATE,         ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,           ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,      ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,    ~(BIT (NM_BOND_MODE_TLB)) },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,   ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY,  ~(BIT (NM_BOND_MODE_8023AD)) },
+};
+
+gboolean
+_nm_setting_bond_option_supported (const char *option, NMBondMode mode)
+{
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (bond_unsupp_modes); i++) {
+		if (nm_streq (option, bond_unsupp_modes[i].option))
+			return !NM_FLAGS_ANY (bond_unsupp_modes[i].unsupp_modes, BIT (mode));
+	}
+
+	return TRUE;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 	GHashTableIter iter;
 	const char *key, *value;
-	const char *valid_modes[] = { "balance-rr",
-	                              "active-backup",
-	                              "balance-xor",
-	                              "broadcast",
-	                              "802.3ad",
-	                              "balance-tlb",
-	                              "balance-alb",
-	                              NULL };
-	int miimon = 0, arp_interval = 0;
+	int mode, miimon = 0, arp_interval = 0;
+	int num_grat_arp = -1, num_unsol_na = -1;
+	const char *mode_orig, *mode_new;
 	const char *arp_ip_target = NULL;
 	const char *lacp_rate;
 	const char *primary;
+	NMBondMode bond_mode;
 
 	g_hash_table_iter_init (&iter, priv->options);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
@@ -469,6 +551,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 	if (value)
 		arp_interval = atoi (value);
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
+	if (value)
+		num_grat_arp = atoi (value);
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
+	if (value)
+		num_unsol_na = atoi (value);
 
 	/* Can only set one of miimon and arp_interval */
 	if (miimon > 0 && arp_interval > 0) {
@@ -479,10 +567,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_SETTING_BOND_OPTION_MIIMON,
 		             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return FALSE;
 	}
 
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
-	if (!value) {
+	/* Verify bond mode */
+	mode_orig = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
+	if (!mode_orig) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -491,7 +581,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
-	if (!_nm_utils_string_in_list (value, valid_modes)) {
+	mode = nm_utils_bond_mode_string_to_int (mode_orig);
+	if (mode == -1) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -500,30 +591,34 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
+	mode_new = nm_utils_bond_mode_int_to_string (mode);
 
 	/* Make sure mode is compatible with other settings */
-	if (   strcmp (value, "balance-alb") == 0
-	    || strcmp (value, "balance-tlb") == 0) {
+	if (   strcmp (mode_new, "balance-alb") == 0
+	    || strcmp (mode_new, "balance-tlb") == 0) {
 		if (arp_interval > 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s=%s' is incompatible with '%s > 0'"),
-			             NM_SETTING_BOND_OPTION_MODE, value, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+			             NM_SETTING_BOND_OPTION_MODE, mode_new, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 	}
 
 	primary = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_PRIMARY);
-	if (strcmp (value, "active-backup") == 0) {
-		if (primary && !nm_utils_iface_valid_name (primary)) {
+	if (strcmp (mode_new, "active-backup") == 0) {
+		GError *tmp_error = NULL;
+
+		if (primary && !nm_utils_is_valid_iface_name (primary, &tmp_error)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid interface name for '%s' option"),
-			             primary, NM_SETTING_BOND_OPTION_PRIMARY);
+			             _("'%s' is not valid for the '%s' option: %s"),
+			             primary, NM_SETTING_BOND_OPTION_PRIMARY, tmp_error->message);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			g_error_free (tmp_error);
 			return FALSE;
 		}
 	} else {
@@ -539,13 +634,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (nm_connection_get_setting_infiniband (connection)) {
-		if (strcmp (value, "active-backup") != 0) {
+	if (connection && nm_connection_get_setting_infiniband (connection)) {
+		if (strcmp (mode_new, "active-backup") != 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s=%s' is not a valid configuration for '%s'"),
-			             NM_SETTING_BOND_OPTION_MODE, value, NM_SETTING_INFINIBAND_SETTING_NAME);
+			             NM_SETTING_BOND_OPTION_MODE, mode_new, NM_SETTING_INFINIBAND_SETTING_NAME);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
@@ -631,8 +726,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	lacp_rate = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_LACP_RATE);
 	if (   lacp_rate
-	    && (g_strcmp0 (value, "802.3ad") != 0 && g_strcmp0 (value, "4") != 0)
-	    && (strcmp (lacp_rate, "slow") != 0 && strcmp (lacp_rate, "0") != 0)) {
+	    && g_strcmp0 (mode_new, "802.3ad")
+	    && strcmp (lacp_rate, "slow") != 0
+	    && strcmp (lacp_rate, "0") != 0) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -642,46 +738,130 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	return _nm_connection_verify_required_interface_name (connection, error);
-}
-
-static void
-nm_setting_bond_init (NMSettingBond *setting)
-{
-	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
-
-	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-
-	/* Default values: */
-	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MODE, "balance-rr");
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
-
-	g_hash_table_destroy (priv->options);
-
-	G_OBJECT_CLASS (nm_setting_bond_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_OPTIONS:
-		g_hash_table_unref (priv->options);
-		priv->options = _nm_utils_copy_strdict (g_value_get_boxed (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
+	if (   (num_grat_arp != -1 && num_unsol_na != -1)
+	    && (num_grat_arp != num_unsol_na)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' and '%s' cannot have different values"),
+		             NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,
+		             NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return FALSE;
 	}
+
+	if (!_nm_connection_verify_required_interface_name (connection, error))
+		return FALSE;
+
+	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (g_strcmp0 (mode_orig, mode_new) != 0) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' option should be string"),
+		             NM_SETTING_BOND_OPTION_MODE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	/* normalize unsupported options for the current mode */
+	bond_mode = _nm_setting_bond_mode_from_string (mode_new);
+	g_hash_table_iter_init (&iter, priv->options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
+		if (nm_streq (key, "mode"))
+			continue;
+		if (!_nm_setting_bond_option_supported (key, bond_mode)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("'%s' option is not valid with mode '%s'"),
+			             key, mode_new);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			return NM_SETTING_VERIFY_NORMALIZABLE;
+		}
+	}
+
+	return TRUE;
 }
+
+/*****************************************************************************/
+
+static gboolean
+options_equal_asym (NMSettingBond *s_bond,
+                    NMSettingBond *s_bond2,
+                    NMSettingCompareFlags flags)
+{
+	GHashTable *options2 = NM_SETTING_BOND_GET_PRIVATE (s_bond2)->options;
+	GHashTableIter iter;
+	const char *key, *value, *value2;
+
+	g_hash_table_iter_init (&iter, NM_SETTING_BOND_GET_PRIVATE (s_bond)->options);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+
+		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
+			/* when doing an inferrable match, the active-slave should be ignored
+			 * as it might be differ from the setting in the connection.
+			 *
+			 * Also, the fail_over_mac setting can change, see for example
+			 * https://bugzilla.redhat.com/show_bug.cgi?id=1375558#c8 */
+			if (NM_IN_STRSET (key, "fail_over_mac", "active_slave"))
+				continue;
+		}
+
+		value2 = g_hash_table_lookup (options2, key);
+
+		if (!value2) {
+			if (nm_streq (key, "num_grat_arp"))
+				value2 = g_hash_table_lookup (options2, "num_unsol_na");
+			else if (nm_streq (key, "num_unsol_na"))
+				value2 = g_hash_table_lookup (options2, "num_grat_arp");
+		}
+
+		if (!value2)
+			value2 = nm_setting_bond_get_option_default (s_bond2, key);
+		if (!nm_streq (value, value2))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+options_equal (NMSettingBond *s_bond,
+               NMSettingBond *s_bond2,
+               NMSettingCompareFlags flags)
+{
+	return    options_equal_asym (s_bond, s_bond2, flags)
+	       && options_equal_asym (s_bond2, s_bond, flags);
+}
+
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
+                  NMSettingCompareFlags flags)
+{
+	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_BOND_OPTIONS)) {
+		return (   !set_b
+		        || options_equal (NM_SETTING_BOND (set_a),
+		                          NM_SETTING_BOND (set_b),
+		                          flags));
+	}
+
+	return NM_SETTING_CLASS (nm_setting_bond_parent_class)->compare_property (sett_info,
+	                                                                          property_idx,
+	                                                                          con_a,
+	                                                                          set_a,
+	                                                                          con_b,
+	                                                                          set_b,
+	                                                                          flags);
+}
+
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -700,43 +880,110 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_bond_class_init (NMSettingBondClass *setting_class)
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingBondPrivate));
+	switch (prop_id) {
+	case PROP_OPTIONS:
+		nm_clear_g_free (&priv->options_idx_cache);
+		g_hash_table_unref (priv->options);
+		priv->options = _nm_utils_copy_strdict (g_value_get_boxed (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
 
-	/* virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+/*****************************************************************************/
 
-	/* Properties */
+static void
+nm_setting_bond_init (NMSettingBond *setting)
+{
+	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+
+	priv->options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+
+	/* Default values: */
+	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MODE, "balance-rr");
+}
+
+/**
+ * nm_setting_bond_new:
+ *
+ * Creates a new #NMSettingBond object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingBond object
+ **/
+NMSetting *
+nm_setting_bond_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BOND, NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
+
+	nm_clear_g_free (&priv->options_idx_cache);
+	g_hash_table_destroy (priv->options);
+
+	G_OBJECT_CLASS (nm_setting_bond_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_bond_class_init (NMSettingBondClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+
+	g_type_class_add_private (klass, sizeof (NMSettingBondPrivate));
+
+	object_class->get_property     = get_property;
+	object_class->set_property     = set_property;
+	object_class->finalize         = finalize;
+
+	setting_class->verify           = verify;
+	setting_class->compare_property = compare_property;
+
 	/**
-	 * NMSettingBond:options:
+	 * NMSettingBond:options: (type GHashTable(utf8,utf8)):
 	 *
 	 * Dictionary of key/value pairs of bonding options.  Both keys and values
 	 * must be strings. Option names must contain only alphanumeric characters
 	 * (ie, [a-zA-Z0-9]).
-	 *
-	 * Type: GHashTable(utf8,utf8)
 	 **/
-	 g_object_class_install_property
-		 (object_class, PROP_OPTIONS,
-		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
-		                     G_TYPE_HASH_TABLE,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
-	 _nm_setting_class_transform_property (parent_class, NM_SETTING_BOND_OPTIONS,
-	                                       G_VARIANT_TYPE ("a{ss}"),
-	                                       _nm_utils_strdict_to_dbus,
-	                                       _nm_utils_strdict_from_dbus);
+	/* ---ifcfg-rh---
+	 * property: options
+	 * variable: BONDING_OPTS
+	 * description: Bonding options.
+	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
+	 * ---end---
+	 */
+	obj_properties[PROP_OPTIONS] =
+	    g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
+	                        G_TYPE_HASH_TABLE,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_INFERRABLE |
+	                        G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_OPTIONS], &nm_sett_info_propert_type_strdict);
 
-	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
-	                                           G_VARIANT_TYPE_STRING,
-	                                           _nm_setting_get_deprecated_virtual_interface_name,
-	                                           NULL);
+	 /* ---dbus---
+	  * property: interface-name
+	  * format: string
+	  * description: Deprecated in favor of connection.interface-name, but can
+	  *   be used for backward-compatibility with older daemons, to set the
+	  *   bond's interface name.
+	  * ---end---
+	  */
+	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_BOND,
+	                               NULL, properties_override);
 }

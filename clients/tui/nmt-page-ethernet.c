@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -21,26 +8,21 @@
  * @short_description: The editor page for Ethernet connections
  */
 
-#include "config.h"
-
-#include <glib.h>
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-page-ethernet.h"
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 
-G_DEFINE_TYPE (NmtPageEthernet, nmt_page_ethernet, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageEthernet, nmt_page_ethernet, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_ethernet_new (NMConnection   *conn,
                        NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_ETHERNET,
 	                     "connection", conn,
-	                     "title", _("ETHERNET"),
 	                     "device-entry", deventry,
-	                     "show-by-default", FALSE,
 	                     NULL);
 }
 
@@ -54,7 +36,8 @@ nmt_page_ethernet_constructed (GObject *object)
 {
 	NmtPageEthernet *ethernet = NMT_PAGE_ETHERNET (object);
 	NmtDeviceEntry *deventry;
-	NmtPageGrid *grid;
+	NmtEditorSection *section;
+	NmtEditorGrid *grid;
 	NMSettingWired *s_wired;
 	NmtNewtWidget *widget;
 	NMConnection *conn;
@@ -66,24 +49,27 @@ nmt_page_ethernet_constructed (GObject *object)
 		s_wired = nm_connection_get_setting_wired (conn);
 	}
 
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
+	deventry = nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (object));
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_MAC_ADDRESS,
 	                        deventry, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	grid = NMT_PAGE_GRID (ethernet);
+	section = nmt_editor_section_new (_("ETHERNET"), NULL, FALSE);
+	grid = nmt_editor_section_get_body (section);
 
-	widget = nmt_mac_entry_new (40, ETH_ALEN);
+	widget = nmt_mac_entry_new (40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED);
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Cloned MAC address"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Cloned MAC address"), widget, NULL);
 
 	widget = nmt_mtu_entry_new ();
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_MTU,
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("MTU"), widget, NULL);
+	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (ethernet), section);
 
 	G_OBJECT_CLASS (nmt_page_ethernet_parent_class)->constructed (object);
 }

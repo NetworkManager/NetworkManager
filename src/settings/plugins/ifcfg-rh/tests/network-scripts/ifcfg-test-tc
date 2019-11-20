@@ -1,0 +1,16 @@
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:55
+BOOTPROTO=none
+ONBOOT=yes
+DNS1=4.2.2.1
+DNS2=4.2.2.2
+IPADDR=192.168.1.5
+PREFIX=24
+NETMASK=255.255.255.0
+GATEWAY=192.168.1.1
+IPV6INIT=no
+QDISC1="root fq_codel"
+FILTER1="parent 1234: matchall action simple sdata Hello"
+NAME=ethernet-tc
+UUID=a42c8d4e-11a2-4144-92d2-5cbce8c6b2c4

@@ -1,22 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2014 Red Hat, Inc.
- * Copyright 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
+ * Copyright (C) 2008 Novell, Inc.
  */
 
 #ifndef __NM_ACTIVE_CONNECTION_H__
@@ -26,7 +11,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-object.h>
+#include "nm-object.h"
 
 G_BEGIN_DECLS
 
@@ -44,6 +29,7 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH "specific-object-path"
 #define NM_ACTIVE_CONNECTION_DEVICES              "devices"
 #define NM_ACTIVE_CONNECTION_STATE                "state"
+#define NM_ACTIVE_CONNECTION_STATE_FLAGS          "state-flags"
 #define NM_ACTIVE_CONNECTION_DEFAULT              "default"
 #define NM_ACTIVE_CONNECTION_IP4_CONFIG           "ip4-config"
 #define NM_ACTIVE_CONNECTION_DHCP4_CONFIG         "dhcp4-config"
@@ -53,34 +39,32 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_VPN                  "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER               "master"
 
-struct _NMActiveConnection {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent;
-
-	/*< private >*/
-	gpointer padding[8];
-} NMActiveConnectionClass;
+/**
+ * NMActiveConnection:
+ */
+typedef struct _NMActiveConnectionClass NMActiveConnectionClass;
 
 GType nm_active_connection_get_type (void);
 
-NMRemoteConnection      *nm_active_connection_get_connection           (NMActiveConnection *connection);
-const char              *nm_active_connection_get_id                   (NMActiveConnection *connection);
-const char              *nm_active_connection_get_uuid                 (NMActiveConnection *connection);
-const char              *nm_active_connection_get_connection_type      (NMActiveConnection *connection);
-const char              *nm_active_connection_get_specific_object_path (NMActiveConnection *connection);
-const GPtrArray         *nm_active_connection_get_devices              (NMActiveConnection *connection);
-NMActiveConnectionState  nm_active_connection_get_state                (NMActiveConnection *connection);
-NMDevice                *nm_active_connection_get_master               (NMActiveConnection *connection);
-gboolean                 nm_active_connection_get_default              (NMActiveConnection *connection);
-NMIP4Config             *nm_active_connection_get_ip4_config           (NMActiveConnection *connection);
-NMDhcp4Config           *nm_active_connection_get_dhcp4_config         (NMActiveConnection *connection);
-gboolean                 nm_active_connection_get_default6             (NMActiveConnection *connection);
-NMIP6Config             *nm_active_connection_get_ip6_config           (NMActiveConnection *connection);
-NMDhcp6Config           *nm_active_connection_get_dhcp6_config         (NMActiveConnection *connection);
-gboolean                 nm_active_connection_get_vpn                  (NMActiveConnection *connection);
+NMRemoteConnection            *nm_active_connection_get_connection           (NMActiveConnection *connection);
+const char                    *nm_active_connection_get_id                   (NMActiveConnection *connection);
+const char                    *nm_active_connection_get_uuid                 (NMActiveConnection *connection);
+const char                    *nm_active_connection_get_connection_type      (NMActiveConnection *connection);
+const char                    *nm_active_connection_get_specific_object_path (NMActiveConnection *connection);
+const GPtrArray               *nm_active_connection_get_devices              (NMActiveConnection *connection);
+NMActiveConnectionState        nm_active_connection_get_state                (NMActiveConnection *connection);
+NM_AVAILABLE_IN_1_10
+NMActivationStateFlags         nm_active_connection_get_state_flags          (NMActiveConnection *connection);
+NM_AVAILABLE_IN_1_8
+NMActiveConnectionStateReason  nm_active_connection_get_state_reason         (NMActiveConnection *connection);
+NMDevice                      *nm_active_connection_get_master               (NMActiveConnection *connection);
+gboolean                       nm_active_connection_get_default              (NMActiveConnection *connection);
+NMIPConfig                    *nm_active_connection_get_ip4_config           (NMActiveConnection *connection);
+NMDhcpConfig                  *nm_active_connection_get_dhcp4_config         (NMActiveConnection *connection);
+gboolean                       nm_active_connection_get_default6             (NMActiveConnection *connection);
+NMIPConfig                    *nm_active_connection_get_ip6_config           (NMActiveConnection *connection);
+NMDhcpConfig                  *nm_active_connection_get_dhcp6_config         (NMActiveConnection *connection);
+gboolean                       nm_active_connection_get_vpn                  (NMActiveConnection *connection);
 
 G_END_DECLS
 

@@ -1,0 +1,16 @@
+[main]
+action=connectivity-change
+uuid=3fd2a33a-d81b-423f-ae99-e6baba742311
+id=Random Connection
+connectivity-state=UNKNOWN
+
+[device]
+state=30
+ip-interface=wlan0
+type=2
+interface=wlan0
+path=/org/freedesktop/NetworkManager/Devices/0
+
+[env]
+PATH=
+NM_DISPATCHER_ACTION=connectivity-change

@@ -1,34 +1,16 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2014 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
+#include "nm-default.h"
+
 #include "nm-property-compare.h"
-#include "nm-glib-compat.h"
 
-#include <string.h>
-#include <math.h>
 #include <netinet/in.h>
-#include <gio/gio.h>
 
-static gint
+static int
 _nm_property_compare_collection (GVariant *value1, GVariant *value2)
 {
 	GVariant *child1, *child2;
@@ -56,7 +38,39 @@ _nm_property_compare_collection (GVariant *value1, GVariant *value2)
 	return 0;
 }
 
-static gint
+static int
+_nm_property_compare_vardict (GVariant *value1, GVariant *value2)
+{
+	GVariantIter iter;
+	int len1, len2;
+	const char *key;
+	GVariant *val1, *val2;
+
+	len1 = g_variant_n_children (value1);
+	len2 = g_variant_n_children (value2);
+
+	if (len1 != len2)
+		return len1 < len2 ? -1 : 1;
+
+	g_variant_iter_init (&iter, value1);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &val1)) {
+		if (!g_variant_lookup (value2, key, "v", &val2)) {
+			g_variant_unref (val1);
+			return -1;
+		}
+		if (!g_variant_equal (val1, val2)) {
+			g_variant_unref (val1);
+			g_variant_unref (val2);
+			return -1;
+		}
+		g_variant_unref (val1);
+		g_variant_unref (val2);
+	}
+
+	return 0;
+}
+
+static int
 _nm_property_compare_strdict (GVariant *value1, GVariant *value2)
 {
 	GVariantIter iter;
@@ -88,7 +102,7 @@ nm_property_compare (GVariant *value1, GVariant *value2)
 {
 	const GVariantType *type1;
 	const GVariantType *type2;
-	gint ret;
+	int ret;
 
 	if (value1 == value2)
 		return 0;
@@ -107,6 +121,8 @@ nm_property_compare (GVariant *value1, GVariant *value2)
 		ret = g_variant_compare (value1, value2);
 	else if (g_variant_is_of_type (value1, G_VARIANT_TYPE ("a{ss}")))
 		ret = _nm_property_compare_strdict (value1, value2);
+	else if (g_variant_is_of_type (value1, G_VARIANT_TYPE ("a{sv}")))
+		ret = _nm_property_compare_vardict (value1, value2);
 	else if (g_variant_type_is_array (type1))
 		ret = _nm_property_compare_collection (value1, value2);
 	else if (g_variant_type_is_tuple (type1))

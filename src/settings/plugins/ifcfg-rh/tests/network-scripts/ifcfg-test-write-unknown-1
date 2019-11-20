@@ -1,0 +1,8 @@
+FOO='val
+  bar=3'
+wrong line
+  F2=b
+  F3='b
+XXX=adf'
+  XXX2=val2
+'

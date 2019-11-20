@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -24,13 +11,10 @@
  * "form" (aka dialog) to the user.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
-
-#include <glib/gi18n-lib.h>
 
 #include "nmt-newt-form.h"
 #include "nmt-newt-button.h"
@@ -362,7 +346,7 @@ nmt_newt_form_real_show (NmtNewtForm *form)
 		keypress_source = g_io_create_watch (io, G_IO_IN);
 		g_source_set_can_recurse (keypress_source, TRUE);
 		g_source_set_callback (keypress_source,
-		                       (GSourceFunc) nmt_newt_form_keypress_callback,
+		                       (GSourceFunc)(void (*) (void)) nmt_newt_form_keypress_callback,
 		                       NULL, NULL);
 		g_source_attach (keypress_source, NULL);
 		g_io_channel_unref (io);

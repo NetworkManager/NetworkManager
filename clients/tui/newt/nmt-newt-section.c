@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -35,11 +22,10 @@
  * extent of the section.
  */
 
-#include "config.h"
-
-#include <string.h>
+#include "nm-default.h"
 
 #include "nmt-newt-section.h"
+
 #include "nmt-newt-grid.h"
 #include "nmt-newt-label.h"
 #include "nmt-newt-utils.h"
@@ -260,12 +246,12 @@ nmt_newt_section_size_request (NmtNewtWidget *widget,
                                int           *height)
 {
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (widget);
-	int border_width, border_height;
+	int w_ignore, h_ignore;
 
 	g_return_if_fail (priv->header != NULL && priv->body != NULL);
 
 	if (priv->show_border)
-		nmt_newt_widget_size_request (priv->border_grid, &border_width, &border_height);
+		nmt_newt_widget_size_request (priv->border_grid, &w_ignore, &h_ignore);
 	nmt_newt_widget_size_request (priv->header, &priv->hwidth_req, &priv->hheight_req);
 	nmt_newt_widget_size_request (priv->body, &priv->bwidth_req, &priv->bheight_req);
 
@@ -304,7 +290,7 @@ adjust_border_for_allocation (NmtNewtSectionPrivate *priv,
 				label = nmt_newt_label_new (line_glyph);
 				g_ptr_array_add (priv->border_line_labels, label);
 				nmt_newt_grid_add (NMT_NEWT_GRID (priv->border_grid), label, 0, i + 1);
-			} else 
+			} else
 				nmt_newt_widget_set_visible (priv->border_line_labels->pdata[i], TRUE);
 		}
 		nmt_newt_widget_set_visible (priv->border_end_label, TRUE);
@@ -322,10 +308,10 @@ nmt_newt_section_size_allocate (NmtNewtWidget *widget,
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (widget);
 
 	if (priv->show_border) {
-		int border_height, border_width;
+		int w_ignore, h_ignore;
 
 		adjust_border_for_allocation (priv, height);
-		nmt_newt_widget_size_request (priv->border_grid, &border_height, &border_width);
+		nmt_newt_widget_size_request (priv->border_grid, &w_ignore, &h_ignore);
 		nmt_newt_widget_size_allocate (priv->border_grid, x, y, 1, height);
 		nmt_newt_widget_size_allocate (priv->header, x + 2, y, width, priv->hheight_req);
 	} else

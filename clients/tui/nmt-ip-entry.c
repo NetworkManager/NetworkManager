@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -27,13 +14,11 @@
  * contains a valid IP address.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-
-#include <glib/gi18n-lib.h>
 
 #include "nmt-ip-entry.h"
 
@@ -125,39 +110,12 @@ ip_entry_validate (NmtNewtEntry *entry,
                    gpointer      user_data)
 {
 	NmtIPEntryPrivate *priv = NMT_IP_ENTRY_GET_PRIVATE (entry);
-	guchar buf[16];
-	guint32 prefix;
-	const char *slash;
-	char *addrstr, *end;
-	gboolean valid;
 
 	if (!*text)
 		return priv->optional;
-
-	slash = strchr (text, '/');
-
-	if (slash) {
-		if (!priv->prefix)
-			return FALSE;
-		addrstr = g_strndup (text, slash - text);
-	} else
-		addrstr = g_strdup (text);
-	valid = (inet_pton (priv->family, addrstr, buf) == 1);
-	g_free (addrstr);
-
-	if (!valid)
-		return FALSE;
-
-	if (slash) {
-		prefix = strtoul (slash + 1, &end, 10);
-		if (   *end
-		    || prefix == 0
-		    || (priv->family == AF_INET && prefix > 32)
-		    || (priv->family == AF_INET6 && prefix > 128))
-			valid = FALSE;
-	}
-
-	return valid;
+	if (priv->prefix)
+		return nm_utils_parse_inaddr_prefix (priv->family, text, NULL, NULL);
+	return nm_utils_parse_inaddr (priv->family, text, NULL);
 }
 
 static void

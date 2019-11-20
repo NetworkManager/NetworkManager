@@ -1,18 +1,5 @@
 #!/usr/bin/env python
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0+
 #
 # Copyright (C) 2009 Novell, Inc.
 # Copyright (C) 2009 Red Hat, Inc.
@@ -61,7 +48,7 @@ def list_uuids():
         iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManager.Settings.Connection')
         settings = iface.GetSettings()
         conn = settings['connection']
-        print "%s - %s (%s)" % (conn['uuid'], conn['id'], conn['type'])
+        print("%s - %s (%s)" % (conn['uuid'], conn['id'], conn['type']))
 
 
 def get_active_connection_path(uuid):
@@ -102,11 +89,11 @@ def get_wifi_device_path():
 def activate_connection(connection_path, device_path):
 
     def reply_handler(opath):
-    	print "Success: device activating"
+        print("Success: device activating")
         sys.exit(0)
 
     def error_handler(*args):
-    	print "Error activating device: %s" % args
+        sys.stderr.write("Error activating device: %s\n" % args)
         sys.exit(1)
 
     bus = dbus.SystemBus()
@@ -114,7 +101,7 @@ def activate_connection(connection_path, device_path):
     iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManager')
     iface.ActivateConnection('org.freedesktop.NetworkManager',
                              connection_path,
-                             device_path, 
+                             device_path,
                              "/",
                              reply_handler=reply_handler,
                              error_handler=error_handler)
@@ -126,26 +113,26 @@ if UID != 0:
 
 # Are we configured?
 if not len(CONNECTION_UUID):
-    print "missing connection UUID"
+    print("missing connection UUID")
     sys.exit(0)
 
 connection_path = get_connection_by_uuid(CONNECTION_UUID)
 if not connection_path:
     # Configured VPN connection is not known to NM, check CONNECTION_UUID.
-    print "couldn't find the connection"
+    print("couldn't find the connection")
     sys.exit(1)
 
 device_path = get_wifi_device_path()
 if not device_path:
-    print "no wifi device found"
+    print("no Wi-Fi device found")
     sys.exit(1)
 
 # Is it already activated?
 if get_active_connection_path(CONNECTION_UUID):
-    print "already connected"
+    print("already connected")
     sys.exit(0)
 
-print "Activating connection..."
+print("Activating connection...")
 activate_connection(connection_path, device_path)
 loop = gobject.MainLoop()
 loop.run()

@@ -1,0 +1,129 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
+
+<!--
+  nmtui(1) manual page
+
+  Copyright 2010 - 2016 Red Hat, Inc.
+
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. You may obtain a copy of the GNU Free Documentation License
+  from the Free Software Foundation by visiting their Web site or by
+  writing to:
+
+  Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<refentry id='nmtui'>
+
+  <refentryinfo>
+    <title>nmtui</title>
+    <author>NetworkManager developers</author>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>nmtui</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">General Commands Manual</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>nmtui</refname>
+    <refpurpose>Text User Interface for controlling NetworkManager</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv id='synopsis'>
+    <cmdsynopsis>
+      <command><group choice='plain'>
+        <arg choice='plain'>nmtui-edit</arg>
+        <arg choice='plain'>nmtui edit</arg>
+      </group></command>
+      <arg choice='plain'>
+        <group choice='req'>
+          <arg choice='plain'><replaceable>name</replaceable></arg>
+          <arg choice='plain'><replaceable>id</replaceable></arg>
+        </group>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command><group choice='plain'>
+        <arg choice='plain'>nmtui-connect</arg>
+        <arg choice='plain'>nmtui connect</arg>
+      </group></command>
+      <arg choice='plain'>
+        <group choice='req'>
+          <arg choice='plain'><replaceable>name</replaceable></arg>
+          <arg choice='plain'><replaceable>uuid</replaceable></arg>
+          <arg choice='plain'><replaceable>device</replaceable></arg>
+          <arg choice='plain'><replaceable>SSID</replaceable></arg>
+        </group>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command><group choice='plain'>
+        <arg choice='plain'>nmtui-hostname</arg>
+        <arg choice='plain'>nmtui hostname</arg>
+      </group></command>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id='description'><title>Description</title>
+    <para><command>nmtui</command> is a curses‐based TUI application for
+    interacting with NetworkManager. When starting <command>nmtui</command>, the
+    user is prompted to choose the activity to perform unless it was specified as
+    the first argument.</para>
+
+    <para>The supported activities are:</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>edit</option></term>
+        <listitem>
+          <para>Show a connection editor that supports adding, modifying, viewing and
+          deleting connections. It provides similar functionality as
+          <command>nm-connection-editor</command>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connect</option></term>
+        <listitem>
+          <para>Show a list of available connections, with the option to activate or
+          deactivate them. It provides similar functionality as
+          <command>nm-applet</command>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>hostname</option></term>
+        <listitem>
+          <para>Set the system hostname.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+    <para>Corresponding to above activities, <command>nmtui</command> also comes
+    with binaries named <command>nmtui-edit</command>,
+    <command>nmtui-connect</command>, and <command>nmtui-hostname</command> to skip
+    the selection of the activities.</para>
+  </refsect1>
+
+  <refsect1 id='see_also'><title>See Also</title>
+    <para><link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+    <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+    <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>.</para>
+  </refsect1>
+
+</refentry>

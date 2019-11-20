@@ -1,0 +1,199 @@
+###############################################################################
+# examples/C/glib
+###############################################################################
+
+examples_C_glib_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/libnm \
+	-I$(top_builddir)/libnm \
+	$(GLIB_CFLAGS)
+
+examples_C_glib_cppflags_gdbus = $(examples_C_glib_cppflags)
+examples_C_glib_cppflags_libnm = $(examples_C_glib_cppflags)
+
+check_programs_norun += \
+	examples/C/glib/add-connection-gdbus \
+	examples/C/glib/add-connection-libnm \
+	examples/C/glib/get-active-connections-gdbus \
+	examples/C/glib/get-ap-info-libnm \
+	examples/C/glib/list-connections-gdbus \
+	examples/C/glib/list-connections-libnm \
+	examples/C/glib/monitor-nm-running-gdbus \
+	examples/C/glib/monitor-nm-state-gdbus
+
+examples_C_glib_add_connection_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_add_connection_gdbus_LDADD = \
+	$(GLIB_LIBS) \
+	$(UUID_LIBS)
+$(examples_C_glib_add_connection_gdbus_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+examples_C_glib_add_connection_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_add_connection_libnm_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+$(examples_C_glib_add_connection_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+examples_C_glib_get_active_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_get_active_connections_gdbus_LDADD = \
+	$(GLIB_LIBS)
+$(examples_C_glib_get_active_connections_gdbus_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+examples_C_glib_get_ap_info_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_get_ap_info_libnm_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+$(examples_C_glib_get_ap_info_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+examples_C_glib_list_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_list_connections_gdbus_LDADD = \
+	$(GLIB_LIBS)
+
+examples_C_glib_list_connections_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_list_connections_libnm_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+$(examples_C_glib_list_connections_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+examples_C_glib_monitor_nm_running_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_monitor_nm_running_gdbus_LDADD = \
+	$(GLIB_LIBS)
+
+examples_C_glib_monitor_nm_state_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_monitor_nm_state_gdbus_LDADD = \
+	$(GLIB_LIBS)
+
+EXTRA_DIST += \
+	examples/C/glib/meson.build
+
+###############################################################################
+# examples/C/qt
+###############################################################################
+
+if WITH_QT
+
+examples_C_qt_cppflags = \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(builddir)/examples/C/qt \
+	$(DBUS_CFLAGS) \
+	$(QT_CFLAGS)
+
+check_programs_norun += \
+	examples/C/qt/add-connection-wired \
+	examples/C/qt/list-connections \
+	examples/C/qt/change-ipv4-addresses \
+	examples/C/qt/monitor-nm-running
+
+examples_C_qt_add_connection_wired_SOURCES = examples/C/qt/add-connection-wired.cpp
+examples_C_qt_add_connection_wired_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_add_connection_wired_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples_C_qt_list_connections_SOURCES = examples/C/qt/list-connections.cpp
+examples_C_qt_list_connections_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_list_connections_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples_C_qt_change_ipv4_addresses_SOURCES = examples/C/qt/change-ipv4-addresses.cpp
+examples_C_qt_change_ipv4_addresses_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_change_ipv4_addresses_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples_C_qt_monitor_nm_running_SOURCES = examples/C/qt/monitor-nm-running.cpp
+examples_C_qt_monitor_nm_running_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_monitor_nm_running_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples/C/qt/monitor-nm-running.moc: examples/C/qt/monitor-nm-running.cpp
+	$(AM_V_GEN) $(MOC) -i $< -o $@
+
+$(examples_C_qt_monitor_nm_running_OBJECTS): examples/C/qt/monitor-nm-running.moc
+
+CLEANFILES += \
+	examples/C/qt/monitor-nm-running.moc
+
+endif
+
+EXTRA_DIST += \
+	examples/C/qt/add-connection-wired.cpp \
+	examples/C/qt/list-connections.cpp \
+	examples/C/qt/change-ipv4-addresses.cpp \
+	examples/C/qt/monitor-nm-running.cpp \
+	examples/C/qt/meson.build
+
+###############################################################################
+# examples
+###############################################################################
+
+EXTRA_DIST += \
+	examples/dispatcher/10-ifcfg-rh-routes.sh \
+	examples/dispatcher/70-wifi-wired-exclusive.sh \
+	\
+	examples/js/get_ips.js \
+	\
+	examples/lua/lgi/add-connection.lua \
+	examples/lua/lgi/list-connections.lua \
+	examples/lua/lgi/list-devices.lua \
+	examples/lua/lgi/show-wifi-networks.lua \
+	examples/lua/lgi/get-basic-nm-info.lua \
+	examples/lua/lgi/get-ips.lua \
+	examples/lua/lgi/change-vpn-username.lua \
+	examples/lua/lgi/deactivate-all.lua \
+	\
+	examples/nm-conf.d/30-anon.conf \
+	examples/nm-conf.d/31-mac-addr-change.conf \
+	\
+	examples/python/dbus/nm-state.py \
+	examples/python/dbus/add-connection.py \
+	examples/python/dbus/add-connection-compat.py \
+	examples/python/dbus/add-wifi-eap-connection.py \
+	examples/python/dbus/add-wifi-psk-connection.py \
+	examples/python/dbus/vpn.py \
+	examples/python/dbus/update-secrets.py \
+	examples/python/dbus/list-connections.py \
+	examples/python/dbus/show-bssids.py \
+	examples/python/dbus/disconnect-device.py \
+	examples/python/dbus/get-active-connection-uuids.py \
+	examples/python/dbus/list-devices.py \
+	examples/python/dbus/update-ip4-method.py \
+	examples/python/dbus/is-wwan-default.py \
+	examples/python/dbus/wifi-hotspot.py \
+	examples/python/dbus/create-bond.py \
+	examples/python/dbus/wifi-active-ap.py\
+	\
+	examples/python/gi/README \
+	examples/python/gi/add_connection.py \
+	examples/python/gi/deactivate-all.py \
+	examples/python/gi/device-state-ip4config.py \
+	examples/python/gi/firewall-zone.py \
+	examples/python/gi/get-active-connections.py \
+	examples/python/gi/get_ips.py \
+	examples/python/gi/list-connections.py \
+	examples/python/gi/nm-add-connection2.py \
+	examples/python/gi/nm-connection-update-stable-id.py \
+	examples/python/gi/nm-update2.py \
+	examples/python/gi/nm-wg-set \
+	examples/python/gi/setting-user-data.py \
+	examples/python/gi/show-wifi-networks.py \
+	examples/python/gi/update-ip4-method.py \
+	\
+	examples/python/python-networkmanager/README \
+	\
+	examples/ruby/add-connection.rb \
+	examples/ruby/get-basic-nm-info.rb \
+	examples/ruby/list-devices.rb \
+	\
+	examples/shell/nm-logging.sh \
+	examples/shell/get-hostname.sh \
+	examples/shell/list-devices.sh \
+	examples/shell/disconnect-device.sh \
+	examples/shell/active-wifi.sh \
+	\
+	$(NULL)

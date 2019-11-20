@@ -1,56 +1,24 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager -- Network link manager
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+// SPDX-License-Identifier: GPL-2.0+
+/*
  * Copyright (C) 2012 Aleksander Morgado <aleksander@gnu.org>
  */
 
-#include <glib/gi18n.h>
-#include <string.h>
-#include <libmm-glib.h>
+#include "nm-default.h"
 
 #include "nm-modem-broadband.h"
+#include "nm-service-providers.h"
+
+#include <arpa/inet.h>
+#include <libmm-glib.h>
+
 #include "nm-core-internal.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
-#include "nm-device-private.h"
-#include "nm-platform.h"
+#include "devices/nm-device-private.h"
+#include "platform/nm-platform.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 
-G_DEFINE_TYPE (NMModemBroadband, nm_modem_broadband, NM_TYPE_MODEM)
-
-struct _NMModemBroadbandPrivate {
-	/* The modem object from dbus */
-	MMObject *modem_object;
-	/* Per-interface objects */
-	MMModem *modem_iface;
-	MMModemSimple *simple_iface;
-
-	/* Connection setup */
-	MMSimpleConnectProperties *connect_properties;
-	MMBearer *bearer;
-	MMBearerIpConfig *ipv4_config;
-	MMBearerIpConfig *ipv6_config;
-
-	guint32 pin_tries;
-};
-
-enum {
-	PROP_0,
-	PROP_MODEM,
-};
+#define NM_MODEM_BROADBAND_MODEM "modem"
 
 #define MODEM_CAPS_3GPP(caps) (caps & (MM_MODEM_CAPABILITY_GSM_UMTS |    \
                                        MM_MODEM_CAPABILITY_LTE |         \
@@ -63,8 +31,104 @@ enum {
 
 /*****************************************************************************/
 
+typedef enum {
+	CONNECT_STEP_FIRST,
+	CONNECT_STEP_WAIT_FOR_SIM,
+	CONNECT_STEP_UNLOCK,
+	CONNECT_STEP_WAIT_FOR_READY,
+	CONNECT_STEP_CONNECT,
+	CONNECT_STEP_LAST,
+} ConnectStep;
+
+typedef struct {
+	NMModemBroadband *self;
+	ConnectStep step;
+
+	MMModemCapability caps;
+	NMConnection *connection;
+	GCancellable *cancellable;
+	MMSimpleConnectProperties *connect_properties;
+	GArray *ip_types;
+	guint ip_types_i;
+	guint ip_type_tries;
+	GError *first_error;
+} ConnectContext;
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MODEM,
+);
+
+typedef struct {
+	/* The modem object from dbus */
+	MMObject *modem_object;
+	/* Per-interface objects */
+	MMModem *modem_iface;
+	MMModem3gpp *modem_3gpp_iface;
+	MMModemSimple *simple_iface;
+	MMSim *sim_iface;
+
+	/* Connection setup */
+	ConnectContext *ctx;
+
+	MMBearer *bearer;
+	MMBearerIpConfig *ipv4_config;
+	MMBearerIpConfig *ipv6_config;
+
+	guint idle_id_ip4;
+	guint idle_id_ip6;
+
+	guint32 pin_tries;
+} NMModemBroadbandPrivate;
+
+struct _NMModemBroadband {
+	NMModem parent;
+	NMModemBroadbandPrivate _priv;
+};
+
+struct _NMModemBroadbandClass {
+	NMModemClass parent;
+};
+
+G_DEFINE_TYPE (NMModemBroadband, nm_modem_broadband, NM_TYPE_MODEM)
+
+#define NM_MODEM_BROADBAND_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMModemBroadband, NM_IS_MODEM_BROADBAND)
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN      LOGD_MB
+#define _NMLOG_PREFIX_NAME "modem-broadband"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel _level = (level); \
+        \
+        if (nm_logging_enabled (_level, (_NMLOG_DOMAIN))) { \
+            NMModemBroadband *const __self = (self); \
+            char __prefix_name[128]; \
+            const char *__uid; \
+            \
+            _nm_log (_level, (_NMLOG_DOMAIN), 0, NULL, \
+                     ((__self && __self->_priv.ctx) \
+                         ? nm_connection_get_uuid (__self->_priv.ctx->connection) \
+                         : NULL), \
+                     "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     (__self \
+                         ? ({ \
+                                ((__uid = nm_modem_get_uid ((NMModem *) __self)) \
+                                    ? nm_sprintf_buf (__prefix_name, "[%s]", __uid) \
+                                    : "(null)"); \
+                            }) \
+                         : "") \
+                     _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
+
 static NMDeviceStateReason
-translate_mm_error (GError *error)
+translate_mm_error (NMModemBroadband *self, GError *error)
 {
 	NMDeviceStateReason reason;
 
@@ -96,7 +160,7 @@ translate_mm_error (GError *error)
 		reason = NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT;
 	else {
 		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
-		nm_log_dbg (LOGD_MB, "unmapped error detected: '%s'", error->message);
+		_LOGD ("unmapped error detected: '%s'", error->message);
 		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 	}
 
@@ -117,7 +181,7 @@ get_capabilities (NMModem *_self,
 
 	/* For now, we don't care about the capability combinations, just merge all
 	 * combinations in a single mask */
-	if (mm_modem_get_supported_capabilities (self->priv->modem_iface, &supported, &n_supported)) {
+	if (mm_modem_get_supported_capabilities (self->_priv.modem_iface, &supported, &n_supported)) {
 		guint i;
 
 		for (i = 0; i < n_supported; i++)
@@ -127,7 +191,7 @@ get_capabilities (NMModem *_self,
 	}
 
 	*modem_caps = (NMDeviceModemCapabilities) all_supported;
-	*current_caps = (NMDeviceModemCapabilities) mm_modem_get_current_capabilities (self->priv->modem_iface);
+	*current_caps = (NMDeviceModemCapabilities) mm_modem_get_current_capabilities (self->_priv.modem_iface);
 }
 
 static gboolean
@@ -136,12 +200,13 @@ owns_port (NMModem *_self, const char *iface)
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	const MMModemPortInfo *ports = NULL;
 	guint n_ports = 0, i;
-	gboolean owns = FALSE;
 
-	mm_modem_peek_ports (self->priv->modem_iface, &ports, &n_ports);
-	for (i = 0; i < n_ports && !owns; i++)
-		owns = (g_strcmp0 (iface, ports[i].name) == 0);
-	return owns;
+	mm_modem_peek_ports (self->_priv.modem_iface, &ports, &n_ports);
+	for (i = 0; i < n_ports; i++) {
+		if (nm_streq0 (iface, ports[i].name))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -151,7 +216,7 @@ ask_for_pin (NMModemBroadband *self)
 {
 	guint32 tries;
 
-	tries = self->priv->pin_tries++;
+	tries = self->_priv.pin_tries++;
 	nm_modem_get_secrets (NM_MODEM (self),
 	                      NM_SETTING_GSM_SETTING_NAME,
 	                      tries ? TRUE : FALSE,
@@ -173,117 +238,48 @@ get_bearer_ip_method (MMBearerIpConfig *config)
 	return NM_MODEM_IP_METHOD_UNKNOWN;
 }
 
-static void
-connect_ready (MMModemSimple *simple_iface,
-               GAsyncResult *res,
-               NMModemBroadband *self)
-{
-	GError *error = NULL;
-	NMModemIPMethod ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
-	NMModemIPMethod ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
-
-	g_clear_object (&self->priv->connect_properties);
-
-	self->priv->bearer = mm_modem_simple_connect_finish (simple_iface, res, &error);
-	if (!self->priv->bearer) {
-		if (g_error_matches (error,
-		                     MM_MOBILE_EQUIPMENT_ERROR,
-		                     MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
-			(g_error_matches (error,
-		                          MM_CORE_ERROR,
-		                          MM_CORE_ERROR_UNAUTHORIZED) &&
-			 mm_modem_get_unlock_required (self->priv->modem_iface) == MM_MODEM_LOCK_SIM_PIN)) {
-			/* Request PIN */
-			ask_for_pin (self);
-		} else {
-			/* Strip remote error info before logging it */
-			if (g_dbus_error_is_remote_error (error))
-				g_dbus_error_strip_remote_error (error);
-
-			nm_log_warn (LOGD_MB, "(%s) failed to connect modem: %s",
-			             nm_modem_get_uid (NM_MODEM (self)),
-			             error && error->message ? error->message : "(unknown)");
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
-		}
-
-		g_clear_error (&error);
-		g_object_unref (self);
-		return;
-	}
-
-	/* Grab IP configurations */
-	self->priv->ipv4_config = mm_bearer_get_ipv4_config (self->priv->bearer);
-	if (self->priv->ipv4_config)
-		ip4_method = get_bearer_ip_method (self->priv->ipv4_config);
-
-	self->priv->ipv6_config = mm_bearer_get_ipv6_config (self->priv->bearer);
-	if (self->priv->ipv6_config)
-		ip6_method = get_bearer_ip_method (self->priv->ipv6_config);
-
-	if (ip4_method == NM_MODEM_IP_METHOD_UNKNOWN &&
-	    ip6_method == NM_MODEM_IP_METHOD_UNKNOWN) {
-		nm_log_warn (LOGD_MB, "(%s) failed to connect modem: invalid bearer IP configuration",
-		             nm_modem_get_uid (NM_MODEM (self)));
-
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                             "invalid bearer IP configuration");
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, error);
-		g_error_free (error);
-		g_object_unref (self);
-		return;
-	}
-
-	g_object_set (self,
-	              NM_MODEM_DATA_PORT,  mm_bearer_get_interface (self->priv->bearer),
-	              NM_MODEM_IP4_METHOD, ip4_method,
-	              NM_MODEM_IP6_METHOD, ip6_method,
-	              NM_MODEM_IP_TIMEOUT, mm_bearer_get_ip_timeout (self->priv->bearer),
-	              NULL);
-
-	g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
-	g_object_unref (self);
-}
-
 static MMSimpleConnectProperties *
 create_cdma_connect_properties (NMConnection *connection)
 {
-	NMSettingCdma *setting;
 	MMSimpleConnectProperties *properties;
-	const gchar *str;
 
-	setting = nm_connection_get_setting_cdma (connection);
 	properties = mm_simple_connect_properties_new ();
 
-	str = nm_setting_cdma_get_number (setting);
-	if (str)
-		mm_simple_connect_properties_set_number (properties, str);
+#if !MM_CHECK_VERSION (1, 9, 1)
+	{
+		NMSettingCdma *setting;
+		const char *str;
+
+		setting = nm_connection_get_setting_cdma (connection);
+		str = nm_setting_cdma_get_number (setting);
+		if (str)
+			mm_simple_connect_properties_set_number (properties, str);
+	}
+#endif
 
 	return properties;
 }
 
 static MMSimpleConnectProperties *
-create_gsm_connect_properties (NMModem *modem,
-                               NMConnection *connection,
-                               GError **error)
+create_gsm_connect_properties (NMConnection *connection,
+                               const char *apn,
+                               const char *username,
+                               const char *password)
 {
 	NMSettingGsm *setting;
 	NMSettingPpp *s_ppp;
 	MMSimpleConnectProperties *properties;
-	const gchar *str;
-	NMModemIPType ip_type;
+	const char *str;
 
 	setting = nm_connection_get_setting_gsm (connection);
+
 	properties = mm_simple_connect_properties_new ();
 
-	/* TODO: not needed */
-	str = nm_setting_gsm_get_number (setting);
-	if (str)
-		mm_simple_connect_properties_set_number (properties, str);
-
-	/* Blank APN ("") means the default subscription APN */
-	str = nm_setting_gsm_get_apn (setting);
-	mm_simple_connect_properties_set_apn (properties, str ? str : "");
+	mm_simple_connect_properties_set_apn (properties, apn ?: "");
+	if (username)
+		mm_simple_connect_properties_set_user (properties, username);
+	if (password)
+		mm_simple_connect_properties_set_password (properties, password);
 
 	str = nm_setting_gsm_get_network_id (setting);
 	if (str)
@@ -292,14 +288,6 @@ create_gsm_connect_properties (NMModem *modem,
 	str = nm_setting_gsm_get_pin (setting);
 	if (str)
 		mm_simple_connect_properties_set_pin (properties, str);
-
-	str = nm_setting_gsm_get_username (setting);
-	if (str)
-		mm_simple_connect_properties_set_user (properties, str);
-
-	str = nm_setting_gsm_get_password (setting);
-	if (str)
-		mm_simple_connect_properties_set_password (properties, str);
 
 	/* Roaming */
 	if (nm_setting_gsm_get_home_only (setting))
@@ -326,67 +314,377 @@ create_gsm_connect_properties (NMModem *modem,
 		mm_simple_connect_properties_set_allowed_auth (properties, allowed_auth);
 	}
 
-	/* Determine IP types to use when connecting */
-	ip_type = nm_modem_get_connection_ip_type (modem, connection, error);
-	if (ip_type == NM_MODEM_IP_TYPE_UNKNOWN) {
-		g_object_unref (properties);
-		return NULL;
-	}
-
-	if (ip_type == NM_MODEM_IP_TYPE_IPV4)
-		mm_simple_connect_properties_set_ip_type (properties, MM_BEARER_IP_FAMILY_IPV4);
-	else if (ip_type == NM_MODEM_IP_TYPE_IPV6)
-		mm_simple_connect_properties_set_ip_type (properties, MM_BEARER_IP_FAMILY_IPV6);
-	else if (ip_type == NM_MODEM_IP_TYPE_IPV4V6)
-		mm_simple_connect_properties_set_ip_type (properties, MM_BEARER_IP_FAMILY_IPV4V6);
-	else
-		g_assert_not_reached ();
-
 	return properties;
 }
 
-static NMActStageReturn
-act_stage1_prepare (NMModem *_self,
-                    NMConnection *connection,
-                    NMDeviceStateReason *reason)
+static void
+connect_context_clear (NMModemBroadband *self)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
-	MMModemCapability caps;
-	GError *error = NULL;
+	if (self->_priv.ctx) {
+		ConnectContext *ctx = self->_priv.ctx;
 
-	g_clear_object (&self->priv->connect_properties);
-
-	caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
-	if (MODEM_CAPS_3GPP (caps))
-		self->priv->connect_properties = create_gsm_connect_properties (_self, connection, &error);
-	else if (MODEM_CAPS_3GPP2 (caps))
-		self->priv->connect_properties = create_cdma_connect_properties (connection);
-	else {
-		nm_log_warn (LOGD_MB, "(%s) not a mobile broadband modem",
-					 nm_modem_get_uid (NM_MODEM (self)));
-		*reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		g_clear_error (&ctx->first_error);
+		g_clear_pointer (&ctx->ip_types, g_array_unref);
+		nm_clear_g_cancellable (&ctx->cancellable);
+		g_clear_object (&ctx->connection);
+		g_clear_object (&ctx->connect_properties);
+		g_clear_object (&ctx->self);
+		g_slice_free (ConnectContext, ctx);
+		self->_priv.ctx = NULL;
 	}
+}
+
+static void connect_context_step (NMModemBroadband *self);
+
+static void
+connect_ready (MMModemSimple *simple_iface,
+               GAsyncResult *res,
+               NMModemBroadband *self)
+{
+	ConnectContext *ctx;
+	GError *error = NULL;
+	NMModemIPMethod ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
+	NMModemIPMethod ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
+	MMBearer *bearer;
+
+	bearer = mm_modem_simple_connect_finish (simple_iface, res, &error);
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		g_error_free (error);
+		return;
+	}
+
+	ctx = self->_priv.ctx;
+
+	if (!ctx)
+		return;
+
+	self->_priv.bearer = bearer;
+
+	if (!self->_priv.bearer) {
+		if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
+		    (g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_UNAUTHORIZED) &&
+		     mm_modem_get_unlock_required (self->_priv.modem_iface) == MM_MODEM_LOCK_SIM_PIN)) {
+			g_error_free (error);
+
+			/* Request PIN */
+			ask_for_pin (self);
+			connect_context_clear (self);
+			return;
+		}
+
+		/* Save the error, if it's the first one */
+		if (!ctx->first_error) {
+			/* Strip remote error info before saving it */
+			if (g_dbus_error_is_remote_error (error))
+				g_dbus_error_strip_remote_error (error);
+			ctx->first_error = error;
+		} else
+			g_clear_error (&error);
+
+		if (   ctx->ip_type_tries == 0
+		    && g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_RETRY)) {
+			/* Try one more time */
+			ctx->ip_type_tries++;
+		} else {
+			/* If the modem/provider lies and the IP type we tried isn't supported,
+			 * retry with the next one, if any.
+			 */
+			ctx->ip_types_i++;
+			ctx->ip_type_tries = 0;
+		}
+		connect_context_step (self);
+		return;
+	}
+
+	/* Grab IP configurations */
+	self->_priv.ipv4_config = mm_bearer_get_ipv4_config (self->_priv.bearer);
+	if (self->_priv.ipv4_config)
+		ip4_method = get_bearer_ip_method (self->_priv.ipv4_config);
+
+	self->_priv.ipv6_config = mm_bearer_get_ipv6_config (self->_priv.bearer);
+	if (self->_priv.ipv6_config)
+		ip6_method = get_bearer_ip_method (self->_priv.ipv6_config);
+
+	if (!nm_modem_set_data_port (NM_MODEM (self),
+	                             NM_PLATFORM_GET,
+	                             mm_bearer_get_interface (self->_priv.bearer),
+	                             ip4_method,
+	                             ip6_method,
+	                             mm_bearer_get_ip_timeout (self->_priv.bearer),
+	                             &error)) {
+		_LOGW ("failed to connect modem: %s", error->message);
+		g_error_free (error);
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		connect_context_clear (self);
+		return;
+	}
+
+	ctx->step++;
+	connect_context_step (self);
+}
+
+static void
+send_pin_ready (MMSim *sim, GAsyncResult *result, NMModemBroadband *self)
+{
+	gs_free_error GError *error = NULL;
+
+	mm_sim_send_pin_finish (sim, result, &error);
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	if (!self->_priv.ctx || self->_priv.ctx->step != CONNECT_STEP_UNLOCK)
+		g_return_if_reached ();
 
 	if (error) {
-		nm_log_warn (LOGD_MB, "(%s): Failed to connect '%s': %s",
-		             nm_modem_get_uid (NM_MODEM (self)),
-		             nm_connection_get_id (connection),
-		             error->message);
-		g_clear_error (&error);
-		*reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
+		    (g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_UNAUTHORIZED) &&
+		     mm_modem_get_unlock_required (self->_priv.modem_iface) == MM_MODEM_LOCK_SIM_PIN))
+			ask_for_pin (self);
+		else
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, translate_mm_error (self, error));
+		return;
 	}
 
-	if (!self->priv->simple_iface)
-		self->priv->simple_iface = mm_object_get_modem_simple (self->priv->modem_object);
+	self->_priv.ctx->step++;
+	connect_context_step (self);
+}
 
-	g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (self->priv->simple_iface), MODEM_CONNECT_TIMEOUT_SECS * 1000);
-	mm_modem_simple_connect (self->priv->simple_iface,
-	                         self->priv->connect_properties,
-	                         NULL,
-	                         (GAsyncReadyCallback)connect_ready,
-	                         g_object_ref (self));
+static void
+find_gsm_apn_cb (const char *apn,
+                 const char *username,
+                 const char *password,
+                 const char *gateway,
+                 const char *auth_method,
+                 const GSList *dns,
+                 GError *error,
+                 gpointer user_data)
+{
+	NMModemBroadband *self = user_data;
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
+	ConnectContext *ctx = priv->ctx;
+
+	if (error) {
+		_LOGW ("failed to connect '%s': APN not found: %s",
+		       nm_connection_get_id (ctx->connection), error->message);
+
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
+		connect_context_clear (self);
+		return;
+	}
+
+	/* Blank APN ("") means the default subscription APN */
+	ctx->connect_properties = create_gsm_connect_properties (ctx->connection,
+	                                                         apn,
+	                                                         username,
+	                                                         password);
+	g_return_if_fail (ctx->connect_properties);
+	connect_context_step (self);
+}
+
+static gboolean
+try_create_connect_properties (NMModemBroadband *self)
+{
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
+	ConnectContext *ctx = priv->ctx;
+
+	if (MODEM_CAPS_3GPP (ctx->caps)) {
+		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (ctx->connection);
+
+		if (!s_gsm || nm_setting_gsm_get_auto_config (s_gsm)) {
+			gs_unref_object MMModem3gpp *modem_3gpp = NULL;
+			const char *network_id = NULL;
+
+			s_gsm = nm_connection_get_setting_gsm (ctx->connection);
+			if (s_gsm)
+				network_id = nm_setting_gsm_get_network_id (s_gsm);
+			if (!network_id) {
+				if (mm_modem_get_state (self->_priv.modem_iface) < MM_MODEM_STATE_REGISTERED)
+					return FALSE;
+				modem_3gpp = mm_object_get_modem_3gpp (priv->modem_object);
+				network_id = mm_modem_3gpp_get_operator_code (modem_3gpp);
+			}
+			if (!network_id) {
+				_LOGW ("failed to connect '%s': unable to determine the network id",
+				       nm_connection_get_id (ctx->connection));
+				goto out;
+			}
+
+			nm_service_providers_find_gsm_apn (MOBILE_BROADBAND_PROVIDER_INFO_DATABASE,
+			                                   network_id,
+			                                   ctx->cancellable,
+			                                   find_gsm_apn_cb,
+			                                   self);
+		} else {
+			ctx->connect_properties = create_gsm_connect_properties (ctx->connection,
+			                                                         nm_setting_gsm_get_apn (s_gsm),
+			                                                         nm_setting_gsm_get_username (s_gsm),
+			                                                         nm_setting_gsm_get_password (s_gsm));
+			g_return_val_if_fail (ctx->connect_properties, TRUE);
+		}
+
+		return TRUE;
+	} else if (MODEM_CAPS_3GPP2 (ctx->caps)) {
+		ctx->connect_properties = create_cdma_connect_properties (ctx->connection);
+		g_return_val_if_fail (ctx->connect_properties, FALSE);
+		return TRUE;
+	} else {
+		_LOGW ("failed to connect '%s': not a mobile broadband modem",
+		       nm_connection_get_id (ctx->connection));
+	}
+
+out:
+	nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+	connect_context_clear (self);
+	return TRUE;
+}
+
+static void
+connect_context_step (NMModemBroadband *self)
+{
+	ConnectContext *ctx = self->_priv.ctx;
+
+	switch (ctx->step) {
+	case CONNECT_STEP_FIRST:
+		ctx->step++;
+		/* fall through */
+
+	case CONNECT_STEP_WAIT_FOR_SIM:
+		if (MODEM_CAPS_3GPP (ctx->caps) && !self->_priv.sim_iface) {
+			/* Have to wait for the SIM to show up */
+			break;
+		}
+		ctx->step++;
+		/* fall through */
+
+	case CONNECT_STEP_UNLOCK:
+		if (   MODEM_CAPS_3GPP (ctx->caps)
+		    && mm_modem_get_unlock_required (self->_priv.modem_iface) == MM_MODEM_LOCK_SIM_PIN) {
+			NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (ctx->connection);
+			const char *pin = nm_setting_gsm_get_pin (s_gsm);
+
+			/* If we have a PIN already, send it.  If we don't, get it. */
+			if (pin) {
+				mm_sim_send_pin (self->_priv.sim_iface,
+				                 pin,
+				                 ctx->cancellable,
+				                 (GAsyncReadyCallback) send_pin_ready,
+				                 self);
+			} else {
+				ask_for_pin (self);
+			}
+			break;
+		}
+		ctx->step++;
+		/* fall through */
+	case CONNECT_STEP_WAIT_FOR_READY: {
+		GError *error = NULL;
+
+		if (mm_modem_get_state (self->_priv.modem_iface) <= MM_MODEM_STATE_LOCKED)
+			break;
+
+		if (!try_create_connect_properties (self))
+			break;
+
+		/* Build up list of IP types that we need to use in the retries */
+		ctx->ip_types = nm_modem_get_connection_ip_type (NM_MODEM (self), ctx->connection, &error);
+		if (!ctx->ip_types) {
+			_LOGW ("failed to connect '%s': %s",
+			       nm_connection_get_id (ctx->connection),
+			       error->message);
+			g_clear_error (&error);
+
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+			connect_context_clear (self);
+			break;
+		}
+
+		ctx->step++;
+	}
+		/* fall through */
+	case CONNECT_STEP_CONNECT:
+		if (!ctx->connect_properties)
+			break;
+
+		if (ctx->ip_types_i < ctx->ip_types->len) {
+			NMModemIPType current;
+
+			current = g_array_index (ctx->ip_types, NMModemIPType, ctx->ip_types_i);
+
+			if (current == NM_MODEM_IP_TYPE_IPV4)
+				mm_simple_connect_properties_set_ip_type (ctx->connect_properties, MM_BEARER_IP_FAMILY_IPV4);
+			else if (current == NM_MODEM_IP_TYPE_IPV6)
+				mm_simple_connect_properties_set_ip_type (ctx->connect_properties, MM_BEARER_IP_FAMILY_IPV6);
+			else if (current == NM_MODEM_IP_TYPE_IPV4V6)
+				mm_simple_connect_properties_set_ip_type (ctx->connect_properties, MM_BEARER_IP_FAMILY_IPV4V6);
+			else
+				g_return_if_reached ();
+
+			_nm_modem_set_apn (NM_MODEM (self), mm_simple_connect_properties_get_apn (ctx->connect_properties));
+
+			_LOGD ("launching connection with ip type '%s' (try %d)",
+			       nm_modem_ip_type_to_string (current),
+			       ctx->ip_type_tries + 1);
+
+			mm_modem_simple_connect (self->_priv.simple_iface,
+			                         ctx->connect_properties,
+			                         ctx->cancellable,
+			                         (GAsyncReadyCallback) connect_ready,
+			                         self);
+			break;
+		}
+
+		ctx->step++;
+		/* fall through */
+
+	case CONNECT_STEP_LAST:
+		if (self->_priv.ipv4_config || self->_priv.ipv6_config)
+			nm_modem_emit_prepare_result (NM_MODEM (self), TRUE, NM_DEVICE_STATE_REASON_NONE);
+		else {
+			/* If we have a saved error from a previous attempt, use it */
+			if (!ctx->first_error)
+				ctx->first_error = g_error_new_literal (NM_DEVICE_ERROR,
+				                                        NM_DEVICE_ERROR_INVALID_CONNECTION,
+				                                        "invalid bearer IP configuration");
+
+			_LOGW ("failed to connect modem: %s",
+			       ctx->first_error->message);
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, translate_mm_error (self, ctx->first_error));
+		}
+
+		connect_context_clear (self);
+		break;
+	}
+}
+
+static NMActStageReturn
+modem_act_stage1_prepare (NMModem *_self,
+                          NMConnection *connection,
+                          NMDeviceStateReason *out_failure_reason)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+
+	/* Make sure we can get the Simple interface from the modem */
+	if (!self->_priv.simple_iface) {
+		self->_priv.simple_iface = mm_object_get_modem_simple (self->_priv.modem_object);
+		if (!self->_priv.simple_iface) {
+			_LOGW ("cannot access the Simple mobile broadband modem interface");
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+	}
+
+	connect_context_clear (self);
+
+	/* Allocate new context for this connect stage attempt */
+	self->_priv.ctx = g_slice_new0 (ConnectContext);
+	self->_priv.ctx->caps = mm_modem_get_current_capabilities (self->_priv.modem_iface);
+	self->_priv.ctx->cancellable = g_cancellable_new ();
+	self->_priv.ctx->connection = g_object_ref (connection);
+
+	g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (self->_priv.simple_iface), MODEM_CONNECT_TIMEOUT_SECS * 1000);
+	connect_context_step (self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -394,60 +692,57 @@ act_stage1_prepare (NMModem *_self,
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible (NMModem *_self, NMConnection *connection)
+check_connection_compatible_with_modem (NMModem *_self, NMConnection *connection, GError **error)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	MMModemCapability modem_caps;
-	NMSettingConnection *s_con;
 
-	modem_caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	modem_caps = mm_modem_get_current_capabilities (self->_priv.modem_iface);
 
 	if (MODEM_CAPS_3GPP (modem_caps)) {
-		NMSettingGsm *s_gsm;
-
-		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                  NM_SETTING_GSM_SETTING_NAME))
-			return FALSE;
-
-		s_gsm = nm_connection_get_setting_gsm (connection);
-		if (!s_gsm)
+		if (!_nm_connection_check_main_setting (connection, NM_SETTING_GSM_SETTING_NAME, error))
 			return FALSE;
 
 		return TRUE;
 	}
 
 	if (MODEM_CAPS_3GPP2 (modem_caps)) {
-		NMSettingCdma *s_cdma;
-
-		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                  NM_SETTING_CDMA_SETTING_NAME))
-			return FALSE;
-
-		s_cdma = nm_connection_get_setting_cdma (connection);
-		if (!s_cdma)
+		if (!_nm_connection_check_main_setting (connection, NM_SETTING_CDMA_SETTING_NAME, error))
 			return FALSE;
 
 		return TRUE;
 	}
 
+	if (   !_nm_connection_check_main_setting (connection, NM_SETTING_GSM_SETTING_NAME, NULL)
+	    && !_nm_connection_check_main_setting (connection, NM_SETTING_CDMA_SETTING_NAME, NULL)) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+		                    "connection type %s is not supported by modem",
+		                    nm_connection_get_connection_type (connection));
+		return FALSE;
+	}
+
+	nm_utils_error_set (error,
+	                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+	                    "modem lacks capabilities for %s profile",
+	                    nm_connection_get_connection_type (connection));
 	return FALSE;
 }
 
 /*****************************************************************************/
 
 static gboolean
-complete_connection (NMModem *_self,
+complete_connection (NMModem *modem,
+                     const char *iface,
                      NMConnection *connection,
-                     const GSList *existing_connections,
+                     NMConnection *const*existing_connections,
                      GError **error)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 	MMModemCapability modem_caps;
 	NMSettingPpp *s_ppp;
 
-	modem_caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
+	modem_caps = mm_modem_get_current_capabilities (self->_priv.modem_iface);
 
 	/* PPP settings common to 3GPP and 3GPP2 */
 	s_ppp = nm_connection_get_setting_ppp (connection);
@@ -465,24 +760,26 @@ complete_connection (NMModem *_self,
 
 		s_gsm = nm_connection_get_setting_gsm (connection);
 		if (!s_gsm) {
-			/* Need a GSM setting at least */
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_MISSING_SETTING,
-			                     _("GSM mobile broadband connection requires a 'gsm' setting"));
-			g_prefix_error (error, "%s: ", NM_SETTING_GSM_SETTING_NAME);
-			return FALSE;
+			s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+			g_object_set (G_OBJECT (s_gsm),
+			              NM_SETTING_GSM_AUTO_CONFIG, TRUE,
+			              NULL);
 		}
 
-		/* TODO: This is not needed */
-		if (!nm_setting_gsm_get_number (s_gsm))
-			g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
+		if (!nm_setting_gsm_get_device_id (s_gsm)) {
+			g_object_set (G_OBJECT (s_gsm),
+			              NM_SETTING_GSM_DEVICE_ID, nm_modem_get_device_id (modem),
+			              NULL);
+		}
 
-		nm_utils_complete_generic (connection,
+		nm_utils_complete_generic (NM_PLATFORM_GET,
+		                           connection,
 		                           NM_SETTING_GSM_SETTING_NAME,
 		                           existing_connections,
 		                           NULL,
 		                           _("GSM connection"),
+		                           NULL,
 		                           NULL,
 		                           FALSE); /* No IPv6 yet by default */
 
@@ -501,12 +798,14 @@ complete_connection (NMModem *_self,
 		if (!nm_setting_cdma_get_number (s_cdma))
 			g_object_set (G_OBJECT (s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
 
-		nm_utils_complete_generic (connection,
+		nm_utils_complete_generic (NM_PLATFORM_GET,
+		                           connection,
 		                           NM_SETTING_CDMA_SETTING_NAME,
 		                           existing_connections,
 		                           NULL,
 		                           _("CDMA connection"),
 		                           NULL,
+		                           iface,
 		                           FALSE); /* No IPv6 yet by default */
 
 		return TRUE;
@@ -563,9 +862,8 @@ set_power_state_low_ready (MMModem *modem,
 
 	if (!mm_modem_set_power_state_finish (modem, result, &error)) {
 		/* Log but ignore errors; not all modems support low power state */
-		nm_log_dbg (LOGD_MB, "(%s) failed to set modem low power state: %s",
-		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		_LOGD ("failed to set modem low power state: %s",
+		       NM_G_ERROR_MSG (error));
 		g_clear_error (&error);
 	}
 
@@ -588,9 +886,8 @@ modem_disable_ready (MMModem *modem_iface,
 		                          (GAsyncReadyCallback) set_power_state_low_ready,
 		                          g_object_ref (self));
 	} else {
-		nm_log_warn (LOGD_MB, "(%s) failed to disable modem: %s",
-		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		_LOGW ("failed to disable modem: %s",
+		       NM_G_ERROR_MSG (error));
 		nm_modem_set_prev_state (NM_MODEM (self), "disable failed");
 		g_clear_error (&error);
 	}
@@ -607,9 +904,8 @@ modem_enable_ready (MMModem *modem_iface,
 	GError *error = NULL;
 
 	if (!mm_modem_enable_finish (modem_iface, res, &error)) {
-		nm_log_warn (LOGD_MB, "(%s) failed to enable modem: %s",
-		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		_LOGW ("failed to enable modem: %s",
+		       NM_G_ERROR_MSG (error));
 		nm_modem_set_prev_state (NM_MODEM (self), "enable failed");
 		g_clear_error (&error);
 	}
@@ -625,12 +921,12 @@ set_mm_enabled (NMModem *_self,
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 
 	if (enabled) {
-		mm_modem_enable (self->priv->modem_iface,
+		mm_modem_enable (self->_priv.modem_iface,
 		                 NULL, /* cancellable */
 		                 (GAsyncReadyCallback)modem_enable_ready,
 		                 g_object_ref (self));
 	} else {
-		mm_modem_disable (self->priv->modem_iface,
+		mm_modem_disable (self->_priv.modem_iface,
 		                  NULL, /* cancellable */
 		                  (GAsyncReadyCallback)modem_disable_ready,
 		                  g_object_ref (self));
@@ -641,75 +937,88 @@ set_mm_enabled (NMModem *_self,
 /* IPv4 method static */
 
 static gboolean
-ip4_string_to_num (const gchar *str, guint32 *out)
-{
-	guint32 addr = 0;
-	gboolean success = FALSE;
-
-	if (!str || inet_pton (AF_INET, str, &addr) != 1)
-		addr = 0;
-	else
-		success = TRUE;
-
-	*out = (guint32)addr;
-	return success;
-}
-
-static gboolean
 static_stage3_ip4_done (NMModemBroadband *self)
 {
 	GError *error = NULL;
-	NMIP4Config *config = NULL;
-	const gchar *address_string;
-	const gchar *gw_string;
+	gs_unref_object NMIP4Config *config = NULL;
+	const char *data_port;
+	const char *address_string;
+	const char *gw_string;
 	guint32 address_network;
-	guint32 gw;
+	guint32 gw = 0;
 	NMPlatformIP4Address address;
-	const gchar **dns;
+	const char **dns;
 	guint i;
+	guint32 ip4_route_table, ip4_route_metric;
+	NMPlatformIP4Route *r;
 
-	g_assert (self->priv->ipv4_config);
+	g_return_val_if_fail (self->_priv.ipv4_config, FALSE);
+	g_return_val_if_fail (self->_priv.bearer, FALSE);
 
-	nm_log_info (LOGD_MB, "(%s): IPv4 static configuration:",
-	             nm_modem_get_uid (NM_MODEM (self)));
+	self->_priv.idle_id_ip4 = 0;
+
+	_LOGI ("IPv4 static configuration:");
 
 	/* Fully fail if invalid IP address retrieved */
-	address_string = mm_bearer_ip_config_get_address (self->priv->ipv4_config);
-	if (!ip4_string_to_num (address_string, &address_network)) {
+	address_string = mm_bearer_ip_config_get_address (self->_priv.ipv4_config);
+	if (   !address_string
+	    || !nm_utils_parse_inaddr_bin (AF_INET, address_string, NULL, &address_network)) {
 		error = g_error_new (NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                     "(%s) retrieving IP4 configuration failed: invalid address given '%s'",
+		                     "(%s) retrieving IP4 configuration failed: invalid address given %s%s%s",
 		                     nm_modem_get_uid (NM_MODEM (self)),
-		                     address_string);
+		                     NM_PRINT_FMT_QUOTE_STRING (address_string));
 		goto out;
 	}
 
 	/* Missing gateway not a hard failure */
-	gw_string = mm_bearer_ip_config_get_gateway (self->priv->ipv4_config);
-	ip4_string_to_num (gw_string, &gw);
+	gw_string = mm_bearer_ip_config_get_gateway (self->_priv.ipv4_config);
+	if (   gw_string
+	    && !nm_utils_parse_inaddr_bin (AF_INET, gw_string, NULL, &gw)) {
+		error = g_error_new (NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                     "(%s) retrieving IP4 configuration failed: invalid gateway address \"%s\"",
+		                     nm_modem_get_uid (NM_MODEM (self)),
+		                     gw_string);
+		goto out;
+	}
 
-	config = nm_ip4_config_new ();
+	data_port = mm_bearer_get_interface (self->_priv.bearer);
+	g_return_val_if_fail (data_port, FALSE);
+	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
 
 	memset (&address, 0, sizeof (address));
 	address.address = address_network;
-	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv4_config);
-	address.source = NM_IP_CONFIG_SOURCE_WWAN;
-	nm_ip4_config_add_address (config, &address);
+	address.peer_address = address_network;
+	address.plen = mm_bearer_ip_config_get_prefix (self->_priv.ipv4_config);
+	address.addr_source = NM_IP_CONFIG_SOURCE_WWAN;
+	if (address.plen <= 32)
+		nm_ip4_config_add_address (config, &address);
 
-	nm_log_info (LOGD_MB, "  address %s/%d", address_string, address.plen);
+	_LOGI ("  address %s/%d", address_string, address.plen);
 
-	if (gw) {
-		nm_ip4_config_set_gateway (config, gw);
-		nm_log_info (LOGD_MB, "  gateway %s", gw_string);
-	}
+	nm_modem_get_route_parameters (NM_MODEM (self),
+	                               &ip4_route_table,
+	                               &ip4_route_metric,
+	                               NULL,
+	                               NULL);
+	r = &(NMPlatformIP4Route) {
+		.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+		.gateway = gw,
+		.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
+		.metric = ip4_route_metric,
+	};
+	nm_ip4_config_add_route (config, r, NULL);
+	_LOGI ("  gateway %s", gw_string);
 
 	/* DNS servers */
-	dns = mm_bearer_ip_config_get_dns (self->priv->ipv4_config);
-	for (i = 0; dns[i]; i++) {
-		if (   ip4_string_to_num (dns[i], &address_network)
+	dns = mm_bearer_ip_config_get_dns (self->_priv.ipv4_config);
+	for (i = 0; dns && dns[i]; i++) {
+		if (   nm_utils_parse_inaddr_bin (AF_INET, dns[i], NULL, &address_network)
 		    && address_network > 0) {
 			nm_ip4_config_add_nameserver (config, address_network);
-			nm_log_info (LOGD_MB, "  DNS %s", dns[i]);
+			_LOGI ("  DNS %s", dns[i]);
 		}
 	}
 
@@ -720,15 +1029,17 @@ out:
 }
 
 static NMActStageReturn
-static_stage3_ip4_config_start (NMModem *_self,
+static_stage3_ip4_config_start (NMModem *modem,
                                 NMActRequest *req,
-                                NMDeviceStateReason *reason)
+                                NMDeviceStateReason *out_failure_reason)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
 
 	/* We schedule it in an idle just to follow the same logic as in the
 	 * generic modem implementation. */
-	g_idle_add ((GSourceFunc) static_stage3_ip4_done, self);
+	nm_clear_g_source (&priv->idle_id_ip4);
+	priv->idle_id_ip4 = g_idle_add ((GSourceFunc) static_stage3_ip4_done, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -741,26 +1052,28 @@ stage3_ip6_done (NMModemBroadband *self)
 {
 	GError *error = NULL;
 	NMIP6Config *config = NULL;
-	const gchar *address_string;
+	const char *data_port;
+	const char *address_string;
 	NMPlatformIP6Address address;
 	NMModemIPMethod ip_method;
-	const gchar **dns;
+	const char **dns;
 	guint i;
 
-	g_assert (self->priv->ipv6_config);
+	g_return_val_if_fail (self->_priv.ipv6_config, FALSE);
 
+	self->_priv.idle_id_ip6 = 0;
 	memset (&address, 0, sizeof (address));
 
-	ip_method = get_bearer_ip_method (self->priv->ipv6_config);
+	ip_method = get_bearer_ip_method (self->_priv.ipv6_config);
 
-	address_string = mm_bearer_ip_config_get_address (self->priv->ipv6_config);
+	address_string = mm_bearer_ip_config_get_address (self->_priv.ipv6_config);
 	if (!address_string) {
 		/* DHCP/SLAAC is allowed to skip addresses; other methods require it */
 		if (ip_method != NM_MODEM_IP_METHOD_AUTO) {
 			error = g_error_new (NM_DEVICE_ERROR,
-				                 NM_DEVICE_ERROR_INVALID_CONNECTION,
-				                 "(%s) retrieving IPv6 configuration failed: no address given",
-				                 nm_modem_get_uid (NM_MODEM (self)));
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+			                     "(%s) retrieving IPv6 configuration failed: no address given",
+			                     nm_modem_get_uid (NM_MODEM (self)));
 		}
 		goto out;
 	}
@@ -775,28 +1088,49 @@ stage3_ip6_done (NMModemBroadband *self)
 		goto out;
 	}
 
-	nm_log_info (LOGD_MB, "(%s): IPv6 base configuration:",
-	             nm_modem_get_uid (NM_MODEM (self)));
+	_LOGI ("IPv6 base configuration:");
 
-	config = nm_ip6_config_new ();
+	data_port = mm_bearer_get_interface (self->_priv.bearer);
+	g_return_val_if_fail (data_port, FALSE);
 
-	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv6_config);
-	nm_ip6_config_add_address (config, &address);
+	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
 
-	nm_log_info (LOGD_MB, "  address %s/%d", address_string, address.plen);
+	address.plen = mm_bearer_ip_config_get_prefix (self->_priv.ipv6_config);
+	if (address.plen <= 128)
+		nm_ip6_config_add_address (config, &address);
 
-	address_string = mm_bearer_ip_config_get_gateway (self->priv->ipv6_config);
+	_LOGI ("  address %s/%d", address_string, address.plen);
+
+	address_string = mm_bearer_ip_config_get_gateway (self->_priv.ipv6_config);
 	if (address_string) {
-		if (!inet_pton (AF_INET6, address_string, (void *) &(address.address))) {
+		guint32 ip6_route_table, ip6_route_metric;
+
+		if (inet_pton (AF_INET6, address_string, &address.address) != 1) {
 			error = g_error_new (NM_DEVICE_ERROR,
-				                 NM_DEVICE_ERROR_INVALID_CONNECTION,
-				                 "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
-				                 nm_modem_get_uid (NM_MODEM (self)),
-				                 address_string);
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+			                     "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
+			                     nm_modem_get_uid (NM_MODEM (self)),
+			                     address_string);
 			goto out;
 		}
-		nm_log_info (LOGD_MB, "  gateway %s", address_string);
-		nm_ip6_config_set_gateway (config, &address.address);
+
+		nm_modem_get_route_parameters (NM_MODEM (self),
+		                               NULL,
+		                               NULL,
+		                               &ip6_route_table,
+		                               &ip6_route_metric);
+		{
+			const NMPlatformIP6Route r = {
+				.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+				.gateway = address.address,
+				.table_coerced = nm_platform_route_table_coerce (ip6_route_table),
+				.metric = ip6_route_metric,
+			};
+
+			_LOGI ("  gateway %s", address_string);
+			nm_ip6_config_add_route (config, &r, NULL);
+		}
 	} else if (ip_method == NM_MODEM_IP_METHOD_STATIC) {
 		/* Gateway required for the 'static' method */
 		error = g_error_new (NM_DEVICE_ERROR,
@@ -807,13 +1141,13 @@ stage3_ip6_done (NMModemBroadband *self)
 	}
 
 	/* DNS servers */
-	dns = mm_bearer_ip_config_get_dns (self->priv->ipv6_config);
-	for (i = 0; dns[i]; i++) {
+	dns = mm_bearer_ip_config_get_dns (self->_priv.ipv6_config);
+	for (i = 0; dns && dns[i]; i++) {
 		struct in6_addr addr;
 
 		if (inet_pton (AF_INET6, dns[i], &addr)) {
 			nm_ip6_config_add_nameserver (config, &addr);
-			nm_log_info (LOGD_MB, "  DNS %s", dns[i]);
+			_LOGI ("  DNS %s", dns[i]);
 		}
 	}
 
@@ -825,13 +1159,15 @@ out:
 }
 
 static NMActStageReturn
-stage3_ip6_config_request (NMModem *_self, NMDeviceStateReason *reason)
+stage3_ip6_config_request (NMModem *modem, NMDeviceStateReason *out_failure_reason)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
 
 	/* We schedule it in an idle just to follow the same logic as in the
 	 * generic modem implementation. */
-	g_idle_add ((GSourceFunc) stage3_ip6_done, self);
+	nm_clear_g_source (&priv->idle_id_ip6);
+	priv->idle_id_ip6 = g_idle_add ((GSourceFunc) stage3_ip6_done, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -841,76 +1177,115 @@ stage3_ip6_config_request (NMModem *_self, NMDeviceStateReason *reason)
 
 typedef struct {
 	NMModemBroadband *self;
+	_NMModemDisconnectCallback callback;
+	gpointer callback_user_data;
+	GCancellable *cancellable;
 	gboolean warn;
-} SimpleDisconnectContext;
+} DisconnectContext;
 
 static void
-simple_disconnect_context_free (SimpleDisconnectContext *ctx)
+disconnect_context_complete (DisconnectContext *ctx, GError *error)
 {
+	if (ctx->callback)
+		ctx->callback (NM_MODEM (ctx->self), error, ctx->callback_user_data);
+	nm_g_object_unref (ctx->cancellable);
 	g_object_unref (ctx->self);
-	g_slice_free (SimpleDisconnectContext, ctx);
+	g_slice_free (DisconnectContext, ctx);
 }
 
 static void
-simple_disconnect_ready (MMModemSimple *modem_iface,
-                         GAsyncResult *res,
-                         SimpleDisconnectContext *ctx)
+disconnect_context_complete_on_idle (gpointer user_data,
+                                     GCancellable *cancellable)
 {
-	GError *error = NULL;
+	DisconnectContext *ctx = user_data;
+	gs_free_error GError *cancelled_error = NULL;
+
+	g_cancellable_set_error_if_cancelled (cancellable, &cancelled_error);
+	disconnect_context_complete (ctx, cancelled_error);
+}
+
+static void
+simple_disconnect_ready (GObject *source_object,
+                         GAsyncResult *res,
+                         gpointer user_data)
+{
+	MMModemSimple *modem_iface = MM_MODEM_SIMPLE (source_object);
+	DisconnectContext *ctx = user_data;
+	gs_free_error GError *error = NULL;
 
 	if (!mm_modem_simple_disconnect_finish (modem_iface, res, &error)) {
-		if (ctx->warn)
-			nm_log_warn (LOGD_MB, "(%s) failed to disconnect modem: %s",
-			             nm_modem_get_uid (NM_MODEM (ctx->self)),
-			             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
+		if (   ctx->warn
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
+			NMModemBroadband *self = ctx->self;
+
+			_LOGW ("failed to disconnect modem: %s",
+			       error->message);
+		}
 	}
 
-	simple_disconnect_context_free (ctx);
+	disconnect_context_complete (ctx, error);
 }
 
 static void
 disconnect (NMModem *modem,
-            gboolean warn)
+            gboolean warn,
+            GCancellable *cancellable,
+            _NMModemDisconnectCallback callback,
+            gpointer user_data)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
-	SimpleDisconnectContext *ctx;
+	DisconnectContext *ctx;
 
-	if (!self->priv->simple_iface)
-		return;
+	connect_context_clear (self);
+	_nm_modem_set_apn (NM_MODEM (self), NULL);
 
-	ctx = g_slice_new (SimpleDisconnectContext);
+	ctx = g_slice_new0 (DisconnectContext);
 	ctx->self = g_object_ref (self);
+	ctx->cancellable = nm_g_object_ref (cancellable);
+	ctx->callback = callback;
+	ctx->callback_user_data = user_data;
 
 	/* Don't bother warning on FAILED since the modem is already gone */
 	ctx->warn = warn;
 
-	mm_modem_simple_disconnect (
-		ctx->self->priv->simple_iface,
-		NULL, /* bearer path; if NULL given ALL get disconnected */
-		NULL, /* cancellable */
-		(GAsyncReadyCallback)simple_disconnect_ready,
-		ctx);
+	/* Already cancelled or no simple-iface? We are done. */
+	if (   !ctx->self->_priv.simple_iface
+	    || g_cancellable_is_cancelled (cancellable)) {
+		nm_utils_invoke_on_idle (disconnect_context_complete_on_idle,
+		                         ctx,
+		                         cancellable);
+		return;
+	}
+
+	_LOGD ("notifying ModemManager about the modem disconnection");
+	mm_modem_simple_disconnect (self->_priv.simple_iface,
+	                            NULL, /* bearer path; if NULL given ALL get disconnected */
+	                            cancellable,
+	                            simple_disconnect_ready,
+	                            ctx);
 }
 
 /*****************************************************************************/
 
 static void
-deactivate (NMModem *_self, NMDevice *device)
+deactivate_cleanup (NMModem *modem,
+                    NMDevice *device,
+                    gboolean stop_ppp_manager)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 
 	/* TODO: cancel SimpleConnect() if any */
 
 	/* Cleanup IPv4 addresses and routes */
-	g_clear_object (&self->priv->ipv4_config);
-	g_clear_object (&self->priv->ipv6_config);
-	g_clear_object (&self->priv->bearer);
+	g_clear_object (&self->_priv.ipv4_config);
+	g_clear_object (&self->_priv.ipv6_config);
+	g_clear_object (&self->_priv.bearer);
 
-	self->priv->pin_tries = 0;
+	self->_priv.pin_tries = 0;
 
-	/* Chain up parent's */
-	NM_MODEM_CLASS (nm_modem_broadband_parent_class)->deactivate (_self, device);
+	NM_MODEM_CLASS (nm_modem_broadband_parent_class)->deactivate_cleanup (modem,
+	                                                                      device,
+	                                                                      stop_ppp_manager);
 }
 
 /*****************************************************************************/
@@ -945,7 +1320,6 @@ modem_state_changed (MMModem *modem,
                      MMModemStateChangeReason reason,
                      NMModemBroadband *self)
 {
-
 	/* After the SIM is unlocked MM1 will move the device to INITIALIZING which
 	 * is an unavailable state.  That makes state handling confusing here, so
 	 * suppress this state change and let the modem move from LOCKED to DISABLED.
@@ -956,6 +1330,9 @@ modem_state_changed (MMModem *modem,
 	nm_modem_set_state (NM_MODEM (self),
 	                    mm_state_to_nm (new_state),
 	                    mm_modem_state_change_reason_get_string (reason));
+
+	if (self->_priv.ctx && self->_priv.ctx->step == CONNECT_STEP_WAIT_FOR_READY)
+		connect_context_step (self);
 }
 
 /*****************************************************************************/
@@ -975,40 +1352,6 @@ mm_ip_family_to_nm (MMBearerIpFamily family)
 	return nm_type;
 }
 
-NMModem *
-nm_modem_broadband_new (GObject *object, GError **error)
-{
-	NMModem *modem;
-	MMObject *modem_object;
-	MMModem *modem_iface;
-	gchar *drivers;
-
-	g_return_val_if_fail (MM_IS_OBJECT (object), NULL);
-	modem_object = MM_OBJECT (object);
-
-	/* Ensure we have the 'Modem' interface and the primary port at least */
-	modem_iface = mm_object_peek_modem (modem_object);
-	g_return_val_if_fail (!!modem_iface, NULL);
-	g_return_val_if_fail (!!mm_modem_get_primary_port (modem_iface), NULL);
-
-	/* Build a single string with all drivers listed */
-	drivers = g_strjoinv (", ", (gchar **)mm_modem_get_drivers (modem_iface));
-
-	modem = g_object_new (NM_TYPE_MODEM_BROADBAND,
-	                      NM_MODEM_PATH, mm_object_get_path (modem_object),
-	                      NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
-	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
-	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
-	                      NM_MODEM_IP_TYPES, mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem_iface)),
-	                      NM_MODEM_STATE, mm_state_to_nm (mm_modem_get_state (modem_iface)),
-	                      NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
-	                      NM_MODEM_BROADBAND_MODEM, modem_object,
-	                      NM_MODEM_DRIVER, drivers,
-	                      NULL);
-	g_free (drivers);
-	return modem;
-}
-
 static void
 get_sim_ready (MMModem *modem,
                GAsyncResult *res,
@@ -1018,15 +1361,26 @@ get_sim_ready (MMModem *modem,
 	MMSim *new_sim;
 
 	new_sim = mm_modem_get_sim_finish (modem, res, &error);
-	if (new_sim) {
+	if (new_sim != self->_priv.sim_iface) {
+		g_clear_object (&self->_priv.sim_iface);
+		self->_priv.sim_iface = new_sim;
+	} else
+		g_clear_object (&new_sim);
+
+	if (self->_priv.sim_iface) {
 		g_object_set (G_OBJECT (self),
-		              NM_MODEM_SIM_ID, mm_sim_get_identifier (new_sim),
+		              NM_MODEM_SIM_ID, mm_sim_get_identifier (self->_priv.sim_iface),
+		              NM_MODEM_SIM_OPERATOR_ID, mm_sim_get_operator_identifier (self->_priv.sim_iface),
 		              NULL);
-		g_object_unref (new_sim);
+
+		/* If we're waiting for the SIM during a connect, proceed with the connect */
+		if (self->_priv.ctx && self->_priv.ctx->step == CONNECT_STEP_WAIT_FOR_SIM)
+			connect_context_step (self);
 	} else {
-		nm_log_warn (LOGD_MB, "(%s) failed to retrieve SIM object: %s",
-		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		_NMLOG (g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_NOT_FOUND)
+		            ? LOGL_INFO : LOGL_WARN,
+		        "failed to retrieve SIM object: %s",
+		        NM_G_ERROR_MSG (error));
 	}
 	g_clear_error (&error);
 	g_object_unref (self);
@@ -1037,29 +1391,66 @@ sim_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (user_data);
 
-	g_return_if_fail (modem == self->priv->modem_iface);
+	g_return_if_fail (modem == self->_priv.modem_iface);
 
-	if (mm_modem_get_sim_path (self->priv->modem_iface)) {
-		mm_modem_get_sim (self->priv->modem_iface,
+	if (mm_modem_get_sim_path (self->_priv.modem_iface)) {
+		mm_modem_get_sim (self->_priv.modem_iface,
 		                  NULL,  /* cancellable */
 		                  (GAsyncReadyCallback) get_sim_ready,
 		                  g_object_ref (self));
 	} else
-		g_object_set (G_OBJECT (self), NM_MODEM_SIM_ID, NULL, NULL);
+		g_object_set (G_OBJECT (self),
+		              NM_MODEM_SIM_ID, NULL,
+		              NM_MODEM_SIM_OPERATOR_ID, NULL,
+		              NULL);
 }
 
 static void
-nm_modem_broadband_init (NMModemBroadband *self)
+supported_ip_families_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-	                                          NM_TYPE_MODEM_BROADBAND,
-	                                          NMModemBroadbandPrivate);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (user_data);
+
+	g_return_if_fail (modem == self->_priv.modem_iface);
+
+	g_object_set (G_OBJECT (self),
+	              NM_MODEM_IP_TYPES,
+	              mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem)),
+	              NULL);
+}
+
+static void
+operator_code_changed (MMModem3gpp *modem_3gpp, GParamSpec *pspec, gpointer user_data)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (user_data);
+
+	g_return_if_fail (modem_3gpp == self->_priv.modem_3gpp_iface);
+	_nm_modem_set_operator_code (NM_MODEM (self), mm_modem_3gpp_get_operator_code (modem_3gpp));
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (object);
+
+	switch (prop_id) {
+	case PROP_MODEM:
+		g_value_set_object (value, self->_priv.modem_object);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
 set_property (GObject *object,
               guint prop_id,
-			  const GValue *value,
+              const GValue *value,
               GParamSpec *pspec)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (object);
@@ -1067,18 +1458,31 @@ set_property (GObject *object,
 	switch (prop_id) {
 	case PROP_MODEM:
 		/* construct-only */
-		self->priv->modem_object = g_value_dup_object (value);
-		self->priv->modem_iface = mm_object_get_modem (self->priv->modem_object);
-		g_assert (self->priv->modem_iface != NULL);
-		g_signal_connect (self->priv->modem_iface,
+		self->_priv.modem_object = g_value_dup_object (value);
+		self->_priv.modem_iface = mm_object_get_modem (self->_priv.modem_object);
+		g_return_if_fail (self->_priv.modem_iface);
+		self->_priv.modem_3gpp_iface = mm_object_get_modem_3gpp (self->_priv.modem_object);
+
+		g_signal_connect (self->_priv.modem_iface,
 		                  "state-changed",
 		                  G_CALLBACK (modem_state_changed),
 		                  self);
-		g_signal_connect (self->priv->modem_iface,
+		g_signal_connect (self->_priv.modem_iface,
 		                  "notify::sim",
 		                  G_CALLBACK (sim_changed),
 		                  self);
-		sim_changed (self->priv->modem_iface, NULL, self);
+		sim_changed (self->_priv.modem_iface, NULL, self);
+		g_signal_connect (self->_priv.modem_iface,
+		                  "notify::supported-ip-families",
+		                  G_CALLBACK (supported_ip_families_changed),
+		                  self);
+
+		if (self->_priv.modem_3gpp_iface) {
+			g_signal_connect (self->_priv.modem_3gpp_iface,
+			                  "notify::operator-code",
+			                  G_CALLBACK (operator_code_changed),
+			                  self);
+		}
 
 		/* Note: don't grab the Simple iface here; the Modem interface is the
 		 * only one assumed to be always valid and available */
@@ -1089,35 +1493,80 @@ set_property (GObject *object,
 	}
 }
 
-static void
-get_property (GObject *object,
-              guint prop_id,
-			  GValue *value,
-              GParamSpec *pspec)
-{
-	NMModemBroadband *self = NM_MODEM_BROADBAND (object);
+/*****************************************************************************/
 
-	switch (prop_id) {
-	case PROP_MODEM:
-		g_value_set_object (value, self->priv->modem_object);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+static void
+nm_modem_broadband_init (NMModemBroadband *self)
+{
+}
+
+NMModem *
+nm_modem_broadband_new (GObject *object, GError **error)
+{
+	MMObject *modem_object;
+	MMModem *modem_iface;
+	MMModem3gpp *modem_3gpp_iface;
+	const char *const*drivers;
+	const char *operator_code = NULL;
+	gs_free char *driver = NULL;
+
+	g_return_val_if_fail (MM_IS_OBJECT (object), NULL);
+	modem_object = MM_OBJECT (object);
+
+	/* Ensure we have the 'Modem' interface and the primary port at least */
+	modem_iface = mm_object_peek_modem (modem_object);
+	g_return_val_if_fail (modem_iface, NULL);
+	g_return_val_if_fail (mm_modem_get_primary_port (modem_iface), NULL);
+
+	/* Build a single string with all drivers listed */
+	drivers = mm_modem_get_drivers (modem_iface);
+	if (drivers)
+		driver = g_strjoinv (", ", (char **) drivers);
+
+	modem_3gpp_iface = mm_object_peek_modem_3gpp (modem_object);
+	if (modem_3gpp_iface)
+		operator_code = mm_modem_3gpp_get_operator_code (modem_3gpp_iface);
+
+	return g_object_new (NM_TYPE_MODEM_BROADBAND,
+	                     NM_MODEM_PATH, mm_object_get_path (modem_object),
+	                     NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
+	                     NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
+	                     NM_MODEM_IP_TYPES, mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem_iface)),
+	                     NM_MODEM_STATE, (int) mm_state_to_nm (mm_modem_get_state (modem_iface)),
+	                     NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
+	                     NM_MODEM_BROADBAND_MODEM, modem_object,
+	                     NM_MODEM_DRIVER, driver,
+	                     NM_MODEM_OPERATOR_CODE, operator_code,
+	                     NULL);
 }
 
 static void
 dispose (GObject *object)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (object);
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
 
-	g_clear_object (&self->priv->ipv4_config);
-	g_clear_object (&self->priv->ipv6_config);
-	g_clear_object (&self->priv->bearer);
-	g_clear_object (&self->priv->modem_iface);
-	g_clear_object (&self->priv->simple_iface);
-	g_clear_object (&self->priv->modem_object);
+	nm_clear_g_source (&priv->idle_id_ip4);
+	nm_clear_g_source (&priv->idle_id_ip6);
+
+	connect_context_clear (self);
+	g_clear_object (&self->_priv.ipv4_config);
+	g_clear_object (&self->_priv.ipv6_config);
+	g_clear_object (&self->_priv.bearer);
+
+	if (self->_priv.modem_iface) {
+		g_signal_handlers_disconnect_by_data (self->_priv.modem_iface, self);
+		g_clear_object (&self->_priv.modem_iface);
+	}
+
+	if (self->_priv.modem_3gpp_iface) {
+		g_signal_handlers_disconnect_by_data (self->_priv.modem_3gpp_iface, self);
+		g_clear_object (&self->_priv.modem_3gpp_iface);
+	}
+
+	g_clear_object (&self->_priv.simple_iface);
+	g_clear_object (&self->_priv.sim_iface);
+	g_clear_object (&self->_priv.modem_object);
 
 	G_OBJECT_CLASS (nm_modem_broadband_parent_class)->dispose (object);
 }
@@ -1128,9 +1577,6 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMModemBroadbandPrivate));
-
-	/* Virtual methods */
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -1139,19 +1585,19 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;
 	modem_class->stage3_ip6_config_request = stage3_ip6_config_request;
 	modem_class->disconnect = disconnect;
-	modem_class->deactivate = deactivate;
+	modem_class->deactivate_cleanup = deactivate_cleanup;
 	modem_class->set_mm_enabled = set_mm_enabled;
 	modem_class->get_user_pass = get_user_pass;
-	modem_class->check_connection_compatible = check_connection_compatible;
+	modem_class->check_connection_compatible_with_modem = check_connection_compatible_with_modem;
 	modem_class->complete_connection = complete_connection;
-	modem_class->act_stage1_prepare = act_stage1_prepare;
+	modem_class->modem_act_stage1_prepare = modem_act_stage1_prepare;
 	modem_class->owns_port = owns_port;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_MODEM,
-		 g_param_spec_object (NM_MODEM_BROADBAND_MODEM, "", "",
-		                      MM_GDBUS_TYPE_OBJECT,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODEM] =
+	     g_param_spec_object (NM_MODEM_BROADBAND_MODEM, "", "",
+	                          MM_GDBUS_TYPE_OBJECT,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

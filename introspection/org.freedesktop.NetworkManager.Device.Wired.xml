@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Wired:
+      @short_description: Wired Ethernet Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Wired">
+    <annotation name="org.gtk.GDBus.C.Name" value="DeviceEthernet"/>
+
+    <!--
+        HwAddress:
+
+        Active hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        PermHwAddress:
+
+        Permanent hardware address of the device.
+    -->
+    <property name="PermHwAddress" type="s" access="read"/>
+
+    <!--
+        Speed:
+
+        Design speed of the device, in megabits/second (Mb/s).
+    -->
+    <property name="Speed" type="u" access="read"/>
+
+    <!--
+        S390Subchannels:
+
+        Array of S/390 subchannels for S/390 or z/Architecture devices.
+    -->
+    <property name="S390Subchannels" type="as" access="read"/>
+
+    <!--
+        Carrier:
+
+        Indicates whether the physical carrier is found (e.g. whether a cable is
+        plugged in or not).
+    -->
+    <property name="Carrier" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

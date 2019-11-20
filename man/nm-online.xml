@@ -1,0 +1,174 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
+
+<!--
+  nm-online(1) manual page
+
+  Copyright 2010 - 2016 Red Hat, Inc.
+
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. You may obtain a copy of the GNU Free Documentation License
+  from the Free Software Foundation by visiting their Web site or by
+  writing to:
+
+  Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<refentry id='nm-online'>
+
+  <refentryinfo>
+    <title>nm-online</title>
+    <author>NetworkManager developers</author>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>nm-online</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">General Commands Manual</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>nm-online</refname>
+    <refpurpose>ask NetworkManager whether the network is connected</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv id='synopsis'>
+    <cmdsynopsis>
+      <command>nm-online</command>
+      <arg choice="opt" rep="repeat"><replaceable>OPTIONS</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id='description'><title>Description</title>
+    <para><command>nm-online</command> is a utility to find out whether we are
+    online. It is done by asking NetworkManager about its status. When run,
+    <command>nm-online</command> waits until NetworkManager reports an active
+    connection, or specified timeout expires. On exit, the returned status code
+    should be checked (see the return codes below).</para>
+
+    <para>By default NetworkManager waits for IPv4 dynamic addressing to complete
+    but does not wait for the <literal>auto</literal> IPv6 dynamic addressing. To
+    wait for IPv6 addressing to complete, either (1) change the network
+    connection's IPv6 <literal>may-fail</literal> setting to <literal>no</literal>,
+    and/or (2) change the IPv6 addressing method to <literal>manual</literal> or
+    <literal>dhcp</literal>, to indicate that IPv6 connectivity is expected.</para>
+  </refsect1>
+
+  <refsect1 id='options'><title>Options</title>
+    <variablelist>
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-h</option></arg>
+          <arg choice='plain'><option>--help</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Print help information.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-q</option></arg>
+          <arg choice='plain'><option>--quiet</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Don't print anything.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-s</option></arg>
+          <arg choice='plain'><option>--wait-for-startup</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Wait for NetworkManager startup to complete, rather than waiting for
+          network connectivity specifically. Startup is considered complete once
+          NetworkManager has activated (or attempted to activate) every auto-activate
+          connection which is available given the current network state. (This is
+          generally only useful at boot time; after startup has completed,
+          <command>nm-online -s</command> will just return immediately, regardless of the
+          current network state.)</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <group choice='plain'>
+            <arg choice='plain'><option>-t</option></arg>
+            <arg choice='plain'><option>--timeout</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>seconds</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Time to wait for a connection, in seconds. If the option is not provided,
+          the default timeout is 30 seconds.</para>
+        </listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-x</option></arg>
+          <arg choice='plain'><option>--exit</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Exit immediately if NetworkManager is not running or connecting.</para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id='exit_status'><title>Exit Status</title>
+
+    <para><command>nm-online</command> exits with status 0 if it succeeds, a value
+    greater than 0 is returned if an error occurs.</para>
+
+    <variablelist spacing='compact' termlength='3'>
+      <varlistentry>
+        <term><errorcode>0</errorcode></term>
+        <listitem>
+          <para>Success &ndash; already online or connection established within given timeout.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><errorcode>1</errorcode></term>
+        <listitem>
+          <para>Offline or not online within given timeout.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><errorcode>2</errorcode></term>
+        <listitem>
+          <para>Unknown or unspecified error.</para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id='see_also'><title>See Also</title>
+    <para><link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>.</para>
+  </refsect1>
+
+</refentry>

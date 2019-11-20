@@ -1,48 +1,41 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * author: Pantelis Koukousoulas <pktoss@gmail.com>
- * Copyright 2009 - 2011 Red Hat, Inc.
+ * Author: Pantelis Koukousoulas <pktoss@gmail.com>
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
-#include "nm-device-adsl.h"
-#include "nm-device-private.h"
-#include "nm-object-private.h"
+#include "nm-default.h"
 
+#include "nm-device-adsl.h"
+
+#include "nm-object-private.h"
 #include "nm-setting-adsl.h"
 #include "nm-setting-connection.h"
 
-#include <string.h>
-#include <glib/gi18n.h>
+/*****************************************************************************/
 
-G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
-
-#define NM_DEVICE_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ADSL, NMDeviceAdslPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_CARRIER,
+);
 
 typedef struct {
 	gboolean carrier;
-
 } NMDeviceAdslPrivate;
 
-enum {
-	PROP_0,
-	PROP_CARRIER,
-	LAST_PROP
+struct _NMDeviceAdsl {
+	NMDevice parent;
+	NMDeviceAdslPrivate _priv;
 };
+
+struct _NMDeviceAdslClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_ADSL_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceAdsl, NM_IS_DEVICE_ADSL, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_adsl_get_carrier:
@@ -81,12 +74,11 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_ADSL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_adsl_init (NMDeviceAdsl *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_ADSL);
 }
 
 static void
@@ -130,28 +122,23 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (adsl_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (adsl_class);
 
-	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_ADSL);
-
-	/* virtual methods */
 	object_class->get_property = get_property;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
+	device_class->get_setting_type      = get_setting_type;
 
-	/* properties */
 	/**
 	 * NMDeviceAdsl:carrier:
 	 *
 	 * Whether the device has carrier.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_ADSL_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CARRIER] =
+	    g_param_spec_boolean (NM_DEVICE_ADSL_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

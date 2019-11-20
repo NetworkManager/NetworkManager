@@ -1,20 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2012 Red Hat, Inc.
+ * Copyright (C) 2012 Red Hat, Inc.
  */
 
 /*
@@ -26,7 +12,7 @@
  * grab nm-dbus-interface.h and put it in the path.
  *
  * Standalone compilation:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` `pkg-config --cflags libnm` monitor-nm-state-gdbus.c -o monitor-nm-state-gdbus
+ *   gcc -Wall monitor-nm-state-gdbus.c -o monitor-nm-state-gdbus `pkg-config --cflags --libs libnm`
  */
 
 #include <gio/gio.h>
@@ -59,15 +45,15 @@ nm_state_to_string (NMState state)
 
 static void
 on_signal (GDBusProxy *proxy,
-           gchar      *sender_name,
-           gchar      *signal_name,
+           char       *sender_name,
+           char       *signal_name,
            GVariant   *parameters,
            gpointer    user_data)
 {
 	guint32 new_state;
 
 	/* Print all signals */
-	//gchar *parameters_str;
+	//char *parameters_str;
 	//parameters_str = g_variant_print (parameters, TRUE);
 	//g_print (" *** Received Signal: %s: %s\n", signal_name, parameters_str);
 	//g_free (parameters_str);
@@ -81,7 +67,6 @@ on_signal (GDBusProxy *proxy,
 	}
 }
 
-
 int
 main (int argc, char *argv[])
 {
@@ -89,11 +74,6 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	GDBusProxyFlags flags;
 	GDBusProxy *proxy;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
 
 	/* Monitor 'StateChanged' signal on 'org.freedesktop.NetworkManager' interface */
 	g_print ("Monitor NetworkManager's state\n");

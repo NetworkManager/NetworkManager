@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE stylesheet [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -8,27 +12,24 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="date"/>
-  <xsl:param name="version"/>
-
   <xsl:template match="nm-keyfile-docs">
     <refentry id="nm-settings-keyfile">
       <refentryinfo>
-        <date><xsl:value-of select="$date"/></date>
+        <title>nm-settings-keyfile</title>
+        <author>NetworkManager developers</author>
       </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings-keyfile</refentrytitle>
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
-        <refmiscinfo class="version"><xsl:value-of select="$version"/></refmiscinfo>
+        <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
         <refname>nm-settings-keyfile</refname>
         <refpurpose>Description of <emphasis>keyfile</emphasis> settings plugin</refpurpose>
       </refnamediv>
-      <refsect1>
-        <title>DESCRIPTION</title>
+      <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on the concept of connection profiles that contain
           network configuration (see <citerefentry><refentrytitle>nm-settings</refentrytitle>
@@ -43,13 +44,12 @@
           out in a .ini-style format in <filename>/etc/NetworkManager/system-connections/</filename>.
           This plugin is always enabled and will automatically be used to store
           any connections that are not supported by any other active plugin.
-          For security, it will ignore files that are readable or writeable by any user
+          For security, it will ignore files that are readable or writable by any user
           or group other than 'root' since private keys and passphrases may be stored
           in plaintext inside the file.
         </para>
       </refsect1>
-      <refsect1>
-        <title>File Format</title>
+      <refsect1 id='file_format'><title>File Format</title>
         <para>
           The <emphasis>keyfile</emphasis> config format is a simple .ini-style
           format. It consists of sections (groups) of key-value pairs. Each section
@@ -60,7 +60,7 @@
           specification. The majority of properties of the specification is written
           in the same format into the <emphasis>keyfile</emphasis> too. However
           some values are inconvenient for people to use. These are stored in the
-          files in more readable ways. These properties are described bellow.
+          files in more readable ways. These properties are described below.
           An example could be IP addresses that are not written as integer arrays,
           but more reasonably as "1.2.3.4/12 1.2.3.254".
           More information of the generic key file format can be found at
@@ -187,16 +187,15 @@ id=4
         </formalpara>
       </refsect1>
 
-      <refsect1>
-        <title>DETAILS</title>
+      <refsect1 id='details'><title>Details</title>
         <para>
           <emphasis>keyfile</emphasis> plugin variables for the majority of NetworkManager
           properties have one-to-one mapping. It means a NetworkManager property is stored
           in the keyfile as a variable of the same name and in the same format.
           There are several exceptions to this rule, mainly for making keyfile syntax easier
           for humans. The exceptions handled specially by <emphasis>keyfile</emphasis>
-          plugin are listed bellow. Refer to
-          <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          plugin are listed below. Refer to
+          <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
           for all available settings and properties and their description.
         </para>
         <formalpara><title>Name aliases</title>
@@ -242,22 +241,17 @@ id=4
         </refsect2>
       </refsect1>
 
-      <refsect1>
-        <title>AUTHOR</title>
-        <para>
-          <author>
-            <firstname>NetworkManager developers</firstname>
-          </author>
-        </para>
-      </refsect1>
-      <refsect1>
-        <title>FILES</title>
+      <refsect1 id='files'><title>Files</title>
         <para><filename>/etc/NetworkManager/system-connections/*</filename></para>
       </refsect1>
-      <refsect1>
-        <title>SEE ALSO</title>
-        <para>https://developer.gnome.org/NetworkManager/unstable/ref-settings.html</para>
-        <para>nm-settings(5), nm-settings-ifcfg-rh(5), NetworkManager(8), NetworkManager.conf(5), nmcli(1), nmcli-examples(5)</para>
+
+      <refsect1 id='see_also'><title>See Also</title>
+        <para><link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nm-settings-ifcfg-rh'><citerefentry><refentrytitle>nm-settings-ifcfg-rh</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+        <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link></para>
       </refsect1>
     </refentry>
   </xsl:template>

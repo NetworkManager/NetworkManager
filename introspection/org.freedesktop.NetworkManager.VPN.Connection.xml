@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+
+  <!--
+      org.freedesktop.NetworkManager.VPN.Connection:
+      @short_description: Active VPN Connection
+
+      Represents an active connection to a Virtual Private Network.
+  -->
+  <interface name="org.freedesktop.NetworkManager.VPN.Connection">
+    <annotation name="org.gtk.GDBus.C.Name" value="VpnConnection"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+
+    <!--
+        VpnState:
+
+        The VPN-specific state of the connection.
+
+        Returns: <link linkend="NMVpnConnectionState">NMVpnConnectionState</link>
+    -->
+    <property name="VpnState" type="u" access="read"/>
+
+    <!--
+        Banner:
+
+        The banner string of the VPN connection.
+    -->
+    <property name="Banner" type="s" access="read"/>
+
+    <!--
+        VpnStateChanged:
+        @state: (<link linkend="NMVpnConnectionState">NMVpnConnectionState</link>) The new state of the VPN connection.
+        @reason: (<link linkend="NMActiveConnectionStateReason">NMActiveConnectionStateReason</link>) Reason code describing the change to the new state.
+
+        Emitted when the state of the VPN connection has changed.
+    -->
+    <signal name="VpnStateChanged">
+      <arg name="state" type="u"/>
+      <arg name="reason" type="u"/>
+    </signal>
+  </interface>
+</node>

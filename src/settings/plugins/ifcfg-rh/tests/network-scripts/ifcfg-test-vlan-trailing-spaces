@@ -1,0 +1,11 @@
+DEVICE="vlan201"  
+ONBOOT=yes  
+NETBOOT=yes  
+BOOTPROTO=none   
+IPADDR="10.130.70.7" 
+NETMASK="255.255.0.0" 
+TYPE=Vlan   
+NAME="vlan201" 
+VLAN=yes 
+PHYSDEV="enccw0.0.fb00" 
+

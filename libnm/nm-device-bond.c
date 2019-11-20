@@ -1,41 +1,25 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2012 Red Hat, Inc.
+ * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#include <config.h>
-#include <string.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
-#include "nm-glib-compat.h"
+#include "nm-setting-bond.h"
 
-#include <nm-setting-connection.h>
-#include <nm-setting-bond.h>
-#include <nm-utils.h>
-
+#include "nm-setting-connection.h"
+#include "nm-utils.h"
 #include "nm-device-bond.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BOND, NMDeviceBondPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_SLAVES,
+);
 
 typedef struct {
 	char *hw_address;
@@ -43,14 +27,20 @@ typedef struct {
 	GPtrArray *slaves;
 } NMDeviceBondPrivate;
 
-enum {
-	PROP_0,
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_SLAVES,
-
-	LAST_PROP
+struct _NMDeviceBond {
+	NMDevice parent;
+	NMDeviceBondPrivate _priv;
 };
+
+struct _NMDeviceBondClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_BOND_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceBond, NM_IS_DEVICE_BOND, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_bond_get_hw_address:
@@ -66,7 +56,7 @@ nm_device_bond_get_hw_address (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), NULL);
 
-	return NM_DEVICE_BOND_GET_PRIVATE (device)->hw_address;
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_BOND_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -89,7 +79,7 @@ nm_device_bond_get_carrier (NMDeviceBond *device)
  * nm_device_bond_get_slaves:
  * @device: a #NMDeviceBond
  *
- * Gets the devices currently slaved to @device.
+ * Gets the devices currently enslaved to @device.
  *
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
@@ -132,14 +122,12 @@ get_hw_address (NMDevice *device)
 	return nm_device_bond_get_hw_address (NM_DEVICE_BOND (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bond_init (NMDeviceBond *device)
 {
 	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
-
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_BOND);
 
 	priv->slaves = g_ptr_array_new ();
 }
@@ -213,58 +201,48 @@ nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bond_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bond_class);
 
-	g_type_class_add_private (bond_class, sizeof (NMDeviceBondPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_BOND);
-
-	/* virtual methods */
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceBond:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_BOND_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_BOND_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceBond:carrier:
 	 *
 	 * Whether the device has carrier.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_BOND_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CARRIER] =
+	    g_param_spec_boolean (NM_DEVICE_BOND_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
-	 * NMDeviceBond:slaves:
+	 * NMDeviceBond:slaves: (type GPtrArray(NMDevice))
 	 *
-	 * The devices slaved to the bond device.
-	 *
-	 * Element-type: NMDevice
+	 * The devices enslaved to the bond device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_BOND_SLAVES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SLAVES] =
+	    g_param_spec_boxed (NM_DEVICE_BOND_SLAVES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

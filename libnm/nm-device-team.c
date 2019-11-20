@@ -1,56 +1,48 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
+ * Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#include <config.h>
-#include <string.h>
-#include <glib/gi18n.h>
-
-#include "nm-glib-compat.h"
-
-#include <nm-setting-connection.h>
-#include <nm-setting-team.h>
-#include <nm-utils.h>
+#include "nm-default.h"
 
 #include "nm-device-team.h"
-#include "nm-device-private.h"
+
+#include "nm-setting-connection.h"
+#include "nm-setting-team.h"
+#include "nm-utils.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_HW_ADDRESS,
+	PROP_CARRIER,
+	PROP_SLAVES,
+	PROP_CONFIG,
+);
 
 typedef struct {
 	char *hw_address;
 	gboolean carrier;
 	GPtrArray *slaves;
+	char *config;
 } NMDeviceTeamPrivate;
 
-enum {
-	PROP_0,
-	PROP_HW_ADDRESS,
-	PROP_CARRIER,
-	PROP_SLAVES,
-
-	LAST_PROP
+struct _NMDeviceTeam {
+	NMDevice parent;
+	NMDeviceTeamPrivate _priv;
 };
+
+struct _NMDeviceTeamClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_TEAM_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceTeam, NM_IS_DEVICE_TEAM, NMObject, NMDevice)
+
+/*****************************************************************************/
 
 /**
  * nm_device_team_get_hw_address:
@@ -66,7 +58,7 @@ nm_device_team_get_hw_address (NMDeviceTeam *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), NULL);
 
-	return NM_DEVICE_TEAM_GET_PRIVATE (device)->hw_address;
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -103,6 +95,25 @@ nm_device_team_get_slaves (NMDeviceTeam *device)
 	return NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves;
 }
 
+/**
+ * nm_device_team_get_config:
+ * @device: a #NMDeviceTeam
+ *
+ * Gets the current JSON configuration of the #NMDeviceTeam
+ *
+ * Returns: the current configuration. This is the internal string used by the
+ * device, and must not be modified.
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_device_team_get_config (NMDeviceTeam *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), NULL);
+
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (device)->config);
+}
+
 static const char *
 get_hw_address (NMDevice *device)
 {
@@ -132,14 +143,12 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_TEAM;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_team_init (NMDeviceTeam *device)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
-
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_TEAM);
 
 	priv->slaves = g_ptr_array_new ();
 }
@@ -152,6 +161,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_TEAM_HW_ADDRESS, &priv->hw_address },
 		{ NM_DEVICE_TEAM_CARRIER,    &priv->carrier },
 		{ NM_DEVICE_TEAM_SLAVES,     &priv->slaves, NULL, NM_TYPE_DEVICE },
+		{ NM_DEVICE_TEAM_CONFIG,     &priv->config },
 		{ NULL },
 	};
 
@@ -178,6 +188,7 @@ finalize (GObject *object)
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
 
 	g_free (priv->hw_address);
+	g_free (priv->config);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->finalize (object);
 }
@@ -200,6 +211,9 @@ get_property (GObject *object,
 	case PROP_SLAVES:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_team_get_slaves (device)));
 		break;
+	case PROP_CONFIG:
+		g_value_set_string (value, nm_device_team_get_config (device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -213,58 +227,61 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (team_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (team_class);
 
-	g_type_class_add_private (team_class, sizeof (NMDeviceTeamPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_TEAM);
-
-	/* virtual methods */
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
-	device_class->get_setting_type = get_setting_type;
-	device_class->get_hw_address = get_hw_address;
-
-	/* properties */
+	device_class->get_setting_type      = get_setting_type;
+	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceTeam:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTeam:carrier:
 	 *
 	 * Whether the device has carrier.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_TEAM_CARRIER, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CARRIER] =
+	    g_param_spec_boolean (NM_DEVICE_TEAM_CARRIER, "", "",
+	                          FALSE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
-	 * NMDeviceTeam:slaves:
+	 * NMDeviceTeam:slaves: (type GPtrArray(NMDevice))
 	 *
 	 * The devices enslaved to the team device.
-	 *
-	 * Element-type: NMDevice
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_SLAVES] =
+	    g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
+	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMDeviceTeam:config:
+	 *
+	 * The current JSON configuration of the device.
+	 *
+	 * Since: 1.4
+	 **/
+	obj_properties[PROP_CONFIG] =
+	    g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

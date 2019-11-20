@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -24,9 +11,7 @@
  * "nmtui edit".
  */
 
-#include "config.h"
-
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmtui.h"
 #include "nmtui-edit.h"
@@ -322,6 +307,32 @@ listbox_activated (NmtNewtWidget *listbox, gpointer list)
 }
 
 static void
+connection_saved (GObject      *conn,
+                  GAsyncResult *result,
+                  gpointer      user_data)
+{
+        nm_remote_connection_save_finish (NM_REMOTE_CONNECTION (conn), result, NULL);
+}
+
+void
+nmt_edit_connection_list_recommit (NmtEditConnectionList *list)
+{
+	NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE (list);
+	NMConnection *conn;
+	GSList *iter;
+
+	for (iter = priv->connections; iter; iter = iter->next) {
+		conn = iter->data;
+
+		if (   NM_IS_REMOTE_CONNECTION (conn)
+		    && (nm_remote_connection_get_unsaved (NM_REMOTE_CONNECTION (conn)) == FALSE)) {
+			nm_remote_connection_save_async (NM_REMOTE_CONNECTION (conn),
+			                                 NULL, connection_saved, NULL);
+		}
+	}
+}
+
+static void
 nmt_edit_connection_list_finalize (GObject *object)
 {
 	NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE (object);
@@ -477,7 +488,7 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT_ONLY |
 		                       G_PARAM_STATIC_STRINGS));
-	
+
 	/**
 	 * NmtEditConnectionListFilter:
 	 * @list: the #NmtEditConnectionList

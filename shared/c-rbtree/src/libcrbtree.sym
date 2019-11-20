@@ -1,0 +1,21 @@
+LIBCRBTREE_3 {
+global:
+        c_rbnode_leftmost;
+        c_rbnode_rightmost;
+        c_rbnode_leftdeepest;
+        c_rbnode_rightdeepest;
+        c_rbnode_next;
+        c_rbnode_prev;
+        c_rbnode_next_postorder;
+        c_rbnode_prev_postorder;
+        c_rbnode_link;
+        c_rbnode_unlink_stale;
+        c_rbtree_first;
+        c_rbtree_last;
+        c_rbtree_first_postorder;
+        c_rbtree_last_postorder;
+        c_rbtree_add;
+        c_rbtree_move;
+local:
+       *;
+};

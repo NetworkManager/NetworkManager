@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+
+  <!--
+      org.freedesktop.NetworkManager.Checkpoint:
+      @short_description: Configuration and State Snapshot
+
+      A snapshot of NetworkManager state for a given device list
+  -->
+  <interface name="org.freedesktop.NetworkManager.Checkpoint">
+    <annotation name="org.gtk.GDBus.C.Name" value="Checkpoint"/>
+
+    <!--
+        Devices:
+
+        Array of object paths for devices which are part of this
+        checkpoint.
+    -->
+    <property name="Devices" type="ao" access="read"/>
+
+    <!--
+        Created:
+
+        The timestamp (in CLOCK_BOOTTIME milliseconds) of checkpoint creation.
+    -->
+    <property name="Created" type="x" access="read"/>
+
+    <!--
+        RollbackTimeout:
+
+        Timeout in seconds for automatic rollback, or zero.
+    -->
+    <property name="RollbackTimeout" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

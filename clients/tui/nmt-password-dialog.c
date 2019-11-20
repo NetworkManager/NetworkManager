@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -24,12 +11,10 @@
  * secrets when activating a connection.
  */
 
-#include "config.h"
-
-#include <glib/gi18n-lib.h>
+#include "nm-default.h"
 
 #include "nmt-password-dialog.h"
-#include "nmt-secret-agent.h"
+#include "nm-secret-agent-simple.h"
 #include "nmtui.h"
 
 G_DEFINE_TYPE (NmtPasswordDialog, nmt_password_dialog, NMT_TYPE_NEWT_FORM)
@@ -60,10 +45,10 @@ enum {
 
 /**
  * nmt_password_dialog_new:
- * @request_id: the request ID from the #NmtSecretAgent
+ * @request_id: the request ID from the #NMSecretAgentSimple
  * @title: the dialog title
  * @prompt: the prompt text to display
- * @secrets: (element-type #NmtSecretAgentSecret): the secrets requested
+ * @secrets: (element-type #NMSecretAgentSimpleSecret): the secrets requested
  *
  * Creates a new #NmtPasswordDialog to request passwords from
  * the user.
@@ -109,7 +94,7 @@ maybe_save_input_and_exit (NmtNewtWidget *widget,
 	priv->succeeded = TRUE;
 
 	for (i = 0; i < priv->secrets->len; i++) {
-		NmtSecretAgentSecret *secret = priv->secrets->pdata[i];
+		NMSecretAgentSimpleSecret *secret = priv->secrets->pdata[i];
 
 		g_free (secret->value);
 		g_object_get (priv->entries->pdata[i], "text", &secret->value, NULL);
@@ -143,17 +128,19 @@ nmt_password_dialog_constructed (GObject *object)
 	secret_grid = NMT_NEWT_GRID (widget);
 
 	for (i = 0; i < priv->secrets->len; i++) {
-		NmtSecretAgentSecret *secret = priv->secrets->pdata[i];
+		NMSecretAgentSimpleSecret *secret = priv->secrets->pdata[i];
 		NmtNewtEntryFlags flags;
 
-		widget = nmt_newt_label_new (secret->name);
+		widget = nmt_newt_label_new (secret->pretty_name);
 		nmt_newt_grid_add (secret_grid, widget, 0, i);
 		nmt_newt_widget_set_padding (widget, 4, 0, 1, 0);
 
 		flags = NMT_NEWT_ENTRY_NONEMPTY;
-		if (secret->password)
+		if (secret->is_secret)
 			flags |= NMT_NEWT_ENTRY_PASSWORD;
 		widget = nmt_newt_entry_new (30, flags);
+		if (secret->value)
+			nmt_newt_entry_set_text (NMT_NEWT_ENTRY (widget), secret->value);
 		nmt_newt_grid_add (secret_grid, widget, 1, i);
 		g_ptr_array_add (priv->entries, widget);
 
@@ -258,7 +245,7 @@ nmt_password_dialog_class_init (NmtPasswordDialogClass *dialog_class)
 	/**
 	 * NmtPasswordDialog:request-id:
 	 *
-	 * The request ID from the #NmtSecretAgent
+	 * The request ID from the #NMSecretAgentSimple
 	 */
 	g_object_class_install_property
 		(object_class, PROP_REQUEST_ID,
@@ -284,7 +271,7 @@ nmt_password_dialog_class_init (NmtPasswordDialogClass *dialog_class)
 	 *
 	 * The array of request secrets
 	 *
-	 * Element-Type: #NmtSecretAgentSecret.
+	 * Element-Type: #NMSecretAgentSimpleSecret.
 	 */
 	g_object_class_install_property
 		(object_class, PROP_SECRETS,

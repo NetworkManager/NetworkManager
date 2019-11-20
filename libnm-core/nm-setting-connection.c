@@ -1,31 +1,16 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2013 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#include <string.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
+
+#include "nm-setting-connection.h"
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-setting-connection.h"
+#include "nm-core-enum-types.h"
 #include "nm-connection-private.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
@@ -42,11 +27,7 @@
  * a #NMSettingConnection setting.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
-                         _nm_register_setting (CONNECTION, 0))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CONNECTION)
-
-#define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
+/*****************************************************************************/
 
 typedef enum {
 	PERM_TYPE_USER = 0,
@@ -57,25 +38,7 @@ typedef struct {
 	char *item;
 } Permission;
 
-typedef struct {
-	char *id;
-	char *uuid;
-	char *interface_name;
-	char *type;
-	char *master;
-	char *slave_type;
-	GSList *permissions; /* list of Permission structs */
-	gboolean autoconnect;
-	gint autoconnect_priority;
-	guint64 timestamp;
-	gboolean read_only;
-	char *zone;
-	GSList *secondaries; /* secondary connections to activate with the base connection */
-	guint gateway_ping_timeout;
-} NMSettingConnectionPrivate;
-
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMSettingConnection,
 	PROP_ID,
 	PROP_UUID,
 	PROP_INTERFACE_NAME,
@@ -83,18 +46,57 @@ enum {
 	PROP_PERMISSIONS,
 	PROP_AUTOCONNECT,
 	PROP_AUTOCONNECT_PRIORITY,
+	PROP_AUTOCONNECT_RETRIES,
+	PROP_MULTI_CONNECT,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
 	PROP_ZONE,
 	PROP_MASTER,
 	PROP_SLAVE_TYPE,
+	PROP_AUTOCONNECT_SLAVES,
 	PROP_SECONDARIES,
 	PROP_GATEWAY_PING_TIMEOUT,
+	PROP_METERED,
+	PROP_LLDP,
+	PROP_MDNS,
+	PROP_LLMNR,
+	PROP_STABLE_ID,
+	PROP_AUTH_RETRIES,
+	PROP_WAIT_DEVICE_TIMEOUT,
+);
 
-	LAST_PROP
-};
+typedef struct {
+	char *id;
+	char *uuid;
+	char *stable_id;
+	char *interface_name;
+	char *type;
+	char *master;
+	char *slave_type;
+	NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
+	GSList *permissions; /* list of Permission structs */
+	gboolean autoconnect;
+	int autoconnect_priority;
+	int autoconnect_retries;
+	int multi_connect;
+	guint64 timestamp;
+	gboolean read_only;
+	char *zone;
+	GSList *secondaries; /* secondary connections to activate with the base connection */
+	guint gateway_ping_timeout;
+	NMMetered metered;
+	NMSettingConnectionLldp lldp;
+	int auth_retries;
+	int mdns;
+	int llmnr;
+	int wait_device_timeout;
+} NMSettingConnectionPrivate;
 
-/***********************************************************************/
+G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
+
+#define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
+
+/*****************************************************************************/
 
 #define PERM_USER_PREFIX  "user:"
 
@@ -175,19 +177,7 @@ permission_free (Permission *p)
 	g_slice_free (Permission, p);
 }
 
-/***********************************************************************/
-
-/**
- * nm_setting_connection_new:
- *
- * Creates a new #NMSettingConnection object with default values.
- *
- * Returns: the new empty #NMSettingConnection object
- **/
-NMSetting *nm_setting_connection_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CONNECTION, NULL);
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_connection_get_id:
@@ -222,6 +212,24 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
 }
 
 /**
+ * nm_setting_connection_get_stable_id:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:stable_id property of the connection.
+ *
+ * Returns: the stable-id for the connection
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_setting_connection_get_stable_id (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->stable_id;
+}
+
+/**
  * nm_setting_connection_get_interface_name:
  * @setting: the #NMSettingConnection
  *
@@ -253,15 +261,14 @@ nm_setting_connection_get_connection_type (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->type;
 }
 
-
 /**
  * nm_setting_connection_get_num_permissions:
  * @setting: the #NMSettingConnection
  *
- * Returns the number of entires in the #NMSettingConnection:permissions
+ * Returns the number of entries in the #NMSettingConnection:permissions
  * property of this setting.
  *
- * Returns: the number of permissions entires
+ * Returns: the number of permissions entries
  */
 guint32
 nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
@@ -276,7 +283,7 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
  * @setting: the #NMSettingConnection
  * @idx: the zero-based index of the permissions entry
  * @out_ptype: on return, the permission type (at this time, always "user")
- * @out_pitem: on return, the permission item (formatted accoring to @ptype, see
+ * @out_pitem: on return, the permission item (formatted according to @ptype, see
  * #NMSettingConnection:permissions for more detail
  * @out_detail: on return, the permission detail (at this time, always %NULL)
  *
@@ -376,8 +383,7 @@ nm_setting_connection_add_permission (NMSettingConnection *setting,
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
-	g_return_val_if_fail (ptype, FALSE);
-	g_return_val_if_fail (strlen (ptype) > 0, FALSE);
+	g_return_val_if_fail (ptype && ptype[0], FALSE);
 	g_return_val_if_fail (detail == NULL, FALSE);
 
 	/* Only "user" for now... */
@@ -395,7 +401,7 @@ nm_setting_connection_add_permission (NMSettingConnection *setting,
 	p = permission_new (pitem);
 	g_return_val_if_fail (p != NULL, FALSE);
 	priv->permissions = g_slist_append (priv->permissions, p);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+	_notify (setting, PROP_PERMISSIONS);
 
 	return TRUE;
 }
@@ -422,7 +428,7 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
 
 	permission_free ((Permission *) iter->data);
 	priv->permissions = g_slist_delete_link (priv->permissions, iter);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+	_notify (setting, PROP_PERMISSIONS);
 }
 
 /**
@@ -449,9 +455,9 @@ nm_setting_connection_remove_permission_by_value (NMSettingConnection *setting,
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
-	g_return_val_if_fail (ptype, FALSE);
-	g_return_val_if_fail (strlen (ptype) > 0, FALSE);
+	g_return_val_if_fail (ptype && ptype[0], FALSE);
 	g_return_val_if_fail (detail == NULL, FALSE);
+	g_return_val_if_fail (pitem != NULL, FALSE);
 
 	/* Only "user" for now... */
 	g_return_val_if_fail (strcmp (ptype, "user") == 0, FALSE);
@@ -462,7 +468,7 @@ nm_setting_connection_remove_permission_by_value (NMSettingConnection *setting,
 		if (strcmp (pitem, p->item) == 0) {
 			permission_free ((Permission *) iter->data);
 			priv->permissions = g_slist_delete_link (priv->permissions, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+			_notify (setting, PROP_PERMISSIONS);
 			return TRUE;
 		}
 	}
@@ -494,12 +500,66 @@ nm_setting_connection_get_autoconnect (NMSettingConnection *setting)
  *
  * Returns: the connection's autoconnect priority
  **/
-gint
+int
 nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_priority;
+}
+
+/**
+ * nm_setting_connection_get_autoconnect_retries:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:autoconnect-retries property of the connection.
+ * Zero means infinite, -1 means the global default value.
+ *
+ * Returns: the connection's autoconnect retries
+ *
+ * Since: 1.6
+ **/
+int
+nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_retries;
+}
+
+/**
+ * nm_setting_connection_get_multi_connect:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:multi-connect property of the connection.
+ *
+ * Since: 1.14
+ **/
+NMConnectionMultiConnect
+nm_setting_connection_get_multi_connect (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return (NMConnectionMultiConnect) NM_SETTING_CONNECTION_GET_PRIVATE (setting)->multi_connect;
+}
+
+/**
+ * nm_setting_connection_get_auth_retries:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the value contained in the #NMSettingConnection:auth-retries property.
+ *
+ * Returns: the configured authentication retries. Zero means
+ * infinity and -1 means a global default value.
+ *
+ * Since: 1.10
+ **/
+int
+nm_setting_connection_get_auth_retries (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->auth_retries;
 }
 
 /**
@@ -516,6 +576,26 @@ nm_setting_connection_get_timestamp (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->timestamp;
+}
+
+static GVariant *
+_to_dbus_fcn_timestamp (const NMSettInfoSetting *sett_info,
+                        guint property_idx,
+                        NMConnection *connection,
+                        NMSetting *setting,
+                        NMConnectionSerializationFlags flags,
+                        const NMConnectionSerializationOptions *options)
+{
+	guint64 v;
+
+	v =   options && options->timestamp.has
+	    ? options->timestamp.val
+	    : NM_SETTING_CONNECTION_GET_PRIVATE (setting)->timestamp;
+
+	if (v == 0u)
+		return NULL;
+
+	return g_variant_new_uint64 (v);
 }
 
 /**
@@ -601,6 +681,42 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
 }
 
 /**
+ * nm_setting_connection_get_wait_device_timeout:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the %NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT property with
+ *   the timeout in milli seconds. -1 is the default.
+ *
+ * Since: 1.20
+ */
+gint32
+nm_setting_connection_get_wait_device_timeout (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->wait_device_timeout;
+}
+
+/**
+ * nm_setting_connection_get_autoconnect_slaves:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:autoconnect-slaves property of the connection.
+ *
+ * Returns: whether slaves of the connection should be activated together
+ *          with the connection.
+ *
+ * Since: 1.2
+ **/
+NMSettingConnectionAutoconnectSlaves
+nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_slaves;
+}
+
+/**
  * nm_setting_connection_get_num_secondaries:
  * @setting: the #NMSettingConnection
  *
@@ -639,7 +755,7 @@ nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
  * @setting: the #NMSettingConnection
  * @sec_uuid: the secondary connection UUID to add
  *
- * Adds a new secondary connetion UUID to the setting.
+ * Adds a new secondary connection UUID to the setting.
  *
  * Returns: %TRUE if the secondary connection UUID was added; %FALSE if the UUID
  * was already present
@@ -662,7 +778,7 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
 	}
 
 	priv->secondaries = g_slist_append (priv->secondaries, g_strdup (sec_uuid));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+	_notify (setting, PROP_SECONDARIES);
 	return TRUE;
 }
 
@@ -687,7 +803,7 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
 
 	g_free (elt->data);
 	priv->secondaries = g_slist_delete_link (priv->secondaries, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+	_notify (setting, PROP_SECONDARIES);
 }
 
 /**
@@ -714,7 +830,7 @@ nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting,
 	for (iter = priv->secondaries; iter; iter = g_slist_next (iter)) {
 		if (!strcmp (sec_uuid, (char *) iter->data)) {
 			priv->secondaries = g_slist_delete_link (priv->secondaries, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+			_notify (setting, PROP_SECONDARIES);
 			return TRUE;
 		}
 	}
@@ -736,6 +852,76 @@ nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->gateway_ping_timeout;
 }
 
+/**
+ * nm_setting_connection_get_metered:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:metered property of the setting.
+ *
+ * Since: 1.2
+ **/
+NMMetered
+nm_setting_connection_get_metered (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
+	                      NM_METERED_UNKNOWN);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->metered;
+}
+
+/**
+ * nm_setting_connection_get_lldp:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:lldp property of the connection.
+ *
+ * Returns: a %NMSettingConnectionLldp which indicates whether LLDP must be
+ * enabled for the connection.
+ *
+ * Since: 1.2
+ **/
+NMSettingConnectionLldp
+nm_setting_connection_get_lldp (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NM_SETTING_CONNECTION_LLDP_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->lldp;
+}
+
+/**
+ * nm_setting_connection_get_mdns:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:mdns property of the setting.
+ *
+ * Since: 1.12
+ **/
+NMSettingConnectionMdns
+nm_setting_connection_get_mdns (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
+	                      NM_SETTING_CONNECTION_MDNS_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->mdns;
+}
+
+/**
+ * nm_setting_connection_get_llmnr:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:llmnr property of the setting.
+ *
+ * Since: 1.14
+ **/
+NMSettingConnectionLlmnr
+nm_setting_connection_get_llmnr (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
+	                      NM_SETTING_CONNECTION_LLMNR_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->llmnr;
+}
+
 static void
 _set_error_missing_base_setting (GError **error, const char *type)
 {
@@ -752,8 +938,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 	gboolean is_slave;
-	const char *slave_setting_type = NULL;
+	const char *slave_setting_type;
 	NMSetting *normerr_base_type = NULL;
+	const char *type;
+	const char *slave_type;
 	const char *normerr_slave_setting_type = NULL;
 	const char *normerr_missing_slave_type = NULL;
 	const char *normerr_missing_slave_type_port = NULL;
@@ -775,14 +963,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->uuid) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
-		return FALSE;
-	} else if (!nm_utils_is_uuid (priv->uuid)) {
+	if (priv->uuid && !nm_utils_is_uuid (priv->uuid)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -793,19 +974,23 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->interface_name) {
-		if (!nm_utils_iface_valid_name (priv->interface_name)) {
+		GError *tmp_error = NULL;
+
+		if (!nm_utils_is_valid_iface_name (priv->interface_name, &tmp_error)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid interface name"),
-			             priv->interface_name);
+			             "'%s': %s", priv->interface_name, tmp_error->message);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+			g_error_free (tmp_error);
 			return FALSE;
 		}
 	}
 
-	if (!priv->type) {
-		if (!connection || !(normerr_base_type = _nm_connection_find_base_type_setting (connection))) {
+	type = priv->type;
+	if (!type) {
+		if (   !connection
+		    || !(normerr_base_type = _nm_connection_find_base_type_setting (connection))) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
@@ -813,10 +998,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;
 		}
+		type = nm_setting_get_name (normerr_base_type);
 	} else {
 		GType base_type;
 
-		if (!priv->type[0]) {
+		if (!type[0]) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -825,20 +1011,21 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			return FALSE;
 		}
 
-		base_type = nm_setting_lookup_type (priv->type);
-		if (base_type == G_TYPE_INVALID || !_nm_setting_type_is_base_type (base_type)) {
+		base_type = nm_setting_lookup_type (type);
+		if (   base_type == G_TYPE_INVALID
+		    || _nm_setting_type_get_base_type_priority (base_type) == NM_SETTING_PRIORITY_INVALID) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("connection type '%s' is not valid"),
-			             priv->type);
+			             type);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;
 		}
 
 		/* Make sure the corresponding 'type' item is present */
 		if (   connection
-		    && !nm_connection_get_setting_by_name (connection, priv->type)) {
+		    && !nm_connection_get_setting_by_name (connection, type)) {
 			NMSetting *s_base;
 			NMConnection *connection2;
 
@@ -851,31 +1038,33 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_object_unref (connection2);
 
 			if (!normerr_base_setting) {
-				_set_error_missing_base_setting (error, priv->type);
+				_set_error_missing_base_setting (error, type);
 				return FALSE;
 			}
 		}
 	}
 
 	is_slave = FALSE;
-	if (priv->slave_type)
-		is_slave = _nm_setting_slave_type_is_valid (priv->slave_type, &slave_setting_type);
-
-	if (priv->slave_type && !is_slave) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("Unknown slave type '%s'"), priv->slave_type);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
-		return FALSE;
+	slave_setting_type = NULL;
+	slave_type = priv->slave_type;
+	if (slave_type) {
+		is_slave = _nm_setting_slave_type_is_valid (slave_type, &slave_setting_type);
+		if (!is_slave) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("Unknown slave type '%s'"), slave_type);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+			return FALSE;
+		}
 	}
 
 	if (is_slave) {
 		if (!priv->master) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			             _("Slave connections need a valid '%s' property"), NM_SETTING_CONNECTION_MASTER);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
 			return FALSE;
 		}
@@ -884,8 +1073,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		    && !nm_connection_get_setting_by_name (connection, slave_setting_type))
 			normerr_slave_setting_type = slave_setting_type;
 	} else {
+		nm_assert (!slave_type);
 		if (priv->master) {
-			const char *slave_type;
 			NMSetting *s_port;
 
 			if (   connection
@@ -893,17 +1082,102 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				normerr_missing_slave_type = slave_type;
 				normerr_missing_slave_type_port = nm_setting_get_name (s_port);
 			} else {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-				                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+				             _("Cannot set '%s' without '%s'"),
+				             NM_SETTING_CONNECTION_MASTER, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
 		}
 	}
 
+	if (   strcmp (type, NM_SETTING_OVS_PORT_SETTING_NAME) == 0
+	    && slave_type
+	    && strcmp (slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME) != 0) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		             _("'%s' connections must be enslaved to '%s', not '%s'"),
+		             NM_SETTING_OVS_PORT_SETTING_NAME,
+		             NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+		             slave_type);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+		return FALSE;
+	}
+
+	if (priv->metered != NM_METERED_UNKNOWN &&
+	    priv->metered != NM_METERED_YES &&
+	    priv->metered != NM_METERED_NO) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("metered value %d is not valid"), priv->metered);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_METERED);
+		return FALSE;
+	}
+
+	if (   priv->mdns < (int) NM_SETTING_CONNECTION_MDNS_DEFAULT
+	    || priv->mdns > (int) NM_SETTING_CONNECTION_MDNS_YES) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("value %d is not valid"), priv->mdns);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_MDNS);
+		return FALSE;
+	}
+
+	if (   priv->llmnr < (int) NM_SETTING_CONNECTION_LLMNR_DEFAULT
+	    || priv->llmnr > (int) NM_SETTING_CONNECTION_LLMNR_YES) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("value %d is not valid"), priv->llmnr);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_LLMNR);
+		return FALSE;
+	}
+
+	if (!NM_IN_SET (priv->multi_connect, (int) NM_CONNECTION_MULTI_CONNECT_DEFAULT,
+	                                     (int) NM_CONNECTION_MULTI_CONNECT_SINGLE,
+	                                     (int) NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE,
+	                                     (int) NM_CONNECTION_MULTI_CONNECT_MULTIPLE)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("value %d is not valid"), priv->multi_connect);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_MULTI_CONNECT);
+		return FALSE;
+	}
+
+	if (   priv->wait_device_timeout != -1
+	    && !priv->interface_name) {
+		/* currently, only waiting by interface-name is implemented. Hence reject
+		 * configurations that are not implemented (yet). */
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("wait-device-timeout requires %s"),
+		             NM_SETTING_CONNECTION_INTERFACE_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT);
+		return FALSE;
+	}
+
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (!priv->uuid) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
 
 	if (normerr_base_type) {
 		g_set_error (error,
@@ -934,10 +1208,29 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		             _("Detect a slave connection with '" NM_SETTING_CONNECTION_MASTER "' set and a port type '%s'. '" NM_SETTING_CONNECTION_SLAVE_TYPE "' should be set to '%s'"),
-		             normerr_missing_slave_type_port, normerr_missing_slave_type);
+		             _("Detect a slave connection with '%s' set and a port type '%s'. '%s' should be set to '%s'"),
+		             NM_SETTING_CONNECTION_MASTER, normerr_missing_slave_type_port,
+		             NM_SETTING_CONNECTION_SLAVE_TYPE, normerr_missing_slave_type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
+	if (connection) {
+		gboolean has_bridge_port = FALSE;
+
+		if (   (   !nm_streq0 (priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+		        && (has_bridge_port = !!nm_connection_get_setting_by_name (connection, NM_SETTING_BRIDGE_PORT_SETTING_NAME)))
+		    || (   !nm_streq0 (priv->slave_type, NM_SETTING_TEAM_SETTING_NAME)
+		        && nm_connection_get_setting_by_name (connection, NM_SETTING_TEAM_PORT_SETTING_NAME))) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("A slave connection with '%s' set to '%s' cannot have a '%s' setting"),
+			             NM_SETTING_CONNECTION_SLAVE_TYPE, priv->slave_type ?: "",
+			             has_bridge_port ? NM_SETTING_BRIDGE_PORT_SETTING_NAME : NM_SETTING_TEAM_PORT_SETTING_NAME);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
 	}
 
 	return TRUE;
@@ -962,16 +1255,19 @@ find_virtual_interface_name (GVariant *connection_dict)
 
 	/* All of the deprecated virtual interface name properties were named "interface-name". */
 	if (!g_variant_lookup (setting_dict, "interface-name", "&s", &interface_name))
-		return NULL;
+		interface_name = NULL;
 
+	g_variant_unref (setting_dict);
 	return interface_name;
 }
 
-static void
+static gboolean
 nm_setting_connection_set_interface_name (NMSetting *setting,
                                           GVariant *connection_dict,
                                           const char *property,
-                                          GVariant *value)
+                                          GVariant *value,
+                                          NMSettingParseFlags parse_flags,
+                                          GError **error)
 {
 	const char *interface_name;
 
@@ -980,18 +1276,22 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
 	 * overridden by a valid connection.interface-name.
 	 */
 	interface_name = find_virtual_interface_name (connection_dict);
-	if (!interface_name || nm_utils_iface_valid_name (interface_name))
+	if (!interface_name || nm_utils_is_valid_iface_name (interface_name, NULL))
 		interface_name = g_variant_get_string (value, NULL);
 
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name,
 	              NULL);
+
+	return TRUE;
 }
 
-static void
+static gboolean
 nm_setting_connection_no_interface_name (NMSetting *setting,
                                          GVariant *connection_dict,
-                                         const char *property)
+                                         const char *property,
+                                         NMSettingParseFlags parse_flags,
+                                         GError **error)
 {
 	const char *virtual_interface_name;
 
@@ -999,44 +1299,33 @@ nm_setting_connection_no_interface_name (NMSetting *setting,
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, virtual_interface_name,
 	              NULL);
+	return TRUE;
 }
 
-static gboolean
-compare_property (NMSetting *setting,
-                  NMSetting *other,
-                  const GParamSpec *prop_spec,
+static NMTernary
+compare_property (const NMSettInfoSetting *sett_info,
+                  guint property_idx,
+                  NMConnection *con_a,
+                  NMSetting *set_a,
+                  NMConnection *con_b,
+                  NMSetting *set_b,
                   NMSettingCompareFlags flags)
 {
-	/* Handle ignore ID */
-	if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
-	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_ID) == 0)
-		return TRUE;
+	if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID)
+	    && nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_CONNECTION_ID))
+		return NM_TERNARY_DEFAULT;
 
-	/* Otherwise chain up to parent to handle generic compare */
-	return NM_SETTING_CLASS (nm_setting_connection_parent_class)->compare_property (setting, other, prop_spec, flags);
-}
+	if (   NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
+	    && nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_CONNECTION_TIMESTAMP))
+		return NM_TERNARY_DEFAULT;
 
-static void
-nm_setting_connection_init (NMSettingConnection *setting)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (object);
-
-	g_free (priv->id);
-	g_free (priv->uuid);
-	g_free (priv->interface_name);
-	g_free (priv->type);
-	g_free (priv->zone);
-	g_free (priv->master);
-	g_free (priv->slave_type);
-	g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
-	g_slist_free_full (priv->secondaries, g_free);
-
-	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
+	return NM_SETTING_CLASS (nm_setting_connection_parent_class)->compare_property (sett_info,
+	                                                                                property_idx,
+	                                                                                con_a,
+	                                                                                set_a,
+	                                                                                con_b,
+	                                                                                set_b,
+	                                                                                flags);
 }
 
 static GSList *
@@ -1059,6 +1348,108 @@ perm_strv_to_permlist (char **strv)
 	return list;
 }
 
+static char **
+perm_permlist_to_strv (GSList *permlist)
+{
+	GPtrArray *strings;
+	GSList *iter;
+
+	strings = g_ptr_array_new ();
+	for (iter = permlist; iter; iter = g_slist_next (iter))
+		g_ptr_array_add (strings, permission_to_string ((Permission *) iter->data));
+	g_ptr_array_add (strings, NULL);
+
+	return (char **) g_ptr_array_free (strings, FALSE);
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingConnection *setting = NM_SETTING_CONNECTION (object);
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_ID:
+		g_value_set_string (value, nm_setting_connection_get_id (setting));
+		break;
+	case PROP_UUID:
+		g_value_set_string (value, nm_setting_connection_get_uuid (setting));
+		break;
+	case PROP_STABLE_ID:
+		g_value_set_string (value, nm_setting_connection_get_stable_id (setting));
+		break;
+	case PROP_INTERFACE_NAME:
+		g_value_set_string (value, nm_setting_connection_get_interface_name (setting));
+		break;
+	case PROP_TYPE:
+		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
+		break;
+	case PROP_PERMISSIONS:
+		g_value_take_boxed (value, perm_permlist_to_strv (priv->permissions));
+		break;
+	case PROP_AUTOCONNECT:
+		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
+		break;
+	case PROP_AUTOCONNECT_PRIORITY:
+		g_value_set_int (value, nm_setting_connection_get_autoconnect_priority (setting));
+		break;
+	case PROP_AUTOCONNECT_RETRIES:
+		g_value_set_int (value, nm_setting_connection_get_autoconnect_retries (setting));
+		break;
+	case PROP_MULTI_CONNECT:
+		g_value_set_int (value, priv->multi_connect);
+		break;
+	case PROP_TIMESTAMP:
+		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
+		break;
+	case PROP_READ_ONLY:
+		g_value_set_boolean (value, nm_setting_connection_get_read_only (setting));
+		break;
+	case PROP_ZONE:
+		g_value_set_string (value, nm_setting_connection_get_zone (setting));
+		break;
+	case PROP_MASTER:
+		g_value_set_string (value, nm_setting_connection_get_master (setting));
+		break;
+	case PROP_SLAVE_TYPE:
+		g_value_set_string (value, nm_setting_connection_get_slave_type (setting));
+		break;
+	case PROP_AUTOCONNECT_SLAVES:
+		g_value_set_enum (value, nm_setting_connection_get_autoconnect_slaves (setting));
+		break;
+	case PROP_SECONDARIES:
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->secondaries, TRUE));
+		break;
+	case PROP_GATEWAY_PING_TIMEOUT:
+		g_value_set_uint (value, priv->gateway_ping_timeout);
+		break;
+	case PROP_METERED:
+		g_value_set_enum (value, priv->metered);
+		break;
+	case PROP_LLDP:
+		g_value_set_int (value, priv->lldp);
+		break;
+	case PROP_AUTH_RETRIES:
+		g_value_set_int (value, priv->auth_retries);
+		break;
+	case PROP_MDNS:
+		g_value_set_int (value, priv->mdns);
+		break;
+	case PROP_LLMNR:
+		g_value_set_int (value, priv->llmnr);
+		break;
+	case PROP_WAIT_DEVICE_TIMEOUT:
+		g_value_set_int (value, priv->wait_device_timeout);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -1073,6 +1464,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_free (priv->uuid);
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_STABLE_ID:
+		g_free (priv->stable_id);
+		priv->stable_id = g_value_dup_string (value);
 		break;
 	case PROP_INTERFACE_NAME:
 		g_free (priv->interface_name);
@@ -1092,6 +1487,12 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTOCONNECT_PRIORITY:
 		priv->autoconnect_priority = g_value_get_int (value);
 		break;
+	case PROP_AUTOCONNECT_RETRIES:
+		priv->autoconnect_retries = g_value_get_int (value);
+		break;
+	case PROP_MULTI_CONNECT:
+		priv->multi_connect = g_value_get_int (value);
+		break;
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
@@ -1110,105 +1511,98 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->slave_type);
 		priv->slave_type = g_value_dup_string (value);
 		break;
+	case PROP_AUTOCONNECT_SLAVES:
+		priv->autoconnect_slaves = g_value_get_enum (value);
+		break;
 	case PROP_SECONDARIES:
 		g_slist_free_full (priv->secondaries, g_free);
-		priv->secondaries = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->secondaries = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_GATEWAY_PING_TIMEOUT:
 		priv->gateway_ping_timeout = g_value_get_uint (value);
 		break;
+	case PROP_METERED:
+		priv->metered = g_value_get_enum (value);
+		break;
+	case PROP_LLDP:
+		priv->lldp = g_value_get_int (value);
+		break;
+	case PROP_AUTH_RETRIES:
+		priv->auth_retries = g_value_get_int (value);
+		break;
+	case PROP_MDNS:
+		priv->mdns = g_value_get_int (value);
+		break;
+	case PROP_LLMNR:
+		priv->llmnr = g_value_get_int (value);
+		break;
+	case PROP_WAIT_DEVICE_TIMEOUT:
+		priv->wait_device_timeout = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
 }
 
-static char **
-perm_permlist_to_strv (GSList *permlist)
-{
-	GPtrArray *strings;
-	GSList *iter;
-
-	strings = g_ptr_array_new ();
-	for (iter = permlist; iter; iter = g_slist_next (iter))
-		g_ptr_array_add (strings, permission_to_string ((Permission *) iter->data));
-	g_ptr_array_add (strings, NULL);
-
-	return (char **) g_ptr_array_free (strings, FALSE);
-}
+/*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_setting_connection_init (NMSettingConnection *setting)
 {
-	NMSettingConnection *setting = NM_SETTING_CONNECTION (object);
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
-	switch (prop_id) {
-	case PROP_ID:
-		g_value_set_string (value, nm_setting_connection_get_id (setting));
-		break;
-	case PROP_UUID:
-		g_value_set_string (value, nm_setting_connection_get_uuid (setting));
-		break;
-	case PROP_INTERFACE_NAME:
-		g_value_set_string (value, nm_setting_connection_get_interface_name (setting));
-		break;
-	case PROP_TYPE:
-		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
-		break;
-	case PROP_PERMISSIONS:
-		g_value_take_boxed (value, perm_permlist_to_strv (priv->permissions));
-		break;
-	case PROP_AUTOCONNECT:
-		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
-		break;
-	case PROP_AUTOCONNECT_PRIORITY:
-		g_value_set_int (value, nm_setting_connection_get_autoconnect_priority (setting));
-		break;
-	case PROP_TIMESTAMP:
-		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
-		break;
-	case PROP_READ_ONLY:
-		g_value_set_boolean (value, nm_setting_connection_get_read_only (setting));
-		break;
-	case PROP_ZONE:
-		g_value_set_string (value, nm_setting_connection_get_zone (setting));
-		break;
-	case PROP_MASTER:
-		g_value_set_string (value, nm_setting_connection_get_master (setting));
-		break;
-	case PROP_SLAVE_TYPE:
-		g_value_set_string (value, nm_setting_connection_get_slave_type (setting));
-		break;
-	case PROP_SECONDARIES:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->secondaries));
-		break;
-	case PROP_GATEWAY_PING_TIMEOUT:
-		g_value_set_uint (value, priv->gateway_ping_timeout);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+	priv->llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
+	priv->wait_device_timeout = -1;
+}
+
+/**
+ * nm_setting_connection_new:
+ *
+ * Creates a new #NMSettingConnection object with default values.
+ *
+ * Returns: the new empty #NMSettingConnection object
+ **/
+NMSetting *nm_setting_connection_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CONNECTION, NULL);
 }
 
 static void
-nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
+finalize (GObject *object)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (object);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingConnectionPrivate));
+	g_free (priv->id);
+	g_free (priv->uuid);
+	g_free (priv->stable_id);
+	g_free (priv->interface_name);
+	g_free (priv->type);
+	g_free (priv->zone);
+	g_free (priv->master);
+	g_free (priv->slave_type);
+	g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
+	g_slist_free_full (priv->secondaries, g_free);
 
-	/* virtual methods */
-	object_class->set_property = set_property;
+	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_connection_class_init (NMSettingConnectionClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+
+	g_type_class_add_private (klass, sizeof (NMSettingConnectionPrivate));
+
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->compare_property = compare_property;
 
-	/* Properties */
+	setting_class->verify           = verify;
+	setting_class->compare_property = compare_property;
 
 	/**
 	 * NMSettingConnection:id:
@@ -1216,13 +1610,18 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * A human readable unique identifier for the connection, like "Work Wi-Fi"
 	 * or "T-Mobile 3G".
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: id
+	 * variable: NAME(+)
+	 * description: User friendly name for the connection profile.
+	 * ---end---
+	 */
+	obj_properties[PROP_ID] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:uuid:
@@ -1240,13 +1639,72 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * be generated by nm_utils_uuid_generate() or
 	 * nm_utils_uuid_generate_from_string().
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_UUID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: uuid
+	 * variable: UUID(+)
+	 * description: UUID for the connection profile. When missing, NetworkManager
+	 *   creates the UUID itself (by hashing the filename).
+	 * ---end---
+	 */
+	obj_properties[PROP_UUID] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:stable-id:
+	 *
+	 * This represents the identity of the connection used for various purposes.
+	 * It allows to configure multiple profiles to share the identity. Also,
+	 * the stable-id can contain placeholders that are substituted dynamically and
+	 * deterministically depending on the context.
+	 *
+	 * The stable-id is used for generating IPv6 stable private addresses
+	 * with ipv6.addr-gen-mode=stable-privacy. It is also used to seed the
+	 * generated cloned MAC address for ethernet.cloned-mac-address=stable
+	 * and wifi.cloned-mac-address=stable. It is also used as DHCP client
+	 * identifier with ipv4.dhcp-client-id=stable and to derive the DHCP
+	 * DUID with ipv6.dhcp-duid=stable-[llt,ll,uuid].
+	 *
+	 * Note that depending on the context where it is used, other parameters are
+	 * also seeded into the generation algorithm. For example, a per-host key
+	 * is commonly also included, so that different systems end up generating
+	 * different IDs. Or with ipv6.addr-gen-mode=stable-privacy, also the device's
+	 * name is included, so that different interfaces yield different addresses.
+	 *
+	 * The '$' character is treated special to perform dynamic substitutions
+	 * at runtime. Currently supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
+	 * "${BOOT}", "${RANDOM}".
+	 * These effectively create unique IDs per-connection, per-device, per-boot,
+	 * or every time. Note that "${DEVICE}" corresponds to the interface name of the
+	 * device and "${MAC}" is the permanent MAC address of the device.
+	 * Any unrecognized patterns following '$' are treated verbatim, however
+	 * are reserved for future use. You are thus advised to avoid '$' or
+	 * escape it as "$$".
+	 * For example, set it to "${CONNECTION}-${BOOT}-${DEVICE}" to create a unique id for
+	 * this connection that changes with every reboot and differs depending on the
+	 * interface where the profile activates.
+	 *
+	 * If the value is unset, a global connection default is consulted. If the
+	 * value is still unset, the default is similar to "${CONNECTION}" and uses
+	 * a unique, fixed ID for the connection.
+	 *
+	 * Since: 1.4
+	 **/
+	/* ---ifcfg-rh---
+	 * property: stable-id
+	 * variable: STABLE_ID(+)
+	 * description: Token to generate stable IDs.
+	 * ---end---
+	 */
+	obj_properties[PROP_STABLE_ID] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_STABLE_ID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:interface-name:
@@ -1263,18 +1721,27 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * can be used with, and if interface names change or are reordered the
 	 * connection may be applied to the wrong interface.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_override_property (parent_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
-	                                     G_VARIANT_TYPE_STRING,
-	                                     NULL,
-	                                     nm_setting_connection_set_interface_name,
-	                                     nm_setting_connection_no_interface_name);
+	/* ---ifcfg-rh---
+	 * property: interface-name
+	 * variable: DEVICE
+	 * description: Interface name of the device this profile is bound to. The variable
+	 *   can be left out when the profile should apply for more devices. Note that DEVICE
+	 *   can be required for some connection types.
+	 * ---end---
+	 */
+	obj_properties[PROP_INTERFACE_NAME] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_INTERFACE_NAME],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type             = G_VARIANT_TYPE_STRING,
+	                                  .from_dbus_fcn         = nm_setting_connection_set_interface_name,
+	                                  .missing_from_dbus_fcn = nm_setting_connection_no_interface_name,
+	                              ));
 
 	/**
 	 * NMSettingConnection:type:
@@ -1285,22 +1752,31 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * non-hardware dependent connections like VPN or otherwise, should contain
 	 * the setting name of that setting type (ie, "vpn" or "bridge", etc).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TYPE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: type
+	 * variable: TYPE (DEVICETYPE, DEVICE)
+	 * values: Ethernet, Wireless, InfiniBand, Bridge, Bond, Vlan, Team, TeamPort
+	 * description: Base type of the connection. DEVICETYPE is used for teaming
+	 *   connections.
+	 * example: TYPE=Ethernet; TYPE=Bond; TYPE=Bridge; DEVICETYPE=TeamPort
+	 * ---end---
+	 */
+	obj_properties[PROP_TYPE] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:permissions:
 	 *
 	 * An array of strings defining what access a given user has to this
 	 * connection.  If this is %NULL or empty, all users are allowed to access
-	 * this connection.  Otherwise a user is allowed to access this connection
-	 * if and only if they are in this list. Each entry is of the form
-	 * "[type]:[id]:[reserved]"; for example, "user:dcbw:blah".
+	 * this connection; otherwise users are allowed if and only if they are in
+	 * this list.  When this is not empty, the connection can be active only when
+	 * one of the specified users is logged into an active session.  Each entry
+	 * is of the form "[type]:[id]:[reserved]"; for example, "user:dcbw:blah".
 	 *
 	 * At this time only the "user" [type] is allowed.  Any other values are
 	 * ignored and reserved for future use.  [id] is the username that this
@@ -1308,12 +1784,20 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * [reserved] information present must be ignored and is reserved for future
 	 * use.  All of [type], [id], and [reserved] must be valid UTF-8.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PERMISSIONS,
-		 g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: permissions
+	 * variable: USERS(+)
+	 * description: Restrict to certain users the access to this connection, and
+	 *     allow the connection to be active only when at least one of the
+	 *     specified users is logged into an active session.
+	 * example: USERS="joe bob"
+	 * ---end---
+	 */
+	obj_properties[PROP_PERMISSIONS] =
+	    g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:autoconnect:
@@ -1322,15 +1806,25 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * NetworkManager when the resources for the connection are available.
 	 * %TRUE to automatically activate the connection, %FALSE to require manual
 	 * intervention to activate the connection.
+	 *
+	 * Note that autoconnect is not implemented for VPN profiles. See
+	 * #NMSettingConnection:secondaries as an alternative to automatically
+	 * connect VPN profiles.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_AUTOCONNECT,
-		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: autoconnect
+	 * variable: ONBOOT
+	 * default: yes
+	 * description: Whether the connection should be autoconnected (not only while booting).
+	 * ---end---
+	 */
+	obj_properties[PROP_AUTOCONNECT] =
+	    g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:autoconnect-priority:
@@ -1339,8 +1833,17 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * connections with higher priority will be preferred. Defaults to 0.
 	 * The higher number means higher priority.
 	 **/
-	g_object_class_install_property
-	    (object_class, PROP_AUTOCONNECT_PRIORITY,
+	/* ---ifcfg-rh---
+	 * property: autoconnect-priority
+	 * variable: AUTOCONNECT_PRIORITY(+)
+	 * values: -999 to 999
+	 * default: 0
+	 * description: Connection priority for automatic activation. Connections with
+	 *  higher numbers are preferred when selecting profiles for automatic activation.
+	 * example: AUTOCONNECT_PRIORITY=20
+	 * ---end---
+	 */
+	obj_properties[PROP_AUTOCONNECT_PRIORITY] =
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, "", "",
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
@@ -1348,7 +1851,56 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
-	                       G_PARAM_STATIC_STRINGS));
+	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:autoconnect-retries:
+	 *
+	 * The number of times a connection should be tried when autoactivating before
+	 * giving up. Zero means forever, -1 means the global default (4 times if not
+	 * overridden). Setting this to 1 means to try activation only once before
+	 * blocking autoconnect. Note that after a timeout, NetworkManager will try
+	 * to autoconnect again.
+	 */
+	/* ---ifcfg-rh---
+	 * property: autoconnect-retries
+	 * variable: AUTOCONNECT_RETRIES(+)
+	 * description: The number of times a connection should be autoactivated
+	 * before giving up and switching to the next one.
+	 * values: -1 (use global default), 0 (forever) or a positive value
+	 * example: AUTOCONNECT_RETRIES=1
+	 * ---end---
+	 */
+	obj_properties[PROP_AUTOCONNECT_RETRIES] =
+	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, "", "",
+	                       -1, G_MAXINT32, -1,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:multi-connect:
+	 *
+	 * Specifies whether the profile can be active multiple times at a particular
+	 * moment. The value is of type #NMConnectionMultiConnect.
+	 *
+	 * Since: 1.14
+	 */
+	/* ---ifcfg-rh---
+	 * property: multi-connect
+	 * variable: MULTI_CONNECT(+)
+	 * description: whether the profile can be active on multiple devices at a given
+	 *   moment. The values are numbers corresponding to #NMConnectionMultiConnect enum.
+	 * example: ZONE=3
+	 * ---end---
+	 */
+	obj_properties[PROP_MULTI_CONNECT] =
+	     g_param_spec_int (NM_SETTING_CONNECTION_MULTI_CONNECT, "", "",
+	                       G_MININT32, G_MAXINT32, NM_CONNECTION_MULTI_CONNECT_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:timestamp:
@@ -1361,14 +1913,19 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * timestamp. The property is only meant for reading (changes to this
 	 * property will not be preserved).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_TIMESTAMP,
-		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
-		                      0, G_MAXUINT64, 0,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TIMESTAMP] =
+	    g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
+	                         0, G_MAXUINT64, 0,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override,
+	                              obj_properties[PROP_TIMESTAMP],
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type   = G_VARIANT_TYPE_UINT64,
+	                                  .to_dbus_fcn = _to_dbus_fcn_timestamp,
+	                              ));
 
 	/**
 	 * NMSettingConnection:read-only:
@@ -1377,14 +1934,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * service's D-Bus interface with the right privileges, or %TRUE if the
 	 * connection is read-only and cannot be modified.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_READ_ONLY,
-		 g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       NM_SETTING_PARAM_FUZZY_IGNORE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_READ_ONLY] =
+	    g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          NM_SETTING_PARAM_FUZZY_IGNORE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:zone:
@@ -1393,29 +1949,48 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * (for example "Home", "Work", "Public").  %NULL or unspecified zone means
 	 * the connection will be placed in the default zone as defined by the
 	 * firewall.
+	 *
+	 * When updating this property on a currently activated connection,
+	 * the change takes effect immediately.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_ZONE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: zone
+	 * variable: ZONE(+)
+	 * description: Trust level of this connection. The string is usually used
+	 *   for a firewall.
+	 * example: ZONE=Work
+	 * ---end---
+	 */
+	obj_properties[PROP_ZONE] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:master:
 	 *
 	 * Interface name of the master device or UUID of the master connection.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MASTER,
-		 g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: master
+	 * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, BRIDGE, BRIDGE_UUID
+	 * description: Reference to master connection. The variable used depends on
+	 *   the connection type and the value. In general, if the *_UUID variant is present,
+	 *   the variant without *_UUID is ignored. NetworkManager attempts to write both
+	 *   for compatibility with legacy tooling.
+	 * ---end---
+	 */
+	obj_properties[PROP_MASTER] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:slave-type:
@@ -1424,14 +1999,55 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
 	 * slave.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SLAVE_TYPE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_FUZZY_IGNORE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: slave-type
+	 * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, DEVICETYPE,
+	 *   BRIDGE, BRIDGE_UUID
+	 * description: Slave type doesn't map directly to a variable, but it is
+	 *   recognized using different variables.  MASTER and MASTER_UUID for bonding,
+	 *   TEAM_MASTER, TEAM_MASTER_UUID and DEVICETYPE for teaming, BRIDGE
+	 *   and BRIDGE_UUID for bridging.
+	 * ---end---
+	 */
+	obj_properties[PROP_SLAVE_TYPE] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_FUZZY_IGNORE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:autoconnect-slaves:
+	 *
+	 * Whether or not slaves of this connection should be automatically brought up
+	 * when NetworkManager activates this connection. This only has a real effect
+	 * for master connections. The properties #NMSettingConnection:autoconnect,
+	 * #NMSettingConnection:autoconnect-priority and #NMSettingConnection:autoconnect-retries
+	 * are unrelated to this setting.
+	 * The permitted values are: 0: leave slave connections untouched,
+	 * 1: activate all the slave connections with this connection, -1: default.
+	 * If -1 (default) is set, global connection.autoconnect-slaves is read to
+	 * determine the real value. If it is default as well, this fallbacks to 0.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: autoconnect-slaves
+	 * variable: AUTOCONNECT_SLAVES(+)
+	 * default: missing variable means global default
+	 * description: Whether slaves of this connection should be auto-connected
+	 *   when this connection is activated.
+	 * ---end---
+	 */
+	obj_properties[PROP_AUTOCONNECT_SLAVES] =
+	    g_param_spec_enum (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES, "", "",
+	                       NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+	                       NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:secondaries:
@@ -1440,13 +2056,19 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * connection itself is activated. Currently only VPN connections are
 	 * supported.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_SECONDARIES,
-		 g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_FUZZY_IGNORE |
-		                     G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: secondaries
+	 * variable: SECONDARY_UUIDS(+)
+	 * description: UUID of VPN connections that should be activated
+	 *   together with this connection.
+	 * ---end---
+	 */
+	obj_properties[PROP_SECONDARIES] =
+	    g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READWRITE |
+	                        NM_SETTING_PARAM_FUZZY_IGNORE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingConnection:gateway-ping-timeout:
@@ -1454,11 +2076,195 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * If greater than zero, delay success of IP addressing until either the
 	 * timeout is reached, or an IP gateway replies to a ping.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_GATEWAY_PING_TIMEOUT,
-		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
-		                    0, 30, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: gateway-ping-timeout
+	 * variable: GATEWAY_PING_TIMEOUT(+)
+	 * default: 0
+	 * description: If greater than zero, the IP connectivity will be checked by
+	 *   pinging the gateway and waiting for the specified timeout (in seconds).
+	 * example: GATEWAY_PING_TIMEOUT=5
+	 * ---end---
+	 */
+	obj_properties[PROP_GATEWAY_PING_TIMEOUT] =
+	    g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
+	                       0, 600, 0,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:metered:
+	 *
+	 * Whether the connection is metered.
+	 *
+	 * When updating this property on a currently activated connection,
+	 * the change takes effect immediately.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: metered
+	 * variable: CONNECTION_METERED(+)
+	 * values: yes,no,unknown
+	 * description: Whether the device is metered
+	 * example: CONNECTION_METERED=yes
+	 * ---end---
+	 */
+	obj_properties[PROP_METERED] =
+	    g_param_spec_enum (NM_SETTING_CONNECTION_METERED, "", "",
+	                       NM_TYPE_METERED,
+	                       NM_METERED_UNKNOWN,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
+	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:lldp:
+	 *
+	 * Whether LLDP is enabled for the connection.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: lldp
+	 * variable: LLDP(+)
+	 * values: boolean value or 'rx'
+	 * default: missing variable means global default
+	 * description: whether LLDP is enabled for the connection
+	 * example: LLDP=no
+	 * ---end---
+	 */
+	obj_properties[PROP_LLDP] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_LLDP, "", "",
+	                      G_MININT32, G_MAXINT32, NM_SETTING_CONNECTION_LLDP_DEFAULT,
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:auth-retries:
+	 *
+	 * The number of retries for the authentication. Zero means to try indefinitely; -1 means
+	 * to use a global default. If the global default is not set, the authentication
+	 * retries for 3 times before failing the connection.
+	 *
+	 * Currently this only applies to 802-1x authentication.
+	 *
+	 * Since: 1.10
+	 **/
+	/* ---ifcfg-rh---
+	 * property: auth-retries
+	 * variable: AUTH_RETRIES(+)
+	 * default: 0
+	 * description: Number of retries for authentication.
+	 * ---end---
+	 */
+	obj_properties[PROP_AUTH_RETRIES] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_AUTH_RETRIES, "", "",
+	                      -1, G_MAXINT32, -1,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:mdns:
+	 *
+	 * Whether mDNS is enabled for the connection.
+	 *
+	 * The permitted values are: yes: register hostname and resolving
+	 * for the connection, no: disable mDNS for the interface, resolve:
+	 * do not register hostname but allow resolving of mDNS host names.
+	 *
+	 * This feature requires a plugin which supports mDNS. One such
+	 * plugin is dns-systemd-resolved.
+	 *
+	 * Since: 1.12
+	 **/
+	/* ---ifcfg-rh---
+	 * property: mdns
+	 * variable: MDNS(+)
+	 * values: yes,no,resolve
+	 * default: missing variable means global default
+	 * description: Whether or not mDNS is enabled for the connection
+	 * example: MDNS=yes
+	 * ---end---
+	 */
+	obj_properties[PROP_MDNS] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_MDNS, "", "",
+	                      G_MININT32, G_MAXINT32,
+	                      NM_SETTING_CONNECTION_MDNS_DEFAULT,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:llmnr:
+	 *
+	 * Whether Link-Local Multicast Name Resolution (LLMNR) is enabled
+	 * for the connection. LLMNR is a protocol based on the Domain Name
+	 * System (DNS) packet format that allows both IPv4 and IPv6 hosts
+	 * to perform name resolution for hosts on the same local link.
+	 *
+	 * The permitted values are: yes: register hostname and resolving
+	 * for the connection, no: disable LLMNR for the interface, resolve:
+	 * do not register hostname but allow resolving of LLMNR host names.
+	 *
+	 * This feature requires a plugin which supports LLMNR. One such
+	 * plugin is dns-systemd-resolved.
+	 *
+	 * Since: 1.14
+	 **/
+	/* ---ifcfg-rh---
+	 * property: llmnr
+	 * variable: LLMNR(+)
+	 * values: yes,no,resolve
+	 * default: missing variable means global default
+	 * description: Whether or not LLMNR is enabled for the connection
+	 * example: LLMNR=yes
+	 * ---end---
+	 */
+	obj_properties[PROP_LLMNR] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_LLMNR, "", "",
+	                      G_MININT32, G_MAXINT32,
+	                      NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingConnection:wait-device-timeout:
+	 *
+	 * Timeout in milliseconds to wait for device at startup.
+	 * During boot, devices may take a while to be detected by the driver.
+	 * This property will cause to delay NetworkManager-wait-online.service
+	 * and nm-online to give the device a chance to appear.
+	 *
+	 * Note that this property only works together with NMSettingConnection:interface-name
+	 * to identify the device that will be waited for.
+	 *
+	 * The value 0 means no wait time. The default value is -1, which
+	 * currently has the same meaning as no wait time.
+	 *
+	 * Since: 1.20
+	 **/
+	/* ---ifcfg-rh---
+	 * property: wait-device-timeout
+	 * variable: DEVTIMEOUT(+)
+	 * values: timeout in seconds.
+	 * description: for initscripts compatibility, this variable must be
+	 *   a whole integer. If necessary, NetworkManager stores also a fractional
+	 *   component for the milliseconds.
+	 * example: DEVTIMEOUT=5
+	 * ---end---
+	 */
+	obj_properties[PROP_WAIT_DEVICE_TIMEOUT] =
+	    g_param_spec_int (NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, "", "",
+	                      -1, G_MAXINT32, -1,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_CONNECTION,
+	                               NULL, properties_override);
 }

@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE stylesheet [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -12,28 +16,24 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="date"/>
-  <xsl:param name="version"/>
-
   <xsl:template match="nm-ifcfg-rh-docs">
-    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
     <refentry id="nm-settings-ifcfg-rh">
       <refentryinfo>
-        <date><xsl:value-of select="$date"/></date>
+        <title>nm-settings-ifcfg-rh</title>
+        <author>NetworkManager developers</author>
       </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings-ifcfg-rh</refentrytitle>
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
-        <refmiscinfo class="version"><xsl:value-of select="$version"/></refmiscinfo>
+        <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
         <refname>nm-settings-ifcfg-rh</refname>
         <refpurpose>Description of <emphasis>ifcfg-rh</emphasis> settings plugin</refpurpose>
       </refnamediv>
-      <refsect1>
-        <title>DESCRIPTION</title>
+      <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on the concept of connection profiles that contain
           network configuration (see <citerefentry><refentrytitle>nm-settings</refentrytitle>
@@ -45,21 +45,20 @@
         <para>
           The <emphasis>ifcfg-rh</emphasis> plugin is used on the Fedora and Red Hat
           Enterprise Linux distributions to read/write configuration from/to
-          the standard <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename> files.
+          the traditional <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename> files.
           Each NetworkManager connection maps to one <filename>ifcfg-*</filename> file, with
           possible usage of <filename>keys-*</filename> for passwords, <filename>route-*</filename>
           for static IPv4 routes and <filename>route6-*</filename> for static IPv6 routes.
           The plugin currently supports reading and writing Ethernet, Wi-Fi, InfiniBand,
           VLAN, Bond, Bridge, and Team connections. Unsupported connection types (such as
-          (WWAN, PPPoE, VPN, or ADSL) are handled by <emphasis>keyfile</emphasis> plugin
-          (<citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry>).
+          WWAN, PPPoE, VPN, or ADSL) are handled by <emphasis>keyfile</emphasis> plugin
+          (<link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>).
           The main reason for using <emphasis>ifcfg-rh</emphasis> plugin is the compatibility
           with legacy configurations for <emphasis>ifup</emphasis> and <emphasis>ifdown</emphasis>
           (initscripts).
         </para>
       </refsect1>
-      <refsect1>
-        <title>File Format</title>
+      <refsect1 id='file_format'><title>File Format</title>
         <para>
           The <emphasis>ifcfg-rh</emphasis> config format is a simple text file containing
           VARIABLE="value" lines. The format is described in <filename>sysconfig.txt</filename>
@@ -205,8 +204,7 @@ DEVICETYPE=TeamPort
         </formalpara>
       </refsect1>
 
-      <refsect1>
-        <title>Differences against initscripts</title>
+      <refsect1 id='differences_against_initscripts'><title>Differences against initscripts</title>
         <para>
           The main differences of NetworkManager ifcfg-rh plugin and traditional
           initscripts are:
@@ -228,7 +226,7 @@ DEVICETYPE=TeamPort
               <listitem><para>
                 NetworkManager has introduced some new variable, not present in initscripts,
                 to be able to store data for its new features. The variables are marked
-                as extensions in the tables bellows.
+                as extensions in the tables below.
               </para></listitem>
             </varlistentry>
             <varlistentry>
@@ -243,10 +241,25 @@ DEVICETYPE=TeamPort
                     nameservers to resolv.conf".</para>
                   </listitem>
                   <listitem>
-                  <para><literal>ONBOOT</literal> -
+                    <para><literal>ONBOOT</literal> -
                     initscripts use ONBOOT=yes to mark the devices that are to be activated
                     during boot. NetworkManager extents this to also mean that this profile
                     can be used for auto-connecting at any time.</para>
+                  </listitem>
+                  <listitem>
+                    <para><literal>BOOTPROTO</literal> -
+                    NetworkManager supports traditional values <emphasis>none</emphasis> (static),
+                    <emphasis>dhcp</emphasis>. But it also allows additional values to
+                    enable new addressing methods. They are <emphasis>autoip</emphasis> for IPv4
+                    link-local addressing using Avahi daemon and <emphasis>shared</emphasis> for
+                    connection sharing. When <emphasis>shared</emphasis> is used, NetworkManager
+                    assigns the interface 10.42.0.1, or it uses the first static address,
+                    if configured.</para>
+                 </listitem>
+                  <listitem>
+                    <para><literal>HWADDR</literal> -
+                    initscripts compare the currently set hardware address of a device, while
+                    NetworkManager considers the permanent one.</para>
                   </listitem>
                 </itemizedlist>
               </para></listitem>
@@ -256,12 +269,11 @@ DEVICETYPE=TeamPort
         <para>
           See the next section for detailed mapping of NetworkManager properties and
           <emphasis>ifcfg-rh</emphasis> variables. Variable names, format and usage
-          differences in NetworkManager and initscripts are documented in the tables bellow.
+          differences in NetworkManager and initscripts are documented in the tables below.
         </para>
       </refsect1>
 
-      <refsect1>
-      <title>DETAILS</title>
+      <refsect1 id='details'><title>Details</title>
         <para>
           <emphasis>ifcfg-rh</emphasis> plugin variables marked with <emphasis>(+)</emphasis>
           are NetworkManager specific extensions not understood by traditional initscripts.
@@ -273,8 +285,8 @@ DEVICETYPE=TeamPort
             Each secret property in a NetworkManager setting has an associated
             <emphasis>flags</emphasis> property that describes how to handle that secret.
             In the <emphasis>fcfg-rh</emphasis> plugin variables for secret flags have a
-            <emphasis>-FLAGS</emphasis> suffix. The variables contain one or more of the
-            folowing values (space separated). Missing (or empty) -FLAGS variable means
+            <emphasis>_FLAGS</emphasis> suffix. The variables contain one or more of the
+            following values (space separated). Missing (or empty) *_FLAGS variable means
             that the password is owned by NetworkManager.
           </para>
           <itemizedlist>
@@ -295,34 +307,28 @@ DEVICETYPE=TeamPort
         </refsect2>
       </refsect1>
 
-      <refsect1>
-        <title>AUTHOR</title>
-        <para>
-          <author>
-            <firstname>NetworkManager developers</firstname>
-          </author>
-        </para>
-      </refsect1>
-      <refsect1>
-        <title>FILES</title>
+      <refsect1 id='files'><title>Files</title>
         <para><filename>/etc/sysconfig/network-scripts/ifcfg-*</filename></para>
         <para><filename>/etc/sysconfig/network-scripts/keys-*</filename></para>
         <para><filename>/etc/sysconfig/network-scripts/route-*</filename></para>
         <para><filename>/etc/sysconfig/network-scripts/route6-*</filename></para>
         <para><filename>/usr/share/doc/initscripts/sysconfig.txt</filename></para>
       </refsect1>
-      <refsect1>
-        <title>SEE ALSO</title>
-        <para>https://developer.gnome.org/NetworkManager/unstable/ref-settings.html</para>
-        <para>nm-settings(5), nm-settings-keyfile(5), NetworkManager(8), NetworkManager.conf(5), nmcli(1), nmcli-examples(5)</para>
+      <refsect1 id='see_also'><title>See Also</title>
+        <para><link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+        <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link></para>
       </refsect1>
     </refentry>
   </xsl:template>
 
   <xsl:template match="setting">
     <xsl:variable name="setting_name" select="../@name"/>
-    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
-      <xsl:if test="not (contains($unsupported, @name))">
+    <xsl:variable name="unsupported" select="'802-11-olpc-mesh, adsl, bluetooth, cdma, dummy, generic, gsm, ip-tunnel, macsec, macvlan, ppp, pppoe, serial, tun, vpn, vxlan, wimax'"/>
+      <xsl:if test="not (contains(concat(' ', $unsupported, ','), concat(' ', @name, ',')))">
         <table>
           <title><xsl:value-of select="@name"/> setting</title>
           <tgroup cols="4">
@@ -343,7 +349,7 @@ DEVICETYPE=TeamPort
 
       <xsl:if test="@name = 'dcb'">
         <para>
-          All DCB related configuration is a NetworkManager extention. DCB=yes must be
+          All DCB related configuration is a NetworkManager extension. DCB=yes must be
           used explicitly to enable DCB so that the rest of the DCB_* variables can apply.
         </para>
       </xsl:if>
@@ -368,7 +374,7 @@ DEVICETYPE=TeamPort
       </entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
       <entry align="left">
-        <xsl:value-of select="@description"/><xsl:if test="contains(@name,'-flags') and $setting_name != 'dcb'"> (see <xref linkend="secrets-flags"/> for _FLAGS values)</xsl:if>
+        <xsl:value-of select="@description"/><xsl:if test="@format = 'NMSettingSecretFlags'"> (see <xref linkend="secrets-flags"/> for _FLAGS values)</xsl:if>
 
         <xsl:if test="string-length(@example)">
         <emphasis role="bold">

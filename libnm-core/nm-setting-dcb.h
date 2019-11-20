@@ -1,22 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 #ifndef __NM_SETTING_DCB_H__
@@ -26,7 +10,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 
@@ -70,7 +54,6 @@ typedef enum { /*< flags >*/
  */
 #define NM_SETTING_DCB_FCOE_MODE_VN2VN   "vn2vn"
 
-
 /* Properties */
 #define NM_SETTING_DCB_APP_FCOE_FLAGS         "app-fcoe-flags"
 #define NM_SETTING_DCB_APP_FCOE_PRIORITY      "app-fcoe-priority"
@@ -92,7 +75,11 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH "priority-strict-bandwidth"
 #define NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS    "priority-traffic-class"
 
-
+/**
+ * NMSettingDcb:
+ *
+ * Data Center Bridging Settings
+ */
 struct _NMSettingDcb {
 	NMSetting parent;
 };
@@ -109,14 +96,14 @@ GType nm_setting_dcb_get_type (void);
 NMSetting *       nm_setting_dcb_new                      (void);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fcoe_flags     (NMSettingDcb *setting);
-gint              nm_setting_dcb_get_app_fcoe_priority  (NMSettingDcb *setting);
+int               nm_setting_dcb_get_app_fcoe_priority  (NMSettingDcb *setting);
 const char *      nm_setting_dcb_get_app_fcoe_mode      (NMSettingDcb *setting);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_iscsi_flags    (NMSettingDcb *setting);
-gint              nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting);
+int               nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fip_flags      (NMSettingDcb *setting);
-gint              nm_setting_dcb_get_app_fip_priority   (NMSettingDcb *setting);
+int               nm_setting_dcb_get_app_fip_priority   (NMSettingDcb *setting);
 
 /* Priority Flow Control */
 NMSettingDcbFlags nm_setting_dcb_get_priority_flow_control_flags    (NMSettingDcb *setting);

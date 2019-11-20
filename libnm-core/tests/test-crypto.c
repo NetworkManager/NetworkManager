@@ -1,37 +1,23 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
  * Dan Williams <dcbw@redhat.com>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
-#include <glib.h>
+#include "nm-default.h"
+
 #include <unistd.h>
 #include <stdlib.h>
-#include <glib/gi18n.h>
 #include <stdio.h>
-#include <string.h>
 
-#include "crypto.h"
+#include "nm-crypto-impl.h"
 #include "nm-utils.h"
+#include "nm-errors.h"
+#include "nm-core-internal.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
+
+#define TEST_CERT_DIR              NM_BUILD_SRCDIR"/libnm-core/tests/certs"
 
 #if 0
 static const char *pem_rsa_key_begin = "-----BEGIN RSA PRIVATE KEY-----";
@@ -94,244 +80,179 @@ out:
 static void
 test_cert (gconstpointer test_data)
 {
-	char *path;
-	GByteArray *array;
+	gs_free char *path = NULL;
+	gs_unref_bytes GBytes *cert = NULL;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
+	gboolean success;
 
 	path = g_build_filename (TEST_CERT_DIR, (const char *) test_data, NULL);
 
-	array = crypto_load_and_verify_certificate (path, &format, &error);
-	ASSERT (array != NULL, "cert",
-	        "couldn't read certificate file '%s': %d %s",
-	        path, error->code, error->message);
+	success = nm_crypto_load_and_verify_certificate (path, &format, &cert, &error);
+	nmtst_assert_success (success, error);
+	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_X509);
 
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_X509, "cert",
-	        "%s: unexpected certificate format (expected %d, got %d)",
-	        path, NM_CRYPTO_FILE_FORMAT_X509, format);
-
-	g_byte_array_free (array, TRUE);
-}
-
-static GByteArray *
-file_to_byte_array (const char *filename)
-{
-	char *contents;
-	GByteArray *array = NULL;
-	gsize length = 0;
-
-	if (g_file_get_contents (filename, &contents, &length, NULL)) {
-		array = g_byte_array_sized_new (length);
-		g_byte_array_append (array, (guint8 *) contents, length);
-		g_assert (array->len == length);
-		g_free (contents);
-	}
-	return array;
+	g_assert (nm_utils_file_is_certificate (path));
 }
 
 static void
 test_load_private_key (const char *path,
                        const char *password,
                        const char *decrypted_path,
-                       gboolean expect_fail,
-                       const char *desc)
+                       int expected_error)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	GByteArray *array, *decrypted;
+	gboolean is_encrypted = FALSE;
+	gs_unref_bytes GBytes *array = NULL;
 	GError *error = NULL;
 
-	array = crypto_decrypt_private_key (path, password, &key_type, &error);
-	if (expect_fail) {
-		ASSERT (array == NULL, desc,
-		        "unexpected success reading private key file '%s' with "
-		        "invalid password",
-		        path);
+	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
+	g_assert (is_encrypted);
 
-		ASSERT (key_type != NM_CRYPTO_KEY_TYPE_UNKNOWN, desc,
-		        "unexpected failure determining private key file '%s' "
-		        "type with invalid password (expected %d, got %d)",
-		        path, NM_CRYPTO_KEY_TYPE_UNKNOWN, key_type);
+	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
+	/* Even if the password is wrong, we should determine the key type */
+	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
+
+	if (expected_error != -1) {
+		g_assert (array == NULL);
+		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
+		g_clear_error (&error);
 		return;
 	}
 
-	ASSERT (array != NULL, desc,
-	        "couldn't read private key file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
-	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
-
-	if (decrypted_path) {
-		/* Compare the crypto decrypted key against a known-good decryption */
-		decrypted = file_to_byte_array (decrypted_path);
-		ASSERT (decrypted != NULL, desc,
-		        "couldn't read decrypted private key file '%s': %d %s",
-		        decrypted_path, error->code, error->message);
-
-		ASSERT (decrypted->len > 0, desc, "decrypted key file invalid (size 0)");
-
-		ASSERT (decrypted->len == array->len,
-			    desc, "decrypted key file (%d) and decrypted key data (%d) lengths don't match",
-			    decrypted->len, array->len);
-
-		ASSERT (memcmp (decrypted->data, array->data, array->len) == 0,
-			    desc, "decrypted key file and decrypted key data don't match");
-
-		g_byte_array_free (decrypted, TRUE);
+	if (password == NULL) {
+		g_assert (array == NULL);
+		g_assert_no_error (error);
+		return;
 	}
 
-	g_byte_array_free (array, TRUE);
+	g_assert (array != NULL);
+
+	if (decrypted_path) {
+		gs_free char *contents = NULL;
+		gsize length;
+
+		/* Compare the crypto decrypted key against a known-good decryption */
+		if (!g_file_get_contents (decrypted_path, &contents, &length, NULL))
+			g_assert_not_reached ();
+		g_assert (nm_utils_gbytes_equal_mem (array, contents, length));
+	}
 }
 
 static void
 test_load_pkcs12 (const char *path,
                   const char *password,
-                  gboolean expect_fail,
-                  const char *desc)
+                  int expected_error)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
-	format = crypto_verify_private_key (path, password, &error);
-	if (expect_fail) {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
-		        "unexpected success reading PKCS#12 private key file "
-		        "'%s' with invalid password",
-		        path);
+	g_assert (nm_utils_file_is_private_key (path, NULL));
+
+	format = nm_crypto_verify_private_key (path, password, &is_encrypted, &error);
+	if (expected_error != -1) {
+		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
+		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+		g_clear_error (&error);
 	} else {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_PKCS12, desc,
-			    "%s: unexpected PKCS#12 private key file format (expected %d, got "
-			    "%d): %d %s",
-			    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
+		g_assert_no_error (error);
+		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_PKCS12);
+		g_assert (is_encrypted);
 	}
 }
 
 static void
-test_load_pkcs12_no_password (const char *path, const char *desc)
+test_load_pkcs12_no_password (const char *path)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
+	g_assert (nm_utils_file_is_private_key (path, NULL));
+
 	/* We should still get a valid returned crypto file format */
-	format = crypto_verify_private_key (path, NULL, &error);
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_PKCS12, desc,
-		    "%s: unexpected PKCS#12 private key file format (expected %d, got "
-		    "%d): %d %s",
-		    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
+	format = nm_crypto_verify_private_key (path, NULL, &is_encrypted, &error);
+	g_assert_no_error (error);
+	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_PKCS12);
+	g_assert (is_encrypted);
 }
 
 static void
-test_is_pkcs12 (const char *path, gboolean expect_fail, const char *desc)
+test_is_pkcs12 (const char *path, gboolean expect_fail)
 {
 	gboolean is_pkcs12;
+	GError *error = NULL;
 
-	is_pkcs12 = crypto_is_pkcs12_file (path, NULL);
+	is_pkcs12 = nm_crypto_is_pkcs12_file (path, &error);
+
 	if (expect_fail) {
-		ASSERT (is_pkcs12 == FALSE, desc,
-		        "unexpected success reading non-PKCS#12 file '%s'",
-		        path);
+		g_assert_error (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_INVALID_DATA);
+		g_assert (!is_pkcs12);
+		g_clear_error (&error);
 	} else {
-		ASSERT (is_pkcs12 == TRUE, desc, "couldn't read PKCS#12 file '%s'", path);
+		g_assert_no_error (error);
+		g_assert (is_pkcs12);
 	}
 }
 
 static void
 test_load_pkcs8 (const char *path,
                  const char *password,
-                 gboolean expect_fail,
-                 const char *desc)
+                 int expected_error)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
-	format = crypto_verify_private_key (path, password, &error);
-	if (expect_fail) {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
-		        "unexpected success reading PKCS#8 private key file "
-		        "'%s' with invalid password",
-		        path);
+	g_assert (nm_utils_file_is_private_key (path, NULL));
+
+	format = nm_crypto_verify_private_key (path, password, &is_encrypted, &error);
+	if (expected_error != -1) {
+		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
+		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+		g_clear_error (&error);
 	} else {
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
-			    "%s: unexpected PKCS#8 private key file format (expected %d, got "
-			    "%d): %d %s",
-			    path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format, error->code, error->message);
+		g_assert_no_error (error);
+		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_RAW_KEY);
+		g_assert (is_encrypted);
 	}
-}
-
-static gboolean
-is_cipher_aes (const char *path)
-{
-	char *contents;
-	gsize length = 0;
-	const char *cipher;
-	gboolean is_aes = FALSE;
-
-	if (!g_file_get_contents (path, &contents, &length, NULL))
-		return FALSE;
-
-	cipher = strstr (contents, "DEK-Info: ");
-	if (cipher) {
-		cipher += strlen ("DEK-Info: ");
-		if (g_str_has_prefix (cipher, "AES-128-CBC"))
-			is_aes = TRUE;
-	}
-
-	g_free (contents);
-	return is_aes;
 }
 
 static void
 test_encrypt_private_key (const char *path,
-                          const char *password,
-                          const char *desc)
+                          const char *password)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	GByteArray *array, *encrypted, *re_decrypted;
+	gs_unref_bytes GBytes *array = NULL;
+	gs_unref_bytes GBytes *encrypted = NULL;
+	gs_unref_bytes GBytes *re_decrypted = NULL;
 	GError *error = NULL;
 
-	array = crypto_decrypt_private_key (path, password, &key_type, &error);
-	ASSERT (array != NULL, desc,
-	        "couldn't read private key file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
-	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
+	array = nmtst_crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
+	nmtst_assert_success (array, error);
+	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
-	if (is_cipher_aes (path))
-		encrypted = nm_utils_rsa_key_encrypt_aes (array->data, array->len, password, NULL, &error);
-	else
-		encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
-	ASSERT (encrypted != NULL, desc,
-	        "couldn't re-encrypt private key file '%s': %d %s",
-	        path, error->code, error->message);
+	encrypted = nmtst_crypto_rsa_key_encrypt (g_bytes_get_data (array, NULL),
+	                                          g_bytes_get_size (array),
+	                                          password,
+	                                          NULL,
+	                                          &error);
+	nmtst_assert_success (encrypted, error);
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = crypto_decrypt_private_key_data (encrypted->data, encrypted->len,
-	                                                password, &key_type, &error);
-	ASSERT (re_decrypted != NULL, desc,
-	        "couldn't read private key file '%s': %d %s",
-	        path, error->code, error->message);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
-	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
+	re_decrypted = nmtst_crypto_decrypt_openssl_private_key_data (g_bytes_get_data (encrypted, NULL),
+	                                                              g_bytes_get_size (encrypted),
+	                                                              password,
+	                                                              &key_type,
+	                                                              &error);
+	nmtst_assert_success (re_decrypted, error);
+	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Compare the original decrypted key with the re-decrypted key */
-	ASSERT (array->len == re_decrypted->len, desc,
-	        "%s: unexpected re-decrypted private key length (expected %d, got %d)",
-	        path, array->len, re_decrypted->len);
-
-	ASSERT (!memcmp (array->data, re_decrypted->data, array->len), desc,
-	        "%s: unexpected private key data",
-	        path);
-
-	g_byte_array_free (re_decrypted, TRUE);
-	g_byte_array_free (encrypted, TRUE);
-	g_byte_array_free (array, TRUE);
+	g_assert (g_bytes_equal (array, re_decrypted));
 }
 
 static void
@@ -342,22 +263,37 @@ test_key (gconstpointer test_data)
 
 	parts = g_strsplit ((const char *) test_data, ", ", -1);
 	len = g_strv_length (parts);
-	ASSERT (len == 2 || len == 3, "test-crypto",
-	        "wrong number of arguments (<key file>, <password>, [<decrypted key file>])");
+	if (len != 2 && len != 3)
+		g_error ("wrong number of arguments (<key file>, <password>, [<decrypted key file>])");
 
 	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
 	password = parts[1];
 	decrypted_path = parts[2] ? g_build_filename (TEST_CERT_DIR, parts[2], NULL) : NULL;
 
-	test_is_pkcs12 (path, TRUE, "not-pkcs12");
-	test_load_private_key (path, password, decrypted_path, FALSE, "private-key");
-	test_load_private_key (path, "blahblahblah", NULL, TRUE, "private-key-bad-password");
-	test_load_private_key (path, NULL, NULL, TRUE, "private-key-no-password");
-	test_encrypt_private_key (path, password, "private-key-rencrypt");
+	test_is_pkcs12 (path, TRUE);
+	test_load_private_key (path, password, decrypted_path, -1);
+	test_load_private_key (path, "blahblahblah", NULL, NM_CRYPTO_ERROR_DECRYPTION_FAILED);
+	test_load_private_key (path, NULL, NULL, -1);
+	test_encrypt_private_key (path, password);
 
 	g_free (path);
 	g_free (decrypted_path);
 	g_strfreev (parts);
+}
+
+static void
+test_key_decrypted (gconstpointer test_data)
+{
+	const char *file = (const char *) test_data;
+	gboolean is_encrypted = FALSE;
+	char *path;
+
+	path = g_build_filename (TEST_CERT_DIR, file, NULL);
+
+	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
+	g_assert (!is_encrypted);
+
+	g_free (path);
 }
 
 static void
@@ -366,16 +302,16 @@ test_pkcs12 (gconstpointer test_data)
 	char **parts, *path, *password;
 
 	parts = g_strsplit ((const char *) test_data, ", ", -1);
-	ASSERT (g_strv_length (parts) == 2, "test-crypto",
-	        "wrong number of arguments (<file>, <password>)");
+	if (g_strv_length (parts) != 2)
+		g_error ("wrong number of arguments (<file>, <password>)");
 
 	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
 	password = parts[1];
 
-	test_is_pkcs12 (path, FALSE, "is-pkcs12");
-	test_load_pkcs12 (path, password, FALSE, "pkcs12-private-key");
-	test_load_pkcs12 (path, "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
-	test_load_pkcs12_no_password (path, "pkcs12-private-key-no-password");
+	test_is_pkcs12 (path, FALSE);
+	test_load_pkcs12 (path, password, -1);
+	test_load_pkcs12 (path, "blahblahblah", NM_CRYPTO_ERROR_DECRYPTION_FAILED);
+	test_load_pkcs12_no_password (path);
 
 	g_free (path);
 	g_strfreev (parts);
@@ -387,22 +323,79 @@ test_pkcs8 (gconstpointer test_data)
 	char **parts, *path, *password;
 
 	parts = g_strsplit ((const char *) test_data, ", ", -1);
-	ASSERT (g_strv_length (parts) == 2, "test-crypto",
-	        "wrong number of arguments (<file>, <password>)");
+	if (g_strv_length (parts) != 2)
+		g_error ("wrong number of arguments (<file>, <password>)");
 
 	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
 	password = parts[1];
 
-	test_is_pkcs12 (path, TRUE, "not-pkcs12");
-	test_load_pkcs8 (path, password, FALSE, "pkcs8-private-key");
-	/* Until gnutls and NSS grow support for all the ciphers that openssl
-	 * can use with PKCS#8, we can't actually verify the password.  So we
-	 * expect a bad password to work for the time being.
+	test_is_pkcs12 (path, TRUE);
+	/* Note: NSS and gnutls < 3.5.4 don't support all the ciphers that openssl
+	 * can use with PKCS#8 and thus the password can't be actually verified with
+	 * such libraries.
 	 */
-	test_load_pkcs8 (path, "blahblahblah", FALSE, "pkcs8-private-key-bad-password");
+	test_load_pkcs8 (path, password, -1);
 
 	g_free (path);
 	g_strfreev (parts);
+}
+
+#define SALT "sodium chloride"
+#define SHORT_PASSWORD "short"
+#define LONG_PASSWORD "this is a longer password than the short one"
+#define SHORT_DIGEST 16
+#define LONG_DIGEST 57
+
+struct {
+	const char *salt, *password;
+	gsize digest_size;
+	const char *result;
+} md5_tests[] = {
+	{ NULL, SHORT_PASSWORD, SHORT_DIGEST,
+	  "4f09daa9d95bcb166a302407a0e0babe" },
+	{ NULL, SHORT_PASSWORD, LONG_DIGEST,
+	  "4f09daa9d95bcb166a302407a0e0babeb7d62e5baf706830d007c253f0fe7584ad7e92dc00a599ec277293c298ae70ee3904c348e23be61c91" },
+	{ SALT, SHORT_PASSWORD, SHORT_DIGEST,
+	  "774771f7292210233b5724991d1f9894" },
+	{ SALT, SHORT_PASSWORD, LONG_DIGEST,
+	  "774771f7292210233b5724991d1f98941a6ffdb45e4dc7fa04b1fa6aceed379c1ade0577bc8f261d109942ed5736921c052664d72e0d5bade9" },
+	{ NULL, LONG_PASSWORD, SHORT_DIGEST,
+	  "e9c03517f81ff29bb777dac21fb1699c" },
+	{ NULL, LONG_PASSWORD, LONG_DIGEST,
+	  "e9c03517f81ff29bb777dac21fb1699c50968c7ccd8db4f0a59d00ffd87b05876d45f25a927d51a8400c35af60fbd64584349a8b7435d62fd9" },
+	{ SALT, LONG_PASSWORD, SHORT_DIGEST,
+	  "4e5c076e2f85f5e03994acbf3a9e10d6" },
+	{ SALT, LONG_PASSWORD, LONG_DIGEST,
+	  "4e5c076e2f85f5e03994acbf3a9e10d61a6969c9fdf47ae8b1f7e2725b3767b05cc974bfcb5344b630c91761e015e09d7794b5065662533bc9" },
+	{ NULL, "", SHORT_DIGEST,
+	  "d41d8cd98f00b204e9800998ecf8427e" },
+	{ SALT, "", SHORT_DIGEST,
+	  "7df1e0494c977195005d82a1809685e4" },
+};
+
+static void
+test_md5 (void)
+{
+	char digest[LONG_DIGEST], *hex;
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
+		memset (digest, 0, sizeof (digest));
+		nm_crypto_md5_hash ((const guint8 *) md5_tests[i].salt,
+		                    /* nm_crypto_md5_hash() used to clamp salt_len to 8.  It
+		                     * doesn't any more, so we need to do it here now to
+		                     * get output that matches md5_tests[i].result.
+		                     */
+		                    md5_tests[i].salt ? 8 : 0,
+		                    (const guint8 *) md5_tests[i].password,
+		                    strlen (md5_tests[i].password),
+		                    (guint8 *) digest,
+		                    md5_tests[i].digest_size);
+
+		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
+		g_assert_cmpstr (hex, ==, md5_tests[i].result);
+		g_free (hex);
+	}
 }
 
 NMTST_DEFINE ();
@@ -411,12 +404,14 @@ int
 main (int argc, char **argv)
 {
 	GError *error = NULL;
+	gboolean success;
 	int ret;
 
 	nmtst_init (&argc, &argv, TRUE);
 
-	if (!crypto_init (&error))
-		FAIL ("crypto-init", "failed to initialize crypto: %s", error->message);
+	success = _nm_crypto_init (&error);
+	g_assert_no_error (error);
+	g_assert (success);
 
 	g_test_add_data_func ("/libnm/crypto/cert/pem",
 	                      "test_ca_cert.pem",
@@ -446,9 +441,15 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/crypto/key/padding-8",
 	                      "test2_key_and_cert.pem, 12345testing",
 	                      test_key);
-	g_test_add_data_func ("/libnm/crypto/key/aes",
-	                      "test-aes-key.pem, test-aes-password",
+	g_test_add_data_func ("/libnm/crypto/key/aes-128",
+	                      "test-aes-128-key.pem, test-aes-password",
 	                      test_key);
+	g_test_add_data_func ("/libnm/crypto/key/aes-256",
+	                      "test-aes-256-key.pem, test-aes-password",
+	                      test_key);
+	g_test_add_data_func ("/libnm/crypto/key/decrypted",
+	                      "test-key-only-decrypted.pem",
+	                      test_key_decrypted);
 
 	g_test_add_data_func ("/libnm/crypto/PKCS#12/1",
 	                      "test-cert.p12, test",
@@ -461,9 +462,9 @@ main (int argc, char **argv)
 	                      "pkcs8-enc-key.pem, 1234567890",
 	                      test_pkcs8);
 
-	ret = g_test_run ();
+	g_test_add_func ("/libnm/crypto/md5", test_md5);
 
-	crypto_deinit ();
+	ret = g_test_run ();
 
 	return ret;
 }

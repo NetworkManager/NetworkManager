@@ -1,18 +1,5 @@
 #!/usr/bin/env python
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0+
 #
 # Copyright (C) 2010 - 2012 Red Hat, Inc.
 #
@@ -34,10 +21,28 @@ device_states = { 0: "Unknown",
                  110: "Deactivating",
                  120: "Failed" }
 
+connectivity_states = { 0: "Unknown",
+                        1: "Activating",
+                        2: "Activated",
+                        3: "Deactivating",
+                        4: "Deactivated" }
+
+nm_state = { 0: "Unknown",
+            10: "Asleep",
+            20: "Disconnected",
+            30: "Disconnecting",
+            40: "Connecting",
+            50: "Connected-Local",
+            60: "Connected-Site",
+            70: "Connected-Global" }
+
 bus = dbus.SystemBus()
 
 proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
+
+# Get overall NM connection state
+print("NetworkManager state is: '%s'" % nm_state[manager.state()])
 
 # Get device-specific state
 devices = manager.GetDevices()
@@ -51,9 +56,9 @@ for d in devices:
 
     # and print them out
     if state == 100 :   # activated
-        print "Device %s is activated" % name
+        print("Device %s is activated" % name)
     else:
-        print "Device %s is not activated (state=%s)" % (name, device_states[state])
+        print("Device %s is not activated (state=%s)" % (name, device_states[state]))
 
 
 # Get active connection state
@@ -73,9 +78,4 @@ for a in active:
     con_details = con_iface.GetSettings()
     con_name = con_details['connection']['id']
 
-    if state == 2:   # activated
-        print "Connection '%s' is activated" % con_name
-    else:
-        print "Connection '%s' is activating" % con_name
-
-
+    print("Connection '%s' is %s" % (con_name, connectivity_states[state].lower()))

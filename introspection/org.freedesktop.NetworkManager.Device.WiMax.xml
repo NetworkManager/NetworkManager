@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.WiMax:
+      @short_description: WiMax Device
+
+      DEPRECATED: NetworkManager no longer supports WiMAX since version 1.2. This interface is no longer used.
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.WiMax">
+
+    <!--
+        GetNspList:
+        @nsps: List of NSP object paths
+
+        Get the list of NSPs visible to this device.
+    -->
+    <method name="GetNspList">
+      <arg name="nsps" type="ao" direction="out"/>
+      </method>
+
+    <!--
+        Nsps:
+
+        List of object paths of Network Service Providers (NSPs) visible to this
+        WiMAX device.
+    -->
+    <property name="Nsps" type="ao" access="read"/>
+
+    <!--
+        HwAddress:
+
+        Hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        CenterFrequency:
+
+        Center frequency (in KHz) of the radio channel the device is using to
+        communicate with the network when connected. Has no meaning when the
+        device is not connected.
+    -->
+    <property name="CenterFrequency" type="u" access="read"/>
+
+    <!--
+        Rssi:
+
+        RSSI of the current radio link in dBm. This value indicates how strong the
+        raw received RF signal from the base station is, but does not indicate the
+        overall quality of the radio link. Has no meaning when the device is not
+        connected.
+    -->
+    <property name="Rssi" type="i" access="read"/>
+
+    <!--
+        Cinr:
+
+        CINR (Carrier to Interference + Noise Ratio) of the current radio link in
+        dB. CINR is a more accurate measure of radio link quality. Has no meaning
+        when the device is not connected.
+    -->
+    <property name="Cinr" type="i" access="read"/>
+
+    <!--
+        TxPower:
+
+        Average power of the last burst transmitted by the device, in units of 0.5
+        dBm. i.e. a TxPower of -11 represents an actual device TX power of -5.5
+        dBm. Has no meaning when the device is not connected.
+    -->
+    <property name="TxPower" type="i" access="read"/>
+
+    <!--
+        Bsid:
+
+        The ID of the serving base station as received from the network. Has no
+        meaning when the device is not connected.
+    -->
+    <property name="Bsid" type="s" access="read"/>
+
+    <!--
+        ActiveNsp:
+
+        Object path of the NSP currently used by the WiMax device.
+    -->
+    <property name="ActiveNsp" type="o" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values.
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}"/>
+        </signal>
+
+    <!--
+        NspAdded:
+        @nsp: The object path of the newly found NSP.
+
+        Emitted when a new NSP is found by the device.
+    -->
+    <signal name="NspAdded">
+        <arg name="nsp" type="o"/>
+        </signal>
+
+    <!--
+        NspRemoved:
+        @nsp: The object path of the NSP that has disappeared.
+
+        Emitted when an NSP disappears from view of the device.
+    -->
+    <signal name="NspRemoved">
+      <arg name="nsp" type="o"/>
+    </signal>
+  </interface>
+</node>

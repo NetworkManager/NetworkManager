@@ -1,0 +1,6 @@
+{
+global:
+	nm_settings_plugin_factory;
+local:
+	*;
+};

@@ -1,29 +1,11 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Copyright 2008 - 2011 Red Hat, Inc.
- *
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include <glib.h>
-#include <string.h>
+#include "nm-default.h"
 
-#include <nm-utils.h>
-
+#include "nm-utils.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-connection.h"
@@ -38,7 +20,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 
-#include "nm-test-utils.h"
+#include "nm-utils/nm-test-utils.h"
 
 static void
 test_defaults (GType type, const char *name)
@@ -51,9 +33,7 @@ test_defaults (GType type, const char *name)
 	setting = g_object_new (type, NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	ASSERT (property_specs != NULL,
-	        name, "couldn't find property specs for object of type '%s'",
-	        g_type_name (G_OBJECT_TYPE (setting)));
+	g_assert (property_specs);
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
@@ -85,9 +65,7 @@ test_defaults (GType type, const char *name)
 		} else
 			ok = g_param_value_defaults (prop_spec, &value);
 
-		ASSERT (ok,
-		        name, "property '%s' value '%s' not the expected default value '%s'",
-		        prop_spec->name, actual, expected);
+		g_assert (ok);
 
 		g_free (actual);
 		g_free (expected);
@@ -99,18 +77,9 @@ test_defaults (GType type, const char *name)
 	g_object_unref (setting);
 }
 
-int main (int argc, char **argv)
+static void
+defaults (void)
 {
-	GError *error = NULL;
-	char *base;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
-
 	/* The tests */
 	test_defaults (NM_TYPE_SETTING_CONNECTION, NM_SETTING_CONNECTION_SETTING_NAME);
 	test_defaults (NM_TYPE_SETTING_802_1X, NM_SETTING_802_1X_SETTING_NAME);
@@ -125,10 +94,17 @@ int main (int argc, char **argv)
 	test_defaults (NM_TYPE_SETTING_WIRED, NM_SETTING_WIRED_SETTING_NAME);
 	test_defaults (NM_TYPE_SETTING_WIRELESS, NM_SETTING_WIRELESS_SETTING_NAME);
 	test_defaults (NM_TYPE_SETTING_WIRELESS_SECURITY, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+}
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+NMTST_DEFINE ();
+
+int
+main (int argc, char **argv)
+{
+	nmtst_init (&argc, &argv, TRUE);
+
+	g_test_add_func ("/libnm/defaults", defaults);
+
+	return g_test_run ();
 }
 

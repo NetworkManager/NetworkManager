@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE stylesheet [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -8,27 +12,25 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:param name="date"/>
-  <xsl:param name="version"/>
-
   <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings">
       <refentryinfo>
-        <date><xsl:value-of select="$date"/></date>
+        <title>nm-settings</title>
+        <author>NetworkManager developers</author>
       </refentryinfo>
       <refmeta>
         <refentrytitle>nm-settings</refentrytitle>
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
-        <refmiscinfo class="version"><xsl:value-of select="$version"/></refmiscinfo>
+        <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
         <refname>nm-settings</refname>
         <refpurpose>Description of settings and properties of NetworkManager connection profiles</refpurpose>
       </refnamediv>
-      <refsect1>
-        <title>DESCRIPTION</title>
+
+      <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on a concept of connection profiles, sometimes referred to as
           connections only. These connection profiles contain a network configuration. When
@@ -61,10 +63,10 @@
                 <para>
                   A group of related key/value pairs describing a specific piece of a
                   <emphasis>Connection (profile)</emphasis>. Settings keys and allowed values are
-                  described in the tables below. Keys are also reffered to as properties.
-                  Developers can find the setting objects and their properties in the libnm-util
-                  sources. Look for the <function>class_init</function> functions near the bottom of
-                  each setting source file.
+                  described in the tables below. Keys are also referred to as properties.
+                  Developers can find the setting objects and their properties in the libnm-core
+                  sources. Look for the <function>*_class_init</function> functions near the bottom
+                  of each setting source file.
                 </para>
               </listitem>
             </varlistentry>
@@ -85,13 +87,18 @@
         <refsect2 id="secrets-flags">
           <title>Secret flag types:</title>
           <para>
-            Each secret property in a setting has an associated <emphasis>flags</emphasis> property
+            Each password or secret property in a setting has an associated <emphasis>flags</emphasis> property
             that describes how to handle that secret. The <emphasis>flags</emphasis> property is a bitfield
             that contains zero or more of the following values logically OR-ed together.
           </para>
           <itemizedlist>
             <listitem>
-              <para>0x0 (none) - the system is responsible for providing and storing this secret.</para>
+              <para>0x0 (none) - the system is responsible for providing and storing this secret. This
+              may be required so that secrets are already available before the user logs in.
+              It also commonly means that the secret will be stored in plain text on disk, accessible
+              to root only. For example via the keyfile settings plugin as described in the "PLUGINS" section
+              in <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.
+              </para>
             </listitem>
             <listitem>
               <para>0x1 (agent-owned) - a user-session secret agent is responsible for providing and storing
@@ -109,53 +116,49 @@
           </itemizedlist>
         </refsect2>
       </refsect1>
-      <refsect1>
-        <title>AUTHOR</title>
-        <para>
-          <author>
-            <firstname>NetworkManager developers</firstname>
-          </author>
-        </para>
+
+      <refsect1 id='files'><title>Files</title>
+        <para><filename>/etc/NetworkManager/system-connections</filename> or distro plugin-specific location</para>
       </refsect1>
-      <refsect1>
-        <title>FILES</title>
-        <para>/etc/NetworkManager/system-connections</para>
-        <para>or distro plugin-specific location</para>
-      </refsect1>
-      <refsect1>
-        <title>SEE ALSO</title>
-        <para>https://wiki.gnome.org/Projects/NetworkManager/ConfigurationSpecification</para>
-        <para>NetworkManager(8), nmcli(1), nmcli-examples(5), NetworkManager.conf(5)</para>
+
+      <refsect1 id='see_also'><title>See Also</title>
+        <para><link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+        <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+        <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></para>
       </refsect1>
     </refentry>
   </xsl:template>
 
   <xsl:template match="setting">
-    <table>
+    <refsect2>
       <title><xsl:value-of select="@name"/> setting</title>
-      <tgroup cols="4">
-        <thead>
-          <row>
-            <entry>Key Name</entry>
-            <entry>Value Type</entry>
-            <entry>Default Value</entry>
-            <entry>Value Description</entry>
-          </row>
-        </thead>
-        <tbody>
-          <xsl:apply-templates/>
-        </tbody>
-      </tgroup>
-    </table>
+      <para><xsl:value-of select="@description"/>.</para>
+      <informaltable>
+        <tgroup cols="4">
+          <thead>
+            <row>
+              <entry>Key Name</entry>
+              <entry>Value Type</entry>
+              <entry>Default Value</entry>
+              <entry>Value Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            <xsl:apply-templates/>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsect2>
   </xsl:template>
 
   <xsl:template match="property">
     <xsl:variable name="setting_name" select="../@name"/>
     <row>
-      <entry align="left"><xsl:value-of select="@name"/></entry>
+      <entry align="left"><xsl:attribute name="id">nm-settings.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
       <entry align="left"><xsl:value-of select="@type"/></entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
-      <entry><xsl:value-of select="@description"/><xsl:if test="contains(@name,'-flags') and $setting_name != 'dcb'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
+      <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags (uint32)'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
     </row>
   </xsl:template>
 

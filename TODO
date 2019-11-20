@@ -18,8 +18,8 @@ of each device's state.  Unfortunately that requires two things:
 The first is the largest obstacle, but ideally we implement this and enable it
 when we have the required glib and libsoup versions available.  One other
 complication is that this checking should be done during the
-NM_DEVICE_STATE_IP_CHECK phase (along with other operations like WiFi hotspot
-auto-login) while the current checks are done globally in nm-manager.c, so 
+NM_DEVICE_STATE_IP_CHECK phase (along with other operations like Wi-Fi hotspot
+auto-login) while the current checks are done globally in nm-manager.c, so
 keeping both code paths might be complex.
 
 But ideally, once the device has successfully gotten an IPv4 or IPv6 address, it
@@ -38,7 +38,7 @@ based on it and the device's state.
 
 To allow for "pre-down" scenarios, this state should be implemented before a
 device is taken down while it still has connectivity.  If the device is
-taken down because it's ethernet carrier was dropped, or because the WiFi
+taken down because its ethernet carrier was dropped, or because the WiFi
 connection was terminated by the supplicant, this state is pointless and should
 be skipped.  But if the user requested a manual "disconnect", or NM is dropping
 connections on exit, etc, then this state should be entered.  In the future
@@ -97,7 +97,7 @@ same MAC address, the connection with the most recent timestamp should be
 preferred.
 
 Similarly, if the probing/listening process detects 802.1x frames the device
-should be marked as requring 802.1x authentication until the carrier drops.
+should be marked as requiring 802.1x authentication until the carrier drops.
 This would be accomplished by adding a new property to the NMDeviceEthernet
 object and exporting that property through the
 introspection/nm-device-ethernet.xml file.  This would allow clients like
@@ -109,10 +109,10 @@ successfully connect to this network.
 * VPN re-connect (bgo #349151)
 
 NM should remember whether a VPN was connected if a connection disconnects
-(like WiFi drops out or short carrier drop) or if the laptop goes to sleep.
+(like Wi-Fi drops out or short carrier drop) or if the laptop goes to sleep.
 Upon reconnect, if the same Connection is again active, the previously
 connected VPN should be activated again as well.  Basically, don't just drop
-the VPN because WiFi choked for 10 seconds, but reconnect the VPN if it was
+the VPN because Wi-Fi choked for 10 seconds, but reconnect the VPN if it was
 connected before the drop.
 
 
@@ -123,11 +123,7 @@ pseudo-ethernet device to obtain addressing information.  This is not currently
 possible, but NM already has all the code for DHCP.  Thus, a new "method"
 key should be defined in include/NetworkManagerVPN.h to allow for DHCP to
 be performed if the VPN service daemon requests it in the IP4Config or IP6Config
-signals.  A patch here:
-
-http://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?h=vpn-ip-method
-
-shows that.  In nm-vpn-connection.c, upon receipt of the D-Bus Ip4Config signal
+signals. In nm-vpn-connection.c, upon receipt of the D-Bus Ip4Config signal
 from the VPN plugin, NetworkManager would inspect the "method" property of the
 ip4 config dictionary.  If that property was present and set to "auto" then
 DHCP would be started using the network interface returned in the dict.  The
@@ -235,7 +231,7 @@ proceeds with the connection.
 
 NM sends the correct wpa_supplicant config for WPS to the supplicant, and waits
 for the connection to occur.  WPS can only be used the *first* time, so after a
-first successfull connection, NM must request the actual hexadecimal PSK from 
+first successful connection, NM must request the actual hexadecimal PSK from
 wpa_supplicant via D-Bus, and store that PSK in the connection, clear any WPS
 PIN code from the connection, and save the connection to backing storage.
 
@@ -245,65 +241,6 @@ because the user has no physical access to the router itself, but has been given
 as passphrase/PSK instead.
 
 
-* Proxies
-
-HTTP and other proxies are per-connection configuration.  It's highly unlikely
-that the same proxy you need to use at work is used at home or in a coffee shop.
-Thus, it makes sense that which proxy settings to use should be updated when
-network connections change.  NetworkManager is a perfect place to do this since
-it tracks which network connections are active, and it already queries the
-network for automatic proxy configuration via DHCP and WPAD.
-
-However, proxy handling is complicated and may require use of Javascript to
-parse PAC files provided by WPAD, and this is not something NetworkManager
-should do itself.  Instead, that should be left to "proxy handlers", or external
-utilities like libproxy or pacrunner that take raw proxy information, parse it,
-and tell applications what proxy server to use for a specific network resource.
-NetworkManager should provide all the proxy information it can find to these
-external proxy handlers via the D-Bus interface and dispatcher scripts.
-
-We should add a new NMSetting subclass called NMSettingProxy that holds
-necessary proxy configuration.  The properties of this setting should be a
-superset of what is provided in the Firefox proxy configuration screen and the
-various desktop environment proxy configuration tools like the GNOME Network
-Proxy control panel; this should include at a minimum:
-
-  method: "auto", "manual", "none"
-  default-proxy: string
-  default-proxy-port: uint
-  default-always: boolean (use default proxy for all protocols)
-  ssl-proxy: string
-  ssl-proxy-port: uint
-  ftp-proxy: string
-  ftp-proxy-port: uint
-  socks-proxy: string
-  socks-proxy-port: uint
-  socks-version: uint, either 4 or 5
-  no-proxy-for: array of strings (things not to use the proxy for, ie ".foobar.com",
-                 "192.168.0.1/24", an IPv6 address, etc)
-  pac-url: string (URL of PAC file, overrides DHCP-provided WPAD value)
-  (FIXME: proxy authentication?  do we need separate user/pass properties for
-    each protocol type?  should NM handle proxy auth or should it be punted
-    to each application?)
-
-After completing IP configuration but still during the NM_DEVICE_STATE_IP_CONFIG
-activation stage, NetworkManager would merge the automatically supplied proxy
-configuration (from DHCP's WPAD option) with user-provided overrides from the
-NMSettingProxy export the resulting proxy configuration via D-Bus and dispatcher
-scripts.  The 'default' connection's proxy configuration would be preferred, so
-we'd have to update proxy configuration from nm-policy.c the same time we update
-DNS information and the default route.
-
-Merged proxy information should be exposed in two places.  First, it should be
-exported over D-Bus as a property of the org.freedesktop.NetworkManager.Device
-interface.  This property should be named "ProxyInfo" and should have the
-D-Bus signature "a{sv}" (eg, dictionary) and should mirror the properties from
-the NMSettingProxy object.
-
-Second, it should be exported via the dispatcher to dispatcher scripts when
-with the "up" and "down" events.
-
-
 * Better Tablet/Mobile Behavior
 
 There are a few components to this:
@@ -311,7 +248,7 @@ There are a few components to this:
 1) kernel driver and hardware capabilities: most mobile devices use periodic
 background scanning to quickly determine whether a known SSID is available and
 notify the connection manager to connect to it.  This typically requires special
-capabilities and good powersave/sleep support from the WiFi kernel driver.
+capabilities and good powersave/sleep support from the Wi-Fi kernel driver.
 There is a background scanning API in nl80211, but we need to determine how many
 SSIDs each driver allows for background scanning, and based on that number, give
 the driver the most recent N SSIDs.  We still need to periodically wake the
@@ -346,10 +283,10 @@ connection process.
 2) single-device-at-a-time with overlapping connections: this is also probably
 the best route to go for desktop use-cases as well.  Instead of bringing all
 available connections up, only bring up the "best" connection at any given
-time based on the current priority list (which is rougly Ethernet > WiFi >
-3G/Bluetooth/WiMAX).  However, to ensure seamless connectivity, when one
-connection begins to degrade, the next-best connection should be started before
-the current one is terminated, such that there is a small amount of overlap.
+time based on the current priority list (which is roughly Ethernet > Wi-Fi >
+3G/Bluetooth).  However, to ensure seamless connectivity, when one connection
+begins to degrade, the next-best connection should be started before the
+current one is terminated, such that there is a small amount of overlap.
 Consequently the same behavior should be used when a better connection becomes
 available.  This behavior should be suspended when special connections like
 Internet Connection Sharing ones are started, where clearly the priorities

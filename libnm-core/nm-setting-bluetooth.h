@@ -1,23 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2009 Red Hat, Inc.
- * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #ifndef __NM_SETTING_BLUETOOTH_H__
@@ -54,11 +38,24 @@ G_BEGIN_DECLS
 /**
  * NM_SETTING_BLUETOOTH_TYPE_PANU:
  *
- * Connection type describing a connection to devices that support the Bluetooth
- * NAP (Network Access Point) protocol, which accepts connections via PANU.
+ * Connection type describing PANU connection to a Bluetooth NAP (Network
+ * Access Point).
  */
 #define NM_SETTING_BLUETOOTH_TYPE_PANU "panu"
 
+/**
+ * NM_SETTING_BLUETOOTH_TYPE_NAP:
+ *
+ * Connection type describing a Bluetooth NAP (Network Access Point),
+ * which accepts PANU clients.
+ */
+#define NM_SETTING_BLUETOOTH_TYPE_NAP "nap"
+
+/**
+ * NMSettingBluetooth:
+ *
+ * Bluetooth Settings
+ */
 struct _NMSettingBluetooth {
 	NMSetting parent;
 };

@@ -1,22 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_REMOTE_CONNECTION_H__
@@ -26,7 +11,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-object.h>
+#include "nm-object.h"
 
 G_BEGIN_DECLS
 
@@ -37,30 +22,40 @@ G_BEGIN_DECLS
 #define NM_IS_REMOTE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_REMOTE_CONNECTION))
 #define NM_REMOTE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionClass))
 
-
 /* Properties */
 #define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
 #define NM_REMOTE_CONNECTION_PATH            "path"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
+#define NM_REMOTE_CONNECTION_FLAGS           "flags"
+#define NM_REMOTE_CONNECTION_FILENAME        "filename"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
-struct _NMRemoteConnection {
-	NMObject parent;
-};
-
-typedef struct {
-	NMObjectClass parent_class;
-
-	/*< private >*/
-	gpointer padding[8];
-} NMRemoteConnectionClass;
+/**
+ * NMRemoteConnection:
+ */
+typedef struct _NMRemoteConnectionClass NMRemoteConnectionClass;
 
 GType nm_remote_connection_get_type (void);
 
+NM_AVAILABLE_IN_1_12
+void nm_remote_connection_update2 (NMRemoteConnection *connection,
+                                   GVariant *settings,
+                                   NMSettingsUpdate2Flags flags,
+                                   GVariant *args,
+                                   GCancellable *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data);
+NM_AVAILABLE_IN_1_12
+GVariant *nm_remote_connection_update2_finish (NMRemoteConnection *connection,
+                                               GAsyncResult *result,
+                                               GError **error);
+
+_NM_DEPRECATED_SYNC_METHOD
 gboolean nm_remote_connection_commit_changes        (NMRemoteConnection *connection,
                                                      gboolean save_to_disk,
                                                      GCancellable *cancellable,
                                                      GError **error);
+
 void     nm_remote_connection_commit_changes_async  (NMRemoteConnection *connection,
                                                      gboolean save_to_disk,
                                                      GCancellable *cancellable,
@@ -70,9 +65,11 @@ gboolean nm_remote_connection_commit_changes_finish (NMRemoteConnection *connect
                                                      GAsyncResult *result,
                                                      GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD
 gboolean nm_remote_connection_save        (NMRemoteConnection *connection,
                                            GCancellable *cancellable,
                                            GError **error);
+
 void     nm_remote_connection_save_async  (NMRemoteConnection *connection,
                                            GCancellable *cancellable,
                                            GAsyncReadyCallback callback,
@@ -81,9 +78,11 @@ gboolean nm_remote_connection_save_finish (NMRemoteConnection *connection,
                                            GAsyncResult *result,
                                            GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD
 gboolean nm_remote_connection_delete        (NMRemoteConnection *connection,
                                              GCancellable *cancellable,
                                              GError **error);
+
 void     nm_remote_connection_delete_async  (NMRemoteConnection *connection,
                                              GCancellable *cancellable,
                                              GAsyncReadyCallback callback,
@@ -92,10 +91,12 @@ gboolean nm_remote_connection_delete_finish (NMRemoteConnection *connection,
                                              GAsyncResult *result,
                                              GError **error);
 
+_NM_DEPRECATED_SYNC_METHOD
 GVariant *nm_remote_connection_get_secrets        (NMRemoteConnection *connection,
                                                    const char *setting_name,
                                                    GCancellable *cancellable,
                                                    GError **error);
+
 void      nm_remote_connection_get_secrets_async  (NMRemoteConnection *connection,
                                                    const char *setting_name,
                                                    GCancellable *cancellable,
@@ -106,6 +107,12 @@ GVariant *nm_remote_connection_get_secrets_finish (NMRemoteConnection *connectio
                                                    GError **error);
 
 gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
+
+NM_AVAILABLE_IN_1_12
+NMSettingsConnectionFlags nm_remote_connection_get_flags (NMRemoteConnection *connection);
+
+NM_AVAILABLE_IN_1_12
+const char *nm_remote_connection_get_filename (NMRemoteConnection *connection);
 
 gboolean nm_remote_connection_get_visible (NMRemoteConnection *connection);
 

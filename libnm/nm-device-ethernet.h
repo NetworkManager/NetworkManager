@@ -1,22 +1,7 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_ETHERNET_H__
@@ -26,7 +11,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-device.h>
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -41,17 +26,12 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED       "speed"
 #define NM_DEVICE_ETHERNET_CARRIER     "carrier"
+#define NM_DEVICE_ETHERNET_S390_SUBCHANNELS "s390-subchannels"
 
-struct _NMDeviceEthernet {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceEthernetClass;
+/**
+ * NMDeviceEthernet:
+ */
+typedef struct _NMDeviceEthernetClass NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type (void);
 
@@ -59,6 +39,8 @@ const char * nm_device_ethernet_get_hw_address (NMDeviceEthernet *device);
 const char * nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device);
 guint32      nm_device_ethernet_get_speed   (NMDeviceEthernet *device);
 gboolean     nm_device_ethernet_get_carrier (NMDeviceEthernet *device);
+NM_AVAILABLE_IN_1_2
+const char * const *nm_device_ethernet_get_s390_subchannels (NMDeviceEthernet *device);
 
 G_END_DECLS
 

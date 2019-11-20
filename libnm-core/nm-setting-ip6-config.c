@@ -1,33 +1,17 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
  */
 
-#include <string.h>
-#include <glib/gi18n.h>
+#include "nm-default.h"
 
 #include "nm-setting-ip6-config.h"
-#include "nm-utils.h"
-#include "nm-utils-private.h"
-#include "nm-glib-compat.h"
+
+#include <arpa/inet.h>
+
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
+#include "nm-core-internal.h"
 
 /**
  * SECTION:nm-setting-ip6-config
@@ -35,738 +19,44 @@
  *
  * The #NMSettingIP6Config object is a #NMSetting subclass that describes
  * properties related to IPv6 addressing, routing, and Domain Name Service
+ *
+ * #NMSettingIP6Config has few properties or methods of its own; it inherits
+ * almost everything from #NMSettingIPConfig.
+ *
+ * NetworkManager supports 7 values for the #NMSettingIPConfig:method property
+ * for IPv6.  If "auto" is specified then the appropriate automatic method (PPP,
+ * router advertisement, etc) is used for the device and most other properties
+ * can be left unset.  To force the use of DHCP only, specify "dhcp"; this
+ * method is only valid for Ethernet- based hardware.  If "link-local" is
+ * specified, then an IPv6 link-local address will be assigned to the interface.
+ * If "manual" is specified, static IP addressing is used and at least one IP
+ * address must be given in the "addresses" property.  If "ignore" is specified,
+ * IPv6 configuration is not done. Note: the "shared" method is not yet
+ * supported. If "disabled" is specified, IPv6 is disabled completely for the
+ * interface.
  **/
 
-G_DEFINE_BOXED_TYPE (NMIP6Address, nm_ip6_address, nm_ip6_address_dup, nm_ip6_address_unref)
-G_DEFINE_BOXED_TYPE (NMIP6Route, nm_ip6_route, nm_ip6_route_dup, nm_ip6_route_unref)
+/*****************************************************************************/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING,
-                         _nm_register_setting (IP6_CONFIG, 4))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP6_CONFIG)
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_IP6_PRIVACY,
+	PROP_ADDR_GEN_MODE,
+	PROP_TOKEN,
+	PROP_DHCP_DUID,
+);
+
+typedef struct {
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	char *token;
+	char *dhcp_duid;
+} NMSettingIP6ConfigPrivate;
+
+G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP6_CONFIG, NMSettingIP6ConfigPrivate))
 
-typedef struct {
-	char *method;
-	char *dhcp_hostname;
-	GSList *dns;        /* array of struct in6_addr */
-	GSList *dns_search; /* list of strings */
-	GSList *addresses;  /* array of NMIP6Address */
-	GSList *routes;     /* array of NMIP6Route */
-	gboolean ignore_auto_routes;
-	gboolean ignore_auto_dns;
-	gboolean never_default;
-	gboolean may_fail;
-	NMSettingIP6ConfigPrivacy ip6_privacy;
-} NMSettingIP6ConfigPrivate;
-
-
-enum {
-	PROP_0,
-	PROP_METHOD,
-	PROP_DHCP_HOSTNAME,
-	PROP_DNS,
-	PROP_DNS_SEARCH,
-	PROP_ADDRESSES,
-	PROP_ROUTES,
-	PROP_IGNORE_AUTO_ROUTES,
-	PROP_IGNORE_AUTO_DNS,
-	PROP_NEVER_DEFAULT,
-	PROP_MAY_FAIL,
-	PROP_IP6_PRIVACY,
-
-	LAST_PROP
-};
-
-/**
- * nm_setting_ip6_config_new:
- *
- * Creates a new #NMSettingIP6Config object with default values.
- *
- * Returns: (transfer full): the new empty #NMSettingIP6Config object
- **/
-NMSetting *
-nm_setting_ip6_config_new (void)
-{
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP6_CONFIG, NULL);
-}
-
-/**
- * nm_setting_ip6_config_get_method:
- * @setting: the #NMSettingIP6Config
- *
- * Returns: the #NMSettingIP6Config:method property of the setting
- **/
-const char *
-nm_setting_ip6_config_get_method (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
-
-	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->method;
-}
-
-/**
- * nm_setting_ip6_config_get_dhcp_hostname:
- * @setting: the #NMSettingIP6Config
- *
- * Returns the value contained in the #NMSettingIP6Config:dhcp-hostname
- * property.
- *
- * Returns: the configured hostname to send to the DHCP server
- **/
-const char *
-nm_setting_ip6_config_get_dhcp_hostname (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
-
-	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dhcp_hostname;
-}
-
-/**
- * nm_setting_ip6_config_get_num_dns:
- * @setting: the #NMSettingIP6Config
- *
- * Returns: the number of configured DNS servers
- **/
-guint32
-nm_setting_ip6_config_get_num_dns (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), 0);
-
-	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns);
-}
-
-/**
- * nm_setting_ip6_config_get_dns:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the DNS server to return
- *
- * Returns: (transfer none): the IPv6 address of the DNS server at index @i
- **/
-const char *
-nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < g_slist_length (priv->dns), NULL);
-
-	return (const char *) g_slist_nth_data (priv->dns, i);
-}
-
-static const char *
-canonicalize_ip (const char *ip)
-{
-	struct in6_addr addr;
-	int ret;
-
-	ret = inet_pton (AF_INET6, ip, &addr);
-	g_return_val_if_fail (ret == 1, NULL);
-	return nm_utils_inet6_ntop (&addr, NULL);
-}
-
-/**
- * nm_setting_ip6_config_add_dns:
- * @setting: the #NMSettingIP6Config
- * @dns: the IPv6 address of the DNS server to add
- *
- * Adds a new DNS server to the setting.
- *
- * Returns: %TRUE if the DNS server was added; %FALSE if the server was already
- * known
- **/
-gboolean
-nm_setting_ip6_config_add_dns (NMSettingIP6Config *setting, const char *dns)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	const char *dns_canonical;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (dns != NULL, FALSE);
-	g_return_val_if_fail (dns[0] != '\0', FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-
-	dns_canonical = canonicalize_ip (dns);
-	g_return_val_if_fail (dns_canonical != NULL, FALSE);
-
-	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (dns_canonical, (char *) iter->data))
-			return FALSE;
-	}
-
-	priv->dns = g_slist_append (priv->dns, g_strdup (dns_canonical));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
-	return TRUE;
-}
-
-/**
- * nm_setting_ip6_config_remove_dns:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the DNS server to remove
- *
- * Removes the DNS server at index @i.
- **/
-void
-nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *elt;
-
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	elt = g_slist_nth (priv->dns, i);
-	g_return_if_fail (elt != NULL);
-
-	g_free (elt->data);
-	priv->dns = g_slist_delete_link (priv->dns, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
-}
-
-/**
- * nm_setting_ip6_config_remove_dns_by_value:
- * @setting: the #NMSettingIP6Config
- * @dns: the IPv6 address of the DNS server to remove
- *
- * Removes the DNS server at index @i.
- *
- * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
- **/
-gboolean
-nm_setting_ip6_config_remove_dns_by_value (NMSettingIP6Config *setting,
-                                           const char *dns)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	const char *dns_canonical;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (dns != NULL, FALSE);
-	g_return_val_if_fail (dns[0] != '\0', FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-
-	dns_canonical = canonicalize_ip (dns);
-	g_return_val_if_fail (dns_canonical != NULL, FALSE);
-
-	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (dns_canonical, (char *) iter->data)) {
-			priv->dns = g_slist_delete_link (priv->dns, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-/**
- * nm_setting_ip6_config_clear_dns:
- * @setting: the #NMSettingIP6Config
- *
- * Removes all configured DNS servers.
- **/
-void
-nm_setting_ip6_config_clear_dns (NMSettingIP6Config *setting)
-{
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	g_slist_free_full (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns, g_free);
-	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
-}
-
-/**
- * nm_setting_ip6_config_get_num_dns_searches:
- * @setting: the #NMSettingIP6Config
- *
- * Returns: the number of configured DNS search domains
- **/
-guint32
-nm_setting_ip6_config_get_num_dns_searches (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), 0);
-
-	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search);
-}
-
-/**
- * nm_setting_ip6_config_get_dns_search:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the DNS search domain to return
- *
- * Returns: the DNS search domain at index @i
- **/
-const char *
-nm_setting_ip6_config_get_dns_search (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < g_slist_length (priv->dns_search), NULL);
-
-	return (const char *) g_slist_nth_data (priv->dns_search, i);
-}
-
-/**
- * nm_setting_ip6_config_add_dns_search:
- * @setting: the #NMSettingIP6Config
- * @dns_search: the search domain to add
- *
- * Adds a new DNS search domain to the setting.
- *
- * Returns: %TRUE if the DNS search domain was added; %FALSE if the search
- * domain was already known
- **/
-gboolean
-nm_setting_ip6_config_add_dns_search (NMSettingIP6Config *setting,
-                                      const char *dns_search)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (dns_search != NULL, FALSE);
-	g_return_val_if_fail (dns_search[0] != '\0', FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	for (iter = priv->dns_search; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (dns_search, (char *) iter->data))
-			return FALSE;
-	}
-
-	priv->dns_search = g_slist_append (priv->dns_search, g_strdup (dns_search));
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-	return TRUE;
-}
-
-/**
- * nm_setting_ip6_config_remove_dns_search:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the DNS search domain
- *
- * Removes the DNS search domain at index @i.
- **/
-void
-nm_setting_ip6_config_remove_dns_search (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *elt;
-
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	elt = g_slist_nth (priv->dns_search, i);
-	g_return_if_fail (elt != NULL);
-
-	g_free (elt->data);
-	priv->dns_search = g_slist_delete_link (priv->dns_search, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-}
-
-/**
- * nm_setting_ip6_config_remove_dns_search_by_value:
- * @setting: the #NMSettingIP6Config
- * @dns_search: the search domain to remove
- *
- * Removes the DNS search domain @dns_search.
- *
- * Returns: %TRUE if the DNS search domain was found and removed; %FALSE if it was not.
- **/
-gboolean
-nm_setting_ip6_config_remove_dns_search_by_value (NMSettingIP6Config *setting,
-                                                  const char *dns_search)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (dns_search != NULL, FALSE);
-	g_return_val_if_fail (dns_search[0] != '\0', FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	for (iter = priv->dns_search; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (dns_search, (char *) iter->data)) {
-			priv->dns_search = g_slist_delete_link (priv->dns_search, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-/**
- * nm_setting_ip6_config_clear_dns_searches:
- * @setting: the #NMSettingIP6Config
- *
- * Removes all configured DNS search domains.
- **/
-void
-nm_setting_ip6_config_clear_dns_searches (NMSettingIP6Config *setting)
-{
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	g_slist_free_full (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
-	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-}
-
-/**
- * nm_setting_ip6_config_get_num_addresses:
- * @setting: the #NMSettingIP6Config
- *
- * Returns: the number of configured addresses
- **/
-guint32
-nm_setting_ip6_config_get_num_addresses (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), 0);
-
-	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->addresses);
-}
-
-/**
- * nm_setting_ip6_config_get_address:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the address to return
- *
- * Returns: the address at index @i
- **/
-NMIP6Address *
-nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < g_slist_length (priv->addresses), NULL);
-
-	return (NMIP6Address *) g_slist_nth_data (priv->addresses, i);
-}
-
-/**
- * nm_setting_ip6_config_add_address:
- * @setting: the #NMSettingIP6Config
- * @address: the new address to add
- *
- * Adds a new IPv6 address and associated information to the setting.  The
- * given address is duplicated internally and is not changed by this function.
- *
- * Returns: %TRUE if the address was added; %FALSE if the address was already
- * known.
- **/
-gboolean
-nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
-                                   NMIP6Address *address)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	NMIP6Address *copy;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (address != NULL, FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_address_compare ((NMIP6Address *) iter->data, address))
-			return FALSE;
-	}
-
-	copy = nm_ip6_address_dup (address);
-	priv->addresses = g_slist_append (priv->addresses, copy);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
-	return TRUE;
-}
-
-/**
- * nm_setting_ip6_config_remove_address:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the address to remove
- *
- * Removes the address at index @i.
- **/
-void
-nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *elt;
-
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	elt = g_slist_nth (priv->addresses, i);
-	g_return_if_fail (elt != NULL);
-
-	nm_ip6_address_unref ((NMIP6Address *) elt->data);
-	priv->addresses = g_slist_delete_link (priv->addresses, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
-}
-
-/**
- * nm_setting_ip6_config_remove_address_by_value:
- * @setting: the #NMSettingIP6Config
- * @address: the address to remove
- *
- * Removes the address @address.
- *
- * Returns: %TRUE if the address was found and removed; %FALSE if it was not.
- **/
-gboolean
-nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting,
-                                               NMIP6Address *address)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (address != NULL, FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_address_compare ((NMIP6Address *) iter->data, address)) {
-			priv->addresses = g_slist_delete_link (priv->addresses, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-/**
- * nm_setting_ip6_config_clear_addresses:
- * @setting: the #NMSettingIP6Config
- *
- * Removes all configured addresses.
- **/
-void
-nm_setting_ip6_config_clear_addresses (NMSettingIP6Config *setting)
-{
-	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
-	priv->addresses = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
-}
-
-/**
- * nm_setting_ip6_config_get_num_routes:
- * @setting: the #NMSettingIP6Config
- *
- * Returns: the number of configured routes
- **/
-guint32
-nm_setting_ip6_config_get_num_routes (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), 0);
-
-	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->routes);
-}
-
-/**
- * nm_setting_ip6_config_get_route:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the route to return
- *
- * Returns: the route at index @i
- **/
-NMIP6Route *
-nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < g_slist_length (priv->routes), NULL);
-
-	return (NMIP6Route *) g_slist_nth_data (priv->routes, i);
-}
-
-/**
- * nm_setting_ip6_config_add_route:
- * @setting: the #NMSettingIP6Config
- * @route: the route to add
- *
- * Adds a new IPv6 route and associated information to the setting.  The
- * given route is duplicated internally and is not changed by this function.
- *
- * Returns: %TRUE if the route was added; %FALSE if the route was already known.
- **/
-gboolean
-nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
-                                 NMIP6Route *route)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	NMIP6Route *copy;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (route != NULL, FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_route_compare ((NMIP6Route *) iter->data, route))
-			return FALSE;
-	}
-
-	copy = nm_ip6_route_dup (route);
-	priv->routes = g_slist_append (priv->routes, copy);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
-	return TRUE;
-}
-
-/**
- * nm_setting_ip6_config_remove_route:
- * @setting: the #NMSettingIP6Config
- * @i: index number of the route
- *
- * Removes the route at index @i.
- **/
-void
-nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *elt;
-
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	elt = g_slist_nth (priv->routes, i);
-	g_return_if_fail (elt != NULL);
-
-	nm_ip6_route_unref ((NMIP6Route *) elt->data);
-	priv->routes = g_slist_delete_link (priv->routes, elt);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
-}
-
-/**
- * nm_setting_ip6_config_remove_route_by_value:
- * @setting: the #NMSettingIP6Config
- * @route: the route to remove
- *
- * Removes the route @route.
- *
- * Returns: %TRUE if the route was found and removed; %FALSE if it was not.
- **/
-gboolean
-nm_setting_ip6_config_remove_route_by_value (NMSettingIP6Config *setting,
-                                             NMIP6Route *route)
-{
-	NMSettingIP6ConfigPrivate *priv;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	g_return_val_if_fail (route != NULL, FALSE);
-
-	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_route_compare ((NMIP6Route *) iter->data, route)) {
-			nm_ip6_route_unref ((NMIP6Route *) iter->data);
-			priv->routes = g_slist_delete_link (priv->routes, iter);
-			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-/**
- * nm_setting_ip6_config_clear_routes:
- * @setting: the #NMSettingIP6Config
- *
- * Removes all configured routes.
- **/
-void
-nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
-{
-	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-
-	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
-	priv->routes = NULL;
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
-}
-
-/**
- * nm_setting_ip6_config_get_ignore_auto_routes:
- * @setting: the #NMSettingIP6Config
- *
- * Returns the value contained in the #NMSettingIP6Config:ignore-auto-routes
- * property.
- *
- * Returns: %TRUE if automatically configured (ie via DHCP) routes should be
- * ignored.
- **/
-gboolean
-nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-
-	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ignore_auto_routes;
-}
-
-/**
- * nm_setting_ip6_config_get_ignore_auto_dns:
- * @setting: the #NMSettingIP6Config
- *
- * Returns the value contained in the #NMSettingIP6Config:ignore-auto-dns
- * property.
- *
- * Returns: %TRUE if automatically configured (ie via DHCP or router
- * advertisements) DNS information should be ignored.
- **/
-gboolean
-nm_setting_ip6_config_get_ignore_auto_dns (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-
-	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ignore_auto_dns;
-}
-
-/**
- * nm_setting_ip6_config_get_never_default:
- * @setting: the #NMSettingIP6Config
- *
- * Returns the value contained in the #NMSettingIP6Config:never-default
- * property.
- *
- * Returns: %TRUE if this connection should never be the default connection
- * for IPv6 addressing
- **/
-gboolean
-nm_setting_ip6_config_get_never_default (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-
-	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->never_default;
-}
-
-/**
- * nm_setting_ip6_config_get_may_fail:
- * @setting: the #NMSettingIP6Config
- *
- * Returns the value contained in the #NMSettingIP6Config:may-fail
- * property.
- *
- * Returns: %TRUE if this connection doesn't require IPv6 addressing to complete
- * for the connection to succeed.
- **/
-gboolean
-nm_setting_ip6_config_get_may_fail (NMSettingIP6Config *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-
-	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->may_fail;
-}
+/*****************************************************************************/
 
 /**
  * nm_setting_ip6_config_get_ip6_privacy:
@@ -785,124 +75,214 @@ nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ip6_privacy;
 }
 
+/**
+ * nm_setting_ip6_config_get_addr_gen_mode:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:addr-gen-mode
+ * property.
+ *
+ * Returns: IPv6 Address Generation Mode.
+ *
+ * Since: 1.2
+ **/
+NMSettingIP6ConfigAddrGenMode
+nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting),
+	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->addr_gen_mode;
+}
+
+/**
+ * nm_setting_ip6_config_get_token:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:token
+ * property.
+ *
+ * Returns: A string.
+ *
+ * Since: 1.4
+ **/
+const char *
+nm_setting_ip6_config_get_token (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->token;
+}
+
+/**
+ * nm_setting_ip6_config_get_dhcp_duid:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:dhcp-duid
+ * property.
+ *
+ * Returns: The configured DUID value to be included in the DHCPv6 requests
+ * sent to the DHCPv6 servers.
+ *
+ * Since: 1.12
+ **/
+const char *
+nm_setting_ip6_config_get_dhcp_duid (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dhcp_duid;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	GSList *iter;
-	int i;
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	NMSettingVerifyResult ret;
+	const char *method;
+	gboolean token_needs_normalization = FALSE;
 
-	if (!priv->method) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_METHOD);
-		return FALSE;
-	}
+	ret = NM_SETTING_CLASS (nm_setting_ip6_config_parent_class)->verify (setting, connection, error);
+	if (ret != NM_SETTING_VERIFY_SUCCESS)
+		return ret;
 
-	if (!strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
-		if (!priv->addresses) {
+	method = nm_setting_ip_config_get_method (s_ip);
+	/* Base class already checked that it exists */
+	g_assert (method);
+
+	if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		if (nm_setting_ip_config_get_num_addresses (s_ip) == 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			             _("this property cannot be empty for '%s=%s'"),
-			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
+			             NM_SETTING_IP_CONFIG_METHOD, method);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_ADDRESSES);
 			return FALSE;
 		}
-	} else if (   !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
-	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
-	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
-		if (priv->dns) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' not allowed for %s=%s"),
-			             _("this property is not allowed for '%s=%s'"),
-			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS);
-			return FALSE;
-		}
+	} else if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                                 NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	                                 NM_SETTING_IP6_CONFIG_METHOD_SHARED,
+	                                 NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+		/* Shared allows IP addresses and DNS; other methods do not */
+		if (!nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
+			if (nm_setting_ip_config_get_num_dns (s_ip) > 0) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("this property is not allowed for '%s=%s'"),
+				             NM_SETTING_IP_CONFIG_METHOD, method);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_DNS);
+				return FALSE;
+			}
 
-		if (priv->dns_search) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("this property is not allowed for '%s=%s'"),
-			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS_SEARCH);
-			return FALSE;
-		}
+			if (nm_setting_ip_config_get_num_dns_searches (s_ip) > 0) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("this property is not allowed for '%s=%s'"),
+				             NM_SETTING_IP_CONFIG_METHOD, method);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_DNS_SEARCH);
+				return FALSE;
+			}
 
-		if (priv->addresses) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("this property is not allowed for '%s=%s'"),
-			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
-			return FALSE;
+			if (nm_setting_ip_config_get_num_addresses (s_ip) > 0) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("this property is not allowed for '%s=%s'"),
+				             NM_SETTING_IP_CONFIG_METHOD, method);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_ADDRESSES);
+				return FALSE;
+			}
 		}
-	} else if (   !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
-	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+	} else if (NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	                                 NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
 		/* nothing to do */
 	} else {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_METHOD);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
 		return FALSE;
 	}
 
-	if (priv->dhcp_hostname && !strlen (priv->dhcp_hostname)) {
+	if (!NM_IN_SET (priv->addr_gen_mode,
+	                NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+	                NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME);
+		                      _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE);
 		return FALSE;
 	}
 
-	for (iter = priv->dns, i = 0; iter; iter = g_slist_next (iter), i++) {
-		const char *dns = (const char *) iter->data;
-		struct in6_addr addr;
+	if (priv->token) {
+		if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
+			struct in6_addr i6_token;
+			char s_token[NM_UTILS_INET_ADDRSTRLEN];
 
-		if (inet_pton (AF_INET6, dns, &addr) != 1) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("%d. DNS server address is invalid"),
-			             i+1);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS);
+			if (   inet_pton (AF_INET6, priv->token, &i6_token) != 1
+			    || !_nm_utils_inet6_is_token (&i6_token)) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                      _("value is not a valid token"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
+				return FALSE;
+			}
+
+			if (g_strcmp0 (priv->token, nm_utils_inet6_ntop (&i6_token, s_token)))
+				token_needs_normalization = TRUE;
+		} else {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                      _("only makes sense with EUI64 address generation mode"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
 			return FALSE;
 		}
 	}
 
+	if (priv->dhcp_duid) {
+		if (!_nm_utils_dhcp_duid_valid (priv->dhcp_duid, NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("invalid DUID"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_DUID);
+			return FALSE;
+		}
+	}
+
+	/* Failures from here on, are NORMALIZABLE_ERROR... */
+
+	if (token_needs_normalization) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("token is not in canonical form"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
+	/* Failures from here on are NORMALIZABLE... */
+
+	if (   NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	                             NM_SETTING_IP6_CONFIG_METHOD_DISABLED)
+	    && !nm_setting_ip_config_get_may_fail (s_ip)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property should be TRUE when method is set to ignore or disabled"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_MAY_FAIL);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
 	return TRUE;
-}
-
-
-static void
-nm_setting_ip6_config_init (NMSettingIP6Config *setting)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
-
-	g_free (priv->method);
-	g_free (priv->dhcp_hostname);
-
-	g_slist_free_full (priv->dns, g_free);
-	g_slist_free_full (priv->dns_search, g_free);
-	g_slist_free_full (priv->addresses, g_free);
-	g_slist_free_full (priv->routes, g_free);
-
-	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
 }
 
 static GVariant *
@@ -919,29 +299,186 @@ ip6_dns_from_dbus (GVariant *dbus_value,
 }
 
 static GVariant *
-ip6_addresses_to_dbus (const GValue *prop_value)
+ip6_addresses_get (const NMSettInfoSetting *sett_info,
+                   guint property_idx,
+                   NMConnection *connection,
+                   NMSetting *setting,
+                   NMConnectionSerializationFlags flags,
+                   const NMConnectionSerializationOptions *options)
 {
-	return nm_utils_ip6_addresses_to_variant (g_value_get_boxed (prop_value));
+	gs_unref_ptrarray GPtrArray *addrs = NULL;
+	const char *gateway;
+
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
+	gateway = nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (setting));
+	return nm_utils_ip6_addresses_to_variant (addrs, gateway);
 }
 
-static void
-ip6_addresses_from_dbus (GVariant *dbus_value,
-                         GValue *prop_value)
+static gboolean
+ip6_addresses_set (NMSetting  *setting,
+                   GVariant   *connection_dict,
+                   const char *property,
+                   GVariant   *value,
+                   NMSettingParseFlags parse_flags,
+                   GError    **error)
 {
-	g_value_take_boxed (prop_value, nm_utils_ip6_addresses_from_variant (dbus_value));
+	GPtrArray *addrs;
+	char *gateway = NULL;
+
+	/* FIXME: properly handle errors */
+
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
+		return TRUE;
+
+	addrs = nm_utils_ip6_addresses_from_variant (value, &gateway);
+
+	g_object_set (setting,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
+	              NULL);
+	g_ptr_array_unref (addrs);
+	g_free (gateway);
+	return TRUE;
 }
 
 static GVariant *
-ip6_routes_to_dbus (const GValue *prop_value)
+ip6_address_data_get (const NMSettInfoSetting *sett_info,
+                      guint property_idx,
+                      NMConnection *connection,
+                      NMSetting *setting,
+                      NMConnectionSerializationFlags flags,
+                      const NMConnectionSerializationOptions *options)
 {
-	return nm_utils_ip6_routes_to_variant (g_value_get_boxed (prop_value));
+	gs_unref_ptrarray GPtrArray *addrs = NULL;
+
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
+
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
+	return nm_utils_ip_addresses_to_variant (addrs);
 }
 
-static void
-ip6_routes_from_dbus (GVariant *dbus_value,
-                      GValue *prop_value)
+static gboolean
+ip6_address_data_set (NMSetting  *setting,
+                      GVariant   *connection_dict,
+                      const char *property,
+                      GVariant   *value,
+                      NMSettingParseFlags parse_flags,
+                      GError    **error)
 {
-	g_value_take_boxed (prop_value, nm_utils_ip6_routes_from_variant (dbus_value));
+	GPtrArray *addrs;
+
+	/* FIXME: properly handle errors */
+
+	/* Ignore 'address-data' if we're going to process 'addresses' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
+		return TRUE;
+
+	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET6);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
+	g_ptr_array_unref (addrs);
+	return TRUE;
+}
+
+static GVariant *
+ip6_routes_get (const NMSettInfoSetting *sett_info,
+                guint property_idx,
+                NMConnection *connection,
+                NMSetting *setting,
+                NMConnectionSerializationFlags flags,
+                const NMConnectionSerializationOptions *options)
+{
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
+	return nm_utils_ip6_routes_to_variant (routes);
+}
+
+static gboolean
+ip6_routes_set (NMSetting  *setting,
+                GVariant   *connection_dict,
+                const char *property,
+                GVariant   *value,
+                NMSettingParseFlags parse_flags,
+                GError    **error)
+{
+	GPtrArray *routes;
+
+	/* FIXME: properly handle errors */
+
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
+		return TRUE;
+
+	routes = nm_utils_ip6_routes_from_variant (value);
+	g_object_set (setting, property, routes, NULL);
+	g_ptr_array_unref (routes);
+	return TRUE;
+}
+
+static GVariant *
+ip6_route_data_get (const NMSettInfoSetting *sett_info,
+                    guint property_idx,
+                    NMConnection *connection,
+                    NMSetting *setting,
+                    NMConnectionSerializationFlags flags,
+                    const NMConnectionSerializationOptions *options)
+{
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+
+	if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		return NULL;
+
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
+	return nm_utils_ip_routes_to_variant (routes);
+}
+
+static gboolean
+ip6_route_data_set (NMSetting  *setting,
+                    GVariant   *connection_dict,
+                    const char *property,
+                    GVariant   *value,
+                    NMSettingParseFlags parse_flags,
+                    GError    **error)
+{
+	GPtrArray *routes;
+
+	/* FIXME: properly handle errors */
+
+	/* Ignore 'route-data' if we're going to process 'routes' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
+		return TRUE;
+
+	routes = nm_utils_ip_routes_from_variant (value, AF_INET6);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
+	g_ptr_array_unref (routes);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_IP6_PRIVACY:
+		g_value_set_enum (value, priv->ip6_privacy);
+		break;
+	case PROP_ADDR_GEN_MODE:
+		g_value_set_int (value, priv->addr_gen_mode);
+		break;
+	case PROP_TOKEN:
+		g_value_set_string (value, priv->token);
+		break;
+	case PROP_DHCP_DUID:
+		g_value_set_string (value, priv->dhcp_duid);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -951,92 +488,19 @@ set_property (GObject *object, guint prop_id,
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_METHOD:
-		g_free (priv->method);
-		priv->method = g_value_dup_string (value);
-		break;
-	case PROP_DNS:
-		g_slist_free_full (priv->dns, g_free);
-		priv->dns = _nm_utils_strv_to_slist (g_value_get_boxed (value));
-		break;
-	case PROP_DNS_SEARCH:
-		g_slist_free_full (priv->dns_search, g_free);
-		priv->dns_search = _nm_utils_strv_to_slist (g_value_get_boxed (value));
-		break;
-	case PROP_ADDRESSES:
-		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_address_unref);
-		priv->addresses = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
-		                                                 (NMUtilsCopyFunc) nm_ip6_address_dup);
-		break;
-	case PROP_ROUTES:
-		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
-		priv->routes = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
-		                                              (NMUtilsCopyFunc) nm_ip6_route_dup);
-		break;
-	case PROP_IGNORE_AUTO_ROUTES:
-		priv->ignore_auto_routes = g_value_get_boolean (value);
-		break;
-	case PROP_IGNORE_AUTO_DNS:
-		priv->ignore_auto_dns = g_value_get_boolean (value);
-		break;
-	case PROP_DHCP_HOSTNAME:
-		g_free (priv->dhcp_hostname);
-		priv->dhcp_hostname = g_value_dup_string (value);
-		break;
-	case PROP_NEVER_DEFAULT:
-		priv->never_default = g_value_get_boolean (value);
-		break;
-	case PROP_MAY_FAIL:
-		priv->may_fail = g_value_get_boolean (value);
-		break;
 	case PROP_IP6_PRIVACY:
 		priv->ip6_privacy = g_value_get_enum (value);
 		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+	case PROP_ADDR_GEN_MODE:
+		priv->addr_gen_mode = g_value_get_int (value);
 		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_METHOD:
-		g_value_set_string (value, priv->method);
+	case PROP_TOKEN:
+		g_free (priv->token);
+		priv->token = g_value_dup_string (value);
 		break;
-	case PROP_DNS:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns));
-		break;
-	case PROP_DNS_SEARCH:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns_search));
-		break;
-	case PROP_ADDRESSES:
-		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses, (NMUtilsCopyFunc) nm_ip6_address_dup, (GDestroyNotify) nm_ip6_address_unref));
-		break;
-	case PROP_ROUTES:
-		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes, (NMUtilsCopyFunc) nm_ip6_route_dup, (GDestroyNotify) nm_ip6_route_unref));
-		break;
-	case PROP_IGNORE_AUTO_ROUTES:
-		g_value_set_boolean (value, priv->ignore_auto_routes);
-		break;
-	case PROP_IGNORE_AUTO_DNS:
-		g_value_set_boolean (value, priv->ignore_auto_dns);
-		break;
-	case PROP_DHCP_HOSTNAME:
-		g_value_set_string (value, priv->dhcp_hostname);
-		break;
-	case PROP_NEVER_DEFAULT:
-		g_value_set_boolean (value, priv->never_default);
-		break;
-	case PROP_MAY_FAIL:
-		g_value_set_boolean (value, priv->may_fail);
-		break;
-	case PROP_IP6_PRIVACY:
-		g_value_set_enum (value, priv->ip6_privacy);
+	case PROP_DHCP_DUID:
+		g_free (priv->dhcp_duid);
+		priv->dhcp_duid = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1044,200 +508,208 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
+nm_setting_ip6_config_init (NMSettingIP6Config *setting)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+}
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingIP6ConfigPrivate));
+/**
+ * nm_setting_ip6_config_new:
+ *
+ * Creates a new #NMSettingIP6Config object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingIP6Config object
+ **/
+NMSetting *
+nm_setting_ip6_config_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP6_CONFIG, NULL);
+}
 
-	/* virtual methods */
-	object_class->set_property = set_property;
+static void
+finalize (GObject *object)
+{
+	NMSettingIP6Config *self = NM_SETTING_IP6_CONFIG (object);
+	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (self);
+
+	g_free (priv->token);
+	g_free (priv->dhcp_duid);
+
+	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
+}
+
+static void
+nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config ();
+
+	g_type_class_add_private (klass, sizeof (NMSettingIP6ConfigPrivate));
+
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
-	parent_class->verify = verify;
 
-	/* Properties */
-	/**
-	 * NMSettingIP6Config:method:
-	 *
-	 * IPv6 configuration method.  If "auto" is specified then the appropriate
-	 * automatic method (PPP, router advertisement, etc) is used for the device
-	 * and most other properties can be left unset.  To force the use of DHCP
-	 * only, specify "dhcp"; this method is only valid for Ethernet- based
-	 * hardware.  If "link-local" is specified, then an IPv6 link-local address
-	 * will be assigned to the interface.  If "manual" is specified, static IP
-	 * addressing is used and at least one IP address must be given in the
-	 * "addresses" property.  If "ignore" is specified, IPv6 configuration is
-	 * not done. This property must be set.  Note: the "shared" method is not
-	 * yet supported.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_METHOD,
-		 g_param_spec_string (NM_SETTING_IP6_CONFIG_METHOD, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	setting_class->verify = verify;
 
-	/**
-	 * NMSettingIP6Config:dhcp-hostname:
-	 *
-	 * The specified name will be sent to the DHCP server when acquiring a
-	 * lease.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_DHCP_HOSTNAME,
-		 g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: method
+	 * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C, IPV6_DISABLED
+	 * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
+	 * description: Method used for IPv6 protocol configuration.
+	 *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes;
+	 *   disabled ~ IPV6_DISABLED=yes
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:dns:
-	 *
-	 * Array of IPv6 addresses of DNS servers.  For the "auto" method, these DNS
-	 * servers are appended to those (if any) returned by automatic
-	 * configuration.  DNS servers cannot be used with the "shared" or
-	 * "link-local" methods as there is no usptream network.  In all other
-	 * methods, these DNS servers are used as the only DNS servers for this
-	 * connection.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS,
-		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_DNS,
-	                                      G_VARIANT_TYPE ("aay"),
-	                                      ip6_dns_to_dbus,
-	                                      ip6_dns_from_dbus);
+	/* ---keyfile---
+	 * property: dns
+	 * format: list of DNS IP addresses
+	 * description: List of DNS servers.
+	 * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: dns
+	 * variable: DNS1, DNS2, ...
+	 * format:   string
+	 * description: List of DNS servers. NetworkManager uses the variables both
+	 *   for IPv4 and IPv6.
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:dns-search:
-	 *
-	 * List of DNS search domains.  For the "auto" method, these search domains
-	 * are appended to those returned by automatic configuration. Search domains
-	 * cannot be used with the "shared" or "link-local" methods as there is no
-	 * upstream network.  In all other methods, these search domains are used as
-	 * the only search domains for this connection.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_DNS_SEARCH,
-		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS_SEARCH, "", "",
-		                     G_TYPE_STRV,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: dns-search
+	 * variable: IPV6_DOMAIN(+)
+	 * format:   string (space-separated domains)
+	 * description: List of DNS search domains.
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:addresses:
-	 *
-	 * Array of IPv6 addresses.  For the 'auto' method, given IP addresses are
-	 * appended to those returned by automatic configuration.  Addresses cannot
-	 * be used with the 'shared' or 'link-local' methods as the interface is
-	 * automatically assigned an address with these methods.
-	 *
-	 * Element-Type: NMIP6Address
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ADDRESSES,
-		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_ADDRESSES,
-	                                      G_VARIANT_TYPE ("a(ayuay)"),
-	                                      ip6_addresses_to_dbus,
-	                                      ip6_addresses_from_dbus);
+	/* ---keyfile---
+	 * property: addresses
+	 * variable: address1, address2, ...
+	 * format: address/plen
+	 * description: List of static IP addresses.
+	 * example: address1=abbe::cafe/96 address2=2001::1234
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: addresses
+	 * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
+	 * description: List of static IP addresses.
+	 * example: IPV6ADDR=ab12:9876::1
+	 *   IPV6ADDR_SECONDARIES="ab12:9876::2 ab12:9876::3"
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:routes:
-	 *
-	 * Array of IPv6 routes. For the 'auto' method, given IP routes are appended
-	 * to those returned by automatic configuration. Routes cannot be used with
-	 * the 'shared' or 'link-local' methods because there is no upstream network.
-	 *
-	 * Element-Type: NMIP6Route
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ROUTES,
-		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
-		                     G_TYPE_PTR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_ROUTES,
-	                                      G_VARIANT_TYPE ("a(ayuayu)"),
-	                                      ip6_routes_to_dbus,
-	                                      ip6_routes_from_dbus);
+	/* ---keyfile---
+	 * property: gateway
+	 * variable: gateway
+	 * format: string
+	 * description: Gateway IP addresses as a string.
+	 * example: gateway=abbe::1
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: gateway
+	 * variable: IPV6_DEFAULTGW
+	 * description: Gateway IP address.
+	 * example: IPV6_DEFAULTGW=abbe::1
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:ignore-auto-routes:
-	 *
-	 * When the method is set to "auto" or "dhcp" and this property is set to
-	 * %TRUE, automatically configured routes are ignored and only routes
-	 * specified in the #NMSettingIP6Config:routes property, if any, are used.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_IGNORE_AUTO_ROUTES,
-		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	/* ---keyfile---
+	 * property: routes
+	 * variable: route1, route2, ...
+	 * format: route/plen[,gateway,metric]
+	 * description: List of IP routes.
+	 * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: routes
+	 * variable: (none)
+	 * description: List of static routes. They are not stored in ifcfg-* file,
+	 *   but in route6-* file instead in the form of command line for 'ip route add'.
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:ignore-auto-dns:
-	 *
-	 * When the method is set to "auto" or "dhcp" and this property is set to
-	 * %TRUE, automatically configured nameservers and search domains are
-	 * ignored and only nameservers and search domains specified in the
-	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search properties, if
-	 * any, are used.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_IGNORE_AUTO_DNS,
-		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: ignore-auto-routes
+	 * variable: IPV6_PEERROUTES(+)
+	 * default: yes
+	 * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:never-default:
-	 *
-	 * If %TRUE, this connection will never be the default IPv6 connection,
-	 * meaning it will never be assigned the default IPv6 route by
-	 * NetworkManager.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_NEVER_DEFAULT,
-		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: ignore-auto-dns
+	 * variable: IPV6_PEERDNS(+)
+	 * default: yes
+	 * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
+	 * ---end---
+	 */
 
-	/**
-	 * NMSettingIP6Config:may-fail:
-	 *
-	 * If %TRUE, allow overall network configuration to proceed even if IPv6
-	 * configuration times out.  Note that at least one IP configuration must
-	 * succeed or overall network configuration will still fail.  For example,
-	 * in IPv4-only networks, setting this property to %TRUE allows the overall
-	 * network configuration to succeed if IPv6 configuration fails but IPv4
-	 * configuration completes successfully.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_MAY_FAIL,
-		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_MAY_FAIL, "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT |
-		                       G_PARAM_STATIC_STRINGS));
+	/* ---ifcfg-rh---
+	 * property: dhcp-hostname
+	 * variable: DHCPV6_HOSTNAME
+	 * description: Hostname to send the DHCP server.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: never-default
+	 * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
+	 * default: IPV6_DEFROUTE=yes (when no variable specified)
+	 * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
+	 *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
+	 *   meaning as 'never-default' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: may-fail
+	 * variable: IPV6_FAILURE_FATAL(+)
+	 * default: no
+	 * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: route-metric
+	 * variable: IPV6_ROUTE_METRIC(+)
+	 * default: -1
+	 * description: IPV6_ROUTE_METRIC is the default IPv6 metric for routes on this connection.
+	 *   If set to -1, a default metric based on the device type is used.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: route-table
+	 * variable: IPV6_ROUTE_TABLE(+)
+	 * default: 0
+	 * description: IPV6_ROUTE_TABLE enables policy-routing and sets the default routing table.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dns-priority
+	 * variable: IPV6_DNS_PRIORITY(+)
+	 * description: The priority for DNS servers of this connection. Lower values have higher priority.
+	 *    If zero, the default value will be used (50 for VPNs, 100 for other connections).
+	 *    A negative value prevents DNS from other connections with greater values to be used.
+	 * default: 0
+	 * example: IPV6_DNS_PRIORITY=20
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dns-options
+	 * variable: IPV6_RES_OPTIONS(+)
+	 * description: List of DNS options to be added to /etc/resolv.conf
+	 * example: IPV6_RES_OPTIONS=ndots:2 timeout:3
+	 * ---end---
+	 */
 
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
@@ -1246,485 +718,263 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * enabled, it makes the kernel generate a temporary IPv6 address in
 	 * addition to the public one generated from MAC address via modified
 	 * EUI-64.  This enhances privacy, but could cause problems in some
-	 * applications, on the other hand.  The permitted values are: 0: disabled,
-	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
+	 * applications, on the other hand.  The permitted values are: -1: unknown,
+	 * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
+	 *
+	 * Having a per-connection setting set to "-1" (unknown) means fallback to
+	 * global configuration "ipv6.ip6-privacy".
+	 *
+	 * If also global configuration is unspecified or set to "-1", fallback to read
+	 * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
+	 *
+	 * Note that this setting is distinct from the Stable Privacy addresses
+	 * that can be enabled with the "addr-gen-mode" property's "stable-privacy"
+	 * setting as another way of avoiding host tracking with IPv6 addresses.
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_IP6_PRIVACY,
-		 g_param_spec_enum (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
-		                    NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
-		                    NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
-}
+	/* ---ifcfg-rh---
+	 * property: ip6-privacy
+	 * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
+	 * values: IPV6_PRIVACY: no, yes (rfc3041 or rfc4941);
+	 *   IPV6_PRIVACY_PREFER_PUBLIC_IP: yes, no
+	 * default: no
+	 * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
+	 * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
+	 * ---end---
+	 */
+	obj_properties[PROP_IP6_PRIVACY] =
+	    g_param_spec_enum (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
+	                       NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
+	                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
-/********************************************************************/
+	/**
+	 * NMSettingIP6Config:addr-gen-mode:
+	 *
+	 * Configure method for creating the address for use with RFC4862 IPv6
+	 * Stateless Address Autoconfiguration. The permitted values are:
+	 * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 or
+	 * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY.
+	 *
+	 * If the property is set to EUI64, the addresses will be generated
+	 * using the interface tokens derived from hardware address. This makes
+	 * the host part of the address to stay constant, making it possible
+	 * to track host's presence when it changes networks. The address changes
+	 * when the interface hardware is replaced.
+	 *
+	 * The value of stable-privacy enables use of cryptographically
+	 * secure hash of a secret host-specific key along with the connection's
+	 * stable-id and the network address as specified by RFC7217.
+	 * This makes it impossible to use the address track host's presence,
+	 * and makes the address stable when the network interface hardware is
+	 * replaced.
+	 *
+	 * On D-Bus, the absence of an addr-gen-mode setting equals enabling
+	 * stable-privacy. For keyfile plugin, the absence of the setting
+	 * on disk means EUI64 so that the property doesn't change on upgrade
+	 * from older versions.
+	 *
+	 * Note that this setting is distinct from the Privacy Extensions as
+	 * configured by "ip6-privacy" property and it does not affect the
+	 * temporary addresses configured with this option.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: addr-gen-mode
+	 * variable: IPV6_ADDR_GEN_MODE
+	 * values: IPV6_ADDR_GEN_MODE: eui64, stable-privacy
+	 * default: eui64
+	 * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
+	 * example: IPV6_ADDR_GEN_MODE=stable-privacy
+	 * ---end---
+	 */
+	obj_properties[PROP_ADDR_GEN_MODE] =
+	    g_param_spec_int (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, "", "",
+	                      G_MININT, G_MAXINT,
+	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
+	                      G_PARAM_READWRITE |
+	                      G_PARAM_CONSTRUCT |
+	                      G_PARAM_STATIC_STRINGS);
 
-struct NMIP6Address {
-	guint32 refcount;
-	struct in6_addr address;
-	guint32 prefix;
-	struct in6_addr gateway;
-};
+	/**
+	 * NMSettingIP6Config:token:
+	 *
+	 * Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02
+	 * IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode.
+	 *
+	 * Since: 1.4
+	 **/
+	/* ---ifcfg-rh---
+	 * property: token
+	 * variable: IPV6_TOKEN
+	 * description: The IPv6 tokenized interface identifier token
+	 * example: IPV6_TOKEN=::53
+	 * ---end---
+	 */
+	obj_properties[PROP_TOKEN] =
+	    g_param_spec_string (NM_SETTING_IP6_CONFIG_TOKEN, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-/**
- * nm_ip6_address_new:
- *
- * Creates and returns a new #NMIP6Address object.
- *
- * Returns: (transfer full): the new empty #NMIP6Address object
- **/
-NMIP6Address *
-nm_ip6_address_new (void)
-{
-	NMIP6Address *address;
+	/**
+	 * NMSettingIP6Config:dhcp-duid:
+	 *
+	 * A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp
+	 * client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried
+	 * in the Client Identifier option.
+	 * If the property is a hex string ('aa:bb:cc') it is interpreted as a binary
+	 * DUID and filled as an opaque value in the Client Identifier option.
+	 *
+	 * The special value "lease" will retrieve the DUID previously used from the
+	 * lease file belonging to the connection. If no DUID is found and "dhclient"
+	 * is the configured dhcp client, the DUID is searched in the system-wide
+	 * dhclient lease file. If still no DUID is found, or another dhcp client is
+	 * used, a global and permanent DUID-UUID (RFC 6355) will be generated based
+	 * on the machine-id.
+	 *
+	 * The special values "llt" and "ll" will generate a DUID of type LLT or LL
+	 * (see RFC 3315) based on the current MAC address of the device. In order to
+	 * try providing a stable DUID-LLT, the time field will contain a constant
+	 * timestamp that is used globally (for all profiles) and persisted to disk.
+	 *
+	 * The special values "stable-llt", "stable-ll" and "stable-uuid" will generate
+	 * a DUID of the corresponding type, derived from the connection's stable-id and
+	 * a per-host unique key. You may want to include the "${DEVICE}" or "${MAC}" specifier
+	 * in the stable-id, in case this profile gets activated on multiple devices.
+	 * So, the link-layer address of "stable-ll" and "stable-llt" will be a generated
+	 * address derived from the stable id. The DUID-LLT time value in the "stable-llt"
+	 * option will be picked among a static timespan of three years (the upper bound
+	 * of the interval is the same constant timestamp used in "llt").
+	 *
+	 * When the property is unset, the global value provided for "ipv6.dhcp-duid" is
+	 * used. If no global value is provided, the default "lease" value is assumed.
+	 *
+	 * Since: 1.12
+	 **/
+	/* ---ifcfg-rh---
+	 * property: dhcp-duid
+	 * variable: DHCPV6_DUID(+)
+	 * description: A string sent to the DHCPv6 server to identify the local machine.
+	 *   Apart from the special values "lease", "stable-llt", "stable-ll", "stable-uuid",
+	 *   "llt" and "ll" a binary value in hex format is expected. An hex string where
+	 *   each octet is separated by a colon is also accepted.
+	 * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
+	 * ---end---
+	 */
+	obj_properties[PROP_DHCP_DUID] =
+	    g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_DUID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	address = g_malloc0 (sizeof (NMIP6Address));
-	address->refcount = 1;
-	return address;
-}
+	/* IP6-specific property overrides */
 
-/**
- * nm_ip6_address_dup:
- * @source: the #NMIP6Address object to copy
- *
- * Copies a given #NMIP6Address object and returns the copy.
- *
- * Returns: (transfer full): the copy of the given #NMIP6Address copy
- **/
-NMIP6Address *
-nm_ip6_address_dup (NMIP6Address *source)
-{
-	NMIP6Address *address;
+	/* ---dbus---
+	 * property: dns
+	 * format: array of byte array
+	 * description: Array of IP addresses of DNS servers (in network byte order)
+	 * ---end---
+	 */
+	_nm_properties_override_gobj (properties_override,
+	                              g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                            NM_SETTING_IP_CONFIG_DNS),
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type           = NM_G_VARIANT_TYPE ("aay"),
+	                                  .gprop_to_dbus_fcn   = ip6_dns_to_dbus,
+	                                  .gprop_from_dbus_fcn = ip6_dns_from_dbus,
+	                              ));
 
-	g_return_val_if_fail (source != NULL, NULL);
-	g_return_val_if_fail (source->refcount > 0, NULL);
+	/* ---dbus---
+	 * property: addresses
+	 * format: array of legacy IPv6 address struct (a(ayuay))
+	 * description: Deprecated in favor of the 'address-data' and 'gateway'
+	 *   properties, but this can be used for backward-compatibility with older
+	 *   daemons. Note that if you send this property the daemon will ignore
+	 *   'address-data' and 'gateway'.
+	 *
+	 *   Array of IPv6 address structures.  Each IPv6 address structure is
+	 *   composed of an IPv6 address, a prefix length (1 - 128), and an IPv6
+	 *   gateway address. The gateway may be zeroed out if no gateway exists for
+	 *   that subnet.
+	 * ---end---
+	 */
+	_nm_properties_override_gobj (properties_override,
+	                              g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                            NM_SETTING_IP_CONFIG_ADDRESSES),
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("a(ayuay)"),
+	                                  .to_dbus_fcn   = ip6_addresses_get,
+	                                  .from_dbus_fcn = ip6_addresses_set,
+	                              ));
 
-	address = nm_ip6_address_new ();
-	address->prefix = source->prefix;
-	memcpy (&address->address, &source->address, sizeof (struct in6_addr));
-	memcpy (&address->gateway, &source->gateway, sizeof (struct in6_addr));
+	/* ---dbus---
+	 * property: address-data
+	 * format: array of vardict
+	 * description: Array of IPv6 addresses. Each address dictionary contains at
+	 *   least 'address' and 'prefix' entries, containing the IP address as a
+	 *   string, and the prefix length as a uint32. Additional attributes may
+	 *   also exist on some addresses.
+	 * ---end---
+	 */
+	_nm_properties_override_dbus (properties_override,
+	                              "address-data",
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                  .to_dbus_fcn   = ip6_address_data_get,
+	                                  .from_dbus_fcn = ip6_address_data_set,
+	                              ));
 
-	return address;
-}
+	/* ---dbus---
+	 * property: routes
+	 * format: array of legacy IPv6 route struct (a(ayuayu))
+	 * description: Deprecated in favor of the 'route-data' property, but this
+	 *   can be used for backward-compatibility with older daemons. Note that if
+	 *   you send this property the daemon will ignore 'route-data'.
+	 *
+	 *   Array of IPv6 route structures.  Each IPv6 route structure is
+	 *   composed of an IPv6 address, a prefix length (1 - 128), an IPv6
+	 *   next hop address (which may be zeroed out if there is no next hop),
+	 *   and a metric. If the metric is 0, NM will choose an appropriate
+	 *   default metric for the device.
+	 * ---end---
+	 */
+	_nm_properties_override_gobj (properties_override,
+	                              g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                            NM_SETTING_IP_CONFIG_ROUTES),
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("a(ayuayu)"),
+	                                  .to_dbus_fcn   = ip6_routes_get,
+	                                  .from_dbus_fcn = ip6_routes_set,
+	                              ));
 
-/**
- * nm_ip6_address_ref:
- * @address: the #NMIP6Address
- *
- * Increases the reference count of the object.
- **/
-void
-nm_ip6_address_ref (NMIP6Address *address)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
+	/* ---dbus---
+	 * property: route-data
+	 * format: array of vardict
+	 * description: Array of IPv6 routes. Each route dictionary contains at
+	 *   least 'dest' and 'prefix' entries, containing the destination IP
+	 *   address as a string, and the prefix length as a uint32. Most routes
+	 *   will also have a 'next-hop' entry, containing the next hop IP address as
+	 *   a string. If the route has a 'metric' entry (containing a uint32), that
+	 *   will be used as the metric for the route (otherwise NM will pick a
+	 *   default value appropriate to the device). Additional attributes may
+	 *   also exist on some routes.
+	 * ---end---
+	 */
+	_nm_properties_override_dbus (properties_override,
+	                              "route-data",
+	                              NM_SETT_INFO_PROPERT_TYPE (
+	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
+	                                  .to_dbus_fcn   = ip6_route_data_get,
+	                                  .from_dbus_fcn = ip6_route_data_set,
+	                              ));
 
-	address->refcount++;
-}
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-/**
- * nm_ip6_address_unref:
- * @address: the #NMIP6Address
- *
- * Decreases the reference count of the object.  If the reference count
- * reaches zero, the object will be destroyed.
- **/
-void
-nm_ip6_address_unref (NMIP6Address *address)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-
-	address->refcount--;
-	if (address->refcount == 0) {
-		memset (address, 0, sizeof (NMIP6Address));
-		g_free (address);
-	}
-}
-
-/**
- * nm_ip6_address_compare:
- * @address: the #NMIP6Address
- * @other: the #NMIP6Address to compare @address to.
- *
- * Determines if two #NMIP6Address objects contain the same values.
- *
- * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
- **/
-gboolean
-nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
-{
-	g_return_val_if_fail (address != NULL, FALSE);
-	g_return_val_if_fail (address->refcount > 0, FALSE);
-
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
-
-	if (   memcmp (&address->address, &other->address, sizeof (struct in6_addr))
-	    || address->prefix != other->prefix
-	    || memcmp (&address->gateway, &other->gateway, sizeof (struct in6_addr)))
-		return FALSE;
-	return TRUE;
-}
-
-/**
- * nm_ip6_address_get_address:
- * @address: the #NMIP6Address
- *
- * Gets the IPv6 address property of this address object.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address
- **/
-const struct in6_addr *
-nm_ip6_address_get_address (NMIP6Address *address)
-{
-	g_return_val_if_fail (address != NULL, NULL);
-	g_return_val_if_fail (address->refcount > 0, NULL);
-
-	return &address->address;
-}
-
-/**
- * nm_ip6_address_set_address:
- * @address: the #NMIP6Address
- * @addr: the IPv6 address
- *
- * Sets the IPv6 address property of this object.
- **/
-void
-nm_ip6_address_set_address (NMIP6Address *address, const struct in6_addr *addr)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (addr != NULL);
-
-	memcpy (&address->address, addr, sizeof (struct in6_addr));
-}
-
-/**
- * nm_ip6_address_get_prefix:
- * @address: the #NMIP6Address
- *
- * Gets the IPv6 address prefix property of this address object.
- *
- * Returns: the IPv6 address prefix
- **/
-guint32
-nm_ip6_address_get_prefix (NMIP6Address *address)
-{
-	g_return_val_if_fail (address != NULL, 0);
-	g_return_val_if_fail (address->refcount > 0, 0);
-
-	return address->prefix;
-}
-
-/**
- * nm_ip6_address_set_prefix:
- * @address: the #NMIP6Address
- * @prefix: the address prefix, a number between 0 and 128 inclusive
- *
- * Sets the IPv6 address prefix.
- **/
-void
-nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (prefix <= 128);
-	g_return_if_fail (prefix > 0);
-
-	address->prefix = prefix;
-}
-
-/**
- * nm_ip6_address_get_gateway:
- * @address: the #NMIP6Address
- *
- * Gets the IPv6 default gateway property of this address object.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 gateway address
- **/
-const struct in6_addr *
-nm_ip6_address_get_gateway (NMIP6Address *address)
-{
-	g_return_val_if_fail (address != NULL, NULL);
-	g_return_val_if_fail (address->refcount > 0, NULL);
-
-	return &address->gateway;
-}
-
-/**
- * nm_ip6_address_set_gateway:
- * @address: the #NMIP6Address
- * @gateway: the IPv6 default gateway
- *
- * Sets the IPv6 default gateway property of this address object.
- **/
-void
-nm_ip6_address_set_gateway (NMIP6Address *address, const struct in6_addr *gateway)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (gateway != NULL);
-
-	memcpy (&address->gateway, gateway, sizeof (struct in6_addr));
-}
-
-/********************************************************************/
-
-struct NMIP6Route {
-	guint32 refcount;
-
-	struct in6_addr dest;
-	guint32 prefix;
-	struct in6_addr next_hop;
-	guint32 metric;    /* lower metric == more preferred */
-};
-
-/**
- * nm_ip6_route_new:
- *
- * Creates and returns a new #NMIP6Route object.
- *
- * Returns: (transfer full): the new empty #NMIP6Route object
- **/
-NMIP6Route *
-nm_ip6_route_new (void)
-{
-	NMIP6Route *route;
-
-	route = g_malloc0 (sizeof (NMIP6Route));
-	route->refcount = 1;
-	return route;
-}
-
-/**
- * nm_ip6_route_dup:
- * @source: the #NMIP6Route object to copy
- *
- * Copies a given #NMIP6Route object and returns the copy.
- *
- * Returns: (transfer full): the copy of the given #NMIP6Route copy
- **/
-NMIP6Route *
-nm_ip6_route_dup (NMIP6Route *source)
-{
-	NMIP6Route *route;
-
-	g_return_val_if_fail (source != NULL, NULL);
-	g_return_val_if_fail (source->refcount > 0, NULL);
-
-	route = nm_ip6_route_new ();
-	route->prefix = source->prefix;
-	route->metric = source->metric;
-	memcpy (&route->dest, &source->dest, sizeof (struct in6_addr));
-	memcpy (&route->next_hop, &source->next_hop, sizeof (struct in6_addr));
-
-	return route;
-}
-
-/**
- * nm_ip6_route_ref:
- * @route: the #NMIP6Route
- *
- * Increases the reference count of the object.
- **/
-void
-nm_ip6_route_ref (NMIP6Route *route)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-
-	route->refcount++;
-}
-
-/**
- * nm_ip6_route_unref:
- * @route: the #NMIP6Route
- *
- * Decreases the reference count of the object.  If the reference count
- * reaches zero, the object will be destroyed.
- **/
-void
-nm_ip6_route_unref (NMIP6Route *route)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-
-	route->refcount--;
-	if (route->refcount == 0) {
-		memset (route, 0, sizeof (NMIP6Route));
-		g_free (route);
-	}
-}
-
-/**
- * nm_ip6_route_compare:
- * @route: the #NMIP6Route
- * @other: the #NMIP6Route to compare @route to.
- *
- * Determines if two #NMIP6Route objects contain the same values.
- *
- * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
- **/
-gboolean
-nm_ip6_route_compare (NMIP6Route *route, NMIP6Route *other)
-{
-	g_return_val_if_fail (route != NULL, FALSE);
-	g_return_val_if_fail (route->refcount > 0, FALSE);
-
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
-
-	if (   memcmp (&route->dest, &other->dest, sizeof (struct in6_addr))
-	    || route->prefix != other->prefix
-	    || memcmp (&route->next_hop, &other->next_hop, sizeof (struct in6_addr))
-	    || route->metric != other->metric)
-		return FALSE;
-	return TRUE;
-}
-
-/**
- * nm_ip6_route_get_dest:
- * @route: the #NMIP6Route
- *
- * Gets the IPv6 destination address property of this route object.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address of destination
- **/
-const struct in6_addr *
-nm_ip6_route_get_dest (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, NULL);
-	g_return_val_if_fail (route->refcount > 0, NULL);
-
-	return &route->dest;
-}
-
-/**
- * nm_ip6_route_set_dest:
- * @route: the #NMIP6Route
- * @dest: the destination address
- *
- * Sets the IPv6 destination address property of this route object.
- **/
-void
-nm_ip6_route_set_dest (NMIP6Route *route, const struct in6_addr *dest)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-	g_return_if_fail (dest != NULL);
-
-	memcpy (&route->dest, dest, sizeof (struct in6_addr));
-}
-
-/**
- * nm_ip6_route_get_prefix:
- * @route: the #NMIP6Route
- *
- * Gets the IPv6 prefix (ie "32" or "64" etc) of this route.
- *
- * Returns: the IPv6 prefix
- **/
-guint32
-nm_ip6_route_get_prefix (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, 0);
-	g_return_val_if_fail (route->refcount > 0, 0);
-
-	return route->prefix;
-}
-
-/**
- * nm_ip6_route_set_prefix:
- * @route: the #NMIP6Route
- * @prefix: the prefix, a number between 1 and 128 inclusive
- *
- * Sets the IPv6 prefix of this route.
- **/
-void
-nm_ip6_route_set_prefix (NMIP6Route *route, guint32 prefix)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-	g_return_if_fail (prefix <= 128);
-	g_return_if_fail (prefix > 0);
-
-	route->prefix = prefix;
-}
-
-/**
- * nm_ip6_route_get_next_hop:
- * @route: the #NMIP6Route
- *
- * Gets the IPv6 address of the next hop of this route.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address of next hop
- **/
-const struct in6_addr *
-nm_ip6_route_get_next_hop (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, NULL);
-	g_return_val_if_fail (route->refcount > 0, NULL);
-
-	return &route->next_hop;
-}
-
-/**
- * nm_ip6_route_set_next_hop:
- * @route: the #NMIP6Route
- * @next_hop: the IPv6 address of the next hop
- *
- * Sets the IPv6 address of the next hop of this route.
- **/
-void
-nm_ip6_route_set_next_hop (NMIP6Route *route, const struct in6_addr *next_hop)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-	g_return_if_fail (next_hop != NULL);
-
-	memcpy (&route->next_hop, next_hop, sizeof (struct in6_addr));
-}
-
-/**
- * nm_ip6_route_get_metric:
- * @route: the #NMIP6Route
- *
- * Gets the route metric property of this route object; lower values indicate
- * "better" or more preferred routes.
- *
- * Returns: the route metric
- **/
-guint32
-nm_ip6_route_get_metric (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, 0);
-	g_return_val_if_fail (route->refcount > 0, 0);
-
-	return route->metric;
-}
-
-/**
- * nm_ip6_route_set_metric:
- * @route: the #NMIP6Route
- * @metric: the route metric
- *
- * Sets the route metric property of this route object; lower values indicate
- * "better" or more preferred routes.
- **/
-void
-nm_ip6_route_set_metric (NMIP6Route *route, guint32 metric)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-
-	route->metric = metric;
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_IP6_CONFIG,
+	                               NULL, properties_override);
 }

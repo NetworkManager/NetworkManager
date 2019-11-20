@@ -1,8 +1,7 @@
-
 ******************
-2008-12-11: NetworkManager core daemon has moved to git.freedesktop.org!
+NetworkManager core daemon has moved to gitlab.freedesktop.org!
 
-git clone git://git.freedesktop.org/git/NetworkManager/NetworkManager.git
+git clone https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
 ******************
 
 
@@ -45,7 +44,7 @@ settings service" and the "user settings service" store connection information
 and provide these to NetworkManager, also via D-Bus.  Each settings service
 can determine how and where it persistently stores the connection information;
 for example, the GNOME applet stores its configuration in GConf, and the system
-settings service stores it's config in distro-specific formats, or in a distro-
+settings service stores its config in distro-specific formats, or in a distro-
 agnostic format, depending on user/administrator preference.
 
 A variety of other system services are used by NetworkManager to provide
@@ -75,11 +74,15 @@ aren't expecting the dynamic requests that NetworkManager and wpa_supplicant
 make.  Driver bugs should be filed in the bug tracker of the distribution being
 run, since often distributions customize their kernel and drivers.
 
-Sometimes, it really is NetworkManager's fault.  If you think that's the case,
-please file a bug at http://bugzilla.gnome.org and choose the NetworkManager
-component.  Attaching the output of /var/log/messages or /var/log/daemon.log
-(wherever your distribution directs syslog's 'daemon' facility output) is often
-very helpful, and (if you can get) a working wpa_supplicant config file helps
-enormously.
+Sometimes, it really is NetworkManager's fault.  If you think that's
+the case, please file a bug at:
 
+https://gitlab.freedesktop.org/NetworkManager/NetworkManager/issues
 
+Attaching NetworkManager debug logs from the journal (or wherever your
+distribution directs syslog's 'daemon' facility output, as
+/var/log/messages or /var/log/daemon.log) is often very helpful, and
+(if you can get) a working wpa_supplicant config file helps
+enormously.  See the logging section of file
+contrib/fedora/rpm/NetworkManager.conf for how to enable debug logging
+in NetworkManager.

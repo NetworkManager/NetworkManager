@@ -1,27 +1,15 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_OBJECT_PRIVATE_H__
 #define __NM_OBJECT_PRIVATE_H__
 
-#include <gio/gio.h>
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
+#error Cannot use this header.
+#endif
+
 #include "nm-object.h"
 
 typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GVariant *, gpointer);
@@ -40,23 +28,56 @@ void _nm_object_register_properties (NMObject *object,
                                      const char *interface,
                                      const NMPropertiesInfo *info);
 
-void     _nm_object_reload_properties_async  (NMObject *object,
-                                              GCancellable *cancellable,
-                                              GAsyncReadyCallback callback,
-                                              gpointer user_data);
-gboolean _nm_object_reload_properties_finish (NMObject *object,
-                                              GAsyncResult *result,
-                                              GError **error);
-
 void _nm_object_queue_notify (NMObject *object, const char *property);
 
-void _nm_object_suppress_property_updates (NMObject *object, gboolean suppress);
+GDBusObjectManager *_nm_object_get_dbus_object_manager (NMObject *object);
 
-/* DBus property accessors */
+GQuark _nm_object_obj_nm_quark (void);
 
-void _nm_object_reload_property (NMObject *object,
-                                 const char *interface,
-                                 const char *prop_name);
+GDBusConnection *_nm_object_get_dbus_connection (gpointer self);
+
+const char *_nm_object_get_dbus_name_owner (gpointer self);
+
+GDBusConnection *_nm_client_get_dbus_connection (NMClient *client);
+
+const char *_nm_client_get_dbus_name_owner (NMClient *client);
+
+void _nm_object_dbus_call (gpointer self,
+                           gpointer source_tag,
+                           GCancellable *cancellable,
+                           GAsyncReadyCallback user_callback,
+                           gpointer user_callback_data,
+                           const char *object_path,
+                           const char *interface_name,
+                           const char *method_name,
+                           GVariant *parameters,
+                           const GVariantType *reply_type,
+                           GDBusCallFlags flags,
+                           int timeout_msec,
+                           GAsyncReadyCallback internal_callback);
+
+GVariant *_nm_object_dbus_call_sync (gpointer self,
+                                     GCancellable *cancellable,
+                                     const char *object_path,
+                                     const char *interface_name,
+                                     const char *method_name,
+                                     GVariant *parameters,
+                                     const GVariantType *reply_type,
+                                     GDBusCallFlags flags,
+                                     int timeout_msec,
+                                     gboolean strip_dbus_error,
+                                     GError **error);
+
+gboolean _nm_object_dbus_call_sync_void (gpointer self,
+                                         GCancellable *cancellable,
+                                         const char *object_path,
+                                         const char *interface_name,
+                                         const char *method_name,
+                                         GVariant *parameters,
+                                         GDBusCallFlags flags,
+                                         int timeout_msec,
+                                         gboolean strip_dbus_error,
+                                         GError **error);
 
 void _nm_object_set_property (NMObject *object,
                               const char *interface,
@@ -64,20 +85,13 @@ void _nm_object_set_property (NMObject *object,
                               const char *format_string,
                               ...);
 
-/* object demarshalling support */
-typedef GType (*NMObjectDecideTypeFunc) (GVariant *);
-
-void _nm_object_register_type_func (GType base_type,
-                                    NMObjectDecideTypeFunc type_func,
-                                    const char *interface,
-                                    const char *property);
-
-#define NM_OBJECT_NM_RUNNING "nm-running-internal"
-gboolean _nm_object_get_nm_running (NMObject *self);
-
-void _nm_object_class_add_interface (NMObjectClass *object_class,
-                                     const char    *interface);
 GDBusProxy *_nm_object_get_proxy (NMObject   *object,
                                   const char *interface);
+
+GError *_nm_object_new_error_nm_not_running (void);
+void _nm_object_set_error_nm_not_running (GError **error);
+
+struct udev;
+void _nm_device_set_udev (NMDevice *device, struct udev *udev);
 
 #endif /* __NM_OBJECT_PRIVATE_H__ */

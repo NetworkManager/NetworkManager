@@ -87,9 +87,10 @@ AC_DEFUN([AX_LIB_READLINE], [
   ])
 
   if test -z "$ax_cv_lib_readline"; then
-    AC_MSG_ERROR([readline library with terminfo support is required (one of ncurses, curses, or termcap)])
+    AC_MSG_ERROR([readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)])
   fi
 
+  ORIG_LIBS="$LIBS"
   LIBS="$LIBS $ax_cv_lib_readline"
   AC_CHECK_HEADERS(readline.h readline/readline.h)
 
@@ -114,6 +115,7 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_MSG_ERROR(rl_echo_signal_char() is required (install readline6?))
   fi
 
+  LIBS="$ORIG_LIBS"
   READLINE_LIBS="$ax_cv_lib_readline"
   AC_SUBST(READLINE_LIBS)
 ])dnl

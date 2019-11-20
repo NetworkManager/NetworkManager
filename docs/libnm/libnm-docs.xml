@@ -10,11 +10,17 @@
     <releaseinfo>
       for libnm &version;
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="https://developer.gnome.org/libnm/1.0/">https://developer.gnome.org/libnm/1.0/</ulink>.
+      <ulink url="https://developer.gnome.org/libnm/stable/">https://developer.gnome.org/libnm/stable/</ulink>.
     </releaseinfo>
 
     <copyright>
-      <year>2012-2014</year>
+      <year>2012</year>
+      <year>2013</year>
+      <year>2014</year>
+      <year>2015</year>
+      <year>2016</year>
+      <year>2017</year>
+      <year>2018</year>
       <holder>The NetworkManager Authors</holder>
     </copyright>
 
@@ -43,64 +49,315 @@
 
   <chapter id="ref-overview">
     <title>Overview</title>
-    <para>
-      libnm maps fairly closely to the actual D-Bus API that NetworkManager
-      provides, wrapping the remote D-Bus objects as native GObjects,
-      mapping D-Bus signals and properties to GObject signals and properties,
-      and providing helpful accessor and utility functions.  However, unlike
-      the old libnm-util/libnm-glib API, the mapping to the D-Bus API is not
-      exact, and various inconveniences and historical anomolies of the D-Bus
-      API are papered over.
-    </para>
-    <para>
-      The following is a rough overview of the libnm object structure and
-      how to use the various parts of it:
-      <mediaobject  id="libnm-overview">
-        <imageobject>
-          <imagedata fileref="libnm.png" format="PNG"/>
-        </imageobject>
-      </mediaobject>
-    </para>
+    <section id="intro">
+      <title>Introduction to libnm</title>
+      <para>
+        libnm is a client library for NetworkManager, the standard Linux network
+        management service. NetworkManager supports a wide variety of network
+        configuration scenarios, hardware devices and protocol families. Most of
+        the functionality is exposed on a
+        <ulink url="https://developer.gnome.org/NetworkManager/stable/spec.html">D-Bus API</ulink>,
+        allowing other tools to use the functionality provided by NetworkManager.
+      </para>
+      <para>
+        libnm provides C language bindings for functionality provided by
+        NetworkManager, optionally useful from other language runtimes as well.
+      </para>
+      <para>
+        libnm maps fairly closely to the actual D-Bus API that NetworkManager
+        provides, wrapping the remote D-Bus objects as native GObjects,
+        mapping D-Bus signals and properties to GObject signals and properties,
+        and providing helpful accessor and utility functions.  However, unlike
+        the old libnm-util/libnm-glib API, the mapping to the D-Bus API is not
+        exact, and various inconveniences and historical anomalies of the D-Bus
+        API are papered over.
+      </para>
+      <para>
+        The following is a rough overview of the libnm object structure and
+        how to use the various parts of it:
+        <mediaobject  id="libnm-overview">
+          <imageobject>
+            <imagedata fileref="libnm.png" format="PNG"/>
+          </imageobject>
+        </mediaobject>
+      </para>
+    </section>
+
+    <section id="usage">
+      <title>Using libnm</title>
+      <simplesect>
+        <title>When to use libnm</title>
+        <para>
+          libnm is fairly simple to use from C. It's based on glib and GObject.
+          If your project uses these already you'll find integration libnm with your
+          project rather convenient. In fact, the <command>nmcli</command> tool shipped
+          with NetworkManager is based on libnm.
+        </para>
+        <para>
+          libnm should be also the way to go if your project does something non-trivial
+          with NetworkManager, such as manipulating the connection profiles.
+          That is, if you're writing a specialized networking control tool or a desktop
+          environment, libnm is probably the right choice. The popular desktop
+          environments in fact all use libnm directly or with nm-applet and
+          nm-connection-editor that are all based on libnm.
+        </para>
+        <para>
+          An alternative to use of libnm is the use of the
+          <ulink url="https://developer.gnome.org/NetworkManager/stable/spec.html">D-Bus API</ulink>
+          directly.  This gives you larger flexibility and reduces the overhead of linking
+          with the libnm library. This makes sense if your task is simple and you have a good
+          D-Bus library at your disposal. Activating a particular connection profile
+          from a Python script is a good example of a task that is perfectly simple
+          without using libnm.
+        </para>
+      </simplesect>
+
+      <simplesect>
+        <title>How to use libnm</title>
+        <para>
+          You can use the libnm's C API directly. To do so, all libnm programs need to
+          include <filename>NetworkManager.h</filename> that provides necessary definitions.
+          The rest of the API is documented in the reference manual.
+        </para>
+        <informalexample><programlisting><![CDATA[#include <glib.h>
+#include <NetworkManager.h>
+
+int
+main (int argc, char *argv[])
+{
+	NMClient *client;
+
+	client = nm_client_new (NULL, NULL);
+	if (client)
+		g_print ("NetworkManager version: %s\n", nm_client_get_version (client));
+}]]></programlisting></informalexample>
+        <para>
+          Use <command>pkg-config</command> for <varname>libnm</varname> to discover the necessary
+          compiler flags.
+        </para>
+  <screen><prompt>$ </prompt><userinput>cc $(pkg-config --libs --cflags libnm) -o hello-nm hello-nm.c</userinput>
+  <prompt>$ </prompt><userinput>./hello-nm</userinput>
+  NetworkManager version: &version;
+  <prompt>$ </prompt></screen>
+        <para>
+          Utilize the <varname>PKG_CHECK_MODULES</varname> macro to integrate with an
+          autoconf-based build system. It's also recommended to use
+          <varname>NM_VERSION_MIN_REQUIRED</varname> and <varname>NM_VERSION_MAX_ALLOWED</varname>
+          macros to tell libnm headers which API version does your application need to work with.
+          If you use them, the compiler will warn you when you use functionality that is not
+          available in the versions you specified.
+        </para>
+        <informalexample><programlisting><![CDATA[PKG_CHECK_MODULES(LIBNM, libnm >= 1.8)
+LIBNM_CFLAGS="$LIBNM_CFLAGS -DNM_VERSION_MIN_REQUIRED=NM_VERSION_1_8"
+LIBNM_CFLAGS="$LIBNM_CFLAGS -DNM_VERSION_MAX_ALLOWED=NM_VERSION_1_8"]]></programlisting></informalexample>
+        <para>
+          You can use libnm from other languages than C with the use of GObject introspection.
+          This includes Perl, Python, Javascript, Lua, Ruby and more. The example below shows what the
+          typical libnm use in Python would look like.
+        </para>
+        <informalexample><programlisting><![CDATA[import gi
+gi.require_version('NM', '1.0')
+from gi.repository import NM
+
+client = NM.Client.new(None)
+print ("NetworkManager version " + client.get_version())]]></programlisting></informalexample>
+        <para>
+          There's <ulink url="https://lazka.github.io/pgi-docs/#NM-1.0">NM-1.0 Python API Reference</ulink>
+          maintained a third party that is generated from the introspection metadata.
+        </para>
+        <para>
+          In general, the C API documentation applies to the use GObject introspection
+          from other languages, with the calling convention respecting the language's
+          customs. Consult the source tree for
+          <ulink url="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/tree/master/examples">some examples</ulink>.
+        </para>
+      </simplesect>
+
+      <simplesect id="sync-api">
+        <title>Synchronous API in libnm</title>
+        <para>
+          Libnm contains some synchronous API. This API basically makes a blocking
+          D-Bus call (g_dbus_connection_call_sync()) and is now deprecated.
+        </para>
+        <para>
+          Note that D-Bus is fundamentally asynchronous. Doing blocking calls
+          on top of D-Bus is odd, especially for libnm's NMClient. That is because
+          NMClient essentially is a client-side cache of the objects of the D-Bus
+          interface. This cache should be filled exclusively by (asynchronous) D-Bus
+          events. So, making a blocking D-Bus call means to wait for a response and
+          return it, while queuing everything that happens in between. Basically,
+          there are three options how a synchronous API on NMClient could behave:
+          <orderedlist>
+            <listitem>
+              <para>
+                The call basically calls g_dbus_connection_call_sync(). This means
+                that libnm sends a D-Bus request via GDBusConnection, and blockingly
+                waits for the response. All D-Bus messages that get received in the
+                meantime are queued in the GMainContext that belongs to NMClient.
+                That means, none of these D-Bus events are processed until we
+                iterate the GMainContext after the call returns. The effect is,
+                that NMClient (and all cached objects in there) are unaffected by
+                the D-Bus request.
+                Most of the synchronous API calls in libnm are of this kind.
+                The problem is that the strict ordering of D-Bus events gets
+                violated.
+                For some API this is not an immediate problem. Take for example
+                nm_device_wifi_request_scan(). The call merely blockingly tells
+                NetworkManager to start scanning, but since NetworkManager's D-Bus
+                API does not directly expose any state that tells whether we are
+                currently scanning, this out of order processing of the D-Bus
+                request is a small issue.
+                The problem is more obvious for nm_client_networking_set_enabled().
+                After calling it, NM_CLIENT_NETWORKING_ENABLED is still unaffected
+                and unchanged, because the PropertiesChanged signal from D-Bus
+                is not yet processed.
+                This means, while you make such a blocking call, NMClient's state
+                does not change. But usually you perform the synchronous call
+                to change some state. In this form, the blocking call is not useful,
+                because NMClient only changes the state after iterating the GMainContext,
+                and not after the blocking call returns.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Like 1), but after making the blocking g_dbus_connection_call_sync(),
+                update the NMClient cache artificially. This is what
+                nm_manager_check_connectivity() does, to "fix" bgo#784629.
+                This also has the problem of out-of-order events, but it kinda
+                solves the problem of not changing the state during the blocking
+                call. But it does so by hacking the state of the cache. I think
+                this is really wrong because the state should only be updated from
+                the ordered stream of D-Bus messages. When libnm decides to modify
+                the state, there are already D-Bus messages queued that affect this
+                very state.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Instead of calling g_dbus_connection_call_sync(), use the
+                asynchronous g_dbus_connection_call(). If we would use a sepaate
+                GMainContext for all D-Bus related calls, we could ensure that
+                while we block for the response, we iterate the internal main context.
+                This might be nice, because all events are processed in order and
+                after the blocking call returns, the NMClient state is up to date.
+                The are problems however: current blocking API does not do this,
+                so it's a significant change in behavior. Also, it might be
+                unexpected to the user that during the blocking call the entire
+                content of NMClient's cache might change and all pointers to the
+                cache might be invalidated. Also, of course NMClient would invoke
+                signals for all the changes that happen.
+                Another problem is that this would be more effort to implement
+                and it involves a small performance overhead for all D-Bus related
+                calls (because we have to serialize all events in an internal
+                GMainContext first and then invoke them on the caller's context).
+                Also, if the users wants this, they could implement it themself
+                using their own extra GMainContext and the asynchronous API.
+              </para>
+            </listitem>
+          </orderedlist>
+
+          See also <ulink url="https://smcv.pseudorandom.co.uk/2008/11/nonblocking/">this blog</ulink>
+          for why blocking calls are wrong.
+        </para>
+        <para>
+          All possible behaviors for synchronous API have severe behavioural
+          issues and thus such API is deprecated. Note that "deprecated" here does not
+          mean that the API is going to be removed. Libnm does not break API. The
+          user may:
+
+          <itemizedlist>
+            <listitem>
+              <para>
+                Continue to use this API. It's deprecated, awkward and discouraged,
+                but if it works for you, that's fine.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Use asynchronous API. That's the only sensible way to use D-Bus.
+                If libnm lacks a certain asynchronous counterpart, it should be
+                added.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Use GDBusConnection directly. There really isn't anything wrong
+                with D-Bus or GDBusConnection. This deprecated API is just a wrapper
+                around g_dbus_connection_call_sync(). You may call it directly
+                without feeling dirty.
+              </para>
+            </listitem>
+          </itemizedlist>
+        </para>
+      </simplesect>
+
+    </section>
   </chapter>
 
   <chapter>
     <title>Client Object API Reference</title>
     <xi:include href="xml/nm-client.xml"/>
-    <xi:include href="xml/nm-secret-agent.xml"/>
+    <xi:include href="xml/nm-secret-agent-old.xml"/>
     <xi:include href="xml/nm-object.xml"/>
+    <xi:include href="xml/nm-errors.xml"/>
+    <xi:include href="xml/nm-dbus-interface.xml"/>
   </chapter>
 
   <chapter>
     <title>Connection and Setting API Reference</title>
     <xi:include href="xml/nm-connection.xml"/>
+    <xi:include href="xml/nm-simple-connection.xml"/>
+    <xi:include href="xml/nm-remote-connection.xml"/>
     <xi:include href="xml/nm-setting.xml"/>
     <xi:include href="xml/nm-setting-connection.xml"/>
     <!-- begin alphabetical -->
+    <xi:include href="xml/nm-setting-6lowpan.xml"/>
     <xi:include href="xml/nm-setting-8021x.xml"/>
     <xi:include href="xml/nm-setting-adsl.xml"/>
     <xi:include href="xml/nm-setting-bluetooth.xml"/>
     <xi:include href="xml/nm-setting-bond.xml"/>
-    <xi:include href="xml/nm-setting-bridge.xml"/>
     <xi:include href="xml/nm-setting-bridge-port.xml"/>
+    <xi:include href="xml/nm-setting-bridge.xml"/>
     <xi:include href="xml/nm-setting-cdma.xml"/>
     <xi:include href="xml/nm-setting-dcb.xml"/>
+    <xi:include href="xml/nm-setting-dummy.xml"/>
+    <xi:include href="xml/nm-setting-ethtool.xml"/>
     <xi:include href="xml/nm-setting-generic.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
     <xi:include href="xml/nm-setting-infiniband.xml"/>
     <xi:include href="xml/nm-setting-ip4-config.xml"/>
     <xi:include href="xml/nm-setting-ip6-config.xml"/>
+    <xi:include href="xml/nm-setting-ip-config.xml"/>
+    <xi:include href="xml/nm-setting-ip-tunnel.xml"/>
+    <xi:include href="xml/nm-setting-macsec.xml"/>
+    <xi:include href="xml/nm-setting-macvlan.xml"/>
+    <xi:include href="xml/nm-setting-match.xml"/>
     <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
+    <xi:include href="xml/nm-setting-ovs-bridge.xml"/>
+    <xi:include href="xml/nm-setting-ovs-interface.xml"/>
+    <xi:include href="xml/nm-setting-ovs-dpdk.xml"/>
+    <xi:include href="xml/nm-setting-ovs-patch.xml"/>
+    <xi:include href="xml/nm-setting-ovs-port.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
     <xi:include href="xml/nm-setting-pppoe.xml"/>
+    <xi:include href="xml/nm-setting-proxy.xml"/>
     <xi:include href="xml/nm-setting-serial.xml"/>
-    <xi:include href="xml/nm-setting-team.xml"/>
+    <xi:include href="xml/nm-setting-sriov.xml"/>
+    <xi:include href="xml/nm-setting-tc-config.xml"/>
     <xi:include href="xml/nm-setting-team-port.xml"/>
+    <xi:include href="xml/nm-setting-team.xml"/>
+    <xi:include href="xml/nm-setting-tun.xml"/>
+    <xi:include href="xml/nm-setting-user.xml"/>
     <xi:include href="xml/nm-setting-vlan.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
+    <xi:include href="xml/nm-setting-vxlan.xml"/>
+    <xi:include href="xml/nm-setting-wifi-p2p.xml"/>
     <xi:include href="xml/nm-setting-wimax.xml"/>
     <xi:include href="xml/nm-setting-wired.xml"/>
-    <xi:include href="xml/nm-setting-wireless.xml"/>
+    <xi:include href="xml/nm-setting-wireguard.xml"/>
     <xi:include href="xml/nm-setting-wireless-security.xml"/>
+    <xi:include href="xml/nm-setting-wireless.xml"/>
+    <xi:include href="xml/nm-setting-wpan.xml"/>
     <!-- end alphabetical -->
   </chapter>
 
@@ -108,34 +365,57 @@
     <title>Device and Runtime Configuration API Reference</title>
     <xi:include href="xml/nm-device.xml"/>
     <!-- begin alphabetical -->
+    <xi:include href="xml/nm-device-6lowpan.xml"/>
     <xi:include href="xml/nm-device-adsl.xml"/>
     <xi:include href="xml/nm-device-bond.xml"/>
     <xi:include href="xml/nm-device-bridge.xml"/>
     <xi:include href="xml/nm-device-bt.xml"/>
+    <xi:include href="xml/nm-device-dummy.xml"/>
     <xi:include href="xml/nm-device-ethernet.xml"/>
     <xi:include href="xml/nm-device-generic.xml"/>
     <xi:include href="xml/nm-device-infiniband.xml"/>
+    <xi:include href="xml/nm-device-ip-tunnel.xml"/>
+    <xi:include href="xml/nm-device-macsec.xml"/>
+    <xi:include href="xml/nm-device-macvlan.xml"/>
     <xi:include href="xml/nm-device-modem.xml"/>
     <xi:include href="xml/nm-device-olpc-mesh.xml"/>
+    <xi:include href="xml/nm-device-ovs-bridge.xml"/>
+    <xi:include href="xml/nm-device-ovs-interface.xml"/>
+    <xi:include href="xml/nm-device-ovs-port.xml"/>
+    <xi:include href="xml/nm-device-ppp.xml"/>
     <xi:include href="xml/nm-device-team.xml"/>
+    <xi:include href="xml/nm-device-tun.xml"/>
     <xi:include href="xml/nm-device-vlan.xml"/>
+    <xi:include href="xml/nm-device-vxlan.xml"/>
+    <xi:include href="xml/nm-device-wifi-p2p.xml"/>
     <xi:include href="xml/nm-device-wifi.xml"/>
     <xi:include href="xml/nm-device-wimax.xml"/>
+    <xi:include href="xml/nm-device-wireguard.xml"/>
+    <xi:include href="xml/nm-device-wpan.xml"/>
     <!-- end alphabetical -->
     <xi:include href="xml/nm-active-connection.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>
-    <xi:include href="xml/nm-remote-connection.xml"/>
     <xi:include href="xml/nm-access-point.xml"/>
+    <xi:include href="xml/nm-wifi-p2p-peer.xml"/>
     <xi:include href="xml/nm-wimax-nsp.xml"/>
-    <xi:include href="xml/nm-ip4-config.xml"/>
-    <xi:include href="xml/nm-ip6-config.xml"/>
-    <xi:include href="xml/nm-dhcp4-config.xml"/>
-    <xi:include href="xml/nm-dhcp6-config.xml"/>
+    <xi:include href="xml/nm-ip-config.xml"/>
+    <xi:include href="xml/nm-dhcp-config.xml"/>
+    <xi:include href="xml/nm-checkpoint.xml"/>
   </chapter>
 
   <chapter>
     <title>Utility API Reference</title>
     <xi:include href="xml/nm-utils.xml"/>
+    <xi:include href="xml/nm-version.xml"/>
+  </chapter>
+
+  <chapter>
+    <title>VPN Plugin API Reference</title>
+    <xi:include href="xml/nm-vpn-service-plugin.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-info.xml"/>
+    <xi:include href="xml/nm-vpn-editor.xml"/>
+    <xi:include href="xml/nm-vpn-editor-plugin.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-old.xml"/>
   </chapter>
 
   <chapter id="object-tree">
@@ -148,5 +428,43 @@
   </index>
 
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
-</book>
 
+  <appendix id="license">
+    <title>License</title>
+
+    <para>
+      This library is free software; you can redistribute
+      it and/or modify it under the terms of the <citetitle>GNU
+      Lesser General Public License</citetitle> as published by
+      the Free Software Foundation; either version 2 of the
+      License, or (at your option) any later version.
+    </para>
+
+    <para>
+      This library is distributed in the hope that it will
+      be useful, but WITHOUT ANY WARRANTY; without even the
+      implied warranty of MERCHANTABILITY or FITNESS FOR A
+      PARTICULAR PURPOSE. See the GNU Lesser General Public
+      License for more details.
+    </para>
+
+    <para>
+      You should have received a copy of the <citetitle>GNU
+      Lesser General Public License</citetitle> along with this
+      library; if not, write to the
+      <address>
+        Free Software Foundation, Inc.,
+        <street>51 Franklin Street</street> - Fifth Floor,
+        <city>Boston</city>, <state>MA</state> <postcode>02110-1301</postcode>,
+        <country>USA</country>
+      </address>
+    </para>
+
+    <para>
+      A copy of the <citetitle>GNU Lesser General Public License</citetitle>
+      can also be obtained from the <ulink url="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html">
+      GNU web site</ulink>.
+    </para>
+  </appendix>
+
+</book>

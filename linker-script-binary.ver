@@ -1,0 +1,6 @@
+{
+global:
+	_IO_stdin_used;
+local:
+	*;
+};

@@ -1,19 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 /**
@@ -23,12 +10,9 @@
  * nmtui-edit implements editing #NMConnections.
  */
 
-#include "config.h"
+#include "nm-default.h"
 
 #include <stdlib.h>
-
-#include <glib/gi18n-lib.h>
-#include <NetworkManager.h>
 
 #include "nmtui.h"
 #include "nmtui-edit.h"
@@ -104,7 +88,7 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 }
 
 static NmtNewtForm *
-nmt_edit_main_connection_list (void)
+nmt_edit_main_connection_list (gboolean is_top)
 {
 	int screen_width, screen_height;
 	NmtNewtForm *form;
@@ -118,7 +102,7 @@ nmt_edit_main_connection_list (void)
 	                     "escape-exits", TRUE,
 	                     NULL);
 
-	quit = nmt_newt_button_new (_("Quit"));
+	quit = nmt_newt_button_new (is_top ? _("Quit") : _("Back"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
 
 	list = g_object_new (NMT_TYPE_EDIT_CONNECTION_LIST,
@@ -185,7 +169,12 @@ create_connection (NmtNewtWidget *widget, gpointer list)
 	connection = nm_editor_utils_create_connection (type, priv->master, nm_client);
 	nmt_edit_connection (connection);
 	g_object_unref (connection);
+}
 
+static void
+create_connection_and_quit (NmtNewtWidget *widget, gpointer list)
+{
+	create_connection (widget, list);
 	nmt_newt_form_quit (list);
 }
 
@@ -204,7 +193,7 @@ nmt_add_connection_init (NmtAddConnection *form)
 
 	listbox = nmt_newt_listbox_new (5, NMT_NEWT_LISTBOX_SCROLL);
 	priv->listbox = NMT_NEWT_LISTBOX (listbox);
-	g_signal_connect (priv->listbox, "activated", G_CALLBACK (create_connection), form);
+	g_signal_connect (priv->listbox, "activated", G_CALLBACK (create_connection_and_quit), form);
 	nmt_newt_grid_add (grid, listbox, 0, 1);
 	nmt_newt_widget_set_padding (listbox, 0, 1, 0, 0);
 	nmt_newt_grid_set_flags (grid, listbox, NMT_NEWT_GRID_EXPAND_X);
@@ -224,7 +213,7 @@ nmt_add_connection_init (NmtAddConnection *form)
 	                         NMT_NEWT_GRID_FILL_Y);
 
 	button = g_object_ref_sink (nmt_newt_button_new (_("Create")));
-	g_signal_connect (button, "clicked", G_CALLBACK (create_connection), form);
+	g_signal_connect (button, "clicked", G_CALLBACK (create_connection_and_quit), form);
 	nmt_newt_grid_add (NMT_NEWT_GRID (buttons), button, 1, 0);
 
 	nmt_newt_form_set_content (NMT_NEWT_FORM (form), NMT_NEWT_WIDGET (grid));
@@ -463,7 +452,7 @@ connection_deleted_callback (GObject      *connection,
 	ConnectionDeleteData *data = user_data;
 	GError *error = NULL;
 
-	if (!nm_remote_connection_delete_finish (data->connection, result, NULL)) {
+	if (!nm_remote_connection_delete_finish (data->connection, result, &error)) {
 		nmt_newt_message_dialog (_("Unable to delete connection: %s"),
 		                         error->message);
 	} else
@@ -515,7 +504,8 @@ remove_one_connection (NMRemoteConnection *connection)
 void
 nmt_remove_connection (NMRemoteConnection *connection)
 {
-	const GPtrArray *conns;
+	const GPtrArray *all_conns;
+	GSList *slaves, *iter;
 	int i;
 	NMRemoteConnection *slave;
 	NMSettingConnection *s_con;
@@ -535,21 +525,27 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
 	iface = nm_connection_get_interface_name (NM_CONNECTION (connection));
 
-	conns = nm_client_get_connections (nm_client);
-	for (i = 0; i < conns->len; i++) {
-		slave = conns->pdata[i];
+	all_conns = nm_client_get_connections (nm_client);
+	slaves = NULL;
+	for (i = 0; i < all_conns->len; i++) {
+		slave = all_conns->pdata[i];
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (slave));
 		master = nm_setting_connection_get_master (s_con);
 		if (master) {
 			if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, iface))
-				remove_one_connection (slave);
+				slaves = g_slist_prepend (slaves, g_object_ref (slave));
 		}
 	}
+
+	for (iter = slaves; iter; iter = iter->next)
+		remove_one_connection (iter->data);
+	g_slist_free_full (slaves, g_object_unref);
+
 	g_object_unref (connection);
 }
 
 NmtNewtForm *
-nmtui_edit (int argc, char **argv)
+nmtui_edit (gboolean is_top, int argc, char **argv)
 {
 	NMConnection *conn = NULL;
 
@@ -566,5 +562,5 @@ nmtui_edit (int argc, char **argv)
 
 		return nmt_editor_new (conn);
 	} else
-		return nmt_edit_main_connection_list ();
+		return nmt_edit_main_connection_list (is_top);
 }

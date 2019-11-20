@@ -1,3 +1,804 @@
+=============================================
+NetworkManager-1.22
+Overview of changes since NetworkManager-1.20
+=============================================
+
+This is a snapshot of NetworkManager 1.22 development series.
+The API is subject to change and not guaranteed to be compatible
+with the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* Drop support for BlueZ 4. BlueZ 5 was released in 2012 and should
+  nowadays be available everywhere.
+* core: declare "startup complete" when device reaches "connected"
+  state, even if IP addressing methods did not yet fully complete.
+  This changes behavior for unblocking "NetworkManager-wait-online.service",
+  and "network-online.target" earlier. If this causes issues in your
+  setup, you may need to configure "ipv4.may-fail=no" or "ipv6.may-fail=no",
+  which delays reaching "connected" state for the address family accordingly.
+* Various bug fixes and improvements.
+* libnm: hide NMObject and NMClient typedefs from header files. This prevents
+  the user from subclassing these types and is an ABI change (in case somebody
+  was doing so).
+* libnm: retire deprecated WiMAX API NMDeviceWimax and NMWimaxNsp.
+  WiMAX support was removed from NetworkManager in version 1.2 (2016) and no such
+  type instances would have been created by NMClient for a while now.
+
+=============================================
+NetworkManager-1.20
+Overview of changes since NetworkManager-1.18
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
+  and disabled by default since NetworkManager 1.12, has now been removed.
+* The DHCP client now defaults to "internal". The default can be overriden
+  at build time by using the --with-config-dhcp-default option of the
+  configure script or at run time by setting the main.dhcp option in the
+  configuration file.
+* Added support for configuring fq_codel line discipline and mirred action.
+* Added a possibility for distributions to ship dispatcher scripts in /usr/lib.
+* Drop deprecated setting "main.monitor-connection-files" in NetworkManager.conf.
+  This setting now has no more effect and was disabled by default for a long time.
+  Instead, after changes, load files explicitly with `nmcli connection load` or
+  `nmcli connection reload`.
+* Rework parsing team JSON config in libnm and stricter validate settings.
+  With this, NetworkManager rejects settings that it considers invalid while
+  still allowing setting arbitrary JSON config directly.
+* Drop ibft settings plugin. This functionality is now covered by using
+  nm-initrd-generator from initrd to pre-generate in-memory profiles.
+* Support "suppress_prefixlength" attribute for policy routing rules.
+  This is what wg-quick uses for the "Improved Rule-based Routing" solution,
+  and the user can now manually configure such policy routing rules.
+* Support "wireguard.ip4-auto-default-route" and "wireguard.ip6-auto-default-route".
+  This automatically implements the "Improved Rule-based Routing" of wg-quick
+  to help avoiding routing loops when setting the default-route on the WireGuard
+  interface. Note that this is now enabled by default, so there is a change in behavior
+  if your WireGuard connection profiles from before had a default-route (/0)
+  in allowed-ips.
+* Rework implementation of settings plugins and how profiles are presisted
+  to disk. This is a large internal refactoring of the settings plugins that
+  allows to migrate a connection profile between plugins.
+* In-memory profiles are now only handled by keyfile plugin and will also be
+  persisted to /run directory. This allows to restart NetworkManager without
+  loosing these profiles and it provides a file-system based API for creating
+  in-memory profiles.
+* Keyfile plugin now supports a read-only directory of profiles under directory
+  "/usr/lib/NetworkManager/system-connections". Such profiles still can be modified
+  and deleted via D-Bus, which results in writing profiles to /etc or /run that
+  shadow the read-only files.
+* Add new D-Bus method AddConnection2() that allows to block autoconnect of
+  the profile at the moment when creating the profile. Also add support for
+  this API to libnm.
+* Add flag "no-reapply" to Update2() D-Bus method. Normally, when a connection
+  profile gets modified, this only changes the profile itself. When the profile
+  is currently activated on a device, then the device's configuration does not update
+  before the profile is fully re-activated or Reapply on the device is called. There
+  is an exception to this: the "connection.zone" and the "connection.metered"
+  properties take effect immediately. The "no-reapply" flag allows suppressing to
+  reapply any properties, so that no changes take effect automatically. The purpose
+  is to really only modify the profile itself without changes to the runtime configuration
+  of the device.
+* Add "ipv6.method=disabled" to disable IPv6 on a device, like also possible for
+  IPv4. Until now, the users could only set "ipv6.method=ignore" which means the
+  users are free to set IPv6 related sysctl values themselves.
+* Added support for Wi-Fi Mesh network.
+
+The following changes were backported to 1.18.x releases between 1.18.0
+and 1.18.2 are also present in NetworkManager-1.18:
+
+- 1.18.2:
+* Add compatibility with out-of-tree WireGuard module on 5.2 kernels
+* Fix parsing of BOOTIF= variables in initrd.
+* Accept numeric IPv4 prefix in place of a mask when parsing a command line
+  in initrd.
+* Don't check connectivity of unconfigured devices.
+* Fix PKCS#12 handling in the ifcfg-rh plugin.
+* Avoid waiting for udev to see software devices created by NetworkManager.
+* Don't attempt to stop management daemon for Team devices created
+  externally to NetworkManager.
+* Use FQDN for persistent hostname on Slackware.
+* Restore IPv6 configuration of a device when its link goes back up.
+* Fix management status of software devices on system suspend.
+* Make nmcli not print certificate blobs if --show-secrets is not used.
+* Fix MTU reapply.
+
+=============================================
+NetworkManager-1.18
+Overview of changes since NetworkManager-1.16
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Add support for policy routing rules.
+* Add support for VLAN filtering for Linux bridge.
+* Support ieee-802-1 and ieee-802-3 LLDP TLVs.
+* Allow large MTU sizes for infiniband/IPoIB connection profiles.
+* Improve nmcli's handling of list options for connection properties.
+
+=============================================
+NetworkManager-1.16
+Overview of changes since NetworkManager-1.14
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Check connectivity per address family.
+* Support "main.systemd-resolved" to let NetworkManager configure DNS settings
+  in systemd-resolved without making it the main DNS plugin of NetworkManager.
+* Write "/var/run/NetworkManager/no-stub-resolv.conf" with original nameservers.
+  That is useful with caching DNS plugins like "systemd-resolved" or "dnsmasq" where
+  "/var/run/NetworkManager/resolv.conf" refers to localhost.
+* Change default "ipv4.dhcp-client-id" setting for the internal DHCP plugin from
+  "duid" to "mac". This is a change in behavior on upgrade when using the internal
+  DHCP plugin (unless the default is overwritten in "NetworkManager.conf" or specified
+  per connection profile).
+* Improve handling of DHCP router options with internal DHCP plugin. For one, accept
+  multiple routers and add a default-route to each. On D-Bus expose the original DNS
+  and NTP servers without cleaning up local nameservers.
+* Allow binding a connections lifetime to the DBus client that activated it.
+* Add support for establishing Wi-Fi Direct connections (Wi-Fi P2P).
+* Add support for WireGuard VPN tunnels to NetworkManager. D-Bus API and libnm
+  support all options. nmcli supports creating and managing WireGuard profiles,
+  with the exception of configuring and showing peers.
+* Add initrd generator to be used by dracut and use it as new way of handling
+  iBFT.
+* Deprecated "plugins.monitor-connection-files" setting in NetworkManager.conf.
+  This option will have no effect in future versions.
+* Add AP and Ad-hoc support for iwd Wi-Fi backend.
+* Warn about invalid settings in "NetworkManager.conf".
+* Support announcing "ANDROID_METERED" DHCP option for shared mode.
+* Support SAE authentication as used for 802.11s Meshing and WPA3-Personal.
+* NetworkManager is no longer installed as D-Bus activatable service.
+* Mark docker bridges as unmanaged via udev rule.
+* Add new PolicyKit permission "org.freedesktop.NetworkManager.wifi.scan" for controlling
+  Wi-Fi scanning.
+
+The following changes were backported to 1.14.x releases between 1.14.0
+and 1.14.6 are also present in NetworkManager-1.14:
+
+- 1.14.6:
+* Fix memory corruption in internal DHCPv6 client (CVE-2018-15688).
+* No longer limit number of search entries in resolv.conf to 6.
+* Support restricting NetworkManager.conf device configuration based on used DHCP
+  plugin.
+* Add "${MAC}" specifier for connection.stable-id. This uses the current MAC
+  address for seeding the stable generation of MAC address, DHCP client-id
+  or IPv6 stable-privacy interface identifier.
+* Support special value "duid" for "ipv4.dhcp-client-id". This generates an
+  RFC4361-compliant client-id like the internal DHCP client used to do by default.
+  Previously, there was no explicit name for such a client-id and it was not
+  usable with dhclient DHCP plugin. This also generates the same client-id as
+  systemd-networkd does by default.
+* Support and use a new kind of secret-key in "/var/lib/NetworkManager/secret_key".
+  The secret-key represents the identity of the machine that is used for various
+  purposes like generating IPv6 stable privacy addresses. It is now combined
+  with "/etc/machine-id" so that changing only the machine-id results in new identifiers.
+  That matters for example when cloning a virtual machine. Previously, the user
+  hard to prune NetworkManager's secret-key to get a new identity, now regenerating
+  machine-id suffices. Secret-keys generated by earlier versions of NetworkManager are
+  not affected and keep their previous behavior.
+* Fix the DHCP client-ids based on the MAC address of IPoIB/infiniband devices.
+* Fix restoring IP configuration after interface went down.
+* No longer let NetworkManager touch rp_filter setting. The rp_filter sysctl must now
+  be set outside of NetworkManager according to the admin's preference. Note that a strict
+  rp_filter may break valid use-cases and interacts badly with connectivity checking.
+* Various bug fixes and improvements.
+
+- 1.14.4:
+* Fix a crash in nmcli when a device is removed while being disconnected.
+* Fix a crash in ifupdown (Debian) configuration plugin.
+* Fix a daemon crash when a generated connection doesn't validate.
+* Fix a memory leak in dhclient DHCP plugin.
+* Fix line editing in nmcli password prompts.
+* Fix a RPATH in bluetooth and wwan plugin when built with Meson (otherwise
+  they wouldn't find libnm-wwan.so).
+
+- 1.14.2:
+* Fix a bug that could cause NetworkManager to crash after checking
+  connectivity status.
+* Correctly apply a default (-1) metric from DHCP.
+* Multiple fixes for IWD Wi-Fi backend.
+* Multiple fixes for builds with Meson build system.
+* Fix a crash with OLPC XO-1 mesh Wi-Fi.
+* Fix handling "serial.parity" and "serial.send-delay" properties in nmcli.
+* Improve auto-selecting device when activating a connection profile
+  and don't auto-select unmanaged devices when activating multi-connect
+  profile.
+* Avoid expiring the lifetime of IPv6 addresses from router advertisements.
+
+=============================================
+NetworkManager-1.14
+Overview of changes since NetworkManager-1.12
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Added support for IEEE 802.15.4 and 6LowPAN devices.
+* Support activating profile multiple times via connection.multi-connect
+  setting.
+* Add match setting to restrict a profile to devices based on
+  a list of interface names with globbing supported.
+* Fix PrimaryConnection for VPN with default-route.
+* Add support for ethtool offload features.
+* Add support for configuring llmnr.
+* Deprecate endian-dependent D-Bus API and add new API that can be
+  used instead (rh#1153559).
+* Add support for ip6gre/ip6gretap IP tunnels.
+* Add support for detecting WireGuard interfaces (WireGuard VPN cannot
+  be controlled via NetworkManager).
+* Add support for configuring SR-IOV devices.
+* Improve error reporting of activation when no device is available.
+* Support reapplying changes of the route metric.
+* Support EAP profiles with iwd Wi-Fi backend and support iwd API 0.8.
+* Expose slaves of OVS bridges and ports.
+
+The following changes were backported to 1.12.x releases between 1.12.0
+and 1.12.2 are also present in NetworkManager-1.14:
+
+* fix missing symbols in libnm ABI for settings.
+
+=============================================
+NetworkManager-1.12
+Overview of changes since NetworkManager-1.10
+=============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Improved support for configuration checkpoint, including support in libnm.
+* Added capability to set IP Tunnel configuration flags.
+* The systemd-resolved DNS plugins now supports MDNS.
+* systemd-resolved and dnsmasq DNS plugins now honor the DNS priority setting.
+* Wi-Fi devices now support FILS for speedier roaming support.
+* Drop dependency on libnl3 library.
+* Add support for "onlink" routes.
+* More robust connectivity checking.
+* Dropped the obsolete "ifnet" settings plugin,
+* Try harder to generate reasonable human-readable names for devices even if
+  the hwdb contains garbage.
+* Add an "overview" option to hide default values in nmcli, resulting in more
+  concise output.
+* Reworked the inner workings of D-Bus interface for better resource efficiency.
+* Add support for configuring nmcli coloring via terminal-colors.d(5).
+* Added experimental support for Meson build system,
+* Added initial IWD Wi-Fi daemon support.
+* A non-hexadecimal DHCPv4 client-id is now properly passed to
+  dhclient with the first byte (type) set to zero, as stated in the
+  documentation. This represents a change in behavior since previous
+  versions where the first character of the string was used as
+  type. The internal client is not affected by the change.
+* DNS setting rc-manager=file now always follows dangling symlinks
+  instead of replacing /etc/resolv.conf with a plain file.
+* Added wake_on_wlan connection setting to configure
+  wake-on-wireless-lan (WoWLAN).
+* The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
+  is now not built by default. While it can still be enabled, the distributions
+  should have a good plan for removing it if they need to keep shipping it at
+  this point.
+* nmcli now scans for Wi-Fi networks before displaying them, if the last scan
+  was too long ago.
+* Added the ipv6.dhcp-duid property to allow configuring the DHCPv6 DUID
+* Extended ipv6.dhcp-client-id property to support DHCP client identifiers
+  depending on the MAC address and the stable ID.
+* Set NM_DISPATCHER_ACTION environment variable in dispatcher scripts.
+
+The following features were backported to 1.10.x releases from 1.10.0 to
+1.10.10 are also present in NetworkManager-1.12:
+
+* Fix crash during reapply of connection settings
+* Fix connectivity timeout handling (bgo #794464),
+* Retry activating devices when the parent becomes managed (rh #1553595),
+* Correctly set the rp_filter value (rh #1565529).
+* A fix to ensure teamd is respawned after daemon restart (rh #1551958).
+* Better handle DHCP expiry (bgo #783391).
+* Fix configuration of IPv6 over master interfaces (rh #1575944).
+* ovs: fix compilation issue of OVS plugin and various fixes.
+* team: add support for team runner "random".
+* core: cleanup activation of device (rh #1537160).
+* dhcp: retry indefinitely to renew the lease (rh #1503587).
+* core: fix blocking autoconnect for no-secrets (rh #794014).
+* libnm: mark async results as cancelled (bgo #794088).
+* Load jansson at runtime. This solves a clash with json-glib that caused
+    a gnome-control-center crash, but also gets rid of a hard dependency.
+* Correct nmcli exit values after receiving a signal.
+* Fix libnm secret agent asynchronous initialization.
+* Add a default route for a modem even if it didn't sent a gateway.
+* Improve communication of DAD failures.
+* Remember device default metrics across daemon restarts.
+* Various bug fixes including possible crashes.
+* Added support for 'onlink' IPv4 routes attribute.
+* Wait longer for the carrier to come up after a MTU change.
+* Implemented abstraction for team connections that exposes team
+    configuration items as distinct properties.
+* Added basic support for tc queueing disciplines and filters.
+* Introduced an Update2() D-Bus method to update connection settings
+  with more flexibility.
+* Many bug fixes and improvements.
+
+============================================
+NetworkManager-1.10
+Overview of changes since NetworkManager-1.8
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* NetworkManager includes now basic Open vSwitch support, good enough
+    to be capable of setting up simple Open vSwitch configurations.
+* Added support for activating PPP connections on non-Ethernet
+  interfaces.
+* It is now possible to authenticate to a Wi-Fi network using WPS
+    (Wi-Fi Protected Setup).
+* Implemented support for Wi-Fi PMF (Protected Management Frames,
+    802.11w), which can be configured via the wifi-sec.pmf property.
+* Now the maximum rate of wireless access points supporting 802.11 is
+    properly calculated and exposed on D-Bus.
+* Background scanning is now disabled for non-WPA-Enterprise Wi-Fi
+    networks.
+* Added support for the Bluetooth NAP (Network Access Point) profile.
+* Added support for disabling connectivity checking via the D-Bus
+    interface.
+* The internal DHCP client now understands the domain-search option.
+* Bridge connections support the group-forward-mask property.
+* NetworkManager can now configure multiple IPv6 default routes
+    received through RA and each gets configured with the announced
+    preference.
+* It is possible to specify the routing table for each static route.
+* Support specifying a explicit routing table for any non-static-route,
+    including routes from DHCP, device-routes, IPv6 autoconf.
+* Device are left configured when a user sets them as unmanaged by
+    NetworkManager.
+* New connection.auth-retry property to configure how often authentication
+    is prompted before failing the configuration.
+* The platform code that handles synchronization with kernel status
+    via netlink has been reworked and is more efficient.
+* Allowed the update of connections that have an associated ifcfg-rh
+    routing rules file.
+* Non-UTF8 properties are now escaped when they are exported on D-Bus.
+* NetworkManager-wait-online.service now starts NetworkManager.service
+    if needed.
+* The MAC address for bond connections can be changed in nmtui.
+* Fixed dependency problems when setting the MTU of VLAN and master
+    devices.
+* The systemd-resolved DNS plugin properly handles the DNS priority
+    setting.
+* Fixed setting a DHCP timeout greater than 60 seconds (dhclient).
+* Fixed some memory leaks.
+* Many other bug fixes and improvements.
+
+============================================
+NetworkManager-1.8
+Overview of changes since NetworkManager-1.6
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Default routes set by devices that failed connectivity checks are now
+    penalized with a higher metric
+* nmcli is now able to produce output more friendly for machine parsing
+* The slaves available at the time a master connection is activated are
+    enslaved in a stable order, making the automatic MAC address for Bonding
+    devices more predictable.
+* Hostname management is now more flexibly configured
+* Support for additional route options (pref-src, src, tos, window, cwnd,
+    initcwnd, initrwnd, mtu, lock-window, lock-cwnd, lock-initcwnd, lock-initrwnd,
+    and lock-mtu).
+* Fixed detection of EAP-FAST support in wpa_supplicant
+* Support for handling PINs for PKCS#11 tokens as secrets
+* GSM and CDMA connections now have a MTU property
+* An option to disable selected TLS versions during EAP phase 1 authentication
+* The 802.1x authentication timeout is now configurable to allow a faster
+    fallback to other connections
+* Persist managed state of device until reboot. This improves seamless take over
+    of a previously managed device after restart of NetworkManager.
+* Better handle devices that are externally managed by somebody else by
+    consistently generating an in-memory connection to reflect the external
+    state.
+* Expose SRIOV capability of a device on D-Bus and support configuring the
+    number of virtual functions via NetworkManager.conf.
+* Support matching networking devices via new "driver:" device spec in
+    NetworkManager.conf.
+* Introduced support for creating and managing dummy links
+* The teaming devices now support setting a hardcoded MAC address
+* Settings of bonding devices can now be modified on-the-fly, without the
+    need to reactivate a connection
+* The failures to activate a connection now communicate better error
+    responses to nmcli
+* Dropped dependency on libgudev
+* Reverse Path filtering is now disabled in multihoming configurations where
+    it would interfere with legitimate network traffic
+* libcurl is used instead of libsoup for connectivity checking, resulting in
+    a smaller dependency footprint
+* With DNS mode "rc-manager=symlink", don't write /etc/resolv.conf as
+    a symlink if it already exists as a regular file.
+* Support attaching user-data in form of key-value pairs to connection profiles.
+* Fix accpeting fully qualified name for ipv4.dhcp-hostname setting.
+* Make NetworkManager more forgiving to failure to change the MAC address during
+    scanning.
+* Many bug fixes and improvements
+
+============================================
+NetworkManager-1.6
+Overview of changes since NetworkManager-1.4
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Added support for managing the MACsec links. Requires support in
+    wpa_supplicant (version newer than 2.6).
+* Support for configuration and discovery of Web Proxy settings with
+    PacRunner service.
+* The ipv6.method=shared is now supported, utilizing DHCPv6 Prefix
+    Delegation option to obtain prefixes for the interface.
+* Support for systemd-resolved local DNS forwarder backend.
+* The configuration is now read from /run/NetworkManager/conf.d as well.
+    This is useful for handing over configuration discovered on system
+    startup to NetworkManager.
+* The PPP manager can now be split into a separate package.
+* Added initial support for PKCS#11 tokens with 802.1x authentication.
+* Introduced Vala bindings for libnm.
+* NetworkManager would now keep most connections up on shutdown (except Wi-Fi
+    connections, VPN connections and other kinds that can't be assumed on
+    startup)
+* The checkpoint/restore connection can now also remove new connections and
+    disconnect devices that were activated since the checkpoint was taken.
+* New connection.autoconnect_retries property that allows fine-tuning
+    the autoconnect behavior.
+* Fix emission of NM-style PropertiesChanged signals and deprecate them
+    for PropertiesChanged on "org.freedesktop.DBus.Properties" interface.
+* Change the meaning of unset "cloned-mac-address" settings from "permanent" to
+    "preserve". This changes the default value and affects existing connections
+    during upgrade that did not explicitly configure cloned-mac-address. This
+    has the effect that externally configured MAC addresses are preserved
+    by default instead of setting the permanent address (bgo#770611).
+* Avoid reading the permanent MAC address before the device is initialized
+    by UDEV. This avoids a race where NetworkManager might detect the MAC
+    address of the wrong interface.
+* The cloned.mac-address property can now be used with Bond and Bridge
+    devices.
+* The ifcfg parsing code has been reworked for better compatibility with
+    actual shell variable files.
+* nmtui now supports creating and editing IP tunnel connections.
+* The libnm client library now uses the D-Bus ObjectManager API that allows
+    for quicker initialization of the clients.
+* nmtui now utilizes the asynchronous libnm client API to paralellize
+    communication with the daemon, reducing the client startup time.
+* Ethernet devices now use "802-3.speed" and "802-3.duplex" properties to
+    allow controlling overriding the negotiated link parameters.
+* Order in which IP addresses are configured is now preserved so that
+    primary address is selected correctly.
+* Details of the DNS information obtained from the connections is now
+    exposed on the D-Bus and can be inspected with nmcli.
+* Fixed race conditions when renaming interfaces, for example as done
+    by UDEV for persistent interface naming. This could cause detecting
+    devices as the wrong hardware type.
+* Added the support for DHCPV6_HOSTNAME and DHCPV6_SEND_HOSTNAME keys in
+    ifcfg files that control "dhcp-hostname" and "dhcp-send-hostname"
+    properties of the "ipv6" setting.
+* The stable-addressing for MAC address randomization and RFC7217 IPv6 stable
+    privacy addressing can now be more flexibly configured using dynamic
+    randomization seeds in "connection.stable-id".
+    See "examples/nm-conf.d/30-anon.conf" for example use.
+* When the master of Team, Bridge and Bond devices is specified as a connection
+    UUID, the ifcfg-rh plugin now writes the master connection's interface name
+    into the ifcfg file for improved compatibility with the legacy network service.
+* Improve handling of MTU by resetting the previous MTU when the device deactivates
+    and reset the MTU to a defined value on activation.
+* Improve tracking of parent devices for dependent devices like ip-tunnels, MACVLAN,
+    VETH, VLAN, and VXLAN.
+* Many bug fixes and improvements
+
+============================================
+NetworkManager-1.4
+Overview of changes since NetworkManager-1.2
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The MAC address assigned to a device can now be set according to
+    different policies: preserve, permanent, random, stable
+* NetworkManager now waits for IPv6 DAD to terminate before completing
+    the activation
+* Added support for setting IPv6 tokenized interface identifiers
+    through the 'ipv6.token' connection property
+* Added a 'Reload' D-Bus method to reload configuration and reapply
+    DNS configuration
+* Added ability to create a configuration checkpoints and rolling back
+    changes after a timeout.
+* NetworkManager now follows symlinks when accessing resolv.conf and
+    rc-manager is set to 'file'
+* Added support for oFono as modem manager
+* The devices now exposes counters of transferred data
+* The 'may-fail' property of ipv4 and ipv6 settings is now respected
+    more accurately
+* The timeout for requests of secrets to agents has been increased
+    from 25 to 120 seconds
+* Name servers passed to dnsmasq now specify an egress interface to
+    avoid problems with multiple active connections
+* Reverse DNS entries for IPv6 are now added to dnsmasq, and IPv4
+    reverse entries now honor the network prefix
+* A new 'dns-priority' property of ipv4 and ipv6 settings can be used
+    to tweak the order of servers in resolv.conf when multiple
+    connections are active
+* configure script accepts --enable-{address,undefined}-sanitizer
+    options to build NetworkManager with GCC sanitizers
+* The default resolv.conf manager can now be specified at build time
+    using the --with-config-dns-rc-manager-default configure option
+* NetworkManager is now compiled with --gc-sections to reduce
+    executable size
+* Added a new 'VPN_PLUGIN' logging domain
+* It is now possible to change the configuration currently applied on
+    a device with 'nmcli device modify' and 'nmcli device reapply'
+* nmcli invoked without parameters shows an overview of the current
+    network configuration
+* The 'nmcli connection add' syntax has been extended and is now
+    possible to pass properties (e.g. 'ipv4.dns') along with aliases
+* nmtui now returns to initial menu after a sub-form exits
+* Improved bash autocompletion for nmcli
+* Now devices are disconnected before the system suspends, executing
+    dispatcher scripts.  This allows external applications to be notified
+    of the change in connectivity
+* Dispatcher scripts are now called also when connectivity status
+    changes
+* Many other fixes and improvements
+
+============================================
+NetworkManager-1.2
+Overview of changes since NetworkManager-1.0
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* MAC addresses during Wi-Fi access point scanning are now randomized
+    if wpa_supplicant supports PreassocMacAddr.
+* Added an option to enable random MAC addresses for association to Wi-Fi access
+    point (defaults to disabled).  Controlled with 'wifi.mac-address-randomization'
+    property (MAC_ADDRESS_RANDOMIZATION key in ifcfg files).  Requires support from
+    wpa_supplicant.
+* Wi-Fi scanning now utilizes wpa_supplicant's AP list.
+* Added support for Wi-Fi powersave, configured with POWERSAVE key in ifcfg
+    files.
+* Added support for creation of more types of software devices: tun & tap,
+    macvlan, vxlan and ip tunnels (ipip, gre, sit, ip6ip6 and ipip6).
+* The software devices (bond, bridge, vlan, team, ...) can now be stacked
+    arbitrarily.  The nmcli interface for creating master-slave relationships
+    has been significantly improved by the use of 'master' argument to
+    all link types.
+* RFC7217 stable privacy addressing is now used by default to protect from
+    address-based host tracking. The IPv6 addressing mode is configured with
+    IPV6_ADDR_GEN_MODE key in ifcfg files.
+* Improved route management code to avoid clashes between conflicting
+    routes in multiple connections.
+* Refactored platform code resulting in more robust interface to platform,
+    less overhead and reduced memory footprint.
+* Improved interoperability with other network management tools.  The
+    externally created software devices are not managed until they're
+    activated.
+* The Device instances now exist for all software connections and the platform
+    devices are now only created when the device is activated.  This makes it
+    possible for connections with device of same name not to clash unless
+    they're activated concurrently.  The links are now not unnecessarily present
+    unless the connection is active, avoiding pollution of the link namespace.
+* NetworkManager now correctly manages connectivity in namespace-based
+    containers such as LXC and Docker.
+* Support for configuring ethernet Wake-On-Lan has been added.
+* Added LLDP listener functionality and related CLI client commands. Enabled via
+    LLDP option in ifcfg files.
+* CLI secret agent has been extended with support for VPN secrets.
+* The command line client now utilizes colors for its output.
+* The command line client now sorts the devices and properties for better
+    clarity.
+* Numerous improvements to Bash command completion for nmcli.
+* NetworkManager relies on less external libraries.  The use of dbus-glib
+    has been replaced with gio's native D-Bus support and libnl-route is no
+    longer used.
+* Dependency on avahi-autoipd has been dropped.  Native IPv4 link-local
+    addressing configuration based on systemd network library is now used
+    instead.
+* Hostname is now managed via systemd-hostnamed on systemd-based systems.
+* Management of resolv.conf can be changed at runtime, private resolv.conf
+    is always written in /run.
+* NetworkManager can now write DNS options to resolv.conf.
+* Added an option to enable the old-fashioned /etc/resolv.conf handling
+   (using a symlink)
+* Updated version of systemd network library used for internal DHCP and
+    IPv4 link-local support.
+* Support for event logging via audit subsystem has been added.
+* Support for native logging via systemd-journald has been added taking
+    advantage of its structured logging.
+* Live reconfiguration of IP configuration after changing the settings without
+    reactivation of the device with "nmcli device reapply" command and via
+    D-Bus API.
+* The API for VPN plugins now supports multiple simultaneous connections.
+    Most popular VPN plugins have been updated to support this functionality.
+* The libnm library now provides API to access VPN service definitions.
+* New DHCP_FQDN key in ifcfg files to configure the full FQDN to be sent to
+    the DHCP servers.
+* The timeout for DHCP requests can now be modified using the
+    'ipv4.dhcp-timeout' property.
+* Added multicast_snooping option to BRIDGING_OPTS ifcfg key.
+* Added support for detecting duplicate IPv4 addresses, with a timeout
+    configurable through the ipv4.dad-timeout connection property.
+* Fixed a race condition that could potentially lead to unauthorized access
+    to connection secrets (CVE-2016-0764).
+* dnsmasq configuration for shared connections can now be extended by
+    placing custom files in /etc/NetworkManager/dnsmasq-shared.d/.
+* Generic devices are no longer assumed unless explicitly requested by
+    user.
+* The reorder-header VLAN flag setting is now honored; to keep backwards
+    compatibility in behavior, an existing REORDER_HDR=0 ifcfg-rh key is
+    ignored; the flag must be disabled with VLAN_FLAGS=NO_REORDER_HDR.
+* NetworkManager now checks the connection data from client for validity
+    and gracefully handles unknown properties in client. This improves
+    interoperability between the server and clients of different versions.
+* The activation of a VLAN device with a virtual parent that is inactive
+    now results in a parent being activated first.
+* The server name used with 802.1x authentication can now be constrained
+    to a particular domain suffix (CVE-2006-7246).
+* Fair amount of bugs was fixed and robustness was generally improved.
+
+The following features were backported to 1.0.x releases from 1.0.0 to 1.0.10
+are also present in NetworkManager-1.2:
+
+* Added support for handling VPN secrets to nmtui and nmcli agent.
+* The team devices can now properly be enslaved to bridges.
+* Failed DHCP attempts for assumed connections are now retried after
+    a timeout.
+* Default wired connection is now created after udev registers the device.
+* Support for Bluetooth DUN devices with Bluez 5 has been fixed.
+* The 'ipv6.ignore-auto-dns' property is now properly honored making it
+    possible to override automatically obtained name servers.
+* Invalid permanent MAC addresses as reported by some devices are now
+    ignored.
+* Device links reported by more recent versions of Linux kernel that reside
+    in different network namespaces are no longer confused with links in
+    the namespace NetworkManager runs in.
+* MAC address changes of bond or team devices are now properly propagated
+    to VLANs created on the device.
+* Fixed error handling for teaming devices with invalid configuration.
+* Wi-Fi AP list is now updated correctly after AP mode has been used.
+* The error handling for VPN secret agents is now significantly more robust.
+* Detection of s390 CTC devices now works properly.
+* A GATEWAY key in in /etc/sysconfig/network now no longer affects
+    non-static connections.
+* Added support for IPv6-only VPN connections.
+* The systemd service now uses HUP signal to reload configuration.
+* Change VLAN default flags to set REORDER_HDR for new connections.
+* nmtui is now able to ignore automatically configured routes.
+* Allow setting IPv6 and PPP settings for GDM and CDMA connections via
+    nmcli.
+* Added support for adding ADSL connections in nmcli.
+* Improved capture portal detection.
+* Default route through Wi-Fi connection is now preferred to Mobile
+    Broadband if both are available.
+* Expose a flag to determine whether a particular connection is metered
+    via API and client tools. Configurable in ifcfg with CONNECTION_METERED
+    key.
+* Add support for locking connections to a channel within a particular
+    band.
+* Add support for configuring Wake-on-LAN capabilitites.
+* Allow overriding the MTU for team device.
+* The MTU setting from an IPv6 neighbor discovery Router Advertisements is
+    now ignored if applying it would result in invalid configuration.
+* Some configuration options can now be changed without restarting the
+    daemon. Notably, this applies to 'dns', 'connectivity' and
+    'ignore-carrier' settings.
+* The connection activation was made more robust. If an active connection
+    is reactivated, the device it is active on takes precedence. If an attempt
+    is made to activate a connection on a different device than the one it is
+    active on, the activation proceeds removing the connection from the active
+    device.
+* The device specifiers in configuration files now support negation via
+    'except:' match.
+* Devices that only have IPv6 link-local address are no longer assumed to
+    be connected.
+* nmcli now provides hints and tab-completion for enumeration properties.
+* If the IPv6 interface tokens are set they are honored when creating an
+    interface identifier for IPv6 addressing.
+* NetworkManager now maintains correct routing configuration when multiple
+    interfaces are connected to the same network.
+* The management of devices can now be controlled with udev rules. The veth
+    devices as well as the virtual Ethernet devices of various
+    virtualization tools (VMWare, VirtualBox, Parallels Workstation) are
+    now ignored by default.
+* The IPv6 privacy extensions are now enabled by default and handling of
+    the ip6-privacy sysctl has been improved.
+* Activating a Bond, Bridge or Team device can now optionally activate the
+    slave connections as well. The behavior is controlled with
+    'connection.autoconnect-slaves' property and AUTOCONNECT-SLAVES key in
+    ifcfg files.
+* The platform support code has been refactored, resulting in better
+    scalability in large configurations.
+* Changes to network interfaces configuration done outside NetworkManager
+    are now picked up and exposed to the user via NetworkManager API and tools.
+* A connection can now optionally leave externally configured default route
+    in place instead of overriding it. The behavior is controlled with
+    'ipv4.never-default' and 'ipv6.never-default' properties.
+* nmcli allows multiple devices for 'nmcli device disconnect/delete'.
+* Firewall zone is added to firewalld for device-based VPN connections too.
+* Wi-Fi devices now indicate support for 2GHz and 5GHz frequencies
+* "nmcli device" output now indicates physical port ID
+* New config items added to the 'ifcfg-rh' plugin:
+  - IPV4_ROUTE_METRIC and IPV6_ROUTE_METRIC
+  - DEVTIMEOUT
+  - IPADDR and PREFIX are now supported for specifying address ranges of
+      shared IPv4 connections
+* Dispatcher scripts now get a CONNECTION_FILENAME variable with the path
+    to the configuration file for the connection
+* An example dispatcher script that is able to apply complex routing rules
+    (such as setting up policy-based routing) for 'ifcfg-rh' connections was
+    added to examples/dispatcher/.
+* 'mode' key of Bond device options property now accepts numeric values
+* Connection attempts for devices without carrier on startup now wait for
+    carrier to appear within a short timeout instead of failing
+    immediately. This makes system startup more robust.
+* Bridge connectivity is now properly restored on resume from suspend
+* The D-Bus name is acquired earlier during the daemon startup. This makes
+    it possible for the systemd service manager to optimize the service
+    startup so that services that require networking are activated sooner
+    contributing to faster system start up time.
+* A lot of memory leak problems were fixed, resulting in reduced memory usage.
+    Many of them were discovered as a result of improvements in use of
+    Valgrind in the testing infrastructure.
+* Management of 'teamd' daemon instances for Team devices is now more robust.
+* The 'dnsmasq' daemon respawns when it terminates and it is configured for
+    management of DNS resolver configuration
+* Hostnames that are not fully qualified are no longer sent to a DHCPv6
+    server for a dynamic DNS update
+* Connection UUIDs are now checked for uniqueness when connection
+    configurations are read
+* Receipt of a NDP Router Advertisement can no longer lower the IPv6 hop
+    limit (CVE-2015-2924)
+
+===============================================
+NetworkManager-1.0
+Overview of changes since NetworkManager-0.9.10
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* A new 'libnm' GObject-based client library to replace libnm-util/libnm-glib
+  - IP address, IP route, hardware address, and other properties are now
+      represented as strings
+  - Based on GIO's GDBus bindings instead of dbus-glib
+  - Uses modern GObject APIs including GAsyncResult and GVariant
+  - For more information see https://wiki.gnome.org/Projects/NetworkManager/libnm
+* Devices and VPN connections now have individual default routes.  Priorities
+    are handled through configurable route metrics.
+* nmcli now supports password requests and PolicyKit authorizations
+* A faster, lighter-weight (though less capable) internal DHCP client has been
+    added and may be selected with the "dhcp=internal" option.  It supports
+    fewer DHCP options and does not yet support DHCPv6.
+* A new 'configure-and-quit=yes' option has been added for environments with
+    less dynamic network configuration
+* When running on 3.17 and later kernels, NetworkManager handles IPv6LL address
+    assignment to ensure that IPv6 connectivity is not enabled until
+    intentionally configured by the user
+* NetworkManager no longer causes the nl80211 kernel module to be loaded on
+    systems with no Wi-Fi devices
+* Bluetooth DUN support now works with Bluez 5.x
+* VPN connections can now persist across link changes and suspend/resume if
+    their VPN plugin supports this feature
+* A new 'ibft' settings plugin has been added to support firmware-based
+    iBFT/iSCSI configurations.  This functionality has been moved to 'ibft'
+    from the 'ifcfg-rh' plugin.
+* IPv6 router advertisement MTUs are now respected
+* NetworkManager no longer requires polkit libraries at runtime when Polkit
+    support is enabled, and Polkit can be disabled at build time too
+* Automatically created connections are now deleted when their device goes away
+* 'nmcli dev connect' now attempts to create a connection if none exists
+* Manually configured static IPv6 configuration is kept even if SLAAC fails
+* Manpages for the 'keyfile' and 'ifcfg-rh' plugins now describe their
+    configuration syntax and available options
+* WWAN connections now support IPv6 if the modem and provider support IPv6
+* Software devices (bridge, bond, team, etc) can now be deleted from the D-Bus
+    API or with nmcli
+* The manpages, documentation, and API annotations have received many cleanups
+* Externally created virtual interfaces are no longer managed by NetworkManager
+    until they are set "up" or activated via nmcli
+* Team device support is now an optional plugin
+
+
 ==============================================
 NetworkManager-0.9.10
 Overview of changes since NetworkManager-0.9.8
@@ -12,7 +813,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Added support for Data Center Bridging (DCB) and FibreChannel over Ethernet (FCoE)
 * IPv6 autoconfiguration is now done in userspace with libndp instead of the kernel
 * The D-Bus daemon is no longer required for root-only operation
-* WiFi, ADSL, WWAN, and Bluetooth are now optional plugins, reducing install size
+* Wi-Fi, ADSL, WWAN, and Bluetooth are now optional plugins, reducing install size
 * Added support for Infiniband Partitions
 * Network connection files are no longer watched by default, use "nmcli con reload"
     to notice changes made externally or set "monitor-connection-files=true" in
@@ -41,7 +842,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The dispatcher timeout has increased to 10 minutes, and new "pre-up" and
     "pre-down" events have been added which block activation until complete
 * NetworkManager no longer prevents Wake-on-LAN functionality from working
-* PPPoE now requires userland "rp-pppoe" to work around kernel bugs with
+* PPPoE now requires userland "rp-pppoe" to work around kernel bugs
     that prevent detecting server-side termination of the PPP link
 * An ARP announcement is now sent after IPv4 addresses are configured
 * Added a DNS plugin for dnssec-trigger for better DNSSEC operation
@@ -69,25 +870,27 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix crash in dnsmasq plugin when no nameservers were present
 * Add support for 4G LTE network modes
 * Fix signal handling when daemonizing at startup
-* Don't autoconnect to WiFi networks that have never successfully connected
-* Only request new WiFi secrets during the initial association or when the
+* Don't autoconnect to Wi-Fi networks that have never successfully connected
+* Only request new Wi-Fi secrets during the initial association or when the
     secrets are known to be wrong, not every time the connection randomly fails
 * Add capability to autoconnect VPN connections when a parent connection succeeds
 * Add configure-time option for "permissive" system connection editing policy
 * Various libnm-glib fixes for asynchronous usage
 * Fix gateway handling when given with secondary IP addresses
 * Optionally listen to systemd for suspend/resume events instead of UPower
-* Fix 'seen-bssids' property when retrieving WiFi connections via D-Bus
-* Add support for AP-mode WiFi hotspots (instead of just Ad-Hoc)
+* Fix 'seen-bssids' property when retrieving Wi-Fi connections via D-Bus
+* Add support for AP-mode Wi-Fi hotspots (instead of just Ad-Hoc)
 * Add a "slaves" property to Bond devices
 * Add support for ModemManager 0.7/0.8
 * Allow more human-readable formatting of IP address in keyfile connections
 * Drop support for dhclient v3
+* Move PPP support to a separate plugin, so that it can be packaged separately
+    and reduce the dependency on the core package.
 * Add support for DHCPv6 server-side Dynamic DNS
 * Add support for bridge master devices and bridge ports
 * Fix canceling secrets requests in GUI agents
 * Always enable Proactive Key Caching (PKC, also called OKC) for WPA Enterprise
-    WiFi configurations
+    Wi-Fi configurations
 
 
 ==============================================
@@ -100,12 +903,12 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Many libnm-glib fixes, including crashes when NetworkManager restarts
 * Enhanced IPv6 stability and compatibility
 * Fix regression in carrier handling for devices that don't support carrier detect
-* Add ability to connect to new WiFi networks from nmcli
+* Add ability to connect to new Wi-Fi networks from nmcli
 * Add native support for ADSL modems using PPPoE or PPPoATM
 * Reduce number of changes made to DNS information during connection setup
 * Add support for IPv6-enabled VPN connections
 * Add device driver version, firmware version, and autoconnect properties to D-Bus API
-* Add on-demand WiFi scan support
+* Add on-demand Wi-Fi scan support
 * Fix IPv6 default gateway handling for DHCPv6
 * Add Vala language bindings
 * Fix various crashes and issues in the ifcfg-rh system settings plugin
@@ -123,12 +926,12 @@ Overview of changes since NetworkManager-0.9.2
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Better handling of WiFi devices via nl80211 when available (instead of WEXT)
+* Better handling of Wi-Fi devices via nl80211 when available (instead of WEXT)
 * IP configuration is now non-blocking; waiting for IPv6 RA no longer blocks
     the device from activating if IPv4 is ready and vice versa
-* Addded support for firewall "zones" via FirewallD
+* Added support for firewall "zones" via FirewallD
 * Added basic support for bonded interfaces
-* WiFi connections are no longer locked to a specific MAC address if they are
+* Wi-Fi connections are no longer locked to a specific MAC address if they are
     "locally administered" addresses (ie, 02:::::)
 * New state change reasons have been added for mobile broadband PIN errors
 * Agent-owned secrets are now sent to agents for newly created connections
@@ -153,7 +956,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Enable out-of-the-box IPv6 connectivity by allowing IPv4 to fail if IPv6 succeeds
 * Allow proxying of DNSSEC data when using the dnsmasq local caching nameserver plugin
 * Add support for multiple domain names sent from VPN plugins
-* Removed support for WiFi Ad-Hoc WPA connections due to kernel bugs
+* Removed support for Wi-Fi Ad-Hoc WPA connections due to kernel bugs
 
 
 ==============================================
@@ -272,8 +1075,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Native local caching nameserver support using dnsmasq
 * Automatically detect addition and removal of new VPN plugins
 * Support for handling suspend/resume signals from UPower
-* Ensure users are allowed to enable/disable WiFi and networking
-* Ensure WiFi enable state is perserved across reboot and suspend
+* Ensure users are allowed to enable/disable Wi-Fi and networking
+* Ensure Wi-Fi enable state is perserved across reboot and suspend
 * Better handling of /etc/hosts and preservation of custom hostnames
 * Support for the systemd session management service
 * Better handling of 'keyfile' system connection errors
@@ -374,13 +1177,13 @@ Overview of changes since NetworkManager-0.5.0
 	* Don't drop the last scanned AP (Dan Williams)
 	* Broadcast state change when disconnected (Robert Love)
 	* The Slackware backend now builds (Nico)
-	* Don't install unsued config files (Dan Williams)
+	* Don't install unused config files (Dan Williams)
 	* Add a test for libnm_glib_unregister_callback (Christopher Aillon)
 	* Requires wireless-tools 28pre9 (Christopher Aillon)
 
 * nm-applet
 	* Use g_get_host_name () if we've got it (Christopher Aillon)
-	* Fix an unitialized variable (Robert Love)
+	* Fix an uninitialized variable (Robert Love)
 	* Fix sensitivity of VPN items (Robert Love)
 
 
@@ -436,7 +1239,7 @@ Overview of changes since NetworkManager-0.4.1
      default action.
    * Fix icon animation smoothness
    * Display more data in the Connection Information dialog
-     (Robert Love) 
+     (Robert Love).
 
 
 ============================================

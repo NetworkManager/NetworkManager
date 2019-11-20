@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.WifiP2PPeer:
+      @short_description: Wi-Fi P2P Peer
+
+      Since: 1.16
+  -->
+  <interface name="org.freedesktop.NetworkManager.WifiP2PPeer">
+    <annotation name="org.gtk.GDBus.C.Name" value="Wifi_P2P_Peer"/>
+
+    <!--
+        Flags:
+
+        Flags describing the capabilities of the access point.
+
+        Returns: <link linkend="NM80211ApFlags">NM80211ApFlags</link>
+
+        Since: 1.16
+    -->
+    <property name="Flags" type="u" access="read"/>
+
+    <!--
+        Manufacturer:
+
+        The manufacturer of the Wi-Fi P2P peer.
+
+        Since: 1.16
+    -->
+    <property name="Manufacturer" type="s" access="read"/>
+
+    <!--
+        Model:
+
+        The model of the Wi-Fi P2P peer.
+
+        Since: 1.16
+    -->
+    <property name="Model" type="s" access="read"/>
+
+    <!--
+        ModelNumber:
+
+        The model number of the Wi-Fi P2P peer.
+
+        Since: 1.16
+    -->
+    <property name="ModelNumber" type="s" access="read"/>
+
+    <!--
+        Serial:
+
+        The serial number of the Wi-Fi P2P peer.
+
+        Since: 1.16
+    -->
+    <property name="Serial" type="s" access="read"/>
+
+    <!--
+        WfdIEs:
+
+        The Wi-Fi Display Information Elements of the Wi-Fi P2P peer.
+
+        Since: 1.16
+    -->
+    <property name="WfdIEs" type="ay" access="read"/>
+
+    <!--
+        HwAddress:
+
+        The hardware address (BSSID) of the access point.
+
+        Since: 1.16
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Strength:
+
+        The current signal quality of the access point, in percent.
+
+        Since: 1.16
+    -->
+    <property name="Strength" type="y" access="read"/>
+
+    <!--
+        LastSeen:
+
+        The timestamp (in CLOCK_BOOTTIME seconds) for the last time the access
+        point was found in scan results. A value of -1 means the access point has
+        never been found in scan results.
+
+        Since: 1.16
+    -->
+    <property name="LastSeen" type="i" access="read"/>
+  </interface>
+</node>

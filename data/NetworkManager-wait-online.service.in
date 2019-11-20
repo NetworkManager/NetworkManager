@@ -1,13 +1,14 @@
 [Unit]
 Description=Network Manager Wait Online
-Requisite=NetworkManager.service
+Documentation=man:nm-online(1)
+Requires=NetworkManager.service
 After=NetworkManager.service
-Wants=network.target
-Before=network.target network-online.target
+Before=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=@bindir@/nm-online -s -q --timeout=30
+RemainAfterExit=yes
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=network-online.target

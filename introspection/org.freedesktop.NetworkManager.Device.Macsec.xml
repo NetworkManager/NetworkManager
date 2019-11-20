@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Macsec:
+      @short_description: MACSec Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Macsec">
+
+    <!--
+        Parent:
+
+        The object path of the parent device.
+    -->
+    <property name="Parent" type="o" access="read"/>
+
+    <!--
+        Sci:
+
+        The Secure Channel Identifier in use.
+    -->
+    <property name="Sci" type="t" access="read"/>
+
+    <!--
+        IcvLength:
+
+        The length of ICV (Integrity Check Value).
+    -->
+    <property name="IcvLength" type="y" access="read"/>
+
+    <!--
+        CipherSuite:
+
+        The set of cryptographic algorithms in use
+        (e.g. 0x0080020001000001 for GCM-AES-128).
+    -->
+    <property name="CipherSuite" type="t" access="read"/>
+
+    <!--
+        Window:
+
+        The size of the replay window.
+    -->
+    <property name="Window" type="u" access="read"/>
+
+    <!--
+        EncodingSa:
+
+        The value of the Association Number (0..3) for the Security
+        Association in use.
+    -->
+    <property name="EncodingSa" type="y" access="read"/>
+
+    <!--
+        Validation:
+
+        The validation mode for incoming packets (strict, check,
+        disabled).
+    -->
+    <property name="Validation" type="s" access="read"/>
+
+    <!--
+        Encrypt:
+
+        Whether encryption of transmitted frames is enabled.
+    -->
+    <property name="Encrypt" type="b" access="read"/>
+
+    <!--
+        Protect:
+
+        Whether protection of transmitted frames is enabled.
+    -->
+    <property name="Protect" type="b" access="read"/>
+
+    <!--
+        IncludeSci:
+
+        Whether the SCI is always included in SecTAG for transmitted
+        frames.
+
+    -->
+    <property name="IncludeSci" type="b" access="read"/>
+
+    <!--
+        Es:
+
+        Whether the ES (End station) bit is enabled in SecTAG for
+        transmitted frames.
+    -->
+    <property name="Es" type="b" access="read"/>
+
+    <!--
+        Scb:
+
+        Whether the SCB (Single Copy Broadcast) bit is enabled in
+        SecTAG for transmitted frames.
+    -->
+    <property name="Scb" type="b" access="read"/>
+
+    <!--
+        ReplayProtect:
+
+        Whether replay protection is enabled.
+    -->
+    <property name="ReplayProtect" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

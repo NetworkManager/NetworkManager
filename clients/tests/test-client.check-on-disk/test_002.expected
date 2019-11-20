@@ -1,0 +1,570 @@
+size: 373
+location: clients/tests/test-client.py:test_002()/1
+cmd: $NMCLI d
+lang: C
+returncode: 0
+stdout: 258 bytes
+>>>
+DEVICE  TYPE      STATE        CONNECTION 
+eth0    ethernet  unavailable  --         
+eth1    ethernet  unavailable  --         
+wlan0   wifi      unavailable  --         
+wlan1   wifi      unavailable  --         
+wlan1   wifi      unavailable  --         
+
+<<<
+size: 388
+location: clients/tests/test-client.py:test_002()/2
+cmd: $NMCLI d
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 263 bytes
+>>>
+DEVICE  TYPE      STATE        CONNECTION 
+eth0    ethernet  niedostępne  --         
+eth1    ethernet  niedostępne  --         
+wlan0   wifi      niedostępne  --         
+wlan1   wifi      niedostępne  --         
+wlan1   wifi      niedostępne  --         
+
+<<<
+size: 974
+location: clients/tests/test-client.py:test_002()/3
+cmd: $NMCLI -f all d
+lang: C
+returncode: 0
+stdout: 852 bytes
+>>>
+DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+
+<<<
+size: 989
+location: clients/tests/test-client.py:test_002()/4
+cmd: $NMCLI -f all d
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 857 bytes
+>>>
+DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+
+<<<
+size: 735
+location: clients/tests/test-client.py:test_002()/5
+cmd: $NMCLI 
+lang: C
+returncode: 0
+stdout: 621 bytes
+>>>
+eth0: unavailable
+	"eth0"
+	ethernet (virtual), 65:2E:D3:9E:0A:0D, hw
+
+eth1: unavailable
+	"eth1"
+	ethernet (virtual), 47:D5:6B:65:FD:6A, hw
+
+wlan0: unavailable
+	"wlan0"
+	wifi (virtual), 3D:99:1D:8B:74:4D, hw
+
+wlan1: unavailable
+	"wlan1"
+	wifi (virtual), 99:09:77:FD:FE:1D, hw
+
+wlan1: unavailable
+	"wlan1"
+	wifi (virtual), 5D:30:4A:EC:3F:61, hw
+
+DNS configuration:
+	servers: 1.2.3.4 5.6.7.8
+
+Use "nmcli device show" to get complete information about known devices and
+"nmcli connection show" to get an overview on active connection profiles.
+
+Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.
+
+<<<
+size: 808
+location: clients/tests/test-client.py:test_002()/6
+cmd: $NMCLI 
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 684 bytes
+>>>
+eth0: niedostępne
+	"eth0"
+	ethernet (virtual), 65:2E:D3:9E:0A:0D, sprzęt
+
+eth1: niedostępne
+	"eth1"
+	ethernet (virtual), 47:D5:6B:65:FD:6A, sprzęt
+
+wlan0: niedostępne
+	"wlan0"
+	wifi (virtual), 3D:99:1D:8B:74:4D, sprzęt
+
+wlan1: niedostępne
+	"wlan1"
+	wifi (virtual), 99:09:77:FD:FE:1D, sprzęt
+
+wlan1: niedostępne
+	"wlan1"
+	wifi (virtual), 5D:30:4A:EC:3F:61, sprzęt
+
+DNS configuration:
+	servers: 1.2.3.4 5.6.7.8
+
+Polecenie „nmcli device show” wyświetli pełne informacje o znanych
+urządzeniach, a „nmcli connection show” wyświetli przegląd aktywnych
+profili połączeń.
+
+Strony podręcznika nmcli(1) i nmcli-examples(7) zawierają pełne informacje
+o użyciu.
+
+<<<
+size: 1420
+location: clients/tests/test-client.py:test_002()/7
+cmd: $NMCLI -f AP -mode multiline d show wlan0
+lang: C
+returncode: 0
+stdout: 1271 bytes
+>>>
+AP[1].IN-USE:                            
+AP[1].BSSID:                            60:B3:25:25:E2:C8
+AP[1].SSID:                             wlan0-ap-3
+AP[1].MODE:                             Infra
+AP[1].CHAN:                             1
+AP[1].RATE:                             54 Mbit/s
+AP[1].SIGNAL:                           55
+AP[1].BARS:                             **  
+AP[1].SECURITY:                         WPA3
+AP[2].IN-USE:                            
+AP[2].BSSID:                            90:B1:5F:9E:E0:E3
+AP[2].SSID:                             wlan0-ap-1
+AP[2].MODE:                             Infra
+AP[2].CHAN:                             1
+AP[2].RATE:                             54 Mbit/s
+AP[2].SIGNAL:                           44
+AP[2].BARS:                             **  
+AP[2].SECURITY:                         WPA1
+AP[3].IN-USE:                            
+AP[3].BSSID:                            61:66:D2:E7:44:A2
+AP[3].SSID:                             wlan0-ap-2
+AP[3].MODE:                             Infra
+AP[3].CHAN:                             1
+AP[3].RATE:                             54 Mbit/s
+AP[3].SIGNAL:                           34
+AP[3].BARS:                             **  
+AP[3].SECURITY:                         WPA1 WPA2
+
+<<<
+size: 1457
+location: clients/tests/test-client.py:test_002()/8
+cmd: $NMCLI -f AP -mode multiline d show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1298 bytes
+>>>
+AP[1].IN-USE:                            
+AP[1].BSSID:                            60:B3:25:25:E2:C8
+AP[1].SSID:                             wlan0-ap-3
+AP[1].MODE:                             Infrastruktura
+AP[1].CHAN:                             1
+AP[1].RATE:                             54 Mb/s
+AP[1].SIGNAL:                           55
+AP[1].BARS:                             **  
+AP[1].SECURITY:                         WPA3
+AP[2].IN-USE:                            
+AP[2].BSSID:                            90:B1:5F:9E:E0:E3
+AP[2].SSID:                             wlan0-ap-1
+AP[2].MODE:                             Infrastruktura
+AP[2].CHAN:                             1
+AP[2].RATE:                             54 Mb/s
+AP[2].SIGNAL:                           44
+AP[2].BARS:                             **  
+AP[2].SECURITY:                         WPA1
+AP[3].IN-USE:                            
+AP[3].BSSID:                            61:66:D2:E7:44:A2
+AP[3].SSID:                             wlan0-ap-2
+AP[3].MODE:                             Infrastruktura
+AP[3].CHAN:                             1
+AP[3].RATE:                             54 Mb/s
+AP[3].SIGNAL:                           34
+AP[3].BARS:                             **  
+AP[3].SECURITY:                         WPA1 WPA2
+
+<<<
+size: 1874
+location: clients/tests/test-client.py:test_002()/9
+cmd: $NMCLI -f AP -mode multiline -p d show wlan0
+lang: C
+returncode: 0
+stdout: 1722 bytes
+>>>
+===============================================================================
+                            Device details (wlan0)
+===============================================================================
+AP[1].IN-USE:                            
+AP[1].BSSID:                            60:B3:25:25:E2:C8
+AP[1].SSID:                             wlan0-ap-3
+AP[1].MODE:                             Infra
+AP[1].CHAN:                             1
+AP[1].RATE:                             54 Mbit/s
+AP[1].SIGNAL:                           55
+AP[1].BARS:                             **  
+AP[1].SECURITY:                         WPA3
+-------------------------------------------------------------------------------
+AP[2].IN-USE:                            
+AP[2].BSSID:                            90:B1:5F:9E:E0:E3
+AP[2].SSID:                             wlan0-ap-1
+AP[2].MODE:                             Infra
+AP[2].CHAN:                             1
+AP[2].RATE:                             54 Mbit/s
+AP[2].SIGNAL:                           44
+AP[2].BARS:                             **  
+AP[2].SECURITY:                         WPA1
+-------------------------------------------------------------------------------
+AP[3].IN-USE:                            
+AP[3].BSSID:                            61:66:D2:E7:44:A2
+AP[3].SSID:                             wlan0-ap-2
+AP[3].MODE:                             Infra
+AP[3].CHAN:                             1
+AP[3].RATE:                             54 Mbit/s
+AP[3].SIGNAL:                           34
+AP[3].BARS:                             **  
+AP[3].SECURITY:                         WPA1 WPA2
+-------------------------------------------------------------------------------
+
+<<<
+size: 1919
+location: clients/tests/test-client.py:test_002()/10
+cmd: $NMCLI -f AP -mode multiline -p d show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1756 bytes
+>>>
+===============================================================================
+                        Informacje o urządzeniu (wlan0)
+===============================================================================
+AP[1].IN-USE:                            
+AP[1].BSSID:                            60:B3:25:25:E2:C8
+AP[1].SSID:                             wlan0-ap-3
+AP[1].MODE:                             Infrastruktura
+AP[1].CHAN:                             1
+AP[1].RATE:                             54 Mb/s
+AP[1].SIGNAL:                           55
+AP[1].BARS:                             **  
+AP[1].SECURITY:                         WPA3
+-------------------------------------------------------------------------------
+AP[2].IN-USE:                            
+AP[2].BSSID:                            90:B1:5F:9E:E0:E3
+AP[2].SSID:                             wlan0-ap-1
+AP[2].MODE:                             Infrastruktura
+AP[2].CHAN:                             1
+AP[2].RATE:                             54 Mb/s
+AP[2].SIGNAL:                           44
+AP[2].BARS:                             **  
+AP[2].SECURITY:                         WPA1
+-------------------------------------------------------------------------------
+AP[3].IN-USE:                            
+AP[3].BSSID:                            61:66:D2:E7:44:A2
+AP[3].SSID:                             wlan0-ap-2
+AP[3].MODE:                             Infrastruktura
+AP[3].CHAN:                             1
+AP[3].RATE:                             54 Mb/s
+AP[3].SIGNAL:                           34
+AP[3].BARS:                             **  
+AP[3].SECURITY:                         WPA1 WPA2
+-------------------------------------------------------------------------------
+
+<<<
+size: 667
+location: clients/tests/test-client.py:test_002()/11
+cmd: $NMCLI -f AP -mode multiline -t d show wlan0
+lang: C
+returncode: 0
+stdout: 515 bytes
+>>>
+AP[1].IN-USE: 
+AP[1].BSSID:60:B3:25:25:E2:C8
+AP[1].SSID:wlan0-ap-3
+AP[1].MODE:Infra
+AP[1].CHAN:1
+AP[1].RATE:54 Mbit/s
+AP[1].SIGNAL:55
+AP[1].BARS:**  
+AP[1].SECURITY:WPA3
+AP[2].IN-USE: 
+AP[2].BSSID:90:B1:5F:9E:E0:E3
+AP[2].SSID:wlan0-ap-1
+AP[2].MODE:Infra
+AP[2].CHAN:1
+AP[2].RATE:54 Mbit/s
+AP[2].SIGNAL:44
+AP[2].BARS:**  
+AP[2].SECURITY:WPA1
+AP[3].IN-USE: 
+AP[3].BSSID:61:66:D2:E7:44:A2
+AP[3].SSID:wlan0-ap-2
+AP[3].MODE:Infra
+AP[3].CHAN:1
+AP[3].RATE:54 Mbit/s
+AP[3].SIGNAL:34
+AP[3].BARS:**  
+AP[3].SECURITY:WPA1 WPA2
+
+<<<
+size: 704
+location: clients/tests/test-client.py:test_002()/12
+cmd: $NMCLI -f AP -mode multiline -t d show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 542 bytes
+>>>
+AP[1].IN-USE: 
+AP[1].BSSID:60:B3:25:25:E2:C8
+AP[1].SSID:wlan0-ap-3
+AP[1].MODE:Infrastruktura
+AP[1].CHAN:1
+AP[1].RATE:54 Mb/s
+AP[1].SIGNAL:55
+AP[1].BARS:**  
+AP[1].SECURITY:WPA3
+AP[2].IN-USE: 
+AP[2].BSSID:90:B1:5F:9E:E0:E3
+AP[2].SSID:wlan0-ap-1
+AP[2].MODE:Infrastruktura
+AP[2].CHAN:1
+AP[2].RATE:54 Mb/s
+AP[2].SIGNAL:44
+AP[2].BARS:**  
+AP[2].SECURITY:WPA1
+AP[3].IN-USE: 
+AP[3].BSSID:61:66:D2:E7:44:A2
+AP[3].SSID:wlan0-ap-2
+AP[3].MODE:Infrastruktura
+AP[3].CHAN:1
+AP[3].RATE:54 Mb/s
+AP[3].SIGNAL:34
+AP[3].BARS:**  
+AP[3].SECURITY:WPA1 WPA2
+
+<<<
+size: 527
+location: clients/tests/test-client.py:test_002()/13
+cmd: $NMCLI -f AP -mode tabular d show wlan0
+lang: C
+returncode: 0
+stdout: 380 bytes
+>>>
+NAME   IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infra  1     54 Mbit/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2 
+
+<<<
+size: 571
+location: clients/tests/test-client.py:test_002()/14
+cmd: $NMCLI -f AP -mode tabular d show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 414 bytes
+>>>
+NAME   IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infrastruktura  1     54 Mb/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 WPA2 
+
+<<<
+size: 705
+location: clients/tests/test-client.py:test_002()/15
+cmd: $NMCLI -f AP -mode tabular -p d show wlan0
+lang: C
+returncode: 0
+stdout: 555 bytes
+>>>
+==========================
+  Device details (wlan0)
+==========================
+NAME   IN-USE  BSSID              SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
+-----------------------------------------------------------------------------------------------
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infra  1     54 Mbit/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infra  1     54 Mbit/s  34      **    WPA1 WPA2 
+
+<<<
+size: 785
+location: clients/tests/test-client.py:test_002()/16
+cmd: $NMCLI -f AP -mode tabular -p d show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 625 bytes
+>>>
+===================================
+  Informacje o urządzeniu (wlan0)
+===================================
+NAME   IN-USE  BSSID              SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
+------------------------------------------------------------------------------------------------------
+AP[1]          60:B3:25:25:E2:C8  wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA3      
+AP[2]          90:B1:5F:9E:E0:E3  wlan0-ap-1  Infrastruktura  1     54 Mb/s  44      **    WPA1      
+AP[3]          61:66:D2:E7:44:A2  wlan0-ap-2  Infrastruktura  1     54 Mb/s  34      **    WPA1 WPA2 
+
+<<<
+size: 374
+location: clients/tests/test-client.py:test_002()/17
+cmd: $NMCLI -f AP -mode tabular -t d show wlan0
+lang: C
+returncode: 0
+stdout: 224 bytes
+>>>
+AP[1]: :60\:B3\:25\:25\:E2\:C8:wlan0-ap-3:Infra:1:54 Mbit/s:55:**  :WPA3
+AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infra:1:54 Mbit/s:44:**  :WPA1
+AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infra:1:54 Mbit/s:34:**  :WPA1 WPA2
+
+<<<
+size: 411
+location: clients/tests/test-client.py:test_002()/18
+cmd: $NMCLI -f AP -mode tabular -t d show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 251 bytes
+>>>
+AP[1]: :60\:B3\:25\:25\:E2\:C8:wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA3
+AP[2]: :90\:B1\:5F\:9E\:E0\:E3:wlan0-ap-1:Infrastruktura:1:54 Mb/s:44:**  :WPA1
+AP[3]: :61\:66\:D2\:E7\:44\:A2:wlan0-ap-2:Infrastruktura:1:54 Mb/s:34:**  :WPA1 WPA2
+
+<<<
+size: 1969
+location: clients/tests/test-client.py:test_002()/19
+cmd: $NMCLI -f ALL d wifi
+lang: C
+returncode: 0
+stdout: 1840 bytes
+>>>
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infra  1     2412 MHz  54 Mbit/s  55      **    WPA3       (none)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/3 
+AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infra  1     2412 MHz  54 Mbit/s  44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (none)                                         wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/1 
+AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infra  1     2412 MHz  54 Mbit/s  34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
+
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infra  1     2412 MHz  54 Mbit/s  38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   no              /org/freedesktop/NetworkManager/AccessPoint/4 
+
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+
+<<<
+size: 2037
+location: clients/tests/test-client.py:test_002()/20
+cmd: $NMCLI -f ALL d wifi
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1898 bytes
+>>>
+NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  FREQ      RATE     SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan0-ap-3  776C616E302D61702D33  60:B3:25:25:E2:C8  Infrastruktura  1     2412 MHz  54 Mb/s  55      **    WPA3       (brak)                                         pair_tkip pair_ccmp group_tkip group_ccmp sae  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/3 
+AP[2]  wlan0-ap-1  776C616E302D61702D31  90:B1:5F:9E:E0:E3  Infrastruktura  1     2412 MHz  54 Mb/s  44      **    WPA1       pair_tkip pair_ccmp group_tkip group_ccmp psk  (brak)                                         wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/1 
+AP[3]  wlan0-ap-2  776C616E302D61702D32  61:66:D2:E7:44:A2  Infrastruktura  1     2412 MHz  54 Mb/s  34      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   nie             /org/freedesktop/NetworkManager/AccessPoint/2 
+
+NAME   SSID        SSID-HEX              BSSID              MODE            CHAN  FREQ      RATE     SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+AP[1]  wlan1-ap-4  776C616E312D61702D34  EE:52:8B:49:A1:96  Infrastruktura  1     2412 MHz  54 Mb/s  38      **    WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan1   nie             /org/freedesktop/NetworkManager/AccessPoint/4 
+
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+
+<<<
+size: 242
+location: clients/tests/test-client.py:test_002()/21
+cmd: $NMCLI c
+lang: C
+returncode: 0
+stdout: 126 bytes
+>>>
+NAME   UUID                                  TYPE      DEVICE 
+con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
+
+<<<
+size: 252
+location: clients/tests/test-client.py:test_002()/22
+cmd: $NMCLI c
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 126 bytes
+>>>
+NAME   UUID                                  TYPE      DEVICE 
+con-1  5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
+
+<<<
+size: 1263
+location: clients/tests/test-client.py:test_002()/23
+cmd: $NMCLI c s con-1
+lang: C
+returncode: 0
+stdout: 1138 bytes
+>>>
+connection.id:                          con-1
+connection.uuid:                        5fcfd6d7-1e63-3332-8826-a7eda103792d
+connection.stable-id:                   --
+connection.type:                        802-3-ethernet
+connection.interface-name:              --
+connection.autoconnect:                 yes
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.multi-connect:               0 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.read-only:                   no
+connection.permissions:                 --
+connection.zone:                        --
+connection.master:                      --
+connection.slave-type:                  --
+connection.autoconnect-slaves:          -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.metered:                     unknown
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+connection.llmnr:                       -1 (default)
+connection.wait-device-timeout:         -1
+
+<<<
+size: 1275
+location: clients/tests/test-client.py:test_002()/24
+cmd: $NMCLI c s con-1
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1140 bytes
+>>>
+connection.id:                          con-1
+connection.uuid:                        5fcfd6d7-1e63-3332-8826-a7eda103792d
+connection.stable-id:                   --
+connection.type:                        802-3-ethernet
+connection.interface-name:              --
+connection.autoconnect:                 tak
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.multi-connect:               0 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.read-only:                   nie
+connection.permissions:                 --
+connection.zone:                        --
+connection.master:                      --
+connection.slave-type:                  --
+connection.autoconnect-slaves:          -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.metered:                     nieznane
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+connection.llmnr:                       -1 (default)
+connection.wait-device-timeout:         -1
+
+<<<

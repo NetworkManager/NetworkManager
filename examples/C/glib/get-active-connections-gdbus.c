@@ -1,20 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: GPL-2.0+
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * (C) Copyright 2010 -2014 Red Hat, Inc.
+ * Copyright (C) 2010 - 2014 Red Hat, Inc.
  */
 
 /*
@@ -23,11 +9,16 @@
  * a few defines from the NetworkManager headers.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --cflags libnm` `pkg-config --cflags --libs gio-2.0` get-active-connections-gdbus.c -o get-active-connections-gdbus
+ *   gcc -Wall get-active-connections-gdbus.c -o get-active-connections-gdbus `pkg-config --cflags --libs libnm`
  */
 
 #include <string.h>
 #include <gio/gio.h>
+
+#include <nm-dbus-interface.h>
+
+/* include NetworkManager.h for the defines, but we don't link against
+ * libnm. */
 #include <NetworkManager.h>
 
 static void
@@ -240,16 +231,10 @@ out:
 		g_variant_unref (ret);
 }
 
-
 int
 main (int argc, char *argv[])
 {
 	GDBusProxy *props_proxy;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
 
 	/* Create a D-Bus proxy to get the object properties from the NM Manager
 	 * object.  NM_DBUS_* defines are from nm-dbus-interface.h.

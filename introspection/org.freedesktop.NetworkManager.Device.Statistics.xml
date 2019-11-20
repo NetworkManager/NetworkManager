@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Statistics:
+      @short_description: Device Statistic Counters
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Statistics">
+
+    <!--
+        RefreshRateMs:
+
+        Refresh rate of the rest of properties of this interface. The properties
+        are guaranteed to be refreshed each RefreshRateMs milliseconds in case
+        the underlying counter has changed too.
+        If zero, there is no guaranteed refresh rate of the properties.
+    -->
+    <property name="RefreshRateMs" type="u" access="readwrite"/>
+
+    <!--
+        TxBytes:
+
+        Number of transmitted bytes
+    -->
+    <property name="TxBytes" type="t" access="read"/>
+
+    <!--
+        RxBytes:
+
+        Number of received bytes
+    -->
+    <property name="RxBytes" type="t" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

@@ -1,0 +1,11 @@
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="Test Write Permissions"
+UUID=${UUID}
+ONBOOT=yes
+USERS="blahblah foobar asdfasdf"

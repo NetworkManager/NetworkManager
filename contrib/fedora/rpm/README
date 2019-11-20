@@ -1,0 +1,27 @@
+# To build RPM packages for Fedora derivates directly from git, just do:
+
+
+#
+# preparation:
+#
+git clone https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
+cd NetworkManager
+git checkout $WHATEVER
+./contrib/fedora/REQUIRED_PACKAGES
+
+
+#
+# build the packages. Pass --help for usage help.
+#
+./contrib/fedora/rpm/build_clean.sh
+
+
+#
+# install
+#
+sudo dnf install ./contrib/fedora/rpm/latest/RPMS/x86_64/*rpm
+
+
+
+# To generate a clean build from git using mock, run:
+./contrib/fedora/rpm/mockbuild.sh

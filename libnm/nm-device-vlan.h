@@ -1,21 +1,6 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+// SPDX-License-Identifier: LGPL-2.1+
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301 USA.
- *
- * Copyright 2012 Red Hat, Inc.
+ * Copyright (C) 2012 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_VLAN_H__
@@ -25,7 +10,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-device.h>
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -38,23 +23,19 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_VLAN_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_VLAN_CARRIER     "carrier"
+#define NM_DEVICE_VLAN_PARENT      "parent"
 #define NM_DEVICE_VLAN_VLAN_ID     "vlan-id"
 
-struct _NMDeviceVlan {
-	NMDevice parent;
-};
-
-typedef struct {
-	NMDeviceClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMDeviceVlanClass;
+/**
+ * NMDeviceVlan:
+ */
+typedef struct _NMDeviceVlanClass NMDeviceVlanClass;
 
 GType nm_device_vlan_get_type (void);
 
 const char * nm_device_vlan_get_hw_address (NMDeviceVlan *device);
 gboolean     nm_device_vlan_get_carrier (NMDeviceVlan *device);
+NMDevice *   nm_device_vlan_get_parent  (NMDeviceVlan *device);
 guint        nm_device_vlan_get_vlan_id (NMDeviceVlan *device);
 
 G_END_DECLS

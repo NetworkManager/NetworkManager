@@ -1,0 +1,17 @@
+#mesondefine BINDIR
+#mesondefine DATADIR
+#mesondefine LIBEXECDIR
+#mesondefine LOCALSTATEDIR
+#mesondefine NMCONFDIR
+#mesondefine NMLIBDIR
+#mesondefine NMLOCALEDIR
+#mesondefine NMPLUGINDIR
+#mesondefine NMRUNDIR
+#mesondefine NMSTATEDIR
+#mesondefine NMVPNDIR
+#mesondefine NM_BUILD_BUILDDIR
+#mesondefine NM_BUILD_SRCDIR
+#mesondefine PPPD_PLUGIN_DIR
+#mesondefine PREFIX
+#mesondefine RUNSTATEDIR
+#mesondefine SYSCONFDIR

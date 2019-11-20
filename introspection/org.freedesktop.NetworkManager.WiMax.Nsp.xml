@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.WiMax.Nsp:
+      @short_description: WiMax Network Service Provider
+
+      DEPRECATED: NetworkManager no longer supports WiMAX since version 1.2. This interface is no longer used.
+  -->
+  <interface name="org.freedesktop.NetworkManager.WiMax.Nsp">
+
+    <!--
+        Name:
+
+        The name of the NSP.
+    -->
+    <property name="Name" type="s" access="read"/>
+
+    <!--
+        SignalQuality:
+
+        The current signal quality of the NSP, in percent.
+    -->
+    <property name="SignalQuality" type="u" access="read"/>
+
+    <!--
+        NetworkType:
+
+        The network type of the NSP.
+
+        Returns: <link linkend="NMWimaxNspNetworkType">NMWimaxNspNetworkType</link>
+    -->
+    <property name="NetworkType" type="u" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values.
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

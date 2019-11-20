@@ -1,7 +1,15 @@
-clients/tui/vpn-helpers.c
+data/NetworkManager.service.in
 examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c
-policy/org.freedesktop.NetworkManager.policy.in
+data/org.freedesktop.NetworkManager.policy.in
 vpn-daemons/openvpn
 vpn-daemons/pptp
 vpn-daemons/vpnc
+contrib/fedora/rpm/
+shared/nm-utils/nm-vpn-editor-plugin-call.h
+shared/nm-utils/nm-vpn-plugin-utils.c
+# https://bugs.launchpad.net/intltool/+bug/1117944
+sub/data/org.freedesktop.NetworkManager.policy.in
+
+# from meson build directory:
+build/data/org.freedesktop.NetworkManager.policy.in

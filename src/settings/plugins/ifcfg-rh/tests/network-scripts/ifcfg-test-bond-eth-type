@@ -1,0 +1,7 @@
+DEVICE=bond0
+NM_CONTROLLED=yes
+TYPE=Ethernet
+BONDING_OPTS="miimon=213 mode=4 lacp_rate=1"
+BONDING_MASTER=yes
+ONBOOT=yes
+BOOTPROTO=none

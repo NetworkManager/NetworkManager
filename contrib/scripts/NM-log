@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Util to pretty-print logfile of NetworkManager
+#
+# Unless setting NM_LOG_NO_COLOR it will colorize the output.
+# Suppress coloring with:
+# $ NM_LOG_NO_COLOR=1 NM-log ...
+#
+# If called without arguments, it either reads from stdin (if not
+# connected to a terminal) or it shows the journal content.
+#
+# If called with first argument "j", it always shows the journal content.
+#
+# You can pass multiple filenames.
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    NM_not_sourced=1
+else
+    unset NM_not_sourced
+fi
+
+NM-show-journal() {
+    local since="$(systemctl show NetworkManager | sed -n 's/^ExecMainStartTimestamp=\(.*\) [A-Z0-9]\+$/\1/p')"
+
+    if [[ "$since" == "" ]]; then
+       echo "error detecting NM. Is it running?"
+       systemctl status NetworkManager
+    else
+       journalctl -o short-precise --since "$since" -b 0 -u NetworkManager "$@"
+    fi
+}
+
+NM-colorize() {
+    if [[ "$NM_LOG_NO_COLOR" == "" ]]; then
+        # poor man's coloring using grep.
+        # TODO: do it somehow better (and more efficient).
+        sed 's/\r$//' | \
+        GREP_COLOR='01;31' grep -a --color=always '^\|^\(.* \)\?<\(warn> \|error>\) \[[0-9.]*\]' | \
+        GREP_COLOR='01;33' grep -a --color=always '^\|^\(.* \)\?<info>  \[[0-9.]*\]\( .*\<is starting\>.*$\)\?' | \
+        GREP_COLOR='01;37' grep -a --color=always '^\|\<platform:\( (.*)\)\? signal: .*$' | \
+        GREP_COLOR='01;34' grep -a --color=always '^\|\<platform\(-linux\)\?:\( (.*)\)\? link: \(add\|adding\|change\|setting\|deleting\)\>\|\<platform: routing-rule: \(adding or updating:\|delete \)\|\<platform:\( (.*)\)\? address: \(deleting\|adding or updating\) IPv. address:\? \|\<platform:\( (.*)\)\? \(route\|ip4-route\|ip6-route\|qdisc\|tfilter\): \([a-z]\+\|adding or updating\|new\[0x[0-9A-Za-z]*\]\) \|\<platform-linux: sysctl: setting ' | \
+        GREP_COLOR='01;35' grep -a --color=always '^\|\<audit: .*$' | \
+        GREP_COLOR='01;32' grep -a --color=always '^\|\<device (.*): state change: ' |
+        if [[ "$NM_LOG_GREP" != "" ]]; then
+            GREP_COLOR='01;36' grep -a --color=always "^\\|$NM_LOG_GREP"
+        else
+            /usr/bin/cat -
+        fi
+    else
+        /usr/bin/cat -
+    fi
+}
+
+NM-log() {
+    local NM_LOG_GREP=
+
+    while [[ $# -gt 0 ]]; do
+        if [[ "$1" == "-h" ]]; then
+            shift
+            NM_LOG_GREP="${NM_LOG_GREP+$NM_LOG_GREP\\|}\\<$1\\>"
+            shift
+        else
+            break
+        fi
+    done
+
+    (
+        if [ "$1" == "j" ]; then
+            shift
+            NM-show-journal "$@"
+        elif [ "$#" -eq 0 -a -t 0 ]; then
+            NM-show-journal
+        else
+            a="${1--}"
+            shift
+            /usr/bin/less "$a" "$@"
+        fi
+    ) | \
+        NM_LOG_GREP="$NM_LOG_GREP" NM-colorize | \
+        LESS=FRSXM less -R --shift=5
+}
+
+if [[ "$NM_not_sourced" != "" ]]; then
+    NM-log "$@"
+fi

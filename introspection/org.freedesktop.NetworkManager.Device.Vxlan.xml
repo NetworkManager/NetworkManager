@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Vxlan:
+      @short_description: VXLAN Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Vxlan">
+
+    <!--
+        Parent:
+
+        The object path of the parent device (if the VXLAN is not purely internal
+        to this host).
+    -->
+    <property name="Parent" type="o" access="read"/>
+
+    <!--
+        HwAddress:
+
+        Hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
+        Id:
+
+        The VXLAN Network Identifier (VNI).
+    -->
+    <property name="Id" type="u" access="read"/>
+
+    <!--
+        Group:
+
+        The IP (v4 or v6) multicast group used to communicate with other physical
+        hosts on this VXLAN.
+    -->
+    <property name="Group" type="s" access="read"/>
+
+    <!--
+        Local:
+
+        The local IPv4 or IPv6 address to use when sending VXLAN packets to other
+        physical hosts.
+    -->
+    <property name="Local" type="s" access="read"/>
+
+    <!--
+        Tos:
+
+        The value to use in the IP ToS field for VXLAN packets sent to other
+        physical hosts.
+    -->
+    <property name="Tos" type="y" access="read"/>
+
+    <!--
+        Ttl:
+
+        The value to use in the IP TTL field for VXLAN packets sent to other
+        physical hosts.
+    -->
+    <property name="Ttl" type="y" access="read"/>
+
+    <!--
+        Learning:
+
+        True if the VXLAN dynamically learns remote IP addresses.
+    -->
+    <property name="Learning" type="b" access="read"/>
+
+    <!--
+        Ageing:
+
+        The interval in seconds at which the kernel purges stale cached addresses.
+    -->
+    <property name="Ageing" type="u" access="read"/>
+
+    <!--
+        Limit:
+
+        The maximum number of entries that can be added to the VXLAN's forwarding
+        table.
+    -->
+    <property name="Limit" type="u" access="read"/>
+
+    <!--
+        DstPort:
+
+        Destination port for outgoing VXLAN packets.
+    -->
+    <property name="DstPort" type="q" access="read"/>
+
+    <!--
+        SrcPortMin:
+
+        The lowest source port number to use for outgoing VXLAN packets.
+    -->
+    <property name="SrcPortMin" type="q" access="read"/>
+
+    <!--
+        SrcPortMax:
+
+        The highest source port number to use for outgoing VXLAN packets.
+    -->
+    <property name="SrcPortMax" type="q" access="read"/>
+
+    <!--
+        Proxy:
+
+        True if the VXLAN is implementing DOVE ARP proxying for remote clients.
+    -->
+    <property name="Proxy" type="b" access="read"/>
+
+    <!--
+        Rsc:
+
+        True if the VXLAN is implementing DOVE route short-circuiting of known
+        remote IP addresses.
+    -->
+    <property name="Rsc" type="b" access="read"/>
+
+    <!--
+        L2miss:
+
+        True if the VXLAN will emit netlink notifications of L2 switch misses.
+    -->
+    <property name="L2miss" type="b" access="read"/>
+
+    <!--
+        L3miss:
+
+        True if the VXLAN will emit netlink notifications of L3 switch misses.
+    -->
+    <property name="L3miss" type="b" access="read"/>
+
+    <!--
+        PropertiesChanged:
+        @properties: A dictionary mapping property names to variant boxed values
+
+        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
+    -->
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+  </interface>
+</node>

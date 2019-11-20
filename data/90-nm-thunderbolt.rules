@@ -1,0 +1,13 @@
+# Do not modify this file, it will get overwritten on updates.
+# To override or extend the rules place a file in /etc/udev/rules.d
+
+ACTION!="add", GOTO="nm_thunderbolt_end"
+
+# Load he thunderbolt-net driver if we a device of type thunderbolt_xdomain
+# is added.
+SUBSYSTEM=="thunderbolt", ENV{DEVTYPE}=="thunderbolt_xdomain", RUN{builtin}+="kmod load thunderbolt-net"
+
+# For all thunderbolt network devices, we want to enable link-local configuration
+SUBSYSTEM=="net", ENV{ID_NET_DRIVER}=="thunderbolt-net", ENV{NM_AUTO_DEFAULT_LINK_LOCAL_ONLY}="1"
+
+LABEL="nm_thunderbolt_end"
