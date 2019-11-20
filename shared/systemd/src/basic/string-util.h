@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
-#include <alloca.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -43,6 +42,22 @@ static inline const char* strnull(const char *s) {
 
 static inline const char *strna(const char *s) {
         return s ?: "n/a";
+}
+
+static inline const char* yes_no(bool b) {
+        return b ? "yes" : "no";
+}
+
+static inline const char* true_false(bool b) {
+        return b ? "true" : "false";
+}
+
+static inline const char* one_zero(bool b) {
+        return b ? "1" : "0";
+}
+
+static inline const char* enable_disable(bool b) {
+        return b ? "enable" : "disable";
 }
 
 static inline bool isempty(const char *p) {

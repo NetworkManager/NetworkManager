@@ -10,7 +10,6 @@
 #include <net/if_arp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <linux/if_infiniband.h>
 
@@ -92,6 +91,7 @@ struct sd_dhcp_client {
         usec_t start_time;
         uint64_t attempt;
         uint64_t max_attempts;
+        OrderedHashmap *options;
         usec_t request_sent;
         sd_event_source *timeout_t1;
         sd_event_source *timeout_t2;
@@ -100,6 +100,7 @@ struct sd_dhcp_client {
         void *userdata;
         sd_dhcp_lease *lease;
         usec_t start_delay;
+        int ip_service_type;
 };
 
 static const uint8_t default_req_opts[] = {
@@ -234,6 +235,7 @@ int sd_dhcp_client_set_mac(
 
         DHCP_CLIENT_DONT_DESTROY(client);
         bool need_restart = false;
+        int r;
 
         assert_return(client, -EINVAL);
         assert_return(addr, -EINVAL);
@@ -261,8 +263,11 @@ int sd_dhcp_client_set_mac(
         client->mac_addr_len = addr_len;
         client->arp_type = arp_type;
 
-        if (need_restart && client->state != DHCP_STATE_STOPPED)
-                sd_dhcp_client_start(client);
+        if (need_restart && client->state != DHCP_STATE_STOPPED) {
+                r = sd_dhcp_client_start(client);
+                if (r < 0)
+                        return log_dhcp_client_errno(client, r, "Failed to restart DHCPv4 client: %m");
+        }
 
         return 0;
 }
@@ -298,6 +303,7 @@ int sd_dhcp_client_set_client_id(
 
         DHCP_CLIENT_DONT_DESTROY(client);
         bool need_restart = false;
+        int r;
 
         assert_return(client, -EINVAL);
         assert_return(data, -EINVAL);
@@ -331,8 +337,11 @@ int sd_dhcp_client_set_client_id(
         memcpy(&client->client_id.raw.data, data, data_len);
         client->client_id_len = data_len + sizeof (client->client_id.type);
 
-        if (need_restart && client->state != DHCP_STATE_STOPPED)
-                sd_dhcp_client_start(client);
+        if (need_restart && client->state != DHCP_STATE_STOPPED) {
+                r = sd_dhcp_client_start(client);
+                if (r < 0)
+                        return log_dhcp_client_errno(client, r, "Failed to restart DHCPv4 client: %m");
+        }
 
         return 0;
 }
@@ -363,7 +372,7 @@ static int dhcp_client_set_iaid_duid_internal(
         if (duid) {
                 r = dhcp_validate_duid_len(duid_type, duid_len, true);
                 if (r < 0)
-                        return r;
+                        return log_dhcp_client_errno(client, r, "Failed to validate length of DUID: %m");
         }
 
         zero(client->client_id);
@@ -378,7 +387,7 @@ static int dhcp_client_set_iaid_duid_internal(
                                                      true,
                                                      &client->client_id.ns.iaid);
                         if (r < 0)
-                                return r;
+                                return log_dhcp_client_errno(client, r, "Failed to set IAID: %m");
                 }
         }
 
@@ -390,32 +399,32 @@ static int dhcp_client_set_iaid_duid_internal(
                 switch (duid_type) {
                 case DUID_TYPE_LLT:
                         if (client->mac_addr_len == 0)
-                                return -EOPNOTSUPP;
+                                return log_dhcp_client_errno(client, SYNTHETIC_ERRNO(EOPNOTSUPP), "Failed to set DUID-LLT, MAC address is not set.");
 
                         r = dhcp_identifier_set_duid_llt(&client->client_id.ns.duid, llt_time, client->mac_addr, client->mac_addr_len, client->arp_type, &len);
                         if (r < 0)
-                                return r;
+                                return log_dhcp_client_errno(client, r, "Failed to set DUID-LLT: %m");
                         break;
                 case DUID_TYPE_EN:
                         r = dhcp_identifier_set_duid_en(&client->client_id.ns.duid, &len);
                         if (r < 0)
-                                return r;
+                                return log_dhcp_client_errno(client, r, "Failed to set DUID-EN: %m");
                         break;
                 case DUID_TYPE_LL:
                         if (client->mac_addr_len == 0)
-                                return -EOPNOTSUPP;
+                                return log_dhcp_client_errno(client, SYNTHETIC_ERRNO(EOPNOTSUPP), "Failed to set DUID-LL, MAC address is not set.");
 
                         r = dhcp_identifier_set_duid_ll(&client->client_id.ns.duid, client->mac_addr, client->mac_addr_len, client->arp_type, &len);
                         if (r < 0)
-                                return r;
+                                return log_dhcp_client_errno(client, r, "Failed to set DUID-LL: %m");
                         break;
                 case DUID_TYPE_UUID:
                         r = dhcp_identifier_set_duid_uuid(&client->client_id.ns.duid, &len);
                         if (r < 0)
-                                return r;
+                                return log_dhcp_client_errno(client, r, "Failed to set DUID-UUID: %m");
                         break;
                 default:
-                        return -EINVAL;
+                        return log_dhcp_client_errno(client, SYNTHETIC_ERRNO(EINVAL), "Invalid DUID type");
                 }
 
         client->client_id_len = sizeof(client->client_id.type) + len +
@@ -424,7 +433,9 @@ static int dhcp_client_set_iaid_duid_internal(
         if (!IN_SET(client->state, DHCP_STATE_INIT, DHCP_STATE_STOPPED)) {
                 log_dhcp_client(client, "Configured %sDUID, restarting.", iaid_append ? "IAID+" : "");
                 client_stop(client, SD_DHCP_CLIENT_EVENT_STOP);
-                sd_dhcp_client_start(client);
+                r = sd_dhcp_client_start(client);
+                if (r < 0)
+                        return log_dhcp_client_errno(client, r, "Failed to restart DHCPv4 client: %m");
         }
 
         return 0;
@@ -534,6 +545,24 @@ int sd_dhcp_client_set_max_attempts(sd_dhcp_client *client, uint64_t max_attempt
         return 0;
 }
 
+int sd_dhcp_client_set_dhcp_option(sd_dhcp_client *client, sd_dhcp_option *v) {
+        int r;
+
+        assert_return(client, -EINVAL);
+        assert_return(v, -EINVAL);
+
+        r = ordered_hashmap_ensure_allocated(&client->options, &dhcp_option_hash_ops);
+        if (r < 0)
+                return r;
+
+        r = ordered_hashmap_put(client->options, UINT_TO_PTR(v->option), v);
+        if (r < 0)
+                return r;
+
+        sd_dhcp_option_ref(v);
+        return 0;
+}
+
 int sd_dhcp_client_get_lease(sd_dhcp_client *client, sd_dhcp_lease **ret) {
         assert_return(client, -EINVAL);
 
@@ -542,6 +571,14 @@ int sd_dhcp_client_get_lease(sd_dhcp_client *client, sd_dhcp_lease **ret) {
 
         if (ret)
                 *ret = client->lease;
+
+        return 0;
+}
+
+int sd_dhcp_client_set_service_type(sd_dhcp_client *client, int type) {
+        assert_return(client, -EINVAL);
+
+        client->ip_service_type = type;
 
         return 0;
 }
@@ -778,7 +815,7 @@ static int dhcp_client_send_raw(
                 size_t len) {
 
         dhcp_packet_append_ip_headers(packet, INADDR_ANY, client->port,
-                                      INADDR_BROADCAST, DHCP_PORT_SERVER, len);
+                                      INADDR_BROADCAST, DHCP_PORT_SERVER, len, client->ip_service_type);
 
         return dhcp_network_send_raw_socket(client->fd, &client->link,
                                             packet, len);
@@ -787,6 +824,8 @@ static int dhcp_client_send_raw(
 static int client_send_discover(sd_dhcp_client *client) {
         _cleanup_free_ DHCPPacket *discover = NULL;
         size_t optoffset, optlen;
+        sd_dhcp_option *j;
+        Iterator i;
         int r;
 
         assert(client);
@@ -803,7 +842,9 @@ static int client_send_discover(sd_dhcp_client *client) {
            address be assigned, and may include the ’IP address lease time’
            option to suggest the lease time it would like.
          */
-        if (client->last_addr != INADDR_ANY) {
+        /* RFC7844 section 3:
+           SHOULD NOT contain any other option. */
+        if (!client->anonymize && client->last_addr != INADDR_ANY) {
                 r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
                                        SD_DHCP_OPTION_REQUESTED_IP_ADDRESS,
                                        4, &client->last_addr);
@@ -848,6 +889,13 @@ static int client_send_discover(sd_dhcp_client *client) {
                         return r;
         }
 
+        ORDERED_HASHMAP_FOREACH(j, client->options, i) {
+                r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
+                                       j->option, j->length, j->data);
+                if (r < 0)
+                        return r;
+        }
+
         r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
                                SD_DHCP_OPTION_END, 0, NULL);
         if (r < 0)
@@ -862,41 +910,6 @@ static int client_send_discover(sd_dhcp_client *client) {
                 return r;
 
         log_dhcp_client(client, "DISCOVER");
-
-        return 0;
-}
-
-static int client_send_release(sd_dhcp_client *client) {
-        _cleanup_free_ DHCPPacket *release = NULL;
-        size_t optoffset, optlen;
-        int r;
-
-        assert(client);
-        assert(!IN_SET(client->state, DHCP_STATE_STOPPED));
-
-        r = client_message_init(client, &release, DHCP_RELEASE,
-                                &optlen, &optoffset);
-        if (r < 0)
-                return r;
-
-        /* Fill up release IP and MAC */
-        release->dhcp.ciaddr = client->lease->address;
-        memcpy(&release->dhcp.chaddr, &client->mac_addr, client->mac_addr_len);
-
-        r = dhcp_option_append(&release->dhcp, optlen, &optoffset, 0,
-                               SD_DHCP_OPTION_END, 0, NULL);
-        if (r < 0)
-                return r;
-
-        r = dhcp_network_send_udp_socket(client->fd,
-                                         client->lease->server_address,
-                                         DHCP_PORT_SERVER,
-                                         &release->dhcp,
-                                         sizeof(DHCPMessage) + optoffset);
-        if (r < 0)
-                return r;
-
-        log_dhcp_client(client, "RELEASE");
 
         return 0;
 }
@@ -1666,7 +1679,7 @@ static int client_handle_message(sd_dhcp_client *client, DHCPMessage *message, i
                                 goto error;
                         }
 
-                        r = dhcp_network_bind_udp_socket(client->ifindex, client->lease->address, client->port);
+                        r = dhcp_network_bind_udp_socket(client->ifindex, client->lease->address, client->port, client->ip_service_type);
                         if (r < 0) {
                                 log_dhcp_client(client, "could not bind UDP socket");
                                 goto error;
@@ -1925,8 +1938,35 @@ int sd_dhcp_client_start(sd_dhcp_client *client) {
 
 int sd_dhcp_client_send_release(sd_dhcp_client *client) {
         assert_return(client, -EINVAL);
+        assert_return(client->state != DHCP_STATE_STOPPED, -ESTALE);
+        assert_return(client->lease, -EUNATCH);
 
-        client_send_release(client);
+        _cleanup_free_ DHCPPacket *release = NULL;
+        size_t optoffset, optlen;
+        int r;
+
+        r = client_message_init(client, &release, DHCP_RELEASE, &optlen, &optoffset);
+        if (r < 0)
+                return r;
+
+        /* Fill up release IP and MAC */
+        release->dhcp.ciaddr = client->lease->address;
+        memcpy(&release->dhcp.chaddr, &client->mac_addr, client->mac_addr_len);
+
+        r = dhcp_option_append(&release->dhcp, optlen, &optoffset, 0,
+                               SD_DHCP_OPTION_END, 0, NULL);
+        if (r < 0)
+                return r;
+
+        r = dhcp_network_send_udp_socket(client->fd,
+                                         client->lease->server_address,
+                                         DHCP_PORT_SERVER,
+                                         &release->dhcp,
+                                         sizeof(DHCPMessage) + optoffset);
+        if (r < 0)
+                return r;
+
+        log_dhcp_client(client, "RELEASE");
 
         return 0;
 }
@@ -1976,7 +2016,8 @@ sd_event *sd_dhcp_client_get_event(sd_dhcp_client *client) {
 }
 
 static sd_dhcp_client *dhcp_client_free(sd_dhcp_client *client) {
-        assert(client);
+        if (!client)
+                return NULL;
 
         log_dhcp_client(client, "FREE");
 
@@ -1995,17 +2036,16 @@ static sd_dhcp_client *dhcp_client_free(sd_dhcp_client *client) {
         free(client->hostname);
         free(client->vendor_class_identifier);
         client->user_class = strv_free(client->user_class);
+        ordered_hashmap_free(client->options);
         return mfree(client);
 }
 
 DEFINE_TRIVIAL_REF_UNREF_FUNC(sd_dhcp_client, sd_dhcp_client, dhcp_client_free);
 
 int sd_dhcp_client_new(sd_dhcp_client **ret, int anonymize) {
-        _cleanup_(sd_dhcp_client_unrefp) sd_dhcp_client *client = NULL;
-
         assert_return(ret, -EINVAL);
 
-        client = new(sd_dhcp_client, 1);
+        _cleanup_(sd_dhcp_client_unrefp) sd_dhcp_client *client = new(sd_dhcp_client, 1);
         if (!client)
                 return -ENOMEM;
 
@@ -2018,6 +2058,7 @@ int sd_dhcp_client_new(sd_dhcp_client **ret, int anonymize) {
                 .port = DHCP_PORT_CLIENT,
                 .anonymize = !!anonymize,
                 .max_attempts = (uint64_t) -1,
+                .ip_service_type = -1,
         };
         /* NOTE: this could be moved to a function. */
         if (anonymize) {

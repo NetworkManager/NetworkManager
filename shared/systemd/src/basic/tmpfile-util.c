@@ -2,7 +2,6 @@
 
 #include "nm-sd-adapt-shared.h"
 
-#include <stdio.h>
 #include <sys/mman.h>
 
 #include "alloc-util.h"

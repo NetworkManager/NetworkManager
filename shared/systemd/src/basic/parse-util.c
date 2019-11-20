@@ -5,11 +5,9 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <linux/oom.h>
-#include <locale.h>
 #include <net/if.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 
 #include "alloc-util.h"
@@ -17,7 +15,7 @@
 #include "extract-word.h"
 #include "locale-util.h"
 #include "macro.h"
-#include "missing.h"
+#include "missing_network.h"
 #include "parse-util.h"
 #include "process-util.h"
 #include "stat-util.h"

@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "alloc-util.h"
 #include "fileio.h"
@@ -13,7 +12,7 @@
 #include "macro.h"
 #include "memory-util.h"
 #include "mempool.h"
-#include "missing.h"
+#include "missing_syscall.h"
 #include "process-util.h"
 #include "random-util.h"
 #include "set.h"

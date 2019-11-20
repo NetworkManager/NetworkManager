@@ -6,9 +6,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/timerfd.h>
 #include <sys/timex.h>
@@ -839,8 +837,12 @@ int parse_timestamp(const char *t, usec_t *usec) {
         }
         if (r == 0) {
                 bool with_tz = true;
+                char *colon_tz;
 
-                if (setenv("TZ", tz, 1) != 0) {
+                /* tzset(3) says $TZ should be prefixed with ":" if we reference timezone files */
+                colon_tz = strjoina(":", tz);
+
+                if (setenv("TZ", colon_tz, 1) != 0) {
                         shared->return_value = negative_errno();
                         _exit(EXIT_FAILURE);
                 }
@@ -1265,6 +1267,7 @@ int get_timezones(char ***ret) {
                 }
 
                 strv_sort(zones);
+                strv_uniq(zones);
 
         } else if (errno != ENOENT)
                 return -errno;
@@ -1284,6 +1287,10 @@ bool timezone_is_valid(const char *name, int log_level) {
 
         if (isempty(name))
                 return false;
+
+        /* Always accept "UTC" as valid timezone, since it's the fallback, even if user has no timezones installed. */
+        if (streq(name, "UTC"))
+                return true;
 
         if (name[0] == '/')
                 return false;
@@ -1391,13 +1398,22 @@ bool clock_supported(clockid_t clock) {
 }
 
 #if 0 /* NM_IGNORED */
-int get_timezone(char **tz) {
+int get_timezone(char **ret) {
         _cleanup_free_ char *t = NULL;
         const char *e;
         char *z;
         int r;
 
         r = readlink_malloc("/etc/localtime", &t);
+        if (r == -ENOENT) {
+                /* If the symlink does not exist, assume "UTC", like glibc does*/
+                z = strdup("UTC");
+                if (!z)
+                        return -ENOMEM;
+
+                *ret = z;
+                return 0;
+        }
         if (r < 0)
                 return r; /* returns EINVAL if not a symlink */
 
@@ -1412,7 +1428,7 @@ int get_timezone(char **tz) {
         if (!z)
                 return -ENOMEM;
 
-        *tz = z;
+        *ret = z;
         return 0;
 }
 

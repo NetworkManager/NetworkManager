@@ -6,11 +6,9 @@
 #include <errno.h>
 #include <limits.h>
 #include <linux/oom.h>
-#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/personality.h>
@@ -37,7 +35,8 @@
 #include "log.h"
 #include "macro.h"
 #include "memory-util.h"
-#include "missing.h"
+#include "missing_sched.h"
+#include "missing_syscall.h"
 #include "namespace-util.h"
 #include "process-util.h"
 #include "raw-clone.h"

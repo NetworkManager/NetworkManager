@@ -55,11 +55,7 @@ void path_hash_func(const char *q, struct siphash *state) {
         }
 }
 
-int path_compare_func(const char *a, const char *b) {
-        return path_compare(a, b);
-}
-
-DEFINE_HASH_OPS(path_hash_ops, char, path_hash_func, path_compare_func);
+DEFINE_HASH_OPS(path_hash_ops, char, path_hash_func, path_compare);
 #endif /* NM_IGNORED */
 
 void trivial_hash_func(const void *p, struct siphash *state) {

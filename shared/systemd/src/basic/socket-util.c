@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "alloc-util.h"
@@ -25,7 +25,7 @@
 #include "log.h"
 #include "macro.h"
 #include "memory-util.h"
-#include "missing.h"
+#include "missing_socket.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"

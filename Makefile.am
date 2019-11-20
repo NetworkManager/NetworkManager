@@ -1705,12 +1705,10 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/nm-sd-utils-shared.c \
 	shared/systemd/nm-sd-utils-shared.h \
 	shared/systemd/sd-adapt-shared/architecture.h \
-	shared/systemd/sd-adapt-shared/btrfs-util.h \
 	shared/systemd/sd-adapt-shared/build.h \
-	shared/systemd/sd-adapt-shared/cgroup-util.h \
 	shared/systemd/sd-adapt-shared/copy.h \
 	shared/systemd/sd-adapt-shared/def.h \
-	shared/systemd/sd-adapt-shared/device-nodes.h \
+	shared/systemd/sd-adapt-shared/dhcp-server-internal.h \
 	shared/systemd/sd-adapt-shared/dirent-util.h \
 	shared/systemd/sd-adapt-shared/errno-list.h \
 	shared/systemd/sd-adapt-shared/glob-util.h \
@@ -1718,7 +1716,10 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/ioprio.h \
 	shared/systemd/sd-adapt-shared/locale-util.h \
 	shared/systemd/sd-adapt-shared/memfd-util.h \
-	shared/systemd/sd-adapt-shared/missing.h \
+	shared/systemd/sd-adapt-shared/missing_fs.h \
+	shared/systemd/sd-adapt-shared/missing_magic.h \
+	shared/systemd/sd-adapt-shared/missing_network.h \
+	shared/systemd/sd-adapt-shared/missing_sched.h \
 	shared/systemd/sd-adapt-shared/missing_syscall.h \
 	shared/systemd/sd-adapt-shared/missing_timerfd.h \
 	shared/systemd/sd-adapt-shared/mkdir.h \
@@ -1726,7 +1727,6 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
 	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
 	shared/systemd/sd-adapt-shared/nulstr-util.h \
-	shared/systemd/sd-adapt-shared/procfs-util.h \
 	shared/systemd/sd-adapt-shared/raw-clone.h \
 	shared/systemd/sd-adapt-shared/rlimit-util.h \
 	shared/systemd/sd-adapt-shared/terminal-util.h \
@@ -1775,6 +1775,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/mempool.c \
 	shared/systemd/src/basic/mempool.h \
 	shared/systemd/src/basic/missing_fcntl.h \
+	shared/systemd/src/basic/missing_random.h \
 	shared/systemd/src/basic/missing_socket.h \
 	shared/systemd/src/basic/missing_stat.h \
 	shared/systemd/src/basic/missing_type.h \
@@ -1898,6 +1899,7 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/src/systemd/_sd-common.h \
 	src/systemd/src/systemd/sd-dhcp-client.h \
 	src/systemd/src/systemd/sd-dhcp-lease.h \
+	src/systemd/src/systemd/sd-dhcp-option.h \
 	src/systemd/src/systemd/sd-dhcp6-client.h \
 	src/systemd/src/systemd/sd-dhcp6-lease.h \
 	src/systemd/src/systemd/sd-event.h \

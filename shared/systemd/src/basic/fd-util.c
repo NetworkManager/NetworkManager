@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/resource.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -18,7 +17,8 @@
 #include "io-util.h"
 #include "macro.h"
 #include "memfd-util.h"
-#include "missing.h"
+#include "missing_fcntl.h"
+#include "missing_syscall.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
