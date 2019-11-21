@@ -162,6 +162,7 @@ void                nm_manager_device_route_metric_clear (NMManager *self,
 char *              nm_manager_get_connection_iface (NMManager *self,
                                                      NMConnection *connection,
                                                      NMDevice **out_parent,
+                                                     const char **out_parent_spec,
                                                      GError **error);
 
 const char *        nm_manager_iface_for_uuid          (NMManager *self,

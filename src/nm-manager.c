@@ -1729,7 +1729,10 @@ nm_manager_get_state (NMManager *manager)
 /*****************************************************************************/
 
 static NMDevice *
-find_parent_device_for_connection (NMManager *self, NMConnection *connection, NMDeviceFactory *cached_factory)
+find_parent_device_for_connection (NMManager *self,
+                                   NMConnection *connection,
+                                   NMDeviceFactory *cached_factory,
+                                   const char **out_parent_spec)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
@@ -1739,6 +1742,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 	NMDevice *candidate;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	NM_SET_OUT (out_parent_spec, NULL);
 
 	if (!cached_factory) {
 		factory = nm_device_factory_manager_find_factory_for_connection (connection);
@@ -1750,6 +1754,8 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 	parent_name = nm_device_factory_get_connection_parent (factory, connection);
 	if (!parent_name)
 		return NULL;
+
+	NM_SET_OUT (out_parent_spec, parent_name);
 
 	/* Try as an interface name of a parent device */
 	parent = find_device_by_iface (self, parent_name, NULL, NULL);
@@ -1792,6 +1798,9 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
  * @self: the #NMManager
  * @connection: the #NMConnection to get the interface for
  * @out_parent: on success, the parent device if any
+ * @out_parent_spec: on return, a string specifying the parent device
+ *   in the connection. This can be a device name, a MAC address or a
+ *   connection UUID.
  * @error: an error if determining the virtual interface name failed
  *
  * Given @connection, returns the interface name that the connection
@@ -1805,14 +1814,15 @@ char *
 nm_manager_get_connection_iface (NMManager *self,
                                  NMConnection *connection,
                                  NMDevice **out_parent,
+                                 const char **out_parent_spec,
                                  GError **error)
 {
 	NMDeviceFactory *factory;
 	char *iface = NULL;
 	NMDevice *parent = NULL;
 
-	if (out_parent)
-		*out_parent = NULL;
+	NM_SET_OUT (out_parent, NULL);
+	NM_SET_OUT (out_parent_spec, NULL);
 
 	factory = nm_device_factory_manager_find_factory_for_connection (connection);
 	if (!factory) {
@@ -1835,7 +1845,7 @@ nm_manager_get_connection_iface (NMManager *self,
 		goto return_ifname_fom_connection;
 	}
 
-	parent = find_parent_device_for_connection (self, connection, factory);
+	parent = find_parent_device_for_connection (self, connection, factory, out_parent_spec);
 	iface = nm_device_factory_get_connection_iface (factory,
 	                                                connection,
 	                                                parent ? nm_device_get_ip_iface (parent) : NULL,
@@ -1932,6 +1942,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i;
 	gs_free char *iface = NULL;
+	const char *parent_spec;
 	NMDevice *device = NULL, *parent = NULL;
 	NMDevice *dev_candidate;
 	GError *error = NULL;
@@ -1940,11 +1951,16 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	iface = nm_manager_get_connection_iface (self, connection, &parent, &error);
+	iface = nm_manager_get_connection_iface (self, connection, &parent, &parent_spec, &error);
 	if (!iface) {
 		_LOG3D (LOGD_DEVICE, connection, "can't get a name of a virtual device: %s",
 		        error->message);
 		g_error_free (error);
+		return NULL;
+	}
+
+	if (parent_spec && !parent) {
+		/* parent is not ready, wait */
 		return NULL;
 	}
 
@@ -2061,10 +2077,10 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 		gs_free char *ifname = NULL;
 		NMDevice *parent;
 
-		parent = find_parent_device_for_connection (self, connection, NULL);
+		parent = find_parent_device_for_connection (self, connection, NULL, NULL);
 		if (parent == device) {
 			/* Only try to activate devices that don't already exist */
-			ifname = nm_manager_get_connection_iface (self, connection, &parent, &error);
+			ifname = nm_manager_get_connection_iface (self, connection, &parent, NULL, &error);
 			if (ifname) {
 				if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname))
 					connection_changed (self, sett_conn);
@@ -4574,6 +4590,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMAuthSubject *subject;
 	GError *local = NULL;
 	NMConnectionMultiConnect multi_connect;
+	const char *parent_spec;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -4626,7 +4643,14 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 		parent = find_parent_device_for_connection (self,
 		                                            nm_settings_connection_get_connection (sett_conn),
-		                                            NULL);
+		                                            NULL,
+		                                            &parent_spec);
+
+		if (parent_spec && !parent) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			             "parent device '%s' not found", parent_spec);
+			return FALSE;
+		}
 
 		if (parent && !nm_device_is_real (parent)) {
 			NMSettingsConnection *parent_con;
@@ -5181,7 +5205,7 @@ validate_activation_request (NMManager *self,
 			}
 
 			/* Look for an existing device with the connection's interface name */
-			iface = nm_manager_get_connection_iface (self, connection, NULL, error);
+			iface = nm_manager_get_connection_iface (self, connection, NULL, NULL, error);
 			if (!iface)
 				return NULL;
 
