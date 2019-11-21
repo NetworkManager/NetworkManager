@@ -99,15 +99,10 @@ libn_dhcp4_dep = declare_dependency(
   link_with: libn_dhcp4,
 )
 
-nm_version_macro_conf = configuration_data()
-nm_version_macro_conf.set('NM_MAJOR_VERSION', nm_major_version)
-nm_version_macro_conf.set('NM_MINOR_VERSION', nm_minor_version)
-nm_version_macro_conf.set('NM_MICRO_VERSION', nm_micro_version)
-
 nm_version_macro_header = configure_file(
   input: 'nm-version-macros.h.in',
   output: '@BASENAME@',
-  configuration: nm_version_macro_conf,
+  configuration: data_conf,
 )
 
 nm_ethtool_utils_source = files('nm-libnm-core-intern/nm-ethtool-utils.c')
