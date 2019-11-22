@@ -3573,6 +3573,11 @@ next:
 		return NULL;
 	}
 
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_SYSTEM_CA_CERTS,
+	              svGetValueBoolean (ifcfg, "IEEE_8021X_SYSTEM_CA_CERTS", FALSE),
+	              NULL);
+
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "IEEE_8021X_SUBJECT_MATCH", &value);
 	g_object_set (s_8021x, NM_SETTING_802_1X_SUBJECT_MATCH, v, NULL);
