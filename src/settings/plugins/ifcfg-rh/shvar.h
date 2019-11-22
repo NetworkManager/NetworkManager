@@ -72,6 +72,7 @@ gboolean svGetValueEnum (shvarFile *s, const char *key,
 gboolean svSetValue (shvarFile *s, const char *key, const char *value);
 gboolean svSetValueStr (shvarFile *s, const char *key, const char *value);
 gboolean svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
+gboolean svSetValueBoolean_cond_true (shvarFile *s, const char *key, gboolean value);
 gboolean svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 gboolean svSetValueInt64_cond (shvarFile *s, const char *key, gboolean do_set, gint64 value);
 gboolean svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
