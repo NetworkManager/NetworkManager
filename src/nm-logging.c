@@ -22,6 +22,7 @@
 #include <systemd/sd-journal.h>
 #endif
 
+#include "nm-glib-aux/nm-logging-base.h"
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-errors.h"
 
@@ -85,22 +86,6 @@ typedef struct {
 } LogDesc;
 
 typedef struct {
-	const char *name;
-	const char *level_str;
-
-	/* nm-logging uses syslog internally. Note that the three most-verbose syslog levels
-	 * are LOG_DEBUG, LOG_INFO and LOG_NOTICE. Journal already highlights LOG_NOTICE
-	 * as special.
-	 *
-	 * On the other hand, we have three levels LOGL_TRACE, LOGL_DEBUG and LOGL_INFO,
-	 * which are regular messages not to be highlighted. For that reason, we must map
-	 * LOGL_TRACE and LOGL_DEBUG both to syslog level LOG_DEBUG. */
-	int syslog_level;
-
-	GLogLevelFlags g_log_level;
-} LogLevelDesc;
-
-typedef struct {
 	char *logging_domains_to_string;
 } GlobalMain;
 
@@ -157,16 +142,6 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 };
 
 /*****************************************************************************/
-
-static const LogLevelDesc level_desc[_LOGL_N] = {
-	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
-	[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
-	[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_INFO,    },
-	[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_MESSAGE, },
-	[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_MESSAGE, },
-	[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   },
-	[_LOGL_KEEP] = { "KEEP",  NULL,      0,           0,                   },
-};
 
 static const LogDesc domain_desc[] = {
 	{ LOGD_PLATFORM,  "PLATFORM" },
@@ -271,14 +246,8 @@ match_log_level (const char  *level,
                  NMLogLevel  *out_level,
                  GError     **error)
 {
-	int i;
-
-	for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
-		if (!g_ascii_strcasecmp (level_desc[i].name, level)) {
-			*out_level = i;
-			return TRUE;
-		}
-	}
+	if (_nm_log_parse_level (level, out_level))
+		return TRUE;
 
 	g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,
 	             _("Unknown log level '%s'"), level);
