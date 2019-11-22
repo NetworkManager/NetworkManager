@@ -1053,6 +1053,7 @@ dhcp4_event_cb (GIOChannel *source,
 	return G_SOURCE_CONTINUE;
 }
 
+G_GNUC_PRINTF (3, 4)
 static void
 nettools_log (int level, void *data, const char *fmt, ...)
 {
