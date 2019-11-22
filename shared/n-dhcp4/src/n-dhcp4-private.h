@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <syslog.h>
 #include "n-dhcp4.h"
 
 typedef struct NDhcp4CConnection NDhcp4CConnection;
@@ -198,6 +199,8 @@ struct NDhcp4Outgoing {
 
         struct {
                 uint8_t type;
+                uint8_t message_type;
+                uint32_t client_addr;
                 uint64_t start_time;
                 uint64_t base_time;
                 uint64_t send_time;
@@ -239,6 +242,11 @@ struct NDhcp4ClientConfig {
         size_t n_broadcast_mac;
         uint8_t *client_id;
         size_t n_client_id;
+        struct {
+                int level;
+                NDhcp4LogFunc func;
+                void *data;
+        } log;
 };
 
 #define N_DHCP4_CLIENT_CONFIG_NULL(_x) {                                        \
@@ -686,3 +694,19 @@ static inline uint64_t n_dhcp4_gettime(clockid_t clock) {
 
         return ts.tv_sec * 1000ULL * 1000ULL * 1000ULL + ts.tv_nsec;
 }
+
+#define n_dhcp4_c_log(_config, _level, ...)                                    \
+        do {                                                                   \
+                const NDhcp4ClientConfig *__config = _config;                  \
+                                                                               \
+                if (_level <= __config->log.level && __config->log.func) {     \
+                        if (1) {                                               \
+                                _config->log.func(_level,                      \
+                                                  __config->log.data,          \
+                                                  __VA_ARGS__);                \
+                        } else {                                               \
+                                /* To have the compiler check arguments */     \
+                                printf(__VA_ARGS__);                           \
+                        }                                                      \
+                }                                                              \
+        } while (0)

@@ -1053,6 +1053,26 @@ dhcp4_event_cb (GIOChannel *source,
 	return G_SOURCE_CONTINUE;
 }
 
+static void
+nettools_log (int level, void *data, const char *fmt, ...)
+{
+	NMDhcpNettools *self = data;
+	NMLogLevel nm_level;
+	gs_free char *msg = NULL;
+	va_list ap;
+
+	nm_level = nm_log_level_from_syslog (level);
+	if (nm_logging_enabled (nm_level, LOGD_DHCP4)) {
+		va_start (ap, fmt);
+		msg = g_strdup_vprintf (fmt, ap);
+		va_end (ap);
+		nm_log (nm_level, LOGD_DHCP4, NULL , NULL,
+		        "dhcp4 (%s): %s",
+		        nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self)),
+		        msg);
+	}
+}
+
 static gboolean
 nettools_create (NMDhcpNettools *self,
                  const char *dhcp_anycast_addr,
@@ -1122,6 +1142,8 @@ nettools_create (NMDhcpNettools *self,
 		return FALSE;
 	}
 
+	n_dhcp4_client_config_set_log_level (config, nm_log_level_to_syslog (nm_logging_get_level (LOGD_DHCP4)));
+	n_dhcp4_client_config_set_log_func (config, nettools_log, self);
 	n_dhcp4_client_config_set_ifindex (config, nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)));
 	n_dhcp4_client_config_set_transport (config, transport);
 	n_dhcp4_client_config_set_mac (config, hwaddr_arr, hwaddr_len);

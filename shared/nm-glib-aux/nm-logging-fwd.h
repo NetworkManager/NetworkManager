@@ -112,6 +112,19 @@ nm_log_level_from_syslog (int syslog_level)
 	}
 }
 
+static inline int
+nm_log_level_to_syslog (NMLogLevel nm_level)
+{
+	switch (nm_level) {
+	case LOGL_ERR:    return 3; /* LOG_ERR */
+	case LOGL_WARN:   return 4; /* LOG_WARN */
+	case LOGL_INFO:   return 5; /* LOG_NOTICE */
+	case LOGL_DEBUG:  return 6; /* LOG_INFO */
+	case LOGL_TRACE:  return 7; /* LOG_DEBUG */
+	default:          return 0; /* LOG_EMERG */
+	}
+}
+
 /*****************************************************************************/
 
 struct timespec;
