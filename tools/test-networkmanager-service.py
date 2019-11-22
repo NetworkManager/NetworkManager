@@ -683,6 +683,7 @@ PRP_DEVICE_AUTOCONNECT           = "Autoconnect"
 PRP_DEVICE_DEVICE_TYPE           = "DeviceType"
 PRP_DEVICE_AVAILABLE_CONNECTIONS = "AvailableConnections"
 PRP_DEVICE_LLDP_NEIGHBORS        = "LldpNeighbors"
+PRP_DEVICE_INTERFACE_FLAGS       = "InterfaceFlags"
 
 class Device(ExportedObj):
 
@@ -718,6 +719,7 @@ class Device(ExportedObj):
             PRP_DEVICE_AUTOCONNECT:           True,
             PRP_DEVICE_DEVICE_TYPE:           dbus.UInt32(devtype),
             PRP_DEVICE_AVAILABLE_CONNECTIONS: ExportedObj.to_path_array([]),
+            PRP_DEVICE_INTERFACE_FLAGS:       dbus.UInt32(3), # up,lower-up
             PRP_DEVICE_LLDP_NEIGHBORS:        dbus.Array([
                 dbus.Dictionary({
                     'chassis-id-type':      dbus.UInt32(6),

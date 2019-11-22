@@ -279,6 +279,17 @@
     <property name="Ip6Connectivity" type="u" access="read"/>
 
     <!--
+        InterfaceFlags:
+
+        The flags of the network interface. See
+        <link linkend="NMDeviceInterfaceFlags">NMDeviceInterfaceFlags</link> for
+        the currently defined flags.
+
+        Since: 1.22
+    -->
+    <property name="InterfaceFlags" type="u" access="read"/>
+
+    <!--
         Reapply:
         @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarly differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
         @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows to catch concurrent modifications between the GetAppliedConnection call and Reapply.

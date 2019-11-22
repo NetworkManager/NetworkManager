@@ -1150,4 +1150,28 @@ typedef enum { /*< flags >*/
 	NM_MANAGER_RELOAD_FLAG_ALL           = 0x7,  /*< skip >*/
 } NMManagerReloadFlags;
 
+/**
+ * NMDeviceInterfaceFlags:
+ * @NM_DEVICE_INTERFACE_FLAG_NONE: an alias for numeric zero, no flags set.
+ * @NM_DEVICE_INTERFACE_FLAG_UP: the interface is enabled from the
+ *   administrative point of view. Corresponds to kernel IFF_UP.
+ * @NM_DEVICE_INTERFACE_FLAG_LOWER_UP: the physical link is up. Corresponds
+ *   to kernel IFF_LOWER_UP.
+ * @NM_DEVICE_INTERFACE_FLAG_CARRIER: the interface has carrier. In most
+ *   cases this is equal to the value of @NM_DEVICE_INTERFACE_FLAG_LOWER_UP.
+ *   However some devices have a non-standard carrier detection mechanism.
+ *
+ * Flags for a network interface.
+ *
+ * Since: 1.22
+ */
+typedef enum { /*< flags >*/
+	/* kernel flags */
+	NM_DEVICE_INTERFACE_FLAG_NONE        = 0,   /*< skip >*/
+	NM_DEVICE_INTERFACE_FLAG_UP          = 0x1,
+	NM_DEVICE_INTERFACE_FLAG_LOWER_UP    = 0x2,
+	/* NM-specific flags */
+	NM_DEVICE_INTERFACE_FLAG_CARRIER     = 0x10000,
+} NMDeviceInterfaceFlags;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

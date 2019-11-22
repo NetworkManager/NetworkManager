@@ -551,6 +551,44 @@ const NmcMetaGenericInfo *const metagen_device_detail_wifi_properties[_NMC_GENER
 	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_IBSS_RSN, "IBSS-RSN"),
 };
 
+
+/*****************************************************************************/
+
+static gconstpointer
+_metagen_device_detail_interface_flags_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
+	NMDeviceInterfaceFlags flags;
+
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+
+	flags = nm_device_get_interface_flags (d);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_UP:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (flags, NM_DEVICE_INTERFACE_FLAG_UP),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_LOWER_UP:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (flags, NM_DEVICE_INTERFACE_FLAG_LOWER_UP),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_CARRIER:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (flags, NM_DEVICE_INTERFACE_FLAG_CARRIER),
+		                                  get_type);
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_detail_interface_flags[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_NUM + 1] = {
+#define _METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_interface_flags_get_fcn)
+	_METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_UP,       "UP"),
+	_METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_LOWER_UP, "LOWER-UP"),
+	_METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_CARRIER,  "CARRIER"),
+};
+
 /*****************************************************************************/
 
 const NmcMetaGenericInfo *const metagen_device_detail_wimax_properties[] = {
@@ -631,23 +669,24 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_bluetooth[] = {
 
 /* Available sections for 'device show' */
 const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
-	NMC_META_GENERIC_WITH_NESTED ("GENERAL",           metagen_device_detail_general),        /* 0 */
-	NMC_META_GENERIC_WITH_NESTED ("CAPABILITIES",      metagen_device_detail_capabilities),   /* 1 */
-	NMC_META_GENERIC_WITH_NESTED ("WIFI-PROPERTIES",   metagen_device_detail_wifi_properties), /* 2 */
-	NMC_META_GENERIC_WITH_NESTED ("AP",                nmc_fields_dev_wifi_list + 1),         /* 3 */
-	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  metagen_device_detail_wired_properties), /* 4 */
-	NMC_META_GENERIC_WITH_NESTED ("WIMAX-PROPERTIES",  metagen_device_detail_wimax_properties), /* 5 */
-	NMC_META_GENERIC_WITH_NESTED ("NSP",               nmc_fields_dev_wimax_list + 1),        /* 6 */
-	NMC_META_GENERIC_WITH_NESTED ("IP4",               metagen_ip4_config),                   /* 7 */
-	NMC_META_GENERIC_WITH_NESTED ("DHCP4",             metagen_dhcp_config),                  /* 8 */
-	NMC_META_GENERIC_WITH_NESTED ("IP6",               metagen_ip6_config),                   /* 9 */
-	NMC_META_GENERIC_WITH_NESTED ("DHCP6",             metagen_dhcp_config),                  /* 10 */
-	NMC_META_GENERIC_WITH_NESTED ("BOND",              nmc_fields_dev_show_master_prop + 1),  /* 11 */
-	NMC_META_GENERIC_WITH_NESTED ("TEAM",              nmc_fields_dev_show_team_prop + 1),    /* 12 */
-	NMC_META_GENERIC_WITH_NESTED ("BRIDGE",            nmc_fields_dev_show_master_prop + 1),  /* 13 */
-	NMC_META_GENERIC_WITH_NESTED ("VLAN",              nmc_fields_dev_show_vlan_prop + 1),    /* 14 */
-	NMC_META_GENERIC_WITH_NESTED ("BLUETOOTH",         nmc_fields_dev_show_bluetooth + 1),    /* 15 */
-	NMC_META_GENERIC_WITH_NESTED ("CONNECTIONS",       metagen_device_detail_connections),    /* 16 */
+	NMC_META_GENERIC_WITH_NESTED ("GENERAL",           metagen_device_detail_general),          /* 0 */
+	NMC_META_GENERIC_WITH_NESTED ("CAPABILITIES",      metagen_device_detail_capabilities),     /* 1 */
+	NMC_META_GENERIC_WITH_NESTED ("INTERFACE-FLAGS",   metagen_device_detail_interface_flags),  /* 2 */
+	NMC_META_GENERIC_WITH_NESTED ("WIFI-PROPERTIES",   metagen_device_detail_wifi_properties),  /* 3 */
+	NMC_META_GENERIC_WITH_NESTED ("AP",                nmc_fields_dev_wifi_list + 1),           /* 4 */
+	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  metagen_device_detail_wired_properties), /* 5 */
+	NMC_META_GENERIC_WITH_NESTED ("WIMAX-PROPERTIES",  metagen_device_detail_wimax_properties), /* 6 */
+	NMC_META_GENERIC_WITH_NESTED ("NSP",               nmc_fields_dev_wimax_list + 1),          /* 7 */
+	NMC_META_GENERIC_WITH_NESTED ("IP4",               metagen_ip4_config),                     /* 8 */
+	NMC_META_GENERIC_WITH_NESTED ("DHCP4",             metagen_dhcp_config),                    /* 9 */
+	NMC_META_GENERIC_WITH_NESTED ("IP6",               metagen_ip6_config),                     /* 10 */
+	NMC_META_GENERIC_WITH_NESTED ("DHCP6",             metagen_dhcp_config),                    /* 11 */
+	NMC_META_GENERIC_WITH_NESTED ("BOND",              nmc_fields_dev_show_master_prop + 1),    /* 12 */
+	NMC_META_GENERIC_WITH_NESTED ("TEAM",              nmc_fields_dev_show_team_prop + 1),      /* 13 */
+	NMC_META_GENERIC_WITH_NESTED ("BRIDGE",            nmc_fields_dev_show_master_prop + 1),    /* 14 */
+	NMC_META_GENERIC_WITH_NESTED ("VLAN",              nmc_fields_dev_show_vlan_prop + 1),      /* 15 */
+	NMC_META_GENERIC_WITH_NESTED ("BLUETOOTH",         nmc_fields_dev_show_bluetooth + 1),      /* 16 */
+	NMC_META_GENERIC_WITH_NESTED ("CONNECTIONS",       metagen_device_detail_connections),      /* 17 */
 	NULL,
 };
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
@@ -1461,6 +1500,20 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			continue;
 		}
 
+		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_interface_flags) {
+			gs_free char *f = section_fld ? g_strdup_printf ("INTERFACE-FLAGS.%s", section_fld) : NULL;
+
+			nmc_print (&nmc->nmc_config,
+			           (gpointer[]) { device, NULL },
+			           NULL,
+			           NULL,
+			           NMC_META_GENERIC_GROUP ("INTERFACE-FLAGS", metagen_device_detail_interface_flags, N_("NAME")),
+			           f,
+			           NULL);
+			was_output = TRUE;
+			continue;
+		}
+
 		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_wifi_properties) {
 			if (NM_IS_DEVICE_WIFI (device)) {
 				gs_free char *f = section_fld ? g_strdup_printf ("WIFI-PROPERTIES.%s", section_fld) : NULL;
@@ -1484,7 +1537,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			GPtrArray *aps;
 
 			/* section AP */
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[3]->name)) {
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[4]->name)) {
 				NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 				if (state == NM_DEVICE_STATE_ACTIVATED) {
@@ -1542,42 +1595,42 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		dhcp6 = nm_device_get_dhcp6_config (device);
 
 		/* IP4 */
-		if (cfg4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[7]->name))
+		if (cfg4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[8]->name))
 			was_output = print_ip_config (cfg4, AF_INET, &nmc->nmc_config, section_fld);
 
 		/* DHCP4 */
-		if (dhcp4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[8]->name))
+		if (dhcp4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[9]->name))
 			was_output = print_dhcp_config (dhcp4, AF_INET, &nmc->nmc_config, section_fld);
 
 		/* IP6 */
-		if (cfg6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[9]->name))
+		if (cfg6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[10]->name))
 			was_output = print_ip_config (cfg6, AF_INET6, &nmc->nmc_config, section_fld);
 
 		/* DHCP6 */
-		if (dhcp6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[10]->name))
+		if (dhcp6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[11]->name))
 			was_output = print_dhcp_config (dhcp6, AF_INET6, &nmc->nmc_config, section_fld);
 
 		/* Bond specific information */
 		if (NM_IS_DEVICE_BOND (device)) {
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[11]->name))
-				was_output = print_bond_bridge_info (device, nmc, nmc_fields_dev_show_sections[11]->name, section_fld);
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[12]->name))
+				was_output = print_bond_bridge_info (device, nmc, nmc_fields_dev_show_sections[12]->name, section_fld);
 		}
 
 		/* Team specific information */
 		if (NM_IS_DEVICE_TEAM (device)) {
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[12]->name))
-				was_output = print_team_info (device, nmc, nmc_fields_dev_show_sections[12]->name, section_fld);
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[13]->name))
+				was_output = print_team_info (device, nmc, nmc_fields_dev_show_sections[13]->name, section_fld);
 		}
 
 		/* Bridge specific information */
 		if (NM_IS_DEVICE_BRIDGE (device)) {
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[13]->name))
-				was_output = print_bond_bridge_info (device, nmc, nmc_fields_dev_show_sections[13]->name, section_fld);
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[14]->name))
+				was_output = print_bond_bridge_info (device, nmc, nmc_fields_dev_show_sections[14]->name, section_fld);
 		}
 
 		/* VLAN-specific information */
 		if ((NM_IS_DEVICE_VLAN (device))) {
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[14]->name)) {
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[15]->name)) {
 				char * vlan_id_str = g_strdup_printf ("%u", nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device)));
 				NMDevice *parent = nm_device_vlan_get_parent (NM_DEVICE_VLAN (device));
 				NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
@@ -1589,7 +1642,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (out.output_data, arr);
 
 				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-				set_val_strc (arr, 0, nmc_fields_dev_show_sections[14]->name);  /* "VLAN" */
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[15]->name);  /* "VLAN" */
 				set_val_strc (arr, 1, parent ? nm_device_get_iface (parent) : NULL);
 				set_val_str  (arr, 2, vlan_id_str);
 				g_ptr_array_add (out.output_data, arr);
@@ -1602,7 +1655,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		}
 
 		if (NM_IS_DEVICE_BT (device)) {
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[15]->name)) {
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[16]->name)) {
 				NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 				tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_bluetooth;
@@ -1612,7 +1665,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (out.output_data, arr);
 
 				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-				set_val_strc (arr, 0, nmc_fields_dev_show_sections[15]->name);  /* "BLUETOOTH" */
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[16]->name);  /* "BLUETOOTH" */
 				set_val_str (arr, 1, bluetooth_caps_to_string (nm_device_bt_get_capabilities (NM_DEVICE_BT (device))));
 				g_ptr_array_add (out.output_data, arr);
 

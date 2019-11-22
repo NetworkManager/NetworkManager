@@ -54,6 +54,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_DEVICE_LLDP_NEIGHBORS "lldp-neighbors"
 #define NM_DEVICE_IP4_CONNECTIVITY "ip4-connectivity"
 #define NM_DEVICE_IP6_CONNECTIVITY "ip6-connectivity"
+#define NM_DEVICE_INTERFACE_FLAGS "interface-flags"
 
 /**
  * NMDevice:
@@ -113,6 +114,9 @@ NM_AVAILABLE_IN_1_2
 NMMetered            nm_device_get_metered           (NMDevice  *device);
 NM_AVAILABLE_IN_1_2
 GPtrArray *          nm_device_get_lldp_neighbors    (NMDevice *device);
+NM_AVAILABLE_IN_1_22
+NMDeviceInterfaceFlags nm_device_get_interface_flags (NMDevice *device);
+
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 NM_AVAILABLE_IN_1_2
