@@ -436,35 +436,33 @@ write_8021x_setting (NMConnection *connection,
 	                             "IEEE_8021X_SYSTEM_CA_CERTS",
 	                             nm_setting_802_1x_get_system_ca_certs (s_8021x));
 
-	/* PEAP version */
 	value = nm_setting_802_1x_get_phase1_peapver (s_8021x);
-	svUnsetValue (ifcfg, "IEEE_8021X_PEAP_VERSION");
-	if (value && (!strcmp (value, "0") || !strcmp (value, "1")))
+	if (NM_IN_STRSET (value, "0", "1"))
 		svSetValueStr (ifcfg, "IEEE_8021X_PEAP_VERSION", value);
+	else
+		svUnsetValue (ifcfg, "IEEE_8021X_PEAP_VERSION");
 
-	/* Force new PEAP label */
-	value = nm_setting_802_1x_get_phase1_peaplabel (s_8021x);
-	svUnsetValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL");
-	if (value && !strcmp (value, "1"))
-		svSetValueStr (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", "yes");
+	svSetValueBoolean_cond_true (ifcfg,
+	                             "IEEE_8021X_PEAP_FORCE_NEW_LABEL",
+	                             nm_streq0 (nm_setting_802_1x_get_phase1_peaplabel (s_8021x), "1"));
 
-	/* PAC file */
-	value = nm_setting_802_1x_get_pac_file (s_8021x);
-	svUnsetValue (ifcfg, "IEEE_8021X_PAC_FILE");
-	if (value)
-		svSetValueStr (ifcfg, "IEEE_8021X_PAC_FILE", value);
+	svSetValueStr (ifcfg,
+	               "IEEE_8021X_PAC_FILE",
+	               nm_setting_802_1x_get_pac_file (s_8021x));
 
 	/* FAST PAC provisioning */
 	value = nm_setting_802_1x_get_phase1_fast_provisioning (s_8021x);
-	svUnsetValue (ifcfg, "IEEE_8021X_FAST_PROVISIONING");
 	if (value) {
 		if (strcmp (value, "1") == 0)
-			svSetValueStr (ifcfg, "IEEE_8021X_FAST_PROVISIONING", "allow-unauth");
+			value = "allow-unauth";
 		else if (strcmp (value, "2") == 0)
-			svSetValueStr (ifcfg, "IEEE_8021X_FAST_PROVISIONING", "allow-auth");
+			value = "allow-auth";
 		else if (strcmp (value, "3") == 0)
-			svSetValueStr (ifcfg, "IEEE_8021X_FAST_PROVISIONING", "allow-unauth allow-auth");
+			value = "allow-unauth allow-auth";
+		else
+			value = NULL;
 	}
+	svSetValueStr (ifcfg, "IEEE_8021X_FAST_PROVISIONING", value);
 
 	/* Phase2 auth methods */
 	svUnsetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS");
@@ -541,10 +539,9 @@ write_8021x_setting (NMConnection *connection,
 	vint = nm_setting_802_1x_get_auth_timeout (s_8021x);
 	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", vint > 0, vint);
 
-	if (nm_setting_802_1x_get_optional (s_8021x))
-		svSetValueBoolean (ifcfg, "IEEE_8021X_OPTIONAL", TRUE);
-	else
-		svUnsetValue (ifcfg, "IEEE_8021X_OPTIONAL");
+	svSetValueBoolean_cond_true (ifcfg,
+	                             "IEEE_8021X_OPTIONAL",
+	                             nm_setting_802_1x_get_optional (s_8021x));
 
 	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
