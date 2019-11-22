@@ -1,55 +1,57 @@
 #!/bin/sh
 
-datadir=$1
-bindir=$2
-pkgconfdir=$3
-pkglibdir=$4
-pkgstatedir=$5
+nm_datadir="$1"
+nm_bindir="$2"
+nm_pkgconfdir="$3"
+nm_pkglibdir="$4"
+nm_pkgstatedir="$5"
+nm_mandir="$6"
+nm_sysconfdir="$7"
+enable_docs="$8"
+enable_ifcfg_rh="$9"
 
-[ -n "$DESTDIR" ] && DESTDIR=${DESTDIR%%/}/
+[ -n "$DESTDIR" ] && DESTDIR="${DESTDIR%%/}/"
 
-if [ -f "${DESTDIR}${datadir}/bash-completion/completions/nmcli-completion" ]; then
-    mv "${DESTDIR}${datadir}/bash-completion/completions/nmcli-completion" \
-       "${DESTDIR}${datadir}/bash-completion/completions/nmcli"
+if [ -f "${DESTDIR}${nm_datadir}/bash-completion/completions/nmcli-completion" ]; then
+    mv "${DESTDIR}${nm_datadir}/bash-completion/completions/nmcli-completion" \
+       "${DESTDIR}${nm_datadir}/bash-completion/completions/nmcli"
 fi
 
-if [ -x "${DESTDIR}${bindir}/nmtui" ]; then
+if [ -x "${DESTDIR}${nm_bindir}/nmtui" ]; then
     for alias in nmtui-connect nmtui-edit nmtui-hostname; do
-        ln -sf nmtui "${DESTDIR}${bindir}/$alias"
+        ln -sf nmtui "${DESTDIR}${nm_bindir}/$alias"
     done
 fi
 
-for dir in "${pkgconfdir}/conf.d" \
-           "${pkgconfdir}/system-connections" \
-           "${pkgconfdir}/dispatcher.d/no-wait.d" \
-           "${pkgconfdir}/dispatcher.d/pre-down.d" \
-           "${pkgconfdir}/dispatcher.d/pre-up.d" \
-           "${pkgconfdir}/dnsmasq.d" \
-           "${pkgconfdir}/dnsmasq-shared.d" \
-           "${pkglibdir}/conf.d" \
-           "${pkglibdir}/dispatcher.d/no-wait.d" \
-           "${pkglibdir}/dispatcher.d/pre-down.d" \
-           "${pkglibdir}/dispatcher.d/pre-up.d" \
-           "${pkglibdir}/system-connections" \
-           "${pkglibdir}/VPN"; do
+for dir in "${nm_pkgconfdir}/conf.d" \
+           "${nm_pkgconfdir}/system-connections" \
+           "${nm_pkgconfdir}/dispatcher.d/no-wait.d" \
+           "${nm_pkgconfdir}/dispatcher.d/pre-down.d" \
+           "${nm_pkgconfdir}/dispatcher.d/pre-up.d" \
+           "${nm_pkgconfdir}/dnsmasq.d" \
+           "${nm_pkgconfdir}/dnsmasq-shared.d" \
+           "${nm_pkglibdir}/conf.d" \
+           "${nm_pkglibdir}/dispatcher.d/no-wait.d" \
+           "${nm_pkglibdir}/dispatcher.d/pre-down.d" \
+           "${nm_pkglibdir}/dispatcher.d/pre-up.d" \
+           "${nm_pkglibdir}/system-connections" \
+           "${nm_pkglibdir}/VPN"; do
     mkdir -p "${DESTDIR}${dir}"
     chmod 0755 "${DESTDIR}${dir}"
 done
 
-mkdir -p "${DESTDIR}${pkgstatedir}"
-chmod 0700 "${DESTDIR}${pkgstatedir}"
+mkdir -p "${DESTDIR}${nm_pkgstatedir}"
+chmod 0700 "${DESTDIR}${nm_pkgstatedir}"
 
-if [ "$6" = install_docs ]; then
-    mandir=$7
+if [ "$enable_docs" = 1 ]; then
 
     for alias in nmtui-connect nmtui-edit nmtui-hostname; do
-        ln -f "${DESTDIR}${mandir}/man1/nmtui.1" "${DESTDIR}${mandir}/man1/${alias}.1"
+        ln -f "${DESTDIR}${nm_mandir}/man1/nmtui.1" "${DESTDIR}${nm_mandir}/man1/${alias}.1"
     done
 
-    ln -f "${DESTDIR}${mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${mandir}/man5/nm-system-settings.conf.5"
+    ln -f "${DESTDIR}${nm_mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${nm_mandir}/man5/nm-system-settings.conf.5"
 fi
 
-if [ "$8" = create_network_scripts ]; then
-    sysconfdir=$9
-    mkdir -p "${DESTDIR}${sysconfdir}/sysconfig/network-scripts"
+if [ "$enable_ifcfg_rh" = 1 ]; then
+    mkdir -p "${DESTDIR}${nm_sysconfdir}/sysconfig/network-scripts"
 fi
