@@ -1358,6 +1358,12 @@ svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
 }
 
 gboolean
+svSetValueBoolean_cond_true (shvarFile *s, const char *key, gboolean value)
+{
+	return svSetValue (s, key, value ? "yes" : NULL);
+}
+
+gboolean
 svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value)
 {
 	gs_free char *v = NULL;
