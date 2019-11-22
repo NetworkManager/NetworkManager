@@ -419,6 +419,10 @@ write_8021x_setting (NMConnection *connection,
 	            nm_setting_802_1x_get_password_raw_flags (s_8021x));
 	g_free (tmp);
 
+	svSetValueBoolean_cond_true (ifcfg,
+	                             "IEEE_8021X_SYSTEM_CA_CERTS",
+	                             nm_setting_802_1x_get_system_ca_certs (s_8021x));
+
 	/* PEAP version */
 	value = nm_setting_802_1x_get_phase1_peapver (s_8021x);
 	svUnsetValue (ifcfg, "IEEE_8021X_PEAP_VERSION");
