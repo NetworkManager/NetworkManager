@@ -90,6 +90,7 @@ t_fedora:29:
   <<: *fedora_install
   image: fedora:29
   <<: *do_build
+  when: manual
 
 t_fedora:30:
   <<: *fedora_install
@@ -108,6 +109,7 @@ t_fedora:31:
   <<: *fedora_install
   image: fedora:31
   <<: *do_build
+  when: manual
 
 t_fedora:rawhide:
   <<: *fedora_install
@@ -126,16 +128,19 @@ t_centos:7.6.1810:
   <<: *fedora_install
   image: centos:7.6.1810
   <<: *do_build
+  when: manual
 
 t_ubuntu:16.04:
   <<: *debian_install
   image: ubuntu:16.04
   <<: *do_build
+  when: manual
 
 t_ubuntu:18.04:
   <<: *debian_install
   image: ubuntu:18.04
   <<: *do_build
+  when: manual
 
 t_ubuntu:rolling:
   <<: *debian_install
@@ -153,11 +158,13 @@ t_debian:9:
   <<: *debian_install
   image: debian:stretch
   <<: *do_build
+  when: manual
 
 t_debian:10:
   <<: *debian_install
   image: debian:stretch
   <<: *do_build
+  when: manual
 
 t_debian:testing:
   <<: *debian_install
@@ -169,6 +176,7 @@ t_debian:sid:
   <<: *debian_install
   image: debian:sid
   <<: *do_build
+  when: manual
 
 pages:
   stage: deploy
