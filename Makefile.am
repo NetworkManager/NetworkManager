@@ -159,6 +159,21 @@ DISTCLEANFILES += intltool-extract intltool-merge intltool-update
 
 ###############################################################################
 
+install-data-hook-dirs:
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/conf.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/system-connections
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq-shared.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/system-connections
+	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
+
+install_data_hook += install-data-hook-dirs
+
+###############################################################################
+
 data_edit = sed \
 	-e 's|@NM_VERSION[@]|$(NM_VERSION)|g' \
 	-e 's|@bindir[@]|$(bindir)|g' \
@@ -4958,15 +4973,6 @@ dist-hook: $(dist_hook)
 install-exec-hook: $(install_exec_hook)
 
 install-data-hook: $(install_data_hook)
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/conf.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/system-connections
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq-shared.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/system-connections
-	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
 
 uninstall-hook: $(uninstall_hook)
 
