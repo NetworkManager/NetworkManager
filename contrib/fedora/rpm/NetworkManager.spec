@@ -466,7 +466,7 @@ configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
 (eg, to do policy-based routing).
 
 
-%if 0%{with_nmtui}
+%if %{with nmtui}
 %package tui
 Summary: NetworkManager curses-based UI
 Group: System Environment/Base
@@ -533,6 +533,11 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Diwd=true \
 %else
 	-Diwd=false \
+%endif
+%if %{with nmtui}
+	-Dnmtui=true \
+%else
+	-Dnmtui=false \
 %endif
 	-Dvapi=true \
 	-Dintrospection=true \
@@ -649,6 +654,11 @@ intltoolize --automake --copy --force
 	--with-iwd=yes \
 %else
 	--with-iwd=no \
+%endif
+%if %{with nmtui}
+	--with-nmtui=yes \
+%else
+	--with-nmtui=no \
 %endif
 	--enable-vala=yes \
 	--enable-introspection \

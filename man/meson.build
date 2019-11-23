@@ -1,18 +1,7 @@
-common_conf = configuration_data()
-common_conf.set('NM_VERSION', nm_version)
-common_conf.set('sysconfdir', nm_sysconfdir)
-common_conf.set('nmrundir', nm_pkgrundir)
-common_conf.set('nmstatedir', nm_pkgstatedir)
-common_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_default_main_auth_polkit)
-common_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT', config_logging_backend_default)
-common_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT', config_default_logging_audit)
-common_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER', config_dns_rc_manager_default)
-common_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
-
 common_ent_file = configure_file(
   input: 'common.ent.in',
   output: '@BASENAME@',
-  configuration: common_conf,
+  configuration: data_conf,
 )
 
 xsltproc_options = [

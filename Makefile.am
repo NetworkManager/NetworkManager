@@ -48,6 +48,7 @@ check_local =
 VAPIGEN_VAPIS =
 dbusservice_DATA =
 dbusactivation_DATA =
+systemdsystemunit_DATA =
 
 INTROSPECTION_GIRS =
 INTROSPECTION_SCANNER_ARGS =
@@ -155,6 +156,39 @@ endif
 dist: $(dist_configure_check) $(dist_dependencies)
 
 DISTCLEANFILES += intltool-extract intltool-merge intltool-update
+
+###############################################################################
+
+install-data-hook-dirs:
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/conf.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/system-connections
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq-shared.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/system-connections
+	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
+
+install_data_hook += install-data-hook-dirs
+
+###############################################################################
+
+data_edit = sed \
+	-e 's|@NM_VERSION[@]|$(NM_VERSION)|g' \
+	-e 's|@bindir[@]|$(bindir)|g' \
+	-e 's|@sbindir[@]|$(sbindir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+	-e 's|@nmrundir[@]|$(nmrundir)|g' \
+	-e 's|@nmstatedir[@]|$(nmstatedir)|g' \
+	-e 's|@localstatedir[@]|$(localstatedir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g' \
+	-e 's|@DISTRO_NETWORK_SERVICE[@]|$(DISTRO_NETWORK_SERVICE)|g' \
+	-e 's|@NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT[@]|$(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT)|g' \
+	-e 's|@NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT[@]|$(NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT)|g' \
+	-e 's|@NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT[@]|$(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)|g' \
+	-e 's|@NM_CONFIG_DEFAULT_MAIN_RC_MANAGER[@]|$(NM_CONFIG_DEFAULT_MAIN_RC_MANAGER)|g' \
+	-e 's|@NM_CONFIG_DEFAULT_MAIN_DHCP[@]|$(NM_CONFIG_DEFAULT_MAIN_DHCP)|g'
 
 ###############################################################################
 
@@ -4633,28 +4667,13 @@ EXTRA_DIST += \
 # data
 ###############################################################################
 
-data_edit = sed \
-	-e 's|@NM_VERSION[@]|$(NM_VERSION)|g' \
-	-e 's|@bindir[@]|$(bindir)|g' \
-	-e 's|@sbindir[@]|$(sbindir)|g' \
-	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@nmrundir[@]|$(nmrundir)|g' \
-	-e 's|@nmstatedir[@]|$(nmstatedir)|g' \
-	-e 's|@localstatedir[@]|$(localstatedir)|g' \
-	-e 's|@libexecdir[@]|$(libexecdir)|g' \
-	-e 's|@DISTRO_NETWORK_SERVICE[@]|$(DISTRO_NETWORK_SERVICE)|g' \
-	-e 's|@NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT[@]|$(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT)|g' \
-	-e 's|@NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT[@]|$(NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT)|g' \
-	-e 's|@NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT[@]|$(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)|g' \
-	-e 's|@NM_CONFIG_DEFAULT_MAIN_RC_MANAGER[@]|$(NM_CONFIG_DEFAULT_MAIN_RC_MANAGER)|g' \
-	-e 's|@NM_CONFIG_DEFAULT_MAIN_DHCP[@]|$(NM_CONFIG_DEFAULT_MAIN_DHCP)|g'
-
 if HAVE_SYSTEMD
 
-systemdsystemunit_DATA = \
+systemdsystemunit_DATA += \
 	data/NetworkManager.service \
 	data/NetworkManager-wait-online.service \
-	data/NetworkManager-dispatcher.service
+	data/NetworkManager-dispatcher.service \
+	$(NULL)
 
 data/NetworkManager.service: $(srcdir)/data/NetworkManager.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
@@ -4687,21 +4706,23 @@ data/server.conf: $(srcdir)/data/server.conf.in
 	$(AM_V_GEN) $(data_edit) $< >$@
 
 EXTRA_DIST += \
-	data/NetworkManager.service.in \
-	data/NetworkManager-wait-online.service.in \
-	data/NetworkManager-wait-online-systemd-pre200.service.in \
-	data/NetworkManager-dispatcher.service.in \
 	data/84-nm-drivers.rules \
 	data/85-nm-unmanaged.rules \
 	data/90-nm-thunderbolt.rules \
+	data/NetworkManager-dispatcher.service.in \
+	data/NetworkManager-wait-online-systemd-pre200.service.in \
+	data/NetworkManager-wait-online.service.in \
+	data/NetworkManager.service.in \
+	data/meson.build \
 	data/server.conf.in \
-	data/meson.build
+	$(NULL)
 
 CLEANFILES += \
-	data/NetworkManager.service \
-	data/NetworkManager-wait-online.service \
 	data/NetworkManager-dispatcher.service \
-	data/server.conf
+	data/NetworkManager-wait-online.service \
+	data/NetworkManager.service \
+	data/server.conf \
+	$(NULL)
 
 ###############################################################################
 # man
@@ -4952,15 +4973,6 @@ dist-hook: $(dist_hook)
 install-exec-hook: $(install_exec_hook)
 
 install-data-hook: $(install_data_hook)
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/conf.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/system-connections
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq-shared.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/system-connections
-	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
 
 uninstall-hook: $(uninstall_hook)
 

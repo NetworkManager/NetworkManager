@@ -19,7 +19,7 @@ endif
 content_files += configure_file(
   input: 'version.xml.in',
   output: '@BASENAME@',
-  configuration: version_conf,
+  configuration: data_conf,
 )
 
 filecopier = find_program('cp')

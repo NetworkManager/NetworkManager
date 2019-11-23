@@ -522,6 +522,11 @@ nm_utils_escaped_tokens_escape_gstr (const char *str,
 guint32 _nm_utils_ip4_prefix_to_netmask (guint32 prefix);
 guint32 _nm_utils_ip4_get_default_prefix (guint32 ip);
 
+gconstpointer          nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);
+in_addr_t              nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
+const struct in6_addr *nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);
+int nm_utils_ip6_address_same_prefix_cmp (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen);
+
 gboolean nm_utils_ip_is_site_local (int addr_family,
                                     const void *address);
 
@@ -925,11 +930,38 @@ nm_g_source_destroy_and_unref (GSource *source)
 	g_source_unref (source);
 }
 
+#define nm_clear_g_source_inst(ptr) (nm_clear_pointer ((ptr), nm_g_source_destroy_and_unref))
+
 NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_destroy_and_unref);
 #define nm_auto_destroy_and_unref_gsource nm_auto(_nm_auto_destroy_and_unref_gsource)
 
 NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default)
 #define nm_auto_pop_gmaincontext nm_auto (_nm_auto_pop_gmaincontext)
+
+GSource *nm_g_idle_source_new (int priority,
+                               GSourceFunc func,
+                               gpointer user_data,
+                               GDestroyNotify destroy_notify);
+
+GSource *nm_g_timeout_source_new (guint timeout_ms,
+                                  int priority,
+                                  GSourceFunc func,
+                                  gpointer user_data,
+                                  GDestroyNotify destroy_notify);
+
+GSource *nm_g_unix_signal_source_new (int signum,
+                                      int priority,
+                                      GSourceFunc handler,
+                                      gpointer user_data,
+                                      GDestroyNotify notify);
+
+static inline GSource *
+nm_g_source_attach (GSource *source,
+                    GMainContext *context)
+{
+	g_source_attach (source, context);
+	return source;
+}
 
 static inline GMainContext *
 nm_g_main_context_push_thread_default (GMainContext *context)

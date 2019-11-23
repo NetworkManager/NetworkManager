@@ -774,6 +774,27 @@ if python.found()
   config_h.set_quoted('TEST_NM_PYTHON', python.path())
 endif
 
+data_conf = configuration_data()
+data_conf.set('DISTRO_NETWORK_SERVICE',                  (enable_ifcfg_rh ? 'network.service' : ''))
+data_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT',    config_default_logging_audit)
+data_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT',  config_logging_backend_default)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_default_main_auth_polkit)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP',             config_dhcp_default)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER',       config_dns_rc_manager_default)
+data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
+data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
+data_conf.set('NM_MINOR_VERSION',                        nm_minor_version)
+data_conf.set('NM_MODIFY_SYSTEM_POLICY',                 (enable_modify_system ? 'yes' : 'auth_admin_keep'))
+data_conf.set('NM_VERSION',                              nm_version)
+data_conf.set('VERSION',                                 nm_version)
+data_conf.set('bindir',                                  nm_bindir)
+data_conf.set('libexecdir',                              nm_libexecdir)
+data_conf.set('localstatedir',                           nm_localstatedir)
+data_conf.set('nmrundir',                                nm_pkgrundir)
+data_conf.set('nmstatedir',                              nm_pkgstatedir)
+data_conf.set('sbindir',                                 nm_sbindir)
+data_conf.set('sysconfdir',                              nm_sysconfdir)
+
 # check if we can build setting property documentation
 '''
 build_docs=no
@@ -885,10 +906,10 @@ meson.add_install_script(
   nm_pkgconfdir,
   nm_pkglibdir,
   nm_pkgstatedir,
-  enable_docs ? 'install_docs' : '',
   nm_mandir,
-  enable_ifcfg_rh ? 'create_network_scripts' : '',
   nm_sysconfdir,
+  enable_docs ? '1' : '0',
+  enable_ifcfg_rh ? '1' : '0',
 )
 
 output = '\nSystem paths:\n'

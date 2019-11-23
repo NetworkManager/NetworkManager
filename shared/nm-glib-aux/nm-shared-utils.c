@@ -11,6 +11,7 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
+#include <glib-unix.h>
 
 #include "nm-errno.h"
 
@@ -538,6 +539,102 @@ guint32
 _nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 {
 	return prefix < 32 ? ~htonl(0xFFFFFFFF >> prefix) : 0xFFFFFFFF;
+}
+
+gconstpointer
+nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen)
+{
+	g_return_val_if_fail (dst, NULL);
+
+	switch (family) {
+	case AF_INET:
+		g_return_val_if_fail (plen <= 32, NULL);
+
+		if (!src) {
+			/* allow "self-assignment", by specifying %NULL as source. */
+			src = dst;
+		}
+
+		*((guint32 *) dst) = nm_utils_ip4_address_clear_host_address (*((guint32 *) src), plen);
+		break;
+	case AF_INET6:
+		nm_utils_ip6_address_clear_host_address (dst, src, plen);
+		break;
+	default:
+		g_return_val_if_reached (NULL);
+	}
+	return dst;
+}
+
+/* nm_utils_ip4_address_clear_host_address:
+ * @addr: source ip6 address
+ * @plen: prefix length of network
+ *
+ * returns: the input address, with the host address set to 0.
+ */
+in_addr_t
+nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen)
+{
+	return addr & _nm_utils_ip4_prefix_to_netmask (plen);
+}
+
+/* nm_utils_ip6_address_clear_host_address:
+ * @dst: destination output buffer, will contain the network part of the @src address
+ * @src: source ip6 address
+ * @plen: prefix length of network
+ *
+ * Note: this function is self assignment safe, to update @src inplace, set both
+ * @dst and @src to the same destination or set @src NULL.
+ */
+const struct in6_addr *
+nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen)
+{
+	g_return_val_if_fail (plen <= 128, NULL);
+	g_return_val_if_fail (dst, NULL);
+
+	if (!src)
+		src = dst;
+
+	if (plen < 128) {
+		guint nbytes = plen / 8;
+		guint nbits = plen % 8;
+
+		if (nbytes && dst != src)
+			memcpy (dst, src, nbytes);
+		if (nbits) {
+			dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+			nbytes++;
+		}
+		if (nbytes <= 15)
+			memset (&dst->s6_addr[nbytes], 0, 16 - nbytes);
+	} else if (src != dst)
+		*dst = *src;
+
+	return dst;
+}
+
+int
+nm_utils_ip6_address_same_prefix_cmp (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen)
+{
+	int nbytes;
+	guint8 va, vb, m;
+
+	if (plen >= 128)
+		NM_CMP_DIRECT_MEMCMP (addr_a, addr_b, sizeof (struct in6_addr));
+	else {
+		nbytes = plen / 8;
+		if (nbytes)
+			NM_CMP_DIRECT_MEMCMP (addr_a, addr_b, nbytes);
+
+		plen = plen % 8;
+		if (plen != 0) {
+			m = ~((1 << (8 - plen)) - 1);
+			va = ((((const guint8 *) addr_a))[nbytes]) & m;
+			vb = ((((const guint8 *) addr_b))[nbytes]) & m;
+			NM_CMP_DIRECT (va, vb);
+		}
+	}
+	return 0;
 }
 
 /**
@@ -3387,4 +3484,54 @@ nm_utils_parse_debug_string (const char *string,
 	}
 
 	return result;
+}
+
+/*****************************************************************************/
+
+GSource *
+nm_g_idle_source_new (int priority,
+                      GSourceFunc func,
+                      gpointer user_data,
+                      GDestroyNotify destroy_notify)
+{
+	GSource *source;
+
+	source = g_idle_source_new ();
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, func, user_data, destroy_notify);
+	return source;
+}
+
+GSource *
+nm_g_timeout_source_new (guint timeout_ms,
+                         int priority,
+                         GSourceFunc func,
+                         gpointer user_data,
+                         GDestroyNotify destroy_notify)
+{
+	GSource *source;
+
+	source = g_timeout_source_new (timeout_ms);
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, func, user_data, destroy_notify);
+	return source;
+}
+
+GSource *
+nm_g_unix_signal_source_new (int signum,
+                             int priority,
+                             GSourceFunc handler,
+                             gpointer user_data,
+                             GDestroyNotify notify)
+{
+	GSource *source;
+
+	source = g_unix_signal_source_new (signum);
+
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, handler, user_data, notify);
+	return source;
 }

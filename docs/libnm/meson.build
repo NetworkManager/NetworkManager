@@ -39,7 +39,7 @@ scan_args = [
 version_xml = configure_file(
   input: 'version.xml.in',
   output: '@BASENAME@',
-  configuration: version_conf,
+  configuration: data_conf,
 )
 
 gnome.gtkdoc(

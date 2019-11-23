@@ -1,6 +1,3 @@
-version_conf = configuration_data()
-version_conf.set('VERSION', nm_version)
-
 subdir('libnm')
 subdir('api')
 
