@@ -97,6 +97,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 	static NMIP4Config *last_config = NULL;
 	NMIP4Config *existing;
 	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
 
@@ -121,6 +122,9 @@ dhcp4_state_changed (NMDhcpClient *client,
 		                           NM_PLATFORM_GET,
 		                           NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN))
 			_LOGW (LOGD_DHCP4, "failed to apply DHCPv4 config");
+
+		if (!last_config && !nm_dhcp_client_accept (client, &error))
+			_LOGW (LOGD_DHCP4, "failed to accept lease: %s", error->message);
 
 		nm_platform_ip4_dev_route_blacklist_set (NM_PLATFORM_GET,
 		                                         gl.ifindex,
