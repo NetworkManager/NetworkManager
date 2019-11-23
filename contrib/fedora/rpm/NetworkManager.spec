@@ -701,7 +701,7 @@ intltoolize --automake --copy --force
 
 make %{?_smp_mflags}
 
-%endif # end autotools
+%endif
 
 %install
 %if %{with meson}
@@ -759,7 +759,7 @@ make -k %{?_smp_mflags} check
 %else
 make -k %{?_smp_mflags} check || :
 %endif
-%endif # end autotools
+%endif
 
 
 %pre
