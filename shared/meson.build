@@ -137,6 +137,7 @@ sources = files(
   'nm-glib-aux/nm-io-utils.c',
   'nm-glib-aux/nm-json-aux.c',
   'nm-glib-aux/nm-keyfile-aux.c',
+  'nm-glib-aux/nm-logging-base.c',
   'nm-glib-aux/nm-random-utils.c',
   'nm-glib-aux/nm-ref-string.c',
   'nm-glib-aux/nm-secret-utils.c',
