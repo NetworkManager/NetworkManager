@@ -142,7 +142,7 @@ sources = files(
   'nm-glib-aux/nm-ref-string.c',
   'nm-glib-aux/nm-secret-utils.c',
   'nm-glib-aux/nm-shared-utils.c',
-  'nm-glib-aux/nm-time-utils.c'
+  'nm-glib-aux/nm-time-utils.c',
 )
 
 c_flags = [
