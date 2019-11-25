@@ -767,6 +767,17 @@ GQuark nm_utils_error_quark (void);
 void nm_utils_error_set_cancelled (GError **error,
                                    gboolean is_disposing,
                                    const char *instance_name);
+
+static inline GError *
+nm_utils_error_new_cancelled (gboolean is_disposing,
+                              const char *instance_name)
+{
+	GError *error = NULL;
+
+	nm_utils_error_set_cancelled (&error, is_disposing, instance_name);
+	return error;
+}
+
 gboolean nm_utils_error_is_cancelled (GError *error,
                                       gboolean consider_is_disposing);
 
@@ -808,6 +819,11 @@ nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
 		                                   _bstrerr, \
 		                                   sizeof (_bstrerr))); \
 	} G_STMT_END
+
+#define nm_utils_error_new(error_code, ...) \
+	(   (NM_NARG (__VA_ARGS__) == 1) \
+	 ? g_error_new_literal (NM_UTILS_ERROR, (error_code), _NM_UTILS_MACRO_FIRST (__VA_ARGS__)) \
+	 : g_error_new         (NM_UTILS_ERROR, (error_code), __VA_ARGS__))
 
 /*****************************************************************************/
 
