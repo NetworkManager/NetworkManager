@@ -1,4 +1,17 @@
 ===============================================
+NetworkManager-1.20.8
+Overview of changes since NetworkManager-1.20.6
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix handling of system CA certificates in the ifcfg parser.
+* Handle ReachableTime and RetransTimer from IPv6 Router Advertisements.
+* Fixed setting of MTU according to its parent device for some device
+  types.
+* Various fixes for the initramfs configuration genertor.
+
+===============================================
 NetworkManager-1.20.6
 Overview of changes since NetworkManager-1.20.4
 ===============================================
