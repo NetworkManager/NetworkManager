@@ -1636,6 +1636,7 @@ global:
 
 libnm_1_22_0 {
 global:
+	nm_client_get_context_busy_watcher;
 	nm_client_get_dbus_connection;
 	nm_client_get_dbus_name_owner;
 	nm_client_get_metered;

@@ -60,6 +60,65 @@
 
 /*****************************************************************************/
 
+static NM_CACHED_QUARK_FCN ("nm-client-context-busy-watcher", nm_client_context_busy_watcher_quark)
+
+static void
+_context_busy_watcher_attach_integration_source_cb (gpointer data,
+                                                    GObject *where_the_object_was)
+{
+	nm_g_source_destroy_and_unref (data);
+}
+
+static void
+_context_busy_watcher_attach_integration_source (GObject *context_busy_watcher,
+                                                 GSource *source_take)
+{
+	/* The problem is...
+	 *
+	 * NMClient is associated with a GMainContext, just like its underlying GDBusConnection
+	 * also queues signals and callbacks on that main context. During operation, NMClient
+	 * will schedule async operations which will return asynchronously on the GMainContext.
+	 *
+	 * Note that depending on whether NMClient got initialized synchronously or asynchronously,
+	 * it has an internal priv->dbus_context that is different from the outer priv->main_context.
+	 * However, the problem is in both cases.
+	 *
+	 * So, as long as there are pending D-Bus calls, the GMainContext is referenced and kept alive.
+	 * When NMClient gets destroyed, the pending calls get cancelled, but the async callback are still
+	 * scheduled to return.
+	 * That means, the main context stays alive until it gets iterated long enough so that all pending
+	 * operations are completed.
+	 *
+	 * Note that pending operations don't keep NMClient alive, so NMClient can already be gone by
+	 * then, but the user still should iterate the main context long enough to process the (cancelled)
+	 * callbacks... at least, if the user cares about whether the remaining memory and file descriptors
+	 * of the GMainContext can be reclaimed.
+	 *
+	 * In hindsight, maybe pending references should kept NMClient alive. But then NMClient would
+	 * need a special "shutdown()" API that the user must invoke, because unrefing would no longer
+	 * be enough to ensure a shutdown (imagine a situation where NMClient receives a constant flow
+	 * of "CheckPermissions" signals, which keeps retriggering an async request). Anyway, we cannot
+	 * add such a shutdown API now, as it would break client's expectations that they can just unref
+	 * the NMClient to destroy it.
+	 *
+	 * So, we allow NMClient to unref, but the user is advised to keep iterating the main context.
+	 * But for how long? Here comes nm_client_get_context_busy_watcher() into play. The user may
+	 * subscribe a weak pointer to that instance and should keep iterating as long as the object
+	 * exists.
+	 *
+	 * Now, back to synchronous initialization. Here we have the internal priv->dbus_context context.
+	 * We also cannot remove that context right away, instead we need to keep it integrated in the
+	 * caller's priv->main_context as long as we have pending calls: that is, as long as the
+	 * context-busy-watcher is alive.
+	 */
+
+	g_object_weak_ref (context_busy_watcher,
+	                   _context_busy_watcher_attach_integration_source_cb,
+	                   source_take);
+}
+
+/*****************************************************************************/
+
 typedef struct {
 
 	/* It is quite wasteful to require 2 pointers per property (of an instance) only to track whether
@@ -199,7 +258,7 @@ typedef struct {
 	struct udev *udev;
 	GMainContext *main_context;
 	GMainContext *dbus_context;
-	GSource *dbus_context_integration;
+	GObject *context_busy_watcher;
 	GDBusConnection *dbus_connection;
 	InitData *init_data;
 	GHashTable *dbus_objects;
@@ -305,9 +364,7 @@ static void name_owner_changed_cb (GDBusConnection *connection,
                                    GVariant *parameters,
                                    gpointer user_data);
 
-static void name_owner_get_cb (const char *name_owner,
-                               GError *error,
-                               gpointer user_data);
+static void name_owner_get_call (NMClient *self);
 
 static void _set_nm_running (NMClient *self);
 
@@ -395,6 +452,18 @@ _nm_client_new_error_nm_not_cached (void)
 	                            "Object is no longer in the client cache");
 }
 
+static void
+_nm_client_dbus_call_simple_cb (GObject *source, GAsyncResult *result, gpointer data)
+{
+	GAsyncReadyCallback callback;
+	gpointer user_data;
+	gs_unref_object GObject *context_busy_watcher = NULL;
+
+	nm_utils_user_data_unpack (data, &callback, &user_data, &context_busy_watcher);
+
+	callback (source, result, user_data);
+}
+
 void
 _nm_client_dbus_call_simple (NMClient *self,
                              GCancellable *cancellable,
@@ -432,8 +501,8 @@ _nm_client_dbus_call_simple (NMClient *self,
 	                        flags,
 	                        timeout_msec,
 	                        cancellable,
-	                        callback,
-	                        user_data);
+	                        _nm_client_dbus_call_simple_cb,
+	                        nm_utils_user_data_pack (callback, user_data, g_object_ref (priv->context_busy_watcher)));
 }
 
 void
@@ -857,6 +926,45 @@ GMainContext *
 _nm_client_get_context_dbus (NMClient *self)
 {
 	return NM_CLIENT_GET_PRIVATE (self)->dbus_context;
+}
+
+/**
+ * nm_client_get_context_busy_watcher:
+ * @self: the NMClient instance.
+ *
+ * Returns: (transfer none): a GObject that stays alive as long as there are pending
+ *   D-Bus operations.
+ *
+ * NMClient will schedule asynchronous D-Bus requests which will complete on
+ * the GMainContext associated with the instance. When destroying the NMClient
+ * instance, those requests are cancelled right away, however their pending requests are
+ * still outstanding and queued in the GMainContext. These outstanding callbacks
+ * keep the GMainContext alive. In order to fully release all resources,
+ * the user must keep iterating the main context until all these callbacks
+ * are handled. Of course, at this point no more actual callbacks will be invoked
+ * for the user, those are all internally cancelled.
+ *
+ * This just leaves one problem: how long does the user need to keep the
+ * GMainContext running to ensure everything is cleaned up? The answer is
+ * this GObject. Subscribe a weak reference to the returned object and keep
+ * iterating the main context until the object got unreferenced.
+ *
+ * Note that after the NMClient instance gets destroyed, the remaining callbacks
+ * will be invoked right away. That means, the user won't have to iterate the
+ * main context much longer.
+ *
+ * Since: 1.22
+ */
+GObject *
+nm_client_get_context_busy_watcher (NMClient *self)
+{
+	GObject *w;
+
+	g_return_val_if_fail (NM_IS_CLIENT (self), NULL);
+
+	w = NM_CLIENT_GET_PRIVATE (self)->context_busy_watcher;
+	return    g_object_get_qdata (w, nm_client_context_busy_watcher_quark ())
+	       ?: w;
 }
 
 struct udev *
@@ -2910,35 +3018,49 @@ _dbus_properties_changed_cb (GDBusConnection *connection,
 }
 
 static void
-_dbus_get_managed_objects_cb (GVariant *result,
-                              GError *error,
+_dbus_get_managed_objects_cb (GObject *source,
+                              GAsyncResult *result,
                               gpointer user_data)
 {
 	NMClient *self;
 	NMClientPrivate *priv;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_unref_variant GVariant *managed_objects = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_object GObject *context_busy_watcher = NULL;
 
-	if (   !result
+	nm_utils_user_data_unpack (user_data, &self, &context_busy_watcher);
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+
+	nm_assert ((!!ret) != (!!error));
+
+	if (   !ret
 	    && nm_utils_error_is_cancelled (error, FALSE))
 		return;
 
-	self = user_data;
 	priv = NM_CLIENT_GET_PRIVATE (self);
+
+	if (ret) {
+		nm_assert (g_variant_is_of_type (ret, G_VARIANT_TYPE ("(a{oa{sa{sv}}})")));
+		managed_objects = g_variant_get_child_value (ret, 0);
+	}
 
 	g_clear_object (&priv->get_managed_objects_cancellable);
 
-	if (!result) {
+	if (!managed_objects) {
 		NML_NMCLIENT_LOG_D (self, "GetManagedObjects() call failed: %s", error->message);
 		/* hm, now that's odd. Maybe NetworkManager just quit and we are about to get
 		 * a name-owner changed signal soon. Treat this as if we got no managed objects at all. */
 	} else
 		NML_NMCLIENT_LOG_D (self, "GetManagedObjects() completed");
 
-	if (result) {
+	if (managed_objects) {
 		GVariantIter iter;
 		const char *object_path;
 		GVariant *ifaces_tmp;
 
-		g_variant_iter_init (&iter, result);
+		g_variant_iter_init (&iter, managed_objects);
 		while (g_variant_iter_next (&iter, "{&o@a{sa{sv}}}", &object_path, &ifaces_tmp)) {
 			gs_unref_variant GVariant *ifaces = ifaces_tmp;
 
@@ -6352,14 +6474,18 @@ _init_fetch_all (NMClient *self)
 	                                                                       self,
 	                                                                       NULL);
 
-	nm_dbus_connection_call_get_managed_objects (priv->dbus_connection,
-	                                             priv->name_owner,
-	                                             "/org/freedesktop",
-	                                             G_DBUS_CALL_FLAGS_NO_AUTO_START,
-	                                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
-	                                             priv->get_managed_objects_cancellable,
-	                                             _dbus_get_managed_objects_cb,
-	                                             self);
+	g_dbus_connection_call (priv->dbus_connection,
+	                        priv->name_owner,
+	                        "/org/freedesktop",
+	                        DBUS_INTERFACE_OBJECT_MANAGER,
+	                        "GetManagedObjects",
+	                        NULL,
+	                        G_VARIANT_TYPE ("(a{oa{sa{sv}}})"),
+	                        G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                        priv->get_managed_objects_cancellable,
+	                        _dbus_get_managed_objects_cb,
+	                        nm_utils_user_data_pack (self, g_object_ref (priv->context_busy_watcher)));
 
 	_dbus_check_permissions_start (self);
 }
@@ -6446,6 +6572,7 @@ name_owner_changed (NMClient *self,
 
 	if (   !name_owner
 	    && priv->main_context != priv->dbus_context) {
+		gs_unref_object GObject *old_context_busy_watcher = NULL;
 
 		NML_NMCLIENT_LOG_D (self, "resync main context as we have no name owner");
 
@@ -6457,11 +6584,13 @@ name_owner_changed (NMClient *self,
 		 * at this point, we anyway are going to do a full resync. Swap the main
 		 * contexts again. */
 
+		old_context_busy_watcher = g_steal_pointer (&priv->context_busy_watcher);
+		priv->context_busy_watcher = g_object_ref (g_object_get_qdata (old_context_busy_watcher,
+		                                                               nm_client_context_busy_watcher_quark ()));
+
 		g_main_context_ref (priv->main_context);
 		g_main_context_unref (priv->dbus_context);
 		priv->dbus_context = priv->main_context;
-
-		nm_clear_pointer (&priv->dbus_context_integration, nm_g_source_destroy_and_unref);
 
 		dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
 
@@ -6474,13 +6603,7 @@ name_owner_changed (NMClient *self,
 		                                                                                      name_owner_changed_cb,
 		                                                                                      self,
 		                                                                                      NULL);
-		priv->name_owner_get_cancellable = g_cancellable_new ();
-		nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
-		                                        NM_DBUS_SERVICE,
-		                                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
-		                                        priv->name_owner_get_cancellable,
-		                                        name_owner_get_cb,
-		                                        self);
+		name_owner_get_call (self);
 	} else
 		dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
 
@@ -6546,23 +6669,55 @@ name_owner_changed_cb (GDBusConnection *connection,
 }
 
 static void
-name_owner_get_cb (const char *name_owner,
-                   GError *error,
+name_owner_get_cb (GObject *source,
+                   GAsyncResult *result,
                    gpointer user_data)
 {
 	NMClient *self;
 	NMClientPrivate *priv;
+	gs_unref_object GObject *context_busy_watcher = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
+	const char *name_owner = NULL;
 
-	if (   !name_owner
+	nm_utils_user_data_unpack (user_data, &self, &context_busy_watcher);
+
+	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+
+	if (   !ret
 	    && nm_utils_error_is_cancelled (error, FALSE))
 		return;
 
-	self = user_data;
 	priv = NM_CLIENT_GET_PRIVATE (self);
 
 	g_clear_object (&priv->name_owner_get_cancellable);
 
+	if (ret)
+		g_variant_get (ret, "(&s)", &name_owner);
+
 	name_owner_changed (self, name_owner);
+}
+
+static void
+name_owner_get_call (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	nm_assert (!priv->name_owner_get_cancellable);
+	priv->name_owner_get_cancellable = g_cancellable_new ();
+
+	g_dbus_connection_call (priv->dbus_connection,
+	                        DBUS_SERVICE_DBUS,
+	                        DBUS_PATH_DBUS,
+	                        DBUS_INTERFACE_DBUS,
+	                        "GetNameOwner",
+	                        g_variant_new ("(s)", NM_DBUS_SERVICE),
+	                        G_VARIANT_TYPE ("(s)"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+	                        priv->name_owner_get_cancellable,
+	                        name_owner_get_cb,
+	                        nm_utils_user_data_pack (self, g_object_ref (priv->context_busy_watcher)));
 }
 
 /*****************************************************************************/
@@ -6681,13 +6836,7 @@ _init_start_with_bus (NMClient *self)
 	                                                                                      name_owner_changed_cb,
 	                                                                                      self,
 	                                                                                      NULL);
-	priv->name_owner_get_cancellable = g_cancellable_new ();
-	nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
-	                                        NM_DBUS_SERVICE,
-	                                        NM_DBUS_DEFAULT_TIMEOUT_MSEC,
-	                                        priv->name_owner_get_cancellable,
-	                                        name_owner_get_cb,
-	                                        self);
+	name_owner_get_call (self);
 }
 
 static void
@@ -6909,6 +7058,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	GMainContext *dbus_context;
 	GError *local_error = NULL;
 	GMainLoop *main_loop;
+	GObject *parent_context_busy_watcher;
 
 	g_return_val_if_fail (NM_IS_CLIENT (initable), FALSE);
 
@@ -6943,6 +7093,19 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	dbus_context = g_main_context_new ();
 	priv->dbus_context = g_main_context_ref (dbus_context);
 
+	/* We have an inner context. Note that if we loose the name owner, we have a chance
+	 * to resync and drop the inner context. That means, requests made against the inner
+	 * context have a different lifetime. Hence, we create a separate tracking
+	 * object. This "wraps" the outer context-busy-watcher and references it, so
+	 * that the work together. Grep for nm_client_context_busy_watcher_quark() to
+	 * see how this works. */
+	parent_context_busy_watcher = g_steal_pointer (&priv->context_busy_watcher);
+	priv->context_busy_watcher = g_object_new (G_TYPE_OBJECT, NULL);
+	g_object_set_qdata_full (priv->context_busy_watcher,
+	                         nm_client_context_busy_watcher_quark (),
+	                         parent_context_busy_watcher,
+	                         g_object_unref);
+
 	g_main_context_push_thread_default (dbus_context);
 
 	main_loop = g_main_loop_new (dbus_context, FALSE);
@@ -6958,8 +7121,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	g_main_context_pop_thread_default (dbus_context);
 
 	if (priv->main_context != priv->dbus_context) {
-		priv->dbus_context_integration = nm_utils_g_main_context_create_integrate_source (priv->dbus_context);
-		g_source_attach (priv->dbus_context_integration, priv->main_context);
+		GSource *source;
+
+		source = nm_utils_g_main_context_create_integrate_source (priv->dbus_context);
+		g_source_attach (source, priv->main_context);
+		_context_busy_watcher_attach_integration_source (priv->context_busy_watcher,
+		                                                 g_steal_pointer (&source));
 	}
 
 	g_main_context_unref (dbus_context);
@@ -7019,6 +7186,8 @@ static void
 nm_client_init (NMClient *self)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	priv->context_busy_watcher = g_object_new (G_TYPE_OBJECT, NULL);
 
 	c_list_init (&self->obj_base.queue_notify_lst);
 	c_list_init (&priv->queue_notify_lst_head);
@@ -7164,13 +7333,14 @@ dispose (GObject *object)
 
 	nm_clear_pointer (&priv->udev, udev_unref);
 
-	nm_clear_pointer (&priv->dbus_context_integration, nm_g_source_destroy_and_unref);
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 
 	nm_clear_pointer (&priv->permissions, g_hash_table_unref);
 
 	g_clear_object (&priv->dbus_connection);
+
+	g_clear_object (&priv->context_busy_watcher);
 
 	nm_clear_g_free (&priv->name_owner);
 }
