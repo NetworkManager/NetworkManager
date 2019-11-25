@@ -24,10 +24,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMDevice *parent;
+	NMLDBusPropertyO parent;
 	char *mode;
-	gboolean no_promisc;
-	gboolean tap;
+	bool no_promisc;
+	bool tap;
 } NMDeviceMacvlanPrivate;
 
 struct _NMDeviceMacvlan {
@@ -58,7 +58,7 @@ nm_device_macvlan_get_parent (NMDeviceMacvlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACVLAN (device), FALSE);
 
-	return NM_DEVICE_MACVLAN_GET_PRIVATE (device)->parent;
+	return nml_dbus_property_o_get_obj (&NM_DEVICE_MACVLAN_GET_PRIVATE (device)->parent);
 }
 
 /**
@@ -181,31 +181,11 @@ nm_device_macvlan_init (NMDeviceMacvlan *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_MACVLAN_PARENT,      &priv->parent, NULL, NM_TYPE_DEVICE },
-		{ NM_DEVICE_MACVLAN_MODE,        &priv->mode },
-		{ NM_DEVICE_MACVLAN_NO_PROMISC,  &priv->no_promisc },
-		{ NM_DEVICE_MACVLAN_TAP,         &priv->tap },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_macvlan_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_MACVLAN,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
 
 	g_free (priv->mode);
-	g_clear_object (&priv->parent);
 
 	G_OBJECT_CLASS (nm_device_macvlan_parent_class)->finalize (object);
 }
@@ -240,17 +220,31 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_macvlan = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_MACVLAN,
+	nm_device_macvlan_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S      ("Mode",      PROP_MODE,       NMDeviceMacvlan, _priv.mode                          ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("NoPromisc", PROP_NO_PROMISC, NMDeviceMacvlan, _priv.no_promisc                    ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDeviceMacvlan, _priv.parent,    nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Tap",       PROP_TAP,        NMDeviceMacvlan, _priv.tap                           ),
+	),
+);
+
 static void
-nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
+nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (gre_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (gre_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (gre_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceMacvlan);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDeviceMacvlanPrivate, parent);
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -323,5 +317,5 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_macvlan);
 }

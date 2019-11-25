@@ -23,10 +23,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	NMLDBusPropertyO parent;
 	char *hw_address;
-	gboolean carrier;
-	NMDevice *parent;
-	guint vlan_id;
+	guint32 vlan_id;
+	bool carrier;
 } NMDeviceVlanPrivate;
 
 struct _NMDeviceVlan {
@@ -88,7 +88,7 @@ nm_device_vlan_get_parent (NMDeviceVlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), FALSE);
 
-	return NM_DEVICE_VLAN_GET_PRIVATE (device)->parent;
+	return nml_dbus_property_o_get_obj (&NM_DEVICE_VLAN_GET_PRIVATE (device)->parent);
 }
 
 /**
@@ -167,31 +167,11 @@ nm_device_vlan_init (NMDeviceVlan *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_VLAN_HW_ADDRESS, &priv->hw_address },
-		{ NM_DEVICE_VLAN_CARRIER,    &priv->carrier },
-		{ NM_DEVICE_VLAN_PARENT,     &priv->parent, NULL, NM_TYPE_DEVICE },
-		{ NM_DEVICE_VLAN_VLAN_ID,    &priv->vlan_id },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_vlan_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_VLAN,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	g_free (priv->hw_address);
-	g_clear_object (&priv->parent);
 
 	G_OBJECT_CLASS (nm_device_vlan_parent_class)->finalize (object);
 }
@@ -223,17 +203,31 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vlan = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_VLAN,
+	nm_device_vlan_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_B      ("Carrier",   PROP_CARRIER,    NMDeviceVlan, _priv.carrier                       ),
+		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress", PROP_HW_ADDRESS, NMDeviceVlan, _priv.hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDeviceVlan, _priv.parent,    nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("VlanId",    PROP_VLAN_ID,    NMDeviceVlan, _priv.vlan_id                       ),
+	),
+);
+
 static void
-nm_device_vlan_class_init (NMDeviceVlanClass *vlan_class)
+nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (vlan_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (vlan_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (vlan_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceVlan);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDeviceVlanPrivate, parent);
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -283,5 +277,5 @@ nm_device_vlan_class_init (NMDeviceVlanClass *vlan_class)
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_vlan);
 }

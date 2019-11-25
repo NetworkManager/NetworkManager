@@ -278,6 +278,14 @@ gboolean nm_pstr_equal (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 
+/* nm_pint_*() are for hashing keys that are pointers to int values,
+ * that is, "const int *" types. */
+
+guint nm_pint_hash (gconstpointer p);
+gboolean nm_pint_equals (gconstpointer a, gconstpointer b);
+
+/*****************************************************************************/
+
 /* this hashes/compares the pointer value that we point to. Basically,
  * (*((const void *const*) a) == *((const void *const*) b)). */
 

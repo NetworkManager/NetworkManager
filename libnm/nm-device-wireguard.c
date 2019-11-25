@@ -19,8 +19,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	GBytes *public_key;
-	guint listen_port;
-	guint fwmark;
+	guint32 fwmark;
+	guint16 listen_port;
 } NMDeviceWireGuardPrivate;
 
 struct _NMDeviceWireGuard {
@@ -126,24 +126,6 @@ nm_device_wireguard_init (NMDeviceWireGuard *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_WIREGUARD_PUBLIC_KEY,  &priv->public_key },
-		{ NM_DEVICE_WIREGUARD_LISTEN_PORT, &priv->listen_port },
-		{ NM_DEVICE_WIREGUARD_FWMARK,      &priv->fwmark },
-		{ NULL }
-	};
-
-	NM_OBJECT_CLASS (nm_device_wireguard_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_WIREGUARD,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (object);
@@ -153,16 +135,24 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_device_wireguard_parent_class)->finalize (object);
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wireguard = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_WIREGUARD,
+	nm_device_wireguard_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_U  ("FwMark",     PROP_FWMARK,      NMDeviceWireGuard, _priv.fwmark      ),
+		NML_DBUS_META_PROPERTY_INIT_Q  ("ListenPort", PROP_LISTEN_PORT, NMDeviceWireGuard, _priv.listen_port ),
+		NML_DBUS_META_PROPERTY_INIT_AY ("PublicKey",  PROP_PUBLIC_KEY,  NMDeviceWireGuard, _priv.public_key  ),
+	),
+);
+
 static void
 nm_device_wireguard_class_init (NMDeviceWireGuardClass *wireguard_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wireguard_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wireguard_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	/**
 	 * NMDeviceWireGuard:public-key:
@@ -203,5 +193,5 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *wireguard_class)
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_wireguard);
 }

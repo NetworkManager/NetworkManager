@@ -3535,3 +3535,368 @@ nm_g_unix_signal_source_new (int signum,
 	g_source_set_callback (source, handler, user_data, notify);
 	return source;
 }
+
+/*****************************************************************************/
+
+#define _CTX_LOG(fmt, ...) \
+	G_STMT_START { \
+		if (FALSE) { \
+			gint64 _ts = g_get_monotonic_time () / 100; \
+			\
+			g_printerr (">>>> [%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] [src:%p]: " fmt "\n", \
+			            _ts / 10000, \
+			            _ts % 10000, \
+			            (ctx_src), \
+			            ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+typedef struct {
+	int fd;
+	guint events;
+	guint registered_events;
+	union {
+		int one;
+		int *many;
+	} idx;
+	gpointer tag;
+	bool stale:1;
+	bool has_many_idx:1;
+} PollData;
+
+typedef struct {
+	GSource source;
+	GMainContext *context;
+	GHashTable *fds;
+	GPollFD *fds_arr;
+	int fds_len;
+	int max_priority;
+	bool acquired:1;
+} CtxIntegSource;
+
+static void
+_poll_data_free (gpointer user_data)
+{
+	PollData *poll_data = user_data;
+
+	if (poll_data->has_many_idx)
+		g_free (poll_data->idx.many);
+	nm_g_slice_free (poll_data);
+}
+
+static void
+_ctx_integ_source_reacquire (CtxIntegSource *ctx_src)
+{
+	if (G_LIKELY (   ctx_src->acquired
+	              && g_main_context_is_owner (ctx_src->context)))
+		return;
+
+	/* the parent context now iterates on a different thread.
+	 * We need to release and reacquire the inner context. */
+
+	if (ctx_src->acquired)
+		g_main_context_release (ctx_src->context);
+
+	if (G_UNLIKELY (!g_main_context_acquire (ctx_src->context))) {
+		/* Nobody is supposed to reacquire the context while we use it. This is a bug
+		 * of the user. */
+		ctx_src->acquired = FALSE;
+		g_return_if_reached ();
+	}
+	ctx_src->acquired = TRUE;
+}
+
+static gboolean
+_ctx_integ_source_prepare (GSource *source,
+                           int *out_timeout)
+{
+	CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
+	int max_priority;
+	int timeout = -1;
+	gboolean any_ready;
+	int fds_allocated;
+	int fds_len_old;
+	gs_free GPollFD *fds_arr_old = NULL;
+	GHashTableIter h_iter;
+	PollData *poll_data;
+	gboolean fds_changed;
+	int i;
+
+	_CTX_LOG ("prepare...");
+
+	_ctx_integ_source_reacquire (ctx_src);
+
+	any_ready = g_main_context_prepare (ctx_src->context, &max_priority);
+
+	fds_arr_old = g_steal_pointer (&ctx_src->fds_arr);
+	fds_len_old = ctx_src->fds_len;
+
+	fds_allocated = NM_MAX (1, fds_len_old); /* there is at least the wakeup's FD */
+	ctx_src->fds_arr = g_new (GPollFD, fds_allocated);
+
+	while ((ctx_src->fds_len = g_main_context_query (ctx_src->context,
+	                                                 max_priority,
+	                                                 &timeout,
+	                                                 ctx_src->fds_arr,
+	                                                 fds_allocated)) > fds_allocated) {
+		fds_allocated = ctx_src->fds_len;
+		g_free (ctx_src->fds_arr);
+		ctx_src->fds_arr = g_new (GPollFD, fds_allocated);
+	}
+
+	fds_changed = FALSE;
+	if (fds_len_old != ctx_src->fds_len)
+		fds_changed = TRUE;
+	else {
+		for (i = 0; i < ctx_src->fds_len; i++) {
+			if (   fds_arr_old[i].fd != ctx_src->fds_arr[i].fd
+			    || fds_arr_old[i].events != ctx_src->fds_arr[i].events) {
+				fds_changed = TRUE;
+				break;
+			}
+		}
+	}
+
+	if (G_UNLIKELY (fds_changed)) {
+
+		g_hash_table_iter_init (&h_iter, ctx_src->fds);
+		while (g_hash_table_iter_next (&h_iter, (gpointer *) &poll_data, NULL))
+			poll_data->stale = TRUE;
+
+		for (i = 0; i < ctx_src->fds_len; i++) {
+			const GPollFD *fd = &ctx_src->fds_arr[i];
+
+			poll_data = g_hash_table_lookup (ctx_src->fds, &fd->fd);
+
+			if (G_UNLIKELY (!poll_data)) {
+				poll_data = g_slice_new (PollData);
+				*poll_data = (PollData) {
+					.fd                = fd->fd,
+					.idx.one           = i,
+					.has_many_idx      = FALSE,
+					.events            = fd->events,
+					.registered_events = 0,
+					.tag               = NULL,
+					.stale             = FALSE,
+				};
+				g_hash_table_add (ctx_src->fds, poll_data);
+				nm_assert (poll_data == g_hash_table_lookup (ctx_src->fds, &fd->fd));
+				continue;
+			}
+
+			if (G_LIKELY (poll_data->stale)) {
+				if (poll_data->has_many_idx) {
+					g_free (poll_data->idx.many);
+					poll_data->has_many_idx = FALSE;
+				}
+				poll_data->events = fd->events;
+				poll_data->idx.one = i;
+				poll_data->stale = FALSE;
+				continue;
+			}
+
+			/* How odd. We have duplicate FDs. In fact, currently g_main_context_query() always
+			 * coalesces the FDs and this cannot happen. However, that is not documented behavior,
+			 * so we should not rely on that. So we need to keep a list of indexes... */
+			poll_data->events |= fd->events;
+			if (!poll_data->has_many_idx) {
+				int idx0;
+
+				idx0 = poll_data->idx.one;
+				poll_data->has_many_idx = TRUE;
+				poll_data->idx.many = g_new (int, 4);
+				poll_data->idx.many[0] = 2; /* number allocated */
+				poll_data->idx.many[1] = 2; /* number used */
+				poll_data->idx.many[2] = idx0;
+				poll_data->idx.many[3] = i;
+			} else {
+				if (poll_data->idx.many[0] == poll_data->idx.many[1]) {
+					poll_data->idx.many[0] *= 2;
+					poll_data->idx.many = g_realloc (poll_data->idx.many, sizeof (int) * (2 + poll_data->idx.many[0]));
+				}
+				poll_data->idx.many[2 + poll_data->idx.many[1]] = i;
+				poll_data->idx.many[1]++;
+			}
+
+		}
+
+		g_hash_table_iter_init (&h_iter, ctx_src->fds);
+		while (g_hash_table_iter_next (&h_iter, (gpointer *) &poll_data, NULL)) {
+			if (poll_data->stale) {
+				nm_assert (poll_data->tag);
+				nm_assert (poll_data->events == poll_data->registered_events);
+				_CTX_LOG ("prepare: remove poll fd=%d, events=0x%x", poll_data->fd, poll_data->events);
+				g_source_remove_unix_fd (&ctx_src->source, poll_data->tag);
+				g_hash_table_iter_remove (&h_iter);
+				continue;
+			}
+			if (!poll_data->tag) {
+				_CTX_LOG ("prepare: add poll fd=%d, events=0x%x", poll_data->fd, poll_data->events);
+				poll_data->registered_events = poll_data->events;
+				poll_data->tag = g_source_add_unix_fd (&ctx_src->source, poll_data->fd, poll_data->registered_events);
+				continue;
+			}
+			if (poll_data->registered_events != poll_data->events) {
+				_CTX_LOG ("prepare: update poll fd=%d, events=0x%x", poll_data->fd, poll_data->events);
+				poll_data->registered_events = poll_data->events;
+				g_source_modify_unix_fd (&ctx_src->source, poll_data->tag, poll_data->registered_events);
+			}
+		}
+	}
+
+	NM_SET_OUT (out_timeout, timeout);
+	ctx_src->max_priority = max_priority;
+
+	_CTX_LOG ("prepare: done, any-ready=%d, timeout=%d, max-priority=%d", any_ready, timeout, max_priority);
+
+	/* we always need to poll, because we have some file descriptors. */
+	return FALSE;
+}
+
+static gboolean
+_ctx_integ_source_check (GSource *source)
+{
+	CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
+	GHashTableIter h_iter;
+	gboolean some_ready;
+	PollData *poll_data;
+
+	nm_assert (ctx_src->context);
+
+	_CTX_LOG ("check");
+
+	_ctx_integ_source_reacquire (ctx_src);
+
+	g_hash_table_iter_init (&h_iter, ctx_src->fds);
+	while (g_hash_table_iter_next (&h_iter, (gpointer *) &poll_data, NULL)) {
+		guint revents;
+
+		revents = g_source_query_unix_fd (&ctx_src->source, poll_data->tag);
+		if (G_UNLIKELY (poll_data->has_many_idx)) {
+			int num = poll_data->idx.many[1];
+			int *p_idx = &poll_data->idx.many[2];
+
+			for (; num > 0; num--, p_idx++)
+				ctx_src->fds_arr[*p_idx].revents = revents;
+		} else
+			ctx_src->fds_arr[poll_data->idx.one].revents = revents;
+	}
+
+	some_ready = g_main_context_check (ctx_src->context,
+	                                   ctx_src->max_priority,
+	                                   ctx_src->fds_arr,
+	                                   ctx_src->fds_len);
+
+	_CTX_LOG ("check (some-ready=%d)...", some_ready);
+
+	return some_ready;
+}
+
+static gboolean
+_ctx_integ_source_dispatch (GSource *source,
+                            GSourceFunc callback,
+                            gpointer user_data)
+{
+	CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
+
+	nm_assert (ctx_src->context);
+
+	_ctx_integ_source_reacquire (ctx_src);
+
+	_CTX_LOG ("dispatch");
+
+	g_main_context_dispatch (ctx_src->context);
+
+	return G_SOURCE_CONTINUE;
+}
+
+static void
+_ctx_integ_source_finalize (GSource *source)
+{
+	CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
+	GHashTableIter h_iter;
+	PollData *poll_data;
+
+	g_return_if_fail (ctx_src->context);
+
+	_CTX_LOG ("finalize...");
+
+	g_hash_table_iter_init (&h_iter, ctx_src->fds);
+	while (g_hash_table_iter_next (&h_iter, (gpointer *) &poll_data, NULL)) {
+		nm_assert (poll_data->tag);
+		_CTX_LOG ("prepare: remove poll fd=%d, events=0x%x", poll_data->fd, poll_data->events);
+		g_source_remove_unix_fd (&ctx_src->source, poll_data->tag);
+		g_hash_table_iter_remove (&h_iter);
+	}
+
+	nm_clear_pointer (&ctx_src->fds, g_hash_table_unref);
+	nm_clear_g_free (&ctx_src->fds_arr);
+	ctx_src->fds_len = 0;
+
+	if (ctx_src->acquired) {
+		ctx_src->acquired = FALSE;
+		g_main_context_release (ctx_src->context);
+	}
+
+	nm_clear_pointer (&ctx_src->context, g_main_context_unref);
+}
+
+static GSourceFuncs ctx_integ_source_funcs = {
+	.prepare  = _ctx_integ_source_prepare,
+	.check    = _ctx_integ_source_check,
+	.dispatch = _ctx_integ_source_dispatch,
+	.finalize = _ctx_integ_source_finalize,
+};
+
+/**
+ * nm_utils_g_main_context_create_integrate_source:
+ * @inner_context: the inner context that will be integrated to an
+ *   outer #GMainContext.
+ *
+ * By integrating the inner context with an outer context, when iterating the outer
+ * context sources on the inner context will be dispatched. Note that while the
+ * created source exists, the @inner_context will be acquired. The user gets restricted
+ * what to do with the inner context. In particular while the inner context is integrated,
+ * the user should not acquire the inner context again or explicitly iterate it. What
+ * the user of course still can (and wants to) do is attaching new sources to the inner
+ * context.
+ *
+ * Note that GSource has a priority. While each context dispatches events based on
+ * their source's priorities, the outer context dispatches to the inner context
+ * only with one priority (the priority of the created source). That is, the sources
+ * from the two contexts are kept separate and are not sorted by their priorities.
+ *
+ * Returns: a newly created GSource that should be attached to the
+ *   outer context.
+ */
+GSource *
+nm_utils_g_main_context_create_integrate_source (GMainContext *inner_context)
+{
+	CtxIntegSource *ctx_src;
+
+	g_return_val_if_fail (inner_context, NULL);
+
+	if (!g_main_context_acquire (inner_context)) {
+		/* We require to acquire the context while it's integrated. We need to keep it acquired
+		 * for the entire duration.
+		 *
+		 * This is also necessary because g_source_attach() only wakes up the context, if
+		 * the context is currently acquired. */
+		g_return_val_if_reached (NULL);
+	}
+
+	ctx_src = (CtxIntegSource *) g_source_new (&ctx_integ_source_funcs, sizeof (CtxIntegSource));
+
+	g_source_set_name (&ctx_src->source, "ContextIntegrateSource");
+
+	ctx_src->context = g_main_context_ref (inner_context);
+	ctx_src->fds = g_hash_table_new_full (nm_pint_hash, nm_pint_equals, _poll_data_free, NULL);
+	ctx_src->fds_len = 0;
+	ctx_src->fds_arr = NULL;
+	ctx_src->acquired = TRUE;
+	ctx_src->max_priority = G_MAXINT;
+
+	_CTX_LOG ("create new integ-source for %p", inner_context);
+
+	return &ctx_src->source;
+}

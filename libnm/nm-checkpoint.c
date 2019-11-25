@@ -6,6 +6,7 @@
 #include "nm-default.h"
 
 #include "nm-checkpoint.h"
+
 #include "nm-core-internal.h"
 #include "nm-dbus-interface.h"
 #include "nm-device.h"
@@ -20,7 +21,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	GPtrArray *devices;
+	NMLDBusPropertyAO devices;
 	gint64 created;
 	guint32 rollback_timeout;
 } NMCheckpointPrivate;
@@ -55,7 +56,7 @@ nm_checkpoint_get_devices (NMCheckpoint *checkpoint)
 {
 	g_return_val_if_fail (NM_IS_CHECKPOINT (checkpoint), NULL);
 
-	return NM_CHECKPOINT_GET_PRIVATE (checkpoint)->devices;
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_CHECKPOINT_GET_PRIVATE (checkpoint)->devices);
 }
 
 /**
@@ -105,16 +106,6 @@ nm_checkpoint_init (NMCheckpoint *checkpoint)
 }
 
 static void
-finalize (GObject *object)
-{
-	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (NM_CHECKPOINT (object));
-
-	g_ptr_array_unref (priv->devices);
-
-	G_OBJECT_CLASS (nm_checkpoint_parent_class)->finalize (object);
-}
-
-static void
 get_property (GObject *object,
               guint prop_id,
               GValue *value,
@@ -125,7 +116,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_DEVICES:
-		g_value_take_boxed (value, _nm_utils_copy_object_array (priv->devices));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_checkpoint_get_devices (checkpoint)));
 		break;
 	case PROP_CREATED:
 		g_value_set_int64 (value, priv->created);
@@ -139,34 +130,28 @@ get_property (GObject *object,
 	}
 }
 
-static void
-init_dbus (NMObject *object)
-{
-	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (NM_CHECKPOINT (object));
-	const NMPropertiesInfo property_info[] = {
-		{ NM_CHECKPOINT_DEVICES,            &priv->devices, NULL, NM_TYPE_DEVICE },
-		{ NM_CHECKPOINT_CREATED,            &priv->created },
-		{ NM_CHECKPOINT_ROLLBACK_TIMEOUT,   &priv->rollback_timeout },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_checkpoint_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_CHECKPOINT,
-	                                property_info);
-}
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_checkpoint = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_CHECKPOINT,
+	nm_checkpoint_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_X       ("Created",         PROP_CREATED,          NMCheckpoint, _priv.created                                                      ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Devices",         PROP_DEVICES,          NMCheckpoint, _priv.devices,         nm_device_get_type, .is_always_ready = TRUE ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("RollbackTimeout", PROP_ROLLBACK_TIMEOUT, NMCheckpoint, _priv.rollback_timeout                                             ),
+	),
+);
 
 static void
-nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
+nm_checkpoint_class_init (NMCheckpointClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (checkpoint_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (checkpoint_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMCheckpoint);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1 (nm_object_class, NMCheckpointPrivate, devices);
 
 	/**
 	 * NMCheckpoint:devices: (type GPtrArray(NMDevice))
@@ -207,5 +192,5 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_checkpoint);
 }

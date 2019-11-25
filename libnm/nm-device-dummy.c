@@ -99,29 +99,13 @@ nm_device_dummy_init (NMDeviceDummy *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceDummyPrivate *priv = NM_DEVICE_DUMMY_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_DUMMY_HW_ADDRESS, &priv->hw_address },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_dummy_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_DUMMY,
-	                                property_info);
-}
-
-static void
-dispose (GObject *object)
+finalize (GObject *object)
 {
 	NMDeviceDummyPrivate *priv = NM_DEVICE_DUMMY_GET_PRIVATE (object);
 
-	g_clear_pointer (&priv->hw_address, g_free);
+	g_free (priv->hw_address);
 
-	G_OBJECT_CLASS (nm_device_dummy_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_device_dummy_parent_class)->finalize (object);
 }
 
 static void
@@ -142,17 +126,23 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_dummy = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_DUMMY,
+	nm_device_dummy_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress", PROP_HW_ADDRESS, NMDeviceDummy, _priv.hw_address ),
+	),
+);
+
 static void
 nm_device_dummy_class_init (NMDeviceDummyClass *dummy_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (dummy_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (dummy_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (dummy_class);
 
 	object_class->get_property = get_property;
-	object_class->dispose      = dispose;
-
-	nm_object_class->init_dbus = init_dbus;
+	object_class->finalize      = finalize;
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_hw_address        = get_hw_address;
@@ -171,5 +161,5 @@ nm_device_dummy_class_init (NMDeviceDummyClass *dummy_class)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_dummy);
 }

@@ -19,7 +19,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMAccessPoint,
 	PROP_FLAGS,
 	PROP_WPA_FLAGS,
 	PROP_RSN_FLAGS,
@@ -34,16 +34,16 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NM80211ApFlags flags;
-	NM80211ApSecurityFlags wpa_flags;
-	NM80211ApSecurityFlags rsn_flags;
 	GBytes *ssid;
-	guint32 frequency;
 	char *bssid;
-	NM80211Mode mode;
+	guint32 flags;
+	guint32 wpa_flags;
+	guint32 rsn_flags;
+	guint32 frequency;
+	guint32 mode;
 	guint32 max_bitrate;
+	gint32 last_seen;
 	guint8 strength;
-	int last_seen;
 } NMAccessPointPrivate;
 
 struct _NMAccessPoint {
@@ -127,9 +127,7 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->ssid || g_bytes_get_size (priv->ssid) == 0)
-		return NULL;
-
+	nm_assert (!priv->ssid || g_bytes_get_size (priv->ssid) > 0);
 	return priv->ssid;
 }
 
@@ -263,6 +261,9 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	const char *setting_band;
 	guint32 ap_freq, setting_chan, ap_chan;
 
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con)
 		return FALSE;
@@ -368,7 +369,12 @@ GPtrArray *
 nm_access_point_filter_connections (NMAccessPoint *ap, const GPtrArray *connections)
 {
 	GPtrArray *filtered;
-	int i;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
+
+	if (!connections)
+		return NULL;
 
 	filtered = g_ptr_array_new_with_free_func (g_object_unref);
 	for (i = 0; i < connections->len; i++) {
@@ -379,6 +385,24 @@ nm_access_point_filter_connections (NMAccessPoint *ap, const GPtrArray *connecti
 	}
 
 	return filtered;
+}
+
+/*****************************************************************************/
+
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_hw_address (NMClient *client,
+                                NMLDBusObject *dbobj,
+                                const NMLDBusMetaIface *meta_iface,
+                                guint dbus_property_idx,
+                                GVariant *value)
+{
+	NMAccessPoint *self = NM_ACCESS_POINT (dbobj->nmobj);
+	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (self);
+
+	g_free (priv->bssid);
+	priv->bssid = value ? g_variant_dup_string (value, NULL) : 0u;
+	_notify (self, PROP_HW_ADDRESS);
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
 }
 
 /*****************************************************************************/
@@ -396,7 +420,6 @@ finalize (GObject *object)
 
 	if (priv->ssid)
 		g_bytes_unref (priv->ssid);
-
 	g_free (priv->bssid);
 
 	G_OBJECT_CLASS (nm_access_point_parent_class)->finalize (object);
@@ -450,42 +473,31 @@ get_property (GObject *object,
 	}
 }
 
-static void
-init_dbus (NMObject *object)
-{
-	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_ACCESS_POINT_FLAGS,       &priv->flags },
-		{ NM_ACCESS_POINT_WPA_FLAGS,   &priv->wpa_flags },
-		{ NM_ACCESS_POINT_RSN_FLAGS,   &priv->rsn_flags },
-		{ NM_ACCESS_POINT_SSID,        &priv->ssid },
-		{ NM_ACCESS_POINT_FREQUENCY,   &priv->frequency },
-		/* The D-Bus property is HwAddress, but the GObject property is "bssid" */
-		{ NM_ACCESS_POINT_HW_ADDRESS,  &priv->bssid },
-		{ NM_ACCESS_POINT_MODE,        &priv->mode },
-		{ NM_ACCESS_POINT_MAX_BITRATE, &priv->max_bitrate },
-		{ NM_ACCESS_POINT_STRENGTH,    &priv->strength },
-		{ NM_ACCESS_POINT_LAST_SEEN,   &priv->last_seen },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_access_point_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_ACCESS_POINT,
-	                                property_info);
-}
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_accesspoint = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_ACCESS_POINT,
+	nm_access_point_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_U   ("Flags",      PROP_FLAGS,       NMAccessPoint, _priv.flags                    ),
+		NML_DBUS_META_PROPERTY_INIT_U   ("Frequency",  PROP_FREQUENCY,   NMAccessPoint, _priv.frequency                ),
+		NML_DBUS_META_PROPERTY_INIT_FCN ("HwAddress",  PROP_BSSID,       "s",           _notify_update_prop_hw_address ),
+		NML_DBUS_META_PROPERTY_INIT_I   ("LastSeen",   PROP_LAST_SEEN,   NMAccessPoint, _priv.last_seen                ),
+		NML_DBUS_META_PROPERTY_INIT_U   ("MaxBitrate", PROP_MAX_BITRATE, NMAccessPoint, _priv.max_bitrate              ),
+		NML_DBUS_META_PROPERTY_INIT_U   ("Mode",       PROP_MODE,        NMAccessPoint, _priv.mode                     ),
+		NML_DBUS_META_PROPERTY_INIT_U   ("RsnFlags",   PROP_RSN_FLAGS,   NMAccessPoint, _priv.rsn_flags                ),
+		NML_DBUS_META_PROPERTY_INIT_AY  ("Ssid",       PROP_SSID,        NMAccessPoint, _priv.ssid                     ),
+		NML_DBUS_META_PROPERTY_INIT_Y   ("Strength",   PROP_STRENGTH,    NMAccessPoint, _priv.strength                 ),
+		NML_DBUS_META_PROPERTY_INIT_U   ("WpaFlags",   PROP_WPA_FLAGS,   NMAccessPoint, _priv.wpa_flags                ),
+	),
+);
 
 static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	/**
 	 * NMAccessPoint:flags:
@@ -620,5 +632,5 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	                      G_PARAM_READABLE |
 	                      G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_accesspoint);
 }

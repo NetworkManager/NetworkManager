@@ -23,10 +23,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	NMLDBusPropertyAO slaves;
 	char *hw_address;
-	gboolean carrier;
-	GPtrArray *slaves;
 	char *config;
+	bool carrier;
 } NMDeviceTeamPrivate;
 
 struct _NMDeviceTeam {
@@ -92,7 +92,7 @@ nm_device_team_get_slaves (NMDeviceTeam *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), FALSE);
 
-	return NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves;
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves);
 }
 
 /**
@@ -148,38 +148,6 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_team_init (NMDeviceTeam *device)
 {
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
-
-	priv->slaves = g_ptr_array_new ();
-}
-
-static void
-init_dbus (NMObject *object)
-{
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_TEAM_HW_ADDRESS, &priv->hw_address },
-		{ NM_DEVICE_TEAM_CARRIER,    &priv->carrier },
-		{ NM_DEVICE_TEAM_SLAVES,     &priv->slaves, NULL, NM_TYPE_DEVICE },
-		{ NM_DEVICE_TEAM_CONFIG,     &priv->config },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_team_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_TEAM,
-	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
-
-	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
-
-	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
 }
 
 static void
@@ -220,18 +188,31 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_team = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_TEAM,
+	nm_device_team_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceTeam, _priv.carrier                        ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("Config",    PROP_CONFIG,     NMDeviceTeam, _priv.config                         ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress", PROP_HW_ADDRESS, NMDeviceTeam, _priv.hw_address                     ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceTeam, _priv.slaves,     nm_device_get_type ),
+	),
+);
+
 static void
-nm_device_team_class_init (NMDeviceTeamClass *team_class)
+nm_device_team_class_init (NMDeviceTeamClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (team_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (team_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (team_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceTeam);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1 (nm_object_class, NMDeviceTeamPrivate, slaves);
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -283,5 +264,5 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_team);
 }

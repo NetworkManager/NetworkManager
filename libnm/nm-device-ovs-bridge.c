@@ -20,7 +20,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	GPtrArray *slaves;
+	NMLDBusPropertyAO slaves;
 } NMDeviceOvsBridgePrivate;
 
 struct _NMDeviceOvsBridge {
@@ -55,7 +55,7 @@ nm_device_ovs_bridge_get_slaves (NMDeviceOvsBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OVS_BRIDGE (device), FALSE);
 
-	return NM_DEVICE_OVS_BRIDGE_GET_PRIVATE (device)->slaves;
+	return nml_dbus_property_ao_get_objs_as_ptrarray (&NM_DEVICE_OVS_BRIDGE_GET_PRIVATE (device)->slaves);
 }
 
 static const char *
@@ -97,22 +97,6 @@ get_setting_type (NMDevice *device)
 /*****************************************************************************/
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceOvsBridge *device = NM_DEVICE_OVS_BRIDGE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_OVS_BRIDGE_SLAVES, &device->_priv.slaves, NULL, NM_TYPE_DEVICE },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_ovs_bridge_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,
-	                                property_info);
-}
-
-static void
 get_property (GObject *object,
               guint prop_id,
               GValue *value,
@@ -130,32 +114,34 @@ get_property (GObject *object,
 	}
 }
 
+/*****************************************************************************/
+
 static void
 nm_device_ovs_bridge_init (NMDeviceOvsBridge *device)
 {
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ovsbridge = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,
+	nm_device_ovs_bridge_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves", PROP_SLAVES, NMDeviceOvsBridge, _priv.slaves, nm_device_get_type ),
+	),
+);
+
 static void
-dispose (GObject *object)
+nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *klass)
 {
-	NMDeviceOvsBridgePrivate *priv = NM_DEVICE_OVS_BRIDGE_GET_PRIVATE (object);
-
-	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
-
-	G_OBJECT_CLASS (nm_device_ovs_bridge_parent_class)->dispose (object);
-}
-
-static void
-nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *ovs_bridge_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (ovs_bridge_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ovs_bridge_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (ovs_bridge_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->dispose      = dispose;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceOvsBridge);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1 (nm_object_class, NMDeviceOvsBridgePrivate, slaves);
 
 	device_class->get_type_description  = get_type_description;
 	device_class->connection_compatible = connection_compatible;
@@ -174,5 +160,5 @@ nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *ovs_bridge_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_ovsbridge);
 }

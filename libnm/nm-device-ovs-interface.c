@@ -69,6 +69,12 @@ nm_device_ovs_interface_init (NMDeviceOvsInterface *device)
 {
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ovsinterface = NML_DBUS_META_IFACE_INIT (
+	NM_DBUS_INTERFACE_DEVICE_OVS_INTERFACE,
+	nm_device_ovs_interface_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+);
+
 static void
 nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *ovs_interface_class)
 {

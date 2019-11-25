@@ -25,11 +25,11 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	char **s390_subchannels;
 	char *hw_address;
 	char *perm_hw_address;
 	guint32 speed;
-	gboolean carrier;
-	char **s390_subchannels;
+	bool carrier;
 } NMDeviceEthernetPrivate;
 
 struct _NMDeviceEthernet {
@@ -124,24 +124,12 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
  *
  * Since: 1.2
  **/
-const char * const *
+const char *const*
 nm_device_ethernet_get_s390_subchannels (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	return (const char * const *) NM_DEVICE_ETHERNET_GET_PRIVATE (device)->s390_subchannels;
-}
-
-static guint32
-_subchannels_count_num (const char * const *array)
-{
-	int i;
-
-	if (!array)
-		return 0;
-	for (i = 0; array[i]; i++)
-		/* NOP */;
-	return i;
+	return (const char *const*) NM_DEVICE_ETHERNET_GET_PRIVATE (device)->s390_subchannels;
 }
 
 static gboolean
@@ -149,14 +137,14 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	const char * const *subchans;
-	guint32 num1, num2;
-	int i, j;
+	gsize num1, num2;
+	gsize i, j;
 
 	*try_mac = TRUE;
 
 	subchans = nm_setting_wired_get_s390_subchannels (s_wired);
-	num1 = _subchannels_count_num (subchans);
-	num2 = _subchannels_count_num ((const char * const *) priv->s390_subchannels);
+	num1 = NM_PTRARRAY_LEN (subchans);
+	num2 = NM_PTRARRAY_LEN (priv->s390_subchannels);
 	/* connection has no subchannels */
 	if (num1 == 0)
 		return TRUE;
@@ -277,26 +265,6 @@ nm_device_ethernet_init (NMDeviceEthernet *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_ETHERNET_HW_ADDRESS,           &priv->hw_address },
-		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
-		{ NM_DEVICE_ETHERNET_SPEED,                &priv->speed },
-		{ NM_DEVICE_ETHERNET_CARRIER,              &priv->carrier },
-		{ NM_DEVICE_ETHERNET_S390_SUBCHANNELS,     &priv->s390_subchannels },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_ethernet_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_WIRED,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
@@ -339,17 +307,34 @@ get_property (GObject *object,
 	}
 }
 
+/* TODO: implemented Veth. */
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth = NML_DBUS_META_IFACE_INIT (
+	NM_DBUS_INTERFACE_DEVICE_VETH,
+	NULL,
+	NML_DBUS_META_INTERFACE_PRIO_NONE,
+);
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_WIRED,
+	nm_device_ethernet_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_B  ("Carrier",         PROP_CARRIER,          NMDeviceEthernet, _priv.carrier          ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("HwAddress",       PROP_HW_ADDRESS,       NMDeviceEthernet, _priv.hw_address       ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("PermHwAddress",   PROP_PERM_HW_ADDRESS,  NMDeviceEthernet, _priv.perm_hw_address  ),
+		NML_DBUS_META_PROPERTY_INIT_AS ("S390Subchannels", PROP_S390_SUBCHANNELS, NMDeviceEthernet, _priv.s390_subchannels ),
+		NML_DBUS_META_PROPERTY_INIT_U  ("Speed",           PROP_SPEED,            NMDeviceEthernet, _priv.speed            ),
+	),
+);
+
 static void
 nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (eth_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -413,5 +398,5 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_wired);
 }

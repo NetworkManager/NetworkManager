@@ -31,20 +31,20 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMDevice *parent;
+	NMLDBusPropertyO parent;
 	char *hw_address;
+	char *validation;
 	guint64 sci;
 	guint64 cipher_suite;
-	guint8 icv_length;
 	guint32 window;
+	guint8 icv_length;
 	guint8 encoding_sa;
-	gboolean encrypt;
-	gboolean protect;
-	gboolean include_sci;
-	gboolean es;
-	gboolean scb;
-	gboolean replay_protect;
-	char *validation;
+	bool encrypt;
+	bool protect;
+	bool include_sci;
+	bool es;
+	bool scb;
+	bool replay_protect;
 } NMDeviceMacsecPrivate;
 
 struct _NMDeviceMacsec {
@@ -75,7 +75,7 @@ nm_device_macsec_get_parent (NMDeviceMacsec *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACSEC (device), NULL);
 
-	return NM_DEVICE_MACSEC_GET_PRIVATE (device)->parent;
+	return nml_dbus_property_o_get_obj (&NM_DEVICE_MACSEC_GET_PRIVATE (device)->parent);
 }
 
 /**
@@ -332,42 +332,12 @@ nm_device_macsec_init (NMDeviceMacsec *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_MACSEC_PARENT,         &priv->parent, NULL, NM_TYPE_DEVICE },
-		{ NM_DEVICE_MACSEC_HW_ADDRESS,     &priv->hw_address },
-		{ NM_DEVICE_MACSEC_SCI,            &priv->sci },
-		{ NM_DEVICE_MACSEC_CIPHER_SUITE,   &priv->cipher_suite },
-		{ NM_DEVICE_MACSEC_ICV_LENGTH,     &priv->icv_length },
-		{ NM_DEVICE_MACSEC_WINDOW,         &priv->window },
-		{ NM_DEVICE_MACSEC_ENCODING_SA,    &priv->encoding_sa },
-		{ NM_DEVICE_MACSEC_ENCRYPT,        &priv->encrypt },
-		{ NM_DEVICE_MACSEC_PROTECT,        &priv->protect },
-		{ NM_DEVICE_MACSEC_INCLUDE_SCI,    &priv->include_sci },
-		{ NM_DEVICE_MACSEC_ES,             &priv->es },
-		{ NM_DEVICE_MACSEC_SCB,            &priv->scb },
-		{ NM_DEVICE_MACSEC_REPLAY_PROTECT, &priv->replay_protect },
-		{ NM_DEVICE_MACSEC_VALIDATION,     &priv->validation },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_macsec_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_MACSEC,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (object);
 
 	g_free (priv->validation);
 	g_free (priv->hw_address);
-	g_clear_object (&priv->parent);
 
 	G_OBJECT_CLASS (nm_device_macsec_parent_class)->finalize (object);
 }
@@ -429,17 +399,40 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_macsec = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_MACSEC,
+	nm_device_macsec_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_T      ("CipherSuite",   PROP_CIPHER_SUITE,   NMDeviceMacsec, _priv.cipher_suite                      ),
+		NML_DBUS_META_PROPERTY_INIT_Y      ("EncodingSa",    PROP_ENCODING_SA,    NMDeviceMacsec, _priv.encoding_sa                       ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Encrypt",       PROP_ENCRYPT,        NMDeviceMacsec, _priv.encrypt                           ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Es",            PROP_ES,             NMDeviceMacsec, _priv.es                                ),
+		NML_DBUS_META_PROPERTY_INIT_Y      ("IcvLength",     PROP_ICV_LENGTH,     NMDeviceMacsec, _priv.icv_length                        ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("IncludeSci",    PROP_INCLUDE_SCI,    NMDeviceMacsec, _priv.include_sci                       ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",        PROP_PARENT,         NMDeviceMacsec, _priv.parent,        nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Protect",       PROP_PROTECT,        NMDeviceMacsec, _priv.protect                           ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("ReplayProtect", PROP_REPLAY_PROTECT, NMDeviceMacsec, _priv.replay_protect                    ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Scb",           PROP_SCB,            NMDeviceMacsec, _priv.scb                               ),
+		NML_DBUS_META_PROPERTY_INIT_T      ("Sci",           PROP_SCI,            NMDeviceMacsec, _priv.sci                               ),
+		NML_DBUS_META_PROPERTY_INIT_S      ("Validation",    PROP_VALIDATION,     NMDeviceMacsec, _priv.validation                        ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("Window",        PROP_WINDOW,         NMDeviceMacsec, _priv.window                            ),
+	),
+);
+
 static void
-nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
+nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (macsec_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (macsec_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (macsec_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceMacsec);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDeviceMacsecPrivate, parent);
 
 	device_class->get_hw_address = get_hw_address;
 
@@ -630,5 +623,5 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *macsec_class)
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_macsec);
 }

@@ -186,6 +186,26 @@ nm_pstr_equal (gconstpointer a, gconstpointer b)
 }
 
 guint
+nm_pint_hash (gconstpointer p)
+{
+	const int *s = p;
+
+	if (!s)
+		return nm_hash_static (298377461u);
+	return nm_hash_val (1208815757u, *s);
+}
+
+gboolean
+nm_pint_equals (gconstpointer a, gconstpointer b)
+{
+	const int *s1 = a;
+	const int *s2 = a;
+
+	return    s1 == s2
+	       || (s1 && s2 && *s1 == *s2);
+}
+
+guint
 nm_pdirect_hash (gconstpointer p)
 {
 	const void *const*s = p;

@@ -17,7 +17,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMDevice *parent;
+	NMLDBusPropertyO parent;
 	char *hw_address;
 } NMDevice6LowpanPrivate;
 
@@ -49,7 +49,7 @@ nm_device_6lowpan_get_parent (NMDevice6Lowpan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_6LOWPAN (device), NULL);
 
-	return NM_DEVICE_6LOWPAN_GET_PRIVATE (device)->parent;
+	return nml_dbus_property_o_get_obj (&NM_DEVICE_6LOWPAN_GET_PRIVATE (device)->parent);
 }
 
 /**
@@ -77,7 +77,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_6lowpan_get_hw_address (NM_DEVICE_6LOWPAN (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_6lowpan_init (NMDevice6Lowpan *device)
@@ -85,31 +85,13 @@ nm_device_6lowpan_init (NMDevice6Lowpan *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDevice6LowpanPrivate *priv = NM_DEVICE_6LOWPAN_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_6LOWPAN_PARENT,         &priv->parent, NULL, NM_TYPE_DEVICE },
-		{ NM_DEVICE_6LOWPAN_HW_ADDRESS,     &priv->hw_address },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_6lowpan_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_6LOWPAN,
-	                                property_info);
-}
-
-static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMDevice6LowpanPrivate *priv = NM_DEVICE_6LOWPAN_GET_PRIVATE (object);
 
-	g_free (priv->hw_address);
-	g_clear_object (&priv->parent);
+	G_OBJECT_CLASS (nm_device_6lowpan_parent_class)->dispose (object);
 
-	G_OBJECT_CLASS (nm_device_6lowpan_parent_class)->finalize (object);
+	nm_clear_g_free (&priv->hw_address);
 }
 
 static void
@@ -133,6 +115,16 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_lowpan = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_6LOWPAN,
+	nm_device_6lowpan_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress", PROP_HW_ADDRESS, NMDevice6Lowpan, _priv.hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDevice6Lowpan, _priv.parent,    nm_device_get_type ),
+	),
+);
+
 static void
 nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 {
@@ -141,9 +133,11 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
+	object_class->dispose      = dispose;
 
-	nm_object_class->init_dbus = init_dbus;
+	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDevice6Lowpan);
+
+	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDevice6LowpanPrivate, parent);
 
 	device_class->get_hw_address = get_hw_address;
 
@@ -173,5 +167,5 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_lowpan);
 }

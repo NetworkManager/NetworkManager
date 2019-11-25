@@ -31,9 +31,9 @@ typedef struct {
 	char *mode;
 	gint64 owner;
 	gint64 group;
-	gboolean no_pi;
-	gboolean vnet_hdr;
-	gboolean multi_queue;
+	bool no_pi;
+	bool vnet_hdr;
+	bool multi_queue;
 } NMDeviceTunPrivate;
 
 struct _NMDeviceTun {
@@ -235,28 +235,6 @@ nm_device_tun_init (NMDeviceTun *device)
 }
 
 static void
-init_dbus (NMObject *object)
-{
-	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_TUN_HW_ADDRESS,  &priv->hw_address },
-		{ NM_DEVICE_TUN_MODE,        &priv->mode },
-		{ NM_DEVICE_TUN_OWNER,       &priv->owner },
-		{ NM_DEVICE_TUN_GROUP,       &priv->group },
-		{ NM_DEVICE_TUN_NO_PI,       &priv->no_pi },
-		{ NM_DEVICE_TUN_VNET_HDR,    &priv->vnet_hdr },
-		{ NM_DEVICE_TUN_MULTI_QUEUE, &priv->multi_queue },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_device_tun_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                NM_DBUS_INTERFACE_DEVICE_TUN,
-	                                property_info);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
@@ -304,17 +282,29 @@ get_property (GObject *object,
 	}
 }
 
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_tun = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_DEVICE_TUN,
+	nm_device_tun_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_X ("Group",      PROP_GROUP,       NMDeviceTun, _priv.group       ),
+		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress",  PROP_HW_ADDRESS,  NMDeviceTun, _priv.hw_address  ),
+		NML_DBUS_META_PROPERTY_INIT_S ("Mode",       PROP_MODE,        NMDeviceTun, _priv.mode        ),
+		NML_DBUS_META_PROPERTY_INIT_B ("MultiQueue", PROP_MULTI_QUEUE, NMDeviceTun, _priv.multi_queue ),
+		NML_DBUS_META_PROPERTY_INIT_B ("NoPi",       PROP_NO_PI,       NMDeviceTun, _priv.no_pi       ),
+		NML_DBUS_META_PROPERTY_INIT_X ("Owner",      PROP_OWNER,       NMDeviceTun, _priv.owner       ),
+		NML_DBUS_META_PROPERTY_INIT_B ("VnetHdr",    PROP_VNET_HDR,    NMDeviceTun, _priv.vnet_hdr    ),
+	),
+);
+
 static void
 nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (gre_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (gre_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (gre_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
@@ -415,5 +405,5 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_tun);
 }

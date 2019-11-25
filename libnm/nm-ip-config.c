@@ -18,7 +18,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMIPConfig,
 	PROP_FAMILY,
 	PROP_GATEWAY,
 	PROP_ADDRESSES,
@@ -30,15 +30,18 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct _NMIPConfigPrivate {
-	char *gateway;
 	GPtrArray *addresses;
 	GPtrArray *routes;
 	char **nameservers;
 	char **domains;
 	char **searches;
-	char **wins;
+	char **wins_servers;
+	char *gateway;
 
-	gboolean new_style_data;
+	bool addresses_new_style:1;
+	bool routes_new_style:1;
+	bool nameservers_new_style:1;
+	bool wins_servers_new_style:1;
 } NMIPConfigPrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMIPConfig, nm_ip_config, NM_TYPE_OBJECT)
@@ -47,156 +50,191 @@ G_DEFINE_ABSTRACT_TYPE (NMIPConfig, nm_ip_config, NM_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static void
-nm_ip_config_init (NMIPConfig *self)
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_addresses (NMClient *client,
+                               NMLDBusObject *dbobj,
+                               const NMLDBusMetaIface *meta_iface,
+                               guint dbus_property_idx,
+                               GVariant *value)
 {
-	NMIPConfigPrivate *priv;
+	NMIPConfig *self = NM_IP_CONFIG (dbobj->nmobj);
+	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (self);
+	gs_unref_ptrarray GPtrArray *addresses_old = NULL;
+	gs_unref_ptrarray GPtrArray *addresses_new = NULL;
+	int addr_family =   meta_iface == &_nml_dbus_meta_iface_nm_ip4config
+	                  ? AF_INET : AF_INET6;
+	gboolean new_style;
 
-	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_IP_CONFIG, NMIPConfigPrivate);
+	new_style = (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[2] == '{');
 
-	self->_priv = priv;
+	if (priv->addresses_new_style) {
+		if (!new_style)
+			return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+	} else
+		priv->addresses_new_style = new_style;
 
-	priv->addresses = g_ptr_array_new ();
-	priv->routes = g_ptr_array_new ();
-	priv->nameservers = g_new0 (char *, 1);
-	priv->domains = g_new0 (char *, 1);
-	priv->searches = g_new0 (char *, 1);
-	priv->wins = g_new0 (char *, 1);
+	if (value) {
+		if (new_style)
+			addresses_new = nm_utils_ip_addresses_from_variant (value, addr_family);
+		else if (addr_family == AF_INET)
+			addresses_new = nm_utils_ip4_addresses_from_variant (value, NULL);
+		else
+			addresses_new = nm_utils_ip6_addresses_from_variant (value, NULL);
+		nm_assert (addresses_new);
+	}
+	if (!addresses_new)
+		addresses_new = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+
+	addresses_old = priv->addresses;
+	priv->addresses = g_steal_pointer (&addresses_new);
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
 }
 
-static gboolean
-demarshal_ip_addresses (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_routes (NMClient *client,
+                            NMLDBusObject *dbobj,
+                            const NMLDBusMetaIface *meta_iface,
+                            guint dbus_property_idx,
+                            GVariant *value)
 {
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
+	NMIPConfig *self = NM_IP_CONFIG (dbobj->nmobj);
+	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (self);
+	gs_unref_ptrarray GPtrArray *routes_old = NULL;
+	gs_unref_ptrarray GPtrArray *routes_new = NULL;
+	int addr_family =   meta_iface == &_nml_dbus_meta_iface_nm_ip4config
+	                  ? AF_INET : AF_INET6;
+	gboolean new_style;
 
-	if (priv->new_style_data)
-		return TRUE;
+	new_style = (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[2] == '{');
 
-	g_ptr_array_unref (priv->addresses);
-	if (NM_IS_IP4_CONFIG (object))
-		priv->addresses = nm_utils_ip4_addresses_from_variant (value, NULL);
-	else
-		priv->addresses = nm_utils_ip6_addresses_from_variant (value, NULL);
-	_nm_object_queue_notify (object, NM_IP_CONFIG_ADDRESSES);
+	if (priv->routes_new_style) {
+		if (!new_style)
+			return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+	} else
+		priv->routes_new_style = new_style;
 
-	return TRUE;
+	if (value) {
+		if (new_style)
+			routes_new = nm_utils_ip_routes_from_variant (value, addr_family);
+		else if (addr_family == AF_INET)
+			routes_new = nm_utils_ip4_routes_from_variant (value);
+		else
+			routes_new = nm_utils_ip6_routes_from_variant (value);
+		nm_assert (routes_new);
+	}
+	if (!routes_new)
+		routes_new = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+
+	routes_old = priv->routes;
+	priv->routes = g_steal_pointer (&routes_new);
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
 }
 
-static gboolean
-demarshal_ip_address_data (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_nameservers (NMClient *client,
+                                 NMLDBusObject *dbobj,
+                                 const NMLDBusMetaIface *meta_iface,
+                                 guint dbus_property_idx,
+                                 GVariant *value)
 {
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
+	NMIPConfig *self = NM_IP_CONFIG (dbobj->nmobj);
+	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (self);
+	gs_strfreev char **nameservers_new = NULL;
+	gboolean new_style = TRUE;
+	int addr_family =   meta_iface == &_nml_dbus_meta_iface_nm_ip4config
+	                  ? AF_INET : AF_INET6;
 
-	priv->new_style_data = TRUE;
+	if (addr_family == AF_INET) {
+		new_style = (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[1] == 'a');
 
-	g_ptr_array_unref (priv->addresses);
-	if (NM_IS_IP4_CONFIG (object))
-		priv->addresses = nm_utils_ip_addresses_from_variant (value, AF_INET);
-	else
-		priv->addresses = nm_utils_ip_addresses_from_variant (value, AF_INET6);
-	_nm_object_queue_notify (object, NM_IP_CONFIG_ADDRESSES);
+		if (priv->nameservers_new_style) {
+			if (!new_style)
+				return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+		} else
+			priv->nameservers_new_style = new_style;
+	}
 
-	return TRUE;
-}
+	if (value) {
+		if (addr_family == AF_INET6)
+			nameservers_new = nm_utils_ip6_dns_from_variant (value);
+		else if (!new_style)
+			nameservers_new = nm_utils_ip4_dns_from_variant (value);
+		else {
+			GVariantIter iter;
+			GVariantIter *iter_v;
+			gs_unref_ptrarray GPtrArray *arr = NULL;
 
-static gboolean
-demarshal_ip_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
-{
-	char ***obj_field;
+			g_variant_iter_init (&iter, value);
+			while (g_variant_iter_next (&iter, "a{sv}", &iter_v)) {
+				const char *key;
+				GVariant *val;
 
-	obj_field = field;
-	if (*obj_field)
-		g_strfreev (*obj_field);
+				while (g_variant_iter_next (iter_v, "{&sv}", &key, &val)) {
+					if (nm_streq (key, "address")) {
+						gs_free char *val_str = NULL;
 
-	if (NM_IS_IP4_CONFIG (object))
-		*obj_field = nm_utils_ip4_dns_from_variant (value);
-	else
-		*obj_field = nm_utils_ip6_dns_from_variant (value);
-
-	_nm_object_queue_notify (object, pspec->name);
-	return TRUE;
-}
-
-static gboolean
-demarshal_ip_routes (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
-{
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
-
-	if (priv->new_style_data)
-		return TRUE;
-
-	g_ptr_array_unref (priv->routes);
-	if (NM_IS_IP4_CONFIG (object))
-		priv->routes = nm_utils_ip4_routes_from_variant (value);
-	else
-		priv->routes = nm_utils_ip6_routes_from_variant (value);
-	_nm_object_queue_notify (object, NM_IP_CONFIG_ROUTES);
-
-	return TRUE;
-}
-
-static gboolean
-demarshal_ip_route_data (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
-{
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
-
-	priv->new_style_data = TRUE;
-
-	g_ptr_array_unref (priv->routes);
-	if (NM_IS_IP4_CONFIG (object))
-		priv->routes = nm_utils_ip_routes_from_variant (value, AF_INET);
-	else
-		priv->routes = nm_utils_ip_routes_from_variant (value, AF_INET6);
-	_nm_object_queue_notify (object, NM_IP_CONFIG_ROUTES);
-
-	return TRUE;
-}
-
-static void
-init_dbus (NMObject *object)
-{
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
-	const NMPropertiesInfo property_info[] = {
-		{ NM_IP_CONFIG_GATEWAY,      &priv->gateway, },
-		{ NM_IP_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip_addresses },
-		{ "address-data",            &priv->addresses, demarshal_ip_address_data },
-		{ NM_IP_CONFIG_ROUTES,       &priv->routes, demarshal_ip_routes },
-		{ "route-data",              &priv->routes, demarshal_ip_route_data },
-		/* Still use deprecated "Nameservers" property instead of "NameserverData" */
-		{ NM_IP_CONFIG_NAMESERVERS,  &priv->nameservers, demarshal_ip_array },
-		{ NM_IP_CONFIG_DOMAINS,      &priv->domains, },
-		{ NM_IP_CONFIG_SEARCHES,     &priv->searches, },
-		/* Still use deprecated "WinsServers" property instead of "WinsServerData" */
-		{ NM_IP_CONFIG_WINS_SERVERS, &priv->wins, demarshal_ip_array },
-		{ NULL },
-	};
-
-	NM_OBJECT_CLASS (nm_ip_config_parent_class)->init_dbus (object);
-
-	_nm_object_register_properties (object,
-	                                (NM_IS_IP4_CONFIG (object) ?
-	                                 NM_DBUS_INTERFACE_IP4_CONFIG :
-	                                 NM_DBUS_INTERFACE_IP6_CONFIG),
-	                                property_info);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
-
-	g_free (priv->gateway);
-
-	g_ptr_array_unref (priv->addresses);
-	g_ptr_array_unref (priv->routes);
+						if (!g_variant_is_of_type (val, G_VARIANT_TYPE_STRING))
+							goto next;
+						if (!nm_utils_parse_inaddr (AF_INET, g_variant_get_string (val, NULL), &val_str))
+							goto next;
+						if (!arr)
+							arr = g_ptr_array_new ();
+						g_ptr_array_add (arr, g_steal_pointer (&val_str));
+						goto next;
+					}
+next:
+					g_variant_unref (val);
+				}
+				g_variant_iter_free (iter_v);
+			}
+			if (   arr
+			    && arr->len > 0)
+				nameservers_new = nm_utils_strv_dup (arr->pdata, arr->len, FALSE);
+			else
+				nameservers_new = g_new0 (char *, 1);
+		}
+		nm_assert (nameservers_new);
+	}
 
 	g_strfreev (priv->nameservers);
-	g_strfreev (priv->domains);
-	g_strfreev (priv->searches);
-	g_strfreev (priv->wins);
-
-	G_OBJECT_CLASS (nm_ip_config_parent_class)->finalize (object);
+	priv->nameservers = g_steal_pointer (&nameservers_new);
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
 }
+
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_wins_servers (NMClient *client,
+                                  NMLDBusObject *dbobj,
+                                  const NMLDBusMetaIface *meta_iface,
+                                  guint dbus_property_idx,
+                                  GVariant *value)
+{
+	NMIPConfig *self = NM_IP_CONFIG (dbobj->nmobj);
+	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (self);
+	gs_strfreev char **wins_servers_new = NULL;
+	gboolean new_style;
+
+	new_style = (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[1] == 's');
+
+	if (priv->wins_servers_new_style) {
+		if (!new_style)
+			return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+	} else
+		priv->wins_servers_new_style = new_style;
+
+	if (value) {
+		if (new_style)
+			wins_servers_new = g_variant_dup_strv (value, NULL);
+		else
+			wins_servers_new = nm_utils_ip4_dns_from_variant (value);
+		nm_assert (wins_servers_new);
+	}
+
+	g_strfreev (priv->wins_servers);
+	priv->wins_servers = g_steal_pointer (&wins_servers_new);
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+}
+
+/*****************************************************************************/
 
 static void
 get_property (GObject *object,
@@ -241,18 +279,89 @@ get_property (GObject *object,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_ip_config_init (NMIPConfig *self)
+{
+	NMIPConfigPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_IP_CONFIG, NMIPConfigPrivate);
+
+	self->_priv = priv;
+
+	priv->addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE (object);
+
+	g_free (priv->gateway);
+
+	g_ptr_array_unref (priv->routes);
+	g_ptr_array_unref (priv->addresses);
+
+	g_strfreev (priv->nameservers);
+	g_strfreev (priv->domains);
+	g_strfreev (priv->searches);
+	g_strfreev (priv->wins_servers);
+
+	G_OBJECT_CLASS (nm_ip_config_parent_class)->finalize (object);
+}
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_ip4config = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_IP4_CONFIG,
+	nm_ip4_config_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("AddressData",    PROP_ADDRESSES,    "aa{sv}",          _notify_update_prop_addresses                                         ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("Addresses",      PROP_ADDRESSES,    "aau",             _notify_update_prop_addresses,    .obj_property_no_reverse_idx = TRUE ),
+		NML_DBUS_META_PROPERTY_INIT_TODO   ("DnsOptions",    "as"                                                                                                         ),
+		NML_DBUS_META_PROPERTY_INIT_TODO   ("DnsPriority",   "i"                                                                                                          ),
+		NML_DBUS_META_PROPERTY_INIT_AS     ("Domains",        PROP_DOMAINS,      NMIPConfigPrivate, domains                                                               ),
+		NML_DBUS_META_PROPERTY_INIT_S      ("Gateway",        PROP_GATEWAY,      NMIPConfigPrivate, gateway                                                               ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("NameserverData", PROP_NAMESERVERS,  "aa{sv}",          _notify_update_prop_nameservers                                       ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("Nameservers",    PROP_NAMESERVERS,  "au",              _notify_update_prop_nameservers,  .obj_property_no_reverse_idx = TRUE ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("RouteData",      PROP_ROUTES,       "aa{sv}",          _notify_update_prop_routes                                            ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("Routes",         PROP_ROUTES,       "aau",             _notify_update_prop_routes,       .obj_property_no_reverse_idx = TRUE ),
+		NML_DBUS_META_PROPERTY_INIT_AS     ("Searches",       PROP_SEARCHES,     NMIPConfigPrivate, searches                                                              ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("WinsServerData", PROP_WINS_SERVERS, "as",              _notify_update_prop_wins_servers                                      ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("WinsServers",    PROP_WINS_SERVERS, "au",              _notify_update_prop_wins_servers, .obj_property_no_reverse_idx = TRUE ),
+	),
+	.base_struct_offset = G_STRUCT_OFFSET (NMIPConfig, _priv),
+);
+
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_ip6config = NML_DBUS_META_IFACE_INIT_PROP (
+	NM_DBUS_INTERFACE_IP6_CONFIG,
+	nm_ip6_config_get_type,
+	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_FCN         ("AddressData", PROP_ADDRESSES,   "aa{sv}",          _notify_update_prop_addresses                                       ),
+		NML_DBUS_META_PROPERTY_INIT_FCN         ("Addresses",   PROP_ADDRESSES,   "a(ayuay)",        _notify_update_prop_addresses,  .obj_property_no_reverse_idx = TRUE ),
+		NML_DBUS_META_PROPERTY_INIT_TODO        ("DnsOptions",  "as"                                                                                                     ),
+		NML_DBUS_META_PROPERTY_INIT_TODO        ("DnsPriority", "i"                                                                                                      ),
+		NML_DBUS_META_PROPERTY_INIT_AS          ("Domains",     PROP_DOMAINS,     NMIPConfigPrivate, domains                                                             ),
+		NML_DBUS_META_PROPERTY_INIT_S           ("Gateway",     PROP_GATEWAY,     NMIPConfigPrivate, gateway                                                             ),
+		NML_DBUS_META_PROPERTY_INIT_FCN         ("Nameservers", PROP_NAMESERVERS, "aay",             _notify_update_prop_nameservers                                     ),
+		NML_DBUS_META_PROPERTY_INIT_FCN         ("RouteData",   PROP_ROUTES,      "aa{sv}",          _notify_update_prop_routes                                          ),
+		NML_DBUS_META_PROPERTY_INIT_FCN         ("Routes",      PROP_ROUTES,      "a(ayuayu)",       _notify_update_prop_routes,     .obj_property_no_reverse_idx = TRUE ),
+		NML_DBUS_META_PROPERTY_INIT_AS          ("Searches",    PROP_SEARCHES,    NMIPConfigPrivate, searches                                                            ),
+	),
+	.base_struct_offset = G_STRUCT_OFFSET (NMIPConfig, _priv),
+);
+
 static void
 nm_ip_config_class_init (NMIPConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMIPConfigPrivate));
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
 
 	/**
 	 * NMIPConfig:family:
@@ -344,7 +453,8 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_ip4config,
+	                                                         &_nml_dbus_meta_iface_nm_ip6config);
 }
 
 /**
@@ -407,12 +517,12 @@ nm_ip_config_get_addresses (NMIPConfig *config)
  *
  * Returns: (transfer none): the array of nameserver IP addresses
  **/
-const char * const *
+const char *const*
 nm_ip_config_get_nameservers (NMIPConfig *config)
 {
 	g_return_val_if_fail (NM_IS_IP_CONFIG (config), NULL);
 
-	return (const char * const *) NM_IP_CONFIG_GET_PRIVATE (config)->nameservers;
+	return _nml_coerce_property_strv_not_null (NM_IP_CONFIG_GET_PRIVATE (config)->nameservers);
 }
 
 /**
@@ -424,12 +534,12 @@ nm_ip_config_get_nameservers (NMIPConfig *config)
  * Returns: (transfer none): the array of domains.
  * (This is never %NULL, though it may be 0-length).
  **/
-const char * const *
+const char *const*
 nm_ip_config_get_domains (NMIPConfig *config)
 {
 	g_return_val_if_fail (NM_IS_IP_CONFIG (config), NULL);
 
-	return (const char * const *) NM_IP_CONFIG_GET_PRIVATE (config)->domains;
+	return _nml_coerce_property_strv_not_null (NM_IP_CONFIG_GET_PRIVATE (config)->domains);
 }
 
 /**
@@ -441,12 +551,12 @@ nm_ip_config_get_domains (NMIPConfig *config)
  * Returns: (transfer none): the array of DNS search strings.
  * (This is never %NULL, though it may be 0-length).
  **/
-const char * const *
+const char *const*
 nm_ip_config_get_searches (NMIPConfig *config)
 {
 	g_return_val_if_fail (NM_IS_IP_CONFIG (config), NULL);
 
-	return (const char * const *) NM_IP_CONFIG_GET_PRIVATE (config)->searches;
+	return _nml_coerce_property_strv_not_null (NM_IP_CONFIG_GET_PRIVATE (config)->searches);
 }
 
 /**
@@ -458,12 +568,12 @@ nm_ip_config_get_searches (NMIPConfig *config)
  * Returns: (transfer none): the arry of WINS server IP address strings.
  * (This is never %NULL, though it may be 0-length.)
  **/
-const char * const *
+const char *const*
 nm_ip_config_get_wins_servers (NMIPConfig *config)
 {
 	g_return_val_if_fail (NM_IS_IP_CONFIG (config), NULL);
 
-	return (const char * const *) NM_IP_CONFIG_GET_PRIVATE (config)->wins;
+	return _nml_coerce_property_strv_not_null (NM_IP_CONFIG_GET_PRIVATE (config)->wins_servers);
 }
 
 /**
