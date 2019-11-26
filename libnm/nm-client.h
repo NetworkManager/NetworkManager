@@ -218,6 +218,9 @@ NM_AVAILABLE_IN_1_22
 GDBusConnection *nm_client_get_dbus_connection (NMClient *client);
 
 NM_AVAILABLE_IN_1_22
+GMainContext *nm_client_get_main_context (NMClient *self);
+
+NM_AVAILABLE_IN_1_22
 GObject *nm_client_get_context_busy_watcher (NMClient *self);
 
 NM_AVAILABLE_IN_1_22

@@ -929,6 +929,32 @@ _nm_client_get_context_dbus (NMClient *self)
 }
 
 /**
+ * nm_client_get_main_context:
+ * @self: the #NMClient instance
+ *
+ * The #NMClient instance is permanently associated with the current
+ * thread default #GMainContext, referenced the time when the instance
+ * was created. To receive events, the user must iterate this context
+ * and can use it to synchronize access to the client.
+ *
+ * Note that even after #NMClient instance got destroyed, there might
+ * still be pending sources registered in the context. That means, to fully
+ * clean up, the user must continue iterating the context as long as
+ * the nm_client_get_context_busy_watcher() object is alive.
+ *
+ * Returns: (transfer none): the #GMainContext of the client.
+ *
+ * Since: 1.22
+ */
+GMainContext *
+nm_client_get_main_context (NMClient *self)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (self), NULL);
+
+	return _nm_client_get_context_main (self);
+}
+
+/**
  * nm_client_get_context_busy_watcher:
  * @self: the NMClient instance.
  *
