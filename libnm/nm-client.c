@@ -1718,7 +1718,7 @@ nml_dbus_property_o_clear (NMLDBusPropertyO *pr_o,
 	pr_o->owner_dbobj = NULL;
 	pr_o->meta_iface = NULL;
 	pr_o->dbus_property_idx = 0;
-	pr_o->is_ready = TRUE;
+	pr_o->is_ready = FALSE;
 }
 
 void
