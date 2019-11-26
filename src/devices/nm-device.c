@@ -14887,6 +14887,13 @@ _set_state_full (NMDevice *self,
 
 	old_state = priv->state;
 
+	if (   state == NM_DEVICE_STATE_FAILED
+	    && nm_device_sys_iface_state_is_external_or_assume (self)) {
+		/* Avoid tearing down assumed connection, assume it's connected */
+		state = NM_DEVICE_STATE_ACTIVATED;
+		reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+	}
+
 	/* Do nothing if state isn't changing, but as a special case allow
 	 * re-setting UNAVAILABLE if the device is missing firmware so that we
 	 * can retry device initialization.
@@ -15135,14 +15142,6 @@ _set_state_full (NMDevice *self,
 		 * that the chain is terminated here.
 		 */
 		_cancel_activation (self);
-
-		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
-			/* Avoid tearing down assumed connection, assume it's connected */
-			nm_device_queue_state (self,
-			                       NM_DEVICE_STATE_ACTIVATED,
-			                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-			break;
-		}
 
 		sett_conn = nm_device_get_settings_connection (self);
 		_LOGW (LOGD_DEVICE | LOGD_WIFI,
