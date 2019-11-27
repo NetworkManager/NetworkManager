@@ -862,8 +862,13 @@ _nm_ip_config_merge_route_attributes (int addr_family,
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE, table, UINT32, uint32, 0);
 	r->table_coerced = nm_platform_route_table_coerce (table ?: (route_table ?: RT_TABLE_MAIN));
 
-	if (addr_family == AF_INET)
+	if (addr_family == AF_INET) {
+		guint8 scope;
+
 		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,        r4->tos,           BYTE,     byte, 0);
+		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_SCOPE,      scope,             BYTE,     byte, RT_SCOPE_NOWHERE);
+		r4->scope_inv = nm_platform_route_scope_inv (scope);
+	}
 
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_ONLINK,         onlink,            BOOLEAN,  boolean, FALSE);
 

@@ -138,6 +138,7 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW    "lock-window"
 #define NM_IP_ROUTE_ATTRIBUTE_MTU            "mtu"
 #define NM_IP_ROUTE_ATTRIBUTE_ONLINK         "onlink"
+#define NM_IP_ROUTE_ATTRIBUTE_SCOPE          "scope"
 #define NM_IP_ROUTE_ATTRIBUTE_SRC            "src"
 #define NM_IP_ROUTE_ATTRIBUTE_TABLE          "table"
 #define NM_IP_ROUTE_ATTRIBUTE_TOS            "tos"

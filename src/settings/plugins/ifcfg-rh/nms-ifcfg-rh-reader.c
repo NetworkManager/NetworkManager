@@ -15,6 +15,7 @@
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-connection.h"
@@ -791,6 +792,7 @@ enum {
 	PARSE_LINE_ATTR_ROUTE_SRC,
 	PARSE_LINE_ATTR_ROUTE_FROM,
 	PARSE_LINE_ATTR_ROUTE_TOS,
+	PARSE_LINE_ATTR_ROUTE_SCOPE,
 	PARSE_LINE_ATTR_ROUTE_ONLINK,
 	PARSE_LINE_ATTR_ROUTE_WINDOW,
 	PARSE_LINE_ATTR_ROUTE_CWND,
@@ -814,6 +816,7 @@ enum {
 #define PARSE_LINE_TYPE_ADDR_WITH_PREFIX  'p'
 #define PARSE_LINE_TYPE_IFNAME            'i'
 #define PARSE_LINE_TYPE_FLAG              'f'
+#define PARSE_LINE_TYPE_ROUTE_SCOPE       'S'
 
 /**
  * parse_route_line:
@@ -855,6 +858,9 @@ parse_route_line (const char *line,
 		[PARSE_LINE_ATTR_ROUTE_TOS]       = { .key = NM_IP_ROUTE_ATTRIBUTE_TOS,
 		                                      .type = PARSE_LINE_TYPE_UINT8,
 		                                      .int_base_16 = TRUE,
+		                                      .ignore = PARSE_LINE_AF_FLAG_FOR_IPV6, },
+		[PARSE_LINE_ATTR_ROUTE_SCOPE]     = { .key = NM_IP_ROUTE_ATTRIBUTE_SCOPE,
+		                                      .type = PARSE_LINE_TYPE_ROUTE_SCOPE,
 		                                      .ignore = PARSE_LINE_AF_FLAG_FOR_IPV6, },
 		[PARSE_LINE_ATTR_ROUTE_ONLINK]    = { .key = NM_IP_ROUTE_ATTRIBUTE_ONLINK,
 		                                      .type = PARSE_LINE_TYPE_FLAG, },
@@ -969,6 +975,9 @@ parse_route_line (const char *line,
 			case PARSE_LINE_TYPE_FLAG:
 				i_words++;
 				goto next;
+			case PARSE_LINE_TYPE_ROUTE_SCOPE:
+				i_words++;
+				goto parse_line_type_route_scope;
 			default:
 				nm_assert_not_reached ();
 			}
@@ -988,6 +997,35 @@ parse_route_line (const char *line,
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Unrecognized argument (\"to\" is duplicate or \"%s\" is garbage)", w);
 		return -EINVAL;
+
+parse_line_type_route_scope:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+		if (nm_streq (s, "global"))
+			p_data->v.uint8 = RT_SCOPE_UNIVERSE;
+		else if (nm_streq (s, "nowhere"))
+			p_data->v.uint8 = RT_SCOPE_NOWHERE;
+		else if (nm_streq (s, "host"))
+			p_data->v.uint8 = RT_SCOPE_HOST;
+		else if (nm_streq (s, "link"))
+			p_data->v.uint8 = RT_SCOPE_LINK;
+		else if (nm_streq (s, "site"))
+			p_data->v.uint8 = RT_SCOPE_SITE;
+		else {
+			p_data->v.uint8 = _nm_utils_ascii_str_to_int64 (s,
+			                                                0,
+			                                                0,
+			                                                G_MAXUINT8,
+			                                                0);;
+			if (errno) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Argument for \"%s\" is not a valid number", w);
+				return -EINVAL;
+			}
+		}
+		i_words++;
+		goto next;
 
 parse_line_type_uint8:
 		s = words[i_words];
@@ -1149,6 +1187,7 @@ next:
 
 		switch (p_info->type) {
 		case PARSE_LINE_TYPE_UINT8:
+		case PARSE_LINE_TYPE_ROUTE_SCOPE:
 			nm_ip_route_set_attribute (route,
 			                           p_info->key,
 			                           g_variant_new_byte (p_data->v.uint8));
