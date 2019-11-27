@@ -638,14 +638,15 @@ static gboolean
 script_must_wait (const char *path)
 {
 	gs_free char *link = NULL;
-	gs_free char *dir = NULL;
-	gs_free char *real = NULL;
-	char *tmp;
-
 
 	link = g_file_read_link (path, NULL);
 	if (link) {
+		gs_free char *dir = NULL;
+		nm_auto_free char *real = NULL;
+
 		if (!g_path_is_absolute (link)) {
+			char *tmp;
+
 			dir = g_path_get_dirname (path);
 			tmp = g_build_path ("/", dir, link, NULL);
 			g_free (link);
