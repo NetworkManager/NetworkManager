@@ -25,6 +25,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   type instances would have been created by NMClient for a while now.
 * DHCP: switch "internal" DHCPv4 plugin from code based on systemd to use nettools'
   n-dhcp4 library.
+* Add support for "scope" attribute for IPv4 routes.
 * libnm: heavily internal rework NMClient. This slims down libnm and makes the
   implementation more efficient. NMClient should work now well with a separate
   GMainContext.

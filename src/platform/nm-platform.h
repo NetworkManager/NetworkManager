@@ -496,7 +496,7 @@ struct _NMPlatformIP4Route {
 
 	/* The bitwise inverse of the route scope rtm_scope. It is inverted so that the
 	 * default value (RT_SCOPE_NOWHERE) is zero. Use nm_platform_route_scope_inv()
-	 * to convert back and forth between the inverese representation and the
+	 * to convert back and forth between the inverse representation and the
 	 * real value.
 	 *
 	 * rtm_scope is part of the primary key for IPv4 routes. When deleting a route,

@@ -874,4 +874,13 @@ const char *nm_utils_wifi_freq_to_band (guint32 freq);
 
 gboolean _nm_utils_iaid_verify (const char *str, gint64 *out_value);
 
+/*****************************************************************************/
+
+gboolean _nmtst_variant_attribute_spec_assert_sorted (const NMVariantAttributeSpec *const*array,
+                                                      gsize len);
+
+const NMVariantAttributeSpec *_nm_variant_attribute_spec_find_binary_search (const NMVariantAttributeSpec *const*array,
+                                                                             gsize len,
+                                                                             const char *name);
+
 #endif

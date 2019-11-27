@@ -15,6 +15,7 @@
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-connection.h"
@@ -739,24 +740,35 @@ parse_route_line_is_comment (const char *line)
 
 /*****************************************************************************/
 
+typedef enum {
+	PARSE_LINE_AF_FLAG_FOR_IPV4 = 0x01,
+	PARSE_LINE_AF_FLAG_FOR_IPV6 = 0x02,
+} ParseLineAFFlag;
+
 typedef struct {
 	const char *key;
 
 	/* the element is not available in this case. */
-	bool disabled:1;
+	ParseLineAFFlag disabled:3;
+
+	bool disabled_with_options_route:1;
 
 	/* whether the element is to be ignored. Ignord is different from
 	 * "disabled", because we still parse the option, but don't use it. */
-	bool ignore:1;
+	ParseLineAFFlag ignore:3;
 
 	bool int_base_16:1;
+
+	/* the type, one of PARSE_LINE_TYPE_* */
+	char type;
+
+} ParseLineInfo;
+
+typedef struct {
 
 	/* whether the command line option was found, and @v is
 	 * initialized. */
 	bool has:1;
-
-	/* the type, one of PARSE_LINE_TYPE_* */
-	char type;
 
 	union {
 		guint8 uint8;
@@ -772,7 +784,7 @@ typedef struct {
 		} addr;
 	} v;
 
-} ParseLineInfo;
+} ParseLineData;
 
 enum {
 	/* route attributes */
@@ -780,6 +792,7 @@ enum {
 	PARSE_LINE_ATTR_ROUTE_SRC,
 	PARSE_LINE_ATTR_ROUTE_FROM,
 	PARSE_LINE_ATTR_ROUTE_TOS,
+	PARSE_LINE_ATTR_ROUTE_SCOPE,
 	PARSE_LINE_ATTR_ROUTE_ONLINK,
 	PARSE_LINE_ATTR_ROUTE_WINDOW,
 	PARSE_LINE_ATTR_ROUTE_CWND,
@@ -803,6 +816,7 @@ enum {
 #define PARSE_LINE_TYPE_ADDR_WITH_PREFIX  'p'
 #define PARSE_LINE_TYPE_IFNAME            'i'
 #define PARSE_LINE_TYPE_FLAG              'f'
+#define PARSE_LINE_TYPE_ROUTE_SCOPE       'S'
 
 /**
  * parse_route_line:
@@ -833,29 +847,23 @@ parse_route_line (const char *line,
                   NMIPRoute **out_route,
                   GError **error)
 {
-	nm_auto_unref_ip_route NMIPRoute *route = NULL;
-	gs_free const char **words_free = NULL;
-	const char *const*words;
-	const char *s;
-	gsize i_words;
-	guint i;
-	char buf1[256];
-	char buf2[256];
-	ParseLineInfo infos[] = {
+	static const ParseLineInfo parse_infos[] = {
 		[PARSE_LINE_ATTR_ROUTE_TABLE]     = { .key = NM_IP_ROUTE_ATTRIBUTE_TABLE,
 		                                      .type = PARSE_LINE_TYPE_UINT32, },
 		[PARSE_LINE_ATTR_ROUTE_SRC]       = { .key = NM_IP_ROUTE_ATTRIBUTE_SRC,
 		                                      .type = PARSE_LINE_TYPE_ADDR, },
 		[PARSE_LINE_ATTR_ROUTE_FROM]      = { .key = NM_IP_ROUTE_ATTRIBUTE_FROM,
 		                                      .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
-		                                      .disabled = (addr_family != AF_INET6), },
+		                                      .disabled = PARSE_LINE_AF_FLAG_FOR_IPV4, },
 		[PARSE_LINE_ATTR_ROUTE_TOS]       = { .key = NM_IP_ROUTE_ATTRIBUTE_TOS,
 		                                      .type = PARSE_LINE_TYPE_UINT8,
 		                                      .int_base_16 = TRUE,
-		                                      .ignore = (addr_family != AF_INET), },
+		                                      .ignore = PARSE_LINE_AF_FLAG_FOR_IPV6, },
+		[PARSE_LINE_ATTR_ROUTE_SCOPE]     = { .key = NM_IP_ROUTE_ATTRIBUTE_SCOPE,
+		                                      .type = PARSE_LINE_TYPE_ROUTE_SCOPE,
+		                                      .ignore = PARSE_LINE_AF_FLAG_FOR_IPV6, },
 		[PARSE_LINE_ATTR_ROUTE_ONLINK]    = { .key = NM_IP_ROUTE_ATTRIBUTE_ONLINK,
-		                                      .type = PARSE_LINE_TYPE_FLAG,
-		                                      .ignore = (addr_family != AF_INET), },
+		                                      .type = PARSE_LINE_TYPE_FLAG, },
 		[PARSE_LINE_ATTR_ROUTE_WINDOW]    = { .key = NM_IP_ROUTE_ATTRIBUTE_WINDOW,
 		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
 		[PARSE_LINE_ATTR_ROUTE_CWND]      = { .key = NM_IP_ROUTE_ATTRIBUTE_CWND,
@@ -869,19 +877,31 @@ parse_route_line (const char *line,
 
 		[PARSE_LINE_ATTR_ROUTE_TO]        = { .key = "to",
 		                                      .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
-		                                      .disabled = (options_route != NULL), },
+		                                      .disabled_with_options_route = TRUE, },
 		[PARSE_LINE_ATTR_ROUTE_VIA]       = { .key = "via",
 		                                      .type = PARSE_LINE_TYPE_ADDR,
-		                                      .disabled = (options_route != NULL), },
+		                                      .disabled_with_options_route = TRUE, },
 		[PARSE_LINE_ATTR_ROUTE_METRIC]    = { .key = "metric",
 		                                      .type = PARSE_LINE_TYPE_UINT32,
-		                                      .disabled = (options_route != NULL), },
+		                                      .disabled_with_options_route = TRUE, },
 
 		[PARSE_LINE_ATTR_ROUTE_DEV]       = { .key = "dev",
 		                                      .type = PARSE_LINE_TYPE_IFNAME,
-		                                      .ignore = TRUE,
-		                                      .disabled = (options_route != NULL), },
+		                                      .ignore = PARSE_LINE_AF_FLAG_FOR_IPV4 | PARSE_LINE_AF_FLAG_FOR_IPV6,
+		                                      .disabled_with_options_route = TRUE, },
 	};
+	nm_auto_unref_ip_route NMIPRoute *route = NULL;
+	gs_free const char **words_free = NULL;
+	const char *const*words;
+	const char *s;
+	gsize i_words;
+	guint i;
+	char buf1[256];
+	char buf2[256];
+	ParseLineData parse_datas[G_N_ELEMENTS (parse_infos)] = { };
+	const ParseLineAFFlag af_flag =   (addr_family == AF_INET)
+	                                ? PARSE_LINE_AF_FLAG_FOR_IPV4
+	                                : PARSE_LINE_AF_FLAG_FOR_IPV6;
 
 	nm_assert (line);
 	nm_assert_addr_family (addr_family);
@@ -909,19 +929,22 @@ parse_route_line (const char *line,
 	for (i_words = 0; words[i_words]; ) {
 		const gsize i_words0 = i_words;
 		const char *const w = words[i_words0];
-		ParseLineInfo *info;
+		const ParseLineInfo *p_info;
+		ParseLineData *p_data;
 		gboolean unqualified_addr = FALSE;
 
-		for (i = 0; i < G_N_ELEMENTS (infos); i++) {
-			info = &infos[i];
+		for (i = 0; i < G_N_ELEMENTS (parse_infos); i++) {
+			p_info = &parse_infos[i];
+			p_data = &parse_datas[i];
 
-			if (info->disabled)
+			if (   (p_info->disabled & af_flag)
+			    || (p_info->disabled_with_options_route && options_route))
 				continue;
 
-			if (!nm_streq (w, info->key))
+			if (!nm_streq (w, p_info->key))
 				continue;
 
-			if (info->has) {
+			if (p_data->has) {
 				/* iproute2 for most arguments allows specifying them multiple times.
 				 * Let's not do that. */
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -929,8 +952,8 @@ parse_route_line (const char *line,
 				return -EINVAL;
 			}
 
-			info->has = TRUE;
-			switch (info->type) {
+			p_data->has = TRUE;
+			switch (p_info->type) {
 			case PARSE_LINE_TYPE_UINT8:
 				i_words++;
 				goto parse_line_type_uint8;
@@ -952,16 +975,22 @@ parse_route_line (const char *line,
 			case PARSE_LINE_TYPE_FLAG:
 				i_words++;
 				goto next;
+			case PARSE_LINE_TYPE_ROUTE_SCOPE:
+				i_words++;
+				goto parse_line_type_route_scope;
 			default:
 				nm_assert_not_reached ();
 			}
 		}
 
 		/* "to" is also accepted unqualified... (once) */
-		info = &infos[PARSE_LINE_ATTR_ROUTE_TO];
-		if (!info->has && !info->disabled) {
+		p_info = &parse_infos[PARSE_LINE_ATTR_ROUTE_TO];
+		p_data = &parse_datas[PARSE_LINE_ATTR_ROUTE_TO];
+		if (   !p_data->has
+		    && !(p_info->disabled & af_flag)
+		    && !(p_info->disabled_with_options_route && options_route)) {
 			unqualified_addr = TRUE;
-			info->has = TRUE;
+			p_data->has = TRUE;
 			goto parse_line_type_addr;
 		}
 
@@ -969,15 +998,44 @@ parse_route_line (const char *line,
 		             "Unrecognized argument (\"to\" is duplicate or \"%s\" is garbage)", w);
 		return -EINVAL;
 
+parse_line_type_route_scope:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+		if (nm_streq (s, "global"))
+			p_data->v.uint8 = RT_SCOPE_UNIVERSE;
+		else if (nm_streq (s, "nowhere"))
+			p_data->v.uint8 = RT_SCOPE_NOWHERE;
+		else if (nm_streq (s, "host"))
+			p_data->v.uint8 = RT_SCOPE_HOST;
+		else if (nm_streq (s, "link"))
+			p_data->v.uint8 = RT_SCOPE_LINK;
+		else if (nm_streq (s, "site"))
+			p_data->v.uint8 = RT_SCOPE_SITE;
+		else {
+			p_data->v.uint8 = _nm_utils_ascii_str_to_int64 (s,
+			                                                0,
+			                                                0,
+			                                                G_MAXUINT8,
+			                                                0);;
+			if (errno) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Argument for \"%s\" is not a valid number", w);
+				return -EINVAL;
+			}
+		}
+		i_words++;
+		goto next;
+
 parse_line_type_uint8:
 		s = words[i_words];
 		if (!s)
 			goto err_word_missing_argument;
-		info->v.uint8 = _nm_utils_ascii_str_to_int64 (s,
-		                                              info->int_base_16 ? 16 : 10,
-		                                              0,
-		                                              G_MAXUINT8,
-		                                              0);;
+		p_data->v.uint8 = _nm_utils_ascii_str_to_int64 (s,
+		                                                p_info->int_base_16 ? 16 : 10,
+		                                                0,
+		                                                G_MAXUINT8,
+		                                                0);;
 		if (errno) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Argument for \"%s\" is not a valid number", w);
@@ -991,17 +1049,17 @@ parse_line_type_uint32_with_lock:
 		s = words[i_words];
 		if (!s)
 			goto err_word_missing_argument;
-		if (info->type == PARSE_LINE_TYPE_UINT32_WITH_LOCK) {
+		if (p_info->type == PARSE_LINE_TYPE_UINT32_WITH_LOCK) {
 			if (nm_streq (s, "lock")) {
 				s = words[++i_words];
 				if (!s)
 					goto err_word_missing_argument;
-				info->v.uint32_with_lock.lock = TRUE;
+				p_data->v.uint32_with_lock.lock = TRUE;
 			} else
-				info->v.uint32_with_lock.lock = FALSE;
-			info->v.uint32_with_lock.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);;
+				p_data->v.uint32_with_lock.lock = FALSE;
+			p_data->v.uint32_with_lock.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);;
 		} else {
-			info->v.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);
+			p_data->v.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);
 		}
 		if (errno) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -1026,16 +1084,16 @@ parse_line_type_addr_with_prefix:
 		{
 			int prefix = -1;
 
-			if (info->type == PARSE_LINE_TYPE_ADDR) {
+			if (p_info->type == PARSE_LINE_TYPE_ADDR) {
 				if (!nm_utils_parse_inaddr_bin (addr_family,
 				                                s,
 				                                NULL,
-				                                &info->v.addr.addr)) {
-					if (   info == &infos[PARSE_LINE_ATTR_ROUTE_VIA]
+				                                &p_data->v.addr.addr)) {
+					if (   p_info == &parse_infos[PARSE_LINE_ATTR_ROUTE_VIA]
 					    && nm_streq (s, "(null)")) {
 						/* Due to a bug, would older versions of NM write "via (null)"
 						 * (rh#1452648). Workaround that, and accept it.*/
-						memset (&info->v.addr.addr, 0, sizeof (info->v.addr.addr));
+						memset (&p_data->v.addr.addr, 0, sizeof (p_data->v.addr.addr));
 					} else {
 						if (unqualified_addr) {
 							g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -1050,15 +1108,15 @@ parse_line_type_addr_with_prefix:
 					}
 				}
 			} else {
-				nm_assert (info->type == PARSE_LINE_TYPE_ADDR_WITH_PREFIX);
-				if (   info == &infos[PARSE_LINE_ATTR_ROUTE_TO]
+				nm_assert (p_info->type == PARSE_LINE_TYPE_ADDR_WITH_PREFIX);
+				if (   p_info == &parse_infos[PARSE_LINE_ATTR_ROUTE_TO]
 				    && nm_streq (s, "default")) {
-					memset (&info->v.addr.addr, 0, sizeof (info->v.addr.addr));
+					memset (&p_data->v.addr.addr, 0, sizeof (p_data->v.addr.addr));
 					prefix = 0;
 				} else if (!nm_utils_parse_inaddr_prefix_bin (addr_family,
 				                                              s,
 				                                              NULL,
-				                                              &info->v.addr.addr,
+				                                              &p_data->v.addr.addr,
 				                                              &prefix)) {
 					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Argument for \"%s\" is not ADDR/PREFIX format", w);
@@ -1066,10 +1124,10 @@ parse_line_type_addr_with_prefix:
 				}
 			}
 			if (prefix == -1)
-				info->v.addr.has_plen = FALSE;
+				p_data->v.addr.has_plen = FALSE;
 			else {
-				info->v.addr.has_plen = TRUE;
-				info->v.addr.plen = prefix;
+				p_data->v.addr.has_plen = TRUE;
+				p_data->v.addr.plen = prefix;
 			}
 		}
 		i_words++;
@@ -1087,70 +1145,76 @@ next:
 		route = options_route;
 		nm_ip_route_ref (route);
 	} else {
-		ParseLineInfo *info_to = &infos[PARSE_LINE_ATTR_ROUTE_TO];
-		ParseLineInfo *info_via = &infos[PARSE_LINE_ATTR_ROUTE_VIA];
-		ParseLineInfo *info_metric = &infos[PARSE_LINE_ATTR_ROUTE_METRIC];
+		ParseLineData *data_to     = &parse_datas[PARSE_LINE_ATTR_ROUTE_TO];
+		ParseLineData *data_via    = &parse_datas[PARSE_LINE_ATTR_ROUTE_VIA];
+		ParseLineData *data_metric = &parse_datas[PARSE_LINE_ATTR_ROUTE_METRIC];
 		guint prefix;
 
-		if (!info_to->has) {
+		if (!data_to->has) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Missing destination prefix");
 			return -EINVAL;
 		}
 
-		prefix =   info_to->v.addr.has_plen
-		         ? info_to->v.addr.plen
+		prefix =   data_to->v.addr.has_plen
+		         ? data_to->v.addr.plen
 		         : (addr_family == AF_INET ? 32 : 128);
 
 		route = nm_ip_route_new_binary (addr_family,
-		                                &info_to->v.addr.addr,
+		                                &data_to->v.addr.addr,
 		                                prefix,
-		                                info_via->has ? &info_via->v.addr.addr : NULL,
-		                                info_metric->has ? (gint64) info_metric->v.uint32 : (gint64) -1,
+		                                data_via->has ? &data_via->v.addr.addr : NULL,
+		                                data_metric->has ? (gint64) data_metric->v.uint32 : (gint64) -1,
 		                                error);
-		info_to->has = FALSE;
-		info_via->has = FALSE;
-		info_metric->has = FALSE;
+		data_to->has = FALSE;
+		data_via->has = FALSE;
+		data_metric->has = FALSE;
 		if (!route)
 			return -EINVAL;
 	}
 
-	for (i = 0; i < G_N_ELEMENTS (infos); i++) {
-		ParseLineInfo *info = &infos[i];
+	for (i = 0; i < G_N_ELEMENTS (parse_infos); i++) {
+		const ParseLineInfo *p_info = &parse_infos[i];
+		ParseLineData *p_data = &parse_datas[i];
 
-		if (!info->has)
+		if (!p_data->has)
 			continue;
-		if (info->ignore || info->disabled)
+
+		if (   (p_info->ignore & af_flag)
+		    || (p_info->disabled & af_flag)
+		    || (p_info->disabled_with_options_route && options_route))
 			continue;
-		switch (info->type) {
+
+		switch (p_info->type) {
 		case PARSE_LINE_TYPE_UINT8:
+		case PARSE_LINE_TYPE_ROUTE_SCOPE:
 			nm_ip_route_set_attribute (route,
-			                           info->key,
-			                           g_variant_new_byte (info->v.uint8));
+			                           p_info->key,
+			                           g_variant_new_byte (p_data->v.uint8));
 			break;
 		case PARSE_LINE_TYPE_UINT32:
 			nm_ip_route_set_attribute (route,
-			                           info->key,
-			                           g_variant_new_uint32 (info->v.uint32));
+			                           p_info->key,
+			                           g_variant_new_uint32 (p_data->v.uint32));
 			break;
 		case PARSE_LINE_TYPE_UINT32_WITH_LOCK:
-			if (info->v.uint32_with_lock.lock) {
+			if (p_data->v.uint32_with_lock.lock) {
 				nm_ip_route_set_attribute (route,
-				                           nm_sprintf_buf (buf1, "lock-%s", info->key),
+				                           nm_sprintf_buf (buf1, "lock-%s", p_info->key),
 				                           g_variant_new_boolean (TRUE));
 			}
 			nm_ip_route_set_attribute (route,
-			                           info->key,
-			                           g_variant_new_uint32 (info->v.uint32_with_lock.uint32));
+			                           p_info->key,
+			                           g_variant_new_uint32 (p_data->v.uint32_with_lock.uint32));
 			break;
 		case PARSE_LINE_TYPE_ADDR:
 		case PARSE_LINE_TYPE_ADDR_WITH_PREFIX:
 			nm_ip_route_set_attribute (route,
-			                           info->key,
+			                           p_info->key,
 			                           g_variant_new_printf ("%s%s",
-			                                                 inet_ntop (addr_family, &info->v.addr.addr, buf1, sizeof (buf1)),
-			                                                 info->v.addr.has_plen
-			                                                    ? nm_sprintf_buf (buf2, "/%u", (unsigned) info->v.addr.plen)
+			                                                 inet_ntop (addr_family, &p_data->v.addr.addr, buf1, sizeof (buf1)),
+			                                                 p_data->v.addr.has_plen
+			                                                    ? nm_sprintf_buf (buf2, "/%u", (unsigned) p_data->v.addr.plen)
 			                                                    : ""));
 			break;
 		case PARSE_LINE_TYPE_FLAG:
@@ -1159,7 +1223,7 @@ next:
 			 * of this attribute, hence, the file format cannot encode
 			 * that configuration. */
 			nm_ip_route_set_attribute (route,
-			                           info->key,
+			                           p_info->key,
 			                           g_variant_new_boolean (TRUE));
 			break;
 		default:

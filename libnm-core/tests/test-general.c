@@ -7986,6 +7986,33 @@ test_route_attributes_format (void)
 
 /*****************************************************************************/
 
+static void
+test_variant_attribute_spec (void)
+{
+	const NMVariantAttributeSpec *const *const specs_list[] = {
+		nm_ip_route_get_variant_attribute_spec (),
+	};
+	int i_specs;
+
+	for (i_specs = 0; i_specs < G_N_ELEMENTS (specs_list); i_specs++) {
+		const NMVariantAttributeSpec *const *const specs = specs_list[i_specs];
+		gsize len;
+		gsize i;
+
+		g_assert (specs);
+
+		len = NM_PTRARRAY_LEN (specs);
+		g_assert_cmpint (len, >, 0u);
+
+		_nmtst_variant_attribute_spec_assert_sorted (specs, len);
+		for (i = 0; i < len; i++)
+			g_assert (specs[i] == _nm_variant_attribute_spec_find_binary_search (specs, len, specs[i]->name));
+		g_assert (!_nm_variant_attribute_spec_find_binary_search (specs, len, "bogus"));
+	}
+}
+
+/*****************************************************************************/
+
 static gboolean
 do_test_nm_set_out_called (int *call_count)
 {
@@ -8448,6 +8475,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/nm-set-out", test_nm_set_out);
 	g_test_add_func ("/core/general/route_attributes/parse", test_route_attributes_parse);
 	g_test_add_func ("/core/general/route_attributes/format", test_route_attributes_format);
+	g_test_add_func ("/core/general/test_variant_attribute_spec", test_variant_attribute_spec);
 
 	g_test_add_func ("/core/general/get_start_time_for_pid", test_get_start_time_for_pid);
 	g_test_add_func ("/core/general/test_nm_va_args_macros", test_nm_va_args_macros);

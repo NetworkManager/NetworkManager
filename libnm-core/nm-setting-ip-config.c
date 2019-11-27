@@ -1197,21 +1197,22 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 }
 
 static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TABLE,         G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_SRC,           G_VARIANT_TYPE_STRING,  .v4 = TRUE, .v6 = TRUE, .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_FROM,          G_VARIANT_TYPE_STRING,              .v6 = TRUE, .str_type = 'p', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TOS,           G_VARIANT_TYPE_BYTE,    .v4 = TRUE,                              ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_ONLINK,        G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_WINDOW,        G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_CWND,          G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_FROM,          G_VARIANT_TYPE_STRING,              .v6 = TRUE, .str_type = 'p', ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_INITCWND,      G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_INITRWND,      G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_MTU,           G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW,   G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND,     G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND, G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND, G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU,      G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW,   G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_MTU,           G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_ONLINK,        G_VARIANT_TYPE_BOOLEAN, .v4 = TRUE, .v6 = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_SCOPE,         G_VARIANT_TYPE_BYTE,    .v4 = TRUE,                              ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_SRC,           G_VARIANT_TYPE_STRING,  .v4 = TRUE, .v6 = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TABLE,         G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TOS,           G_VARIANT_TYPE_BYTE,    .v4 = TRUE,                              ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_WINDOW,        G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
 	NULL,
 };
 
@@ -1250,21 +1251,16 @@ nm_ip_route_attribute_validate  (const char *name,
                                  gboolean *known,
                                  GError **error)
 {
-	const NMVariantAttributeSpec *const *iter;
-	const NMVariantAttributeSpec *spec = NULL;
+	const NMVariantAttributeSpec *spec;
 
 	g_return_val_if_fail (name, FALSE);
 	g_return_val_if_fail (value, FALSE);
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	for (iter = ip_route_attribute_spec; *iter; iter++) {
-		if (nm_streq (name, (*iter)->name)) {
-			spec = *iter;
-			break;
-		}
-	}
-
+	spec = _nm_variant_attribute_spec_find_binary_search (ip_route_attribute_spec,
+	                                                      G_N_ELEMENTS (ip_route_attribute_spec) - 1,
+	                                                      name);
 	if (!spec) {
 		NM_SET_OUT (known, FALSE);
 		g_set_error_literal (error,
