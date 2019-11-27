@@ -669,7 +669,7 @@ script_must_wait (const char *path)
 
 		dir = g_path_get_dirname (link);
 		real = realpath (dir, NULL);
-		if (real && !g_str_has_suffix (real, "/no-wait.d"))
+		if (NM_STR_HAS_SUFFIX (real, "/no-wait.d"))
 			return FALSE;
 	}
 
