@@ -5555,6 +5555,48 @@ attribute_unescape (const char *start, const char *end)
 	return ret;
 }
 
+gboolean
+_nmtst_variant_attribute_spec_assert_sorted (const NMVariantAttributeSpec *const*array,
+                                             gsize len)
+{
+	gsize i;
+
+	g_assert (array);
+	g_assert (len > 0);
+	g_assert_cmpint(len, ==, NM_PTRARRAY_LEN (array));
+
+	for (i = 0; i < len; i++) {
+		nm_assert (array[i]->name);
+		nm_assert (array[i]->name[0]);
+		if (i > 0)
+			nm_assert (strcmp (array[i - 1]->name, array[i]->name) < 0);
+	}
+	nm_assert (!array[i]);
+
+	return TRUE;
+}
+
+const NMVariantAttributeSpec *
+_nm_variant_attribute_spec_find_binary_search (const NMVariantAttributeSpec *const*array,
+                                               gsize len,
+                                               const char *name)
+{
+	gssize idx;
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMVariantAttributeSpec, name) == 0);
+
+	idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) array,
+	                                            len,
+	                                            &name,
+	                                            nm_strcmp_p_with_data,
+	                                            NULL,
+	                                            NULL,
+	                                            NULL);
+	if (idx < 0)
+		return NULL;
+	return array[idx];
+}
+
 /**
  * nm_utils_parse_variant_attributes:
  * @string: the input string

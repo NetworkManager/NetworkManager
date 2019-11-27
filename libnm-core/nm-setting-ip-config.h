@@ -127,21 +127,21 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
                                               gboolean *known,
                                               GError **error);
 
-#define NM_IP_ROUTE_ATTRIBUTE_TABLE          "table"
-#define NM_IP_ROUTE_ATTRIBUTE_SRC            "src"
-#define NM_IP_ROUTE_ATTRIBUTE_FROM           "from"
-#define NM_IP_ROUTE_ATTRIBUTE_TOS            "tos"
-#define NM_IP_ROUTE_ATTRIBUTE_ONLINK         "onlink"
-#define NM_IP_ROUTE_ATTRIBUTE_WINDOW         "window"
 #define NM_IP_ROUTE_ATTRIBUTE_CWND           "cwnd"
+#define NM_IP_ROUTE_ATTRIBUTE_FROM           "from"
 #define NM_IP_ROUTE_ATTRIBUTE_INITCWND       "initcwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_INITRWND       "initrwnd"
-#define NM_IP_ROUTE_ATTRIBUTE_MTU            "mtu"
-#define NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW    "lock-window"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND      "lock-cwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND  "lock-initcwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND  "lock-initrwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU       "lock-mtu"
+#define NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW    "lock-window"
+#define NM_IP_ROUTE_ATTRIBUTE_MTU            "mtu"
+#define NM_IP_ROUTE_ATTRIBUTE_ONLINK         "onlink"
+#define NM_IP_ROUTE_ATTRIBUTE_SRC            "src"
+#define NM_IP_ROUTE_ATTRIBUTE_TABLE          "table"
+#define NM_IP_ROUTE_ATTRIBUTE_TOS            "tos"
+#define NM_IP_ROUTE_ATTRIBUTE_WINDOW         "window"
 
 /*****************************************************************************/
 
