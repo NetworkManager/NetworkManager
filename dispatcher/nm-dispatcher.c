@@ -617,9 +617,10 @@ find_scripts (Request *request)
 		err = stat (path, &st);
 		if (err)
 			_LOG_R_W (request, "find-scripts: Failed to stat '%s': %d", path, err);
-		else if (!S_ISREG (st.st_mode))
-			; /* silently skip. */
-		else if (!check_permissions (&st, &err_msg))
+		else if (   !S_ISREG (st.st_mode)
+		         || st.st_size == 0) {
+			/* silently skip. */
+		} else if (!check_permissions (&st, &err_msg))
 			_LOG_R_W (request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
 		else {
 			/* success */
