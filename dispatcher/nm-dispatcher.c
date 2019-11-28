@@ -605,17 +605,14 @@ find_scripts (Request *request)
 
 	g_hash_table_iter_init (&iter, scripts);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &filename, (gpointer *) &path)) {
-		struct stat st;
-		char *link_target;
-		int err;
+		gs_free char *link_target = NULL;
 		const char *err_msg = NULL;
+		struct stat st;
+		int err;
 
 		link_target = g_file_read_link (path, NULL);
-		if (g_strcmp0 (link_target, "/dev/null") == 0) {
-			g_free (link_target);
+		if (nm_streq0 (link_target, "/dev/null"))
 			continue;
-		}
-		g_free (link_target);
 
 		err = stat (path, &st);
 		if (err)
