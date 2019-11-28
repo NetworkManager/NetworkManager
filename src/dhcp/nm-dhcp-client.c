@@ -49,6 +49,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_IAID,
 	PROP_IAID_EXPLICIT,
 	PROP_HOSTNAME,
+	PROP_HOSTNAME_FLAGS,
 );
 
 typedef struct _NMDhcpClientPrivate {
@@ -69,6 +70,7 @@ typedef struct _NMDhcpClientPrivate {
 	guint32      timeout;
 	guint32      iaid;
 	NMDhcpState  state;
+	NMDhcpHostnameFlags hostname_flags;
 	bool         info_only:1;
 	bool         use_fqdn:1;
 	bool         iaid_explicit:1;
@@ -284,6 +286,14 @@ nm_dhcp_client_get_hostname (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hostname;
+}
+
+NMDhcpHostnameFlags
+nm_dhcp_client_get_hostname_flags (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NM_DHCP_HOSTNAME_FLAG_NONE);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hostname_flags;
 }
 
 gboolean
@@ -1035,6 +1045,10 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->hostname = g_value_dup_string (value);
 		break;
+	case PROP_HOSTNAME_FLAGS:
+		/* construct-only */
+		priv->hostname_flags = g_value_get_uint (value);
+		break;
 	case PROP_ROUTE_TABLE:
 		priv->route_table = g_value_get_uint (value);
 		break;
@@ -1167,6 +1181,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_HOSTNAME_FLAGS] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_HOSTNAME_FLAGS, "", "",
+	                       0, G_MAXUINT32, NM_DHCP_HOSTNAME_FLAG_NONE,
+	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_ROUTE_TABLE] =
 	    g_param_spec_uint (NM_DHCP_CLIENT_ROUTE_TABLE, "", "",

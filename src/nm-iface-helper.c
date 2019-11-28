@@ -26,6 +26,7 @@
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
 #include "nm-setting-ip6-config.h"
 #include "systemd/nm-sd.h"
 
@@ -520,6 +521,7 @@ main (int argc, char *argv[])
 		                                          !!global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_fqdn,
+		                                          NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4,
 		                                          client_id,
 		                                          NM_DHCP_TIMEOUT_DEFAULT,
 		                                          NULL,

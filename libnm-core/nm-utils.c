@@ -6185,3 +6185,56 @@ _nm_utils_iaid_verify (const char *str, gint64 *out_value)
 
 	return FALSE;
 }
+
+gboolean
+_nm_utils_validate_dhcp_hostname_flags (NMDhcpHostnameFlags flags,
+                                        int addr_family,
+                                        GError **error)
+{
+	NMDhcpHostnameFlags unknown;
+
+	unknown = flags;
+	unknown &= ~(  NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED
+	             | NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE
+	             | NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE
+	             | NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS);
+	if (unknown) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("unknown flags 0x%x"), (guint) unknown);
+		return FALSE;
+	}
+
+	if (NM_FLAGS_ALL (flags,
+	                    NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE
+	                  | NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("'fqdn-no-update' and 'fqdn-serv-update' flags cannot be set at the same time"));
+		return FALSE;
+	}
+
+	if (   NM_FLAGS_HAS (flags, NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS)
+	    && NM_FLAGS_ANY (flags,  NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE
+	                           | NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED
+	                           | NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("'fqdn-clear-flags' flag is incompatible with other FQDN flags"));
+		return FALSE;
+	}
+
+	if (   addr_family == AF_INET6
+	    && (flags & NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("DHCPv6 does not support the E (encoded) FQDN flag"));
+		return FALSE;
+	}
+
+	return TRUE;
+}

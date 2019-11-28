@@ -307,25 +307,26 @@ char *nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX     30000
 
-#define NM_SETTING_IP_CONFIG_METHOD             "method"
-#define NM_SETTING_IP_CONFIG_DNS                "dns"
-#define NM_SETTING_IP_CONFIG_DNS_SEARCH         "dns-search"
-#define NM_SETTING_IP_CONFIG_DNS_OPTIONS        "dns-options"
-#define NM_SETTING_IP_CONFIG_DNS_PRIORITY       "dns-priority"
-#define NM_SETTING_IP_CONFIG_ADDRESSES          "addresses"
-#define NM_SETTING_IP_CONFIG_GATEWAY            "gateway"
-#define NM_SETTING_IP_CONFIG_ROUTES             "routes"
-#define NM_SETTING_IP_CONFIG_ROUTE_METRIC       "route-metric"
-#define NM_SETTING_IP_CONFIG_ROUTE_TABLE        "route-table"
-#define NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
-#define NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
-#define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
-#define NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME "dhcp-send-hostname"
-#define NM_SETTING_IP_CONFIG_NEVER_DEFAULT      "never-default"
-#define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
-#define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
-#define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
-#define NM_SETTING_IP_CONFIG_DHCP_IAID          "dhcp-iaid"
+#define NM_SETTING_IP_CONFIG_METHOD              "method"
+#define NM_SETTING_IP_CONFIG_DNS                 "dns"
+#define NM_SETTING_IP_CONFIG_DNS_SEARCH          "dns-search"
+#define NM_SETTING_IP_CONFIG_DNS_OPTIONS         "dns-options"
+#define NM_SETTING_IP_CONFIG_DNS_PRIORITY        "dns-priority"
+#define NM_SETTING_IP_CONFIG_ADDRESSES           "addresses"
+#define NM_SETTING_IP_CONFIG_GATEWAY             "gateway"
+#define NM_SETTING_IP_CONFIG_ROUTES              "routes"
+#define NM_SETTING_IP_CONFIG_ROUTE_METRIC        "route-metric"
+#define NM_SETTING_IP_CONFIG_ROUTE_TABLE         "route-table"
+#define NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES  "ignore-auto-routes"
+#define NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS     "ignore-auto-dns"
+#define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME       "dhcp-hostname"
+#define NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME  "dhcp-send-hostname"
+#define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS "dhcp-hostname-flags"
+#define NM_SETTING_IP_CONFIG_NEVER_DEFAULT       "never-default"
+#define NM_SETTING_IP_CONFIG_MAY_FAIL            "may-fail"
+#define NM_SETTING_IP_CONFIG_DAD_TIMEOUT         "dad-timeout"
+#define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT        "dhcp-timeout"
+#define NM_SETTING_IP_CONFIG_DHCP_IAID           "dhcp-iaid"
 
 /* these are not real GObject properties. */
 #define NM_SETTING_IP_CONFIG_ROUTING_RULES      "routing-rules"
@@ -359,6 +360,45 @@ typedef struct {
 	/* Padding for future expansion */
 	gpointer padding[8];
 } NMSettingIPConfigClass;
+
+/**
+ * NMDhcpHostnameFlags:
+ * @NM_DHCP_HOSTNAME_FLAG_NONE: no flag set. The default value from
+ *   Networkmanager global configuration is used. If such value is unset
+ *   or still zero, the DHCP request will use standard FQDN flags, i.e.
+ *   %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE and
+ *   %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED for IPv4 and
+ *   %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE for IPv6.
+ * @NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE: whether the server should
+ *   do the A RR (FQDN-to-address) DNS updates.
+ * @NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED: if set, the FQDN is encoded
+ *   using canonical wire format. Otherwise it uses the deprecated
+ *   ASCII encoding. This flag is allowed only for DHCPv4.
+ * @NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE: when not set, request the
+ *   server to perform updates (the PTR RR and possibly the A RR
+ *   based on the %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE flag). If
+ *   this is set, the %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE flag
+ *   should be cleared.
+ * @NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS: when set, no FQDN flags are
+ *   sent in the DHCP FQDN option. When cleared and all other FQDN
+ *   flags are zero, standard FQDN flags are sent. This flag is
+ *   incompatible with any other FQDN flag.
+ * *
+ * #NMDhcpHostnameFlags describe flags related to the DHCP hostname and
+ * FQDN.
+ *
+ * Since: 1.22
+ */
+typedef enum { /*< flags >*/
+	NM_DHCP_HOSTNAME_FLAG_NONE             = 0x0,
+
+	NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE = 0x1,
+	NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED     = 0x2,
+	NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE   = 0x4,
+
+	NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS = 0x8,
+
+} NMDhcpHostnameFlags;
 
 GType nm_setting_ip_config_get_type (void);
 
@@ -460,6 +500,9 @@ NM_AVAILABLE_IN_1_2
 int           nm_setting_ip_config_get_dhcp_timeout           (NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_22
 const char   *nm_setting_ip_config_get_dhcp_iaid              (NMSettingIPConfig *setting);
+
+NM_AVAILABLE_IN_1_22
+NMDhcpHostnameFlags nm_setting_ip_config_get_dhcp_hostname_flags (NMSettingIPConfig *setting);
 
 G_END_DECLS
 

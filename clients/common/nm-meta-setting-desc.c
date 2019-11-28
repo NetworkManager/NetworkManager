@@ -5666,6 +5666,14 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP4_CONFIG_DHCP_FQDN,
 	    .property_type =                &_pt_gobject_string,
 	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME_FLAGS,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_dhcp_hostname_flags_get_type,
+			),
+		)
+	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_NEVER_DEFAULT,
 	    .property_type =                &_pt_gobject_bool,
 	),
@@ -5895,6 +5903,14 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME,
 	    .property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME_FLAGS,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_dhcp_hostname_flags_get_type,
+			),
+		)
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_TOKEN,
 	    .property_type =                &_pt_gobject_string,

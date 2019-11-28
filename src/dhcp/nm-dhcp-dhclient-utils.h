@@ -16,6 +16,7 @@ char *nm_dhcp_dhclient_create_config (const char *interface,
                                       const char *hostname,
                                       guint32 timeout,
                                       gboolean use_fqdn,
+                                      NMDhcpHostnameFlags hostname_flags,
                                       const char *orig_path,
                                       const char *orig_contents,
                                       GBytes **out_new_client_id);

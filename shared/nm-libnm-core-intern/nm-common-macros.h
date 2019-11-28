@@ -55,6 +55,5 @@ NM_IAID_IS_SPECIAL (const char *str)
 	                     NM_IAID_IFNAME,
 	                     NM_IAID_STABLE);
 }
-/*****************************************************************************/
 
 #endif /* __NM_COMMON_MACROS_H__ */

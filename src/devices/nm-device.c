@@ -8092,6 +8092,53 @@ out_good:
 	return iaid;
 }
 
+static NMDhcpHostnameFlags
+get_dhcp_hostname_flags (NMDevice *self, int addr_family)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	NMDhcpHostnameFlags flags;
+	gs_free_error GError *error = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DHCP_HOSTNAME_FLAG_NONE);
+
+	connection = nm_device_get_applied_connection (self);
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+	g_return_val_if_fail (s_ip, NM_DHCP_HOSTNAME_FLAG_NONE);
+
+	if (!nm_setting_ip_config_get_dhcp_send_hostname (s_ip))
+		return NM_DHCP_HOSTNAME_FLAG_NONE;
+
+	flags = nm_setting_ip_config_get_dhcp_hostname_flags (s_ip);
+	if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
+		return flags;
+
+	flags = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                     addr_family == AF_INET
+	                                                       ? NM_CON_DEFAULT ("ipv4.dhcp-hostname-flags")
+	                                                       : NM_CON_DEFAULT ("ipv6.dhcp-hostname-flags"),
+	                                                     self,
+	                                                     0, NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS,
+	                                                     0);
+
+	if (!_nm_utils_validate_dhcp_hostname_flags (flags, addr_family, &error)) {
+		_LOGW (LOGD_DEVICE, "invalid global default value 0x%x for ipv%d.%s: %s",
+		       (guint) flags,
+		       addr_family == AF_INET ? 4 : 6,
+		       NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
+		       error->message);
+		flags = NM_DHCP_HOSTNAME_FLAG_NONE;
+	}
+
+	if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
+		return flags;
+
+	if (addr_family == AF_INET)
+		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4;
+	else
+		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
+}
+
 static GBytes *
 dhcp4_get_client_id (NMDevice *self,
                      NMConnection *connection,
@@ -8265,12 +8312,12 @@ dhcp4_start (NMDevice *self)
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
+	                                                get_dhcp_hostname_flags (self, AF_INET),
 	                                                client_id,
 	                                                get_dhcp_timeout (self, AF_INET),
 	                                                priv->dhcp_anycast_address,
 	                                                NULL,
 	                                                &error);
-
 	if (!priv->dhcp4.client) {
 		_LOGW (LOGD_DHCP4, "failure to start DHCP: %s", error->message);
 		g_clear_error (&error);
@@ -9078,6 +9125,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                nm_device_get_route_metric (self, AF_INET6),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
+	                                                get_dhcp_hostname_flags (self, AF_INET6),
 	                                                duid,
 	                                                enforce_duid,
 	                                                iaid,
