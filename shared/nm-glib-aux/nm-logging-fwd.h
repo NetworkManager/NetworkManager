@@ -4,8 +4,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef __NM_LOGGING_DEFINES_H__
-#define __NM_LOGGING_DEFINES_H__
+#ifndef __NM_LOGGING_FWD_H__
+#define __NM_LOGGING_FWD_H__
 
 /* Log domains */
 
@@ -245,4 +245,4 @@ extern void _nm_utils_monotonic_timestamp_initialized (const struct timespec *tp
 
 /*****************************************************************************/
 
-#endif /* __NM_LOGGING_DEFINES_H__ */
+#endif /* __NM_LOGGING_FWD_H__ */

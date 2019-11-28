@@ -1646,6 +1646,8 @@ global:
 	nm_device_get_interface_flags;
 	nm_device_interface_flags_get_type;
 	nm_dhcp_hostname_flags_get_type;
+	nm_ip_address_cmp_flags_get_type;
+	nm_ip_address_cmp_full;
 	nm_manager_reload_flags_get_type;
 	nm_setting_gsm_get_auto_config;
 	nm_setting_ip_config_get_dhcp_hostname_flags;

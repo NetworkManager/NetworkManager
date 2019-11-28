@@ -18,6 +18,24 @@ G_BEGIN_DECLS
 
 #define NM_IP_ADDRESS_ATTRIBUTE_LABEL        "label"
 
+/**
+ * NMIPAddressCmpFlags:
+ * @NM_IP_ADDRESS_CMP_FLAGS_NONE: no flags.
+ * @NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS: when comparing two addresses,
+ *   also consider their attributes. Warning: note that attributes are GVariants
+ *   and they don't have a total order. In other words, if the address differs only
+ *   by their attributes, the returned compare order is not total. In that case,
+ *   the return value merely indicates equality (zero) or inequality.
+ *
+ * Compare flags for nm_ip_address_cmp_full().
+ *
+ * Since: 1.22
+ */
+typedef enum { /*< flags >*/
+	NM_IP_ADDRESS_CMP_FLAGS_NONE       = 0,
+	NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS = 0x1,
+} NMIPAddressCmpFlags;
+
 typedef struct NMIPAddress NMIPAddress;
 
 GType        nm_ip_address_get_type            (void);
@@ -35,6 +53,10 @@ void         nm_ip_address_ref                 (NMIPAddress *address);
 void         nm_ip_address_unref               (NMIPAddress *address);
 gboolean     nm_ip_address_equal               (NMIPAddress *address,
                                                 NMIPAddress *other);
+NM_AVAILABLE_IN_1_22
+int          nm_ip_address_cmp_full            (const NMIPAddress *a,
+                                                const NMIPAddress *b,
+                                                NMIPAddressCmpFlags cmp_flags);
 NMIPAddress *nm_ip_address_dup                 (NMIPAddress *address);
 
 int          nm_ip_address_get_family          (NMIPAddress *address);

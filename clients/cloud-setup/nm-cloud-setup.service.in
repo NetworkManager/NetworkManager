@@ -1,0 +1,8 @@
+[Unit]
+Description=Automatically configure NetworkManager in cloud
+
+[Service]
+Type=oneshot
+ExecStart=@libexecdir@/nm-cloud-setup
+
+#Environment=NM_CLOUD_SETUP_LOG=TRACE

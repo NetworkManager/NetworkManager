@@ -289,49 +289,62 @@ nm_ip_address_unref (NMIPAddress *address)
 }
 
 /**
- * _nm_ip_address_equal:
- * @address: the #NMIPAddress
- * @other: the #NMIPAddress to compare @address to.
- * @consider_attributes: whether to check for equality of attributes too.
+ * nm_ip_address_cmp_full:
+ * @a: the #NMIPAddress
+ * @b: the #NMIPAddress to compare @address to.
+ * @cmp_flags: the #NMIPAddressCmpFlags that indicate what to compare.
  *
- * Determines if two #NMIPAddress objects are equal.
+ * Note that with @cmp_flags #NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS, there
+ * is no total order for comparing GVariant. That means, if the two addresses
+ * only differ by their attributes, the sort order is undefined and the return
+ * value only indicates equality.
  *
- * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ * Returns: 0 if the two objects have the same values (according to their flags)
+ *   or a integer indicating the compare order.
  **/
-static gboolean
-_nm_ip_address_equal (NMIPAddress *address, NMIPAddress *other, gboolean consider_attributes)
+int
+nm_ip_address_cmp_full (const NMIPAddress *a, const NMIPAddress *b, NMIPAddressCmpFlags cmp_flags)
 {
-	g_return_val_if_fail (address != NULL, FALSE);
-	g_return_val_if_fail (address->refcount > 0, FALSE);
+	g_return_val_if_fail (!a || a->refcount > 0, 0);
+	g_return_val_if_fail (!b || b->refcount > 0, 0);
+	g_return_val_if_fail (!NM_FLAGS_ANY (cmp_flags, ~NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS), 0);
 
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
+	NM_CMP_SELF (a, b);
 
-	if (   address->family != other->family
-	    || address->prefix != other->prefix
-	    || strcmp (address->address, other->address) != 0)
-		return FALSE;
-	if (consider_attributes) {
+	NM_CMP_FIELD (a, b, family);
+	NM_CMP_FIELD (a, b, prefix);
+	NM_CMP_FIELD_STR (a, b, address);
+
+	if (NM_FLAGS_HAS (cmp_flags, NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS)) {
 		GHashTableIter iter;
 		const char *key;
 		GVariant *value, *value2;
 		guint n;
 
-		n = address->attributes ? g_hash_table_size (address->attributes) : 0;
-		if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
-			return FALSE;
-		if (n) {
-			g_hash_table_iter_init (&iter, address->attributes);
+		n = a->attributes ? g_hash_table_size (a->attributes) : 0u;
+		NM_CMP_DIRECT (n, (b->attributes ? g_hash_table_size (b->attributes) : 0u));
+
+		if (n > 0) {
+			g_hash_table_iter_init (&iter, a->attributes);
 			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-				value2 = g_hash_table_lookup (other->attributes, key);
+				value2 = g_hash_table_lookup (b->attributes, key);
+				/* We cannot really compare GVariants, because g_variant_compare() does
+				 * not work in general. So, don't bother. NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS is
+				 * documented to not provide a total order for the attribute contents.
+				 *
+				 * Theoretically, we can implement also a total order. However we should
+				 * not do that by default because it would require us to sort the keys
+				 * first. Most callers don't care about total order, so they shouldn't
+				 * pay the overhead. */
 				if (!value2)
-					return FALSE;
+					return -2;
 				if (!g_variant_equal (value, value2))
-					return FALSE;
+					return -2;
 			}
 		}
 	}
-	return TRUE;
+
+	return 0;
 }
 
 /**
@@ -347,7 +360,7 @@ _nm_ip_address_equal (NMIPAddress *address, NMIPAddress *other, gboolean conside
 gboolean
 nm_ip_address_equal (NMIPAddress *address, NMIPAddress *other)
 {
-	return _nm_ip_address_equal (address, other, FALSE);
+	return nm_ip_address_cmp_full (address, other, NM_IP_ADDRESS_CMP_FLAGS_NONE) == 0;
 }
 
 /**
@@ -778,8 +791,8 @@ nm_ip_route_equal_full (NMIPRoute *route, NMIPRoute *other, guint cmp_flags)
 		GVariant *value, *value2;
 		guint n;
 
-		n = route->attributes ? g_hash_table_size (route->attributes) : 0;
-		if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
+		n = route->attributes ? g_hash_table_size (route->attributes) : 0u;
+		if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0u))
 			return FALSE;
 		if (n) {
 			g_hash_table_iter_init (&iter, route->attributes);
@@ -5129,7 +5142,9 @@ compare_property (const NMSettInfoSetting *sett_info,
 			if (a_priv->addresses->len != b_priv->addresses->len)
 				return FALSE;
 			for (i = 0; i < a_priv->addresses->len; i++) {
-				if (!_nm_ip_address_equal (a_priv->addresses->pdata[i], b_priv->addresses->pdata[i], TRUE))
+				if (nm_ip_address_cmp_full (a_priv->addresses->pdata[i],
+				                            b_priv->addresses->pdata[i],
+				                            NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS) != 0)
 					return FALSE;
 			}
 		}

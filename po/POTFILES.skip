@@ -1,13 +1,15 @@
+clients/cloud-setup/nm-cloud-setup.service.in
+contrib/fedora/rpm/
 data/NetworkManager.service.in
+data/org.freedesktop.NetworkManager.policy.in
 examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c
-data/org.freedesktop.NetworkManager.policy.in
+shared/nm-utils/nm-vpn-editor-plugin-call.h
+shared/nm-utils/nm-vpn-plugin-utils.c
 vpn-daemons/openvpn
 vpn-daemons/pptp
 vpn-daemons/vpnc
-contrib/fedora/rpm/
-shared/nm-utils/nm-vpn-editor-plugin-call.h
-shared/nm-utils/nm-vpn-plugin-utils.c
+
 # https://bugs.launchpad.net/intltool/+bug/1117944
 sub/data/org.freedesktop.NetworkManager.policy.in
 
