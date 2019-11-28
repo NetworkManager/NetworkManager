@@ -1418,9 +1418,14 @@ nm_device_get_state_reason (NMDevice *device)
 NMActiveConnection *
 nm_device_get_active_connection (NMDevice *device)
 {
+	NMActiveConnection *ac;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nml_dbus_property_o_get_obj (&NM_DEVICE_GET_PRIVATE (device)->property_o[PROPERTY_O_IDX_ACTIVE_CONNECTION]);
+	ac = nml_dbus_property_o_get_obj (&NM_DEVICE_GET_PRIVATE (device)->property_o[PROPERTY_O_IDX_ACTIVE_CONNECTION]);
+
+	nm_assert (!ac || NM_IS_ACTIVE_CONNECTION (ac));
+	return ac;
 }
 
 /**

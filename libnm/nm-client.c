@@ -3708,7 +3708,7 @@ _request_wait_start (GTask *task_take,
 	}
 }
 
-static gpointer *
+static gpointer
 _request_wait_finish (NMClient *client,
                       GAsyncResult *result,
                       gpointer source_tag,
@@ -3731,6 +3731,8 @@ _request_wait_finish (NMClient *client,
 
 	NM_SET_OUT (out_result, g_steal_pointer (&request_data->extra_results));
 	r = g_steal_pointer (&request_data->result);
+
+	nm_assert (NM_IS_OBJECT (r));
 
 	_request_wait_data_free (request_data);
 	return r;
