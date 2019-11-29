@@ -10,27 +10,38 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Drop support for BlueZ 4. BlueZ 5 was released in 2012 and should
   nowadays be available everywhere.
+* DHCP: switch "internal" DHCPv4 plugin from code based on systemd to use nettools'
+  n-dhcp4 library.
+* Add support for "scope" attribute for IPv4 routes.
+* Add support for specifying IAID and FQDN flags for DHCP request.
+* Add a '802-1x.optional' property to consider the wired 802.1X authentication as
+  optional.
+* Use the Network Cost Wi-Fi information element to determine metered
+  device state.
 * core: declare "startup complete" when device reaches "connected"
   state, even if IP addressing methods did not yet fully complete.
   This changes behavior for unblocking "NetworkManager-wait-online.service",
   and "network-online.target" earlier. If this causes issues in your
   setup, you may need to configure "ipv4.may-fail=no" or "ipv6.may-fail=no",
   which delays reaching "connected" state for the address family accordingly.
-* Various bug fixes and improvements.
 * libnm: hide NMObject and NMClient typedefs from header files. This prevents
-  the user from subclassing these types and is an ABI change (in case somebody
-  was doing so).
+  the user from subclassing these types and is an ABI change (in the unlikely
+  case that a user was subclassing the types, which is no longer supported).
 * libnm: retire deprecated WiMAX API NMDeviceWimax and NMWimaxNsp.
   WiMAX support was removed from NetworkManager in version 1.2 (2016) and no such
   type instances would have been created by NMClient for a while now.
-* DHCP: switch "internal" DHCPv4 plugin from code based on systemd to use nettools'
-  n-dhcp4 library.
-* Add support for "scope" attribute for IPv4 routes.
+* Deprecate synchronous API for D-Bus calls in libnm. We don't remove libnm API so
+  you are free to continue using it. But tells you that using it might be a bad idea.
 * libnm: heavily internal rework NMClient. This slims down libnm and makes the
   implementation more efficient. NMClient should work now well with a separate
   GMainContext.
+* Add `nmcli general reload` subcommand to reload NetworkManager configuration
+  and DNS settings.
 * nm-cloud-setup: add new tool for automatically configuring NetworkManager
-  in cloud. Currently only EC2 and IPv4 is supported.
+  in cloud. This is still experimental and currently only EC2 and IPv4 is
+  supported.
+* Add new NetworkManager logo to "contrib/art/logo".
+* Various bug fixes and improvements.
 
 =============================================
 NetworkManager-1.20
