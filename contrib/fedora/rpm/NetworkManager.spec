@@ -550,6 +550,11 @@ NetworkManager in cloud setups. Currently only EC2 is supported.
 %else
 	-Diwd=false \
 %endif
+%if %{with bluetooth}
+	-Dbluez5_dun=true \
+%else
+	-Dbluez5_dun=false \
+%endif
 %if %{with nmtui}
 	-Dnmtui=true \
 %else
@@ -675,6 +680,11 @@ intltoolize --automake --copy --force
 	--with-iwd=yes \
 %else
 	--with-iwd=no \
+%endif
+%if %{with bluetooth}
+	--enable-bluez5-dun=yes \
+%else
+	--enable-bluez5-dun=no \
 %endif
 %if %{with nmtui}
 	--with-nmtui=yes \
