@@ -3522,9 +3522,6 @@ nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
 
 /**
  * nm_utils_dhcp_client_id_systemd_node_specific_full:
- * @legacy_unstable_byteorder: historically, the code would generate a iaid
- *   dependent on host endianness. This is undesirable, if backward compatibility
- *   are not a concern, generate stable endianness.
  * @iaid: the IAID (identity association identifier) in native byte order
  * @machine_id: the binary identifier for the machine. It is hashed
  *   into the DUID. It commonly is /etc/machine-id (parsed in binary as NMUuid).
@@ -3537,8 +3534,7 @@ nm_utils_create_dhcp_iaid (gboolean legacy_unstable_byteorder,
  * Returns: a %GBytes of generated client-id. This function cannot fail.
  */
 GBytes *
-nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byteorder,
-                                                    guint32 iaid,
+nm_utils_dhcp_client_id_systemd_node_specific_full (guint32 iaid,
                                                     const guint8 *machine_id,
                                                     gsize machine_id_len)
 {
@@ -3578,11 +3574,9 @@ nm_utils_dhcp_client_id_systemd_node_specific_full (gboolean legacy_unstable_byt
 }
 
 GBytes *
-nm_utils_dhcp_client_id_systemd_node_specific (gboolean legacy_unstable_byteorder,
-                                               guint32 iaid)
+nm_utils_dhcp_client_id_systemd_node_specific (guint32 iaid)
 {
-	return nm_utils_dhcp_client_id_systemd_node_specific_full (legacy_unstable_byteorder,
-	                                                           iaid,
+	return nm_utils_dhcp_client_id_systemd_node_specific_full (iaid,
 	                                                           (const guint8 *) nm_utils_machine_id_bin (),
 	                                                           sizeof (NMUuid));
 }

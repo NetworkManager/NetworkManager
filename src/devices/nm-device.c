@@ -8217,8 +8217,7 @@ dhcp4_get_client_id (NMDevice *self,
 	if (nm_streq (client_id, "duid")) {
 		guint32 iaid = dhcp_get_iaid (self, AF_INET, connection, NULL);
 
-		result = nm_utils_dhcp_client_id_systemd_node_specific (TRUE,
-		                                                        iaid);
+		result = nm_utils_dhcp_client_id_systemd_node_specific (iaid);
 		goto out_good;
 	}
 
