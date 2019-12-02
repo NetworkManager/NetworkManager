@@ -2086,7 +2086,9 @@ test_nm_utils_dhcp_client_id_systemd_node_specific (gconstpointer test_data)
 		guint32 iaid = d->iaid_ifname;
 		guint32 tmp;
 
-		tmp = nm_utils_create_dhcp_iaid (TRUE, (const guint8 *) d->ifname, strlen (d->ifname));
+		tmp = nm_utils_create_dhcp_iaid (legacy_unstable_byteorder,
+		                                 (const guint8 *) d->ifname,
+		                                 strlen (d->ifname));
 		client_id = nm_utils_dhcp_client_id_systemd_node_specific_full (tmp,
 		                                                                (const guint8 *) &d->machine_id,
 		                                                                sizeof (d->machine_id));
