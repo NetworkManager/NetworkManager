@@ -15,11 +15,22 @@ if enable_bluez5_dun
   deps += bluez5_dep
 endif
 
-libnm_device_plugin_bluetooth = shared_module(
-  'nm-device-plugin-bluetooth',
+libnm_device_plugin_bluetooth_static = static_library(
+  'nm-device-plugin-bluetooth-static',
   sources: sources,
   dependencies: deps,
   c_args: daemon_c_flags,
+)
+
+libnm_device_plugin_bluetooth_static_dep = declare_dependency(
+  link_whole: libnm_device_plugin_bluetooth_static,
+)
+
+deps += libnm_device_plugin_bluetooth_static_dep
+
+libnm_device_plugin_bluetooth = shared_module(
+  'nm-device-plugin-bluetooth',
+  dependencies: deps,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,
@@ -41,7 +52,7 @@ if enable_tests
   executable(
     test_unit,
     'tests/' + test_unit + '.c',
-    dependencies: libnetwork_manager_test_dep,
+    dependencies: [ libnetwork_manager_test_dep, deps ],
     c_args: test_c_flags,
   )
 endif
