@@ -463,9 +463,9 @@ _system (const char *cmd)
 static void
 test_bond (void)
 {
-	if (nmtstp_is_root_test () &&
-	    !g_file_test ("/proc/1/net/bonding", G_FILE_TEST_IS_DIR) &&
-	    _system("modprobe --show bonding") != 0) {
+	if (   nmtstp_is_root_test ()
+	    && !g_file_test ("/proc/1/net/bonding", G_FILE_TEST_IS_DIR)
+	    && _system("modprobe --show bonding") != 0) {
 		g_test_skip ("Skipping test for bonding: bonding module not available");
 		return;
 	}
@@ -476,6 +476,20 @@ test_bond (void)
 static void
 test_team (void)
 {
+	int r;
+
+	if (nmtstp_is_root_test ()) {
+		r = nm_platform_link_team_add (NM_PLATFORM_GET, "nm-team-check", NULL);
+
+		if (r < 0) {
+			g_assert_cmpint (r, ==, -EOPNOTSUPP);
+			g_test_skip ("Skipping test for teaming: team module not functioning");
+			return;
+		}
+
+		nmtstp_link_delete (NM_PLATFORM_GET, -1, -1, "nm-team-check", FALSE);
+	}
+
 	test_software (NM_LINK_TYPE_TEAM, "team");
 }
 
