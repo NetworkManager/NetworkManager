@@ -1015,7 +1015,7 @@ fi
 AM_CONDITIONAL(BUILD_NMCLI, test "$build_nmcli" = yes)
 
 AC_ARG_WITH(nm-cloud-setup,
-            AS_HELP_STRING([--with-nm-cloud-setup=yes|no], [Build nm-cloud-setup]))
+            AS_HELP_STRING([--with-nm-cloud-setup=yes|no], [Build nm-cloud-setup, a tool for automatically configure networking in cloud (EXPERIMENTAL!)]))
 if test "$with_nm_cloud_setup" != no; then
 	PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0], [have_libcurl=yes], [have_libcurl=no])
 	if test "$have_libcurl" != "yes"; then
