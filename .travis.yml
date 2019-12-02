@@ -1,5 +1,5 @@
 language: c
-dist: trusty
+dist: xenial
 sudo: required
 compiler:
   - gcc
@@ -9,42 +9,44 @@ addons:
   apt:
     packages:
     - autoconf
-    - libtool
-    - pkg-config
-    - intltool
-    - libdbus-1-dev
-    - libiw-dev
-    - libglib2.0-dev
-    - libmm-glib-dev
-    - ppp
-    - ppp-dev
-    - libpolkit-gobject-1-dev
-    - libgnutls-dev
-    - libgcrypt11-dev
-    - uuid-dev
-    - libudev-dev
-    - libgirepository1.0-dev
-    - gobject-introspection
-    - gtk-doc-tools
-    - libglib2.0-doc
-    - libreadline-dev
-    - libnewt-dev
-    - libnss3-dev
-    - iptables
-    - make
-    - python-software-properties
-    - python-gi
-    - python-dbus
+    - automake
     - dbus
     - dbus-x11
-    - libjansson4
-    - libjansson-dev
-    - libndp-dev
-    - automake
     - dnsmasq
+    - gobject-introspection
+    - gtk-doc-tools
+    - intltool
+    - iptables
     - libcurl4-gnutls-dev
-    - python3-pip
+    - libdbus-1-dev
+    - libgcrypt11-dev
+    - libgirepository1.0-dev
+    - libglib2.0-dev
+    - libglib2.0-doc
+    - libgnutls-dev
+    - libiw-dev
+    - libjansson-dev
+    - libjansson4
+    - libmm-glib-dev
+    - libndp-dev
+    - libnewt-dev
+    - libnss3-dev
+    - libpolkit-gobject-1-dev
+    - libreadline-dev
+    - libteam-dev
+    - libtool
+    - libudev-dev
+    - make
     - mobile-broadband-provider-info
+    - pkg-config
+    - ppp
+    - ppp-dev
+    - python-dbus
+    - python-gi
+    - python-software-properties
+    - python3-pip
+    - python3-setuptools
+    - uuid-dev
   coverity_scan:
     project:
       name: NetworkManager/NetworkManager
@@ -56,23 +58,8 @@ before_install:
     - sudo dbus-uuidgen --ensure
     - |
       if test "$BUILD_TYPE" == 'meson'; then
-          git clone https://github.com/ninja-build/ninja &&
-          pushd ninja &&
-              ./configure.py --bootstrap &&
-              sudo cp ninja /usr/bin/ &&
-          popd
-
-          # Recent meson requires python 3.5, which isn't in Ubuntu 14.04.
-          # Hence we cannot install it via `pip3 install meson`. Install the latest
-          # working release.
-          #
-          # Wouldn't it be nice to have a build system that supports everything
-          # that NetworkManager would like to support?
-          wget https://github.com/mesonbuild/meson/releases/download/0.44.1/meson-0.44.1.tar.gz -O /tmp/meson.tar.gz
-          tar -C /tmp -xvzf /tmp/meson.tar.gz
-          pushd /tmp/meson-0.44.1
-              sudo python3 setup.py install
-          popd
+          pip3 install ninja
+          pip3 install meson
       fi
     - sudo chmod o+x /usr/sbin/pppd
     - sudo locale-gen pl_PL.UTF-8
