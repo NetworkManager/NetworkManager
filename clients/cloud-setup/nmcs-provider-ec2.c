@@ -24,9 +24,12 @@ _ec2_base (void)
 again:
 	base = g_atomic_pointer_get (&base_cached);
 	if (G_UNLIKELY (!base)) {
+
 		/* The base URI can be set via environment variable.
-		 * This is only for testing, not really to be configurable! */
-		base = g_getenv ("NM_CLOUD_SETUP_EC2_HOST");
+		 * This is mainly for testing, it's not usually supposed to be configured.
+		 * Consider this private API! */
+		base = g_getenv (NMCS_ENV_VARIABLE ("NM_CLOUD_SETUP_EC2_HOST"));
+
 		if (   base
 		    && base[0]
 		    && !strchr (base, '/')) {
@@ -546,7 +549,7 @@ nmcs_provider_ec2_class_init (NMCSProviderEC2Class *klass)
 	NMCSProviderClass *provider_class = NMCS_PROVIDER_CLASS (klass);
 
 	provider_class->_name                 = "ec2";
-	provider_class->_env_provider_enabled = "NM_CLOUD_SETUP_EC2";
+	provider_class->_env_provider_enabled = NMCS_ENV_VARIABLE ("NM_CLOUD_SETUP_EC2");
 	provider_class->detect                = detect;
 	provider_class->get_config            = get_config;
 }

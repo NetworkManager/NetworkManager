@@ -7,6 +7,12 @@
 
 /*****************************************************************************/
 
+/* mark names for  variables that can be used as configuration. Search
+ * for NMCS_ENV_VARIABLE() to find all honored environment variables. */
+#define NMCS_ENV_VARIABLE(var) ""var""
+
+/*****************************************************************************/
+
 extern volatile NMLogLevel _nm_logging_configured_level;
 
 static inline gboolean
