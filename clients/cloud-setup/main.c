@@ -594,7 +594,7 @@ main (int argc, const char *const*argv)
 	gs_unref_object NMClient *nmc = NULL;
 	gs_unref_hashtable GHashTable *config_dict = NULL;
 
-	_nm_logging_enabled_init (g_getenv ("NM_CLOUD_SETUP_LOG"));
+	_nm_logging_enabled_init (g_getenv (NMCS_ENV_VARIABLE ("NM_CLOUD_SETUP_LOG")));
 
 	_LOGD ("nm-cloud-setup %s starting...", NM_DIST_VERSION);
 
