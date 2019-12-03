@@ -11,6 +11,10 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/sendfile.h>
+#include <limits.h>
 
 #include "nm-glib-aux/nm-c-list.h"
 
@@ -2692,6 +2696,31 @@ get_existing_connection (NMManager *self,
 }
 
 static gboolean
+copy_lease (const char *src, const char *dst)
+{
+	int src_fd, dst_fd;
+	ssize_t res, size = SSIZE_MAX;
+
+	src_fd = open (src, O_RDONLY|O_CLOEXEC);
+	if (src_fd < 0)
+		return FALSE;
+
+	dst_fd = open (dst, O_CREAT|O_EXCL|O_CLOEXEC|O_WRONLY, 0644);
+	if (dst_fd < 0) {
+		close (src_fd);
+		return FALSE;
+	}
+
+	while ((res = sendfile (dst_fd, src_fd, NULL, size)) > 0)
+		size -= res;
+
+	close (src_fd);
+	close (dst_fd);
+
+	return !res;
+}
+
+static gboolean
 recheck_assume_connection (NMManager *self,
                            NMDevice *device)
 {
@@ -2732,7 +2761,8 @@ recheck_assume_connection (NMManager *self,
 		                                                  nm_settings_connection_get_uuid (sett_conn),
 		                                                  nm_device_get_iface (device));
 
-		if (rename (initramfs_lease, connection_lease) == 0) {
+		if (copy_lease (initramfs_lease, connection_lease)) {
+			unlink (initramfs_lease);
 			/*
 			 * We've managed to steal the lease used by initramfs before it
 			 * killed off the dhclient. We need to take ownership of the configured
