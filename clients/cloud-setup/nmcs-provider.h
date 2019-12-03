@@ -62,6 +62,7 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 	const char *_name;
+	const char *_env_provider_enabled;
 
 	void (*detect) (NMCSProvider *self,
 	                GTask *task);

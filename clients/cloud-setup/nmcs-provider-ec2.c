@@ -545,7 +545,8 @@ nmcs_provider_ec2_class_init (NMCSProviderEC2Class *klass)
 {
 	NMCSProviderClass *provider_class = NMCS_PROVIDER_CLASS (klass);
 
-	provider_class->_name      = "ec2";
-	provider_class->detect     = detect;
-	provider_class->get_config = get_config;
+	provider_class->_name                 = "ec2";
+	provider_class->_env_provider_enabled = "NM_CLOUD_SETUP_EC2";
+	provider_class->detect                = detect;
+	provider_class->get_config            = get_config;
 }
