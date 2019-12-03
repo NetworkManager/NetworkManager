@@ -735,6 +735,14 @@ _nm_client_queue_notify_object (NMClient *self,
 	nm_assert (NM_IS_OBJECT (nmobj) || NM_IS_CLIENT (nmobj));
 
 	base = (NMObjectBase *) nmobj;
+
+	if (base->is_disposing) {
+		/* Don't emit property changed signals once the NMClient
+		 * instance is about to shut down. */
+		nm_assert (nmobj == self);
+		return;
+	}
+
 	if (c_list_is_empty (&base->queue_notify_lst)) {
 		c_list_link_tail (&NM_CLIENT_GET_PRIVATE (self)->queue_notify_lst_head,
 		                  &base->queue_notify_lst);
