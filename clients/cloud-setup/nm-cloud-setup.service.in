@@ -1,5 +1,6 @@
 [Unit]
 Description=Automatically configure NetworkManager in cloud
+After=NetworkManager.service
 
 [Service]
 Type=oneshot
@@ -25,3 +26,6 @@ RestrictNamespaces=yes
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
 SystemCallFilter=@system-service
+
+[Install]
+WantedBy=NetworkManager.service
