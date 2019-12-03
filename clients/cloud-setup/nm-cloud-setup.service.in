@@ -8,6 +8,11 @@ ExecStart=@libexecdir@/nm-cloud-setup
 
 #Environment=NM_CLOUD_SETUP_LOG=TRACE
 
+# Cloud providers are disabled by default. You need to
+# Opt-in by setting the right environment variable for
+# the provider.
+#Environment=NM_CLOUD_SETUP_EC2=yes
+
 CapabilityBoundingSet=
 LockPersonality=yes
 MemoryDenyWriteExecute=yes

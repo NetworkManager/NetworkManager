@@ -61,6 +61,7 @@ nmcs_provider_detect (NMCSProvider *self,
                       gpointer user_data)
 {
 	gs_unref_object GTask *task = NULL;
+	const char *env;
 
 	g_return_if_fail (NMCS_IS_PROVIDER (self));
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
@@ -68,6 +69,14 @@ nmcs_provider_detect (NMCSProvider *self,
 	task = nm_g_task_new (self, cancellable, nmcs_provider_detect, callback, user_data);
 
 	nmcs_wait_for_objects_register (task);
+
+	env = g_getenv (NMCS_PROVIDER_GET_CLASS (self)->_env_provider_enabled);
+	if (!_nm_utils_ascii_str_to_bool (env, FALSE)) {
+		g_task_return_error (task,
+		                     nm_utils_error_new (NM_UTILS_ERROR_UNKNOWN,
+		                                         "provider is disabled"));
+		return;
+	}
 
 	NMCS_PROVIDER_GET_CLASS (self)->detect (self,
 	                                        g_steal_pointer (&task));
