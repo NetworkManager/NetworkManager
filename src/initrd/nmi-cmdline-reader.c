@@ -59,6 +59,7 @@ add_conn (GHashTable *connections,
 	g_object_set (setting,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
 	              NULL);
 
 	setting = nm_setting_connection_new ();

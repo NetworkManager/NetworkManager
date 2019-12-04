@@ -290,6 +290,10 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 	s_ip6 = nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, s_ip6);
 
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+	              NULL);
+
 	if (!bootp && dt_get_property (base, "chosen", "bootp-response", NULL, NULL))
 		bootp = TRUE;
 
