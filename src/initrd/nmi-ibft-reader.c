@@ -157,6 +157,10 @@ ip_setting_add_from_block (GHashTable *nic,
 	if (!s_ip6) {
 		s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_ip6);
+
+		g_object_set (s_ip6,
+		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+		              NULL);
 	}
 
 	family = guess_ip_address_family (s_ipaddr);
