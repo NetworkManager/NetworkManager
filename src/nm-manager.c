@@ -6215,18 +6215,11 @@ get_permissions_done_cb (NMAuthChain *chain,
 	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++) {
 		const char *permission = nm_auth_permission_names_by_idx[nm_auth_permission_sorted[i] - 1];
 		NMAuthCallResult result;
+		const char *result_str;
 
 		result = nm_auth_chain_get_result (chain, permission);
-		if (result == NM_AUTH_CALL_RESULT_YES)
-			g_variant_builder_add (&results, "{ss}", permission, "yes");
-		else if (result == NM_AUTH_CALL_RESULT_NO)
-			g_variant_builder_add (&results, "{ss}", permission, "no");
-		else if (result == NM_AUTH_CALL_RESULT_AUTH)
-			g_variant_builder_add (&results, "{ss}", permission, "auth");
-		else if (result == NM_AUTH_CALL_RESULT_UNKNOWN)
-			g_variant_builder_add (&results, "{ss}", permission, "unknown");
-		else
-			nm_assert_not_reached ();
+		result_str = nm_client_permission_result_to_string (nm_auth_call_result_to_client (result));
+		g_variant_builder_add (&results, "{ss}", permission, result_str);
 	}
 
 	g_dbus_method_invocation_return_value (context,
