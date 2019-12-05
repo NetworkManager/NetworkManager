@@ -850,6 +850,8 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("VLAN_FLAGS",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("VLAN_ID",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("VLAN_INGRESS_PRIORITY_MAP",                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VRF",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VRF_UUID",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("WEP_KEY_FLAGS",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("WPA_ALLOW_WPA",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("WPA_ALLOW_WPA2",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),

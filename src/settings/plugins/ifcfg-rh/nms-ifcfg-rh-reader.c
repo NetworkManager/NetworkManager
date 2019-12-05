@@ -502,6 +502,24 @@ make_connection_setting (const char *file,
 	}
 
 	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "VRF_UUID", &value);
+	if (!v)
+		v = svGetValueStr (ifcfg, "VRF", &value);
+	if (v) {
+		const char *old_value;
+
+		if ((old_value = nm_setting_connection_get_master (s_con))) {
+			PARSE_WARNING ("Already configured as slave of %s. Ignoring VRF{_UUID}=\"%s\"",
+			               old_value, v);
+		} else {
+			g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, v, NULL);
+			g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE,
+			              NM_SETTING_VRF_SETTING_NAME, NULL);
+		}
+	}
+
+
+	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "GATEWAY_PING_TIMEOUT", &value);
 	if (v) {
 		gint64 tmp;
