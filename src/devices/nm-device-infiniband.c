@@ -191,6 +191,32 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
+can_reapply_change (NMDevice *device,
+                    const char *setting_name,
+                    NMSetting *s_old,
+                    NMSetting *s_new,
+                    GHashTable *diffs,
+                    GError **error)
+{
+	NMDeviceClass *device_class;
+
+	if (nm_streq (setting_name, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_INFINIBAND_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_INFINIBAND_MTU); /* reapplied with IP config */
+	}
+
+	device_class = NM_DEVICE_CLASS (nm_device_infiniband_parent_class);
+	return device_class->can_reapply_change (device,
+	                                         setting_name,
+	                                         s_old,
+	                                         s_new,
+	                                         diffs,
+	                                         error);
+}
+
+static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
                     NMDevice *parent,
@@ -342,6 +368,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	device_class->connection_type_check_compatible = NM_SETTING_INFINIBAND_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_INFINIBAND);
 
+	device_class->can_reapply_change = can_reapply_change;
 	device_class->create_and_realize = create_and_realize;
 	device_class->unrealize = unrealize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
