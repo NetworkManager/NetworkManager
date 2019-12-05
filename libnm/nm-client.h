@@ -18,11 +18,18 @@ G_BEGIN_DECLS
 /**
  * NMClientInstanceFlags:
  * @NM_CLIENT_INSTANCE_FLAGS_NONE: special value to indicate no flags.
+ * @NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS: by default, NMClient
+ *   will fetch the permissions via "GetPermissions" and refetch them when
+ *   "CheckPermissions" signal gets received. By setting this flag, this behavior
+ *   can be disabled. You can toggle this flag to enable and disable automatic
+ *   fetching of the permissions. Watch also nm_client_get_permissions_state()
+ *   to know whether the permissions are up to date.
  *
  * Since: 1.24
  */
 typedef enum { /*< flags >*/
-	NM_CLIENT_INSTANCE_FLAGS_NONE = 0,
+	NM_CLIENT_INSTANCE_FLAGS_NONE                      = 0,
+	NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS = 1,
 } NMClientInstanceFlags;
 
 #define NM_TYPE_CLIENT            (nm_client_get_type ())
@@ -74,6 +81,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_DNS_RC_MANAGER "dns-rc-manager"
 #define NM_CLIENT_DNS_CONFIGURATION "dns-configuration"
 #define NM_CLIENT_CHECKPOINTS "checkpoints"
+#define NM_CLIENT_PERMISSIONS_STATE "permissions-state"
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
 #define NM_CLIENT_DEVICE_REMOVED "device-removed"
@@ -227,6 +235,9 @@ gboolean nm_client_set_logging (NMClient *client,
 
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
                                                           NMClientPermission permission);
+
+NM_AVAILABLE_IN_1_24
+NMTernary nm_client_get_permissions_state (NMClient *self);
 
 NMConnectivityState nm_client_get_connectivity          (NMClient *client);
 
