@@ -6210,9 +6210,10 @@ get_perm_add_result (NMManager *self, NMAuthChain *chain, GVariantBuilder *resul
 		g_variant_builder_add (results, "{ss}", permission, "no");
 	else if (result == NM_AUTH_CALL_RESULT_AUTH)
 		g_variant_builder_add (results, "{ss}", permission, "auth");
-	else {
-		_LOGD (LOGD_CORE, "unknown auth chain result %d", result);
-	}
+	else if (result == NM_AUTH_CALL_RESULT_UNKNOWN)
+		g_variant_builder_add (results, "{ss}", permission, "unknown");
+	else
+		nm_assert_not_reached ();
 }
 
 static void

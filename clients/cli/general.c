@@ -582,7 +582,10 @@ got_permissions (NmCli *nmc)
 	NMClientPermission perm;
 
 	/* The server returns all the permissions at once, so if at least one is there
-	 * we already received the reply. */
+	 * we already received the reply.
+	 *
+	 * FIXME: this is wrong, because all permissions could be unknown. We should instead
+	 * have a signal in NMClient to indicate when permissions are received. */
 	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
 		if (nm_client_get_permission_result (nmc->client, perm) != NM_CLIENT_PERMISSION_RESULT_UNKNOWN)
 			return TRUE;
