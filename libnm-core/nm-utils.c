@@ -1120,6 +1120,7 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_WPA_PSK:
 	case NMU_SEC_WPA2_PSK:
 	case NMU_SEC_SAE:
+	case NMU_SEC_OWE:
 		return TRUE;
 	default:
 		break;
@@ -1298,6 +1299,16 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 				}
 			}
 			return FALSE;
+		}
+		break;
+	case NMU_SEC_OWE:
+		if (adhoc)
+			return FALSE;
+		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
+			return FALSE;
+		if (have_ap) {
+			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_OWE))
+				return FALSE;
 		}
 		break;
 	default:

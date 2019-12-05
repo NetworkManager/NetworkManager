@@ -3073,6 +3073,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-hex \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-quoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-owe \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-sae \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-104-ascii \

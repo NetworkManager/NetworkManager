@@ -72,6 +72,7 @@ static NmtNewtPopupEntry wifi_security[] = {
 	{ N_("WEP 128-bit Passphrase"),            "wep-passphrase" },
 	{ N_("Dynamic WEP (802.1x)"),              "dynamic-wep" },
 	{ N_("LEAP"),                              "leap" },
+	{ N_("Enhanced Open (OWE)"),                     "owe" },
 	{ NULL, NULL }
 };
 
