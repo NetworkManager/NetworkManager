@@ -54,6 +54,7 @@ typedef struct _NMSettingTun              NMSettingTun;
 typedef struct _NMSettingUser             NMSettingUser;
 typedef struct _NMSettingVlan             NMSettingVlan;
 typedef struct _NMSettingVpn              NMSettingVpn;
+typedef struct _NMSettingVrf              NMSettingVrf;
 typedef struct _NMSettingVxlan            NMSettingVxlan;
 typedef struct _NMSettingWifiP2P          NMSettingWifiP2P;
 typedef struct _NMSettingWimax            NMSettingWimax;

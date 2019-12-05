@@ -46,6 +46,7 @@
 #include "nm-setting-user.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-vrf.h"
 #include "nm-setting-vxlan.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-setting-wimax.h"
@@ -386,6 +387,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
 		.setting_name =             NM_SETTING_VPN_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_vpn_get_type,
+	},
+	[NM_META_SETTING_TYPE_VRF] = {
+		.meta_type =                NM_META_SETTING_TYPE_VRF,
+		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
+		.setting_name =             NM_SETTING_VRF_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_vrf_get_type,
 	},
 	[NM_META_SETTING_TYPE_VXLAN] = {
 		.meta_type =                NM_META_SETTING_TYPE_VXLAN,

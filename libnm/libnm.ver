@@ -1665,4 +1665,7 @@ global:
 	nm_client_get_permissions_state;
 	nm_client_instance_flags_get_type;
 	nm_object_get_client;
+	nm_setting_vrf_get_table;
+	nm_setting_vrf_get_type;
+	nm_setting_vrf_new;
 } libnm_1_22_0;

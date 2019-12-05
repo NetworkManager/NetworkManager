@@ -918,6 +918,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-user.h \
 	libnm-core/nm-setting-vlan.h \
 	libnm-core/nm-setting-vpn.h \
+	libnm-core/nm-setting-vrf.h \
 	libnm-core/nm-setting-vxlan.h \
 	libnm-core/nm-setting-wifi-p2p.h \
 	libnm-core/nm-setting-wimax.h \
@@ -990,6 +991,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-user.c \
 	libnm-core/nm-setting-vlan.c \
 	libnm-core/nm-setting-vpn.c \
+	libnm-core/nm-setting-vrf.c \
 	libnm-core/nm-setting-vxlan.c \
 	libnm-core/nm-setting-wifi-p2p.c \
 	libnm-core/nm-setting-wimax.c \

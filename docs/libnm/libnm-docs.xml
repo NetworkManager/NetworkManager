@@ -350,6 +350,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-user.xml"/>
     <xi:include href="xml/nm-setting-vlan.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
+    <xi:include href="xml/nm-setting-vrf.xml"/>
     <xi:include href="xml/nm-setting-vxlan.xml"/>
     <xi:include href="xml/nm-setting-wifi-p2p.xml"/>
     <xi:include href="xml/nm-setting-wimax.xml"/>
