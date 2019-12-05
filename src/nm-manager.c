@@ -6199,30 +6199,12 @@ done:
 /* Permissions */
 
 static void
-get_perm_add_result (NMManager *self, NMAuthChain *chain, GVariantBuilder *results, const char *permission)
-{
-	NMAuthCallResult result;
-
-	result = nm_auth_chain_get_result (chain, permission);
-	if (result == NM_AUTH_CALL_RESULT_YES)
-		g_variant_builder_add (results, "{ss}", permission, "yes");
-	else if (result == NM_AUTH_CALL_RESULT_NO)
-		g_variant_builder_add (results, "{ss}", permission, "no");
-	else if (result == NM_AUTH_CALL_RESULT_AUTH)
-		g_variant_builder_add (results, "{ss}", permission, "auth");
-	else if (result == NM_AUTH_CALL_RESULT_UNKNOWN)
-		g_variant_builder_add (results, "{ss}", permission, "unknown");
-	else
-		nm_assert_not_reached ();
-}
-
-static void
 get_permissions_done_cb (NMAuthChain *chain,
                          GDBusMethodInvocation *context,
                          gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
 	GVariantBuilder results;
+	int i;
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
 
@@ -6230,23 +6212,22 @@ get_permissions_done_cb (NMAuthChain *chain,
 
 	g_variant_builder_init (&results, G_VARIANT_TYPE ("a{ss}"));
 
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SLEEP_WAKE);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_RELOAD);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK);
-	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_WIFI_SCAN);
+	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++) {
+		const char *permission = nm_auth_permission_names_by_idx[nm_auth_permission_sorted[i] - 1];
+		NMAuthCallResult result;
+
+		result = nm_auth_chain_get_result (chain, permission);
+		if (result == NM_AUTH_CALL_RESULT_YES)
+			g_variant_builder_add (&results, "{ss}", permission, "yes");
+		else if (result == NM_AUTH_CALL_RESULT_NO)
+			g_variant_builder_add (&results, "{ss}", permission, "no");
+		else if (result == NM_AUTH_CALL_RESULT_AUTH)
+			g_variant_builder_add (&results, "{ss}", permission, "auth");
+		else if (result == NM_AUTH_CALL_RESULT_UNKNOWN)
+			g_variant_builder_add (&results, "{ss}", permission, "unknown");
+		else
+			nm_assert_not_reached ();
+	}
 
 	g_dbus_method_invocation_return_value (context,
 	                                       g_variant_new ("(a{ss})", &results));
@@ -6264,6 +6245,7 @@ impl_manager_get_permissions (NMDBusObject *obj,
 	NMManager *self = NM_MANAGER (obj);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
+	int i;
 
 	chain = nm_auth_chain_new_context (invocation, get_permissions_done_cb, self);
 	if (!chain) {
@@ -6275,23 +6257,12 @@ impl_manager_get_permissions (NMDBusObject *obj,
 	}
 
 	c_list_link_tail (&priv->auth_lst_head, nm_auth_chain_parent_lst_list (chain));
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SCAN, FALSE);
+
+	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++) {
+		const char *permission = nm_auth_permission_names_by_idx[nm_auth_permission_sorted[i] - 1];
+
+		nm_auth_chain_add_call_unsafe (chain, permission, FALSE);
+	}
 }
 
 static void
