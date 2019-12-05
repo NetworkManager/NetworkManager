@@ -37,6 +37,7 @@ typedef struct _NMDevicePpp          NMDevicePpp;
 typedef struct _NMDeviceTeam         NMDeviceTeam;
 typedef struct _NMDeviceTun          NMDeviceTun;
 typedef struct _NMDeviceVlan         NMDeviceVlan;
+typedef struct _NMDeviceVrf          NMDeviceVrf;
 typedef struct _NMDeviceVxlan        NMDeviceVxlan;
 typedef struct _NMDeviceWifi         NMDeviceWifi;
 typedef struct _NMDeviceWifiP2P      NMDeviceWifiP2P;

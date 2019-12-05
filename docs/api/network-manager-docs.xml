@@ -202,6 +202,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Tun.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Veth.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vlan.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vrf.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.WifiP2P.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml"/>

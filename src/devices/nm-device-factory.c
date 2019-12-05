@@ -393,6 +393,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	_ADD_INTERNAL (nm_tun_device_factory_get_type);
 	_ADD_INTERNAL (nm_veth_device_factory_get_type);
 	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_vrf_device_factory_get_type);
 	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
 	_ADD_INTERNAL (nm_wireguard_device_factory_get_type);
 	_ADD_INTERNAL (nm_wpan_device_factory_get_type);

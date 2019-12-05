@@ -694,6 +694,7 @@ const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[] = {
 	&_nml_dbus_meta_iface_nm_device_tun,
 	&_nml_dbus_meta_iface_nm_device_veth,
 	&_nml_dbus_meta_iface_nm_device_vlan,
+	&_nml_dbus_meta_iface_nm_device_vrf,
 	&_nml_dbus_meta_iface_nm_device_vxlan,
 	&_nml_dbus_meta_iface_nm_device_wifip2p,
 	&_nml_dbus_meta_iface_nm_device_wireguard,
