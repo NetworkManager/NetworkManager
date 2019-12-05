@@ -103,4 +103,8 @@ extern const NMClientPermission nm_auth_permission_sorted[NM_CLIENT_PERMISSION_L
 const char *nm_auth_permission_to_string (NMClientPermission permission);
 NMClientPermission nm_auth_permission_from_string (const char *str);
 
+/*****************************************************************************/
+
+NMClientPermissionResult nm_client_permission_result_from_string (const char *nm);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

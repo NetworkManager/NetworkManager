@@ -29,10 +29,6 @@ gboolean nm_utils_g_param_spec_is_default (const GParamSpec *pspec);
 
 /*****************************************************************************/
 
-NMClientPermissionResult nm_permission_result_to_client (const char *nm);
-
-/*****************************************************************************/
-
 typedef enum {
 	_NML_DBUS_LOG_LEVEL_INITIALIZED = 0x01,
 

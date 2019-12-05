@@ -3379,7 +3379,7 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 		if (perm == NM_CLIENT_PERMISSION_NONE)
 			continue;
 
-		perm_result = nm_permission_result_to_client (pvalue);
+		perm_result = nm_client_permission_result_from_string (pvalue);
 
 		g_hash_table_insert (priv->permissions,
 		                     GUINT_TO_POINTER (perm),

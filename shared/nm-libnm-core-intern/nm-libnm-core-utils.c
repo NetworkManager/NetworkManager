@@ -149,3 +149,19 @@ nm_auth_permission_from_string (const char *str)
 		return NM_CLIENT_PERMISSION_NONE;
 	return nm_auth_permission_sorted[idx];
 }
+
+/*****************************************************************************/
+
+NMClientPermissionResult
+nm_client_permission_result_from_string (const char *nm)
+{
+	if (!nm)
+		return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+	if (nm_streq (nm, "yes"))
+		return NM_CLIENT_PERMISSION_RESULT_YES;
+	if (nm_streq (nm, "no"))
+		return NM_CLIENT_PERMISSION_RESULT_NO;
+	if (nm_streq (nm, "auth"))
+		return NM_CLIENT_PERMISSION_RESULT_AUTH;
+	return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+}

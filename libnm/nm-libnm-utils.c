@@ -663,22 +663,6 @@ nm_utils_fixup_product_string (const char *desc)
 
 /*****************************************************************************/
 
-NMClientPermissionResult
-nm_permission_result_to_client (const char *nm)
-{
-	if (!nm)
-		return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
-	if (nm_streq (nm, "yes"))
-		return NM_CLIENT_PERMISSION_RESULT_YES;
-	if (nm_streq (nm, "no"))
-		return NM_CLIENT_PERMISSION_RESULT_NO;
-	if (nm_streq (nm, "auth"))
-		return NM_CLIENT_PERMISSION_RESULT_AUTH;
-	return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
-}
-
-/*****************************************************************************/
-
 const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[] = {
 	&_nml_dbus_meta_iface_nm,
 	&_nml_dbus_meta_iface_nm_accesspoint,
