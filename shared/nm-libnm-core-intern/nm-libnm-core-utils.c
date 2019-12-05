@@ -165,3 +165,16 @@ nm_client_permission_result_from_string (const char *nm)
 		return NM_CLIENT_PERMISSION_RESULT_AUTH;
 	return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
 }
+
+const char *
+nm_client_permission_result_to_string (NMClientPermissionResult permission)
+{
+	switch (permission) {
+	case NM_CLIENT_PERMISSION_RESULT_YES:     return "yes";
+	case NM_CLIENT_PERMISSION_RESULT_NO:      return "no";
+	case NM_CLIENT_PERMISSION_RESULT_AUTH:    return "auth";
+	case NM_CLIENT_PERMISSION_RESULT_UNKNOWN: return "unknown";
+	}
+	nm_assert_not_reached ();
+	return NULL;
+}
