@@ -360,6 +360,10 @@ const NMPlatformLink *nmtstp_link_tun_add (NMPlatform *platform,
                                            const char *name,
                                            const NMPlatformLnkTun *lnk,
                                            int *out_fd);
+const NMPlatformLink *nmtstp_link_vrf_add (NMPlatform *platform,
+                                           gboolean external_command,
+                                           const char *name,
+                                           const NMPlatformLnkVrf *lnk);
 const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
                                              gboolean external_command,
                                              const char *name,
