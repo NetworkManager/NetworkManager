@@ -51,40 +51,24 @@ dt_get_ipaddr_property (const char *base,
                         const char *prop,
                         int *family)
 {
-	NMIPAddress *addr;
 	gs_free char *buf = NULL;
 	size_t len;
-	gs_free_error GError *error = NULL;
+	int f;
 
 	if (!dt_get_property (base, dev, prop, &buf, &len))
 		return NULL;
 
-	switch (len) {
-	case 4:
-		if (*family == AF_UNSPEC)
-			*family = AF_INET;
-		break;
-	case 16:
-		if (*family == AF_UNSPEC)
-			*family = AF_INET6;
-		break;
-	default:
-		break;
-	}
-
-	if (*family == AF_UNSPEC) {
+	f = nm_utils_addr_family_from_size (len);
+	if (   f == AF_UNSPEC
+	    || (   *family != AF_UNSPEC
+	        && *family != f)) {
 		_LOGW (LOGD_CORE, "%s: Address %s has unrecognized length (%zd)",
 		       dev, prop, len);
 		return NULL;
 	}
 
-	addr = nm_ip_address_new_binary (*family, buf, 0, &error);
-	if (!addr) {
-		_LOGW (LOGD_CORE, "%s: Address %s is malformed: %s",
-		       dev, prop, error->message);
-	}
-
-	return addr;
+	*family = f;
+	return nm_ip_address_new_binary (f, buf, 0, NULL);
 }
 
 static char *
@@ -112,30 +96,23 @@ dt_get_hwaddr_property (const char *base,
 static NMIPAddress *
 str_addr (const char *str, int *family)
 {
-	struct in_addr inp;
+	NMIPAddr addr_bin;
 
-	if (*family == AF_UNSPEC)
-		*family = guess_ip_address_family (str);
-
-	if (*family == AF_UNSPEC) {
+	if (!nm_utils_parse_inaddr_bin_full (*family,
+	                                     TRUE,
+	                                     str,
+	                                     family,
+	                                     &addr_bin)) {
 		_LOGW (LOGD_CORE, "Malformed IP address: '%s'", str);
 		return NULL;
 	}
-
-	if (*family == AF_INET && inet_aton (str, &inp)) {
-		/* For IPv4, we need to be more tolerant than
-		 * nm_ip_address_new(), to recognize things like
-		 * the extra zeroes in "255.255.255.000" */
-		return nm_ip_address_new_binary (*family, &inp, 0, NULL);
-	}
-
-	return nm_ip_address_new (*family, str, 0, NULL);
+	return nm_ip_address_new_binary (*family, &addr_bin, 0, NULL);
 }
 
 NMConnection *
 nmi_dt_reader_parse (const char *sysfs_dir)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	gs_free char *base = NULL;
 	gs_free char *bootpath = NULL;
 	gs_strfreev char **tokens = NULL;
@@ -144,9 +121,8 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 	const char *s_ipaddr = NULL;
 	const char *s_netmask = NULL;
 	const char *s_gateway = NULL;
-	NMIPAddress *ipaddr = NULL;
-	NMIPAddress *netmask = NULL;
-	NMIPAddress *gateway = NULL;
+	nm_auto_unref_ip_address NMIPAddress *ipaddr = NULL;
+	nm_auto_unref_ip_address NMIPAddress *gateway = NULL;
 	const char *duplex = NULL;
 	gs_free char *hwaddr = NULL;
 	gs_free char *local_hwaddr = NULL;
@@ -279,10 +255,10 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 	connection = nm_simple_connection_new ();
 
 	nm_connection_add_setting (connection,
-		g_object_new (NM_TYPE_SETTING_CONNECTION,
-		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_ID, "OpenFirmware Connection",
-		              NULL));
+	                           g_object_new (NM_TYPE_SETTING_CONNECTION,
+	                                         NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	                                         NM_SETTING_CONNECTION_ID, "OpenFirmware Connection",
+	                                         NULL));
 
 	s_ip4 = nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, s_ip4);
@@ -298,6 +274,8 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 		bootp = TRUE;
 
 	if (!bootp) {
+		nm_auto_unref_ip_address NMIPAddress *netmask = NULL;
+
 		netmask = dt_get_ipaddr_property (base, "chosen", "netmask-ip", &family);
 		gateway = dt_get_ipaddr_property (base, "chosen", "gateway-ip", &family);
 		if (gateway)
@@ -305,9 +283,9 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 		ipaddr = dt_get_ipaddr_property (base, "chosen", "client-ip", &family);
 
 		if (family == AF_UNSPEC) {
-			g_warn_if_fail (netmask == NULL);
-			g_warn_if_fail (ipaddr == NULL);
-			g_warn_if_fail (gateway == NULL);
+			nm_assert (netmask == NULL);
+			nm_assert (gateway == NULL);
+			nm_assert (ipaddr == NULL);
 
 			netmask = str_addr (s_netmask, &family);
 			ipaddr = str_addr (s_ipaddr, &family);
@@ -326,11 +304,6 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 			_LOGW (LOGD_CORE, "Unable to determine the network prefix");
 		else
 			nm_ip_address_set_prefix (ipaddr, prefix);
-
-		if (netmask)
-			nm_ip_address_unref (netmask);
-		if (gateway)
-			nm_ip_address_unref (gateway);
 	}
 
 	if (!ipaddr) {
@@ -375,9 +348,6 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 		g_object_set (s_ip, NM_SETTING_IP_CONFIG_GATEWAY, s_gateway, NULL);
 	}
 
-	if (ipaddr)
-		nm_ip_address_unref (ipaddr);
-
 	if (duplex || speed || hwaddr || local_hwaddr) {
 		s_wired = nm_setting_wired_new ();
 		nm_connection_add_setting (connection, s_wired);
@@ -390,11 +360,11 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 		              NULL);
 	}
 
-        if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
+	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
 		_LOGW (LOGD_CORE, "Generated an invalid connection: %s",
 		       error->message);
 		g_clear_pointer (&connection, g_object_unref);
 	}
 
-	return connection;
+	return g_steal_pointer (&connection);
 }

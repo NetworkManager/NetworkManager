@@ -89,6 +89,16 @@ nm_utils_addr_family_to_size (int addr_family)
 	g_return_val_if_reached (0);
 }
 
+static inline int
+nm_utils_addr_family_from_size (gsize len)
+{
+	switch (len) {
+	case sizeof (in_addr_t):       return AF_INET;
+	case sizeof (struct in6_addr): return AF_INET6;
+	}
+	return AF_UNSPEC;
+}
+
 #define nm_assert_addr_family(addr_family) \
 	nm_assert (NM_IN_SET ((addr_family), AF_INET, AF_INET6))
 
@@ -532,10 +542,19 @@ gboolean nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
-gboolean nm_utils_parse_inaddr_bin  (int addr_family,
-                                     const char *text,
-                                     int *out_addr_family,
-                                     gpointer out_addr);
+gboolean nm_utils_parse_inaddr_bin_full (int addr_family,
+                                         gboolean accept_legacy,
+                                         const char *text,
+                                         int *out_addr_family,
+                                         gpointer out_addr);
+static inline gboolean
+nm_utils_parse_inaddr_bin (int addr_family,
+                           const char *text,
+                           int *out_addr_family,
+                           gpointer out_addr)
+{
+	return nm_utils_parse_inaddr_bin_full (addr_family, FALSE, text, out_addr_family, out_addr);
+}
 
 gboolean nm_utils_parse_inaddr (int addr_family,
                                 const char *text,
