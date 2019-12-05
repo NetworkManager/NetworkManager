@@ -15,6 +15,16 @@
 
 G_BEGIN_DECLS
 
+/**
+ * NMClientInstanceFlags:
+ * @NM_CLIENT_INSTANCE_FLAGS_NONE: special value to indicate no flags.
+ *
+ * Since: 1.24
+ */
+typedef enum { /*< flags >*/
+	NM_CLIENT_INSTANCE_FLAGS_NONE = 0,
+} NMClientInstanceFlags;
+
 #define NM_TYPE_CLIENT            (nm_client_get_type ())
 #define NM_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CLIENT, NMClient))
 #define NM_CLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CLIENT, NMClientClass))
@@ -28,6 +38,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_NM_RUNNING      "nm-running"
 #define NM_CLIENT_DBUS_CONNECTION "dbus-connection"
 #define NM_CLIENT_DBUS_NAME_OWNER "dbus-name-owner"
+#define NM_CLIENT_INSTANCE_FLAGS  "instance-flags"
 
 _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
@@ -132,6 +143,10 @@ void      nm_client_new_async  (GCancellable         *cancellable,
                                 gpointer              user_data);
 NMClient *nm_client_new_finish (GAsyncResult         *result,
                                 GError              **error);
+
+
+NM_AVAILABLE_IN_1_24
+NMClientInstanceFlags nm_client_get_instance_flags (NMClient *self);
 
 NM_AVAILABLE_IN_1_22
 GDBusConnection *nm_client_get_dbus_connection (NMClient *client);

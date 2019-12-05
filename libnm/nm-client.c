@@ -195,6 +195,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_NAME_OWNER,
 	PROP_VERSION,
+	PROP_INSTANCE_FLAGS,
 	PROP_STATE,
 	PROP_STARTUP,
 	PROP_NM_RUNNING,
@@ -289,6 +290,10 @@ typedef struct {
 	guint dbsid_nm_connection_active_state_changed;
 	guint dbsid_nm_vpn_connection_state_changed;
 	guint dbsid_nm_check_permissions;
+
+	NMClientInstanceFlags instance_flags:3;
+
+	bool instance_flags_constructed:1;
 
 	bool udev_inited:1;
 	bool notify_event_lst_changed:1;
@@ -3751,6 +3756,22 @@ _request_wait_finish (NMClient *client,
 /*****************************************************************************/
 
 /**
+ * nm_client_get_instance_flags:
+ * @self: the #NMClient instance.
+ *
+ * Returns: the #NMClientInstanceFlags flags.
+ *
+ * Since: 1.24
+ */
+NMClientInstanceFlags
+nm_client_get_instance_flags (NMClient *self)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (self), NM_CLIENT_INSTANCE_FLAGS_NONE);
+
+	return NM_CLIENT_GET_PRIVATE (self)->instance_flags;
+}
+
+/**
  * nm_client_get_dbus_connection:
  * @client: a #NMClient
  *
@@ -6929,6 +6950,9 @@ get_property (GObject *object, guint prop_id,
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_INSTANCE_FLAGS:
+		g_value_set_uint (value, priv->instance_flags);
+		break;
 	case PROP_DBUS_CONNECTION:
 		g_value_set_object (value, priv->dbus_connection);
 		break;
@@ -7041,8 +7065,27 @@ set_property (GObject *object, guint prop_id,
 	NMClient *self = NM_CLIENT (object);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	gboolean b;
+	guint v_uint;
 
 	switch (prop_id) {
+
+	case PROP_INSTANCE_FLAGS:
+		/* construct */
+
+		v_uint = g_value_get_uint (value);
+		g_return_if_fail (!NM_FLAGS_ANY (v_uint, ~((guint) NM_CLIENT_INSTANCE_FLAGS_ALL)));
+		v_uint &= ((guint) NM_CLIENT_INSTANCE_FLAGS_ALL);
+
+		if (!priv->instance_flags_constructed) {
+			priv->instance_flags_constructed = TRUE;
+			priv->instance_flags = v_uint;
+			nm_assert ((guint) priv->instance_flags == v_uint);
+		} else {
+			/* Later, we may want to implement setting some flags not only at construct time.
+			 * For now, that is not implemented and resetting flags afterwards has no effect. */
+		}
+		break;
+
 	case PROP_DBUS_CONNECTION:
 		/* construct-only */
 		priv->dbus_connection = g_value_dup_object (value);
@@ -7474,6 +7517,25 @@ nm_client_class_init (NMClientClass *client_class)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMClient:instance-flags:
+	 *
+	 * #NMClientInstanceFlags for the instance. These affect behavior of #NMClient.
+	 * This is a construct property and you may only set the flags during
+	 * construction.
+	 *
+	 * Since: 1.24
+	 */
+	obj_properties[PROP_INSTANCE_FLAGS] =
+	    g_param_spec_uint (NM_CLIENT_INSTANCE_FLAGS, "", "",
+	                       0,
+	                       G_MAXUINT32,
+	                       0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:dbus-name-owner:

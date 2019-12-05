@@ -166,6 +166,8 @@ typedef enum {
 
 /*****************************************************************************/
 
+#define NM_CLIENT_INSTANCE_FLAGS_ALL ((NMClientInstanceFlags) 0x0)
+
 typedef struct {
 	GType (*get_o_type_fcn) (void);
 
