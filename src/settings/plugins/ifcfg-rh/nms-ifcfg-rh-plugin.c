@@ -1132,8 +1132,8 @@ _dbus_setup (NMSIfcfgRHPlugin *self)
 
 	_dbus_clear (self);
 
-	/* FIXME: we don't need a separate GDBusConnection. Just reuse the one from
-	 * nm_dbus_manager_get_dbus_connection(). */
+	/* We use a separate D-Bus connection so that org.freedesktop.NetworkManager and com.redhat.ifcfgrh1
+	 * are exported by different connections. */
 	address = g_dbus_address_get_for_bus_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
 	if (address == NULL) {
 		_LOGW ("dbus: failed getting address for system bus: %s", error->message);
