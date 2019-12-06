@@ -278,7 +278,7 @@ typedef struct {
 	NMLDBusObject *dbobj_settings;
 	NMLDBusObject *dbobj_dns_manager;
 
-	GHashTable *permissions;
+	guint8 *permissions;
 	GCancellable *permissions_cancellable;
 
 	char *name_owner;
@@ -3311,27 +3311,35 @@ _dbus_nm_vpn_connection_state_changed_cb (GDBusConnection *connection,
 
 static void
 _emit_permissions_changed (NMClient *self,
-                           GHashTable *permissions,
-                           gboolean force_unknown)
+                           const guint8 *old_permissions,
+                           const guint8 *permissions)
 {
-	GHashTableIter iter;
-	gpointer key;
-	gpointer value;
+	int i;
 
-	if (!permissions)
-		return;
 	if (self->obj_base.is_disposing)
 		return;
 
-	g_hash_table_iter_init (&iter, permissions);
-	while (g_hash_table_iter_next (&iter, &key, &value)) {
+	if (old_permissions == permissions)
+		return;
+
+	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++) {
+		NMClientPermission perm = nm_auth_permission_sorted[i];
+		NMClientPermissionResult perm_result = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+		NMClientPermissionResult perm_result_old = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+
+		if (permissions)
+			perm_result = permissions[perm - 1];
+		if (old_permissions)
+			perm_result_old = old_permissions[perm - 1];
+
+		if (perm_result == perm_result_old)
+			continue;
+
 		g_signal_emit (self,
 		               signals[PERMISSION_CHANGED],
 		               0,
-		               GPOINTER_TO_UINT (key),
-		                 force_unknown
-		               ? (guint) NM_CLIENT_PERMISSION_NONE
-		               : GPOINTER_TO_UINT (value));
+		               (guint) perm,
+		               (guint) perm_result);
 	}
 }
 
@@ -3344,10 +3352,11 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 	NMClientPrivate *priv;
 	gs_unref_variant GVariant *ret = NULL;
 	nm_auto_free_variant_iter GVariantIter *v_permissions = NULL;
-	gs_unref_hashtable GHashTable *old_permissions = NULL;
+	gs_free guint8 *old_permissions = NULL;
 	gs_free_error GError *error = NULL;
 	const char *pkey;
 	const char *pvalue;
+	int i;
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (   !ret
@@ -3366,9 +3375,10 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 
 	NML_NMCLIENT_LOG_T (self, "GetPermissions call finished with success");
 
-	/* get list of old permissions for change notification */
 	old_permissions = g_steal_pointer (&priv->permissions);
-	priv->permissions = g_hash_table_new (nm_direct_hash, NULL);
+	priv->permissions = g_new (guint8, G_N_ELEMENTS (nm_auth_permission_sorted));
+	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++)
+		priv->permissions[i] = NM_CLIENT_PERMISSION_NONE;
 
 	g_variant_get (ret, "(a{ss})", &v_permissions);
 	while (g_variant_iter_next (v_permissions, "{&s&s}", &pkey, &pvalue)) {
@@ -3380,19 +3390,11 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 			continue;
 
 		perm_result = nm_client_permission_result_from_string (pvalue);
-
-		g_hash_table_insert (priv->permissions,
-		                     GUINT_TO_POINTER (perm),
-		                     GUINT_TO_POINTER (perm_result));
-		if (old_permissions) {
-			g_hash_table_remove (old_permissions,
-			                     GUINT_TO_POINTER (perm));
-		}
+		priv->permissions[perm - 1] = perm_result;
 	}
 
 	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->main_context);
-	_emit_permissions_changed (self, priv->permissions, FALSE);
-	_emit_permissions_changed (self, old_permissions, TRUE);
+	_emit_permissions_changed (self, old_permissions, priv->permissions);
 }
 
 static void
@@ -4271,18 +4273,18 @@ NMClientPermissionResult
 nm_client_get_permission_result (NMClient *client, NMClientPermission permission)
 {
 	NMClientPrivate *priv;
-	gpointer result;
+	NMClientPermissionResult result = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (   !priv->permissions
-	    || !g_hash_table_lookup_extended (priv->permissions,
-	                                      GUINT_TO_POINTER (permission),
-	                                      NULL,
-	                                      &result))
-		return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
-	return GPOINTER_TO_UINT (result);
+	if (   permission > NM_CLIENT_PERMISSION_NONE
+	    && permission <= NM_CLIENT_PERMISSION_LAST) {
+		priv = NM_CLIENT_GET_PRIVATE (client);
+		if (priv->permissions)
+			result = priv->permissions[permission - 1];
+	}
+
+	return result;
 }
 
 /**
@@ -6553,9 +6555,9 @@ _init_release_all (NMClient *self)
 	                                   &priv->dbsid_nm_check_permissions);
 
 	if (priv->permissions) {
-		gs_unref_hashtable GHashTable *old_permissions = g_steal_pointer (&priv->permissions);
+		gs_free guint8 *old_permissions = g_steal_pointer (&priv->permissions);
 
-		_emit_permissions_changed (self, old_permissions, TRUE);
+		_emit_permissions_changed (self, old_permissions, NULL);
 	}
 
 	nm_assert (c_list_is_empty (&priv->obj_changed_lst_head));
@@ -7372,7 +7374,7 @@ dispose (GObject *object)
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 
-	nm_clear_pointer (&priv->permissions, g_hash_table_unref);
+	nm_clear_g_free (&priv->permissions);
 
 	g_clear_object (&priv->dbus_connection);
 
