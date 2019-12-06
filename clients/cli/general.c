@@ -22,6 +22,12 @@
 
 /*****************************************************************************/
 
+static void permission_changed (GObject *gobject,
+                                GParamSpec *pspec,
+                                NmCli *nmc);
+
+/*****************************************************************************/
+
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_state_to_string, NMState,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_STATE_ASLEEP,           N_("asleep")),
@@ -498,20 +504,45 @@ timeout_cb (gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
 
+	g_signal_handlers_disconnect_by_func (nmc->client,
+	                                      G_CALLBACK (permission_changed),
+	                                      nmc);
+
 	g_string_printf (nmc->return_text, _("Error: Timeout %d sec expired."), nmc->timeout);
 	nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
 	quit ();
 	return FALSE;
 }
 
-static int
+static void
 print_permissions (void *user_data)
 {
 	NmCli *nmc = user_data;
 	gs_free_error GError *error = NULL;
 	const char *fields_str = NULL;
 	gpointer permissions[G_N_ELEMENTS (nm_auth_permission_sorted) + 1];
+	gboolean is_running;
 	int i;
+
+	is_running = nm_client_get_nm_running (nmc->client);
+
+	if (   is_running
+	    && nm_client_get_permissions_state (nmc->client) != NM_TERNARY_TRUE) {
+		/* wait longer. Permissions are not up to date. */
+		return;
+	}
+
+	g_signal_handlers_disconnect_by_func (nmc->client,
+	                                      G_CALLBACK (permission_changed),
+	                                      nmc);
+
+	if (!is_running) {
+		/* NetworkManager quit while we were waiting. */
+		g_string_printf (nmc->return_text, _("NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		quit ();
+		return;
+	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
 	} else if (strcasecmp (nmc->required_fields, "all") == 0) {
@@ -536,62 +567,43 @@ print_permissions (void *user_data)
 	}
 
 	quit ();
-	return G_SOURCE_REMOVE;
-}
-
-static gboolean
-got_permissions (NmCli *nmc)
-{
-	NMClientPermission perm;
-
-	/* The server returns all the permissions at once, so if at least one is there
-	 * we already received the reply.
-	 *
-	 * FIXME: this is wrong, because all permissions could be unknown. We should instead
-	 * have a signal in NMClient to indicate when permissions are received. */
-	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
-		if (nm_client_get_permission_result (nmc->client, perm) != NM_CLIENT_PERMISSION_RESULT_UNKNOWN)
-			return TRUE;
-	}
-
-	return FALSE;
 }
 
 static void
-permission_changed (NMClient *client,
-                    NMClientPermission permission,
-                    NMClientPermissionResult result,
+permission_changed (GObject *gobject,
+                    GParamSpec *pspec,
                     NmCli *nmc)
 {
-	if (got_permissions (nmc)) {
-		/* Defer the printing, so that we have a chance to process the other
-		 * permission-changed signals. */
-		g_signal_handlers_disconnect_by_func (nmc->client,
-		                                      G_CALLBACK (permission_changed),
-		                                      nmc);
-		g_idle_remove_by_data (nmc);
-		g_idle_add (print_permissions, nmc);
-	}
+	if (NM_IN_STRSET (pspec->name, NM_CLIENT_NM_RUNNING,
+	                               NM_CLIENT_PERMISSIONS_STATE))
+		print_permissions (nmc);
 }
 
 static gboolean
 show_nm_permissions (NmCli *nmc)
 {
-	/* The permissions are available now, just print them. */
-	if (got_permissions (nmc)) {
-		print_permissions (nmc);
-		return TRUE;
-	}
+	NMClientInstanceFlags instance_flags;
 
-	/* The client didn't get the permissions reply yet. Subscribe to changes. */
-	g_signal_connect (nmc->client, NM_CLIENT_PERMISSION_CHANGED,
-	                  G_CALLBACK (permission_changed), nmc);
+	instance_flags = nm_client_get_instance_flags (nmc->client);
+	instance_flags &= ~NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS;
+
+	g_object_set (nmc->client,
+	              NM_CLIENT_INSTANCE_FLAGS, (guint) instance_flags,
+	              NULL);
+
+	g_signal_connect (nmc->client,
+	                  "notify",
+	                  G_CALLBACK (permission_changed),
+	                  nmc);
 
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 	g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 
 	nmc->should_wait++;
+
+	print_permissions (nmc);
+
 	return TRUE;
 }
 

@@ -1269,6 +1269,7 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv)
 		nmc_client_new_async (NULL,
 		                      got_client,
 		                      call,
+		                      NM_CLIENT_INSTANCE_FLAGS, (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
 		                      NULL);
 	}
 }
