@@ -4640,6 +4640,7 @@ clients_tui_nmtui_LDADD = \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
