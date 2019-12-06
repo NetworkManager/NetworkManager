@@ -292,6 +292,7 @@ main (int argc, char *argv[])
 	data.client = nmc_client_new_async (data.client_new_cancellable,
 	                                    got_client,
 	                                    &data,
+	                                    NM_CLIENT_INSTANCE_FLAGS, (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
 	                                    NULL);
 
 	g_main_loop_run (data.loop);
