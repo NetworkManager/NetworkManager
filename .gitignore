@@ -128,7 +128,7 @@ test-*.trs
 /examples/C/qt/monitor-nm-running
 /examples/C/qt/monitor-nm-running.moc
 
-/shared/nm-utils/tests/test-shared-general
+/shared/nm-glib-aux/tests/test-shared-general
 /shared/nm-version-macros.h
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
@@ -325,6 +325,7 @@ test-*.trs
 /libnm/tests/test-general
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
+/shared/nm-utils/tests/test-shared-general
 /src/devices/tests/test-arping
 /src/devices/wifi/tests/test-general
 /src/devices/wifi/tests/test-wifi-ap-utils

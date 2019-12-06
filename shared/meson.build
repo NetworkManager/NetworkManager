@@ -256,5 +256,5 @@ libnm_systemd_logging_stub = static_library(
 )
 
 if enable_tests
-  subdir('nm-utils/tests')
+  subdir('nm-glib-aux/tests')
 endif

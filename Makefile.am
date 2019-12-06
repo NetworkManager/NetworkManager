@@ -526,14 +526,14 @@ $(shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_
 ###############################################################################
 
 EXTRA_DIST += \
-	shared/nm-utils/tests/meson.build \
+	shared/nm-glib-aux/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
 
-check_programs += shared/nm-utils/tests/test-shared-general
+check_programs += shared/nm-glib-aux/tests/test-shared-general
 
-shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
+shared_nm_glib_aux_tests_test_shared_general_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-DNETWORKMANAGER_COMPILATION_TEST \
@@ -543,12 +543,12 @@ shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_utils_tests_test_shared_general_LDFLAGS = \
+shared_nm_glib_aux_tests_test_shared_general_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-shared_nm_utils_tests_test_shared_general_LDADD = \
+shared_nm_glib_aux_tests_test_shared_general_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
 	shared/nm-std-aux/libnm-std-aux.la \
