@@ -510,18 +510,17 @@ print_permissions (void *user_data)
 	NmCli *nmc = user_data;
 	gs_free_error GError *error = NULL;
 	const char *fields_str = NULL;
-	NMClientPermission perm;
-	guint i;
-	gpointer permissions[NM_CLIENT_PERMISSION_LAST + 1];
+	gpointer permissions[G_N_ELEMENTS (nm_auth_permission_sorted) + 1];
+	int i;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
 	} else if (strcasecmp (nmc->required_fields, "all") == 0) {
 	} else
 		fields_str = nmc->required_fields;
 
-	for (i = 0, perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++)
-		permissions[i++] = GINT_TO_POINTER (perm);
-	permissions[i++] = NULL;
+	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++)
+		permissions[i] = GINT_TO_POINTER (nm_auth_permission_sorted[i]);
+	permissions[i] = NULL;
 
 	nm_cli_spawn_pager (nmc);
 
