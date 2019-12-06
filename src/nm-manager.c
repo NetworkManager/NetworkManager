@@ -6245,6 +6245,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
 	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS);
 	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK);
+	get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_WIFI_SCAN);
 
 	g_dbus_method_invocation_return_value (context,
 	                                       g_variant_new ("(a{ss})", &results));
@@ -6289,6 +6290,7 @@ impl_manager_get_permissions (NMDBusObject *obj,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SCAN, FALSE);
 }
 
 static void
