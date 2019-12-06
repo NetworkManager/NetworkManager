@@ -4707,6 +4707,7 @@ clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
 	$(NULL)
 
 clients_cloud_setup_nm_cloud_setup_LDADD = \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
