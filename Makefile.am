@@ -4439,6 +4439,7 @@ clients_cli_nmcli_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)

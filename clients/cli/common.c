@@ -13,6 +13,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-libnm-aux/nm-libnm-aux.h"
+
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
 
@@ -1216,17 +1218,22 @@ got_client (GObject *source_object, GAsyncResult *res, gpointer user_data)
 	CmdCall *call = user_data;
 	NmCli *nmc;
 
+	nm_assert (NM_IS_CLIENT (source_object));
+
 	task = g_steal_pointer (&call->task);
 	nmc = g_task_get_task_data (task);
 
 	nmc->should_wait--;
-	nmc->client = nm_client_new_finish (res, &error);
 
-	if (!nmc->client) {
+	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (source_object),
+	                                   res,
+	                                   &error)) {
+		g_object_unref (source_object);
 		g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_UNKNOWN,
 		                         _("Error: Could not create NMClient object: %s."),
 		                         error->message);
 	} else {
+		nmc->client = NM_CLIENT (source_object);
 		call_cmd (nmc, g_steal_pointer (&task), call->cmd, call->argc, call->argv);
 	}
 
@@ -1259,7 +1266,10 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv)
 		call->argc = argc;
 		call->argv = argv;
 		call->task = task;
-		nm_client_new_async (NULL, got_client, call);
+		nmc_client_new_async (NULL,
+		                      got_client,
+		                      call,
+		                      NULL);
 	}
 }
 
