@@ -569,6 +569,7 @@ main (int argc, const char *const*argv)
 	nmc_client_new_waitsync (sigterm_cancellable,
 	                         &nmc,
 	                         &error,
+	                         NM_CLIENT_INSTANCE_FLAGS, (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
 	                         NULL);
 
 	nmcs_wait_for_objects_register (nmc);
