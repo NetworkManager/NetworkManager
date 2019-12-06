@@ -4216,6 +4216,7 @@ clients_nm_online_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 clients_nm_online_LDADD = \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
