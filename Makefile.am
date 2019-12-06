@@ -525,6 +525,43 @@ $(shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/nm-libnm-aux/libnm-libnm-aux.la
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""libnmc"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
+	$(NULL)
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_SOURCES = \
+	shared/nm-libnm-aux/nm-libnm-aux.c \
+	shared/nm-libnm-aux/nm-libnm-aux.h \
+	$(NULL)
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_LIBADD = \
+	$(GLIB_LIBS) \
+	libnm/libnm.la \
+	$(NULL)
+
+$(shared_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(shared_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
+
+###############################################################################
+
 EXTRA_DIST += \
 	shared/nm-glib-aux/tests/meson.build \
 	$(NULL)
