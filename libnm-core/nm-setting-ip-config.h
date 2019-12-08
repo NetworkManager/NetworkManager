@@ -405,7 +405,7 @@ typedef struct {
  *   sent in the DHCP FQDN option. When cleared and all other FQDN
  *   flags are zero, standard FQDN flags are sent. This flag is
  *   incompatible with any other FQDN flag.
- * *
+ *
  * #NMDhcpHostnameFlags describe flags related to the DHCP hostname and
  * FQDN.
  *
