@@ -355,7 +355,7 @@ _load_file (NMSKeyfilePlugin *self,
 	                              &local);
 	if (!connection) {
 		if (error)
-			g_propagate_error (error, local);
+			g_propagate_error (error, g_steal_pointer (&local));
 		else
 			_LOGW ("load: \"%s\": failed to load connection: %s", full_filename, local->message);
 		return NULL;
