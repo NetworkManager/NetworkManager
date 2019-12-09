@@ -20,6 +20,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
+#include "nm-dbus-manager.h"
 #include "settings/nm-settings-plugin.h"
 #include "settings/nm-settings-utils.h"
 #include "NetworkManagerUtils.h"
@@ -1131,6 +1132,11 @@ _dbus_setup (NMSIfcfgRHPlugin *self)
 	gs_free_error GError *error = NULL;
 
 	_dbus_clear (self);
+
+	if (!NM_MAIN_DBUS_CONNECTION_GET) {
+		_LOGW ("dbus: don't use D-Bus for %s service", IFCFGRH1_BUS_NAME);
+		return;
+	}
 
 	/* We use a separate D-Bus connection so that org.freedesktop.NetworkManager and com.redhat.ifcfgrh1
 	 * are exported by different connections. */
