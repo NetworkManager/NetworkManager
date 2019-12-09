@@ -29,8 +29,6 @@ gboolean nm_utils_g_param_spec_is_default (const GParamSpec *pspec);
 
 /*****************************************************************************/
 
-NMClientPermission nm_permission_to_client (const char *nm);
-
 NMClientPermissionResult nm_permission_result_to_client (const char *nm);
 
 /*****************************************************************************/

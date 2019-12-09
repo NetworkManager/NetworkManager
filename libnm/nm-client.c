@@ -3375,7 +3375,7 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 		NMClientPermission perm;
 		NMClientPermissionResult perm_result;
 
-		perm = nm_permission_to_client (pkey);
+		perm = nm_auth_permission_from_string (pkey);
 		if (perm == NM_CLIENT_PERMISSION_NONE)
 			continue;
 
