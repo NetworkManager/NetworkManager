@@ -2750,9 +2750,10 @@ impl_settings_load_connections (NMDBusObject *obj,
 		for (i = 0; i < n_entries; i++) {
 			NMSettingsPluginConnectionLoadEntry *entry = &entries[i];
 
-			if (!entry->handled)
+			if (!entry->handled) {
 				_LOGW ("load: no settings plugin could load \"%s\"", entry->filename);
-			else if (entry->error) {
+				nm_assert (!entry->error);
+			} else if (entry->error) {
 				_LOGW ("load: failure to load \"%s\": %s", entry->filename, entry->error->message);
 				g_clear_error (&entry->error);
 			} else
