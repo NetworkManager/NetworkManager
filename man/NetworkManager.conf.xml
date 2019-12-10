@@ -674,9 +674,11 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>connection.llmnr</varname></term>
+          <listitem><para>If unspecified, the ultimate default values depends on the DNS plugin. With systemd-resolved the default currently is "yes" (2) and for all other plugins "no" (0).</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.mdns</varname></term>
+          <listitem><para>If unspecified, the ultimate default values depends on the DNS plugin. With systemd-resolved the default currently is "no" (0) and for all other plugins also "no" (0).</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.stable-id</varname></term>
