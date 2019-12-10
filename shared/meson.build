@@ -111,6 +111,8 @@ nm_libnm_core_aux_source = files('nm-libnm-core-aux/nm-libnm-core-aux.c')
 
 nm_libnm_core_utils_source = files('nm-libnm-core-intern/nm-libnm-core-utils.c')
 
+nm_libnm_aux_source = files('nm-libnm-aux/nm-libnm-aux.c')
+
 nm_meta_setting_source = files('nm-meta-setting.c')
 
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')
@@ -168,15 +170,14 @@ libnm_utils_base_dep = declare_dependency(
   link_with: libnm_utils_base,
 )
 
-deps = [
-  glib_nm_default_dep,
-  libudev_dep,
-]
 
 libnm_udev_aux = static_library(
   'nm-udev-aux',
   sources: 'nm-udev-aux/nm-udev-utils.c',
-  dependencies: deps,
+  dependencies: [
+    glib_nm_default_dep,
+    libudev_dep,
+  ],
   c_args: c_flags,
 )
 
@@ -256,5 +257,5 @@ libnm_systemd_logging_stub = static_library(
 )
 
 if enable_tests
-  subdir('nm-utils/tests')
+  subdir('nm-glib-aux/tests')
 endif

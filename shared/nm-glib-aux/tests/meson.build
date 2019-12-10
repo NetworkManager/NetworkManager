@@ -14,7 +14,7 @@ exe = executable(
 )
 
 test(
-  'shared/nm-utils/' + test_unit,
+  'shared/nm-glib-aux/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()],
   timeout: default_test_timeout,

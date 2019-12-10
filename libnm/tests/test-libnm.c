@@ -22,6 +22,7 @@
 #include "nm-libnm-utils.h"
 #include "nm-object.h"
 #include "nm-vpn-service-plugin.h"
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -3064,6 +3065,49 @@ test_dbus_meta_types (void)
 		g_assert (meta_iface->get_type_fcn() == d->gtype);
 	}
 }
+
+/*****************************************************************************/
+
+static void
+test_nm_auth_permissions (void)
+{
+	int i, j;
+
+	G_STATIC_ASSERT (G_N_ELEMENTS (nm_auth_permission_names_by_idx) == NM_CLIENT_PERMISSION_LAST);
+	G_STATIC_ASSERT (G_N_ELEMENTS (nm_auth_permission_sorted) == NM_CLIENT_PERMISSION_LAST);
+
+	for (i = 0; i < NM_CLIENT_PERMISSION_LAST; i++) {
+		g_assert (nm_auth_permission_names_by_idx[i]);
+		g_assert (NM_STR_HAS_PREFIX (nm_auth_permission_names_by_idx[i], "org.freedesktop.NetworkManager."));
+		g_assert_cmpint (nm_auth_permission_sorted[i], >, 0);
+		g_assert_cmpint (nm_auth_permission_sorted[i], <=, NM_CLIENT_PERMISSION_LAST);
+		for (j = i + 1; j < NM_CLIENT_PERMISSION_LAST; j++) {
+			g_assert_cmpint (nm_auth_permission_sorted[i], !=, nm_auth_permission_sorted[j]);
+			g_assert_cmpstr (nm_auth_permission_names_by_idx[i], !=, nm_auth_permission_names_by_idx[j]);
+		}
+	}
+	for (i = 1; i < NM_CLIENT_PERMISSION_LAST; i++) {
+		NMClientPermission a = nm_auth_permission_sorted[i - 1];
+		NMClientPermission b = nm_auth_permission_sorted[i];
+		const char *s_a = nm_auth_permission_names_by_idx[a - 1];
+		const char *s_b = nm_auth_permission_names_by_idx[b - 1];
+
+		g_assert_cmpstr (s_a, <, s_b);
+		g_assert (a != b);
+		g_assert (s_a != s_b);
+	}
+	for (i = 1; i <= NM_CLIENT_PERMISSION_LAST; i++) {
+		const char *s = nm_auth_permission_to_string (i);
+
+		g_assert_cmpstr (s, ==, nm_auth_permission_names_by_idx[i - 1]);
+		g_assert (s == nm_auth_permission_names_by_idx[i - 1]);
+		g_assert_cmpint (nm_auth_permission_from_string (s), ==, i);
+	}
+	return;
+	for (i = 0; i < NM_CLIENT_PERMISSION_LAST; i++)
+		g_assert_cmpint (nm_auth_permission_from_string (nm_auth_permission_names_by_idx[i]), ==, i + 1);
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -3078,6 +3122,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/libnm/general/test_types", test_types);
 	g_test_add_func ("/libnm/general/test_nml_dbus_meta", test_nml_dbus_meta);
 	g_test_add_func ("/libnm/general/test_dbus_meta_types", test_dbus_meta_types);
+	g_test_add_func ("/libnm/general/test_nm_auth_permissions", test_nm_auth_permissions);
 
 	return g_test_run ();
 }

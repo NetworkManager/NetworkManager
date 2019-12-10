@@ -18,6 +18,8 @@
 #include <locale.h>
 #include <stdlib.h>
 
+#include "nm-libnm-aux/nm-libnm-aux.h"
+
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"
 
@@ -231,8 +233,11 @@ main (int argc, char **argv)
 
 	nm_editor_bindings_init ();
 
-	nm_client = nm_client_new (NULL, &error);
-	if (!nm_client) {
+	if (!nmc_client_new_waitsync (NULL,
+	                              &nm_client,
+	                              &error,
+	                              NM_CLIENT_INSTANCE_FLAGS, (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
+	                              NULL)) {
 		g_printerr (_("Could not contact NetworkManager: %s.\n"), error->message);
 		g_error_free (error);
 		exit (1);

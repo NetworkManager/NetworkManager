@@ -278,3 +278,21 @@ endif
 if enable_tests
   subdir('tests')
 endif
+
+libnm_libnm_aux = static_library(
+  'nm-libnm-aux',
+  sources: nm_libnm_aux_source,
+  c_args: [
+    '-DG_LOG_DOMAIN="@0@"'.format('libnmc'),
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
+  dependencies: [
+    libnm_core_nm_default_dep,
+    libnm_dep,
+  ],
+)
+
+libnm_libnm_aux_dep = declare_dependency(
+  include_directories: [shared_inc],
+  link_with: [libnm_libnm_aux],
+)

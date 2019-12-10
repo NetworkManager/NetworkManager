@@ -29,12 +29,6 @@ gboolean nm_utils_g_param_spec_is_default (const GParamSpec *pspec);
 
 /*****************************************************************************/
 
-NMClientPermission nm_permission_to_client (const char *nm);
-
-NMClientPermissionResult nm_permission_result_to_client (const char *nm);
-
-/*****************************************************************************/
-
 typedef enum {
 	_NML_DBUS_LOG_LEVEL_INITIALIZED = 0x01,
 
@@ -171,6 +165,8 @@ typedef enum {
 } NMLDBusMetaInteracePrio;
 
 /*****************************************************************************/
+
+#define NM_CLIENT_INSTANCE_FLAGS_ALL ((NMClientInstanceFlags) 0x1)
 
 typedef struct {
 	GType (*get_o_type_fcn) (void);

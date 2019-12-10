@@ -22,11 +22,11 @@ deps = [
   libnmc_base_dep,
   libnmc_dep,
   readline_dep,
+  libnm_libnm_aux_dep,
 ]
 
 if enable_polkit_agent
   sources += nm_polkit_listener
-
   deps += polkit_agent_dep
 endif
 

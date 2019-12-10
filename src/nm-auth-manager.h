@@ -11,11 +11,17 @@
 /*****************************************************************************/
 
 typedef enum {
-	NM_AUTH_CALL_RESULT_UNKNOWN,
-	NM_AUTH_CALL_RESULT_YES,
-	NM_AUTH_CALL_RESULT_AUTH,
-	NM_AUTH_CALL_RESULT_NO,
+	NM_AUTH_CALL_RESULT_UNKNOWN = NM_CLIENT_PERMISSION_RESULT_UNKNOWN,
+	NM_AUTH_CALL_RESULT_YES     = NM_CLIENT_PERMISSION_RESULT_YES,
+	NM_AUTH_CALL_RESULT_AUTH    = NM_CLIENT_PERMISSION_RESULT_AUTH,
+	NM_AUTH_CALL_RESULT_NO      = NM_CLIENT_PERMISSION_RESULT_NO,
 } NMAuthCallResult;
+
+static inline NMClientPermissionResult
+nm_auth_call_result_to_client (NMAuthCallResult result)
+{
+	return (NMClientPermissionResult) result;
+}
 
 static inline NMAuthCallResult
 nm_auth_call_result_eval (gboolean is_authorized,
