@@ -2698,26 +2698,29 @@ get_existing_connection (NMManager *self,
 static gboolean
 copy_lease (const char *src, const char *dst)
 {
-	int src_fd, dst_fd;
-	ssize_t res, size = SSIZE_MAX;
+	nm_auto_close int src_fd = -1;
+	int dst_fd;
+	ssize_t res;
 
 	src_fd = open (src, O_RDONLY|O_CLOEXEC);
 	if (src_fd < 0)
 		return FALSE;
 
 	dst_fd = open (dst, O_CREAT|O_EXCL|O_CLOEXEC|O_WRONLY, 0644);
-	if (dst_fd < 0) {
-		close (src_fd);
+	if (dst_fd < 0)
+		return FALSE;
+
+	while ((res = sendfile (dst_fd, src_fd, NULL, G_MAXSSIZE)) > 0) {
+	}
+
+	nm_close (dst_fd);
+
+	if (res != 0) {
+		unlink (dst);
 		return FALSE;
 	}
 
-	while ((res = sendfile (dst_fd, src_fd, NULL, size)) > 0)
-		size -= res;
-
-	close (src_fd);
-	close (dst_fd);
-
-	return !res;
+	return TRUE;
 }
 
 static gboolean
