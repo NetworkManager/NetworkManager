@@ -386,6 +386,52 @@ _nm_config_data_get_keyfile_user (const NMConfigData *self)
 
 /*****************************************************************************/
 
+static NMAuthPolkitMode
+nm_auth_polkit_mode_from_string (const char *str)
+{
+	int as_bool;
+
+	if (!str)
+		return NM_AUTH_POLKIT_MODE_UNKNOWN;
+
+	if (nm_streq (str, "root-only"))
+		return NM_AUTH_POLKIT_MODE_ROOT_ONLY;
+
+	as_bool = _nm_utils_ascii_str_to_bool (str, -1);
+	if (as_bool != -1) {
+		return   as_bool
+		       ? NM_AUTH_POLKIT_MODE_USE_POLKIT
+		       : NM_AUTH_POLKIT_MODE_ALLOW_ALL;
+	}
+
+	return NM_AUTH_POLKIT_MODE_UNKNOWN;
+}
+
+NMAuthPolkitMode
+nm_config_data_get_main_auth_polkit (const NMConfigData *self)
+{
+	NMAuthPolkitMode auth_polkit_mode;
+	const char *str;
+
+	str = nm_config_data_get_value (self,
+	                                NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
+	                                  NM_CONFIG_GET_VALUE_STRIP
+	                                | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	auth_polkit_mode = nm_auth_polkit_mode_from_string (str);
+	if (auth_polkit_mode == NM_AUTH_POLKIT_MODE_UNKNOWN) {
+		auth_polkit_mode = nm_auth_polkit_mode_from_string (NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT);
+		if (auth_polkit_mode == NM_AUTH_POLKIT_MODE_UNKNOWN) {
+			nm_assert_not_reached ();
+			auth_polkit_mode = NM_AUTH_POLKIT_MODE_ROOT_ONLY;
+		}
+	}
+
+	return auth_polkit_mode;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_config_data_get_groups:
  * @self: the #NMConfigData instance

@@ -42,7 +42,7 @@ typedef struct {
 	guint changed_signal_id;
 	bool disposing:1;
 	bool shutting_down:1;
-	bool polkit_enabled_construct_only:1;
+	NMAuthPolkitMode auth_polkit_mode:3;
 } NMAuthManagerPrivate;
 
 struct _NMAuthManager {
@@ -118,6 +118,7 @@ struct _NMAuthManagerCallId {
 	gpointer user_data;
 	guint64 call_numid;
 	guint idle_id;
+	bool idle_is_authorized:1;
 };
 
 #define cancellation_id_to_str_a(call_numid) \
@@ -256,9 +257,10 @@ static gboolean
 _call_on_idle (gpointer user_data)
 {
 	NMAuthManagerCallId *call_id = user_data;
-	gboolean is_authorized = TRUE;
+	gboolean is_authorized;
 	gboolean is_challenge = FALSE;
 
+	is_authorized = call_id->idle_is_authorized;
 	call_id->idle_id = 0;
 
 	_LOG2T (call_id, "completed: authorized=%d, challenge=%d (simulated)",
@@ -312,21 +314,24 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 
 	call_id = g_slice_new (NMAuthManagerCallId);
 	*call_id = (NMAuthManagerCallId) {
-		.self       = g_object_ref (self),
-		.callback   = callback,
-		.user_data  = user_data,
-		.call_numid = ++priv->call_numid_counter,
+		.self               = g_object_ref (self),
+		.callback           = callback,
+		.user_data          = user_data,
+		.call_numid         = ++priv->call_numid_counter,
+		.idle_is_authorized = TRUE,
 	};
 	c_list_link_tail (&priv->calls_lst_head, &call_id->calls_lst);
 
-	if (!priv->dbus_connection) {
-		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding due to polkit authorization disabled)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
-	} else if (nm_auth_subject_is_internal (subject)) {
+	if (nm_auth_subject_is_internal (subject)) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for internal request)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else if (nm_auth_subject_get_unix_process_uid (subject) == 0) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for root)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
+		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
+	} else if (priv->auth_polkit_mode != NM_AUTH_POLKIT_MODE_USE_POLKIT) {
+		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (PolicyKit disabled and always %s authorization to non-root user)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)),
+		        priv->auth_polkit_mode == NM_AUTH_POLKIT_MODE_ALLOW_ALL ? "grant" : "deny");
+		call_id->idle_is_authorized = (priv->auth_polkit_mode == NM_AUTH_POLKIT_MODE_ALLOW_ALL);
 		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else {
 		GVariant *parameters;
@@ -461,11 +466,17 @@ static void
 set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE ((NMAuthManager *) object);
+	int v_int;
 
 	switch (prop_id) {
 	case PROP_POLKIT_ENABLED:
 		/* construct-only */
-		priv->polkit_enabled_construct_only = !!g_value_get_boolean (value);
+		v_int = g_value_get_int (value);
+		g_return_if_fail (NM_IN_SET (v_int, NM_AUTH_POLKIT_MODE_ROOT_ONLY,
+		                                    NM_AUTH_POLKIT_MODE_ALLOW_ALL,
+		                                    NM_AUTH_POLKIT_MODE_USE_POLKIT));
+		priv->auth_polkit_mode = v_int;
+		nm_assert (priv->auth_polkit_mode == v_int);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -481,6 +492,7 @@ nm_auth_manager_init (NMAuthManager *self)
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
 	c_list_init (&priv->calls_lst_head);
+	priv->auth_polkit_mode = NM_AUTH_POLKIT_MODE_ROOT_ONLY;
 }
 
 static void
@@ -493,8 +505,11 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->constructed (object);
 
-	if (!priv->polkit_enabled_construct_only) {
-		create_message = "polkit disabled";
+	if (priv->auth_polkit_mode != NM_AUTH_POLKIT_MODE_USE_POLKIT) {
+		if (priv->auth_polkit_mode == NM_AUTH_POLKIT_MODE_ROOT_ONLY)
+			create_message = "polkit disabled, root-only";
+		else
+			create_message = "polkit disabled, allow-all";
 		goto out;
 	}
 
@@ -503,7 +518,8 @@ constructed (GObject *object)
 	if (!priv->dbus_connection) {
 		/* This warrants an info level message. */
 		logl = LOGL_INFO;
-		create_message = "D-Bus connection not available. Polkit is disabled and all requests are authenticated.";
+		create_message = "D-Bus connection not available. Polkit is disabled and only root will be authorized.";
+		priv->auth_polkit_mode = NM_AUTH_POLKIT_MODE_ROOT_ONLY;
 		goto out;
 	}
 
@@ -527,14 +543,17 @@ out:
 }
 
 NMAuthManager *
-nm_auth_manager_setup (gboolean polkit_enabled)
+nm_auth_manager_setup (NMAuthPolkitMode auth_polkit_mode)
 {
 	NMAuthManager *self;
 
 	g_return_val_if_fail (!singleton_instance, singleton_instance);
+	nm_assert (NM_IN_SET (auth_polkit_mode, NM_AUTH_POLKIT_MODE_ROOT_ONLY,
+	                                        NM_AUTH_POLKIT_MODE_ALLOW_ALL,
+	                                        NM_AUTH_POLKIT_MODE_USE_POLKIT));
 
 	self = g_object_new (NM_TYPE_AUTH_MANAGER,
-	                     NM_AUTH_MANAGER_POLKIT_ENABLED, polkit_enabled,
+	                     NM_AUTH_MANAGER_POLKIT_ENABLED, (int) auth_polkit_mode,
 	                     NULL);
 	_LOGD ("set instance");
 
@@ -579,11 +598,11 @@ nm_auth_manager_class_init (NMAuthManagerClass *klass)
 	object_class->dispose = dispose;
 
 	obj_properties[PROP_POLKIT_ENABLED] =
-	     g_param_spec_boolean (NM_AUTH_MANAGER_POLKIT_ENABLED, "", "",
-	                           FALSE,
-	                           G_PARAM_WRITABLE |
-	                           G_PARAM_CONSTRUCT_ONLY |
-	                           G_PARAM_STATIC_STRINGS);
+	     g_param_spec_int (NM_AUTH_MANAGER_POLKIT_ENABLED, "", "",
+	                       NM_AUTH_POLKIT_MODE_ROOT_ONLY, NM_AUTH_POLKIT_MODE_USE_POLKIT, NM_AUTH_POLKIT_MODE_USE_POLKIT,
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

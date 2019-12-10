@@ -6,6 +6,28 @@
 #ifndef NM_CONFIG_DATA_H
 #define NM_CONFIG_DATA_H
 
+/*****************************************************************************/
+
+typedef enum {
+
+	/* an invalid mode. */
+	NM_AUTH_POLKIT_MODE_UNKNOWN,
+
+	/* don't use PolicyKit, but only allow root user (uid 0). */
+	NM_AUTH_POLKIT_MODE_ROOT_ONLY,
+
+	/* don't use PolicyKit, but allow all requests. */
+	NM_AUTH_POLKIT_MODE_ALLOW_ALL,
+
+	/* use PolicyKit to authorize requests. Root user (uid 0) always
+	 * gets a free pass, without consulting PolicyKit. If PolicyKit is not
+	 * running, authorization will fail for non root users. */
+	NM_AUTH_POLKIT_MODE_USE_POLKIT,
+
+} NMAuthPolkitMode;
+
+/*****************************************************************************/
+
 #define NM_TYPE_CONFIG_DATA            (nm_config_data_get_type ())
 #define NM_CONFIG_DATA(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONFIG_DATA, NMConfigData))
 #define NM_CONFIG_DATA_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_CONFIG_DATA, NMConfigDataClass))
@@ -131,6 +153,8 @@ guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data)
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
 
 int nm_config_data_get_autoconnect_retries_default (const NMConfigData *config_data);
+
+NMAuthPolkitMode nm_config_data_get_main_auth_polkit (const NMConfigData *config_data);
 
 const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config_data);
 gboolean          nm_config_data_get_no_auto_default_for_device (const NMConfigData *self, NMDevice *device);
