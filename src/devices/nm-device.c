@@ -11615,7 +11615,8 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 			}
 		}
 
-		if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
+		if (   nm_device_get_ip_ifindex (self) > 0
+		    && !ip_config_merge_and_apply (self, AF_INET, TRUE))
 			_LOGW (LOGD_IP4, "Failed to reapply IPv4 configuration");
 	}
 }
@@ -11688,7 +11689,8 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 			}
 		}
 
-		if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
+		if (   nm_device_get_ip_ifindex (self) > 0
+		    && !ip_config_merge_and_apply (self, AF_INET6, TRUE))
 			_LOGW (LOGD_IP4, "Failed to reapply IPv6 configuration");
 	}
 }
