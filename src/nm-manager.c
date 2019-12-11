@@ -2700,7 +2700,7 @@ copy_lease (const char *src, const char *dst)
 {
 	nm_auto_close int src_fd = -1;
 	int dst_fd;
-	ssize_t res;
+	ssize_t res, size = SSIZE_MAX;
 
 	src_fd = open (src, O_RDONLY|O_CLOEXEC);
 	if (src_fd < 0)
@@ -2710,8 +2710,8 @@ copy_lease (const char *src, const char *dst)
 	if (dst_fd < 0)
 		return FALSE;
 
-	while ((res = sendfile (dst_fd, src_fd, NULL, G_MAXSSIZE)) > 0) {
-	}
+	while ((res = sendfile (dst_fd, src_fd, NULL, size)) > 0)
+		size -= res;
 
 	nm_close (dst_fd);
 
