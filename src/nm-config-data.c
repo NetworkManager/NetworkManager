@@ -407,8 +407,9 @@ nm_auth_polkit_mode_from_string (const char *str)
 	return NM_AUTH_POLKIT_MODE_UNKNOWN;
 }
 
-NMAuthPolkitMode
-nm_config_data_get_main_auth_polkit (const NMConfigData *self)
+static NMAuthPolkitMode
+_config_data_get_main_auth_polkit (const NMConfigData *self,
+                                   gboolean *out_invalid_config)
 {
 	NMAuthPolkitMode auth_polkit_mode;
 	const char *str;
@@ -420,14 +421,22 @@ nm_config_data_get_main_auth_polkit (const NMConfigData *self)
 	                                | NM_CONFIG_GET_VALUE_NO_EMPTY);
 	auth_polkit_mode = nm_auth_polkit_mode_from_string (str);
 	if (auth_polkit_mode == NM_AUTH_POLKIT_MODE_UNKNOWN) {
+		NM_SET_OUT (out_invalid_config, (str != NULL));
 		auth_polkit_mode = nm_auth_polkit_mode_from_string (NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT);
 		if (auth_polkit_mode == NM_AUTH_POLKIT_MODE_UNKNOWN) {
 			nm_assert_not_reached ();
 			auth_polkit_mode = NM_AUTH_POLKIT_MODE_ROOT_ONLY;
 		}
-	}
+	} else
+		NM_SET_OUT (out_invalid_config, FALSE);
 
 	return auth_polkit_mode;
+}
+
+NMAuthPolkitMode
+nm_config_data_get_main_auth_polkit (const NMConfigData *self)
+{
+	return _config_data_get_main_auth_polkit (self, NULL);
 }
 
 /*****************************************************************************/
@@ -1602,6 +1611,18 @@ void
 nm_config_data_get_warnings (const NMConfigData *self,
                              GPtrArray *warnings)
 {
+	gboolean invalid;
+
+	nm_assert (NM_IS_CONFIG_DATA (self));
+	nm_assert (warnings);
+
+	_config_data_get_main_auth_polkit (self, &invalid);
+	if (invalid) {
+		g_ptr_array_add (warnings,
+		                 g_strdup_printf ("invalid setting for %s.%s (should be one of \"true\", \"false\", \"root-only\")",
+		                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
+		                                  NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT));
+	}
 }
 
 /*****************************************************************************/
