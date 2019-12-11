@@ -1598,6 +1598,14 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 
 /*****************************************************************************/
 
+void
+nm_config_data_get_warnings (const NMConfigData *self,
+                             GPtrArray *warnings)
+{
+}
+
+/*****************************************************************************/
+
 static void
 get_property (GObject *object,
               guint prop_id,
