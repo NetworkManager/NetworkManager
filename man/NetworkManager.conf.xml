@@ -158,8 +158,11 @@ plugins-=remove-me
       <varlistentry>
         <term><varname>auth-polkit</varname></term>
         <listitem><para>Whether the system uses PolicyKit for authorization.
-        If <literal>false</literal>, all requests will be allowed. If
-        <literal>true</literal>, non-root requests are authorized using PolicyKit.
+        If <literal>true</literal>, non-root requests are authorized using PolicyKit.
+        Requests from root (user ID zero) are always granted without asking PolicyKit.
+        If <literal>false</literal>, all requests will be allowed and PolicyKit is
+        not used. If set to <literal>root-only</literal> PolicyKit is not used and
+        all requests except root are denied.
         The default value is <literal>&NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT;</literal>.
         </para></listitem>
       </varlistentry>

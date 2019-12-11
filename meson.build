@@ -464,8 +464,11 @@ if enable_polkit
   polkit_gobject_policydir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
 endif
 
-config_default_main_auth_polkit = enable_polkit.to_string()
-config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_default_main_auth_polkit)
+config_auth_polkit_default = get_option('config_auth_polkit_default')
+if config_auth_polkit_default == 'default'
+  config_auth_polkit_default = (enable_polkit ? 'true' : 'false')
+endif
+config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_default)
 
 enable_modify_system = get_option('modify_system')
 
@@ -784,7 +787,7 @@ data_conf = configuration_data()
 data_conf.set('DISTRO_NETWORK_SERVICE',                  (enable_ifcfg_rh ? 'network.service' : ''))
 data_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT',    config_default_logging_audit)
 data_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT',  config_logging_backend_default)
-data_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_default_main_auth_polkit)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_auth_polkit_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP',             config_dhcp_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER',       config_dns_rc_manager_default)
 data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
@@ -935,10 +938,9 @@ output += '  nmplugindir: ' + nm_plugindir + '\n'
 output += '\nPlatform:\n'
 output += '  session tracking: ' + ','.join(session_trackers) + '\n'
 output += '  suspend/resume: ' + suspend_resume + '\n'
-output += '  policykit: ' + enable_polkit.to_string()
+output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ')'
 if enable_polkit
-  modify = (enable_modify_system ? 'permissive' : 'restrictive')
-  output += ' (' + modify + ' modify.system) (default: main.auth-polkit=true)'
+  output += ' (' + (enable_modify_system ? 'permissive' : 'restrictive') + ' modify.system)'
 endif
 output += '\n'
 output += '  polkit agent: ' + enable_polkit_agent.to_string() + '\n'

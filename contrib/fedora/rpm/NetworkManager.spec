@@ -585,6 +585,7 @@ This tool is still experimental.
 %endif
 	-Dselinux=true \
 	-Dpolkit=true  \
+	-Dconfig_auth_polkit_default=true \
 	-Dpolkit_agent=true \
 	-Dmodify_system=true \
 	-Dconcheck=true \

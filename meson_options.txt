@@ -14,6 +14,7 @@ option('session_tracking_consolekit', type: 'boolean', value: true, description:
 option('session_tracking', type: 'combo', choices: ['systemd', 'elogind', 'no'], value: 'systemd', description: 'Compatibility option to choose one session tracking module')
 option('suspend_resume', type: 'combo', choices: ['upower', 'systemd', 'elogind', 'consolekit', 'auto'], value: 'auto', description: 'Build NetworkManager with specific suspend/resume support')
 option('polkit', type: 'boolean', value: true, description: 'User auth-polkit configuration option.')
+option('config_auth_polkit_default', type: 'combo', choices: ['default', 'true', 'false', 'root-only'], value: 'default', description: 'Default value for configuration main.auth-polkit.')
 option('modify_system', type: 'boolean', value: false, description: 'Allow users to modify system connections')
 option('polkit_agent', type: 'boolean', value: false, description: 'enable polkit agent for clients')
 option('selinux', type: 'boolean', value: true, description: 'Build with SELinux')

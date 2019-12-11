@@ -7,6 +7,7 @@
 #define NM_AUTH_MANAGER_H
 
 #include "nm-auth-subject.h"
+#include "nm-config-data.h"
 
 /*****************************************************************************/
 
@@ -49,7 +50,7 @@ typedef struct _NMAuthManagerClass NMAuthManagerClass;
 
 GType nm_auth_manager_get_type (void);
 
-NMAuthManager *nm_auth_manager_setup (gboolean polkit_enabled);
+NMAuthManager *nm_auth_manager_setup (NMAuthPolkitMode auth_polkit_mode);
 NMAuthManager *nm_auth_manager_get (void);
 
 void nm_auth_manager_force_shutdown (NMAuthManager *self);
