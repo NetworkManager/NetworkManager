@@ -154,6 +154,7 @@ print_config (NMConfigCmdLineOptions *config_cli)
 	gs_unref_object NMConfig *config = NULL;
 	gs_free_error GError *error = NULL;
 	NMConfigData *config_data;
+	const char *const*warnings;
 
 	nm_logging_setup ("OFF", "ALL", NULL, NULL);
 
@@ -166,6 +167,13 @@ print_config (NMConfigCmdLineOptions *config_cli)
 	config_data = nm_config_get_data (config);
 	fprintf (stdout, "# NetworkManager configuration: %s\n", nm_config_data_get_config_description (config_data));
 	nm_config_data_log (config_data, "", "", nm_config_get_no_auto_default_file (config), stdout);
+
+	warnings = nm_config_get_warnings (config);
+	if (warnings && warnings[0])
+		fprintf (stdout, "\n");
+	for ( ; warnings && warnings[0]; warnings++)
+		fprintf (stdout, "# WARNING: %s\n", warnings[0]);
+
 	return 0;
 }
 
