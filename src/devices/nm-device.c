@@ -11752,6 +11752,14 @@ can_reapply_change (NMDevice *self,
 	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                         NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
 		return TRUE;
+	} else if (   nm_streq (setting_name, NM_SETTING_WIRED_SETTING_NAME)
+	           && NM_IN_SET (NM_DEVICE_GET_CLASS (self)->get_configured_mtu,
+	                         nm_device_get_configured_mtu_wired_parent,
+	                         nm_device_get_configured_mtu_for_wired)) {
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_WIRED_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_WIRED_MTU);
 	} else {
 		g_set_error (error,
 		             NM_DEVICE_ERROR,
