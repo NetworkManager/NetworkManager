@@ -195,6 +195,10 @@ int n_dhcp4_c_socket_udp_new(int *sockfdp,
         if (sockfd < 0)
                 return -errno;
 
+        r = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        if (r < 0)
+                return -errno;
+
         r = setsockopt(sockfd, SOL_SOCKET, SO_ATTACH_FILTER, &fprog, sizeof(fprog));
         if (r < 0)
                 return -errno;
