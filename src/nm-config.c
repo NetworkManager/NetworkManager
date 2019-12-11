@@ -2603,11 +2603,6 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emi
 		return;
 	}
 
-	if (emit_warnings) {
-		for (i = 0; i < warnings->len; i++)
-			_LOGW ("%s", (const char *) warnings->pdata[i]);
-	}
-
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
 	keyfile_intern = intern_config_read (priv->intern_config_file,
@@ -2624,6 +2619,13 @@ nm_config_reload (NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emi
 	                               (const char *const*) no_auto_default,
 	                               keyfile,
 	                               keyfile_intern);
+
+	if (emit_warnings) {
+		nm_config_data_get_warnings (priv->config_data_orig, warnings);
+		for (i = 0; i < warnings->len; i++)
+			_LOGW ("%s", (const char *) warnings->pdata[i]);
+	}
+
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
@@ -2854,6 +2856,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                                             (const char *const*) no_auto_default,
 	                                             keyfile,
 	                                             keyfile_intern);
+
+	nm_config_data_get_warnings (priv->config_data_orig, warnings);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 	if (warnings->len > 0) {

@@ -234,6 +234,9 @@ void nm_global_dns_config_free (NMGlobalDnsConfig *dns_config);
 NMGlobalDnsConfig *nm_global_dns_config_from_dbus (const GValue *value, GError **error);
 void nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns_config, GValue *value);
 
+void nm_config_data_get_warnings (const NMConfigData *self,
+                                  GPtrArray *warnings);
+
 /* private accessors */
 GKeyFile *_nm_config_data_get_keyfile (const NMConfigData *self);
 GKeyFile *_nm_config_data_get_keyfile_user (const NMConfigData *self);
