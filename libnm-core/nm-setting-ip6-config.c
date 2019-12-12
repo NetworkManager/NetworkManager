@@ -46,10 +46,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMSettingIP6ConfigPrivacy ip6_privacy;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *token;
 	char *dhcp_duid;
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 } NMSettingIP6ConfigPrivate;
 
 G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)

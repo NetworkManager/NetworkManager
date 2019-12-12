@@ -41,26 +41,20 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	gboolean auto_config;
-
 	char *number; /* For dialing, duh */
 	char *username;
 	char *password;
-	NMSettingSecretFlags password_flags;
-
-	/* Restrict connection to certain devices or SIMs */
 	char *device_id;
 	char *sim_id;
 	char *sim_operator_id;
-
 	char *apn; /* NULL for dynamic */
 	char *network_id; /* for manual registration or NULL for automatic */
-
 	char *pin;
+	NMSettingSecretFlags password_flags;
 	NMSettingSecretFlags pin_flags;
-
-	gboolean home_only;
 	guint32 mtu;
+	bool auto_config:1;
+	bool home_only:1;
 } NMSettingGsmPrivate;
 
 G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)

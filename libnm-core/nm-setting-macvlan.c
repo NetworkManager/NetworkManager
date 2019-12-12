@@ -35,8 +35,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	char *parent;
 	NMSettingMacvlanMode mode;
-	gboolean promiscuous;
-	gboolean tap;
+	bool promiscuous:1;
+	bool tap:1;
 } NMSettingMacvlanPrivate;
 
 G_DEFINE_TYPE (NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING)

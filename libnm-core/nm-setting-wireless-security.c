@@ -63,36 +63,26 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWirelessSecurity,
 );
 
 typedef struct {
+	GSList *proto;    /* GSList of strings */
+	GSList *pairwise; /* GSList of strings */
+	GSList *group;    /* GSList of strings */
 	char *key_mgmt;
 	char *auth_alg;
-	GSList *proto; /* GSList of strings */
-	GSList *pairwise; /* GSList of strings */
-	GSList *group; /* GSList of strings */
-	NMSettingWirelessSecurityPmf pmf;
-
-	/* LEAP */
 	char *leap_username;
 	char *leap_password;
-	NMSettingSecretFlags leap_password_flags;
-
-	/* WEP */
 	char *wep_key0;
 	char *wep_key1;
 	char *wep_key2;
 	char *wep_key3;
-	NMSettingSecretFlags wep_key_flags;
-	NMWepKeyType wep_key_type;
-	guint32 wep_tx_keyidx;
-
-	/* WPA-PSK */
 	char *psk;
+	NMSettingSecretFlags leap_password_flags;
+	NMSettingSecretFlags wep_key_flags;
 	NMSettingSecretFlags psk_flags;
-
-	/* WPS */
+	NMSettingWirelessSecurityPmf pmf;
+	NMWepKeyType wep_key_type;
 	NMSettingWirelessSecurityWpsMethod wps_method;
-
-	/* FILS */
 	NMSettingWirelessSecurityFils fils;
+	guint32 wep_tx_keyidx;
 } NMSettingWirelessSecurityPrivate;
 
 G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)

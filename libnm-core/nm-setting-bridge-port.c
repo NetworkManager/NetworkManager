@@ -34,10 +34,10 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridgePort,
 );
 
 typedef struct {
+	GPtrArray *vlans;
 	guint16 priority;
 	guint16 path_cost;
-	gboolean hairpin_mode;
-	GPtrArray *vlans;
+	bool hairpin_mode:1;
 } NMSettingBridgePortPrivate;
 
 G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)

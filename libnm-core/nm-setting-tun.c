@@ -34,12 +34,12 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMSettingTunMode mode;
 	char *owner;
 	char *group;
-	gboolean pi;
-	gboolean vnet_hdr;
-	gboolean multi_queue;
+	NMSettingTunMode mode;
+	bool pi:1;
+	bool vnet_hdr:1;
+	bool multi_queue:1;
 } NMSettingTunPrivate;
 
 G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)

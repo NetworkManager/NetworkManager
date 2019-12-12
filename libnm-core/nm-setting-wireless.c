@@ -47,22 +47,22 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWireless,
 
 typedef struct {
 	GBytes *ssid;
+	GArray *mac_address_blacklist;
+	GPtrArray *seen_bssids;
 	char *mode;
 	char *band;
-	guint32 channel;
 	char *bssid;
-	guint32 rate;
-	guint32 tx_power;
 	char *device_mac_address;
 	char *cloned_mac_address;
 	char *generate_mac_address_mask;
-	GArray *mac_address_blacklist;
-	GPtrArray *seen_bssids;
+	guint32 channel;
+	guint32 rate;
+	guint32 tx_power;
 	guint32 mtu;
-	gboolean hidden;
 	guint32 powersave;
-	NMSettingMacRandomization mac_address_randomization;
 	guint32 wowl;
+	NMSettingMacRandomization mac_address_randomization;
+	bool hidden:1;
 } NMSettingWirelessPrivate;
 
 G_DEFINE_TYPE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)

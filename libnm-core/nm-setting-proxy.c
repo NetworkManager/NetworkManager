@@ -34,10 +34,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMSettingProxyMethod method;
-	gboolean browser_only;
 	char *pac_url;
 	char *pac_script;
+	NMSettingProxyMethod method;
+	bool browser_only:1;
 } NMSettingProxyPrivate;
 
 G_DEFINE_TYPE (NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING)

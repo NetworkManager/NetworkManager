@@ -36,11 +36,11 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVlan,
 );
 
 typedef struct {
+	GSList *ingress_priority_map;
+	GSList *egress_priority_map;
 	char *parent;
 	guint32 id;
 	guint32 flags;
-	GSList *ingress_priority_map;
-	GSList *egress_priority_map;
 } NMSettingVlanPrivate;
 
 G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)

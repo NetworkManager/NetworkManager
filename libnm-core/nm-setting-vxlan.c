@@ -45,9 +45,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	char *parent;
-	guint id;
 	char *local;
 	char *remote;
+	guint id;
 	guint source_port_min;
 	guint source_port_max;
 	guint destination_port;
@@ -55,11 +55,11 @@ typedef struct {
 	guint ttl;
 	guint ageing;
 	guint limit;
-	gboolean learning;
-	gboolean proxy;
-	gboolean rsc;
-	gboolean l2_miss;
-	gboolean l3_miss;
+	bool learning:1;
+	bool proxy:1;
+	bool rsc:1;
+	bool l2_miss:1;
+	bool l3_miss:1;
 } NMSettingVxlanPrivate;
 
 G_DEFINE_TYPE (NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING)

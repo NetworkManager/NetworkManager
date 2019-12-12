@@ -35,18 +35,18 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	char *parent;
-	NMIPTunnelMode mode;
 	char *local;
 	char *remote;
-	guint ttl;
-	guint tos;
-	gboolean path_mtu_discovery;
 	char *input_key;
 	char *output_key;
+	guint ttl;
+	guint tos;
 	guint encapsulation_limit;
 	guint flow_label;
+	NMIPTunnelMode mode;
 	guint32 mtu;
 	guint32 flags;
+	bool path_mtu_discovery:1;
 } NMSettingIPTunnelPrivate;
 
 G_DEFINE_TYPE (NMSettingIPTunnel, nm_setting_ip_tunnel, NM_TYPE_SETTING)

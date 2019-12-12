@@ -35,9 +35,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	char *mac_address;
 	char *transport_mode;
-	guint32 mtu;
+	char *parent;
+	char *virtual_iface_name;
 	int p_key;
-	char *parent, *virtual_iface_name;
+	guint32 mtu;
 } NMSettingInfinibandPrivate;
 
 G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)

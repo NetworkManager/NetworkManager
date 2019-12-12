@@ -40,18 +40,18 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 );
 
 typedef struct {
+	GPtrArray *vlans;
 	char *   mac_address;
-	gboolean stp;
+	guint32  ageing_time;
 	guint16  priority;
 	guint16  forward_delay;
 	guint16  hello_time;
 	guint16  max_age;
-	guint32  ageing_time;
-	guint16  group_forward_mask;
-	gboolean multicast_snooping;
-	gboolean vlan_filtering;
 	guint16  vlan_default_pvid;
-	GPtrArray *vlans;
+	guint16  group_forward_mask;
+	bool multicast_snooping:1;
+	bool vlan_filtering:1;
+	bool stp:1;
 } NMSettingBridgePrivate;
 
 G_DEFINE_TYPE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)

@@ -31,11 +31,11 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
+	guint64 send_delay;
 	guint baud;
 	guint bits;
-	char parity;
 	guint stopbits;
-	guint64 send_delay;
+	char parity;
 } NMSettingSerialPrivate;
 
 G_DEFINE_TYPE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)

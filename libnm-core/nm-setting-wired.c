@@ -48,24 +48,24 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWired,
 );
 
 typedef struct {
-	char *port;
-	guint32 speed;
-	char *duplex;
-	gboolean auto_negotiate;
-	char *device_mac_address;
-	char *cloned_mac_address;
-	char *generate_mac_address_mask;
-	GArray *mac_address_blacklist;
-	guint32 mtu;
-	char **s390_subchannels;
-	char *s390_nettype;
 	struct {
 		NMUtilsNamedValue *arr;
 		guint len;
 		guint n_alloc;
 	} s390_options;
-	NMSettingWiredWakeOnLan wol;
+	GArray *mac_address_blacklist;
+	char **s390_subchannels;
+	char *port;
+	char *duplex;
+	char *device_mac_address;
+	char *cloned_mac_address;
+	char *generate_mac_address_mask;
+	char *s390_nettype;
 	char *wol_password;
+	NMSettingWiredWakeOnLan wol;
+	guint32 speed;
+	guint32 mtu;
+	bool auto_negotiate:1;
 } NMSettingWiredPrivate;
 
 G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)

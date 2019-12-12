@@ -39,9 +39,9 @@ struct _NMSettingOvsPort {
 	NMSetting parent;
 
 	char *vlan_mode;
-	guint tag;
 	char *lacp;
 	char *bond_mode;
+	guint tag;
 	guint bond_updelay;
 	guint bond_downdelay;
 };

@@ -3598,27 +3598,27 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingIPConfig,
 );
 
 typedef struct {
-	char *method;
-	GPtrArray *dns;        /* array of IP address strings */
-	GPtrArray *dns_search; /* array of domain name strings */
-	GPtrArray *dns_options;/* array of DNS options */
-	int dns_priority;
-	GPtrArray *addresses;  /* array of NMIPAddress */
-	GPtrArray *routes;     /* array of NMIPRoute */
+	GPtrArray *dns;         /* array of IP address strings */
+	GPtrArray *dns_search;  /* array of domain name strings */
+	GPtrArray *dns_options; /* array of DNS options */
+	GPtrArray *addresses;   /* array of NMIPAddress */
+	GPtrArray *routes;      /* array of NMIPRoute */
 	GPtrArray *routing_rules;
-	gint64 route_metric;
-	guint32 route_table;
+	char *method;
 	char *gateway;
-	gboolean ignore_auto_routes;
-	gboolean ignore_auto_dns;
 	char *dhcp_hostname;
-	gboolean dhcp_send_hostname;
-	gboolean never_default;
-	gboolean may_fail;
+	char *dhcp_iaid;
+	gint64 route_metric;
+	guint dhcp_hostname_flags;
+	int dns_priority;
 	int dad_timeout;
 	int dhcp_timeout;
-	char *dhcp_iaid;
-	guint dhcp_hostname_flags;
+	guint32 route_table;
+	bool ignore_auto_routes:1;
+	bool ignore_auto_dns:1;
+	bool dhcp_send_hostname:1;
+	bool never_default:1;
+	bool may_fail:1;
 } NMSettingIPConfigPrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)

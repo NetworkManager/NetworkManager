@@ -66,6 +66,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingConnection,
 );
 
 typedef struct {
+	GSList *permissions; /* list of Permission structs */
+	GSList *secondaries; /* secondary connections to activate with the base connection */
 	char *id;
 	char *uuid;
 	char *stable_id;
@@ -73,23 +75,21 @@ typedef struct {
 	char *type;
 	char *master;
 	char *slave_type;
-	NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
-	GSList *permissions; /* list of Permission structs */
-	gboolean autoconnect;
+	char *zone;
+	guint64 timestamp;
 	int autoconnect_priority;
 	int autoconnect_retries;
 	int multi_connect;
-	guint64 timestamp;
-	gboolean read_only;
-	char *zone;
-	GSList *secondaries; /* secondary connections to activate with the base connection */
-	guint gateway_ping_timeout;
-	NMMetered metered;
-	NMSettingConnectionLldp lldp;
 	int auth_retries;
 	int mdns;
 	int llmnr;
 	int wait_device_timeout;
+	guint gateway_ping_timeout;
+	NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
+	NMMetered metered;
+	NMSettingConnectionLldp lldp;
+	bool read_only:1;
+	bool autoconnect:1;
 } NMSettingConnectionPrivate;
 
 G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)

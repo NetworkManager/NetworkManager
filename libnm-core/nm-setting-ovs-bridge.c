@@ -39,9 +39,9 @@ struct _NMSettingOvsBridge {
 
 	char *fail_mode;
 	char *datapath_type;
-	gboolean mcast_snooping_enable;
-	gboolean rstp_enable;
-	gboolean stp_enable;
+	bool mcast_snooping_enable:1;
+	bool rstp_enable:1;
+	bool stp_enable:1;
 };
 
 struct _NMSettingOvsBridgeClass {

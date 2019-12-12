@@ -42,14 +42,14 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	char *parent;
-	NMSettingMacsecMode mode;
-	bool encrypt:1;
-	bool send_sci:1;
 	char *mka_cak;
-	NMSettingSecretFlags mka_cak_flags;
 	char *mka_ckn;
 	int port;
+	NMSettingMacsecMode mode;
+	NMSettingSecretFlags mka_cak_flags;
 	NMSettingMacsecValidation validation;
+	bool encrypt:1;
+	bool send_sci:1;
 } NMSettingMacsecPrivate;
 
 G_DEFINE_TYPE (NMSettingMacsec, nm_setting_macsec, NM_TYPE_SETTING)
