@@ -27,7 +27,7 @@ GMainContext *nm_http_client_get_main_context (NMHttpClient *self);
 
 void nm_http_client_get (NMHttpClient *self,
                          const char *uri,
-                         int timeout_ms,
+                         int timeout_msec,
                          gssize max_data,
                          GCancellable *cancellable,
                          GAsyncReadyCallback callback,

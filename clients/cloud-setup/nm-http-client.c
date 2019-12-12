@@ -259,7 +259,7 @@ _get_cancelled_cb (GObject *object, gpointer user_data)
 void
 nm_http_client_get (NMHttpClient *self,
                     const char *url,
-                    int timeout_ms,
+                    int timeout_msec,
                     gssize max_data,
                     GCancellable *cancellable,
                     GAsyncReadyCallback callback,
@@ -271,7 +271,7 @@ nm_http_client_get (NMHttpClient *self,
 	g_return_if_fail (NM_IS_HTTP_CLIENT (self));
 	g_return_if_fail (url);
 	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
-	g_return_if_fail (timeout_ms >= 0);
+	g_return_if_fail (timeout_msec >= 0);
 	g_return_if_fail (max_data >= -1);
 
 	priv = NM_HTTP_CLIENT_GET_PRIVATE (self);
@@ -303,9 +303,9 @@ nm_http_client_get (NMHttpClient *self,
 	curl_easy_setopt (edata->ehandle, CURLOPT_WRITEDATA, edata);
 	curl_easy_setopt (edata->ehandle, CURLOPT_PRIVATE, edata);
 
-	if (timeout_ms > 0) {
+	if (timeout_msec > 0) {
 		edata->timeout_source = _source_attach (self,
-		                                        nm_g_timeout_source_new (timeout_ms,
+		                                        nm_g_timeout_source_new (timeout_msec,
 		                                                                 G_PRIORITY_DEFAULT,
 		                                                                 _get_timeout_cb,
 		                                                                 edata,
@@ -653,15 +653,15 @@ _mhandle_timeout_cb (gpointer user_data)
 }
 
 static int
-_mhandle_timerfunction_cb (CURLM *multi, long timeout_ms, void *user_data)
+_mhandle_timerfunction_cb (CURLM *multi, long timeout_msec, void *user_data)
 {
 	NMHttpClient *self = user_data;
 	NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE (self);
 
 	nm_clear_pointer (&priv->mhandle_source_timeout, nm_g_source_destroy_and_unref);
-	if (timeout_ms >= 0) {
+	if (timeout_msec >= 0) {
 		priv->mhandle_source_timeout = _source_attach (self,
-		                                               nm_g_timeout_source_new (NM_MIN (timeout_ms, G_MAXINT),
+		                                               nm_g_timeout_source_new (NM_MIN (timeout_msec, G_MAXINT),
 		                                                                        G_PRIORITY_DEFAULT,
 		                                                                        _mhandle_timeout_cb,
 		                                                                        self,
