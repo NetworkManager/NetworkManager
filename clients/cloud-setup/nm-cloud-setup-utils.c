@@ -156,7 +156,7 @@ _wait_for_objects_iterate_until_done_idle_cb (gpointer user_data)
 /**
  * nmcs_wait_for_objects_iterate_until_done:
  * @context: the #GMainContext to iterate.
- * @timeout_ms: timeout or -1 for no timeout.
+ * @timeout_msec: timeout or -1 for no timeout.
  *
  * Iterates the provided @context until all objects that we wait for
  * are destroyed.
@@ -169,7 +169,7 @@ _wait_for_objects_iterate_until_done_idle_cb (gpointer user_data)
  */
 gboolean
 nmcs_wait_for_objects_iterate_until_done (GMainContext *context,
-                                          int timeout_ms)
+                                          int timeout_msec)
 {
 	nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new (context, FALSE);
 	nm_auto_destroy_and_unref_gsource GSource *timeout_source = NULL;
@@ -189,8 +189,8 @@ nmcs_wait_for_objects_iterate_until_done (GMainContext *context,
 		.got_timeout = FALSE,
 	};
 
-	if (timeout_ms >= 0) {
-		timeout_source = nm_g_source_attach (nm_g_timeout_source_new (timeout_ms,
+	if (timeout_msec >= 0) {
+		timeout_source = nm_g_source_attach (nm_g_timeout_source_new (timeout_msec,
 		                                                              G_PRIORITY_DEFAULT,
 		                                                              _wait_for_objects_iterate_until_done_timeout_cb,
 		                                                              &data,

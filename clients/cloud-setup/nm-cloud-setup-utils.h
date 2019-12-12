@@ -50,7 +50,7 @@ void _nm_log_impl_cs (NMLogLevel level,
 gpointer nmcs_wait_for_objects_register (gpointer target);
 
 gboolean nmcs_wait_for_objects_iterate_until_done (GMainContext *context,
-                                                   int timeout_ms);
+                                                   int timeout_msec);
 
 /*****************************************************************************/
 
