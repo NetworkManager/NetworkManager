@@ -350,7 +350,6 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	    g_param_spec_uint (NM_SETTING_CDMA_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 

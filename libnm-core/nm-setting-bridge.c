@@ -22,6 +22,15 @@
  * necessary for bridging connections.
  **/
 
+#define BRIDGE_AGEING_TIME_DEFAULT        300
+#define BRIDGE_FORWARD_DELAY_DEFAULT      15
+#define BRIDGE_HELLO_TIME_DEFAULT         2
+#define BRIDGE_MAX_AGE_DEFAULT            20
+#define BRIDGE_MULTICAST_SNOOPING_DEFAULT TRUE
+#define BRIDGE_PRIORITY_DEFAULT           0x8000
+#define BRIDGE_STP_DEFAULT                TRUE
+#define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT  1
+
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
@@ -1131,6 +1140,15 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (setting);
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
+
+	priv->ageing_time        = BRIDGE_AGEING_TIME_DEFAULT;
+	priv->forward_delay      = BRIDGE_FORWARD_DELAY_DEFAULT;
+	priv->hello_time         = BRIDGE_HELLO_TIME_DEFAULT;
+	priv->max_age            = BRIDGE_MAX_AGE_DEFAULT;
+	priv->multicast_snooping = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
+	priv->priority           = BRIDGE_PRIORITY_DEFAULT;
+	priv->stp                = BRIDGE_STP_DEFAULT;
+	priv->vlan_default_pvid  = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
 }
 
 /**
@@ -1225,9 +1243,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_STP] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_STP, "", "",
-	                          TRUE,
+	                          BRIDGE_STP_DEFAULT,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -1248,9 +1265,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_PRIORITY] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_PRIORITY, "", "",
-	                       0, G_MAXUINT16, 0x8000,
+	                       0, G_MAXUINT16, BRIDGE_PRIORITY_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1269,9 +1285,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_FORWARD_DELAY] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_FORWARD_DELAY, "", "",
-	                       0, NM_BR_MAX_FORWARD_DELAY, 15,
+	                       0, NM_BR_MAX_FORWARD_DELAY, BRIDGE_FORWARD_DELAY_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1290,9 +1305,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_HELLO_TIME] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_HELLO_TIME, "", "",
-	                       0, NM_BR_MAX_HELLO_TIME, 2,
+	                       0, NM_BR_MAX_HELLO_TIME, BRIDGE_HELLO_TIME_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1311,9 +1325,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MAX_AGE] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_MAX_AGE, "", "",
-	                       0, NM_BR_MAX_MAX_AGE, 20,
+	                       0, NM_BR_MAX_MAX_AGE, BRIDGE_MAX_AGE_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1332,9 +1345,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_AGEING_TIME] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_AGEING_TIME, "", "",
-	                       NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
+	                       NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, BRIDGE_AGEING_TIME_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1354,7 +1366,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	    g_param_spec_uint (NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, "", "",
 	                       0, 0xFFFF, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1378,9 +1389,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MULTICAST_SNOOPING] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "", "",
-	                          TRUE,
+	                          BRIDGE_MULTICAST_SNOOPING_DEFAULT,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -1403,7 +1413,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_VLAN_FILTERING, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -1425,9 +1434,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_VLAN_DEFAULT_PVID] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID, "", "",
-	                       0, NM_BRIDGE_VLAN_VID_MAX, 1,
+	                       0, NM_BRIDGE_VLAN_VID_MAX, BRIDGE_VLAN_DEFAULT_PVID_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 

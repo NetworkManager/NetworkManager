@@ -241,8 +241,9 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_proxy_init (NMSettingProxy *setting)
+nm_setting_proxy_init (NMSettingProxy *self)
 {
+	nm_assert (NM_SETTING_PROXY_GET_PRIVATE (self)->method == NM_SETTING_PROXY_METHOD_NONE);
 }
 
 /**
@@ -306,7 +307,6 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	    g_param_spec_int (NM_SETTING_PROXY_METHOD, "", "",
 	                      G_MININT32, G_MAXINT32, NM_SETTING_PROXY_METHOD_NONE,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**

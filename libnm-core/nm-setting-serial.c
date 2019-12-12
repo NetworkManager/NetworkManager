@@ -206,8 +206,14 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_serial_init (NMSettingSerial *setting)
+nm_setting_serial_init (NMSettingSerial *self)
 {
+	NMSettingSerialPrivate *priv = NM_SETTING_SERIAL_GET_PRIVATE (self);
+
+	nm_assert (priv->parity == NM_SETTING_SERIAL_PARITY_NONE);
+	priv->stopbits = 1;
+	priv->baud     = 57600;
+	priv->bits     = 8;
 }
 
 /**
@@ -246,7 +252,6 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 	    g_param_spec_uint (NM_SETTING_SERIAL_BAUD, "", "",
 	                       0, G_MAXUINT, 57600,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -258,7 +263,6 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 	    g_param_spec_uint (NM_SETTING_SERIAL_BITS, "", "",
 	                       5, 8, 8,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -286,7 +290,6 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 	                       NM_TYPE_SETTING_SERIAL_PARITY,
 	                       NM_SETTING_SERIAL_PARITY_NONE,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override,
 	                              obj_properties[PROP_PARITY],
@@ -306,7 +309,6 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 	    g_param_spec_uint (NM_SETTING_SERIAL_STOPBITS, "", "",
 	                       1, 2, 1,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -318,7 +320,6 @@ nm_setting_serial_class_init (NMSettingSerialClass *klass)
 	    g_param_spec_uint64 (NM_SETTING_SERIAL_SEND_DELAY, "", "",
 	                         0, G_MAXUINT64, 0,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);

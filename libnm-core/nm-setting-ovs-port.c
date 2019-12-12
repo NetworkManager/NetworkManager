@@ -367,7 +367,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	    g_param_spec_string (NM_SETTING_OVS_PORT_VLAN_MODE, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -382,7 +381,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	    g_param_spec_uint (NM_SETTING_OVS_PORT_TAG, "", "",
 	                       0, 4095, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -397,7 +395,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	    g_param_spec_string (NM_SETTING_OVS_PORT_LACP, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -412,7 +409,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	    g_param_spec_string (NM_SETTING_OVS_PORT_BOND_MODE, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -427,7 +423,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	    g_param_spec_uint (NM_SETTING_OVS_PORT_BOND_UPDELAY, "", "",
 	                       0, G_MAXUINT, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -442,7 +437,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	    g_param_spec_uint (NM_SETTING_OVS_PORT_BOND_DOWNDELAY, "", "",
 	                       0, G_MAXUINT, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 

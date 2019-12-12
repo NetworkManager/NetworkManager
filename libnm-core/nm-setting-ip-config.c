@@ -5501,11 +5501,14 @@ nm_setting_ip_config_init (NMSettingIPConfig *setting)
 {
 	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 
-	priv->dns = g_ptr_array_new_with_free_func (g_free);
-	priv->dns_search = g_ptr_array_new_with_free_func (g_free);
-	priv->dns_options = NULL;
-	priv->addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
-	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+	priv->dns                = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_search         = g_ptr_array_new_with_free_func (g_free);
+	priv->addresses          = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+	priv->routes             = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+	priv->route_metric       = -1;
+	priv->dhcp_send_hostname = TRUE;
+	priv->may_fail           = TRUE;
+	priv->dad_timeout        = -1;
 }
 
 static void
@@ -5659,7 +5662,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	     g_param_spec_int (NM_SETTING_IP_CONFIG_DNS_PRIORITY, "", "",
 	                       G_MININT32, G_MAXINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5724,7 +5726,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	     g_param_spec_int64 (NM_SETTING_IP_CONFIG_ROUTE_METRIC, "", "",
 	                         -1, G_MAXUINT32, -1,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5765,7 +5766,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5781,7 +5781,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5811,7 +5810,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5825,7 +5823,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5843,7 +5840,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	    g_param_spec_boolean (NM_SETTING_IP_CONFIG_MAY_FAIL, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -5864,7 +5860,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	    g_param_spec_int (NM_SETTING_IP_CONFIG_DAD_TIMEOUT, "", "",
 	                       -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -1,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 

@@ -1145,6 +1145,8 @@ nm_setting_wired_init (NMSettingWired *setting)
 	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
 	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
 	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
+
+	priv->wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
 }
 
 /**
@@ -1248,7 +1250,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRED_SPEED, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -1304,7 +1305,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	    g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override,
 	                              obj_properties[PROP_AUTO_NEGOTIATE],
@@ -1501,7 +1501,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRED_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1591,7 +1590,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	obj_properties[PROP_WAKE_ON_LAN] =
 	    g_param_spec_uint (NM_SETTING_WIRED_WAKE_ON_LAN, "", "",
 	                       0, G_MAXUINT32, NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 

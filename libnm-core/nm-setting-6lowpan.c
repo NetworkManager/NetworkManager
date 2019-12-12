@@ -214,7 +214,6 @@ nm_setting_6lowpan_class_init (NMSetting6LowpanClass *klass)
 	    g_param_spec_string (NM_SETTING_6LOWPAN_PARENT, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 

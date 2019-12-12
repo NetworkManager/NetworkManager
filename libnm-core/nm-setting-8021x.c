@@ -3828,7 +3828,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	obj_properties[PROP_PHASE1_AUTH_FLAGS] =
 	    g_param_spec_uint (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, "", "",
 	                       0, G_MAXUINT32, NM_SETTING_802_1X_AUTH_FLAGS_NONE,
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -4401,7 +4400,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	    g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**

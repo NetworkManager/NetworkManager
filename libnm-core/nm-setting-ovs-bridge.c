@@ -305,7 +305,6 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	    g_param_spec_string (NM_SETTING_OVS_BRIDGE_FAIL_MODE, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -320,7 +319,6 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	    g_param_spec_boolean (NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -334,7 +332,6 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	    g_param_spec_boolean (NM_SETTING_OVS_BRIDGE_RSTP_ENABLE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -348,7 +345,6 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	    g_param_spec_boolean (NM_SETTING_OVS_BRIDGE_STP_ENABLE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**

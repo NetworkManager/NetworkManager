@@ -1552,9 +1552,15 @@ nm_setting_connection_init (NMSettingConnection *setting)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
-	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-	priv->llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-	priv->wait_device_timeout = -1;
+	priv->auth_retries         = -1;
+	priv->autoconnect          = TRUE;
+	priv->autoconnect_priority = NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT;
+	priv->autoconnect_retries  = -1;
+	priv->autoconnect_slaves   = NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT;
+	priv->lldp                 = NM_SETTING_CONNECTION_LLDP_DEFAULT;
+	priv->llmnr                = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
+	priv->mdns                 = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+	priv->wait_device_timeout  = -1;
 }
 
 /**
@@ -1822,7 +1828,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	    g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_FUZZY_IGNORE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -1849,7 +1854,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1875,7 +1879,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, "", "",
 	                       -1, G_MAXINT32, -1,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1917,7 +1920,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	    g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
 	                         0, G_MAXUINT64, 0,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_FUZZY_IGNORE |
 	                         G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override,
@@ -1938,7 +1940,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	    g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_FUZZY_IGNORE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -1965,7 +1966,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	    g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_FUZZY_IGNORE |
 	                         NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
 	                         G_PARAM_STATIC_STRINGS);
@@ -2045,7 +2045,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                       NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -2089,7 +2088,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	    g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
 	                       0, 600, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -2139,7 +2137,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                      G_MININT32, G_MAXINT32, NM_SETTING_CONNECTION_LLDP_DEFAULT,
 	                      NM_SETTING_PARAM_FUZZY_IGNORE |
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -2164,7 +2161,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	    g_param_spec_int (NM_SETTING_CONNECTION_AUTH_RETRIES, "", "",
 	                      -1, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      NM_SETTING_PARAM_FUZZY_IGNORE |
 	                      G_PARAM_STATIC_STRINGS);
 

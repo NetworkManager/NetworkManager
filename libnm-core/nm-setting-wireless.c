@@ -1219,6 +1219,8 @@ nm_setting_wireless_init (NMSettingWireless *setting)
 	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
 	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
 	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
+
+	priv->wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
 }
 
 /**
@@ -1359,7 +1361,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRELESS_CHANNEL, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -1402,7 +1403,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRELESS_RATE, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1423,7 +1423,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRELESS_TX_POWER, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1640,7 +1639,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRELESS_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1768,7 +1766,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	obj_properties[PROP_WAKE_ON_WLAN] =
 	    g_param_spec_uint (NM_SETTING_WIRELESS_WAKE_ON_WLAN, "", "",
 	                       0, G_MAXUINT32, NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT,
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 

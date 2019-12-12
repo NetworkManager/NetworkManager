@@ -383,7 +383,6 @@ nm_setting_ovs_interface_class_init (NMSettingOvsInterfaceClass *klass)
 	    g_param_spec_string (NM_SETTING_OVS_INTERFACE_TYPE, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
