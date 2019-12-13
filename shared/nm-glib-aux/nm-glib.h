@@ -572,4 +572,30 @@ _nm_g_value_unset (GValue *value)
 
 /*****************************************************************************/
 
+/* Glib implements g_atomic_pointer_compare_and_exchange() as a macro.
+ * For one, to inline the atomic operation and also to perform some type checks
+ * on the arguments.
+ * Depending on compiler and glib version, glib passes the arguments as they
+ * are to __atomic_compare_exchange_n(). Some clang version don't accept const
+ * pointers there. Reimplement the macro to get that right, but with stronger
+ * type checks (as we use typeof()). Had one job. */
+static inline gboolean
+_g_atomic_pointer_compare_and_exchange (volatile void *atomic,
+                                        gconstpointer oldval,
+                                        gconstpointer newval)
+{
+	return g_atomic_pointer_compare_and_exchange ((void **) atomic, (void *) oldval, (void *) newval);
+}
+#undef g_atomic_pointer_compare_and_exchange
+#define g_atomic_pointer_compare_and_exchange(atomic, oldval, newval) \
+	({ \
+		typeof (atomic) const _atomic = (atomic); \
+		typeof (*_atomic) const _oldval = (oldval); \
+		typeof (*_atomic) const _newval = (newval); \
+		\
+		_g_atomic_pointer_compare_and_exchange (_atomic, _oldval, _newval); \
+	})
+
+/*****************************************************************************/
+
 #endif  /* __NM_GLIB_H__ */
