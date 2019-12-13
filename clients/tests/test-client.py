@@ -309,6 +309,12 @@ class Util:
             bb = bb.decode('utf-8')
         return bb
 
+    @staticmethod
+    def replace_text_sort_list(lst, replace_arr):
+        lst = [ (Util.replace_text(elem, replace_arr), elem) for elem in lst ]
+        lst = sorted(lst)
+        lst = [ tup[1] for tup in lst ]
+        return list(lst)
 
     @staticmethod
     def debug_dbus_interface():
