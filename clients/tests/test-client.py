@@ -278,6 +278,9 @@ class Util:
     def replace_text(text, replace_arr):
         if not replace_arr:
             return text
+        needs_encode = Util.python_has_version(3) and Util.is_string(text)
+        if needs_encode:
+            text = text.encode('utf-8')
         text = [text]
         for replace in replace_arr:
             try:
@@ -301,7 +304,11 @@ class Util:
                     text2.append( (v_replace,) )
                     text2.append(t3)
             text = text2
-        return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
+        bb = b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
+        if needs_encode:
+            bb = bb.decode('utf-8')
+        return bb
+
 
     @staticmethod
     def debug_dbus_interface():
