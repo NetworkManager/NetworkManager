@@ -454,12 +454,12 @@ test_save_hostname (void)
 
 	nm_client_save_hostname_async (gl.client, "example.com", NULL, save_hostname_cb, &done);
 
-	until_ts = nm_utils_get_monotonic_timestamp_ms () + 5000;
+	until_ts = nm_utils_get_monotonic_timestamp_msec () + 5000;
 	while (TRUE) {
 		g_main_context_iteration (NULL, FALSE);
 		if (done)
 			break;
-		if (nm_utils_get_monotonic_timestamp_ms () >= until_ts)
+		if (nm_utils_get_monotonic_timestamp_msec () >= until_ts)
 			g_assert_not_reached ();
 	}
 

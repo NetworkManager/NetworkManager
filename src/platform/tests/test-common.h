@@ -32,13 +32,13 @@
         const NMLogDomain __domain = (domain); \
         \
         if (nm_logging_enabled (__level, __domain)) { \
-            gint64 _ts = nm_utils_get_monotonic_timestamp_ns (); \
+            gint64 _ts = nm_utils_get_monotonic_timestamp_nsec (); \
             \
             _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s[%ld.%09ld]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
-                     (long) (_ts / NM_UTILS_NS_PER_SECOND), \
-                     (long) (_ts % NM_UTILS_NS_PER_SECOND) \
+                     (long) (_ts / NM_UTILS_NSEC_PER_SEC), \
+                     (long) (_ts % NM_UTILS_NSEC_PER_SEC) \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
@@ -101,14 +101,14 @@ int nmtstp_run_command (const char *format, ...) _nm_printf (1, 2);
 
 /*****************************************************************************/
 
-guint nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_ms);
+guint nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_msec);
 guint nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms);
-const NMPlatformLink *nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_ms);
+const NMPlatformLink *nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_msec);
 const NMPlatformLink *nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
 
-#define nmtstp_assert_wait_for_signal(platform, timeout_ms) \
+#define nmtstp_assert_wait_for_signal(platform, timeout_msec) \
 	G_STMT_START { \
-		if (nmtstp_wait_for_signal (platform, timeout_ms) == 0) \
+		if (nmtstp_wait_for_signal (platform, timeout_msec) == 0) \
 			g_assert_not_reached (); \
 	} G_STMT_END
 
@@ -118,8 +118,8 @@ const NMPlatformLink *nmtstp_wait_for_link_until (NMPlatform *platform, const ch
 			g_assert_not_reached (); \
 	} G_STMT_END
 
-#define nmtstp_assert_wait_for_link(platform, ifname, expected_link_type, timeout_ms) \
-	nmtst_assert_nonnull (nmtstp_wait_for_link (platform, ifname, expected_link_type, timeout_ms))
+#define nmtstp_assert_wait_for_link(platform, ifname, expected_link_type, timeout_msec) \
+	nmtst_assert_nonnull (nmtstp_wait_for_link (platform, ifname, expected_link_type, timeout_msec))
 
 #define nmtstp_assert_wait_for_link_until(platform, ifname, expected_link_type, until_ms) \
 	nmtst_assert_nonnull (nmtstp_wait_for_link_until (platform, ifname, expected_link_type, until_ms))

@@ -93,7 +93,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	gboolean has_router_from_classless = FALSE;
 	gboolean has_classless_route = FALSE;
 	gboolean has_static_route = FALSE;
-	const gint32 ts = nm_utils_get_monotonic_timestamp_s ();
+	const gint32 ts = nm_utils_get_monotonic_timestamp_sec ();
 	gint64 ts_time = time (NULL);
 	struct in_addr a_address;
 	struct in_addr a_netmask;
@@ -803,7 +803,7 @@ static void
 bound6_handle (NMDhcpSystemd *self)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
-	const gint32 ts = nm_utils_get_monotonic_timestamp_s ();
+	const gint32 ts = nm_utils_get_monotonic_timestamp_sec ();
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
 	gs_unref_object NMIP6Config *ip6_config = NULL;
 	gs_unref_hashtable GHashTable *options = NULL;

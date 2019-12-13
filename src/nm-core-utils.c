@@ -436,7 +436,7 @@ static const char *
 _kc_waited_to_string (char *buf, gint64 wait_start_us)
 #define _kc_waited_to_string(buf, wait_start_us) ( G_STATIC_ASSERT_EXPR(sizeof (buf) == KC_WAITED_TO_STRING && sizeof ((buf)[0]) == 1), _kc_waited_to_string (buf, wait_start_us) )
 {
-	g_snprintf (buf, KC_WAITED_TO_STRING, " (%ld usec elapsed)", (long) (nm_utils_get_monotonic_timestamp_us () - wait_start_us));
+	g_snprintf (buf, KC_WAITED_TO_STRING, " (%ld usec elapsed)", (long) (nm_utils_get_monotonic_timestamp_usec () - wait_start_us));
 	return buf;
 }
 
@@ -476,7 +476,7 @@ _kc_cb_timeout_grace_period (void *user_data)
 		}
 	} else {
 		nm_log_dbg (data->log_domain, "%s: process not terminated after %ld usec. Sending SIGKILL signal",
-		            data->log_name, (long) (nm_utils_get_monotonic_timestamp_us () - data->async.wait_start_us));
+		            data->log_name, (long) (nm_utils_get_monotonic_timestamp_usec () - data->async.wait_start_us));
 	}
 
 	return G_SOURCE_REMOVE;
@@ -591,7 +591,7 @@ nm_utils_kill_child_async (pid_t pid, int sig, NMLogDomain log_domain,
 	}
 
 	data = _kc_async_data_alloc (pid, log_domain, log_name, callback, user_data);
-	data->async.wait_start_us = nm_utils_get_monotonic_timestamp_us ();
+	data->async.wait_start_us = nm_utils_get_monotonic_timestamp_usec ();
 
 	if (sig != SIGKILL && wait_before_kill_msec > 0) {
 		data->async.source_timeout_kill_id = g_timeout_add (wait_before_kill_msec, _kc_cb_timeout_grace_period, data);
@@ -694,7 +694,7 @@ nm_utils_kill_child_sync (pid_t pid, int sig, NMLogDomain log_domain, const char
 		goto out;
 	}
 
-	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
+	wait_start_us = nm_utils_get_monotonic_timestamp_usec ();
 
 	/* wait for the process to terminated... */
 	if (sig != SIGKILL) {
@@ -728,7 +728,7 @@ nm_utils_kill_child_sync (pid_t pid, int sig, NMLogDomain log_domain, const char
 			if (!wait_until)
 				break;
 
-			now = nm_utils_get_monotonic_timestamp_us ();
+			now = nm_utils_get_monotonic_timestamp_usec ();
 			if (now >= wait_until)
 				break;
 
@@ -871,7 +871,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 
 	/* wait for the process to terminate... */
 
-	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
+	wait_start_us = nm_utils_get_monotonic_timestamp_usec ();
 
 	sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 	if (sig != SIGKILL && wait_before_kill_msec)
@@ -922,7 +922,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 		}
 
 		sleep_time = sleep_duration_usec;
-		now = nm_utils_get_monotonic_timestamp_us ();
+		now = nm_utils_get_monotonic_timestamp_usec ();
 
 		if (   max_wait_until != 0
 		    && now >= max_wait_until) {
@@ -2453,13 +2453,13 @@ _host_id_read_timestamp (gboolean use_secret_key_file,
 	 * is not stable across restarts, but apparently neither is the host-id
 	 * nor the secret_key itself. */
 
-#define EPOCH_TWO_YEARS  (G_GINT64_CONSTANT (2 * 365 * 24 * 3600) * NM_UTILS_NS_PER_SECOND)
+#define EPOCH_TWO_YEARS  (G_GINT64_CONSTANT (2 * 365 * 24 * 3600) * NM_UTILS_NSEC_PER_SEC)
 
 	v = nm_hash_siphash42 (1156657133u, host_id, host_id_len);
 
 	now = time (NULL);
 	*out_timestamp_ns = NM_MAX ((gint64) 1,
-	                            (now * NM_UTILS_NS_PER_SECOND) - ((gint64) (v % ((guint64) (EPOCH_TWO_YEARS)))));
+	                            (now * NM_UTILS_NSEC_PER_SEC) - ((gint64) (v % ((guint64) (EPOCH_TWO_YEARS)))));
 	return FALSE;
 }
 
@@ -3721,7 +3721,7 @@ nm_utils_lifetime_get (guint32 timestamp,
 	}
 
 	if (now <= 0)
-		now = nm_utils_get_monotonic_timestamp_s ();
+		now = nm_utils_get_monotonic_timestamp_sec ();
 
 	t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now);
 	if (!t_lifetime) {

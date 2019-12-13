@@ -44,7 +44,7 @@ test_gpid (void)
 static void
 test_monotonic_timestamp (void)
 {
-	g_assert (nm_utils_get_monotonic_timestamp_s () > 0);
+	g_assert (nm_utils_get_monotonic_timestamp_sec () > 0);
 }
 
 /*****************************************************************************/

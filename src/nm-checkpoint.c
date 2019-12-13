@@ -585,7 +585,7 @@ nm_checkpoint_adjust_rollback_timeout (NMCheckpoint *self, guint32 add_timeout)
 	if (add_timeout == 0)
 		rollback_timeout_s = 0;
 	else {
-		now_ms = nm_utils_get_monotonic_timestamp_ms ();
+		now_ms = nm_utils_get_monotonic_timestamp_msec ();
 		add_timeout_ms = ((gint64) add_timeout) * 1000;
 		rollback_timeout_ms = (now_ms - priv->created_at_ms) + add_timeout_ms;
 
@@ -626,7 +626,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CREATED:
 		g_value_set_int64 (value,
 		                   nm_utils_monotonic_timestamp_as_boottime (priv->created_at_ms,
-		                                                             NM_UTILS_NS_PER_MSEC));
+		                                                             NM_UTILS_NSEC_PER_MSEC));
 		break;
 	case PROP_ROLLBACK_TIMEOUT:
 		g_value_set_uint (value, priv->rollback_timeout_s);
@@ -679,7 +679,7 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	priv = NM_CHECKPOINT_GET_PRIVATE (self);
 	priv->manager = g_object_ref (manager);
 	priv->rollback_timeout_s = rollback_timeout_s;
-	priv->created_at_ms = nm_utils_get_monotonic_timestamp_ms ();
+	priv->created_at_ms = nm_utils_get_monotonic_timestamp_msec ();
 	priv->flags = flags;
 
 	if (rollback_timeout_s != 0) {

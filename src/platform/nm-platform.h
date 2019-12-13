@@ -287,7 +287,7 @@ typedef enum {
 	 * 2 @lifetime==@preferred==NM_PLATFORM_LIFETIME_PERMANENT: @timestamp is irrelevant (but mostly
 	 *   set to 0). Such addresses are permanent.
 	 * 3 Non permanent addresses should (almost) always have @timestamp > 0. 0 is not a valid timestamp
-	 *   and never returned by nm_utils_get_monotonic_timestamp_s(). In this case @valid/@preferred
+	 *   and never returned by nm_utils_get_monotonic_timestamp_sec(). In this case @valid/@preferred
 	 *   is anchored at @timestamp.
 	 * 4 Non permanent addresses with @timestamp == 0 are implicitly anchored at *now*, thus the time
 	 *   moves as time goes by. This is usually not useful, except e.g. nm_platform_ip[46]_address_add().
@@ -325,7 +325,7 @@ typedef struct {
 
 /**
  * NMPlatformIP4Address:
- * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
+ * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_sec()
  **/
 struct _NMPlatformIP4Address {
 	__NMPlatformIPAddress_COMMON;
@@ -349,7 +349,7 @@ struct _NMPlatformIP4Address {
 
 /**
  * NMPlatformIP6Address:
- * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
+ * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_sec()
  **/
 struct _NMPlatformIP6Address {
 	__NMPlatformIPAddress_COMMON;

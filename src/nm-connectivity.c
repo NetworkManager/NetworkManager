@@ -415,13 +415,13 @@ _con_curl_timeout_cb (gpointer user_data)
 }
 
 static int
-multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
+multi_timer_cb (CURLM *multi, long timeout_msec, void *userdata)
 {
 	NMConnectivityCheckHandle *cb_data = userdata;
 
 	nm_clear_g_source (&cb_data->concheck.curl_timer);
-	if (timeout_ms != -1)
-		cb_data->concheck.curl_timer = g_timeout_add (timeout_ms, _con_curl_timeout_cb, cb_data);
+	if (timeout_msec != -1)
+		cb_data->concheck.curl_timer = g_timeout_add (timeout_msec, _con_curl_timeout_cb, cb_data);
 	return 0;
 }
 

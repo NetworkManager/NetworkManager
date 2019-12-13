@@ -4048,7 +4048,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 {
 	gs_unref_ptrarray GPtrArray *plat_addresses = NULL;
 	const NMPlatformIP4Address *known_address;
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	GHashTable *plat_subnets = NULL;
 	GHashTable *known_subnets = NULL;
 	gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
@@ -4224,7 +4224,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
                               gboolean full_sync)
 {
 	gs_unref_ptrarray GPtrArray *plat_addresses = NULL;
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	guint i_plat, i_know;
 	gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
 	NMPLookup lookup;
@@ -4965,15 +4965,15 @@ nm_platform_ip_route_get (NMPlatform *self,
 #define IP4_DEV_ROUTE_BLACKLIST_GC_TIMEOUT_S ((int) (((IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS + 999) * 3) / 1000))
 
 static gint64
-_ip4_dev_route_blacklist_timeout_ms_get (gint64 timeout_ms)
+_ip4_dev_route_blacklist_timeout_ms_get (gint64 timeout_msec)
 {
-	return timeout_ms >> 1;
+	return timeout_msec >> 1;
 }
 
 static gint64
-_ip4_dev_route_blacklist_timeout_ms_marked (gint64 timeout_ms)
+_ip4_dev_route_blacklist_timeout_ms_marked (gint64 timeout_msec)
 {
-	return !!(timeout_ms & ((gint64) 1));
+	return !!(timeout_msec & ((gint64) 1));
 }
 
 static gboolean
@@ -4992,7 +4992,7 @@ again:
 	if (!priv->ip4_dev_route_blacklist_hash)
 		goto out;
 
-	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	now_ms = nm_utils_get_monotonic_timestamp_msec ();
 
 	g_hash_table_iter_init (&iter, priv->ip4_dev_route_blacklist_hash);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
@@ -5055,7 +5055,7 @@ _ip4_dev_route_blacklist_notify_route (NMPlatform *self,
 	                                   (gpointer *) &p_timeout_ms))
 		return;
 
-	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	now_ms = nm_utils_get_monotonic_timestamp_msec ();
 	if (now_ms > _ip4_dev_route_blacklist_timeout_ms_get (*p_timeout_ms)) {
 		/* already expired. Wait for gc. */
 		return;
@@ -5086,7 +5086,7 @@ _ip4_dev_route_blacklist_gc_timeout_handle (gpointer user_data)
 
 	nm_assert (priv->ip4_dev_route_blacklist_gc_timeout_id);
 
-	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	now_ms = nm_utils_get_monotonic_timestamp_msec ();
 
 	g_hash_table_iter_init (&iter, priv->ip4_dev_route_blacklist_hash);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
@@ -5155,8 +5155,8 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 	GHashTableIter iter;
 	const NMPObject *p_obj;
 	guint i;
-	gint64 timeout_ms;
-	gint64 timeout_ms_val;
+	gint64 timeout_msec;
+	gint64 timeout_msec_val;
 	gint64 *p_timeout_ms;
 	gboolean needs_check = FALSE;
 
@@ -5191,8 +5191,8 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 			                                                            nm_g_slice_free_fcn_gint64);
 		}
 
-		timeout_ms = nm_utils_get_monotonic_timestamp_ms () + IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS;
-		timeout_ms_val = (timeout_ms << 1) | ((gint64) 1);
+		timeout_msec = nm_utils_get_monotonic_timestamp_msec () + IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS;
+		timeout_msec_val = (timeout_msec << 1) | ((gint64) 1);
 		for (i = 0; i < ip4_dev_route_blacklist->len; i++) {
 			const NMPObject *o;
 
@@ -5206,7 +5206,7 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 					/* un-expire and reuse the entry. */
 					_LOGT ("ip4-dev-route: register %s (update)",
 					       nmp_object_to_string (p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
-					*p_timeout_ms = timeout_ms_val;
+					*p_timeout_ms = timeout_msec_val;
 					continue;
 				}
 			}
@@ -5214,7 +5214,7 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 			_LOGT ("ip4-dev-route: register %s",
 			       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 			p_timeout_ms = g_slice_new (gint64);
-			*p_timeout_ms = timeout_ms_val;
+			*p_timeout_ms = timeout_msec_val;
 			g_hash_table_replace (priv->ip4_dev_route_blacklist_hash,
 			                      (gpointer) nmp_object_ref (o),
 			                      p_timeout_ms);
@@ -6054,7 +6054,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	char str_lft[30], str_pref[30], str_time[50], s_source[50];
 	char *str_peer = NULL;
 	const char *str_lft_p, *str_pref_p, *str_time_p;
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 
 	if (!nm_utils_to_string_buffer_init_null (address, &buf, &len))
 		return buf;
@@ -6167,7 +6167,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char *str_peer = NULL;
 	const char *str_lft_p, *str_pref_p, *str_time_p;
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 
 	if (!nm_utils_to_string_buffer_init_null (address, &buf, &len))
 		return buf;

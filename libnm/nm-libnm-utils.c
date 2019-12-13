@@ -93,8 +93,8 @@ _nml_dbus_log (NMLDBusLogLevel level,
 
 	g_printerr ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
 	            prefix,
-	            ts / NM_UTILS_NS_PER_SECOND,
-	            (ts / (NM_UTILS_NS_PER_SECOND / 10000)) % 10000,
+	            ts / NM_UTILS_NSEC_PER_SEC,
+	            (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
 	            msg);
 }
 

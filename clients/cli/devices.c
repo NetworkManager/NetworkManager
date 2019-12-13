@@ -3083,7 +3083,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (rescan == NULL || strcmp (rescan, "auto") == 0) {
-		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SECOND, 0);
+		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SEC, 0);
 	} else if (strcmp (rescan, "no") == 0) {
 		rescan_cutoff = 0;
 	} else if (strcmp (rescan, "yes") == 0) {

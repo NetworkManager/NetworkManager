@@ -129,7 +129,7 @@ _gl_pid_kill_external_timeout_cb (gpointer user_data)
 		goto process_gone;
 	}
 
-	now = nm_utils_get_monotonic_timestamp_ms ();
+	now = nm_utils_get_monotonic_timestamp_msec ();
 
 	if (gl_pid.kill_external_data->started_at + WAIT_MSEC_AFTER_SIGTERM < now) {
 		if (!gl_pid.kill_external_data->sigkilled) {
@@ -240,7 +240,7 @@ handle_kill:
 	gl_pid.kill_external_data = g_slice_new (GlPidKillExternalData);
 	*gl_pid.kill_external_data = (GlPidKillExternalData) {
 		.shutdown_wait_handle = nm_shutdown_wait_obj_register_handle_full (g_strdup_printf ("kill-external-dnsmasq-process-%"G_PID_FORMAT, pid), TRUE),
-		.started_at           = nm_utils_get_monotonic_timestamp_ms (),
+		.started_at           = nm_utils_get_monotonic_timestamp_msec (),
 		.pid                  = pid,
 		.p_start_time         = p_start_time,
 	};
@@ -1058,7 +1058,7 @@ start_dnsmasq (NMDnsDnsmasq *self, gboolean force_start, GError **error)
 		}
 	}
 
-	now = nm_utils_get_monotonic_timestamp_ms ();
+	now = nm_utils_get_monotonic_timestamp_msec ();
 	if (   force_start
 	    || priv->burst_start_at == 0
 	    || priv->burst_start_at + RATELIMIT_INTERVAL_MSEC <= now) {

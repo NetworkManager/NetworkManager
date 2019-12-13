@@ -920,7 +920,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	 * otherwise after restart the device won't work for the first seconds.
 	 */
 	if (priv->last_pppoe_time != 0) {
-		gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
+		gint32 delay = nm_utils_get_monotonic_timestamp_sec () - priv->last_pppoe_time;
 
 		if (   delay < PPPOE_RECONNECT_DELAY
 		    && nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE)) {
@@ -1468,7 +1468,7 @@ deactivate (NMDevice *device)
 
 	/* Set last PPPoE connection time */
 	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
-		priv->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
+		priv->last_pppoe_time = nm_utils_get_monotonic_timestamp_sec ();
 }
 
 static gboolean

@@ -104,7 +104,7 @@ peer_list_dump (gpointer user_data)
 
 	if (_LOGD_ENABLED (LOGD_WIFI_SCAN)) {
 		NMWifiP2PPeer *peer;
-		gint32 now_s = nm_utils_get_monotonic_timestamp_s ();
+		gint32 now_s = nm_utils_get_monotonic_timestamp_sec ();
 
 		_LOGD (LOGD_WIFI_SCAN, "P2P Peers: [now:%u]", now_s);
 		c_list_for_each_entry (peer, &priv->peers_lst_head, peers_lst)

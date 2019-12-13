@@ -980,7 +980,7 @@ ip4_address_add (NMPlatform *platform,
 	address.address = addr;
 	address.peer_address = peer_addr;
 	address.plen = plen;
-	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
+	address.timestamp = nm_utils_get_monotonic_timestamp_sec ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
 	address.n_ifa_flags = flags;
@@ -1008,7 +1008,7 @@ ip6_address_add (NMPlatform *platform,
 	address.address = addr;
 	address.peer_address = (IN6_IS_ADDR_UNSPECIFIED (&peer_addr) || IN6_ARE_ADDR_EQUAL (&addr, &peer_addr)) ? in6addr_any : peer_addr;
 	address.plen = plen;
-	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
+	address.timestamp = nm_utils_get_monotonic_timestamp_sec ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
 	address.n_ifa_flags = flags;

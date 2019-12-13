@@ -730,7 +730,7 @@ _nm_log_impl (const char *file,
 			char *iov_free_data[5];
 			char **iov_free = iov_free_data;
 
-			now = nm_utils_get_monotonic_timestamp_ns ();
+			now = nm_utils_get_monotonic_timestamp_nsec ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			_iovec_set_format_a (iov++, 30, "PRIORITY=%d", level_desc[level].syslog_level);
@@ -763,8 +763,8 @@ _nm_log_impl (const char *file,
 				_iovec_set_format (iov++, iov_free++, "CODE_FUNC=%s", func);
 			_iovec_set_format (iov++, iov_free++, "CODE_FILE=%s", file ?: "");
 			_iovec_set_format_a (iov++, 20, "CODE_LINE=%u", line);
-			_iovec_set_format_a (iov++, 60, "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000));
-			_iovec_set_format_a (iov++, 60, "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000));
+			_iovec_set_format_a (iov++, 60, "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NSEC_PER_SEC), (long long) ((now % NM_UTILS_NSEC_PER_SEC) / 1000));
+			_iovec_set_format_a (iov++, 60, "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NSEC_PER_SEC), (long long) ((boottime % NM_UTILS_NSEC_PER_SEC) / 1000));
 			if (error != 0)
 				_iovec_set_format_a (iov++, 30, "ERRNO=%d", error);
 			if (ifname)
@@ -865,7 +865,7 @@ nm_log_handler (const char *log_domain,
 		{
 			gint64 now, boottime;
 
-			now = nm_utils_get_monotonic_timestamp_ns ();
+			now = nm_utils_get_monotonic_timestamp_nsec ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			sd_journal_send ("PRIORITY=%d", syslog_priority,
@@ -875,8 +875,8 @@ nm_log_handler (const char *log_domain,
 			                 "SYSLOG_FACILITY=3",
 			                 "GLIB_DOMAIN=%s", log_domain ?: "",
 			                 "GLIB_LEVEL=%d", (int) (level & G_LOG_LEVEL_MASK),
-			                 "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000),
-			                 "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000),
+			                 "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NSEC_PER_SEC), (long long) ((now % NM_UTILS_NSEC_PER_SEC) / 1000),
+			                 "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NSEC_PER_SEC), (long long) ((boottime % NM_UTILS_NSEC_PER_SEC) / 1000),
 			                 NULL);
 		}
 		break;
@@ -996,7 +996,7 @@ nm_logging_init (const char *logging_backend, gboolean debug)
 	if (fetch_monotonic_timestamp) {
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
-		nm_utils_get_monotonic_timestamp_ns ();
+		nm_utils_get_monotonic_timestamp_nsec ();
 	}
 
 	if (obsolete_debug_backend)

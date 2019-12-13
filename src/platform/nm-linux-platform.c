@@ -738,7 +738,7 @@ _addrtime_timestamp_to_nm (guint32 timestamp, gint32 *out_now_nm)
 
 	/* do all the calculations in milliseconds scale */
 
-	now_nm = nm_utils_get_monotonic_timestamp_ms ();
+	now_nm = nm_utils_get_monotonic_timestamp_msec ();
 	now_nl = nm_utils_clock_gettime_ms (CLOCK_MONOTONIC);
 
 	nm_assert (now_nm >= 1000);
@@ -748,13 +748,13 @@ _addrtime_timestamp_to_nm (guint32 timestamp, gint32 *out_now_nm)
 
 	NM_SET_OUT (out_now_nm, now_nm / 1000);
 
-	/* converting the timestamp into nm_utils_get_monotonic_timestamp_ms() scale is
+	/* converting the timestamp into nm_utils_get_monotonic_timestamp_msec() scale is
 	 * a good guess but fails in the following situations:
 	 *
 	 * - If the address existed before start of the process, the timestamp in nm scale would
 	 *   be negative or zero. In this case we default to 1.
 	 * - during hibernation, the CLOCK_MONOTONIC/timestamp drifts from
-	 *   nm_utils_get_monotonic_timestamp_ms() scale.
+	 *   nm_utils_get_monotonic_timestamp_msec() scale.
 	 */
 	if (result <= 1000)
 		return 1;
@@ -809,7 +809,7 @@ _addrtime_get_lifetimes (guint32 timestamp,
 		if (now == 0) {
 			/* strange. failed to detect the last-update time and assumed that timestamp is 1. */
 			nm_assert (timestamp == 1);
-			now = nm_utils_get_monotonic_timestamp_s ();
+			now = nm_utils_get_monotonic_timestamp_sec ();
 		}
 		if (timestamp < now) {
 			guint32 diff = now - timestamp;
@@ -5030,14 +5030,14 @@ delayed_action_to_string_full (DelayedActionType action_type, gpointer user_data
 		data = user_data;
 
 		if (data) {
-			gint64 timeout = data->timeout_abs_ns - nm_utils_get_monotonic_timestamp_ns ();
+			gint64 timeout = data->timeout_abs_ns - nm_utils_get_monotonic_timestamp_nsec ();
 			char b[255];
 
 			nm_utils_strbuf_append (&buf, &buf_size, " (seq %u, timeout in %s%"G_GINT64_FORMAT".%09"G_GINT64_FORMAT", response-type %d%s%s)",
 			                        data->seq_number,
 			                        timeout < 0 ? "-" : "",
-			                        (timeout < 0 ? -timeout : timeout) / NM_UTILS_NS_PER_SECOND,
-			                        (timeout < 0 ? -timeout : timeout) % NM_UTILS_NS_PER_SECOND,
+			                        (timeout < 0 ? -timeout : timeout) / NM_UTILS_NSEC_PER_SEC,
+			                        (timeout < 0 ? -timeout : timeout) % NM_UTILS_NSEC_PER_SEC,
 			                        (int) data->response_type,
 			                        data->seq_result ? ", " : "",
 			                        data->seq_result ? wait_for_nl_response_to_string (data->seq_result, NULL, b, sizeof (b)) : "");
@@ -5139,7 +5139,7 @@ delayed_action_wait_for_nl_response_complete_check (NMPlatform *platform,
 		if (data->seq_result)
 			delayed_action_wait_for_nl_response_complete (platform, i, data->seq_result);
 		else if (   p_now_ns
-		         && ((now_ns ?: (now_ns = nm_utils_get_monotonic_timestamp_ns ())) >= data->timeout_abs_ns)) {
+		         && ((now_ns ?: (now_ns = nm_utils_get_monotonic_timestamp_nsec ())) >= data->timeout_abs_ns)) {
 			/* the caller can optionally check for timeout by providing a p_now_ns argument. */
 			delayed_action_wait_for_nl_response_complete (platform, i, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT);
 		} else if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
@@ -5359,7 +5359,7 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE (NMPlatform *platform,
 {
 	DelayedActionWaitForNlResponseData data = {
 		.seq_number = seq_number,
-		.timeout_abs_ns = nm_utils_get_monotonic_timestamp_ns () + (200 * (NM_UTILS_NS_PER_SECOND / 1000)),
+		.timeout_abs_ns = nm_utils_get_monotonic_timestamp_nsec () + (200 * (NM_UTILS_NSEC_PER_SEC / 1000)),
 		.out_seq_result = out_seq_result,
 		.out_errmsg = out_errmsg,
 		.response_type = response_type,
@@ -8799,7 +8799,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 	int r;
 	struct pollfd pfd;
 	gboolean any = FALSE;
-	int timeout_ms;
+	int timeout_msec;
 	struct {
 		guint32 seq_number;
 		gint64 timeout_abs_ns;
@@ -8880,12 +8880,12 @@ after_read:
 
 		_LOGT ("netlink: read: wait for ACK for sequence number %u...", next.seq_number);
 
-		timeout_ms = (next.timeout_abs_ns - next.now_ns) / (NM_UTILS_NS_PER_SECOND / 1000);
+		timeout_msec = (next.timeout_abs_ns - next.now_ns) / (NM_UTILS_NSEC_PER_SEC / 1000);
 
 		memset (&pfd, 0, sizeof (pfd));
 		pfd.fd = nl_socket_get_fd (priv->nlh);
 		pfd.events = POLLIN;
-		r = poll (&pfd, 1, MAX (1, timeout_ms));
+		r = poll (&pfd, 1, MAX (1, timeout_msec));
 
 		if (r == 0) {
 			/* timeout and there is nothing to read. */

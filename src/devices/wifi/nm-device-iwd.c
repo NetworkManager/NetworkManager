@@ -998,7 +998,7 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	priv->scan_requested = FALSE;
-	priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+	priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 	_notify (self, PROP_LAST_SCAN);
 
 	/* On success, priv->scanning becomes true right before or right
@@ -2099,7 +2099,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_LAST_SCAN:
 		g_value_set_int64 (value,
 		                   priv->last_scan > 0
-		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_MSEC)
+		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NSEC_PER_MSEC)
 		                       : (gint64) -1);
 		break;
 	default:

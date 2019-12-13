@@ -58,7 +58,7 @@ struct _NMWifiAPPrivate {
 	/* Non-scanned attributes */
 	bool               fake:1;       /* Whether or not the AP is from a scan */
 	bool               hotspot:1;    /* Whether the AP is a local device's hotspot network */
-	gint32             last_seen;    /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
+	gint32             last_seen;    /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_sec()) */
 };
 
 typedef struct _NMWifiAPPrivate NMWifiAPPrivate;
@@ -898,7 +898,7 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 		changed = TRUE;
 	}
 
-	changed |= nm_wifi_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_s ());
+	changed |= nm_wifi_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_sec ());
 	changed |= nm_wifi_ap_set_fake (ap, FALSE);
 
 	g_object_thaw_notify (G_OBJECT (ap));
@@ -1026,7 +1026,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	            priv->metered ? 'M' : '_',
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
-	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_s ()) - priv->last_seen) : -1,
+	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_sec ()) - priv->last_seen) : -1,
 	            supplicant_id,
 	            export_path);
 	return str_buf;
@@ -1180,7 +1180,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_LAST_SEEN:
 		g_value_set_int (value,
 		                 priv->last_seen > 0
-		                     ? (int) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NS_PER_SECOND)
+		                     ? (int) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NSEC_PER_SEC)
 		                     : -1);
 		break;
 	default:

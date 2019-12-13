@@ -2095,7 +2095,7 @@ test_vlan_set_xgress (void)
 static void
 test_create_many_links_do (guint n_devices)
 {
-	gint64 time, start_time = nm_utils_get_monotonic_timestamp_ns ();
+	gint64 time, start_time = nm_utils_get_monotonic_timestamp_nsec ();
 	guint i;
 	char name[64];
 	const NMPlatformLink *pllink;
@@ -2149,8 +2149,8 @@ test_create_many_links_do (guint n_devices)
 	_LOGI (">>> process events after deleting devices...");
 	nm_platform_process_events (NM_PLATFORM_GET);
 
-	time = nm_utils_get_monotonic_timestamp_ns () - start_time;
-	_LOGI (">>> finished in %ld.%09ld seconds", (long) (time / NM_UTILS_NS_PER_SECOND), (long) (time % NM_UTILS_NS_PER_SECOND));
+	time = nm_utils_get_monotonic_timestamp_nsec () - start_time;
+	_LOGI (">>> finished in %ld.%09ld seconds", (long) (time / NM_UTILS_NSEC_PER_SEC), (long) (time % NM_UTILS_NSEC_PER_SEC));
 }
 
 static void

@@ -553,7 +553,7 @@ _wait_for_signal_timeout (gpointer user_data)
 }
 
 guint
-nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_ms)
+nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_msec)
 {
 	WaitForSignalData data = { 0 };
 	gulong id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
@@ -568,7 +568,7 @@ nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_ms)
 	id_ip4_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 	id_ip6_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 
-	/* if timeout_ms is negative, it means the wait-time already expired.
+	/* if timeout_msec is negative, it means the wait-time already expired.
 	 * Maybe, we should do nothing and return right away, without even
 	 * processing events from platform. However, that inconsistency (of not
 	 * processing events from mainloop) is inconvenient.
@@ -578,7 +578,7 @@ nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_ms)
 	 * a zero timeout: we check whether there are any events pending in platform,
 	 * and quite the mainloop immediately afterwards. But we always check. */
 
-	data.id = g_timeout_add (CLAMP (timeout_ms, 0, G_MAXUINT32),
+	data.id = g_timeout_add (CLAMP (timeout_msec, 0, G_MAXUINT32),
 	                         _wait_for_signal_timeout, &data);
 
 	g_main_loop_run (data.loop);
@@ -603,7 +603,7 @@ nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 	guint signal_counts;
 
 	while (TRUE) {
-		now = nm_utils_get_monotonic_timestamp_ms ();
+		now = nm_utils_get_monotonic_timestamp_msec ();
 
 		if (until_ms < now)
 			return 0;
@@ -615,11 +615,11 @@ nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_ms)
+nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_msec)
 {
 	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type,
-	                                   timeout_ms
-	                                     ? nm_utils_get_monotonic_timestamp_ms () + timeout_ms
+	                                   timeout_msec
+	                                     ? nm_utils_get_monotonic_timestamp_msec () + timeout_msec
 	                                     : 0);
 }
 
@@ -633,7 +633,7 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 	_init_platform (&platform, FALSE);
 
 	while (TRUE) {
-		now = nm_utils_get_monotonic_timestamp_ms ();
+		now = nm_utils_get_monotonic_timestamp_msec ();
 
 		plink = nm_platform_link_get_by_ifname (platform, ifname);
 		if (   plink
@@ -704,7 +704,7 @@ nmtstp_ip_address_check_lifetime (const NMPlatformIPAddress *addr,
 	g_assert (addr);
 
 	if (now == -1)
-		now = nm_utils_get_monotonic_timestamp_s ();
+		now = nm_utils_get_monotonic_timestamp_sec ();
 	g_assert (now > 0);
 
 	g_assert (expected_preferred <= expected_lifetime);
@@ -750,7 +750,7 @@ nmtstp_ip_address_assert_lifetime (const NMPlatformIPAddress *addr,
 	g_assert (addr);
 
 	if (now == -1)
-		now = nm_utils_get_monotonic_timestamp_s ();
+		now = nm_utils_get_monotonic_timestamp_sec ();
 	g_assert (now > 0);
 
 	g_assert (expected_preferred <= expected_lifetime);
@@ -886,7 +886,7 @@ _ip_address_add (NMPlatform *platform,
 	}
 
 	/* Let's wait until we see the address. */
-	end_time = nm_utils_get_monotonic_timestamp_ms () + 500;
+	end_time = nm_utils_get_monotonic_timestamp_msec () + 500;
 	do {
 
 		if (external_command)
@@ -1091,7 +1091,7 @@ _ip_address_del (NMPlatform *platform,
 	}
 
 	/* Let's wait until we get the result */
-	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	end_time = nm_utils_get_monotonic_timestamp_msec () + 250;
 	do {
 		if (external_command)
 			nm_platform_process_events (platform);
@@ -1736,7 +1736,7 @@ nmtstp_link_delete (NMPlatform *platform,
 	}
 
 	/* Let's wait until we get the result */
-	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	end_time = nm_utils_get_monotonic_timestamp_msec () + 250;
 	do {
 		if (external_command)
 			nm_platform_process_events (platform);
@@ -1785,7 +1785,7 @@ nmtstp_link_set_updown (NMPlatform *platform,
 	}
 
 	/* Let's wait until we get the result */
-	end_time = nm_utils_get_monotonic_timestamp_ms () + 250;
+	end_time = nm_utils_get_monotonic_timestamp_msec () + 250;
 	do {
 		if (external_command)
 			nm_platform_process_events (platform);

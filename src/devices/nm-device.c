@@ -2641,17 +2641,17 @@ concheck_periodic_schedule_do (NMDevice *self, int addr_family, gint64 now_ns)
 	 * Before calling concheck_periodic_schedule_do(), make sure that these properties are
 	 * correct. */
 
-	expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NS_PER_SECOND);
+	expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 	tdiff = expiry - now_ns;
 
 	_LOGT (LOGD_CONCHECK, "connectivity: [IPv%c] periodic-check: %sscheduled in %lld milliseconds (%u seconds interval)",
 	       nm_utils_addr_family_to_char (addr_family),
 	       periodic_check_disabled ? "re-" : "",
-	       (long long) (tdiff / NM_UTILS_NS_PER_MSEC),
+	       (long long) (tdiff / NM_UTILS_NSEC_PER_MSEC),
 	       priv->concheck_x[IS_IPv4].p_cur_interval);
 
 	priv->concheck_x[IS_IPv4].p_cur_id =
-		g_timeout_add (NM_MAX ((gint64) 0, tdiff) / NM_UTILS_NS_PER_MSEC,
+		g_timeout_add (NM_MAX ((gint64) 0, tdiff) / NM_UTILS_NSEC_PER_MSEC,
 	                       IS_IPv4 ? concheck_ip4_periodic_timeout_cb : concheck_ip6_periodic_timeout_cb,
 	                       self);
 	return TRUE;
@@ -2713,7 +2713,7 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 			return;
 		}
 
-		cur_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_max_interval * NM_UTILS_NS_PER_SECOND);
+		cur_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_max_interval * NM_UTILS_NSEC_PER_SEC);
 		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
 
 		priv->concheck_x[IS_IPv4].p_cur_interval = priv->concheck_x[IS_IPv4].p_max_interval;
@@ -2769,10 +2769,10 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 		 *
 		 * We want to reschedule the timeout at exp_expiry (aka now) + cur_interval. */
 		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
-		exp_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (old_interval * NM_UTILS_NS_PER_SECOND);
-		new_expiry = exp_expiry + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		exp_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (old_interval * NM_UTILS_NSEC_PER_SEC);
+		new_expiry = exp_expiry + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 		tdiff = NM_MAX (new_expiry - now_ns, 0);
-		priv->concheck_x[IS_IPv4].p_cur_basetime_ns = (now_ns + tdiff) - (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		priv->concheck_x[IS_IPv4].p_cur_basetime_ns = (now_ns + tdiff) - (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 		if (concheck_periodic_schedule_do (self, addr_family, now_ns)) {
 			handle = concheck_start (self, addr_family, NULL, NULL, TRUE);
 			if (old_interval != priv->concheck_x[IS_IPv4].p_cur_interval) {
@@ -2806,9 +2806,9 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 	 * last check, instead of counting from now. The reason is that we want that the times
 	 * when we schedule checks be at precise intervals, without including the time it took for
 	 * the connectivity check. */
-	new_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NS_PER_SECOND);
+	new_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 	tdiff = NM_MAX (new_expiry - nm_utils_get_monotonic_timestamp_ns_cached (&now_ns), 0);
-	priv->concheck_x[IS_IPv4].p_cur_basetime_ns = now_ns + tdiff - (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NS_PER_SECOND);
+	priv->concheck_x[IS_IPv4].p_cur_basetime_ns = now_ns + tdiff - (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 	concheck_periodic_schedule_do (self, addr_family, now_ns);
 }
 
@@ -3646,7 +3646,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		} else {
 			gint64 now_ms, until_ms;
 
-			now_ms = nm_utils_get_monotonic_timestamp_ms ();
+			now_ms = nm_utils_get_monotonic_timestamp_msec ();
 			until_ms = NM_MAX (now_ms + _get_carrier_wait_ms (self), priv->carrier_wait_until_ms);
 			priv->carrier_defer_id = g_timeout_add (until_ms - now_ms, carrier_disconnected_action_cb, self);
 			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milliseconds) (id=%u)",
@@ -3742,7 +3742,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 	if (nm_ndisc_get_node_type (ndisc) != NM_NDISC_NODE_TYPE_ROUTER)
 		return;
 
-	now = nm_utils_get_monotonic_timestamp_s ();
+	now = nm_utils_get_monotonic_timestamp_sec ();
 
 	head_entry = nm_ip6_config_lookup_addresses (priv->ip_config_6);
 	addresses = g_array_sized_new (FALSE, TRUE, sizeof (NMNDiscAddress),
@@ -8920,7 +8920,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 			duid_out = generate_duid_ll (arp_type, hwaddr_bin, hwaddr_len);
 		else {
 			duid_out = generate_duid_llt (arp_type, hwaddr_bin, hwaddr_len,
-			                              nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NS_PER_SECOND);
+			                              nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC);
 		}
 
 		goto out_good;
@@ -9015,7 +9015,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
 			 * subtract it from the host_id timestamp.
 			 */
-			time = nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NS_PER_SECOND;
+			time = nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC;
 
 			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
 			 * would all be truncated to zero. */
@@ -9785,7 +9785,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 				              ? "Are the MTU sizes of the slaves large enough?"
 				              : "Did you configure the MTU correctly?"));
 			}
-			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_msec () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 		}
 
 		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
@@ -9801,7 +9801,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 				           : "");
 				success = FALSE;
 			}
-			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_msec () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 		}
 	}
 
@@ -12230,7 +12230,7 @@ _rt6_temporary_not_available_set (NMDevice *self,
 		                                                           nm_g_slice_free_fcn (IP6RoutesTemporaryNotAvailableData));
 	}
 
-	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	now_ms = nm_utils_get_monotonic_timestamp_msec ();
 	oldest_ms = now_ms;
 
 	for (i = 0; i < temporary_not_available->len; i++) {
@@ -13267,14 +13267,14 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	device_is_up = nm_device_is_up (self);
 	if (block && !device_is_up) {
-		gint64 wait_until = nm_utils_get_monotonic_timestamp_us () + 10000 /* microseconds */;
+		gint64 wait_until = nm_utils_get_monotonic_timestamp_usec () + 10000 /* microseconds */;
 
 		do {
 			g_usleep (200);
 			if (!nm_platform_link_refresh (nm_device_get_platform (self), ifindex))
 				return FALSE;
 			device_is_up = nm_device_is_up (self);
-		} while (!device_is_up && nm_utils_get_monotonic_timestamp_us () < wait_until);
+		} while (!device_is_up && nm_utils_get_monotonic_timestamp_usec () < wait_until);
 	}
 
 	if (!device_is_up) {
@@ -13309,7 +13309,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 		if (!priv->carrier)
 			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
-		now_ms = nm_utils_get_monotonic_timestamp_ms ();
+		now_ms = nm_utils_get_monotonic_timestamp_msec ();
 		until_ms = NM_MAX (now_ms + _get_carrier_wait_ms (self), priv->carrier_wait_until_ms);
 		priv->carrier_wait_id = g_timeout_add (until_ms - now_ms, carrier_wait_timeout, self);
 	}
@@ -13352,14 +13352,14 @@ nm_device_take_down (NMDevice *self, gboolean block)
 
 	device_is_up = nm_device_is_up (self);
 	if (block && device_is_up) {
-		gint64 wait_until = nm_utils_get_monotonic_timestamp_us () + 10000 /* microseconds */;
+		gint64 wait_until = nm_utils_get_monotonic_timestamp_usec () + 10000 /* microseconds */;
 
 		do {
 			g_usleep (200);
 			if (!nm_platform_link_refresh (nm_device_get_platform (self), ifindex))
 				return;
 			device_is_up = nm_device_is_up (self);
-		} while (device_is_up && nm_utils_get_monotonic_timestamp_us () < wait_until);
+		} while (device_is_up && nm_utils_get_monotonic_timestamp_usec () < wait_until);
 	}
 
 	if (device_is_up) {
@@ -15151,7 +15151,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 			       (guint) priv->mtu_initial, (guint) priv->ip6_mtu_initial, ifindex);
 			if (priv->mtu_initial) {
 				nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, priv->mtu_initial);
-				priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+				priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_msec () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 			}
 			if (priv->ip6_mtu_initial) {
 				char sbuf[64];
@@ -16319,7 +16319,7 @@ again:
 			 *
 			 * wait/poll up to 100 msec until it changes. */
 
-			poll_end = nm_utils_get_monotonic_timestamp_us () + (100 * 1000);
+			poll_end = nm_utils_get_monotonic_timestamp_usec () + (100 * 1000);
 			for (;;) {
 				if (!nm_platform_link_refresh (nm_device_get_platform (self), nm_device_get_ip_ifindex (self)))
 					goto handle_fail;
@@ -16330,7 +16330,7 @@ again:
 
 				break;
 handle_wait:
-				now = nm_utils_get_monotonic_timestamp_us ();
+				now = nm_utils_get_monotonic_timestamp_usec ();
 				if (now < poll_end) {
 					g_usleep (NM_MIN (poll_end - now, 500));
 					continue;

@@ -17,7 +17,7 @@
 #include "systemd/nm-sd.h"
 
 #define MAX_NEIGHBORS         4096
-#define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NS_PER_SECOND)
+#define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NSEC_PER_SEC)
 
 #define LLDP_MAC_NEAREST_BRIDGE          ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }))
 #define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 }))
@@ -828,7 +828,7 @@ data_changed_timeout (gpointer user_data)
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	priv->ratelimit_id = 0;
-	priv->ratelimit_next = nm_utils_get_monotonic_timestamp_ns() + MIN_UPDATE_INTERVAL_NS;
+	priv->ratelimit_next = nm_utils_get_monotonic_timestamp_nsec() + MIN_UPDATE_INTERVAL_NS;
 	data_changed_notify (self, priv);
 	return G_SOURCE_REMOVE;
 }
@@ -839,13 +839,13 @@ data_changed_schedule (NMLldpListener *self)
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 	gint64 now;
 
-	now = nm_utils_get_monotonic_timestamp_ns ();
+	now = nm_utils_get_monotonic_timestamp_nsec ();
 	if (now >= priv->ratelimit_next) {
 		nm_clear_g_source (&priv->ratelimit_id);
 		priv->ratelimit_next = now + MIN_UPDATE_INTERVAL_NS;
 		data_changed_notify (self, priv);
 	} else if (!priv->ratelimit_id)
-		priv->ratelimit_id = g_timeout_add (NM_UTILS_NS_TO_MSEC_CEIL (priv->ratelimit_next - now), data_changed_timeout, self);
+		priv->ratelimit_id = g_timeout_add (NM_UTILS_NSEC_TO_MSEC_CEIL (priv->ratelimit_next - now), data_changed_timeout, self);
 }
 
 static void

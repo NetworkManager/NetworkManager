@@ -99,7 +99,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	NMNDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	struct in6_addr gateway_addr;
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	int offset;
 	int hop_limit;
 	guint32 val;
@@ -348,7 +348,7 @@ send_ra (NMNDisc *ndisc, GError **error)
 {
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 	NMNDiscDataInternal *rdata = ndisc->rdata;
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	int errsv;
 	struct in6_addr *addr;
 	struct ndp_msg *msg;

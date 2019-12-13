@@ -373,8 +373,8 @@ lease_parse_address (NDhcp4ClientLease *lease,
 		 * Here we still do it... it seems safe enough. */
 		nm_assert (nettools_basetime > 0);
 		nm_assert (nettools_lifetime >= nettools_basetime);
-		nm_assert (((nettools_lifetime - nettools_basetime) % NM_UTILS_NS_PER_SECOND) == 0);
-		nm_assert ((nettools_lifetime - nettools_basetime) / NM_UTILS_NS_PER_SECOND <= G_MAXUINT32);
+		nm_assert (((nettools_lifetime - nettools_basetime) % NM_UTILS_NSEC_PER_SEC) == 0);
+		nm_assert ((nettools_lifetime - nettools_basetime) / NM_UTILS_NSEC_PER_SEC <= G_MAXUINT32);
 
 		if (nettools_lifetime <= nettools_basetime) {
 			/* A lease time of 0 is allowed on some dhcp servers, so, let's accept it. */
@@ -384,7 +384,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 
 			/* we "ceil" the value to the next second. In practice, we don't expect any sub-second values
 			 * from n-dhcp4 anyway, so this should have no effect. */
-			lifetime += NM_UTILS_NS_PER_SECOND - 1;
+			lifetime += NM_UTILS_NSEC_PER_SEC - 1;
 		}
 
 		ts = nm_utils_monotonic_timestamp_from_boottime (nettools_basetime, 1);
@@ -392,11 +392,11 @@ lease_parse_address (NDhcp4ClientLease *lease,
 		/* the timestamp must be positive, because we only started nettools DHCP client
 		 * after obtaining the first monotonic timestamp. Hence, the lease must have been
 		 * received afterwards. */
-		nm_assert (ts >= NM_UTILS_NS_PER_SECOND);
+		nm_assert (ts >= NM_UTILS_NSEC_PER_SEC);
 
-		a_timestamp = ts / NM_UTILS_NS_PER_SECOND;
-		a_lifetime = NM_MIN (lifetime / NM_UTILS_NS_PER_SECOND, NM_PLATFORM_LIFETIME_PERMANENT - 1);
-		a_expiry = time (NULL) + ((lifetime - (nm_utils_clock_gettime_ns (CLOCK_BOOTTIME) - nettools_basetime)) / NM_UTILS_NS_PER_SECOND);
+		a_timestamp = ts / NM_UTILS_NSEC_PER_SEC;
+		a_lifetime = NM_MIN (lifetime / NM_UTILS_NSEC_PER_SEC, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+		a_expiry = time (NULL) + ((lifetime - (nm_utils_clock_gettime_ns (CLOCK_BOOTTIME) - nettools_basetime)) / NM_UTILS_NSEC_PER_SEC);
 	}
 
 	if (!lease_get_in_addr (lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &a_netmask)) {
