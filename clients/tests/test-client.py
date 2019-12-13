@@ -594,6 +594,7 @@ class TestNmcli(NmTestBase):
                      expected_stderr = _DEFAULT_ARG,
                      replace_stdout = None,
                      replace_stderr = None,
+                     replace_cmd = None,
                      sort_lines_stdout = False,
                      extra_env = None,
                      sync_barrier = False):
@@ -608,6 +609,7 @@ class TestNmcli(NmTestBase):
                              expected_stderr,
                              replace_stdout,
                              replace_stderr,
+                             replace_cmd,
                              sort_lines_stdout,
                              extra_env,
                              sync_barrier,
@@ -625,6 +627,7 @@ class TestNmcli(NmTestBase):
                    expected_stderr = _DEFAULT_ARG,
                    replace_stdout = None,
                    replace_stderr = None,
+                   replace_cmd = None,
                    sort_lines_stdout = False,
                    extra_env = None,
                    sync_barrier = None):
@@ -651,6 +654,7 @@ class TestNmcli(NmTestBase):
                              expected_stderr,
                              replace_stdout,
                              replace_stderr,
+                             replace_cmd,
                              sort_lines_stdout,
                              extra_env,
                              sync_barrier,
@@ -666,6 +670,7 @@ class TestNmcli(NmTestBase):
                     expected_stderr,
                     replace_stdout,
                     replace_stderr,
+                    replace_cmd,
                     sort_lines_stdout,
                     extra_env,
                     sync_barrier,
@@ -728,6 +733,8 @@ class TestNmcli(NmTestBase):
             replace_stdout = list(replace_stdout)
         if replace_stderr is not None:
             replace_stderr = list(replace_stderr)
+        if replace_cmd is not None:
+            replace_cmd = list(replace_cmd)
 
         if check_on_disk is _DEFAULT_ARG:
             check_on_disk = (    expected_returncode is _DEFAULT_ARG
@@ -788,6 +795,7 @@ class TestNmcli(NmTestBase):
 
             if check_on_disk:
                 cmd = '$NMCLI %s' % (' '.join([Util.quote(a) for a in args[1:]]))
+                cmd = Util.replace_text(cmd, replace_cmd)
 
                 content = ('location: %s\n' % (calling_location)).encode('utf8') + \
                           ('cmd: %s\n' % (cmd)).encode('utf8') + \
