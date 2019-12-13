@@ -2004,7 +2004,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		s_con = nm_connection_get_setting_connection (candidate);
 		g_assert (s_con);
-		if (!nm_setting_connection_get_autoconnect (s_con))
+		if (   !nm_setting_connection_get_autoconnect (s_con)
+		    || nm_settings_connection_autoconnect_is_blocked (connections[i]))
 			continue;
 
 		/* Create any backing resources the device needs */
