@@ -787,7 +787,7 @@ class TestNmcli(NmTestBase):
                    self.assertEqual(returncode, -5)
 
             if check_on_disk:
-                cmd = '$NMCLI %s' % (' '.join([Util.quote(a) for a in args[1:]])),
+                cmd = '$NMCLI %s' % (' '.join([Util.quote(a) for a in args[1:]]))
 
                 content = ('location: %s\n' % (calling_location)).encode('utf8') + \
                           ('cmd: %s\n' % (cmd)).encode('utf8') + \
