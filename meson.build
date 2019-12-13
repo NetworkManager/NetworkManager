@@ -940,7 +940,13 @@ output += '  session tracking: ' + ','.join(session_trackers) + '\n'
 output += '  suspend/resume: ' + suspend_resume + '\n'
 output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ')'
 if enable_polkit
-  output += ' (' + (enable_modify_system ? 'permissive' : 'restrictive') + ' modify.system)'
+  output += ' ('
+  if enable_modify_system
+    output += 'permissive'
+  else
+    output += 'restrictive'
+  endif
+  output += ' modify.system)'
 endif
 output += '\n'
 output += '  polkit agent: ' + enable_polkit_agent.to_string() + '\n'
