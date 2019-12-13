@@ -36,7 +36,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	char *pac_url;
 	char *pac_script;
-	NMSettingProxyMethod method;
+	int method;
 	bool browser_only:1;
 } NMSettingProxyPrivate;
 
@@ -119,11 +119,8 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE (setting);
-	NMSettingProxyMethod method;
 
-	method = priv->method;
-
-	if (!NM_IN_SET (method,
+	if (!NM_IN_SET (priv->method,
 	                NM_SETTING_PROXY_METHOD_NONE,
 	                NM_SETTING_PROXY_METHOD_AUTO)) {
 		g_set_error (error,
@@ -134,7 +131,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (method != NM_SETTING_PROXY_METHOD_AUTO) {
+	if (priv->method != NM_SETTING_PROXY_METHOD_AUTO) {
 		if (priv->pac_url) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
