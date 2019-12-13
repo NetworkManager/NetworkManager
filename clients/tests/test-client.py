@@ -441,11 +441,8 @@ class NMStubServer:
             if kwargs:
                 # for convenience, we allow the caller to specify arguments
                 # as kwargs. In this case, we construct a a{sv} array as last argument.
-                kwargs2 = {}
                 args = list(args)
-                args.append(kwargs2)
-                for k in kwargs.keys():
-                    kwargs2[k] = kwargs[k]
+                args.append(kwargs)
             return method(*args)
 
     def __getattr__(self, member):
@@ -456,9 +453,16 @@ class NMStubServer:
     def addConnection(self, connection, do_verify_strict = True):
         return self.op_AddConnection(connection, do_verify_strict)
 
+    def findConnections(self, **kwargs):
+        if kwargs:
+            lst = self.op_FindConnections(**kwargs)
+        else:
+            lst = self.op_FindConnections( { } )
+        return list([ (str(elem[0]), str(elem[1]), str(elem[2])) for elem in lst ])
+
     def findConnectionUuid(self, con_id, required = True):
         try:
-            u = Util.iter_single(self.op_FindConnections(con_id = con_id))[1]
+            u = Util.iter_single(self.findConnections(con_id = con_id))[1]
             assert u, ("Invalid uuid %s" % (u))
         except Exception as e:
             if not required:
