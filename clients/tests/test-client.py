@@ -278,6 +278,9 @@ class Util:
     def replace_text(text, replace_arr):
         if not replace_arr:
             return text
+        needs_encode = Util.python_has_version(3) and Util.is_string(text)
+        if needs_encode:
+            text = text.encode('utf-8')
         text = [text]
         for replace in replace_arr:
             try:
@@ -301,7 +304,17 @@ class Util:
                     text2.append( (v_replace,) )
                     text2.append(t3)
             text = text2
-        return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
+        bb = b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
+        if needs_encode:
+            bb = bb.decode('utf-8')
+        return bb
+
+    @staticmethod
+    def replace_text_sort_list(lst, replace_arr):
+        lst = [ (Util.replace_text(elem, replace_arr), elem) for elem in lst ]
+        lst = sorted(lst)
+        lst = [ tup[1] for tup in lst ]
+        return list(lst)
 
     @staticmethod
     def debug_dbus_interface():
@@ -434,11 +447,8 @@ class NMStubServer:
             if kwargs:
                 # for convenience, we allow the caller to specify arguments
                 # as kwargs. In this case, we construct a a{sv} array as last argument.
-                kwargs2 = {}
                 args = list(args)
-                args.append(kwargs2)
-                for k in kwargs.keys():
-                    kwargs2[k] = kwargs[k]
+                args.append(kwargs)
             return method(*args)
 
     def __getattr__(self, member):
@@ -449,9 +459,16 @@ class NMStubServer:
     def addConnection(self, connection, do_verify_strict = True):
         return self.op_AddConnection(connection, do_verify_strict)
 
+    def findConnections(self, **kwargs):
+        if kwargs:
+            lst = self.op_FindConnections(**kwargs)
+        else:
+            lst = self.op_FindConnections( { } )
+        return list([ (str(elem[0]), str(elem[1]), str(elem[2])) for elem in lst ])
+
     def findConnectionUuid(self, con_id, required = True):
         try:
-            u = Util.iter_single(self.op_FindConnections(con_id = con_id))[1]
+            u = Util.iter_single(self.findConnections(con_id = con_id))[1]
             assert u, ("Invalid uuid %s" % (u))
         except Exception as e:
             if not required:
@@ -587,6 +604,7 @@ class TestNmcli(NmTestBase):
                      expected_stderr = _DEFAULT_ARG,
                      replace_stdout = None,
                      replace_stderr = None,
+                     replace_cmd = None,
                      sort_lines_stdout = False,
                      extra_env = None,
                      sync_barrier = False):
@@ -601,6 +619,7 @@ class TestNmcli(NmTestBase):
                              expected_stderr,
                              replace_stdout,
                              replace_stderr,
+                             replace_cmd,
                              sort_lines_stdout,
                              extra_env,
                              sync_barrier,
@@ -618,6 +637,7 @@ class TestNmcli(NmTestBase):
                    expected_stderr = _DEFAULT_ARG,
                    replace_stdout = None,
                    replace_stderr = None,
+                   replace_cmd = None,
                    sort_lines_stdout = False,
                    extra_env = None,
                    sync_barrier = None):
@@ -644,6 +664,7 @@ class TestNmcli(NmTestBase):
                              expected_stderr,
                              replace_stdout,
                              replace_stderr,
+                             replace_cmd,
                              sort_lines_stdout,
                              extra_env,
                              sync_barrier,
@@ -659,6 +680,7 @@ class TestNmcli(NmTestBase):
                     expected_stderr,
                     replace_stdout,
                     replace_stderr,
+                    replace_cmd,
                     sort_lines_stdout,
                     extra_env,
                     sync_barrier,
@@ -721,6 +743,8 @@ class TestNmcli(NmTestBase):
             replace_stdout = list(replace_stdout)
         if replace_stderr is not None:
             replace_stderr = list(replace_stderr)
+        if replace_cmd is not None:
+            replace_cmd = list(replace_cmd)
 
         if check_on_disk is _DEFAULT_ARG:
             check_on_disk = (    expected_returncode is _DEFAULT_ARG
@@ -780,7 +804,8 @@ class TestNmcli(NmTestBase):
                    self.assertEqual(returncode, -5)
 
             if check_on_disk:
-                cmd = '$NMCLI %s' % (' '.join([Util.quote(a) for a in args[1:]])),
+                cmd = '$NMCLI %s' % (' '.join([Util.quote(a) for a in args[1:]]))
+                cmd = Util.replace_text(cmd, replace_cmd)
 
                 content = ('location: %s\n' % (calling_location)).encode('utf8') + \
                           ('cmd: %s\n' % (cmd)).encode('utf8') + \
@@ -1027,38 +1052,38 @@ class TestNmcli(NmTestBase):
     def test_003(self):
         self.init_001()
 
-        replace_stdout = []
+        replace_uuids = []
 
-        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-xx1')), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
+        replace_uuids.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-xx1')), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
 
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*', 'con-name', 'con-xx1'],
-                        replace_stdout = replace_stdout)
+                        replace_stdout = replace_uuids)
 
         self.call_nmcli_l(['c', 's'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
-        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-gsm1')), 'UUID-con-gsm1-REPLACED-REPLACED-REPL'))
+        replace_uuids.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-gsm1')), 'UUID-con-gsm1-REPLACED-REPLACED-REPL'))
 
         self.call_nmcli(['connection', 'add', 'type', 'gsm', 'autoconnect', 'no', 'con-name', 'con-gsm1', 'ifname', '*', 'apn', 'xyz.con-gsm1', 'serial.baud', '5', 'serial.send-delay', '100', 'serial.pari', '1', 'ipv4.dns-options', ' '],
-                        replace_stdout = replace_stdout)
+                        replace_stdout = replace_uuids)
 
-        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('ethernet')), 'UUID-ethernet-REPLACED-REPLACED-REPL'))
+        replace_uuids.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('ethernet')), 'UUID-ethernet-REPLACED-REPLACED-REPL'))
 
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*'],
-                        replace_stdout = replace_stdout)
+                        replace_stdout = replace_uuids)
 
         self.call_nmcli_l(['c', 's'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         self.call_nmcli_l(['-f', 'ALL', 'c', 's'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         self.call_nmcli_l(['--complete-args', '-f', 'ALL', 'c', 's', ''],
-                          replace_stdout = replace_stdout,
+                          replace_stdout = replace_uuids,
                           sort_lines_stdout = True)
 
         self.call_nmcli_l(['con', 's', 'con-gsm1'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         # activate the same profile on multiple devices. Our stub-implmentation
         # is fine with that... although NetworkManager service would reject
@@ -1074,41 +1099,41 @@ class TestNmcli(NmTestBase):
             self.call_nmcli(['con', 'up', 'ethernet', 'ifname', dev])
 
             self.call_nmcli_l(['con'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ALL', 'con'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ALL', 'con', 's', '-a'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ACTIVE-PATH,DEVICE,UUID', 'con', 's', '-act'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'UUID,NAME', 'con', 's', '--active'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'GENERAL.STATE', 'con', 's', 'ethernet'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['con', 's', 'ethernet'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'status'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             # test invalid call ('s' abbrevates 'status' and not 'show'
             self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(['-f', 'ALL', '-t', 'dev', 'show', 'eth0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
         self.async_wait()
 
@@ -1123,30 +1148,30 @@ class TestNmcli(NmTestBase):
 
             for mode in Util.iter_nmcli_output_modes():
                 self.call_nmcli_l(mode + ['-f', 'ALL', 'con'],
-                                  replace_stdout = replace_stdout)
+                                  replace_stdout = replace_uuids)
 
                 self.call_nmcli_l(mode + ['-f', 'UUID,TYPE', 'con'],
-                                  replace_stdout = replace_stdout)
+                                  replace_stdout = replace_uuids)
 
                 self.call_nmcli_l(mode + ['con', 's', 'ethernet'],
-                                  replace_stdout = replace_stdout)
+                                  replace_stdout = replace_uuids)
 
                 self.call_nmcli_l(mode + ['c', 's', '/org/freedesktop/NetworkManager/ActiveConnection/1'],
-                                  replace_stdout = replace_stdout)
+                                  replace_stdout = replace_uuids)
 
                 self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show', 'eth0'],
-                                  replace_stdout = replace_stdout)
+                                  replace_stdout = replace_uuids)
 
     @nm_test
     def test_004(self):
         self.init_001()
 
-        replace_stdout = []
+        replace_uuids = []
 
-        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-xx1')), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
+        replace_uuids.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-xx1')), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
 
         self.call_nmcli(['c', 'add', 'type', 'wifi', 'ifname', '*', 'ssid', 'foobar', 'con-name', 'con-xx1'],
-                        replace_stdout = replace_stdout)
+                        replace_stdout = replace_uuids)
 
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ip.gateway', ''])
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.gateway', '172.16.0.1'], lang = 'pl')
@@ -1155,29 +1180,29 @@ class TestNmcli(NmTestBase):
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802-11-wireless.band', 'a'])
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.addresses', '192.168.77.5/24', 'ipv4.routes', '2.3.4.5/32 192.168.77.1', 'ipv6.addresses', '1:2:3:4::6/64', 'ipv6.routes', '1:2:3:4:5:6::5/128'])
         self.call_nmcli_l(['con', 's', 'con-xx1'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         self.async_wait()
 
-        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-vpn-1')), 'UUID-con-vpn-1-REPLACED-REPLACED-REP'))
+        replace_uuids.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-vpn-1')), 'UUID-con-vpn-1-REPLACED-REPLACED-REP'))
 
         self.call_nmcli(['connection', 'add', 'type', 'vpn', 'con-name', 'con-vpn-1', 'ifname', '*', 'vpn-type', 'openvpn', 'vpn.data', 'key1 = val1,   key2  = val2, key3=val3'],
-                        replace_stdout = replace_stdout)
+                        replace_stdout = replace_uuids)
 
         self.call_nmcli_l(['con', 's'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
         self.call_nmcli_l(['con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         self.call_nmcli(['con', 'up', 'con-xx1'])
         self.call_nmcli_l(['con', 's'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         self.call_nmcli(['con', 'up', 'con-vpn-1'])
         self.call_nmcli_l(['con', 's'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
         self.call_nmcli_l(['con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
+                          replace_stdout = replace_uuids)
 
         self.async_wait()
 
@@ -1185,75 +1210,82 @@ class TestNmcli(NmTestBase):
                              'VpnState',
                              dbus.UInt32(NM.VpnConnectionState.ACTIVATED))
 
+        uuids = Util.replace_text_sort_list([ c[1] for c in self.srv.findConnections() ], replace_uuids)
+
         for mode in Util.iter_nmcli_output_modes():
 
             self.call_nmcli_l(mode + ['con', 's', 'con-vpn-1'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['con', 's', 'con-vpn-1'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'ALL', 'con', 's', 'con-vpn-1'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             # This only filters 'vpn' settings from the connection profile.
             # Contrary to '-f GENERAL' below, it does not show the properties of
             # the activated VPN connection. This is a nmcli bug.
             self.call_nmcli_l(mode + ['-f', 'VPN', 'con', 's', 'con-vpn-1'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'GENERAL', 'con', 's', 'con-vpn-1'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['dev', 's'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'status'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['dev', 'show'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['dev', 'show', 'wlan0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show', 'wlan0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list' ],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
                               'device', 'wifi', 'list'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
                               'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'show', 'wlan0' ],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'show', 'wlan0' ],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
             self.call_nmcli_l(mode + ['-f', 'GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS', 'device', 'show', 'wlan0' ],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
 
             self.call_nmcli_l(mode + ['dev', 'lldp', 'list', 'ifname', 'eth0'],
-                              replace_stdout = replace_stdout)
+                              replace_stdout = replace_uuids)
+
+            self.call_nmcli_l(mode + ['-f', 'connection.id,connection.uuid,connection.type,connection.interface-name,802-3-ethernet.mac-address,vpn.user-name', 'connection', 'show' ] + uuids,
+                              replace_stdout = replace_uuids,
+                              replace_cmd = replace_uuids)
+
 
 ###############################################################################
 
