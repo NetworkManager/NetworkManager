@@ -1210,6 +1210,8 @@ class TestNmcli(NmTestBase):
                              'VpnState',
                              dbus.UInt32(NM.VpnConnectionState.ACTIVATED))
 
+        uuids = Util.replace_text_sort_list([ c[1] for c in self.srv.findConnections() ], replace_uuids)
+
         for mode in Util.iter_nmcli_output_modes():
 
             self.call_nmcli_l(mode + ['con', 's', 'con-vpn-1'],
@@ -1279,6 +1281,11 @@ class TestNmcli(NmTestBase):
 
             self.call_nmcli_l(mode + ['dev', 'lldp', 'list', 'ifname', 'eth0'],
                               replace_stdout = replace_uuids)
+
+            self.call_nmcli_l(mode + ['-f', 'connection.id,connection.uuid,connection.type,connection.interface-name,802-3-ethernet.mac-address,vpn.user-name', 'connection', 'show' ] + uuids,
+                              replace_stdout = replace_uuids,
+                              replace_cmd = replace_uuids)
+
 
 ###############################################################################
 
