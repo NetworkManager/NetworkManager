@@ -332,6 +332,7 @@ struct NDhcp4Client {
         uint64_t scheduled_timeout;
 
         bool preempted : 1;
+        bool timerfd_is_monotonic : 1;
 };
 
 #define N_DHCP4_CLIENT_NULL(_x) {                                               \
