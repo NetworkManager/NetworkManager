@@ -388,8 +388,14 @@ _c_public_ int n_dhcp4_client_new(NDhcp4Client **clientp, NDhcp4ClientConfig *co
                 return -errno;
 
         client->fd_timer = timerfd_create(CLOCK_BOOTTIME, TFD_CLOEXEC | TFD_NONBLOCK);
-        if (client->fd_timer < 0)
-                return -errno;
+        if (client->fd_timer < 0) {
+                if (errno != EINVAL)
+                        return -errno;
+                client->fd_timer = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+                if (client->fd_timer < 0)
+                        return -errno;
+                client->timerfd_is_monotonic = true;
+        }
 
         ev.data.u32 = N_DHCP4_CLIENT_EPOLL_TIMER;
         r = epoll_ctl(client->fd_epoll, EPOLL_CTL_ADD, client->fd_timer, &ev);
@@ -499,8 +505,24 @@ void n_dhcp4_client_arm_timer(NDhcp4Client *client) {
                 n_dhcp4_client_probe_get_timeout(client->current_probe, &timeout);
 
         if (timeout != client->scheduled_timeout) {
+                uint64_t scheduled_timeout = timeout;
+                int flags = TFD_TIMER_ABSTIME;
+
+                if (   timeout != 0
+                    && client->timerfd_is_monotonic) {
+                        uint64_t now;
+
+                        /* the timerfd ticks with CLOCK_MONOTONIC. Calculate and set the relative
+                         * timeout. */
+                        now = n_dhcp4_gettime(CLOCK_BOOTTIME);
+                        if (timeout <= now)
+                                timeout = 1;
+                        else
+                                timeout = timeout - now;
+                        flags = 0;
+                }
                 r = timerfd_settime(client->fd_timer,
-                                    TFD_TIMER_ABSTIME,
+                                    flags,
                                     &(struct itimerspec){
                                         .it_value = {
                                                 .tv_sec = timeout / UINT64_C(1000000000),
@@ -510,7 +532,7 @@ void n_dhcp4_client_arm_timer(NDhcp4Client *client) {
                                     NULL);
                 c_assert(r >= 0);
 
-                client->scheduled_timeout = timeout;
+                client->scheduled_timeout = scheduled_timeout;
         }
 }
 
