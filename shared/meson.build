@@ -187,10 +187,11 @@ libnm_udev_aux_dep = declare_dependency(
 )
 
 sources = files(
+  'systemd/nm-sd-utils-shared.c',
   'systemd/src/basic/alloc-util.c',
-  'systemd/src/basic/escape.c',
   'systemd/src/basic/env-file.c',
   'systemd/src/basic/env-util.c',
+  'systemd/src/basic/escape.c',
   'systemd/src/basic/ether-addr-util.c',
   'systemd/src/basic/extract-word.c',
   'systemd/src/basic/fd-util.c',
@@ -210,6 +211,7 @@ sources = files(
   'systemd/src/basic/prioq.c',
   'systemd/src/basic/process-util.c',
   'systemd/src/basic/random-util.c',
+  'systemd/src/basic/signal-util.c',
   'systemd/src/basic/socket-util.c',
   'systemd/src/basic/stat-util.c',
   'systemd/src/basic/string-table.c',
@@ -221,7 +223,6 @@ sources = files(
   'systemd/src/basic/utf8.c',
   'systemd/src/basic/util.c',
   'systemd/src/shared/dns-domain.c',
-  'systemd/nm-sd-utils-shared.c',
 )
 
 incs = include_directories(

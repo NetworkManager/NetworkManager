@@ -91,6 +91,33 @@ AC_CHECK_DECLS([
 #include <sys/mman.h>
 ]])
 
+AC_CHECK_DECLS([
+	pidfd_open],
+	[], [], [[
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+]])
+
+AC_CHECK_DECLS([
+	pidfd_send_signal],
+	[], [], [[
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+]])
+
+AC_CHECK_DECLS([
+	rt_sigqueueinfo],
+	[], [], [[
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+]])
+
 AC_CHECK_HEADERS(sys/auxv.h)
 
 AC_CHECK_DECLS([getrandom],

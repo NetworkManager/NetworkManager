@@ -1788,10 +1788,10 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/locale-util.h \
 	shared/systemd/sd-adapt-shared/memfd-util.h \
 	shared/systemd/sd-adapt-shared/missing_fs.h \
+	shared/systemd/sd-adapt-shared/missing_keyctl.h \
 	shared/systemd/sd-adapt-shared/missing_magic.h \
 	shared/systemd/sd-adapt-shared/missing_network.h \
 	shared/systemd/sd-adapt-shared/missing_sched.h \
-	shared/systemd/sd-adapt-shared/missing_syscall.h \
 	shared/systemd/sd-adapt-shared/missing_timerfd.h \
 	shared/systemd/sd-adapt-shared/mkdir.h \
 	shared/systemd/sd-adapt-shared/namespace-util.h \
@@ -1849,6 +1849,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/missing_random.h \
 	shared/systemd/src/basic/missing_socket.h \
 	shared/systemd/src/basic/missing_stat.h \
+	shared/systemd/src/basic/missing_syscall.h \
 	shared/systemd/src/basic/missing_type.h \
 	shared/systemd/src/basic/parse-util.c \
 	shared/systemd/src/basic/parse-util.h \
@@ -1861,6 +1862,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/random-util.c \
 	shared/systemd/src/basic/random-util.h \
 	shared/systemd/src/basic/set.h \
+	shared/systemd/src/basic/signal-util.c \
 	shared/systemd/src/basic/signal-util.h \
 	shared/systemd/src/basic/siphash24.h \
 	shared/systemd/src/basic/socket-util.c \

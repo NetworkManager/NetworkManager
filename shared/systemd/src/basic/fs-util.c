@@ -551,6 +551,7 @@ int get_files_in_directory(const char *path, char ***list) {
 
         return n;
 }
+#endif /* NM_IGNORED */
 
 static int getenv_tmp_dir(const char **ret_path) {
         const char *n;
@@ -622,6 +623,7 @@ static int tmp_dir_internal(const char *def, const char **ret) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 int var_tmp_dir(const char **ret) {
 
         /* Returns the location for "larger" temporary files, that is backed by physical storage if available, and thus
@@ -631,6 +633,7 @@ int var_tmp_dir(const char **ret) {
 
         return tmp_dir_internal("/var/tmp", ret);
 }
+#endif /* NM_IGNORED */
 
 int tmp_dir(const char **ret) {
 
@@ -640,6 +643,7 @@ int tmp_dir(const char **ret) {
         return tmp_dir_internal("/tmp", ret);
 }
 
+#if 0 /* NM_IGNORED */
 int unlink_or_warn(const char *filename) {
         if (unlink(filename) < 0 && errno != ENOENT)
                 /* If the file doesn't exist and the fs simply was read-only (in which
