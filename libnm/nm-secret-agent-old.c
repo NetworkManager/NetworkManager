@@ -477,6 +477,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 {
 	NMSecretAgentOldPrivate *priv;
 	NMSecretAgentOldClass *class;
+	gboolean success;
 
 	g_return_val_if_fail (NM_IS_SECRET_AGENT_OLD (self), FALSE);
 
@@ -506,70 +507,21 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 		return FALSE;
 
 	priv->registering = TRUE;
-	if (nmdbus_agent_manager_call_register_with_capabilities_sync (priv->manager_proxy,
-	                                                               priv->identifier,
-	                                                               priv->capabilities,
-	                                                               cancellable, NULL))
-		goto success;
-
-	/* Might be an old NetworkManager that doesn't support capabilities;
-	 * fall back to old Register() method instead.
-	 */
-	if (nmdbus_agent_manager_call_register_sync (priv->manager_proxy,
-	                                             priv->identifier,
-	                                             cancellable, error))
-		goto success;
-
-	/* Failure */
+	success = nmdbus_agent_manager_call_register_with_capabilities_sync (priv->manager_proxy,
+	                                                                     priv->identifier,
+	                                                                     priv->capabilities,
+	                                                                     cancellable,
+	                                                                     error);
 	priv->registering = FALSE;
-	_internal_unregister (self);
-	return FALSE;
 
-success:
-	priv->registering = FALSE;
+	if (!success) {
+		_internal_unregister (self);
+		return FALSE;
+	}
+
 	priv->registered = TRUE;
 	_notify (self, PROP_REGISTERED);
 	return TRUE;
-}
-
-static void
-reg_result (NMSecretAgentOld *self, GSimpleAsyncResult *simple, GError *error)
-{
-	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
-	_nm_unused gs_unref_object GSimpleAsyncResult *simple_free = simple;
-
-	priv->registering = FALSE;
-
-	if (error) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete (simple);
-
-		/* If registration failed we shouldn't expose ourselves on the bus */
-		_internal_unregister (self);
-	} else {
-		priv->registered = TRUE;
-		_notify (self, PROP_REGISTERED);
-
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-		g_simple_async_result_complete (simple);
-	}
-}
-
-static void
-reg_request_cb (GObject *proxy,
-                GAsyncResult *result,
-                gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	NMSecretAgentOld *self;
-	GError *error = NULL;
-
-	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
-	g_object_unref (self); /* drop extra ref added by get_source_object() */
-
-	if (!nmdbus_agent_manager_call_register_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error))
-		g_dbus_error_strip_remote_error (error);
-	reg_result (self, simple, error);
 }
 
 static void
@@ -577,26 +529,35 @@ reg_with_caps_cb (GObject *proxy,
                   GAsyncResult *result,
                   gpointer user_data)
 {
-	GSimpleAsyncResult *simple = user_data;
+	_nm_unused gs_unref_object GSimpleAsyncResult *simple = user_data;
 	NMSecretAgentOld *self;
 	NMSecretAgentOldPrivate *priv;
+	gs_free_error GError *error = NULL;
 
 	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	g_object_unref (self); /* drop extra ref added by get_source_object() */
 
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	if (nmdbus_agent_manager_call_register_with_capabilities_finish (NMDBUS_AGENT_MANAGER (proxy), result, NULL)) {
-		reg_result (self, simple, NULL);
+	if (!nmdbus_agent_manager_call_register_with_capabilities_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error))
+		g_dbus_error_strip_remote_error (error);
+
+	priv->registering = FALSE;
+
+	if (error) {
+		g_simple_async_result_take_error (simple, g_steal_pointer (&error));
+		g_simple_async_result_complete (simple);
+
+		/* If registration failed we shouldn't expose ourselves on the bus */
+		_internal_unregister (self);
 		return;
 	}
 
-	/* Might be an old NetworkManager that doesn't support capabilities;
-	 * fall back to old Register() method instead.
-	 */
-	nmdbus_agent_manager_call_register (priv->manager_proxy,
-	                                    priv->identifier,
-	                                    NULL, reg_request_cb, simple);
+	priv->registered = TRUE;
+	_notify (self, PROP_REGISTERED);
+
+	g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	g_simple_async_result_complete (simple);
 }
 
 /**
