@@ -540,15 +540,10 @@ reg_with_caps_cb (GObject *proxy,
                   GAsyncResult *result,
                   gpointer user_data)
 {
-	_nm_unused gs_unref_object GSimpleAsyncResult *simple = user_data;
-	NMSecretAgentOld *self;
-	NMSecretAgentOldPrivate *priv;
+	gs_unref_object GTask *task = user_data;
+	NMSecretAgentOld *self = g_task_get_source_object (task);
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	gs_free_error GError *error = NULL;
-
-	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
-	g_object_unref (self); /* drop extra ref added by get_source_object() */
-
-	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
 	if (!nmdbus_agent_manager_call_register_with_capabilities_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error))
 		g_dbus_error_strip_remote_error (error);
@@ -556,19 +551,16 @@ reg_with_caps_cb (GObject *proxy,
 	priv->registering = FALSE;
 
 	if (error) {
-		g_simple_async_result_take_error (simple, g_steal_pointer (&error));
-		g_simple_async_result_complete (simple);
-
 		/* If registration failed we shouldn't expose ourselves on the bus */
 		_internal_unregister (self);
+		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
 
 	priv->registered = TRUE;
 	_notify (self, PROP_REGISTERED);
 
-	g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	g_simple_async_result_complete (simple);
+	g_task_return_boolean (task, TRUE);
 }
 
 /**
@@ -593,8 +585,8 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 {
 	NMSecretAgentOldPrivate *priv;
 	NMSecretAgentOldClass *class;
-	gs_unref_object GSimpleAsyncResult *simple = NULL;
-	GError *error = NULL;
+	gs_unref_object GTask *task = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
 
@@ -611,14 +603,10 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	g_return_if_fail (class->save_secrets != NULL);
 	g_return_if_fail (class->delete_secrets != NULL);
 
-	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-	                                    nm_secret_agent_old_register_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	task = nm_g_task_new (self, cancellable, nm_secret_agent_old_register_async, callback, user_data);
 
 	if (!check_nm_running (self, &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
+		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
 
@@ -627,8 +615,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	                                       priv->bus,
 	                                       NM_DBUS_PATH_SECRET_AGENT,
 	                                       &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
+		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
 
@@ -640,7 +627,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	                                                      priv->capabilities,
 	                                                      NULL,
 	                                                      reg_with_caps_cb,
-	                                                      g_steal_pointer (&simple));
+	                                                      g_steal_pointer (&task));
 }
 
 /**
@@ -658,12 +645,10 @@ nm_secret_agent_old_register_finish (NMSecretAgentOld *self,
                                      GAsyncResult *result,
                                      GError **error)
 {
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self), nm_secret_agent_old_register_async), FALSE);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT_OLD (self), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_secret_agent_old_register_async), FALSE);
 
-	if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
-		return FALSE;
-	else
-		return TRUE;
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
@@ -706,24 +691,21 @@ nm_secret_agent_old_unregister (NMSecretAgentOld *self,
 static void
 unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	gs_unref_object GSimpleAsyncResult *simple = user_data;
-	NMSecretAgentOld *self;
-	GError *error = NULL;
-
-	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
-	g_object_unref (self); /* drop extra ref added by get_source_object() */
+	gs_unref_object GTask *task = user_data;
+	NMSecretAgentOld *self = g_task_get_source_object (task);
+	gs_free_error GError *error = NULL;
 
 	_internal_unregister (self);
 
-	if (nmdbus_agent_manager_call_unregister_finish (NMDBUS_AGENT_MANAGER (proxy),
-	                                                 result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else {
+	if (!nmdbus_agent_manager_call_unregister_finish (NMDBUS_AGENT_MANAGER (proxy),
+	                                                  result,
+	                                                  &error)) {
 		g_dbus_error_strip_remote_error (error);
-		g_simple_async_result_take_error (simple, error);
+		g_task_return_error (task, g_steal_pointer (&error));
+		return;
 	}
 
-	g_simple_async_result_complete (simple);
+	g_task_return_boolean (task, TRUE);
 }
 
 /**
@@ -744,8 +726,8 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
                                       gpointer user_data)
 {
 	NMSecretAgentOldPrivate *priv;
-	gs_unref_object GSimpleAsyncResult *simple = NULL;
-	GError *error = NULL;
+	gs_unref_object GTask *task = NULL;
+	gs_free_error GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT_OLD (self));
 
@@ -754,14 +736,10 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 	g_return_if_fail (priv->bus != NULL);
 	g_return_if_fail (priv->manager_proxy != NULL);
 
-	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-	                                    nm_secret_agent_old_unregister_async);
-	if (cancellable)
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	task = nm_g_task_new (self, cancellable, nm_secret_agent_old_unregister_async, callback, user_data);
 
 	if (!check_nm_running (self, &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
+		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
 
@@ -770,7 +748,7 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 	nmdbus_agent_manager_call_unregister (priv->manager_proxy,
 	                                      cancellable,
 	                                      unregister_cb,
-	                                      g_steal_pointer (&simple));
+	                                      g_steal_pointer (&task));
 }
 
 /**
@@ -788,12 +766,10 @@ nm_secret_agent_old_unregister_finish (NMSecretAgentOld *self,
                                        GAsyncResult *result,
                                        GError **error)
 {
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self), nm_secret_agent_old_unregister_async), FALSE);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT_OLD (self), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_secret_agent_old_unregister_async), FALSE);
 
-	if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
-		return FALSE;
-	else
-		return TRUE;
+	return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
