@@ -64,6 +64,14 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSecretAgentOld, nm_secret_agent_old, G_TYPE_
 
 /*****************************************************************************/
 
+#define _NMLOG(level, ...) \
+	NML_DBUS_LOG((level), \
+	              "secret-agent["NM_HASH_OBFUSCATE_PTR_FMT"]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+	              NM_HASH_OBFUSCATE_PTR (self) \
+	              _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
 static void
 _internal_unregister (NMSecretAgentOld *self)
 {
@@ -111,6 +119,9 @@ name_owner_changed (GObject *proxy,
 	GetSecretsInfo *info;
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy));
+
+	_LOGT ("name owner changed: %s%s%s", NM_PRINT_FMT_QUOTE_STRING (owner));
+
 	if (owner) {
 		if (should_auto_register (self))
 			nm_secret_agent_old_register_async (self, NULL, NULL, NULL);
@@ -1073,6 +1084,8 @@ nm_secret_agent_old_init (NMSecretAgentOld *self)
 {
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
+	_LOGT ("create new instance");
+
 	c_list_init (&priv->gsi_lst_head);
 	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
 	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
@@ -1089,6 +1102,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+
+	_LOGT ("init-sync");
 
 	priv->bus = g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
 	if (!priv->bus)
@@ -1117,9 +1132,12 @@ init_async (GAsyncInitable *initable, int io_priority,
             GCancellable *cancellable, GAsyncReadyCallback callback,
             gpointer user_data)
 {
+	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
 	GTask *task;
 
-	task = g_task_new (initable, cancellable, callback, user_data);
+	_LOGT ("init-async starting...");
+
+	task = g_task_new (self, cancellable, callback, user_data);
 	g_task_set_priority (task, io_priority);
 
 	g_bus_get (_nm_dbus_bus_type (),
@@ -1134,6 +1152,8 @@ dispose (GObject *object)
 	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (object);
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GetSecretsInfo *info;
+
+	_LOGT ("disposing");
 
 	if (priv->registered) {
 		priv->registered = FALSE;
