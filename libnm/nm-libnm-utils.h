@@ -8,6 +8,7 @@
 
 #include "c-list/src/c-list.h"
 #include "nm-glib-aux/nm-ref-string.h"
+#include "nm-glib-aux/nm-logging-fwd.h"
 #include "nm-types.h"
 #include "nm-object.h"
 #include "nm-client.h"
@@ -59,6 +60,18 @@ typedef enum {
 	NML_DBUS_LOG_LEVEL_ERROR        =   _NML_DBUS_LOG_LEVEL_ERROR
 	                                  | NML_DBUS_LOG_LEVEL_WARN,
 } NMLDBusLogLevel;
+
+#undef _LOGL_TRACE
+#undef _LOGL_DEBUG
+#undef _LOGL_INFO
+#undef _LOGL_WARN
+#undef _LOGL_ERR
+
+#define _LOGL_TRACE NML_DBUS_LOG_LEVEL_TRACE
+#define _LOGL_DEBUG NML_DBUS_LOG_LEVEL_DEBUG
+#define _LOGL_INFO  NML_DBUS_LOG_LEVEL_INFO
+#define _LOGL_WARN  NML_DBUS_LOG_LEVEL_WARN
+#define _LOGL_ERR   NML_DBUS_LOG_LEVEL_ERR
 
 extern volatile int _nml_dbus_log_level;
 
