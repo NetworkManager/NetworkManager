@@ -702,8 +702,7 @@ _register_call_cb (GObject *proxy,
 	}
 
 done:
-	priv->registering_timeout_msec = nm_utils_get_monotonic_timestamp_ms () + REGISTER_RETRY_TIMEOUT_MSEC;
-	priv->registering_try_count = 0;
+	priv->registering_timeout_msec = 0;
 
 	if (error) {
 		_LOGT ("register: registration failed with error \"%s\"", error->message);
