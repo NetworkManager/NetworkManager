@@ -194,6 +194,7 @@ complain ("Don't add Emacs editor formatting hints to source files") if $line_no
 complain ("XXX marker are reserved for development while work-in-progress. Use TODO or FIXME comment instead?") if $line =~ /\bXXX\b/;
 complain ("This gtk-doc annotation looks wrong") if $line =~ /\*.*\( *(transfer-(none|container|full)|allow none) *\) *(:|\()/;
 complain ("Prefer nm_assert() or g_return*() to g_assert*()") if $line =~ /g_assert/ and not $filename =~ /\/tests\//;
+complain ("Use gs_free_error with GError variables") if $line =~ /\bgs_free\b +GError *\*/;
 
 new_hunk if $_ eq '';
 my ($this_indent) = /^(\s*)/;
