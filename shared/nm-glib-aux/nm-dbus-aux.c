@@ -341,3 +341,26 @@ nm_dbus_connection_call_finish_variant_strip_dbus_error_cb (GObject *source,
 {
 	_call_finish_cb (source, result, user_data, FALSE, TRUE);
 }
+
+/*****************************************************************************/
+
+gboolean
+_nm_dbus_error_is (GError *error, ...)
+{
+	gs_free char *dbus_error = NULL;
+	const char *name;
+	va_list ap;
+
+	dbus_error = g_dbus_error_get_remote_error (error);
+	if (!dbus_error)
+		return FALSE;
+
+	va_start (ap, error);
+	while ((name = va_arg (ap, const char *))) {
+		if (nm_streq (dbus_error, name))
+			return TRUE;
+	}
+	va_end (ap);
+
+	return FALSE;
+}
