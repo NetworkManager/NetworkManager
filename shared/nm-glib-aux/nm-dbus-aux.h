@@ -192,4 +192,17 @@ void nm_dbus_connection_call_finish_variant_strip_dbus_error_cb (GObject *source
 
 /*****************************************************************************/
 
+gboolean _nm_dbus_error_is (GError *error, ...) G_GNUC_NULL_TERMINATED;
+
+#define nm_dbus_error_is(error, ...) \
+	({ \
+		GError *const _error = (error); \
+		\
+		_error && _nm_dbus_error_is (_error, __VA_ARGS__, NULL); \
+	})
+
+#define NM_DBUS_ERROR_NAME_UNKNOWN_METHOD "org.freedesktop.DBus.Error.UnknownMethod"
+
+/*****************************************************************************/
+
 #endif /* __NM_DBUS_AUX_H__ */
