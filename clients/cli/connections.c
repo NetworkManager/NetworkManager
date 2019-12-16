@@ -7649,7 +7649,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					}
 				} else {
 					gs_free char *prop_name = NULL;
-					gs_free GError *tmp_err = NULL;
+					gs_free_error GError *tmp_err = NULL;
 
 					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {

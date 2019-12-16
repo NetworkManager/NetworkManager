@@ -435,7 +435,7 @@ _nmtstc_client_new_cb (GObject *source_object,
 static NMClient *
 _nmtstc_client_new (gboolean sync)
 {
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	NMClient *client;
 
 	/* Create a NMClient instance synchronously, and arbitrarily use either

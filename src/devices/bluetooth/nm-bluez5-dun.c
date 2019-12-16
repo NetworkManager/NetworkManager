@@ -268,7 +268,7 @@ _connect_socket_connect_cb (GIOChannel *stream,
                             gpointer user_data)
 {
 	NMBluez5DunContext *context = user_data;
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	int errsv = 0;
 	socklen_t slen = sizeof(errsv);
 	int r;
@@ -471,7 +471,7 @@ _connect_sdp_search_io_cb (GIOChannel *io_channel,
                            gpointer user_data)
 {
 	NMBluez5DunContext *context = user_data;
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	int errsv;
 
 	if (condition & (G_IO_ERR | G_IO_HUP | G_IO_NVAL)) {

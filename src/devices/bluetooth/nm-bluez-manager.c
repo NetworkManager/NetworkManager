@@ -287,7 +287,7 @@ _network_server_register_req_data_complete (NetworkServerRegisterReqData *r_req_
 	nm_clear_g_cancellable (&r_req_data->int_cancellable);
 
 	if (r_req_data->callback) {
-		gs_free GError *error_cancelled = NULL;
+		gs_free_error GError *error_cancelled = NULL;
 
 		if (g_cancellable_set_error_if_cancelled (r_req_data->ext_cancellable, &error_cancelled))
 			error = error_cancelled;
@@ -314,7 +314,7 @@ _device_connect_req_data_complete (DeviceConnectReqData *c_req_data,
 	nm_clear_g_source (&c_req_data->timeout_wait_connect_id);
 
 	if (c_req_data->callback) {
-		gs_free GError *error_cancelled = NULL;
+		gs_free_error GError *error_cancelled = NULL;
 
 		if (g_cancellable_set_error_if_cancelled (c_req_data->ext_cancellable, &error_cancelled)) {
 			error = error_cancelled;
