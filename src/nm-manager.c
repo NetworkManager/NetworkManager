@@ -4514,7 +4514,7 @@ unmanaged_to_disconnected (NMDevice *device)
 static NMActivationStateFlags
 _activation_bind_lifetime_to_profile_visibility (NMAuthSubject *subject)
 {
-	if (   nm_auth_subject_is_internal (subject)
+	if (   nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL
 	    || nm_auth_subject_get_unix_process_uid (subject) == 0) {
 		/* internal requests and requests from root are always unbound. */
 		return NM_ACTIVATION_STATE_FLAG_NONE;
@@ -5098,8 +5098,10 @@ nm_manager_activate_connection (NMManager *self,
 		if (   sett_conn == nm_active_connection_get_settings_connection (active)
 		    && nm_streq0 (nm_active_connection_get_specific_object (active), specific_object)
 		    && (!device || nm_active_connection_get_device (active) == device)
-		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
-		    && nm_auth_subject_is_internal (subject)
+		    && nm_auth_subject_get_subject_type (nm_active_connection_get_subject (active))
+		    == NM_AUTH_SUBJECT_TYPE_INTERNAL
+		    && nm_auth_subject_get_subject_type (subject)
+		    == NM_AUTH_SUBJECT_TYPE_INTERNAL
 		    && nm_active_connection_get_activation_reason (active) == activation_reason)
 			return active;
 	}

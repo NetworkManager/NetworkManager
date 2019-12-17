@@ -200,7 +200,8 @@ _audit_log_helper (NMAuditManager *self,
 		} else
 			g_warn_if_reached ();
 	}
-	if (subject && nm_auth_subject_is_unix_process (subject)) {
+	if (subject &&
+	    nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
 		pid = nm_auth_subject_get_unix_process_pid (subject);
 		uid = nm_auth_subject_get_unix_process_uid (subject);
 		if (pid != G_MAXULONG) {

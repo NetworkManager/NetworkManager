@@ -342,8 +342,10 @@ nm_auth_chain_add_call_unsafe (NMAuthChain *self,
 	g_return_if_fail (!self->is_finishing);
 	g_return_if_fail (!self->is_destroyed);
 	g_return_if_fail (permission && *permission);
-	nm_assert (   nm_auth_subject_is_unix_process (self->subject)
-	           || nm_auth_subject_is_internal (self->subject));
+	nm_assert (   nm_auth_subject_get_subject_type (self->subject)
+	           == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS
+	           || nm_auth_subject_get_subject_type (self->subject)
+	           == NM_AUTH_SUBJECT_TYPE_INTERNAL);
 
 	/* duplicate permissions are not supported, also because nm_auth_chain_get_result()
 	 * can only return one-permission. */
@@ -417,8 +419,10 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	NMAuthChain *self;
 
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	nm_assert (   nm_auth_subject_is_unix_process (subject)
-	           || nm_auth_subject_is_internal (subject));
+	nm_assert (   nm_auth_subject_get_subject_type (subject)
+	           == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS
+	           || nm_auth_subject_get_subject_type (subject)
+	           == NM_AUTH_SUBJECT_TYPE_INTERNAL);
 	nm_assert (done_func);
 
 	self = g_slice_new (NMAuthChain);
@@ -505,10 +509,12 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 
 	g_return_val_if_fail (connection, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
-	nm_assert (   nm_auth_subject_is_internal (subject)
-	           || nm_auth_subject_is_unix_process (subject));
+	nm_assert (   nm_auth_subject_get_subject_type (subject)
+	              == NM_AUTH_SUBJECT_TYPE_INTERNAL
+	           || nm_auth_subject_get_subject_type (subject)
+	              == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
 
-	if (nm_auth_subject_is_internal (subject))
+	if (nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL)
 		return TRUE;
 
 	uid = nm_auth_subject_get_unix_process_uid (subject);

@@ -1633,7 +1633,8 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		}
 
 		subject = nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req));
-		internal_activation = subject && nm_auth_subject_is_internal (subject);
+		internal_activation =    subject
+		                      && (nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL);
 	}
 
 	changed = FALSE;

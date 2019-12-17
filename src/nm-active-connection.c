@@ -598,7 +598,9 @@ nm_active_connection_get_user_requested (NMActiveConnection *self)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
 
-	return nm_auth_subject_is_unix_process (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->subject);
+	return nm_auth_subject_get_subject_type (
+	           NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->subject
+	           ) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS;
 }
 
 NMDevice *

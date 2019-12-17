@@ -626,7 +626,7 @@ agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 	b_pid = nm_secret_agent_get_pid (b);
 
 	/* Prefer agents in the process the request came from */
-	if (nm_auth_subject_is_unix_process (req->subject)) {
+	if (nm_auth_subject_get_subject_type (req->subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
 		requester = nm_auth_subject_get_unix_process_pid (req->subject);
 
 		if (a_pid != b_pid) {
@@ -682,7 +682,7 @@ request_add_agent (Request *req, NMSecretAgent *agent)
 	}
 
 	/* If the request should filter agents by UID, do that now */
-	if (nm_auth_subject_is_unix_process (req->subject)) {
+	if (nm_auth_subject_get_subject_type (req->subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
 		uid_t agent_uid, subject_uid;
 
 		agent_uid = nm_secret_agent_get_owner_uid (agent);
@@ -1409,8 +1409,8 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (manager);
 	GHashTableIter iter;
 	NMSecretAgent *agent;
-	gboolean subject_is_unix_process = nm_auth_subject_is_unix_process (subject);
-	gulong subject_uid = subject_is_unix_process ? nm_auth_subject_get_unix_process_uid (subject) : 0;
+	gboolean subject_is_unix_process = (nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
+	gulong subject_uid = subject_is_unix_process ? nm_auth_subject_get_unix_process_uid (subject) : 0u;
 
 	g_hash_table_iter_init (&iter, priv->agents);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
