@@ -195,6 +195,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_NAME_OWNER,
 	PROP_VERSION,
+	PROP_INSTANCE_FLAGS,
 	PROP_STATE,
 	PROP_STARTUP,
 	PROP_NM_RUNNING,
@@ -222,6 +223,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DNS_RC_MANAGER,
 	PROP_DNS_CONFIGURATION,
 	PROP_CHECKPOINTS,
+	PROP_PERMISSIONS_STATE,
 );
 
 enum {
@@ -278,7 +280,7 @@ typedef struct {
 	NMLDBusObject *dbobj_settings;
 	NMLDBusObject *dbobj_dns_manager;
 
-	GHashTable *permissions;
+	guint8 *permissions;
 	GCancellable *permissions_cancellable;
 
 	char *name_owner;
@@ -289,6 +291,12 @@ typedef struct {
 	guint dbsid_nm_connection_active_state_changed;
 	guint dbsid_nm_vpn_connection_state_changed;
 	guint dbsid_nm_check_permissions;
+
+	NMClientInstanceFlags instance_flags:3;
+
+	NMTernary permissions_state:3;
+
+	bool instance_flags_constructed:1;
 
 	bool udev_inited:1;
 	bool notify_event_lst_changed:1;
@@ -3311,27 +3319,35 @@ _dbus_nm_vpn_connection_state_changed_cb (GDBusConnection *connection,
 
 static void
 _emit_permissions_changed (NMClient *self,
-                           GHashTable *permissions,
-                           gboolean force_unknown)
+                           const guint8 *old_permissions,
+                           const guint8 *permissions)
 {
-	GHashTableIter iter;
-	gpointer key;
-	gpointer value;
+	int i;
 
-	if (!permissions)
-		return;
 	if (self->obj_base.is_disposing)
 		return;
 
-	g_hash_table_iter_init (&iter, permissions);
-	while (g_hash_table_iter_next (&iter, &key, &value)) {
+	if (old_permissions == permissions)
+		return;
+
+	for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++) {
+		NMClientPermission perm = nm_auth_permission_sorted[i];
+		NMClientPermissionResult perm_result = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+		NMClientPermissionResult perm_result_old = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+
+		if (permissions)
+			perm_result = permissions[perm - 1];
+		if (old_permissions)
+			perm_result_old = old_permissions[perm - 1];
+
+		if (perm_result == perm_result_old)
+			continue;
+
 		g_signal_emit (self,
 		               signals[PERMISSION_CHANGED],
 		               0,
-		               GPOINTER_TO_UINT (key),
-		                 force_unknown
-		               ? (guint) NM_CLIENT_PERMISSION_NONE
-		               : GPOINTER_TO_UINT (value));
+		               (guint) perm,
+		               (guint) perm_result);
 	}
 }
 
@@ -3344,10 +3360,11 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 	NMClientPrivate *priv;
 	gs_unref_variant GVariant *ret = NULL;
 	nm_auto_free_variant_iter GVariantIter *v_permissions = NULL;
-	gs_unref_hashtable GHashTable *old_permissions = NULL;
+	gs_free guint8 *old_permissions = NULL;
 	gs_free_error GError *error = NULL;
 	const char *pkey;
 	const char *pvalue;
+	int i;
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (   !ret
@@ -3359,63 +3376,73 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 
 	g_clear_object (&priv->permissions_cancellable);
 
+	old_permissions = g_steal_pointer (&priv->permissions);
+
 	if (!ret) {
+		/* when the call completes, we always pretend success. Even a failure means
+		 * that we fetched the permissions, however they are all unknown. */
 		NML_NMCLIENT_LOG_T (self, "GetPermissions call failed: %s", error->message);
-		return;
+		goto out;
 	}
 
 	NML_NMCLIENT_LOG_T (self, "GetPermissions call finished with success");
-
-	/* get list of old permissions for change notification */
-	old_permissions = g_steal_pointer (&priv->permissions);
-	priv->permissions = g_hash_table_new (nm_direct_hash, NULL);
 
 	g_variant_get (ret, "(a{ss})", &v_permissions);
 	while (g_variant_iter_next (v_permissions, "{&s&s}", &pkey, &pvalue)) {
 		NMClientPermission perm;
 		NMClientPermissionResult perm_result;
 
-		perm = nm_permission_to_client (pkey);
+		perm = nm_auth_permission_from_string (pkey);
 		if (perm == NM_CLIENT_PERMISSION_NONE)
 			continue;
 
-		perm_result = nm_permission_result_to_client (pvalue);
+		perm_result = nm_client_permission_result_from_string (pvalue);
 
-		g_hash_table_insert (priv->permissions,
-		                     GUINT_TO_POINTER (perm),
-		                     GUINT_TO_POINTER (perm_result));
-		if (old_permissions) {
-			g_hash_table_remove (old_permissions,
-			                     GUINT_TO_POINTER (perm));
+		if (!priv->permissions) {
+			if (perm_result == NM_CLIENT_PERMISSION_RESULT_UNKNOWN)
+				continue;
+			priv->permissions = g_new (guint8, G_N_ELEMENTS (nm_auth_permission_sorted));
+			for (i = 0; i < (int) G_N_ELEMENTS (nm_auth_permission_sorted); i++)
+				priv->permissions[i] = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
 		}
+		priv->permissions[perm - 1] = perm_result;
 	}
 
+out:
+	priv->permissions_state = NM_TERNARY_TRUE;
+
 	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->main_context);
-	_emit_permissions_changed (self, priv->permissions, FALSE);
-	_emit_permissions_changed (self, old_permissions, TRUE);
+	_emit_permissions_changed (self, old_permissions, priv->permissions);
+	_notify (self, PROP_PERMISSIONS_STATE);
 }
 
 static void
 _dbus_check_permissions_start (NMClient *self)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	gboolean fetch;
+
+	fetch = !NM_FLAGS_HAS ((NMClientInstanceFlags) priv->instance_flags,
+	                       NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS);
 
 	nm_clear_g_cancellable (&priv->permissions_cancellable);
-	priv->permissions_cancellable = g_cancellable_new ();
 
-	NML_NMCLIENT_LOG_T (self, "GetPermissions() call started...");
+	if (fetch) {
+		NML_NMCLIENT_LOG_T (self, "GetPermissions() call started...");
 
-	_nm_client_dbus_call_simple (self,
-	                             priv->permissions_cancellable,
-	                             NM_DBUS_PATH,
-	                             NM_DBUS_INTERFACE,
-	                             "GetPermissions",
-	                             g_variant_new ("()"),
-	                             G_VARIANT_TYPE ("(a{ss})"),
-	                             G_DBUS_CALL_FLAGS_NONE,
-	                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
-	                             _dbus_check_permissions_start_cb,
-	                             self);
+		priv->permissions_cancellable = g_cancellable_new ();
+		_nm_client_dbus_call_simple (self,
+		                             priv->permissions_cancellable,
+		                             NM_DBUS_PATH,
+		                             NM_DBUS_INTERFACE,
+		                             "GetPermissions",
+		                             g_variant_new ("()"),
+		                             G_VARIANT_TYPE ("(a{ss})"),
+		                             G_DBUS_CALL_FLAGS_NONE,
+		                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+		                             _dbus_check_permissions_start_cb,
+		                             self);
+	}
 }
 
 static void
@@ -3428,6 +3455,7 @@ _dbus_nm_check_permissions_cb (GDBusConnection *connection,
                                gpointer user_data)
 {
 	NMClient *self = user_data;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
 	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("()"))) {
 		NML_NMCLIENT_LOG_E (self, "ignore CheckPermissions signal with unexpected signature %s",
@@ -3436,6 +3464,10 @@ _dbus_nm_check_permissions_cb (GDBusConnection *connection,
 	}
 
 	_dbus_check_permissions_start (self);
+
+	if (priv->permissions_state == NM_TERNARY_TRUE)
+		priv->permissions_state = NM_TERNARY_FALSE;
+	_notify (self, PROP_PERMISSIONS_STATE);
 }
 
 /*****************************************************************************/
@@ -3747,6 +3779,22 @@ _request_wait_finish (NMClient *client,
 }
 
 /*****************************************************************************/
+
+/**
+ * nm_client_get_instance_flags:
+ * @self: the #NMClient instance.
+ *
+ * Returns: the #NMClientInstanceFlags flags.
+ *
+ * Since: 1.24
+ */
+NMClientInstanceFlags
+nm_client_get_instance_flags (NMClient *self)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (self), NM_CLIENT_INSTANCE_FLAGS_NONE);
+
+	return NM_CLIENT_GET_PRIVATE (self)->instance_flags;
+}
 
 /**
  * nm_client_get_dbus_connection:
@@ -4271,18 +4319,39 @@ NMClientPermissionResult
 nm_client_get_permission_result (NMClient *client, NMClientPermission permission)
 {
 	NMClientPrivate *priv;
-	gpointer result;
+	NMClientPermissionResult result = NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (   !priv->permissions
-	    || !g_hash_table_lookup_extended (priv->permissions,
-	                                      GUINT_TO_POINTER (permission),
-	                                      NULL,
-	                                      &result))
-		return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
-	return GPOINTER_TO_UINT (result);
+	if (   permission > NM_CLIENT_PERMISSION_NONE
+	    && permission <= NM_CLIENT_PERMISSION_LAST) {
+		priv = NM_CLIENT_GET_PRIVATE (client);
+		if (priv->permissions)
+			result = priv->permissions[permission - 1];
+	}
+
+	return result;
+}
+
+/**
+ * nm_client_get_permissions_state:
+ * @self: the #NMClient instance
+ *
+ * Returns: the state of the cached permissions. %NM_TERNARY_DEFAULT
+ *   means that no permissions result was yet received. All permissions
+ *   are unknown. %NM_TERNARY_TRUE means that the permissions got received
+ *   and are cached. %%NM_TERNARY_FALSE means that permissions are cached,
+ *   but they are invalided as as "CheckPermissions" signal was received
+ *   in the meantime.
+ *
+ * Since: 1.24
+ */
+NMTernary
+nm_client_get_permissions_state (NMClient *self)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (self), NM_TERNARY_DEFAULT);
+
+	return NM_CLIENT_GET_PRIVATE (self)->permissions_state;
 }
 
 /**
@@ -6533,6 +6602,7 @@ _init_release_all (NMClient *self)
 	CList **dbus_objects_lst_heads;
 	NMLDBusObject *dbobj;
 	int i;
+	gboolean permissions_state_changed = FALSE;
 
 	NML_NMCLIENT_LOG_D (self, "release all");
 
@@ -6552,11 +6622,19 @@ _init_release_all (NMClient *self)
 	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
 	                                   &priv->dbsid_nm_check_permissions);
 
-	if (priv->permissions) {
-		gs_unref_hashtable GHashTable *old_permissions = g_steal_pointer (&priv->permissions);
-
-		_emit_permissions_changed (self, old_permissions, TRUE);
+	if (priv->permissions_state != NM_TERNARY_DEFAULT) {
+		priv->permissions_state = NM_TERNARY_DEFAULT;
+		permissions_state_changed = TRUE;
 	}
+
+	if (priv->permissions) {
+		gs_free guint8 *old_permissions = g_steal_pointer (&priv->permissions);
+
+		_emit_permissions_changed (self, old_permissions, NULL);
+	}
+
+	if (permissions_state_changed)
+		_notify (self, PROP_PERMISSIONS_STATE);
 
 	nm_assert (c_list_is_empty (&priv->obj_changed_lst_head));
 
@@ -6927,6 +7005,9 @@ get_property (GObject *object, guint prop_id,
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_INSTANCE_FLAGS:
+		g_value_set_uint (value, priv->instance_flags);
+		break;
 	case PROP_DBUS_CONNECTION:
 		g_value_set_object (value, priv->dbus_connection);
 		break;
@@ -7001,6 +7082,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CHECKPOINTS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_checkpoints (self)));
 		break;
+	case PROP_PERMISSIONS_STATE:
+		g_value_set_enum (value, priv->permissions_state);
+		break;
 
 	/* Settings properties. */
 	case PROP_CONNECTIONS:
@@ -7039,8 +7123,38 @@ set_property (GObject *object, guint prop_id,
 	NMClient *self = NM_CLIENT (object);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	gboolean b;
+	guint v_uint;
 
 	switch (prop_id) {
+
+	case PROP_INSTANCE_FLAGS:
+		/* construct */
+
+		v_uint = g_value_get_uint (value);
+		g_return_if_fail (!NM_FLAGS_ANY (v_uint, ~((guint) NM_CLIENT_INSTANCE_FLAGS_ALL)));
+		v_uint &= ((guint) NM_CLIENT_INSTANCE_FLAGS_ALL);
+
+		if (!priv->instance_flags_constructed) {
+			priv->instance_flags_constructed = TRUE;
+			priv->instance_flags = v_uint;
+			nm_assert ((guint) priv->instance_flags == v_uint);
+		} else {
+			NMClientInstanceFlags flags = v_uint;
+
+			/* After object construction, we only allow to toggle certain flags and
+			 * ignore all other flags. */
+
+			if ((priv->instance_flags ^ flags) & NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS) {
+				if (NM_FLAGS_HAS (flags, NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS))
+					priv->instance_flags |= NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS;
+				else
+					priv->instance_flags &= ~NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS;
+				if (priv->dbsid_nm_check_permissions != 0)
+					_dbus_check_permissions_start (self);
+			}
+		}
+		break;
+
 	case PROP_DBUS_CONNECTION:
 		/* construct-only */
 		priv->dbus_connection = g_value_dup_object (value);
@@ -7223,6 +7337,8 @@ nm_client_init (NMClient *self)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
+	priv->permissions_state = NM_TERNARY_DEFAULT;
+
 	priv->context_busy_watcher = g_object_new (G_TYPE_OBJECT, NULL);
 
 	c_list_init (&self->obj_base.queue_notify_lst);
@@ -7372,7 +7488,7 @@ dispose (GObject *object)
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 
-	nm_clear_pointer (&priv->permissions, g_hash_table_unref);
+	nm_clear_g_free (&priv->permissions);
 
 	g_clear_object (&priv->dbus_connection);
 
@@ -7472,6 +7588,30 @@ nm_client_class_init (NMClientClass *client_class)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMClient:instance-flags:
+	 *
+	 * #NMClientInstanceFlags for the instance. These affect behavior of #NMClient.
+	 * This is a construct property and you may only set most flags only during
+	 * construction.
+	 *
+	 * The flag %NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS can be toggled any time,
+	 * even after constructing the instance. Note that you may want to watch NMClient:permissions-state
+	 * property to know whether permissions are ready. Note that permissions are only fetched
+	 * when NMClient has a D-Bus name owner.
+	 *
+	 * Since: 1.24
+	 */
+	obj_properties[PROP_INSTANCE_FLAGS] =
+	    g_param_spec_uint (NM_CLIENT_INSTANCE_FLAGS, "", "",
+	                       0,
+	                       G_MAXUINT32,
+	                       0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT |
+	                       G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMClient:dbus-name-owner:
@@ -7831,6 +7971,32 @@ nm_client_class_init (NMClientClass *client_class)
 	                        G_TYPE_PTR_ARRAY,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMClient:permissions-state:
+	 *
+	 * The state of the cached permissions. The value %NM_TERNARY_DEFAULT
+	 * means that no permissions are yet received (or not yet requested).
+	 * %NM_TERNARY_TRUE means that permissions are received, cached and up
+	 * to date. %NM_TERNARY_FALSE means that permissions were received and are
+	 * cached, but in the meantime a "CheckPermissions" signal was received
+	 * that invalidated the cached permissions.
+	 * Note that NMClient will always emit a notify::permissions-state signal
+	 * when a "CheckPermissions" signal got received or after new permissions
+	 * got received (that is regardless whether the value of the permission state
+	 * actually changed). With this you can watch the permissions-state property
+	 * to know whether the permissions are ready. Note that while NMClient has
+	 * no D-Bus name owner, no permissions are fetched (and this property won't
+	 * change).
+	 *
+	 * Since: 1.24
+	 */
+	obj_properties[PROP_PERMISSIONS_STATE] =
+	    g_param_spec_enum (NM_CLIENT_PERMISSIONS_STATE, "", "",
+	                       NM_TYPE_TERNARY,
+	                       NM_TERNARY_DEFAULT,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm,
 	                                                         &_nml_dbus_meta_iface_nm_settings,

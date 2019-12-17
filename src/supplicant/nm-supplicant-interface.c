@@ -160,7 +160,7 @@ typedef struct {
 
 	GHashTable *   peer_proxies;
 
-	gint64         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_ms() */
+	gint64         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_msec() */
 
 	NMSupplicantAuthState auth_state;
 } NMSupplicantInterfacePrivate;
@@ -241,7 +241,7 @@ bss_proxy_properties_changed_cb (GDBusProxy *proxy,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (priv->scanning)
-		priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+		priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 
 	g_signal_emit (self, signals[BSS_UPDATED], 0,
 	               g_dbus_proxy_get_object_path (proxy),
@@ -492,7 +492,7 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 
 	if (   priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
 	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+		priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 
 	/* Disconnect reason is no longer relevant when not in the DISCONNECTED state */
 	if (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED)
@@ -554,7 +554,7 @@ set_scanning (NMSupplicantInterface *self, gboolean new_scanning)
 
 		/* Cache time of last scan completion */
 		if (priv->scanning == FALSE)
-			priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+			priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 
 		_notify (self, PROP_SCANNING);
 	}
@@ -1286,7 +1286,7 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	/* Cache last scan completed time */
-	priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+	priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 	priv->scan_done_success |= success;
 	scan_done_emit_signal (self);
 }
@@ -1301,7 +1301,7 @@ wpas_iface_bss_added (GDBusProxy *proxy,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (priv->scanning)
-		priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+		priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 
 	bss_add_new (self, path);
 }

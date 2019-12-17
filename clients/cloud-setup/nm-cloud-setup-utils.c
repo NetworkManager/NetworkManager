@@ -52,8 +52,8 @@ _nm_log_impl_cs (NMLogLevel level,
 	ts = nm_utils_clock_gettime_ns (CLOCK_BOOTTIME);
 
 	g_print ("[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s %s\n",
-	         ts / NM_UTILS_NS_PER_SECOND,
-	         (ts / (NM_UTILS_NS_PER_SECOND / 10000)) % 10000,
+	         ts / NM_UTILS_NSEC_PER_SEC,
+	         (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
 	         level_str,
 	         msg);
 }
@@ -305,7 +305,7 @@ _poll_done_cb (GObject *source,
 		return;
 	}
 
-	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	now_ms = nm_utils_get_monotonic_timestamp_msec ();
 	if (poll_task_data->ratelimit_timeout_ms > 0)
 		wait_ms = (poll_task_data->last_poll_start_ms + poll_task_data->ratelimit_timeout_ms) - now_ms;
 	else
@@ -328,7 +328,7 @@ _poll_start_cb (gpointer user_data)
 
 	nm_clear_g_source_inst (&poll_task_data->source_next_poll);
 
-	poll_task_data->last_poll_start_ms = nm_utils_get_monotonic_timestamp_ms ();
+	poll_task_data->last_poll_start_ms = nm_utils_get_monotonic_timestamp_msec ();
 
 	g_object_ref (poll_task_data->task); /* balanced by _poll_done_cb() */
 

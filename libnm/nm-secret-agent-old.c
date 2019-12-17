@@ -486,7 +486,7 @@ _register_should_retry (NMSecretAgentOldPrivate *priv,
 
 	if (priv->registering_try_count++ == 0)
 		timeout_msec = 0;
-	else if (nm_utils_get_monotonic_timestamp_ms () < priv->registering_timeout_msec)
+	else if (nm_utils_get_monotonic_timestamp_msec () < priv->registering_timeout_msec)
 		timeout_msec = 1ULL * (1ULL << NM_MIN (7, priv->registering_try_count));
 	else
 		return FALSE;
@@ -545,7 +545,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 	                                       error))
 		return FALSE;
 
-	priv->registering_timeout_msec = nm_utils_get_monotonic_timestamp_ms () + REGISTER_RETRY_TIMEOUT_MSEC;
+	priv->registering_timeout_msec = nm_utils_get_monotonic_timestamp_msec () + REGISTER_RETRY_TIMEOUT_MSEC;
 	priv->registering_try_count = 0;
 
 	while (TRUE) {
@@ -777,7 +777,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 	}
 
 	priv->suppress_auto = FALSE;
-	priv->registering_timeout_msec = nm_utils_get_monotonic_timestamp_ms () + REGISTER_RETRY_TIMEOUT_MSEC;
+	priv->registering_timeout_msec = nm_utils_get_monotonic_timestamp_msec () + REGISTER_RETRY_TIMEOUT_MSEC;
 	priv->registering_try_count = 0;
 
 	_LOGT ("register: starting asynchronous registration...");

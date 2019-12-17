@@ -28,7 +28,7 @@
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
-	char *flags_str[13];
+	char *flags_str[14];
 	int i = 0;
 
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP40)
@@ -53,6 +53,8 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 		flags_str[i++] = "802.1X";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
 		flags_str[i++] = "sae";
+	if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
+		flags_str[i++] = "owe";
 	/* Make sure you grow flags_str when adding items here. */
 
 	if (i == 0)
@@ -1206,6 +1208,9 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	}
 	if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
 		g_string_append (security_str, "WPA3 ");
+	}
+	if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE) {
+		g_string_append (security_str, "OWE ");
 	}
 	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
@@ -3078,7 +3083,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (rescan == NULL || strcmp (rescan, "auto") == 0) {
-		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SECOND, 0);
+		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SEC, 0);
 	} else if (strcmp (rescan, "no") == 0) {
 		rescan_cutoff = 0;
 	} else if (strcmp (rescan, "yes") == 0) {
@@ -3561,8 +3566,8 @@ do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
 
 	/* Set password for WEP or WPA-PSK. */
 	if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
-	    || ap_wpa_flags != NM_802_11_AP_SEC_NONE
-	    || ap_rsn_flags != NM_802_11_AP_SEC_NONE) {
+	    || (ap_wpa_flags != NM_802_11_AP_SEC_NONE && !(ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE))
+	    || (ap_rsn_flags != NM_802_11_AP_SEC_NONE && !(ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE))) {
 		const char *con_password = NULL;
 		NMSettingWirelessSecurity *s_wsec = NULL;
 
@@ -4234,6 +4239,9 @@ print_wifi_connection (const NmcConfig *nmc_config, NMConnection *connection)
 	           || strcmp (key_mgmt, "sae") == 0) {
 		type = "WPA";
 		g_print ("%s: WPA\n", _("Security"));
+	} else if (   strcmp (key_mgmt, "owe") == 0) {
+		type = "nopass";
+		g_print ("%s: OWE\n", _("Security"));
 	}
 
 	if (psk)

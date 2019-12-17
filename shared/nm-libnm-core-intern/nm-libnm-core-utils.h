@@ -95,4 +95,17 @@ nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
  * depends on other factors. */
 #define NM_INFINIBAND_MAX_MTU ((guint) 65520)
 
+/*****************************************************************************/
+
+extern const char *const nm_auth_permission_names_by_idx[NM_CLIENT_PERMISSION_LAST];
+extern const NMClientPermission nm_auth_permission_sorted[NM_CLIENT_PERMISSION_LAST];
+
+const char *nm_auth_permission_to_string (NMClientPermission permission);
+NMClientPermission nm_auth_permission_from_string (const char *str);
+
+/*****************************************************************************/
+
+NMClientPermissionResult nm_client_permission_result_from_string (const char *nm);
+const char *nm_client_permission_result_to_string (NMClientPermissionResult permission);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

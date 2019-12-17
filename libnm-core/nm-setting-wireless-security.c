@@ -865,7 +865,8 @@ need_secrets (NMSetting *setting)
 	}
 
 	if (   (strcmp (priv->key_mgmt, "ieee8021x") == 0)
-	    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)) {
+	    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)
+	    || (strcmp (priv->key_mgmt, "owe") == 0)) {
 		/* Let caller check the 802.1x setting for secrets */
 		goto no_secrets;
 	}
@@ -884,7 +885,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
 	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
-	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-psk", "wpa-eap", "sae", NULL };
+	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-psk", "wpa-eap", "sae", "owe", NULL };
 	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
 	const char *valid_pairwise[] = { "tkip", "ccmp", NULL };
@@ -1054,7 +1055,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (   NM_IN_SET (priv->pmf,
 	                  NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
 	                  NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
-	    && !NM_IN_STRSET (priv->key_mgmt, "wpa-eap", "wpa-psk", "sae")) {
+	    && !NM_IN_STRSET (priv->key_mgmt, "wpa-eap", "wpa-psk", "sae", "owe")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1429,7 +1430,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	 *
 	 * Key management used for the connection.  One of "none" (WEP),
 	 * "ieee8021x" (Dynamic WEP), "wpa-psk" (infrastructure WPA-PSK), "sae"
-	 * (SAE) or "wpa-eap" (WPA-Enterprise).  This property must be set for
+	 * (SAE), "owe" (Opportunistic Wireless Encryption) or "wpa-eap"
+	 * (WPA-Enterprise).  This property must be set for
 	 * any Wi-Fi connection that uses security.
 	 **/
 	/* ---ifcfg-rh---

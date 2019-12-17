@@ -7325,7 +7325,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
 	    .property_type =                &_pt_gobject_string,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-	        .values_static =            NM_MAKE_STRV ("none", "ieee8021x", "wpa-psk", "wpa-eap", "sae"),
+	        .values_static =            NM_MAKE_STRV ("none", "ieee8021x", "wpa-psk", "wpa-eap", "sae", "owe"),
 	    ),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX,

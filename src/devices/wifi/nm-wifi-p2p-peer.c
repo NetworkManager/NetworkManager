@@ -55,7 +55,7 @@ struct _NMWifiP2PPeerPrivate {
 	NM80211ApFlags     flags;      /* General flags */
 
 	/* Non-scanned attributes */
-	gint32             last_seen;    /* Timestamp when the Peer was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
+	gint32             last_seen;    /* Timestamp when the Peer was seen lastly (obtained via nm_utils_get_monotonic_timestamp_sec()) */
 };
 
 typedef struct _NMWifiP2PPeerPrivate NMWifiP2PPeerPrivate;
@@ -499,7 +499,7 @@ nm_wifi_p2p_peer_update_from_properties (NMWifiP2PPeer *peer,
 		changed = TRUE;
 	}
 
-	changed |= nm_wifi_p2p_peer_set_last_seen (peer, nm_utils_get_monotonic_timestamp_s ());
+	changed |= nm_wifi_p2p_peer_set_last_seen (peer, nm_utils_get_monotonic_timestamp_sec ());
 
 	g_object_thaw_notify (G_OBJECT (peer));
 
@@ -537,7 +537,7 @@ nm_wifi_p2p_peer_to_string (const NMWifiP2PPeer *self,
 	            priv->model,
 	            priv->model_number,
 	            priv->serial,
-	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_s ()) - priv->last_seen) : -1,
+	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_sec ()) - priv->last_seen) : -1,
 	            supplicant_id,
 	            export_path);
 
@@ -616,7 +616,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_LAST_SEEN:
 		g_value_set_int (value,
 		                 priv->last_seen > 0
-		                     ? (int) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NS_PER_SECOND)
+		                     ? (int) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NSEC_PER_SEC)
 		                     : -1);
 		break;
 	default:

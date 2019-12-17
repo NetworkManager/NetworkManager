@@ -867,8 +867,8 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		}
 	}
 
-	/* Don't try to enable PMF on non-WPA/SAE networks */
-	if (!NM_IN_STRSET (key_mgmt, "wpa-eap", "wpa-psk", "sae"))
+	/* Don't try to enable PMF on non-WPA/SAE/OWE networks */
+	if (!NM_IN_STRSET (key_mgmt, "wpa-eap", "wpa-psk", "sae", "owe"))
 		pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
 
 	/* Check if we actually support PMF */
@@ -885,7 +885,8 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	/* Only WPA-specific things when using WPA */
 	if (   !strcmp (key_mgmt, "wpa-psk")
 	    || !strcmp (key_mgmt, "wpa-eap")
-	    || !strcmp (key_mgmt, "sae")) {
+	    || !strcmp (key_mgmt, "sae")
+	    || !strcmp (key_mgmt, "owe")) {
 		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, proto, protos, "proto", ' ', TRUE, NULL, error))
 			return FALSE;
 		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, pairwise, pairwise, "pairwise", ' ', TRUE, NULL, error))

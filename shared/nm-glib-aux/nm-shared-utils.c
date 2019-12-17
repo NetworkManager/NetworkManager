@@ -2223,7 +2223,7 @@ nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags)
 /* taken from systemd's fd_wait_for_event(). Note that the timeout
  * is here in nano-seconds, not micro-seconds. */
 int
-nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns)
+nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_nsec)
 {
 	struct pollfd pollfd = {
 		.fd = fd,
@@ -2232,11 +2232,11 @@ nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns)
 	struct timespec ts, *pts;
 	int r;
 
-	if (timeout_ns < 0)
+	if (timeout_nsec < 0)
 		pts = NULL;
 	else {
-		ts.tv_sec = (time_t) (timeout_ns / NM_UTILS_NS_PER_SECOND);
-		ts.tv_nsec = (long int) (timeout_ns % NM_UTILS_NS_PER_SECOND);
+		ts.tv_sec = (time_t) (timeout_nsec / NM_UTILS_NSEC_PER_SEC);
+		ts.tv_nsec = (long int) (timeout_nsec % NM_UTILS_NSEC_PER_SEC);
 		pts = &ts;
 	}
 
@@ -3591,7 +3591,7 @@ nm_g_idle_source_new (int priority,
 }
 
 GSource *
-nm_g_timeout_source_new (guint timeout_ms,
+nm_g_timeout_source_new (guint timeout_msec,
                          int priority,
                          GSourceFunc func,
                          gpointer user_data,
@@ -3599,7 +3599,7 @@ nm_g_timeout_source_new (guint timeout_ms,
 {
 	GSource *source;
 
-	source = g_timeout_source_new (timeout_ms);
+	source = g_timeout_source_new (timeout_msec);
 	if (priority != G_PRIORITY_DEFAULT)
 		g_source_set_priority (source, priority);
 	g_source_set_callback (source, func, user_data, destroy_notify);

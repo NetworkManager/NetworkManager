@@ -389,15 +389,6 @@ GVariant *_nm_dbus_proxy_call_finish (GDBusProxy           *proxy,
                                       const GVariantType   *reply_type,
                                       GError              **error);
 
-GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
-                                      const char           *method_name,
-                                      GVariant             *parameters,
-                                      const GVariantType   *reply_type,
-                                      GDBusCallFlags        flags,
-                                      int                   timeout_msec,
-                                      GCancellable         *cancellable,
-                                      GError              **error);
-
 GVariant * _nm_dbus_connection_call_finish (GDBusConnection *dbus_connection,
                                             GAsyncResult *result,
                                             const GVariantType *reply_type,

@@ -20,7 +20,7 @@
 static void
 test_nm_utils_monotonic_timestamp_as_boottime (void)
 {
-	gint64 timestamp_ns_per_tick, now, now_boottime, now_boottime_2, now_boottime_3;
+	gint64 timestamp_nsec_per_tick, now, now_boottime, now_boottime_2, now_boottime_3;
 	struct timespec tp;
 	clockid_t clockid;
 	guint i;
@@ -35,22 +35,22 @@ test_nm_utils_monotonic_timestamp_as_boottime (void)
 
 		if (clock_gettime (clockid, &tp) != 0)
 			g_assert_not_reached ();
-		now_boottime = ( ((gint64) tp.tv_sec) * NM_UTILS_NS_PER_SECOND ) + ((gint64) tp.tv_nsec);
+		now_boottime = ( ((gint64) tp.tv_sec) * NM_UTILS_NSEC_PER_SEC ) + ((gint64) tp.tv_nsec);
 
-		now = nm_utils_get_monotonic_timestamp_ns ();
+		now = nm_utils_get_monotonic_timestamp_nsec ();
 
 		now_boottime_2 = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 		g_assert_cmpint (now_boottime_2, >=, 0);
 		g_assert_cmpint (now_boottime_2, >=, now_boottime);
-		g_assert_cmpint (now_boottime_2 - now_boottime, <=, NM_UTILS_NS_PER_SECOND / 10);
+		g_assert_cmpint (now_boottime_2 - now_boottime, <=, NM_UTILS_NSEC_PER_SEC / 10);
 
 		g_assert_cmpint (now, ==, nm_utils_monotonic_timestamp_from_boottime (now_boottime_2, 1));
 
-		for (timestamp_ns_per_tick = 1; timestamp_ns_per_tick <= NM_UTILS_NS_PER_SECOND; timestamp_ns_per_tick *= 10) {
-			now_boottime_3 = nm_utils_monotonic_timestamp_as_boottime (now / timestamp_ns_per_tick, timestamp_ns_per_tick);
+		for (timestamp_nsec_per_tick = 1; timestamp_nsec_per_tick <= NM_UTILS_NSEC_PER_SEC; timestamp_nsec_per_tick *= 10) {
+			now_boottime_3 = nm_utils_monotonic_timestamp_as_boottime (now / timestamp_nsec_per_tick, timestamp_nsec_per_tick);
 
-			g_assert_cmpint (now_boottime_2 / timestamp_ns_per_tick, ==, now_boottime_3);
-			g_assert_cmpint (now / timestamp_ns_per_tick, ==, nm_utils_monotonic_timestamp_from_boottime (now_boottime_3, timestamp_ns_per_tick));
+			g_assert_cmpint (now_boottime_2 / timestamp_nsec_per_tick, ==, now_boottime_3);
+			g_assert_cmpint (now / timestamp_nsec_per_tick, ==, nm_utils_monotonic_timestamp_from_boottime (now_boottime_3, timestamp_nsec_per_tick));
 		}
 	}
 }

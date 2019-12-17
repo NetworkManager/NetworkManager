@@ -145,7 +145,7 @@ _connect_open_tty_retry_cb (gpointer user_data)
 	if (r >= 0)
 		return G_SOURCE_REMOVE;
 
-	if (nm_utils_get_monotonic_timestamp_ns () > context->cdat->connect_open_tty_started_at + (30 * 100 * NM_UTILS_NS_PER_MSEC)) {
+	if (nm_utils_get_monotonic_timestamp_nsec () > context->cdat->connect_open_tty_started_at + (30 * 100 * NM_UTILS_NSEC_PER_MSEC)) {
 		gs_free_error GError *error = NULL;
 
 		context->cdat->source_id = 0;
@@ -179,7 +179,7 @@ _connect_open_tty (NMBluez5DunContext *context)
 			       context->rfcomm_tty_no,
 			       nm_strerror_native (errsv),
 			       errsv);
-			context->cdat->connect_open_tty_started_at = nm_utils_get_monotonic_timestamp_ns ();
+			context->cdat->connect_open_tty_started_at = nm_utils_get_monotonic_timestamp_nsec ();
 			context->cdat->source_id = g_timeout_add (100,
 			                                          _connect_open_tty_retry_cb,
 			                                          context);

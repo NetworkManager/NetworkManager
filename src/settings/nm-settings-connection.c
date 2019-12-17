@@ -2365,7 +2365,7 @@ _autoconnect_retries_set (NMSettingsConnection *self,
 		 * the tracking of resetting the retry count in NMPolicy needs adjustment
 		 * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
 		 * the next-timeout every time a connection gets blocked). */
-		priv->autoconnect_retries_blocked_until = nm_utils_get_monotonic_timestamp_s () + AUTOCONNECT_RESET_RETRIES_TIMER;
+		priv->autoconnect_retries_blocked_until = nm_utils_get_monotonic_timestamp_sec () + AUTOCONNECT_RESET_RETRIES_TIMER;
 	}
 }
 

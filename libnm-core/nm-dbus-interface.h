@@ -342,6 +342,8 @@ typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
  * is supported
  * @NM_802_11_AP_SEC_KEY_MGMT_SAE: WPA/RSN Simultaneous Authentication of Equals is
  * supported
+ * @NM_802_11_AP_SEC_KEY_MGMT_OWE: WPA/RSN Opportunistic Wireless Encryption is
+ * supported
  *
  * 802.11 access point security and authentication flags.  These flags describe
  * the current security requirements of an access point as determined from the
@@ -360,6 +362,7 @@ typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
 	NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100,
 	NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200,
 	NM_802_11_AP_SEC_KEY_MGMT_SAE    = 0x00000400,
+	NM_802_11_AP_SEC_KEY_MGMT_OWE    = 0x00000800,
 } NM80211ApSecurityFlags;
 
 /**
@@ -1173,5 +1176,86 @@ typedef enum { /*< flags >*/
 	/* NM-specific flags */
 	NM_DEVICE_INTERFACE_FLAG_CARRIER     = 0x10000,
 } NMDeviceInterfaceFlags;
+
+/**
+ * NMClientPermission:
+ * @NM_CLIENT_PERMISSION_NONE: unknown or no permission
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK: controls whether networking
+ *  can be globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI: controls whether Wi-Fi can be
+ *  globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN: controls whether WWAN (3G) can be
+ *  globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX: controls whether WiMAX can be
+ *  globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_SLEEP_WAKE: controls whether the client can ask
+ *  NetworkManager to sleep and wake
+ * @NM_CLIENT_PERMISSION_NETWORK_CONTROL: controls whether networking connections
+ *  can be started, stopped, and changed
+ * @NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED: controls whether a password
+ *  protected Wi-Fi hotspot can be created
+ * @NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN: controls whether an open Wi-Fi hotspot
+ *  can be created
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM: controls whether connections
+ *  that are available to all users can be modified
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN: controls whether connections
+ *  owned by the current user can be modified
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME: controls whether the
+ *  persistent hostname can be changed
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS: modify persistent global
+ *  DNS configuration
+ * @NM_CLIENT_PERMISSION_RELOAD: controls access to Reload.
+ * @NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK: permission to create checkpoints.
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS: controls whether device
+ *  statistics can be globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK: controls whether
+ *  connectivity check can be enabled or disabled
+ * @NM_CLIENT_PERMISSION_WIFI_SCAN: controls whether wifi scans can be performed
+ * @NM_CLIENT_PERMISSION_LAST: a reserved boundary value
+ *
+ * #NMClientPermission values indicate various permissions that NetworkManager
+ * clients can obtain to perform certain tasks on behalf of the current user.
+ **/
+typedef enum {
+	NM_CLIENT_PERMISSION_NONE = 0,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK = 1,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI = 2,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN = 3,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX = 4,
+	NM_CLIENT_PERMISSION_SLEEP_WAKE = 5,
+	NM_CLIENT_PERMISSION_NETWORK_CONTROL = 6,
+	NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED = 7,
+	NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN = 8,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM = 9,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN = 10,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME = 11,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS = 12,
+	NM_CLIENT_PERMISSION_RELOAD = 13,
+	NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK = 14,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS = 15,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK = 16,
+	NM_CLIENT_PERMISSION_WIFI_SCAN = 17,
+
+	NM_CLIENT_PERMISSION_LAST = 17,
+} NMClientPermission;
+
+/**
+ * NMClientPermissionResult:
+ * @NM_CLIENT_PERMISSION_RESULT_UNKNOWN: unknown or no authorization
+ * @NM_CLIENT_PERMISSION_RESULT_YES: the permission is available
+ * @NM_CLIENT_PERMISSION_RESULT_AUTH: authorization is necessary before the
+ *  permission is available
+ * @NM_CLIENT_PERMISSION_RESULT_NO: permission to perform the operation is
+ *  denied by system policy
+ *
+ * #NMClientPermissionResult values indicate what authorizations and permissions
+ * the user requires to obtain a given #NMClientPermission
+ **/
+typedef enum {
+	NM_CLIENT_PERMISSION_RESULT_UNKNOWN = 0,
+	NM_CLIENT_PERMISSION_RESULT_YES,
+	NM_CLIENT_PERMISSION_RESULT_AUTH,
+	NM_CLIENT_PERMISSION_RESULT_NO
+} NMClientPermissionResult;
 
 #endif /* __NM_DBUS_INTERFACE_H__ */

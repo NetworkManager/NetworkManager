@@ -19,7 +19,7 @@
 
 static void
 _wait_for_ipv4_addr_device_route (NMPlatform *platform,
-                                  gint64 timeout_ms,
+                                  gint64 timeout_msec,
                                   int ifindex,
                                   in_addr_t addr,
                                   guint8 plen)
@@ -55,7 +55,7 @@ _wait_for_ipv4_addr_device_route (NMPlatform *platform,
 
 static void
 _wait_for_ipv6_addr_non_tentative (NMPlatform *platform,
-                                   gint64 timeout_ms,
+                                   gint64 timeout_msec,
                                    int ifindex,
                                    guint addr_n,
                                    const struct in6_addr *addrs)
@@ -67,7 +67,7 @@ _wait_for_ipv6_addr_non_tentative (NMPlatform *platform,
 	 * small amount of time, which prevents the immediate addition of the route
 	 * with RTA_PREFSRC */
 
-	NMTST_WAIT_ASSERT (timeout_ms, {
+	NMTST_WAIT_ASSERT (timeout_msec, {
 		gboolean should_wait = FALSE;
 		const NMPlatformIP6Address *plt_addr;
 

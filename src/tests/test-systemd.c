@@ -27,7 +27,7 @@ _nm_utils_set_testing (NMUtilsTestFlags flags)
 }
 
 gint32
-nm_utils_get_monotonic_timestamp_s (void)
+nm_utils_get_monotonic_timestamp_sec (void)
 {
 	return 1;
 }

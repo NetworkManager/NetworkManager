@@ -15,6 +15,23 @@
 
 G_BEGIN_DECLS
 
+/**
+ * NMClientInstanceFlags:
+ * @NM_CLIENT_INSTANCE_FLAGS_NONE: special value to indicate no flags.
+ * @NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS: by default, NMClient
+ *   will fetch the permissions via "GetPermissions" and refetch them when
+ *   "CheckPermissions" signal gets received. By setting this flag, this behavior
+ *   can be disabled. You can toggle this flag to enable and disable automatic
+ *   fetching of the permissions. Watch also nm_client_get_permissions_state()
+ *   to know whether the permissions are up to date.
+ *
+ * Since: 1.24
+ */
+typedef enum { /*< flags >*/
+	NM_CLIENT_INSTANCE_FLAGS_NONE                      = 0,
+	NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS = 1,
+} NMClientInstanceFlags;
+
 #define NM_TYPE_CLIENT            (nm_client_get_type ())
 #define NM_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CLIENT, NMClient))
 #define NM_CLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CLIENT, NMClientClass))
@@ -28,6 +45,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_NM_RUNNING      "nm-running"
 #define NM_CLIENT_DBUS_CONNECTION "dbus-connection"
 #define NM_CLIENT_DBUS_NAME_OWNER "dbus-name-owner"
+#define NM_CLIENT_INSTANCE_FLAGS  "instance-flags"
 
 _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
@@ -63,6 +81,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_DNS_RC_MANAGER "dns-rc-manager"
 #define NM_CLIENT_DNS_CONFIGURATION "dns-configuration"
 #define NM_CLIENT_CHECKPOINTS "checkpoints"
+#define NM_CLIENT_PERMISSIONS_STATE "permissions-state"
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
 #define NM_CLIENT_DEVICE_REMOVED "device-removed"
@@ -73,87 +92,6 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_CONNECTION_REMOVED "connection-removed"
 #define NM_CLIENT_ACTIVE_CONNECTION_ADDED "active-connection-added"
 #define NM_CLIENT_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
-
-/**
- * NMClientPermission:
- * @NM_CLIENT_PERMISSION_NONE: unknown or no permission
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK: controls whether networking
- *  can be globally enabled or disabled
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI: controls whether Wi-Fi can be
- *  globally enabled or disabled
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN: controls whether WWAN (3G) can be
- *  globally enabled or disabled
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX: controls whether WiMAX can be
- *  globally enabled or disabled
- * @NM_CLIENT_PERMISSION_SLEEP_WAKE: controls whether the client can ask
- *  NetworkManager to sleep and wake
- * @NM_CLIENT_PERMISSION_NETWORK_CONTROL: controls whether networking connections
- *  can be started, stopped, and changed
- * @NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED: controls whether a password
- *  protected Wi-Fi hotspot can be created
- * @NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN: controls whether an open Wi-Fi hotspot
- *  can be created
- * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM: controls whether connections
- *  that are available to all users can be modified
- * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN: controls whether connections
- *  owned by the current user can be modified
- * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME: controls whether the
- *  persistent hostname can be changed
- * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS: modify persistent global
- *  DNS configuration
- * @NM_CLIENT_PERMISSION_RELOAD: controls access to Reload.
- * @NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK: permission to create checkpoints.
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS: controls whether device
- *  statistics can be globally enabled or disabled
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK: controls whether
- *  connectivity check can be enabled or disabled
- * @NM_CLIENT_PERMISSION_WIFI_SCAN: controls whether wifi scans can be performed
- * @NM_CLIENT_PERMISSION_LAST: a reserved boundary value
- *
- * #NMClientPermission values indicate various permissions that NetworkManager
- * clients can obtain to perform certain tasks on behalf of the current user.
- **/
-typedef enum {
-	NM_CLIENT_PERMISSION_NONE = 0,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK = 1,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI = 2,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN = 3,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX = 4,
-	NM_CLIENT_PERMISSION_SLEEP_WAKE = 5,
-	NM_CLIENT_PERMISSION_NETWORK_CONTROL = 6,
-	NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED = 7,
-	NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN = 8,
-	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM = 9,
-	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN = 10,
-	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME = 11,
-	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS = 12,
-	NM_CLIENT_PERMISSION_RELOAD = 13,
-	NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK = 14,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS = 15,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK = 16,
-	NM_CLIENT_PERMISSION_WIFI_SCAN = 17,
-
-	NM_CLIENT_PERMISSION_LAST = 17,
-} NMClientPermission;
-
-/**
- * NMClientPermissionResult:
- * @NM_CLIENT_PERMISSION_RESULT_UNKNOWN: unknown or no authorization
- * @NM_CLIENT_PERMISSION_RESULT_YES: the permission is available
- * @NM_CLIENT_PERMISSION_RESULT_AUTH: authorization is necessary before the
- *  permission is available
- * @NM_CLIENT_PERMISSION_RESULT_NO: permission to perform the operation is
- *  denied by system policy
- *
- * #NMClientPermissionResult values indicate what authorizations and permissions
- * the user requires to obtain a given #NMClientPermission
- **/
-typedef enum {
-	NM_CLIENT_PERMISSION_RESULT_UNKNOWN = 0,
-	NM_CLIENT_PERMISSION_RESULT_YES,
-	NM_CLIENT_PERMISSION_RESULT_AUTH,
-	NM_CLIENT_PERMISSION_RESULT_NO
-} NMClientPermissionResult;
 
 /**
  * NMClientError:
@@ -213,6 +151,10 @@ void      nm_client_new_async  (GCancellable         *cancellable,
                                 gpointer              user_data);
 NMClient *nm_client_new_finish (GAsyncResult         *result,
                                 GError              **error);
+
+
+NM_AVAILABLE_IN_1_24
+NMClientInstanceFlags nm_client_get_instance_flags (NMClient *self);
 
 NM_AVAILABLE_IN_1_22
 GDBusConnection *nm_client_get_dbus_connection (NMClient *client);
@@ -293,6 +235,9 @@ gboolean nm_client_set_logging (NMClient *client,
 
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
                                                           NMClientPermission permission);
+
+NM_AVAILABLE_IN_1_24
+NMTernary nm_client_get_permissions_state (NMClient *self);
 
 NMConnectivityState nm_client_get_connectivity          (NMClient *client);
 

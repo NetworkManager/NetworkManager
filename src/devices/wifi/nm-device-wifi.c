@@ -1047,7 +1047,7 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		return;
 	}
 
-	now = nm_utils_get_monotonic_timestamp_s ();
+	now = nm_utils_get_monotonic_timestamp_sec ();
 
 	if (now >= priv->hw_addr_scan_expire) {
 		gs_free char *generate_mac_address_mask = NULL;
@@ -1188,7 +1188,7 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 	}
 
 	last_scan = nm_supplicant_interface_get_last_scan (priv->sup_iface);
-	if (last_scan && (nm_utils_get_monotonic_timestamp_ms () - last_scan) < 10 * NM_UTILS_MSEC_PER_SECOND) {
+	if (last_scan && (nm_utils_get_monotonic_timestamp_msec () - last_scan) < 10 * NM_UTILS_MSEC_PER_SEC) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
@@ -1419,7 +1419,7 @@ static void
 schedule_scan (NMDeviceWifi *self, gboolean backoff)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	gint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 
 	/* Cancel the pending scan if it would happen later than (now + the scan_interval) */
 	if (priv->pending_scan_id) {
@@ -1466,7 +1466,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 
 	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback: %s", success ? "successful" : "failed");
 
-	priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
+	priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 	_notify (self, PROP_LAST_SCAN);
 	schedule_scan (self, success);
 
@@ -1488,11 +1488,11 @@ ap_list_dump (gpointer user_data)
 
 	if (_LOGD_ENABLED (LOGD_WIFI_SCAN)) {
 		NMWifiAP *ap;
-		gint32 now_s = nm_utils_get_monotonic_timestamp_s ();
+		gint32 now_s = nm_utils_get_monotonic_timestamp_sec ();
 
 		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%" G_GINT64_FORMAT " next:%u]",
 		       now_s,
-		       priv->last_scan / NM_UTILS_MSEC_PER_SECOND,
+		       priv->last_scan / NM_UTILS_MSEC_PER_SEC,
 		       priv->scheduled_scan_time);
 		c_list_for_each_entry (ap, &priv->aps_lst_head, aps_lst)
 			_ap_dump (self, LOGL_DEBUG, ap, "dump", now_s);
@@ -3255,7 +3255,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_LAST_SCAN:
 		g_value_set_int64 (value,
 		                   priv->last_scan > 0
-		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_MSEC)
+		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NSEC_PER_MSEC)
 		                       : (gint64) -1);
 		break;
 	default:

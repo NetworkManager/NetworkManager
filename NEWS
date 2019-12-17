@@ -1,4 +1,14 @@
 =============================================
+NetworkManager-1.24
+Overview of changes since NetworkManager-1.22
+=============================================
+
+This is a snapshot of NetworkManager 1.24 development series.
+The API is subject to change and not guaranteed to be compatible
+with the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+=============================================
 NetworkManager-1.22
 Overview of changes since NetworkManager-1.20
 =============================================

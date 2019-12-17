@@ -31,6 +31,7 @@ int is_symlink(const char *path) {
 
         return !!S_ISLNK(info.st_mode);
 }
+#endif /* NM_IGNORED */
 
 int is_dir(const char* path, bool follow) {
         struct stat st;
@@ -48,6 +49,7 @@ int is_dir(const char* path, bool follow) {
         return !!S_ISDIR(st.st_mode);
 }
 
+#if 0 /* NM_IGNORED */
 int is_dir_fd(int fd) {
         struct stat st;
 

@@ -7,8 +7,8 @@ dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [22])
-m4_define([nm_micro_version], [0])
+m4_define([nm_minor_version], [23])
+m4_define([nm_micro_version], [1])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
@@ -89,6 +89,33 @@ AC_CHECK_DECLS([
 	memfd_create],
 	[], [], [[
 #include <sys/mman.h>
+]])
+
+AC_CHECK_DECLS([
+	pidfd_open],
+	[], [], [[
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+]])
+
+AC_CHECK_DECLS([
+	pidfd_send_signal],
+	[], [], [[
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+]])
+
+AC_CHECK_DECLS([
+	rt_sigqueueinfo],
+	[], [], [[
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 ]])
 
 AC_CHECK_HEADERS(sys/auxv.h)

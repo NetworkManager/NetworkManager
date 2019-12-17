@@ -523,7 +523,7 @@ _get_caller_info_ensure (NMDBusManager *self,
 	gint64 now_ns;
 	gsize num;
 
-#define CALLER_INFO_MAX_AGE   (NM_UTILS_NS_PER_SECOND * 1)
+#define CALLER_INFO_MAX_AGE   (NM_UTILS_NSEC_PER_SEC * 1)
 
 	/* Linear search the cache for the sender.
 	 *
@@ -564,7 +564,7 @@ _get_caller_info_ensure (NMDBusManager *self,
 		}
 	}
 
-	now_ns = nm_utils_get_monotonic_timestamp_ns ();
+	now_ns = nm_utils_get_monotonic_timestamp_nsec ();
 
 	if (   ensure_uid
 	    && (now_ns - caller_info->uid_checked_at) > CALLER_INFO_MAX_AGE) {

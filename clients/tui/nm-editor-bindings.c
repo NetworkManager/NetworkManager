@@ -595,6 +595,9 @@ get_security_type (NMEditorWirelessSecurityMethodBinding *binding)
 	if (!strcmp (key_mgmt, "sae"))
 		return "wpa3-personal";
 
+	if (!strcmp (key_mgmt, "owe"))
+		return "owe";
+
 	if (!strcmp (key_mgmt, "wpa-eap"))
 		return "wpa-enterprise";
 
@@ -702,6 +705,12 @@ wireless_security_target_changed (GObject    *object,
 	} else if (!strcmp (method, "wpa3-personal")) {
 		g_object_set (binding->s_wsec,
 		              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae",
+		              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, NULL,
+		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_UNKNOWN,
+		              NULL);
+	} else if (!strcmp (method, "owe")) {
+		g_object_set (binding->s_wsec,
+		              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "owe",
 		              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, NULL,
 		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_UNKNOWN,
 		              NULL);

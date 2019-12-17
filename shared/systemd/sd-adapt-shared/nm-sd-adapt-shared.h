@@ -122,6 +122,24 @@ static inline pid_t _nm_gettid(void) {
 #define HAVE_EXPLICIT_BZERO 0
 #endif
 
+#if defined(HAVE_DECL_PIDFD_OPEN) && HAVE_DECL_PIDFD_OPEN == 1
+#define HAVE_PIDFD_OPEN 1
+#else
+#define HAVE_PIDFD_OPEN 0
+#endif
+
+#if defined(HAVE_DECL_PIDFD_SEND_SIGNAL) && HAVE_DECL_PIDFD_SEND_SIGNAL == 1
+#define HAVE_PIDFD_SEND_SIGNAL 1
+#else
+#define HAVE_PIDFD_SEND_SIGNAL 0
+#endif
+
+#if defined(HAVE_DECL_RT_SIGQUEUEINFO) && HAVE_DECL_RT_SIGQUEUEINFO == 1
+#define HAVE_RT_SIGQUEUEINFO 1
+#else
+#define HAVE_RT_SIGQUEUEINFO 0
+#endif
+
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 
 /*****************************************************************************/

@@ -51,6 +51,7 @@ deps = [
   libnmc_base_dep,
   libnmc_dep,
   libnmt_newt_dep,
+  libnm_libnm_aux_dep,
 ]
 
 executable(

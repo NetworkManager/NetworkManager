@@ -548,7 +548,7 @@ _startup_complete_check (NMSettings *self,
 		goto ready;
 
 	if (!now_us)
-		now_us = nm_utils_get_monotonic_timestamp_us ();
+		now_us = nm_utils_get_monotonic_timestamp_usec ();
 
 	next_expiry = 0;
 
@@ -654,7 +654,7 @@ _startup_complete_notify_connection (NMSettings *self,
 		} else
 			scd = g_hash_table_lookup (priv->startup_complete_idx, &sett_conn);
 		if (!scd) {
-			now_us = nm_utils_get_monotonic_timestamp_us ();
+			now_us = nm_utils_get_monotonic_timestamp_usec ();
 			scd = g_slice_new (StartupCompleteData);
 			*scd = (StartupCompleteData) {
 				.sett_conn = g_object_ref (sett_conn),

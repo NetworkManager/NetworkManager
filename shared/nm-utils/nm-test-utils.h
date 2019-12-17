@@ -622,7 +622,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 
 #ifdef __NETWORKMANAGER_UTILS_H__
 	/* ensure that monotonic timestamp is called (because it initially logs a line) */
-	nm_utils_get_monotonic_timestamp_s ();
+	nm_utils_get_monotonic_timestamp_sec ();
 #endif
 
 #ifdef NM_UTILS_H
@@ -978,13 +978,13 @@ _nmtst_main_loop_run_timeout (gpointer user_data)
 }
 
 static inline gboolean
-nmtst_main_loop_run (GMainLoop *loop, guint timeout_ms)
+nmtst_main_loop_run (GMainLoop *loop, guint timeout_msec)
 {
 	nm_auto_unref_gsource GSource *source = NULL;
 	GMainLoop *loopx = loop;
 
-	if (timeout_ms > 0) {
-		source = g_timeout_source_new (timeout_ms);
+	if (timeout_msec > 0) {
+		source = g_timeout_source_new (timeout_msec);
 		g_source_set_callback (source, _nmtst_main_loop_run_timeout, &loopx, NULL);
 		g_source_attach (source, g_main_loop_get_context (loop));
 	}
@@ -1020,13 +1020,13 @@ _nmtst_main_context_iterate_until_timeout (gpointer user_data)
 	return G_SOURCE_CONTINUE;
 }
 
-#define nmtst_main_context_iterate_until(context, timeout_ms, condition) \
+#define nmtst_main_context_iterate_until(context, timeout_msec, condition) \
 	G_STMT_START { \
 		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
 		GMainContext *_context = (context); \
 		gboolean _had_timeout = FALSE; \
 		\
-		_source = g_timeout_source_new (timeout_ms); \
+		_source = g_timeout_source_new (timeout_msec); \
 		g_source_set_callback (_source, _nmtst_main_context_iterate_until_timeout, &_had_timeout, NULL); \
 		g_source_attach (_source, _context); \
 		\

@@ -7927,7 +7927,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					connection_changed = FALSE;
 				}
 
-				source = g_timeout_source_new (10 * NM_UTILS_MSEC_PER_SECOND);
+				source = g_timeout_source_new (10 * NM_UTILS_MSEC_PER_SEC);
 				g_source_set_callback (source, editor_save_timeout, &timeout, NULL);
 				g_source_attach (source, g_main_loop_get_context (loop));
 

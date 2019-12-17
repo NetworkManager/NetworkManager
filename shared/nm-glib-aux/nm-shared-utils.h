@@ -978,7 +978,7 @@ GSource *nm_g_idle_source_new (int priority,
                                gpointer user_data,
                                GDestroyNotify destroy_notify);
 
-GSource *nm_g_timeout_source_new (guint timeout_ms,
+GSource *nm_g_timeout_source_new (guint timeout_msec,
                                   int priority,
                                   GSourceFunc func,
                                   gpointer user_data,
@@ -1182,14 +1182,19 @@ _nm_utils_strv_equal (char **strv1, char **strv2)
 
 /*****************************************************************************/
 
-#define NM_UTILS_NS_PER_SECOND   ((gint64) 1000000000)
-#define NM_UTILS_NS_PER_MSEC     ((gint64) 1000000)
-#define NM_UTILS_MSEC_PER_SECOND ((gint64) 1000)
-#define NM_UTILS_NS_TO_MSEC_CEIL(nsec)      (((nsec) + (NM_UTILS_NS_PER_MSEC - 1)) / NM_UTILS_NS_PER_MSEC)
+#define NM_UTILS_NSEC_PER_SEC  ((gint64) 1000000000)
+#define NM_UTILS_NSEC_PER_MSEC ((gint64) 1000000)
+#define NM_UTILS_MSEC_PER_SEC  ((gint64) 1000)
+
+static inline gint64
+NM_UTILS_NSEC_TO_MSEC_CEIL (gint64 nsec)
+{
+	return (nsec + (NM_UTILS_NSEC_PER_MSEC - 1)) / NM_UTILS_NSEC_PER_MSEC;
+}
 
 /*****************************************************************************/
 
-int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
+int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_nsec);
 ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
 int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
 

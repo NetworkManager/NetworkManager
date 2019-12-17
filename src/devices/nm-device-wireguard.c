@@ -51,7 +51,7 @@ G_STATIC_ASSERT (NM_WIREGUARD_SYMMETRIC_KEY_LEN == NMP_WIREGUARD_SYMMETRIC_KEY_L
 
 /*****************************************************************************/
 
-#define LINK_CONFIG_RATE_LIMIT_NSEC (50 * NM_UTILS_NS_PER_MSEC)
+#define LINK_CONFIG_RATE_LIMIT_NSEC (50 * NM_UTILS_NSEC_PER_MSEC)
 
 /* a special @next_try_at_nsec timestamp indicating that we should try again as soon as possible. */
 #define NEXT_TRY_AT_NSEC_ASAP ((gint64) G_MAXINT64)
@@ -80,7 +80,7 @@ typedef struct {
 
 	NMSockAddrUnion sockaddr;
 
-	/* the timestamp (in nm_utils_get_monotonic_timestamp_ns() scale) when we want
+	/* the timestamp (in nm_utils_get_monotonic_timestamp_nsec() scale) when we want
 	 * to retry resolving the endpoint (again).
 	 *
 	 * It may be set to %NEXT_TRY_AT_NSEC_ASAP to indicate to re-resolve as soon as possible.
@@ -555,7 +555,7 @@ _peers_resolve_retry_timeout (gpointer user_data)
 
 	_LOGT (LOGD_DEVICE, "wireguard-peers: rechecking peer endpoints...");
 
-	now = nm_utils_get_monotonic_timestamp_ns ();
+	now = nm_utils_get_monotonic_timestamp_nsec ();
 	next = G_MAXINT64;
 	c_list_for_each_entry (peer_data, &priv->lst_peers_head, lst_peers) {
 		if (peer_data->ep_resolv.next_try_at_nsec <= 0)
@@ -606,11 +606,11 @@ _peers_resolve_retry_reschedule (NMDeviceWireGuard *self,
 		return;
 	}
 
-	now = nm_utils_get_monotonic_timestamp_ns ();
+	now = nm_utils_get_monotonic_timestamp_nsec ();
 
 	/* schedule at most one day ahead. No problem if we expire earlier
 	 * than expected. Also, rate-limit to 500 msec. */
-	interval_ms = NM_CLAMP ((new_next_try_at_nsec - now) / NM_UTILS_NS_PER_MSEC,
+	interval_ms = NM_CLAMP ((new_next_try_at_nsec - now) / NM_UTILS_NSEC_PER_MSEC,
 	                        (gint64) 500,
 	                        (gint64) (24*60*60*1000));
 
@@ -636,8 +636,8 @@ _peers_resolve_retry_reschedule_for_peer (NMDeviceWireGuard *self,
 		return;
 	}
 
-	peer_data->ep_resolv.next_try_at_nsec =   nm_utils_get_monotonic_timestamp_ns ()
-	                                        + (retry_in_msec * NM_UTILS_NS_PER_MSEC);
+	peer_data->ep_resolv.next_try_at_nsec =   nm_utils_get_monotonic_timestamp_nsec ()
+	                                        + (retry_in_msec * NM_UTILS_NSEC_PER_MSEC);
 	_peers_resolve_retry_reschedule (self, peer_data->ep_resolv.next_try_at_nsec);
 }
 
@@ -1370,7 +1370,7 @@ link_config (NMDeviceWireGuard *self,
 	s_wg = NM_SETTING_WIREGUARD (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIREGUARD));
 	g_return_val_if_fail (s_wg, NM_ACT_STAGE_RETURN_FAILURE);
 
-	priv->link_config_last_at = nm_utils_get_monotonic_timestamp_ns ();
+	priv->link_config_last_at = nm_utils_get_monotonic_timestamp_nsec ();
 
 	_LOGT (LOGD_DEVICE, "wireguard link config (%s, %s)...",
 	       reason, _link_config_mode_to_string (config_mode));
@@ -1475,12 +1475,12 @@ link_config_delayed (NMDeviceWireGuard *self,
 	priv->link_config_delayed_id = 0;
 
 	if (priv->link_config_last_at != 0) {
-		now = nm_utils_get_monotonic_timestamp_ns ();
+		now = nm_utils_get_monotonic_timestamp_nsec ();
 		if (now < priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC) {
 			/* we ratelimit calls to link_config(), because we call this whenever a resolver
 			 * completes. */
 			_LOGT (LOGD_DEVICE, "wireguard link config (%s) (postponed)", reason);
-			priv->link_config_delayed_id = g_timeout_add (NM_MAX ((priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC - now) / NM_UTILS_NS_PER_MSEC,
+			priv->link_config_delayed_id = g_timeout_add (NM_MAX ((priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC - now) / NM_UTILS_NSEC_PER_MSEC,
 			                                                      (gint64) 1),
 			                                              link_config_delayed_ratelimit_cb,
 			                                              self);

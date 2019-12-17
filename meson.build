@@ -4,7 +4,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "shared/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.22.0',
+  version: '1.23.1',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
@@ -110,8 +110,18 @@ use_sys_random = cc.has_function('getrandom', prefix: '#include <sys/random.h>')
 config_h.set10('USE_SYS_RANDOM_H', use_sys_random)
 config_h.set10('HAVE_GETRANDOM', use_sys_random or cc.has_function('getrandom', prefix: '#include <linux/random.h>'))
 
-# functions
-# FIXME secure_getenv check is not useful?
+config_h.set10('HAVE_PIDFD_OPEN', cc.has_function('pidfd_open', prefix: '''#include <stdlib.h>
+                                                                           #include <unistd.h>
+                                                                           #include <signal.h>
+                                                                           #include <sys/wait.h>'''))
+config_h.set10('HAVE_PIDFD_SEND_SIGNAL', cc.has_function('pidfd_send_signal', prefix: '''#include <stdlib.h>
+                                                                                         #include <unistd.h>
+                                                                                         #include <signal.h>
+                                                                                         #include <sys/wait.h>'''))
+config_h.set10('HAVE_RT_SIGQUEUEINFO', cc.has_function('rt_sigqueueinfo', prefix: '''#include <stdlib.h>
+                                                                                     #include <unistd.h>
+                                                                                     #include <signal.h>
+                                                                                     #include <sys/wait.h>'''))
 config_h.set('HAVE_SECURE_GETENV', cc.has_function('secure_getenv'))
 config_h.set('HAVE___SECURE_GETENV', cc.has_function('__secure_getenv'))
 config_h.set10('HAVE_DECL_REALLOCARRAY', cc.has_function('reallocarray', prefix: '#include <malloc.h>'))

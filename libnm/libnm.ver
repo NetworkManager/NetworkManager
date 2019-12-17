@@ -1652,3 +1652,10 @@ global:
 	nm_setting_gsm_get_auto_config;
 	nm_setting_ip_config_get_dhcp_hostname_flags;
 } libnm_1_20_0;
+
+libnm_1_24_0 {
+global:
+	nm_client_get_instance_flags;
+	nm_client_get_permissions_state;
+	nm_client_instance_flags_get_type;
+} libnm_1_22_0;

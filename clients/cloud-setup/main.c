@@ -2,8 +2,9 @@
 
 #include "nm-default.h"
 
-#include "nm-cloud-setup-utils.h"
+#include "nm-libnm-aux/nm-libnm-aux.h"
 
+#include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"
 #include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
@@ -118,58 +119,6 @@ _provider_detect (GCancellable *sigterm_cancellable)
 out:
 	nm_clear_g_signal_handler (sigterm_cancellable, &cancellable_signal_id);
 	return dd.provider_result;
-}
-
-/*****************************************************************************/
-
-typedef struct {
-	GMainLoop *main_loop;
-	NMClient *nmc;
-} ClientCreateData;
-
-static void
-_nmc_create_cb (GObject *source_object,
-                GAsyncResult *result,
-                gpointer user_data)
-{
-	gs_unref_object NMClient *nmc = NULL;
-	ClientCreateData *data = user_data;
-	gs_free_error GError *error = NULL;
-
-	nmc = nm_client_new_finish (result, &error);
-	if (!nmc) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
-			_LOGI ("failure to talk to NetworkManager: %s", error->message);
-		goto out;
-	}
-
-	if (!nm_client_get_nm_running (nmc)) {
-		_LOGI ("NetworkManager is not running");
-		goto out;
-	}
-
-	_LOGD ("NetworkManager is running");
-	nmcs_wait_for_objects_register (nmc);
-	nmcs_wait_for_objects_register (nm_client_get_context_busy_watcher (nmc));
-
-	data->nmc = g_steal_pointer (&nmc);
-out:
-	g_main_loop_quit (data->main_loop);
-}
-
-static NMClient *
-_nmc_create (GCancellable *sigterm_cancellable)
-{
-	nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new (NULL, FALSE);
-	ClientCreateData data = {
-		.main_loop = main_loop,
-	};
-
-	nm_client_new_async (sigterm_cancellable, _nmc_create_cb, &data);
-
-	g_main_loop_run (main_loop);
-
-	return data.nmc;
 }
 
 /*****************************************************************************/
@@ -593,6 +542,7 @@ main (int argc, const char *const*argv)
 	gs_unref_object NMCSProvider *provider = NULL;
 	gs_unref_object NMClient *nmc = NULL;
 	gs_unref_hashtable GHashTable *config_dict = NULL;
+	gs_free_error GError *error = NULL;
 
 	_nm_logging_enabled_init (g_getenv (NMCS_ENV_VARIABLE ("NM_CLOUD_SETUP_LOG")));
 
@@ -616,9 +566,25 @@ main (int argc, const char *const*argv)
 	if (!provider)
 		goto done;
 
-	nmc = _nmc_create (sigterm_cancellable);
-	if (!nmc)
+	nmc_client_new_waitsync (sigterm_cancellable,
+	                         &nmc,
+	                         &error,
+	                         NM_CLIENT_INSTANCE_FLAGS, (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
+	                         NULL);
+
+	nmcs_wait_for_objects_register (nmc);
+	nmcs_wait_for_objects_register (nm_client_get_context_busy_watcher (nmc));
+
+	if (error) {
+		if (!nm_utils_error_is_cancelled (error, FALSE))
+			_LOGI ("failure to talk to NetworkManager: %s", error->message);
 		goto done;
+	}
+
+	if (!nm_client_get_nm_running (nmc)) {
+		_LOGI ("NetworkManager is not running");
+		goto done;
+	}
 
 	config_dict = _get_config (sigterm_cancellable, provider, nmc);
 	if (!config_dict)

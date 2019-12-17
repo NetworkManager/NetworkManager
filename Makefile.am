@@ -525,15 +525,52 @@ $(shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/nm-libnm-aux/libnm-libnm-aux.la
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""libnmc"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
+	$(NULL)
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_SOURCES = \
+	shared/nm-libnm-aux/nm-libnm-aux.c \
+	shared/nm-libnm-aux/nm-libnm-aux.h \
+	$(NULL)
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+shared_nm_libnm_aux_libnm_libnm_aux_la_LIBADD = \
+	$(GLIB_LIBS) \
+	libnm/libnm.la \
+	$(NULL)
+
+$(shared_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(shared_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
+
+###############################################################################
+
 EXTRA_DIST += \
-	shared/nm-utils/tests/meson.build \
+	shared/nm-glib-aux/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
 
-check_programs += shared/nm-utils/tests/test-shared-general
+check_programs += shared/nm-glib-aux/tests/test-shared-general
 
-shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
+shared_nm_glib_aux_tests_test_shared_general_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-DNETWORKMANAGER_COMPILATION_TEST \
@@ -543,12 +580,12 @@ shared_nm_utils_tests_test_shared_general_CPPFLAGS = \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_utils_tests_test_shared_general_LDFLAGS = \
+shared_nm_glib_aux_tests_test_shared_general_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-shared_nm_utils_tests_test_shared_general_LDADD = \
+shared_nm_glib_aux_tests_test_shared_general_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/systemd/libnm-systemd-logging-stub.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -1751,10 +1788,10 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/locale-util.h \
 	shared/systemd/sd-adapt-shared/memfd-util.h \
 	shared/systemd/sd-adapt-shared/missing_fs.h \
+	shared/systemd/sd-adapt-shared/missing_keyctl.h \
 	shared/systemd/sd-adapt-shared/missing_magic.h \
 	shared/systemd/sd-adapt-shared/missing_network.h \
 	shared/systemd/sd-adapt-shared/missing_sched.h \
-	shared/systemd/sd-adapt-shared/missing_syscall.h \
 	shared/systemd/sd-adapt-shared/missing_timerfd.h \
 	shared/systemd/sd-adapt-shared/mkdir.h \
 	shared/systemd/sd-adapt-shared/namespace-util.h \
@@ -1812,6 +1849,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/missing_random.h \
 	shared/systemd/src/basic/missing_socket.h \
 	shared/systemd/src/basic/missing_stat.h \
+	shared/systemd/src/basic/missing_syscall.h \
 	shared/systemd/src/basic/missing_type.h \
 	shared/systemd/src/basic/parse-util.c \
 	shared/systemd/src/basic/parse-util.h \
@@ -1824,6 +1862,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/random-util.c \
 	shared/systemd/src/basic/random-util.h \
 	shared/systemd/src/basic/set.h \
+	shared/systemd/src/basic/signal-util.c \
 	shared/systemd/src/basic/signal-util.h \
 	shared/systemd/src/basic/siphash24.h \
 	shared/systemd/src/basic/socket-util.c \
@@ -3073,6 +3112,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-hex \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-quoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-owe \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-sae \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-104-ascii \
@@ -4178,6 +4218,7 @@ clients_nm_online_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 clients_nm_online_LDADD = \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
@@ -4400,6 +4441,7 @@ clients_cli_nmcli_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
@@ -4602,6 +4644,7 @@ clients_tui_nmtui_LDADD = \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
@@ -4668,6 +4711,7 @@ clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
 	$(NULL)
 
 clients_cloud_setup_nm_cloud_setup_LDADD = \
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \

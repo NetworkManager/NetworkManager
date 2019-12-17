@@ -540,6 +540,7 @@ bool path_equal(const char *a, const char *b) {
 bool path_equal_or_files_same(const char *a, const char *b, int flags) {
         return path_equal(a, b) || files_same(a, b, flags) > 0;
 }
+#endif /* NM_IGNORED */
 
 char* path_join_internal(const char *first, ...) {
         char *joined, *q;
@@ -599,6 +600,7 @@ char* path_join_internal(const char *first, ...) {
         return joined;
 }
 
+#if 0 /* NM_IGNORED */
 int find_binary(const char *name, char **ret) {
         int last_error, r;
         const char *p;
