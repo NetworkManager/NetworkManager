@@ -4255,6 +4255,8 @@ clients_common_libnmc_base_la_SOURCES = \
 	clients/common/nm-vpn-helpers.h \
 	clients/common/nm-client-utils.c \
 	clients/common/nm-client-utils.h \
+	clients/common/nm-polkit-listener.c \
+	clients/common/nm-polkit-listener.h \
 	$(NULL)
 
 EXTRA_DIST += \
@@ -4445,14 +4447,6 @@ clients_cli_nmcli_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
-
-if WITH_POLKIT_AGENT
-clients_cli_nmcli_CPPFLAGS += $(POLKIT_CFLAGS)
-clients_cli_nmcli_SOURCES += \
-	clients/common/nm-polkit-listener.c \
-	clients/common/nm-polkit-listener.h
-clients_cli_nmcli_LDADD += $(POLKIT_LIBS)
-endif
 
 clients_cli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \

@@ -14,16 +14,12 @@
 #include "nm-polkit-listener.h"
 #include "common.h"
 
-#if WITH_POLKIT_AGENT
 static char *
-polkit_request (NMPolkitListener *listener,
-                const char *request,
-                const char *action_id,
-                const char *message,
-                const char *icon_name,
-                const char *user,
-                gboolean echo_on,
-                gpointer user_data)
+polkit_read_passwd (gpointer instance,
+                    const char *action_id,
+                    const char *message,
+                    const char *user,
+                    gpointer user_data)
 {
 	NmCli *nmc = user_data;
 
@@ -32,87 +28,68 @@ polkit_request (NMPolkitListener *listener,
 
 	/* Ask user for polkit authorization password */
 	if (user) {
-		gs_free char *tmp = NULL;
-		char *p;
-
-		/* chop of ": " if present */
-		tmp = g_strdup (request);
-		p = strrchr (tmp, ':');
-		if (p && nm_streq (p, ": "))
-			*p = '\0';
-		return nmc_readline_echo (&nmc->nmc_config, echo_on, "%s (%s): ", tmp, user);
+		return nmc_readline_echo (&nmc->nmc_config, FALSE, "password (%s): ", user);
 	}
-
-	return nmc_readline_echo (&nmc->nmc_config, echo_on, "%s", request);
+	return nmc_readline_echo (&nmc->nmc_config, FALSE, "password: ");
 }
 
 static void
-polkit_show_info (NMPolkitListener *listener,
-                  const char *text,
-                  gpointer user_data)
+polkit_error (gpointer instance,
+              const char *error,
+              gpointer user_data)
 {
-	g_print (_("Authentication message: %s\n"), text);
+	g_printerr (_("Error: polkit agent failed: %s\n"), error);
 }
-
-static void
-polkit_show_error (NMPolkitListener *listener,
-                   const char *text,
-                   gpointer user_data)
-{
-	g_print (_("Authentication error: %s\n"), text);
-}
-
-static void
-polkit_completed (NMPolkitListener *listener,
-                  gboolean gained_authorization,
-                  gpointer user_data)
-{
-	/* We don't print anything here. The outcome will be evident from
-	 * the operation result anyway. */
-}
-#endif
 
 gboolean
 nmc_polkit_agent_init (NmCli* nmc, gboolean for_session, GError **error)
 {
-#if WITH_POLKIT_AGENT
-	static const NMPolkitListenVtable vtable = {
-		.on_request = polkit_request,
-		.on_show_info = polkit_show_info,
-		.on_show_error = polkit_show_error,
-		.on_completed = polkit_completed,
-	};
 	NMPolkitListener *listener;
+	GDBusConnection *dbus_connection = NULL;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	listener = nm_polkit_listener_new (for_session, error);
-	if (!listener)
-		return FALSE;
+	if (nmc->client && nm_client_get_dbus_connection (nmc->client)) {
+		dbus_connection = nm_client_get_dbus_connection (nmc->client);
+		listener = nm_polkit_listener_new (dbus_connection, for_session);
+	} else {
+		dbus_connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM,
+		                                  NULL,
+		                                  error);
 
-	nm_polkit_listener_set_vtable (listener, &vtable, nmc);
+		if (!dbus_connection) {
+			return FALSE;
+		}
+
+		listener = nm_polkit_listener_new (dbus_connection, for_session);
+		g_object_unref (dbus_connection);
+	}
+
+	g_signal_connect (listener,
+	                  NM_POLKIT_LISTENER_SIGNAL_REQUEST,
+	                  G_CALLBACK (polkit_read_passwd),
+	                  nmc);
+	g_signal_connect (listener,
+	                  NM_POLKIT_LISTENER_SIGNAL_ERROR,
+	                  G_CALLBACK (polkit_error),
+	                  NULL);
 
 	nmc->pk_listener = listener;
-#endif
 	return TRUE;
 }
 
 void
 nmc_polkit_agent_fini (NmCli* nmc)
 {
-#if WITH_POLKIT_AGENT
 	if (nmc->pk_listener) {
-		nm_polkit_listener_set_vtable (nmc->pk_listener, NULL, NULL);
 		g_clear_object (&nmc->pk_listener);
 	}
-#endif
 }
 
 gboolean
 nmc_start_polkit_agent_start_try (NmCli *nmc)
 {
-#if WITH_POLKIT_AGENT
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	/* We don't register polkit agent at all when running non-interactively */
 	if (!nmc->ask)
@@ -121,9 +98,7 @@ nmc_start_polkit_agent_start_try (NmCli *nmc)
 	if (!nmc_polkit_agent_init (nmc, FALSE, &error)) {
 		g_printerr (_("Warning: polkit agent initialization failed: %s\n"),
 		            error->message);
-		g_error_free (error);
 		return FALSE;
 	}
-#endif
 	return TRUE;
 }

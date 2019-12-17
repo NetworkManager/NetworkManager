@@ -586,7 +586,6 @@ This tool is still experimental.
 	-Dselinux=true \
 	-Dpolkit=true  \
 	-Dconfig_auth_polkit_default=true \
-	-Dpolkit_agent=true \
 	-Dmodify_system=true \
 	-Dconcheck=true \
 %if 0%{?fedora}
@@ -717,7 +716,6 @@ intltoolize --automake --copy --force
 %endif
 	--with-selinux=yes \
 	--enable-polkit=yes \
-	--enable-polkit-agent \
 	--enable-modify-system=yes \
 	--enable-concheck \
 %if 0%{?fedora}

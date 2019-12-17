@@ -1,7 +1,5 @@
 common_inc = include_directories('.')
 
-nm_polkit_listener = files('nm-polkit-listener.c')
-
 common_deps = [
   libnm_dep,
   libnm_nm_default_dep,
@@ -13,6 +11,7 @@ sources = files(
   'nm-client-utils.c',
   'nm-secret-agent-simple.c',
   'nm-vpn-helpers.c',
+  'nm-polkit-listener.c',
 )
 
 libnmc_base = static_library(

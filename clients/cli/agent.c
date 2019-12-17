@@ -16,6 +16,7 @@
 #include "utils.h"
 #include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
+#include "nm-polkit-listener.h"
 
 static void
 usage (void)
@@ -149,27 +150,50 @@ do_agent_secret (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static void
+polkit_registered (gpointer instance,
+                   gpointer user_data)
+{
+	g_print (_("nmcli successfully registered as a polkit agent.\n"));
+}
+
+static void
+polkit_error (gpointer instance,
+              const char *error,
+              gpointer user_data)
+{
+	g_main_loop_quit (loop);
+}
+
 static NMCResultCode
 do_agent_polkit (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
-	/* Initialize polkit agent */
 	if (!nmc_polkit_agent_init (nmc, TRUE, &error)) {
 		g_dbus_error_strip_remote_error (error);
-		g_string_printf (nmc->return_text, _("Error: polkit agent initialization failed: %s"),
+		g_string_printf (nmc->return_text,
+		                 _("Error: polkit agent initialization failed: %s"),
 		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_error_free (error);
 	} else {
 		/* We keep running */
 		nmc->should_wait++;
+		g_signal_connect (nmc->pk_listener,
+		                  NM_POLKIT_LISTENER_SIGNAL_ERROR,
+		                  G_CALLBACK (polkit_error),
+		                  NULL);
+		g_signal_connect (nmc->pk_listener,
+		                  NM_POLKIT_LISTENER_SIGNAL_REGISTERED,
+		                  G_CALLBACK (polkit_registered),
+		                  NULL);
 
-		g_print (_("nmcli successfully registered as a polkit agent.\n"));
+		/* keep running */
+		nmc->should_wait++;
 	}
 
 	return nmc->return_value;
