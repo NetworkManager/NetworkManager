@@ -175,6 +175,14 @@ _nml_coerce_property_strv_not_null (char **strv)
 
 /*****************************************************************************/
 
+GQuark nm_context_busy_watcher_quark (void);
+
+void nm_context_busy_watcher_integrate_source (GMainContext *outer_context,
+                                               GMainContext *inner_context,
+                                               GObject *context_busy_watcher);
+
+/*****************************************************************************/
+
 typedef struct _NMLDBusObject     NMLDBusObject;
 typedef struct _NMLDBusObjWatcher NMLDBusObjWatcher;
 typedef struct _NMLDBusMetaIface  NMLDBusMetaIface;
