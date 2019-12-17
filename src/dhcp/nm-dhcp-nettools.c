@@ -775,23 +775,12 @@ lease_parse_domainname (NDhcp4ClientLease *lease,
 	                           str->str);
 }
 
-static void
-lease_parse_search_domains (NDhcp4ClientLease *lease,
-                            NMIP4Config *ip4_config,
-                            GHashTable *options)
+char **
+nm_dhcp_parse_search_list (guint8 *data, size_t n_data)
 {
-	nm_auto_free_gstring GString *str = NULL;
-	uint8_t *data, *cache;
-	size_t n_data, n_cache = 0;
-	int r;
-
-	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST, &data, &n_data);
-	if (r)
-		return;
-
-	cache = data;
-
-	nm_gstring_prepare (&str);
+	GPtrArray *array = NULL;
+	guint8 *cache = data;
+	size_t n_cache = 0;
 
 	for (;;) {
 		nm_auto_free_gstring GString *domain = NULL;
@@ -801,8 +790,42 @@ lease_parse_search_domains (NDhcp4ClientLease *lease,
 		if (!lease_option_print_domain_name (domain, cache, &n_cache, &data, &n_data))
 			break;
 
-		g_string_append (nm_gstring_add_space_delimiter (str), domain->str);
-		nm_ip4_config_add_search (ip4_config, domain->str);
+		if (!array)
+			array = g_ptr_array_new ();
+
+		g_ptr_array_add (array, g_string_free (domain, FALSE));
+		domain = NULL;
+	}
+
+	if (array) {
+		g_ptr_array_add (array, NULL);
+		return (char **) g_ptr_array_free (array, FALSE);
+	} else
+		return NULL;
+}
+
+static void
+lease_parse_search_domains (NDhcp4ClientLease *lease,
+                            NMIP4Config *ip4_config,
+                            GHashTable *options)
+{
+	nm_auto_free_gstring GString *str = NULL;
+	uint8_t *data;
+	size_t n_data;
+	gs_strfreev char **domains = NULL;
+	guint i;
+	int r;
+
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST, &data, &n_data);
+	if (r)
+		return;
+
+	domains = nm_dhcp_parse_search_list (data, n_data);
+	nm_gstring_prepare (&str);
+
+	for (i = 0; domains && domains[i]; i++) {
+		g_string_append (nm_gstring_add_space_delimiter (str), domains[i]);
+		nm_ip4_config_add_search (ip4_config, domains[i]);
 	}
 	nm_dhcp_option_add_option (options,
 	                           _nm_dhcp_option_dhcp4_options,
