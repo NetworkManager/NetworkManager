@@ -3,10 +3,7 @@ NetworkManager-1.22
 Overview of changes since NetworkManager-1.20
 =============================================
 
-This is a snapshot of NetworkManager 1.22 development series.
-The API is subject to change and not guaranteed to be compatible
-with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+This is a new stable release of NetworkManager.  Notable changes include:
 
 * Drop support for BlueZ 4. BlueZ 5 was released in 2012 and should
   nowadays be available everywhere.
@@ -18,6 +15,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   optional.
 * Use the Network Cost Wi-Fi information element to determine metered
   device state.
+* Support main.auth-polkit=root-only setting to disable PolicyKit use and
+  restrict authorization to root user.
 * core: declare "startup complete" when device reaches "connected"
   state, even if IP addressing methods did not yet fully complete.
   This changes behavior for unblocking "NetworkManager-wait-online.service",
