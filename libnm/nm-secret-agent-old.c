@@ -550,7 +550,6 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 
 	while (TRUE) {
 		gs_free_error GError *local = NULL;
-		gs_free char *dbus_error = NULL;
 
 		nmdbus_agent_manager_call_register_with_capabilities_sync (priv->manager_proxy,
 		                                                           priv->identifier,
