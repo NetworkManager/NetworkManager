@@ -582,6 +582,11 @@ make_connection_setting (const char *file,
 			g_object_set (s_con, NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, (int) vint64, NULL);
 	}
 
+	nm_clear_g_free (&value);
+	v = svGetValue (ifcfg, "MUD_URL", &value);
+	if (v)
+		g_object_set (s_con, NM_SETTING_CONNECTION_MUD_URL, v, NULL);
+
 	i_val = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	if (!svGetValueEnum (ifcfg, "MDNS",
 	                     nm_setting_connection_mdns_get_type (),
@@ -1532,29 +1537,42 @@ make_user_setting (shvarFile *ifcfg)
 	       : NULL;
 }
 
-static NMSetting *
-make_match_setting (shvarFile *ifcfg)
-{
-	NMSettingMatch *s_match = NULL;
-	gs_free const char **strv = NULL;
-	gs_free char *value = NULL;
-	const char *v;
-	gsize i;
 
-	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value);
-	if (!v)
-		return NULL;
+static void
+make_match_setting_prop (const char *v,
+                         NMSettingMatch **s_match,
+                         void (*add_fcn) (NMSettingMatch *s_match, const char *value))
+{
+	gs_free const char **strv = NULL;
+	gsize i;
 
 	strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
 	if (strv) {
 		for (i = 0; strv[i]; i++) {
-			if (!s_match)
-				s_match = (NMSettingMatch *) nm_setting_match_new ();
-			nm_setting_match_add_interface_name (s_match, strv[i]);
+			if (!(*s_match))
+				*s_match = NM_SETTING_MATCH (nm_setting_match_new ());
+			add_fcn (*s_match, strv[i]);
 		}
 	}
+}
 
-	return (NMSetting *) s_match;
+static NMSetting *
+make_match_setting (shvarFile *ifcfg)
+{
+	NMSettingMatch *s_match = NULL;
+	gs_free char *value_ifn = NULL;
+	gs_free char *value_kcl = NULL;
+	gs_free char *value_d = NULL;
+	const char *v;
+
+	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value_ifn);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_interface_name);
+	v = svGetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", &value_kcl);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_kernel_command_line);
+	v = svGetValueStr (ifcfg, "MATCH_DRIVER", &value_d);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_driver);
+
+	return NM_SETTING (s_match);
 }
 
 static NMSetting *
@@ -5152,24 +5170,33 @@ handle_bridge_option (NMSetting *setting,
 		gboolean only_with_stp;
 		gboolean extended_bool;
 	} m/*etadata*/[] = {
-		{ "DELAY",                      NM_SETTING_BRIDGE_FORWARD_DELAY,              BRIDGE_OPT_TYPE_MAIN,        .only_with_stp = TRUE },
-		{ "priority",                   NM_SETTING_BRIDGE_PRIORITY,                   BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
-		{ "hello_time",                 NM_SETTING_BRIDGE_HELLO_TIME,                 BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
-		{ "max_age",                    NM_SETTING_BRIDGE_MAX_AGE,                    BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
-		{ "ageing_time",                NM_SETTING_BRIDGE_AGEING_TIME,                BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_querier",          NM_SETTING_BRIDGE_MULTICAST_QUERIER,          BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_query_use_ifaddr", NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR, BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_snooping",         NM_SETTING_BRIDGE_MULTICAST_SNOOPING,         BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_router",           NM_SETTING_BRIDGE_MULTICAST_ROUTER,           BRIDGE_OPT_TYPE_OPTION },
-		{ "vlan_filtering",             NM_SETTING_BRIDGE_VLAN_FILTERING,             BRIDGE_OPT_TYPE_OPTION },
-		{ "default_pvid",               NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,          BRIDGE_OPT_TYPE_OPTION },
-		{ "group_address",              NM_SETTING_BRIDGE_GROUP_ADDRESS,              BRIDGE_OPT_TYPE_OPTION },
-		{ "group_fwd_mask",             NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,         BRIDGE_OPT_TYPE_OPTION },
-		{ "vlan_protocol",              NM_SETTING_BRIDGE_VLAN_PROTOCOL,              BRIDGE_OPT_TYPE_OPTION },
-		{ "vlan_stats_enabled",         NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,         BRIDGE_OPT_TYPE_OPTION },
-		{ "priority",                   NM_SETTING_BRIDGE_PORT_PRIORITY,              BRIDGE_OPT_TYPE_PORT_OPTION },
-		{ "path_cost",                  NM_SETTING_BRIDGE_PORT_PATH_COST,             BRIDGE_OPT_TYPE_PORT_OPTION },
-		{ "hairpin_mode",               NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,          BRIDGE_OPT_TYPE_PORT_OPTION, .extended_bool = TRUE, },
+		{ "DELAY",                             NM_SETTING_BRIDGE_FORWARD_DELAY,                     BRIDGE_OPT_TYPE_MAIN,        .only_with_stp = TRUE },
+		{ "priority",                          NM_SETTING_BRIDGE_PRIORITY,                          BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
+		{ "hello_time",                        NM_SETTING_BRIDGE_HELLO_TIME,                        BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
+		{ "max_age",                           NM_SETTING_BRIDGE_MAX_AGE,                           BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
+		{ "ageing_time",                       NM_SETTING_BRIDGE_AGEING_TIME,                       BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_last_member_count",       NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,       BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_last_member_interval",    NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL,    BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_membership_interval",     NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL,     BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_hash_max",                NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,                BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_querier",                 NM_SETTING_BRIDGE_MULTICAST_QUERIER,                 BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_querier_interval",        NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL,        BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_query_interval",          NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL,          BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_query_response_interval", NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL, BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_query_use_ifaddr",        NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,        BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_snooping",                NM_SETTING_BRIDGE_MULTICAST_SNOOPING,                BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_router",                  NM_SETTING_BRIDGE_MULTICAST_ROUTER,                  BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_startup_query_count",     NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT,     BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_startup_query_interval",  NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL,  BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_filtering",                    NM_SETTING_BRIDGE_VLAN_FILTERING,                    BRIDGE_OPT_TYPE_OPTION },
+		{ "default_pvid",                      NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,                 BRIDGE_OPT_TYPE_OPTION },
+		{ "group_address",                     NM_SETTING_BRIDGE_GROUP_ADDRESS,                     BRIDGE_OPT_TYPE_OPTION },
+		{ "group_fwd_mask",                    NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,                BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_protocol",                     NM_SETTING_BRIDGE_VLAN_PROTOCOL,                     BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_stats_enabled",                NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,                BRIDGE_OPT_TYPE_OPTION },
+		{ "priority",                          NM_SETTING_BRIDGE_PORT_PRIORITY,                     BRIDGE_OPT_TYPE_PORT_OPTION },
+		{ "path_cost",                         NM_SETTING_BRIDGE_PORT_PATH_COST,                    BRIDGE_OPT_TYPE_PORT_OPTION },
+		{ "hairpin_mode",                      NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,                 BRIDGE_OPT_TYPE_PORT_OPTION, .extended_bool = TRUE, },
 	};
 	const char *error_message = NULL;
 	int i;
@@ -5220,6 +5247,16 @@ handle_bridge_option (NMSetting *setting,
 			if (!nm_g_object_set_property_uint (G_OBJECT (setting), m[i].property_name, v, NULL)) {
 				error_message = "number is out of range";
 				goto warn;
+			}
+			return;
+		case G_TYPE_UINT64: {
+				guint64 vu64;
+
+				vu64 = _nm_utils_ascii_str_to_uint64 (value, 10, 0, G_MAXUINT64, 0);
+				if (!nm_g_object_set_property_uint64 (G_OBJECT (setting), m[i].property_name, vu64, NULL)) {
+					error_message = "number is out of range";
+					goto warn;
+				}
 			}
 			return;
 		case G_TYPE_STRING:

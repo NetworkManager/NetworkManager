@@ -257,6 +257,7 @@ struct _NMMetaPropertyTypData {
 		} gobject_int;
 		struct {
 			const char *(*validate_fcn) (const char *value, char **out_to_free, GError **error);
+			bool handle_emptyunset:1;
 		} gobject_string;
 		struct {
 			bool legacy_format:1;

@@ -1,4 +1,21 @@
 =============================================
+NetworkManager-1.26
+Overview of changes since NetworkManager-1.24
+=============================================
+
+This is a snapshot of NetworkManager 1.26 development series.
+The API is subject to change and not guaranteed to be compatible
+with the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* Add MUD URL property for connection profiles (RFC 8520) and set it
+  for DHCP and DHCPv6 requests.
+* IPv6 SLAAC: improved the reaction of IPv6 SLAAC to renumbering events:
+  - honor PIO Valid Lifetimes < 2 hours.
+  - cap the Preferred Lifetime of PIOs to the "Router Lifetime" value
+    and the Valid Lifetime of PIOs to 48 * Router Lifetime.
+
+=============================================
 NetworkManager-1.24
 Overview of changes since NetworkManager-1.22
 =============================================

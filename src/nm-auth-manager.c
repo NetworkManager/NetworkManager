@@ -37,11 +37,14 @@ static guint signals[LAST_SIGNAL] = {0};
 typedef struct {
 	CList calls_lst_head;
 	GDBusConnection *dbus_connection;
-	GCancellable *shutdown_cancellable;
+	GCancellable *main_cancellable;
+	char *name_owner;
 	guint64 call_numid_counter;
-	guint changed_signal_id;
+	guint changed_id;
+	guint name_owner_changed_id;
 	bool disposing:1;
 	bool shutting_down:1;
+	bool got_name_owner:1;
 	NMAuthPolkitMode auth_polkit_mode:3;
 } NMAuthManagerPrivate;
 
@@ -104,6 +107,12 @@ nm_auth_manager_get_polkit_enabled (NMAuthManager *self)
 }
 
 /*****************************************************************************/
+
+static void
+_emit_changed_signal (NMAuthManager *self)
+{
+	g_signal_emit (self, signals[CHANGED_SIGNAL], 0);
+}
 
 typedef enum {
 	POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE                   = 0,
@@ -204,17 +213,18 @@ _call_check_authorize_cb (GObject *proxy,
 	priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
 	value = g_dbus_connection_call_finish (G_DBUS_CONNECTION (proxy), res, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+
+	if (nm_utils_error_is_cancelled (error)) {
 		/* call_id was cancelled externally, but _call_id_free() kept call_id
 		 * alive (and it has still the reference on @self. */
 
-		if (!priv->shutdown_cancellable) {
+		if (!priv->main_cancellable) {
 			/* we do a forced shutdown. There is no more time for cancelling... */
 			_call_id_free (call_id);
 
 			/* this shouldn't really happen, because:
-			 * _call_check_authorize() only scheduled the D-Bus request at a time when
-			 * shutdown_cancellable was still set. It means, somebody called force-shutdown
+			 * nm_auth_manager_check_authorization() only scheduled the D-Bus request at a time when
+			 * main_cancellable was still set. It means, somebody called force-shutdown
 			 * after call-id was schedule.
 			 * force-shutdown should only be called after:
 			 *   - cancel all pending requests
@@ -233,7 +243,7 @@ _call_check_authorize_cb (GObject *proxy,
 		                        G_VARIANT_TYPE ("()"),
 		                        G_DBUS_CALL_FLAGS_NONE,
 		                        CANCELLATION_TIMEOUT_MS,
-		                        priv->shutdown_cancellable,
+		                        priv->main_cancellable,
 		                        cancel_check_authorization_cb,
 		                        call_id);
 		return;
@@ -357,7 +367,7 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 
 		call_id->dbus_cancellable = g_cancellable_new ();
 
-		nm_assert (priv->shutdown_cancellable);
+		nm_assert (priv->main_cancellable);
 
 		g_dbus_connection_call (priv->dbus_connection,
 		                        POLKIT_SERVICE,
@@ -411,9 +421,95 @@ changed_signal_cb (GDBusConnection *connection,
                    gpointer user_data)
 {
 	NMAuthManager *self = user_data;
+	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
+	gboolean valid_sender;
 
-	_LOGD ("dbus signal: \"Changed\"");
-	g_signal_emit (self, signals[CHANGED_SIGNAL], 0);
+	nm_assert (nm_streq0 (signal_name, "Changed"));
+
+	valid_sender = nm_streq0 (priv->name_owner, sender_name);
+
+	_LOGD ("dbus-signal: \"Changed\" notification%s", valid_sender ? "" : " (ignore)");
+
+	if (valid_sender)
+		_emit_changed_signal (self);
+}
+
+static void
+_name_owner_changed (NMAuthManager *self,
+                     const char *name_owner,
+                     gboolean is_initial)
+{
+	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
+	gboolean is_changed;
+	gs_free char *old_name_owner = NULL;
+
+	if (is_initial)
+		priv->got_name_owner = TRUE;
+	else {
+		if (!priv->got_name_owner)
+			return;
+	}
+
+	name_owner = nm_str_not_empty (name_owner);
+
+	is_changed = !nm_streq0 (priv->name_owner, name_owner);
+	if (is_changed) {
+		old_name_owner = g_steal_pointer (&priv->name_owner);
+		priv->name_owner = g_strdup (name_owner);
+	} else {
+		if (!is_initial)
+			return;
+	}
+
+	if (!priv->name_owner) {
+		if (is_initial)
+			_LOGT ("name-owner: polkit not running");
+		else
+			_LOGT ("name-owner: polkit stopped (was %s)", old_name_owner);
+	} else {
+		if (is_initial)
+			_LOGT ("name-owner: polkit is running (now %s)", priv->name_owner);
+		else if (old_name_owner)
+			_LOGT ("name-owner: polkit restarted (now %s, was %s)", priv->name_owner, old_name_owner);
+		else
+			_LOGT ("name-owner: polkit started (now %s)", priv->name_owner);
+	}
+
+	if (priv->name_owner)
+		_emit_changed_signal (self);
+}
+
+static void
+_name_owner_changed_cb (GDBusConnection *connection,
+                        const char *sender_name,
+                        const char *object_path,
+                        const char *interface_name,
+                        const char *signal_name,
+                        GVariant *parameters,
+                        gpointer user_data)
+{
+	NMAuthManager *self = user_data;
+	const char *new_owner;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sss)")))
+		return;
+
+	g_variant_get (parameters,
+	               "(&s&s&s)",
+	               NULL,
+	               NULL,
+	               &new_owner);
+
+	_name_owner_changed (self, new_owner, FALSE);
+}
+
+static void
+_name_owner_get_cb (const char *name_owner,
+                    GError *error,
+                    gpointer user_data)
+{
+	if (!nm_utils_error_is_cancelled (error))
+		_name_owner_changed (user_data, name_owner, TRUE);
 }
 
 /*****************************************************************************/
@@ -435,14 +531,17 @@ nm_auth_manager_force_shutdown (NMAuthManager *self)
 
 	priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
+	/* FIXME(shutdown): ensure we properly call this API during shutdown as
+	 * described next. */
+
 	/* while we have pending requests (NMAuthManagerCallId), the instance
 	 * is kept alive.
 	 *
-	 * Even if the caller cancells all pending call-ids, we still need to keep
+	 * Even if the caller cancels all pending call-ids, we still need to keep
 	 * a reference to self, in order to handle pending CancelCheckAuthorization
 	 * requests.
 	 *
-	 * To do a corrdinated shutdown, do the following:
+	 * To do a coordinated shutdown, do the following:
 	 * - cancel all pending NMAuthManagerCallId requests.
 	 * - ensure everybody unrefs the NMAuthManager instance. If by that, the instance
 	 *   gets destroyed, the shutdown already completed successfully.
@@ -457,7 +556,7 @@ nm_auth_manager_force_shutdown (NMAuthManager *self)
 	 */
 
 	priv->shutting_down = TRUE;
-	nm_clear_g_cancellable (&priv->shutdown_cancellable);
+	nm_clear_g_cancellable (&priv->main_cancellable);
 }
 
 /*****************************************************************************/
@@ -523,18 +622,31 @@ constructed (GObject *object)
 		goto out;
 	}
 
-	priv->shutdown_cancellable = g_cancellable_new ();
+	priv->main_cancellable = g_cancellable_new ();
 
-	priv->changed_signal_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
-	                                                              POLKIT_SERVICE,
-	                                                              POLKIT_INTERFACE,
-	                                                              "Changed",
-	                                                              POLKIT_OBJECT_PATH,
-	                                                              NULL,
-	                                                              G_DBUS_SIGNAL_FLAGS_NONE,
-	                                                              changed_signal_cb,
-	                                                              self,
-	                                                              NULL);
+	priv->name_owner_changed_id = nm_dbus_connection_signal_subscribe_name_owner_changed (priv->dbus_connection,
+	                                                                                      POLKIT_SERVICE,
+	                                                                                      _name_owner_changed_cb,
+	                                                                                      self,
+	                                                                                      NULL);
+
+	priv->changed_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                       POLKIT_SERVICE,
+	                                                       POLKIT_INTERFACE,
+	                                                       "Changed",
+	                                                       POLKIT_OBJECT_PATH,
+	                                                       NULL,
+	                                                       G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                       changed_signal_cb,
+	                                                       self,
+	                                                       NULL);
+
+	nm_dbus_connection_call_get_name_owner (priv->dbus_connection,
+	                                        POLKIT_SERVICE,
+	                                        -1,
+	                                        priv->main_cancellable,
+	                                        _name_owner_get_cb,
+	                                        self);
 
 	create_message = "polkit enabled";
 
@@ -578,14 +690,19 @@ dispose (GObject *object)
 
 	priv->disposing = TRUE;
 
-	nm_clear_g_cancellable (&priv->shutdown_cancellable);
+	nm_clear_g_cancellable (&priv->main_cancellable);
 
 	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
-	                                   &priv->changed_signal_id);
+	                                   &priv->name_owner_changed_id);
+
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->changed_id);
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->dispose (object);
 
 	g_clear_object (&priv->dbus_connection);
+
+	nm_clear_g_free (&priv->name_owner);
 }
 
 static void

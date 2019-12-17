@@ -2500,7 +2500,7 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 			break;
 		}
 	}
-	nm_clear_pointer (&rest, g_free);
+	nm_clear_g_free (&rest);
 
 	if (options) {
 		value = g_hash_table_lookup (options, "");

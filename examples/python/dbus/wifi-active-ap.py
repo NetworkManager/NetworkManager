@@ -5,13 +5,13 @@
 #
 
 #
-# This example starts or stops a wifi hotspot
+# This example prints the current wifi access point
 #
 # Configuration settings are described at
 # https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
 #
 
-import dbus, sys, time
+import dbus, sys
 
 bus = dbus.SystemBus()
 service_name = "org.freedesktop.NetworkManager"

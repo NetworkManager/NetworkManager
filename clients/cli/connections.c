@@ -541,6 +541,8 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 			if (info->info_type == NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP)
 				return (*out_to_free = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp));
 			else {
+				struct tm localtime_result;
+
 				if (!timestamp) {
 					if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 						return _("never");
@@ -548,7 +550,7 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 				}
 				timestamp_real = timestamp;
 				s_mut = g_malloc0 (128);
-				strftime (s_mut, 64, "%c", localtime (&timestamp_real));
+				strftime (s_mut, 127, "%c", localtime_r (&timestamp_real, &localtime_result));
 				return (*out_to_free = s_mut);
 			}
 		}
@@ -1449,7 +1451,9 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 	gboolean was_output = FALSE;
 
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0) {
+		/* pass */
 	} else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 
@@ -2074,6 +2078,7 @@ do_connections_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 		if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 			fields_str = NMC_FIELDS_CON_SHOW_COMMON;
 		else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+			/* pass */
 		} else
 			fields_str = nmc->required_fields;
 
@@ -6280,7 +6285,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 							rl_completion_append_character = '.';
 						} else
 							generator_func = gen_property_names;
-					} else if (num >= 3) {
+					} else {
 						if (num == 3 && should_complete_files (NULL, line))
 							rl_attempted_completion_over = 0;
 						else if (should_complete_vpn_uuids (NULL, line)) {

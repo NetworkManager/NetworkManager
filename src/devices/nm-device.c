@@ -24,6 +24,7 @@
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-glib-aux/nm-random-utils.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-libnm-core-intern/nm-ethtool-utils.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -5998,7 +5999,6 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	gs_free_error GError *local = NULL;
 	gs_free char *conn_iface = NULL;
 	NMDeviceClass *klass;
-	const char *const *patterns;
 	NMSettingMatch *s_match;
 
 	klass = NM_DEVICE_GET_CLASS (self);
@@ -6041,12 +6041,80 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	s_match = (NMSettingMatch *) nm_connection_get_setting (connection,
 	                                                        NM_TYPE_SETTING_MATCH);
 	if (s_match) {
+		const char *const *patterns;
+		const char *device_driver;
 		guint num_patterns = 0;
 
 		patterns = nm_setting_match_get_interface_names (s_match, &num_patterns);
 		if (!nm_wildcard_match_check (device_iface, patterns, num_patterns)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "device does not satisfy match.interface-name property");
+			return FALSE;
+		}
+
+		{
+			const char *const*proc_cmdline;
+			gboolean pos_patterns = FALSE;
+			guint i;
+
+			patterns = nm_setting_match_get_kernel_command_lines (s_match, &num_patterns);
+			proc_cmdline = nm_utils_proc_cmdline_split ();
+
+			for (i = 0; i < num_patterns; i++) {
+				const char *patterns_i = patterns[i];
+				const char *const*proc_cmdline_i;
+				gboolean negative = FALSE;
+				gboolean found = FALSE;
+				const char *equal;
+
+				if (patterns_i[0] == '!') {
+					++patterns_i;
+					negative = TRUE;
+				} else
+					pos_patterns = TRUE;
+
+				equal = strchr (patterns_i, '=');
+
+				proc_cmdline_i = proc_cmdline;
+				while (*proc_cmdline_i) {
+					if (equal) {
+						/* if pattern contains = compare full key=value */
+						found = nm_streq (*proc_cmdline_i, patterns_i);
+					} else {
+						gsize l = strlen (patterns_i);
+
+						/* otherwise consider pattern as key only */
+						if (   strncmp (*proc_cmdline_i, patterns_i, l) == 0
+						    && NM_IN_SET ((*proc_cmdline_i)[l], '\0', '='))
+							found = TRUE;
+					}
+					if (   found
+					    && negative) {
+						/* first negative match */
+						nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+						                    "device does not satisfy match.kernel-command-line property %s",
+						                    patterns[i]);
+						return FALSE;
+					}
+					proc_cmdline_i++;
+				}
+
+				if (   pos_patterns
+				    && !found) {
+					/* positive patterns configured but no match */
+					nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+					                    "device does not satisfy any match.kernel-command-line property %s...",
+					                    patterns[0]);
+					return FALSE;
+				}
+			}
+		}
+
+		device_driver = nm_device_get_driver (self);
+		patterns = nm_setting_match_get_drivers (s_match, &num_patterns);
+		if (!nm_wildcard_match_check (device_driver, patterns, num_patterns)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device does not satisfy match.driver property");
 			return FALSE;
 		}
 	}
@@ -8315,6 +8383,37 @@ get_dhcp_hostname_flags (NMDevice *self, int addr_family)
 		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
 }
 
+static const char *
+connection_get_mud_url (NMDevice *self,
+                        NMSettingConnection *s_con,
+                        char **out_mud_url)
+{
+	const char *mud_url;
+	gs_free char *s = NULL;
+
+	nm_assert (out_mud_url && !*out_mud_url);
+
+	mud_url = nm_setting_connection_get_mud_url (s_con);
+
+	if (mud_url) {
+		if (nm_streq (mud_url, NM_CONNECTION_MUD_URL_NONE))
+			return NULL;
+		return mud_url;
+	}
+
+	s = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                           NM_CON_DEFAULT ("connection.mud-url"),
+	                                           self);
+	if (s) {
+		if (nm_streq (s, NM_CONNECTION_MUD_URL_NONE))
+			return NULL;
+		if (nm_sd_http_url_is_valid_https (s))
+			return (*out_mud_url = g_steal_pointer (&s));
+	}
+
+	return NULL;
+}
+
 static GBytes *
 dhcp4_get_client_id (NMDevice *self,
                      NMConnection *connection,
@@ -8453,7 +8552,9 @@ dhcp4_start (NMDevice *self)
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
+	gs_free char *mud_url_free = NULL;
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 	GError *error = NULL;
 	const NMPlatformLink *pllink;
 
@@ -8461,6 +8562,9 @@ dhcp4_start (NMDevice *self)
 	g_return_val_if_fail (connection, FALSE);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	nm_assert (s_con);
 
 	/* Clear old exported DHCP options */
 	nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config);
@@ -8488,6 +8592,7 @@ dhcp4_start (NMDevice *self)
 	                                                      nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                      nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                      get_dhcp_hostname_flags (self, AF_INET),
+	                                                      connection_get_mud_url (self, s_con, &mud_url_free),
 	                                                      client_id,
 	                                                      get_dhcp_timeout (self, AF_INET),
 	                                                      priv->dhcp_anycast_address,
@@ -9235,15 +9340,19 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	gs_unref_bytes GBytes *duid = NULL;
 	gboolean enforce_duid = FALSE;
 	const NMPlatformLink *pllink;
+	gs_free char *mud_url_free = NULL;
 	GError *error = NULL;
 	guint32 iaid;
 	gboolean iaid_explicit;
-
+	NMSettingConnection *s_con;
 	const NMPlatformIP6Address *ll_addr = NULL;
 
-	g_assert (connection);
+	g_return_val_if_fail (connection, FALSE);
+
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	g_assert (s_ip6);
+	nm_assert (s_ip6);
+	s_con = nm_connection_get_setting_connection (connection);
+	nm_assert (s_con);
 
 	if (priv->ext_ip6_config_captured) {
 		ll_addr = nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
@@ -9278,6 +9387,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                      nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                      nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                      get_dhcp_hostname_flags (self, AF_INET6),
+	                                                      connection_get_mud_url (self, s_con, &mud_url_free),
 	                                                      duid,
 	                                                      enforce_duid,
 	                                                      iaid,

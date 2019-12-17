@@ -41,7 +41,7 @@ devList = []
 
 for arg in sys.argv[2:]:
     path = GetDevicePath(arg)
-    if path == None:
+    if path is None:
         raise Exception("NetworkManager knows nothing about %s" % arg)
     else:
         devList.append(path)

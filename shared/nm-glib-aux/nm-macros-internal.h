@@ -630,6 +630,14 @@ NM_G_ERROR_MSG (GError *error)
 		NM_CONSTCAST_FULL (type, (obj), _obj, GObject, ##__VA_ARGS__); \
 	})
 
+#define NM_ENSURE_NOT_NULL(ptr) \
+	({ \
+		typeof (ptr) _ptr = (ptr); \
+		\
+		nm_assert (_ptr != NULL); \
+		_ptr; \
+	})
+
 #if _NM_CC_SUPPORT_GENERIC
 /* returns @value, if the type of @value matches @type.
  * This requires support for C11 _Generic(). If no support is
@@ -929,21 +937,36 @@ nm_streq0 (const char *s1, const char *s2)
 
 #define NM_STR_HAS_PREFIX(str, prefix) \
 	({ \
-		const char *const _str = (str); \
+		const char *const _str_has_prefix = (str); \
 		\
-		_str && (strncmp ((str), ""prefix"", NM_STRLEN (prefix)) == 0); \
+		nm_assert (strlen (prefix) == NM_STRLEN (prefix)); \
+		\
+		   _str_has_prefix \
+		&& (strncmp (_str_has_prefix, ""prefix"", NM_STRLEN (prefix)) == 0); \
 	})
 
 #define NM_STR_HAS_SUFFIX(str, suffix) \
 	({ \
-		const char *_str; \
+		const char *const _str_has_suffix = (str); \
 		gsize _l; \
 		\
-		(   (_str = (str)) \
-		 && ((_l = strlen (_str)) >= NM_STRLEN (suffix)) \
-		 && (memcmp (&_str[_l - NM_STRLEN (suffix)], \
+		nm_assert (strlen (suffix) == NM_STRLEN (suffix)); \
+		\
+		(   _str_has_suffix \
+		 && ((_l = strlen (_str_has_suffix)) >= NM_STRLEN (suffix)) \
+		 && (memcmp (&_str_has_suffix[_l - NM_STRLEN (suffix)], \
 		             ""suffix"", \
 		             NM_STRLEN (suffix)) == 0)); \
+	})
+
+/* whether @str starts with the string literal @prefix and is followed by
+ * some other text. It is like NM_STR_HAS_PREFIX() && !nm_streq() together. */
+#define NM_STR_HAS_PREFIX_WITH_MORE(str, prefix) \
+	({ \
+		const char *const _str_has_prefix_with_more = (str); \
+		\
+		   NM_STR_HAS_PREFIX (_str_has_prefix_with_more, ""prefix"") \
+		&& _str_has_prefix_with_more[NM_STRLEN (prefix)] != '\0'; \
 	})
 
 /*****************************************************************************/
@@ -966,16 +989,23 @@ nm_gstring_add_space_delimiter (GString *str)
 	return str;
 }
 
+static inline gboolean
+nm_str_is_empty (const char *str)
+{
+	/* %NULL is also accepted, and also "empty". */
+	return !str || !str[0];
+}
+
 static inline const char *
 nm_str_not_empty (const char *str)
 {
-	return str && str[0] ? str : NULL;
+	return !nm_str_is_empty (str) ? str : NULL;
 }
 
 static inline char *
 nm_strdup_not_empty (const char *str)
 {
-	return str && str[0] ? g_strdup (str) : NULL;
+	return !nm_str_is_empty (str) ? g_strdup (str) : NULL;
 }
 
 static inline char *

@@ -926,6 +926,21 @@ _nm_g_slice_free_fcn_define (32)
 
 /*****************************************************************************/
 
+/* Like g_error_matches() however:
+ * - as macro it is always inlined.
+ * - the @domain is usually a error quark getter function that cannot
+ *   be inlined. This macro calls the getter only if there is an error (lazy).
+ * - accept a list of allowed codes, instead of only one.
+ */
+#define nm_g_error_matches(error, err_domain, ...) \
+	({ \
+		const GError *const _error = (error); \
+		\
+		   _error \
+		&& _error->domain == (err_domain) \
+		&& NM_IN_SET (_error->code, __VA_ARGS__); \
+	})
+
 static inline void
 nm_g_set_error_take (GError **error, GError *error_take)
 {
@@ -1140,6 +1155,25 @@ gboolean nm_g_object_set_property_enum (GObject *object,
 
 GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
                                                         const char *property_name);
+
+/*****************************************************************************/
+
+#define _NM_G_PARAM_SPEC_CAST(param_spec, _value_type, _c_type) \
+	({ \
+		const GParamSpec *const _param_spec = (param_spec); \
+		\
+		nm_assert (   !_param_spec \
+		           || _param_spec->value_type == (_value_type)); \
+		((const _c_type *) _param_spec); \
+	})
+
+#define NM_G_PARAM_SPEC_CAST_BOOLEAN(param_spec) _NM_G_PARAM_SPEC_CAST (param_spec, G_TYPE_BOOLEAN, GParamSpecBoolean)
+#define NM_G_PARAM_SPEC_CAST_UINT(param_spec)    _NM_G_PARAM_SPEC_CAST (param_spec, G_TYPE_UINT,    GParamSpecUInt)
+#define NM_G_PARAM_SPEC_CAST_UINT64(param_spec)  _NM_G_PARAM_SPEC_CAST (param_spec, G_TYPE_UINT64,  GParamSpecUInt64)
+
+#define NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(param_spec) (NM_G_PARAM_SPEC_CAST_BOOLEAN (NM_ENSURE_NOT_NULL (param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_UINT(param_spec)    (NM_G_PARAM_SPEC_CAST_UINT    (NM_ENSURE_NOT_NULL (param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(param_spec)  (NM_G_PARAM_SPEC_CAST_UINT64  (NM_ENSURE_NOT_NULL (param_spec))->default_value)
 
 /*****************************************************************************/
 
@@ -1432,6 +1466,22 @@ GSList *nm_utils_g_slist_find_str (const GSList *list,
 int nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b);
 
 char *nm_utils_g_slist_strlist_join (const GSList *a, const char *separator);
+
+/*****************************************************************************/
+
+static inline guint
+nm_g_array_len (const GArray *arr)
+{
+	return arr ? arr->len : 0u;
+}
+
+/*****************************************************************************/
+
+static inline guint
+nm_g_ptr_array_len (const GPtrArray *arr)
+{
+	return arr ? arr->len : 0u;
+}
 
 /*****************************************************************************/
 
@@ -1848,6 +1898,8 @@ nm_utils_strdup_reset (char **dst, const char *src)
 	return TRUE;
 }
 
+void nm_indirect_g_free (gpointer arg);
+
 /*****************************************************************************/
 
 /* nm_utils_get_next_realloc_size() is used to grow buffers exponentially, when
@@ -1886,5 +1938,53 @@ gboolean nm_utils_ifname_valid_kernel (const char *name, GError **error);
 gboolean nm_utils_ifname_valid (const char* name,
                                 NMUtilsIfaceType type,
                                 GError **error);
+
+/*****************************************************************************/
+
+static inline GArray *
+nm_strvarray_ensure (GArray **p)
+{
+	if (!*p) {
+		*p = g_array_new (TRUE, FALSE, sizeof (char *));
+		g_array_set_clear_func (*p, nm_indirect_g_free);
+	}
+	return *p;
+}
+
+static inline void
+nm_strvarray_add (GArray *array, const char *str)
+{
+	char *s;
+
+	s = g_strdup (str);
+	g_array_append_val (array, s);
+}
+
+static inline const char *const*
+nm_strvarray_get_strv (GArray **arr, guint *length)
+{
+	if (!*arr) {
+		NM_SET_OUT (length, 0);
+		return (const char *const*) arr;
+	}
+
+	NM_SET_OUT (length, (*arr)->len);
+	return &g_array_index (*arr, const char *, 0);
+}
+
+static inline void
+nm_strvarray_set_strv (GArray **array, const char *const*strv)
+{
+	gs_unref_array GArray *array_old = NULL;
+
+	array_old = g_steal_pointer (array);
+
+	if (!strv || !strv[0])
+		return;
+
+	nm_strvarray_ensure (array);
+	for (; strv[0]; strv++)
+		nm_strvarray_add (*array, strv[0]);
+}
 
 #endif /* __NM_SHARED_UTILS_H__ */

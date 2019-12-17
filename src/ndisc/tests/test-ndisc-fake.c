@@ -217,9 +217,8 @@ test_everything_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed
 
 		g_assert_cmpint (rdata->gateways_n, ==, 1);
 		match_gateway (rdata, 0, "fe80::2", data->timestamp1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
-		g_assert_cmpint (rdata->addresses_n, ==, 2);
-		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 0);
-		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1, 10, 10);
+		g_assert_cmpint (rdata->addresses_n, ==, 1);
+		match_address (rdata, 0, "2001:db8:a:b::1", data->timestamp1, 10, 10);
 		g_assert_cmpint (rdata->routes_n, ==, 1);
 		match_route (rdata, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1, 10, 10);
 		g_assert_cmpint (rdata->dns_servers_n, ==, 1);

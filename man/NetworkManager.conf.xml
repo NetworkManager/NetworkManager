@@ -679,6 +679,10 @@ ipv6.ip6-privacy=0
           <term><varname>connection.autoconnect-slaves</varname></term>
         </varlistentry>
         <varlistentry>
+          <term><varname>connection.mud-url</varname></term>
+          <listitem><para>If unspecified, MUD URL defaults to <literal>"none"</literal>.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.lldp</varname></term>
         </varlistentry>
         <varlistentry>

@@ -4,7 +4,7 @@
 # Copyright (C) 2011 - 2012 Red Hat, Inc.
 #
 
-import dbus, sys
+import dbus
 
 # This example lists basic information about network interfaces known to NM
 

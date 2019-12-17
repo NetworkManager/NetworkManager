@@ -64,6 +64,7 @@ static struct {
 	char *dhcp4_clientid;
 	char *dhcp4_hostname;
 	char *dhcp4_fqdn;
+	char *mud_url;
 	char *iid_str;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *logging_backend;
@@ -523,6 +524,7 @@ main (int argc, char *argv[])
 		                                          global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_fqdn,
 		                                          NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4,
+		                                          global_opt.mud_url,
 		                                          client_id,
 		                                          NM_DHCP_TIMEOUT_DEFAULT,
 		                                          NULL,

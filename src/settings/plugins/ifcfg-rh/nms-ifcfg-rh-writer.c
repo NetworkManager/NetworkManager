@@ -1362,38 +1362,22 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	return TRUE;
 }
 
-static guint32
-get_setting_default_uint (NMSetting *setting, const char *prop)
+static gboolean
+get_setting_default_boolean (gpointer setting, const char *prop)
 {
-	GParamSpec *pspec;
-	GValue val = G_VALUE_INIT;
-	guint32 ret = 0;
-
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
-	g_assert (pspec);
-	g_value_init (&val, pspec->value_type);
-	g_param_value_set_default (pspec, &val);
-	g_assert (G_VALUE_HOLDS_UINT (&val));
-	ret = g_value_get_uint (&val);
-	g_value_unset (&val);
-	return ret;
+	return NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop));
 }
 
-static gboolean
-get_setting_default_boolean (NMSetting *setting, const char *prop)
+static guint
+get_setting_default_uint (gpointer setting, const char *prop)
 {
-	GParamSpec *pspec;
-	GValue val = G_VALUE_INIT;
-	gboolean ret = 0;
+	return NM_G_PARAM_SPEC_GET_DEFAULT_UINT (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop));
+}
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
-	g_assert (pspec);
-	g_value_init (&val, pspec->value_type);
-	g_param_value_set_default (pspec, &val);
-	g_assert (G_VALUE_HOLDS_BOOLEAN (&val));
-	ret = g_value_get_boolean (&val);
-	g_value_unset (&val);
-	return ret;
+static guint64
+get_setting_default_uint64 (gpointer setting, const char *prop)
+{
+	return NM_G_PARAM_SPEC_GET_DEFAULT_UINT64 (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop));
 }
 
 static gboolean
@@ -1436,7 +1420,8 @@ static gboolean
 write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingBridge *s_bridge;
-	guint32 i;
+	guint32 u32;
+	guint64 u64;
 	gboolean b;
 	const char *s;
 	GString *opts;
@@ -1459,32 +1444,32 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	if (nm_setting_bridge_get_stp (s_bridge)) {
 		svSetValueStr (ifcfg, "STP", "yes");
 
-		i = nm_setting_bridge_get_forward_delay (s_bridge);
-		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY))
-			svSetValueInt64 (ifcfg, "DELAY", i);
+		u32 = nm_setting_bridge_get_forward_delay (s_bridge);
+		if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY))
+			svSetValueInt64 (ifcfg, "DELAY", u32);
 
 		g_string_append_printf (opts, "priority=%u", nm_setting_bridge_get_priority (s_bridge));
 
-		i = nm_setting_bridge_get_hello_time (s_bridge);
-		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
+		u32 = nm_setting_bridge_get_hello_time (s_bridge);
+		if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
-			g_string_append_printf (opts, "hello_time=%u", i);
+			g_string_append_printf (opts, "hello_time=%u", u32);
 		}
 
-		i = nm_setting_bridge_get_max_age (s_bridge);
-		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
+		u32 = nm_setting_bridge_get_max_age (s_bridge);
+		if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MAX_AGE)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
-			g_string_append_printf (opts, "max_age=%u", i);
+			g_string_append_printf (opts, "max_age=%u", u32);
 		}
 	}
 
-	i = nm_setting_bridge_get_ageing_time (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME)) {
+	u32 = nm_setting_bridge_get_ageing_time (s_bridge);
+	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
-		g_string_append_printf (opts, "ageing_time=%u", i);
+		g_string_append_printf (opts, "ageing_time=%u", u32);
 	}
 
 	s = nm_setting_bridge_get_group_address (s_bridge);
@@ -1494,32 +1479,96 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "group_address=%s", s);
 	}
 
-	i = nm_setting_bridge_get_group_forward_mask (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_GROUP_FORWARD_MASK)) {
+	u32 = nm_setting_bridge_get_group_forward_mask (s_bridge);
+	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_GROUP_FORWARD_MASK)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
-		g_string_append_printf (opts, "group_fwd_mask=%u", i);
+		g_string_append_printf (opts, "group_fwd_mask=%u", u32);
+	}
+
+
+	u32 = nm_setting_bridge_get_multicast_hash_max (s_bridge);
+	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MULTICAST_HASH_MAX)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_hash_max=%u", u32);
+	}
+
+	u32 = nm_setting_bridge_get_multicast_last_member_count (s_bridge);
+	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_last_member_count=%u", u32);
+	}
+
+	u64 = nm_setting_bridge_get_multicast_last_member_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_last_member_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
+	u64 = nm_setting_bridge_get_multicast_membership_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_membership_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	b = nm_setting_bridge_get_multicast_querier (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_querier=%u", (guint) b);
 	}
 
+	u64 = nm_setting_bridge_get_multicast_querier_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_querier_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
+	u64 = nm_setting_bridge_get_multicast_query_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_query_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
+	u64 = nm_setting_bridge_get_multicast_query_response_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_query_response_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
 	b = nm_setting_bridge_get_multicast_query_use_ifaddr (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_query_use_ifaddr=%u", (guint) b);
 	}
 
 	b = nm_setting_bridge_get_multicast_snooping (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
+	}
+
+	u32 = nm_setting_bridge_get_multicast_startup_query_count (s_bridge);
+	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_startup_query_count=%u", u32);
+	}
+
+	u64 = nm_setting_bridge_get_multicast_startup_query_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_startup_query_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	s = nm_setting_bridge_get_multicast_router (s_bridge);
@@ -1530,17 +1579,17 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	}
 
 	b = nm_setting_bridge_get_vlan_filtering (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_FILTERING)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_VLAN_FILTERING)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "vlan_filtering=%u", (guint32) b);
 	}
 
-	i = nm_setting_bridge_get_vlan_default_pvid (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID)) {
+	u32 = nm_setting_bridge_get_vlan_default_pvid (s_bridge);
+	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
-		g_string_append_printf (opts, "default_pvid=%u", i);
+		g_string_append_printf (opts, "default_pvid=%u", u32);
 	}
 
 	s = nm_setting_bridge_get_vlan_protocol (s_bridge);
@@ -1551,7 +1600,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	}
 
 	b = nm_setting_bridge_get_vlan_stats_enabled (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_STATS_ENABLED)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_VLAN_STATS_ENABLED)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "vlan_stats_enabled=%u", (guint) b);
@@ -1579,7 +1628,7 @@ static gboolean
 write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingBridgePort *s_port;
-	guint32 i;
+	guint32 u32;
 	GString *string;
 
 	s_port = nm_connection_get_setting_bridge_port (connection);
@@ -1589,15 +1638,15 @@ write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **
 	/* Bridge options */
 	string = g_string_sized_new (32);
 
-	i = nm_setting_bridge_port_get_priority (s_port);
-	if (i != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
-		g_string_append_printf (string, "priority=%u", i);
+	u32 = nm_setting_bridge_port_get_priority (s_port);
+	if (u32 != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
+		g_string_append_printf (string, "priority=%u", u32);
 
-	i = nm_setting_bridge_port_get_path_cost (s_port);
-	if (i != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
+	u32 = nm_setting_bridge_port_get_path_cost (s_port);
+	if (u32 != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
 		if (string->len)
 			g_string_append_c (string, ' ');
-		g_string_append_printf (string, "path_cost=%u", i);
+		g_string_append_printf (string, "path_cost=%u", u32);
 	}
 
 	if (nm_setting_bridge_port_get_hairpin_mode (s_port)) {
@@ -1792,7 +1841,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	NMSettingConnectionMdns mdns;
 	NMSettingConnectionLlmnr llmnr;
 	guint32 vuint32;
-	const char *tmp;
+	const char *tmp, *mud_url;
 
 	svSetValueStr (ifcfg, "NAME", nm_setting_connection_get_id (s_con));
 	svSetValueStr (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con));
@@ -1866,6 +1915,9 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValueStr (ifcfg, "BRIDGE", NULL);
 	svSetValueStr (ifcfg, "TEAM_MASTER_UUID", NULL);
 	svSetValueStr (ifcfg, "TEAM_MASTER", NULL);
+
+	mud_url = nm_setting_connection_get_mud_url (s_con);
+	svSetValue (ifcfg, "MUD_URL", mud_url);
 
 	master = nm_setting_connection_get_master (s_con);
 	if (master) {
@@ -2289,36 +2341,50 @@ write_tc_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
-static gboolean
-write_match_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+static void
+write_match_setting (NMConnection *connection, shvarFile *ifcfg)
 {
-	NMSettingMatch *s_match;
 	nm_auto_free_gstring GString *str = NULL;
+	NMSettingMatch *s_match;
 	guint i, num;
+	const char *name;
 
 	s_match = (NMSettingMatch *) nm_connection_get_setting (connection, NM_TYPE_SETTING_MATCH);
 	if (!s_match)
-		return TRUE;
+		return;
 
-	num = nm_setting_match_get_num_interface_names (s_match);
-	for (i = 0; i < num; i++) {
-		const char *name;
-
-		name = nm_setting_match_get_interface_name (s_match, i);
-		if (!name || !name[0])
-			continue;
-
-		if (!str)
-			str = g_string_new ("");
-		else
-			g_string_append_c (str, ' ');
-		nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+	num = nm_setting_match_get_num_drivers (s_match);
+	if (num > 0) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			name = nm_setting_match_get_driver (s_match, i);
+			nm_gstring_add_space_delimiter (str);
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
+		svSetValueStr (ifcfg, "MATCH_DRIVER", str->str);
 	}
 
-	if (str)
+	num = nm_setting_match_get_num_interface_names (s_match);
+	if (num > 0) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			name = nm_setting_match_get_interface_name (s_match, i);
+			nm_gstring_add_space_delimiter (str);
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
 		svSetValueStr (ifcfg, "MATCH_INTERFACE_NAME", str->str);
+	}
 
-	return TRUE;
+	num = nm_setting_match_get_num_kernel_command_lines (s_match);
+	if (num > 0) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			name = nm_setting_match_get_kernel_command_line (s_match, i);
+			nm_gstring_add_space_delimiter (str);
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
+		svSetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", str->str);
+	}
 }
 
 static void
@@ -3078,8 +3144,7 @@ do_write_construct (NMConnection *connection,
 	if (!write_user_setting (connection, ifcfg, error))
 		return FALSE;
 
-	if (!write_match_setting (connection, ifcfg, error))
-		return FALSE;
+	write_match_setting (connection, ifcfg);
 
 	write_sriov_setting (connection, ifcfg);
 

@@ -103,63 +103,73 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 	return NM_FLAGS_HAS (capabilities, NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6);
 }
 
-const VpnPasswordName *
+const NmcVpnPasswordName *
 nm_vpn_get_secret_names (const char *service_type)
 {
-	static const VpnPasswordName generic_vpn_secrets[] = {
-		{ "password", N_("Password") },
-		{ 0 }
-	};
-	static const VpnPasswordName openvpn_secrets[] = {
-		{ "password", N_("Password") },
-		{ "cert-pass", N_("Certificate password") },
-		{ "http-proxy-password", N_("HTTP proxy password") },
-		{ 0 }
-	};
-	static const VpnPasswordName vpnc_secrets[] = {
-		{ "Xauth password", N_("Password") },
-		{ "IPSec secret", N_("Group password") },
-		{ 0 }
-	};
-	static const VpnPasswordName swan_secrets[] = {
-		{ "xauthpassword", N_("Password") },
-		{ "pskvalue", N_("Group password") },
-		{ 0 }
-	};
-	static const VpnPasswordName openconnect_secrets[] = {
-		{ "gateway", N_("Gateway") },
-		{ "cookie", N_("Cookie") },
-		{ "gwcert", N_("Gateway certificate hash") },
-		{ 0 }
-	};
 	const char *type;
 
 	if (!service_type)
 		return NULL;
 
-	if (   !g_str_has_prefix (service_type, NM_DBUS_INTERFACE)
+	if (   !NM_STR_HAS_PREFIX (service_type, NM_DBUS_INTERFACE)
 	    || service_type[NM_STRLEN (NM_DBUS_INTERFACE)] != '.') {
 		/* all our well-known, hard-coded vpn-types start with NM_DBUS_INTERFACE. */
 		return NULL;
 	}
 
 	type = service_type + (NM_STRLEN (NM_DBUS_INTERFACE) + 1);
-	if (   !g_strcmp0 (type, "pptp")
-	    || !g_strcmp0 (type, "iodine")
-	    || !g_strcmp0 (type, "ssh")
-	    || !g_strcmp0 (type, "l2tp")
-	    || !g_strcmp0 (type, "fortisslvpn"))
-		 return generic_vpn_secrets;
-	else if (!g_strcmp0 (type, "openvpn"))
-		return openvpn_secrets;
-	else if (!g_strcmp0 (type, "vpnc"))
-		return vpnc_secrets;
-	else if (   !g_strcmp0 (type, "openswan")
-	         || !g_strcmp0 (type, "libreswan")
-	         || !g_strcmp0 (type, "strongswan"))
-		return swan_secrets;
-	else if (!g_strcmp0 (type, "openconnect"))
-		return openconnect_secrets;
+
+#define _VPN_PASSWORD_LIST(...) \
+	({ \
+		static const NmcVpnPasswordName _arr[] = { \
+			__VA_ARGS__ \
+			{ 0 }, \
+		}; \
+		_arr; \
+	})
+
+	if (NM_IN_STRSET (type, "pptp",
+	                        "iodine",
+	                        "ssh",
+	                        "l2tp",
+	                        "fortisslvpn")) {
+		return _VPN_PASSWORD_LIST (
+			{ "password", N_("Password") },
+		);
+	}
+
+	if (NM_IN_STRSET (type, "openvpn")) {
+		return _VPN_PASSWORD_LIST (
+			{ "password",            N_("Password") },
+			{ "cert-pass",           N_("Certificate password") },
+			{ "http-proxy-password", N_("HTTP proxy password") },
+		);
+	}
+
+	if (NM_IN_STRSET (type, "vpnc")) {
+		return _VPN_PASSWORD_LIST (
+			{ "Xauth password", N_("Password") },
+			{ "IPSec secret",   N_("Group password") },
+		);
+	};
+
+	if (NM_IN_STRSET (type, "openswan",
+	                        "libreswan",
+	                        "strongswan")) {
+		return _VPN_PASSWORD_LIST (
+			{ "xauthpassword", N_("Password") },
+			{ "pskvalue",      N_("Group password") },
+		);
+	};
+
+	if (NM_IN_STRSET (type, "openconnect")) {
+		return _VPN_PASSWORD_LIST (
+			{ "gateway", N_("Gateway") },
+			{ "cookie",  N_("Cookie") },
+			{ "gwcert",  N_("Gateway certificate hash") },
+		);
+	};
+
 	return NULL;
 }
 

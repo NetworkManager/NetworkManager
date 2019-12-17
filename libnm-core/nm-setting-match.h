@@ -24,6 +24,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_MATCH_SETTING_NAME      "match"
 
 #define NM_SETTING_MATCH_INTERFACE_NAME    "interface-name"
+#define NM_SETTING_MATCH_KERNEL_COMMAND_LINE    "kernel-command-line"
+#define NM_SETTING_MATCH_DRIVER            "driver"
 
 typedef struct _NMSettingMatchClass NMSettingMatchClass;
 
@@ -49,6 +51,43 @@ NM_AVAILABLE_IN_1_14
 void nm_setting_match_clear_interface_names (NMSettingMatch *setting);
 NM_AVAILABLE_IN_1_14
 const char *const *nm_setting_match_get_interface_names (NMSettingMatch *setting, guint *length);
+
+
+NM_AVAILABLE_IN_1_26
+guint nm_setting_match_get_num_kernel_command_lines (NMSettingMatch *setting);
+NM_AVAILABLE_IN_1_26
+const char *nm_setting_match_get_kernel_command_line (NMSettingMatch *setting, guint idx);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_remove_kernel_command_line (NMSettingMatch *setting, guint idx);
+NM_AVAILABLE_IN_1_26
+gboolean nm_setting_match_remove_kernel_command_line_by_value (NMSettingMatch *setting,
+                                                               const char *kernel_command_line);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_add_kernel_command_line (NMSettingMatch *setting,
+                                               const char *kernel_command_line);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_clear_kernel_command_lines (NMSettingMatch *setting);
+NM_AVAILABLE_IN_1_26
+const char *const *nm_setting_match_get_kernel_command_lines (NMSettingMatch *setting, guint *length);
+
+
+NM_AVAILABLE_IN_1_26
+guint nm_setting_match_get_num_drivers (NMSettingMatch *setting);
+NM_AVAILABLE_IN_1_26
+const char *nm_setting_match_get_driver (NMSettingMatch *setting, guint idx);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_remove_driver (NMSettingMatch *setting, guint idx);
+NM_AVAILABLE_IN_1_26
+gboolean nm_setting_match_remove_driver_by_value (NMSettingMatch *setting,
+                                                  const char *driver);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_add_driver (NMSettingMatch *setting,
+                                  const char *driver);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_clear_drivers (NMSettingMatch *setting);
+NM_AVAILABLE_IN_1_26
+const char *const *nm_setting_match_get_drivers (NMSettingMatch *setting, guint *length);
+
 G_END_DECLS
 
 #endif /* NM_SETTING_MATCH_H */

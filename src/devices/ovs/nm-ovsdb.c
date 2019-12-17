@@ -131,10 +131,9 @@ typedef struct {
 #define OVSDB_MAX_FAILURES    3
 
 static void
-_call_trace (const char *comment, OvsdbMethodCall *call, json_t *msg)
+_LOGT_call_do (const char *comment, OvsdbMethodCall *call, json_t *msg)
 {
-#if NM_MORE_LOGGING
-	char *str = NULL;
+	gs_free char *str = NULL;
 
 	if (msg)
 		str = json_dumps (msg, 0);
@@ -169,11 +168,13 @@ _call_trace (const char *comment, OvsdbMethodCall *call, json_t *msg)
 		       call->mtu);
 		break;
 	}
-
-	if (msg)
-		g_free (str);
-#endif
 }
+
+#define _LOGT_call(comment, call, message) \
+	G_STMT_START { \
+		if (_LOGT_ENABLED ()) \
+			_LOGT_call_do ((comment), (call), (message)); \
+	} G_STMT_END
 
 /**
  * ovsdb_call_method:
@@ -226,7 +227,7 @@ ovsdb_call_method (NMOvsdb *self, OvsdbCommand command,
 		break;
 	}
 
-	_call_trace ("enqueue", call, NULL);
+	_LOGT_call ("enqueue", call, NULL);
 
 	ovsdb_next_command (self);
 }
@@ -875,7 +876,7 @@ ovsdb_next_command (NMOvsdb *self)
 	}
 
 	g_return_if_fail (msg);
-	_call_trace ("send", call, msg);
+	_LOGT_call ("send", call, msg);
 	cmd = json_dumps (msg, 0);
 
 	g_string_append (priv->output, cmd);
@@ -1247,7 +1248,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		}
 		/* Cool, we found a corresponding call. Finish it. */
 
-		_call_trace ("response", call, msg);
+		_LOGT_call ("response", call, msg);
 
 		if (!json_is_null (error)) {
 			/* The response contains an error. */

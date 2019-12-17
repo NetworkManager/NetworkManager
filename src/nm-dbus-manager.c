@@ -247,7 +247,9 @@ private_server_closed_connection (GDBusConnection *conn,
 	CloseConnectionInfo *info;
 
 	/* Clean up after the connection */
-	_LOGD ("(%s) closed connection %p on private socket", s->tag, conn);
+	_LOGD ("(%s) closed connection "NM_HASH_OBFUSCATE_PTR_FMT" on private socket",
+	       s->tag,
+	       NM_HASH_OBFUSCATE_PTR (conn));
 
 	info = g_slice_new0 (CloseConnectionInfo);
 	info->connection = conn;
@@ -285,7 +287,9 @@ private_server_new_connection (GDBusServer *server,
 	obj_mgr_data->fake_sender = sender;
 	c_list_link_tail (&s->object_mgr_lst_head, &obj_mgr_data->object_mgr_lst);
 
-	_LOGD ("(%s) accepted connection %p on private socket", s->tag, conn);
+	_LOGD ("(%s) accepted connection "NM_HASH_OBFUSCATE_PTR_FMT" on private socket",
+	       s->tag,
+	       NM_HASH_OBFUSCATE_PTR (conn));
 
 	/* Emit this for the manager.
 	 *

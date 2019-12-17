@@ -4817,3 +4817,23 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 
 	strbuf->_priv_len += (gsize) l;
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_indirect_g_free:
+ * @arg: a pointer to a pointer that is to be freed.
+ *
+ * This does the same as nm_clear_g_free(arg) (g_clear_pointer (arg, g_free)).
+ * This is for example useful when you have a GArray with pointers and a
+ * clear function to free them. g_array_set_clear_func()'s destroy notify
+ * function gets a pointer to the array location, so we have to follow
+ * the first pointer.
+ */
+void
+nm_indirect_g_free (gpointer arg)
+{
+	gpointer *p = arg;
+
+	nm_clear_g_free (p);
+}

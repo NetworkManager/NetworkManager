@@ -236,18 +236,20 @@ nm_setting_bridge_port_remove_vlan_by_vid (NMSettingBridgePort *setting,
                                            guint16 vid_end)
 {
 	NMSettingBridgePortPrivate *priv;
-	guint16 v_start, v_end;
-	NMBridgeVlan *vlan;
 	guint i;
 
 	if (vid_end == 0)
 		vid_end = vid_start;
 
 	g_return_val_if_fail (NM_IS_SETTING_BRIDGE_PORT (setting), FALSE);
+
 	priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (setting);
 
 	for (i = 0; i < priv->vlans->len; i++) {
-		vlan = (NMBridgeVlan *) priv->vlans->pdata[i];
+		NMBridgeVlan *vlan = priv->vlans->pdata[i];
+		guint16 v_start = 0;
+		guint16 v_end = 0;
+
 		nm_bridge_vlan_get_vid_range (vlan, &v_start, &v_end);
 		if (v_start == vid_start && v_end == vid_end) {
 			g_ptr_array_remove_index (priv->vlans, i);
@@ -440,8 +442,8 @@ nm_setting_bridge_port_init (NMSettingBridgePort *setting)
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	priv->priority = NM_BR_PORT_DEF_PRIORITY;
-	priv->path_cost = NM_BR_PORT_DEF_PATH_COST;
+	priv->priority = NM_BRIDGE_PORT_PRIORITY_DEF;
+	priv->path_cost = NM_BRIDGE_PORT_PATH_COST_DEF;
 }
 
 /**
@@ -498,7 +500,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 */
 	obj_properties[PROP_PRIORITY] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
-	                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
+	                       NM_BRIDGE_PORT_PRIORITY_MIN, NM_BRIDGE_PORT_PRIORITY_MAX, NM_BRIDGE_PORT_PRIORITY_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
@@ -519,7 +521,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 */
 	obj_properties[PROP_PATH_COST] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
-	                       0, NM_BR_PORT_MAX_PATH_COST, NM_BR_PORT_DEF_PATH_COST,
+	                       NM_BRIDGE_PORT_PATH_COST_MIN, NM_BRIDGE_PORT_PATH_COST_MAX, NM_BRIDGE_PORT_PATH_COST_DEF,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 

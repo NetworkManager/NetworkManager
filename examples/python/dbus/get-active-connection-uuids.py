@@ -4,7 +4,7 @@
 # Copyright (C) 2010 Red Hat, Inc.
 #
 
-import dbus, sys
+import dbus
 
 # This example takes a device interface name as a parameter and tells
 # NetworkManager to disconnect that device, closing down any network

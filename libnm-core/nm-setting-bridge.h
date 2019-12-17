@@ -23,24 +23,33 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_BRIDGE_SETTING_NAME "bridge"
 
-#define NM_SETTING_BRIDGE_MAC_ADDRESS                     "mac-address"
-#define NM_SETTING_BRIDGE_STP                             "stp"
-#define NM_SETTING_BRIDGE_PRIORITY                        "priority"
-#define NM_SETTING_BRIDGE_FORWARD_DELAY                   "forward-delay"
-#define NM_SETTING_BRIDGE_HELLO_TIME                      "hello-time"
-#define NM_SETTING_BRIDGE_MAX_AGE                         "max-age"
-#define NM_SETTING_BRIDGE_AGEING_TIME                     "ageing-time"
-#define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK              "group-forward-mask"
-#define NM_SETTING_BRIDGE_MULTICAST_SNOOPING              "multicast-snooping"
-#define NM_SETTING_BRIDGE_MULTICAST_ROUTER                "multicast-router"
-#define NM_SETTING_BRIDGE_MULTICAST_QUERIER               "multicast-querier"
-#define NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR      "multicast-query-use-ifaddr"
-#define NM_SETTING_BRIDGE_VLAN_FILTERING                  "vlan-filtering"
-#define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID               "vlan-default-pvid"
-#define NM_SETTING_BRIDGE_VLANS                           "vlans"
-#define NM_SETTING_BRIDGE_GROUP_ADDRESS                   "group-address"
-#define NM_SETTING_BRIDGE_VLAN_PROTOCOL                   "vlan-protocol"
-#define NM_SETTING_BRIDGE_VLAN_STATS_ENABLED              "vlan-stats-enabled"
+#define NM_SETTING_BRIDGE_MAC_ADDRESS                       "mac-address"
+#define NM_SETTING_BRIDGE_STP                               "stp"
+#define NM_SETTING_BRIDGE_PRIORITY                          "priority"
+#define NM_SETTING_BRIDGE_FORWARD_DELAY                     "forward-delay"
+#define NM_SETTING_BRIDGE_HELLO_TIME                        "hello-time"
+#define NM_SETTING_BRIDGE_MAX_AGE                           "max-age"
+#define NM_SETTING_BRIDGE_AGEING_TIME                       "ageing-time"
+#define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK                "group-forward-mask"
+#define NM_SETTING_BRIDGE_MULTICAST_HASH_MAX                "multicast-hash-max"
+#define NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT       "multicast-last-member-count"
+#define NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL    "multicast-last-member-interval"
+#define NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL     "multicast-membership-interval"
+#define NM_SETTING_BRIDGE_MULTICAST_SNOOPING                "multicast-snooping"
+#define NM_SETTING_BRIDGE_MULTICAST_ROUTER                  "multicast-router"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERIER                 "multicast-querier"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL        "multicast-querier-interval"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL          "multicast-query-interval"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL "multicast-query-response-interval"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR        "multicast-query-use-ifaddr"
+#define NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT     "multicast-startup-query-count"
+#define NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL  "multicast-startup-query-interval"
+#define NM_SETTING_BRIDGE_VLAN_FILTERING                    "vlan-filtering"
+#define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID                 "vlan-default-pvid"
+#define NM_SETTING_BRIDGE_VLANS                             "vlans"
+#define NM_SETTING_BRIDGE_GROUP_ADDRESS                     "group-address"
+#define NM_SETTING_BRIDGE_VLAN_PROTOCOL                     "vlan-protocol"
+#define NM_SETTING_BRIDGE_VLAN_STATS_ENABLED                "vlan-stats-enabled"
 
 #define NM_BRIDGE_VLAN_VID_MIN            1
 #define NM_BRIDGE_VLAN_VID_MAX            4094
@@ -139,6 +148,33 @@ gboolean nm_setting_bridge_get_multicast_query_use_ifaddr (const NMSettingBridge
 
 NM_AVAILABLE_IN_1_24
 gboolean nm_setting_bridge_get_multicast_querier (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint32 nm_setting_bridge_get_multicast_hash_max (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint32 nm_setting_bridge_get_multicast_last_member_count (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_last_member_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_membership_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_querier_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_query_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_query_response_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint32 nm_setting_bridge_get_multicast_startup_query_count (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_startup_query_interval (const NMSettingBridge *setting);
 
 G_END_DECLS
 

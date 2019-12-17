@@ -33,6 +33,13 @@
 #define ALSOREQ_TAG "also request "
 #define REQ_TAG "request "
 
+#define MUDURLv4_DEF    "option mudurl code 161 = text;\n"
+#define MUDURLv4_FMT    "send mudurl \"%s\";\n"
+
+#define MUDURLv6_DEF    "option dhcp6.mudurl code 112 = text;\n"
+#define MUDURLv6_FMT    "send dhcp6.mudurl \"%s\";\n"
+
+
 static void
 add_request (GPtrArray *array, const char *item)
 {
@@ -183,6 +190,19 @@ add_hostname6 (GString *str,
 	}
 }
 
+static void add_mud_url_config(GString *str, const char *mud_url, int addr_family)
+{
+	if (mud_url) {
+		if (addr_family == AF_INET) {
+			g_string_append (str, MUDURLv4_DEF);
+			g_string_append_printf (str, MUDURLv4_FMT, mud_url);
+		} else {
+			g_string_append (str, MUDURLv6_DEF);
+			g_string_append_printf (str, MUDURLv6_FMT, mud_url);
+		}
+	}
+}
+
 static GBytes *
 read_client_id (const char *str)
 {
@@ -286,6 +306,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 guint32 timeout,
                                 gboolean use_fqdn,
                                 NMDhcpHostnameFlags hostname_flags,
+                                const char *mud_url,
                                 const char *orig_path,
                                 const char *orig_contents,
                                 GBytes **out_new_client_id)
@@ -451,6 +472,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_string_append_printf (new_contents, "timeout %u;\n", timeout);
 	}
 
+	add_mud_url_config (new_contents, mud_url, addr_family);
 	if (addr_family == AF_INET) {
 		add_ip4_config (new_contents, client_id, hostname, use_fqdn, hostname_flags);
 		add_request (reqs, "rfc3442-classless-static-routes");

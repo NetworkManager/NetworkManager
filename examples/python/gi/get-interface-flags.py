@@ -6,7 +6,7 @@
 
 import gi
 gi.require_version('NM', '1.0')
-from gi.repository import GLib, NM
+from gi.repository import NM
 
 if __name__ == "__main__":
     client = NM.Client.new(None)

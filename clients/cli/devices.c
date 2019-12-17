@@ -1436,6 +1436,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON;
 	else if (g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 
@@ -1749,6 +1750,7 @@ do_devices_status (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = "DEVICE,TYPE,STATE,CONNECTION";
 	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 
@@ -3149,6 +3151,7 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = NMC_FIELDS_DEV_WIFI_LIST_COMMON;
 	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 
@@ -4651,6 +4654,7 @@ do_device_lldp_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = NMC_FIELDS_DEV_LLDP_LIST_COMMON;
 	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 

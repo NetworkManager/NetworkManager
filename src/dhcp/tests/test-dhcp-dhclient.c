@@ -21,6 +21,7 @@
 #include "nm-test-utils-core.h"
 
 #define TEST_DIR             NM_BUILD_SRCDIR"/src/dhcp/tests"
+#define TEST_MUDURL          "https://example.com/mud.json"
 
 static void
 test_config (const char *orig,
@@ -33,7 +34,8 @@ test_config (const char *orig,
              const char *dhcp_client_id,
              GBytes *expected_new_client_id,
              const char *iface,
-             const char *anycast_addr)
+             const char *anycast_addr,
+             const char *mud_url)
 {
 	gs_free char *new = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
@@ -52,6 +54,7 @@ test_config (const char *orig,
 	                                      timeout,
 	                                      use_fqdn,
 	                                      hostname_flags,
+	                                      mud_url,
 	                                      "/path/to/dhclient.conf",
 	                                      orig,
 	                                      &new_client_id);
@@ -100,7 +103,37 @@ test_orig_missing (void)
 	             orig_missing_expected,
 	             AF_INET, NULL, 0, FALSE,
 	             NM_DHCP_HOSTNAME_FLAG_NONE,
-	             NULL, NULL, "eth0", NULL);
+	             NULL, NULL, "eth0", NULL, NULL);
+}
+
+/*****************************************************************************/
+
+
+static const char *orig_missing_add_mud_url_expected = \
+	"# Created by NetworkManager\n"
+	"\n"
+	"option mudurl code 161 = text;\n"
+	"send mudurl \"https://example.com/mud.json\";\n\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"also request root-path;\n"
+	"\n";
+
+static void
+test_orig_missing_add_mud_url (void)
+{
+	test_config (NULL,
+	             orig_missing_add_mud_url_expected,
+	             AF_INET, NULL, 0, FALSE,
+	             NM_DHCP_HOSTNAME_FLAG_NONE,
+	             NULL, NULL, "eth0", NULL, TEST_MUDURL);
 }
 
 /*****************************************************************************/
@@ -135,6 +168,7 @@ test_override_client_id (void)
 	             "11:22:33:44:55:66",
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -166,6 +200,7 @@ test_quote_client_id (void)
 	             "abcd",
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -197,6 +232,7 @@ test_quote_client_id_2 (void)
 	             "a\\bc",
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -228,6 +264,7 @@ test_hex_zero_client_id (void)
 	             "00:11:22:33",
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -259,6 +296,7 @@ test_ascii_client_id (void)
 	             "qb:cd:ef:12:34:56",
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -290,6 +328,7 @@ test_hex_single_client_id (void)
 	             "ab:cd:e:12:34:56",
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -329,6 +368,7 @@ test_existing_hex_client_id (void)
 	             NULL,
 	             new_client_id,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -367,6 +407,7 @@ test_existing_escaped_client_id (void)
 	             NULL,
 	             new_client_id,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -409,6 +450,7 @@ test_existing_ascii_client_id (void)
 	             NULL,
 	             new_client_id,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 /*****************************************************************************/
@@ -443,6 +485,7 @@ test_fqdn (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -486,6 +529,7 @@ test_fqdn_options_override (void)
 	             TRUE, NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -521,6 +565,7 @@ test_override_hostname (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -550,6 +595,7 @@ test_override_hostname6 (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -576,6 +622,7 @@ test_nonfqdn_hostname6 (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -613,6 +660,7 @@ test_existing_alsoreq (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -653,6 +701,7 @@ test_existing_req (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -694,6 +743,7 @@ test_existing_multiline_alsoreq (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -934,6 +984,7 @@ test_interface1 (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -981,6 +1032,7 @@ test_interface2 (void)
 	             NULL,
 	             NULL,
 	             "eth1",
+	             NULL,
 	             NULL);
 }
 
@@ -1093,6 +1145,7 @@ test_structured (void)
 	             NULL,
 	             new_client_id,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -1149,6 +1202,7 @@ test_config_req_intf (void)
 	             NULL,
 	             NULL,
 	             "eth0",
+	             NULL,
 	             NULL);
 }
 
@@ -1162,6 +1216,7 @@ main (int argc, char **argv)
 	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
+	g_test_add_func ("/dhcp/dhclient/orig_missing_add_mud_url", test_orig_missing_add_mud_url);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
 	g_test_add_func ("/dhcp/dhclient/quote_client_id/1", test_quote_client_id);
 	g_test_add_func ("/dhcp/dhclient/quote_client_id/2", test_quote_client_id_2);

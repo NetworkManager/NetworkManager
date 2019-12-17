@@ -46,32 +46,45 @@
 
 /*****************************************************************************/
 
-static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
-
 static GVariant *
 build_signal_parameters (void)
 {
-	char **item;
+	const char *const*environ_iter;
 	GVariantBuilder builder;
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
 	/* List environment and format for dbus dict */
-	for (item = environ; *item; item++) {
-		char *name, *val, **p;
+	for (environ_iter = (const char *const*) environ; *environ_iter; environ_iter++) {
+		static const char *const ignore_with_prefix_list[] = {
+			"PATH",
+			"SHLVL",
+			"_",
+			"PWD",
+			"dhc_dbus",
+			NULL
+		};
+		const char *item = *environ_iter;
+		gs_free char *name = NULL;
+		const char *val;
+		const char *const*p;
 
-		/* Split on the = */
-		name = g_strdup (*item);
-		val = strchr (name, '=');
-		if (!val || val == name)
-			goto next;
-		*val++ = '\0';
+		val = strchr (item, '=');
+		if (   !val
+		    || item == val)
+			continue;
 
-		/* Ignore non-DCHP-related environment variables */
-		for (p = (char **) ignore; *p; p++) {
+		name = g_strndup (item, val - item);
+		val += 1;
+
+		/* Ignore non-DHCP-related environment variables */
+		for (p = ignore_with_prefix_list; *p; p++) {
 			if (strncmp (name, *p, strlen (*p)) == 0)
 				goto next;
 		}
+
+		if (!g_utf8_validate (name, -1, NULL))
+			continue;
 
 		/* Value passed as a byte array rather than a string, because there are
 		 * no character encoding guarantees with DHCP, and D-Bus requires
@@ -85,8 +98,8 @@ build_signal_parameters (void)
 		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 		                                                  val, strlen (val), 1));
 
-	next:
-		g_free (name);
+next:
+		;
 	}
 
 	return g_variant_ref_sink (g_variant_new ("(a{sv})", &builder));

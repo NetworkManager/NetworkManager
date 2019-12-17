@@ -10,8 +10,6 @@ import gi
 gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
 
-import os
-
 ###############################################################################
 
 def usage():
@@ -136,7 +134,7 @@ def do_adjust_rollback_timeout(client):
         sys.exit("Missing timeout")
     try:
         add_timeout = int(sys.argv[3])
-    except:
+    except Exception:
         sys.exit("Invalid timeout")
 
     path = validate_path(sys.argv[2], client)
