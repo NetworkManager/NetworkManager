@@ -924,11 +924,12 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 /*****************************************************************************/
 
 static void
-lease_save (NDhcp4ClientLease *lease, const char *lease_file)
+lease_save (NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_file)
 {
 	struct in_addr a_address;
 	nm_auto_free_gstring GString *new_contents = NULL;
 	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+	gs_free_error GError *error = NULL;
 
 	nm_assert (lease);
 	nm_assert (lease_file);
@@ -942,10 +943,11 @@ lease_save (NDhcp4ClientLease *lease, const char *lease_file)
 	g_string_append_printf (new_contents,
 	                        "ADDRESS=%s\n", nm_utils_inet4_ntop (a_address.s_addr, sbuf));
 
-	g_file_set_contents (lease_file,
-	                     new_contents->str,
-	                     -1,
-	                     NULL);
+	if (!g_file_set_contents (lease_file,
+	                          new_contents->str,
+	                          -1,
+	                          &error))
+		_LOGW ("error saving lease to %s: %s", lease_file, error->message);
 }
 
 static void
@@ -975,7 +977,7 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
 	}
 
 	nm_dhcp_option_add_requests_to_options (options, _nm_dhcp_option_dhcp4_options);
-	lease_save (lease, priv->lease_file);
+	lease_save (self, lease, priv->lease_file);
 
 	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
 	                          NM_DHCP_STATE_BOUND,
