@@ -183,6 +183,31 @@ void nm_context_busy_watcher_integrate_source (GMainContext *outer_context,
 
 /*****************************************************************************/
 
+typedef struct {
+	GCancellable *cancellable;
+	GSource *cancel_on_idle_source;
+	gulong cancelled_id;
+	union {
+		struct {
+			GTask *task;
+		} async;
+		struct {
+			GMainLoop *main_loop;
+			GError **error_location;
+		} sync;
+	} data;
+	bool is_sync:1;
+} NMLInitData;
+
+NMLInitData *nml_init_data_new_sync (GCancellable *cancellable,
+                                     GMainLoop *main_loop,
+                                     GError **error_location);
+
+NMLInitData *nml_init_data_new_async (GCancellable *cancellable,
+                                      GTask *task_take);
+
+/*****************************************************************************/
+
 typedef struct _NMLDBusObject     NMLDBusObject;
 typedef struct _NMLDBusObjWatcher NMLDBusObjWatcher;
 typedef struct _NMLDBusMetaIface  NMLDBusMetaIface;
