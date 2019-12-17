@@ -357,8 +357,10 @@ _nm_dbus_error_is (GError *error, ...)
 
 	va_start (ap, error);
 	while ((name = va_arg (ap, const char *))) {
-		if (nm_streq (dbus_error, name))
+		if (nm_streq (dbus_error, name)) {
+			va_end (ap);
 			return TRUE;
+		}
 	}
 	va_end (ap);
 
