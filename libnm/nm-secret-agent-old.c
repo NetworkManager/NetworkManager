@@ -35,10 +35,12 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSecretAgentOld,
 	PROP_AUTO_REGISTER,
 	PROP_REGISTERED,
 	PROP_CAPABILITIES,
+	PROP_DBUS_CONNECTION,
 );
 
 typedef struct {
-	GDBusConnection *bus;
+	GDBusConnection *dbus_connection;
+	GMainContext *main_context;
 	NMDBusAgentManager *manager_proxy;
 	NMDBusSecretAgent *dbus_secret_agent;
 
@@ -81,6 +83,44 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSecretAgentOld, nm_secret_agent_old, G_TYPE_
 static void _register_call_cb (GObject *proxy,
                                GAsyncResult *result,
                                gpointer user_data);
+
+/*****************************************************************************/
+
+/**
+ * nm_secret_agent_old_get_dbus_connection:
+ * @self: the #NMSecretAgentOld instance
+ *
+ * Returns: (transfer none): the #GDBusConnection used by the secret agent.
+ *   You may either set this as construct property %NM_SECRET_AGENT_OLD_DBUS_CONNECTION,
+ *   or it will automatically set during initialization.
+ *
+ * Since: 1.24
+ */
+GDBusConnection *
+nm_secret_agent_old_get_dbus_connection (NMSecretAgentOld *self)
+{
+	g_return_val_if_fail (NM_IS_SECRET_AGENT_OLD (self), NULL);
+
+	return NM_SECRET_AGENT_OLD_GET_PRIVATE (self)->dbus_connection;
+}
+
+/**
+ * nm_secret_agent_old_get_main_context:
+ * @self: the #NMSecretAgentOld instance
+ *
+ * Returns: (transfer none): the #GMainContext instance associate with the
+ *   instance. This is the g_main_context_get_thread_default() at the time
+ *   when creating the instance.
+ *
+ * Since: 1.24
+ */
+GMainContext *
+nm_secret_agent_old_get_main_context (NMSecretAgentOld *self)
+{
+	g_return_val_if_fail (NM_IS_SECRET_AGENT_OLD (self), NULL);
+
+	return NM_SECRET_AGENT_OLD_GET_PRIVATE (self)->main_context;
+}
 
 /*****************************************************************************/
 
@@ -198,7 +238,7 @@ verify_sender (NMSecretAgentOld *self,
 		return TRUE;
 
 	/* Check the UID of the sender */
-	ret = g_dbus_connection_call_sync (priv->bus,
+	ret = g_dbus_connection_call_sync (priv->dbus_connection,
 	                                   DBUS_SERVICE_DBUS,
 	                                   DBUS_PATH_DBUS,
 	                                   DBUS_INTERFACE_DBUS,
@@ -524,7 +564,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 
 	g_return_val_if_fail (priv->registered == FALSE, FALSE);
 	g_return_val_if_fail (priv->registering_timeout_msec == 0, FALSE);
-	g_return_val_if_fail (priv->bus != NULL, FALSE);
+	g_return_val_if_fail (priv->dbus_connection != NULL, FALSE);
 	g_return_val_if_fail (priv->manager_proxy != NULL, FALSE);
 
 	/* Also make sure the subclass can actually respond to secrets requests */
@@ -540,7 +580,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 
 	/* Export our secret agent interface before registering with the manager */
 	if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (priv->dbus_secret_agent),
-	                                       priv->bus,
+	                                       priv->dbus_connection,
 	                                       NM_DBUS_PATH_SECRET_AGENT,
 	                                       error))
 		return FALSE;
@@ -749,7 +789,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 
 	g_return_if_fail (priv->registered == FALSE);
 	g_return_if_fail (priv->registering_timeout_msec == 0);
-	g_return_if_fail (priv->bus != NULL);
+	g_return_if_fail (priv->dbus_connection != NULL);
 	g_return_if_fail (priv->manager_proxy != NULL);
 
 	/* Also make sure the subclass can actually respond to secrets requests */
@@ -768,7 +808,7 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 
 	/* Export our secret agent interface before registering with the manager */
 	if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (priv->dbus_secret_agent),
-	                                       priv->bus,
+	                                       priv->dbus_connection,
 	                                       NM_DBUS_PATH_SECRET_AGENT,
 	                                       &error)) {
 		_LOGT ("register: failed to export D-Bus service: %s", error->message);
@@ -834,7 +874,7 @@ nm_secret_agent_old_unregister (NMSecretAgentOld *self,
 
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->bus != NULL, FALSE);
+	g_return_val_if_fail (priv->dbus_connection != NULL, FALSE);
 	g_return_val_if_fail (priv->manager_proxy != NULL, FALSE);
 
 	priv->suppress_auto = TRUE;
@@ -892,7 +932,7 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 
 	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->bus != NULL);
+	g_return_if_fail (priv->dbus_connection != NULL);
 	g_return_if_fail (priv->manager_proxy != NULL);
 
 	task = nm_g_task_new (self, cancellable, nm_secret_agent_old_unregister_async, callback, user_data);
@@ -1129,6 +1169,22 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static void
+init_async_start (NMSecretAgentOld *self, GTask *task_take)
+{
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+
+	nmdbus_agent_manager_proxy_new (priv->dbus_connection,
+	                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+	                                | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                                NM_DBUS_SERVICE,
+	                                NM_DBUS_PATH_AGENT_MANAGER,
+	                                g_task_get_cancellable (task_take),
+	                                init_async_got_proxy,
+	                                task_take);
+	g_steal_pointer (&task_take);
+}
+
+static void
 init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 {
 	gs_unref_object GTask *task = user_data;
@@ -1136,21 +1192,40 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	priv->bus = g_bus_get_finish (result, &error);
-	if (!priv->bus) {
+	priv->dbus_connection = g_bus_get_finish (result, &error);
+	if (!priv->dbus_connection) {
 		g_task_return_error (task, error);
 		return;
 	}
 
-	nmdbus_agent_manager_proxy_new (priv->bus,
-	                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-	                                | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                                NM_DBUS_SERVICE,
-	                                NM_DBUS_PATH_AGENT_MANAGER,
-	                                g_task_get_cancellable (task),
-	                                init_async_got_proxy,
-	                                task);
-	g_steal_pointer (&task);
+	init_async_start (self, g_steal_pointer (&task));
+
+	_notify (self, PROP_DBUS_CONNECTION);
+}
+
+static void
+init_async (GAsyncInitable *initable, int io_priority,
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
+{
+	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
+	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
+	GTask *task;
+
+	_LOGT ("init-async starting...");
+
+	task = g_task_new (self, cancellable, callback, user_data);
+	g_task_set_priority (task, io_priority);
+
+	if (!priv->dbus_connection) {
+		g_bus_get (_nm_dbus_bus_type (),
+		           cancellable,
+		           init_async_got_bus,
+		           task);
+		return;
+	}
+
+	init_async_start (self, task);
 }
 
 /*****************************************************************************/
@@ -1164,6 +1239,9 @@ get_property (GObject *object,
 	NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_DBUS_CONNECTION:
+		g_value_set_object (value, priv->dbus_connection);
+		break;
 	case PROP_IDENTIFIER:
 		g_value_set_string (value, priv->identifier);
 		break;
@@ -1192,6 +1270,10 @@ set_property (GObject *object,
 	const char *identifier;
 
 	switch (prop_id) {
+	case PROP_DBUS_CONNECTION:
+		/* construct-only */
+		priv->dbus_connection = g_value_dup_object (value);
+		break;
 	case PROP_IDENTIFIER:
 		identifier = g_value_get_string (value);
 
@@ -1222,6 +1304,9 @@ nm_secret_agent_old_init (NMSecretAgentOld *self)
 	_LOGT ("create new instance");
 
 	c_list_init (&priv->gsi_lst_head);
+
+	priv->main_context = g_main_context_ref_thread_default ();
+
 	priv->dbus_secret_agent = nmdbus_secret_agent_skeleton_new ();
 	_nm_dbus_bind_properties (self, priv->dbus_secret_agent);
 	_nm_dbus_bind_methods (self, priv->dbus_secret_agent,
@@ -1240,11 +1325,14 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	_LOGT ("init-sync");
 
-	priv->bus = g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
-	if (!priv->bus)
-		return FALSE;
+	if (!priv->dbus_connection) {
+		priv->dbus_connection = g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
+		if (!priv->dbus_connection)
+			return FALSE;
+		_notify (self, PROP_DBUS_CONNECTION);
+	}
 
-	priv->manager_proxy = nmdbus_agent_manager_proxy_new_sync (priv->bus,
+	priv->manager_proxy = nmdbus_agent_manager_proxy_new_sync (priv->dbus_connection,
 	                                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
 	                                                           | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                                                           NM_DBUS_SERVICE,
@@ -1260,25 +1348,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return nm_secret_agent_old_register (self, cancellable, error);
 	else
 		return TRUE;
-}
-
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data)
-{
-	NMSecretAgentOld *self = NM_SECRET_AGENT_OLD (initable);
-	GTask *task;
-
-	_LOGT ("init-async starting...");
-
-	task = g_task_new (self, cancellable, callback, user_data);
-	g_task_set_priority (task, io_priority);
-
-	g_bus_get (_nm_dbus_bus_type (),
-	           cancellable,
-	           init_async_got_bus,
-	           task);
 }
 
 static void
@@ -1307,9 +1376,11 @@ dispose (GObject *object)
 	}
 
 	g_clear_object (&priv->manager_proxy);
-	g_clear_object (&priv->bus);
 
 	G_OBJECT_CLASS (nm_secret_agent_old_parent_class)->dispose (object);
+
+	g_clear_object (&priv->dbus_connection);
+	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 }
 
 static void
@@ -1322,6 +1393,22 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	/**
+	 * NMSecretAgentOld:dbus-connection:
+	 *
+	 * The #GDBusConnection used by the instance. You may either set this
+	 * as construct-only property, or otherwise #NMSecretAgentOld will choose
+	 * a connection via g_bus_get() during initialization.
+	 *
+	 * Since: 1.24
+	 **/
+	obj_properties[PROP_DBUS_CONNECTION] =
+	    g_param_spec_object (NM_SECRET_AGENT_OLD_DBUS_CONNECTION, "", "",
+	                         G_TYPE_DBUS_CONNECTION,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSecretAgentOld:identifier:
