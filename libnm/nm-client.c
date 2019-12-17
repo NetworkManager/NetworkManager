@@ -186,22 +186,6 @@ typedef struct {
 
 /*****************************************************************************/
 
-typedef struct {
-	GCancellable *cancellable;
-	GSource *cancel_on_idle_source;
-	gulong cancelled_id;
-	union {
-		struct {
-			GTask *task;
-		} async;
-		struct {
-			GMainLoop *main_loop;
-			GError **error_location;
-		} sync;
-	} data;
-	bool is_sync:1;
-} InitData;
-
 NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_NAME_OWNER,
@@ -274,7 +258,7 @@ typedef struct {
 	GMainContext *dbus_context;
 	GObject *context_busy_watcher;
 	GDBusConnection *dbus_connection;
-	InitData *init_data;
+	NMLInitData *init_data;
 	GHashTable *dbus_objects;
 	CList obj_changed_lst_head;
 	GCancellable *name_owner_get_cancellable;
@@ -420,15 +404,15 @@ NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 
 /*****************************************************************************/
 
-static InitData *
-_init_data_new_sync (GCancellable *cancellable,
-                     GMainLoop *main_loop,
-                     GError **error_location)
+NMLInitData *
+nml_init_data_new_sync (GCancellable *cancellable,
+                        GMainLoop *main_loop,
+                        GError **error_location)
 {
-	InitData *init_data;
+	NMLInitData *init_data;
 
-	init_data = g_slice_new (InitData);
-	*init_data = (InitData) {
+	init_data = g_slice_new (NMLInitData);
+	*init_data = (NMLInitData) {
 		.cancellable = nm_g_object_ref (cancellable),
 		.is_sync     = TRUE,
 		.data.sync   = {
@@ -439,14 +423,14 @@ _init_data_new_sync (GCancellable *cancellable,
 	return init_data;
 }
 
-static InitData *
-_init_data_new_async (GCancellable *cancellable,
-                      GTask *task_take)
+NMLInitData *
+nml_init_data_new_async (GCancellable *cancellable,
+                         GTask *task_take)
 {
-	InitData *init_data;
+	NMLInitData *init_data;
 
-	init_data = g_slice_new (InitData);
-	*init_data = (InitData) {
+	init_data = g_slice_new (NMLInitData);
+	*init_data = (NMLInitData) {
 		.cancellable = nm_g_object_ref (cancellable),
 		.is_sync     = FALSE,
 		.data.async  = {
@@ -6913,7 +6897,7 @@ _init_start_complete (NMClient *self,
                       GError *error_take)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-	InitData *init_data;
+	NMLInitData *init_data;
 
 	init_data = g_steal_pointer (&priv->init_data);
 
@@ -7348,7 +7332,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	main_loop = g_main_loop_new (dbus_context, FALSE);
 
-	priv->init_data = _init_data_new_sync (cancellable, main_loop, &local_error);
+	priv->init_data = nml_init_data_new_sync (cancellable, main_loop, &local_error);
 
 	_init_start (self);
 
@@ -7401,7 +7385,7 @@ init_async (GAsyncInitable *initable,
 	task = nm_g_task_new (self, cancellable, init_async, callback, user_data);
 	g_task_set_priority (task, io_priority);
 
-	priv->init_data = _init_data_new_async (cancellable, g_steal_pointer (&task));
+	priv->init_data = nml_init_data_new_async (cancellable, g_steal_pointer (&task));
 
 	_init_start (self);
 }
