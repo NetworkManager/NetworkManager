@@ -21,6 +21,7 @@ G_BEGIN_DECLS
 #define NM_SECRET_AGENT_OLD_AUTO_REGISTER       "auto-register"
 #define NM_SECRET_AGENT_OLD_REGISTERED          "registered"
 #define NM_SECRET_AGENT_OLD_CAPABILITIES        "capabilities"
+#define NM_SECRET_AGENT_OLD_DBUS_CONNECTION     "dbus-connection"
 
 /**
  * NMSecretAgentOld:
@@ -178,6 +179,12 @@ typedef struct {
 } NMSecretAgentOldClass;
 
 GType nm_secret_agent_old_get_type (void);
+
+NM_AVAILABLE_IN_1_24
+GDBusConnection *nm_secret_agent_old_get_dbus_connection (NMSecretAgentOld *self);
+
+NM_AVAILABLE_IN_1_24
+GMainContext *nm_secret_agent_old_get_main_context (NMSecretAgentOld *self);
 
 gboolean nm_secret_agent_old_register        (NMSecretAgentOld *self,
                                               GCancellable *cancellable,
