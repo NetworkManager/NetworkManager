@@ -246,10 +246,10 @@ lease_option_print_domain_name (GString *str, uint8_t *cache, size_t *n_cachep, 
 				return TRUE;
 			}
 
-			if (!first) {
+			if (!first)
 				g_string_append_c(str, '.');
+			else
 				first = FALSE;
-			}
 
 			if (!lease_option_print_label (str, n_label, domainp, n_domainp))
 				return FALSE;
