@@ -60,7 +60,7 @@
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("nm-client-context-busy-watcher", nm_client_context_busy_watcher_quark)
+NM_CACHED_QUARK_FCN ("nm-context-busy-watcher", nm_context_busy_watcher_quark)
 
 static void
 _context_busy_watcher_attach_integration_source_cb (gpointer data,
@@ -69,10 +69,21 @@ _context_busy_watcher_attach_integration_source_cb (gpointer data,
 	nm_g_source_destroy_and_unref (data);
 }
 
-static void
-_context_busy_watcher_attach_integration_source (GObject *context_busy_watcher,
-                                                 GSource *source_take)
+void
+nm_context_busy_watcher_integrate_source (GMainContext *outer_context,
+                                          GMainContext *inner_context,
+                                          GObject *context_busy_watcher)
 {
+	GSource *source;
+
+	nm_assert (outer_context);
+	nm_assert (inner_context);
+	nm_assert (outer_context != inner_context);
+	nm_assert (G_IS_OBJECT (context_busy_watcher));
+
+	source = nm_utils_g_main_context_create_integrate_source (inner_context);
+	g_source_attach (source, outer_context);
+
 	/* The problem is...
 	 *
 	 * NMClient is associated with a GMainContext, just like its underlying GDBusConnection
@@ -114,7 +125,7 @@ _context_busy_watcher_attach_integration_source (GObject *context_busy_watcher,
 
 	g_object_weak_ref (context_busy_watcher,
 	                   _context_busy_watcher_attach_integration_source_cb,
-	                   source_take);
+	                   source);
 }
 
 /*****************************************************************************/
@@ -1008,7 +1019,7 @@ nm_client_get_context_busy_watcher (NMClient *self)
 	g_return_val_if_fail (NM_IS_CLIENT (self), NULL);
 
 	w = NM_CLIENT_GET_PRIVATE (self)->context_busy_watcher;
-	return    g_object_get_qdata (w, nm_client_context_busy_watcher_quark ())
+	return    g_object_get_qdata (w, nm_context_busy_watcher_quark ())
 	       ?: w;
 }
 
@@ -6816,7 +6827,7 @@ name_owner_changed (NMClient *self,
 
 		old_context_busy_watcher = g_steal_pointer (&priv->context_busy_watcher);
 		priv->context_busy_watcher = g_object_ref (g_object_get_qdata (old_context_busy_watcher,
-		                                                               nm_client_context_busy_watcher_quark ()));
+		                                                               nm_context_busy_watcher_quark ()));
 
 		g_main_context_ref (priv->main_context);
 		g_main_context_unref (priv->dbus_context);
@@ -7379,12 +7390,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	 * to resync and drop the inner context. That means, requests made against the inner
 	 * context have a different lifetime. Hence, we create a separate tracking
 	 * object. This "wraps" the outer context-busy-watcher and references it, so
-	 * that the work together. Grep for nm_client_context_busy_watcher_quark() to
+	 * that the work together. Grep for nm_context_busy_watcher_quark() to
 	 * see how this works. */
 	parent_context_busy_watcher = g_steal_pointer (&priv->context_busy_watcher);
 	priv->context_busy_watcher = g_object_new (G_TYPE_OBJECT, NULL);
 	g_object_set_qdata_full (priv->context_busy_watcher,
-	                         nm_client_context_busy_watcher_quark (),
+	                         nm_context_busy_watcher_quark (),
 	                         parent_context_busy_watcher,
 	                         g_object_unref);
 
@@ -7403,12 +7414,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	g_main_context_pop_thread_default (dbus_context);
 
 	if (priv->main_context != priv->dbus_context) {
-		GSource *source;
-
-		source = nm_utils_g_main_context_create_integrate_source (priv->dbus_context);
-		g_source_attach (source, priv->main_context);
-		_context_busy_watcher_attach_integration_source (priv->context_busy_watcher,
-		                                                 g_steal_pointer (&source));
+		nm_context_busy_watcher_integrate_source (priv->main_context,
+		                                          priv->dbus_context,
+		                                          priv->context_busy_watcher);
 	}
 
 	g_main_context_unref (dbus_context);
