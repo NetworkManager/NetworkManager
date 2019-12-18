@@ -319,7 +319,6 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
         switch (connection->request->userdata.type) {
         case N_DHCP4_C_MESSAGE_DISCOVER:
         case N_DHCP4_C_MESSAGE_SELECT:
-        case N_DHCP4_C_MESSAGE_REBOOT:
         case N_DHCP4_C_MESSAGE_INFORM:
                 /*
                  * Resend with an exponential backoff and a one second random
@@ -338,6 +337,7 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
                 break;
         case N_DHCP4_C_MESSAGE_REBIND:
         case N_DHCP4_C_MESSAGE_RENEW:
+        case N_DHCP4_C_MESSAGE_REBOOT:
                 /*
                  * Resend every sixty seconds with a one second random slack.
                  *
