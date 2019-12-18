@@ -6974,6 +6974,8 @@ _init_start_bus_get_cb (GObject *source, GAsyncResult *result, gpointer user_dat
 	priv->dbus_connection = dbus_connection;
 
 	_init_start_with_bus (self);
+
+	_notify (self, PROP_DBUS_CONNECTION);
 }
 
 static void
