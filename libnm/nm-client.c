@@ -440,6 +440,30 @@ nml_init_data_new_async (GCancellable *cancellable,
 	return init_data;
 }
 
+void
+nml_init_data_return (NMLInitData *init_data,
+                      GError *error_take)
+{
+	nm_assert (init_data);
+
+	nm_clear_pointer (&init_data->cancel_on_idle_source, nm_g_source_destroy_and_unref);
+	nm_clear_g_signal_handler (init_data->cancellable, &init_data->cancelled_id);
+
+	if (init_data->is_sync) {
+		if (error_take)
+			g_propagate_error (init_data->data.sync.error_location, error_take);
+		g_main_loop_quit (init_data->data.sync.main_loop);
+	} else {
+		if (error_take)
+			g_task_return_error (init_data->data.async.task, error_take);
+		else
+			g_task_return_boolean (init_data->data.async.task, TRUE);
+		g_object_unref (init_data->data.async.task);
+	}
+	nm_g_object_unref (init_data->cancellable);
+	nm_g_slice_free (init_data);
+}
+
 /*****************************************************************************/
 
 GError *
@@ -6952,30 +6976,13 @@ _init_start_complete (NMClient *self,
                       GError *error_take)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-	NMLInitData *init_data;
-
-	init_data = g_steal_pointer (&priv->init_data);
 
 	NML_NMCLIENT_LOG_D (self, "%s init complete with %s%s%s",
-	                   init_data->is_sync ? "sync" : "async",
+	                   priv->init_data->is_sync ? "sync" : "async",
 	                   NM_PRINT_FMT_QUOTED (error_take, "error: ", error_take->message, "", "success"));
 
-	nm_clear_pointer (&init_data->cancel_on_idle_source, nm_g_source_destroy_and_unref);
-	nm_clear_g_signal_handler (init_data->cancellable, &init_data->cancelled_id);
-
-	if (init_data->is_sync) {
-		if (error_take)
-			g_propagate_error (init_data->data.sync.error_location, error_take);
-		g_main_loop_quit (init_data->data.sync.main_loop);
-	} else {
-		if (error_take)
-			g_task_return_error (init_data->data.async.task, error_take);
-		else
-			g_task_return_boolean (init_data->data.async.task, TRUE);
-		g_object_unref (init_data->data.async.task);
-	}
-	nm_g_object_unref (init_data->cancellable);
-	nm_g_slice_free (init_data);
+	nml_init_data_return (g_steal_pointer (&priv->init_data),
+	                      error_take);
 }
 
 static void

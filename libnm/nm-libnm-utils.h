@@ -206,6 +206,9 @@ NMLInitData *nml_init_data_new_sync (GCancellable *cancellable,
 NMLInitData *nml_init_data_new_async (GCancellable *cancellable,
                                       GTask *task_take);
 
+void nml_init_data_return (NMLInitData *init_data,
+                           GError *error_take);
+
 /*****************************************************************************/
 
 typedef struct _NMLDBusObject     NMLDBusObject;
