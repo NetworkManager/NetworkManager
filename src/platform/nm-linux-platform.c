@@ -645,6 +645,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_IP6GRE,        "ip6gre",      "ip6gre",      NULL },
 	{ NM_LINK_TYPE_IP6GRETAP,     "ip6gretap",   "ip6gretap",   NULL },
 	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
+	{ NM_LINK_TYPE_VTI,           "vti",         "vti",         NULL },
 	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
 	{ NM_LINK_TYPE_MACSEC,        "macsec",      "macsec",      NULL },
 	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
@@ -1426,6 +1427,41 @@ _parse_lnk_ipip (const char *kind, struct nlattr *info_data)
 	props->tos = tb[IFLA_IPTUN_TOS] ? nla_get_u8 (tb[IFLA_IPTUN_TOS]) : 0;
 	props->ttl = tb[IFLA_IPTUN_TTL] ? nla_get_u8 (tb[IFLA_IPTUN_TTL]) : 0;
 	props->path_mtu_discovery = !tb[IFLA_IPTUN_PMTUDISC] || !!nla_get_u8 (tb[IFLA_IPTUN_PMTUDISC]);
+
+	return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
+_parse_lnk_vti (const char *kind, struct nlattr *info_data)
+{
+    static const struct nla_policy policy[] = {
+    	[IFLA_VTI_LINK]     = { .type = NLA_U32 },
+    	[IFLA_VTI_IKEY]     = { .type = NLA_U32 },
+    	[IFLA_VTI_OKEY]     = { .type = NLA_U32 },
+    	[IFLA_VTI_LOCAL]    = { .type = NLA_U32 },
+    	[IFLA_VTI_REMOTE]   = { .type = NLA_U32 },
+    };
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
+	NMPObject *obj;
+	NMPlatformLnkVti *props;
+
+	if (   !info_data
+	    || !nm_streq0 (kind, "vti"))
+		return NULL;
+
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_VTI, NULL);
+	props = &obj->lnk_vti;
+
+	props->parent_ifindex = tb[IFLA_VTI_LINK] ? nla_get_u32 (tb[IFLA_VTI_LINK]) : 0;
+	props->local = tb[IFLA_VTI_LOCAL] ? nla_get_u32 (tb[IFLA_VTI_LOCAL]) : 0;
+	props->remote = tb[IFLA_VTI_REMOTE] ? nla_get_u32 (tb[IFLA_VTI_REMOTE]) : 0;
+	props->input_key = tb[IFLA_VTI_IKEY] ? ntohl (nla_get_u32 (tb[IFLA_VTI_IKEY])) : 0;
+	props->output_key = tb[IFLA_VTI_OKEY] ? ntohl (nla_get_u32 (tb[IFLA_VTI_OKEY])) : 0;
 
 	return obj;
 }
@@ -2780,6 +2816,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		break;
 	case NM_LINK_TYPE_IPIP:
 		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_VTI:
+		lnk_data = _parse_lnk_vti (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_MACSEC:
 		lnk_data = _parse_lnk_macsec (nl_info_kind, nl_info_data);
@@ -7399,6 +7438,46 @@ nla_put_failure:
 }
 
 static gboolean
+link_vti_add (NMPlatform *platform,
+               const char *name,
+               const NMPlatformLnkVti *props,
+               const NMPlatformLink **out_link)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nlattr *info;
+    struct nlattr *data;
+
+    nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+                              NLM_F_CREATE | NLM_F_EXCL,
+                              0,
+                              name);
+    if (!nlmsg)
+        return FALSE;
+
+    if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+        goto nla_put_failure;
+
+    NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "vti");
+
+    if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+        goto nla_put_failure;
+
+    if (props->parent_ifindex)
+        NLA_PUT_U32 (nlmsg, IFLA_VTI_LINK, props->parent_ifindex);
+    NLA_PUT_U32 (nlmsg, IFLA_VTI_LOCAL, props->local);
+    NLA_PUT_U32 (nlmsg, IFLA_VTI_REMOTE, props->remote);
+	NLA_PUT_U32 (nlmsg, IFLA_VTI_IKEY, htonl (props->input_key));
+	NLA_PUT_U32 (nlmsg, IFLA_VTI_OKEY, htonl (props->output_key));
+
+    nla_nest_end (nlmsg, data);
+    nla_nest_end (nlmsg, info);
+
+    return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VTI, name, nlmsg, out_link) >= 0);
+nla_put_failure:
+    g_return_val_if_reached (FALSE);
+}
+
+static gboolean
 link_macsec_add (NMPlatform *platform,
                  const char *name,
                  int parent,
@@ -9330,6 +9409,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_macsec_add = link_macsec_add;
 	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_ipip_add = link_ipip_add;
+	platform_class->link_vti_add = link_vti_add;
 	platform_class->link_sit_add = link_sit_add;
 	platform_class->link_tun_add = link_tun_add;
 	platform_class->link_6lowpan_add = link_6lowpan_add;

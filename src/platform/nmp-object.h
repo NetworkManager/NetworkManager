@@ -260,6 +260,10 @@ typedef struct {
 } NMPObjectLnkIpIp;
 
 typedef struct {
+	NMPlatformLnkVti _public;
+} NMPObjectLnkVti;
+
+typedef struct {
 	NMPlatformLnkMacsec _public;
 } NMPObjectLnkMacsec;
 
@@ -347,6 +351,9 @@ struct _NMPObject {
 
 		NMPlatformLnkIpIp       lnk_ipip;
 		NMPObjectLnkIpIp        _lnk_ipip;
+
+		NMPlatformLnkVti       lnk_vti;
+		NMPObjectLnkVti        _lnk_vti;
 
 		NMPlatformLnkIp6Tnl     lnk_ip6tnl;
 		NMPObjectLnkIp6Tnl      _lnk_ip6tnl;

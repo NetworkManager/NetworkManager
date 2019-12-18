@@ -2181,6 +2181,12 @@ nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLi
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IPIP, out_link);
 }
 
+const NMPlatformLnkVti *
+nm_platform_link_get_lnk_vti (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_VTI, out_link);
+}
+
 const NMPlatformLnkMacsec *
 nm_platform_link_get_lnk_macsec (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -3022,6 +3028,39 @@ nm_platform_link_ipip_add (NMPlatform *self,
 	if (!klass->link_ipip_add (self, name, props, out_link))
 		return -NME_UNSPEC;
 	return 0;
+}
+
+/**
+ * nm_platform_link_vti_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create a software VTI device.
+ */
+int
+nm_platform_link_vti_add (NMPlatform *self,
+                          const char *name,
+                          const NMPlatformLnkVti *props,
+                          const NMPlatformLink **out_link)
+{   
+    int r;
+    
+    _CHECK_SELF (self, klass, -NME_BUG);
+    
+    g_return_val_if_fail (props, -NME_BUG);
+    g_return_val_if_fail (name, -NME_BUG);
+    
+    r = _link_add_check_existing (self, name, NM_LINK_TYPE_VTI, out_link);
+    if (r < 0) 
+        return r;
+    
+    _LOG2D ("adding link %s", nm_platform_lnk_vti_to_string (props, NULL, 0));
+    
+    if (!klass->link_vti_add (self, name, props, out_link))
+        return -NME_UNSPEC;
+    return 0;
 }
 
 /**
@@ -5718,6 +5757,39 @@ nm_platform_lnk_ipip_to_string (const NMPlatformLnkIpIp *lnk, char *buf, gsize l
 }
 
 const char *
+nm_platform_lnk_vti_to_string (const NMPlatformLnkVti *lnk, char *buf, gsize len)
+{
+	char str_parent_ifindex[30];
+    char str_local[30];
+    char str_local1[NM_UTILS_INET_ADDRSTRLEN];
+    char str_remote[30];
+    char str_remote1[NM_UTILS_INET_ADDRSTRLEN];
+    char str_input_key[30];
+    char str_input_key1[NM_UTILS_INET_ADDRSTRLEN];
+    char str_output_key[30];
+    char str_output_key1[NM_UTILS_INET_ADDRSTRLEN];
+
+    if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+        return buf;
+
+    g_snprintf (buf, len,
+                "vti"
+                "%s" /* remote */
+                "%s" /* local */
+                "%s" /* parent_ifindex */
+                "%s" /* ikey */
+                "%s" /* okey */
+                "",
+                lnk->remote ? nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet4_ntop (lnk->remote, str_remote1)) : "",
+                lnk->local ? nm_sprintf_buf (str_local, " local %s", nm_utils_inet4_ntop (lnk->local, str_local1)) : "",
+                lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
+                lnk->input_key ? nm_sprintf_buf (str_input_key, " ikey %s", nm_utils_inet4_ntop (lnk->input_key, str_input_key1)) : "",
+                lnk->output_key ? nm_sprintf_buf (str_output_key, " okey %s", nm_utils_inet4_ntop (lnk->output_key, str_output_key1)) : "");
+
+    return buf;
+}
+
+const char *
 nm_platform_lnk_macsec_to_string (const NMPlatformLnkMacsec *lnk, char *buf, gsize len)
 {
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
@@ -7081,6 +7153,29 @@ nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b
 	NM_CMP_FIELD (a, b, tos);
 	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
+}
+
+void
+nm_platform_lnk_vti_hash_update (const NMPlatformLnkVti *obj, NMHashState *h)
+{
+    nm_hash_update_vals (h,
+                         obj->local,
+                         obj->remote,
+                         obj->parent_ifindex,
+                         obj->input_key,
+                         obj->output_key);
+}
+
+int
+nm_platform_lnk_vti_cmp (const NMPlatformLnkVti *a, const NMPlatformLnkVti *b)
+{
+    NM_CMP_SELF (a, b);
+    NM_CMP_FIELD (a, b, parent_ifindex);
+    NM_CMP_FIELD (a, b, local);
+    NM_CMP_FIELD (a, b, remote);
+    NM_CMP_FIELD (a, b, input_key);
+    NM_CMP_FIELD (a, b, output_key);
+    return 0;
 }
 
 void
