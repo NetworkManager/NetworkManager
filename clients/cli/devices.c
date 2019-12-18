@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "common.h"
 #include "connections.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 
 /* define some prompts */
 #define PROMPT_INTERFACE  _("Interface: ")
@@ -3639,7 +3640,7 @@ finish:
 	if (bssid2_arr)
 		g_byte_array_free (bssid2_arr, TRUE);
 	g_free (ssid_ask);
-	g_free (passwd_ask);
+	nm_free_secret (passwd_ask);
 
 	return nmc->return_value;
 }
