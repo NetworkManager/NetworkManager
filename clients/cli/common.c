@@ -1005,7 +1005,7 @@ nmc_readline_echo (const NmcConfig *nmc_config,
 	va_list args;
 	gs_free char *prompt = NULL;
 	char *str;
-	HISTORY_STATE *saved_history;
+	nm_auto_free HISTORY_STATE *saved_history = NULL;
 	HISTORY_STATE passwd_history = { 0, };
 
 	va_start (args, prompt_fmt);
@@ -1018,6 +1018,10 @@ nmc_readline_echo (const NmcConfig *nmc_config,
 	if (!echo_on) {
 		saved_history = history_get_history_state ();
 		history_set_history_state (&passwd_history);
+		/* stifling history is important as it tells readline to
+		 * not store anything, otherwise sensitive data could be
+		 * leaked */
+		stifle_history (0);
 		rl_redisplay_function = nmc_secret_redisplay;
 	}
 
