@@ -17,6 +17,7 @@
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 
 #include "utils.h"
 
@@ -732,7 +733,7 @@ get_secrets_from_user (const NmcConfig *nmc_config,
 		/* No password provided, cancel the secrets. */
 		if (!pwd)
 			return FALSE;
-		g_free (secret->value);
+		nm_free_secret (secret->value);
 		secret->value = pwd;
 	}
 	return TRUE;

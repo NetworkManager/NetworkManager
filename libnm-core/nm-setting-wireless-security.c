@@ -13,6 +13,7 @@
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-setting-wireless.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 
 /**
  * SECTION:nm-setting-wireless-security
@@ -1316,33 +1317,33 @@ set_property (GObject *object, guint prop_id,
 		priv->leap_username = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY0:
-		g_free (priv->wep_key0);
+		nm_free_secret (priv->wep_key0);
 		priv->wep_key0 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY1:
-		g_free (priv->wep_key1);
+		nm_free_secret (priv->wep_key1);
 		priv->wep_key1 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY2:
-		g_free (priv->wep_key2);
+		nm_free_secret (priv->wep_key2);
 		priv->wep_key2 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY3:
-		g_free (priv->wep_key3);
+		nm_free_secret (priv->wep_key3);
 		priv->wep_key3 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY_FLAGS:
 		priv->wep_key_flags = g_value_get_flags (value);
 		break;
 	case PROP_PSK:
-		g_free (priv->psk);
+		nm_free_secret (priv->psk);
 		priv->psk = g_value_dup_string (value);
 		break;
 	case PROP_PSK_FLAGS:
 		priv->psk_flags = g_value_get_flags (value);
 		break;
 	case PROP_LEAP_PASSWORD:
-		g_free (priv->leap_password);
+		nm_free_secret (priv->leap_password);
 		priv->leap_password = g_value_dup_string (value);
 		break;
 	case PROP_LEAP_PASSWORD_FLAGS:
@@ -1392,12 +1393,12 @@ finalize (GObject *object)
 	g_free (priv->key_mgmt);
 	g_free (priv->auth_alg);
 	g_free (priv->leap_username);
-	g_free (priv->wep_key0);
-	g_free (priv->wep_key1);
-	g_free (priv->wep_key2);
-	g_free (priv->wep_key3);
-	g_free (priv->psk);
-	g_free (priv->leap_password);
+	nm_free_secret (priv->wep_key0);
+	nm_free_secret (priv->wep_key1);
+	nm_free_secret (priv->wep_key2);
+	nm_free_secret (priv->wep_key3);
+	nm_free_secret (priv->psk);
+	nm_free_secret (priv->leap_password);
 
 	g_slist_free_full (priv->proto, g_free);
 	g_slist_free_full (priv->pairwise, g_free);
