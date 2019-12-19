@@ -128,6 +128,7 @@ lease_option_next_route (struct in_addr *destp,
 	uint8_t *data = *datap;
 	size_t n_data = *n_datap;
 	uint8_t plen;
+	uint8_t bytes;
 
 	if (classless) {
 		if (!lease_option_consume (&plen, sizeof (plen), &data, &n_data))
@@ -136,7 +137,9 @@ lease_option_next_route (struct in_addr *destp,
 		if (plen > 32)
 			return FALSE;
 
-		if (!lease_option_consume (&dest, plen / 8, &data, &n_data))
+		bytes = plen == 0 ? 0 : ((plen - 1) / 8) + 1;
+
+		if (!lease_option_consume (&dest, bytes, &data, &n_data))
 			return FALSE;
 	} else {
 		if (!lease_option_next_in_addr (&dest, &data, &n_data))
