@@ -1253,6 +1253,39 @@ svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 	return changed;
 }
 
+gboolean
+svUnsetDirtyWellknown (shvarFile *s, NMTernary new_dirty_value)
+{
+	shvarLine *line;
+	gboolean changed = FALSE;
+
+	g_return_val_if_fail (s, FALSE);
+
+	c_list_for_each_entry (line, &s->lst_head, lst) {
+		const NMSIfcfgKeyTypeInfo *ti;
+
+		ASSERT_shvarLine (line);
+
+		if (   line->dirty
+		    && line->key
+		    && line->line
+		    && (ti = nms_ifcfg_rh_utils_is_well_known_key (line->key))
+		    && !NM_FLAGS_HAS (ti->key_flags, NMS_IFCFG_KEY_TYPE_KEEP_WHEN_DIRTY)) {
+			if (nm_clear_g_free (&line->line)) {
+				ASSERT_shvarLine (line);
+				changed = TRUE;
+			}
+		}
+
+		if (new_dirty_value != NM_TERNARY_DEFAULT)
+			line->dirty = (new_dirty_value != NM_TERNARY_FALSE);
+	}
+
+	if (changed)
+		s->modified = TRUE;
+	return changed;
+}
+
 /* Same as svSetValueStr() but it preserves empty @value -- contrary to
  * svSetValueStr() for which "" effectively means to remove the value. */
 gboolean
