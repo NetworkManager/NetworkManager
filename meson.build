@@ -154,8 +154,12 @@ if enable_ld_gc
 
   test_ldflags = ['-Wl,--gc-sections']
 
-  foreach cflag: test_c_flags + test_ldflags
+  foreach cflag: test_c_flags
     assert(cc.has_argument(cflag), 'Unused symbol eviction requested but not supported. Use -Dld_gc=false to build without it.')
+  endforeach
+
+  foreach ldflag: test_ldflags
+    assert(cc.has_link_argument(ldflag), 'Linker garbage collection requested but not supported. Use -Dld_gc=false to build without it.')
   endforeach
 
   common_flags += test_c_flags
