@@ -1460,8 +1460,8 @@ _parse_lnk_vti (const char *kind, struct nlattr *info_data)
 	props->parent_ifindex = tb[IFLA_VTI_LINK] ? nla_get_u32 (tb[IFLA_VTI_LINK]) : 0;
 	props->local = tb[IFLA_VTI_LOCAL] ? nla_get_u32 (tb[IFLA_VTI_LOCAL]) : 0;
 	props->remote = tb[IFLA_VTI_REMOTE] ? nla_get_u32 (tb[IFLA_VTI_REMOTE]) : 0;
-	props->input_key = tb[IFLA_VTI_IKEY] ? nla_get_be32 (tb[IFLA_VTI_IKEY]) : 0;
-	props->output_key = tb[IFLA_VTI_OKEY] ? nla_get_be32 (tb[IFLA_VTI_OKEY]) : 0;
+	props->input_key = tb[IFLA_VTI_IKEY] ? nla_get_u32 (tb[IFLA_VTI_IKEY]) : 0;
+	props->output_key = tb[IFLA_VTI_OKEY] ? nla_get_u32 (tb[IFLA_VTI_OKEY]) : 0;
 
 	return obj;
 }
