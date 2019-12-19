@@ -14,7 +14,7 @@
 #include "nm-simple-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-manager.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-keep-alive.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"

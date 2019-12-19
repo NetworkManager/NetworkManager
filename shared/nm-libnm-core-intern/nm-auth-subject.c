@@ -17,8 +17,6 @@
 
 #include <stdlib.h>
 
-#include "nm-dbus-manager.h"
-
 enum {
 	PROP_0,
 	PROP_SUBJECT_TYPE,
@@ -152,74 +150,6 @@ nm_auth_subject_get_unix_process_dbus_sender (NMAuthSubject *subject)
 
 /*****************************************************************************/
 
-static NMAuthSubject *
-_new_unix_process (GDBusMethodInvocation *context,
-                   GDBusConnection *connection,
-                   GDBusMessage *message)
-{
-	NMAuthSubject *self;
-	const char *dbus_sender = NULL;
-	gulong uid = 0;
-	gulong pid = 0;
-	gboolean success;
-
-	g_return_val_if_fail (context || (connection && message), NULL);
-
-	if (context) {
-		success = nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
-		                                           context,
-		                                           &dbus_sender,
-		                                           &uid,
-		                                           &pid);
-	} else {
-		nm_assert (message);
-		success = nm_dbus_manager_get_caller_info_from_message (nm_dbus_manager_get (),
-		                                                        connection,
-		                                                        message,
-		                                                        &dbus_sender,
-		                                                        &uid,
-		                                                        &pid);
-	}
-
-	if (!success)
-		return NULL;
-
-	g_return_val_if_fail (dbus_sender && *dbus_sender, NULL);
-	/* polkit glib library stores uid and pid as int. There might be some
-	 * pitfalls if the id ever happens to be larger then that. Just assert against
-	 * it here. */
-	g_return_val_if_fail (uid <= MIN (G_MAXINT, G_MAXINT32), NULL);
-	g_return_val_if_fail (pid > 0 && pid <= MIN (G_MAXINT, G_MAXINT32), NULL);
-
-	self = NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
-	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
-	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_DBUS_SENDER, dbus_sender,
-	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_PID, (gulong) pid,
-	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_UID, (gulong) uid,
-	                                      NULL));
-
-	if (NM_AUTH_SUBJECT_GET_PRIVATE (self)->subject_type != NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
-		/* this most likely happened because the process is gone (start_time==0).
-		 * Either that is not assert-worthy, or constructed() already asserted.
-		 * Just return NULL. */
-		g_clear_object (&self);
-	}
-	return self;
-}
-
-NMAuthSubject *
-nm_auth_subject_new_unix_process_from_context (GDBusMethodInvocation *context)
-{
-	return _new_unix_process (context, NULL, NULL);
-}
-
-NMAuthSubject *
-nm_auth_subject_new_unix_process_from_message (GDBusConnection *connection,
-                                               GDBusMessage *message)
-{
-	return _new_unix_process (NULL, connection, message);
-}
-
 /**
  * nm_auth_subject_new_internal():
  *
@@ -231,8 +161,39 @@ NMAuthSubject *
 nm_auth_subject_new_internal (void)
 {
 	return NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
-	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL,
-	                                      NULL));
+                                          NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL,
+                                          NULL));
+}
+
+/**
+ * nm_auth_subject_new_unix_process():
+ *
+ * Creates a new auth subject representing a give unix process.
+ *
+ * Returns: the new #NMAuthSubject
+ */
+NMAuthSubject *
+nm_auth_subject_new_unix_process (const char *dbus_sender, gulong pid, gulong uid)
+{
+	return NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
+                                          NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+                                          NM_AUTH_SUBJECT_UNIX_PROCESS_DBUS_SENDER, dbus_sender,
+                                          NM_AUTH_SUBJECT_UNIX_PROCESS_PID, pid,
+                                          NM_AUTH_SUBJECT_UNIX_PROCESS_UID, uid,
+                                          NULL));
+}
+
+/**
+ * nm_auth_subject_new_unix_process_self():
+ *
+ * Creates a new auth subject representing the current executing process.
+ *
+ * Returns: the new #NMAuthSubject
+ */
+NMAuthSubject *
+nm_auth_subject_new_unix_process_self (void)
+{
+	return nm_auth_subject_new_unix_process (NULL, getpid(), getuid());
 }
 
 /*****************************************************************************/
@@ -349,8 +310,6 @@ constructed (GObject *object)
 			 * Don't bother and require the user id as parameter. */
 			break;
 		}
-		if (!priv->unix_process.dbus_sender || !*priv->unix_process.dbus_sender)
-			break;
 
 		priv->unix_process.start_time = nm_utils_get_start_time_for_pid (priv->unix_process.pid, NULL, NULL);
 

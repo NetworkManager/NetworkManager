@@ -119,6 +119,8 @@ nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')
 
+nm_auth_subject_source = files('nm-libnm-core-intern/nm-auth-subject.c')
+
 c_flags = [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=0',

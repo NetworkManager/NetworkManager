@@ -374,7 +374,7 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 	NMSecretAgent *agent;
 	NMAuthChain *chain;
 
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,

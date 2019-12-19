@@ -25,14 +25,15 @@ typedef enum {
 #define NM_AUTH_SUBJECT_UNIX_PROCESS_UID           "unix-process-uid"
 
 typedef struct _NMAuthSubjectClass NMAuthSubjectClass;
+typedef struct _NMAuthSubject NMAuthSubject;
 
 GType nm_auth_subject_get_type (void);
 
 NMAuthSubject *nm_auth_subject_new_internal (void);
 
-NMAuthSubject *nm_auth_subject_new_unix_process_from_context (GDBusMethodInvocation *context);
+NMAuthSubject *nm_auth_subject_new_unix_process (const char *dbus_sender, gulong pid, gulong uid);
 
-NMAuthSubject *nm_auth_subject_new_unix_process_from_message (GDBusConnection *connection, GDBusMessage *message);
+NMAuthSubject *nm_auth_subject_new_unix_process_self (void);
 
 NMAuthSubjectType nm_auth_subject_get_subject_type (NMAuthSubject *subject);
 

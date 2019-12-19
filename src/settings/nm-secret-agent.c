@@ -14,7 +14,7 @@
 #include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
 #include "c-list/src/c-list.h"

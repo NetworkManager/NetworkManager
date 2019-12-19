@@ -14,7 +14,7 @@
 
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-setting-ip4-config.h"

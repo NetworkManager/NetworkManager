@@ -476,6 +476,8 @@ shared_nm_libnm_core_intern_libnm_libnm_core_intern_la_SOURCES = \
 	shared/nm-libnm-core-intern/nm-ethtool-utils.h \
 	shared/nm-libnm-core-intern/nm-libnm-core-utils.c \
 	shared/nm-libnm-core-intern/nm-libnm-core-utils.h \
+	shared/nm-libnm-core-intern/nm-auth-subject.c \
+	shared/nm-libnm-core-intern/nm-auth-subject.h \
 	$(NULL)
 
 shared_nm_libnm_core_intern_libnm_libnm_core_intern_la_LDFLAGS = \
@@ -2244,8 +2246,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-proxy-config.h \
 	src/nm-auth-manager.c \
 	src/nm-auth-manager.h \
-	src/nm-auth-subject.c \
-	src/nm-auth-subject.h \
 	src/nm-auth-utils.c \
 	src/nm-auth-utils.h \
 	src/nm-manager.c \

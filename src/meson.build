@@ -125,7 +125,6 @@ sources = files(
   'nm-act-request.c',
   'nm-audit-manager.c',
   'nm-auth-manager.c',
-  'nm-auth-subject.c',
   'nm-auth-utils.c',
   'nm-dbus-manager.c',
   'nm-checkpoint.c',

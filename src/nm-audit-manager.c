@@ -11,8 +11,9 @@
 #include <libaudit.h>
 #endif
 
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-config.h"
+#include "nm-dbus-manager.h"
 #include "settings/nm-settings-connection.h"
 
 /*****************************************************************************/
@@ -195,7 +196,7 @@ _audit_log_helper (NMAuditManager *self,
 		else if (G_IS_DBUS_METHOD_INVOCATION (subject_context)) {
 			GDBusMethodInvocation *context = subject_context;
 
-			subject = subject_free = nm_auth_subject_new_unix_process_from_context (context);
+			subject = subject_free = nm_dbus_manager_new_auth_subject_from_context (context);
 		} else
 			g_warn_if_reached ();
 	}

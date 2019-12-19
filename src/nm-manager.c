@@ -2437,7 +2437,7 @@ device_auth_request_cb (NMDevice *device,
 	char *permission_dup;
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -5174,7 +5174,7 @@ validate_activation_request (NMManager *self,
 		connection = nm_settings_connection_get_connection (sett_conn);
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
@@ -5824,7 +5824,7 @@ impl_manager_deactivate_connection (NMDBusObject *obj,
 	}
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 	if (!subject) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -6108,7 +6108,7 @@ impl_manager_sleep (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(b)", &do_sleep);
 
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 
 	if (priv->sleeping == do_sleep) {
 		error = g_error_new (NM_MANAGER_ERROR,
@@ -6935,7 +6935,7 @@ nm_manager_dbus_set_property_handle (NMDBusObject *obj,
 	gs_unref_object NMAuthSubject *subject = NULL;
 	DBusSetPropertyHandle *handle_data;
 
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 	if (!subject) {
 		error_message = NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN;
 		goto err;

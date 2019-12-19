@@ -9,9 +9,10 @@
 
 #include "nm-glib-aux/nm-c-list.h"
 #include "nm-setting-connection.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"
+#include "nm-dbus-manager.h"
 
 /*****************************************************************************/
 
@@ -395,7 +396,7 @@ nm_auth_chain_new_context (GDBusMethodInvocation *context,
 	g_return_val_if_fail (context, NULL);
 	nm_assert (done_func);
 
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject)
 		return NULL;
 

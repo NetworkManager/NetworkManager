@@ -19,6 +19,7 @@
 #include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-dbus-object.h"
 #include "NetworkManagerUtils.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 
 /* The base path for our GDBusObjectManagerServers.  They do not contain
  * "NetworkManager" because GDBusObjectManagerServer requires that all
@@ -1668,4 +1669,67 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 	                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, G_TYPE_POINTER);
+}
+
+static NMAuthSubject *
+_new_unix_process (GDBusMethodInvocation *context,
+                   GDBusConnection *connection,
+                   GDBusMessage *message)
+{
+	NMAuthSubject *self;
+	const char *dbus_sender = NULL;
+	gulong uid = 0;
+	gulong pid = 0;
+	gboolean success;
+
+	g_return_val_if_fail (context || (connection && message), NULL);
+
+	if (context) {
+		success = nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
+		                                           context,
+		                                           &dbus_sender,
+		                                           &uid,
+		                                           &pid);
+	} else {
+		nm_assert (message);
+		success = nm_dbus_manager_get_caller_info_from_message (nm_dbus_manager_get (),
+		                                                        connection,
+		                                                        message,
+		                                                        &dbus_sender,
+		                                                        &uid,
+		                                                        &pid);
+	}
+
+	if (!success)
+		return NULL;
+
+	g_return_val_if_fail (dbus_sender && *dbus_sender, NULL);
+	/* polkit glib library stores uid and pid as int. There might be some
+	 * pitfalls if the id ever happens to be larger then that. Just assert against
+	 * it here. */
+	g_return_val_if_fail (uid <= MIN (G_MAXINT, G_MAXINT32), NULL);
+	g_return_val_if_fail (pid > 0 && pid <= MIN (G_MAXINT, G_MAXINT32), NULL);
+
+	self = nm_auth_subject_new_unix_process (dbus_sender, pid, uid);
+
+	if (nm_auth_subject_get_subject_type (self) != NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
+		/* this most likely happened because the process is gone (start_time==0).
+		 * Either that is not assert-worthy, or constructed() already asserted.
+		 * Just return NULL. */
+		g_clear_object (&self);
+	}
+	return self;
+}
+
+NMAuthSubject *
+nm_dbus_manager_new_auth_subject_from_context (GDBusMethodInvocation *context)
+{
+	return _new_unix_process (context, NULL, NULL);
+}
+
+NMAuthSubject *
+nm_dbus_manager_new_auth_subject_from_message (GDBusConnection *connection,
+                                               GDBusMessage *message)
+{
+	return _new_unix_process (NULL, connection, message);
 }
