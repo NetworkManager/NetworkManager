@@ -5765,9 +5765,7 @@ nm_platform_lnk_vti_to_string (const NMPlatformLnkVti *lnk, char *buf, gsize len
     char str_remote[30];
     char str_remote1[NM_UTILS_INET_ADDRSTRLEN];
     char str_input_key[30];
-    char str_input_key1[NM_UTILS_INET_ADDRSTRLEN];
     char str_output_key[30];
-    char str_output_key1[NM_UTILS_INET_ADDRSTRLEN];
 
     if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
         return buf;
@@ -5783,8 +5781,8 @@ nm_platform_lnk_vti_to_string (const NMPlatformLnkVti *lnk, char *buf, gsize len
                 lnk->remote ? nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet4_ntop (lnk->remote, str_remote1)) : "",
                 lnk->local ? nm_sprintf_buf (str_local, " local %s", nm_utils_inet4_ntop (lnk->local, str_local1)) : "",
                 lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
-                lnk->input_key ? nm_sprintf_buf (str_input_key, " ikey %s", nm_utils_inet4_ntop (lnk->input_key, str_input_key1)) : "",
-                lnk->output_key ? nm_sprintf_buf (str_output_key, " okey %s", nm_utils_inet4_ntop (lnk->output_key, str_output_key1)) : "");
+                lnk->input_key ? nm_sprintf_buf (str_input_key, " ikey %s", lnk->input_key) : "",
+                lnk->output_key ? nm_sprintf_buf (str_output_key, " okey %s", lnk->output_key) : "");
 
     return buf;
 }

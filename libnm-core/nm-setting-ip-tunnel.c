@@ -375,6 +375,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (   (priv->input_key && priv->input_key[0])
 	    || (priv->output_key && priv->output_key[0])) {
 		if (!NM_IN_SET (priv->mode,
+		                NM_IP_TUNNEL_MODE_VTI,
 		                NM_IP_TUNNEL_MODE_GRE,
 		                NM_IP_TUNNEL_MODE_GRETAP,
 		                NM_IP_TUNNEL_MODE_IP6GRE,
@@ -382,7 +383,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("tunnel keys can only be specified for GRE tunnels"));
+			                     _("tunnel keys can only be specified for GRE and VTI tunnels"));
 			return FALSE;
 		}
 	}
