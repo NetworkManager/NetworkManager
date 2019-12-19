@@ -438,3 +438,35 @@ nm_utils_file_stat (const char *filename, struct stat *out_st)
 		return -NM_ERRNO_NATIVE (errno);
 	return 0;
 }
+
+/**
+ * nm_utils_fd_read:
+ * @fd: the fd to read from.
+ * @out_string: (out): output string where read bytes will be stored.
+ *
+ * Returns:  <0 on failure, which is -(errno)
+ *           0 on EOF or if the call would block (if the fd is nonblocking),
+ *           >0 on success, which is the number of bytes read  */
+ssize_t
+nm_utils_fd_read (int fd, GString *out_string)
+{
+	size_t start_len;
+	ssize_t n_read;
+
+	g_return_val_if_fail (fd >= 0, -1);
+	g_return_val_if_fail (out_string, -1);
+
+	start_len = out_string->len;
+	g_string_set_size (out_string, start_len + 1024);
+
+	n_read = read (fd, &out_string->str[start_len], 1024);
+	if (n_read < 0) {
+		if (errno != EAGAIN) {
+			return -NM_ERRNO_NATIVE (errno);
+		}
+		n_read = 0;
+	} else {
+		g_string_set_size (out_string, start_len + n_read);
+	}
+	return n_read;
+}
