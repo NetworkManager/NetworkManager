@@ -147,7 +147,7 @@ write_secrets (shvarFile *ifcfg,
 
 	if (!any_secrets)
 		(void) unlink (svFileGetName (keyfile));
-	else if (!svWriteFile (keyfile, 0600, &local)) {
+	else if (!svWriteFileWithoutDirtyWellknown (keyfile, 0600, &local)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Failure to write secrets to '%s': %s", svFileGetName (keyfile), local->message);
 		return FALSE;
@@ -2747,7 +2747,7 @@ write_ip4_aliases (NMConnection *connection, const char *base_ifcfg_path)
 
 		svSetValueInt64 (ifcfg, "PREFIX", nm_ip_address_get_prefix(addr));
 
-		svWriteFile (ifcfg, 0644, NULL);
+		svWriteFileWithoutDirtyWellknown (ifcfg, 0644, NULL);
 		svCloseFile (ifcfg);
 	}
 }
@@ -3317,7 +3317,7 @@ do_write_to_disk (NMConnection *connection,
 	 * only. But we loaded the ifcfg files from disk, and managled our
 	 * new settings (in-memory). */
 
-	if (!svWriteFile (ifcfg, 0644, error))
+	if (!svWriteFileWithoutDirtyWellknown (ifcfg, 0644, error))
 		return FALSE;
 
 	write_ip4_aliases (connection, svFileGetName (ifcfg));
@@ -3336,7 +3336,7 @@ do_write_to_disk (NMConnection *connection,
 		else {
 			nm_assert (route_content_svformat || route_content);
 			if (route_content_svformat) {
-				if (!svWriteFile (route_content_svformat, 0644, error))
+				if (!svWriteFileWithoutDirtyWellknown (route_content_svformat, 0644, error))
 					return FALSE;
 			} else {
 				if (!g_file_set_contents (route_path, route_content->str, route_content->len, NULL)) {
