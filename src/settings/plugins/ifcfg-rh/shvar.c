@@ -45,6 +45,9 @@ struct _shvarLine {
 	char *line;
 	const char *key;
 	char *key_with_prefix;
+
+	/* svSetValue() will clear the dirty flag. */
+	bool dirty:1;
 };
 
 typedef struct _shvarLine shvarLine;
@@ -671,8 +674,11 @@ line_new_parse (const char *value, gsize len)
 
 	nm_assert (value);
 
-	line = g_slice_new0 (shvarLine);
-	c_list_init (&line->lst);
+	line = g_slice_new (shvarLine);
+	*line = (shvarLine) {
+		.lst   = C_LIST_INIT (line->lst),
+		.dirty = TRUE,
+	};
 
 	for (k = 0; k < len; k++) {
 		if (g_ascii_isspace (value[k]))
@@ -706,14 +712,19 @@ line_new_build (const char *key, const char *value)
 {
 	char *value_escaped = NULL;
 	shvarLine *line;
+	char *new_key;
 
 	value = svEscape (value, &value_escaped);
 
 	line = g_slice_new (shvarLine);
-	c_list_init (&line->lst);
-	line->line = value_escaped ?: g_strdup (value);
-	line->key_with_prefix = g_strdup (key);
-	line->key = line->key_with_prefix;
+	new_key = g_strdup (key),
+	*line = (shvarLine) {
+		.lst             = C_LIST_INIT (line->lst),
+		.line            = value_escaped ?: g_strdup (value),
+		.key_with_prefix = new_key,
+		.key             = new_key,
+		.dirty           = FALSE,
+	};
 	ASSERT_shvarLine (line);
 	return line;
 }
@@ -726,6 +737,8 @@ line_set (shvarLine *line, const char *value)
 
 	ASSERT_shvarLine (line);
 	nm_assert (line->key);
+
+	line->dirty = FALSE;
 
 	if (line->key != line->key_with_prefix) {
 		memmove (line->key_with_prefix, line->key, strlen (line->key) + 1);
@@ -1284,6 +1297,8 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 
 	if (!value) {
 		if (line) {
+			/* We only clear the value, but leave the line entry. This way, if we
+			 * happen to re-add the value, we write it to the same line again. */
 			if (nm_clear_g_free (&line->line)) {
 				changed = TRUE;
 			}
