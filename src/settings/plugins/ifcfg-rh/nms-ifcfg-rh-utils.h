@@ -70,6 +70,24 @@ _nms_ifcfg_rh_utils_numbered_tag (char *buf, gsize buf_len, const char *tag_name
 		_nms_ifcfg_rh_utils_numbered_tag (buf, sizeof (buf), ""tag_name"", (which)); \
 	})
 
+gboolean nms_ifcfg_rh_utils_is_numbered_tag_impl (const char *key,
+                                                  const char *tag,
+                                                  gsize tag_len,
+                                                  gint64 *out_idx);
+
+static inline gboolean
+nms_ifcfg_rh_utils_is_numbered_tag (const char *key,
+                                    const char *tag,
+                                    gint64 *out_idx)
+{
+	nm_assert (tag);
+
+	return nms_ifcfg_rh_utils_is_numbered_tag_impl (key, tag, strlen (tag), out_idx);
+}
+
+#define NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG(key, tag, out_idx) \
+	nms_ifcfg_rh_utils_is_numbered_tag_impl (key, tag, NM_STRLEN (tag), out_idx)
+
 /*****************************************************************************/
 
 extern const char *const _nm_ethtool_ifcfg_names[_NM_ETHTOOL_ID_FEATURE_NUM];

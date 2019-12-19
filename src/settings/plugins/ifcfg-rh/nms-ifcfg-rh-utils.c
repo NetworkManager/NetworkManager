@@ -586,3 +586,37 @@ nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
 
 	return NULL;
 }
+
+/*****************************************************************************/
+
+gboolean
+nms_ifcfg_rh_utils_is_numbered_tag_impl (const char *key,
+                                         const char *tag,
+                                         gsize tag_len,
+                                         gint64 *out_idx)
+{
+	gint64 idx;
+
+	nm_assert (key);
+	nm_assert (tag);
+	nm_assert (tag_len == strlen (tag));
+	nm_assert (tag_len > 0);
+
+	if (strncmp (key, tag, tag_len) != 0)
+		return FALSE;
+
+	key += tag_len;
+
+	if (key[0] == '\0')
+		return FALSE;
+
+	if (!NM_STRCHAR_ALL (key, ch, g_ascii_isdigit (ch)))
+		return FALSE;
+
+	idx = _nm_utils_ascii_str_to_int64 (key, 10, 0, G_MAXINT64, -1);
+	if (idx == -1)
+		return FALSE;
+
+	NM_SET_OUT (out_idx, idx);
+	return TRUE;
+}

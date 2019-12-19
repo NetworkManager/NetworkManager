@@ -19,6 +19,7 @@
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-io-utils.h"
 #include "c-list/src/c-list.h"
+#include "nms-ifcfg-rh-utils.h"
 
 /*****************************************************************************/
 
@@ -864,54 +865,24 @@ svCreateFile (const char *name)
 /*****************************************************************************/
 
 static gboolean
-_is_all_digits (const char *str)
-{
-	return    str[0]
-	       && NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
-}
-
-#define IS_NUMBERED_TAG(key, tab_name) \
-	({ \
-		const char *_key2 = (key); \
-		\
-		(   (strncmp (_key2, tab_name, NM_STRLEN (tab_name)) == 0) \
-		 && _is_all_digits (&_key2[NM_STRLEN (tab_name)])); \
-	})
-
-#define IS_NUMBERED_TAG_PARSE(key, tab_name, out_idx) \
-	({ \
-		const char *_key = (key); \
-		gint64 _idx; \
-		gboolean _good = FALSE; \
-		gint64 *_out_idx = (out_idx); \
-		\
-		if (    IS_NUMBERED_TAG (_key, ""tab_name"") \
-		    && (_idx = _nm_utils_ascii_str_to_int64 (&_key[NM_STRLEN (tab_name)], 10, 0, G_MAXINT64, -1)) != -1) { \
-			NM_SET_OUT (_out_idx, _idx); \
-			_good = TRUE; \
-		} \
-		_good; \
-	})
-
-static gboolean
 _svKeyMatchesType (const char *key, SvKeyType match_key_type)
 {
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ANY))
 		return TRUE;
 
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTE_SVFORMAT)) {
-		if (   IS_NUMBERED_TAG (key, "ADDRESS")
-		    || IS_NUMBERED_TAG (key, "NETMASK")
-		    || IS_NUMBERED_TAG (key, "GATEWAY")
-		    || IS_NUMBERED_TAG (key, "METRIC")
-		    || IS_NUMBERED_TAG (key, "OPTIONS"))
+		if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ADDRESS", NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "NETMASK", NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "GATEWAY", NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "METRIC",  NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "OPTIONS", NULL))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_IP4_ADDRESS)) {
-		if (   IS_NUMBERED_TAG (key, "IPADDR")
-		    || IS_NUMBERED_TAG (key, "PREFIX")
-		    || IS_NUMBERED_TAG (key, "NETMASK")
-		    || IS_NUMBERED_TAG (key, "GATEWAY"))
+		if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "IPADDR",  NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "PREFIX",  NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "NETMASK", NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "GATEWAY", NULL))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_USER)) {
@@ -919,20 +890,20 @@ _svKeyMatchesType (const char *key, SvKeyType match_key_type)
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_TC)) {
-		if (   IS_NUMBERED_TAG (key, "QDISC")
-		    || IS_NUMBERED_TAG (key, "FILTER"))
+		if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "QDISC",  NULL)
+		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "FILTER", NULL))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_SRIOV_VF)) {
-		if (IS_NUMBERED_TAG (key, "SRIOV_VF"))
+		if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "SRIOV_VF", NULL))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTING_RULE4)) {
-		if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE_", NULL))
+		if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE_", NULL))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTING_RULE6)) {
-		if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE6_", NULL))
+		if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE6_", NULL))
 			return TRUE;
 	}
 
@@ -944,9 +915,9 @@ svNumberedParseKey (const char *key)
 {
 	gint64 idx;
 
-	if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE_", &idx))
+	if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE_", &idx))
 		return idx;
-	if (IS_NUMBERED_TAG_PARSE (key, "ROUTING_RULE6_", &idx))
+	if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE6_", &idx))
 		return idx;
 	return -1;
 }
