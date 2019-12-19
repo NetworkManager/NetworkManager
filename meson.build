@@ -10,7 +10,7 @@ project(
     'buildtype=debugoptimized',
     'c_std=gnu11',
   ],
-  meson_version: '>= 0.44.0',
+  meson_version: '>= 0.46.0',
 )
 
 nm_name = meson.project_name()
