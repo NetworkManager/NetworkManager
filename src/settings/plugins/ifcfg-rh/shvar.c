@@ -62,6 +62,19 @@ struct _shvarFile {
 
 /*****************************************************************************/
 
+#define ASSERT_key_is_well_known(key) \
+	nm_assert ( ({ \
+		const char *_key = (key); \
+		gboolean _is_wellknown = TRUE; \
+		\
+		if (!nms_ifcfg_rh_utils_is_well_known_key (_key)) { \
+			_is_wellknown = FALSE; \
+			g_critical ("ifcfg-rh key \"%s\" is not well-known", _key); \
+		} \
+		\
+		_is_wellknown; \
+	}) )
+
 /**
  * svParseBoolean:
  * @value: the input string
@@ -1017,6 +1030,8 @@ _svGetValue (shvarFile *s, const char *key, char **to_free)
 	nm_assert (_shell_is_name (key, -1));
 	nm_assert (to_free);
 
+	ASSERT_key_is_well_known (key);
+
 	line = NULL;
 	c_list_for_each (current, &s->lst_head) {
 		l = c_list_entry (current, shvarLine, lst);
@@ -1251,6 +1266,8 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 	g_return_val_if_fail (key, FALSE);
 
 	nm_assert (_shell_is_name (key, -1));
+
+	ASSERT_key_is_well_known (key);
 
 	line = NULL;
 	c_list_for_each (current, &s->lst_head) {

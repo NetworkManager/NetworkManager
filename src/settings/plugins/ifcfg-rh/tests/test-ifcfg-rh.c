@@ -2868,7 +2868,7 @@ test_ifcfg_no_trailing_newline (void)
 	shvarFile *sv;
 
 	sv = _svOpenFile (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk");
-	_svGetValue_check (sv, "LAST_ENTRY", "no-newline");
+	_svGetValue_check (sv, "CTCPROT", "no-newline");
 	svCloseFile (sv);
 }
 
@@ -9781,23 +9781,23 @@ test_write_unknown (gconstpointer test_data)
 	_nmtst_svFileSetModified (sv);
 
 	if (g_str_has_suffix (testfile, "ifcfg-test-write-unknown-4")) {
-		_svGetValue_check (sv, "NAME", "l4x");
-		_svGetValue_check (sv, "NAME2", "");
-		_svGetValue_check (sv, "NAME3", "name3-value");
+		_svGetValue_check (sv, "IPADDR", "l4x");
+		_svGetValue_check (sv, "IPADDR2", "");
+		_svGetValue_check (sv, "IPADDR3", "name3-value");
 
-		svSetValue (sv, "NAME", "set-by-test1");
-		svSetValue (sv, "NAME2", NULL);
-		svSetValue (sv, "NAME2", "set-by-test2");
-		svSetValue (sv, "NAME3", "set-by-test3");
+		svSetValue (sv, "IPADDR", "set-by-test1");
+		svSetValue (sv, "IPADDR2", NULL);
+		svSetValue (sv, "IPADDR2", "set-by-test2");
+		svSetValue (sv, "IPADDR3", "set-by-test3");
 
-		_svGetValue_check (sv, "some_key", NULL);
-		_svGetValue_check (sv, "some_key1", "");
-		_svGetValue_check (sv, "some_key2", "");
-		_svGetValue_check (sv, "some_key3", "x");
+		_svGetValue_check (sv, "METRIC", NULL);
+		_svGetValue_check (sv, "METRIC1", "");
+		_svGetValue_check (sv, "METRIC2", "");
+		_svGetValue_check (sv, "METRIC3", "x");
 
-		_svGetValue_check (sv, "NAME", "set-by-test1");
-		_svGetValue_check (sv, "NAME2", "set-by-test2");
-		_svGetValue_check (sv, "NAME3", "set-by-test3");
+		_svGetValue_check (sv, "IPADDR", "set-by-test1");
+		_svGetValue_check (sv, "IPADDR2", "set-by-test2");
+		_svGetValue_check (sv, "IPADDR3", "set-by-test3");
 	}
 
 	success = svWriteFile (sv, 0644, &error);
@@ -10242,6 +10242,69 @@ test_tc_write (void)
 
 /*****************************************************************************/
 
+static void
+test_well_known_keys (void)
+{
+	gsize i;
+
+	for (i = 0; i < G_N_ELEMENTS (nms_ifcfg_well_known_keys); i++) {
+		const NMSIfcfgKeyTypeInfo *ti = &nms_ifcfg_well_known_keys[i];
+
+		g_assert (ti->key_name);
+		g_assert (ti->key_name[0]);
+		g_assert (NM_FLAGS_HAS (ti->key_flags, NMS_IFCFG_KEY_TYPE_WELL_KNOWN));
+		g_assert (nm_utils_is_power_of_two (ti->key_flags & (  NMS_IFCFG_KEY_TYPE_IS_PLAIN
+		                                                     | NMS_IFCFG_KEY_TYPE_IS_NUMBERED
+		                                                     | NMS_IFCFG_KEY_TYPE_IS_PREFIX)));
+	}
+
+	for (i = 1; i < G_N_ELEMENTS (nms_ifcfg_well_known_keys); i++) {
+		const NMSIfcfgKeyTypeInfo *ti_prev = &nms_ifcfg_well_known_keys[i - 1];
+		const NMSIfcfgKeyTypeInfo *ti = &nms_ifcfg_well_known_keys[i];
+
+		g_assert_cmpstr (ti_prev->key_name, <, ti->key_name);
+	}
+
+	for (i = 0; i < G_N_ELEMENTS (nms_ifcfg_well_known_keys); i++) {
+		const NMSIfcfgKeyTypeInfo *ti = &nms_ifcfg_well_known_keys[i];
+		gs_free char *key_name = NULL;
+		gssize idx;
+
+		g_assert (ti == nms_ifcfg_well_known_key_find_info (ti->key_name, &idx));
+		g_assert_cmpint (i, ==, idx);
+
+		key_name = g_strdup (ti->key_name);
+		g_assert (ti == nms_ifcfg_well_known_key_find_info (key_name, &idx));
+		g_assert_cmpint (i, ==, idx);
+	}
+
+#define _test_well_known(key, expected) \
+	G_STMT_START { \
+		const NMSIfcfgKeyTypeInfo *_ti; \
+		const char *_expected = (expected); \
+		\
+		_ti = nms_ifcfg_rh_utils_is_well_known_key (""key""); \
+		if (!_expected) { \
+			g_assert (!_ti); \
+		} else { \
+			g_assert (_ti); \
+			g_assert_cmpstr (_ti->key_name, ==, _expected); \
+		} \
+	} G_STMT_END
+
+#define _test_well_known_plain(key) \
+	_test_well_known (""key"", ""key"")
+
+	_test_well_known_plain ("ONBOOT");
+	_test_well_known ("NM_USER_",  NULL);
+	_test_well_known ("NM_USER_x", "NM_USER_");
+	_test_well_known ("IPADDR",    "IPADDR");
+	_test_well_known ("IPADDR1",   "IPADDR");
+	_test_well_known ("IPADDRx",   NULL);
+}
+
+/*****************************************************************************/
+
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-long-quoted"
@@ -10538,6 +10601,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func (TPATH "tc/read", test_tc_read);
 	g_test_add_func (TPATH "tc/write", test_tc_write);
+	g_test_add_func (TPATH "utils/test_well_known_keys", test_well_known_keys);
 
 	return g_test_run ();
 }
