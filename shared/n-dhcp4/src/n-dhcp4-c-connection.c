@@ -992,6 +992,7 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
         char server_addr[INET_ADDRSTRLEN];
         char client_addr[INET_ADDRSTRLEN];
         int r;
+        bool broadcast = false;
 
         /*
          * Increment the base time and reset the xid field,
@@ -1026,12 +1027,14 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
         case N_DHCP4_C_MESSAGE_SELECT:
         case N_DHCP4_C_MESSAGE_REBOOT:
         case N_DHCP4_C_MESSAGE_DECLINE:
+                broadcast = true;
                 r = n_dhcp4_c_connection_packet_broadcast(connection, request);
                 if (r)
                         return r;
                 break;
         case N_DHCP4_C_MESSAGE_INFORM:
         case N_DHCP4_C_MESSAGE_REBIND:
+                broadcast = true;
                 r = n_dhcp4_c_connection_udp_broadcast(connection, request);
                 if (r)
                         return r;
@@ -1052,6 +1055,8 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
                 n_dhcp4_c_log(connection->client_config, LOG_INFO,
                               "sent %s to %s",
                               message_type_to_str(request->userdata.message_type),
+                              broadcast ?
+                              "255.255.255.255" :
                               inet_ntop(AF_INET, &connection->server_ip,
                                         server_addr, sizeof(server_addr)));
         } else {
@@ -1060,6 +1065,8 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
                               message_type_to_str(request->userdata.message_type),
                               inet_ntop(AF_INET, &request->userdata.client_addr,
                                         client_addr, sizeof(client_addr)),
+                              broadcast ?
+                              "255.255.255.255" :
                               inet_ntop(AF_INET, &connection->server_ip,
                                         server_addr, sizeof(server_addr)));
         }
