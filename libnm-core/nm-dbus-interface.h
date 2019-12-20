@@ -89,7 +89,10 @@
 
 /**
  * NMCapability:
- * @NM_CAPABILITY_TEAM: Teams can be managed
+ * @NM_CAPABILITY_TEAM: Teams can be managed. This means the team device plugin
+ *   is loaded.
+ * @NM_CAPABILITY_OVS: OpenVSwitch can be managed. This means the OVS device plugin
+ *   is loaded. Since: 1.24
  *
  * #NMCapability names the numbers in the Capabilities property.
  * Capabilities are positive numbers. They are part of stable API
@@ -101,6 +104,7 @@
  */
 typedef enum {
 	NM_CAPABILITY_TEAM = 1,
+	NM_CAPABILITY_OVS  = 2,
 } NMCapability;
 
 /**
