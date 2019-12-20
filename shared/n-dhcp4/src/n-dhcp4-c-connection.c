@@ -139,7 +139,19 @@ int n_dhcp4_c_connection_listen(NDhcp4CConnection *connection) {
         _c_cleanup_(c_closep) int fd_packet = -1;
         int r;
 
-        c_assert(connection->state == N_DHCP4_C_CONNECTION_STATE_INIT);
+        c_assert(connection->state == N_DHCP4_C_CONNECTION_STATE_INIT ||
+                 connection->state == N_DHCP4_C_CONNECTION_STATE_DRAINING ||
+                 connection->state == N_DHCP4_C_CONNECTION_STATE_UDP);
+
+        if (connection->fd_packet >= 0) {
+                epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, connection->fd_packet, NULL);
+                connection->fd_packet = c_close(connection->fd_packet);
+        }
+
+        if (connection->fd_udp >= 0) {
+                epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, connection->fd_udp, NULL);
+                connection->fd_udp = c_close(connection->fd_udp);
+        }
 
         r = n_dhcp4_c_socket_packet_new(&fd_packet, connection->client_config->ifindex);
         if (r)
@@ -1027,13 +1039,13 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
         case N_DHCP4_C_MESSAGE_SELECT:
         case N_DHCP4_C_MESSAGE_REBOOT:
         case N_DHCP4_C_MESSAGE_DECLINE:
+        case N_DHCP4_C_MESSAGE_REBIND:
                 broadcast = true;
                 r = n_dhcp4_c_connection_packet_broadcast(connection, request);
                 if (r)
                         return r;
                 break;
         case N_DHCP4_C_MESSAGE_INFORM:
-        case N_DHCP4_C_MESSAGE_REBIND:
                 broadcast = true;
                 r = n_dhcp4_c_connection_udp_broadcast(connection, request);
                 if (r)
