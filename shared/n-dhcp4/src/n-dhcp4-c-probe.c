@@ -785,6 +785,10 @@ static int n_dhcp4_client_probe_transition_t2(NDhcp4ClientProbe *probe, uint64_t
         switch (probe->state) {
         case N_DHCP4_CLIENT_PROBE_STATE_BOUND:
         case N_DHCP4_CLIENT_PROBE_STATE_RENEWING:
+                r = n_dhcp4_c_connection_listen(&probe->connection);
+                if (r)
+                        return r;
+
                 r = n_dhcp4_c_connection_rebind_new(&probe->connection, &request);
                 if (r)
                         return r;
@@ -907,11 +911,22 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
         _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = message_take;
         _c_cleanup_(n_dhcp4_client_lease_unrefp) NDhcp4ClientLease *lease = NULL;
         NDhcp4CEventNode *node;
+        struct in_addr client = {};
+        struct in_addr server = {};
         int r;
 
         switch (probe->state) {
-        case N_DHCP4_CLIENT_PROBE_STATE_RENEWING:
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
+                n_dhcp4_incoming_get_yiaddr(message, &client);
+
+                r = n_dhcp4_incoming_query_server_identifier(message, &server);
+                if (r)
+                        return r;
+                r = n_dhcp4_c_connection_connect(&probe->connection, &client, &server);
+                if (r)
+                        return r;
+                /* fall-through */
+        case N_DHCP4_CLIENT_PROBE_STATE_RENEWING:
 
                 r = n_dhcp4_client_probe_raise(probe,
                                                &node,
