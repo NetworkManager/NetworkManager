@@ -2402,7 +2402,7 @@ write_ip4_setting (NMConnection *connection,
 	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		svSetValueStr (ifcfg, "BOOTPROTO", "shared");
 
-	has_netmask = !!svFindFirstKeyWithPrefix (ifcfg, "NETMASK");
+	has_netmask = !!svFindFirstNumberedKey (ifcfg, "NETMASK");
 
 	/* Write out IPADDR<n>, PREFIX<n>, GATEWAY<n> for current IP addresses
 	 * without labels. Unset obsolete NETMASK<n>.

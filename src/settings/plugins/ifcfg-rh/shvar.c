@@ -998,19 +998,17 @@ svGetKeysSorted (shvarFile *s,
 /*****************************************************************************/
 
 const char *
-svFindFirstKeyWithPrefix (shvarFile *s, const char *key_prefix)
+svFindFirstNumberedKey (shvarFile *s, const char *key_prefix)
 {
-	CList *current;
 	const shvarLine *l;
 
 	g_return_val_if_fail (s, NULL);
 	g_return_val_if_fail (key_prefix, NULL);
 
-	c_list_for_each (current, &s->lst_head) {
-		l = c_list_entry (current, shvarLine, lst);
+	c_list_for_each_entry (l, &s->lst_head, lst) {
 		if (   l->key
 		    && l->line
-		    && g_str_has_prefix (l->key, key_prefix))
+		    && nms_ifcfg_rh_utils_is_numbered_tag (l->key, key_prefix, NULL))
 			return l->key;
 	}
 

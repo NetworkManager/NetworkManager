@@ -30,7 +30,7 @@ shvarFile *svCreateFile (const char *name);
 /* Open the file <name>, return shvarFile on success, NULL on failure */
 shvarFile *svOpenFile (const char *name, GError **error);
 
-const char *svFindFirstKeyWithPrefix (shvarFile *s, const char *key_prefix);
+const char *svFindFirstNumberedKey (shvarFile *s, const char *key_prefix);
 
 /* Get the value associated with the key, and leave the current pointer
  * pointing at the line containing the value.  The char* returned MUST
