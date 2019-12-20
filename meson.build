@@ -137,10 +137,6 @@ config_h.set('SIZEOF_INO_T', cc.sizeof('ino_t', prefix : '#include <sys/types.h>
 config_h.set('SIZEOF_TIME_T', cc.sizeof('time_t', prefix : '#include <sys/time.h>'))
 config_h.set('SIZEOF_RLIM_T', cc.sizeof('rlim_t', prefix : '#include <sys/resource.h>'))
 
-if not cc.has_type('pid_t', prefix: '#include <sys/types.h>')
-  config_h.set('pid_t', 'int')
-endif
-
 # compiler flags
 common_flags = []
 common_ldflags = []
