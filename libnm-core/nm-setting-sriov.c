@@ -99,13 +99,15 @@ nm_sriov_vf_new (guint index)
 {
 	NMSriovVF *vf;
 
-	vf = g_slice_new0 (NMSriovVF);
-	vf->refcount = 1;
-	vf->index = index;
-	vf->attributes = g_hash_table_new_full (nm_str_hash,
-	                                        g_str_equal,
-	                                        g_free,
-	                                        (GDestroyNotify) g_variant_unref);
+	vf = g_slice_new (NMSriovVF);
+	*vf = (NMSriovVF) {
+		.refcount   = 1,
+		.index      = index,
+		.attributes = g_hash_table_new_full (nm_str_hash,
+		                                     g_str_equal,
+		                                     g_free,
+		                                     (GDestroyNotify) g_variant_unref),
+	};
 	return vf;
 }
 
@@ -147,7 +149,7 @@ nm_sriov_vf_unref (NMSriovVF *vf)
 		if (vf->vlans)
 			g_hash_table_unref (vf->vlans);
 		g_free (vf->vlan_ids);
-		g_slice_free (NMSriovVF, vf);
+		nm_g_slice_free (vf);
 	}
 }
 
@@ -221,10 +223,12 @@ vf_add_vlan (NMSriovVF *vf,
 {
 	VFVlan *vlan;
 
-	vlan = g_slice_new0 (VFVlan);
-	vlan->id = vlan_id;
-	vlan->qos = qos;
-	vlan->protocol = protocol;
+	vlan = g_slice_new (VFVlan);
+	*vlan = (VFVlan) {
+		.id       = vlan_id,
+		.qos      = qos,
+		.protocol = protocol,
+	};
 
 	if (!vf->vlans)
 		vf->vlans = _vf_vlan_create_hash ();
