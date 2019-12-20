@@ -1655,6 +1655,7 @@ global:
 
 libnm_1_24_0 {
 global:
+	nm_client_get_capabilities;
 	nm_client_get_instance_flags;
 	nm_client_get_permissions_state;
 	nm_client_instance_flags_get_type;
