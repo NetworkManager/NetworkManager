@@ -562,7 +562,7 @@ vlan_id_compare (gconstpointer a, gconstpointer b, gpointer user_data)
  *
  * Returns the VLANs currently configured on the VF.
  *
- * Returns: (transfer none): a list of VLAN ids configured on the VF.
+ * Returns: (transfer none) (array length=length): a list of VLAN ids configured on the VF.
  *
  * Since: 1.14
  */
