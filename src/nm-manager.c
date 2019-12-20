@@ -7357,7 +7357,7 @@ nm_manager_set_capability (NMManager *self,
 	gssize idx;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
-	if (cap < 1 || cap > NM_CAPABILITY_TEAM)
+	if (cap < 1 || cap > _NM_CAPABILITY_MAX)
 		g_return_if_reached ();
 
 	cap_i = (guint32) cap;

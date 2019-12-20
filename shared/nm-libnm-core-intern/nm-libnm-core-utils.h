@@ -95,4 +95,8 @@ nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
  * depends on other factors. */
 #define NM_INFINIBAND_MAX_MTU ((guint) 65520)
 
+/*****************************************************************************/
+
+#define _NM_CAPABILITY_MAX NM_CAPABILITY_OVS
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
