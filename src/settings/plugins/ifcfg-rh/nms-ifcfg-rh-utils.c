@@ -17,9 +17,9 @@
 /*****************************************************************************/
 
 gboolean
-nms_ifcfg_rh_util_parse_unhandled_spec (const char *unhandled_spec,
-                                        const char **out_unmanaged_spec,
-                                        const char **out_unrecognized_spec)
+nms_ifcfg_rh_utils_parse_unhandled_spec (const char *unhandled_spec,
+                                         const char **out_unmanaged_spec,
+                                         const char **out_unrecognized_spec)
 {
 	if (unhandled_spec) {
 		if (NM_STR_HAS_PREFIX (unhandled_spec, "unmanaged:")) {

@@ -11,9 +11,9 @@
 
 #include "shvar.h"
 
-gboolean nms_ifcfg_rh_util_parse_unhandled_spec (const char *unhandled_spec,
-                                                 const char **out_unmanaged_spec,
-                                                 const char **out_unrecognized_spec);
+gboolean nms_ifcfg_rh_utils_parse_unhandled_spec (const char *unhandled_spec,
+                                                  const char **out_unmanaged_spec,
+                                                  const char **out_unrecognized_spec);
 
 #define NM_IFCFG_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
 #define NM_IFCFG_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
