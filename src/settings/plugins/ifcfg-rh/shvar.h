@@ -30,7 +30,7 @@ shvarFile *svCreateFile (const char *name);
 /* Open the file <name>, return shvarFile on success, NULL on failure */
 shvarFile *svOpenFile (const char *name, GError **error);
 
-const char *svFindFirstKeyWithPrefix (shvarFile *s, const char *key_prefix);
+const char *svFindFirstNumberedKey (shvarFile *s, const char *key_prefix);
 
 /* Get the value associated with the key, and leave the current pointer
  * pointing at the line containing the value.  The char* returned MUST
@@ -79,6 +79,7 @@ gboolean svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
 
 gboolean svUnsetValue (shvarFile *s, const char *key);
 gboolean svUnsetAll (shvarFile *s, SvKeyType match_key_type);
+gboolean svUnsetDirtyWellknown (shvarFile *s, NMTernary new_dirty_value);
 
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.
@@ -87,6 +88,13 @@ gboolean svUnsetAll (shvarFile *s, SvKeyType match_key_type);
  * open() syscall.
  */
 gboolean svWriteFile (shvarFile *s, int mode, GError **error);
+
+static inline gboolean
+svWriteFileWithoutDirtyWellknown (shvarFile *s, int mode, GError **error)
+{
+	svUnsetDirtyWellknown (s, NM_TERNARY_FALSE);
+	return svWriteFile (s, mode, error);
+}
 
 /* Close the file descriptor (if open) and free the shvarFile. */
 void svCloseFile (shvarFile *s);

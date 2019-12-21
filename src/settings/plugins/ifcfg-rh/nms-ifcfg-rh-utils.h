@@ -11,9 +11,48 @@
 
 #include "shvar.h"
 
-gboolean nms_ifcfg_rh_util_parse_unhandled_spec (const char *unhandled_spec,
-                                                 const char **out_unmanaged_spec,
-                                                 const char **out_unrecognized_spec);
+/*****************************************************************************/
+
+typedef enum {
+	NMS_IFCFG_KEY_TYPE_UNKNOWN         = 0,
+	NMS_IFCFG_KEY_TYPE_WELL_KNOWN      = (1u << 0),
+
+	NMS_IFCFG_KEY_TYPE_IS_PLAIN        = (1u << 1),
+	NMS_IFCFG_KEY_TYPE_IS_NUMBERED     = (1u << 2),
+	NMS_IFCFG_KEY_TYPE_IS_PREFIX       = (1u << 3),
+
+	/* by default, well knowns keys that are not explicitly set
+	 * by the writer (the unvisited, dirty ones) are removed.
+	 * With this flag, such keys are kept if they are present. */
+	NMS_IFCFG_KEY_TYPE_KEEP_WHEN_DIRTY = (1u << 4),
+
+} NMSIfcfgKeyTypeFlags;
+
+typedef struct {
+	const char *key_name;
+	NMSIfcfgKeyTypeFlags key_flags;
+} NMSIfcfgKeyTypeInfo;
+
+const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[225];
+
+const NMSIfcfgKeyTypeInfo *nms_ifcfg_well_known_key_find_info (const char *key, gssize *out_idx);
+
+static inline NMSIfcfgKeyTypeFlags
+nms_ifcfg_well_known_key_find_info_flags (const char *key)
+{
+	const NMSIfcfgKeyTypeInfo *ti;
+
+	ti = nms_ifcfg_well_known_key_find_info (key, NULL);
+	if (!ti)
+		return NMS_IFCFG_KEY_TYPE_UNKNOWN;
+	return ti->key_flags;
+}
+
+/*****************************************************************************/
+
+gboolean nms_ifcfg_rh_utils_parse_unhandled_spec (const char *unhandled_spec,
+                                                  const char **out_unmanaged_spec,
+                                                  const char **out_unrecognized_spec);
 
 #define NM_IFCFG_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
 #define NM_IFCFG_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
@@ -51,6 +90,12 @@ _nms_ifcfg_rh_utils_numbered_tag (char *buf, gsize buf_len, const char *tag_name
 {
 	gsize l;
 
+#if NM_MORE_ASSERTS > 5
+	nm_assert (NM_FLAGS_ALL (nms_ifcfg_well_known_key_find_info_flags (tag_name),
+	                           NMS_IFCFG_KEY_TYPE_WELL_KNOWN
+	                         | NMS_IFCFG_KEY_TYPE_IS_NUMBERED));
+#endif
+
 	l = g_strlcpy (buf, tag_name, buf_len);
 	nm_assert (l < buf_len);
 	if (which != -1) {
@@ -69,6 +114,28 @@ _nms_ifcfg_rh_utils_numbered_tag (char *buf, gsize buf_len, const char *tag_name
 		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *) && sizeof (buf) < G_MAXINT); \
 		_nms_ifcfg_rh_utils_numbered_tag (buf, sizeof (buf), ""tag_name"", (which)); \
 	})
+
+gboolean nms_ifcfg_rh_utils_is_numbered_tag_impl (const char *key,
+                                                  const char *tag,
+                                                  gsize tag_len,
+                                                  gint64 *out_idx);
+
+static inline gboolean
+nms_ifcfg_rh_utils_is_numbered_tag (const char *key,
+                                    const char *tag,
+                                    gint64 *out_idx)
+{
+	nm_assert (tag);
+
+	return nms_ifcfg_rh_utils_is_numbered_tag_impl (key, tag, strlen (tag), out_idx);
+}
+
+#define NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG(key, tag, out_idx) \
+	nms_ifcfg_rh_utils_is_numbered_tag_impl (key, tag, NM_STRLEN (tag), out_idx)
+
+/*****************************************************************************/
+
+const NMSIfcfgKeyTypeInfo *nms_ifcfg_rh_utils_is_well_known_key (const char *key);
 
 /*****************************************************************************/
 

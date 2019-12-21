@@ -206,9 +206,9 @@ _load_file (NMSIfcfgRHPlugin *self,
 		const char *unmanaged_spec;
 		const char *unrecognized_spec;
 
-		if (!nms_ifcfg_rh_util_parse_unhandled_spec (unhandled_spec,
-		                                             &unmanaged_spec,
-		                                             &unrecognized_spec)) {
+		if (!nms_ifcfg_rh_utils_parse_unhandled_spec (unhandled_spec,
+		                                              &unmanaged_spec,
+		                                              &unrecognized_spec)) {
 			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
 			                    "invalid unhandled spec \"%s\"",
 			                    unhandled_spec);

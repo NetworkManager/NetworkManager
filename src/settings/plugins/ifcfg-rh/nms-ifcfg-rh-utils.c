@@ -17,9 +17,9 @@
 /*****************************************************************************/
 
 gboolean
-nms_ifcfg_rh_util_parse_unhandled_spec (const char *unhandled_spec,
-                                        const char **out_unmanaged_spec,
-                                        const char **out_unrecognized_spec)
+nms_ifcfg_rh_utils_parse_unhandled_spec (const char *unhandled_spec,
+                                         const char **out_unmanaged_spec,
+                                         const char **out_unrecognized_spec)
 {
 	if (unhandled_spec) {
 		if (NM_STR_HAS_PREFIX (unhandled_spec, "unmanaged:")) {
@@ -582,6 +582,339 @@ nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
 	for (i = 0; i < G_N_ELEMENTS (kernel_names); i++) {
 		if (nm_streq (name, kernel_names[i].kernel_name))
 			return nm_ethtool_data[kernel_names[i].ethtool_id];
+	}
+
+	return NULL;
+}
+
+/*****************************************************************************/
+
+gboolean
+nms_ifcfg_rh_utils_is_numbered_tag_impl (const char *key,
+                                         const char *tag,
+                                         gsize tag_len,
+                                         gint64 *out_idx)
+{
+	gint64 idx;
+
+	nm_assert (key);
+	nm_assert (tag);
+	nm_assert (tag_len == strlen (tag));
+	nm_assert (tag_len > 0);
+
+	if (strncmp (key, tag, tag_len) != 0)
+		return FALSE;
+
+	key += tag_len;
+
+	if (key[0] == '\0')
+		return FALSE;
+
+	if (!NM_STRCHAR_ALL (key, ch, g_ascii_isdigit (ch)))
+		return FALSE;
+
+	idx = _nm_utils_ascii_str_to_int64 (key, 10, 0, G_MAXINT64, -1);
+	if (idx == -1)
+		return FALSE;
+
+	NM_SET_OUT (out_idx, idx);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+#define _KEY_TYPE(key, flags) { .key_name = ""key"", .key_flags = ((NMS_IFCFG_KEY_TYPE_WELL_KNOWN) | (flags)), }
+
+const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
+	_KEY_TYPE ("ACD_TIMEOUT",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("ADDRESS",                                     NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("ARPING_WAIT",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("AUTH_RETRIES",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("AUTOCONNECT_PRIORITY",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("AUTOCONNECT_RETRIES",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("AUTOCONNECT_SLAVES",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BAND",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BONDING_MASTER",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BONDING_OPTS",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BOOTPROTO",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BRIDGE",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BRIDGE_MACADDR",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BRIDGE_PORT_VLANS",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BRIDGE_UUID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BRIDGE_VLANS",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BRIDGING_OPTS",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BROWSER_ONLY",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("BSSID",                                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("CHANNEL",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("CIPHER_GROUP",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("CIPHER_PAIRWISE",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("CONNECTED_MODE",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("CONNECTION_METERED",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("CTCPROT",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DCB",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FCOE_ADVERTISE,                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FCOE_ENABLE,                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FCOE_MODE,                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DCB_APP_FCOE_PRIORITY",                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FCOE_WILLING,                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FIP_ADVERTISE,                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FIP_ENABLE,                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DCB_APP_FIP_PRIORITY",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_FIP_WILLING,                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_ISCSI_ADVERTISE,                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_ISCSI_ENABLE,                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DCB_APP_ISCSI_PRIORITY",                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_APP_ISCSI_WILLING,                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PFC_ADVERTISE,                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PFC_ENABLE,                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PFC_UP,                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PFC_WILLING,                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_ADVERTISE,                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_ENABLE,                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_ID,                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_PCT,                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_STRICT,                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_UP2TC,                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_UPPCT,                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE (KEY_DCB_PG_WILLING,                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DEFAULTKEY",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DEFROUTE",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DELAY",                                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DEVICE",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DEVICETYPE",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DEVTIMEOUT",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPV6C",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPV6_DUID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPV6_HOSTNAME",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPV6_HOSTNAME_FLAGS",                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPV6_IAID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPV6_SEND_HOSTNAME",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_CLIENT_ID",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_FQDN",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_HOSTNAME",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_HOSTNAME_FLAGS",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_IAID",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_SEND_HOSTNAME",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPv6_DUID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCPv6_IAID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DNS",                                         NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("DOMAIN",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("ESSID",                                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("ETHTOOL_OPTS",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("ETHTOOL_WAKE_ON_LAN",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("FILS",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("FILTER",                                      NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("GATEWAY",                                     NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("GATEWAYDEV",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("GATEWAY_PING_TIMEOUT",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("GENERATE_MAC_ADDRESS_MASK",                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("GVRP",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("HWADDR",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("HWADDR_BLACKLIST",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_ALTSUBJECT_MATCHES",               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_ANON_IDENTITY",                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_AUTH_TIMEOUT",                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_CA_CERT",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_CA_CERT_PASSWORD",                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_CA_CERT_PASSWORD_FLAGS",           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_CLIENT_CERT",                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_CLIENT_CERT_PASSWORD",             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_CLIENT_CERT_PASSWORD_FLAGS",       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_DOMAIN_SUFFIX_MATCH",              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_EAP_METHODS",                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_FAST_PROVISIONING",                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_IDENTITY",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_AUTH_METHODS",               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_CA_CERT",                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_CA_CERT_PASSWORD",           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_CA_CERT_PASSWORD_FLAGS",     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_CLIENT_CERT",                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_CLIENT_CERT_PASSWORD",       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_CLIENT_CERT_PASSWORD_FLAGS", NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_PRIVATE_KEY",                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD",       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS", NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_OPTIONAL",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PAC_FILE",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PASSWORD",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PASSWORD_FLAGS",                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PASSWORD_RAW",                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PASSWORD_RAW_FLAGS",               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PEAP_FORCE_NEW_LABEL",             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PEAP_VERSION",                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PHASE1_AUTH_FLAGS",                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES",        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH",       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PHASE2_SUBJECT_MATCH",             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PRIVATE_KEY",                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PRIVATE_KEY_PASSWORD",             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS",       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_SUBJECT_MATCH",                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IEEE_8021X_SYSTEM_CA_CERTS",                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPADDR",                                      NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("IPV4_DHCP_TIMEOUT",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV4_DNS_PRIORITY",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV4_FAILURE_FATAL",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV4_ROUTE_METRIC",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV4_ROUTE_TABLE",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6ADDR",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6ADDR_SECONDARIES",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6FORWARDING",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6INIT",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6TUNNELIPV4",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_ADDR_GEN_MODE",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_AUTOCONF",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DEFAULTDEV",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DEFAULTGW",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DEFROUTE",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DISABLED",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DNS_PRIORITY",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DOMAIN",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_FAILURE_FATAL",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_PEERDNS",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_PEERROUTES",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_PRIVACY",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_PRIVACY_PREFER_PUBLIC_IP",               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_RES_OPTIONS",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_ROUTE_METRIC",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_ROUTE_TABLE",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_TOKEN",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("KEY",                                         NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("KEY_MGMT",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("KEY_PASSPHRASE",                              NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("KEY_TYPE",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("LLDP",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("LLMNR",                                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MACADDR",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MAC_ADDRESS_RANDOMIZATION",                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MASTER",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MASTER_UUID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MATCH_INTERFACE_NAME",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MDNS",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("METRIC",                                      NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("MODE",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MTU",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MULTI_CONNECT",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MVRP",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("NAME",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("NETMASK",                                     NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("NETTYPE",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("NM_CONTROLLED",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN | NMS_IFCFG_KEY_TYPE_KEEP_WHEN_DIRTY ),
+	_KEY_TYPE ("NM_USER_",                                    NMS_IFCFG_KEY_TYPE_IS_PREFIX ),
+	_KEY_TYPE ("ONBOOT",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("OPTIONS",                                     NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("OVS_PORT",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("OVS_PORT_UUID",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PAC_SCRIPT",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PAC_URL",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PEERDNS",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PEERROUTES",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PHYSDEV",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PKEY",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PMF",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PORTNAME",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("POWERSAVE",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PREFIX",                                      NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("PROXY_METHOD",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("QDISC",                                       NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("REORDER_HDR",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("RES_OPTIONS",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("ROUTING_RULE6_",                              NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("ROUTING_RULE_",                               NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("SEARCH",                                      NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SECONDARY_UUIDS",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SECURITYMODE",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SLAVE",                                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SRIOV_AUTOPROBE_DRIVERS",                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SRIOV_TOTAL_VFS",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SRIOV_VF",                                    NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("SSID_HIDDEN",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("STABLE_ID",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("STP",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("SUBCHANNELS",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("TEAM_CONFIG",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("TEAM_MASTER",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("TEAM_MASTER_UUID",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("TEAM_PORT_CONFIG",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("TYPE",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("USERS",                                       NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("UUID",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VLAN",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VLAN_EGRESS_PRIORITY_MAP",                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VLAN_FLAGS",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VLAN_ID",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("VLAN_INGRESS_PRIORITY_MAP",                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("WEP_KEY_FLAGS",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("WPA_ALLOW_WPA",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("WPA_ALLOW_WPA2",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("WPA_PSK",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("WPA_PSK_FLAGS",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("WPS_METHOD",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("ZONE",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+};
+
+const NMSIfcfgKeyTypeInfo *
+nms_ifcfg_well_known_key_find_info (const char *key, gssize *out_idx)
+{
+	gssize idx;
+
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMSIfcfgKeyTypeInfo, key_name) == 0);
+
+	idx = nm_utils_array_find_binary_search (nms_ifcfg_well_known_keys,
+	                                         sizeof (nms_ifcfg_well_known_keys[0]),
+	                                         G_N_ELEMENTS (nms_ifcfg_well_known_keys),
+	                                         &key,
+	                                         nm_strcmp_p_with_data,
+	                                         NULL);
+	NM_SET_OUT (out_idx, idx);
+	if (idx < 0)
+		return NULL;
+	return &nms_ifcfg_well_known_keys[idx];
+}
+
+const NMSIfcfgKeyTypeInfo *
+nms_ifcfg_rh_utils_is_well_known_key (const char *key)
+{
+	const NMSIfcfgKeyTypeInfo *ti;
+	gssize idx;
+
+	nm_assert (key);
+
+	ti = nms_ifcfg_well_known_key_find_info (key, &idx);
+
+	if (ti) {
+		if (NM_FLAGS_ANY (ti->key_flags,   NMS_IFCFG_KEY_TYPE_IS_PLAIN
+		                                 | NMS_IFCFG_KEY_TYPE_IS_NUMBERED)) {
+			/* these tags are valid on full match. */
+			return ti;
+		}
+		nm_assert (NM_FLAGS_HAS (ti->key_flags, NMS_IFCFG_KEY_TYPE_IS_PREFIX));
+		/* a prefix tag needs some extra words afterwards. */
+		return NULL;
+	}
+
+	/* Not found. Maybe it's a numbered/prefixed key? With idx we got the index where
+	 * we should insert the key. Since the numbered/prefixed keys share a prefix, we can
+	 * find the possible prefix at the index before the insert position. */
+	idx = ~idx;
+	if (idx == 0)
+		return NULL;
+
+	ti = &nms_ifcfg_well_known_keys[idx - 1];
+
+	if (NM_FLAGS_HAS (ti->key_flags, NMS_IFCFG_KEY_TYPE_IS_NUMBERED)) {
+		if (nms_ifcfg_rh_utils_is_numbered_tag (key, ti->key_name, NULL))
+			return ti;
+		return NULL;
+	}
+
+	if (NM_FLAGS_HAS (ti->key_flags, NMS_IFCFG_KEY_TYPE_IS_PREFIX)) {
+		gsize l = strlen (ti->key_name);
+
+		if (   strncmp (key, ti->key_name, l) == 0
+		    && key[l] != '\0')
+			return ti;
+		return NULL;
 	}
 
 	return NULL;

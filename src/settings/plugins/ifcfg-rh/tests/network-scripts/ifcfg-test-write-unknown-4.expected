@@ -5,27 +5,27 @@
 # don't consider only line-by-line, thus this is
 # expected.
 #
-# Also note that setting NAME will replace the last
+# Also note that setting IPADDR will replace the last
 # occurrence, and delete all previous once.
 
 #L1
 
 #L2
 
-some_key1=''
-some_key2=$'\U0x'
-some_key3=$'x\U0'
+METRIC1=''
+METRIC2=$'\U0x'
+METRIC3=$'x\U0'
 
 #L4
-NAME=set-by-test1
+IPADDR=set-by-test1
 #NM: '
 
 #Lx-1
 #Lx-2
-NAME2=set-by-test2
+IPADDR2=set-by-test2
 #Lx-3
 
 #Ly-1
 #Ly-2
-NAME3=set-by-test3
+IPADDR3=set-by-test3
 #Ly-3

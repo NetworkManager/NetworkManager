@@ -601,4 +601,32 @@ _g_atomic_pointer_compare_and_exchange (volatile void *atomic,
 
 /*****************************************************************************/
 
+#if !GLIB_CHECK_VERSION (2, 58, 0)
+static inline gboolean
+g_hash_table_steal_extended (GHashTable    *hash_table,
+                             gconstpointer  lookup_key,
+                             gpointer      *stolen_key,
+                             gpointer      *stolen_value)
+{
+	if (g_hash_table_lookup_extended (hash_table, lookup_key, stolen_key, stolen_value)) {
+		g_hash_table_steal (hash_table, lookup_key);
+		return TRUE;
+	}
+	if (stolen_key)
+		*stolen_key = NULL;
+	if (stolen_value)
+		*stolen_value = NULL;
+	return FALSE;
+}
+#else
+#define g_hash_table_steal_extended(hash_table, lookup_key, stolen_key, stolen_value) \
+	({ \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		g_hash_table_steal_extended (hash_table, lookup_key, stolen_key, stolen_value); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	})
+#endif
+
+/*****************************************************************************/
+
 #endif  /* __NM_GLIB_H__ */
