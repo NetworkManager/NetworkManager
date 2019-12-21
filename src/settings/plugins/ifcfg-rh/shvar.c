@@ -927,19 +927,27 @@ _svKeyMatchesType (const char *key, SvKeyType match_key_type)
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ANY))
 		return TRUE;
 
+#define _IS_NUMBERED(key, tag) \
+	({ \
+		gint64 _idx; \
+		\
+		   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, tag, &_idx) \
+		&& _idx >= 0; \
+	})
+
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTE_SVFORMAT)) {
-		if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ADDRESS", NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "NETMASK", NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "GATEWAY", NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "METRIC",  NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "OPTIONS", NULL))
+		if (   _IS_NUMBERED (key, "ADDRESS")
+		    || _IS_NUMBERED (key, "NETMASK")
+		    || _IS_NUMBERED (key, "GATEWAY")
+		    || _IS_NUMBERED (key, "METRIC")
+		    || _IS_NUMBERED (key, "OPTIONS"))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_IP4_ADDRESS)) {
-		if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "IPADDR",  NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "PREFIX",  NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "NETMASK", NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "GATEWAY", NULL))
+		if (   _IS_NUMBERED (key, "IPADDR")
+		    || _IS_NUMBERED (key, "PREFIX")
+		    || _IS_NUMBERED (key, "NETMASK")
+		    || _IS_NUMBERED (key, "GATEWAY"))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_USER)) {
@@ -947,20 +955,20 @@ _svKeyMatchesType (const char *key, SvKeyType match_key_type)
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_TC)) {
-		if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "QDISC",  NULL)
-		    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "FILTER", NULL))
+		if (   _IS_NUMBERED (key, "QDISC")
+		    || _IS_NUMBERED (key, "FILTER"))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_SRIOV_VF)) {
-		if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "SRIOV_VF", NULL))
+		if (_IS_NUMBERED (key, "SRIOV_VF"))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTING_RULE4)) {
-		if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE_", NULL))
+		if (_IS_NUMBERED (key, "ROUTING_RULE_"))
 			return TRUE;
 	}
 	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTING_RULE6)) {
-		if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE6_", NULL))
+		if (_IS_NUMBERED (key, "ROUTING_RULE6_"))
 			return TRUE;
 	}
 
@@ -972,9 +980,8 @@ svNumberedParseKey (const char *key)
 {
 	gint64 idx;
 
-	if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE_", &idx))
-		return idx;
-	if (NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE6_", &idx))
+	if (   NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE_", &idx)
+	    || NMS_IFCFG_RH_UTIL_IS_NUMBERED_TAG (key, "ROUTING_RULE6_", &idx))
 		return idx;
 	return -1;
 }

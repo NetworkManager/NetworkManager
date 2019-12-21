@@ -607,8 +607,14 @@ nms_ifcfg_rh_utils_is_numbered_tag_impl (const char *key,
 
 	key += tag_len;
 
-	if (key[0] == '\0')
-		return FALSE;
+	if (key[0] == '\0') {
+		/* The key has no number suffix. We treat this also as a numbered
+		 * tag, and it is for certain tags like "IPADDR", but not so much
+		 * for others like "ROUTING_RULE_". The caller may want to handle
+		 * this case specially. */
+		NM_SET_OUT (out_idx, -1);
+		return TRUE;
+	}
 
 	if (!NM_STRCHAR_ALL (key, ch, g_ascii_isdigit (ch)))
 		return FALSE;
@@ -885,11 +891,14 @@ nms_ifcfg_rh_utils_is_well_known_key (const char *key)
 	if (ti) {
 		if (NM_FLAGS_ANY (ti->key_flags,   NMS_IFCFG_KEY_TYPE_IS_PLAIN
 		                                 | NMS_IFCFG_KEY_TYPE_IS_NUMBERED)) {
-			/* these tags are valid on full match. */
+			/* These tags are valid on full match.
+			 *
+			 * Note that numbered tags we also treat as valid if they have no
+			 * suffix. That is correct for "IPADDR", but less so for "ROUTING_RULE_". */
 			return ti;
 		}
 		nm_assert (NM_FLAGS_HAS (ti->key_flags, NMS_IFCFG_KEY_TYPE_IS_PREFIX));
-		/* a prefix tag needs some extra words afterwards. */
+		/* a prefix tag needs some extra suffix afterwards to be valid. */
 		return NULL;
 	}
 
