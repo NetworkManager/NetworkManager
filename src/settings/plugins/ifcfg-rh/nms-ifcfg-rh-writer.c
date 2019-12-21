@@ -126,9 +126,6 @@ write_secrets (shvarFile *ifcfg,
 		return FALSE;
 	}
 
-	/* we purge all existing secrets. */
-	svUnsetAll (keyfile, SV_KEY_TYPE_ANY);
-
 	secrets_keys = nm_utils_strdict_get_keys (secrets, TRUE, &secrets_keys_n);
 	for (i = 0; i < secrets_keys_n; i++) {
 		const char *k = secrets_keys[i];
@@ -2013,8 +2010,6 @@ write_route_file_svformat (const char *filename, NMSettingIPConfig *s_ip4)
 
 	routefile = utils_get_route_ifcfg (filename, TRUE);
 
-	svUnsetAll (routefile, SV_KEY_TYPE_ROUTE_SVFORMAT);
-
 	num = nm_setting_ip_config_get_num_routes (s_ip4);
 	for (i = 0; i < num; i++) {
 		char buf[INET_ADDRSTRLEN];
@@ -2148,8 +2143,6 @@ write_user_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_user = NM_SETTING_USER (nm_connection_get_setting (connection, NM_TYPE_SETTING_USER));
 
-	svUnsetAll (ifcfg, SV_KEY_TYPE_USER);
-
 	if (!s_user)
 		return TRUE;
 
@@ -2182,8 +2175,6 @@ write_sriov_setting (NMConnection *connection, shvarFile *ifcfg)
 	char key[32];
 	char *str;
 
-	svUnsetAll (ifcfg, SV_KEY_TYPE_SRIOV_VF);
-
 	s_sriov = NM_SETTING_SRIOV (nm_connection_get_setting (connection,
 	                                                       NM_TYPE_SETTING_SRIOV));
 	if (!s_sriov) {
@@ -2212,8 +2203,6 @@ write_tc_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingTCConfig *s_tc;
 	guint i, num, n;
 	char tag[64];
-
-	svUnsetAll (ifcfg, SV_KEY_TYPE_TC);
 
 	s_tc = nm_connection_get_setting_tc_config (connection);
 	if (!s_tc)
@@ -2369,14 +2358,8 @@ write_ip4_setting (NMConnection *connection,
 	NM_SET_OUT (out_route_content, NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (!s_ip4) {
-		/* slave-type: clear IPv4 settings.
-		 *
-		 * Some IPv4 setting related options are not cleared,
-		 * for no strong reason. */
-		svUnsetAll (ifcfg, SV_KEY_TYPE_IP4_ADDRESS);
+	if (!s_ip4)
 		return TRUE;
-	}
 
 	method = nm_setting_ip_config_get_method (s_ip4);
 
@@ -2669,13 +2652,8 @@ write_ip6_setting (NMConnection *connection,
 	NM_SET_OUT (out_route6_content, NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (!s_ip6) {
-		/* slave-type: clear IPv6 settings
-		 *
-		 * Some IPv6 setting related options are not cleared,
-		 * for no strong reason. */
+	if (!s_ip6)
 		return TRUE;
-	}
 
 	value = nm_setting_ip_config_get_method (s_ip6);
 	g_assert (value);
@@ -2821,8 +2799,6 @@ write_ip_routing_rules (NMConnection *connection,
 {
 	gsize idx;
 	int is_ipv4;
-
-	svUnsetAll (ifcfg, SV_KEY_TYPE_ROUTING_RULE4 | SV_KEY_TYPE_ROUTING_RULE6);
 
 	if (route_ignore)
 		return;
