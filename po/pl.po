@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-08-11 14:09+0200\n"
-"PO-Revision-Date: 2019-08-11 14:10+0200\n"
+"POT-Creation-Date: 2019-12-21 16:08+0100\n"
+"PO-Revision-Date: 2019-12-21 16:09+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -4822,8 +4822,8 @@ msgstr "„%ld” nie jest prawidłowym kanałem"
 #: ../clients/common/nm-meta-setting-desc.c:3988
 #: ../libnm-core/nm-setting-sriov.c:442 ../libnm-core/nm-setting-wired.c:772
 #: ../libnm-core/nm-setting-wired.c:785 ../libnm-core/nm-setting-wired.c:838
-#: ../libnm-core/nm-setting-wired.c:881 ../libnm-core/nm-setting-wireless.c:893
-#: ../libnm-core/nm-setting-wireless.c:909
+#: ../libnm-core/nm-setting-wired.c:881 ../libnm-core/nm-setting-wireless.c:898
+#: ../libnm-core/nm-setting-wireless.c:914
 #, c-format
 msgid "'%s' is not a valid MAC address"
 msgstr "„%s” nie jest prawidłowym adresem MAC"
@@ -4963,7 +4963,7 @@ msgstr ""
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
 msgstr "Urządzenie nadrzędne IEEE 802.15.4 (WPAN) lub UUID połączenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:4514
+#: ../clients/common/nm-meta-setting-desc.c:4517
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -4977,7 +4977,7 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/cacert.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4553
+#: ../clients/common/nm-meta-setting-desc.c:4556
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -4991,7 +4991,7 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/jara.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4610
+#: ../clients/common/nm-meta-setting-desc.c:4613
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5007,7 +5007,7 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4650
+#: ../clients/common/nm-meta-setting-desc.c:4653
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5023,7 +5023,7 @@ msgstr ""
 "danych typu blob.\n"
 "Przykład: /home/cimrman/jara-zweite-phase.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4677
+#: ../clients/common/nm-meta-setting-desc.c:4680
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5044,8 +5044,8 @@ msgstr ""
 "Przykłady: ab0455a6ea3a74C2\n"
 "           ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4694
-#: ../clients/common/nm-meta-setting-desc.c:4712
+#: ../clients/common/nm-meta-setting-desc.c:4697
+#: ../clients/common/nm-meta-setting-desc.c:4715
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5059,84 +5059,84 @@ msgstr ""
 "surowych danych typu blob.\n"
 "Przykład: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4751
+#: ../clients/common/nm-meta-setting-desc.c:4754
 #: ../clients/common/nm-secret-agent-simple.c:280
 #: ../clients/common/nm-secret-agent-simple.c:368
-#: ../clients/tui/nmt-page-dsl.c:65 ../clients/tui/nmt-page-wifi.c:331
+#: ../clients/tui/nmt-page-dsl.c:65 ../clients/tui/nmt-page-wifi.c:333
 msgid "Username"
 msgstr "Nazwa użytkownika"
 
-#: ../clients/common/nm-meta-setting-desc.c:4757
-#: ../clients/common/nm-meta-setting-desc.c:4972
-#: ../clients/common/nm-meta-setting-desc.c:5365
-#: ../clients/common/nm-meta-setting-desc.c:6286
+#: ../clients/common/nm-meta-setting-desc.c:4760
+#: ../clients/common/nm-meta-setting-desc.c:4975
+#: ../clients/common/nm-meta-setting-desc.c:5368
+#: ../clients/common/nm-meta-setting-desc.c:6289
 msgid "Password [none]"
 msgstr "Hasło [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4803
+#: ../clients/common/nm-meta-setting-desc.c:4806
 msgid "Bluetooth device address"
 msgstr "Adres urządzenia Bluetooth"
 
-#: ../clients/common/nm-meta-setting-desc.c:4851
-#: ../clients/common/nm-meta-setting-desc.c:5418
-#: ../clients/common/nm-meta-setting-desc.c:6982
-#: ../clients/common/nm-meta-setting-desc.c:7020
-#: ../clients/common/nm-meta-setting-desc.c:7202
-#: ../clients/common/nm-meta-setting-desc.c:7432
+#: ../clients/common/nm-meta-setting-desc.c:4854
+#: ../clients/common/nm-meta-setting-desc.c:5421
+#: ../clients/common/nm-meta-setting-desc.c:6985
+#: ../clients/common/nm-meta-setting-desc.c:7023
+#: ../clients/common/nm-meta-setting-desc.c:7205
+#: ../clients/common/nm-meta-setting-desc.c:7435
 msgid "MAC [none]"
 msgstr "MAC [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4857
+#: ../clients/common/nm-meta-setting-desc.c:4860
 msgid "Enable STP [no]"
 msgstr "Włączenie STP [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4863
+#: ../clients/common/nm-meta-setting-desc.c:4866
 msgid "STP priority [32768]"
 msgstr "Priorytet STP [32768]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4869
+#: ../clients/common/nm-meta-setting-desc.c:4872
 msgid "Forward delay [15]"
 msgstr "Forward-delay [15]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4875
+#: ../clients/common/nm-meta-setting-desc.c:4878
 msgid "Hello time [2]"
 msgstr "Hello-time [2]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4881
+#: ../clients/common/nm-meta-setting-desc.c:4884
 msgid "Max age [20]"
 msgstr "Max-age [20]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4887
+#: ../clients/common/nm-meta-setting-desc.c:4890
 msgid "MAC address ageing time [300]"
 msgstr "Czas starzenia adresu MAC [300]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4893
+#: ../clients/common/nm-meta-setting-desc.c:4896
 msgid "Group forward mask [0]"
 msgstr "Maska przekierowania grupy [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4899
+#: ../clients/common/nm-meta-setting-desc.c:4902
 msgid "Enable IGMP snooping [no]"
 msgstr "Włączenie węszenia IGMP [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4928
+#: ../clients/common/nm-meta-setting-desc.c:4931
 msgid "Bridge port priority [32]"
 msgstr "Priorytet portu mostku [32]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4934
+#: ../clients/common/nm-meta-setting-desc.c:4937
 msgid "Bridge port STP path cost [100]"
 msgstr "Koszt ścieżki STP portu mostku [100]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4940
+#: ../clients/common/nm-meta-setting-desc.c:4943
 msgid "Hairpin [no]"
 msgstr "Hairpin [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4966
-#: ../clients/common/nm-meta-setting-desc.c:5359
-#: ../clients/common/nm-meta-setting-desc.c:6840
+#: ../clients/common/nm-meta-setting-desc.c:4969
+#: ../clients/common/nm-meta-setting-desc.c:5362
+#: ../clients/common/nm-meta-setting-desc.c:6843
 msgid "Username [none]"
 msgstr "Nazwa użytkownika [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5069
+#: ../clients/common/nm-meta-setting-desc.c:5072
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -5152,7 +5152,7 @@ msgstr ""
 "\n"
 "Przykład: alice bob charlie\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5121
+#: ../clients/common/nm-meta-setting-desc.c:5124
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -5173,7 +5173,7 @@ msgstr ""
 "\n"
 "Przykład: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5144
+#: ../clients/common/nm-meta-setting-desc.c:5147
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -5188,25 +5188,25 @@ msgstr ""
 "„unknown” umożliwia usłudze NetworkManager wybranie wartości za pomocą "
 "heurystyki\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5375
+#: ../clients/common/nm-meta-setting-desc.c:5378
 msgid "APN"
 msgstr "APN"
 
-#: ../clients/common/nm-meta-setting-desc.c:5427
-#: ../clients/common/nm-meta-setting-desc.c:7051
-#: ../clients/common/nm-meta-setting-desc.c:7242
+#: ../clients/common/nm-meta-setting-desc.c:5430
+#: ../clients/common/nm-meta-setting-desc.c:7054
+#: ../clients/common/nm-meta-setting-desc.c:7245
 msgid "MTU [auto]"
 msgstr "MTU [auto]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5446
+#: ../clients/common/nm-meta-setting-desc.c:5449
 msgid "P_KEY [none]"
 msgstr "P_KEY [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5455
+#: ../clients/common/nm-meta-setting-desc.c:5458
 msgid "Parent interface [none]"
 msgstr "Interfejs nadrzędny [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5482
+#: ../clients/common/nm-meta-setting-desc.c:5485
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5216,11 +5216,11 @@ msgstr ""
 "\n"
 "Przykład: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5530
+#: ../clients/common/nm-meta-setting-desc.c:5533
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "Adres IPv4 (IP[/plen]) [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5532
+#: ../clients/common/nm-meta-setting-desc.c:5535
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5234,11 +5234,11 @@ msgstr ""
 "\n"
 "Przykład: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5551
+#: ../clients/common/nm-meta-setting-desc.c:5554
 msgid "IPv4 gateway [none]"
 msgstr "Brama IPv4 [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5559
+#: ../clients/common/nm-meta-setting-desc.c:5562
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5261,7 +5261,7 @@ msgstr ""
 "Przykłady: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "           10.1.2.0/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5599
+#: ../clients/common/nm-meta-setting-desc.c:5602
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5271,7 +5271,7 @@ msgstr ""
 "  priority [priorytet] [from [źródło]] [to [cel]], ,…\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5690
+#: ../clients/common/nm-meta-setting-desc.c:5693
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5292,11 +5292,11 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5744
+#: ../clients/common/nm-meta-setting-desc.c:5747
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Adres IPv6 (IP[/plen]) [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5746
+#: ../clients/common/nm-meta-setting-desc.c:5749
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5310,11 +5310,11 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5765
+#: ../clients/common/nm-meta-setting-desc.c:5768
 msgid "IPv6 gateway [none]"
 msgstr "Brama IPv6 [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5773
+#: ../clients/common/nm-meta-setting-desc.c:5776
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5339,7 +5339,7 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5813
+#: ../clients/common/nm-meta-setting-desc.c:5816
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5349,166 +5349,166 @@ msgstr ""
 "  priority [priorytet] [from [źródło]] [to [cel]], ,…\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5901
-#: ../clients/common/nm-meta-setting-desc.c:6881
+#: ../clients/common/nm-meta-setting-desc.c:5904
+#: ../clients/common/nm-meta-setting-desc.c:6884
 msgid "Parent device [none]"
 msgstr "Urządzenie nadrzędne [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5907
+#: ../clients/common/nm-meta-setting-desc.c:5910
 msgid "Local endpoint [none]"
 msgstr "Lokalny punkt końcowy [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5914
-#: ../clients/common/nm-meta-setting-desc.c:6901
+#: ../clients/common/nm-meta-setting-desc.c:5917
+#: ../clients/common/nm-meta-setting-desc.c:6904
 msgid "Remote"
 msgstr "Zdalne"
 
-#: ../clients/common/nm-meta-setting-desc.c:5959
+#: ../clients/common/nm-meta-setting-desc.c:5962
 msgid "MACsec parent device or connection UUID"
 msgstr "Urządzenie nadrzędne MACsec lub UUID połączenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:5980
+#: ../clients/common/nm-meta-setting-desc.c:5983
 msgid "Enable encryption [yes]"
 msgstr "Włączenie szyfrowania [yes]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5986
+#: ../clients/common/nm-meta-setting-desc.c:5989
 #: ../clients/common/nm-secret-agent-simple.c:929
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
-#: ../clients/common/nm-meta-setting-desc.c:5996
+#: ../clients/common/nm-meta-setting-desc.c:5999
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: ../clients/common/nm-meta-setting-desc.c:6002
+#: ../clients/common/nm-meta-setting-desc.c:6005
 msgid "SCI port [1]"
 msgstr "Port SCI [1]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6028
+#: ../clients/common/nm-meta-setting-desc.c:6031
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Urządzenie nadrzędne MACVLAN lub UUID połączenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:6049
+#: ../clients/common/nm-meta-setting-desc.c:6052
 msgid "Tap [no]"
 msgstr "Tap [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6084
-#: ../clients/common/nm-meta-setting-desc.c:7156
-#: ../clients/tui/nmt-page-wifi.c:223
+#: ../clients/common/nm-meta-setting-desc.c:6087
+#: ../clients/common/nm-meta-setting-desc.c:7159
+#: ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/common/nm-meta-setting-desc.c:6093
+#: ../clients/common/nm-meta-setting-desc.c:6096
 msgid "OLPC Mesh channel [1]"
 msgstr "Kanał sieci kratowej OLPC [1]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6102
+#: ../clients/common/nm-meta-setting-desc.c:6105
 msgid "DHCP anycast MAC address [none]"
 msgstr "Adres MAC „anycast” DHCP [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6267
+#: ../clients/common/nm-meta-setting-desc.c:6270
 msgid "PPPoE parent device"
 msgstr "Urządzenie nadrzędne PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:6273
+#: ../clients/common/nm-meta-setting-desc.c:6276
 msgid "Service [none]"
 msgstr "Usługa [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6280
+#: ../clients/common/nm-meta-setting-desc.c:6283
 msgid "PPPoE username"
 msgstr "Nazwa użytkownika PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:6316
+#: ../clients/common/nm-meta-setting-desc.c:6319
 msgid "Browser only [no]"
 msgstr "Tylko przeglądarka [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6322
+#: ../clients/common/nm-meta-setting-desc.c:6325
 msgid "PAC URL"
 msgstr "Adres URL PAC"
 
-#: ../clients/common/nm-meta-setting-desc.c:6328
+#: ../clients/common/nm-meta-setting-desc.c:6331
 msgid "PAC script"
 msgstr "Skrypt PAC"
 
-#: ../clients/common/nm-meta-setting-desc.c:6452
-#: ../clients/common/nm-meta-setting-desc.c:6640
+#: ../clients/common/nm-meta-setting-desc.c:6455
+#: ../clients/common/nm-meta-setting-desc.c:6643
 msgid "Team JSON configuration [none]"
 msgstr "Konfiguracja JSON zespołu [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6743
+#: ../clients/common/nm-meta-setting-desc.c:6746
 msgid "User ID [none]"
 msgstr "Identyfikator użytkownika [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6749
+#: ../clients/common/nm-meta-setting-desc.c:6752
 msgid "Group ID [none]"
 msgstr "Identyfikator grupy [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6755
+#: ../clients/common/nm-meta-setting-desc.c:6758
 msgid "Enable PI [no]"
 msgstr "Włączenie PI [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6761
+#: ../clients/common/nm-meta-setting-desc.c:6764
 msgid "Enable VNET header [no]"
 msgstr "Włączenie nagłówka VNET [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6767
+#: ../clients/common/nm-meta-setting-desc.c:6770
 msgid "Enable multi queue [no]"
 msgstr "Włączenie wielokrotnej kolejki [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6780
+#: ../clients/common/nm-meta-setting-desc.c:6783
 msgid "VLAN parent device or connection UUID"
 msgstr "Urządzenie nadrzędne VLAN lub UUID połączenia"
 
-#: ../clients/common/nm-meta-setting-desc.c:6787
+#: ../clients/common/nm-meta-setting-desc.c:6790
 msgid "VLAN ID (<0-4094>)"
 msgstr "Identyfikator VLAN (<0-4094>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:6793
+#: ../clients/common/nm-meta-setting-desc.c:6796
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Flagi VLAN (<0-7>) [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6802
+#: ../clients/common/nm-meta-setting-desc.c:6805
 msgid "Ingress priority maps [none]"
 msgstr "Wejściowe mapy priorytetów [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6812
+#: ../clients/common/nm-meta-setting-desc.c:6815
 msgid "Egress priority maps [none]"
 msgstr "Wyjściowe mapy priorytetów [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6888
+#: ../clients/common/nm-meta-setting-desc.c:6891
 msgid "VXLAN ID"
 msgstr "Identyfikator VXLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:6894
+#: ../clients/common/nm-meta-setting-desc.c:6897
 msgid "Local address [none]"
 msgstr "Lokalny adres [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6907
+#: ../clients/common/nm-meta-setting-desc.c:6910
 msgid "Minimum source port [0]"
 msgstr "Minimalny port źródłowy [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6913
+#: ../clients/common/nm-meta-setting-desc.c:6916
 msgid "Maximum source port [0]"
 msgstr "Maksymalny port źródłowy [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6919
+#: ../clients/common/nm-meta-setting-desc.c:6922
 msgid "Destination port [8472]"
 msgstr "Port docelowy [8472]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6959
+#: ../clients/common/nm-meta-setting-desc.c:6962
 msgid "Peer"
 msgstr "Partner"
 
-#: ../clients/common/nm-meta-setting-desc.c:6989
+#: ../clients/common/nm-meta-setting-desc.c:6992
 msgid "WiMAX NSP name"
 msgstr "Nazwa NSP sieci WiMAX"
 
-#: ../clients/common/nm-meta-setting-desc.c:7026
-#: ../clients/common/nm-meta-setting-desc.c:7207
+#: ../clients/common/nm-meta-setting-desc.c:7029
+#: ../clients/common/nm-meta-setting-desc.c:7210
 msgid "Cloned MAC [none]"
 msgstr "Sklonowany MAC [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7059
+#: ../clients/common/nm-meta-setting-desc.c:7062
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5518,7 +5518,7 @@ msgstr ""
 "\n"
 "Przykład: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:7381
+#: ../clients/common/nm-meta-setting-desc.c:7384
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5526,216 +5526,216 @@ msgstr ""
 "Proszę podać typ kluczy WEP. Możliwe wartości: 0 lub „unknown”, 1 lub „key” "
 "i 2 lub „passphrase”.\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:7440
+#: ../clients/common/nm-meta-setting-desc.c:7443
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "Krótki adres (<0x0000-0xffff>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7456
+#: ../clients/common/nm-meta-setting-desc.c:7459
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "Identyfikator PAN (<0x0000-0xffff>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7471
+#: ../clients/common/nm-meta-setting-desc.c:7474
 msgid "Page (<default|0-31>)"
 msgstr "Strona (<domyślna|0-31>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7485
+#: ../clients/common/nm-meta-setting-desc.c:7488
 msgid "Channel (<default|0-26>)"
 msgstr "Kanał (<domyślny|0-26>)"
 
 #. ***************************************************************************
-#: ../clients/common/nm-meta-setting-desc.c:7620
+#: ../clients/common/nm-meta-setting-desc.c:7623
 msgid "6LOWPAN settings"
 msgstr "Ustawienia 6LoWPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7621
+#: ../clients/common/nm-meta-setting-desc.c:7624
 msgid "802-1x settings"
 msgstr "Ustawienia 802-1x"
 
-#: ../clients/common/nm-meta-setting-desc.c:7622
+#: ../clients/common/nm-meta-setting-desc.c:7625
 #: ../src/devices/adsl/nm-device-adsl.c:131
 msgid "ADSL connection"
 msgstr "Połączenie ADSL"
 
-#: ../clients/common/nm-meta-setting-desc.c:7623
+#: ../clients/common/nm-meta-setting-desc.c:7626
 msgid "bluetooth connection"
 msgstr "Połączenie Bluetooth"
 
-#: ../clients/common/nm-meta-setting-desc.c:7624
+#: ../clients/common/nm-meta-setting-desc.c:7627
 msgid "Bond device"
 msgstr "Urządzenie wiązania"
 
-#: ../clients/common/nm-meta-setting-desc.c:7625
+#: ../clients/common/nm-meta-setting-desc.c:7628
 msgid "Bridge device"
 msgstr "Urządzenie mostka"
 
-#: ../clients/common/nm-meta-setting-desc.c:7626
+#: ../clients/common/nm-meta-setting-desc.c:7629
 msgid "Bridge port"
 msgstr "Port mostka"
 
-#: ../clients/common/nm-meta-setting-desc.c:7627
+#: ../clients/common/nm-meta-setting-desc.c:7630
 msgid "CDMA mobile broadband connection"
 msgstr "Połączenie komórkowe CDMA"
 
-#: ../clients/common/nm-meta-setting-desc.c:7628
+#: ../clients/common/nm-meta-setting-desc.c:7631
 msgid "General settings"
 msgstr "Ogólne ustawienia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7629
+#: ../clients/common/nm-meta-setting-desc.c:7632
 msgid "DCB settings"
 msgstr "Ustawienia DCB"
 
-#: ../clients/common/nm-meta-setting-desc.c:7630
+#: ../clients/common/nm-meta-setting-desc.c:7633
 msgid "Dummy settings"
 msgstr "Ustawienia atrapy"
 
-#: ../clients/common/nm-meta-setting-desc.c:7631
+#: ../clients/common/nm-meta-setting-desc.c:7634
 msgid "Ethtool settings"
 msgstr "Ustawienia ethtool"
 
-#: ../clients/common/nm-meta-setting-desc.c:7632
+#: ../clients/common/nm-meta-setting-desc.c:7635
 msgid "Generic settings"
 msgstr "Ogólne ustawienia"
 
-#: ../clients/common/nm-meta-setting-desc.c:7633
+#: ../clients/common/nm-meta-setting-desc.c:7636
 msgid "GSM mobile broadband connection"
 msgstr "Połączenie komórkowe GSM"
 
-#: ../clients/common/nm-meta-setting-desc.c:7634
-#: ../src/devices/nm-device-infiniband.c:175
+#: ../clients/common/nm-meta-setting-desc.c:7637
+#: ../src/devices/nm-device-infiniband.c:177
 msgid "InfiniBand connection"
 msgstr "Połączenie InfiniBand"
 
-#: ../clients/common/nm-meta-setting-desc.c:7635
+#: ../clients/common/nm-meta-setting-desc.c:7638
 msgid "IPv4 protocol"
 msgstr "Protokół IPv4"
 
-#: ../clients/common/nm-meta-setting-desc.c:7636
+#: ../clients/common/nm-meta-setting-desc.c:7639
 msgid "IPv6 protocol"
 msgstr "Protokół IPv6"
 
-#: ../clients/common/nm-meta-setting-desc.c:7637
+#: ../clients/common/nm-meta-setting-desc.c:7640
 msgid "IP-tunnel settings"
 msgstr "Ustawienia tunelu IP"
 
-#: ../clients/common/nm-meta-setting-desc.c:7638
+#: ../clients/common/nm-meta-setting-desc.c:7641
 msgid "MACsec connection"
 msgstr "Połączenie MACsec"
 
-#: ../clients/common/nm-meta-setting-desc.c:7639
+#: ../clients/common/nm-meta-setting-desc.c:7642
 msgid "macvlan connection"
 msgstr "Połączenie MACVLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7640
+#: ../clients/common/nm-meta-setting-desc.c:7643
 msgid "Match"
 msgstr "Dopasowanie"
 
-#: ../clients/common/nm-meta-setting-desc.c:7641
+#: ../clients/common/nm-meta-setting-desc.c:7644
 msgid "OLPC Mesh connection"
 msgstr "Połączenie kratowe OLPC"
 
-#: ../clients/common/nm-meta-setting-desc.c:7642
+#: ../clients/common/nm-meta-setting-desc.c:7645
 msgid "Open vSwitch bridge settings"
 msgstr "Ustawienia mostka Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7643
+#: ../clients/common/nm-meta-setting-desc.c:7646
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Ustawienia interfejsu DPDK Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7644
+#: ../clients/common/nm-meta-setting-desc.c:7647
 msgid "Open vSwitch interface settings"
 msgstr "Ustawienia interfejsu Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7645
+#: ../clients/common/nm-meta-setting-desc.c:7648
 msgid "Open vSwitch patch interface settings"
 msgstr "Ustawienia interfejsu ścieżki Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7646
+#: ../clients/common/nm-meta-setting-desc.c:7649
 msgid "Open vSwitch port settings"
 msgstr "Ustawienia portu Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7647
+#: ../clients/common/nm-meta-setting-desc.c:7650
 msgid "PPP settings"
 msgstr "Ustawienia PPP"
 
-#: ../clients/common/nm-meta-setting-desc.c:7648
+#: ../clients/common/nm-meta-setting-desc.c:7651
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:7649
+#: ../clients/common/nm-meta-setting-desc.c:7652
 msgid "Proxy"
 msgstr "Pośrednik"
 
-#: ../clients/common/nm-meta-setting-desc.c:7650
+#: ../clients/common/nm-meta-setting-desc.c:7653
 msgid "Serial settings"
 msgstr "Ustawienia szeregowe"
 
-#: ../clients/common/nm-meta-setting-desc.c:7651
+#: ../clients/common/nm-meta-setting-desc.c:7654
 msgid "SR-IOV settings"
 msgstr "Ustawienia SR-IOV"
 
-#: ../clients/common/nm-meta-setting-desc.c:7652
+#: ../clients/common/nm-meta-setting-desc.c:7655
 msgid "Traffic controls"
 msgstr "Sterowanie ruchem"
 
-#: ../clients/common/nm-meta-setting-desc.c:7653
+#: ../clients/common/nm-meta-setting-desc.c:7656
 msgid "Team device"
 msgstr "Urządzenie zespołowe"
 
-#: ../clients/common/nm-meta-setting-desc.c:7654
+#: ../clients/common/nm-meta-setting-desc.c:7657
 msgid "Team port"
 msgstr "Port zespołu"
 
-#: ../clients/common/nm-meta-setting-desc.c:7655
+#: ../clients/common/nm-meta-setting-desc.c:7658
 msgid "Tun device"
 msgstr "Urządzenie TUN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7656
+#: ../clients/common/nm-meta-setting-desc.c:7659
 msgid "User settings"
 msgstr "Ustawienia użytkownika"
 
-#: ../clients/common/nm-meta-setting-desc.c:7657
+#: ../clients/common/nm-meta-setting-desc.c:7660
 #: ../src/devices/nm-device-vlan.c:399
 msgid "VLAN connection"
 msgstr "Połączenie VLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7658 ../src/nm-manager.c:5602
+#: ../clients/common/nm-meta-setting-desc.c:7661 ../src/nm-manager.c:5640
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7659
+#: ../clients/common/nm-meta-setting-desc.c:7662
 #: ../src/devices/nm-device-vxlan.c:368
 msgid "VXLAN connection"
 msgstr "Połączenie VXLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7660
+#: ../clients/common/nm-meta-setting-desc.c:7663
 msgid "Wi-Fi P2P connection"
 msgstr "Połączenie P2P sieci Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7661
+#: ../clients/common/nm-meta-setting-desc.c:7664
 msgid "WiMAX connection"
 msgstr "Połączenie WiMAX"
 
-#: ../clients/common/nm-meta-setting-desc.c:7662
+#: ../clients/common/nm-meta-setting-desc.c:7665
 msgid "Wired Ethernet"
 msgstr "Przewodowy Ethernet"
 
-#: ../clients/common/nm-meta-setting-desc.c:7663
+#: ../clients/common/nm-meta-setting-desc.c:7666
 msgid "WireGuard VPN settings"
 msgstr "Ustawienia WireGuard VPN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7664
+#: ../clients/common/nm-meta-setting-desc.c:7667
 msgid "Wi-Fi connection"
 msgstr "Połączenie Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7665
+#: ../clients/common/nm-meta-setting-desc.c:7668
 msgid "Wi-Fi security settings"
 msgstr "Ustawienia zabezpieczeń Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7666
+#: ../clients/common/nm-meta-setting-desc.c:7669
 msgid "WPAN settings"
 msgstr "Ustawienia WPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8031
+#: ../clients/common/nm-meta-setting-desc.c:8035
 msgid "name"
 msgstr "nazwa"
 
@@ -5759,8 +5759,8 @@ msgstr "Uprzednio udostępniony klucz dla %s"
 #: ../clients/common/nm-vpn-helpers.c:126
 #: ../clients/common/nm-vpn-helpers.c:132
 #: ../clients/common/nm-vpn-helpers.c:137 ../clients/tui/nmt-page-dsl.c:74
-#: ../clients/tui/nmt-page-wifi.c:276 ../clients/tui/nmt-page-wifi.c:307
-#: ../clients/tui/nmt-page-wifi.c:340
+#: ../clients/tui/nmt-page-wifi.c:277 ../clients/tui/nmt-page-wifi.c:309
+#: ../clients/tui/nmt-page-wifi.c:342
 msgid "Password"
 msgstr "Hasło"
 
@@ -5773,7 +5773,7 @@ msgid "Private key password"
 msgstr "Hasło klucza prywatnego"
 
 #: ../clients/common/nm-secret-agent-simple.c:335
-#: ../clients/tui/nmt-page-wifi.c:288
+#: ../clients/tui/nmt-page-wifi.c:290
 msgid "Key"
 msgstr "Klucz"
 
@@ -6069,7 +6069,7 @@ msgstr "Połączenie DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:196 ../libnm-core/nm-connection.c:2734
 #: ../libnm/nm-device.c:1399
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4936
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4946
 msgid "Bond"
 msgstr "Wiązane"
 
@@ -6080,7 +6080,7 @@ msgstr "Połączenie wiązane %d"
 
 #: ../clients/tui/nm-editor-utils.c:205 ../libnm-core/nm-connection.c:2738
 #: ../libnm/nm-device.c:1403
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5291
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5301
 msgid "Bridge"
 msgstr "Mostek"
 
@@ -6091,7 +6091,7 @@ msgstr "Połączenie mostkowane %d"
 
 #: ../clients/tui/nm-editor-utils.c:214 ../libnm-core/nm-connection.c:2736
 #: ../libnm/nm-device.c:1401
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5009
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5019
 msgid "Team"
 msgstr "Zespół"
 
@@ -6256,7 +6256,7 @@ msgid "Slaves"
 msgstr "Podrzędne"
 
 #: ../clients/tui/nmt-page-bond.c:377 ../clients/tui/nmt-page-ip-tunnel.c:147
-#: ../clients/tui/nmt-page-wifi.c:229
+#: ../clients/tui/nmt-page-wifi.c:230
 msgid "Mode"
 msgstr "Tryb"
 
@@ -6291,7 +6291,7 @@ msgid "ARP targets"
 msgstr "Cele ARP"
 
 #: ../clients/tui/nmt-page-bond.c:430 ../clients/tui/nmt-page-ethernet.c:76
-#: ../clients/tui/nmt-page-vlan.c:109 ../clients/tui/nmt-page-wifi.c:363
+#: ../clients/tui/nmt-page-vlan.c:109 ../clients/tui/nmt-page-wifi.c:365
 msgid "Cloned MAC address"
 msgstr "Sklonowany adres MAC"
 
@@ -6356,7 +6356,7 @@ msgstr "ETHERNET"
 #: ../clients/tui/nmt-page-ethernet.c:82
 #: ../clients/tui/nmt-page-infiniband.c:93
 #: ../clients/tui/nmt-page-ip-tunnel.c:185 ../clients/tui/nmt-page-vlan.c:115
-#: ../clients/tui/nmt-page-wifi.c:369
+#: ../clients/tui/nmt-page-wifi.c:371
 msgid "MTU"
 msgstr "MTU"
 
@@ -6627,86 +6627,90 @@ msgid "WPA & WPA2 Personal"
 msgstr "WPA i WPA2 Personal"
 
 #: ../clients/tui/nmt-page-wifi.c:81
+msgid "WPA3 Personal"
+msgstr "WPA3 Personal"
+
+#: ../clients/tui/nmt-page-wifi.c:82
 msgid "WPA & WPA2 Enterprise"
 msgstr "WPA i WPA2 Enterprise"
 
-#: ../clients/tui/nmt-page-wifi.c:82
+#: ../clients/tui/nmt-page-wifi.c:83
 msgid "WEP 40/128-bit Key (Hex or ASCII)"
 msgstr "40/128-bitowy klucz WEP (szesnastkowy lub ASCII)"
 
-#: ../clients/tui/nmt-page-wifi.c:83
+#: ../clients/tui/nmt-page-wifi.c:84
 msgid "WEP 128-bit Passphrase"
 msgstr "128-bitowe hasło WEP"
 
-#: ../clients/tui/nmt-page-wifi.c:84
+#: ../clients/tui/nmt-page-wifi.c:85
 msgid "Dynamic WEP (802.1x)"
 msgstr "Dynamiczne WEP (802.1x)"
 
-#: ../clients/tui/nmt-page-wifi.c:85
+#: ../clients/tui/nmt-page-wifi.c:86
 msgid "LEAP"
 msgstr "LEAP"
 
-#: ../clients/tui/nmt-page-wifi.c:90
+#: ../clients/tui/nmt-page-wifi.c:91
 msgctxt "WEP key index"
 msgid "1 (Default)"
 msgstr "1 (domyślne)"
 
-#: ../clients/tui/nmt-page-wifi.c:91
+#: ../clients/tui/nmt-page-wifi.c:92
 msgctxt "WEP key index"
 msgid "2"
 msgstr "2"
 
-#: ../clients/tui/nmt-page-wifi.c:92
+#: ../clients/tui/nmt-page-wifi.c:93
 msgctxt "WEP key index"
 msgid "3"
 msgstr "3"
 
-#: ../clients/tui/nmt-page-wifi.c:93
+#: ../clients/tui/nmt-page-wifi.c:94
 msgctxt "WEP key index"
 msgid "4"
 msgstr "4"
 
-#: ../clients/tui/nmt-page-wifi.c:98
+#: ../clients/tui/nmt-page-wifi.c:99
 msgid "Open System"
 msgstr "System otwarty"
 
-#: ../clients/tui/nmt-page-wifi.c:99
+#: ../clients/tui/nmt-page-wifi.c:100
 msgid "Shared Key"
 msgstr "Klucz współdzielony"
 
-#: ../clients/tui/nmt-page-wifi.c:213
+#: ../clients/tui/nmt-page-wifi.c:214
 msgid "WI-FI"
 msgstr "WI-FI"
 
-#: ../clients/tui/nmt-page-wifi.c:255
+#: ../clients/tui/nmt-page-wifi.c:256
 msgid "Channel"
 msgstr "Kanał"
 
-#: ../clients/tui/nmt-page-wifi.c:260
+#: ../clients/tui/nmt-page-wifi.c:261
 msgid "Security"
 msgstr "Zabezpieczenia"
 
 #. "wpa-enterprise"
 #. FIXME
-#: ../clients/tui/nmt-page-wifi.c:281
+#: ../clients/tui/nmt-page-wifi.c:283
 msgid "(No support for wpa-enterprise yet...)"
 msgstr "(WPA Enterprise nie jest jeszcze obsługiwane)"
 
-#: ../clients/tui/nmt-page-wifi.c:291 ../clients/tui/nmt-page-wifi.c:310
+#: ../clients/tui/nmt-page-wifi.c:293 ../clients/tui/nmt-page-wifi.c:312
 msgid "WEP index"
 msgstr "Indeks WEP"
 
-#: ../clients/tui/nmt-page-wifi.c:299 ../clients/tui/nmt-page-wifi.c:318
+#: ../clients/tui/nmt-page-wifi.c:301 ../clients/tui/nmt-page-wifi.c:320
 msgid "Authentication"
 msgstr "Uwierzytelnianie"
 
 #. "dynamic-wep"
 #. FIXME
-#: ../clients/tui/nmt-page-wifi.c:324
+#: ../clients/tui/nmt-page-wifi.c:326
 msgid "(No support for dynamic-wep yet...)"
 msgstr "(Dynamiczne WEP nie jest jeszcze obsługiwane)"
 
-#: ../clients/tui/nmt-page-wifi.c:357
+#: ../clients/tui/nmt-page-wifi.c:359
 msgid "BSSID"
 msgstr "BSSID"
 
@@ -7270,12 +7274,12 @@ msgstr "Sprawdzenie połączenia niespodziewanie się nie powiodło"
 msgid "unexpected uuid %s instead of %s"
 msgstr "nieoczekiwany UUID %s zamiast %s"
 
-#: ../libnm-core/nm-connection.c:2599 ../libnm-core/nm-setting-8021x.c:2567
-#: ../libnm-core/nm-setting-8021x.c:2584 ../libnm-core/nm-setting-8021x.c:2615
-#: ../libnm-core/nm-setting-8021x.c:2632 ../libnm-core/nm-setting-8021x.c:2674
-#: ../libnm-core/nm-setting-8021x.c:2686 ../libnm-core/nm-setting-8021x.c:2704
-#: ../libnm-core/nm-setting-8021x.c:2716 ../libnm-core/nm-setting-8021x.c:2740
-#: ../libnm-core/nm-setting-8021x.c:2822 ../libnm-core/nm-setting-adsl.c:172
+#: ../libnm-core/nm-connection.c:2599 ../libnm-core/nm-setting-8021x.c:2588
+#: ../libnm-core/nm-setting-8021x.c:2605 ../libnm-core/nm-setting-8021x.c:2636
+#: ../libnm-core/nm-setting-8021x.c:2653 ../libnm-core/nm-setting-8021x.c:2695
+#: ../libnm-core/nm-setting-8021x.c:2707 ../libnm-core/nm-setting-8021x.c:2725
+#: ../libnm-core/nm-setting-8021x.c:2737 ../libnm-core/nm-setting-8021x.c:2761
+#: ../libnm-core/nm-setting-8021x.c:2854 ../libnm-core/nm-setting-adsl.c:172
 #: ../libnm-core/nm-setting-bluetooth.c:123
 #: ../libnm-core/nm-setting-bluetooth.c:181
 #: ../libnm-core/nm-setting-bluetooth.c:195 ../libnm-core/nm-setting-cdma.c:142
@@ -7289,7 +7293,7 @@ msgstr "nieoczekiwany UUID %s zamiast %s"
 #: ../libnm-core/nm-setting-vpn.c:530 ../libnm-core/nm-setting-vxlan.c:337
 #: ../libnm-core/nm-setting-wifi-p2p.c:136 ../libnm-core/nm-setting-wimax.c:108
 #: ../libnm-core/nm-setting-wireless-security.c:917
-#: ../libnm-core/nm-setting-wireless.c:776
+#: ../libnm-core/nm-setting-wireless.c:781
 msgid "property is missing"
 msgstr "brak właściwości"
 
@@ -7377,7 +7381,7 @@ msgstr "nieprawidłowa wartość dla „%s”: %s"
 msgid "ignoring invalid DNS server IPv%c address '%s'"
 msgstr "ignorowanie nieprawidłowego adresu IPv%c serwera DNS „%s”"
 
-#: ../libnm-core/nm-keyfile.c:994 ../libnm-core/nm-keyfile.c:3122
+#: ../libnm-core/nm-keyfile.c:994 ../libnm-core/nm-keyfile.c:3147
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
@@ -7396,122 +7400,122 @@ msgstr "ignorowanie nieprawidłowego SSID"
 msgid "ignoring invalid raw password"
 msgstr "ignorowanie nieprawidłowego surowego hasła"
 
-#: ../libnm-core/nm-keyfile.c:1417
+#: ../libnm-core/nm-keyfile.c:1420
 msgid "invalid key/cert value"
 msgstr "nieprawidłowa wartość klucz/certyfikat"
 
-#: ../libnm-core/nm-keyfile.c:1428
+#: ../libnm-core/nm-keyfile.c:1431
 #, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "nieprawidłowa ścieżka wartości klucz/certyfikat „%s”"
 
-#: ../libnm-core/nm-keyfile.c:1444 ../libnm-core/nm-keyfile.c:1527
+#: ../libnm-core/nm-keyfile.c:1451 ../libnm-core/nm-keyfile.c:1534
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr "certyfikat lub plik klucza „%s” nie istnieje"
 
-#: ../libnm-core/nm-keyfile.c:1453
+#: ../libnm-core/nm-keyfile.c:1460
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr "nieprawidłowy adres URI PKCS#11 „%s”"
 
-#: ../libnm-core/nm-keyfile.c:1497
+#: ../libnm-core/nm-keyfile.c:1504
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr "nieprawidłowe dane wartości klucz/certyfikat:;base64, nie jest base64"
 
-#: ../libnm-core/nm-keyfile.c:1506
+#: ../libnm-core/nm-keyfile.c:1513
 msgid "invalid key/cert value data:;base64,file://"
 msgstr "nieprawidłowe dane wartości klucz/certyfikat:;base64,file://"
 
-#: ../libnm-core/nm-keyfile.c:1539
+#: ../libnm-core/nm-keyfile.c:1546
 msgid "invalid key/cert value is not a valid blob"
 msgstr ""
 "nieprawidłowa wartość klucz/certyfikat nie jest prawidłowymi danymi typu blob"
 
-#: ../libnm-core/nm-keyfile.c:1641
+#: ../libnm-core/nm-keyfile.c:1648
 #, c-format
 msgid "invalid parity value '%s'"
 msgstr "nieprawidłowa wartość parzystości „%s”"
 
-#: ../libnm-core/nm-keyfile.c:1658 ../libnm-core/nm-keyfile.c:3177
+#: ../libnm-core/nm-keyfile.c:1665 ../libnm-core/nm-keyfile.c:3202
 #, c-format
 msgid "invalid setting: %s"
 msgstr "nieprawidłowe ustawienie: %s"
 
-#: ../libnm-core/nm-keyfile.c:1675
+#: ../libnm-core/nm-keyfile.c:1682
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr "ignorowanie nieprawidłowej konfiguracji zespołu: %s"
 
-#: ../libnm-core/nm-keyfile.c:1753
+#: ../libnm-core/nm-keyfile.c:1760
 #, c-format
 msgid "invalid qdisc: %s"
 msgstr "nieprawidłowe qdisc: %s"
 
-#: ../libnm-core/nm-keyfile.c:1799
+#: ../libnm-core/nm-keyfile.c:1806
 #, c-format
 msgid "invalid tfilter: %s"
 msgstr "nieprawidłowe tfilter: %s"
 
-#: ../libnm-core/nm-keyfile.c:3021
+#: ../libnm-core/nm-keyfile.c:3046
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "błąd podczas wczytywania wartości ustawienia: %s"
 
-#: ../libnm-core/nm-keyfile.c:3049 ../libnm-core/nm-keyfile.c:3060
-#: ../libnm-core/nm-keyfile.c:3078 ../libnm-core/nm-keyfile.c:3089
-#: ../libnm-core/nm-keyfile.c:3100 ../libnm-core/nm-keyfile.c:3152
-#: ../libnm-core/nm-keyfile.c:3163
+#: ../libnm-core/nm-keyfile.c:3074 ../libnm-core/nm-keyfile.c:3085
+#: ../libnm-core/nm-keyfile.c:3103 ../libnm-core/nm-keyfile.c:3114
+#: ../libnm-core/nm-keyfile.c:3125 ../libnm-core/nm-keyfile.c:3177
+#: ../libnm-core/nm-keyfile.c:3188
 msgid "value cannot be interpreted as integer"
 msgstr "wartość nie może zostać zinterpretowana jako liczba całkowita"
 
-#: ../libnm-core/nm-keyfile.c:3198
+#: ../libnm-core/nm-keyfile.c:3223
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "nieprawidłowa nazwa ustawienia „%s”"
 
-#: ../libnm-core/nm-keyfile.c:3243
+#: ../libnm-core/nm-keyfile.c:3268
 #, c-format
 msgid "invalid key '%s.%s'"
 msgstr "nieprawidłowy klucz „%s.%s”"
 
-#: ../libnm-core/nm-keyfile.c:3258
+#: ../libnm-core/nm-keyfile.c:3283
 #, c-format
 msgid "key '%s.%s' is not boolean"
 msgstr "klucz „%s.%s” nie jest wartością logiczną"
 
-#: ../libnm-core/nm-keyfile.c:3315
+#: ../libnm-core/nm-keyfile.c:3340
 #, c-format
 msgid "invalid peer public key in section '%s'"
 msgstr "nieprawidłowy klucz publiczny partnera w sekcji „%s”"
 
-#: ../libnm-core/nm-keyfile.c:3327
+#: ../libnm-core/nm-keyfile.c:3352
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
 msgstr ""
 "klucz „%s.%s” nie jest prawidłowym 256-bitowym kluczem w kodowaniu base64"
 
-#: ../libnm-core/nm-keyfile.c:3340
+#: ../libnm-core/nm-keyfile.c:3365
 #, c-format
 msgid "key '%s.%s' is not a valid secret flag"
 msgstr "klucz „%s.%s” nie jest prawidłową flagą hasła"
 
-#: ../libnm-core/nm-keyfile.c:3352
+#: ../libnm-core/nm-keyfile.c:3377
 #, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
 msgstr "klucz „%s.%s” nie jest liczbą całkowitą w zakresie 0 do 2^32"
 
-#: ../libnm-core/nm-keyfile.c:3364
+#: ../libnm-core/nm-keyfile.c:3389
 #, c-format
 msgid "key '%s.%s' is not a valid endpoint"
 msgstr "klucz „%s.%s” nie jest prawidłowym punktem końcowym"
 
-#: ../libnm-core/nm-keyfile.c:3386
+#: ../libnm-core/nm-keyfile.c:3411
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
 msgstr "klucz „%s.%s” ma nieprawidłowe dozwolone adresy IP"
 
-#: ../libnm-core/nm-keyfile.c:3398
+#: ../libnm-core/nm-keyfile.c:3423
 #, c-format
 msgid "peer '%s' is invalid: %s"
 msgstr "partner „%s” jest nieprawidłowy: %s"
@@ -7535,54 +7539,54 @@ msgstr "wartość „%s” nie pasuje do „%s=%s”"
 msgid "'%s' is neither an UUID nor an interface name"
 msgstr "„%s” nie jest UUID ani nazwą interfejsu"
 
-#: ../libnm-core/nm-setting-8021x.c:225
+#: ../libnm-core/nm-setting-8021x.c:227
 msgid "binary data missing"
 msgstr "brak danych binarnych"
 
-#: ../libnm-core/nm-setting-8021x.c:253
+#: ../libnm-core/nm-setting-8021x.c:255
 msgid "URI not NUL terminated"
 msgstr "adres URI nie kończy się NUL"
 
-#: ../libnm-core/nm-setting-8021x.c:262
+#: ../libnm-core/nm-setting-8021x.c:264
 msgid "URI is empty"
 msgstr "adres URI jest pusty"
 
-#: ../libnm-core/nm-setting-8021x.c:270
+#: ../libnm-core/nm-setting-8021x.c:272
 msgid "URI is not valid UTF-8"
 msgstr "adres URI nie jest prawidłowym tekstem UTF-8"
 
-#: ../libnm-core/nm-setting-8021x.c:288
+#: ../libnm-core/nm-setting-8021x.c:290
 msgid "data missing"
 msgstr "brak danych"
 
-#: ../libnm-core/nm-setting-8021x.c:311 ../libnm-core/nm-setting-8021x.c:678
+#: ../libnm-core/nm-setting-8021x.c:313 ../libnm-core/nm-setting-8021x.c:680
 #, c-format
 msgid "certificate is invalid: %s"
 msgstr "certyfikat jest nieprawidłowy: %s"
 
-#: ../libnm-core/nm-setting-8021x.c:319
+#: ../libnm-core/nm-setting-8021x.c:321
 #, c-format
 msgid "certificate detected as invalid scheme"
 msgstr "wykryto certyfikat jako nieprawidłowy schemat"
 
-#: ../libnm-core/nm-setting-8021x.c:533
+#: ../libnm-core/nm-setting-8021x.c:535
 msgid "CA certificate must be in X.509 format"
 msgstr "Certyfikat CA musi być w formacie X.509"
 
-#: ../libnm-core/nm-setting-8021x.c:549
+#: ../libnm-core/nm-setting-8021x.c:551
 msgid "invalid certificate format"
 msgstr "nieprawidłowy format certyfikatu"
 
-#: ../libnm-core/nm-setting-8021x.c:688
+#: ../libnm-core/nm-setting-8021x.c:690
 #, c-format
 msgid "password is not supported when certificate is not on a PKCS#11 token"
 msgstr "hasło nie jest obsługiwane, kiedy certyfikat nie jest tokenem PKCS#11"
 
-#: ../libnm-core/nm-setting-8021x.c:2574 ../libnm-core/nm-setting-8021x.c:2591
-#: ../libnm-core/nm-setting-8021x.c:2622 ../libnm-core/nm-setting-8021x.c:2639
-#: ../libnm-core/nm-setting-8021x.c:2680 ../libnm-core/nm-setting-8021x.c:2692
-#: ../libnm-core/nm-setting-8021x.c:2710 ../libnm-core/nm-setting-8021x.c:2722
-#: ../libnm-core/nm-setting-8021x.c:2747 ../libnm-core/nm-setting-adsl.c:179
+#: ../libnm-core/nm-setting-8021x.c:2595 ../libnm-core/nm-setting-8021x.c:2612
+#: ../libnm-core/nm-setting-8021x.c:2643 ../libnm-core/nm-setting-8021x.c:2660
+#: ../libnm-core/nm-setting-8021x.c:2701 ../libnm-core/nm-setting-8021x.c:2713
+#: ../libnm-core/nm-setting-8021x.c:2731 ../libnm-core/nm-setting-8021x.c:2743
+#: ../libnm-core/nm-setting-8021x.c:2768 ../libnm-core/nm-setting-adsl.c:179
 #: ../libnm-core/nm-setting-cdma.c:149 ../libnm-core/nm-setting-cdma.c:158
 #: ../libnm-core/nm-setting-connection.c:975
 #: ../libnm-core/nm-setting-connection.c:1023
@@ -7596,16 +7600,20 @@ msgstr "hasło nie jest obsługiwane, kiedy certyfikat nie jest tokenem PKCS#11"
 #: ../libnm-core/nm-setting-wimax.c:117
 #: ../libnm-core/nm-setting-wireless-security.c:960
 #: ../libnm-core/nm-setting-wireless-security.c:984
-#: ../libnm-core/nm-setting.c:1355
+#: ../libnm-core/nm-setting.c:1362
 msgid "property is empty"
 msgstr "właściwość jest pusta"
 
-#: ../libnm-core/nm-setting-8021x.c:2604 ../libnm-core/nm-setting-8021x.c:2652
+#: ../libnm-core/nm-setting-8021x.c:2625 ../libnm-core/nm-setting-8021x.c:2673
 #, c-format
 msgid "has to match '%s' property for PKCS#12"
 msgstr "musi pasować do właściwości „%s” dla PKCS#12"
 
-#: ../libnm-core/nm-setting-8021x.c:2831
+#: ../libnm-core/nm-setting-8021x.c:2845
+msgid "can be enabled only on Ethernet connections"
+msgstr "można włączyć tylko na połączeniach ethernetowych"
+
+#: ../libnm-core/nm-setting-8021x.c:2863
 #: ../libnm-core/nm-setting-bluetooth.c:108
 #: ../libnm-core/nm-setting-infiniband.c:176
 #: ../libnm-core/nm-setting-infiniband.c:186
@@ -7623,23 +7631,23 @@ msgstr "musi pasować do właściwości „%s” dla PKCS#12"
 #: ../libnm-core/nm-setting-wireless-security.c:1090
 #: ../libnm-core/nm-setting-wireless-security.c:1128
 #: ../libnm-core/nm-setting-wireless-security.c:1169
-#: ../libnm-core/nm-setting-wireless.c:847
-#: ../libnm-core/nm-setting-wireless.c:856
-#: ../libnm-core/nm-setting-wireless.c:867 ../libnm-core/nm-setting-wpan.c:176
-#: ../libnm-core/nm-utils.c:4543
+#: ../libnm-core/nm-setting-wireless.c:852
+#: ../libnm-core/nm-setting-wireless.c:861
+#: ../libnm-core/nm-setting-wireless.c:872 ../libnm-core/nm-setting-wpan.c:176
+#: ../libnm-core/nm-utils.c:4562
 msgid "property is invalid"
 msgstr "właściwość jest nieprawidłowa"
 
-#: ../libnm-core/nm-setting-8021x.c:2858 ../libnm-core/nm-setting-8021x.c:2870
-#: ../libnm-core/nm-setting-8021x.c:2884 ../libnm-core/nm-setting-8021x.c:2911
-#: ../libnm-core/nm-setting-8021x.c:2926 ../libnm-core/nm-setting-adsl.c:191
+#: ../libnm-core/nm-setting-8021x.c:2890 ../libnm-core/nm-setting-8021x.c:2902
+#: ../libnm-core/nm-setting-8021x.c:2916 ../libnm-core/nm-setting-8021x.c:2943
+#: ../libnm-core/nm-setting-8021x.c:2958 ../libnm-core/nm-setting-adsl.c:191
 #: ../libnm-core/nm-setting-adsl.c:203 ../libnm-core/nm-setting-bluetooth.c:136
 #: ../libnm-core/nm-setting-wireless-security.c:938
 #, c-format
 msgid "'%s' is not a valid value for the property"
 msgstr "„%s” nie jest prawidłową wartością dla właściwości"
 
-#: ../libnm-core/nm-setting-8021x.c:2894
+#: ../libnm-core/nm-setting-8021x.c:2926
 msgid "invalid auth flags"
 msgstr "nieprawidłowe flagi uwierzytelniania"
 
@@ -8345,12 +8353,12 @@ msgid "non promiscuous operation is allowed only in passthru mode"
 msgstr "nierozwiązłe działanie jest dozwolone tylko w trybie przejścia"
 
 #: ../libnm-core/nm-setting-olpc-mesh.c:108
-#: ../libnm-core/nm-setting-wireless.c:786
+#: ../libnm-core/nm-setting-wireless.c:791
 msgid "SSID length is out of range <1-32> bytes"
 msgstr "długość SSID jest poza zakresem <1-32> bajtów"
 
 #: ../libnm-core/nm-setting-olpc-mesh.c:117
-#: ../libnm-core/nm-setting-wireless.c:826
+#: ../libnm-core/nm-setting-wireless.c:831
 #, c-format
 msgid "'%d' is not a valid channel"
 msgstr "„%d” nie jest prawidłowym kanałem"
@@ -8662,7 +8670,7 @@ msgstr "ustawienie zawierało hasło o pustej nazwie"
 msgid "secret value was empty"
 msgstr "wartość hasła jest pusta"
 
-#: ../libnm-core/nm-setting-vpn.c:666 ../libnm-core/nm-setting.c:2224
+#: ../libnm-core/nm-setting-vpn.c:666 ../libnm-core/nm-setting.c:2231
 msgid "not a secret property"
 msgstr "nie jest właściwością hasła"
 
@@ -8831,42 +8839,42 @@ msgstr ""
 "„%s” może być używane tylko za pomocą zarządzania kluczami „wpa-eap”, „wpa-"
 "psk” lub „sae” "
 
-#: ../libnm-core/nm-setting-wireless.c:795
+#: ../libnm-core/nm-setting-wireless.c:800
 #, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
 msgstr "„%s” nie jest prawidłowym trybem Wi-Fi"
 
-#: ../libnm-core/nm-setting-wireless.c:805
+#: ../libnm-core/nm-setting-wireless.c:810
 #, c-format
 msgid "'%s' is not a valid band"
 msgstr "„%s” nie jest prawidłowym pasmem"
 
-#: ../libnm-core/nm-setting-wireless.c:815
+#: ../libnm-core/nm-setting-wireless.c:820
 #, c-format
 msgid "'%s' requires setting '%s' property"
 msgstr "„%s” wymaga ustawienia właściwości „%s”"
 
-#: ../libnm-core/nm-setting-wireless.c:837
+#: ../libnm-core/nm-setting-wireless.c:842
 #, c-format
 msgid "'%s' requires '%s' and '%s' property"
 msgstr "„%s” wymaga właściwości „%s” i „%s”"
 
-#: ../libnm-core/nm-setting-wireless.c:924 ../libnm-core/nm-team-utils.c:2004
+#: ../libnm-core/nm-setting-wireless.c:929 ../libnm-core/nm-team-utils.c:2004
 #, c-format
 msgid "invalid value"
 msgstr "nieprawidłowa wartość"
 
-#: ../libnm-core/nm-setting-wireless.c:934
+#: ../libnm-core/nm-setting-wireless.c:939
 msgid "Wake-on-WLAN mode 'default' and 'ignore' are exclusive flags"
 msgstr ""
 "Tryby Wake-on-WLAN „default” i „ignore” są wzajemnie się wykluczającymi "
 "flagami"
 
-#: ../libnm-core/nm-setting-wireless.c:943
+#: ../libnm-core/nm-setting-wireless.c:948
 msgid "Wake-on-WLAN trying to set unknown flag"
 msgstr "Wake-on-WLAN próbuje ustawić nieznaną flagę"
 
-#: ../libnm-core/nm-setting-wireless.c:965
+#: ../libnm-core/nm-setting-wireless.c:970
 #, c-format
 msgid "conflicting value of mac-address-randomization and cloned-mac-address"
 msgstr ""
@@ -8886,32 +8894,32 @@ msgstr "strona musi wynosić między %d a %d"
 msgid "channel must not be between %d and %d"
 msgstr "kanał musi wynosić między %d a %d"
 
-#: ../libnm-core/nm-setting.c:919
+#: ../libnm-core/nm-setting.c:926
 #, c-format
 msgid "duplicate property"
 msgstr "podwójna właściwość"
 
-#: ../libnm-core/nm-setting.c:942
+#: ../libnm-core/nm-setting.c:949
 #, c-format
 msgid "unknown property"
 msgstr "nieznana właściwość"
 
-#: ../libnm-core/nm-setting.c:1013 ../libnm-core/nm-setting.c:1062
+#: ../libnm-core/nm-setting.c:1020 ../libnm-core/nm-setting.c:1069
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
 msgstr "nie można ustawić właściwości typu „%s” z wartości typu „%s”"
 
-#: ../libnm-core/nm-setting.c:1032 ../libnm-core/nm-setting.c:1047
+#: ../libnm-core/nm-setting.c:1039 ../libnm-core/nm-setting.c:1054
 #, c-format
 msgid "failed to set property: %s"
 msgstr "ustawienie właściwości się nie powiodło: %s"
 
-#: ../libnm-core/nm-setting.c:1077
+#: ../libnm-core/nm-setting.c:1084
 #, c-format
 msgid "can not set property: %s"
 msgstr "nie można ustawić właściwości: %s"
 
-#: ../libnm-core/nm-setting.c:2115
+#: ../libnm-core/nm-setting.c:2122
 msgid "secret not found"
 msgstr "nie odnaleziono hasła"
 
@@ -8992,218 +9000,218 @@ msgstr "nieprawidłowy typ D-Bus „%s”"
 msgid "invalid link-watchers: %s"
 msgstr "nieprawidłowi obserwatorzy łącza: %s"
 
-#: ../libnm-core/nm-utils.c:2327
+#: ../libnm-core/nm-utils.c:2345
 #, c-format
 msgid "'%s' is not a valid handle."
 msgstr "„%s” nie jest prawidłowym elementem obsługującym."
 
-#: ../libnm-core/nm-utils.c:2455
+#: ../libnm-core/nm-utils.c:2473
 #, c-format
 msgid "'%s' unexpected: parent already specified."
 msgstr "„%s” jest nieoczekiwane: element nadrzędny jest już podany."
 
-#: ../libnm-core/nm-utils.c:2471
+#: ../libnm-core/nm-utils.c:2489
 #, c-format
 msgid "invalid handle: '%s'"
 msgstr "nieprawidłowy element obsługujący: „%s”"
 
-#: ../libnm-core/nm-utils.c:2493
+#: ../libnm-core/nm-utils.c:2511
 msgid "parent not specified."
 msgstr "nie podano elementu nadrzędnego."
 
-#: ../libnm-core/nm-utils.c:2555
+#: ../libnm-core/nm-utils.c:2573
 #, c-format
 msgid "unsupported qdisc option: '%s'."
 msgstr "nieobsługiwana opcja qdisc: „%s” ."
 
-#: ../libnm-core/nm-utils.c:2677
+#: ../libnm-core/nm-utils.c:2695
 msgid "action name missing."
 msgstr "brak nazwy działania."
 
-#: ../libnm-core/nm-utils.c:2703
+#: ../libnm-core/nm-utils.c:2721
 #, c-format
 msgid "unsupported action option: '%s'."
 msgstr "nieobsługiwana opcja działania: „%s”."
 
-#: ../libnm-core/nm-utils.c:2841
+#: ../libnm-core/nm-utils.c:2859
 msgid "invalid action: "
 msgstr "nieprawidłowe działanie: "
 
-#: ../libnm-core/nm-utils.c:2845
+#: ../libnm-core/nm-utils.c:2863
 #, c-format
 msgid "unsupported tfilter option: '%s'."
 msgstr "nieobsługiwana opcja tfilter: „%s”."
 
-#: ../libnm-core/nm-utils.c:3446
+#: ../libnm-core/nm-utils.c:3464
 #, c-format
 msgid "failed stat file %s: %s"
 msgstr "wykonanie „stat” na pliku %s się nie powiodło: %s"
 
-#: ../libnm-core/nm-utils.c:3455
+#: ../libnm-core/nm-utils.c:3473
 #, c-format
 msgid "not a file (%s)"
 msgstr "nie jest plikiem (%s)"
 
-#: ../libnm-core/nm-utils.c:3466
+#: ../libnm-core/nm-utils.c:3484
 #, c-format
 msgid "invalid file owner %d for %s"
 msgstr "nieprawidłowy właściciel pliku %d dla %s"
 
-#: ../libnm-core/nm-utils.c:3477
+#: ../libnm-core/nm-utils.c:3495
 #, c-format
 msgid "file permissions for %s"
 msgstr "uprawnienia pliku dla %s"
 
-#: ../libnm-core/nm-utils.c:3487
+#: ../libnm-core/nm-utils.c:3505
 #, c-format
 msgid "reject %s"
 msgstr "odrzucenie %s"
 
-#: ../libnm-core/nm-utils.c:3506
+#: ../libnm-core/nm-utils.c:3524
 #, c-format
 msgid "path is not absolute (%s)"
 msgstr "ścieżka nie jest bezwzględna (%s)"
 
-#: ../libnm-core/nm-utils.c:3520
+#: ../libnm-core/nm-utils.c:3538
 #, c-format
 msgid "Plugin file does not exist (%s)"
 msgstr "Plik wtyczki nie istnieje (%s)"
 
-#: ../libnm-core/nm-utils.c:3528
+#: ../libnm-core/nm-utils.c:3546
 #, c-format
 msgid "Plugin is not a valid file (%s)"
 msgstr "Wtyczka nie jest prawidłowym plikiem (%s)"
 
-#: ../libnm-core/nm-utils.c:3538
+#: ../libnm-core/nm-utils.c:3556
 #, c-format
 msgid "libtool archives are not supported (%s)"
 msgstr "Archiwa biblioteki libtool nie są obsługiwane (%s)"
 
-#: ../libnm-core/nm-utils.c:3620
+#: ../libnm-core/nm-utils.c:3638
 #, c-format
 msgid "Could not find \"%s\" binary"
 msgstr "Nie można odnaleźć pliku binarnego „%s”"
 
-#: ../libnm-core/nm-utils.c:4494
+#: ../libnm-core/nm-utils.c:4513
 msgid "unknown secret flags"
 msgstr "nieznane flagi hasła"
 
-#: ../libnm-core/nm-utils.c:4504
+#: ../libnm-core/nm-utils.c:4523
 msgid "conflicting secret flags"
 msgstr "sprzeczne flagi hasła"
 
-#: ../libnm-core/nm-utils.c:4515
+#: ../libnm-core/nm-utils.c:4534
 msgid "secret flags must not be \"not-required\""
 msgstr "flagi hasła nie mogą być „not-required”"
 
-#: ../libnm-core/nm-utils.c:4523
+#: ../libnm-core/nm-utils.c:4542
 msgid "unsupported secret flags"
 msgstr "nieobsługiwane flagi hasła"
 
-#: ../libnm-core/nm-utils.c:4553
+#: ../libnm-core/nm-utils.c:4572
 msgid "can't be simultaneously disabled and enabled"
 msgstr "nie może być jednocześnie wyłączone i włączone"
 
-#: ../libnm-core/nm-utils.c:4561
+#: ../libnm-core/nm-utils.c:4580
 msgid "WPS is required"
 msgstr "Wymagane jest WPS"
 
-#: ../libnm-core/nm-utils.c:4627
+#: ../libnm-core/nm-utils.c:4646
 #, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "nieprawidłowy adres MAC Ethernetu dla maski w miejscu %lld"
 
-#: ../libnm-core/nm-utils.c:4642
+#: ../libnm-core/nm-utils.c:4661
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr "nieprawidłowy adres MAC Ethernetu #%u w miejscu %lld"
 
-#: ../libnm-core/nm-utils.c:4702
+#: ../libnm-core/nm-utils.c:4721
 msgid "interface name is missing"
 msgstr "brak nazwy interfejsu"
 
-#: ../libnm-core/nm-utils.c:4708
+#: ../libnm-core/nm-utils.c:4727
 msgid "interface name is too short"
 msgstr "nazwa interfejsu jest za krótka"
 
-#: ../libnm-core/nm-utils.c:4717
+#: ../libnm-core/nm-utils.c:4736
 msgid "interface name is reserved"
 msgstr "nazwa interfejsu jest zastrzeżona"
 
-#: ../libnm-core/nm-utils.c:4729
+#: ../libnm-core/nm-utils.c:4748
 msgid "interface name contains an invalid character"
 msgstr "nazwa interfejsu zawiera nieprawidłowy znak"
 
-#: ../libnm-core/nm-utils.c:4735
+#: ../libnm-core/nm-utils.c:4754
 msgid "interface name is longer than 15 characters"
 msgstr "nazwa interfejsu jest dłuższa niż 15 znaków"
 
-#: ../libnm-core/nm-utils.c:5402
+#: ../libnm-core/nm-utils.c:5421
 msgid "not valid utf-8"
 msgstr "nieprawidłowy tekst UTF-8"
 
-#: ../libnm-core/nm-utils.c:5423 ../libnm-core/nm-utils.c:5476
+#: ../libnm-core/nm-utils.c:5442 ../libnm-core/nm-utils.c:5495
 msgid "is not a JSON object"
 msgstr "nie jest obiektem JSON"
 
-#: ../libnm-core/nm-utils.c:5452 ../libnm-core/nm-utils.c:5489
+#: ../libnm-core/nm-utils.c:5471 ../libnm-core/nm-utils.c:5508
 msgid "value is NULL"
 msgstr "wartość wynosi NULL"
 
-#: ../libnm-core/nm-utils.c:5452 ../libnm-core/nm-utils.c:5489
+#: ../libnm-core/nm-utils.c:5471 ../libnm-core/nm-utils.c:5508
 msgid "value is empty"
 msgstr "wartość jest pusta"
 
-#: ../libnm-core/nm-utils.c:5464
+#: ../libnm-core/nm-utils.c:5483
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "nieprawidłowy kod JSON w miejscu %d (%s)"
 
-#: ../libnm-core/nm-utils.c:5584 ../libnm-core/nm-utils.c:5604
+#: ../libnm-core/nm-utils.c:5603 ../libnm-core/nm-utils.c:5623
 msgid "unterminated escape sequence"
 msgstr "niezakończona sekwencja sterująca"
 
-#: ../libnm-core/nm-utils.c:5629
+#: ../libnm-core/nm-utils.c:5648
 #, c-format
 msgid "unknown attribute '%s'"
 msgstr "nieznany atrybut „%s”"
 
-#: ../libnm-core/nm-utils.c:5644
+#: ../libnm-core/nm-utils.c:5663
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr "brak separatora klucz-wartość „%c” po „%s”"
 
-#: ../libnm-core/nm-utils.c:5660
+#: ../libnm-core/nm-utils.c:5679
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "nieprawidłowa wartość uint32 „%s” dla atrybutu „%s”"
 
-#: ../libnm-core/nm-utils.c:5669
+#: ../libnm-core/nm-utils.c:5688
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "nieprawidłowa wartość uint8 „%s” dla atrybutu „%s”"
 
-#: ../libnm-core/nm-utils.c:5679
+#: ../libnm-core/nm-utils.c:5698
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "nieprawidłowa wartość logiczna „%s” dla atrybutu „%s”"
 
-#: ../libnm-core/nm-utils.c:5689
+#: ../libnm-core/nm-utils.c:5708
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr "nieobsługiwany atrybut „%s” typu „%s”"
 
-#: ../libnm-core/nm-utils.c:6040
+#: ../libnm-core/nm-utils.c:6059
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr "VLAN mostka %d i %d nie są uporządkowane według rosnącego vid"
 
-#: ../libnm-core/nm-utils.c:6064
+#: ../libnm-core/nm-utils.c:6083
 #, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr "podwójny vid VLAN mostka %u"
 
-#: ../libnm-core/nm-utils.c:6076
+#: ../libnm-core/nm-utils.c:6095
 msgid "only one VLAN can be the PVID"
 msgstr "tylko jedno VLAN może być PVID"
 
@@ -9868,25 +9876,25 @@ msgid "Failed to read configuration: %s\n"
 msgstr "Odczytanie konfiguracji się nie powiodło: %s\n"
 
 #. Logging/debugging
-#: ../src/main.c:190 ../src/nm-iface-helper.c:292
+#: ../src/main.c:190 ../src/nm-iface-helper.c:304
 msgid "Print NetworkManager version and exit"
 msgstr "Wyświetla wersję usługi NetworkManager i kończy działanie"
 
-#: ../src/main.c:191 ../src/nm-iface-helper.c:293
+#: ../src/main.c:191 ../src/nm-iface-helper.c:305
 msgid "Don't become a daemon"
 msgstr "Bez zmiany w usługę"
 
-#: ../src/main.c:192 ../src/nm-iface-helper.c:295
+#: ../src/main.c:192 ../src/nm-iface-helper.c:307
 #, c-format
 msgid "Log level: one of [%s]"
 msgstr "Poziom dziennika: jeden z [%s]"
 
-#: ../src/main.c:194 ../src/nm-iface-helper.c:297
+#: ../src/main.c:194 ../src/nm-iface-helper.c:309
 #, c-format
 msgid "Log domains separated by ',': any combination of [%s]"
 msgstr "Domeny dziennika oddzielone przez „,”: dowolne połączenie [%s]"
 
-#: ../src/main.c:196 ../src/nm-iface-helper.c:299
+#: ../src/main.c:196 ../src/nm-iface-helper.c:311
 msgid "Make all warnings fatal"
 msgstr "Wszystkie ostrzeżenia jako krytyczne"
 
@@ -9910,12 +9918,12 @@ msgstr ""
 "wybranie bezprzewodowych punktów dostępowych, z którymi karty\n"
 "sieciowe w komputerze mają być powiązane."
 
-#: ../src/main.c:331 ../src/main-utils.c:289 ../src/nm-iface-helper.c:440
+#: ../src/main.c:331 ../src/main-utils.c:289 ../src/nm-iface-helper.c:452
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Parametr --help wyświetli listę prawidłowych opcji.\n"
 
-#: ../src/main.c:364 ../src/nm-iface-helper.c:453
+#: ../src/main.c:364 ../src/nm-iface-helper.c:465
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Nie można zmienić w usługę: %s [błąd %u]\n"
@@ -9954,7 +9962,7 @@ msgstr "Tylko root może uruchamiać %s.\n"
 msgid "# Created by NetworkManager\n"
 msgstr "# Utworzony przez usługę NetworkManager\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:312
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:314
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -10022,11 +10030,11 @@ msgstr "Połączenie mostkowane"
 msgid "Dummy connection"
 msgstr "Atrapa połączenia"
 
-#: ../src/devices/nm-device-ethernet.c:1415
+#: ../src/devices/nm-device-ethernet.c:1514
 msgid "PPPoE connection"
 msgstr "Połączenie PPPoE"
 
-#: ../src/devices/nm-device-ethernet.c:1415
+#: ../src/devices/nm-device-ethernet.c:1514
 msgid "Wired connection"
 msgstr "Połączenie przewodowe"
 
@@ -10039,7 +10047,7 @@ msgstr "Połączenie przewodowe %d"
 msgid "IP tunnel connection"
 msgstr "Połączenie tunelu IP"
 
-#: ../src/devices/nm-device-macvlan.c:364
+#: ../src/devices/nm-device-macvlan.c:379
 msgid "MACVLAN connection"
 msgstr "Połączenie MACVLAN"
 
@@ -10264,7 +10272,7 @@ msgstr "Lista wtyczek oddzielonych „,”"
 msgid "Quit after initial configuration"
 msgstr "Kończy działanie po początkowej konfiguracji"
 
-#: ../src/nm-config.c:601 ../src/nm-iface-helper.c:294
+#: ../src/nm-config.c:601 ../src/nm-iface-helper.c:306
 msgid "Don't become a daemon, and log to stderr"
 msgstr ""
 "Bez zmiany w usługę i zapisywanie dziennika do standardowego wyjścia błędów"
@@ -10291,83 +10299,83 @@ msgid "Show NetworkManager options"
 msgstr "Wyświetl opcje usługi NetworkManager"
 
 #. Interface/IP config
-#: ../src/nm-iface-helper.c:274
+#: ../src/nm-iface-helper.c:286
 msgid "The interface to manage"
 msgstr "Interfejs do zarządzania"
 
-#: ../src/nm-iface-helper.c:275
+#: ../src/nm-iface-helper.c:287
 msgid "Connection UUID"
 msgstr "UUID połączenia"
 
-#: ../src/nm-iface-helper.c:276
+#: ../src/nm-iface-helper.c:288
 msgid "Connection Token for Stable IDs"
 msgstr "Token połączenia dla stabilnych identyfikatorów"
 
-#: ../src/nm-iface-helper.c:277
+#: ../src/nm-iface-helper.c:289
 msgid "Whether to manage IPv6 SLAAC"
 msgstr "Czy zarządzać SLAAC IPv6"
 
-#: ../src/nm-iface-helper.c:278
+#: ../src/nm-iface-helper.c:290
 msgid "Whether SLAAC must be successful"
 msgstr "Czy SLAAC musi się powieść"
 
-#: ../src/nm-iface-helper.c:279
+#: ../src/nm-iface-helper.c:291
 msgid "Use an IPv6 temporary privacy address"
 msgstr "Użycie tymczasowego adresu prywatnego IPv6"
 
-#: ../src/nm-iface-helper.c:280
+#: ../src/nm-iface-helper.c:292
 msgid "Current DHCPv4 address"
 msgstr "Bieżący adres DHCPv4"
 
-#: ../src/nm-iface-helper.c:281
+#: ../src/nm-iface-helper.c:293
 msgid "Whether DHCPv4 must be successful"
 msgstr "Czy DHCPv4 musi się powieść"
 
-#: ../src/nm-iface-helper.c:282
+#: ../src/nm-iface-helper.c:294
 msgid "Hex-encoded DHCPv4 client ID"
 msgstr "Identyfikator klienta DHCPv4 zakodowany szesnastkowo"
 
-#: ../src/nm-iface-helper.c:283
+#: ../src/nm-iface-helper.c:295
 msgid "Hostname to send to DHCP server"
 msgstr "Nazwa komputera wysyłana do serwera DHCP"
 
-#: ../src/nm-iface-helper.c:283
+#: ../src/nm-iface-helper.c:295
 msgid "barbar"
 msgstr "barbar"
 
-#: ../src/nm-iface-helper.c:284
+#: ../src/nm-iface-helper.c:296
 msgid "FQDN to send to DHCP server"
 msgstr "FQDN wysyłane do serwera DHCP"
 
-#: ../src/nm-iface-helper.c:284
+#: ../src/nm-iface-helper.c:296
 msgid "host.domain.org"
 msgstr "komputer.example.com"
 
-#: ../src/nm-iface-helper.c:285
+#: ../src/nm-iface-helper.c:297
 msgid "Route priority for IPv4"
 msgstr "Priorytet trasy dla IPv4"
 
-#: ../src/nm-iface-helper.c:285
+#: ../src/nm-iface-helper.c:297
 msgid "0"
 msgstr "0"
 
-#: ../src/nm-iface-helper.c:286
+#: ../src/nm-iface-helper.c:298
 msgid "Route priority for IPv6"
 msgstr "Priorytet trasy dla IPv6"
 
-#: ../src/nm-iface-helper.c:286
+#: ../src/nm-iface-helper.c:298
 msgid "1024"
 msgstr "1024"
 
-#: ../src/nm-iface-helper.c:287
+#: ../src/nm-iface-helper.c:299
 msgid "Hex-encoded Interface Identifier"
 msgstr "Identyfikator interfejsu zakodowany szesnastkowo"
 
-#: ../src/nm-iface-helper.c:288
+#: ../src/nm-iface-helper.c:300
 msgid "IPv6 SLAAC address generation mode"
 msgstr "Tryb tworzenia adresów SLAAC IPv6"
 
-#: ../src/nm-iface-helper.c:289
+#: ../src/nm-iface-helper.c:301
 msgid ""
 "The logging backend configuration value. See logging.backend in "
 "NetworkManager.conf"
@@ -10375,7 +10383,7 @@ msgstr ""
 "Właściwość konfiguracji mechanizmu dziennika. Więcej informacji zawiera "
 "„logging.backend” w pliku NetworkManager.conf"
 
-#: ../src/nm-iface-helper.c:309
+#: ../src/nm-iface-helper.c:321
 msgid ""
 "nm-iface-helper is a small, standalone process that manages a single network "
 "interface."
@@ -10383,28 +10391,28 @@ msgstr ""
 "nm-iface-helper to mały, samodzielny proces zarządzający pojedynczym "
 "interfejsem sieciowym."
 
-#: ../src/nm-iface-helper.c:420
+#: ../src/nm-iface-helper.c:432
 #, c-format
 msgid "An interface name and UUID are required\n"
 msgstr "Wymagana jest nazwa interfejsu i UUID\n"
 
-#: ../src/nm-iface-helper.c:427
+#: ../src/nm-iface-helper.c:439
 #, c-format
 msgid "Failed to find interface index for %s (%s)\n"
 msgstr "Odnalezienie indeksu interfejsu dla %s (%s) się nie powiodło\n"
 
-#: ../src/nm-iface-helper.c:445
+#: ../src/nm-iface-helper.c:457
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr ""
 "Ignorowanie nieznanych domen dziennika „%s” przekazanych w wierszu poleceń.\n"
 
-#: ../src/nm-iface-helper.c:486
+#: ../src/nm-iface-helper.c:498
 #, c-format
 msgid "(%s): Invalid IID %s\n"
 msgstr "(%s): nieprawidłowy IID %s\n"
 
-#: ../src/nm-iface-helper.c:497
+#: ../src/nm-iface-helper.c:509
 #, c-format
 msgid "(%s): Invalid DHCP client-id %s\n"
 msgstr "(%s): nieprawidłowy client-id DHCP %s\n"
