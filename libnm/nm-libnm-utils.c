@@ -926,6 +926,7 @@ nm_utils_g_param_spec_is_default (const GParamSpec *pspec)
 		return ((((GParamSpecString *) pspec)->default_value) == NULL);
 	if (NM_IN_SET (pspec->value_type, G_TYPE_BYTES,
 	                                  G_TYPE_PTR_ARRAY,
+	                                  G_TYPE_ARRAY,
 	                                  G_TYPE_HASH_TABLE,
 	                                  G_TYPE_STRV)) {
 		/* boxed types have NULL default. */
