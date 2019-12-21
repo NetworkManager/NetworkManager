@@ -97,6 +97,10 @@ nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
 
 /*****************************************************************************/
 
+#define _NM_CAPABILITY_MAX NM_CAPABILITY_OVS
+
+/*****************************************************************************/
+
 extern const char *const nm_auth_permission_names_by_idx[NM_CLIENT_PERMISSION_LAST];
 extern const NMClientPermission nm_auth_permission_sorted[NM_CLIENT_PERMISSION_LAST];
 

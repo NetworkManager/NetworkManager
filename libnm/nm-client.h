@@ -81,6 +81,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_DNS_RC_MANAGER "dns-rc-manager"
 #define NM_CLIENT_DNS_CONFIGURATION "dns-configuration"
 #define NM_CLIENT_CHECKPOINTS "checkpoints"
+#define NM_CLIENT_CAPABILITIES "capabilities"
 #define NM_CLIENT_PERMISSIONS_STATE "permissions-state"
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
@@ -177,6 +178,10 @@ NM_AVAILABLE_IN_1_22
 NMMetered   nm_client_get_metered (NMClient *client);
 
 gboolean nm_client_networking_get_enabled (NMClient *client);
+
+NM_AVAILABLE_IN_1_24
+const guint32 *nm_client_get_capabilities (NMClient *client,
+                                           gsize *length);
 
 _NM_DEPRECATED_SYNC_METHOD
 gboolean nm_client_networking_set_enabled (NMClient *client,

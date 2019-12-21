@@ -223,6 +223,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DNS_RC_MANAGER,
 	PROP_DNS_CONFIGURATION,
 	PROP_CHECKPOINTS,
+	PROP_CAPABILITIES,
 	PROP_PERMISSIONS_STATE,
 );
 
@@ -308,6 +309,8 @@ typedef struct {
 		NMLDBusPropertyAO property_ao[_PROPERTY_AO_IDX_NM_NUM];
 		char *connectivity_check_uri;
 		char *version;
+		guint32 *capabilities_arr;
+		gsize capabilities_len;
 		guint32 connectivity;
 		guint32 state;
 		guint32 metered;
@@ -6092,6 +6095,64 @@ _notify_update_prop_dns_manager_configuration (NMClient *self,
 	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
 }
 
+/**
+ * nm_client_get_capabilities:
+ * @client: the #NMClient instance
+ * @length: (out) (allow-none): the number of returned capabilities.
+ *
+ * Returns: (transfer none) (array length=length): the
+ *   list of capabilities reported by the server or %NULL
+ *   if the capabilities are unknown.
+ *   The numeric values correspond to #NMCapability enum.
+ *   The array is terminated by a numeric zero sentinel
+ *   at position @length.
+ *
+ * Since: 1.24
+ */
+const guint32 *
+nm_client_get_capabilities (NMClient *client,
+                            gsize *length)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (length, NULL);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	NM_SET_OUT (length, priv->nm.capabilities_len);
+	return priv->nm.capabilities_arr;
+}
+
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_nm_capabilities (NMClient *self,
+                                     NMLDBusObject *dbobj,
+                                     const NMLDBusMetaIface *meta_iface,
+                                     guint dbus_property_idx,
+                                     GVariant *value)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	nm_assert (G_OBJECT (self) == dbobj->nmobj);
+
+	nm_clear_g_free (&priv->nm.capabilities_arr);
+	priv->nm.capabilities_len = 0;
+
+	if (value) {
+		const guint32 *arr;
+		gsize len;
+
+		arr = g_variant_get_fixed_array (value, &len, sizeof (guint32));
+		priv->nm.capabilities_len = len;
+		priv->nm.capabilities_arr = g_new (guint32, len + 1);
+		if (len > 0)
+			memcpy (priv->nm.capabilities_arr, arr, len * sizeof (guint32));
+		priv->nm.capabilities_arr[len] = 0;
+	}
+
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+}
+
 /*****************************************************************************/
 
 /**
@@ -7084,6 +7145,20 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CHECKPOINTS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_checkpoints (self)));
 		break;
+	case PROP_CAPABILITIES: {
+			const guint32 *arr;
+			GArray *out;
+			gsize len;
+
+			arr = nm_client_get_capabilities (self, &len);
+			if (arr) {
+				out = g_array_new (TRUE, FALSE, sizeof (guint32));
+				g_array_append_vals (out, arr, len);
+			} else
+				out = NULL;
+			g_value_take_boxed (value, out);
+		}
+		break;
 	case PROP_PERMISSIONS_STATE:
 		g_value_set_enum (value, priv->permissions_state);
 		break;
@@ -7497,6 +7572,9 @@ dispose (GObject *object)
 	g_clear_object (&priv->context_busy_watcher);
 
 	nm_clear_g_free (&priv->name_owner);
+
+	priv->nm.capabilities_len = 0;
+	nm_clear_g_free (&priv->nm.capabilities_arr);
 }
 
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_agentmanager = NML_DBUS_META_IFACE_INIT (
@@ -7513,7 +7591,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm = NML_DBUS_META_IFACE_INIT_PROP (
 		NML_DBUS_META_PROPERTY_INIT_O_PROP  ("ActivatingConnection",       PROP_ACTIVATING_CONNECTION,        NMClient, _priv.nm.property_o[PROPERTY_O_IDX_NM_ACTIVATING_CONNECTION], nm_active_connection_get_type                                                                         ),
 		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("ActiveConnections",          PROP_ACTIVE_CONNECTIONS,           NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_ACTIVE_CONNECTIONS],     nm_active_connection_get_type, .notify_changed_ao = _property_ao_notify_changed_active_connections_cb ),
 		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("AllDevices",                 PROP_ALL_DEVICES,                  NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_ALL_DEVICES],            nm_device_get_type,            .notify_changed_ao = _property_ao_notify_changed_all_devices_cb        ),
-		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("Capabilities",               "au"                                                                                                                                                                                                             ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("Capabilities",               PROP_CAPABILITIES,                 "au",     _notify_update_prop_nm_capabilities,                                                                                                                                ),
 		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Checkpoints",                PROP_CHECKPOINTS,                  NMClient, _priv.nm.property_ao[PROPERTY_AO_IDX_CHECKPOINTS],            nm_checkpoint_get_type                                                                                ),
 		NML_DBUS_META_PROPERTY_INIT_U       ("Connectivity",               PROP_CONNECTIVITY,                 NMClient, _priv.nm.connectivity                                                                                                                                               ),
 		NML_DBUS_META_PROPERTY_INIT_B       ("ConnectivityCheckAvailable", PROP_CONNECTIVITY_CHECK_AVAILABLE, NMClient, _priv.nm.connectivity_check_available                                                                                                                               ),
@@ -7971,6 +8049,21 @@ nm_client_class_init (NMClientClass *client_class)
 	obj_properties[PROP_CHECKPOINTS] =
 	    g_param_spec_boxed (NM_CLIENT_CHECKPOINTS, "", "",
 	                        G_TYPE_PTR_ARRAY,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMClient:capabilities: (type GArray(guint32))
+	 *
+	 * The list of capabilities numbers as guint32 or %NULL if
+	 * there are no capabitilies. The numeric value correspond
+	 * to %NMCapability enum.
+	 *
+	 * Since: 1.24
+	 */
+	obj_properties[PROP_CAPABILITIES] =
+	    g_param_spec_boxed (NM_CLIENT_CAPABILITIES, "", "",
+	                        G_TYPE_ARRAY,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
