@@ -116,6 +116,8 @@ static void _con_del_request_start (Request *req);
 
 static gboolean _con_get_try_complete_early (Request *req);
 
+static void agent_disconnected_cb (NMSecretAgent *agent, gpointer user_data);
+
 /*****************************************************************************/
 
 guint64
@@ -240,6 +242,8 @@ _agent_remove (NMAgentManager *self, NMSecretAgent *agent)
 	_LOGD (agent, "agent unregistered or disappeared");
 
 	c_list_unlink (&agent->agent_lst);
+
+	g_signal_handlers_disconnect_by_func (agent, G_CALLBACK (agent_disconnected_cb), self);
 
 	/* Remove this agent from any in-progress secrets requests */
 	c_list_for_each_safe (iter, safe, &priv->request_lst_head)
@@ -381,9 +385,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 static void
 agent_disconnected_cb (NMSecretAgent *agent, gpointer user_data)
 {
-	/* The agent quit, so remove it and let interested clients know */
-	_agent_remove_by_owner (NM_AGENT_MANAGER (user_data),
-	                        nm_secret_agent_get_dbus_owner (agent));
+	_agent_remove (NM_AGENT_MANAGER (user_data), agent);
 }
 
 static void
