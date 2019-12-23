@@ -200,6 +200,60 @@ test_vendor_option_metered (void)
 }
 
 static void
+test_parse_search_list (void)
+{
+	guint8 *data;
+	char **domains;
+
+	data = (guint8 []) {
+		0x05, 'l', 'o', 'c', 'a', 'l',
+		0x00
+	};
+	domains = nm_dhcp_parse_search_list (data, 7);
+	g_assert (domains);
+	g_assert_cmpint (g_strv_length (domains), ==, 1);
+	g_assert_cmpstr (domains[0], ==, "local");
+	g_strfreev (domains);
+
+	data = (guint8 []) {
+		0x04, 't', 'e', 's', 't',
+		0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e',
+		0x03, 'c', 'o', 'm',
+		0x00,
+		0xc0, 0x05,
+		0x03, 'a', 'b', 'c',
+		0xc0, 0x0d,
+		0x06, 'f', 'o', 'o', 'b', 'a', 'r',
+		0x00
+	};
+	domains = nm_dhcp_parse_search_list (data, 34);
+	g_assert (domains);
+	g_assert_cmpint (g_strv_length (domains), ==, 4);
+	g_assert_cmpstr (domains[0], ==, "test.example.com");
+	g_assert_cmpstr (domains[1], ==, "example.com");
+	g_assert_cmpstr (domains[2], ==, "abc.com");
+	g_assert_cmpstr (domains[3], ==, "foobar");
+	g_strfreev (domains);
+
+	data = (guint8 []) {
+		0x40, 'b', 'a', 'd',
+	};
+	domains = nm_dhcp_parse_search_list (data, 4);
+	g_assert (!domains);
+
+	data = (guint8 []) {
+		0x04, 'o', 'k', 'a', 'y',
+		0x00,
+		0x40, 'b', 'a', 'd',
+	};
+	domains = nm_dhcp_parse_search_list (data, 10);
+	g_assert (domains);
+	g_assert_cmpint (g_strv_length (domains), ==, 1);
+	g_assert_cmpstr (domains[0], ==, "okay");
+	g_strfreev (domains);
+}
+
+static void
 ip4_test_route (NMIP4Config *ip4_config,
                 guint route_num,
                 const char *expected_dest,
@@ -732,6 +786,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/dhcp/ip4-prefix-classless", test_ip4_prefix_classless);
 	g_test_add_func ("/dhcp/client-id-from-string", test_client_id_from_string);
 	g_test_add_func ("/dhcp/vendor-option-metered", test_vendor_option_metered);
+	g_test_add_func ("/dhcp/parse-search-list", test_parse_search_list);
 
 	return g_test_run ();
 }
