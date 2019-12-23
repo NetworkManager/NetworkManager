@@ -8,6 +8,8 @@
 
 #include "nm-connection.h"
 
+#include "c-list/src/c-list.h"
+
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))
@@ -24,6 +26,7 @@ struct _NMSecretAgentPrivate;
 
 struct _NMSecretAgent {
 	GObject parent;
+	CList agent_lst;
 	struct _NMSecretAgentPrivate *_priv;
 };
 

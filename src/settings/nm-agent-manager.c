@@ -38,10 +38,7 @@ typedef struct {
 	/* Auth chains for checking agent permissions */
 	GSList *chains;
 
-	/* Hashed by owner name, not identifier, since two agents in different
-	 * sessions can use the same identifier.
-	 */
-	GHashTable *agents;
+	CList agent_lst_head;
 
 	CList request_lst_head;
 
@@ -201,28 +198,84 @@ struct _NMAgentManagerCallId {
 
 /*****************************************************************************/
 
-static gboolean
-remove_agent (NMAgentManager *self, const char *owner)
+static NMSecretAgent *
+_agent_find_by_owner (NMAgentManagerPrivate *priv,
+                      const char *owner)
+{
+	NMSecretAgent *agent;
+
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (nm_streq (nm_secret_agent_get_dbus_owner (agent), owner))
+			return agent;
+	}
+	return NULL;
+}
+
+static NMSecretAgent *
+_agent_find_by_identifier_and_uid (NMAgentManagerPrivate *priv,
+                                   const char *identifier,
+                                   gulong sender_uid)
+{
+	NMSecretAgent *agent;
+
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (    nm_streq0 (nm_secret_agent_get_identifier (agent), identifier)
+		    && sender_uid == nm_secret_agent_get_owner_uid (agent))
+			return agent;
+	}
+	return NULL;
+}
+
+static NMSecretAgent *
+_agent_find_by_username (NMAgentManagerPrivate *priv,
+                         const char *username)
+{
+	NMSecretAgent *agent;
+
+	nm_assert (username);
+
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (nm_streq0 (nm_secret_agent_get_owner_username (agent), username))
+			return agent;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
+static void
+_agent_remove (NMAgentManager *self, NMSecretAgent *agent)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	NMSecretAgent *agent;
 	CList *iter, *safe;
 
-	g_return_val_if_fail (owner != NULL, FALSE);
-
-	/* Make sure this agent has already registered */
-	agent = g_hash_table_lookup (priv->agents, owner);
-	if (!agent)
-		return FALSE;
+	nm_assert (NM_IS_SECRET_AGENT (agent));
+	nm_assert (c_list_contains (&priv->agent_lst_head, &agent->agent_lst));
 
 	_LOGD (agent, "agent unregistered or disappeared");
+
+	c_list_unlink (&agent->agent_lst);
 
 	/* Remove this agent from any in-progress secrets requests */
 	c_list_for_each_safe (iter, safe, &priv->request_lst_head)
 		request_remove_agent (c_list_entry (iter, Request, request_lst), agent);
 
-	/* And dispose of the agent */
-	g_hash_table_remove (priv->agents, owner);
+	g_object_unref (agent);
+}
+
+static gboolean
+_agent_remove_by_owner (NMAgentManager *self, const char *owner)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	NMSecretAgent *agent;
+
+	g_return_val_if_fail (owner, FALSE);
+
+	agent = _agent_find_by_owner (priv, owner);
+	if (!agent)
+		return FALSE;
+
+	_agent_remove (self, agent);
 	return TRUE;
 }
 
@@ -234,7 +287,7 @@ maybe_remove_agent_on_error (NMSecretAgent *agent,
 	if (   g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CLOSED)
 	    || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_DISCONNECTED)
 	    || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_NAME_HAS_NO_OWNER))
-		remove_agent (nm_agent_manager_get (), nm_secret_agent_get_dbus_owner (agent));
+		_agent_remove_by_owner (nm_agent_manager_get (), nm_secret_agent_get_dbus_owner (agent));
 }
 
 /*****************************************************************************/
@@ -302,7 +355,6 @@ agent_register_permissions_done (NMAuthChain *chain,
 	NMAgentManager *self = NM_AGENT_MANAGER (user_data);
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMSecretAgent *agent;
-	const char *sender;
 	NMAuthCallResult result;
 	CList *iter;
 
@@ -322,8 +374,10 @@ agent_register_permissions_done (NMAuthChain *chain,
 		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, TRUE);
 
 	priv->agent_version_id += 1;
-	sender = nm_secret_agent_get_dbus_owner (agent);
-	g_hash_table_insert (priv->agents, g_strdup (sender), agent);
+
+	nm_assert (c_list_is_empty (&agent->agent_lst));
+	c_list_link_tail (&priv->agent_lst_head, &agent->agent_lst);
+
 	_LOGI (agent, "agent registered");
 	g_dbus_method_invocation_return_value (context, NULL);
 
@@ -335,30 +389,12 @@ agent_register_permissions_done (NMAuthChain *chain,
 		request_add_agent (c_list_entry (iter, Request, request_lst), agent);
 }
 
-static NMSecretAgent *
-find_agent_by_identifier_and_uid (NMAgentManager *self,
-                                  const char *identifier,
-                                  gulong sender_uid)
-{
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMSecretAgent *agent;
-
-	g_hash_table_iter_init (&iter, priv->agents);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
-		if (   g_strcmp0 (nm_secret_agent_get_identifier (agent), identifier) == 0
-		    && nm_secret_agent_get_owner_uid (agent) == sender_uid)
-			return agent;
-	}
-	return NULL;
-}
-
 static void
 agent_disconnected_cb (NMSecretAgent *agent, gpointer user_data)
 {
 	/* The agent quit, so remove it and let interested clients know */
-	remove_agent (NM_AGENT_MANAGER (user_data),
-	              nm_secret_agent_get_dbus_owner (agent));
+	_agent_remove_by_owner (NM_AGENT_MANAGER (user_data),
+	                        nm_secret_agent_get_dbus_owner (agent));
 }
 
 static void
@@ -388,7 +424,7 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 		goto done;
 
 	/* Only one agent for each identifier is allowed per user */
-	if (find_agent_by_identifier_and_uid (self, identifier, sender_uid)) {
+	if (_agent_find_by_identifier_and_uid (priv, identifier, sender_uid)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "An agent with this ID is already registered for this user.");
@@ -456,7 +492,7 @@ impl_agent_manager_unregister (NMDBusObject *obj,
 {
 	NMAgentManager *self = NM_AGENT_MANAGER (obj);
 
-	if (!remove_agent (self, sender)) {
+	if (!_agent_remove_by_owner (self, sender)) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_AGENT_MANAGER_ERROR,
 		                                               NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,
@@ -695,12 +731,10 @@ static void
 request_add_agents (NMAgentManager *self, Request *req)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	gpointer data;
+	NMSecretAgent *agent;
 
-	g_hash_table_iter_init (&iter, priv->agents);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		request_add_agent (req, NM_SECRET_AGENT (data));
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst)
+		request_add_agent (req, agent);
 }
 
 static void
@@ -1371,17 +1405,10 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 NMSecretAgent *
 nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
 {
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMSecretAgent *agent;
+	g_return_val_if_fail (NM_IS_AGENT_MANAGER (self), NULL);
+	g_return_val_if_fail (username, NULL);
 
-	g_hash_table_iter_init (&iter, priv->agents);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
-		if (g_strcmp0 (nm_secret_agent_get_owner_username (agent), username) == 0)
-			return agent;
-	}
-
-	return NULL;
+	return _agent_find_by_username (NM_AGENT_MANAGER_GET_PRIVATE (self), username);
 }
 
 /*****************************************************************************/
@@ -1392,17 +1419,14 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
                                              NMSecretAgentCapabilities capability)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (manager);
-	GHashTableIter iter;
 	NMSecretAgent *agent;
 	gboolean subject_is_unix_process = (nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
 	gulong subject_uid = subject_is_unix_process ? nm_auth_subject_get_unix_process_uid (subject) : 0u;
 
-	g_hash_table_iter_init (&iter, priv->agents);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
 		if (   subject_is_unix_process
 		    && nm_secret_agent_get_owner_uid (agent) != subject_uid)
 			continue;
-
 		if (!(nm_secret_agent_get_capabilities (agent) & capability))
 			return FALSE;
 	}
@@ -1442,12 +1466,10 @@ static void
 authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
 	NMSecretAgent *agent;
 
 	/* Recheck the permissions of all secret agents */
-	g_hash_table_iter_init (&iter, priv->agents);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
 		NMAuthChain *chain;
 
 		/* Kick off permissions requests for this agent */
@@ -1455,7 +1477,6 @@ authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 		                                   NULL,
 		                                   agent_permissions_changed_done,
 		                                   self);
-		g_assert (chain);
 		priv->chains = g_slist_append (priv->chains, chain);
 
 		/* Make sure if the agent quits while the permissions call is in progress
@@ -1475,8 +1496,8 @@ nm_agent_manager_init (NMAgentManager *self)
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 
 	priv->agent_version_id = 1;
+	c_list_init (&priv->agent_lst_head);
 	c_list_init (&priv->request_lst_head);
-	priv->agents = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
@@ -1500,23 +1521,21 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE ((NMAgentManager *) object);
-	CList *iter;
+	NMAgentManager *self = NM_AGENT_MANAGER (object);
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	Request *request;
+	NMSecretAgent *agent;
 
-cancel_more:
-	c_list_for_each (iter, &priv->request_lst_head) {
-		c_list_unlink (iter);
-		req_complete_cancel (c_list_entry (iter, Request, request_lst), TRUE);
-		goto cancel_more;
+	while ((request = c_list_first_entry (&priv->request_lst_head, Request, request_lst))) {
+		c_list_unlink (&request->request_lst);
+		req_complete_cancel (request, TRUE);
 	}
 
 	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->chains = NULL;
 
-	if (priv->agents) {
-		g_hash_table_destroy (priv->agents);
-		priv->agents = NULL;
-	}
+	while ((agent = c_list_first_entry (&priv->agent_lst_head, NMSecretAgent, agent_lst)))
+		_agent_remove (self, agent);
 
 	if (priv->auth_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->auth_mgr,
