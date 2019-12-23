@@ -16,7 +16,7 @@
 
 /*****************************************************************************/
 
-struct NMAuthChain {
+struct _NMAuthChain {
 
 	CList parent_lst;
 
@@ -264,6 +264,14 @@ nm_auth_chain_get_subject (NMAuthChain *self)
 	g_return_val_if_fail (self, NULL);
 
 	return self->subject;
+}
+
+GDBusMethodInvocation *
+nm_auth_chain_get_context (NMAuthChain *self)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return self->context;
 }
 
 /*****************************************************************************/

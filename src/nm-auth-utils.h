@@ -12,7 +12,7 @@
 
 /*****************************************************************************/
 
-typedef struct NMAuthChain NMAuthChain;
+typedef struct _NMAuthChain NMAuthChain;
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        GDBusMethodInvocation *context,
@@ -52,6 +52,8 @@ void nm_auth_chain_add_call_unsafe (NMAuthChain *chain,
 void nm_auth_chain_destroy (NMAuthChain *chain);
 
 NMAuthSubject *nm_auth_chain_get_subject (NMAuthChain *self);
+
+GDBusMethodInvocation *nm_auth_chain_get_context (NMAuthChain *self);
 
 /*****************************************************************************/
 
