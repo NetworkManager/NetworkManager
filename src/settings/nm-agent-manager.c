@@ -410,18 +410,10 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 
 	/* Kick off permissions requests for this agent */
 	chain = nm_auth_chain_new_subject (subject, context, agent_register_permissions_done, self);
-	if (chain) {
-		nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-
-		priv->chains = g_slist_append (priv->chains, chain);
-	} else {
-		g_object_unref (agent);
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_FAILED,
-		                             "Unable to start agent authentication.");
-	}
+	nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
+	priv->chains = g_slist_append (priv->chains, chain);
 
 done:
 	if (error)
