@@ -226,21 +226,6 @@ _agent_find_by_identifier_and_uid (NMAgentManagerPrivate *priv,
 	return NULL;
 }
 
-static NMSecretAgent *
-_agent_find_by_username (NMAgentManagerPrivate *priv,
-                         const char *username)
-{
-	NMSecretAgent *agent;
-
-	nm_assert (username);
-
-	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
-		if (nm_streq0 (nm_secret_agent_get_owner_username (agent), username))
-			return agent;
-	}
-	return NULL;
-}
-
 /*****************************************************************************/
 
 static void
@@ -1402,13 +1387,28 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 
 /*****************************************************************************/
 
-NMSecretAgent *
-nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
+gboolean
+nm_agent_manager_has_agent_with_permission (NMAgentManager *self,
+                                            const char *username,
+                                            const char *permission)
 {
-	g_return_val_if_fail (NM_IS_AGENT_MANAGER (self), NULL);
-	g_return_val_if_fail (username, NULL);
+	NMAgentManagerPrivate *priv;
+	NMSecretAgent *agent;
 
-	return _agent_find_by_username (NM_AGENT_MANAGER_GET_PRIVATE (self), username);
+	g_return_val_if_fail (NM_IS_AGENT_MANAGER (self), FALSE);
+	g_return_val_if_fail (username, FALSE);
+	g_return_val_if_fail (permission, FALSE);
+
+	priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (!nm_streq0 (nm_secret_agent_get_owner_username (agent), username))
+			continue;
+		if (nm_secret_agent_has_permission (agent, permission))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*****************************************************************************/
