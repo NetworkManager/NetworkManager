@@ -266,13 +266,17 @@ _agent_remove_by_owner (NMAgentManager *self, const char *owner)
 
 /* Call this *after* calling request_next_agent() */
 static void
-maybe_remove_agent_on_error (NMSecretAgent *agent,
+maybe_remove_agent_on_error (NMAgentManager *self,
+                             NMSecretAgent *agent,
                              GError *error)
 {
-	if (   g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CLOSED)
-	    || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_DISCONNECTED)
-	    || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_NAME_HAS_NO_OWNER))
-		_agent_remove_by_owner (nm_agent_manager_get (), nm_secret_agent_get_dbus_owner (agent));
+	if (   !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CLOSED)
+	    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_DISCONNECTED)
+	    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_NAME_HAS_NO_OWNER))
+		return;
+
+	if (!c_list_is_empty (&agent->agent_lst))
+		_agent_remove (self, agent);
 }
 
 /*****************************************************************************/
@@ -872,7 +876,7 @@ _con_get_request_done (NMSecretAgent *agent,
 
 			/* Try the next agent */
 			request_next_agent (req);
-			maybe_remove_agent_on_error (agent, error);
+			maybe_remove_agent_on_error (self, agent, error);
 		}
 		return;
 	}
@@ -1246,7 +1250,7 @@ _con_save_request_done (NMSecretAgent *agent,
 		       LOG_REQ_ARG (req), error->message);
 		/* Try the next agent */
 		request_next_agent (req);
-		maybe_remove_agent_on_error (agent, error);
+		maybe_remove_agent_on_error (self, agent, error);
 		return;
 	}
 
@@ -1337,7 +1341,7 @@ _con_del_request_done (NMSecretAgent *agent,
 	/* Tell the next agent to delete secrets */
 	request_next_agent (req);
 	if (error)
-		maybe_remove_agent_on_error (agent, error);
+		maybe_remove_agent_on_error (self, agent, error);
 }
 
 static void
