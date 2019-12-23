@@ -10,7 +10,7 @@ project(
     'buildtype=debugoptimized',
     'c_std=gnu11',
   ],
-  meson_version: '>= 0.44.0',
+  meson_version: '>= 0.46.0',
 )
 
 nm_name = meson.project_name()
@@ -137,10 +137,6 @@ config_h.set('SIZEOF_INO_T', cc.sizeof('ino_t', prefix : '#include <sys/types.h>
 config_h.set('SIZEOF_TIME_T', cc.sizeof('time_t', prefix : '#include <sys/time.h>'))
 config_h.set('SIZEOF_RLIM_T', cc.sizeof('rlim_t', prefix : '#include <sys/resource.h>'))
 
-if not cc.has_type('pid_t', prefix: '#include <sys/types.h>')
-  config_h.set('pid_t', 'int')
-endif
-
 # compiler flags
 common_flags = []
 common_ldflags = []
@@ -154,8 +150,12 @@ if enable_ld_gc
 
   test_ldflags = ['-Wl,--gc-sections']
 
-  foreach cflag: test_c_flags + test_ldflags
+  foreach cflag: test_c_flags
     assert(cc.has_argument(cflag), 'Unused symbol eviction requested but not supported. Use -Dld_gc=false to build without it.')
+  endforeach
+
+  foreach ldflag: test_ldflags
+    assert(cc.has_link_argument(ldflag), 'Linker garbage collection requested but not supported. Use -Dld_gc=false to build without it.')
   endforeach
 
   common_flags += test_c_flags
@@ -173,16 +173,28 @@ endif
 
 if nm_debug
   common_flags += cc.get_supported_arguments([
+    '-Wall',
+    '-Wextra',
     '-Wdeclaration-after-statement',
     '-Wfloat-equal',
+    '-Wformat-nonliteral',
+    '-Wformat-security',
     '-Wimplicit-fallthrough',
+    '-Wimplicit-function-declaration',
     '-Winit-self',
     '-Wlogical-op',
     '-Wmissing-declarations',
     '-Wmissing-include-dirs',
     '-Wmissing-prototypes',
+    '-Wpointer-arith',
+    '-Wshadow',
+    '-Wshift-negative-value',
+    '-Wstrict-prototypes',
+    '-Wundef',
+    '-Wvla',
     '-Wno-duplicate-decl-specifier',
     '-Wno-format-truncation',
+    '-Wno-format-y2k',
     '-Wno-gnu-variable-sized-type-not-at-end',
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',

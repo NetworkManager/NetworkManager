@@ -249,9 +249,6 @@
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #mesondefine _POSIX_SOURCE
 
-/* Define to `int' if <sys/types.h> does not define. */
-#mesondefine pid_t
-
 #mesondefine HAVE_PIDFD_OPEN
 #mesondefine HAVE_PIDFD_SEND_SIGNAL
 #mesondefine HAVE_RT_SIGQUEUEINFO
