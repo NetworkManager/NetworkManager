@@ -36,5 +36,7 @@ gboolean nm_dhcp_utils_get_leasefile_path (int addr_family,
                                            const char *uuid,
                                            char **out_leasefile_path);
 
+char **nm_dhcp_parse_search_list (guint8 *data, size_t n_data);
+
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
 
