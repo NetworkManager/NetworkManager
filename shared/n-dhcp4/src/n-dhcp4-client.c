@@ -681,7 +681,12 @@ _c_public_ int n_dhcp4_client_dispatch(NDhcp4Client *client) {
 
                                 /* continue normally */
                         } else if (r) {
-                                c_assert(r < _N_DHCP4_E_INTERNAL);
+                                if (r >= _N_DHCP4_E_INTERNAL) {
+                                        n_dhcp4_c_log(client->config, LOG_ERR,
+                                                      "invalid internal error code %d after dispatch",
+                                                      r);
+                                        return N_DHCP4_E_INTERNAL;
+                                }
                                 return r;
                         }
                 }
