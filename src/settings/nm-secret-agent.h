@@ -22,12 +22,15 @@
 typedef struct _NMSecretAgentClass NMSecretAgentClass;
 typedef struct _NMSecretAgentCallId NMSecretAgentCallId;
 
+struct _NMAuthChain;
 struct _NMSecretAgentPrivate;
 
 struct _NMSecretAgent {
 	GObject parent;
 	CList agent_lst;
+	struct _NMAuthChain *auth_chain;
 	struct _NMSecretAgentPrivate *_priv;
+	bool fully_registered:1;
 };
 
 GType nm_secret_agent_get_type (void);

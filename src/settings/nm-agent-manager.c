@@ -35,9 +35,6 @@ typedef struct {
 	NMAuthManager *auth_mgr;
 	NMSessionMonitor *session_monitor;
 
-	/* Auth chains for checking agent permissions */
-	GSList *chains;
-
 	CList agent_lst_head;
 
 	CList request_lst_head;
@@ -241,6 +238,8 @@ _agent_remove (NMAgentManager *self, NMSecretAgent *agent)
 
 	_LOGD (agent, "agent unregistered or disappeared");
 
+	nm_clear_pointer (&agent->auth_chain, nm_auth_chain_destroy);
+
 	c_list_unlink (&agent->agent_lst);
 
 	g_signal_handlers_disconnect_by_func (agent, G_CALLBACK (agent_disconnected_cb), self);
@@ -325,45 +324,86 @@ validate_identifier (const char *identifier, GError **error)
 }
 
 static void
-agent_register_permissions_done (NMAuthChain *chain,
-                                 GDBusMethodInvocation *context,
-                                 gpointer user_data)
+_agent_permissions_check_done (NMAuthChain *chain,
+                               GDBusMethodInvocation *context,
+                               gpointer user_data)
 {
 	NMAgentManager *self = NM_AGENT_MANAGER (user_data);
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMSecretAgent *agent;
-	NMAuthCallResult result;
-	CList *iter;
+	Request *request;
 
-	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
-
-	priv->chains = g_slist_remove (priv->chains, chain);
+	nm_assert (!context || G_IS_DBUS_METHOD_INVOCATION (context));
 
 	agent = nm_auth_chain_steal_data (chain, "agent");
-	nm_assert (agent);
 
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
-	if (result == NM_AUTH_CALL_RESULT_YES)
-		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, TRUE);
+	nm_assert (NM_IS_SECRET_AGENT (agent));
+	nm_assert (agent->auth_chain == chain);
+	nm_assert (agent->fully_registered == (!context));
+	nm_assert (c_list_contains (&priv->agent_lst_head, &agent->agent_lst));
 
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-	if (result == NM_AUTH_CALL_RESULT_YES)
-		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, TRUE);
+	agent->auth_chain = NULL;
+
+	nm_secret_agent_add_permission (agent,
+	                                NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED,
+	                                (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED) == NM_AUTH_CALL_RESULT_YES));
+	nm_secret_agent_add_permission (agent,
+	                                NM_AUTH_PERMISSION_WIFI_SHARE_OPEN,
+	                                (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN) == NM_AUTH_CALL_RESULT_YES));
+
+	if (agent->fully_registered) {
+		_LOGD (agent, "updated agent permissions");
+		return;
+	}
+
+	_LOGI (agent, "agent registered");
+
+	agent->fully_registered = TRUE;
 
 	priv->agent_version_id += 1;
 
-	nm_assert (c_list_is_empty (&agent->agent_lst));
-	c_list_link_tail (&priv->agent_lst_head, &agent->agent_lst);
-
-	_LOGI (agent, "agent registered");
 	g_dbus_method_invocation_return_value (context, NULL);
 
-	/* Signal an agent was registered */
-	g_signal_emit (self, signals[AGENT_REGISTERED], 0, agent);
+	c_list_for_each_entry (request, &priv->request_lst_head, request_lst)
+		request_add_agent (request, agent);
 
-	/* Add this agent to any in-progress secrets requests */
-	c_list_for_each (iter, &priv->request_lst_head)
-		request_add_agent (c_list_entry (iter, Request, request_lst), agent);
+	g_signal_emit (self, signals[AGENT_REGISTERED], 0, agent);
+}
+
+static NMAuthChain *
+_agent_create_auth_chain (NMAgentManager *self,
+                          NMSecretAgent *agent,
+                          GDBusMethodInvocation *context)
+{
+	NMAuthChain *chain;
+
+	_LOGD (agent, "requesting permissions");
+
+	nm_assert (   !agent->auth_chain
+	           || (agent->fully_registered == (!nm_auth_chain_get_context (agent->auth_chain))));
+
+	if (   agent->auth_chain
+	    && !context
+	    && !agent->fully_registered) {
+		/* we restart the authorization check (without a @context), but the currently
+		 * pending auth-chain carries a context. We need to pass it on as we replace
+		 * the auth-chain. */
+		context = nm_auth_chain_get_context (agent->auth_chain);
+		nm_assert (context);
+	}
+
+	chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (agent),
+	                                   context,
+	                                   _agent_permissions_check_done,
+	                                   self);
+
+	nm_auth_chain_set_data (chain, "agent", agent, NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
+
+	nm_clear_pointer (&agent->auth_chain, nm_auth_chain_destroy);
+	agent->auth_chain = chain;
+	return chain;
 }
 
 static void
@@ -383,46 +423,40 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
 	NMSecretAgent *agent;
-	NMAuthChain *chain;
 
 	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
-		goto done;
+		g_dbus_method_invocation_take_error (context, error);
+		return;
 	}
 	sender_uid = nm_auth_subject_get_unix_process_uid (subject);
 
 	/* Validate the identifier */
-	if (!validate_identifier (identifier, &error))
-		goto done;
+	if (!validate_identifier (identifier, &error)) {
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
 
 	/* Only one agent for each identifier is allowed per user */
 	if (_agent_find_by_identifier_and_uid (priv, identifier, sender_uid)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "An agent with this ID is already registered for this user.");
-		goto done;
+		g_dbus_method_invocation_take_error (context, error);
+		return;
 	}
 
-	/* Success, add the new agent */
 	agent = nm_secret_agent_new (context, subject, identifier, capabilities);
+
 	g_signal_connect (agent, NM_SECRET_AGENT_DISCONNECTED,
 	                  G_CALLBACK (agent_disconnected_cb), self);
 
-	_LOGD (agent, "requesting permissions");
+	c_list_link_tail (&priv->agent_lst_head, &agent->agent_lst);
 
-	/* Kick off permissions requests for this agent */
-	chain = nm_auth_chain_new_subject (subject, context, agent_register_permissions_done, self);
-	nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-	priv->chains = g_slist_append (priv->chains, chain);
-
-done:
-	if (error)
-		g_dbus_method_invocation_take_error (context, error);
+	_agent_create_auth_chain (self, agent, context);
 }
 
 static void
@@ -713,8 +747,10 @@ request_add_agents (NMAgentManager *self, Request *req)
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMSecretAgent *agent;
 
-	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst)
-		request_add_agent (req, agent);
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (agent->fully_registered)
+			request_add_agent (req, agent);
+	}
 }
 
 static void
@@ -1036,7 +1072,7 @@ _con_get_request_start (Request *req)
 		                                            NULL,
 		                                            _con_get_request_start_validated,
 		                                            req);
-		g_assert (req->con.chain);
+		nm_assert (req->con.chain);
 
 		/* If the caller is the only user in the connection's permissions, then
 		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
@@ -1187,7 +1223,6 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	req->con.get.callback = callback;
 	req->con.get.callback_data = callback_data;
 
-	/* Kick off the request */
 	if (!(req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM))
 		request_add_agents (self, req);
 	req->idle_id = g_idle_add (request_start, req);
@@ -1290,7 +1325,6 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	req->con.path = g_strdup (path);
 	req->con.connection = g_object_ref (connection);
 
-	/* Kick off the request */
 	request_add_agents (self, req);
 	req->idle_id = g_idle_add (request_start, req);
 }
@@ -1375,7 +1409,6 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	req->con.connection = g_object_ref (connection);
 	g_object_unref (subject);
 
-	/* Kick off the request */
 	request_add_agents (self, req);
 	req->idle_id = g_idle_add (request_start, req);
 }
@@ -1397,6 +1430,8 @@ nm_agent_manager_has_agent_with_permission (NMAgentManager *self,
 	priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 
 	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (!agent->fully_registered)
+			continue;
 		if (!nm_streq0 (nm_secret_agent_get_owner_username (agent), username))
 			continue;
 		if (nm_secret_agent_has_permission (agent, permission))
@@ -1419,6 +1454,8 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 	gulong subject_uid = subject_is_unix_process ? nm_auth_subject_get_unix_process_uid (subject) : 0u;
 
 	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
+		if (!agent->fully_registered)
+			continue;
 		if (   subject_is_unix_process
 		    && nm_secret_agent_get_owner_uid (agent) != subject_uid)
 			continue;
@@ -1432,55 +1469,13 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 /*****************************************************************************/
 
 static void
-agent_permissions_changed_done (NMAuthChain *chain,
-                                GDBusMethodInvocation *context,
-                                gpointer user_data)
-{
-	NMAgentManager *self = NM_AGENT_MANAGER (user_data);
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	NMSecretAgent *agent;
-	gboolean share_protected = FALSE, share_open = FALSE;
-
-	priv->chains = g_slist_remove (priv->chains, chain);
-
-	agent = nm_auth_chain_get_data (chain, "agent");
-	g_assert (agent);
-
-	_LOGD (agent, "updated agent permissions");
-
-	if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED) == NM_AUTH_CALL_RESULT_YES)
-		share_protected = TRUE;
-	if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN) == NM_AUTH_CALL_RESULT_YES)
-		share_open = TRUE;
-
-	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, share_protected);
-	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, share_open);
-}
-
-static void
 authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMSecretAgent *agent;
 
-	/* Recheck the permissions of all secret agents */
-	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
-		NMAuthChain *chain;
-
-		/* Kick off permissions requests for this agent */
-		chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (agent),
-		                                   NULL,
-		                                   agent_permissions_changed_done,
-		                                   self);
-		priv->chains = g_slist_append (priv->chains, chain);
-
-		/* Make sure if the agent quits while the permissions call is in progress
-		 * that the object sticks around until our callback.
-		 */
-		nm_auth_chain_set_data (chain, "agent", g_object_ref (agent), g_object_unref);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-	}
+	c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst)
+		_agent_create_auth_chain (self, agent, NULL);
 }
 
 /*****************************************************************************/
@@ -1525,9 +1520,6 @@ dispose (GObject *object)
 		c_list_unlink (&request->request_lst);
 		req_complete_cancel (request, TRUE);
 	}
-
-	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_destroy);
-	priv->chains = NULL;
 
 	while ((agent = c_list_first_entry (&priv->agent_lst_head, NMSecretAgent, agent_lst)))
 		_agent_remove (self, agent);
