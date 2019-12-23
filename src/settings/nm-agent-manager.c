@@ -397,12 +397,6 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 
 	/* Success, add the new agent */
 	agent = nm_secret_agent_new (context, subject, identifier, capabilities);
-	if (!agent) {
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_FAILED,
-		                             "Failed to initialize the agent");
-		goto done;
-	}
 	g_signal_connect (agent, NM_SECRET_AGENT_DISCONNECTED,
 	                  G_CALLBACK (agent_disconnected_cb), self);
 
