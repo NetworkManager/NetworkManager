@@ -252,22 +252,6 @@ _agent_remove (NMAgentManager *self, NMSecretAgent *agent)
 	g_object_unref (agent);
 }
 
-static gboolean
-_agent_remove_by_owner (NMAgentManager *self, const char *owner)
-{
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	NMSecretAgent *agent;
-
-	g_return_val_if_fail (owner, FALSE);
-
-	agent = _agent_find_by_owner (priv, owner);
-	if (!agent)
-		return FALSE;
-
-	_agent_remove (self, agent);
-	return TRUE;
-}
-
 /* Call this *after* calling request_next_agent() */
 static void
 maybe_remove_agent_on_error (NMAgentManager *self,
@@ -482,14 +466,19 @@ impl_agent_manager_unregister (NMDBusObject *obj,
                                GVariant *parameters)
 {
 	NMAgentManager *self = NM_AGENT_MANAGER (obj);
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	NMSecretAgent *agent;
 
-	if (!_agent_remove_by_owner (self, sender)) {
+	agent = _agent_find_by_owner (priv, sender);
+	if (!agent) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_AGENT_MANAGER_ERROR,
 		                                               NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,
 		                                               "Caller is not registered as an Agent");
 		return;
 	}
+
+	_agent_remove (self, agent);
 
 	g_dbus_method_invocation_return_value (invocation, NULL);
 }
