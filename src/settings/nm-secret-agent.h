@@ -20,6 +20,13 @@
 typedef struct _NMSecretAgentClass NMSecretAgentClass;
 typedef struct _NMSecretAgentCallId NMSecretAgentCallId;
 
+struct _NMSecretAgentPrivate;
+
+struct _NMSecretAgent {
+	GObject parent;
+	struct _NMSecretAgentPrivate *_priv;
+};
+
 GType nm_secret_agent_get_type (void);
 
 NMSecretAgent *nm_secret_agent_new (GDBusMethodInvocation *context,
