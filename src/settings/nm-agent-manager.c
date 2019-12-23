@@ -368,7 +368,7 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
                                           guint32 capabilities)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	NMAuthSubject *subject;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
 	NMSecretAgent *agent;
@@ -418,7 +418,6 @@ agent_manager_register_with_capabilities (NMAgentManager *self,
 done:
 	if (error)
 		g_dbus_method_invocation_take_error (context, error);
-	g_clear_object (&subject);
 }
 
 static void
