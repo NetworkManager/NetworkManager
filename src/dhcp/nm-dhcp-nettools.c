@@ -1311,8 +1311,10 @@ ip4_start (NMDhcpClient *client,
 			sd_dhcp_lease_get_address (lease, &last_addr);
 	}
 
-	if (last_addr.s_addr)
+	if (last_addr.s_addr) {
 		n_dhcp4_client_probe_config_set_requested_ip (config, last_addr);
+		n_dhcp4_client_probe_config_set_init_reboot (config, TRUE);
+	}
 
 	/* Add requested options */
 	for (i = 0; _nm_dhcp_option_dhcp4_options[i].name; i++) {
