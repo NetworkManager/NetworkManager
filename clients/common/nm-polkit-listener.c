@@ -344,10 +344,11 @@ retrieve_session_id_cb (GObject *source_object,
 				return;
 			}
 		}
+		err_str = g_strdup_printf (_("Could not find any session id for uid %d"), uid);
+	} else {
+		err_str = g_strdup_printf (_("Could not retrieve session id: %s"),
+		                                error->message);
 	}
-
-	err_str = g_strdup_printf (_("Could not retrieve session id: %s"),
-	                           error->message);
 
 	g_signal_emit (listener,
 	               signals[ERROR],
