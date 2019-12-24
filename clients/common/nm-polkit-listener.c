@@ -552,6 +552,14 @@ begin_authentication (AuthRequest *request)
 	                               &request->child_stdout,
 	                               NULL,
 	                               NULL)) {
+		/* not findind the PolicyKit setuid helper is a critical error */
+		request->child_stdin = -1;
+		request->child_stdout = -1;
+		g_signal_emit (request->listener,
+		               signals[ERROR],
+		               0,
+		               "The PolicyKit setuid helper 'polkit-agent-helper-1' has not been found");
+
 		complete_authentication (request, FALSE);
 		return;
 	}
