@@ -656,12 +656,14 @@ AC_SUBST(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT, "$enable_polkit")
 
 PKG_CHECK_MODULES(POLKIT, [polkit-agent-1 >= 0.97], [have_pk_agent=yes],[have_pk_agent=no])
 if test x"$have_pk_agent" = x"no"; then
-	AC_MSG_ERROR(Polkit agent is required)
+	POLKIT_PACKAGE_PREFIX="/usr"
+else
+	POLKIT_PACKAGE_PREFIX=`$PKG_CONFIG --variable=prefix polkit-agent-1`
 fi
-POLKIT_PACKAGE_PREFIX=`$PKG_CONFIG --variable=prefix polkit-agent-1`
 AC_DEFINE_UNQUOTED([POLKIT_PACKAGE_PREFIX],
                    ["$POLKIT_PACKAGE_PREFIX"],
                    [polkit-agent package prefix])
+
 
 AC_ARG_ENABLE(modify-system, AS_HELP_STRING([--enable-modify-system], [Allow users to modify system connections]))
 if test "${enable_modify_system}" = "yes"; then
