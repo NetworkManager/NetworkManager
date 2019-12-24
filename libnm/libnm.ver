@@ -1663,6 +1663,8 @@ global:
 	nm_client_get_instance_flags;
 	nm_client_get_permissions_state;
 	nm_client_instance_flags_get_type;
+	nm_secret_agent_old_enable;
+	nm_secret_agent_old_get_context_busy_watcher;
 	nm_secret_agent_old_get_dbus_connection;
 	nm_secret_agent_old_get_main_context;
 } libnm_1_22_0;

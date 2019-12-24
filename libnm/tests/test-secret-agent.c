@@ -122,12 +122,12 @@ test_secret_agent_init (TestSecretAgent *agent)
 }
 
 static NMSecretAgentOld *
-test_secret_agent_new (void)
+test_secret_agent_new (gboolean auto_register)
 {
 	return nmtstc_context_object_new (test_secret_agent_get_type (),
 	                                  TRUE,
 	                                  NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
-	                                  NM_SECRET_AGENT_OLD_AUTO_REGISTER, FALSE,
+	                                  NM_SECRET_AGENT_OLD_AUTO_REGISTER, auto_register,
 	                                  NULL);
 }
 
@@ -211,7 +211,7 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 {
 	static int static_counter = 0;
 	const int counter = static_counter++;
-	const char *agent_notes = test_data;
+	const char *create_agent = test_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
@@ -270,18 +270,25 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	g_main_loop_run (sadata->loop);
 	g_assert (sadata->connection);
 
-	if (agent_notes) {
-		sadata->agent = test_secret_agent_new ();
+	if (nm_streq (create_agent, "1")) {
+		gboolean auto_register = nmtst_get_rand_bool ();
 
-		if (!strcmp (agent_notes, "sync")) {
+		sadata->agent = test_secret_agent_new (auto_register);
+
+		if (auto_register) {
+			g_assert (nm_secret_agent_old_get_registered (sadata->agent));
 			nm_secret_agent_old_register (sadata->agent, NULL, &error);
 			g_assert_no_error (error);
-			g_assert (nm_secret_agent_old_get_registered (sadata->agent));
 		} else {
-			nm_secret_agent_old_register_async (sadata->agent, NULL,
-			                                register_cb, sadata);
+			g_assert (!nm_secret_agent_old_get_registered (sadata->agent));
+			nm_secret_agent_old_register_async (sadata->agent,
+			                                    NULL,
+			                                    register_cb,
+			                                    sadata);
 			g_main_loop_run (sadata->loop);
 		}
+
+		g_assert (nm_secret_agent_old_get_registered (sadata->agent));
 	}
 }
 
@@ -301,6 +308,9 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 	                                nm_client_get_context_busy_watcher (sadata->client));
 
 	if (sadata->agent) {
+		nmtst_context_busy_watcher_add (&watcher_data,
+		                                nm_secret_agent_old_get_context_busy_watcher (sadata->agent));
+
 		if (nm_secret_agent_old_get_registered (sadata->agent)) {
 			nm_secret_agent_old_unregister (sadata->agent, NULL, &error);
 			g_assert_no_error (error);
@@ -537,17 +547,18 @@ test_secret_agent_good (TestSecretAgentData *sadata, gconstpointer test_data)
 	g_assert_cmpint (sadata->secrets_requested, ==, 1);
 }
 
+/*****************************************************************************/
+
 static void
 async_init_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	GMainLoop *loop = user_data;
-	GError *error = NULL;
-	GObject *agent;
+	gs_free_error GError *error = NULL;
+	gs_unref_object GObject *agent = NULL;
 
 	agent = g_async_initable_new_finish (G_ASYNC_INITABLE (object), result, &error);
-	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED);
-	g_assert (agent == NULL);
-	g_clear_error (&error);
+	nmtst_assert_success (NM_IS_SECRET_AGENT_OLD (agent), error);
+	g_assert (!nm_secret_agent_old_get_registered (NM_SECRET_AGENT_OLD (agent)));
 
 	g_main_loop_quit (loop);
 }
@@ -555,89 +566,129 @@ async_init_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 test_secret_agent_nm_not_running (void)
 {
-	NMSecretAgentOld *agent;
-	GMainLoop *loop;
+	gs_unref_object NMSecretAgentOld *agent = NULL;
+	nm_auto_unref_gmainloop GMainLoop *loop = NULL;
 	GError *error = NULL;
 
-	agent = g_initable_new (test_secret_agent_get_type (), NULL, &error,
+	agent = g_initable_new (test_secret_agent_get_type (),
+	                        NULL,
+	                        &error,
 	                        NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
 	                        NULL);
-	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED);
-	g_assert (agent == NULL);
-	g_clear_error (&error);
+	nmtst_assert_success (NM_IS_SECRET_AGENT_OLD (agent), error);
+	g_assert (!nm_secret_agent_old_get_registered (agent));
+	g_clear_object (&agent);
 
 	loop = g_main_loop_new (NULL, FALSE);
 	g_async_initable_new_async (test_secret_agent_get_type (),
 	                            G_PRIORITY_DEFAULT,
-	                            NULL, async_init_cb, loop,
+	                            NULL,
+	                            async_init_cb,
+	                            loop,
 	                            NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
 	                            NULL);
 	g_main_loop_run (loop);
-	g_main_loop_unref (loop);
 }
+
+/*****************************************************************************/
+
+typedef struct {
+	int step;
+	int invoke_count;
+} AutoRegisterData;
 
 static void
 registered_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	GMainLoop *loop = user_data;
+	NMSecretAgentOld *agent = NM_SECRET_AGENT_OLD (object);
+	AutoRegisterData *data = user_data;
 
-	g_main_loop_quit (loop);
+	g_assert (data);
+	g_assert (NM_IS_SECRET_AGENT_OLD (agent));
+
+	data->invoke_count++;
+	g_assert_cmpint (data->invoke_count, ==, data->step);
+
+	switch (data->step) {
+	case 1:
+	case 3:
+		g_assert (nm_secret_agent_old_get_registered (agent));
+		break;
+	case 2:
+	case 4:
+		g_assert (!nm_secret_agent_old_get_registered (agent));
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 }
 
 static void
 test_secret_agent_auto_register (void)
 {
 	NMTstcServiceInfo *sinfo;
-	NMSecretAgentOld *agent;
-	GMainLoop *loop;
+	gs_unref_object NMSecretAgentOld *agent = NULL;
 	GError *error = NULL;
+	AutoRegisterData auto_register_data = {
+		.step         = 0,
+		.invoke_count = 0,
+	};
+	gulong signal_id;
 
 	sinfo = nmtstc_service_init ();
 	if (!nmtstc_service_available (sinfo))
 		return;
 
-	loop = g_main_loop_new (NULL, FALSE);
-
-	agent = test_secret_agent_new ();
-	g_object_set (agent,
-	              NM_SECRET_AGENT_OLD_AUTO_REGISTER, TRUE,
-	              NULL);
-	g_signal_connect (agent, "notify::" NM_SECRET_AGENT_OLD_REGISTERED,
-	                  G_CALLBACK (registered_changed), loop);
-
+	agent = test_secret_agent_new (FALSE);
 	g_assert (!nm_secret_agent_old_get_registered (agent));
+
+	signal_id = g_signal_connect (agent, "notify::" NM_SECRET_AGENT_OLD_REGISTERED,
+	                              G_CALLBACK (registered_changed), &auto_register_data);
+
+	if (nmtst_get_rand_bool ()) {
+		g_object_set (agent,
+		              NM_SECRET_AGENT_OLD_AUTO_REGISTER, TRUE,
+		              NULL);
+	} else
+		nm_secret_agent_old_enable (agent, TRUE);
+	g_assert (!nm_secret_agent_old_get_registered (agent));
+
 	nm_secret_agent_old_register (agent, NULL, &error);
 	g_assert_no_error (error);
-	g_assert (nm_secret_agent_old_get_registered (agent));
-
-	/* The GLib ObjectManager doesn't like when we drop the service
-	 * in between it sees the service disappear and the call to
-	 * GetManagedObjects. Give it a chance to do its business.
-	 * Arguably a bug. */
-	g_main_context_iteration (NULL, FALSE);
-
-	/* Shut down test service */
-	nmtstc_service_cleanup (sinfo);
-	g_main_loop_run (loop);
 	g_assert (!nm_secret_agent_old_get_registered (agent));
 
-	/* Restart test service */
+	auto_register_data.step = 1;
+	nmtst_main_context_iterate_until (NULL,
+	                                  1000,
+	                                  nm_secret_agent_old_get_registered (agent));
+
+	nmtstc_service_cleanup (sinfo);
+
+	g_assert (nm_secret_agent_old_get_registered (agent));
+
+	auto_register_data.step = 2;
+	nmtst_main_context_iterate_until (NULL,
+	                                  1000,
+	                                  !nm_secret_agent_old_get_registered (agent));
+
 	sinfo = nmtstc_service_init ();
 	g_assert (nmtstc_service_available (sinfo));
 
-	g_main_loop_run (loop);
-	g_assert (nm_secret_agent_old_get_registered (agent));
+	auto_register_data.step = 3;
+	nmtst_main_context_iterate_until (NULL,
+	                                  1000,
+	                                  nm_secret_agent_old_get_registered (agent));
 
-	/* Let ObjectManager initialize (see above). */
-	g_main_context_iteration (NULL, FALSE);
-
-	/* Shut down test service again */
 	nmtstc_service_cleanup (sinfo);
-	g_main_loop_run (loop);
-	g_assert (!nm_secret_agent_old_get_registered (agent));
 
-	g_object_unref (agent);
-	g_main_loop_unref (loop);
+	auto_register_data.step = 4;
+	nmtst_main_context_iterate_until (NULL,
+	                                  1000,
+	                                  !nm_secret_agent_old_get_registered (agent));
+
+	nm_clear_g_signal_handler (agent, &signal_id);
+
+	g_clear_object (&agent);
 }
 
 /*****************************************************************************/
@@ -651,10 +702,10 @@ main (int argc, char **argv)
 
 	nmtst_init (&argc, &argv, TRUE);
 
-	g_test_add ("/libnm/secret-agent/none",       TestSecretAgentData, NULL,    test_setup, test_secret_agent_none,       test_cleanup);
-	g_test_add ("/libnm/secret-agent/no-secrets", TestSecretAgentData, "sync",  test_setup, test_secret_agent_no_secrets, test_cleanup);
-	g_test_add ("/libnm/secret-agent/cancel",     TestSecretAgentData, "async", test_setup, test_secret_agent_cancel,     test_cleanup);
-	g_test_add ("/libnm/secret-agent/good",       TestSecretAgentData, "async", test_setup, test_secret_agent_good,       test_cleanup);
+	g_test_add ("/libnm/secret-agent/none",       TestSecretAgentData, "0", test_setup, test_secret_agent_none,       test_cleanup);
+	g_test_add ("/libnm/secret-agent/no-secrets", TestSecretAgentData, "1", test_setup, test_secret_agent_no_secrets, test_cleanup);
+	g_test_add ("/libnm/secret-agent/cancel",     TestSecretAgentData, "1", test_setup, test_secret_agent_cancel,     test_cleanup);
+	g_test_add ("/libnm/secret-agent/good",       TestSecretAgentData, "1", test_setup, test_secret_agent_good,       test_cleanup);
 	g_test_add_func ("/libnm/secret-agent/nm-not-running", test_secret_agent_nm_not_running);
 	g_test_add_func ("/libnm/secret-agent/auto-register", test_secret_agent_auto_register);
 
