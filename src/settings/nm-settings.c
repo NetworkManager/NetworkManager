@@ -54,7 +54,7 @@
 #include "nm-settings-plugin.h"
 #include "nm-dbus-manager.h"
 #include "nm-auth-utils.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/nms-keyfile-plugin.h"
 #include "plugins/keyfile/nms-keyfile-storage.h"
@@ -2574,7 +2574,7 @@ settings_add_connection_helper (NMSettings *self,
 		return;
 	}
 
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		g_dbus_method_invocation_return_error_literal (context,
 		                                               NM_SETTINGS_ERROR,
@@ -2918,7 +2918,7 @@ impl_settings_get_connection_by_uuid (NMDBusObject *obj,
 		goto error;
 	}
 
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 	if (!subject) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,

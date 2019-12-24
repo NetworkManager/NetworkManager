@@ -14,7 +14,7 @@
 #include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
 #include "c-list/src/c-list.h"
@@ -709,7 +709,8 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	g_return_val_if_fail (nm_auth_subject_is_unix_process (subject), NULL);
+	g_return_val_if_fail (nm_auth_subject_get_subject_type (subject)
+	                      == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS, NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
 
 	dbus_connection = g_dbus_method_invocation_get_connection (context);

@@ -655,18 +655,13 @@ AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT, "$enable_polkit", [The de
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT, "$enable_polkit")
 
 PKG_CHECK_MODULES(POLKIT, [polkit-agent-1 >= 0.97], [have_pk_agent=yes],[have_pk_agent=no])
-AC_ARG_ENABLE(polkit-agent,
-              AS_HELP_STRING([--enable-polkit-agent], [enable polkit agent for clients]),
-              [enable_polkit_agent=${enableval}], [enable_polkit_agent=${have_pk_agent}])
-if (test "${enable_polkit_agent}" = "yes"); then
-	if test x"$have_pk_agent" = x"no"; then
-		AC_MSG_ERROR(Polkit agent is required)
-	fi
-	AC_DEFINE(WITH_POLKIT_AGENT, 1, [Define if you have polkit agent])
-else
-	AC_DEFINE(WITH_POLKIT_AGENT, 0, [Define if you have polkit agent])
+if test x"$have_pk_agent" = x"no"; then
+	AC_MSG_ERROR(Polkit agent is required)
 fi
-AM_CONDITIONAL(WITH_POLKIT_AGENT, test "${enable_polkit_agent}" = "yes")
+POLKIT_PACKAGE_PREFIX=`$PKG_CONFIG --variable=prefix polkit-agent-1`
+AC_DEFINE_UNQUOTED([POLKIT_PACKAGE_PREFIX],
+                   ["$POLKIT_PACKAGE_PREFIX"],
+                   [polkit-agent package prefix])
 
 AC_ARG_ENABLE(modify-system, AS_HELP_STRING([--enable-modify-system], [Allow users to modify system connections]))
 if test "${enable_modify_system}" = "yes"; then
@@ -1323,7 +1318,6 @@ if test "${enable_modify_system}" = "yes"; then
 else
 	echo "  policykit: main.auth-polkit=${enable_polkit} (restrictive modify.system)"
 fi
-echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
 echo "  systemd-journald: $have_systemd_journal (default: logging.backend=${nm_config_logging_backend_default})"
 echo "  hostname persist: ${hostname_persist}"

@@ -17,14 +17,13 @@
 
 #include <stdlib.h>
 
-#include "nm-dbus-manager.h"
-
 enum {
 	PROP_0,
 	PROP_SUBJECT_TYPE,
 	PROP_UNIX_PROCESS_DBUS_SENDER,
 	PROP_UNIX_PROCESS_PID,
 	PROP_UNIX_PROCESS_UID,
+	PROP_UNIX_SESSION_ID,
 
 	PROP_LAST,
 };
@@ -37,6 +36,10 @@ typedef struct {
 		guint64 start_time;
 		char *dbus_sender;
 	} unix_process;
+
+	struct {
+		char *id;
+	} unix_session;
 } NMAuthSubjectPrivate;
 
 struct _NMAuthSubject {
@@ -78,6 +81,10 @@ nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len)
 	case NM_AUTH_SUBJECT_TYPE_INTERNAL:
 		g_strlcpy (buf, "internal", buf_len);
 		break;
+	case NM_AUTH_SUBJECT_TYPE_UNIX_SESSION:
+		g_snprintf (buf, buf_len, "unix-session[id=%s]",
+		            priv->unix_session.id);
+		break;
 	default:
 		g_strlcpy (buf, "invalid", buf_len);
 		break;
@@ -87,23 +94,32 @@ nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len)
 
 /* returns a floating variant */
 GVariant *
-nm_auth_subject_unix_process_to_polkit_gvariant (NMAuthSubject *self)
+nm_auth_subject_unix_to_polkit_gvariant (NMAuthSubject *self)
 {
 	GVariantBuilder builder;
-	GVariant *dict;
-	GVariant *ret;
-	CHECK_SUBJECT_TYPED (self, NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS, NULL);
+	CHECK_SUBJECT (self, NULL);
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	g_variant_builder_add (&builder, "{sv}", "pid",
-	                       g_variant_new_uint32 (priv->unix_process.pid));
-	g_variant_builder_add (&builder, "{sv}", "start-time",
-	                       g_variant_new_uint64 (priv->unix_process.start_time));
-	g_variant_builder_add (&builder, "{sv}", "uid",
-	                       g_variant_new_int32 (priv->unix_process.uid));
-	dict = g_variant_builder_end (&builder);
-	ret = g_variant_new ("(s@a{sv})", "unix-process", dict);
-	return ret;
+	switch (priv->subject_type) {
+
+	case NM_AUTH_SUBJECT_TYPE_UNIX_SESSION:
+		g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+		g_variant_builder_add (&builder, "{sv}", "session-id",
+		                       g_variant_new_string (priv->unix_session.id));
+		return g_variant_new ("(sa{sv})", "unix-session", &builder);
+
+	case NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS:
+		g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+		g_variant_builder_add (&builder, "{sv}", "pid",
+		                       g_variant_new_uint32 (priv->unix_process.pid));
+		g_variant_builder_add (&builder, "{sv}", "start-time",
+		                       g_variant_new_uint64 (priv->unix_process.start_time));
+		g_variant_builder_add (&builder, "{sv}", "uid",
+		                       g_variant_new_int32 (priv->unix_process.uid));
+		return g_variant_new ("(sa{sv})", "unix-process", &builder);
+
+	default:
+		g_return_val_if_reached (NULL);
+	}
 }
 
 NMAuthSubjectType
@@ -112,18 +128,6 @@ nm_auth_subject_get_subject_type (NMAuthSubject *subject)
 	CHECK_SUBJECT (subject, NM_AUTH_SUBJECT_TYPE_INVALID);
 
 	return priv->subject_type;
-}
-
-gboolean
-nm_auth_subject_is_internal (NMAuthSubject *subject)
-{
-	return nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL;
-}
-
-gboolean
-nm_auth_subject_is_unix_process (NMAuthSubject *subject)
-{
-	return nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS;
 }
 
 gulong
@@ -150,75 +154,15 @@ nm_auth_subject_get_unix_process_dbus_sender (NMAuthSubject *subject)
 	return priv->unix_process.dbus_sender;
 }
 
+const char *
+nm_auth_subject_get_unix_session_id (NMAuthSubject *subject)
+{
+	CHECK_SUBJECT_TYPED (subject, NM_AUTH_SUBJECT_TYPE_UNIX_SESSION, NULL);
+
+	return priv->unix_session.id;
+}
+
 /*****************************************************************************/
-
-static NMAuthSubject *
-_new_unix_process (GDBusMethodInvocation *context,
-                   GDBusConnection *connection,
-                   GDBusMessage *message)
-{
-	NMAuthSubject *self;
-	const char *dbus_sender = NULL;
-	gulong uid = 0;
-	gulong pid = 0;
-	gboolean success;
-
-	g_return_val_if_fail (context || (connection && message), NULL);
-
-	if (context) {
-		success = nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
-		                                           context,
-		                                           &dbus_sender,
-		                                           &uid,
-		                                           &pid);
-	} else {
-		nm_assert (message);
-		success = nm_dbus_manager_get_caller_info_from_message (nm_dbus_manager_get (),
-		                                                        connection,
-		                                                        message,
-		                                                        &dbus_sender,
-		                                                        &uid,
-		                                                        &pid);
-	}
-
-	if (!success)
-		return NULL;
-
-	g_return_val_if_fail (dbus_sender && *dbus_sender, NULL);
-	/* polkit glib library stores uid and pid as int. There might be some
-	 * pitfalls if the id ever happens to be larger then that. Just assert against
-	 * it here. */
-	g_return_val_if_fail (uid <= MIN (G_MAXINT, G_MAXINT32), NULL);
-	g_return_val_if_fail (pid > 0 && pid <= MIN (G_MAXINT, G_MAXINT32), NULL);
-
-	self = NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
-	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
-	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_DBUS_SENDER, dbus_sender,
-	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_PID, (gulong) pid,
-	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_UID, (gulong) uid,
-	                                      NULL));
-
-	if (NM_AUTH_SUBJECT_GET_PRIVATE (self)->subject_type != NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
-		/* this most likely happened because the process is gone (start_time==0).
-		 * Either that is not assert-worthy, or constructed() already asserted.
-		 * Just return NULL. */
-		g_clear_object (&self);
-	}
-	return self;
-}
-
-NMAuthSubject *
-nm_auth_subject_new_unix_process_from_context (GDBusMethodInvocation *context)
-{
-	return _new_unix_process (context, NULL, NULL);
-}
-
-NMAuthSubject *
-nm_auth_subject_new_unix_process_from_message (GDBusConnection *connection,
-                                               GDBusMessage *message)
-{
-	return _new_unix_process (NULL, connection, message);
-}
 
 /**
  * nm_auth_subject_new_internal():
@@ -231,8 +175,55 @@ NMAuthSubject *
 nm_auth_subject_new_internal (void)
 {
 	return NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
-	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL,
+                                          NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL,
+                                          NULL));
+}
+
+/**
+ * nm_auth_subject_new_unix_session():
+ *
+ * Creates a new auth subject representing a given unix session.
+ *
+ * Returns: the new #NMAuthSubject
+ */
+NMAuthSubject *
+nm_auth_subject_new_unix_session (const char *session_id)
+{
+	return NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
+	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_UNIX_SESSION,
+	                                      NM_AUTH_SUBJECT_UNIX_SESSION_ID, session_id,
 	                                      NULL));
+}
+
+/**
+ * nm_auth_subject_new_unix_process():
+ *
+ * Creates a new auth subject representing a given unix process.
+ *
+ * Returns: the new #NMAuthSubject
+ */
+NMAuthSubject *
+nm_auth_subject_new_unix_process (const char *dbus_sender, gulong pid, gulong uid)
+{
+	return NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
+	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_DBUS_SENDER, dbus_sender,
+	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_PID, pid,
+	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_UID, uid,
+	                                      NULL));
+}
+
+/**
+ * nm_auth_subject_new_unix_process_self():
+ *
+ * Creates a new auth subject representing the current executing process.
+ *
+ * Returns: the new #NMAuthSubject
+ */
+NMAuthSubject *
+nm_auth_subject_new_unix_process_self (void)
+{
+	return nm_auth_subject_new_unix_process (NULL, getpid(), getuid());
 }
 
 /*****************************************************************************/
@@ -255,6 +246,9 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 	case PROP_UNIX_PROCESS_UID:
 		g_value_set_ulong (value, priv->unix_process.uid);
 		break;
+	case PROP_UNIX_SESSION_ID:
+		g_value_set_string (value, priv->unix_session.id);
+		break;
 	default:
 		 G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		 break;
@@ -274,7 +268,10 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 	case PROP_SUBJECT_TYPE:
 		/* construct-only */
 		i = g_value_get_int (value);
-		g_return_if_fail (NM_IN_SET (i, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS));
+		g_return_if_fail (NM_IN_SET (i,
+		                             (int) NM_AUTH_SUBJECT_TYPE_INTERNAL,
+		                             (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+		                             (int) NM_AUTH_SUBJECT_TYPE_UNIX_SESSION));
 		subject_type = i;
 		priv->subject_type |= subject_type;
 		g_return_if_fail (priv->subject_type == subject_type);
@@ -303,6 +300,14 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 			priv->unix_process.uid = id;
 		}
 		break;
+	case PROP_UNIX_SESSION_ID:
+		/* construct-only */
+		if ((str = g_value_get_string (value))) {
+			priv->subject_type |= NM_AUTH_SUBJECT_TYPE_UNIX_SESSION;
+			g_return_if_fail (priv->subject_type == NM_AUTH_SUBJECT_TYPE_UNIX_SESSION);
+			priv->unix_session.id = g_strdup (str);
+		}
+		break;
 	default:
 		 G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		 break;
@@ -317,7 +322,9 @@ _clear_private (NMAuthSubject *self)
 	priv->subject_type = NM_AUTH_SUBJECT_TYPE_INVALID;
 	priv->unix_process.pid = G_MAXULONG;
 	priv->unix_process.uid = G_MAXULONG;
-	g_clear_pointer (&priv->unix_process.dbus_sender, g_free);
+	nm_clear_g_free (&priv->unix_process.dbus_sender);
+
+	nm_clear_g_free (&priv->unix_session.id);
 }
 
 static void
@@ -349,8 +356,6 @@ constructed (GObject *object)
 			 * Don't bother and require the user id as parameter. */
 			break;
 		}
-		if (!priv->unix_process.dbus_sender || !*priv->unix_process.dbus_sender)
-			break;
 
 		priv->unix_process.start_time = nm_utils_get_start_time_for_pid (priv->unix_process.pid, NULL, NULL);
 
@@ -368,6 +373,8 @@ constructed (GObject *object)
 			 * The only combination that would fail here, is when NM is able to read the
 			 * start-time, but polkit is not. */
 		}
+		return;
+	case NM_AUTH_SUBJECT_TYPE_UNIX_SESSION:
 		return;
 	default:
 		break;
@@ -399,7 +406,7 @@ nm_auth_subject_class_init (NMAuthSubjectClass *config_class)
 	    (object_class, PROP_SUBJECT_TYPE,
 	     g_param_spec_int (NM_AUTH_SUBJECT_SUBJECT_TYPE, "", "",
 	                       NM_AUTH_SUBJECT_TYPE_INVALID,
-	                       NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                       NM_AUTH_SUBJECT_TYPE_UNIX_SESSION,
 	                       NM_AUTH_SUBJECT_TYPE_INVALID,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT_ONLY |
@@ -429,4 +436,11 @@ nm_auth_subject_class_init (NMAuthSubjectClass *config_class)
 	                          G_PARAM_CONSTRUCT_ONLY |
 	                          G_PARAM_STATIC_STRINGS));
 
+	g_object_class_install_property
+	     (object_class, PROP_UNIX_SESSION_ID,
+	      g_param_spec_string (NM_AUTH_SUBJECT_UNIX_SESSION_ID, "", "",
+	                           NULL,
+	                           G_PARAM_READWRITE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
 }

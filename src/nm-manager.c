@@ -2437,7 +2437,7 @@ device_auth_request_cb (NMDevice *device,
 	char *permission_dup;
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -4514,7 +4514,7 @@ unmanaged_to_disconnected (NMDevice *device)
 static NMActivationStateFlags
 _activation_bind_lifetime_to_profile_visibility (NMAuthSubject *subject)
 {
-	if (   nm_auth_subject_is_internal (subject)
+	if (   nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL
 	    || nm_auth_subject_get_unix_process_uid (subject) == 0) {
 		/* internal requests and requests from root are always unbound. */
 		return NM_ACTIVATION_STATE_FLAG_NONE;
@@ -5098,8 +5098,10 @@ nm_manager_activate_connection (NMManager *self,
 		if (   sett_conn == nm_active_connection_get_settings_connection (active)
 		    && nm_streq0 (nm_active_connection_get_specific_object (active), specific_object)
 		    && (!device || nm_active_connection_get_device (active) == device)
-		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
-		    && nm_auth_subject_is_internal (subject)
+		    && nm_auth_subject_get_subject_type (nm_active_connection_get_subject (active))
+		    == NM_AUTH_SUBJECT_TYPE_INTERNAL
+		    && nm_auth_subject_get_subject_type (subject)
+		    == NM_AUTH_SUBJECT_TYPE_INTERNAL
 		    && nm_active_connection_get_activation_reason (active) == activation_reason)
 			return active;
 	}
@@ -5174,7 +5176,7 @@ validate_activation_request (NMManager *self,
 		connection = nm_settings_connection_get_connection (sett_conn);
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
@@ -5824,7 +5826,7 @@ impl_manager_deactivate_connection (NMDBusObject *obj,
 	}
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 	if (!subject) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -6108,7 +6110,7 @@ impl_manager_sleep (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(b)", &do_sleep);
 
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 
 	if (priv->sleeping == do_sleep) {
 		error = g_error_new (NM_MANAGER_ERROR,
@@ -6935,7 +6937,7 @@ nm_manager_dbus_set_property_handle (NMDBusObject *obj,
 	gs_unref_object NMAuthSubject *subject = NULL;
 	DBusSetPropertyHandle *handle_data;
 
-	subject = nm_auth_subject_new_unix_process_from_context (invocation);
+	subject = nm_dbus_manager_new_auth_subject_from_context (invocation);
 	if (!subject) {
 		error_message = NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN;
 		goto err;

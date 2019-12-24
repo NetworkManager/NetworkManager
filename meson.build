@@ -494,11 +494,12 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_def
 
 enable_modify_system = get_option('modify_system')
 
-enable_polkit_agent = get_option('polkit_agent')
-if enable_polkit_agent
-  polkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.97')
+polkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.97', required : false)
+if polkit_agent_dep.found()
+	config_h.set_quoted('POLKIT_PACKAGE_PREFIX', polkit_agent_dep.get_pkgconfig_variable('prefix'))
+else
+	config_h.set_quoted('POLKIT_PACKAGE_PREFIX', '/usr')
 endif
-config_h.set10('WITH_POLKIT_AGENT', enable_polkit_agent)
 
 
 crypto = get_option('crypto')
@@ -971,7 +972,6 @@ if enable_polkit
   output += ' modify.system)'
 endif
 output += '\n'
-output += '  polkit agent: ' + enable_polkit_agent.to_string() + '\n'
 output += '  selinux: ' + enable_selinux.to_string() + '\n'
 output += '  systemd-journald: ' + enable_systemd_journal.to_string() + ' (default: logging.backend=' + config_logging_backend_default + ')\n'
 output += '  hostname persist: ' + hostname_persist + '\n'

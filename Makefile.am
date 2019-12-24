@@ -476,6 +476,8 @@ shared_nm_libnm_core_intern_libnm_libnm_core_intern_la_SOURCES = \
 	shared/nm-libnm-core-intern/nm-ethtool-utils.h \
 	shared/nm-libnm-core-intern/nm-libnm-core-utils.c \
 	shared/nm-libnm-core-intern/nm-libnm-core-utils.h \
+	shared/nm-libnm-core-intern/nm-auth-subject.c \
+	shared/nm-libnm-core-intern/nm-auth-subject.h \
 	$(NULL)
 
 shared_nm_libnm_core_intern_libnm_libnm_core_intern_la_LDFLAGS = \
@@ -2244,8 +2246,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-proxy-config.h \
 	src/nm-auth-manager.c \
 	src/nm-auth-manager.h \
-	src/nm-auth-subject.c \
-	src/nm-auth-subject.h \
 	src/nm-auth-utils.c \
 	src/nm-auth-utils.h \
 	src/nm-manager.c \
@@ -4255,6 +4255,8 @@ clients_common_libnmc_base_la_SOURCES = \
 	clients/common/nm-vpn-helpers.h \
 	clients/common/nm-client-utils.c \
 	clients/common/nm-client-utils.h \
+	clients/common/nm-polkit-listener.c \
+	clients/common/nm-polkit-listener.h \
 	$(NULL)
 
 EXTRA_DIST += \
@@ -4445,14 +4447,6 @@ clients_cli_nmcli_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
-
-if WITH_POLKIT_AGENT
-clients_cli_nmcli_CPPFLAGS += $(POLKIT_CFLAGS)
-clients_cli_nmcli_SOURCES += \
-	clients/common/nm-polkit-listener.c \
-	clients/common/nm-polkit-listener.h
-clients_cli_nmcli_LDADD += $(POLKIT_LIBS)
-endif
 
 clients_cli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \

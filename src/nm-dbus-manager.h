@@ -88,4 +88,9 @@ void nm_dbus_manager_private_server_register (NMDBusManager *self,
                                               const char *path,
                                               const char *tag);
 
+NMAuthSubject *nm_dbus_manager_new_auth_subject_from_context (GDBusMethodInvocation *context);
+
+NMAuthSubject *nm_dbus_manager_new_auth_subject_from_message (GDBusConnection *connection,
+                                                              GDBusMessage *message);
+
 #endif /* __NM_DBUS_MANAGER_H__ */

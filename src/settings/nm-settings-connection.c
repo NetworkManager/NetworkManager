@@ -18,12 +18,12 @@
 #include "nm-session-monitor.h"
 #include "nm-auth-manager.h"
 #include "nm-auth-utils.h"
-#include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-audit-manager.h"
 #include "nm-settings.h"
+#include "nm-dbus-manager.h"
 #include "settings/plugins/keyfile/nms-keyfile-storage.h"
 
 #define AUTOCONNECT_RETRIES_UNSET        -2
@@ -1249,7 +1249,7 @@ _new_auth_subject (GDBusMethodInvocation *context, GError **error)
 {
 	NMAuthSubject *subject;
 
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,

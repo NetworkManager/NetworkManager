@@ -19,7 +19,7 @@
 #include "devices/nm-device.h"
 #include "nm-active-connection.h"
 #include "settings/nm-settings-connection.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 
 typedef struct {
 	char *table;

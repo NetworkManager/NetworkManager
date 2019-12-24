@@ -6,7 +6,7 @@
 #ifndef NM_AUTH_MANAGER_H
 #define NM_AUTH_MANAGER_H
 
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-config-data.h"
 
 /*****************************************************************************/

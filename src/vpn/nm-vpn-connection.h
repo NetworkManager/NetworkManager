@@ -9,7 +9,7 @@
 
 #include "nm-vpn-dbus-interface.h"
 #include "devices/nm-device.h"
-#include "nm-auth-subject.h"
+#include "nm-libnm-core-intern/nm-auth-subject.h"
 #include "nm-active-connection.h"
 #include "nm-vpn-plugin-info.h"
 
