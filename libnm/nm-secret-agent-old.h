@@ -127,9 +127,12 @@ typedef struct {
 	/* Called when the subclass should retrieve and return secrets.  Subclass
 	 * must copy or reference any arguments it may require after returning from
 	 * this method, as the arguments will freed (except for 'self', 'callback',
-	 * and 'user_data' of course).  If the request is canceled, the callback
-	 * should still be called, but with the
-	 * NM_SECRET_AGENT_OLD_ERROR_AGENT_CANCELED error.
+	 * and 'user_data' of course).
+	 *
+	 * Before version 1.24, if the request is canceled, the callback
+	 * should still be called, but with the NM_SECRET_AGENT_ERROR_AGENT_CANCELED
+	 * error. Since 1.24, invoking the callback has no effect during cancellation
+	 * and may be omitted.
 	 */
 	void (*get_secrets) (NMSecretAgentOld *self,
 	                     NMConnection *connection,
@@ -141,10 +144,12 @@ typedef struct {
 	                     gpointer user_data);
 
 	/* Called when the subclass should cancel an outstanding request to
-	 * get secrets for a given connection.  Canceling the request MUST
-	 * call the callback that was passed along with the initial get_secrets
-	 * call, sending the NM_SECRET_AGENT_OLD_ERROR/
-	 * NM_SECRET_AGENT_OLD_ERROR_AGENT_CANCELED error to that callback.
+	 * get secrets for a given connection.
+	 *
+	 * Before version 1.24, canceling the request MUST call the callback that was
+	 * passed along with the initial get_secrets call, sending the NM_SECRET_AGENT_ERROR/
+	 * NM_SECRET_AGENT_ERROR_AGENT_CANCELED error to that callback. Since 1.24,
+	 * the get_secrets callback will be ignored during cancellation and may be omitted.
 	 */
 	void (*cancel_get_secrets) (NMSecretAgentOld *self,
 	                            const char *connection_path,
@@ -186,9 +191,20 @@ GDBusConnection *nm_secret_agent_old_get_dbus_connection (NMSecretAgentOld *self
 NM_AVAILABLE_IN_1_24
 GMainContext *nm_secret_agent_old_get_main_context (NMSecretAgentOld *self);
 
-gboolean nm_secret_agent_old_register        (NMSecretAgentOld *self,
-                                              GCancellable *cancellable,
-                                              GError **error);
+NM_AVAILABLE_IN_1_24
+GObject *nm_secret_agent_old_get_context_busy_watcher (NMSecretAgentOld *self);
+
+NM_AVAILABLE_IN_1_24
+const char *nm_secret_agent_old_get_dbus_name_owner (NMSecretAgentOld *self);
+
+gboolean nm_secret_agent_old_get_registered (NMSecretAgentOld *self);
+
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_24
+void nm_secret_agent_old_enable (NMSecretAgentOld *self,
+                                 gboolean enable);
+
 void     nm_secret_agent_old_register_async  (NMSecretAgentOld *self,
                                               GCancellable *cancellable,
                                               GAsyncReadyCallback callback,
@@ -197,18 +213,33 @@ gboolean nm_secret_agent_old_register_finish (NMSecretAgentOld *self,
                                               GAsyncResult *result,
                                               GError **error);
 
+NM_AVAILABLE_IN_1_24
+void nm_secret_agent_old_destroy (NMSecretAgentOld *self);
+
+/*****************************************************************************/
+
+NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
+gboolean nm_secret_agent_old_register        (NMSecretAgentOld *self,
+                                              GCancellable *cancellable,
+                                              GError **error);
+
+NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
 gboolean nm_secret_agent_old_unregister        (NMSecretAgentOld *self,
                                                 GCancellable *cancellable,
                                                 GError **error);
+
+NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
 void     nm_secret_agent_old_unregister_async  (NMSecretAgentOld *self,
                                                 GCancellable *cancellable,
                                                 GAsyncReadyCallback callback,
                                                 gpointer user_data);
+
+NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
 gboolean nm_secret_agent_old_unregister_finish (NMSecretAgentOld *self,
                                                 GAsyncResult *result,
                                                 GError **error);
 
-gboolean nm_secret_agent_old_get_registered (NMSecretAgentOld *self);
+/*****************************************************************************/
 
 void nm_secret_agent_old_get_secrets (NMSecretAgentOld *self,
                                       NMConnection *connection,

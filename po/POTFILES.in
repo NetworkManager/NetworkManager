@@ -134,6 +134,7 @@ libnm/nm-device-wpan.c
 libnm/nm-device.c
 libnm/nm-object.c
 libnm/nm-remote-connection.c
+libnm/nm-secret-agent-old.c
 libnm/nm-vpn-plugin-old.c
 libnm/nm-vpn-service-plugin.c
 data/org.freedesktop.NetworkManager.policy.in.in
