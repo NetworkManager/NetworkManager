@@ -1,3 +1,19 @@
+===============================================
+NetworkManager-1.22.2
+Overview of changes since NetworkManager-1.22.0
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix multiple issues in the internal DHCP client, including wrong
+  parsing of search domains and classless routes options, and failures
+  in obtaining and renewing the lease with certain server
+  configurations.
+* Export NM_CAPABILITY_OVS capability on D-Bus and in libnm to
+  indicate that the OVS plugin is loaded.
+* Fix libnm annotations for nm_sriov_vf_get_vlan_ids() to allow the
+  usage of the function through GObject introspection.
+
 =============================================
 NetworkManager-1.22
 Overview of changes since NetworkManager-1.20
