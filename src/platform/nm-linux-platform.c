@@ -3937,6 +3937,7 @@ _nl_msg_new_address (int nlmsg_type,
 
 	if (   family == AF_INET
 	    && nlmsg_type != RTM_DELADDR
+	    && plen < 31 /* RFC 3021 */
 	    && address
 	    && *((in_addr_t *) address) != 0) {
 		in_addr_t broadcast;
