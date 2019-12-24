@@ -44,24 +44,24 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	gboolean noauth;
-	gboolean refuse_eap;
-	gboolean refuse_pap;
-	gboolean refuse_chap;
-	gboolean refuse_mschap;
-	gboolean refuse_mschapv2;
-	gboolean nobsdcomp;
-	gboolean nodeflate;
-	gboolean no_vj_comp;
-	gboolean require_mppe;
-	gboolean require_mppe_128;
-	gboolean mppe_stateful;
-	gboolean crtscts;
 	guint32 baud;
 	guint32 mru;
 	guint32 mtu;
 	guint32 lcp_echo_failure;
 	guint32 lcp_echo_interval;
+	bool noauth:1;
+	bool refuse_eap:1;
+	bool refuse_pap:1;
+	bool refuse_chap:1;
+	bool refuse_mschap:1;
+	bool refuse_mschapv2:1;
+	bool nobsdcomp:1;
+	bool nodeflate:1;
+	bool no_vj_comp:1;
+	bool require_mppe:1;
+	bool require_mppe_128:1;
+	bool mppe_stateful:1;
+	bool crtscts:1;
 } NMSettingPppPrivate;
 
 G_DEFINE_TYPE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING)
@@ -495,8 +495,11 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_ppp_init (NMSettingPpp *setting)
+nm_setting_ppp_init (NMSettingPpp *self)
 {
+	NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (self);
+
+	priv->noauth = TRUE;
 }
 
 /**
@@ -536,7 +539,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_NOAUTH, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -548,7 +550,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_EAP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -560,7 +561,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_PAP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -572,7 +572,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_CHAP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -584,7 +583,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -596,7 +594,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAPV2, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -608,7 +605,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_NOBSDCOMP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_FUZZY_IGNORE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -621,7 +617,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_NODEFLATE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_FUZZY_IGNORE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -634,7 +629,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_NO_VJ_COMP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_FUZZY_IGNORE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -650,7 +644,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -663,7 +656,7 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	obj_properties[PROP_REQUIRE_MPPE_128] =
 	    g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPE_128, "", "",
 	                          FALSE,
-	                          G_PARAM_READWRITE  | G_PARAM_CONSTRUCT |
+	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -676,7 +669,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_MPPE_STATEFUL, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -690,7 +682,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_boolean (NM_SETTING_PPP_CRTSCTS, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -704,7 +695,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_uint (NM_SETTING_PPP_BAUD, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -719,7 +709,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_uint (NM_SETTING_PPP_MRU, "", "",
 	                       0, 16384, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -732,7 +721,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_uint (NM_SETTING_PPP_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -748,7 +736,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_uint (NM_SETTING_PPP_LCP_ECHO_FAILURE, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -764,7 +751,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	    g_param_spec_uint (NM_SETTING_PPP_LCP_ECHO_INTERVAL, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 

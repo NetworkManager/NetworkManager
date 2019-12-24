@@ -34,10 +34,10 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridgePort,
 );
 
 typedef struct {
+	GPtrArray *vlans;
 	guint16 priority;
 	guint16 path_cost;
-	gboolean hairpin_mode;
-	GPtrArray *vlans;
+	bool hairpin_mode:1;
 } NMSettingBridgePortPrivate;
 
 G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
@@ -439,6 +439,9 @@ nm_setting_bridge_port_init (NMSettingBridgePort *setting)
 	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (setting);
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
+
+	priv->priority = NM_BR_PORT_DEF_PRIORITY;
+	priv->path_cost = NM_BR_PORT_DEF_PATH_COST;
 }
 
 /**
@@ -497,7 +500,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
 	                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -517,9 +519,8 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 */
 	obj_properties[PROP_PATH_COST] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
-	                       0, NM_BR_PORT_MAX_PATH_COST, 100,
+	                       0, NM_BR_PORT_MAX_PATH_COST, NM_BR_PORT_DEF_PATH_COST,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**

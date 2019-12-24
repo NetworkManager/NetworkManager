@@ -31,8 +31,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	GBytes *ssid;
-	guint32 channel;
 	char *dhcp_anycast_addr;
+	guint32 channel;
 } NMSettingOlpcMeshPrivate;
 
 G_DEFINE_TYPE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
@@ -234,7 +234,6 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	    g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 

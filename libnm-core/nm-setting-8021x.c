@@ -135,45 +135,45 @@ typedef struct {
 	char *pac_file;
 	GBytes *ca_cert;
 	char *ca_cert_password;
-	NMSettingSecretFlags ca_cert_password_flags;
 	char *ca_path;
 	char *subject_match;
 	GSList *altsubject_matches;
 	char *domain_suffix_match;
 	GBytes *client_cert;
 	char *client_cert_password;
-	NMSettingSecretFlags client_cert_password_flags;
 	char *phase1_peapver;
 	char *phase1_peaplabel;
 	char *phase1_fast_provisioning;
-	NMSetting8021xAuthFlags phase1_auth_flags;
 	char *phase2_auth;
 	char *phase2_autheap;
 	GBytes *phase2_ca_cert;
 	char *phase2_ca_cert_password;
-	NMSettingSecretFlags phase2_ca_cert_password_flags;
 	char *phase2_ca_path;
 	char *phase2_subject_match;
 	GSList *phase2_altsubject_matches;
 	char *phase2_domain_suffix_match;
 	GBytes *phase2_client_cert;
 	char *phase2_client_cert_password;
-	NMSettingSecretFlags phase2_client_cert_password_flags;
 	char *password;
-	NMSettingSecretFlags password_flags;
 	GBytes *password_raw;
-	NMSettingSecretFlags password_raw_flags;
 	char *pin;
-	NMSettingSecretFlags pin_flags;
 	GBytes *private_key;
 	char *private_key_password;
-	NMSettingSecretFlags private_key_password_flags;
 	GBytes *phase2_private_key;
 	char *phase2_private_key_password;
-	NMSettingSecretFlags phase2_private_key_password_flags;
-	gboolean system_ca_certs;
 	int auth_timeout;
-	gboolean optional;
+	NMSetting8021xAuthFlags phase1_auth_flags;
+	NMSettingSecretFlags ca_cert_password_flags;
+	NMSettingSecretFlags client_cert_password_flags;
+	NMSettingSecretFlags phase2_ca_cert_password_flags;
+	NMSettingSecretFlags phase2_client_cert_password_flags;
+	NMSettingSecretFlags password_flags;
+	NMSettingSecretFlags password_raw_flags;
+	NMSettingSecretFlags pin_flags;
+	NMSettingSecretFlags private_key_password_flags;
+	NMSettingSecretFlags phase2_private_key_password_flags;
+	bool optional:1;
+	bool system_ca_certs:1;
 } NMSetting8021xPrivate;
 
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
@@ -3828,7 +3828,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	obj_properties[PROP_PHASE1_AUTH_FLAGS] =
 	    g_param_spec_uint (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, "", "",
 	                       0, G_MAXUINT32, NM_SETTING_802_1X_AUTH_FLAGS_NONE,
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -4401,7 +4400,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	    g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**

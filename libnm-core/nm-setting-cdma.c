@@ -34,8 +34,8 @@ typedef struct {
 	char *number; /* For dialing, duh */
 	char *username;
 	char *password;
-	NMSettingSecretFlags password_flags;
 	guint32 mtu;
+	NMSettingSecretFlags password_flags;
 } NMSettingCdmaPrivate;
 
 G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
@@ -350,7 +350,6 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	    g_param_spec_uint (NM_SETTING_CDMA_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 

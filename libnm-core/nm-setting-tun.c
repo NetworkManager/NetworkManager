@@ -34,12 +34,12 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMSettingTunMode mode;
 	char *owner;
 	char *group;
-	gboolean pi;
-	gboolean vnet_hdr;
-	gboolean multi_queue;
+	NMSettingTunMode mode;
+	bool pi:1;
+	bool vnet_hdr:1;
+	bool multi_queue:1;
 } NMSettingTunPrivate;
 
 G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
@@ -248,8 +248,11 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_tun_init (NMSettingTun *setting)
+nm_setting_tun_init (NMSettingTun *self)
 {
+	NMSettingTunPrivate *priv = NM_SETTING_TUN_GET_PRIVATE (self);
+
+	priv->mode = NM_SETTING_TUN_MODE_TUN;
 }
 
 /**
@@ -307,7 +310,6 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	    g_param_spec_uint (NM_SETTING_TUN_MODE, "", "",
 	                       0, G_MAXUINT, NM_SETTING_TUN_MODE_TUN,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 

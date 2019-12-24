@@ -49,27 +49,21 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingDcb,
 );
 
 typedef struct {
-	NMSettingDcbFlags app_fcoe_flags;
-	int               app_fcoe_priority;
 	char *            app_fcoe_mode;
-
-	NMSettingDcbFlags app_iscsi_flags;
-	int               app_iscsi_priority;
-
-	NMSettingDcbFlags app_fip_flags;
-	int               app_fip_priority;
-
-	/* Priority Flow Control */
-	NMSettingDcbFlags pfc_flags;
 	guint             pfc[8];
-
-	/* Priority Groups */
-	NMSettingDcbFlags priority_group_flags;
 	guint             priority_group_id[8];
 	guint             priority_group_bandwidth[8];
 	guint             priority_bandwidth[8];
 	guint             priority_strict[8];
 	guint             priority_traffic_class[8];
+	int               app_fcoe_priority;
+	int               app_iscsi_priority;
+	int               app_fip_priority;
+	NMSettingDcbFlags app_fcoe_flags;
+	NMSettingDcbFlags app_iscsi_flags;
+	NMSettingDcbFlags app_fip_flags;
+	NMSettingDcbFlags pfc_flags;
+	NMSettingDcbFlags priority_group_flags;
 } NMSettingDcbPrivate;
 
 G_DEFINE_TYPE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING)
@@ -872,8 +866,14 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_dcb_init (NMSettingDcb *setting)
+nm_setting_dcb_init (NMSettingDcb *self)
 {
+	NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE (self);
+
+	priv->app_fcoe_mode      = g_strdup (NM_SETTING_DCB_FCOE_MODE_FABRIC);
+	priv->app_fcoe_priority  = -1;
+	priv->app_fip_priority   = -1;
+	priv->app_iscsi_priority = -1;
 }
 
 /**
@@ -954,7 +954,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	    g_param_spec_int (NM_SETTING_DCB_APP_FCOE_PRIORITY, "", "",
 	                      -1, 7, -1,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -975,7 +974,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	    g_param_spec_string (NM_SETTING_DCB_APP_FCOE_MODE, "", "",
 	                         NM_SETTING_DCB_FCOE_MODE_FABRIC,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -1017,7 +1015,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	    g_param_spec_int (NM_SETTING_DCB_APP_ISCSI_PRIORITY, "", "",
 	                      -1, 7, -1,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -1059,7 +1056,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	    g_param_spec_int (NM_SETTING_DCB_APP_FIP_PRIORITY, "", "",
 	                      -1, 7, -1,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**

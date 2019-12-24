@@ -1217,6 +1217,8 @@ static void
 nm_setting_sriov_init (NMSettingSriov *setting)
 {
 	setting->vfs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_sriov_vf_unref);
+
+	setting->autoprobe_drivers = NM_TERNARY_DEFAULT;
 }
 
 /**
@@ -1282,7 +1284,6 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	                       0, G_MAXUINT32, 0,
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -1370,7 +1371,6 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	                       NM_TERNARY_DEFAULT,
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);

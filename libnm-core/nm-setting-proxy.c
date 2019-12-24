@@ -34,10 +34,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMSettingProxyMethod method;
-	gboolean browser_only;
 	char *pac_url;
 	char *pac_script;
+	int method;
+	bool browser_only:1;
 } NMSettingProxyPrivate;
 
 G_DEFINE_TYPE (NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING)
@@ -119,11 +119,8 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE (setting);
-	NMSettingProxyMethod method;
 
-	method = priv->method;
-
-	if (!NM_IN_SET (method,
+	if (!NM_IN_SET (priv->method,
 	                NM_SETTING_PROXY_METHOD_NONE,
 	                NM_SETTING_PROXY_METHOD_AUTO)) {
 		g_set_error (error,
@@ -134,7 +131,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (method != NM_SETTING_PROXY_METHOD_AUTO) {
+	if (priv->method != NM_SETTING_PROXY_METHOD_AUTO) {
 		if (priv->pac_url) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -241,8 +238,9 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_proxy_init (NMSettingProxy *setting)
+nm_setting_proxy_init (NMSettingProxy *self)
 {
+	nm_assert (NM_SETTING_PROXY_GET_PRIVATE (self)->method == NM_SETTING_PROXY_METHOD_NONE);
 }
 
 /**
@@ -306,7 +304,6 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	    g_param_spec_int (NM_SETTING_PROXY_METHOD, "", "",
 	                      G_MININT32, G_MAXINT32, NM_SETTING_PROXY_METHOD_NONE,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**

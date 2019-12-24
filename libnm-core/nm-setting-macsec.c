@@ -42,14 +42,14 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	char *parent;
-	NMSettingMacsecMode mode;
-	bool encrypt:1;
-	bool send_sci:1;
 	char *mka_cak;
-	NMSettingSecretFlags mka_cak_flags;
 	char *mka_ckn;
 	int port;
+	NMSettingMacsecMode mode;
+	NMSettingSecretFlags mka_cak_flags;
 	NMSettingMacsecValidation validation;
+	bool encrypt:1;
+	bool send_sci:1;
 } NMSettingMacsecPrivate;
 
 G_DEFINE_TYPE (NMSettingMacsec, nm_setting_macsec, NM_TYPE_SETTING)
@@ -458,8 +458,15 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_macsec_init (NMSettingMacsec *setting)
+nm_setting_macsec_init (NMSettingMacsec *self)
 {
+	NMSettingMacsecPrivate *priv = NM_SETTING_MACSEC_GET_PRIVATE (self);
+
+	nm_assert (priv->mode == NM_SETTING_MACSEC_MODE_PSK);
+	priv->encrypt    = TRUE;
+	priv->port       = 1;
+	priv->send_sci   = TRUE;
+	priv->validation = NM_SETTING_MACSEC_VALIDATION_STRICT;
 }
 
 /**
@@ -519,7 +526,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_string (NM_SETTING_MACSEC_PARENT, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -535,7 +541,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_int (NM_SETTING_MACSEC_MODE, "", "",
 	                      G_MININT, G_MAXINT, NM_SETTING_MACSEC_MODE_PSK,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      NM_SETTING_PARAM_INFERRABLE |
 	                      G_PARAM_STATIC_STRINGS);
 
@@ -550,7 +555,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_boolean (NM_SETTING_MACSEC_ENCRYPT, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -565,7 +569,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_string (NM_SETTING_MACSEC_MKA_CAK, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_SECRET |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -596,7 +599,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_string (NM_SETTING_MACSEC_MKA_CKN, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -610,7 +612,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_int (NM_SETTING_MACSEC_PORT, "", "",
 	                      1, 65534, 1,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      NM_SETTING_PARAM_INFERRABLE |
 	                      G_PARAM_STATIC_STRINGS);
 
@@ -625,7 +626,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_int (NM_SETTING_MACSEC_VALIDATION, "", "",
 	                      G_MININT, G_MAXINT, NM_SETTING_MACSEC_VALIDATION_STRICT,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      NM_SETTING_PARAM_INFERRABLE |
 	                      G_PARAM_STATIC_STRINGS);
 
@@ -641,7 +641,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	    g_param_spec_boolean (NM_SETTING_MACSEC_SEND_SCI, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);

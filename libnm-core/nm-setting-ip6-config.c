@@ -46,10 +46,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	NMSettingIP6ConfigPrivacy ip6_privacy;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *token;
 	char *dhcp_duid;
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 } NMSettingIP6ConfigPrivate;
 
 G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
@@ -513,6 +513,10 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_setting_ip6_config_init (NMSettingIP6Config *setting)
 {
+	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+
+	priv->ip6_privacy   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	priv->addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY;
 }
 
 /**
@@ -754,7 +758,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	                       NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
 	                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -803,7 +806,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	                      G_MININT, G_MAXINT,
 	                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      G_PARAM_STATIC_STRINGS);
 
 	/**

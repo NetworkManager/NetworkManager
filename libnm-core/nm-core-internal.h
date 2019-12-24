@@ -94,6 +94,7 @@
 #define NM_BR_PORT_DEF_PRIORITY 32
 
 #define NM_BR_PORT_MAX_PATH_COST 65535
+#define NM_BR_PORT_DEF_PATH_COST 100
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only

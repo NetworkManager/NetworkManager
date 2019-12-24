@@ -36,11 +36,11 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingVlan,
 );
 
 typedef struct {
+	GSList *ingress_priority_map;
+	GSList *egress_priority_map;
 	char *parent;
 	guint32 id;
 	guint32 flags;
-	GSList *ingress_priority_map;
-	GSList *egress_priority_map;
 } NMSettingVlanPrivate;
 
 G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)
@@ -791,8 +791,11 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_vlan_init (NMSettingVlan *setting)
+nm_setting_vlan_init (NMSettingVlan *self)
 {
+	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (self);
+
+	priv->flags = NM_VLAN_FLAG_REORDER_HEADERS;
 }
 
 /**
@@ -854,7 +857,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	    g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -874,7 +876,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	    g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
 	                       0, 4095, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -905,7 +906,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	                        NM_TYPE_VLAN_FLAGS,
 	                        NM_VLAN_FLAG_REORDER_HEADERS,
 	                        G_PARAM_READWRITE |
-	                        G_PARAM_CONSTRUCT |
 	                        NM_SETTING_PARAM_INFERRABLE |
 	                        G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override,

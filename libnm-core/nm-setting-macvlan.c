@@ -35,8 +35,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	char *parent;
 	NMSettingMacvlanMode mode;
-	gboolean promiscuous;
-	gboolean tap;
+	bool promiscuous:1;
+	bool tap:1;
 } NMSettingMacvlanPrivate;
 
 G_DEFINE_TYPE (NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING)
@@ -217,8 +217,11 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_macvlan_init (NMSettingMacvlan *setting)
+nm_setting_macvlan_init (NMSettingMacvlan *self)
 {
+	NMSettingMacvlanPrivate *priv = NM_SETTING_MACVLAN_GET_PRIVATE (self);
+
+	priv->promiscuous = TRUE;
 }
 
 /**
@@ -275,7 +278,6 @@ nm_setting_macvlan_class_init (NMSettingMacvlanClass *klass)
 	    g_param_spec_string (NM_SETTING_MACVLAN_PARENT, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -291,7 +293,6 @@ nm_setting_macvlan_class_init (NMSettingMacvlanClass *klass)
 	    g_param_spec_uint (NM_SETTING_MACVLAN_MODE, "", "",
 	                       0, G_MAXUINT, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -306,7 +307,6 @@ nm_setting_macvlan_class_init (NMSettingMacvlanClass *klass)
 	    g_param_spec_boolean (NM_SETTING_MACVLAN_PROMISCUOUS, "", "",
 	                          TRUE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
 
@@ -321,7 +321,6 @@ nm_setting_macvlan_class_init (NMSettingMacvlanClass *klass)
 	    g_param_spec_boolean (NM_SETTING_MACVLAN_TAP, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
 

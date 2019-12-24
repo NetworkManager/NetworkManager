@@ -48,24 +48,24 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWired,
 );
 
 typedef struct {
-	char *port;
-	guint32 speed;
-	char *duplex;
-	gboolean auto_negotiate;
-	char *device_mac_address;
-	char *cloned_mac_address;
-	char *generate_mac_address_mask;
-	GArray *mac_address_blacklist;
-	guint32 mtu;
-	char **s390_subchannels;
-	char *s390_nettype;
 	struct {
 		NMUtilsNamedValue *arr;
 		guint len;
 		guint n_alloc;
 	} s390_options;
-	NMSettingWiredWakeOnLan wol;
+	GArray *mac_address_blacklist;
+	char **s390_subchannels;
+	char *port;
+	char *duplex;
+	char *device_mac_address;
+	char *cloned_mac_address;
+	char *generate_mac_address_mask;
+	char *s390_nettype;
 	char *wol_password;
+	NMSettingWiredWakeOnLan wol;
+	guint32 speed;
+	guint32 mtu;
+	bool auto_negotiate:1;
 } NMSettingWiredPrivate;
 
 G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
@@ -1145,6 +1145,8 @@ nm_setting_wired_init (NMSettingWired *setting)
 	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
 	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
 	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
+
+	priv->wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
 }
 
 /**
@@ -1248,7 +1250,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRED_SPEED, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_STATIC_STRINGS);
 
 	/**
@@ -1304,7 +1305,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	    g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE, "", "",
 	                          FALSE,
 	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override,
 	                              obj_properties[PROP_AUTO_NEGOTIATE],
@@ -1501,7 +1501,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	    g_param_spec_uint (NM_SETTING_WIRED_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -1591,7 +1590,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	obj_properties[PROP_WAKE_ON_LAN] =
 	    g_param_spec_uint (NM_SETTING_WIRED_WAKE_ON_LAN, "", "",
 	                       0, G_MAXUINT32, NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
-	                       G_PARAM_CONSTRUCT |
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 

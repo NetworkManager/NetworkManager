@@ -35,9 +35,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	char *mac_address;
 	char *transport_mode;
-	guint32 mtu;
+	char *parent;
+	char *virtual_iface_name;
 	int p_key;
-	char *parent, *virtual_iface_name;
+	guint32 mtu;
 } NMSettingInfinibandPrivate;
 
 G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
@@ -338,8 +339,11 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_setting_infiniband_init (NMSettingInfiniband *setting)
+nm_setting_infiniband_init (NMSettingInfiniband *self)
 {
+	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (self);
+
+	priv->p_key = -1;
 }
 
 /**
@@ -432,7 +436,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	    g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE |
-	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS);
 
@@ -454,7 +457,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	    g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
@@ -480,7 +482,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	    g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
 	                      -1, 0xFFFF, -1,
 	                      G_PARAM_READWRITE |
-	                      G_PARAM_CONSTRUCT |
 	                      NM_SETTING_PARAM_INFERRABLE |
 	                      G_PARAM_STATIC_STRINGS);
 
@@ -504,7 +505,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	    g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 

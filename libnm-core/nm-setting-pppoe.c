@@ -302,7 +302,6 @@ nm_setting_pppoe_class_init (NMSettingPppoeClass *klass)
 	    g_param_spec_string (NM_SETTING_PPPOE_PARENT, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
-	                         G_PARAM_CONSTRUCT |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
