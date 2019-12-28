@@ -1083,6 +1083,19 @@ managed=1
     <para>
       <variablelist>
         <varlistentry>
+          <term><varname>enabled</varname></term>
+          <listitem><para>Whether connectivity check is enabled.
+          Note that to enable connectivity check, a valid uri must
+          also be configured. The value defaults to true, but since
+          the uri is unset by default, connectivity check may be disabled.
+          The main purpose of this option is to have a single flag
+          to disable connectivity check. Note that this setting can
+          also be set via D-Bus API at runtime. In that case, the value gets
+          stored in <filename>/var/lib/NetworkManager/NetworkManager-intern.conf</filename>
+          file.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>uri</varname></term>
           <listitem><para>The URI of a web page to periodically
           request when connectivity is being checked.  This page
