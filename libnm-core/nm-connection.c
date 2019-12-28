@@ -2261,39 +2261,33 @@ nm_connection_to_dbus_full (NMConnection *connection,
                             NMConnectionSerializationFlags flags,
                             const NMConnectionSerializationOptions *options)
 {
-	NMConnectionPrivate *priv;
 	GVariantBuilder builder;
-	GHashTableIter iter;
-	gpointer data;
-	GVariant *setting_dict, *ret;
+	gboolean any = FALSE;
+	gs_free NMSetting **settings = NULL;
+	guint settings_len;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
-
-	/* Add each setting's hash to the main hash */
-
-	/* FIXME: the order of serialized settings must be stable. */
-
-	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		NMSetting *setting = NM_SETTING (data);
+	settings = nm_connection_get_settings (connection, &settings_len);
+	for (i = 0; i < settings_len; i++) {
+		NMSetting *setting = settings[i];
+		GVariant *setting_dict;
 
 		setting_dict = _nm_setting_to_dbus (setting, connection, flags, options);
-		if (setting_dict)
-			g_variant_builder_add (&builder, "{s@a{sv}}", nm_setting_get_name (setting), setting_dict);
+		if (!setting_dict)
+			continue;
+		if (!any) {
+			any = TRUE;
+			g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
+		}
+		g_variant_builder_add (&builder, "{s@a{sv}}", nm_setting_get_name (setting), setting_dict);
 	}
 
-	ret = g_variant_builder_end (&builder);
+	if (!any)
+		return NULL;
 
-	/* Don't send empty hashes */
-	if (g_variant_n_children (ret) == 0) {
-		g_variant_unref (ret);
-		ret = NULL;
-	}
-
-	return ret;
+	return g_variant_builder_end (&builder);
 }
 
 /**
