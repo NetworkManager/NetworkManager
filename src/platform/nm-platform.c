@@ -1214,6 +1214,10 @@ nm_platform_link_add (NMPlatform *self,
 	            buf[0] = '\0';
 
 	            switch (type) {
+	            case NM_LINK_TYPE_VLAN:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_vlan_to_string ((const NMPlatformLnkVlan *) extra_data, buf_p, buf_len);
+	                break;
 	            case NM_LINK_TYPE_VETH:
 	                nm_sprintf_buf (buf, ", veth-peer \"%s\"", (const char *) extra_data);
 	                break;
@@ -2314,44 +2318,6 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 }
 
 /*****************************************************************************/
-
-/**
- * nm_platform_link_vlan_add:
- * @self: platform instance
- * @name: New interface name
- * @vlanid: VLAN identifier
- * @vlanflags: VLAN flags from libnm
- * @out_link: on success, the link object
- *
- * Create a software VLAN device.
- */
-int
-nm_platform_link_vlan_add (NMPlatform *self,
-                           const char *name,
-                           int parent,
-                           int vlanid,
-                           guint32 vlanflags,
-                           const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (parent >= 0, -NME_BUG);
-	g_return_val_if_fail (vlanid >= 0, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_VLAN, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("link: adding link vlan parent %d vlanid %d vlanflags %x",
-	        parent, vlanid, vlanflags);
-
-	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
 
 /**
  * nm_platform_link_vxlan_add:

@@ -1029,7 +1029,6 @@ typedef struct {
 	                              guint peers_len,
 	                              NMPlatformWireGuardChangeFlags change_flags);
 
-	gboolean (*vlan_add) (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, const NMPlatformLink **out_link);
 	gboolean (*link_vlan_change) (NMPlatform *self,
 	                              int ifindex,
 	                              NMVlanFlags flags_mask,
@@ -1437,6 +1436,30 @@ nm_platform_link_sit_add (NMPlatform *self,
 	return nm_platform_link_add (self, NM_LINK_TYPE_SIT, name, 0, NULL, 0, props, out_link);
 }
 
+static inline int
+nm_platform_link_vlan_add (NMPlatform *self,
+                           const char *name,
+                           int parent,
+                           int vlanid,
+                           guint32 vlanflags,
+                           const NMPlatformLink **out_link)
+{
+	g_return_val_if_fail (parent >= 0, -NME_BUG);
+	g_return_val_if_fail (vlanid >= 0, -NME_BUG);
+
+	return nm_platform_link_add (self,
+	                             NM_LINK_TYPE_VLAN,
+	                             name,
+	                             parent,
+	                             NULL,
+	                             0,
+	                             &((NMPlatformLnkVlan) {
+	                                .id    = vlanid,
+	                                .flags = vlanflags,
+	                             }),
+	                             out_link);
+}
+
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
@@ -1552,12 +1575,6 @@ const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int if
 const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkWireGuard *nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 
-int nm_platform_link_vlan_add (NMPlatform *self,
-                               const char *name,
-                               int parent,
-                               int vlanid,
-                               guint32 vlanflags,
-                               const NMPlatformLink **out_link);
 gboolean nm_platform_link_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_link_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_link_vlan_change (NMPlatform *self,

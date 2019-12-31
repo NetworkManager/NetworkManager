@@ -293,10 +293,21 @@ link_add (NMPlatform *platform,
 	NMPCacheOpsType cache_op;
 	NMPCacheOpsType cache_op_veth = NMP_CACHE_OPS_UNCHANGED;
 	const char *veth_peer = NULL;
+	NMPObject *dev_obj;
+	NMPObject *dev_lnk = NULL;
 
 	device = link_add_pre (platform, name, type, address, address_len);
 
-	g_assert (parent == 0);
+	g_assert (device);
+
+	dev_obj = (NMPObject *) device->obj;
+
+	if (parent > 0)
+		dev_obj->link.parent = parent;
+	else
+		g_assert (parent == 0);
+
+	g_assert ((parent != 0) == NM_IN_SET (type, NM_LINK_TYPE_VLAN));
 
 	switch (type) {
 	case NM_LINK_TYPE_VETH:
@@ -304,10 +315,21 @@ link_add (NMPlatform *platform,
 		g_assert (veth_peer);
 		device_veth = link_add_pre (platform, veth_peer, type, NULL, 0);
 		break;
+	case NM_LINK_TYPE_VLAN: {
+		const NMPlatformLnkVlan *props = extra_data;
+
+		g_assert (props);
+
+		dev_lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, props);
+		break;
+	}
 	default:
 		g_assert (!extra_data);
 		break;
 	}
+
+	if (dev_lnk)
+		dev_obj->_link.netlink.lnk = dev_lnk;
 
 	link_add_prepare (platform, device, (NMPObject *) device->obj);
 	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
@@ -716,45 +738,6 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 	obj_tmp = nmp_object_clone (slave->obj, FALSE);
 	obj_tmp->link.master = 0;
 	link_set_obj (platform, slave, obj_tmp);
-	return TRUE;
-}
-
-struct vlan_add_data {
-	guint32 vlan_flags;
-	int parent;
-	int vlan_id;
-};
-
-static void
-_vlan_add_prepare (NMPlatform *platform,
-                   NMFakePlatformLink *device,
-                   gconstpointer user_data)
-{
-	const struct vlan_add_data *d = user_data;
-	NMPObject *obj_tmp;
-	NMPObject *lnk;
-
-	obj_tmp = (NMPObject *) device->obj;
-
-	lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
-	lnk->lnk_vlan.id = d->vlan_id;
-	lnk->lnk_vlan.flags = d->vlan_flags;
-
-	obj_tmp->link.parent = d->parent;
-	obj_tmp->_link.netlink.lnk = lnk;
-}
-
-static gboolean
-vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags, const NMPlatformLink **out_link)
-{
-	const struct vlan_add_data d = {
-		.parent = parent,
-		.vlan_id = vlan_id,
-		.vlan_flags = vlan_flags,
-	};
-
-	link_add_one (platform, name, NM_LINK_TYPE_VLAN,
-	              _vlan_add_prepare, &d, out_link);
 	return TRUE;
 }
 
@@ -1424,7 +1407,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
 
-	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
 	platform_class->link_vxlan_add = link_vxlan_add;
 

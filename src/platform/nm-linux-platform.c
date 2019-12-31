@@ -3707,6 +3707,26 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 	NLA_PUT_STRING (msg, IFLA_INFO_KIND, kind);
 
 	switch (link_type) {
+	case NM_LINK_TYPE_VLAN: {
+		const NMPlatformLnkVlan *props = extra_data;
+
+		nm_assert (extra_data);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		NLA_PUT_U16 (msg, IFLA_VLAN_ID, props->id);
+
+		{
+			struct ifla_vlan_flags flags = {
+				.flags = props->flags & NM_VLAN_FLAGS_ALL,
+				.mask  = NM_VLAN_FLAGS_ALL,
+			};
+
+			NLA_PUT (msg, IFLA_VLAN_FLAGS, sizeof (flags), &flags);
+		}
+		break;
+	}
 	case NM_LINK_TYPE_VETH: {
 		const char *veth_peer = extra_data;
 		const struct ifinfomsg ifi = { };
@@ -3793,6 +3813,11 @@ _nl_msg_new_link_set_linkinfo_vlan (struct nl_msg *msg,
 	struct nlattr *data;
 	guint i;
 	gboolean has_any_vlan_properties = FALSE;
+
+	G_STATIC_ASSERT (NM_VLAN_FLAG_REORDER_HEADERS == (guint32) VLAN_FLAG_REORDER_HDR);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_GVRP == (guint32) VLAN_FLAG_GVRP);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_LOOSE_BINDING == (guint32) VLAN_FLAG_LOOSE_BINDING);
+	G_STATIC_ASSERT (NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
 
 #define VLAN_XGRESS_PRIO_VALID(from) (((from) & ~(guint32) 0x07) == 0)
 
@@ -7213,46 +7238,6 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-vlan_add (NMPlatform *platform,
-          const char *name,
-          int parent,
-          int vlan_id,
-          guint32 vlan_flags,
-          const NMPlatformLink **out_link)
-{
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	G_STATIC_ASSERT (NM_VLAN_FLAG_REORDER_HEADERS == (guint32) VLAN_FLAG_REORDER_HDR);
-	G_STATIC_ASSERT (NM_VLAN_FLAG_GVRP == (guint32) VLAN_FLAG_GVRP);
-	G_STATIC_ASSERT (NM_VLAN_FLAG_LOOSE_BINDING == (guint32) VLAN_FLAG_LOOSE_BINDING);
-	G_STATIC_ASSERT (NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
-
-	vlan_flags &= (guint32) NM_VLAN_FLAGS_ALL;
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE | NLM_F_EXCL,
-	                          0,
-	                          name);
-	if (!nlmsg)
-		return FALSE;
-
-	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
-
-	if (!_nl_msg_new_link_set_linkinfo_vlan (nlmsg,
-	                                         vlan_id,
-	                                         NM_VLAN_FLAGS_ALL,
-	                                         vlan_flags,
-	                                         NULL,
-	                                         0,
-	                                         NULL,
-	                                         0))
-		return FALSE;
-
-	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VLAN, name, nlmsg, out_link) >= 0);
-nla_put_failure:
-	g_return_val_if_reached (FALSE);
-}
-
-static gboolean
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
                  const NMPlatformLnkIp6Tnl *props,
@@ -9261,7 +9246,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_can_assume = link_can_assume;
 
-	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
 	platform_class->link_wireguard_change = link_wireguard_change;
 	platform_class->link_vxlan_add = link_vxlan_add;
