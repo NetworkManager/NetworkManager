@@ -965,11 +965,11 @@ typedef struct {
 	void (*process_events) (NMPlatform *self);
 
 	int (*link_add) (NMPlatform *self,
-	                 const char *name,
 	                 NMLinkType type,
-	                 const char *veth_peer,
+	                 const char *name,
 	                 const void *address,
 	                 size_t address_len,
+	                 gconstpointer extra_data,
 	                 const NMPlatformLink **out_link);
 	gboolean (*link_delete) (NMPlatform *self, int ifindex);
 	gboolean (*link_refresh) (NMPlatform *self, int ifindex);

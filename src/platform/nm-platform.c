@@ -1150,11 +1150,11 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
 /**
  * nm_platform_link_add:
  * @self: platform instance
- * @name: Interface name
  * @type: Interface type
- * @veth_peer: For veths, the peer name
+ * @name: Interface name
  * @address: (allow-none): set the mac address of the link
  * @address_len: the length of the @address
+ * @extra_data: depending on @type, additional data.
  * @out_link: on success, the link object
  *
  * Add a software interface.  If the interface already exists and is of type
@@ -1169,22 +1169,22 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
  */
 static int
 nm_platform_link_add (NMPlatform *self,
-                      const char *name,
                       NMLinkType type,
-                      const char *veth_peer,
+                      const char *name,
                       const void *address,
                       size_t address_len,
+                      gconstpointer extra_data,
                       const NMPlatformLink **out_link)
 {
 	int r;
 	char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
+	char buf[512];
 
 	_CHECK_SELF (self, klass, -NME_BUG);
 
 	g_return_val_if_fail (name, -NME_BUG);
 	g_return_val_if_fail ((address != NULL) ^ (address_len == 0) , -NME_BUG);
 	g_return_val_if_fail (address_len <= NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
-	g_return_val_if_fail ((!!veth_peer) == (type == NM_LINK_TYPE_VETH), -NME_BUG);
 
 	r = _link_add_check_existing (self, name, type, out_link);
 	if (r < 0)
@@ -1194,16 +1194,27 @@ nm_platform_link_add (NMPlatform *self,
 	        "%s "    /* type */
 	        "\"%s\"" /* name */
 	        "%s%s"   /* address */
-	        "%s%s"   /* veth peer */
+	        "%s"     /* extra_data */
 	        "",
 	        nm_link_type_to_string (type),
 	        name,
 	        address ? ", address: " : "",
 	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
-	        veth_peer ? ", veth-peer: " : "",
-	        veth_peer ?: "");
+	        ({
+	            const char *str = "";
 
-	return klass->link_add (self, name, type, veth_peer, address, address_len, out_link);
+	            switch (type) {
+	            case NM_LINK_TYPE_VETH:
+	                str = nm_sprintf_buf (buf, ", veth-peer \"%s\"", (const char *) extra_data);
+	                break;
+	            default:
+	                break;
+	            }
+
+	            str;
+	        }));
+
+	return klass->link_add (self, type, name, address, address_len, extra_data, out_link);
 }
 
 int
@@ -1212,7 +1223,7 @@ nm_platform_link_veth_add (NMPlatform *self,
                             const char *peer,
                             const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_VETH, peer, NULL, 0, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_VETH, name, NULL, 0, peer, out_link);
 }
 
 /**
@@ -1228,7 +1239,7 @@ nm_platform_link_dummy_add (NMPlatform *self,
                             const char *name,
                             const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, NULL, 0, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_DUMMY, name, NULL, 0, NULL, out_link);
 }
 
 /**
@@ -2256,7 +2267,7 @@ nm_platform_link_wireguard_add (NMPlatform *self,
                                 const char *name,
                                 const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_WIREGUARD, NULL, NULL, 0, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_WIREGUARD, name, NULL, 0, NULL, out_link);
 }
 
 int
@@ -2334,7 +2345,7 @@ nm_platform_link_bridge_add (NMPlatform *self,
                              size_t address_len,
                              const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, NULL, address, address_len, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_BRIDGE, name, address, address_len, NULL, out_link);
 }
 
 /**
@@ -2350,7 +2361,7 @@ nm_platform_link_bond_add (NMPlatform *self,
                            const char *name,
                            const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, NULL, 0, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_BOND, name, NULL, 0, NULL, out_link);
 }
 
 /**
@@ -2366,7 +2377,7 @@ nm_platform_link_team_add (NMPlatform *self,
                            const char *name,
                            const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, NULL, 0, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_TEAM, name, NULL, 0, NULL, out_link);
 }
 
 /**

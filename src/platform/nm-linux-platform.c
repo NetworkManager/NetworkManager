@@ -3689,13 +3689,13 @@ nla_put_failure:
 static gboolean
 _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
                                NMLinkType link_type,
-                               const char *veth_peer)
+                               gconstpointer extra_data)
 {
 	struct nlattr *info;
+	struct nlattr *data = NULL;
 	const char *kind;
 
 	nm_assert (msg);
-	nm_assert (!!veth_peer == (link_type == NM_LINK_TYPE_VETH));
 
 	kind = nm_link_type_to_rtnl_type_string (link_type);
 	if (!kind)
@@ -3706,9 +3706,13 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 
 	NLA_PUT_STRING (msg, IFLA_INFO_KIND, kind);
 
-	if (veth_peer) {
+	switch (link_type) {
+	case NM_LINK_TYPE_VETH: {
+		const char *veth_peer = extra_data;
 		const struct ifinfomsg ifi = { };
-		struct nlattr *data, *info_peer;
+		struct nlattr *info_peer;
+
+		nm_assert (veth_peer);
 
 		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
 			goto nla_put_failure;
@@ -3718,8 +3722,15 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 			goto nla_put_failure;
 		NLA_PUT_STRING (msg, IFLA_IFNAME, veth_peer);
 		nla_nest_end (msg, info_peer);
-		nla_nest_end (msg, data);
+		break;
 	}
+	default:
+		nm_assert (!extra_data);
+		break;
+	}
+
+	if (data)
+		nla_nest_end (msg, data);
 
 	nla_nest_end (msg, info);
 
@@ -6491,11 +6502,11 @@ out:
 
 static int
 link_add (NMPlatform *platform,
-          const char *name,
           NMLinkType type,
-          const char *veth_peer,
+          const char *name,
           const void *address,
           size_t address_len,
+          gconstpointer extra_data,
           const NMPlatformLink **out_link)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -6522,7 +6533,7 @@ link_add (NMPlatform *platform,
 	if (address && address_len)
 		NLA_PUT (nlmsg, IFLA_ADDRESS, address_len, address);
 
-	if (!_nl_msg_new_link_set_linkinfo (nlmsg, type, veth_peer))
+	if (!_nl_msg_new_link_set_linkinfo (nlmsg, type, extra_data))
 		return -NME_UNSPEC;
 
 	return do_add_link_with_lookup (platform, type, name, nlmsg, out_link);

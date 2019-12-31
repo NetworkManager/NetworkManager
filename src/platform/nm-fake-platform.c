@@ -276,11 +276,11 @@ link_add_pre (NMPlatform *platform,
 
 static int
 link_add (NMPlatform *platform,
-          const char *name,
           NMLinkType type,
-          const char *veth_peer,
+          const char *name,
           const void *address,
           size_t address_len,
+          gconstpointer extra_data,
           const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device;
@@ -291,14 +291,20 @@ link_add (NMPlatform *platform,
 	nm_auto_nmpobj const NMPObject *obj_new_veth = NULL;
 	NMPCacheOpsType cache_op;
 	NMPCacheOpsType cache_op_veth = NMP_CACHE_OPS_UNCHANGED;
+	const char *veth_peer = NULL;
 
 	device = link_add_pre (platform, name, type, address, address_len);
 
-	if (veth_peer) {
-		g_assert (type == NM_LINK_TYPE_VETH);
+	switch (type) {
+	case NM_LINK_TYPE_VETH:
+		veth_peer = extra_data;
+		g_assert (veth_peer);
 		device_veth = link_add_pre (platform, veth_peer, type, NULL, 0);
-	} else
-		g_assert (type != NM_LINK_TYPE_VETH);
+		break;
+	default:
+		g_assert (!extra_data);
+		break;
+	}
 
 	link_add_prepare (platform, device, (NMPObject *) device->obj);
 	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
@@ -1355,12 +1361,12 @@ nm_fake_platform_setup (void)
 	nm_platform_setup (platform);
 
 	/* add loopback interface */
-	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, NULL, 0, NULL);
+	link_add (platform, NM_LINK_TYPE_LOOPBACK, "lo", NULL, 0, NULL, NULL);
 
 	/* add some ethernets */
-	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
-	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
-	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth0", NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth1", NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth2", NULL, 0, NULL, NULL);
 }
 
 static void
