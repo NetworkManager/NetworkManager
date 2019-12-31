@@ -1066,10 +1066,6 @@ typedef struct {
 	                              int parent,
 	                              const NMPlatformLnkMacvlan *props,
 	                              const NMPlatformLink **out_link);
-	gboolean (*link_sit_add) (NMPlatform *self,
-	                          const char *name,
-	                          const NMPlatformLnkSit *props,
-	                          const NMPlatformLink **out_link);
 	gboolean (*link_tun_add) (NMPlatform *self,
 	                          const char *name,
 	                          const NMPlatformLnkTun *props,
@@ -1430,6 +1426,15 @@ nm_platform_link_gre_add (NMPlatform *self,
 	g_return_val_if_fail (props, -NME_BUG);
 
 	return nm_platform_link_add (self, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, name, 0, NULL, 0, props, out_link);
+}
+
+static inline int
+nm_platform_link_sit_add (NMPlatform *self,
+                          const char *name,
+                          const NMPlatformLnkSit *props,
+                          const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_SIT, name, 0, NULL, 0, props, out_link);
 }
 
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);

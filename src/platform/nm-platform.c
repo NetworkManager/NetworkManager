@@ -1221,6 +1221,11 @@ nm_platform_link_add (NMPlatform *self,
 	            case NM_LINK_TYPE_GRETAP:
 	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
 	                nm_platform_lnk_gre_to_string ((const NMPlatformLnkGre *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_SIT:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_sit_to_string ((const NMPlatformLnkSit *) extra_data, buf_p, buf_len);
+	                break;
 	            default:
 	                nm_assert (!extra_data);
 	                break;
@@ -3002,39 +3007,6 @@ nm_platform_link_macvlan_add (NMPlatform *self,
 	_LOG2D ("adding link %s", nm_platform_lnk_macvlan_to_string (props, NULL, 0));
 
 	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_sit_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a software SIT device.
- */
-int
-nm_platform_link_sit_add (NMPlatform *self,
-                          const char *name,
-                          const NMPlatformLnkSit *props,
-                          const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_SIT, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_sit_to_string (props, NULL, 0));
-
-	if (!klass->link_sit_add (self, name, props, out_link))
 		return -NME_UNSPEC;
 	return 0;
 }
