@@ -16265,8 +16265,10 @@ _hw_addr_set (NMDevice *self,
 	}
 
 	if (   priv->hw_addr_len
-	    && priv->hw_addr_len != addr_len)
-		g_return_val_if_reached (FALSE);
+	    && priv->hw_addr_len != addr_len) {
+		_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s) failed because of wrong address length (should be %u bytes)", addr, operation, detail, priv->hw_addr_len);
+		return FALSE;
+	}
 
 	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s)...", addr, operation, detail);
 
