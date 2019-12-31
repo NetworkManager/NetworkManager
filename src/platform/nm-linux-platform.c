@@ -3892,6 +3892,23 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		NLA_PUT_U32 (msg, IFLA_GRE_FLAGS, props->flags);
 		break;
 	}
+	case NM_LINK_TYPE_IPIP: {
+		const NMPlatformLnkIpIp *props = extra_data;
+
+		nm_assert (props);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		if (props->parent_ifindex)
+			NLA_PUT_U32 (msg, IFLA_IPTUN_LINK, props->parent_ifindex);
+		NLA_PUT_U32 (msg, IFLA_IPTUN_LOCAL, props->local);
+		NLA_PUT_U32 (msg, IFLA_IPTUN_REMOTE, props->remote);
+		NLA_PUT_U8 (msg, IFLA_IPTUN_TTL, props->ttl);
+		NLA_PUT_U8 (msg, IFLA_IPTUN_TOS, props->tos);
+		NLA_PUT_U8 (msg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
+		break;
+	}
 	default:
 		nm_assert (!extra_data);
 		break;
@@ -7346,47 +7363,6 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-link_ipip_add (NMPlatform *platform,
-               const char *name,
-               const NMPlatformLnkIpIp *props,
-               const NMPlatformLink **out_link)
-{
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct nlattr *info;
-	struct nlattr *data;
-
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE | NLM_F_EXCL,
-	                          0,
-	                          name);
-	if (!nlmsg)
-		return FALSE;
-
-	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
-		goto nla_put_failure;
-
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "ipip");
-
-	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
-		goto nla_put_failure;
-
-	if (props->parent_ifindex)
-		NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LINK, props->parent_ifindex);
-	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_LOCAL, props->local);
-	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_REMOTE, props->remote);
-	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TTL, props->ttl);
-	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_TOS, props->tos);
-	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
-
-	nla_nest_end (nlmsg, data);
-	nla_nest_end (nlmsg, info);
-
-	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_IPIP, name, nlmsg, out_link) >= 0);
-nla_put_failure:
-	g_return_val_if_reached (FALSE);
-}
-
-static gboolean
 link_macsec_add (NMPlatform *platform,
                  const char *name,
                  int parent,
@@ -9170,7 +9146,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_macsec_add = link_macsec_add;
 	platform_class->link_macvlan_add = link_macvlan_add;
-	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_tun_add = link_tun_add;
 
 	platform_class->object_delete = object_delete;

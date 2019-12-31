@@ -1039,10 +1039,6 @@ typedef struct {
 	                              gboolean egress_reset_all,
 	                              const NMVlanQosMapping *egress_map,
 	                              gsize n_egress_map);
-	gboolean (*link_ipip_add) (NMPlatform *self,
-	                           const char *name,
-	                           const NMPlatformLnkIpIp *props,
-	                           const NMPlatformLink **out_link);
 	gboolean (*link_macsec_add) (NMPlatform *self,
 	                             const char *name,
 	                             int parent,
@@ -1486,6 +1482,17 @@ nm_platform_link_ip6gre_add (NMPlatform *self,
 	return nm_platform_link_add (self, props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE, name, 0, NULL, 0, props, out_link);
 }
 
+static inline int
+nm_platform_link_ipip_add (NMPlatform *self,
+                           const char *name,
+                           const NMPlatformLnkIpIp *props,
+                           const NMPlatformLink **out_link)
+{
+	g_return_val_if_fail (props, -NME_BUG);
+
+	return nm_platform_link_add (self, NM_LINK_TYPE_IPIP, name, 0, NULL, 0, props, out_link);
+}
+
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
@@ -1656,10 +1663,6 @@ const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Addr
 
 const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 
-int nm_platform_link_ipip_add (NMPlatform *self,
-                               const char *name,
-                               const NMPlatformLnkIpIp *props,
-                               const NMPlatformLink **out_link);
 int nm_platform_link_macsec_add (NMPlatform *self,
                                  const char *name,
                                  int parent,
