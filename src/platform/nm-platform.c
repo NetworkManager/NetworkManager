@@ -1190,12 +1190,14 @@ nm_platform_link_add (NMPlatform *self,
 	if (r < 0)
 		return r;
 
-	_LOG2D ("link: adding link: %s (%d)"
-	        "%s%s" /* address */
-	        "%s%s" /* veth peer */
+	_LOG2D ("link: adding link: "
+	        "%s "    /* type */
+	        "\"%s\"" /* name */
+	        "%s%s"   /* address */
+	        "%s%s"   /* veth peer */
 	        "",
 	        nm_link_type_to_string (type),
-	        (int) type,
+	        name,
 	        address ? ", address: " : "",
 	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
 	        veth_peer ? ", veth-peer: " : "",
