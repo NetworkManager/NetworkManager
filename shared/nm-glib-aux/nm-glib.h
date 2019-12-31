@@ -608,21 +608,30 @@ g_hash_table_steal_extended (GHashTable    *hash_table,
                              gpointer      *stolen_key,
                              gpointer      *stolen_value)
 {
+	g_assert (stolen_key);
+	g_assert (stolen_value);
+
 	if (g_hash_table_lookup_extended (hash_table, lookup_key, stolen_key, stolen_value)) {
 		g_hash_table_steal (hash_table, lookup_key);
 		return TRUE;
 	}
-	if (stolen_key)
-		*stolen_key = NULL;
-	if (stolen_value)
-		*stolen_value = NULL;
+	*stolen_key = NULL;
+	*stolen_value = NULL;
 	return FALSE;
 }
 #else
 #define g_hash_table_steal_extended(hash_table, lookup_key, stolen_key, stolen_value) \
 	({ \
+		gpointer *_stolen_key = (stolen_key); \
+		gpointer *_stolen_value = (stolen_value); \
+		\
+		/* we cannot allow NULL arguments, because then we would leak the values in
+		 * the compat implementation. */ \
+		g_assert (_stolen_key); \
+		g_assert (_stolen_value); \
+		\
 		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
-		g_hash_table_steal_extended (hash_table, lookup_key, stolen_key, stolen_value); \
+		g_hash_table_steal_extended (hash_table, lookup_key, _stolen_key, _stolen_value); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
 	})
 #endif

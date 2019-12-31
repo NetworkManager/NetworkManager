@@ -34,25 +34,20 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef struct {
+typedef struct _NMSecretAgentPrivate {
 	CList permissions;
+	CList requests;
+	GDBusConnection *dbus_connection;
 	char *description;
 	NMAuthSubject *subject;
 	char *identifier;
 	char *owner_username;
 	char *dbus_owner;
-	GDBusConnection *dbus_connection;
 	GCancellable *name_owner_cancellable;
-	CList requests;
-	NMSecretAgentCapabilities capabilities;
 	guint name_owner_changed_id;
+	NMSecretAgentCapabilities capabilities;
 	bool shutdown_wait_obj_registered:1;
 } NMSecretAgentPrivate;
-
-struct _NMSecretAgent {
-	GObject parent;
-	NMSecretAgentPrivate _priv;
-};
 
 struct _NMSecretAgentClass {
 	GObjectClass parent;
@@ -60,7 +55,7 @@ struct _NMSecretAgentClass {
 
 G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
-#define NM_SECRET_AGENT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSecretAgent, NM_IS_SECRET_AGENT)
+#define NM_SECRET_AGENT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMSecretAgent, NM_IS_SECRET_AGENT)
 
 /*****************************************************************************/
 
@@ -765,8 +760,13 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 static void
 nm_secret_agent_init (NMSecretAgent *self)
 {
-	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	NMSecretAgentPrivate *priv;
 
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_SECRET_AGENT, NMSecretAgentPrivate);
+
+	self->_priv = priv;
+
+	c_list_init (&self->agent_lst);
 	c_list_init (&priv->permissions);
 	c_list_init (&priv->requests);
 }
@@ -777,6 +777,8 @@ dispose (GObject *object)
 	NMSecretAgent *self = NM_SECRET_AGENT (object);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
+	nm_assert (c_list_is_empty (&self->agent_lst));
+	nm_assert (!self->auth_chain);
 	nm_assert (c_list_is_empty (&priv->requests));
 
 	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
@@ -813,6 +815,8 @@ static void
 nm_secret_agent_class_init (NMSecretAgentClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+
+	g_type_class_add_private (object_class, sizeof (NMSecretAgentPrivate));
 
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
