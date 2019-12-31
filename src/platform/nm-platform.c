@@ -1167,7 +1167,7 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
  *
  * Returns: the negative nm-error on failure.
  */
-static int
+int
 nm_platform_link_add (NMPlatform *self,
                       NMLinkType type,
                       const char *name,
@@ -1215,31 +1215,6 @@ nm_platform_link_add (NMPlatform *self,
 	        }));
 
 	return klass->link_add (self, type, name, address, address_len, extra_data, out_link);
-}
-
-int
-nm_platform_link_veth_add (NMPlatform *self,
-                            const char *name,
-                            const char *peer,
-                            const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, NM_LINK_TYPE_VETH, name, NULL, 0, peer, out_link);
-}
-
-/**
- * nm_platform_link_dummy_add:
- * @self: platform instance
- * @name: New interface name
- * @out_link: on success, the link object
- *
- * Create a software ethernet-like interface
- */
-int
-nm_platform_link_dummy_add (NMPlatform *self,
-                            const char *name,
-                            const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, NM_LINK_TYPE_DUMMY, name, NULL, 0, NULL, out_link);
 }
 
 /**
@@ -2263,14 +2238,6 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_peer_flags_to_string, NMPlat
 );
 
 int
-nm_platform_link_wireguard_add (NMPlatform *self,
-                                const char *name,
-                                const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, NM_LINK_TYPE_WIREGUARD, name, NULL, 0, NULL, out_link);
-}
-
-int
 nm_platform_link_wireguard_change (NMPlatform *self,
                                    int ifindex,
                                    const NMPlatformLnkWireGuard *lnk_wireguard,
@@ -2327,58 +2294,6 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 }
 
 /*****************************************************************************/
-
-/**
- * nm_platform_link_bridge_add:
- * @self: platform instance
- * @name: New interface name
- * @address: (allow-none): set the mac address of the new bridge
- * @address_len: the length of the @address
- * @out_link: on success, the link object
- *
- * Create a software bridge.
- */
-int
-nm_platform_link_bridge_add (NMPlatform *self,
-                             const char *name,
-                             const void *address,
-                             size_t address_len,
-                             const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, NM_LINK_TYPE_BRIDGE, name, address, address_len, NULL, out_link);
-}
-
-/**
- * nm_platform_link_bond_add:
- * @self: platform instance
- * @name: New interface name
- * @out_link: on success, the link object
- *
- * Create a software bonding device.
- */
-int
-nm_platform_link_bond_add (NMPlatform *self,
-                           const char *name,
-                           const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, NM_LINK_TYPE_BOND, name, NULL, 0, NULL, out_link);
-}
-
-/**
- * nm_platform_link_team_add:
- * @self: platform instance
- * @name: New interface name
- * @out_link: on success, the link object
- *
- * Create a software teaming device.
- */
-int
-nm_platform_link_team_add (NMPlatform *self,
-                           const char *name,
-                           const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, NM_LINK_TYPE_TEAM, name, NULL, 0, NULL, out_link);
-}
 
 /**
  * nm_platform_link_vlan_add:

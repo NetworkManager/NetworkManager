@@ -1363,11 +1363,65 @@ const NMPlatformLink *nm_platform_link_get_by_ifname (NMPlatform *self, const ch
 const NMPlatformLink *nm_platform_link_get_by_address (NMPlatform *self, NMLinkType link_type, gconstpointer address, size_t length);
 
 GPtrArray *nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name);
-int nm_platform_link_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
-int nm_platform_link_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, const NMPlatformLink **out_link);
-int nm_platform_link_bond_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
-int nm_platform_link_team_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
-int nm_platform_link_veth_add (NMPlatform *self, const char *name, const char *peer, const NMPlatformLink **out_link);
+
+int nm_platform_link_add (NMPlatform *self,
+                          NMLinkType type,
+                          const char *name,
+                          const void *address,
+                          size_t address_len,
+                          gconstpointer extra_data,
+                          const NMPlatformLink **out_link);
+
+static inline int
+nm_platform_link_veth_add (NMPlatform *self,
+                            const char *name,
+                            const char *peer,
+                            const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_VETH, name, NULL, 0, peer, out_link);
+}
+
+static inline int
+nm_platform_link_dummy_add (NMPlatform *self,
+                            const char *name,
+                            const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_DUMMY, name, NULL, 0, NULL, out_link);
+}
+
+static inline int
+nm_platform_link_bridge_add (NMPlatform *self,
+                             const char *name,
+                             const void *address,
+                             size_t address_len,
+                             const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_BRIDGE, name, address, address_len, NULL, out_link);
+}
+
+static inline int
+nm_platform_link_bond_add (NMPlatform *self,
+                           const char *name,
+                           const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_BOND, name, NULL, 0, NULL, out_link);
+}
+
+static inline int
+nm_platform_link_team_add (NMPlatform *self,
+                           const char *name,
+                           const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_TEAM, name, NULL, 0, NULL, out_link);
+}
+
+static inline int
+nm_platform_link_wireguard_add (NMPlatform *self,
+                                const char *name,
+                                const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_WIREGUARD, name, NULL, 0, NULL, out_link);
+}
 
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
