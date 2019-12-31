@@ -278,6 +278,7 @@ static int
 link_add (NMPlatform *platform,
           NMLinkType type,
           const char *name,
+          int parent,
           const void *address,
           size_t address_len,
           gconstpointer extra_data,
@@ -294,6 +295,8 @@ link_add (NMPlatform *platform,
 	const char *veth_peer = NULL;
 
 	device = link_add_pre (platform, name, type, address, address_len);
+
+	g_assert (parent == 0);
 
 	switch (type) {
 	case NM_LINK_TYPE_VETH:
@@ -1360,13 +1363,10 @@ nm_fake_platform_setup (void)
 
 	nm_platform_setup (platform);
 
-	/* add loopback interface */
-	link_add (platform, NM_LINK_TYPE_LOOPBACK, "lo", NULL, 0, NULL, NULL);
-
-	/* add some ethernets */
-	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth0", NULL, 0, NULL, NULL);
-	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth1", NULL, 0, NULL, NULL);
-	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth2", NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_LOOPBACK, "lo",   0, NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth0", 0, NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth1", 0, NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth2", 0, NULL, 0, NULL, NULL);
 }
 
 static void

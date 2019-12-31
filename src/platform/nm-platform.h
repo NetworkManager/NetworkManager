@@ -967,6 +967,7 @@ typedef struct {
 	int (*link_add) (NMPlatform *self,
 	                 NMLinkType type,
 	                 const char *name,
+	                 int parent,
 	                 const void *address,
 	                 size_t address_len,
 	                 gconstpointer extra_data,
@@ -1367,6 +1368,7 @@ GPtrArray *nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name);
 int nm_platform_link_add (NMPlatform *self,
                           NMLinkType type,
                           const char *name,
+                          int parent,
                           const void *address,
                           size_t address_len,
                           gconstpointer extra_data,
@@ -1378,7 +1380,7 @@ nm_platform_link_veth_add (NMPlatform *self,
                             const char *peer,
                             const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, NM_LINK_TYPE_VETH, name, NULL, 0, peer, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_VETH, name, 0, NULL, 0, peer, out_link);
 }
 
 static inline int
@@ -1386,7 +1388,7 @@ nm_platform_link_dummy_add (NMPlatform *self,
                             const char *name,
                             const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, NM_LINK_TYPE_DUMMY, name, NULL, 0, NULL, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_DUMMY, name, 0, NULL, 0, NULL, out_link);
 }
 
 static inline int
@@ -1396,7 +1398,7 @@ nm_platform_link_bridge_add (NMPlatform *self,
                              size_t address_len,
                              const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, NM_LINK_TYPE_BRIDGE, name, address, address_len, NULL, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_BRIDGE, name, 0, address, address_len, NULL, out_link);
 }
 
 static inline int
@@ -1404,7 +1406,7 @@ nm_platform_link_bond_add (NMPlatform *self,
                            const char *name,
                            const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, NM_LINK_TYPE_BOND, name, NULL, 0, NULL, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_BOND, name, 0, NULL, 0, NULL, out_link);
 }
 
 static inline int
@@ -1412,7 +1414,7 @@ nm_platform_link_team_add (NMPlatform *self,
                            const char *name,
                            const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, NM_LINK_TYPE_TEAM, name, NULL, 0, NULL, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_TEAM, name, 0, NULL, 0, NULL, out_link);
 }
 
 static inline int
@@ -1420,7 +1422,7 @@ nm_platform_link_wireguard_add (NMPlatform *self,
                                 const char *name,
                                 const NMPlatformLink **out_link)
 {
-	return nm_platform_link_add (self, NM_LINK_TYPE_WIREGUARD, name, NULL, 0, NULL, out_link);
+	return nm_platform_link_add (self, NM_LINK_TYPE_WIREGUARD, name, 0, NULL, 0, NULL, out_link);
 }
 
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);

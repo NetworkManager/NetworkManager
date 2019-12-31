@@ -1152,6 +1152,7 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
  * @self: platform instance
  * @type: Interface type
  * @name: Interface name
+ * @parent: the IFLA_LINK parameter or 0.
  * @address: (allow-none): set the mac address of the link
  * @address_len: the length of the @address
  * @extra_data: depending on @type, additional data.
@@ -1171,6 +1172,7 @@ int
 nm_platform_link_add (NMPlatform *self,
                       NMLinkType type,
                       const char *name,
+                      int parent,
                       const void *address,
                       size_t address_len,
                       gconstpointer extra_data,
@@ -1178,6 +1180,7 @@ nm_platform_link_add (NMPlatform *self,
 {
 	int r;
 	char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
+	char parent_buf[64];
 	char buf[512];
 
 	_CHECK_SELF (self, klass, -NME_BUG);
@@ -1185,6 +1188,7 @@ nm_platform_link_add (NMPlatform *self,
 	g_return_val_if_fail (name, -NME_BUG);
 	g_return_val_if_fail ((address != NULL) ^ (address_len == 0) , -NME_BUG);
 	g_return_val_if_fail (address_len <= NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
+	g_return_val_if_fail (parent >= 0, -NME_BUG);
 
 	r = _link_add_check_existing (self, name, type, out_link);
 	if (r < 0)
@@ -1193,11 +1197,14 @@ nm_platform_link_add (NMPlatform *self,
 	_LOG2D ("link: adding link: "
 	        "%s "    /* type */
 	        "\"%s\"" /* name */
+	        "%s%s"   /* parent */
 	        "%s%s"   /* address */
 	        "%s"     /* extra_data */
 	        "",
 	        nm_link_type_to_string (type),
 	        name,
+	        parent > 0 ? ", parent " : "",
+	        parent > 0 ? nm_sprintf_buf (parent_buf, "%d", parent) : "",
 	        address ? ", address: " : "",
 	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
 	        ({
@@ -1214,7 +1221,7 @@ nm_platform_link_add (NMPlatform *self,
 	            str;
 	        }));
 
-	return klass->link_add (self, type, name, address, address_len, extra_data, out_link);
+	return klass->link_add (self, type, name, parent, address, address_len, extra_data, out_link);
 }
 
 /**

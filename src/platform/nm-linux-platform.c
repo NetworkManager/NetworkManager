@@ -6504,6 +6504,7 @@ static int
 link_add (NMPlatform *platform,
           NMLinkType type,
           const char *name,
+          int parent,
           const void *address,
           size_t address_len,
           gconstpointer extra_data,
@@ -6529,6 +6530,9 @@ link_add (NMPlatform *platform,
 	                          name);
 	if (!nlmsg)
 		return -NME_UNSPEC;
+
+	if (parent > 0)
+		NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
 
 	if (address && address_len)
 		NLA_PUT (nlmsg, IFLA_ADDRESS, address_len, address);
