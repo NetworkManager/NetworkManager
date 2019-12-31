@@ -1066,10 +1066,6 @@ typedef struct {
 	                          const NMPlatformLnkTun *props,
 	                          const NMPlatformLink **out_link,
 	                          int *out_fd);
-	gboolean (*link_6lowpan_add) (NMPlatform *self,
-	                              const char *name,
-	                              int parent,
-	                              const NMPlatformLink **out_link);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *self, int parent, int p_key, const NMPlatformLink **out_link);
 	gboolean (*infiniband_partition_delete) (NMPlatform *self, int parent, int p_key);
@@ -1465,6 +1461,15 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 	return nm_platform_link_add (self, NM_LINK_TYPE_VXLAN, name, 0, NULL, 0, props, out_link);
 }
 
+static inline int
+nm_platform_link_6lowpan_add (NMPlatform *self,
+                              const char *name,
+                              int parent,
+                              const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_6LOWPAN, name, parent, NULL, 0, NULL, out_link);
+}
+
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
@@ -1666,10 +1671,6 @@ int nm_platform_link_tun_add (NMPlatform *self,
                               const NMPlatformLnkTun *props,
                               const NMPlatformLink **out_link,
                               int *out_fd);
-int nm_platform_link_6lowpan_add (NMPlatform *self,
-                                  const char *name,
-                                  int parent,
-                                  const NMPlatformLink **out_link);
 gboolean nm_platform_link_6lowpan_get_properties (NMPlatform *self,
                                                   int ifindex,
                                                   int *out_parent);

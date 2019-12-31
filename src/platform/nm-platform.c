@@ -2375,38 +2375,6 @@ nm_platform_link_tun_add (NMPlatform *self,
 	return 0;
 }
 
-/**
- * nm_platform_6lowpan_add:
- * @self: platform instance
- * @parent: parent link
- * @name: name of the new interface
- * @out_link: on success, the link object
- *
- * Create a 6LoWPAN interface.
- */
-int
-nm_platform_link_6lowpan_add (NMPlatform *self,
-                              const char *name,
-                              int parent,
-                              const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_6LOWPAN, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link 6lowpan parent %u", parent);
-
-	if (!klass->link_6lowpan_add (self, name, parent, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
 gboolean
 nm_platform_link_6lowpan_get_properties (NMPlatform *self, int ifindex, int *out_parent)
 {
