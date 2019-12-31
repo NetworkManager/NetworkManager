@@ -736,10 +736,11 @@ create_and_realize (NMDevice *device,
 	if (   !hwaddr
 	    && nm_device_hw_addr_get_cloned (device, connection, FALSE,
 	                                     &hwaddr_cloned, NULL, NULL)) {
-		/* The cloned MAC address might by dynamic, for example with stable-id="${RANDOM}".
-		 * It's a bit odd that we first create the device with one dynamic address,
-		 * and later on may reset it to another. That is, because we don't cache
-		 * the dynamic address in @device, like we do during nm_device_hw_addr_set_cloned(). */
+		/* FIXME: we set the MAC address when creating the interface, while the
+		 * NMDevice is still unrealized. As we afterwards realize the device, it
+		 * forgets the parameters for the cloned MAC address, and in stage 1
+		 * it might create a different MAC address. That should be fixed by
+		 * better handling device realization. */
 		hwaddr = hwaddr_cloned;
 	}
 
