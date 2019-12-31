@@ -1039,10 +1039,6 @@ typedef struct {
 	                              gboolean egress_reset_all,
 	                              const NMVlanQosMapping *egress_map,
 	                              gsize n_egress_map);
-	gboolean (*link_ip6tnl_add) (NMPlatform *self,
-	                             const char *name,
-	                             const NMPlatformLnkIp6Tnl *props,
-	                             const NMPlatformLink **out_link);
 	gboolean (*link_ip6gre_add) (NMPlatform *self,
 	                             const char *name,
 	                             const NMPlatformLnkIp6Tnl *props,
@@ -1470,6 +1466,18 @@ nm_platform_link_6lowpan_add (NMPlatform *self,
 	return nm_platform_link_add (self, NM_LINK_TYPE_6LOWPAN, name, parent, NULL, 0, NULL, out_link);
 }
 
+static inline int
+nm_platform_link_ip6tnl_add (NMPlatform *self,
+                             const char *name,
+                             const NMPlatformLnkIp6Tnl *props,
+                             const NMPlatformLink **out_link)
+{
+	g_return_val_if_fail (props, -NME_BUG);
+	g_return_val_if_fail (!props->is_gre, -NME_BUG);
+
+	return nm_platform_link_add (self, NM_LINK_TYPE_IP6TNL, name, 0, NULL, 0, props, out_link);
+}
+
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
@@ -1640,10 +1648,6 @@ const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Addr
 
 const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 
-int nm_platform_link_ip6tnl_add (NMPlatform *self,
-                                 const char *name,
-                                 const NMPlatformLnkIp6Tnl *props,
-                                 const NMPlatformLink **out_link);
 int nm_platform_link_ip6gre_add (NMPlatform *self,
                                  const char *name,
                                  const NMPlatformLnkIp6Tnl *props,
