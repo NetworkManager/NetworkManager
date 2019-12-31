@@ -1387,12 +1387,14 @@ nm_platform_link_wireguard_add (NMPlatform *self,
 static inline int
 nm_platform_link_gre_add (NMPlatform *self,
                           const char *name,
+                          const void *address,
+                          size_t address_len,
                           const NMPlatformLnkGre *props,
                           const NMPlatformLink **out_link)
 {
 	g_return_val_if_fail (props, -NME_BUG);
 
-	return nm_platform_link_add (self, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, name, 0, NULL, 0, props, out_link);
+	return nm_platform_link_add (self, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, name, 0, address, address_len, props, out_link);
 }
 
 static inline int

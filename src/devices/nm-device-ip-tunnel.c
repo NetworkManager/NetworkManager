@@ -702,7 +702,12 @@ create_and_realize (NMDevice *device,
 			lnk_gre.output_flags = NM_GRE_KEY;
 		}
 
-		r = nm_platform_link_gre_add (nm_device_get_platform (device), iface, &lnk_gre, out_plink);
+		r = nm_platform_link_gre_add (nm_device_get_platform (device),
+		                              iface,
+		                              NULL,
+		                              0,
+		                              &lnk_gre,
+		                              out_plink);
 		if (r < 0) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 			             "Failed to create GRE interface '%s' for '%s': %s",

@@ -1265,7 +1265,7 @@ nmtstp_link_gre_add (NMPlatform *platform,
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, link_type, 100);
 	} else
-		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_gre_add (platform, name, lnk, &pllink));
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_gre_add (platform, name, NULL, 0, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, link_type);
 
