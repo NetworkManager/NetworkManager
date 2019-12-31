@@ -3909,6 +3909,32 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		NLA_PUT_U8 (msg, IFLA_IPTUN_PMTUDISC, !!props->path_mtu_discovery);
 		break;
 	}
+	case NM_LINK_TYPE_MACSEC: {
+		const NMPlatformLnkMacsec *props = extra_data;
+
+		nm_assert (props);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		if (props->icv_length)
+			NLA_PUT_U8 (msg, IFLA_MACSEC_ICV_LEN, 16);
+		if (props->cipher_suite)
+			NLA_PUT_U64 (msg, IFLA_MACSEC_CIPHER_SUITE, props->cipher_suite);
+		if (props->replay_protect)
+			NLA_PUT_U32 (msg, IFLA_MACSEC_WINDOW, props->window);
+
+		NLA_PUT_U64 (msg, IFLA_MACSEC_SCI, htobe64 (props->sci));
+		NLA_PUT_U8 (msg, IFLA_MACSEC_ENCODING_SA, props->encoding_sa);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_ENCRYPT, props->encrypt);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_PROTECT, props->protect);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_INC_SCI, props->include_sci);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_ES, props->es);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_SCB, props->scb);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_REPLAY_PROTECT, props->replay_protect);
+		NLA_PUT_U8 (msg, IFLA_MACSEC_VALIDATION, props->validation);
+		break;
+	};
 	default:
 		nm_assert (!extra_data);
 		break;
@@ -7363,61 +7389,6 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-link_macsec_add (NMPlatform *platform,
-                 const char *name,
-                 int parent,
-                 const NMPlatformLnkMacsec *props,
-                 const NMPlatformLink **out_link)
-{
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct nlattr *info;
-	struct nlattr *data;
-
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE | NLM_F_EXCL,
-	                          0,
-	                          name);
-	if (!nlmsg)
-		return FALSE;
-
-	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
-
-	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
-		goto nla_put_failure;
-
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "macsec");
-
-	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
-		goto nla_put_failure;
-
-	if (props->icv_length)
-		NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ICV_LEN, 16);
-	if (props->cipher_suite)
-		NLA_PUT_U64 (nlmsg, IFLA_MACSEC_CIPHER_SUITE, props->cipher_suite);
-	if (props->replay_protect)
-		NLA_PUT_U32 (nlmsg, IFLA_MACSEC_WINDOW, props->window);
-
-	NLA_PUT_U64 (nlmsg, IFLA_MACSEC_SCI, htobe64 (props->sci));
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ENCODING_SA, props->encoding_sa);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ENCRYPT, props->encrypt);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_PROTECT, props->protect);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_INC_SCI, props->include_sci);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ES, props->es);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_SCB, props->scb);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_REPLAY_PROTECT, props->replay_protect);
-	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_VALIDATION, props->validation);
-
-	nla_nest_end (nlmsg, data);
-	nla_nest_end (nlmsg, info);
-
-	return (do_add_link_with_lookup (platform,
-	                                 NM_LINK_TYPE_MACSEC,
-	                                 name, nlmsg, out_link) >= 0);
-nla_put_failure:
-	g_return_val_if_reached (FALSE);
-}
-
-static gboolean
 link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
@@ -9144,7 +9115,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->wpan_set_short_addr = wpan_set_short_addr;
 	platform_class->wpan_set_channel = wpan_set_channel;
 
-	platform_class->link_macsec_add = link_macsec_add;
 	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_tun_add = link_tun_add;
 

@@ -1244,6 +1244,10 @@ nm_platform_link_add (NMPlatform *self,
 	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
 	                nm_platform_lnk_ipip_to_string ((const NMPlatformLnkIpIp *) extra_data, buf_p, buf_len);
 	                break;
+	            case NM_LINK_TYPE_MACSEC:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_macsec_to_string ((const NMPlatformLnkMacsec *) extra_data, buf_p, buf_len);
+	                break;
 	            default:
 	                nm_assert (!extra_data);
 	                break;
@@ -2747,41 +2751,6 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 	NM_SET_OUT (out_p_key, p_key);
 	NM_SET_OUT (out_mode, mode);
 	return TRUE;
-}
-
-/**
- * nm_platform_macsec_add:
- * @self: platform instance
- * @name: name of the new interface
- * @parent: parent link
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a MACsec interface.
- */
-int
-nm_platform_link_macsec_add (NMPlatform *self,
-                             const char *name,
-                             int parent,
-                             const NMPlatformLnkMacsec *props,
-                             const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_MACSEC, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_macsec_to_string (props, NULL, 0));
-
-	if (!klass->link_macsec_add (self, name, parent, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
 }
 
 /**
