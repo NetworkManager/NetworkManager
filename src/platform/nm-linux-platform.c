@@ -3724,6 +3724,29 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		nla_nest_end (msg, info_peer);
 		break;
 	}
+	case NM_LINK_TYPE_GRE:
+	case NM_LINK_TYPE_GRETAP: {
+		const NMPlatformLnkGre *props = extra_data;
+
+		nm_assert (props);
+		nm_assert (props->is_tap == (link_type == NM_LINK_TYPE_GRETAP));
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		if (props->parent_ifindex)
+			NLA_PUT_U32 (msg, IFLA_GRE_LINK, props->parent_ifindex);
+		NLA_PUT_U32 (msg, IFLA_GRE_LOCAL, props->local);
+		NLA_PUT_U32 (msg, IFLA_GRE_REMOTE, props->remote);
+		NLA_PUT_U8 (msg, IFLA_GRE_TTL, props->ttl);
+		NLA_PUT_U8 (msg, IFLA_GRE_TOS, props->tos);
+		NLA_PUT_U8 (msg, IFLA_GRE_PMTUDISC, !!props->path_mtu_discovery);
+		NLA_PUT_U32 (msg, IFLA_GRE_IKEY, htonl (props->input_key));
+		NLA_PUT_U32 (msg, IFLA_GRE_OKEY, htonl (props->output_key));
+		NLA_PUT_U16 (msg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+		NLA_PUT_U16 (msg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+		break;
+	}
 	default:
 		nm_assert (!extra_data);
 		break;
@@ -7213,53 +7236,6 @@ nla_put_failure:
 }
 
 static gboolean
-link_gre_add (NMPlatform *platform,
-              const char *name,
-              const NMPlatformLnkGre *props,
-              const NMPlatformLink **out_link)
-{
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct nlattr *info;
-	struct nlattr *data;
-
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE | NLM_F_EXCL,
-	                          0,
-	                          name);
-	if (!nlmsg)
-		return FALSE;
-
-	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
-		goto nla_put_failure;
-
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->is_tap ? "gretap" : "gre");
-
-	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
-		goto nla_put_failure;
-
-	if (props->parent_ifindex)
-		NLA_PUT_U32 (nlmsg, IFLA_GRE_LINK, props->parent_ifindex);
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_LOCAL, props->local);
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_REMOTE, props->remote);
-	NLA_PUT_U8 (nlmsg, IFLA_GRE_TTL, props->ttl);
-	NLA_PUT_U8 (nlmsg, IFLA_GRE_TOS, props->tos);
-	NLA_PUT_U8 (nlmsg, IFLA_GRE_PMTUDISC, !!props->path_mtu_discovery);
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
-	NLA_PUT_U16 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
-	NLA_PUT_U16 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
-
-	nla_nest_end (nlmsg, data);
-	nla_nest_end (nlmsg, info);
-
-	return (do_add_link_with_lookup (platform,
-	                                 props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
-	                                 name, nlmsg, out_link) >= 0);
-nla_put_failure:
-	g_return_val_if_reached (FALSE);
-}
-
-static gboolean
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
                  const NMPlatformLnkIp6Tnl *props,
@@ -9340,7 +9316,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->wpan_set_short_addr = wpan_set_short_addr;
 	platform_class->wpan_set_channel = wpan_set_channel;
 
-	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;
 	platform_class->link_ip6gre_add = link_ip6gre_add;
 	platform_class->link_macsec_add = link_macsec_add;

@@ -1208,17 +1208,25 @@ nm_platform_link_add (NMPlatform *self,
 	        address ? ", address: " : "",
 	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
 	        ({
-	            const char *str = "";
+	            char *buf_p = buf;
+	            gsize buf_len = sizeof (buf);
+
+	            buf[0] = '\0';
 
 	            switch (type) {
 	            case NM_LINK_TYPE_VETH:
-	                str = nm_sprintf_buf (buf, ", veth-peer \"%s\"", (const char *) extra_data);
+	                nm_sprintf_buf (buf, ", veth-peer \"%s\"", (const char *) extra_data);
 	                break;
+	            case NM_LINK_TYPE_GRE:
+	            case NM_LINK_TYPE_GRETAP:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_gre_to_string ((const NMPlatformLnkGre *) extra_data, buf_p, buf_len);
 	            default:
+	                nm_assert (!extra_data);
 	                break;
 	            }
 
-	            str;
+	            buf;
 	        }));
 
 	return klass->link_add (self, type, name, parent, address, address_len, extra_data, out_link);
@@ -2694,39 +2702,6 @@ nm_platform_link_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, i
 	};
 
 	return nm_platform_link_vlan_change (self, ifindex, 0, 0, FALSE, NULL, 0, FALSE, &map, 1);
-}
-
-/**
- * nm_platform_link_gre_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a software GRE device.
- */
-int
-nm_platform_link_gre_add (NMPlatform *self,
-                          const char *name,
-                          const NMPlatformLnkGre *props,
-                          const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_gre_to_string (props, NULL, 0));
-
-	if (!klass->link_gre_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
 }
 
 static int
