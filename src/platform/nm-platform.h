@@ -1039,11 +1039,6 @@ typedef struct {
 	                              gboolean egress_reset_all,
 	                              const NMVlanQosMapping *egress_map,
 	                              gsize n_egress_map);
-	gboolean (*link_macvlan_add) (NMPlatform *self,
-	                              const char *name,
-	                              int parent,
-	                              const NMPlatformLnkMacvlan *props,
-	                              const NMPlatformLink **out_link);
 	gboolean (*link_tun_add) (NMPlatform *self,
 	                          const char *name,
 	                          const NMPlatformLnkTun *props,
@@ -1501,6 +1496,19 @@ nm_platform_link_macsec_add (NMPlatform *self,
 	return nm_platform_link_add (self, NM_LINK_TYPE_MACSEC, name, parent, NULL, 0, props, out_link);
 }
 
+static inline int
+nm_platform_link_macvlan_add (NMPlatform *self,
+                              const char *name,
+                              int parent,
+                              const NMPlatformLnkMacvlan *props,
+                              const NMPlatformLink **out_link)
+{
+	g_return_val_if_fail (props, -NME_BUG);
+	g_return_val_if_fail (parent > 0, -NME_BUG);
+
+	return nm_platform_link_add (self, props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN, name, parent, NULL, 0, props, out_link);
+}
+
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
@@ -1671,11 +1679,6 @@ const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Addr
 
 const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 
-int nm_platform_link_macvlan_add (NMPlatform *self,
-                                  const char *name,
-                                  int parent,
-                                  const NMPlatformLnkMacvlan *props,
-                                  const NMPlatformLink **out_link);
 int nm_platform_link_sit_add (NMPlatform *self,
                               const char *name,
                               const NMPlatformLnkSit *props,

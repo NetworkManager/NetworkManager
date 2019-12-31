@@ -3935,6 +3935,19 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		NLA_PUT_U8 (msg, IFLA_MACSEC_VALIDATION, props->validation);
 		break;
 	};
+	case NM_LINK_TYPE_MACVTAP:
+	case NM_LINK_TYPE_MACVLAN: {
+		const NMPlatformLnkMacvlan *props = extra_data;
+
+		nm_assert (props);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		NLA_PUT_U32 (msg, IFLA_MACVLAN_MODE, props->mode);
+		NLA_PUT_U16 (msg, IFLA_MACVLAN_FLAGS, props->no_promisc ? MACVLAN_FLAG_NOPROMISC : 0);
+		break;
+	}
 	default:
 		nm_assert (!extra_data);
 		break;
@@ -7389,47 +7402,6 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-link_macvlan_add (NMPlatform *platform,
-                  const char *name,
-                  int parent,
-                  const NMPlatformLnkMacvlan *props,
-                  const NMPlatformLink **out_link)
-{
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct nlattr *info;
-	struct nlattr *data;
-
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE | NLM_F_EXCL,
-	                          0,
-	                          name);
-	if (!nlmsg)
-		return FALSE;
-
-	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
-
-	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
-		goto nla_put_failure;
-
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->tap ? "macvtap" : "macvlan");
-
-	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
-		goto nla_put_failure;
-
-	NLA_PUT_U32 (nlmsg, IFLA_MACVLAN_MODE, props->mode);
-	NLA_PUT_U16 (nlmsg, IFLA_MACVLAN_FLAGS, props->no_promisc ? MACVLAN_FLAG_NOPROMISC : 0);
-
-	nla_nest_end (nlmsg, data);
-	nla_nest_end (nlmsg, info);
-
-	return (do_add_link_with_lookup (platform,
-	                                 props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN,
-	                                 name, nlmsg, out_link) >= 0);
-nla_put_failure:
-	g_return_val_if_reached (FALSE);
-}
-
-static gboolean
 link_tun_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkTun *props,
@@ -9115,7 +9087,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->wpan_set_short_addr = wpan_set_short_addr;
 	platform_class->wpan_set_channel = wpan_set_channel;
 
-	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_tun_add = link_tun_add;
 
 	platform_class->object_delete = object_delete;
