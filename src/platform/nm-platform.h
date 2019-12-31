@@ -1039,10 +1039,6 @@ typedef struct {
 	                              gboolean egress_reset_all,
 	                              const NMVlanQosMapping *egress_map,
 	                              gsize n_egress_map);
-	gboolean (*link_vxlan_add) (NMPlatform *self,
-	                            const char *name,
-	                            const NMPlatformLnkVxlan *props,
-	                            const NMPlatformLink **out_link);
 	gboolean (*link_ip6tnl_add) (NMPlatform *self,
 	                             const char *name,
 	                             const NMPlatformLnkIp6Tnl *props,
@@ -1460,6 +1456,15 @@ nm_platform_link_vlan_add (NMPlatform *self,
 	                             out_link);
 }
 
+static inline int
+nm_platform_link_vxlan_add (NMPlatform *self,
+                            const char *name,
+                            const NMPlatformLnkVxlan *props,
+                            const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_VXLAN, name, 0, NULL, 0, props, out_link);
+}
+
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
@@ -1587,11 +1592,6 @@ gboolean nm_platform_link_vlan_change (NMPlatform *self,
                                        gboolean egress_reset_all,
                                        const NMVlanQosMapping *egress_map,
                                        gsize n_egress_map);
-
-int nm_platform_link_vxlan_add (NMPlatform *self,
-                                const char *name,
-                                const NMPlatformLnkVxlan *props,
-                                const NMPlatformLink **out_link);
 
 int nm_platform_link_infiniband_add (NMPlatform *self,
                                      int parent,

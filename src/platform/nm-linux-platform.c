@@ -3727,6 +3727,51 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		}
 		break;
 	}
+	case NM_LINK_TYPE_VXLAN: {
+		const NMPlatformLnkVxlan *props = extra_data;
+
+		nm_assert (extra_data);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		NLA_PUT_U32 (msg, IFLA_VXLAN_ID, props->id);
+
+		if (props->group)
+			NLA_PUT (msg, IFLA_VXLAN_GROUP, sizeof (props->group), &props->group);
+		else if (memcmp (&props->group6, &in6addr_any, sizeof (in6addr_any)))
+			NLA_PUT (msg, IFLA_VXLAN_GROUP6, sizeof (props->group6), &props->group6);
+
+		if (props->local)
+			NLA_PUT (msg, IFLA_VXLAN_LOCAL, sizeof (props->local), &props->local);
+		else if (memcmp (&props->local6, &in6addr_any, sizeof (in6addr_any)))
+			NLA_PUT (msg, IFLA_VXLAN_LOCAL6, sizeof (props->local6), &props->local6);
+
+		if (props->parent_ifindex >= 0)
+			NLA_PUT_U32 (msg, IFLA_VXLAN_LINK, props->parent_ifindex);
+
+		if (   props->src_port_min
+		    || props->src_port_max) {
+			struct nm_ifla_vxlan_port_range port_range = {
+				.low  = htons (props->src_port_min),
+				.high = htons (props->src_port_max),
+			};
+
+			NLA_PUT (msg, IFLA_VXLAN_PORT_RANGE, sizeof (port_range), &port_range);
+		}
+
+		NLA_PUT_U16 (msg, IFLA_VXLAN_PORT, htons (props->dst_port));
+		NLA_PUT_U8 (msg, IFLA_VXLAN_TOS, props->tos);
+		NLA_PUT_U8 (msg, IFLA_VXLAN_TTL, props->ttl);
+		NLA_PUT_U32 (msg, IFLA_VXLAN_AGEING, props->ageing);
+		NLA_PUT_U32 (msg, IFLA_VXLAN_LIMIT, props->limit);
+		NLA_PUT_U8 (msg, IFLA_VXLAN_LEARNING, !!props->learning);
+		NLA_PUT_U8 (msg, IFLA_VXLAN_PROXY, !!props->proxy);
+		NLA_PUT_U8 (msg, IFLA_VXLAN_RSC, !!props->rsc);
+		NLA_PUT_U8 (msg, IFLA_VXLAN_L2MISS, !!props->l2miss);
+		NLA_PUT_U8 (msg, IFLA_VXLAN_L3MISS, !!props->l3miss);
+		break;
+	}
 	case NM_LINK_TYPE_VETH: {
 		const char *veth_peer = extra_data;
 		const struct ifinfomsg ifi = { };
@@ -7545,74 +7590,6 @@ link_tun_add (NMPlatform *platform,
 }
 
 static gboolean
-link_vxlan_add (NMPlatform *platform,
-                const char *name,
-                const NMPlatformLnkVxlan *props,
-                const NMPlatformLink **out_link)
-{
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	struct nlattr *info;
-	struct nlattr *data;
-	struct nm_ifla_vxlan_port_range port_range;
-
-	g_return_val_if_fail (props, FALSE);
-
-	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
-	                          NLM_F_CREATE | NLM_F_EXCL,
-	                          0,
-	                          name);
-	if (!nlmsg)
-		return FALSE;
-
-	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
-		goto nla_put_failure;
-
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "vxlan");
-
-	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
-		goto nla_put_failure;
-
-	NLA_PUT_U32 (nlmsg, IFLA_VXLAN_ID, props->id);
-
-	if (props->group)
-		NLA_PUT (nlmsg, IFLA_VXLAN_GROUP, sizeof (props->group), &props->group);
-	else if (memcmp (&props->group6, &in6addr_any, sizeof (in6addr_any)))
-		NLA_PUT (nlmsg, IFLA_VXLAN_GROUP6, sizeof (props->group6), &props->group6);
-
-	if (props->local)
-		NLA_PUT (nlmsg, IFLA_VXLAN_LOCAL, sizeof (props->local), &props->local);
-	else if (memcmp (&props->local6, &in6addr_any, sizeof (in6addr_any)))
-		NLA_PUT (nlmsg, IFLA_VXLAN_LOCAL6, sizeof (props->local6), &props->local6);
-
-	if (props->parent_ifindex >= 0)
-		NLA_PUT_U32 (nlmsg, IFLA_VXLAN_LINK, props->parent_ifindex);
-
-	if (props->src_port_min || props->src_port_max) {
-		port_range.low = htons (props->src_port_min);
-		port_range.high = htons (props->src_port_max);
-		NLA_PUT (nlmsg, IFLA_VXLAN_PORT_RANGE, sizeof (port_range), &port_range);
-	}
-
-	NLA_PUT_U16 (nlmsg, IFLA_VXLAN_PORT, htons (props->dst_port));
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_TOS, props->tos);
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_TTL, props->ttl);
-	NLA_PUT_U32 (nlmsg, IFLA_VXLAN_AGEING, props->ageing);
-	NLA_PUT_U32 (nlmsg, IFLA_VXLAN_LIMIT, props->limit);
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_LEARNING, !!props->learning);
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_PROXY, !!props->proxy);
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_RSC, !!props->rsc);
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_L2MISS, !!props->l2miss);
-	NLA_PUT_U8 (nlmsg, IFLA_VXLAN_L3MISS, !!props->l3miss);
-
-	nla_nest_end (nlmsg, data);
-	nla_nest_end (nlmsg, info);
-
-	return (do_add_link_with_lookup (platform, NM_LINK_TYPE_VXLAN, name, nlmsg, out_link) >= 0);
-nla_put_failure:
-	g_return_val_if_reached (FALSE);
-}
-
-static gboolean
 link_6lowpan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
@@ -9248,7 +9225,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_vlan_change = link_vlan_change;
 	platform_class->link_wireguard_change = link_wireguard_change;
-	platform_class->link_vxlan_add = link_vxlan_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
 	platform_class->infiniband_partition_delete = infiniband_partition_delete;
