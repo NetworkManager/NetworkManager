@@ -49,8 +49,7 @@ typedef struct {
 	NDhcp4Client *client;
 	NDhcp4ClientProbe *probe;
 	NDhcp4ClientLease *lease;
-	GIOChannel *channel;
-	guint event_id;
+	GSource *event_source;
 	char *lease_file;
 } NMDhcpNettoolsPrivate;
 
@@ -1054,7 +1053,7 @@ dhcp4_event_handle (NMDhcpNettools *self,
 }
 
 static gboolean
-dhcp4_event_cb (GIOChannel *source,
+dhcp4_event_cb (int fd,
                 GIOCondition condition,
                 gpointer data)
 {
@@ -1188,8 +1187,14 @@ nettools_create (NMDhcpNettools *self,
 	client = NULL;
 
 	n_dhcp4_client_get_fd (priv->client, &fd);
-	priv->channel = g_io_channel_unix_new (fd);
-	priv->event_id = g_io_add_watch (priv->channel, G_IO_IN, dhcp4_event_cb, self);
+
+	priv->event_source = nm_g_unix_fd_source_new (fd,
+	                                              G_IO_IN,
+	                                              G_PRIORITY_DEFAULT,
+	                                              dhcp4_event_cb,
+	                                              self,
+	                                              NULL);
+	g_source_attach (priv->event_source, NULL);
 
 	return TRUE;
 }
@@ -1419,8 +1424,7 @@ dispose (GObject *object)
 	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE ((NMDhcpNettools *) object);
 
 	nm_clear_pointer (&priv->lease_file, g_free);
-	nm_clear_pointer (&priv->channel, g_io_channel_unref);
-	nm_clear_g_source (&priv->event_id);
+	nm_clear_g_source_inst (&priv->event_source);
 	nm_clear_pointer (&priv->lease, n_dhcp4_client_lease_unref);
 	nm_clear_pointer (&priv->probe, n_dhcp4_client_probe_free);
 	nm_clear_pointer (&priv->client, n_dhcp4_client_unref);
