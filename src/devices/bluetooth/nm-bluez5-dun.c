@@ -50,12 +50,12 @@ struct _NMBluez5DunContext {
 
 	char *rfcomm_tty_path;
 
+	GSource *rfcomm_tty_poll_source;
+
 	int rfcomm_sock_fd;
 	int rfcomm_tty_fd;
 	int rfcomm_tty_no;
 	int rfcomm_channel;
-
-	guint rfcomm_tty_poll_id;
 
 	bdaddr_t src;
 	bdaddr_t dst;
@@ -118,7 +118,7 @@ nm_bluez5_dun_context_get_rfcomm_dev (const NMBluez5DunContext *context)
 /*****************************************************************************/
 
 static gboolean
-_rfcomm_tty_poll_cb (GIOChannel *stream,
+_rfcomm_tty_poll_cb (int fd,
                      GIOCondition condition,
                      gpointer user_data)
 {
@@ -129,7 +129,7 @@ _rfcomm_tty_poll_cb (GIOChannel *stream,
 	       NM_FLAGS_ALL (condition, G_IO_HUP | G_IO_ERR) ? ","   : "",
 	       NM_FLAGS_HAS (condition, G_IO_HUP)            ? "HUP" : "");
 
-	context->rfcomm_tty_poll_id = 0;
+	nm_clear_g_source_inst (&context->rfcomm_tty_poll_source);
 	context->notify_tty_hangup_cb (context,
 	                               context->notify_tty_hangup_user_data);
 	return G_SOURCE_REMOVE;
@@ -166,7 +166,6 @@ _connect_open_tty_retry_cb (gpointer user_data)
 static int
 _connect_open_tty (NMBluez5DunContext *context)
 {
-	nm_auto_unref_io_channel GIOChannel *io_channel = NULL;
 	int fd;
 	int errsv;
 
@@ -192,11 +191,13 @@ _connect_open_tty (NMBluez5DunContext *context)
 
 	context->rfcomm_tty_fd = fd;
 
-	io_channel = g_io_channel_unix_new (context->rfcomm_tty_fd);
-	context->rfcomm_tty_poll_id = g_io_add_watch (io_channel,
-	                                              G_IO_ERR | G_IO_HUP,
-	                                              _rfcomm_tty_poll_cb,
-	                                              context);
+	context->rfcomm_tty_poll_source = nm_g_unix_fd_source_new (context->rfcomm_tty_fd,
+	                                                           G_IO_ERR | G_IO_HUP,
+	                                                           G_PRIORITY_DEFAULT,
+	                                                           _rfcomm_tty_poll_cb,
+	                                                           context,
+	                                                           NULL);
+	g_source_attach (context->rfcomm_tty_poll_source, NULL);
 
 	_context_invoke_callback_success (context);
 	return 0;
@@ -843,7 +844,7 @@ _context_free (NMBluez5DunContext *context)
 
 	_context_cleanup_connect_data (context);
 
-	nm_clear_g_source (&context->rfcomm_tty_poll_id);
+	nm_clear_g_source_inst (&context->rfcomm_tty_poll_source);
 
 	if (context->rfcomm_sock_fd >= 0) {
 		if (context->rfcomm_tty_no >= 0) {
