@@ -515,8 +515,12 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 			condition = 0;
 
 		if (condition) {
-			fdp->source = g_unix_fd_source_new (fd, condition);
-			g_source_set_callback (fdp->source, G_SOURCE_FUNC (_con_curl_socketevent_cb), fdp, NULL);
+			fdp->source = nm_g_unix_fd_source_new (fd,
+			                                       condition,
+			                                       G_PRIORITY_DEFAULT,
+			                                       _con_curl_socketevent_cb,
+			                                       fdp,
+			                                       NULL);
 			g_source_attach (fdp->source, NULL);
 		}
 	}
