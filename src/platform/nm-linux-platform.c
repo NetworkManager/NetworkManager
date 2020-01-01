@@ -8823,7 +8823,7 @@ constructed (GObject *_object)
 	nm_assert (!platform->_netns || platform->_netns == nmp_netns_get_current ());
 
 	if (nm_platform_get_use_udev (platform)) {
-		priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
+		priv->udev_client = nm_udev_client_new (NM_MAKE_STRV ("net"),
 		                                        handle_udev_event, platform);
 	}
 
