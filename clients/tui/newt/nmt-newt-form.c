@@ -312,7 +312,7 @@ static GSList *form_stack;
 static GSource *keypress_source;
 
 static gboolean
-nmt_newt_form_keypress_callback (int          fd,
+nmt_newt_form_keypress_callback (GIOChannel   *channel,
                                  GIOCondition condition,
                                  gpointer     user_data)
 {
