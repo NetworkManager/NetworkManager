@@ -864,7 +864,9 @@ readline_cb (char *line)
 }
 
 static gboolean
-stdin_ready_cb (GIOChannel * io, GIOCondition condition, gpointer data)
+stdin_ready_cb (int fd,
+                GIOCondition condition,
+                gpointer data)
 {
 	rl_callback_read_char ();
 	return TRUE;
@@ -874,14 +876,17 @@ static char *
 nmc_readline_helper (const NmcConfig *nmc_config,
                      const char *prompt)
 {
-	GIOChannel *io = NULL;
-	guint io_watch_id;
+	GSource *io_source;
 
 	nmc_set_in_readline (TRUE);
 
-	io = g_io_channel_unix_new (STDIN_FILENO);
-	io_watch_id = g_io_add_watch (io, G_IO_IN, stdin_ready_cb, NULL);
-	g_io_channel_unref (io);
+	io_source = nm_g_unix_fd_source_new (STDIN_FILENO,
+	                                     G_IO_IN,
+	                                     G_PRIORITY_DEFAULT,
+	                                     stdin_ready_cb,
+	                                     NULL,
+	                                     NULL);
+	g_source_attach (io_source, NULL);
 
 read_again:
 	rl_string = NULL;
@@ -930,7 +935,8 @@ read_again:
 		rl_string = NULL;
 	}
 
-	g_source_remove (io_watch_id);
+	nm_clear_g_source_inst (&io_source);
+
 	nmc_set_in_readline (FALSE);
 
 	return rl_string;
