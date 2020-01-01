@@ -164,7 +164,7 @@ nm_udev_client_enumerate_new (NMUdevClient *self)
 /*****************************************************************************/
 
 static gboolean
-monitor_event (GIOChannel *source,
+monitor_event (int fd,
                GIOCondition condition,
                gpointer user_data)
 {
@@ -204,7 +204,6 @@ nm_udev_client_new (const char *const*subsystems,
                     gpointer event_user_data)
 {
 	NMUdevClient *self;
-	GIOChannel *channel;
 	guint n;
 
 	self = g_slice_new0 (NMUdevClient);
@@ -237,12 +236,14 @@ nm_udev_client_new (const char *const*subsystems,
 			/* listen to events, and buffer them */
 			udev_monitor_set_receive_buffer_size (self->monitor, 4*1024*1024);
 			udev_monitor_enable_receiving (self->monitor);
-			channel = g_io_channel_unix_new (udev_monitor_get_fd (self->monitor));
-			self->watch_source = g_io_create_watch (channel, G_IO_IN);
-			g_io_channel_unref (channel);
-			g_source_set_callback (self->watch_source, (GSourceFunc)(void (*) (void)) monitor_event, self, NULL);
+
+			self->watch_source = nm_g_unix_fd_source_new (udev_monitor_get_fd (self->monitor),
+			                                              G_IO_IN,
+			                                              G_PRIORITY_DEFAULT,
+			                                              monitor_event,
+			                                              self,
+			                                              NULL);
 			g_source_attach (self->watch_source, g_main_context_get_thread_default ());
-			g_source_unref (self->watch_source);
 		}
 	}
 
@@ -258,10 +259,7 @@ nm_udev_client_unref (NMUdevClient *self)
 	if (!self)
 		return NULL;
 
-	if (self->watch_source) {
-		g_source_destroy (self->watch_source);
-		self->watch_source = NULL;
-	}
+	nm_clear_g_source_inst (&self->watch_source);
 
 	udev_monitor_unref (self->monitor);
 	self->monitor = NULL;
