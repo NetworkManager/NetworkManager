@@ -418,13 +418,14 @@ typedef struct {
 	struct nl_sock *genl;
 
 	struct nl_sock *nlh;
+
+	GSource *event_source;
+
 	guint32 nlh_seq_next;
 #if NM_MORE_LOGGING
 	guint32 nlh_seq_last_handled;
 #endif
 	guint32 nlh_seq_last_seen;
-	GIOChannel *event_channel;
-	guint event_id;
 
 	guint32 pruning[_REFRESH_ALL_TYPE_NUM];
 
@@ -8340,12 +8341,8 @@ tfilter_add (NMPlatform *platform,
 
 /*****************************************************************************/
 
-#define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
-#define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
-#define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
-
 static gboolean
-event_handler (GIOChannel *channel,
+event_handler (int fd,
                GIOCondition io_condition,
                gpointer user_data)
 {
@@ -8816,9 +8813,8 @@ constructed (GObject *_object)
 {
 	NMPlatform *platform = NM_PLATFORM (_object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int channel_flags;
-	gboolean status;
 	int nle;
+	int fd;
 
 	nm_assert (!platform->_netns || platform->_netns == nmp_netns_get_current ());
 
@@ -8887,18 +8883,18 @@ constructed (GObject *_object)
 	                                 RTNLGRP_TC,
 	                                 0);
 	g_assert (!nle);
-	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
-	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh));
-	g_io_channel_set_encoding (priv->event_channel, NULL, NULL);
+	fd = nl_socket_get_fd (priv->nlh);
 
-	channel_flags = g_io_channel_get_flags (priv->event_channel);
-	status = g_io_channel_set_flags (priv->event_channel,
-	                                 channel_flags | G_IO_FLAG_NONBLOCK, NULL);
-	g_assert (status);
-	priv->event_id = g_io_add_watch (priv->event_channel,
-	                                (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
-	                                 event_handler, platform);
+	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), fd);
+
+	priv->event_source = nm_g_unix_fd_source_new (fd,
+	                                              G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
+	                                              G_PRIORITY_DEFAULT,
+	                                              event_handler,
+	                                              platform,
+	                                              NULL);
+	g_source_attach (priv->event_source, NULL);
 
 	/* complete construction of the GObject instance before populating the cache. */
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
@@ -8991,8 +8987,8 @@ finalize (GObject *object)
 
 	nl_socket_free (priv->genl);
 
-	g_source_remove (priv->event_id);
-	g_io_channel_unref (priv->event_channel);
+	nm_clear_g_source_inst (&priv->event_source);
+
 	nl_socket_free (priv->nlh);
 
 	if (priv->sysctl_get_prev_values) {
