@@ -48,7 +48,7 @@ struct _NMSessionMonitor {
 #if SESSION_TRACKING_XLOGIND
 	struct {
 		sd_login_monitor *monitor;
-		guint watch;
+		GSource *watch;
 	} sd;
 #endif
 
@@ -90,7 +90,9 @@ st_sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
 }
 
 static gboolean
-st_sd_changed (GIOChannel *stream, GIOCondition condition, gpointer user_data)
+st_sd_changed (int fd,
+               GIOCondition condition,
+               gpointer user_data)
 {
 	NMSessionMonitor *monitor = user_data;
 
@@ -98,14 +100,13 @@ st_sd_changed (GIOChannel *stream, GIOCondition condition, gpointer user_data)
 
 	sd_login_monitor_flush (monitor->sd.monitor);
 
-	return TRUE;
+	return G_SOURCE_CONTINUE;
 }
 
 static void
 st_sd_init (NMSessionMonitor *monitor)
 {
 	int status;
-	GIOChannel *stream;
 
 	if (!g_file_test ("/run/systemd/seats/", G_FILE_TEST_EXISTS))
 		return;
@@ -115,10 +116,13 @@ st_sd_init (NMSessionMonitor *monitor)
 		return;
 	}
 
-	stream = g_io_channel_unix_new (sd_login_monitor_get_fd (monitor->sd.monitor));
-	monitor->sd.watch = g_io_add_watch (stream, G_IO_IN, st_sd_changed, monitor);
-
-	g_io_channel_unref (stream);
+	monitor->sd.watch = nm_g_unix_fd_source_new (sd_login_monitor_get_fd (monitor->sd.monitor),
+	                                             G_IO_IN,
+	                                             G_PRIORITY_DEFAULT,
+	                                             st_sd_changed,
+	                                             monitor,
+	                                             NULL);
+	g_source_attach (monitor->sd.watch, NULL);
 }
 
 static void
@@ -128,7 +132,7 @@ st_sd_finalize (NMSessionMonitor *monitor)
 		sd_login_monitor_unref (monitor->sd.monitor);
 		monitor->sd.monitor = NULL;
 	}
-	nm_clear_g_source (&monitor->sd.watch);
+	nm_clear_g_source_inst (&monitor->sd.watch);
 }
 #endif /* SESSION_TRACKING_XLOGIND */
 
