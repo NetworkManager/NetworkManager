@@ -3623,6 +3623,26 @@ nm_g_unix_signal_source_new (int signum,
 	return source;
 }
 
+GSource *
+nm_g_unix_fd_source_new (int fd,
+                         GIOCondition io_condition,
+                         int priority,
+                         gboolean (*source_func) (int fd,
+                                                  GIOCondition condition,
+                                                  gpointer user_data),
+                         gpointer user_data,
+                         GDestroyNotify destroy_notify)
+{
+	GSource *source;
+
+	source = g_unix_fd_source_new (fd, io_condition);
+
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, G_SOURCE_FUNC (source_func), user_data, destroy_notify);
+	return source;
+}
+
 /*****************************************************************************/
 
 #define _CTX_LOG(fmt, ...) \
