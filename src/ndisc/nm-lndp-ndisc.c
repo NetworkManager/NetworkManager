@@ -24,9 +24,7 @@
 
 typedef struct {
 	struct ndp *ndp;
-
-	GIOChannel *event_channel;
-	guint event_id;
+	GSource *event_source;
 } NMLndpNDiscPrivate;
 
 /*****************************************************************************/
@@ -484,9 +482,11 @@ receive_rs (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 }
 
 static gboolean
-event_ready (GIOChannel *source, GIOCondition condition, NMNDisc *ndisc)
+event_ready (int fd,
+             GIOCondition condition,
+             gpointer user_data)
 {
-	_nm_unused gs_unref_object NMNDisc *ndisc_keep_alive = g_object_ref (ndisc);
+	gs_unref_object NMNDisc *ndisc = g_object_ref (NM_NDISC (user_data));
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 
@@ -494,7 +494,7 @@ event_ready (GIOChannel *source, GIOCondition condition, NMNDisc *ndisc)
 
 	if (!nm_ndisc_netns_push (ndisc, &netns)) {
 		/* something is very wrong. Stop handling events. */
-		priv->event_id = 0;
+		nm_clear_g_source_inst (&priv->event_source);
 		return G_SOURCE_REMOVE;
 	}
 
@@ -506,16 +506,22 @@ static void
 start (NMNDisc *ndisc)
 {
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
-	int fd = ndp_get_eventfd (priv->ndp);
+	int fd;
 
-	g_return_if_fail (!priv->event_channel);
-	g_return_if_fail (!priv->event_id);
+	g_return_if_fail (!priv->event_source);
 
-	priv->event_channel = g_io_channel_unix_new (fd);
-	priv->event_id = g_io_add_watch (priv->event_channel, G_IO_IN, (GIOFunc) event_ready, ndisc);
+	fd = ndp_get_eventfd (priv->ndp);
+
+	priv->event_source = nm_g_unix_fd_source_new (fd,
+	                                              G_IO_IN,
+	                                              G_PRIORITY_DEFAULT,
+	                                              event_ready,
+	                                              ndisc,
+	                                              NULL);
+	g_source_attach (priv->event_source, NULL);
 
 	/* Flush any pending messages to avoid using obsolete information */
-	event_ready (priv->event_channel, 0, ndisc);
+	event_ready (fd, 0, ndisc);
 
 	switch (nm_ndisc_get_node_type (ndisc)) {
 	case NM_NDISC_NODE_TYPE_HOST:
@@ -611,8 +617,7 @@ dispose (GObject *object)
 	NMNDisc *ndisc = (NMNDisc *) object;
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 
-	nm_clear_g_source (&priv->event_id);
-	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
+	nm_clear_g_source_inst (&priv->event_source);
 
 	if (priv->ndp) {
 		switch (nm_ndisc_get_node_type (ndisc)) {
