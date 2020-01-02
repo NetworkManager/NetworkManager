@@ -1122,7 +1122,12 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_SAE:
 	case NMU_SEC_OWE:
 		return TRUE;
-	default:
+	case NMU_SEC_LEAP:
+	case NMU_SEC_DYNAMIC_WEP:
+	case NMU_SEC_WPA_ENTERPRISE:
+	case NMU_SEC_WPA2_ENTERPRISE:
+		return FALSE;
+	case NMU_SEC_INVALID:
 		break;
 	}
 	return FALSE;
@@ -1161,8 +1166,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
                          NM80211ApSecurityFlags ap_wpa,
                          NM80211ApSecurityFlags ap_rsn)
 {
-	gboolean good = TRUE;
-
 	if (!have_ap) {
 		if (type == NMU_SEC_NONE)
 			return TRUE;
@@ -1171,8 +1174,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
 			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
 				return TRUE;
-			else
-				return FALSE;
+			return FALSE;
 		}
 	}
 
@@ -1183,7 +1185,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			return FALSE;
 		if (ap_wpa || ap_rsn)
 			return FALSE;
-		break;
+		return TRUE;
 	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
 		if (adhoc)
 			return FALSE;
@@ -1197,7 +1199,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 				if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, TRUE))
 					return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_DYNAMIC_WEP:
 		if (adhoc)
 			return FALSE;
@@ -1211,7 +1213,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
 				return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_WPA_PSK:
 		if (adhoc)
 			return FALSE;
@@ -1228,7 +1230,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			}
 			return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_WPA2_PSK:
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
@@ -1251,7 +1253,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			}
 			return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_WPA_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
@@ -1264,7 +1266,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
 				return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_WPA2_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
@@ -1277,7 +1279,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, FALSE))
 				return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_SAE:
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
@@ -1300,7 +1302,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			}
 			return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_OWE:
 		if (adhoc)
 			return FALSE;
@@ -1310,13 +1312,12 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_OWE))
 				return FALSE;
 		}
-		break;
-	default:
-		good = FALSE;
+		return TRUE;
+	case NMU_SEC_INVALID:
 		break;
 	}
 
-	return good;
+	return FALSE;
 }
 
 /**
