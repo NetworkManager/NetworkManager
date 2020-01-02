@@ -9,7 +9,7 @@
 
 #include <sys/stat.h>
 
-#include "nm-keyfile-internal.h"
+#include "nm-keyfile/nm-keyfile-internal.h"
 
 #include "NetworkManagerUtils.h"
 #include "nms-keyfile-utils.h"

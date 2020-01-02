@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 
 #include "nm-glib-aux/nm-io-utils.h"
-#include "nm-keyfile-internal.h"
+#include "nm-keyfile/nm-keyfile-internal.h"
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"

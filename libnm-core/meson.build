@@ -165,8 +165,6 @@ libnm_core_sources = libnm_core_settings_sources + files(
   'nm-crypto.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
-  'nm-keyfile-utils.c',
-  'nm-keyfile.c',
   'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
@@ -227,6 +225,24 @@ libnm_libnm_core_aux_dep = declare_dependency(
   include_directories: [libnm_core_inc, shared_inc],
   dependencies: glib_dep,
   link_with: libnm_libnm_core_aux,
+)
+
+libnm_keyfile = static_library(
+  'nm-keyfile',
+  sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
+  dependencies: libnm_utils_base_dep,
+  c_args: [
+    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+  ],
+  link_with: libnm_libnm_core_intern,
+)
+
+libnm_keyfile_dep = declare_dependency(
+  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
+  include_directories: [libnm_core_inc, shared_inc],
+  dependencies: glib_dep,
+  link_with: libnm_keyfile,
 )
 
 enums_to_docbook = join_paths(source_root, 'tools', 'enums-to-docbook.pl')

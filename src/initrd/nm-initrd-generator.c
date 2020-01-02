@@ -6,7 +6,7 @@
 #include "nm-default.h"
 #include "nm-core-utils.h"
 #include "nm-core-internal.h"
-#include "nm-keyfile-internal.h"
+#include "nm-keyfile/nm-keyfile-internal.h"
 #include "nm-initrd-generator.h"
 #include "nm-glib-aux/nm-io-utils.h"
 

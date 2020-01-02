@@ -527,6 +527,41 @@ $(shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_
 
 ###############################################################################
 
+noinst_LTLIBRARIES += shared/nm-keyfile/libnm-keyfile.la
+
+shared_nm_keyfile_libnm_keyfile_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
+	$(NULL)
+
+shared_nm_keyfile_libnm_keyfile_la_SOURCES = \
+	shared/nm-keyfile/nm-keyfile-internal.h \
+	shared/nm-keyfile/nm-keyfile-utils.c \
+	shared/nm-keyfile/nm-keyfile-utils.h \
+	shared/nm-keyfile/nm-keyfile.c \
+	$(NULL)
+
+shared_nm_keyfile_libnm_keyfile_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+shared_nm_keyfile_libnm_keyfile_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+$(shared_nm_keyfile_libnm_keyfile_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+###############################################################################
+
 noinst_LTLIBRARIES += shared/nm-libnm-aux/libnm-libnm-aux.la
 
 shared_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
@@ -909,8 +944,6 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-core-types-internal.h \
 	libnm-core/nm-crypto-impl.h \
 	libnm-core/nm-crypto.h \
-	libnm-core/nm-keyfile-internal.h \
-	libnm-core/nm-keyfile-utils.h \
 	libnm-core/nm-property-compare.h \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-team-utils.h \
@@ -973,8 +1006,6 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-crypto.c \
 	libnm-core/nm-dbus-utils.c \
 	libnm-core/nm-errors.c \
-	libnm-core/nm-keyfile-utils.c \
-	libnm-core/nm-keyfile.c \
 	libnm-core/nm-property-compare.c \
 	libnm-core/nm-setting.c \
 	libnm-core/nm-simple-connection.c \
@@ -1182,6 +1213,7 @@ nodist_libnm_core_tests_test_general_SOURCES = \
 
 libnm_core_tests_ldadd = \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
@@ -2269,6 +2301,7 @@ src_libNetworkManager_la_SOURCES = \
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
@@ -2358,6 +2391,7 @@ src_nm_iface_helper_SOURCES = \
 src_nm_iface_helper_LDADD = \
 	src/libNetworkManagerBase.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \
@@ -2406,6 +2440,7 @@ src_initrd_nm_initrd_generator_LDADD = \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerBase.la \
 	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	shared/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	shared/nm-libnm-core-intern/libnm-libnm-core-intern.la \

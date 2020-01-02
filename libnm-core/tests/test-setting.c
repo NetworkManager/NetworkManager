@@ -24,7 +24,7 @@
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-errors.h"
-#include "nm-keyfile-internal.h"
+#include "nm-keyfile/nm-keyfile-internal.h"
 
 #include "nm-utils/nm-test-utils.h"
 

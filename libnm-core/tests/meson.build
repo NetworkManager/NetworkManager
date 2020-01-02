@@ -16,6 +16,7 @@ enum_sources = gnome.mkenums_simple(
 )
 
 deps = [
+  libnm_keyfile_dep,
   libnm_core_dep,
   libnm_core_nm_default_dep,
 ]
