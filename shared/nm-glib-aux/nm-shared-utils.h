@@ -1026,6 +1026,25 @@ nm_g_main_context_push_thread_default (GMainContext *context)
 	return context;
 }
 
+static inline gboolean
+nm_g_main_context_is_thread_default (GMainContext *context)
+{
+	GMainContext *cur_context;
+
+	cur_context = g_main_context_get_thread_default ();
+	if (cur_context == context)
+		return TRUE;
+
+	if (G_UNLIKELY (!cur_context))
+		cur_context = g_main_context_default ();
+	else if (G_UNLIKELY (!context))
+		context = g_main_context_default ();
+	else
+		return FALSE;
+
+	return (cur_context == context);
+}
+
 static inline GMainContext *
 nm_g_main_context_push_thread_default_if_necessary (GMainContext *context)
 {
