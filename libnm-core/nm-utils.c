@@ -1195,9 +1195,10 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 		if (ap_wpa || ap_rsn) {
-			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, TRUE))
+			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, TRUE)) {
 				if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, TRUE))
 					return FALSE;
+			}
 		}
 		return TRUE;
 	case NMU_SEC_DYNAMIC_WEP:
