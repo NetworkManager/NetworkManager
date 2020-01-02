@@ -1166,21 +1166,10 @@ nm_utils_security_valid (NMUtilsSecurityType type,
                          NM80211ApSecurityFlags ap_wpa,
                          NM80211ApSecurityFlags ap_rsn)
 {
-	if (!have_ap) {
-		if (type == NMU_SEC_NONE)
-			return TRUE;
-		if (   (type == NMU_SEC_STATIC_WEP)
-		    || ((type == NMU_SEC_DYNAMIC_WEP) && !adhoc)
-		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
-			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
-				return TRUE;
-			return FALSE;
-		}
-	}
-
 	switch (type) {
 	case NMU_SEC_NONE:
-		g_assert (have_ap);
+		if (!have_ap)
+			return TRUE;
 		if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
 			return FALSE;
 		if (   ap_wpa
@@ -1192,7 +1181,11 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			return FALSE;
 		/* fall through */
 	case NMU_SEC_STATIC_WEP:
-		g_assert (have_ap);
+		if (!have_ap) {
+			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
+				return TRUE;
+			return FALSE;
+		}
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 		if (   ap_wpa
@@ -1206,7 +1199,11 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_DYNAMIC_WEP:
 		if (adhoc)
 			return FALSE;
-		g_assert (have_ap);
+		if (!have_ap) {
+			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
+				return TRUE;
+			return FALSE;
+		}
 		if (   ap_rsn
 		    || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
