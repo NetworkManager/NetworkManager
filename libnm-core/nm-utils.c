@@ -1183,7 +1183,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		g_assert (have_ap);
 		if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
 			return FALSE;
-		if (ap_wpa || ap_rsn)
+		if (   ap_wpa
+		    || ap_rsn)
 			return FALSE;
 		return TRUE;
 	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
@@ -1194,7 +1195,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		g_assert (have_ap);
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
-		if (ap_wpa || ap_rsn) {
+		if (   ap_wpa
+		    || ap_rsn) {
 			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, TRUE)) {
 				if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, TRUE))
 					return FALSE;
@@ -1205,7 +1207,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (adhoc)
 			return FALSE;
 		g_assert (have_ap);
-		if (ap_rsn || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+		if (   ap_rsn
+		    || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 		/* Some APs broadcast minimal WPA-enabled beacons that must be handled */
 		if (ap_wpa) {
