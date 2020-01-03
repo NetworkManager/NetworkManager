@@ -124,17 +124,11 @@ test_secret_agent_init (TestSecretAgent *agent)
 static NMSecretAgentOld *
 test_secret_agent_new (void)
 {
-	NMSecretAgentOld *agent;
-	GError *error = NULL;
-
-	agent = g_initable_new (test_secret_agent_get_type (),
-	                        NULL,
-	                        &error,
-	                        NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
-	                        NM_SECRET_AGENT_OLD_AUTO_REGISTER, FALSE,
-	                        NULL);
-	nmtst_assert_success (agent, error);
-	return agent;
+	return nmtstc_context_object_new (test_secret_agent_get_type (),
+	                                  TRUE,
+	                                  NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
+	                                  NM_SECRET_AGENT_OLD_AUTO_REGISTER, FALSE,
+	                                  NULL);
 }
 
 static void
