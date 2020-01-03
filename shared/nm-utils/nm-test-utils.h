@@ -1040,6 +1040,68 @@ _nmtst_main_context_iterate_until_timeout (gpointer user_data)
 
 /*****************************************************************************/
 
+typedef struct {
+	GMainLoop *_main_loop;
+	GSList *_list;
+} NMTstContextBusyWatcherData;
+
+static inline void
+_nmtst_context_busy_watcher_add_cb (gpointer data,
+                                    GObject *where_the_object_was)
+{
+	NMTstContextBusyWatcherData *watcher_data = data;
+	GSList *l;
+
+	g_assert (watcher_data);
+
+	l = g_slist_find (watcher_data->_list, where_the_object_was);
+	g_assert (l);
+
+	watcher_data->_list = g_slist_delete_link (watcher_data->_list, l);
+	if (!watcher_data->_list)
+		g_main_loop_quit (watcher_data->_main_loop);
+}
+
+static inline void
+nmtst_context_busy_watcher_add (NMTstContextBusyWatcherData *watcher_data,
+                                GObject *object)
+{
+	g_assert (watcher_data);
+	g_assert (G_IS_OBJECT (object));
+
+	if (!watcher_data->_main_loop) {
+		watcher_data->_main_loop = g_main_loop_new (g_main_context_get_thread_default (),
+		                                            FALSE);
+		g_assert (!watcher_data->_list);
+	}
+
+	g_object_weak_ref (object,
+	                   _nmtst_context_busy_watcher_add_cb,
+	                   watcher_data);
+	watcher_data->_list = g_slist_prepend (watcher_data->_list, object);
+}
+
+static inline void
+nmtst_context_busy_watcher_wait (NMTstContextBusyWatcherData *watcher_data)
+{
+	g_assert (watcher_data);
+
+	if (!watcher_data->_main_loop) {
+		g_assert (!watcher_data->_list);
+		return;
+	}
+
+	if (watcher_data->_list) {
+		if (!nmtst_main_loop_run (watcher_data->_main_loop, 5000))
+			g_error ("timeout running mainloop waiting for GObject to destruct");
+	}
+
+	g_assert (!watcher_data->_list);
+	nm_clear_pointer (&watcher_data->_main_loop, g_main_loop_unref);
+}
+
+/*****************************************************************************/
+
 static inline const char *
 nmtst_get_sudo_cmd (void)
 {
