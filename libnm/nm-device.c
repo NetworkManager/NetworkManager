@@ -158,7 +158,7 @@ _notify_event_state_changed (NMClient *client,
 	gs_unref_object NMDevice *self = notify_event->user_data;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	NML_NMCLIENT_LOG_T (_nm_object_get_client (self),
+	NML_NMCLIENT_LOG_T (client,
 	                    "[%s] emit Device's StateChanged signal %u -> %u, reason: %u",
 	                    _nm_object_get_path (self),
 	                    (guint) priv->old_state,
