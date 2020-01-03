@@ -216,7 +216,7 @@ again_wait:
 typedef struct {
 	GMainLoop *loop;
 	const char *ifname;
-	char *path;
+	const char *path;
 	NMDevice *device;
 } AddDeviceInfo;
 
@@ -227,19 +227,15 @@ device_added_cb (NMClient *client,
 {
 	AddDeviceInfo *info = user_data;
 
-	g_assert (device);
+	g_assert (info);
+	g_assert (!info->device);
+
+	g_assert (NM_IS_DEVICE (device));
 	g_assert_cmpstr (nm_object_get_path (NM_OBJECT (device)), ==, info->path);
 	g_assert_cmpstr (nm_device_get_iface (device), ==, info->ifname);
 
-	info->device = device;
+	info->device = g_object_ref (device);
 	g_main_loop_quit (info->loop);
-}
-
-static gboolean
-timeout (gpointer user_data)
-{
-	g_assert_not_reached ();
-	return G_SOURCE_REMOVE;
 }
 
 static GVariant *
@@ -275,39 +271,53 @@ call_add_device (GDBusProxy *proxy, const char *method, const char *ifname, GErr
 }
 
 static NMDevice *
-add_device_common (NMTstcServiceInfo *sinfo, NMClient *client,
-                   const char *method, const char *ifname,
-                   const char *hwaddr, const char **subchannels)
+add_device_common (NMTstcServiceInfo *sinfo,
+                   NMClient *client,
+                   const char *method,
+                   const char *ifname,
+                   const char *hwaddr,
+                   const char **subchannels)
 {
+	nm_auto_unref_gmainloop GMainLoop *loop = NULL;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
 	AddDeviceInfo info;
-	GError *error = NULL;
-	GVariant *ret;
-	guint timeout_id;
 
-	if (g_strcmp0 (method, "AddWiredDevice") == 0)
+	g_assert (sinfo);
+	g_assert (NM_IS_CLIENT (client));
+
+	if (nm_streq0 (method, "AddWiredDevice"))
 		ret = call_add_wired_device (sinfo->proxy, ifname, hwaddr, subchannels, &error);
 	else
 		ret = call_add_device (sinfo->proxy, method, ifname, &error);
 
-	g_assert_no_error (error);
-	g_assert (ret);
+	nmtst_assert_success (ret, error);
 	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
-	g_variant_get (ret, "(o)", &info.path);
-	g_variant_unref (ret);
 
-	/* Wait for libnm to find the device */
-	info.ifname = ifname;
-	info.loop = g_main_loop_new (NULL, FALSE);
-	g_signal_connect (client, "device-added",
-	                  G_CALLBACK (device_added_cb), &info);
-	timeout_id = g_timeout_add_seconds (5, timeout, NULL);
-	g_main_loop_run (info.loop);
+	/* Wait for NMClient to find the device */
 
-	g_source_remove (timeout_id);
+	loop = g_main_loop_new (nm_client_get_main_context (client), FALSE);
+
+	info = (AddDeviceInfo) {
+		.ifname = ifname,
+		.loop   = loop,
+	};
+	g_variant_get (ret, "(&o)", &info.path);
+
+	g_signal_connect (client,
+	                  NM_CLIENT_DEVICE_ADDED,
+	                  G_CALLBACK (device_added_cb),
+	                  &info);
+
+	if (!nmtst_main_loop_run (loop, 5000))
+		g_assert_not_reached ();
+
 	g_signal_handlers_disconnect_by_func (client, device_added_cb, &info);
-	g_free (info.path);
-	g_main_loop_unref (info.loop);
 
+	g_assert (NM_IS_DEVICE (info.device));
+
+	g_assert (info.device == nm_client_get_device_by_path (client, nm_object_get_path (NM_OBJECT (info.device))));
+	g_object_unref (info.device);
 	return info.device;
 }
 
