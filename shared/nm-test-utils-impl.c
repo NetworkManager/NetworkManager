@@ -410,35 +410,47 @@ nmtstc_service_update_connection_variant (NMTstcServiceInfo *sinfo,
 /*****************************************************************************/
 
 typedef struct {
+	GType gtype;
 	GMainLoop *loop;
-	NMClient *client;
-} NMTstcClientNewData;
+	GObject *obj;
+	bool call_nm_client_new_async:1;
+} NMTstcObjNewData;
 
 static void
-_nmtstc_client_new_cb (GObject *source_object,
-                       GAsyncResult *res,
-                       gpointer user_data)
+_context_object_new_do_cb (GObject *source_object,
+                           GAsyncResult *res,
+                           gpointer user_data)
 {
-	NMTstcClientNewData *d = user_data;
+	NMTstcObjNewData *d = user_data;
 	gs_free_error GError *error = NULL;
 
-	g_assert (!d->client);
+	g_assert (!d->obj);
 
-	d->client = nm_client_new_finish (res,
-	                                  nmtst_get_rand_bool () ? &error : NULL);
+	if (d->call_nm_client_new_async) {
+		d->obj = G_OBJECT (nm_client_new_finish (res,
+		                                         nmtst_get_rand_bool () ? &error : NULL));
+	} else {
+		d->obj = g_async_initable_new_finish (G_ASYNC_INITABLE (source_object),
+		                                      res,
+		                                      nmtst_get_rand_bool () ? &error : NULL);
+	}
 
-	nmtst_assert_success (NM_IS_CLIENT (d->client), error);
+	nmtst_assert_success (G_IS_OBJECT (d->obj), error);
+	g_assert (G_OBJECT_TYPE (d->obj) == d->gtype);
 
 	g_main_loop_quit (d->loop);
 }
 
-static NMClient *
-_nmtstc_client_new (gboolean sync)
+static GObject *
+_context_object_new_do (GType gtype,
+                        gboolean sync,
+                        const gchar *first_property_name,
+                        va_list var_args)
 {
 	gs_free_error GError *error = NULL;
-	NMClient *client;
+	GObject *obj;
 
-	/* Create a NMClient instance synchronously, and arbitrarily use either
+	/* Create a GObject instance synchronously, and arbitrarily use either
 	 * the sync or async constructor.
 	 *
 	 * Note that the sync and async construct differ in one important aspect:
@@ -456,124 +468,127 @@ _nmtstc_client_new (gboolean sync)
 			g_source_attach (source, g_main_context_get_thread_default ());
 		}
 
-		if (nmtst_get_rand_bool ()) {
+		if (   gtype != NM_TYPE_CLIENT
+		    || first_property_name
+		    || nmtst_get_rand_bool ()) {
 			gboolean success;
 
-			client = g_object_new (NM_TYPE_CLIENT, NULL);
-			g_assert (NM_IS_CLIENT (client));
+			if (   first_property_name
+			    || nmtst_get_rand_bool ())
+				obj = g_object_new_valist (gtype, first_property_name, var_args);
+			else
+				obj = g_object_new (gtype, NULL);
 
-			success = g_initable_init (G_INITABLE (client),
+			success = g_initable_init (G_INITABLE (obj),
 			                           NULL,
 			                           nmtst_get_rand_bool () ? &error : NULL);
 			nmtst_assert_success (success, error);
 		} else {
-			client = nm_client_new (NULL,
-			                        nmtst_get_rand_bool () ? &error : NULL);
+			obj = G_OBJECT (nm_client_new (NULL,
+			                               nmtst_get_rand_bool () ? &error : NULL));
 		}
 	} else {
 		nm_auto_unref_gmainloop GMainLoop *loop = NULL;
-		NMTstcClientNewData d = { .loop = NULL, };
+		NMTstcObjNewData d = {
+			.gtype                    = gtype,
+			.loop                     = NULL,
+		};
+		gs_unref_object GObject *obj2 = NULL;
 
 		loop = g_main_loop_new (g_main_context_get_thread_default (), FALSE);
-
 		d.loop = loop;
-		nm_client_new_async (NULL,
-		                     _nmtstc_client_new_cb,
-		                     &d);
+
+		if (   gtype != NM_TYPE_CLIENT
+		    || first_property_name
+		    || nmtst_get_rand_bool ()) {
+			if (   first_property_name
+			    || nmtst_get_rand_bool ())
+				obj2 = g_object_new_valist (gtype, first_property_name, var_args);
+			else
+				obj2 = g_object_new (gtype, NULL);
+
+			g_async_initable_init_async (G_ASYNC_INITABLE (obj2),
+			                             G_PRIORITY_DEFAULT,
+			                             NULL,
+			                             _context_object_new_do_cb,
+			                             &d);
+		} else {
+			d.call_nm_client_new_async = TRUE;
+			nm_client_new_async (NULL,
+			                     _context_object_new_do_cb,
+			                     &d);
+		}
 		g_main_loop_run (loop);
-		g_assert (NM_IS_CLIENT (d.client));
-		client = d.client;
+		obj = d.obj;
+		g_assert (!obj2 || obj == obj2);
 	}
 
-	nmtst_assert_success (NM_IS_CLIENT (client), error);
-	return client;
+	nmtst_assert_success (G_IS_OBJECT (obj), error);
+	g_assert (G_OBJECT_TYPE (obj) == gtype);
+	return obj;
 }
 
 typedef struct {
+	GType gtype;
+	const char *first_property_name;
+	va_list var_args;
 	GMainLoop *loop;
-	NMClient *client;
+	GObject *obj;
 	bool sync;
 } NewSyncInsideDispatchedData;
 
 static gboolean
-_nmtstc_client_new_inside_loop_do (gpointer user_data)
+_context_object_new_inside_loop_do (gpointer user_data)
 {
 	NewSyncInsideDispatchedData *d = user_data;
 
 	g_assert (d->loop);
-	g_assert (!d->client);
+	g_assert (!d->obj);
 
-	d->client = nmtstc_client_new (d->sync);
+	d->obj = nmtstc_context_object_new_valist (d->gtype, d->sync, d->first_property_name, d->var_args);
 	g_main_loop_quit (d->loop);
 	return G_SOURCE_CONTINUE;
 }
 
-static NMClient *
-_nmtstc_client_new_inside_loop (gboolean sync)
+static GObject *
+_context_object_new_inside_loop (GType gtype,
+                                 gboolean sync,
+                                 const char *first_property_name,
+                                 va_list var_args)
 {
 	GMainContext *context = g_main_context_get_thread_default ();
 	nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new (context, FALSE);
 	NewSyncInsideDispatchedData d = {
-		.sync = sync,
-		.loop = loop,
+		.gtype               = gtype,
+		.first_property_name = first_property_name,
+		.sync                = sync,
+		.loop                = loop,
 	};
 	nm_auto_destroy_and_unref_gsource GSource *source = NULL;
 
+	va_copy (d.var_args, var_args);
+
 	source = g_idle_source_new ();
-	g_source_set_callback (source, _nmtstc_client_new_inside_loop_do, &d, NULL);
+	g_source_set_callback (source, _context_object_new_inside_loop_do, &d, NULL);
 	g_source_attach (source, context);
 
 	g_main_loop_run (loop);
-	g_assert (NM_IS_CLIENT (d.client));
-	return d.client;
+
+	va_end (d.var_args);
+
+	g_assert (G_IS_OBJECT (d.obj));
+	g_assert (G_OBJECT_TYPE (d.obj) == gtype);
+	return d.obj;
 }
 
-static NMClient *
-_nmtstc_client_new_extra_context (void)
-{
-	GMainContext *inner_context;
-	NMClient *client;
-	GSource *source;
-	guint key_idx;
-
-	inner_context = g_main_context_new ();
-	g_main_context_push_thread_default (inner_context);
-
-	client = nmtstc_client_new (TRUE);
-
-	source = nm_utils_g_main_context_create_integrate_source (inner_context);
-
-	g_main_context_pop_thread_default (inner_context);
-	g_main_context_unref (inner_context);
-
-	g_source_attach (source, g_main_context_get_thread_default ());
-
-	for (key_idx = 0; TRUE; key_idx++) {
-		char s[100];
-
-		/* nmtstc_client_new() may call _nmtstc_client_new_extra_context() repeatedly. We
-		 * need to attach the source to a previously unused key. */
-		nm_sprintf_buf (s, "nm-test-extra-context-%u", key_idx);
-		if (!g_object_get_data (G_OBJECT (client), s)) {
-			g_object_set_data_full (G_OBJECT (client),
-			                        s,
-			                        source,
-			                        (GDestroyNotify) nm_g_source_destroy_and_unref);
-			break;
-		}
-	}
-
-	return client;
-}
-
-NMClient *
-nmtstc_client_new (gboolean allow_iterate_main_context)
+gpointer
+nmtstc_context_object_new_valist (GType gtype,
+                                  gboolean allow_iterate_main_context,
+                                  const char *first_property_name,
+                                  va_list var_args)
 {
 	gboolean inside_loop;
 	gboolean sync;
-
-	if (nmtst_get_rand_uint32 () % 5 == 0)
-		return _nmtstc_client_new_extra_context ();
 
 	if (!allow_iterate_main_context) {
 		sync = TRUE;
@@ -587,11 +602,26 @@ nmtstc_client_new (gboolean allow_iterate_main_context)
 	}
 
 	if (inside_loop) {
-		/* Create the client on an idle handler of the current context.
+		/* Create the obj on an idle handler of the current context.
 		 * In practice, it should make no difference, which this check
 		 * tries to prove. */
-		return _nmtstc_client_new_inside_loop (sync);
+		return _context_object_new_inside_loop (gtype, sync, first_property_name, var_args);
 	}
 
-	return _nmtstc_client_new (sync);
+	return _context_object_new_do (gtype, sync, first_property_name, var_args);
+}
+
+gpointer
+nmtstc_context_object_new (GType gtype,
+                           gboolean allow_iterate_main_context,
+                           const char *first_property_name,
+                           ...)
+{
+	GObject *obj;
+	va_list var_args;
+
+	va_start (var_args, first_property_name);
+	obj = nmtstc_context_object_new_valist (gtype, allow_iterate_main_context, first_property_name, var_args);
+	va_end (var_args);
+	return obj;
 }
