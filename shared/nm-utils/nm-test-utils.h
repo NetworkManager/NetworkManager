@@ -2380,6 +2380,17 @@ nmtst_g_source_assert_not_called (gpointer user_data)
 	return G_SOURCE_CONTINUE;
 }
 
+static inline gboolean
+nmtst_g_source_set_boolean_true (gpointer user_data)
+{
+	gboolean *ptr = user_data;
+
+	g_assert (ptr);
+	g_assert (!*ptr);
+	*ptr = TRUE;
+	return G_SOURCE_CONTINUE;
+}
+
 /*****************************************************************************/
 
 #endif /* __NM_TEST_UTILS_H__ */
