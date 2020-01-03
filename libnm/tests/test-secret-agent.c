@@ -290,9 +290,15 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 {
 	GVariant *ret;
 	GError *error = NULL;
+	NMTstContextBusyWatcherData watcher_data = { };
+
+	g_assert (nm_g_main_context_is_thread_default (NULL));
 
 	if (!sadata->sinfo)
 		return;
+
+	nmtst_context_busy_watcher_add (&watcher_data,
+	                                nm_client_get_context_busy_watcher (sadata->client));
 
 	if (sadata->agent) {
 		if (nm_secret_agent_old_get_registered (sadata->agent)) {
@@ -325,6 +331,13 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 	g_free (sadata->con_id);
 
 	*sadata = (TestSecretAgentData) { };
+
+	nmtst_context_busy_watcher_wait (&watcher_data);
+
+	while (g_main_context_iteration (NULL, FALSE)) {
+	}
+
+	nmtst_main_context_assert_no_dispatch (NULL, nmtst_get_rand_uint32 () % 500);
 }
 
 /*****************************************************************************/
