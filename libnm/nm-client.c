@@ -7575,6 +7575,8 @@ dispose (GObject *object)
 
 	priv->nm.capabilities_len = 0;
 	nm_clear_g_free (&priv->nm.capabilities_arr);
+
+	NML_NMCLIENT_LOG_D (self, "disposed");
 }
 
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_agentmanager = NML_DBUS_META_IFACE_INIT (
