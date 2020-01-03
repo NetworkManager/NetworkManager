@@ -1040,6 +1040,28 @@ _nmtst_main_context_iterate_until_timeout (gpointer user_data)
 
 /*****************************************************************************/
 
+static inline gboolean nmtst_g_source_set_boolean_true (gpointer user_data);
+
+static inline void
+nmtst_main_context_assert_no_dispatch (GMainContext *context,
+                                       guint timeout_msec)
+{
+	nm_auto_destroy_and_unref_gsource GSource *source = NULL;
+	gboolean timeout_hit = FALSE;
+
+	source = g_timeout_source_new (timeout_msec);
+	g_source_set_callback (source, nmtst_g_source_set_boolean_true, &timeout_hit, NULL);
+	g_source_attach (source, context);
+
+	while (g_main_context_iteration (context, TRUE)) {
+		if (timeout_hit)
+			return;
+		g_assert_not_reached ();
+	}
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	GMainLoop *_main_loop;
 	GSList *_list;
