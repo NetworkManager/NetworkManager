@@ -968,6 +968,26 @@ nmtst_rand_perm_gslist (GRand *rand, GSList *list)
 /*****************************************************************************/
 
 static inline gboolean
+nmtst_g_source_assert_not_called (gpointer user_data)
+{
+	g_assert_not_reached ();
+	return G_SOURCE_CONTINUE;
+}
+
+static inline gboolean
+nmtst_g_source_set_boolean_true (gpointer user_data)
+{
+	gboolean *ptr = user_data;
+
+	g_assert (ptr);
+	g_assert (!*ptr);
+	*ptr = TRUE;
+	return G_SOURCE_CONTINUE;
+}
+
+/*****************************************************************************/
+
+static inline gboolean
 _nmtst_main_loop_run_timeout (gpointer user_data)
 {
 	GMainLoop **p_loop = user_data;
@@ -2387,15 +2407,6 @@ nmtst_keyfile_get_num_keys (GKeyFile *keyfile,
 	g_assert_cmpint (NM_PTRARRAY_LEN (keys), ==, l);
 
 	return l;
-}
-
-/*****************************************************************************/
-
-static inline gboolean
-nmtst_g_source_assert_not_called (gpointer user_data)
-{
-	g_assert_not_reached ();
-	return G_SOURCE_CONTINUE;
 }
 
 /*****************************************************************************/
