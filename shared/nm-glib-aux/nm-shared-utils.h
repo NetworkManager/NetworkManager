@@ -1183,8 +1183,9 @@ _nm_utils_strv_equal (char **strv1, char **strv2)
 /*****************************************************************************/
 
 #define NM_UTILS_NSEC_PER_SEC  ((gint64) 1000000000)
-#define NM_UTILS_NSEC_PER_MSEC ((gint64) 1000000)
+#define NM_UTILS_USEC_PER_SEC  ((gint64) 1000000)
 #define NM_UTILS_MSEC_PER_SEC  ((gint64) 1000)
+#define NM_UTILS_NSEC_PER_MSEC ((gint64) 1000000)
 
 static inline gint64
 NM_UTILS_NSEC_TO_MSEC_CEIL (gint64 nsec)
