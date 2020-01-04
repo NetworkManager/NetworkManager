@@ -1030,16 +1030,6 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 }
 #define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
 
-static inline gboolean
-_nmtst_main_context_iterate_until_timeout (gpointer user_data)
-{
-	gboolean *p_had_pointer = user_data;
-
-	g_assert (!*p_had_pointer);
-	*p_had_pointer = TRUE;
-	return G_SOURCE_CONTINUE;
-}
-
 #define nmtst_main_context_iterate_until(context, timeout_msec, condition) \
 	G_STMT_START { \
 		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
@@ -1047,7 +1037,7 @@ _nmtst_main_context_iterate_until_timeout (gpointer user_data)
 		gboolean _had_timeout = FALSE; \
 		\
 		_source = g_timeout_source_new (timeout_msec); \
-		g_source_set_callback (_source, _nmtst_main_context_iterate_until_timeout, &_had_timeout, NULL); \
+		g_source_set_callback (_source, nmtst_g_source_set_boolean_true, &_had_timeout, NULL); \
 		g_source_attach (_source, _context); \
 		\
 		while (TRUE) { \
