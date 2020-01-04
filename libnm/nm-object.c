@@ -78,13 +78,40 @@ _nm_object_get_client (gpointer self)
  *
  * Returns: the object's path. This is the internal string used by the
  * object, and must not be modified.
+ *
+ * Note that the D-Bus path of an NMObject never changes, even
+ * if the instance gets removed from the cache. To find out
+ * whether the object is still alive/cached, check nm_object_get_client().
  **/
 const char *
 nm_object_get_path (NMObject *object)
 {
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
-	return NM_OBJECT_GET_PRIVATE (object)->dbobj->dbus_path->str;
+	return _nm_object_get_path (object);
+}
+
+/**
+ * nm_object_get_client:
+ * @object: a #NMObject
+ *
+ * Returns the #NMClient instance in which object is cached.
+ * Also, if the object got removed from the client cached,
+ * this returns %NULL. So it can be used to check whether the
+ * object is still alive.
+ *
+ * Returns: (transfer none): the #NMClient cache in which the
+ * object can be found, or %NULL if the object is no longer
+ * cached.
+ *
+ * Since: 1.24
+ **/
+NMClient *
+nm_object_get_client (NMObject *object)
+{
+	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
+
+	return _nm_object_get_client (object);
 }
 
 /*****************************************************************************/

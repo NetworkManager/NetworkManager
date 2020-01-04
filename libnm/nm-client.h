@@ -174,6 +174,9 @@ NMState     nm_client_get_state      (NMClient *client);
 gboolean    nm_client_get_startup    (NMClient *client);
 gboolean    nm_client_get_nm_running (NMClient *client);
 
+NMObject *nm_client_get_object_by_path (NMClient *client,
+                                        const char *dbus_path);
+
 NM_AVAILABLE_IN_1_22
 NMMetered   nm_client_get_metered (NMClient *client);
 

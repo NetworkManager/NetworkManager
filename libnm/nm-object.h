@@ -31,7 +31,10 @@ typedef struct _NMObjectClass NMObjectClass;
 
 GType nm_object_get_type (void);
 
-const char      *nm_object_get_path            (NMObject *object);
+const char      *nm_object_get_path (NMObject *object);
+
+NM_AVAILABLE_IN_1_24
+NMClient *nm_object_get_client (NMObject *object);
 
 G_END_DECLS
 

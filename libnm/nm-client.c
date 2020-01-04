@@ -3914,6 +3914,26 @@ nm_client_get_nm_running (NMClient *client)
 }
 
 /**
+ * nm_client_get_object_by_path:
+ * @client: the #NMClient instance
+ * @dbus_path: the D-Bus path of the object to look up
+ *
+ * Returns: (transfer none): the #NMObject instance that is
+ *   cached under @dbus_path, or %NULL if no such object exists.
+ *
+ * Since: 1.24
+ */
+NMObject *
+nm_client_get_object_by_path (NMClient *client,
+                              const char *dbus_path)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (dbus_path, NULL);
+
+	return _dbobjs_get_nmobj_unpack_visible (client, dbus_path, G_TYPE_NONE);
+}
+
+/**
  * nm_client_get_metered:
  * @client: a #NMClient
  *
