@@ -3606,9 +3606,9 @@ EXTRA_DIST += \
 
 if WITH_WIFI
 
-core_plugins += src/devices/wifi/libnm-device-plugin-wifi.la
+noinst_LTLIBRARIES += src/devices/wifi/libnm-wifi-base.la
 
-src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
+src_devices_wifi_libnm_wifi_base_la_SOURCES = \
 	src/devices/wifi/nm-device-olpc-mesh.c \
 	src/devices/wifi/nm-device-olpc-mesh.h \
 	src/devices/wifi/nm-device-wifi-p2p.c \
@@ -3619,7 +3619,6 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 	src/devices/wifi/nm-wifi-ap.h \
 	src/devices/wifi/nm-wifi-common.c \
 	src/devices/wifi/nm-wifi-common.h \
-	src/devices/wifi/nm-wifi-factory.c \
 	src/devices/wifi/nm-wifi-p2p-peer.c \
 	src/devices/wifi/nm-wifi-p2p-peer.h \
 	src/devices/wifi/nm-wifi-utils.c \
@@ -3627,13 +3626,26 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 	$(NULL)
 
 if WITH_IWD
-src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES += \
+src_devices_wifi_libnm_wifi_base_la_SOURCES += \
 	src/devices/wifi/nm-device-iwd.c \
 	src/devices/wifi/nm-device-iwd.h \
 	src/devices/wifi/nm-iwd-manager.c \
 	src/devices/wifi/nm-iwd-manager.h \
 	$(NULL)
 endif
+
+src_devices_wifi_libnm_wifi_base_la_CPPFLAGS = $(src_cppflags_device_plugin)
+
+src_devices_wifi_libnm_wifi_base_la_LIBADD = \
+	$(GLIB_LIBS)
+
+$(src_devices_wifi_libnm_wifi_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+core_plugins += src/devices/wifi/libnm-device-plugin-wifi.la
+
+src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
+	src/devices/wifi/nm-wifi-factory.c \
+	$(NULL)
 
 src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = $(src_cppflags_device_plugin)
 
@@ -3642,7 +3654,10 @@ src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
+	src/devices/wifi/libnm-wifi-base.la \
 	$(GLIB_LIBS)
+
+$(src_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
@@ -3654,14 +3669,15 @@ check_programs += src/devices/wifi/tests/test-devices-wifi
 
 src_devices_wifi_tests_test_devices_wifi_SOURCES = \
 	src/devices/wifi/tests/test-devices-wifi.c \
-	src/devices/wifi/nm-wifi-ap.c \
-	src/devices/wifi/nm-wifi-ap.h \
-	src/devices/wifi/nm-wifi-utils.c \
-	src/devices/wifi/nm-wifi-utils.h
+	$(NULL)
 
 src_devices_wifi_tests_test_devices_wifi_CPPFLAGS = $(src_cppflags_base_test)
 
-src_devices_wifi_tests_test_devices_wifi_LDADD = src/libNetworkManagerTest.la
+src_devices_wifi_tests_test_devices_wifi_LDADD = \
+	src/libNetworkManagerTest.la \
+	src/devices/wifi/libnm-wifi-base.la \
+	$(NULL)
+
 src_devices_wifi_tests_test_devices_wifi_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
 
 $(src_devices_wifi_tests_test_devices_wifi_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
