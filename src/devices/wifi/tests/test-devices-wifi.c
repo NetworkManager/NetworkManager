@@ -6,6 +6,7 @@
 #include "nm-default.h"
 
 #include "devices/wifi/nm-wifi-utils.h"
+#include "devices/wifi/nm-device-wifi.h"
 #include "nm-core-internal.h"
 
 #include "nm-test-utils-core.h"
@@ -1337,6 +1338,60 @@ test_strength_all (void)
 
 /*****************************************************************************/
 
+static void
+do_test_ssids_options_to_ptrarray (const char *const*ssids)
+{
+	GVariantBuilder builder;
+	gs_unref_variant GVariant *variant = NULL;
+	gs_unref_ptrarray GPtrArray *ssids_arr = NULL;
+	gs_free_error GError *error = NULL;
+	gsize len;
+	gsize i;
+
+	g_assert (ssids);
+
+	len = NM_PTRARRAY_LEN (ssids);
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aay"));
+	for (i = 0; i < len; i++) {
+		const char *ssid = ssids[i];
+
+		g_variant_builder_add (&builder,
+		                       "@ay",
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, ssid, strlen (ssid), 1));
+	}
+	variant = g_variant_builder_end (&builder);
+
+	if (nmtst_get_rand_bool ())
+		g_variant_ref_sink (variant);
+
+	ssids_arr = nmtst_ssids_options_to_ptrarray (variant, &error);
+	g_assert (!error);
+	if (len == 0) {
+		g_assert (!ssids_arr);
+		return;
+	}
+	g_assert_cmpint (len, ==, ssids_arr->len);
+	for (i = 0; i < len; i++) {
+		const char *ssid = ssids[i];
+		GBytes *bytes = ssids_arr->pdata[i];
+
+		g_assert (nm_utils_gbytes_equal_mem (bytes,
+		                                     ssid,
+		                                     strlen (ssid)));
+	}
+}
+
+static void
+test_ssids_options_to_ptrarray (void)
+{
+	do_test_ssids_options_to_ptrarray (NM_PTRARRAY_EMPTY (const char *));
+	do_test_ssids_options_to_ptrarray (NM_MAKE_STRV ("ab"));
+	do_test_ssids_options_to_ptrarray (NM_MAKE_STRV ("ab", "cd", "fsdfdsf"));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1500,6 +1555,8 @@ main (int argc, char **argv)
 	                 test_strength_wext);
 	g_test_add_func ("/wifi/strength/all",
 	                 test_strength_all);
+
+	g_test_add_func ("/wifi/ssids_options_to_ptrarray", test_ssids_options_to_ptrarray);
 
 	return g_test_run ();
 }

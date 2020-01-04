@@ -1079,6 +1079,8 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 	gsize len;
 	int num_ssids, i;
 
+	nm_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("aay")));
+
 	num_ssids = g_variant_n_children (value);
 	if (num_ssids > 32) {
 		g_set_error_literal (error,
@@ -1108,6 +1110,12 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 		}
 	}
 	return ssids;
+}
+
+GPtrArray *
+nmtst_ssids_options_to_ptrarray (GVariant *value, GError **error)
+{
+	return ssids_options_to_ptrarray (value, error);
 }
 
 static void
