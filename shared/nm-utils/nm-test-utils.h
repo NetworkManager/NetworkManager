@@ -848,6 +848,15 @@ nmtst_get_rand_uint32 (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+static inline guint64
+nmtst_get_rand_uint64 (void)
+{
+	GRand *rand = nmtst_get_rand ();
+
+	return   (((guint64) g_rand_int (rand))      )
+	       | (((guint64) g_rand_int (rand)) << 32);
+}
+
 static inline guint
 nmtst_get_rand_uint (void)
 {
