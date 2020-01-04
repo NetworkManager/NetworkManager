@@ -621,6 +621,44 @@ test_wifi_eap_fils_disabled (void)
 	validate_opt ("wifi-eap", config_dict, "bgscan", TYPE_BYTES, bgscan);
 }
 
+/*****************************************************************************/
+
+static void
+test_suppl_cap_mask (void)
+{
+	NMSupplCapType type;
+
+	g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (NM_SUPPL_CAP_MASK_T_AP_NO,  NM_SUPPL_CAP_TYPE_AP), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (NM_SUPPL_CAP_MASK_T_AP_YES, NM_SUPPL_CAP_TYPE_AP), ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (NM_SUPPL_CAP_MASK_NONE,     NM_SUPPL_CAP_TYPE_AP), ==, NM_TERNARY_DEFAULT);
+
+	g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (NM_SUPPL_CAP_MASK_T_FILS_NO,  NM_SUPPL_CAP_TYPE_FILS), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (NM_SUPPL_CAP_MASK_T_FILS_YES, NM_SUPPL_CAP_TYPE_FILS), ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (NM_SUPPL_CAP_MASK_NONE,       NM_SUPPL_CAP_TYPE_FILS), ==, NM_TERNARY_DEFAULT);
+
+	for (type = 0; type < _NM_SUPPL_CAP_TYPE_NUM; type++) {
+		NMTernary value;
+		NMSupplCapMask feature;
+		NMSupplCapMask feature2;
+
+		feature =   nmtst_get_rand_bool ()
+		          ? 0u
+		          : nmtst_get_rand_uint64 ();
+		feature &= NM_SUPPL_CAP_MASK_ALL;
+
+		value = nmtst_rand_select (NM_TERNARY_DEFAULT,
+		                           NM_TERNARY_FALSE,
+		                           NM_TERNARY_TRUE);
+
+		feature2 = NM_SUPPL_CAP_MASK_SET (feature, type, value);
+
+		g_assert_cmpint (NM_SUPPL_CAP_MASK_GET (feature2, type), ==, value);
+		g_assert_cmpint (feature & ~NM_SUPPL_CAP_MASK_MASK (type), ==, feature2 & ~NM_SUPPL_CAP_MASK_MASK (type));
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -634,6 +672,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/supplicant-config/wifi-eap/unlocked-bssid", test_wifi_eap_unlocked_bssid);
 	g_test_add_func ("/supplicant-config/wifi-eap/fils-disabled", test_wifi_eap_fils_disabled);
 	g_test_add_func ("/supplicant-config/wifi-sae", test_wifi_sae);
+	g_test_add_func ("/supplicant-config/test_suppl_cap_mask", test_suppl_cap_mask);
 
 	return g_test_run ();
 }
