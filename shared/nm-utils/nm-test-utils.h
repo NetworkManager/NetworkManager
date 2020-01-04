@@ -1030,7 +1030,7 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 }
 #define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
 
-#define nmtst_main_context_iterate_until(context, timeout_msec, condition) \
+#define nmtst_main_context_iterate_until_assert(context, timeout_msec, condition) \
 	G_STMT_START { \
 		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
 		GMainContext *_context = (context); \
