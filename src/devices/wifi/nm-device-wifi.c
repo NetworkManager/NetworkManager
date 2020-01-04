@@ -1077,7 +1077,6 @@ static GPtrArray *
 ssids_options_to_ptrarray (GVariant *value, GError **error)
 {
 	GPtrArray *ssids = NULL;
-	GVariant *v;
 	const guint8 *bytes;
 	gsize len;
 	int num_ssids, i;
@@ -1094,6 +1093,8 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 	if (num_ssids) {
 		ssids = g_ptr_array_new_full (num_ssids, (GDestroyNotify) g_bytes_unref);
 		for (i = 0; i < num_ssids; i++) {
+			gs_unref_variant GVariant *v = NULL;
+
 			v = g_variant_get_child_value (value, i);
 			bytes = g_variant_get_fixed_array (v, &len, sizeof (guint8));
 			if (len > 32) {
