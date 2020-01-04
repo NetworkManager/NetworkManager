@@ -1030,8 +1030,8 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 }
 #define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
 
-#define nmtst_main_context_iterate_until_assert(context, timeout_msec, condition) \
-	G_STMT_START { \
+#define nmtst_main_context_iterate_until(context, timeout_msec, condition) \
+	({ \
 		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
 		GMainContext *_context = (context); \
 		gboolean _had_timeout = FALSE; \
@@ -1044,8 +1044,17 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 			if (condition) \
 				break; \
 			g_main_context_iteration (_context, TRUE); \
-			g_assert (!_had_timeout && #condition); \
+			if (_had_timeout) \
+				break; \
 		} \
+		\
+		!_had_timeout; \
+	})
+
+#define nmtst_main_context_iterate_until_assert(context, timeout_msec, condition) \
+	G_STMT_START { \
+		if (!nmtst_main_context_iterate_until (context, timeout_msec, condition)) \
+			g_assert (FALSE && #condition); \
 	} G_STMT_END
 
 /*****************************************************************************/
