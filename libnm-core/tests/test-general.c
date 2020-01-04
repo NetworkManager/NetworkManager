@@ -8270,7 +8270,7 @@ test_integrate_maincontext (gconstpointer test_data)
 		g_source_set_callback (idle_source_1, _test_integrate_maincontext_cb_idle1, &count, NULL);
 		g_source_attach (idle_source_1, c2);
 
-		nmtst_main_context_iterate_until (c1, 2000, count == 5);
+		nmtst_main_context_iterate_until_assert (c1, 2000, count == 5);
 	}
 
 	if (TEST_IDX == 2) {
