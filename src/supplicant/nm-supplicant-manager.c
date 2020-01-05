@@ -526,9 +526,9 @@ nm_supplicant_manager_init (NMSupplicantManager *self)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_NONE,
 	                          NULL,
-	                          WPAS_DBUS_SERVICE,
-	                          WPAS_DBUS_PATH,
-	                          WPAS_DBUS_INTERFACE,
+	                          NM_WPAS_DBUS_SERVICE,
+	                          NM_WPAS_DBUS_PATH,
+	                          NM_WPAS_DBUS_INTERFACE,
 	                          priv->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired,
 	                          self);

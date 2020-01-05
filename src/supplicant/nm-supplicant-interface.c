@@ -16,15 +16,15 @@
 #include "nm-core-internal.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 
-#define WPAS_DBUS_IFACE_INTERFACE             WPAS_DBUS_INTERFACE ".Interface"
-#define WPAS_DBUS_IFACE_INTERFACE_WPS         WPAS_DBUS_INTERFACE ".Interface.WPS"
-#define WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE  WPAS_DBUS_INTERFACE ".Interface.P2PDevice"
-#define WPAS_DBUS_IFACE_BSS                   WPAS_DBUS_INTERFACE ".BSS"
-#define WPAS_DBUS_IFACE_PEER                  WPAS_DBUS_INTERFACE ".Peer"
-#define WPAS_DBUS_IFACE_GROUP                 WPAS_DBUS_INTERFACE ".Group"
-#define WPAS_DBUS_IFACE_NETWORK               WPAS_DBUS_INTERFACE ".Network"
-#define WPAS_ERROR_INVALID_IFACE              WPAS_DBUS_INTERFACE ".InvalidInterface"
-#define WPAS_ERROR_EXISTS_ERROR               WPAS_DBUS_INTERFACE ".InterfaceExists"
+#define NM_WPAS_DBUS_IFACE_INTERFACE             NM_WPAS_DBUS_INTERFACE ".Interface"
+#define NM_WPAS_DBUS_IFACE_INTERFACE_WPS         NM_WPAS_DBUS_INTERFACE ".Interface.WPS"
+#define NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE  NM_WPAS_DBUS_INTERFACE ".Interface.P2PDevice"
+#define NM_WPAS_DBUS_IFACE_BSS                   NM_WPAS_DBUS_INTERFACE ".BSS"
+#define NM_WPAS_DBUS_IFACE_PEER                  NM_WPAS_DBUS_INTERFACE ".Peer"
+#define NM_WPAS_DBUS_IFACE_GROUP                 NM_WPAS_DBUS_INTERFACE ".Group"
+#define NM_WPAS_DBUS_IFACE_NETWORK               NM_WPAS_DBUS_INTERFACE ".Network"
+#define NM_WPAS_ERROR_INVALID_IFACE              NM_WPAS_DBUS_INTERFACE ".InvalidInterface"
+#define NM_WPAS_ERROR_EXISTS_ERROR               NM_WPAS_DBUS_INTERFACE ".InterfaceExists"
 
 /*****************************************************************************/
 
@@ -311,9 +311,9 @@ bss_add_new (NMSupplicantInterface *self, const char *object_path)
 	bss_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 	                          "g-bus-type", G_BUS_TYPE_SYSTEM,
 	                          "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-	                          "g-name", WPAS_DBUS_SERVICE,
+	                          "g-name", NM_WPAS_DBUS_SERVICE,
 	                          "g-object-path", object_path,
-	                          "g-interface-name", WPAS_DBUS_IFACE_BSS,
+	                          "g-interface-name", NM_WPAS_DBUS_IFACE_BSS,
 	                          NULL);
 	bss_data = g_slice_new0 (BssData);
 	bss_data->proxy = bss_proxy;
@@ -427,9 +427,9 @@ peer_add_new (NMSupplicantInterface *self, const char *object_path)
 	peer_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 	                           "g-bus-type", G_BUS_TYPE_SYSTEM,
 	                           "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-	                           "g-name", WPAS_DBUS_SERVICE,
+	                           "g-name", NM_WPAS_DBUS_SERVICE,
 	                           "g-object-path", object_path,
-	                           "g-interface-name", WPAS_DBUS_IFACE_PEER,
+	                           "g-interface-name", NM_WPAS_DBUS_IFACE_PEER,
 	                           NULL);
 	peer_data = g_slice_new0 (PeerData);
 	peer_data->proxy = peer_proxy;
@@ -624,7 +624,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 	if (g_variant_lookup (capabilities, "MaxScanSSID", "i", &max_scan_ssids)) {
 		/* We need active scan and SSID probe capabilities to care about MaxScanSSIDs */
 		if (max_scan_ssids > 0 && have_active && have_ssid) {
-			/* wpa_supplicant's WPAS_MAX_SCAN_SSIDS value is 16, but for speed
+			/* wpa_supplicant's NM_WPAS_MAX_SCAN_SSIDS value is 16, but for speed
 			 * and to ensure we don't disclose too many SSIDs from the hidden
 			 * list, we'll limit to 5.
 			 */
@@ -945,7 +945,7 @@ _wps_call_set_pc (WpsData *data)
 	g_dbus_proxy_call (data->proxy,
 	                   "org.freedesktop.DBus.Properties.Set",
 	                   g_variant_new ("(ssv)",
-	                                  WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                                  NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
 	                                  "ProcessCredentials",
 	                                  g_variant_new_boolean (TRUE)),
 	                   G_DBUS_CALL_FLAGS_NONE,
@@ -1066,9 +1066,9 @@ _wps_start (NMSupplicantInterface *self,
 		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 		                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 		                          NULL,
-		                          WPAS_DBUS_SERVICE,
+		                          NM_WPAS_DBUS_SERVICE,
 		                          priv->object_path,
-		                          WPAS_DBUS_IFACE_INTERFACE_WPS,
+		                          NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
 		                          data->cancellable,
 		                          _wps_handle_proxy_cb,
 		                          data);
@@ -1485,9 +1485,9 @@ p2p_props_changed_cb (GDBusProxy *proxy,
 			priv->group_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 			                                  "g-bus-type", G_BUS_TYPE_SYSTEM,
 			                                  "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-			                                  "g-name", WPAS_DBUS_SERVICE,
+			                                  "g-name", NM_WPAS_DBUS_SERVICE,
 			                                  "g-object-path", path,
-			                                  "g-interface-name", WPAS_DBUS_IFACE_GROUP,
+			                                  "g-interface-name", NM_WPAS_DBUS_IFACE_GROUP,
 			                                  NULL);
 			g_signal_connect (priv->group_proxy, "g-properties-changed", G_CALLBACK (group_props_changed_cb), self);
 			g_async_initable_init_async (G_ASYNC_INITABLE (priv->group_proxy),
@@ -1630,7 +1630,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
-	                                  WPAS_DBUS_IFACE_INTERFACE,
+	                                  NM_WPAS_DBUS_IFACE_INTERFACE,
 	                                  "BSSExpireAge",
 	                                  g_variant_new_uint32 (250)),
 	                   G_DBUS_CALL_FLAGS_NONE,
@@ -1641,7 +1641,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
-	                                  WPAS_DBUS_IFACE_INTERFACE,
+	                                  NM_WPAS_DBUS_IFACE_INTERFACE,
 	                                  "BSSExpireCount",
 	                                  g_variant_new_uint32 (2)),
 	                   G_DBUS_CALL_FLAGS_NONE,
@@ -1671,7 +1671,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		g_dbus_proxy_call (priv->iface_proxy,
 		                   DBUS_INTERFACE_PROPERTIES ".Set",
 		                   g_variant_new ("(ssv)",
-		                                  WPAS_DBUS_IFACE_INTERFACE,
+		                                  NM_WPAS_DBUS_IFACE_INTERFACE,
 		                                  "Pmf",
 		                                  g_variant_new_string ("1")),
 		                   G_DBUS_CALL_FLAGS_NONE,
@@ -1758,9 +1758,9 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 	priv->iface_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 	                                  "g-bus-type", G_BUS_TYPE_SYSTEM,
 	                                  "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-	                                  "g-name", WPAS_DBUS_SERVICE,
+	                                  "g-name", NM_WPAS_DBUS_SERVICE,
 	                                  "g-object-path", priv->object_path,
-	                                  "g-interface-name", WPAS_DBUS_IFACE_INTERFACE,
+	                                  "g-interface-name", NM_WPAS_DBUS_IFACE_INTERFACE,
 	                                  NULL);
 	g_signal_connect (priv->iface_proxy, "g-properties-changed", G_CALLBACK (props_changed_cb), self);
 	g_async_initable_init_async (G_ASYNC_INITABLE (priv->iface_proxy),
@@ -1774,9 +1774,9 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 		priv->p2p_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 		                                "g-bus-type", G_BUS_TYPE_SYSTEM,
 		                                "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-		                                "g-name", WPAS_DBUS_SERVICE,
+		                                "g-name", NM_WPAS_DBUS_SERVICE,
 		                                "g-object-path", priv->object_path,
-		                                "g-interface-name", WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+		                                "g-interface-name", NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
 		                                NULL);
 		g_signal_connect (priv->p2p_proxy, "g-properties-changed", G_CALLBACK (p2p_props_changed_cb), self);
 		g_async_initable_init_async (G_ASYNC_INITABLE (priv->p2p_proxy),
@@ -1834,7 +1834,7 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	if (variant) {
 		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
-	} else if (_nm_dbus_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
+	} else if (_nm_dbus_error_has_name (error, NM_WPAS_ERROR_EXISTS_ERROR)) {
 		/* Interface already added, just get its object path */
 		g_dbus_proxy_call (priv->wpas_proxy,
 		                   "GetInterface",
@@ -1997,9 +1997,9 @@ interface_add (NMSupplicantInterface *self)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
-	                          WPAS_DBUS_SERVICE,
-	                          WPAS_DBUS_PATH,
-	                          WPAS_DBUS_INTERFACE,
+	                          NM_WPAS_DBUS_SERVICE,
+	                          NM_WPAS_DBUS_PATH,
+	                          NM_WPAS_DBUS_INTERFACE,
 	                          priv->init_cancellable,
 	                          (GAsyncReadyCallback) on_wpas_proxy_acquired,
 	                          self);
@@ -2428,7 +2428,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
-	                                  WPAS_DBUS_IFACE_INTERFACE,
+	                                  NM_WPAS_DBUS_IFACE_INTERFACE,
 	                                  "ApScan",
 	                                  g_variant_new_uint32 (nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg))),
 	                   G_DBUS_CALL_FLAGS_NONE,
