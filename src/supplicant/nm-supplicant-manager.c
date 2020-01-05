@@ -149,7 +149,6 @@ nm_supplicant_manager_set_wfd_ies (NMSupplicantManager *self,
 {
 	NMSupplicantManagerPrivate *priv;
 	GVariantBuilder params;
-	GVariant *val;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
 
@@ -157,20 +156,12 @@ nm_supplicant_manager_set_wfd_ies (NMSupplicantManager *self,
 
 	_LOGD ("setting WFD IEs for P2P operation");
 
-	if (wfd_ies)
-		val = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                 g_bytes_get_data (wfd_ies, NULL),
-		                                 g_bytes_get_size (wfd_ies),
-		                                 sizeof (guint8));
-	else
-		val = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                 NULL, 0, sizeof (guint8));
-
 	g_variant_builder_init (&params, G_VARIANT_TYPE ("(ssv)"));
 
 	g_variant_builder_add (&params, "s", g_dbus_proxy_get_interface_name (priv->proxy));
 	g_variant_builder_add (&params, "s", "WFDIEs");
-	g_variant_builder_add_value (&params, g_variant_new_variant (val));
+	g_variant_builder_add_value (&params,
+	                             g_variant_new_variant (nm_utils_gbytes_to_variant_ay (wfd_ies)));
 
 	g_dbus_connection_call (g_dbus_proxy_get_connection (priv->proxy),
 	                        g_dbus_proxy_get_name (priv->proxy),
