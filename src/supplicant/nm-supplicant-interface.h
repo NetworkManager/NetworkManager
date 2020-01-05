@@ -9,6 +9,8 @@
 
 #include "nm-supplicant-types.h"
 
+#include "c-list/src/c-list.h"
+
 /*
  * Supplicant interface states
  *   A mix of wpa_supplicant interface states and internal states.
@@ -71,6 +73,14 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED          "group-finished"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
+
+struct _NMSupplicantInterfacePrivate;
+
+struct _NMSupplicantInterface {
+	GObject parent;
+	CList supp_lst;
+	struct _NMSupplicantInterfacePrivate *_priv;
+};
 
 GType nm_supplicant_interface_get_type (void);
 

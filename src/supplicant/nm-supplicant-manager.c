@@ -17,7 +17,7 @@
 typedef struct {
 	GDBusProxy *proxy;
 	GCancellable *cancellable;
-	GSList *ifaces;
+	CList supp_lst_head;
 	NMSupplCapMask capabilities;
 	guint die_count_reset_id;
 	guint die_count;
@@ -95,20 +95,15 @@ _sup_iface_last_ref (gpointer data,
                      gboolean is_last_ref)
 {
 	NMSupplicantManager *self = data;
-	NMSupplicantManagerPrivate *priv;
-	NMSupplicantInterface *sup_iface = (NMSupplicantInterface *) object;
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	NMSupplicantInterface *sup_iface = NM_SUPPLICANT_INTERFACE (object);
 	const char *op;
 
-	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
-	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (sup_iface));
-	g_return_if_fail (is_last_ref);
+	nm_assert (is_last_ref);
+	nm_assert (c_list_contains (&priv->supp_lst_head, &sup_iface->supp_lst));
 
-	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	c_list_unlink (&sup_iface->supp_lst);
 
-	if (!g_slist_find (priv->ifaces, sup_iface))
-		g_return_if_reached ();
-
-	/* Ask wpa_supplicant to remove this interface */
 	if (   priv->running
 	    && priv->proxy
 	    && (op = nm_supplicant_interface_get_object_path (sup_iface))) {
@@ -122,8 +117,7 @@ _sup_iface_last_ref (gpointer data,
 		                   NULL);
 	}
 
-	priv->ifaces = g_slist_remove (priv->ifaces, sup_iface);
-	g_object_remove_toggle_ref ((GObject *) sup_iface, _sup_iface_last_ref, self);
+	g_object_remove_toggle_ref (G_OBJECT (sup_iface), _sup_iface_last_ref, self);
 }
 
 static void
@@ -211,8 +205,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
                                         NMSupplicantDriver driver)
 {
 	NMSupplicantManagerPrivate *priv;
-	NMSupplicantInterface *iface;
-	GSList *ifaces;
+	NMSupplicantInterface *sup_iface;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
 	g_return_val_if_fail (ifname != NULL, NULL);
@@ -221,19 +214,18 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 
 	_LOGD ("(%s): creating new supplicant interface", ifname);
 
-	/* assert against not requesting duplicate interfaces. */
-	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
-		if (g_strcmp0 (nm_supplicant_interface_get_ifname (ifaces->data), ifname) == 0)
+	c_list_for_each_entry (sup_iface, &priv->supp_lst_head, supp_lst) {
+		if (nm_streq0 (nm_supplicant_interface_get_ifname (sup_iface), ifname))
 			g_return_val_if_reached (NULL);
 	}
 
-	iface = nm_supplicant_interface_new (ifname,
-	                                     NULL,
-	                                     driver,
-	                                     priv->capabilities);
+	sup_iface = nm_supplicant_interface_new (ifname,
+	                                         NULL,
+	                                         driver,
+	                                         priv->capabilities);
 
-	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
-	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
+	c_list_link_tail (&priv->supp_lst_head, &sup_iface->supp_lst);
+	g_object_add_toggle_ref (G_OBJECT (sup_iface), _sup_iface_last_ref, self);
 
 	/* If we're making the supplicant take a time out for a bit, don't
 	 * let the supplicant interface start immediately, just let it hang
@@ -241,9 +233,9 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	 * again.
 	 */
 	if (is_available (self))
-		nm_supplicant_interface_set_supplicant_available (iface, TRUE);
+		nm_supplicant_interface_set_supplicant_available (sup_iface, TRUE);
 
-	return iface;
+	return sup_iface;
 }
 
 /**
@@ -263,8 +255,7 @@ nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
                                                   const char *object_path)
 {
 	NMSupplicantManagerPrivate *priv;
-	NMSupplicantInterface *iface;
-	GSList *ifaces;
+	NMSupplicantInterface *sup_iface;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
 	g_return_val_if_fail (object_path != NULL, NULL);
@@ -273,19 +264,18 @@ nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
 
 	_LOGD ("creating new supplicant interface for dbus path %s", object_path);
 
-	/* assert against not requesting duplicate interfaces. */
-	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
-		if (g_strcmp0 (nm_supplicant_interface_get_object_path (ifaces->data), object_path) == 0)
+	c_list_for_each_entry (sup_iface, &priv->supp_lst_head, supp_lst) {
+		if (nm_streq0 (nm_supplicant_interface_get_object_path (sup_iface), object_path))
 			g_return_val_if_reached (NULL);
 	}
 
-	iface = nm_supplicant_interface_new (NULL,
-	                                     object_path,
-	                                     NM_SUPPLICANT_DRIVER_WIRELESS,
-	                                     priv->capabilities);
+	sup_iface = nm_supplicant_interface_new (NULL,
+	                                         object_path,
+	                                         NM_SUPPLICANT_DRIVER_WIRELESS,
+	                                         priv->capabilities);
 
-	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
-	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
+	c_list_link_tail (&priv->supp_lst_head, &sup_iface->supp_lst);
+	g_object_add_toggle_ref (G_OBJECT (sup_iface), _sup_iface_last_ref, self);
 
 	/* If we're making the supplicant take a time out for a bit, don't
 	 * let the supplicant interface start immediately, just let it hang
@@ -293,16 +283,16 @@ nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
 	 * again.
 	 */
 	if (is_available (self))
-		nm_supplicant_interface_set_supplicant_available (iface, TRUE);
+		nm_supplicant_interface_set_supplicant_available (sup_iface, TRUE);
 
-	return iface;
+	return sup_iface;
 }
 
 static void
 update_capabilities (NMSupplicantManager *self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	GSList *ifaces;
+	NMSupplicantInterface *sup_iface;
 	const char **array;
 	GVariant *value;
 
@@ -383,8 +373,8 @@ update_capabilities (NMSupplicantManager *self)
 	_LOGD ("EAP-FAST is %s", _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FAST));
 	_LOGD ("WFD is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_WFD));
 
-	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
-		nm_supplicant_interface_set_global_capabilities (ifaces->data,
+	c_list_for_each_entry (sup_iface, &priv->supp_lst_head, supp_lst) {
+		nm_supplicant_interface_set_global_capabilities (sup_iface,
 		                                                 priv->capabilities);
 	}
 }
@@ -393,20 +383,24 @@ static void
 availability_changed (NMSupplicantManager *self, gboolean available)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	GSList *ifaces, *iter;
+	gs_unref_ptrarray GPtrArray *sup_ifaces = NULL;
+	NMSupplicantInterface *sup_iface;
+	gsize i, n;
 
-	if (!priv->ifaces)
+	n = c_list_length (&priv->supp_lst_head);
+	if (n == 0)
 		return;
 
 	/* setting the supplicant as unavailable might cause the caller to unref
 	 * the supplicant (and thus remove the instance from the list of interfaces.
 	 * Delay that by taking an additional reference first. */
-	ifaces = g_slist_copy (priv->ifaces);
-	for (iter = ifaces; iter; iter = iter->next)
-		g_object_ref (iter->data);
-	for (iter = ifaces; iter; iter = iter->next)
-		nm_supplicant_interface_set_supplicant_available (iter->data, available);
-	g_slist_free_full (ifaces, g_object_unref);
+
+	sup_ifaces = g_ptr_array_new_full (n, g_object_unref);
+	c_list_for_each_entry (sup_iface, &priv->supp_lst_head, supp_lst)
+		g_ptr_array_add (sup_ifaces, g_object_ref (sup_iface));
+
+	for (i = 0; i < n; i++)
+		nm_supplicant_interface_set_supplicant_available (sup_ifaces->pdata[i], available);
 }
 
 static void
@@ -522,6 +516,8 @@ nm_supplicant_manager_init (NMSupplicantManager *self)
 
 	nm_assert (priv->capabilities == NM_SUPPL_CAP_MASK_NONE);
 
+	c_list_init (&priv->supp_lst_head);
+
 	priv->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_NONE,
@@ -539,17 +535,15 @@ dispose (GObject *object)
 {
 	NMSupplicantManager *self = (NMSupplicantManager *) object;
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	GSList *ifaces;
+	NMSupplicantInterface *sup_iface;
 
 	nm_clear_g_source (&priv->die_count_reset_id);
 
 	nm_clear_g_cancellable (&priv->cancellable);
 
-	if (priv->ifaces) {
-		for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next)
-			g_object_remove_toggle_ref (ifaces->data, _sup_iface_last_ref, self);
-		g_slist_free (priv->ifaces);
-		priv->ifaces = NULL;
+	while ((sup_iface = c_list_first_entry (&priv->supp_lst_head, NMSupplicantInterface, supp_lst))) {
+		c_list_unlink (&sup_iface->supp_lst);
+		g_object_remove_toggle_ref (G_OBJECT (sup_iface), _sup_iface_last_ref, self);
 	}
 
 	g_clear_object (&priv->proxy);
