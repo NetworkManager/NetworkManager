@@ -30,13 +30,10 @@ typedef struct {
 typedef struct {
 	GHashTable *config;
 	GHashTable *blobs;
-	guint32    ap_scan;
-	gboolean   fast_required;
-	gboolean   dispose_has_run;
-	gboolean   support_pmf;
-	gboolean   support_fils;
-	gboolean   support_ft;
-	gboolean   support_sha384;
+	NMSupplCapMask capabilities;
+	guint32 ap_scan;
+	bool fast_required:1;
+	bool dispose_has_run:1;
 } NMSupplicantConfigPrivate;
 
 struct _NMSupplicantConfig {
@@ -54,9 +51,15 @@ G_DEFINE_TYPE (NMSupplicantConfig, nm_supplicant_config, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static gboolean
+_get_capability (NMSupplicantConfigPrivate *priv,
+                 NMSupplCapType type)
+{
+	return NM_SUPPL_CAP_MASK_GET (priv->capabilities, type) == NM_TERNARY_TRUE;
+}
+
 NMSupplicantConfig *
-nm_supplicant_config_new (gboolean support_pmf, gboolean support_fils,
-                          gboolean support_ft, gboolean support_sha384)
+nm_supplicant_config_new (NMSupplCapMask capabilities)
 {
 	NMSupplicantConfigPrivate *priv;
 	NMSupplicantConfig *self;
@@ -64,10 +67,7 @@ nm_supplicant_config_new (gboolean support_pmf, gboolean support_fils,
 	self = g_object_new (NM_TYPE_SUPPLICANT_CONFIG, NULL);
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	priv->support_pmf = support_pmf;
-	priv->support_fils = support_fils;
-	priv->support_ft = support_ft;
-	priv->support_sha384 = support_sha384;
+	priv->capabilities = capabilities;
 
 	return self;
 }
@@ -768,7 +768,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* Check if we actually support FILS */
-	if (!priv->support_fils) {
+	if (!_get_capability (priv, NM_SUPPL_CAP_TYPE_FILS)) {
 		if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED) {
 			g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 			                     "Supplicant does not support FILS");
@@ -780,36 +780,40 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
 	key_mgmt_conf = g_string_new (key_mgmt);
 	if (nm_streq (key_mgmt, "wpa-psk")) {
-		if (priv->support_pmf)
+		if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF))
 			g_string_append (key_mgmt_conf, " wpa-psk-sha256");
-		if (priv->support_ft)
+		if (_get_capability (priv, NM_SUPPL_CAP_TYPE_FT))
 			g_string_append (key_mgmt_conf, " ft-psk");
 	} else if (nm_streq (key_mgmt, "wpa-eap")) {
-		if (priv->support_pmf)
+		if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF))
 			g_string_append (key_mgmt_conf, " wpa-eap-sha256");
-		if (priv->support_ft)
+		if (_get_capability (priv, NM_SUPPL_CAP_TYPE_FT))
 			g_string_append (key_mgmt_conf, " ft-eap");
-		if (priv->support_ft && priv->support_sha384)
+		if (   _get_capability (priv, NM_SUPPL_CAP_TYPE_FT)
+		    && _get_capability (priv, NM_SUPPL_CAP_TYPE_SHA384))
 			g_string_append (key_mgmt_conf, " ft-eap-sha384");
 		switch (fils) {
 		case NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED:
 			g_string_truncate (key_mgmt_conf, 0);
-			if (!priv->support_pmf)
+			if (!_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF))
 				g_string_assign (key_mgmt_conf, "fils-sha256 fils-sha384");
 			/* fall-through */
 		case NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL:
-			if (priv->support_pmf)
+			if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF))
 				g_string_append (key_mgmt_conf, " fils-sha256 fils-sha384");
-			if (priv->support_pmf && priv->support_ft)
+			if (   _get_capability (priv, NM_SUPPL_CAP_TYPE_PMF)
+			    && _get_capability (priv, NM_SUPPL_CAP_TYPE_FT))
 				g_string_append (key_mgmt_conf, " ft-fils-sha256");
-			if (priv->support_pmf && priv->support_ft & priv->support_sha384)
+			if (   _get_capability (priv, NM_SUPPL_CAP_TYPE_PMF)
+			    && _get_capability (priv, NM_SUPPL_CAP_TYPE_FT)
+			    && _get_capability (priv, NM_SUPPL_CAP_TYPE_SHA384))
 				g_string_append (key_mgmt_conf, " ft-fils-sha384");
 			break;
 		default:
 			break;
 		}
 	} else if (nm_streq (key_mgmt, "sae")) {
-		if (priv->support_ft)
+		if (_get_capability (priv, NM_SUPPL_CAP_TYPE_FT))
 			g_string_append (key_mgmt_conf, " ft-sae");
 	}
 
@@ -873,7 +877,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 
 	/* Check if we actually support PMF */
 	set_pmf = TRUE;
-	if (!priv->support_pmf) {
+	if (!_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF)) {
 		if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
 			g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 			                     "Supplicant does not support PMF");

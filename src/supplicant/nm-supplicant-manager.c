@@ -15,22 +15,13 @@
 /*****************************************************************************/
 
 typedef struct {
-	GDBusProxy *     proxy;
-	GCancellable *   cancellable;
-	gboolean         running;
-
-	GSList          *ifaces;
-	NMSupplicantFeature fast_support;
-	NMSupplicantFeature ap_support;
-	NMSupplicantFeature pmf_support;
-	NMSupplicantFeature fils_support;
-	NMSupplicantFeature p2p_support;
-	NMSupplicantFeature mesh_support;
-	NMSupplicantFeature wfd_support;
-	NMSupplicantFeature ft_support;
-	NMSupplicantFeature sha384_support;
-	guint             die_count_reset_id;
-	guint             die_count;
+	GDBusProxy *proxy;
+	GCancellable *cancellable;
+	GSList *ifaces;
+	NMSupplCapMask capabilities;
+	guint die_count_reset_id;
+	guint die_count;
+	bool running:1;
 } NMSupplicantManagerPrivate;
 
 struct _NMSupplicantManager {
@@ -54,6 +45,30 @@ G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 NM_CACHED_QUARK_FCN ("nm-supplicant-error-quark", nm_supplicant_error_quark)
+
+/*****************************************************************************/
+
+static void
+_caps_set (NMSupplicantManagerPrivate *priv,
+           NMSupplCapType type,
+           NMTernary value)
+{
+	priv->capabilities = NM_SUPPL_CAP_MASK_SET (priv->capabilities, type, value);
+}
+
+static const char *
+_caps_to_str (NMSupplicantManagerPrivate *priv,
+              NMSupplCapType type)
+{
+	NMTernary val;
+
+	val = NM_SUPPL_CAP_MASK_GET (priv->capabilities, type);;
+	if (val == NM_TERNARY_TRUE)
+		return "supported";
+	if (val == NM_TERNARY_FALSE)
+		return "not supported";
+	return "possibly supported";
+}
 
 /*****************************************************************************/
 
@@ -215,15 +230,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	iface = nm_supplicant_interface_new (ifname,
 	                                     NULL,
 	                                     driver,
-	                                     priv->fast_support,
-	                                     priv->ap_support,
-	                                     priv->pmf_support,
-	                                     priv->fils_support,
-	                                     priv->p2p_support,
-	                                     priv->mesh_support,
-	                                     priv->wfd_support,
-	                                     priv->ft_support,
-	                                     priv->sha384_support);
+	                                     priv->capabilities);
 
 	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
 	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
@@ -275,15 +282,7 @@ nm_supplicant_manager_create_interface_from_path (NMSupplicantManager *self,
 	iface = nm_supplicant_interface_new (NULL,
 	                                     object_path,
 	                                     NM_SUPPLICANT_DRIVER_WIRELESS,
-	                                     priv->fast_support,
-	                                     priv->ap_support,
-	                                     priv->pmf_support,
-	                                     priv->fils_support,
-	                                     priv->p2p_support,
-	                                     priv->mesh_support,
-	                                     priv->wfd_support,
-	                                     priv->ft_support,
-	                                     priv->sha384_support);
+	                                     priv->capabilities);
 
 	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
 	g_object_add_toggle_ref ((GObject *) iface, _sup_iface_last_ref, self);
@@ -316,82 +315,38 @@ update_capabilities (NMSupplicantManager *self)
 	 *
 	 * dbus: Add global capabilities property
 	 */
-	priv->ap_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-	priv->pmf_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-	priv->fils_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_AP,     NM_TERNARY_DEFAULT);
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_PMF,    NM_TERNARY_DEFAULT);
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_FILS,   NM_TERNARY_DEFAULT);
+
 	/* Support for the following is newer than the capabilities property */
-	priv->p2p_support = NM_SUPPLICANT_FEATURE_NO;
-	priv->ft_support = NM_SUPPLICANT_FEATURE_NO;
-	priv->sha384_support = NM_SUPPLICANT_FEATURE_NO;
-	priv->mesh_support = NM_SUPPLICANT_FEATURE_NO;
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_P2P,    NM_TERNARY_FALSE);
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_FT,     NM_TERNARY_FALSE);
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_SHA384, NM_TERNARY_FALSE);
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_MESH,   NM_TERNARY_FALSE);
 
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "Capabilities");
 	if (value) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
 			array = g_variant_get_strv (value, NULL);
-			priv->ap_support = NM_SUPPLICANT_FEATURE_NO;
-			priv->pmf_support = NM_SUPPLICANT_FEATURE_NO;
-			priv->fils_support = NM_SUPPLICANT_FEATURE_NO;
-			priv->p2p_support = NM_SUPPLICANT_FEATURE_NO;
-			priv->ft_support = NM_SUPPLICANT_FEATURE_NO;
-			priv->sha384_support = NM_SUPPLICANT_FEATURE_NO;
-			priv->mesh_support = NM_SUPPLICANT_FEATURE_NO;
+			_caps_set (priv, NM_SUPPL_CAP_TYPE_AP,   NM_TERNARY_FALSE);
+			_caps_set (priv, NM_SUPPL_CAP_TYPE_PMF,  NM_TERNARY_FALSE);
+			_caps_set (priv, NM_SUPPL_CAP_TYPE_FILS, NM_TERNARY_FALSE);
 			if (array) {
-				if (g_strv_contains (array, "ap"))
-					priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
-				if (g_strv_contains (array, "pmf"))
-					priv->pmf_support = NM_SUPPLICANT_FEATURE_YES;
-				if (g_strv_contains (array, "fils"))
-					priv->fils_support = NM_SUPPLICANT_FEATURE_YES;
-				if (g_strv_contains (array, "p2p"))
-					priv->p2p_support = NM_SUPPLICANT_FEATURE_YES;
-				if (g_strv_contains (array, "ft"))
-					priv->ft_support = NM_SUPPLICANT_FEATURE_YES;
-				if (g_strv_contains (array, "sha384"))
-					priv->sha384_support = NM_SUPPLICANT_FEATURE_YES;
-				if (g_strv_contains (array, "mesh"))
-					priv->mesh_support = NM_SUPPLICANT_FEATURE_YES;
+				if (g_strv_contains (array, "ap"))     _caps_set (priv, NM_SUPPL_CAP_TYPE_AP,     NM_TERNARY_TRUE);
+				if (g_strv_contains (array, "pmf"))    _caps_set (priv, NM_SUPPL_CAP_TYPE_PMF,    NM_TERNARY_TRUE);
+				if (g_strv_contains (array, "fils"))   _caps_set (priv, NM_SUPPL_CAP_TYPE_FILS,   NM_TERNARY_TRUE);
+				if (g_strv_contains (array, "p2p"))    _caps_set (priv, NM_SUPPL_CAP_TYPE_P2P,    NM_TERNARY_TRUE);
+				if (g_strv_contains (array, "ft"))     _caps_set (priv, NM_SUPPL_CAP_TYPE_FT,     NM_TERNARY_TRUE);
+				if (g_strv_contains (array, "sha384")) _caps_set (priv, NM_SUPPL_CAP_TYPE_SHA384, NM_TERNARY_TRUE);
+				if (g_strv_contains (array, "mesh"))   _caps_set (priv, NM_SUPPL_CAP_TYPE_MESH,   NM_TERNARY_TRUE);
 				g_free (array);
 			}
 		}
 		g_variant_unref (value);
 	}
 
-	/* Tell all interfaces about results of the AP/PMF/FILS/P2P/FT/SHA384 check */
-	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
-		nm_supplicant_interface_set_ap_support (ifaces->data, priv->ap_support);
-		nm_supplicant_interface_set_pmf_support (ifaces->data, priv->pmf_support);
-		nm_supplicant_interface_set_fils_support (ifaces->data, priv->fils_support);
-		nm_supplicant_interface_set_p2p_support (ifaces->data, priv->p2p_support);
-		nm_supplicant_interface_set_ft_support (ifaces->data, priv->ft_support);
-		nm_supplicant_interface_set_sha384_support (ifaces->data, priv->sha384_support);
-		nm_supplicant_interface_set_mesh_support (ifaces->data, priv->mesh_support);
-	}
-
-	_LOGD ("AP mode is %ssupported",
-	       (priv->ap_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->ap_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-	_LOGD ("PMF is %ssupported",
-	       (priv->pmf_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->pmf_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-	_LOGD ("FILS is %ssupported",
-	       (priv->fils_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->fils_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-	_LOGD ("P2P is %ssupported",
-	       (priv->p2p_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->p2p_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-	_LOGD ("FT is %ssupported",
-	       (priv->ft_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->ft_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-	_LOGD ("SHA384 is %ssupported",
-	       (priv->sha384_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->sha384_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-	_LOGD ("Mesh is %ssupported",
-	       (priv->mesh_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->mesh_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-
-	/* EAP-FAST */
-	priv->fast_support = NM_SUPPLICANT_FEATURE_NO;
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_FAST, NM_TERNARY_FALSE);
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "EapMethods");
 	if (value) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
@@ -401,7 +356,7 @@ update_capabilities (NMSupplicantManager *self)
 
 				for (a = array; *a; a++) {
 					if (g_ascii_strcasecmp (*a, "FAST") == 0) {
-						priv->fast_support = NM_SUPPLICANT_FEATURE_YES;
+						_caps_set (priv, NM_SUPPL_CAP_TYPE_FAST, NM_TERNARY_TRUE);
 						break;
 					}
 				}
@@ -411,26 +366,27 @@ update_capabilities (NMSupplicantManager *self)
 		g_variant_unref (value);
 	}
 
-	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next)
-		nm_supplicant_interface_set_fast_support (ifaces->data, priv->fast_support);
-
-	_LOGD ("EAP-FAST is %ssupported",
-	       (priv->fast_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->fast_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
-
-	priv->wfd_support = NM_SUPPLICANT_FEATURE_NO;
+	_caps_set (priv, NM_SUPPL_CAP_TYPE_WFD, NM_TERNARY_FALSE);
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "WFDIEs");
 	if (value) {
-		priv->wfd_support = NM_SUPPLICANT_FEATURE_YES;
+		_caps_set (priv, NM_SUPPL_CAP_TYPE_WFD, NM_TERNARY_TRUE);
 		g_variant_unref (value);
 	}
 
-	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next)
-		nm_supplicant_interface_set_wfd_support (ifaces->data, priv->fast_support);
+	_LOGD ("AP mode is %s",  _caps_to_str (priv, NM_SUPPL_CAP_TYPE_AP));
+	_LOGD ("PMF is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_PMF));
+	_LOGD ("FILS is %s",     _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FILS));
+	_LOGD ("P2P is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_P2P));
+	_LOGD ("FT is %s",       _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FT));
+	_LOGD ("SHA384 is %s",   _caps_to_str (priv, NM_SUPPL_CAP_TYPE_SHA384));
+	_LOGD ("Mesh is %s",     _caps_to_str (priv, NM_SUPPL_CAP_TYPE_MESH));
+	_LOGD ("EAP-FAST is %s", _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FAST));
+	_LOGD ("WFD is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_WFD));
 
-	_LOGD ("WFD is %ssupported",
-	       (priv->wfd_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
-	           (priv->wfd_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
+	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next) {
+		nm_supplicant_interface_set_global_capabilities (ifaces->data,
+		                                                 priv->capabilities);
+	}
 }
 
 static void
@@ -523,12 +479,7 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 			       priv->die_count);
 		}
 
-		priv->ap_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-		priv->fast_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-		priv->pmf_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-		priv->fils_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-		priv->ft_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
-		priv->sha384_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
+		priv->capabilities = NM_SUPPL_CAP_MASK_NONE;
 
 		set_running (self, FALSE);
 	}
@@ -568,6 +519,8 @@ static void
 nm_supplicant_manager_init (NMSupplicantManager *self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	nm_assert (priv->capabilities == NM_SUPPL_CAP_MASK_NONE);
 
 	priv->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,

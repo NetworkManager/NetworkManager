@@ -98,12 +98,6 @@ NM_SUPPL_CAP_MASK_GET (NMSupplCapMask features, NMSupplCapType type)
 
 /*****************************************************************************/
 
-typedef enum {
-	NM_SUPPLICANT_FEATURE_UNKNOWN = 0,  /* Can't detect whether supported or not */
-	NM_SUPPLICANT_FEATURE_NO = 1,       /* Feature definitely not supported */
-	NM_SUPPLICANT_FEATURE_YES = 2,      /* Feature definitely supported */
-} NMSupplicantFeature;
-
 /**
  * NMSupplicantError:
  * @NM_SUPPLICANT_ERROR_UNKNOWN: unknown or unclassified error

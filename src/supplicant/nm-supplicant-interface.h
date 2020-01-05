@@ -46,37 +46,27 @@ typedef enum {
 #define NM_IS_SUPPLICANT_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_INTERFACE))
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
-/* Properties */
-#define NM_SUPPLICANT_INTERFACE_IFACE            "iface"
-#define NM_SUPPLICANT_INTERFACE_OBJECT_PATH      "object-path"
-#define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
-#define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
-#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED "p2p-group-joined"
-#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_PATH   "p2p-group-path"
-#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_OWNER  "p2p-group-owner"
-#define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
-#define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE    "p2p-available"
-#define NM_SUPPLICANT_INTERFACE_FAST_SUPPORT     "fast-support"
-#define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
-#define NM_SUPPLICANT_INTERFACE_PMF_SUPPORT      "pmf-support"
-#define NM_SUPPLICANT_INTERFACE_FILS_SUPPORT     "fils-support"
-#define NM_SUPPLICANT_INTERFACE_P2P_SUPPORT      "p2p-support"
-#define NM_SUPPLICANT_INTERFACE_MESH_SUPPORT     "mesh-support"
-#define NM_SUPPLICANT_INTERFACE_WFD_SUPPORT      "wfd-support"
-#define NM_SUPPLICANT_INTERFACE_FT_SUPPORT       "ft-support"
-#define NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT   "sha384-support"
-#define NM_SUPPLICANT_INTERFACE_AUTH_STATE       "auth-state"
+#define NM_SUPPLICANT_INTERFACE_IFACE               "iface"
+#define NM_SUPPLICANT_INTERFACE_OBJECT_PATH         "object-path"
+#define NM_SUPPLICANT_INTERFACE_SCANNING            "scanning"
+#define NM_SUPPLICANT_INTERFACE_CURRENT_BSS         "current-bss"
+#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED    "p2p-group-joined"
+#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_PATH      "p2p-group-path"
+#define NM_SUPPLICANT_INTERFACE_P2P_GROUP_OWNER     "p2p-group-owner"
+#define NM_SUPPLICANT_INTERFACE_DRIVER              "driver"
+#define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE       "p2p-available"
+#define NM_SUPPLICANT_INTERFACE_GLOBAL_CAPABILITIES "global-capabilities"
+#define NM_SUPPLICANT_INTERFACE_AUTH_STATE          "auth-state"
 
-/* Signals */
-#define NM_SUPPLICANT_INTERFACE_STATE            "state"
-#define NM_SUPPLICANT_INTERFACE_REMOVED          "removed"
-#define NM_SUPPLICANT_INTERFACE_BSS_UPDATED      "bss-updated"
-#define NM_SUPPLICANT_INTERFACE_BSS_REMOVED      "bss-removed"
-#define NM_SUPPLICANT_INTERFACE_PEER_UPDATED     "peer-updated"
-#define NM_SUPPLICANT_INTERFACE_PEER_REMOVED     "peer-removed"
-#define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
-#define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
-#define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS  "wps-credentials"
+#define NM_SUPPLICANT_INTERFACE_STATE                   "state"
+#define NM_SUPPLICANT_INTERFACE_REMOVED                 "removed"
+#define NM_SUPPLICANT_INTERFACE_BSS_UPDATED             "bss-updated"
+#define NM_SUPPLICANT_INTERFACE_BSS_REMOVED             "bss-removed"
+#define NM_SUPPLICANT_INTERFACE_PEER_UPDATED            "peer-updated"
+#define NM_SUPPLICANT_INTERFACE_PEER_REMOVED            "peer-removed"
+#define NM_SUPPLICANT_INTERFACE_SCAN_DONE               "scan-done"
+#define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST     "credentials-request"
+#define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS         "wps-credentials"
 #define NM_SUPPLICANT_INTERFACE_GROUP_STARTED           "group-started"
 #define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED          "group-finished"
 
@@ -84,18 +74,10 @@ typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 
 GType nm_supplicant_interface_get_type (void);
 
-NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
-                                                     const char *object_path,
-                                                     NMSupplicantDriver driver,
-                                                     NMSupplicantFeature fast_support,
-                                                     NMSupplicantFeature ap_support,
-                                                     NMSupplicantFeature pmf_support,
-                                                     NMSupplicantFeature fils_support,
-                                                     NMSupplicantFeature p2p_support,
-                                                     NMSupplicantFeature mesh_support,
-                                                     NMSupplicantFeature wfd_support,
-                                                     NMSupplicantFeature ft_support,
-                                                     NMSupplicantFeature sha384_support);
+NMSupplicantInterface *nm_supplicant_interface_new (const char *ifname,
+                                                    const char *object_path,
+                                                    NMSupplicantDriver driver,
+                                                    NMSupplCapMask global_capabilities);
 
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                        gboolean available);
@@ -166,41 +148,13 @@ void nm_supplicant_interface_p2p_connect (NMSupplicantInterface * self,
 void nm_supplicant_interface_p2p_cancel_connect (NMSupplicantInterface * self);
 void nm_supplicant_interface_p2p_disconnect (NMSupplicantInterface * self);
 
-NMSupplicantFeature nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_pmf_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_fils_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_p2p_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_mesh_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_wfd_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_ft_support (NMSupplicantInterface *self);
-NMSupplicantFeature nm_supplicant_interface_get_sha384_support (NMSupplicantInterface *self);
+void nm_supplicant_interface_set_global_capabilities (NMSupplicantInterface *self,
+                                                      NMSupplCapMask value);
 
-void nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
-                                             NMSupplicantFeature apmode);
+NMTernary nm_supplicant_interface_get_capability (NMSupplicantInterface *self,
+                                                  NMSupplCapType type);
 
-void nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
-                                               NMSupplicantFeature fast_support);
-
-void nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
-                                              NMSupplicantFeature pmf_support);
-
-void nm_supplicant_interface_set_fils_support (NMSupplicantInterface *self,
-                                               NMSupplicantFeature fils_support);
-
-void nm_supplicant_interface_set_p2p_support (NMSupplicantInterface *self,
-                                              NMSupplicantFeature p2p_support);
-
-void nm_supplicant_interface_set_mesh_support (NMSupplicantInterface *self,
-                                               NMSupplicantFeature mesh_support);
-
-void nm_supplicant_interface_set_wfd_support (NMSupplicantInterface *self,
-                                              NMSupplicantFeature wfd_support);
-
-void nm_supplicant_interface_set_ft_support (NMSupplicantInterface *self,
-                                             NMSupplicantFeature ft_support);
-
-void nm_supplicant_interface_set_sha384_support (NMSupplicantInterface *self,
-                                                 NMSupplicantFeature sha384_support);
+NMSupplCapMask nm_supplicant_interface_get_capabilities (NMSupplicantInterface *self);
 
 void nm_supplicant_interface_enroll_wps (NMSupplicantInterface *self,
                                          const char *const type,

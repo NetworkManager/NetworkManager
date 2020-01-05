@@ -98,15 +98,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_CURRENT_BSS,
 	PROP_DRIVER,
 	PROP_P2P_AVAILABLE,
-	PROP_FAST_SUPPORT,
-	PROP_AP_SUPPORT,
-	PROP_PMF_SUPPORT,
-	PROP_FILS_SUPPORT,
-	PROP_P2P_SUPPORT,
-	PROP_MESH_SUPPORT,
-	PROP_WFD_SUPPORT,
-	PROP_FT_SUPPORT,
-	PROP_SHA384_SUPPORT,
+	PROP_GLOBAL_CAPABILITIES,
 	PROP_AUTH_STATE,
 );
 
@@ -114,16 +106,8 @@ typedef struct {
 	char *         dev;
 	NMSupplicantDriver driver;
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
-	NMSupplicantFeature fast_support;
-	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
-	NMSupplicantFeature pmf_support;
-	NMSupplicantFeature fils_support;
-	NMSupplicantFeature p2p_support;
-	NMSupplicantFeature mesh_support;
-	NMSupplicantFeature wfd_support;
-	NMSupplicantFeature ft_support_global;
-	NMSupplicantFeature ft_support_per_iface;
-	NMSupplicantFeature sha384_support;
+	NMSupplCapMask global_capabilities;
+	NMSupplCapMask iface_capabilities;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
 
@@ -131,23 +115,12 @@ typedef struct {
 	NMSupplicantInterfaceState state;
 	int            disconnect_reason;
 
-	bool           scanning:1;
-
-	bool           scan_done_pending:1;
-	bool           scan_done_success:1;
-
 	GDBusProxy *   wpas_proxy;
 	GCancellable * init_cancellable;
 	GDBusProxy *   iface_proxy;
 	GCancellable * other_cancellable;
 	GDBusProxy *   p2p_proxy;
 	GDBusProxy *   group_proxy;
-
-	gboolean       p2p_proxy_acquired;
-	gboolean       group_proxy_acquired;
-	gboolean       p2p_capable;
-
-	gboolean       p2p_group_owner;
 
 	WpsData *wps_data;
 
@@ -162,6 +135,18 @@ typedef struct {
 	gint64         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_msec() */
 
 	NMSupplicantAuthState auth_state;
+
+	bool           scanning:1;
+
+	bool           scan_done_pending:1;
+	bool           scan_done_success:1;
+
+	bool           p2p_proxy_acquired:1;
+	bool           group_proxy_acquired:1;
+	bool           p2p_capable:1;
+
+	bool           p2p_group_owner:1;
+
 } NMSupplicantInterfacePrivate;
 
 struct _NMSupplicantInterface {
@@ -611,9 +596,11 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 		g_free (array);
 	}
 
-	priv->ft_support_per_iface =   have_ft
-	                             ? NM_SUPPLICANT_FEATURE_YES
-	                             : NM_SUPPLICANT_FEATURE_NO;
+	priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET (priv->iface_capabilities,
+	                                                  NM_SUPPL_CAP_TYPE_FT,
+	                                                    have_ft
+	                                                  ? NM_TERNARY_TRUE
+	                                                  : NM_TERNARY_FALSE);
 
 	if (g_variant_lookup (capabilities, "Modes", "^a&s", &array)) {
 		if (g_strv_contains (array, "p2p"))
@@ -766,149 +753,81 @@ nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_group_owner;
 }
 
-NMSupplicantFeature
-nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self)
+static NMTernary
+_get_capability (NMSupplicantInterfacePrivate *priv,
+                 NMSupplCapType type)
 {
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->ap_support;
+	NMTernary value;
+	NMTernary iface_value;
+
+	switch (type) {
+	case NM_SUPPL_CAP_TYPE_AP:
+		iface_value = NM_SUPPL_CAP_MASK_GET (priv->iface_capabilities, type);
+		value = NM_SUPPL_CAP_MASK_GET (priv->global_capabilities, type);
+		value = MAX (iface_value, value);
+		break;
+	case NM_SUPPL_CAP_TYPE_FT:
+		value = NM_SUPPL_CAP_MASK_GET (priv->global_capabilities, type);
+		if (value != NM_TERNARY_FALSE) {
+			iface_value = NM_SUPPL_CAP_MASK_GET (priv->iface_capabilities, type);
+			if (iface_value != NM_TERNARY_DEFAULT)
+				value = iface_value;
+		}
+		break;
+	default:
+		nm_assert (NM_SUPPL_CAP_MASK_GET (priv->iface_capabilities, type) == NM_TERNARY_DEFAULT);
+		value = NM_SUPPL_CAP_MASK_GET (priv->global_capabilities, type);
+		break;
+	}
+	return value;
 }
 
-NMSupplicantFeature
-nm_supplicant_interface_get_pmf_support (NMSupplicantInterface *self)
+NMTernary
+nm_supplicant_interface_get_capability (NMSupplicantInterface *self,
+                                        NMSupplCapType type)
 {
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->pmf_support;
+	return _get_capability (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self), type);
 }
 
-NMSupplicantFeature
-nm_supplicant_interface_get_fils_support (NMSupplicantInterface *self)
+NMSupplCapMask
+nm_supplicant_interface_get_capabilities (NMSupplicantInterface *self)
 {
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->fils_support;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplCapMask caps;
+
+	caps = priv->global_capabilities;
+	caps = NM_SUPPL_CAP_MASK_SET (caps, NM_SUPPL_CAP_TYPE_AP, _get_capability (priv, NM_SUPPL_CAP_TYPE_AP));
+	caps = NM_SUPPL_CAP_MASK_SET (caps, NM_SUPPL_CAP_TYPE_FT, _get_capability (priv, NM_SUPPL_CAP_TYPE_FT));
+
+	nm_assert (!NM_FLAGS_ANY (priv->iface_capabilities,
+	                          ~(  NM_SUPPL_CAP_MASK_T_AP_MASK
+	                            | NM_SUPPL_CAP_MASK_T_FT_MASK)));
+
+#if NM_MORE_ASSERTS > 10
+	{
+		NMSupplCapType type;
+
+		for (type = 0; type < _NM_SUPPL_CAP_TYPE_NUM; type++)
+			nm_assert (NM_SUPPL_CAP_MASK_GET (caps, type) == _get_capability (priv, type));
+	}
+#endif
+
+	return caps;
 }
 
-NMSupplicantFeature
-nm_supplicant_interface_get_p2p_support (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_support;
-}
-
-NMSupplicantFeature
-nm_supplicant_interface_get_mesh_support (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->mesh_support;
-}
-
-NMSupplicantFeature
-nm_supplicant_interface_get_wfd_support (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->wfd_support;
-}
-
-NMSupplicantFeature
-nm_supplicant_interface_get_ft_support (NMSupplicantInterface *self)
+void
+nm_supplicant_interface_set_global_capabilities (NMSupplicantInterface *self,
+                                                 NMSupplCapMask value)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (priv->ft_support_global == NM_SUPPLICANT_FEATURE_NO)
-		return NM_SUPPLICANT_FEATURE_NO;
-	if (priv->ft_support_per_iface != NM_SUPPLICANT_FEATURE_UNKNOWN)
-		return priv->ft_support_per_iface;
-	return priv->ft_support_global;
-}
-
-NMSupplicantFeature
-nm_supplicant_interface_get_sha384_support (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->sha384_support;
+	priv->global_capabilities = value;
 }
 
 NMSupplicantAuthState
 nm_supplicant_interface_get_auth_state (NMSupplicantInterface *self)
 {
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->auth_state;
-}
-
-void
-nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
-                                        NMSupplicantFeature ap_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* Use the best indicator of support between the supplicant global
-	 * Capabilities property and the interface's introspection data.
-	 */
-	if (ap_support > priv->ap_support)
-		priv->ap_support = ap_support;
-}
-
-void
-nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
-                                          NMSupplicantFeature fast_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->fast_support = fast_support;
-}
-
-void
-nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
-                                         NMSupplicantFeature pmf_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->pmf_support = pmf_support;
-}
-
-void
-nm_supplicant_interface_set_fils_support (NMSupplicantInterface *self,
-                                          NMSupplicantFeature fils_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->fils_support = fils_support;
-}
-
-void
-nm_supplicant_interface_set_p2p_support (NMSupplicantInterface *self,
-                                         NMSupplicantFeature p2p_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->p2p_support = p2p_support;
-}
-
-void
-nm_supplicant_interface_set_mesh_support (NMSupplicantInterface *self,
-                                          NMSupplicantFeature mesh_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->mesh_support = mesh_support;
-}
-
-void
-nm_supplicant_interface_set_wfd_support (NMSupplicantInterface *self,
-                                         NMSupplicantFeature wfd_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->wfd_support = wfd_support;
-}
-
-void
-nm_supplicant_interface_set_ft_support (NMSupplicantInterface *self,
-                                        NMSupplicantFeature ft_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->ft_support_global = ft_support;
-}
-
-void
-nm_supplicant_interface_set_sha384_support (NMSupplicantInterface *self,
-                                            NMSupplicantFeature sha384_support)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->sha384_support = sha384_support;
 }
 
 /*****************************************************************************/
@@ -1219,6 +1138,7 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
 	const char *data;
+	NMTernary value;
 
 	variant = _nm_dbus_proxy_call_finish (proxy, result,
 	                                      G_VARIANT_TYPE ("(s)"),
@@ -1229,12 +1149,19 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant) {
-		g_variant_get (variant, "(&s)", &data);
+	if (NM_SUPPL_CAP_MASK_GET (priv->global_capabilities, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT) {
+		/* if the global value is set, we trust it and ignore whatever we get from introspection. */
+	} else {
+		value = NM_TERNARY_DEFAULT;
+		if (variant) {
+			g_variant_get (variant, "(&s)", &data);
 
-		/* The ProbeRequest method only exists if AP mode has been enabled */
-		if (strstr (data, "ProbeRequest"))
-			priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
+			/* The ProbeRequest method only exists if AP mode has been enabled */
+			value =   strstr (data, "ProbeRequest")
+			        ? NM_TERNARY_TRUE
+			        : NM_TERNARY_FALSE;
+		}
+		priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET (priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP, value);
 	}
 
 	iface_check_ready (self);
@@ -1738,7 +1665,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   (GAsyncReadyCallback) iface_check_netreply_cb,
 	                   self);
 
-	if (priv->pmf_support == NM_SUPPLICANT_FEATURE_YES) {
+	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF) == NM_TERNARY_TRUE) {
 		/* Initialize global PMF setting to 'optional' */
 		priv->ready_count++;
 		g_dbus_proxy_call (priv->iface_proxy,
@@ -1754,7 +1681,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		                   self);
 	}
 
-	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
+	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT) {
 		/* If the global supplicant capabilities property is not present, we can
 		 * fall back to checking whether the ProbeRequest method is supported.  If
 		 * neither of these works we have no way of determining if AP mode is
@@ -1842,7 +1769,7 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 	                             (GAsyncReadyCallback) on_iface_proxy_acquired,
 	                             self);
 
-	if (priv->p2p_support == NM_SUPPLICANT_FEATURE_YES) {
+	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_P2P) == NM_TERNARY_TRUE) {
 		priv->ready_count++;
 		priv->p2p_proxy = g_object_new (G_TYPE_DBUS_PROXY,
 		                                "g-bus-type", G_BUS_TYPE_SYSTEM,
@@ -2491,7 +2418,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	/* Make sure the supplicant supports EAP-FAST before trying to send
 	 * it an EAP-FAST configuration.
 	 */
-	if (   priv->fast_support == NM_SUPPLICANT_FEATURE_NO
+	if (   _get_capability (priv, NM_SUPPL_CAP_TYPE_FAST) == NM_TERNARY_FALSE
 	    && nm_supplicant_config_fast_required (cfg)) {
 		assoc_data->fail_on_idle_id = g_idle_add (assoc_fail_on_idle_cb, self);
 		return;
@@ -2802,41 +2729,9 @@ set_property (GObject *object,
 		/* construct-only */
 		priv->driver = g_value_get_uint (value);
 		break;
-	case PROP_FAST_SUPPORT:
+	case PROP_GLOBAL_CAPABILITIES:
 		/* construct-only */
-		priv->fast_support = g_value_get_int (value);
-		break;
-	case PROP_AP_SUPPORT:
-		/* construct-only */
-		priv->ap_support = g_value_get_int (value);
-		break;
-	case PROP_PMF_SUPPORT:
-		/* construct-only */
-		priv->pmf_support = g_value_get_int (value);
-		break;
-	case PROP_FILS_SUPPORT:
-		/* construct-only */
-		priv->fils_support = g_value_get_int (value);
-		break;
-	case PROP_P2P_SUPPORT:
-		/* construct-only */
-		priv->p2p_support = g_value_get_int (value);
-		break;
-	case PROP_MESH_SUPPORT:
-		/* construct-only */
-		priv->mesh_support = g_value_get_int (value);
-		break;
-	case PROP_WFD_SUPPORT:
-		/* construct-only */
-		priv->wfd_support = g_value_get_int (value);
-		break;
-	case PROP_FT_SUPPORT:
-		/* construct-only */
-		priv->ft_support_global = g_value_get_int (value);
-		break;
-	case PROP_SHA384_SUPPORT:
-		/* construct-only */
-		priv->sha384_support = g_value_get_int (value);
+		priv->global_capabilities = g_value_get_uint64 (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2849,6 +2744,9 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
+	nm_assert (priv->global_capabilities == NM_SUPPL_CAP_MASK_NONE);
+	nm_assert (priv->iface_capabilities == NM_SUPPL_CAP_MASK_NONE);
+
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
 	priv->bss_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, bss_data_destroy);
 	priv->peer_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, peer_data_destroy);
@@ -2858,33 +2756,16 @@ NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
                              const char *object_path,
                              NMSupplicantDriver driver,
-                             NMSupplicantFeature fast_support,
-                             NMSupplicantFeature ap_support,
-                             NMSupplicantFeature pmf_support,
-                             NMSupplicantFeature fils_support,
-                             NMSupplicantFeature p2p_support,
-                             NMSupplicantFeature mesh_support,
-                             NMSupplicantFeature wfd_support,
-                             NMSupplicantFeature ft_support,
-                             NMSupplicantFeature sha384_support)
+                             NMSupplCapMask global_capabilities)
 {
 	/* One of ifname or path need to be set */
-	g_return_val_if_fail (ifname != NULL || object_path != NULL, NULL);
-	g_return_val_if_fail (ifname == NULL || object_path == NULL, NULL);
+	g_return_val_if_fail ((ifname != NULL) != (object_path != NULL), NULL);
 
 	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
 	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
 	                     NM_SUPPLICANT_INTERFACE_OBJECT_PATH, object_path,
 	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
-	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, (int) fast_support,
-	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
-	                     NM_SUPPLICANT_INTERFACE_PMF_SUPPORT, (int) pmf_support,
-	                     NM_SUPPLICANT_INTERFACE_FILS_SUPPORT, (int) fils_support,
-	                     NM_SUPPLICANT_INTERFACE_P2P_SUPPORT, (int) p2p_support,
-	                     NM_SUPPLICANT_INTERFACE_MESH_SUPPORT, (int) mesh_support,
-	                     NM_SUPPLICANT_INTERFACE_WFD_SUPPORT, (int) wfd_support,
-	                     NM_SUPPLICANT_INTERFACE_FT_SUPPORT, (int) ft_support,
-	                     NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT, (int) sha384_support,
+	                     NM_SUPPLICANT_INTERFACE_GLOBAL_CAPABILITIES, (guint64) global_capabilities,
 	                     NULL);
 }
 
@@ -2995,78 +2876,14 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_FAST_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_AP_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_AP_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_PMF_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_PMF_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_FILS_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_FILS_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_P2P_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_P2P_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_MESH_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_MESH_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_WFD_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_WFD_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_FT_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_FT_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_SHA384_SUPPORT] =
-	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_SHA384_SUPPORT, "", "",
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      NM_SUPPLICANT_FEATURE_YES,
-	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_GLOBAL_CAPABILITIES] =
+	    g_param_spec_uint64 (NM_SUPPLICANT_INTERFACE_GLOBAL_CAPABILITIES, "", "",
+	                         0,
+	                         NM_SUPPL_CAP_MASK_ALL,
+	                         0,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AUTH_STATE] =
 	    g_param_spec_uint (NM_SUPPLICANT_INTERFACE_AUTH_STATE, "", "",
 	                       NM_SUPPLICANT_AUTH_STATE_UNKNOWN,

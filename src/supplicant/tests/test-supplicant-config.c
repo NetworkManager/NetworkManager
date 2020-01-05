@@ -86,8 +86,7 @@ static GVariant *
 build_supplicant_config (NMConnection *connection,
                          guint mtu,
                          guint fixed_freq,
-                         gboolean support_pmf,
-                         gboolean support_fils)
+                         NMSupplCapMask capabilities)
 {
 	gs_unref_object NMSupplicantConfig *config = NULL;
 	gs_free_error GError *error = NULL;
@@ -96,7 +95,7 @@ build_supplicant_config (NMConnection *connection,
 	NMSetting8021x *s_8021x;
 	gboolean success;
 
-	config = nm_supplicant_config_new (support_pmf, support_fils, FALSE, FALSE);
+	config = nm_supplicant_config_new (capabilities);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -195,7 +194,7 @@ test_wifi_open (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
 	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'NONE'");
-	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
+	config_dict = build_supplicant_config (connection, 1500, 0, NM_SUPPL_CAP_MASK_T_PMF_YES | NM_SUPPL_CAP_MASK_T_FILS_YES);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -252,7 +251,7 @@ test_wifi_wep_key (const char *detail,
 	if (!test_bssid)
 		NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-70:86400'*");
 
-	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
+	config_dict = build_supplicant_config (connection, 1500, 0, NM_SUPPL_CAP_MASK_T_PMF_YES | NM_SUPPL_CAP_MASK_T_FILS_YES);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -352,7 +351,7 @@ test_wifi_wpa_psk (const char *detail,
 	default:
 		break;
 	}
-	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
+	config_dict = build_supplicant_config (connection, 1500, 0, NM_SUPPL_CAP_MASK_T_PMF_YES | NM_SUPPL_CAP_MASK_T_FILS_YES);
 
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
@@ -416,7 +415,7 @@ test_wifi_sae_psk (const char *psk)
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
-	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
+	config_dict = build_supplicant_config (connection, 1500, 0, NM_SUPPL_CAP_MASK_T_PMF_YES | NM_SUPPL_CAP_MASK_T_FILS_YES);
 
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
@@ -524,7 +523,7 @@ test_wifi_eap_locked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
-	config_dict = build_supplicant_config (connection, mtu, 0, FALSE, FALSE);
+	config_dict = build_supplicant_config (connection, mtu, 0, NM_SUPPL_CAP_MASK_NONE);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -565,7 +564,7 @@ test_wifi_eap_unlocked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-65:300'");
-	config_dict = build_supplicant_config (connection, mtu, 0, FALSE, TRUE);
+	config_dict = build_supplicant_config (connection, mtu, 0, NM_SUPPL_CAP_MASK_T_FILS_YES);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -606,7 +605,7 @@ test_wifi_eap_fils_disabled (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-65:300'");
-	config_dict = build_supplicant_config (connection, mtu, 0, TRUE, TRUE);
+	config_dict = build_supplicant_config (connection, mtu, 0, NM_SUPPL_CAP_MASK_T_PMF_YES | NM_SUPPL_CAP_MASK_T_FILS_YES);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
