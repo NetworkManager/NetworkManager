@@ -1282,16 +1282,10 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_SAE:
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
+		if (adhoc)
+			return FALSE;
 		if (!have_ap)
 			return TRUE;
-		if (adhoc) {
-			if (!(wifi_caps & NM_WIFI_DEVICE_CAP_IBSS_RSN))
-				return FALSE;
-			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-				return TRUE;
-			return FALSE;
-		}
 		if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
 			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
 			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
