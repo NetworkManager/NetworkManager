@@ -946,7 +946,7 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
                 n_dhcp4_client_lease_unref(probe->current_lease);
                 probe->current_lease = n_dhcp4_client_lease_ref(lease);
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_BOUND;
-
+                probe->ns_nak_restart_delay = 0;
                 break;
 
         case N_DHCP4_CLIENT_PROBE_STATE_REQUESTING:
@@ -969,7 +969,7 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
                 node->event.granted.lease = n_dhcp4_client_lease_ref(lease);
                 probe->current_lease = n_dhcp4_client_lease_ref(lease);
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_GRANTED;
-
+                probe->ns_nak_restart_delay = 0;
                 break;
 
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
@@ -1004,9 +1004,11 @@ static int n_dhcp4_client_probe_transition_nak(NDhcp4ClientProbe *probe) {
                         return r;
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
-
+                probe->ns_deferred = n_dhcp4_gettime(CLOCK_BOOTTIME) + probe->ns_nak_restart_delay;
+                probe->ns_nak_restart_delay = c_clamp(probe->ns_nak_restart_delay * 2,
+                                                      UINT64_C(1000000000 * 2),
+                                                      UINT64_C(1000000000 * 300));
                 break;
-
         case N_DHCP4_CLIENT_PROBE_STATE_SELECTING:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
