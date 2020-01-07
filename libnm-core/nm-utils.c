@@ -1287,9 +1287,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!have_ap)
 			return TRUE;
 		if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
-			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
-			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
-				return TRUE;
 			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
 			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 				return TRUE;
