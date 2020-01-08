@@ -198,6 +198,22 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplican
 	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DOWN,            "down"),
 );
 
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC (
+	wpas_state_string_to_enum,
+	NMSupplicantInterfaceState,
+	{ return NM_SUPPLICANT_INTERFACE_STATE_INVALID; },
+	{ "4way_handshake",     NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE  },
+	{ "associated",         NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED      },
+	{ "associating",        NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING     },
+	{ "authenticating",     NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING  },
+	{ "completed",          NM_SUPPLICANT_INTERFACE_STATE_COMPLETED       },
+	{ "disconnected",       NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED    },
+	{ "group_handshake",    NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE },
+	{ "inactive",           NM_SUPPLICANT_INTERFACE_STATE_INACTIVE        },
+	{ "interface_disabled", NM_SUPPLICANT_INTERFACE_STATE_DISABLED        },
+	{ "scanning",           NM_SUPPLICANT_INTERFACE_STATE_SCANNING        },
+);
+
 /*****************************************************************************/
 
 static void
@@ -481,33 +497,6 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 	               (int) priv->state,
 	               (int) old_state,
 	               (int) priv->disconnect_reason);
-}
-
-static NMSupplicantInterfaceState
-wpas_state_string_to_enum (const char *str_state)
-{
-	if (!strcmp (str_state, "interface_disabled"))
-		return NM_SUPPLICANT_INTERFACE_STATE_DISABLED;
-	else if (!strcmp (str_state, "disconnected"))
-		return NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
-	else if (!strcmp (str_state, "inactive"))
-		return NM_SUPPLICANT_INTERFACE_STATE_INACTIVE;
-	else if (!strcmp (str_state, "scanning"))
-		return NM_SUPPLICANT_INTERFACE_STATE_SCANNING;
-	else if (!strcmp (str_state, "authenticating"))
-		return NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING;
-	else if (!strcmp (str_state, "associating"))
-		return NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING;
-	else if (!strcmp (str_state, "associated"))
-		return NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED;
-	else if (!strcmp (str_state, "4way_handshake"))
-		return NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE;
-	else if (!strcmp (str_state, "group_handshake"))
-		return NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE;
-	else if (!strcmp (str_state, "completed"))
-		return NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
-
-	return NM_SUPPLICANT_INTERFACE_STATE_INVALID;
 }
 
 static void
