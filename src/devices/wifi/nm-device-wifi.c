@@ -1074,11 +1074,11 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 static GPtrArray *
 ssids_options_to_ptrarray (GVariant *value, GError **error)
 {
-	GPtrArray *ssids = NULL;
-	GVariant *v;
-	const guint8 *bytes;
-	gsize len;
-	int num_ssids, i;
+	gs_unref_ptrarray GPtrArray *ssids = NULL;
+	gsize num_ssids;
+	gsize i;
+
+	nm_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("aay")));
 
 	num_ssids = g_variant_n_children (value);
 	if (num_ssids > 32) {
@@ -1092,21 +1092,31 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 	if (num_ssids) {
 		ssids = g_ptr_array_new_full (num_ssids, (GDestroyNotify) g_bytes_unref);
 		for (i = 0; i < num_ssids; i++) {
+			gs_unref_variant GVariant *v = NULL;
+			gsize len;
+			const guint8 *bytes;
+
 			v = g_variant_get_child_value (value, i);
 			bytes = g_variant_get_fixed_array (v, &len, sizeof (guint8));
 			if (len > 32) {
 				g_set_error (error,
 				             NM_DEVICE_ERROR,
 				             NM_DEVICE_ERROR_NOT_ALLOWED,
-				             "SSID at index %d more than 32 bytes", i);
-				g_ptr_array_unref (ssids);
+				             "SSID at index %d more than 32 bytes", (int) i);
 				return NULL;
 			}
 
 			g_ptr_array_add (ssids, g_bytes_new (bytes, len));
 		}
 	}
-	return ssids;
+
+	return g_steal_pointer (&ssids);
+}
+
+GPtrArray *
+nmtst_ssids_options_to_ptrarray (GVariant *value, GError **error)
+{
+	return ssids_options_to_ptrarray (value, error);
 }
 
 static void

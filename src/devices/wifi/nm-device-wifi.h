@@ -40,4 +40,6 @@ void _nm_device_wifi_request_scan (NMDeviceWifi *self,
                                    GVariant *options,
                                    GDBusMethodInvocation *invocation);
 
+GPtrArray *nmtst_ssids_options_to_ptrarray (GVariant *value, GError **error);
+
 #endif /* __NETWORKMANAGER_DEVICE_WIFI_H__ */
