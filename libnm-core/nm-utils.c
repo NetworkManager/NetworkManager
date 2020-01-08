@@ -1122,7 +1122,12 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_SAE:
 	case NMU_SEC_OWE:
 		return TRUE;
-	default:
+	case NMU_SEC_LEAP:
+	case NMU_SEC_DYNAMIC_WEP:
+	case NMU_SEC_WPA_ENTERPRISE:
+	case NMU_SEC_WPA2_ENTERPRISE:
+		return FALSE;
+	case NMU_SEC_INVALID:
 		break;
 	}
 	return FALSE;
@@ -1161,48 +1166,46 @@ nm_utils_security_valid (NMUtilsSecurityType type,
                          NM80211ApSecurityFlags ap_wpa,
                          NM80211ApSecurityFlags ap_rsn)
 {
-	gboolean good = TRUE;
-
-	if (!have_ap) {
-		if (type == NMU_SEC_NONE)
-			return TRUE;
-		if (   (type == NMU_SEC_STATIC_WEP)
-		    || ((type == NMU_SEC_DYNAMIC_WEP) && !adhoc)
-		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
-			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
-				return TRUE;
-			else
-				return FALSE;
-		}
-	}
-
 	switch (type) {
 	case NMU_SEC_NONE:
-		g_assert (have_ap);
+		if (!have_ap)
+			return TRUE;
 		if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
 			return FALSE;
-		if (ap_wpa || ap_rsn)
+		if (   ap_wpa
+		    || ap_rsn)
 			return FALSE;
-		break;
+		return TRUE;
 	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
 		if (adhoc)
 			return FALSE;
 		/* fall through */
 	case NMU_SEC_STATIC_WEP:
-		g_assert (have_ap);
+		if (!have_ap) {
+			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
+				return TRUE;
+			return FALSE;
+		}
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
-		if (ap_wpa || ap_rsn) {
-			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, TRUE))
+		if (   ap_wpa
+		    || ap_rsn) {
+			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, TRUE)) {
 				if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, TRUE))
 					return FALSE;
+			}
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_DYNAMIC_WEP:
 		if (adhoc)
 			return FALSE;
-		g_assert (have_ap);
-		if (ap_rsn || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+		if (!have_ap) {
+			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
+				return TRUE;
+			return FALSE;
+		}
+		if (   ap_rsn
+		    || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 		/* Some APs broadcast minimal WPA-enabled beacons that must be handled */
 		if (ap_wpa) {
@@ -1211,112 +1214,99 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
 				return FALSE;
 		}
-		break;
+		return TRUE;
 	case NMU_SEC_WPA_PSK:
 		if (adhoc)
 			return FALSE;
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
-		if (have_ap) {
-			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
-				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
-				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
-					return TRUE;
-				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-					return TRUE;
-			}
-			return FALSE;
+		if (!have_ap)
+			return TRUE;
+		if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+			if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
+			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
+				return TRUE;
+			if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
+			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+				return TRUE;
 		}
-		break;
+		return FALSE;
 	case NMU_SEC_WPA2_PSK:
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
-		if (have_ap) {
-			if (adhoc) {
-				if (!(wifi_caps & NM_WIFI_DEVICE_CAP_IBSS_RSN))
-					return FALSE;
-				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-					return TRUE;
-			} else {
-				if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
-					if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
-						return TRUE;
-					if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-						return TRUE;
-				}
-			}
+		if (!have_ap)
+			return TRUE;
+		if (adhoc) {
+			if (!(wifi_caps & NM_WIFI_DEVICE_CAP_IBSS_RSN))
+				return FALSE;
+			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
+			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+				return TRUE;
 			return FALSE;
 		}
-		break;
+		if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
+			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
+				return TRUE;
+			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
+			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+				return TRUE;
+		}
+		return FALSE;
 	case NMU_SEC_WPA_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
-		if (have_ap) {
-			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
-				return FALSE;
-			/* Ensure at least one WPA cipher is supported */
-			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
-				return FALSE;
-		}
-		break;
+		if (!have_ap)
+			return TRUE;
+		if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+			return FALSE;
+		/* Ensure at least one WPA cipher is supported */
+		if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
+			return FALSE;
+		return TRUE;
 	case NMU_SEC_WPA2_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
-		if (have_ap) {
-			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
-				return FALSE;
-			/* Ensure at least one WPA cipher is supported */
-			if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, FALSE))
-				return FALSE;
-		}
-		break;
+		if (!have_ap)
+			return TRUE;
+		if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+			return FALSE;
+		/* Ensure at least one WPA cipher is supported */
+		if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, FALSE))
+			return FALSE;
+		return TRUE;
 	case NMU_SEC_SAE:
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
-		if (have_ap) {
-			if (adhoc) {
-				if (!(wifi_caps & NM_WIFI_DEVICE_CAP_IBSS_RSN))
-					return FALSE;
-				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-					return TRUE;
-			} else {
-				if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
-					if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
-						return TRUE;
-					if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-					    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-						return TRUE;
-				}
-			}
+		if (adhoc)
 			return FALSE;
+		if (!have_ap)
+			return TRUE;
+		if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+			if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
+			    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+				return TRUE;
 		}
-		break;
+		return FALSE;
 	case NMU_SEC_OWE:
 		if (adhoc)
 			return FALSE;
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
-		if (have_ap) {
-			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_OWE))
-				return FALSE;
-		}
-		break;
-	default:
-		good = FALSE;
+		if (!have_ap)
+			return TRUE;
+		if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_OWE))
+			return FALSE;
+		return TRUE;
+	case NMU_SEC_INVALID:
 		break;
 	}
 
-	return good;
+	return FALSE;
 }
 
 /**
