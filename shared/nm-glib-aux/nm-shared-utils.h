@@ -1537,6 +1537,56 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
 
 /*****************************************************************************/
 
+#define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(scope, fcn_name, result_type, unknown_val, ...) \
+scope result_type \
+fcn_name (const char *name) \
+{ \
+	static const struct { \
+		const char *name; \
+		result_type value; \
+	} LIST[] = { \
+		__VA_ARGS__ \
+	}; \
+	gssize idx; \
+	\
+	nm_assert (name); \
+	\
+	if (NM_MORE_ASSERTS > 5) { \
+		static gboolean checked = FALSE; \
+		int i; \
+		\
+		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) > 1); \
+		\
+		if (!checked) { \
+			checked = TRUE; \
+			\
+			for (i = 0; i < G_N_ELEMENTS (LIST); i++) { \
+				nm_assert (LIST[i].name); \
+				if (i > 0) \
+					nm_assert (strcmp (LIST[i - 1].name, LIST[i].name) < 0); \
+			} \
+		} \
+	} \
+	\
+	idx = nm_utils_array_find_binary_search (LIST, \
+	                                         sizeof (LIST[0]), \
+	                                         G_N_ELEMENTS (LIST), \
+	                                         &name, \
+	                                         nm_strcmp_p_with_data, \
+	                                         NULL); \
+	if (idx >= 0) \
+		return LIST[idx].value; \
+	\
+	{ unknown_val; } \
+}
+
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (static, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+
+/*****************************************************************************/
+
 static inline GTask *
 nm_g_task_new (gpointer source_object,
                GCancellable *cancellable,
