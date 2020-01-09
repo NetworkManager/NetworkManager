@@ -183,13 +183,13 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 }
 
 static inline const char *
-_nm_utils_inet4_ntop (in_addr_t addr, char *dst)
+_nm_utils_inet4_ntop (in_addr_t addr, char dst[static INET_ADDRSTRLEN])
 {
 	return nm_utils_inet_ntop (AF_INET, &addr, dst);
 }
 
 static inline const char *
-_nm_utils_inet6_ntop (const struct in6_addr *addr, char *dst)
+_nm_utils_inet6_ntop (const struct in6_addr *addr, char dst[static INET6_ADDRSTRLEN])
 {
 	return nm_utils_inet_ntop (AF_INET6, addr, dst);
 }
