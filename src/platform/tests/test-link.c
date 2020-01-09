@@ -1144,7 +1144,7 @@ test_software_detect (gconstpointer user_data)
 		break;
 	}
 	case NM_LINK_TYPE_MACVTAP: {
-		NMPlatformLnkMacvtap lnk_macvtap = { };
+		NMPlatformLnkMacvlan lnk_macvtap = { };
 
 		lnk_macvtap.mode = MACVLAN_MODE_PRIVATE;
 		lnk_macvtap.no_promisc = FALSE;
@@ -1389,7 +1389,7 @@ test_software_detect (gconstpointer user_data)
 			break;
 		}
 		case NM_LINK_TYPE_MACVTAP: {
-			const NMPlatformLnkMacvtap *plnk = &lnk->lnk_macvlan;
+			const NMPlatformLnkMacvlan *plnk = &lnk->lnk_macvlan;
 
 			g_assert (plnk == nm_platform_link_get_lnk_macvtap (NM_PLATFORM_GET, ifindex, NULL));
 			g_assert_cmpint (plnk->no_promisc, ==, FALSE);

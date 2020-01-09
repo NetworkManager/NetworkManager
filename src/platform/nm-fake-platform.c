@@ -276,11 +276,12 @@ link_add_pre (NMPlatform *platform,
 
 static int
 link_add (NMPlatform *platform,
-          const char *name,
           NMLinkType type,
-          const char *veth_peer,
+          const char *name,
+          int parent,
           const void *address,
           size_t address_len,
+          gconstpointer extra_data,
           const NMPlatformLink **out_link)
 {
 	NMFakePlatformLink *device;
@@ -291,14 +292,52 @@ link_add (NMPlatform *platform,
 	nm_auto_nmpobj const NMPObject *obj_new_veth = NULL;
 	NMPCacheOpsType cache_op;
 	NMPCacheOpsType cache_op_veth = NMP_CACHE_OPS_UNCHANGED;
+	const char *veth_peer = NULL;
+	NMPObject *dev_obj;
+	NMPObject *dev_lnk = NULL;
 
 	device = link_add_pre (platform, name, type, address, address_len);
 
-	if (veth_peer) {
-		g_assert (type == NM_LINK_TYPE_VETH);
+	g_assert (device);
+
+	dev_obj = (NMPObject *) device->obj;
+
+	if (parent > 0)
+		dev_obj->link.parent = parent;
+	else
+		g_assert (parent == 0);
+
+	g_assert ((parent != 0) == NM_IN_SET (type, NM_LINK_TYPE_VLAN));
+
+	switch (type) {
+	case NM_LINK_TYPE_VETH:
+		veth_peer = extra_data;
+		g_assert (veth_peer);
 		device_veth = link_add_pre (platform, veth_peer, type, NULL, 0);
-	} else
-		g_assert (type != NM_LINK_TYPE_VETH);
+		break;
+	case NM_LINK_TYPE_VLAN: {
+		const NMPlatformLnkVlan *props = extra_data;
+
+		g_assert (props);
+
+		dev_lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, props);
+		break;
+	}
+	case NM_LINK_TYPE_VXLAN: {
+		const NMPlatformLnkVxlan *props = extra_data;
+
+		g_assert (props);
+
+		dev_lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VXLAN, props);
+		break;
+	}
+	default:
+		g_assert (!extra_data);
+		break;
+	}
+
+	if (dev_lnk)
+		dev_obj->_link.netlink.lnk = dev_lnk;
 
 	link_add_prepare (platform, device, (NMPObject *) device->obj);
 	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
@@ -710,45 +749,6 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 	return TRUE;
 }
 
-struct vlan_add_data {
-	guint32 vlan_flags;
-	int parent;
-	int vlan_id;
-};
-
-static void
-_vlan_add_prepare (NMPlatform *platform,
-                   NMFakePlatformLink *device,
-                   gconstpointer user_data)
-{
-	const struct vlan_add_data *d = user_data;
-	NMPObject *obj_tmp;
-	NMPObject *lnk;
-
-	obj_tmp = (NMPObject *) device->obj;
-
-	lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
-	lnk->lnk_vlan.id = d->vlan_id;
-	lnk->lnk_vlan.flags = d->vlan_flags;
-
-	obj_tmp->link.parent = d->parent;
-	obj_tmp->_link.netlink.lnk = lnk;
-}
-
-static gboolean
-vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags, const NMPlatformLink **out_link)
-{
-	const struct vlan_add_data d = {
-		.parent = parent,
-		.vlan_id = vlan_id,
-		.vlan_flags = vlan_flags,
-	};
-
-	link_add_one (platform, name, NM_LINK_TYPE_VLAN,
-	              _vlan_add_prepare, &d, out_link);
-	return TRUE;
-}
-
 static gboolean
 link_vlan_change (NMPlatform *platform,
                   int ifindex,
@@ -762,35 +762,6 @@ link_vlan_change (NMPlatform *platform,
                   gsize n_egress_map)
 {
 	return FALSE;
-}
-
-static void
-_vxlan_add_prepare (NMPlatform *platform,
-                    NMFakePlatformLink *device,
-                    gconstpointer user_data)
-{
-	const NMPlatformLnkVxlan *props = user_data;
-	NMPObject *obj_tmp;
-	NMPObject *lnk;
-
-	obj_tmp = (NMPObject *) device->obj;
-
-	lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VXLAN, NULL);
-	lnk->lnk_vxlan = *props;
-
-	obj_tmp->link.parent = props->parent_ifindex;
-	obj_tmp->_link.netlink.lnk = lnk;
-}
-
-static gboolean
-link_vxlan_add (NMPlatform *platform,
-                const char *name,
-                const NMPlatformLnkVxlan *props,
-                const NMPlatformLink **out_link)
-{
-	link_add_one (platform, name, NM_LINK_TYPE_VXLAN,
-	              _vxlan_add_prepare, props, out_link);
-	return TRUE;
 }
 
 struct infiniband_add_data {
@@ -1354,13 +1325,10 @@ nm_fake_platform_setup (void)
 
 	nm_platform_setup (platform);
 
-	/* add loopback interface */
-	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, NULL, 0, NULL);
-
-	/* add some ethernets */
-	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
-	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
-	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
+	link_add (platform, NM_LINK_TYPE_LOOPBACK, "lo",   0, NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth0", 0, NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth1", 0, NULL, 0, NULL, NULL);
+	link_add (platform, NM_LINK_TYPE_ETHERNET, "eth2", 0, NULL, 0, NULL, NULL);
 }
 
 static void
@@ -1418,9 +1386,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
 
-	platform_class->vlan_add = vlan_add;
 	platform_class->link_vlan_change = link_vlan_change;
-	platform_class->link_vxlan_add = link_vxlan_add;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
 	platform_class->infiniband_partition_delete = infiniband_partition_delete;

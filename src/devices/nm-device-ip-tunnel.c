@@ -657,11 +657,44 @@ create_and_realize (NMDevice *device,
 	gint64 val;
 	NMIPTunnelMode mode;
 	int r;
+	gs_free char *hwaddr = NULL;
+	guint8 mac_address[ETH_ALEN];
+	gboolean mac_address_valid = FALSE;
 
 	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
-	g_assert (s_ip_tunnel);
+	nm_assert (NM_IS_SETTING_IP_TUNNEL (s_ip_tunnel));
 
 	mode = nm_setting_ip_tunnel_get_mode (s_ip_tunnel);
+
+	if (   nm_device_hw_addr_get_cloned (device,
+	                                     connection,
+	                                     FALSE,
+	                                     &hwaddr,
+	                                     NULL,
+	                                     NULL)
+	    && hwaddr) {
+		/* FIXME: we set the MAC address when creating the interface, while the
+		 * NMDevice is still unrealized. As we afterwards realize the device, it
+		 * forgets the parameters for the cloned MAC address, and in stage 1
+		 * it might create a different MAC address. That should be fixed by
+		 * better handling device realization. */
+		if (!nm_utils_hwaddr_aton (hwaddr, mac_address, ETH_ALEN)) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			             "Invalid hardware address '%s'",
+			             hwaddr);
+			g_return_val_if_reached (FALSE);
+		}
+
+		if (NM_IN_SET (mode, NM_IP_TUNNEL_MODE_GRE)) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			             "Invalid hardware address '%s' for tunnel type",
+			             hwaddr);
+			return FALSE;
+		}
+
+		mac_address_valid = TRUE;
+	}
+
 	switch (mode) {
 	case NM_IP_TUNNEL_MODE_GRETAP:
 		lnk_gre.is_tap = TRUE;
@@ -702,7 +735,12 @@ create_and_realize (NMDevice *device,
 			lnk_gre.output_flags = NM_GRE_KEY;
 		}
 
-		r = nm_platform_link_gre_add (nm_device_get_platform (device), iface, &lnk_gre, out_plink);
+		r = nm_platform_link_gre_add (nm_device_get_platform (device),
+		                              iface,
+		                              mac_address_valid ? mac_address : NULL,
+		                              mac_address_valid ? ETH_ALEN : 0,
+		                              &lnk_gre,
+		                              out_plink);
 		if (r < 0) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 			             "Failed to create GRE interface '%s' for '%s': %s",

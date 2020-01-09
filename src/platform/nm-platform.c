@@ -1150,11 +1150,12 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
 /**
  * nm_platform_link_add:
  * @self: platform instance
- * @name: Interface name
  * @type: Interface type
- * @veth_peer: For veths, the peer name
+ * @name: Interface name
+ * @parent: the IFLA_LINK parameter or 0.
  * @address: (allow-none): set the mac address of the link
  * @address_len: the length of the @address
+ * @extra_data: depending on @type, additional data.
  * @out_link: on success, the link object
  *
  * Add a software interface.  If the interface already exists and is of type
@@ -1167,66 +1168,100 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, c
  *
  * Returns: the negative nm-error on failure.
  */
-static int
+int
 nm_platform_link_add (NMPlatform *self,
-                      const char *name,
                       NMLinkType type,
-                      const char *veth_peer,
+                      const char *name,
+                      int parent,
                       const void *address,
                       size_t address_len,
+                      gconstpointer extra_data,
                       const NMPlatformLink **out_link)
 {
 	int r;
 	char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
+	char parent_buf[64];
+	char buf[512];
 
 	_CHECK_SELF (self, klass, -NME_BUG);
 
 	g_return_val_if_fail (name, -NME_BUG);
 	g_return_val_if_fail ((address != NULL) ^ (address_len == 0) , -NME_BUG);
 	g_return_val_if_fail (address_len <= NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
-	g_return_val_if_fail ((!!veth_peer) == (type == NM_LINK_TYPE_VETH), -NME_BUG);
+	g_return_val_if_fail (parent >= 0, -NME_BUG);
 
 	r = _link_add_check_existing (self, name, type, out_link);
 	if (r < 0)
 		return r;
 
-	_LOG2D ("link: adding link: %s (%d)"
-	        "%s%s" /* address */
-	        "%s%s" /* veth peer */
+	_LOG2D ("link: adding link: "
+	        "%s "    /* type */
+	        "\"%s\"" /* name */
+	        "%s%s"   /* parent */
+	        "%s%s"   /* address */
+	        "%s"     /* extra_data */
 	        "",
 	        nm_link_type_to_string (type),
-	        (int) type,
+	        name,
+	        parent > 0 ? ", parent " : "",
+	        parent > 0 ? nm_sprintf_buf (parent_buf, "%d", parent) : "",
 	        address ? ", address: " : "",
 	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
-	        veth_peer ? ", veth-peer: " : "",
-	        veth_peer ?: "");
+	        ({
+	            char *buf_p = buf;
+	            gsize buf_len = sizeof (buf);
 
-	return klass->link_add (self, name, type, veth_peer, address, address_len, out_link);
-}
+	            buf[0] = '\0';
 
-int
-nm_platform_link_veth_add (NMPlatform *self,
-                            const char *name,
-                            const char *peer,
-                            const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_VETH, peer, NULL, 0, out_link);
-}
+	            switch (type) {
+	            case NM_LINK_TYPE_VLAN:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_vlan_to_string ((const NMPlatformLnkVlan *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_VXLAN:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_vxlan_to_string ((const NMPlatformLnkVxlan *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_VETH:
+	                nm_sprintf_buf (buf, ", veth-peer \"%s\"", (const char *) extra_data);
+	                break;
+	            case NM_LINK_TYPE_GRE:
+	            case NM_LINK_TYPE_GRETAP:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_gre_to_string ((const NMPlatformLnkGre *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_SIT:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_sit_to_string ((const NMPlatformLnkSit *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_IP6TNL:
+	            case NM_LINK_TYPE_IP6GRE:
+	            case NM_LINK_TYPE_IP6GRETAP:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_ip6tnl_to_string ((const NMPlatformLnkIp6Tnl *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_IPIP:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_ipip_to_string ((const NMPlatformLnkIpIp *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_MACSEC:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_macsec_to_string ((const NMPlatformLnkMacsec *) extra_data, buf_p, buf_len);
+	                break;
+	            case NM_LINK_TYPE_MACVLAN:
+	            case NM_LINK_TYPE_MACVTAP:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_macvlan_to_string ((const NMPlatformLnkMacvlan *) extra_data, buf_p, buf_len);
+	                break;
+	            default:
+	                nm_assert (!extra_data);
+	                break;
+	            }
 
-/**
- * nm_platform_link_dummy_add:
- * @self: platform instance
- * @name: New interface name
- * @out_link: on success, the link object
- *
- * Create a software ethernet-like interface
- */
-int
-nm_platform_link_dummy_add (NMPlatform *self,
-                            const char *name,
-                            const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, NULL, 0, out_link);
+	            buf;
+	        }));
+
+	return klass->link_add (self, type, name, parent, address, address_len, extra_data, out_link);
 }
 
 /**
@@ -2193,7 +2228,7 @@ nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatfor
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVLAN, out_link);
 }
 
-const NMPlatformLnkMacvtap *
+const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvtap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACVTAP, out_link);
@@ -2248,14 +2283,6 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_peer_flags_to_string, NMPlat
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS,         "aips"),
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS,     "remove-aips"),
 );
-
-int
-nm_platform_link_wireguard_add (NMPlatform *self,
-                                const char *name,
-                                const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_WIREGUARD, NULL, NULL, 0, out_link);
-}
 
 int
 nm_platform_link_wireguard_change (NMPlatform *self,
@@ -2316,128 +2343,6 @@ nm_platform_link_wireguard_change (NMPlatform *self,
 /*****************************************************************************/
 
 /**
- * nm_platform_link_bridge_add:
- * @self: platform instance
- * @name: New interface name
- * @address: (allow-none): set the mac address of the new bridge
- * @address_len: the length of the @address
- * @out_link: on success, the link object
- *
- * Create a software bridge.
- */
-int
-nm_platform_link_bridge_add (NMPlatform *self,
-                             const char *name,
-                             const void *address,
-                             size_t address_len,
-                             const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, NULL, address, address_len, out_link);
-}
-
-/**
- * nm_platform_link_bond_add:
- * @self: platform instance
- * @name: New interface name
- * @out_link: on success, the link object
- *
- * Create a software bonding device.
- */
-int
-nm_platform_link_bond_add (NMPlatform *self,
-                           const char *name,
-                           const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, NULL, 0, out_link);
-}
-
-/**
- * nm_platform_link_team_add:
- * @self: platform instance
- * @name: New interface name
- * @out_link: on success, the link object
- *
- * Create a software teaming device.
- */
-int
-nm_platform_link_team_add (NMPlatform *self,
-                           const char *name,
-                           const NMPlatformLink **out_link)
-{
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, NULL, 0, out_link);
-}
-
-/**
- * nm_platform_link_vlan_add:
- * @self: platform instance
- * @name: New interface name
- * @vlanid: VLAN identifier
- * @vlanflags: VLAN flags from libnm
- * @out_link: on success, the link object
- *
- * Create a software VLAN device.
- */
-int
-nm_platform_link_vlan_add (NMPlatform *self,
-                           const char *name,
-                           int parent,
-                           int vlanid,
-                           guint32 vlanflags,
-                           const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (parent >= 0, -NME_BUG);
-	g_return_val_if_fail (vlanid >= 0, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_VLAN, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("link: adding link vlan parent %d vlanid %d vlanflags %x",
-	        parent, vlanid, vlanflags);
-
-	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_link_vxlan_add:
- * @self: platform instance
- * @name: New interface name
- * @props: properties of the new link
- * @out_link: on success, the link object
- *
- * Create a VXLAN device.
- */
-int
-nm_platform_link_vxlan_add (NMPlatform *self,
-                            const char *name,
-                            const NMPlatformLnkVxlan *props,
-                            const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_VXLAN, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("link: adding link %s", nm_platform_lnk_vxlan_to_string (props, NULL, 0));
-
-	if (!klass->link_vxlan_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
  * nm_platform_link_tun_add:
  * @self: platform instance
  * @name: new interface name
@@ -2485,38 +2390,6 @@ nm_platform_link_tun_add (NMPlatform *self,
 	_LOG2D ("link: adding link %s", nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
 
 	if (!klass->link_tun_add (self, name, props, out_link, out_fd))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_6lowpan_add:
- * @self: platform instance
- * @parent: parent link
- * @name: name of the new interface
- * @out_link: on success, the link object
- *
- * Create a 6LoWPAN interface.
- */
-int
-nm_platform_link_6lowpan_add (NMPlatform *self,
-                              const char *name,
-                              int parent,
-                              const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_6LOWPAN, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link 6lowpan parent %u", parent);
-
-	if (!klass->link_6lowpan_add (self, name, parent, out_link))
 		return -NME_UNSPEC;
 	return 0;
 }
@@ -2761,39 +2634,6 @@ nm_platform_link_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, i
 	return nm_platform_link_vlan_change (self, ifindex, 0, 0, FALSE, NULL, 0, FALSE, &map, 1);
 }
 
-/**
- * nm_platform_link_gre_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a software GRE device.
- */
-int
-nm_platform_link_gre_add (NMPlatform *self,
-                          const char *name,
-                          const NMPlatformLnkGre *props,
-                          const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_gre_to_string (props, NULL, 0));
-
-	if (!klass->link_gre_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
 static int
 _infiniband_add_add_or_delete (NMPlatform *self,
                                int ifindex,
@@ -2916,217 +2756,6 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 	NM_SET_OUT (out_p_key, p_key);
 	NM_SET_OUT (out_mode, mode);
 	return TRUE;
-}
-
-/**
- * nm_platform_ip6tnl_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create an IPv6 tunnel.
- */
-int
-nm_platform_link_ip6tnl_add (NMPlatform *self,
-                             const char *name,
-                             const NMPlatformLnkIp6Tnl *props,
-                             const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-	g_return_val_if_fail (!props->is_gre, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_IP6TNL, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
-
-	if (!klass->link_ip6tnl_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_ip6gre_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create an IPv6 GRE/GRETAP tunnel.
- */
-int
-nm_platform_link_ip6gre_add (NMPlatform *self,
-                             const char *name,
-                             const NMPlatformLnkIp6Tnl *props,
-                             const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-	g_return_val_if_fail (props->is_gre, -NME_BUG);
-
-	r = _link_add_check_existing (self,
-	                              name,
-	                              props->is_tap
-	                                  ? NM_LINK_TYPE_IP6GRETAP
-	                                  : NM_LINK_TYPE_IP6GRE,
-	                              out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
-
-	if (!klass->link_ip6gre_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_ipip_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create an IPIP tunnel.
- */
-int
-nm_platform_link_ipip_add (NMPlatform *self,
-                           const char *name,
-                           const NMPlatformLnkIpIp *props,
-                           const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_IPIP, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_ipip_to_string (props, NULL, 0));
-
-	if (!klass->link_ipip_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_macsec_add:
- * @self: platform instance
- * @name: name of the new interface
- * @parent: parent link
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a MACsec interface.
- */
-int
-nm_platform_link_macsec_add (NMPlatform *self,
-                             const char *name,
-                             int parent,
-                             const NMPlatformLnkMacsec *props,
-                             const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_MACSEC, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_macsec_to_string (props, NULL, 0));
-
-	if (!klass->link_macsec_add (self, name, parent, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_macvlan_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a MACVLAN or MACVTAP device.
- */
-int
-nm_platform_link_macvlan_add (NMPlatform *self,
-                              const char *name,
-                              int parent,
-                              const NMPlatformLnkMacvlan *props,
-                              const NMPlatformLink **out_link)
-{
-	int r;
-	NMLinkType type;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	type = props->tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN;
-
-	r = _link_add_check_existing (self, name, type, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_macvlan_to_string (props, NULL, 0));
-
-	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
-}
-
-/**
- * nm_platform_sit_add:
- * @self: platform instance
- * @name: name of the new interface
- * @props: interface properties
- * @out_link: on success, the link object
- *
- * Create a software SIT device.
- */
-int
-nm_platform_link_sit_add (NMPlatform *self,
-                          const char *name,
-                          const NMPlatformLnkSit *props,
-                          const NMPlatformLink **out_link)
-{
-	int r;
-
-	_CHECK_SELF (self, klass, -NME_BUG);
-
-	g_return_val_if_fail (props, -NME_BUG);
-	g_return_val_if_fail (name, -NME_BUG);
-
-	r = _link_add_check_existing (self, name, NM_LINK_TYPE_SIT, out_link);
-	if (r < 0)
-		return r;
-
-	_LOG2D ("adding link %s", nm_platform_lnk_sit_to_string (props, NULL, 0));
-
-	if (!klass->link_sit_add (self, name, props, out_link))
-		return -NME_UNSPEC;
-	return 0;
 }
 
 gboolean
