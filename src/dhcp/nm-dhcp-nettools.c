@@ -1028,10 +1028,10 @@ dhcp4_event_handle (NMDhcpNettools *self,
 			_LOGW ("selecting lease failed: %d", r);
 		}
 		break;
+	case N_DHCP4_CLIENT_EVENT_RETRACTED:
 	case N_DHCP4_CLIENT_EVENT_EXPIRED:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_EXPIRE, NULL, NULL);
 		break;
-	case N_DHCP4_CLIENT_EVENT_RETRACTED:
 	case N_DHCP4_CLIENT_EVENT_CANCELLED:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
 		break;

@@ -139,6 +139,9 @@ int n_dhcp4_c_connection_listen(NDhcp4CConnection *connection) {
         _c_cleanup_(c_closep) int fd_packet = -1;
         int r;
 
+        if (connection->state == N_DHCP4_C_CONNECTION_STATE_PACKET)
+                return 0;
+
         c_assert(connection->state == N_DHCP4_C_CONNECTION_STATE_INIT ||
                  connection->state == N_DHCP4_C_CONNECTION_STATE_DRAINING ||
                  connection->state == N_DHCP4_C_CONNECTION_STATE_UDP);
