@@ -216,6 +216,14 @@ nm_utils_inet6_ntop_dup (const struct in6_addr *addr)
 
 /*****************************************************************************/
 
+gboolean nm_utils_ipaddr_is_valid (int addr_family,
+                                   const char *str_addr);
+
+gboolean nm_utils_ipaddr_is_normalized (int addr_family,
+                                        const char *str_addr);
+
+/*****************************************************************************/
+
 #define NM_CMP_RETURN(c) \
     G_STMT_START { \
         const int _cc = (c); \
