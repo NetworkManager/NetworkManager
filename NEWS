@@ -1,4 +1,16 @@
 ===============================================
+NetworkManager-1.22.4
+Overview of changes since NetworkManager-1.22.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix behavior of internal DHCP client when the server sends a NAK.
+* Support 31-bit prefixes on IPv4 point-to-point links according to
+  RFC 3021.
+* Fix memory leak parsing RequestScan D-Bus method arguments.
+
+===============================================
 NetworkManager-1.22.2
 Overview of changes since NetworkManager-1.22.0
 ===============================================
