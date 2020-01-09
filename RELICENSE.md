@@ -71,4 +71,5 @@ of this file will give details when/how an entry was added.
 Consent/Disapproval List
 ========================
 
+- [Y] Beniamino Galvani <bgalvani@redhat.com>
 - [Y] Thomas Haller <thaller@redhat.com>
