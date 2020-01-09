@@ -50,19 +50,6 @@ const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
 	{ NULL,                                        FALSE,   FALSE }
 };
 
-static int
-_addr_size (int family)
-{
-	switch (family) {
-	case AF_INET:
-		return sizeof (in_addr_t);
-	case AF_INET6:
-		return sizeof (struct in6_addr);
-	default:
-		g_return_val_if_reached (0);
-	}
-}
-
 static char *
 canonicalize_ip (int family, const char *ip, gboolean null_any)
 {
@@ -84,7 +71,7 @@ canonicalize_ip (int family, const char *ip, gboolean null_any)
 	g_return_val_if_fail (ret == 1, NULL);
 
 	if (null_any) {
-		if (!memcmp (addr_bytes, &in6addr_any, _addr_size (family)))
+		if (!memcmp (addr_bytes, &in6addr_any, nm_utils_addr_family_to_size (family)))
 			return NULL;
 	}
 
@@ -106,7 +93,7 @@ canonicalize_ip_binary (int family, gconstpointer ip, gboolean null_any)
 		g_return_val_if_reached (NULL);
 	}
 	if (null_any) {
-		if (!memcmp (ip, &in6addr_any, _addr_size (family)))
+		if (!memcmp (ip, &in6addr_any, nm_utils_addr_family_to_size (family)))
 			return NULL;
 	}
 	return g_strdup (inet_ntop (family, ip, string, sizeof (string)));
@@ -1051,7 +1038,7 @@ nm_ip_route_get_next_hop_binary (NMIPRoute *route,
 		inet_pton (route->family, route->next_hop, next_hop);
 		return TRUE;
 	} else {
-		memset (next_hop, 0, _addr_size (route->family));
+		memset (next_hop, 0, nm_utils_addr_family_to_size (route->family));
 		return FALSE;
 	}
 }
