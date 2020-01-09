@@ -158,6 +158,64 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
 
 /*****************************************************************************/
 
+#define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
+
+static inline const char *
+nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
+{
+	const char *s;
+
+	const char *inet_ntop (int af,
+	                       const void *src,
+	                       char *dst,
+	                       socklen_t size);
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+	nm_assert (dst);
+
+	s = inet_ntop (addr_family,
+	               addr,
+	               dst,
+	               addr_family == AF_INET6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN);
+	nm_assert (s);
+	return s;
+}
+
+static inline const char *
+_nm_utils_inet4_ntop (in_addr_t addr, char *dst)
+{
+	return nm_utils_inet_ntop (AF_INET, &addr, dst);
+}
+
+static inline const char *
+_nm_utils_inet6_ntop (const struct in6_addr *addr, char *dst)
+{
+	return nm_utils_inet_ntop (AF_INET6, addr, dst);
+}
+
+static inline char *
+nm_utils_inet_ntop_dup (int addr_family, gconstpointer addr)
+{
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	return g_strdup (nm_utils_inet_ntop (addr_family, addr, buf));
+}
+
+static inline char *
+nm_utils_inet4_ntop_dup (in_addr_t addr)
+{
+	return nm_utils_inet_ntop_dup (AF_INET, &addr);
+}
+
+static inline char *
+nm_utils_inet6_ntop_dup (const struct in6_addr *addr)
+{
+	return nm_utils_inet_ntop_dup (AF_INET6, addr);
+}
+
+/*****************************************************************************/
+
 #define NM_CMP_RETURN(c) \
     G_STMT_START { \
         const int _cc = (c); \
