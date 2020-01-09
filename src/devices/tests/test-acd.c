@@ -157,7 +157,7 @@ again:
 		}
 
 		g_error ("expected check for address #%d (%s) to %s, but it didn't",
-		         i, nm_utils_inet4_ntop (info->addresses[i], sbuf),
+		         i, _nm_utils_inet4_ntop (info->addresses[i], sbuf),
 		         info->expected_result[i] ? "detect no duplicated" : "detect a duplicate");
 	}
 }

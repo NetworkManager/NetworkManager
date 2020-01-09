@@ -3003,8 +3003,9 @@ nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
 {
 	struct in6_addr i6_token = { .s6_addr = { 0, } };
 
+	nm_assert (buf);
 	nm_utils_ipv6_addr_set_interface_identifier (&i6_token, iid);
-	return nm_utils_inet6_ntop (&i6_token, buf);
+	return _nm_utils_inet6_ntop (&i6_token, buf);
 }
 
 /*****************************************************************************/

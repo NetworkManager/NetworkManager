@@ -2036,7 +2036,7 @@ write_route_file_svformat (const char *filename, NMSettingIPConfig *s_ip4)
 
 		netmask = _nm_utils_ip4_prefix_to_netmask (nm_ip_route_get_prefix (route));
 		svSetValueStr (routefile, netmask_key,
-		               nm_utils_inet4_ntop (netmask, buf));
+		               _nm_utils_inet4_ntop (netmask, buf));
 
 		svSetValueStr (routefile, gw_key, nm_ip_route_get_next_hop (route));
 
@@ -2430,7 +2430,7 @@ write_ip4_setting (NMConnection *connection,
 			char buf[INET_ADDRSTRLEN];
 
 			svSetValueStr (ifcfg, tag,
-			               nm_utils_inet4_ntop (_nm_utils_ip4_prefix_to_netmask (prefix), buf));
+			               _nm_utils_inet4_ntop (_nm_utils_ip4_prefix_to_netmask (prefix), buf));
 		}
 
 		n++;

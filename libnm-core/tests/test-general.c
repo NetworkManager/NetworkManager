@@ -8341,8 +8341,8 @@ test_nm_ip_addr_zero (void)
 	g_assert (memcmp (&nm_ip_addr_zero, &a4, sizeof (a4)) == 0);
 	g_assert (memcmp (&nm_ip_addr_zero, &a6, sizeof (a6)) == 0);
 
-	g_assert_cmpstr (nm_utils_inet4_ntop (nm_ip_addr_zero.addr4, buf), ==, "0.0.0.0");
-	g_assert_cmpstr (nm_utils_inet6_ntop (&nm_ip_addr_zero.addr6, buf), ==, "::");
+	g_assert_cmpstr (_nm_utils_inet4_ntop (nm_ip_addr_zero.addr4, buf), ==, "0.0.0.0");
+	g_assert_cmpstr (_nm_utils_inet6_ntop (&nm_ip_addr_zero.addr6, buf), ==, "::");
 
 	g_assert_cmpstr (nm_utils_inet_ntop (AF_INET, &nm_ip_addr_zero, buf), ==, "0.0.0.0");
 	g_assert_cmpstr (nm_utils_inet_ntop (AF_INET6, &nm_ip_addr_zero, buf), ==, "::");

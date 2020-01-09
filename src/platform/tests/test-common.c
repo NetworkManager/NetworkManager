@@ -356,7 +356,7 @@ _nmtstp_assert_ip4_route_exists (const char *file,
 
 		g_error ("[%s:%u] %s(): The ip4 route %s/%d metric %u tos %u shall exist %u times, but platform has it %u times",
 		         file, line, func,
-		         nm_utils_inet4_ntop (network, sbuf),
+		         _nm_utils_inet4_ntop (network, sbuf),
 		         plen,
 		         metric,
 		         tos,
@@ -467,10 +467,10 @@ _nmtstp_assert_ip6_route_exists (const char *file,
 
 		g_error ("[%s:%u] %s(): The ip6 route %s/%d metric %u src %s/%d shall exist %u times, but platform has it %u times",
 		         file, line, func,
-		         nm_utils_inet6_ntop (network, s_network),
+		         _nm_utils_inet6_ntop (network, s_network),
 		         plen,
 		         metric,
-		         nm_utils_inet6_ntop (src, s_src),
+		         _nm_utils_inet6_ntop (src, s_src),
 		         src_plen,
 		         c_exists,
 		         c);
@@ -831,12 +831,12 @@ _ip_address_add (NMPlatform *platform,
 			if (   peer_address->addr4 != address->addr4
 			    || nmtst_get_rand_uint32 () % 2) {
 				/* If the peer is the same as the local address, we can omit it. The result should be identical */
-				nm_sprintf_buf (s_peer, " peer %s", nm_utils_inet4_ntop (peer_address->addr4, b2));
+				nm_sprintf_buf (s_peer, " peer %s", _nm_utils_inet4_ntop (peer_address->addr4, b2));
 			} else
 				s_peer[0] = '\0';
 
 			nmtstp_run_command_check ("ip address change %s%s/%d dev %s%s%s%s",
-			                          nm_utils_inet4_ntop (address->addr4, b1),
+			                          _nm_utils_inet4_ntop (address->addr4, b1),
 			                          s_peer,
 			                          plen,
 			                          ifname,
@@ -849,9 +849,9 @@ _ip_address_add (NMPlatform *platform,
 			/* flags not implemented (yet) */
 			g_assert (flags == 0);
 			nmtstp_run_command_check ("ip address change %s%s%s/%d dev %s%s%s%s",
-			                          nm_utils_inet6_ntop (&address->addr6, b1),
+			                          _nm_utils_inet6_ntop (&address->addr6, b1),
 			                          !IN6_IS_ADDR_UNSPECIFIED (&peer_address->addr6) ? " peer " : "",
-			                          !IN6_IS_ADDR_UNSPECIFIED (&peer_address->addr6) ? nm_utils_inet6_ntop (&peer_address->addr6, b2) : "",
+			                          !IN6_IS_ADDR_UNSPECIFIED (&peer_address->addr6) ? _nm_utils_inet6_ntop (&peer_address->addr6, b2) : "",
 			                          plen,
 			                          ifname,
 			                          s_valid ?: "",
@@ -1059,15 +1059,15 @@ _ip_address_del (NMPlatform *platform,
 
 		if (is_v4) {
 			success = nmtstp_run_command ("ip address delete %s%s%s/%d dev %s",
-			                              nm_utils_inet4_ntop (address->addr4, b1),
+			                              _nm_utils_inet4_ntop (address->addr4, b1),
 			                              peer_address->addr4 != address->addr4 ? " peer " : "",
-			                              peer_address->addr4 != address->addr4 ? nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
+			                              peer_address->addr4 != address->addr4 ? _nm_utils_inet4_ntop (peer_address->addr4, b2) : "",
 			                              plen,
 			                              ifname);
 		} else {
 			g_assert (!peer_address);
 			success = nmtstp_run_command ("ip address delete %s/%d dev %s",
-			                              nm_utils_inet6_ntop (&address->addr6, b1),
+			                              _nm_utils_inet6_ntop (&address->addr6, b1),
 			                              plen,
 			                              ifname);
 		}
@@ -1258,8 +1258,8 @@ nmtstp_link_gre_add (NMPlatform *platform,
 		                                name,
 		                                type,
 		                                dev ?: "",
-		                                nm_utils_inet4_ntop (lnk->local, b1),
-		                                nm_utils_inet4_ntop (lnk->remote, b2),
+		                                _nm_utils_inet4_ntop (lnk->local, b1),
+		                                _nm_utils_inet4_ntop (lnk->remote, b2),
 		                                lnk->ttl,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1320,8 +1320,8 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 		                                name,
 		                                mode,
 		                                dev,
-		                                nm_utils_inet6_ntop (&lnk->local, b1),
-		                                nm_utils_inet6_ntop (&lnk->remote, b2),
+		                                _nm_utils_inet6_ntop (&lnk->local, b1),
+		                                _nm_utils_inet6_ntop (&lnk->remote, b2),
 		                                lnk->ttl,
 		                                tclass_inherit ? "inherit" : nm_sprintf_buf (tclass, "%02x", lnk->tclass),
 		                                encap_ignore ? "none" : nm_sprintf_buf (encap, "%u", lnk->encap_limit),
@@ -1368,8 +1368,8 @@ nmtstp_link_ip6gre_add (NMPlatform *platform,
 		                                name,
 		                                lnk->is_tap ? "ip6gretap" : "ip6gre",
 		                                dev,
-		                                nm_utils_inet6_ntop (&lnk->local, b1),
-		                                nm_utils_inet6_ntop (&lnk->remote, b2),
+		                                _nm_utils_inet6_ntop (&lnk->local, b1),
+		                                _nm_utils_inet6_ntop (&lnk->remote, b2),
 		                                lnk->ttl,
 		                                tclass_inherit ? "inherit" : nm_sprintf_buf (tclass, "%02x", lnk->tclass),
 		                                lnk->flow_label);
@@ -1413,8 +1413,8 @@ nmtstp_link_ipip_add (NMPlatform *platform,
 		success = !nmtstp_run_command ("ip tunnel add %s mode ipip %s local %s remote %s ttl %u tos %02x %s",
 		                                name,
 		                                dev,
-		                                nm_utils_inet4_ntop (lnk->local, b1),
-		                                nm_utils_inet4_ntop (lnk->remote, b2),
+		                                _nm_utils_inet4_ntop (lnk->local, b1),
+		                                _nm_utils_inet4_ntop (lnk->remote, b2),
 		                                lnk->ttl,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1507,8 +1507,8 @@ nmtstp_link_sit_add (NMPlatform *platform,
 		success = !nmtstp_run_command ("ip tunnel add %s mode sit%s local %s remote %s ttl %u tos %02x %s",
 		                                name,
 		                                dev,
-		                                nm_utils_inet4_ntop (lnk->local, b1),
-		                                nm_utils_inet4_ntop (lnk->remote, b2),
+		                                _nm_utils_inet4_ntop (lnk->local, b1),
+		                                _nm_utils_inet4_ntop (lnk->remote, b2),
 		                                lnk->ttl,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1644,16 +1644,16 @@ nmtstp_link_vxlan_add (NMPlatform *platform,
 			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (platform, lnk->parent_ifindex));
 
 		if (lnk->local)
-			nm_utils_inet4_ntop (lnk->local, local);
+			_nm_utils_inet4_ntop (lnk->local, local);
 		else if (memcmp (&lnk->local6, &in6addr_any, sizeof (in6addr_any)))
-			nm_utils_inet6_ntop (&lnk->local6, local);
+			_nm_utils_inet6_ntop (&lnk->local6, local);
 		else
 			local[0] = '\0';
 
 		if (lnk->group)
-			nm_utils_inet4_ntop (lnk->group, group);
+			_nm_utils_inet4_ntop (lnk->group, group);
 		else if (memcmp (&lnk->group6, &in6addr_any, sizeof (in6addr_any)))
-			nm_utils_inet6_ntop (&lnk->group6, group);
+			_nm_utils_inet6_ntop (&lnk->group6, group);
 		else
 			group[0] = '\0';
 

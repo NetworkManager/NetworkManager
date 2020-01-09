@@ -235,7 +235,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				return FALSE;
 			}
 
-			if (g_strcmp0 (priv->token, nm_utils_inet6_ntop (&i6_token, s_token)))
+			if (g_strcmp0 (priv->token, _nm_utils_inet6_ntop (&i6_token, s_token)))
 				token_needs_normalization = TRUE;
 		} else {
 			g_set_error_literal (error,

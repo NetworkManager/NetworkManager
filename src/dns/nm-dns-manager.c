@@ -425,9 +425,9 @@ merge_one_ip_config (NMResolvConfData *rc,
 		if (addr_family == AF_INET)
 			nm_utils_inet_ntop (addr_family, addr, buf);
 		else if (IN6_IS_ADDR_V4MAPPED (addr))
-			nm_utils_inet4_ntop (addr->addr6.s6_addr32[3], buf);
+			_nm_utils_inet4_ntop (addr->addr6.s6_addr32[3], buf);
 		else {
-			nm_utils_inet6_ntop (&addr->addr6, buf);
+			_nm_utils_inet6_ntop (&addr->addr6, buf);
 			if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 				const char *ifname;
 
@@ -457,7 +457,7 @@ merge_one_ip_config (NMResolvConfData *rc,
 		num = nm_ip4_config_get_num_nis_servers (ip4_config);
 		for (i = 0; i < num; i++) {
 			add_string_item (rc->nis_servers,
-			                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (ip4_config, i), buf),
+			                 _nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (ip4_config, i), buf),
 			                 TRUE);
 		}
 

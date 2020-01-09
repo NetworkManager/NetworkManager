@@ -145,7 +145,7 @@ get_ip_domains (GPtrArray *domains, NMIPConfig *ip_config)
 
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, (NMIP4Config *) ip_config, &address) {
 			cidr = g_strdup_printf ("%s/%u",
-			                        nm_utils_inet4_ntop (address->address, sbuf),
+			                        _nm_utils_inet4_ntop (address->address, sbuf),
 			                        address->plen);
 			g_ptr_array_add (domains, cidr);
 		}
@@ -154,7 +154,7 @@ get_ip_domains (GPtrArray *domains, NMIPConfig *ip_config)
 
 		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, (NMIP6Config *) ip_config, &address) {
 			cidr = g_strdup_printf ("%s/%u",
-			                        nm_utils_inet6_ntop (&address->address, sbuf),
+			                        _nm_utils_inet6_ntop (&address->address, sbuf),
 			                        address->plen);
 			g_ptr_array_add (domains, cidr);
 		}
@@ -167,7 +167,7 @@ get_ip_domains (GPtrArray *domains, NMIPConfig *ip_config)
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (routes))
 				continue;
 			cidr = g_strdup_printf ("%s/%u",
-			                        nm_utils_inet4_ntop (routes->network, sbuf),
+			                        _nm_utils_inet4_ntop (routes->network, sbuf),
 			                        routes->plen);
 			g_ptr_array_add (domains, cidr);
 		}
@@ -178,7 +178,7 @@ get_ip_domains (GPtrArray *domains, NMIPConfig *ip_config)
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (routes))
 				continue;
 			cidr = g_strdup_printf ("%s/%u",
-			                        nm_utils_inet6_ntop (&routes->network, sbuf),
+			                        _nm_utils_inet6_ntop (&routes->network, sbuf),
 			                        routes->plen);
 			g_ptr_array_add (domains, cidr);
 		}

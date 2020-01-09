@@ -128,7 +128,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 	options = out_options ? nm_dhcp_option_create_options_dict () : NULL;
 
-	nm_utils_inet4_ntop (a_address.s_addr, addr_str);
+	_nm_utils_inet4_ntop (a_address.s_addr, addr_str);
 	nm_dhcp_option_add_option (options,
 	                           _nm_dhcp_option_dhcp4_options,
 	                           NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS,
@@ -138,7 +138,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	nm_dhcp_option_add_option (options,
 	                           _nm_dhcp_option_dhcp4_options,
 	                           NM_DHCP_OPTION_DHCP4_SUBNET_MASK,
-	                           nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
+	                           _nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
 
 	nm_dhcp_option_add_option_u64 (options,
 	                               _nm_dhcp_option_dhcp4_options,
@@ -150,7 +150,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	                               (guint64) (ts_time + a_lifetime));
 
 	if (sd_dhcp_lease_get_next_server (lease, &a_next_server) == 0) {
-		nm_utils_inet4_ntop (a_next_server.s_addr, addr_str);
+		_nm_utils_inet4_ntop (a_next_server.s_addr, addr_str);
 		nm_dhcp_option_add_option (options,
 		                           _nm_dhcp_option_dhcp4_options,
 		                           NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,
@@ -169,7 +169,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	                           }));
 
 	if (sd_dhcp_lease_get_server_identifier (lease, &server_id) >= 0) {
-		nm_utils_inet4_ntop (server_id.s_addr, addr_str);
+		_nm_utils_inet4_ntop (server_id.s_addr, addr_str);
 		nm_dhcp_option_add_option (options,
 		                           _nm_dhcp_option_dhcp4_options,
 		                           NM_DHCP_OPTION_DHCP4_SERVER_ID,
@@ -177,7 +177,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	}
 
 	if (sd_dhcp_lease_get_broadcast (lease, &broadcast) >= 0) {
-		nm_utils_inet4_ntop (broadcast.s_addr, addr_str);
+		_nm_utils_inet4_ntop (broadcast.s_addr, addr_str);
 		nm_dhcp_option_add_option (options,
 		                           _nm_dhcp_option_dhcp4_options,
 		                           NM_DHCP_OPTION_DHCP4_BROADCAST,
@@ -188,7 +188,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
+			_nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
 			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 
 			if (   addr_list[i].s_addr == 0
@@ -288,8 +288,8 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 			network_net = nm_utils_ip4_address_clear_host_address (r_network.s_addr,
 			                                                       r_plen);
-			nm_utils_inet4_ntop (network_net, network_net_str);
-			nm_utils_inet4_ntop (r_gateway.s_addr, gateway_str);
+			_nm_utils_inet4_ntop (network_net, network_net_str);
+			_nm_utils_inet4_ntop (r_gateway.s_addr, gateway_str);
 
 			g_string_append_printf (nm_gstring_add_space_delimiter (  option == NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE
 			                                                        ? str_classless
@@ -359,7 +359,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 		for (i = 0; i < num; i++) {
 			guint32 m;
 
-			s = nm_utils_inet4_ntop (a_router[i].s_addr, addr_str);
+			s = _nm_utils_inet4_ntop (a_router[i].s_addr, addr_str);
 			g_string_append (nm_gstring_add_space_delimiter (str), s);
 
 			if (a_router[i].s_addr == 0) {
@@ -411,7 +411,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
+			_nm_utils_inet4_ntop (addr_list[i].s_addr, addr_str);
 			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 		}
 		nm_dhcp_option_add_option (options,
@@ -750,7 +750,7 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 
 		nm_ip6_config_add_address (ip6_config, &address);
 
-		nm_utils_inet6_ntop (&tmp_addr, addr_str);
+		_nm_utils_inet6_ntop (&tmp_addr, addr_str);
 		g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 	};
 	if (str->len)
@@ -772,7 +772,7 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	if (num > 0) {
 		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			nm_utils_inet6_ntop (&dns[i], addr_str);
+			_nm_utils_inet6_ntop (&dns[i], addr_str);
 			g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 			nm_ip6_config_add_nameserver (ip6_config, &dns[i]);
 		}

@@ -181,9 +181,9 @@ ip4_process_dhclient_rfc3442_routes (const char *iface,
 			nm_ip4_config_add_route (ip4_config, &route, NULL);
 
 			_LOG2I (LOGD_DHCP4, iface, "  classless static route %s/%d gw %s",
-			        nm_utils_inet4_ntop (route.network, b1),
+			        _nm_utils_inet4_ntop (route.network, b1),
 			        route.plen,
-			        nm_utils_inet4_ntop (route.gateway, b2));
+			        _nm_utils_inet4_ntop (route.gateway, b2));
 		}
 	}
 
@@ -414,7 +414,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 		process_classful_routes (iface, options, route_table, route_metric, ip4_config);
 
 	if (gateway) {
-		_LOG2I (LOGD_DHCP4, iface, "  gateway %s", nm_utils_inet4_ntop (gateway, sbuf));
+		_LOG2I (LOGD_DHCP4, iface, "  gateway %s", _nm_utils_inet4_ntop (gateway, sbuf));
 		gateway_has = TRUE;
 	} else {
 		/* If the gateway wasn't provided as a classless static route with a
