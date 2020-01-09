@@ -8334,6 +8334,9 @@ test_nm_ip_addr_zero (void)
 	in_addr_t a4 = nmtst_inet4_from_string ("0.0.0.0");
 	struct in6_addr a6 = *nmtst_inet6_from_string ("::");
 	char buf[NM_UTILS_INET_ADDRSTRLEN];
+	NMIPAddr a = NM_IP_ADDR_INIT;
+
+	g_assert (memcmp (&a, &nm_ip_addr_zero, sizeof (a)) == 0);
 
 	g_assert (IN6_IS_ADDR_UNSPECIFIED (&nm_ip_addr_zero.addr6));
 	g_assert (memcmp (&nm_ip_addr_zero.addr6, &in6addr_any, sizeof (in6addr_any)) == 0);
@@ -8346,6 +8349,8 @@ test_nm_ip_addr_zero (void)
 
 	g_assert_cmpstr (nm_utils_inet_ntop (AF_INET, &nm_ip_addr_zero, buf), ==, "0.0.0.0");
 	g_assert_cmpstr (nm_utils_inet_ntop (AF_INET6, &nm_ip_addr_zero, buf), ==, "::");
+
+	G_STATIC_ASSERT_EXPR (sizeof (a) == sizeof (a.array));
 }
 
 /*****************************************************************************/

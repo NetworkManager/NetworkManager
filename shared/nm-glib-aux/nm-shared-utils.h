@@ -115,8 +115,12 @@ typedef struct {
 		 * However, as ethernet addresses fit in here nicely, use
 		 * it also for an ethernet MAC address. */
 		guint8 addr_eth[6 /*ETH_ALEN*/];
+
+		guint8 array[sizeof (struct in6_addr)];
 	};
 } NMIPAddr;
+
+#define NM_IP_ADDR_INIT { .array = { 0 } }
 
 extern const NMIPAddr nm_ip_addr_zero;
 
