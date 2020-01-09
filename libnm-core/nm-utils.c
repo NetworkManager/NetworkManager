@@ -4890,17 +4890,9 @@ nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 gboolean
 nm_utils_ipaddr_valid (int family, const char *ip)
 {
-	guint8 buf[sizeof (struct in6_addr)];
-
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6 || family == AF_UNSPEC, FALSE);
 
-	if (!ip)
-		return FALSE;
-
-	if (family == AF_UNSPEC)
-		family = strchr (ip, ':') ? AF_INET6 : AF_INET;
-
-	return inet_pton (family, ip, buf) == 1;
+	return nm_utils_ipaddr_is_valid (family, ip);
 }
 
 /**
