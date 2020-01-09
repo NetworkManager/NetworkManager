@@ -18,14 +18,7 @@ char *nm_secret_strchomp (char *secret);
 
 /*****************************************************************************/
 
-static inline void
-nm_free_secret (char *secret)
-{
-	if (secret) {
-		nm_explicit_bzero (secret, strlen (secret));
-		g_free (secret);
-	}
-}
+void nm_free_secret (char *secret);
 
 NM_AUTO_DEFINE_FCN0 (char *, _nm_auto_free_secret, nm_free_secret)
 /**
