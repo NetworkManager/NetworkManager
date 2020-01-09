@@ -445,7 +445,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 	if (gateway_ip && *gateway_ip) {
 		int addr_family = guess_ip_address_family (gateway_ip);
 
-		if (nm_utils_ipaddr_valid (addr_family, gateway_ip)) {
+		if (nm_utils_ipaddr_is_valid (addr_family, gateway_ip)) {
 			switch (addr_family) {
 			case AF_INET:
 				g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
@@ -470,7 +470,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 	for (i = 0; i < 2; i++) {
 		if (dns_addr_family[i] == AF_UNSPEC)
 			break;
-		if (nm_utils_ipaddr_valid (dns_addr_family[i], dns[i])) {
+		if (nm_utils_ipaddr_is_valid (dns_addr_family[i], dns[i])) {
 			switch (dns_addr_family[i]) {
 			case AF_INET:
 				nm_setting_ip_config_add_dns (s_ip4, dns[i]);

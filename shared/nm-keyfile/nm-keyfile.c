@@ -248,7 +248,7 @@ build_route (KeyfileReaderInfo *info,
 
 	/* Next hop */
 	if (gateway_str && gateway_str[0]) {
-		if (!nm_utils_ipaddr_valid (family, gateway_str)) {
+		if (!nm_utils_ipaddr_is_valid (family, gateway_str)) {
 			/* Try workaround for routes written by broken keyfile writer.
 			 * Due to bug bgo#719851, an older version of writer would have
 			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead

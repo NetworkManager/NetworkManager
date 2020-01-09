@@ -1161,7 +1161,7 @@ _collect_resolv_conf_data (NMDnsManager *self,
 		const char *hostdomain = strchr (priv->hostname, '.');
 
 		if (   hostdomain
-		    && !nm_utils_ipaddr_valid (AF_UNSPEC, priv->hostname)) {
+		    && !nm_utils_ipaddr_is_valid (AF_UNSPEC, priv->hostname)) {
 			hostdomain++;
 			if (domain_is_valid (hostdomain, TRUE))
 				add_string_item (rc.searches, hostdomain, TRUE);

@@ -484,7 +484,7 @@ update_ip4_setting_from_if_block (NMConnection *connection,
 		/* gateway */
 		gateway_v = ifparser_getkey (block, "gateway");
 		if (gateway_v) {
-			if (!nm_utils_ipaddr_valid (AF_INET, gateway_v)) {
+			if (!nm_utils_ipaddr_is_valid (AF_INET, gateway_v)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IPv4 gateway '%s'", gateway_v);
 				return FALSE;
@@ -596,7 +596,7 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 		/* gateway */
 		gateway_v = ifparser_getkey (block, "gateway");
 		if (gateway_v) {
-			if (!nm_utils_ipaddr_valid (AF_INET6, gateway_v)) {
+			if (!nm_utils_ipaddr_is_valid (AF_INET6, gateway_v)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IPv6 gateway '%s'", gateway_v);
 				return FALSE;

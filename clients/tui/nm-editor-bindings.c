@@ -192,7 +192,7 @@ ip_addresses_check_and_copy (GBinding     *binding,
 	strings = g_value_get_boxed (source_value);
 
 	for (i = 0; strings[i]; i++) {
-		if (!nm_utils_ipaddr_valid (addr_family, strings[i]))
+		if (!nm_utils_ipaddr_is_valid (addr_family, strings[i]))
 			return FALSE;
 	}
 
@@ -251,7 +251,7 @@ ip_gateway_from_string (GBinding     *binding,
 	const char *gateway;
 
 	gateway = g_value_get_string (source_value);
-	if (gateway && !nm_utils_ipaddr_valid (addr_family, gateway))
+	if (gateway && !nm_utils_ipaddr_is_valid (addr_family, gateway))
 		gateway = NULL;
 
 	g_value_set_string (target_value, gateway);
@@ -457,7 +457,7 @@ ip_route_transform_from_next_hop_string (GBinding     *binding,
 
 	text = g_value_get_string (source_value);
 	if (*text) {
-		if (!nm_utils_ipaddr_valid (addr_family, text))
+		if (!nm_utils_ipaddr_is_valid (addr_family, text))
 			return FALSE;
 	} else
 		text = NULL;
