@@ -260,27 +260,47 @@ utils_get_route_ifcfg (const char *parent, gboolean should_create)
 gboolean
 utils_has_route_file_new_syntax (const char *filename)
 {
-	char *contents = NULL;
-	gsize len = 0;
-	gboolean ret = FALSE;
-	const char *pattern = "^[[:space:]]*ADDRESS[0-9]+=";
+	gs_free char *contents_data = NULL;
+	const char *contents;
+	gsize len;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
-	if (!g_file_get_contents (filename, &contents, &len, NULL))
+	if (!g_file_get_contents (filename, &contents_data, &len, NULL))
 		return TRUE;
 
-	if (len <= 0) {
-		ret = TRUE;
-		goto gone;
+	if (len <= 0)
+		return TRUE;
+
+	contents = contents_data;
+
+	while (TRUE) {
+		const char *line = contents;
+		char *eol;
+
+		/* matches regex "^[[:space:]]*ADDRESS[0-9]+=" */
+
+		eol = (char *) strchr (contents, '\n');
+		if (eol) {
+			eol[0] = '\0';
+			contents = &eol[1];
+		}
+
+		line = nm_str_skip_leading_spaces (line);
+		if (NM_STR_HAS_PREFIX (line, "ADDRESS")) {
+			line += NM_STRLEN ("ADDRESS");
+			if (g_ascii_isdigit (line[0])) {
+				while (g_ascii_isdigit ((++line)[0])) {
+					/* pass */
+				}
+				if (line[0] == '=')
+					return TRUE;
+			}
+		}
+
+		if (!eol)
+			return FALSE;
 	}
-
-	if (g_regex_match_simple (pattern, contents, G_REGEX_MULTILINE, 0))
-		ret = TRUE;
-
-gone:
-	g_free (contents);
-	return ret;
 }
 
 gboolean
