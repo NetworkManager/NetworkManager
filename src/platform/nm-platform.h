@@ -1175,10 +1175,11 @@ nm_platform_ip4_broadcast_address_from_addr (const NMPlatformIP4Address *addr)
 	if (addr->use_ip4_broadcast_address)
 		return addr->broadcast_address;
 
-	/* the set broadcast-address gets ignored, and we determine a default brd. */
-	if (   addr->address != 0u
+	/* the set broadcast-address gets ignored, and we determine a default brd base
+	 * on the peer IFA_ADDRESS. */
+	if (   addr->peer_address != 0u
 	    && addr->plen < 31 /* RFC3021 */)
-		return nm_platform_ip4_broadcast_address_create (addr->address, addr->plen);
+		return nm_platform_ip4_broadcast_address_create (addr->peer_address, addr->plen);
 	return 0u;
 }
 
