@@ -938,6 +938,7 @@ ip4_address_add (NMPlatform *platform,
                  in_addr_t addr,
                  guint8 plen,
                  in_addr_t peer_addr,
+                 in_addr_t broadcast_address,
                  guint32 lifetime,
                  guint32 preferred,
                  guint32 flags,
@@ -945,16 +946,19 @@ ip4_address_add (NMPlatform *platform,
 {
 	NMPlatformIP4Address address;
 
-	memset (&address, 0, sizeof (address));
-	address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
-	address.ifindex = ifindex;
-	address.address = addr;
-	address.peer_address = peer_addr;
-	address.plen = plen;
-	address.timestamp = nm_utils_get_monotonic_timestamp_sec ();
-	address.lifetime = lifetime;
-	address.preferred = preferred;
-	address.n_ifa_flags = flags;
+	address = (NMPlatformIP4Address) {
+		.addr_source               = NM_IP_CONFIG_SOURCE_KERNEL,
+		.ifindex                   = ifindex,
+		.address                   = addr,
+		.plen                      = plen,
+		.peer_address              = peer_addr,
+		.broadcast_address         = broadcast_address,
+		.use_ip4_broadcast_address = TRUE,
+		.timestamp                 = nm_utils_get_monotonic_timestamp_sec (),
+		.lifetime                  = lifetime,
+		.preferred                 = preferred,
+		.n_ifa_flags               = flags,
+	};
 	if (label)
 		g_strlcpy (address.label, label, sizeof (address.label));
 

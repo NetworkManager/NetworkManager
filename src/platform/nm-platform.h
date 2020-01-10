@@ -308,6 +308,8 @@ typedef enum {
 	guint8 plen; \
 	\
 	bool external:1; \
+	\
+	bool use_ip4_broadcast_address:1; \
 	;
 
 /**
@@ -343,6 +345,12 @@ struct _NMPlatformIP4Address {
 	 * address to 0.0.0.0, which you probably don't want.
 	 * */
 	in_addr_t peer_address;  /* PTP peer address */
+
+	/* IFA_BROADCAST.
+	 *
+	 * This parameter is ignored unless use_ip4_broadcast_address is TRUE.
+	 * See nm_platform_ip4_broadcast_address_from_addr(). */
+	in_addr_t broadcast_address;
 
 	char label[NMP_IFNAMSIZ];
 };
@@ -1080,6 +1088,7 @@ typedef struct {
 	                             in_addr_t address,
 	                             guint8 plen,
 	                             in_addr_t peer_address,
+	                             in_addr_t broadcast_address,
 	                             guint32 lifetime,
 	                             guint32 preferred_lft,
 	                             guint32 flags,
@@ -1148,6 +1157,30 @@ void nm_platform_setup (NMPlatform *instance);
 NMPlatform *nm_platform_get (void);
 
 #define NM_PLATFORM_GET (nm_platform_get ())
+
+/*****************************************************************************/
+
+static inline in_addr_t
+nm_platform_ip4_broadcast_address_create (in_addr_t address,
+                                          guint8 plen)
+{
+	return address | ~_nm_utils_ip4_prefix_to_netmask (plen);
+}
+
+static inline in_addr_t
+nm_platform_ip4_broadcast_address_from_addr (const NMPlatformIP4Address *addr)
+{
+	nm_assert (addr);
+
+	if (addr->use_ip4_broadcast_address)
+		return addr->broadcast_address;
+
+	/* the set broadcast-address gets ignored, and we determine a default brd. */
+	if (   addr->address != 0u
+	    && addr->plen < 31 /* RFC3021 */)
+		return nm_platform_ip4_broadcast_address_create (addr->address, addr->plen);
+	return 0u;
+}
 
 /*****************************************************************************/
 
@@ -1727,6 +1760,7 @@ gboolean nm_platform_ip4_address_add (NMPlatform *self,
                                       in_addr_t address,
                                       guint8 plen,
                                       in_addr_t peer_address,
+                                      in_addr_t broadcast_address,
                                       guint32 lifetime,
                                       guint32 preferred_lft,
                                       guint32 flags,

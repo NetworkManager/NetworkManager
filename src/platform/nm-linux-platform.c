@@ -3012,6 +3012,12 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 			memcpy (&obj->ip4_address.address, nla_data (tb[IFA_LOCAL]), addr_len);
 		if (tb[IFA_ADDRESS])
 			memcpy (&obj->ip4_address.peer_address, nla_data (tb[IFA_ADDRESS]), addr_len);
+
+		_check_addr_or_return_null (tb, IFA_BROADCAST, addr_len);
+		obj->ip4_address.broadcast_address =   tb[IFA_BROADCAST]
+		                                     ? nla_get_u32 (tb[IFA_BROADCAST])
+		                                     : 0u;
+		obj->ip4_address.use_ip4_broadcast_address = TRUE;
 	} else {
 		/* For IPv6, IFA_ADDRESS is always present.
 		 *
@@ -4177,6 +4183,7 @@ _nl_msg_new_address (int nlmsg_type,
                      int scope,
                      guint32 lifetime,
                      guint32 preferred,
+                     in_addr_t ip4_broadcast_address,
                      const char *label)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -4220,16 +4227,8 @@ _nl_msg_new_address (int nlmsg_type,
 	if (label && label[0])
 		NLA_PUT_STRING (msg, IFA_LABEL, label);
 
-	if (   family == AF_INET
-	    && nlmsg_type != RTM_DELADDR
-	    && plen < 31 /* RFC 3021 */
-	    && address
-	    && *((in_addr_t *) address) != 0) {
-		in_addr_t broadcast;
-
-		broadcast = *((in_addr_t *) address) | ~_nm_utils_ip4_prefix_to_netmask (plen);
-		NLA_PUT (msg, IFA_BROADCAST, addr_len, &broadcast);
-	}
+	if (ip4_broadcast_address != 0)
+		NLA_PUT (msg, IFA_BROADCAST, sizeof (in_addr_t), &ip4_broadcast_address);
 
 	if (   lifetime != NM_PLATFORM_LIFETIME_PERMANENT
 	    || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
@@ -8005,6 +8004,7 @@ ip4_address_add (NMPlatform *platform,
                  in_addr_t addr,
                  guint8 plen,
                  in_addr_t peer_addr,
+                 in_addr_t broadcast_address,
                  guint32 lifetime,
                  guint32 preferred,
                  guint32 flags,
@@ -8024,6 +8024,7 @@ ip4_address_add (NMPlatform *platform,
 	                             nm_utils_ip4_address_is_link_local (addr) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
 	                             lifetime,
 	                             preferred,
+	                             broadcast_address,
 	                             label);
 
 	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_addr);
@@ -8054,6 +8055,7 @@ ip6_address_add (NMPlatform *platform,
 	                             RT_SCOPE_UNIVERSE,
 	                             lifetime,
 	                             preferred,
+	                             0,
 	                             NULL);
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
@@ -8077,6 +8079,7 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 pl
 	                             RT_SCOPE_NOWHERE,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
+	                             0,
 	                             NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (FALSE);
@@ -8102,6 +8105,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 	                             RT_SCOPE_NOWHERE,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
 	                             NM_PLATFORM_LIFETIME_PERMANENT,
+	                             0,
 	                             NULL);
 	if (!nlmsg)
 		g_return_val_if_reached (FALSE);

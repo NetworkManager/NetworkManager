@@ -3314,6 +3314,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
                              in_addr_t address,
                              guint8 plen,
                              in_addr_t peer_address,
+                             in_addr_t broadcast_address,
                              guint32 lifetime,
                              guint32 preferred,
                              guint32 flags,
@@ -3328,22 +3329,26 @@ nm_platform_ip4_address_add (NMPlatform *self,
 	g_return_val_if_fail (!label || strlen (label) < sizeof (((NMPlatformIP4Address *) NULL)->label), FALSE);
 
 	if (_LOGD_ENABLED ()) {
-		NMPlatformIP4Address addr = { 0 };
+		NMPlatformIP4Address addr;
 
-		addr.ifindex = ifindex;
-		addr.address = address;
-		addr.peer_address = peer_address;
-		addr.plen = plen;
-		addr.timestamp = 0; /* set it at zero, which to_string will treat as *now* */
-		addr.lifetime = lifetime;
-		addr.preferred = preferred;
-		addr.n_ifa_flags = flags;
+		addr = (NMPlatformIP4Address) {
+			.ifindex                   = ifindex,
+			.address                   = address,
+			.peer_address              = peer_address,
+			.plen                      = plen,
+			.timestamp                 = 0, /* set it at zero, which to_string will treat as *now* */
+			.lifetime                  = lifetime,
+			.preferred                 = preferred,
+			.n_ifa_flags               = flags,
+			.broadcast_address         = broadcast_address,
+			.use_ip4_broadcast_address = TRUE,
+		};
 		if (label)
 			g_strlcpy (addr.label, label, sizeof (addr.label));
 
 		_LOG3D ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr, NULL, 0));
 	}
-	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, lifetime, preferred, flags, label);
+	return klass->ip4_address_add (self, ifindex, address, plen, peer_address, broadcast_address, lifetime, preferred, flags, label);
 }
 
 gboolean
@@ -3802,8 +3807,14 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 		if (!lifetime)
 			goto delete_and_next2;
 
-		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
-		                                  known_address->peer_address, lifetime, preferred,
+		if (!nm_platform_ip4_address_add (self,
+		                                  ifindex,
+		                                  known_address->address,
+		                                  known_address->plen,
+		                                  known_address->peer_address,
+		                                  nm_platform_ip4_broadcast_address_from_addr (known_address),
+		                                  lifetime,
+		                                  preferred,
 		                                  ifa_flags,
 		                                  known_address->label))
 			goto delete_and_next2;
@@ -5708,6 +5719,8 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	char *str_peer = NULL;
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
+	in_addr_t broadcast_address;
+	char str_broadcast[INET_ADDRSTRLEN];
 
 	if (!nm_utils_to_string_buffer_init_null (address, &buf, &len))
 		return buf;
@@ -5736,9 +5749,27 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
+	broadcast_address = nm_platform_ip4_broadcast_address_from_addr (address);
+
 	g_snprintf (buf, len,
-	            "%s/%d lft %s pref %s%s%s%s%s%s src %s%s",
-	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
+	            "%s/%d"
+	            "%s%s" /* broadcast */
+	            " lft %s"
+	            " pref %s"
+	            "%s" /* time */
+	            "%s" /* peer  */
+	            "%s" /* dev */
+	            "%s" /* flags */
+	            "%s" /* label */
+	            " src %s"
+	            "%s" /* external */
+	            "",
+	            s_address, address->plen,
+	            broadcast_address ? " brd " : "",
+	            broadcast_address ? nm_utils_inet4_ntop (broadcast_address, str_broadcast) : "",
+	            str_lft_p,
+	            str_pref_p,
+	            str_time_p,
 	            str_peer ?: "",
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
@@ -6966,6 +6997,7 @@ nm_platform_ip4_address_hash_update (const NMPlatformIP4Address *obj, NMHashStat
 	nm_hash_update_vals (h,
 	                     obj->ifindex,
 	                     obj->addr_source,
+	                     nm_platform_ip4_broadcast_address_from_addr (obj),
 	                     obj->timestamp,
 	                     obj->lifetime,
 	                     obj->preferred,
@@ -6985,6 +7017,7 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 	NM_CMP_FIELD (a, b, address);
 	NM_CMP_FIELD (a, b, plen);
 	NM_CMP_FIELD (a, b, peer_address);
+	NM_CMP_DIRECT (nm_platform_ip4_broadcast_address_from_addr (a), nm_platform_ip4_broadcast_address_from_addr (b));
 	NM_CMP_FIELD (a, b, addr_source);
 	NM_CMP_FIELD (a, b, timestamp);
 	NM_CMP_FIELD (a, b, lifetime);
