@@ -1620,7 +1620,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	int i;
 	guint32 a;
 	gboolean has_key;
-	shvarFile *route_ifcfg;
 	gboolean never_default;
 	gint64 i64;
 	int priority;
@@ -1857,32 +1856,34 @@ make_ip4_setting (shvarFile *ifcfg,
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (svFileGetName (ifcfg));
 
-	if (!routes_read) {
-		/* NOP */
-	} else if (utils_has_route_file_new_syntax (route_path)) {
-		/* Parse route file in new syntax */
-		route_ifcfg = utils_get_route_ifcfg (svFileGetName (ifcfg), FALSE);
-		if (route_ifcfg) {
-			for (i = 0;; i++) {
-				NMIPRoute *route = NULL;
+	if (routes_read) {
+		gs_free char *contents = NULL;
+		gsize len;
 
-				if (!read_one_ip4_route (route_ifcfg, i, &route, error)) {
-					svCloseFile (route_ifcfg);
+		if (!g_file_get_contents (route_path, &contents, &len, NULL))
+			len = 0;
+
+		if (utils_has_route_file_new_syntax_content (contents, len)) {
+			nm_auto_shvar_file_close shvarFile *route_ifcfg = NULL;
+
+			/* Parse route file in new syntax */
+			route_ifcfg = svFile_new (route_path, -1, contents);
+			for (i = 0;; i++) {
+				nm_auto_unref_ip_route NMIPRoute *route = NULL;
+
+				if (!read_one_ip4_route (route_ifcfg, i, &route, error))
 					return NULL;
-				}
 
 				if (!route)
 					break;
 
 				if (!nm_setting_ip_config_add_route (s_ip4, route))
 					PARSE_WARNING ("duplicate IP4 route");
-				nm_ip_route_unref (route);
 			}
-			svCloseFile (route_ifcfg);
+		} else {
+			if (!read_route_file_parse (AF_INET, route_path, contents, len, s_ip4, error))
+				return NULL;
 		}
-	} else {
-		if (!read_route_file (AF_INET, route_path, s_ip4, error))
-			return NULL;
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
