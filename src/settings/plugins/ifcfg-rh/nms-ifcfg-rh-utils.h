@@ -76,6 +76,8 @@ shvarFile *utils_get_keys_ifcfg (const char *parent, gboolean should_create);
 shvarFile *utils_get_route_ifcfg (const char *parent, gboolean should_create);
 
 gboolean utils_has_route_file_new_syntax (const char *filename);
+gboolean utils_has_route_file_new_syntax_content (const char *contents,
+                                                  gsize len);
 gboolean utils_has_complex_routes (const char *filename, int addr_family);
 
 gboolean utils_is_ifcfg_alias_file (const char *alias, const char *ifcfg);

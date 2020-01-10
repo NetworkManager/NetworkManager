@@ -261,7 +261,6 @@ gboolean
 utils_has_route_file_new_syntax (const char *filename)
 {
 	gs_free char *contents_data = NULL;
-	const char *contents;
 	gsize len;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
@@ -269,14 +268,20 @@ utils_has_route_file_new_syntax (const char *filename)
 	if (!g_file_get_contents (filename, &contents_data, &len, NULL))
 		return TRUE;
 
+	return utils_has_route_file_new_syntax_content (contents_data, len);
+}
+
+gboolean
+utils_has_route_file_new_syntax_content (const char *contents,
+                                         gsize len)
+{
 	if (len <= 0)
 		return TRUE;
-
-	contents = contents_data;
 
 	while (TRUE) {
 		const char *line = contents;
 		char *eol;
+		gboolean found = FALSE;
 
 		/* matches regex "^[[:space:]]*ADDRESS[0-9]+=" */
 
@@ -294,10 +299,18 @@ utils_has_route_file_new_syntax (const char *filename)
 					/* pass */
 				}
 				if (line[0] == '=')
-					return TRUE;
+					found = TRUE;
 			}
 		}
 
+		if (eol) {
+			/* restore the line ending. We don't want to mangle the content from
+			 * POV of the caller. */
+			eol[0] = '\n';
+		}
+
+		if (found)
+			return TRUE;
 		if (!eol)
 			return FALSE;
 	}
