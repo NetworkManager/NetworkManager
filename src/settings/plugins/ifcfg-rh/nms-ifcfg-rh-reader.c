@@ -1345,39 +1345,40 @@ read_one_ip4_route (shvarFile *ifcfg,
 }
 
 static gboolean
-read_route_file (int addr_family,
-                 const char *filename,
-                 NMSettingIPConfig *s_ip,
-                 GError **error)
+read_route_file_parse (int addr_family,
+                       const char *filename,
+                       const char *contents,
+                       gsize len,
+                       NMSettingIPConfig *s_ip,
+                       GError **error)
 {
-	gs_free char *contents = NULL;
-	char *contents_rest = NULL;
-	const char *line;
-	gsize len = 0;
 	gsize line_num;
 
-	g_return_val_if_fail (filename, FALSE);
-	g_return_val_if_fail (   (addr_family == AF_INET  && NM_IS_SETTING_IP4_CONFIG (s_ip))
-	                      || (addr_family == AF_INET6 && NM_IS_SETTING_IP6_CONFIG (s_ip)), FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
+	nm_assert (filename);
+	nm_assert (addr_family == nm_setting_ip_config_get_addr_family (s_ip));
+	nm_assert (!error || !*error);
 
-	if (   !g_file_get_contents (filename, &contents, &len, NULL)
-	    || !len) {
+	if (len <= 0)
 		return TRUE;  /* missing/empty = success */
-	}
 
 	line_num = 0;
-	for (line = strtok_r (contents, "\n", &contents_rest);
-	     line;
-	     line = strtok_r (NULL, "\n", &contents_rest)) {
+	while (TRUE) {
 		nm_auto_unref_ip_route NMIPRoute *route = NULL;
 		gs_free_error GError *local = NULL;
+		const char *line = contents;
+		char *eol;
 		int e;
+
+		eol = strchr (contents, '\n');
+		if (eol) {
+			eol[0] = '\0';
+			contents = &eol[1];
+		}
 
 		line_num++;
 
 		if (parse_route_line_is_comment (line))
-			continue;
+			goto next;
 
 		e = parse_route_line (line, addr_family, NULL, &route, &local);
 
@@ -1389,14 +1390,38 @@ read_route_file (int addr_family,
 				 * entire connection. */
 				PARSE_WARNING ("ignoring invalid route at \"%s\" (%s:%lu): %s", line, filename, (long unsigned) line_num, local->message);
 			}
-			continue;
+			goto next;
 		}
 
 		if (!nm_setting_ip_config_add_route (s_ip, route))
 			PARSE_WARNING ("duplicate IPv%c route", addr_family == AF_INET ? '4' : '6');
-	}
 
-	return TRUE;
+next:
+		if (!eol)
+			return TRUE;
+
+		/* restore original content. */
+		eol[0] = '\n';
+	}
+}
+
+static gboolean
+read_route_file (int addr_family,
+                 const char *filename,
+                 NMSettingIPConfig *s_ip,
+                 GError **error)
+{
+	gs_free char *contents = NULL;
+	gsize len;
+
+	nm_assert (filename);
+	nm_assert (addr_family == nm_setting_ip_config_get_addr_family (s_ip));
+	nm_assert (!error || !*error);
+
+	if (!g_file_get_contents (filename, &contents, &len, NULL))
+		return TRUE;  /* missing/empty = success */
+
+	return read_route_file_parse (addr_family, filename, contents, len, s_ip, error);
 }
 
 static void
