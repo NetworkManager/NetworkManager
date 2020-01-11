@@ -65,6 +65,7 @@ test_read_ibft_dhcp (void)
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "iBFT Connection 1");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, NULL);
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -109,6 +110,7 @@ test_read_ibft_static (void)
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "iBFT Connection 0");
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, NULL);
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -178,6 +180,7 @@ test_read_ibft_vlan (void)
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_VLAN_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, NULL);
 
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
