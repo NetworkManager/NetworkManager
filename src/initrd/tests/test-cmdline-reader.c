@@ -768,6 +768,27 @@ test_team (void)
 }
 
 static void
+test_ibft_ip_dev (void)
+{
+	const char *const*ARGV = NM_MAKE_STRV ("ip=eth0:ibft");
+	gs_unref_hashtable GHashTable *connections = NULL;
+	NMSettingConnection *s_con;
+	NMConnection *connection;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+
+	connection = g_hash_table_lookup (connections, "eth0");
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_VLAN_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, NULL);
+}
+
+static void
 test_ibft (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
@@ -782,11 +803,13 @@ test_ibft (void)
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "iBFT VLAN Connection 0");
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, NULL);
 
 	connection = g_hash_table_lookup (connections, "ibft2");
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "iBFT Connection 2");
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, NULL);
 }
 
 static void
@@ -1045,6 +1068,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/team", test_team);
 	g_test_add_func ("/initrd/cmdline/bridge", test_bridge);
 	g_test_add_func ("/initrd/cmdline/bridge/default", test_bridge_default);
+	g_test_add_func ("/initrd/cmdline/ibft/ip_dev", test_ibft_ip_dev);
 	g_test_add_func ("/initrd/cmdline/ibft", test_ibft);
 	g_test_add_func ("/initrd/cmdline/ignore_extra", test_ignore_extra);
 	g_test_add_func ("/initrd/cmdline/rd_znet", test_rd_znet);
