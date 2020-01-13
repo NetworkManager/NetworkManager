@@ -382,6 +382,11 @@ _nm_auto_freev (gpointer ptr)
 
 /*****************************************************************************/
 
+#define _NM_MACRO_COMMA_IF_ARGS(...)       _NM_MACRO_CALL (G_PASTE (__NM_MACRO_COMMA_IF_ARGS_, NM_NARG_MAX1(__VA_ARGS__)), __VA_ARGS__)
+#define __NM_MACRO_COMMA_IF_ARGS_0()
+#define __NM_MACRO_COMMA_IF_ARGS_1(...)    ,
+
+/*****************************************************************************/
 
 /* http://stackoverflow.com/a/11172679 */
 #define  _NM_UTILS_MACRO_FIRST(...)                  __NM_UTILS_MACRO_FIRST_HELPER(__VA_ARGS__, throwaway)
