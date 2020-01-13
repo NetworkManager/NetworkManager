@@ -31,11 +31,11 @@ typedef struct {
 
 	GError *rfcomm_sdp_search_error;
 
+	GSource *source;
+
 	gint64 connect_open_tty_started_at;
 
 	gulong cancelled_id;
-
-	guint source_id;
 
 	guint8 sdp_session_try_count;
 } ConnectData;
@@ -50,12 +50,12 @@ struct _NMBluez5DunContext {
 
 	char *rfcomm_tty_path;
 
+	GSource *rfcomm_tty_poll_source;
+
 	int rfcomm_sock_fd;
 	int rfcomm_tty_fd;
 	int rfcomm_tty_no;
 	int rfcomm_channel;
-
-	guint rfcomm_tty_poll_id;
 
 	bdaddr_t src;
 	bdaddr_t dst;
@@ -118,7 +118,7 @@ nm_bluez5_dun_context_get_rfcomm_dev (const NMBluez5DunContext *context)
 /*****************************************************************************/
 
 static gboolean
-_rfcomm_tty_poll_cb (GIOChannel *stream,
+_rfcomm_tty_poll_cb (int fd,
                      GIOCondition condition,
                      gpointer user_data)
 {
@@ -129,7 +129,7 @@ _rfcomm_tty_poll_cb (GIOChannel *stream,
 	       NM_FLAGS_ALL (condition, G_IO_HUP | G_IO_ERR) ? ","   : "",
 	       NM_FLAGS_HAS (condition, G_IO_HUP)            ? "HUP" : "");
 
-	context->rfcomm_tty_poll_id = 0;
+	nm_clear_g_source_inst (&context->rfcomm_tty_poll_source);
 	context->notify_tty_hangup_cb (context,
 	                               context->notify_tty_hangup_user_data);
 	return G_SOURCE_REMOVE;
@@ -148,7 +148,7 @@ _connect_open_tty_retry_cb (gpointer user_data)
 	if (nm_utils_get_monotonic_timestamp_nsec () > context->cdat->connect_open_tty_started_at + (30 * 100 * NM_UTILS_NSEC_PER_MSEC)) {
 		gs_free_error GError *error = NULL;
 
-		context->cdat->source_id = 0;
+		nm_clear_g_source_inst (&context->cdat->source);
 		g_set_error (&error,
 		             NM_BT_ERROR,
 		             NM_BT_ERROR_DUN_CONNECT_FAILED,
@@ -166,7 +166,6 @@ _connect_open_tty_retry_cb (gpointer user_data)
 static int
 _connect_open_tty (NMBluez5DunContext *context)
 {
-	nm_auto_unref_io_channel GIOChannel *io_channel = NULL;
 	int fd;
 	int errsv;
 
@@ -174,26 +173,31 @@ _connect_open_tty (NMBluez5DunContext *context)
 	if (fd < 0) {
 		errsv = NM_ERRNO_NATIVE (errno);
 
-		if (context->cdat->source_id == 0) {
+		if (!context->cdat->source) {
 			_LOGD (context, "failed opening tty "RFCOMM_FMT": %s (%d). Start polling...",
 			       context->rfcomm_tty_no,
 			       nm_strerror_native (errsv),
 			       errsv);
 			context->cdat->connect_open_tty_started_at = nm_utils_get_monotonic_timestamp_nsec ();
-			context->cdat->source_id = g_timeout_add (100,
-			                                          _connect_open_tty_retry_cb,
-			                                          context);
+			context->cdat->source = nm_g_timeout_source_new (100,
+			                                                 G_PRIORITY_DEFAULT,
+			                                                 _connect_open_tty_retry_cb,
+			                                                 context,
+			                                                 NULL);
+			g_source_attach (context->cdat->source, NULL);
 		}
 		return -errsv;
 	}
 
 	context->rfcomm_tty_fd = fd;
 
-	io_channel = g_io_channel_unix_new (context->rfcomm_tty_fd);
-	context->rfcomm_tty_poll_id = g_io_add_watch (io_channel,
-	                                              G_IO_ERR | G_IO_HUP,
-	                                              _rfcomm_tty_poll_cb,
-	                                              context);
+	context->rfcomm_tty_poll_source = nm_g_unix_fd_source_new (context->rfcomm_tty_fd,
+	                                                           G_IO_ERR | G_IO_HUP,
+	                                                           G_PRIORITY_DEFAULT,
+	                                                           _rfcomm_tty_poll_cb,
+	                                                           context,
+	                                                           NULL);
+	g_source_attach (context->rfcomm_tty_poll_source, NULL);
 
 	_context_invoke_callback_success (context);
 	return 0;
@@ -263,7 +267,7 @@ _connect_create_rfcomm (NMBluez5DunContext *context)
 }
 
 static gboolean
-_connect_socket_connect_cb (GIOChannel *stream,
+_connect_socket_connect_cb (int fd,
                             GIOCondition condition,
                             gpointer user_data)
 {
@@ -273,7 +277,7 @@ _connect_socket_connect_cb (GIOChannel *stream,
 	socklen_t slen = sizeof(errsv);
 	int r;
 
-	context->cdat->source_id = 0;
+	nm_clear_g_source_inst (&context->cdat->source);
 
 	r = getsockopt (context->rfcomm_sock_fd, SOL_SOCKET, SO_ERROR, &errsv, &slen);
 
@@ -346,7 +350,6 @@ _connect_socket_connect (NMBluez5DunContext *context)
 	if (connect (context->rfcomm_sock_fd,
 	             (struct sockaddr *) &sa,
 	             sizeof (sa)) != 0) {
-		nm_auto_unref_io_channel GIOChannel *io_channel = NULL;
 
 		errsv = errno;
 		if (errsv != EINPROGRESS) {
@@ -363,11 +366,13 @@ _connect_socket_connect (NMBluez5DunContext *context)
 		       context->dst_str,
 		       context->rfcomm_channel);
 
-		io_channel = g_io_channel_unix_new (context->rfcomm_sock_fd);
-		context->cdat->source_id = g_io_add_watch (io_channel,
-		                                           G_IO_OUT,
-		                                           _connect_socket_connect_cb,
-		                                           context);
+		context->cdat->source = nm_g_unix_fd_source_new (context->rfcomm_sock_fd,
+		                                                 G_IO_OUT,
+		                                                 G_PRIORITY_DEFAULT,
+		                                                 _connect_socket_connect_cb,
+		                                                 context,
+		                                                 NULL);
+		g_source_attach (context->cdat->source, NULL);
 		return;
 	}
 
@@ -466,7 +471,7 @@ _connect_sdp_search_cb (uint8_t type,
 }
 
 static gboolean
-_connect_sdp_search_io_cb (GIOChannel *io_channel,
+_connect_sdp_search_io_cb (int fd,
                            GIOCondition condition,
                            gpointer user_data)
 {
@@ -480,7 +485,7 @@ _connect_sdp_search_io_cb (GIOChannel *io_channel,
 		error = g_error_new (NM_BT_ERROR,
 		                     NM_BT_ERROR_DUN_CONNECT_FAILED,
 		                     "Service Discovery interrupted");
-		context->cdat->source_id = 0;
+		nm_clear_g_source_inst (&context->cdat->source);
 		_context_invoke_callback_fail_and_free (context, error);
 		return G_SOURCE_REMOVE;
 	}
@@ -490,7 +495,7 @@ _connect_sdp_search_io_cb (GIOChannel *io_channel,
 		return G_SOURCE_CONTINUE;
 	}
 
-	context->cdat->source_id = 0;
+	nm_clear_g_source_inst (&context->cdat->source);
 
 	if (   context->rfcomm_channel < 0
 	    && !context->cdat->rfcomm_sdp_search_error) {
@@ -524,7 +529,7 @@ _connect_sdp_session_start_on_idle_cb (gpointer user_data)
 	NMBluez5DunContext *context = user_data;
 	gs_free_error GError *error = NULL;
 
-	context->cdat->source_id = 0;
+	nm_clear_g_source_inst (&context->cdat->source);
 
 	_LOGD (context, "retry starting sdp-session...");
 
@@ -535,7 +540,7 @@ _connect_sdp_session_start_on_idle_cb (gpointer user_data)
 }
 
 static gboolean
-_connect_sdp_io_cb (GIOChannel *io_channel,
+_connect_sdp_io_cb (int fd,
                     GIOCondition condition,
                     gpointer user_data)
 {
@@ -544,16 +549,13 @@ _connect_sdp_io_cb (GIOChannel *io_channel,
 	sdp_list_t *attrs;
 	uuid_t svclass;
 	uint16_t attr;
-	int fd;
 	int errsv;
 	int fd_err = 0;
 	int r;
 	socklen_t len = sizeof (fd_err);
 	gs_free_error GError *error = NULL;
 
-	context->cdat->source_id = 0;
-
-	fd = g_io_channel_unix_get_fd (io_channel);
+	nm_clear_g_source_inst (&context->cdat->source);
 
 	_LOGD (context, "sdp-session ready to connect with fd=%d", fd);
 
@@ -572,10 +574,13 @@ _connect_sdp_io_cb (GIOChannel *io_channel,
 		    && --context->cdat->sdp_session_try_count > 0) {
 			/* *sigh* */
 			_LOGD (context, "sdp-session failed with %s (%d). Retry in a bit", nm_strerror_native (errsv), errsv);
-			nm_clear_g_source (&context->cdat->source_id);
-			context->cdat->source_id = g_timeout_add (1000,
-			                                          _connect_sdp_session_start_on_idle_cb,
-			                                          context);
+			nm_clear_g_source_inst (&context->cdat->source);
+			context->cdat->source = nm_g_timeout_source_new (1000,
+			                                                 G_PRIORITY_DEFAULT,
+			                                                 _connect_sdp_session_start_on_idle_cb,
+			                                                 context,
+			                                                 NULL);
+			g_source_attach (context->cdat->source, NULL);
 			return G_SOURCE_REMOVE;
 		}
 
@@ -615,10 +620,13 @@ _connect_sdp_io_cb (GIOChannel *io_channel,
 	}
 
 	/* Set callback responsible for update the internal SDP transaction */
-	context->cdat->source_id = g_io_add_watch (io_channel,
-	                                           G_IO_IN | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
-	                                           _connect_sdp_search_io_cb,
-	                                           context);
+	context->cdat->source = nm_g_unix_fd_source_new (fd,
+	                                                 G_IO_IN | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
+	                                                 G_PRIORITY_DEFAULT,
+	                                                 _connect_sdp_search_io_cb,
+	                                                 context,
+	                                                 NULL);
+	g_source_attach (context->cdat->source, NULL);
 
 done:
 	if (error)
@@ -644,11 +652,9 @@ static gboolean
 _connect_sdp_session_start (NMBluez5DunContext *context,
                             GError **error)
 {
-	nm_auto_unref_io_channel GIOChannel *io_channel = NULL;
-
 	nm_assert (context->cdat);
 
-	nm_clear_g_source (&context->cdat->source_id);
+	nm_clear_g_source_inst (&context->cdat->source);
 	nm_clear_pointer (&context->cdat->sdp_session, sdp_close);
 
 	context->cdat->sdp_session = sdp_connect (&context->src, &context->dst, SDP_NON_BLOCKING);
@@ -661,11 +667,13 @@ _connect_sdp_session_start (NMBluez5DunContext *context,
 		return FALSE;
 	}
 
-	io_channel = g_io_channel_unix_new (sdp_get_socket (context->cdat->sdp_session));
-	context->cdat->source_id = g_io_add_watch (io_channel,
-	                                           G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
-	                                           _connect_sdp_io_cb,
-	                                           context);
+	context->cdat->source = nm_g_unix_fd_source_new (sdp_get_socket (context->cdat->sdp_session),
+	                                                 G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
+	                                                 G_PRIORITY_DEFAULT,
+	                                                 _connect_sdp_io_cb,
+	                                                 context,
+	                                                 NULL);
+	g_source_attach (context->cdat->source, NULL);
 	return TRUE;
 }
 
@@ -772,7 +780,7 @@ _context_cleanup_connect_data (NMBluez5DunContext *context)
 
 	nm_clear_g_signal_handler (cdat->cancellable, &cdat->cancelled_id);
 
-	nm_clear_g_source (&cdat->source_id);
+	nm_clear_g_source_inst (&cdat->source);
 
 	nm_clear_pointer (&cdat->sdp_session, sdp_close);
 
@@ -836,7 +844,7 @@ _context_free (NMBluez5DunContext *context)
 
 	_context_cleanup_connect_data (context);
 
-	nm_clear_g_source (&context->rfcomm_tty_poll_id);
+	nm_clear_g_source_inst (&context->rfcomm_tty_poll_source);
 
 	if (context->rfcomm_sock_fd >= 0) {
 		if (context->rfcomm_tty_no >= 0) {

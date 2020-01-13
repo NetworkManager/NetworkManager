@@ -38,8 +38,7 @@ struct _NMAcdManager {
 	GHashTable    *addresses;
 	guint          completed;
 	NAcd          *acd;
-	GIOChannel    *channel;
-	guint          event_id;
+	GSource       *event_source;
 
 	NMAcdCallbacks callbacks;
 	gpointer user_data;
@@ -157,7 +156,9 @@ nm_acd_manager_add_address (NMAcdManager *self, in_addr_t address)
 }
 
 static gboolean
-acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
+acd_event (int fd,
+           GIOCondition condition,
+           gpointer data)
 {
 	NMAcdManager *self = data;
 	NAcdEvent *event;
@@ -334,11 +335,15 @@ nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 	if (success)
 		self->state = STATE_PROBING;
 
-	nm_assert (!self->channel);
-	nm_assert (self->event_id == 0);
+	nm_assert (!self->event_source);
 	n_acd_get_fd (self->acd, &fd);
-	self->channel = g_io_channel_unix_new (fd);
-	self->event_id = g_io_add_watch (self->channel, G_IO_IN, acd_event, self);
+	self->event_source = nm_g_unix_fd_source_new (fd,
+	                                              G_IO_IN,
+	                                              G_PRIORITY_DEFAULT,
+	                                              acd_event,
+	                                              self,
+	                                              NULL);
+	g_source_attach (self->event_source, NULL);
 
 	return success ? 0 : -NME_UNSPEC;
 }
@@ -421,11 +426,15 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 		}
 	}
 
-	if (!self->channel) {
-		nm_assert (self->event_id == 0);
+	if (!self->event_source) {
 		n_acd_get_fd (self->acd, &fd);
-		self->channel = g_io_channel_unix_new (fd);
-		self->event_id = g_io_add_watch (self->channel, G_IO_IN, acd_event, self);
+		self->event_source = nm_g_unix_fd_source_new (fd,
+		                                              G_IO_IN,
+		                                              G_PRIORITY_DEFAULT,
+		                                              acd_event,
+		                                              self,
+		                                              NULL);
+		g_source_attach (self->event_source, NULL);
 	}
 
 	return success ? 0 : -NME_UNSPEC;
@@ -479,8 +488,7 @@ nm_acd_manager_free (NMAcdManager *self)
 		self->callbacks.user_data_destroy (self->user_data);
 
 	nm_clear_pointer (&self->addresses, g_hash_table_destroy);
-	nm_clear_pointer (&self->channel, g_io_channel_unref);
-	nm_clear_g_source (&self->event_id);
+	nm_clear_g_source_inst (&self->event_source);
 	nm_clear_pointer (&self->acd, n_acd_unref);
 
 	g_slice_free (NMAcdManager, self);

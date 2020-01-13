@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <glib-unix.h>
 
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-enum-utils.h"
@@ -8199,8 +8198,12 @@ _test_integrate_cb_idle_2 (gpointer user_data)
 	g_assert (d->extra_sources[0]);
 	g_assert (!d->extra_sources[1]);
 
-	extra_source = g_unix_fd_source_new (d->fd_2, G_IO_IN);
-	g_source_set_callback (extra_source, G_SOURCE_FUNC (_test_integrate_cb_fd_2), d, NULL);
+	extra_source = nm_g_unix_fd_source_new (d->fd_2,
+	                                        G_IO_IN,
+	                                        G_PRIORITY_DEFAULT,
+	                                        _test_integrate_cb_fd_2,
+	                                        d,
+	                                        NULL);
 	g_source_attach (extra_source, d->c2);
 
 	d->extra_sources[1] = extra_source;
@@ -8294,8 +8297,12 @@ test_integrate_maincontext (gconstpointer test_data)
 
 		fd_1 = open ("/dev/null", O_RDONLY | O_CLOEXEC);
 		g_assert (fd_1 >= 0);
-		fd_source_1 = g_unix_fd_source_new (fd_1, G_IO_IN);
-		g_source_set_callback (fd_source_1, G_SOURCE_FUNC (_test_integrate_cb_fd_1), &d, NULL);
+		fd_source_1 = nm_g_unix_fd_source_new (fd_1,
+		                                       G_IO_IN,
+		                                       G_PRIORITY_DEFAULT,
+		                                       _test_integrate_cb_fd_1,
+		                                       &d,
+		                                       NULL);
 		g_source_attach (fd_source_1, c2);
 
 		fd_2 = open ("/dev/null", O_RDONLY | O_CLOEXEC);

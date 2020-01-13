@@ -312,9 +312,9 @@ static GSList *form_stack;
 static GSource *keypress_source;
 
 static gboolean
-nmt_newt_form_keypress_callback (int          fd,
+nmt_newt_form_keypress_callback (int fd,
                                  GIOCondition condition,
-                                 gpointer     user_data)
+                                 gpointer user_data)
 {
 	g_return_val_if_fail (form_stack != NULL, FALSE);
 
@@ -340,16 +340,14 @@ static void
 nmt_newt_form_real_show (NmtNewtForm *form)
 {
 	if (!keypress_source) {
-		GIOChannel *io;
-
-		io = g_io_channel_unix_new (STDIN_FILENO);
-		keypress_source = g_io_create_watch (io, G_IO_IN);
+		keypress_source = nm_g_unix_fd_source_new (STDIN_FILENO,
+		                                           G_IO_IN,
+		                                           G_PRIORITY_DEFAULT,
+		                                           nmt_newt_form_keypress_callback,
+		                                           NULL,
+		                                           NULL);
 		g_source_set_can_recurse (keypress_source, TRUE);
-		g_source_set_callback (keypress_source,
-		                       (GSourceFunc)(void (*) (void)) nmt_newt_form_keypress_callback,
-		                       NULL, NULL);
 		g_source_attach (keypress_source, NULL);
-		g_io_channel_unref (io);
 	}
 
 	nmt_newt_form_build (form);
@@ -416,10 +414,8 @@ nmt_newt_form_quit (NmtNewtForm *form)
 
 	if (form_stack)
 		nmt_newt_form_iterate (form_stack->data);
-	else if (keypress_source) {
-		g_source_destroy (keypress_source);
-		g_clear_pointer (&keypress_source, g_source_unref);
-	}
+	else
+		nm_clear_g_source_inst (&keypress_source);
 
 	g_signal_emit (form, signals[QUIT], 0);
 	g_object_unref (form);

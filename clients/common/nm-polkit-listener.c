@@ -23,8 +23,8 @@
 #include "nm-polkit-listener.h"
 
 #include <gio/gio.h>
-#include <glib-unix.h>
 #include <pwd.h>
+#include <fcntl.h>
 
 #include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-glib-aux/nm-secret-utils.h"
@@ -443,12 +443,12 @@ queue_string_to_helper (AuthRequest *request, const char *response)
 		g_string_append_c (request->out_buffer, '\n');
 
 	if (!request->child_stdin_watch_source) {
-		request->child_stdin_watch_source = g_unix_fd_source_new (request->child_stdin,
-		                                                          G_IO_OUT | G_IO_ERR | G_IO_HUP);
-		g_source_set_callback (request->child_stdin_watch_source,
-		                       G_SOURCE_FUNC (io_watch_can_write),
-		                       request,
-		                       NULL);
+		request->child_stdin_watch_source = nm_g_unix_fd_source_new (request->child_stdin,
+		                                                             G_IO_OUT | G_IO_ERR | G_IO_HUP,
+		                                                             G_PRIORITY_DEFAULT,
+		                                                             io_watch_can_write,
+		                                                             request,
+		                                                             NULL);
 		g_source_attach (request->child_stdin_watch_source,
 		                 request->listener->main_context);
 	}
@@ -570,12 +570,12 @@ begin_authentication (AuthRequest *request)
 	fd_flags = fcntl (request->child_stdout, F_GETFD, 0);
 	fcntl (request->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
 
-	request->child_stdout_watch_source = g_unix_fd_source_new (request->child_stdout,
-	                                                           G_IO_IN | G_IO_ERR | G_IO_HUP);
-	g_source_set_callback (request->child_stdout_watch_source,
-	                       G_SOURCE_FUNC (io_watch_have_data),
-	                       request,
-	                       NULL);
+	request->child_stdout_watch_source = nm_g_unix_fd_source_new (request->child_stdout,
+	                                                              G_IO_IN | G_IO_ERR | G_IO_HUP,
+	                                                              G_PRIORITY_DEFAULT,
+	                                                              io_watch_have_data,
+	                                                              request,
+	                                                              NULL);
 	g_source_attach (request->child_stdout_watch_source,
 	                 request->listener->main_context);
 
