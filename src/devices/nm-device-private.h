@@ -180,15 +180,14 @@ void nm_device_commit_mtu (NMDevice *self);
 	((NM_NARG (__VA_ARGS__) == 0) \
 	  ? NULL \
 	  : ({ \
-	      static const struct { \
-	          const NMLinkType types[NM_NARG (__VA_ARGS__)]; \
-	          const NMLinkType sentinel; \
-	      } _link_types = { \
-	          .types = { __VA_ARGS__ }, \
-	          .sentinel = NM_LINK_TYPE_NONE, \
+	      const NMLinkType _types[NM_NARG (__VA_ARGS__) + 1] = { \
+	          __VA_ARGS__ \
+	          _NM_MACRO_COMMA_IF_ARGS (__VA_ARGS__) \
+	          NM_LINK_TYPE_NONE, \
 	      }; \
 	      \
-	      _link_types.types; \
+	      nm_assert (_types[NM_NARG (__VA_ARGS__)] == NM_LINK_TYPE_NONE); \
+	      _types; \
 	    })\
 	)
 
