@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 install_data(
   'nm-ifcfg-rh.conf',
   install_dir: dbus_conf_dir,

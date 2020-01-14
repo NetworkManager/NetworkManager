@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'nms-ifupdown-interface-parser.c',
   'nms-ifupdown-parser.c',

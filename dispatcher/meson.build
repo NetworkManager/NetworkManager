@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 dispatcher_inc = include_directories('.')
 
 name = 'nm-dispatcher'

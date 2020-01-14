@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 #
 # target: libclist.so
 # (No .so is built so far, since we are header-only. This might change in the

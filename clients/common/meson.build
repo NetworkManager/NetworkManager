@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 common_inc = include_directories('.')
 
 common_deps = [

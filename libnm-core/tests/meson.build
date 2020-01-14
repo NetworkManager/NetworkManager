@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 # test-cert.p12 created with:
 #
 # openssl pkcs12 -export \

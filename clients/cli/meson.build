@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 name = 'nmcli'
 
 # FIXME: nmcli-completion should be renamed to nmcli

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 name = 'nm-cloud-setup'
 
 if install_systemdunitdir
