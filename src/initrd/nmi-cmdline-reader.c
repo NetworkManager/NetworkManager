@@ -208,7 +208,7 @@ read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 	ibft = nmi_ibft_read (sysfs_dir);
 
 	g_hash_table_iter_init (&iter, ibft);
-	while (g_hash_table_iter_next (&iter, (gpointer)&mac, (gpointer)&nic)) {
+	while (g_hash_table_iter_next (&iter, (gpointer *) &mac, (gpointer *) &nic)) {
 		connection = nm_simple_connection_new ();
 
 		index = g_hash_table_lookup (nic, "index");
@@ -234,7 +234,6 @@ read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 		                     connection);
 	}
 }
-
 
 static void
 parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
