@@ -1586,6 +1586,39 @@ nmtstp_link_tun_add (NMPlatform *platform,
 }
 
 const NMPlatformLink *
+nmtstp_link_vrf_add (NMPlatform *platform,
+                     gboolean external_command,
+                     const char *name,
+                     const NMPlatformLnkVrf *lnk)
+{
+	const NMPlatformLink *pllink = NULL;
+	int err;
+	int r;
+
+	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	_init_platform (&platform, external_command);
+
+	if (external_command) {
+		err = nmtstp_run_command ("ip link add %s type vrf table %u",
+		                          name,
+		                          lnk->table);
+		if (err == 0)
+			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_VRF, 100);
+	} else {
+		r = nm_platform_link_vrf_add (platform, name, lnk, &pllink);
+		g_assert (NMTST_NM_ERR_SUCCESS (r));
+		g_assert (pllink);
+	}
+
+	g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_VRF);
+	g_assert_cmpstr (pllink->name, ==, name);
+	return pllink;
+}
+
+const NMPlatformLink *
 nmtstp_link_vxlan_add (NMPlatform *platform,
                        gboolean external_command,
                        const char *name,

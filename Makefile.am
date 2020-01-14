@@ -693,6 +693,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Veth.h \
 	introspection/org.freedesktop.NetworkManager.Device.Vlan.c \
 	introspection/org.freedesktop.NetworkManager.Device.Vlan.h \
+	introspection/org.freedesktop.NetworkManager.Device.Vrf.c \
+	introspection/org.freedesktop.NetworkManager.Device.Vrf.h \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.c \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.h \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.c \
@@ -764,6 +766,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vrf.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.WiMax.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.WifiP2P.xml \
@@ -831,6 +834,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Tun.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Veth.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Vlan.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Vrf.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.xml \
 	introspection/org.freedesktop.NetworkManager.Device.WifiP2P.xml \
@@ -918,6 +922,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-user.h \
 	libnm-core/nm-setting-vlan.h \
 	libnm-core/nm-setting-vpn.h \
+	libnm-core/nm-setting-vrf.h \
 	libnm-core/nm-setting-vxlan.h \
 	libnm-core/nm-setting-wifi-p2p.h \
 	libnm-core/nm-setting-wimax.h \
@@ -990,6 +995,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-user.c \
 	libnm-core/nm-setting-vlan.c \
 	libnm-core/nm-setting-vpn.c \
+	libnm-core/nm-setting-vrf.c \
 	libnm-core/nm-setting-vxlan.c \
 	libnm-core/nm-setting-wifi-p2p.c \
 	libnm-core/nm-setting-wimax.c \
@@ -1317,6 +1323,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
 	libnm/nm-device-vlan.h \
+	libnm/nm-device-vrf.h \
 	libnm/nm-device-vxlan.h \
 	libnm/nm-device-wifi-p2p.h \
 	libnm/nm-device-wifi.h \
@@ -1380,6 +1387,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \
 	libnm/nm-device-vlan.c \
+	libnm/nm-device-vrf.c \
 	libnm/nm-device-vxlan.c \
 	libnm/nm-device-wifi-p2p.c \
 	libnm/nm-device-wifi.c \
@@ -2167,6 +2175,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-veth.h \
 	src/devices/nm-device-vlan.c \
 	src/devices/nm-device-vlan.h \
+	src/devices/nm-device-vrf.c \
+	src/devices/nm-device-vrf.h \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
 	src/devices/nm-device-wireguard.c \

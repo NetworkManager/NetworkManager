@@ -33,6 +33,7 @@ ifaces = [
   'org.freedesktop.NetworkManager.Device.Tun',
   'org.freedesktop.NetworkManager.Device.Veth',
   'org.freedesktop.NetworkManager.Device.Vlan',
+  'org.freedesktop.NetworkManager.Device.Vrf',
   'org.freedesktop.NetworkManager.Device.Vxlan',
   'org.freedesktop.NetworkManager.Device.WiMax',
   'org.freedesktop.NetworkManager.Device.WifiP2P',

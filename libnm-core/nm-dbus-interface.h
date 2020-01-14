@@ -52,6 +52,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_TUN           NM_DBUS_INTERFACE_DEVICE ".Tun"
 #define NM_DBUS_INTERFACE_DEVICE_VETH          NM_DBUS_INTERFACE_DEVICE ".Veth"
 #define NM_DBUS_INTERFACE_DEVICE_VLAN          NM_DBUS_INTERFACE_DEVICE ".Vlan"
+#define NM_DBUS_INTERFACE_DEVICE_VRF           NM_DBUS_INTERFACE_DEVICE ".Vrf"
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN         NM_DBUS_INTERFACE_DEVICE ".Vxlan"
 #define NM_DBUS_INTERFACE_DEVICE_WIFI_P2P      NM_DBUS_INTERFACE_DEVICE ".WifiP2P"
 #define NM_DBUS_INTERFACE_DEVICE_WIMAX         NM_DBUS_INTERFACE_DEVICE ".WiMax"
@@ -213,6 +214,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_6LOWPAN: 6LoWPAN interface
  * @NM_DEVICE_TYPE_WIREGUARD: a WireGuard interface
  * @NM_DEVICE_TYPE_WIFI_P2P: an 802.11 Wi-Fi P2P device (Since: 1.16)
+ * @NM_DEVICE_TYPE_VRF: A VRF (Virtual Routing and Forwarding) interface (Since: 1.24)
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -249,6 +251,7 @@ typedef enum {
 	NM_DEVICE_TYPE_6LOWPAN       = 28,
 	NM_DEVICE_TYPE_WIREGUARD     = 29,
 	NM_DEVICE_TYPE_WIFI_P2P      = 30,
+	NM_DEVICE_TYPE_VRF           = 31,
 } NMDeviceType;
 
 /**

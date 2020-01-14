@@ -33,7 +33,7 @@ typedef struct {
 	NMSIfcfgKeyTypeFlags key_flags;
 } NMSIfcfgKeyTypeInfo;
 
-const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[225];
+const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[227];
 
 const NMSIfcfgKeyTypeInfo *nms_ifcfg_well_known_key_find_info (const char *key, gssize *out_idx);
 

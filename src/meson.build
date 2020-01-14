@@ -87,6 +87,7 @@ sources = files(
   'devices/nm-device-tun.c',
   'devices/nm-device-veth.c',
   'devices/nm-device-vlan.c',
+  'devices/nm-device-vrf.c',
   'devices/nm-device-vxlan.c',
   'devices/nm-device-wireguard.c',
   'devices/nm-device-wpan.c',

@@ -828,6 +828,10 @@ typedef struct {
 } NMPlatformLnkVlan;
 
 typedef struct {
+	guint32 table;
+} NMPlatformLnkVrf;
+
+typedef struct {
 	struct in6_addr group6;
 	struct in6_addr local6;
 	in_addr_t group;
@@ -1431,6 +1435,15 @@ nm_platform_link_vlan_add (NMPlatform *self,
 }
 
 static inline int
+nm_platform_link_vrf_add (NMPlatform *self,
+                          const char *name,
+                          const NMPlatformLnkVrf *props,
+                          const NMPlatformLink **out_link)
+{
+	return nm_platform_link_add (self, NM_LINK_TYPE_VRF, name, 0, NULL, 0, props, out_link);
+}
+
+static inline int
 nm_platform_link_vxlan_add (NMPlatform *self,
                             const char *name,
                             const NMPlatformLnkVxlan *props,
@@ -1621,6 +1634,7 @@ const NMPlatformLnkMacvlan *nm_platform_link_get_lnk_macvtap (NMPlatform *self, 
 const NMPlatformLnkSit *nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkTun *nm_platform_link_get_lnk_tun (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVlan *nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkVrf *nm_platform_link_get_lnk_vrf (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVxlan *nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkWireGuard *nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 
@@ -1792,6 +1806,7 @@ const char *nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, 
 const char *nm_platform_lnk_sit_to_string (const NMPlatformLnkSit *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_tun_to_string (const NMPlatformLnkTun *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_vrf_to_string (const NMPlatformLnkVrf *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireGuard *lnk, char *buf, gsize len);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *buf, gsize len);
@@ -1824,6 +1839,7 @@ int nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatform
 int nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b);
 int nm_platform_lnk_tun_cmp (const NMPlatformLnkTun *a, const NMPlatformLnkTun *b);
 int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);
+int nm_platform_lnk_vrf_cmp (const NMPlatformLnkVrf *a, const NMPlatformLnkVrf *b);
 int nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);
 int nm_platform_lnk_wireguard_cmp (const NMPlatformLnkWireGuard *a, const NMPlatformLnkWireGuard *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
@@ -1870,6 +1886,7 @@ void nm_platform_lnk_macvlan_hash_update (const NMPlatformLnkMacvlan *obj, NMHas
 void nm_platform_lnk_sit_hash_update (const NMPlatformLnkSit *obj, NMHashState *h);
 void nm_platform_lnk_tun_hash_update (const NMPlatformLnkTun *obj, NMHashState *h);
 void nm_platform_lnk_vlan_hash_update (const NMPlatformLnkVlan *obj, NMHashState *h);
+void nm_platform_lnk_vrf_hash_update (const NMPlatformLnkVrf *obj, NMHashState *h);
 void nm_platform_lnk_vxlan_hash_update (const NMPlatformLnkVxlan *obj, NMHashState *h);
 void nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireGuard *obj, NMHashState *h);
 

@@ -2109,6 +2109,8 @@ nm_device_get_route_metric_default (NMDeviceType device_type)
 		return 450;
 	case NM_DEVICE_TYPE_PPP:
 		return 460;
+	case NM_DEVICE_TYPE_VRF:
+		return 470;
 	case NM_DEVICE_TYPE_VXLAN:
 		return 500;
 	case NM_DEVICE_TYPE_DUMMY:
@@ -2274,6 +2276,8 @@ _get_route_table (NMDevice *self,
 	NMSettingIPConfig *s_ip;
 	guint32 route_table = 0;
 	gboolean is_user_config = TRUE;
+	NMSettingConnection *s_con;
+	NMSettingVrf *s_vrf;
 
 	nm_assert_addr_family (addr_family);
 
@@ -2308,6 +2312,28 @@ _get_route_table (NMDevice *self,
 			route_table = v;
 			is_user_config = FALSE;
 		}
+	}
+
+	if (   route_table == 0u
+	    && connection
+	    && (s_con = nm_connection_get_setting_connection (connection))
+	    && (nm_streq0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_VRF_SETTING_NAME)
+	    && priv->master
+	    && nm_device_get_device_type (priv->master) == NM_DEVICE_TYPE_VRF)) {
+		const NMPlatformLnkVrf *lnk;
+
+		lnk = nm_platform_link_get_lnk_vrf (nm_device_get_platform (self),
+		                                    nm_device_get_ifindex (priv->master),
+		                                    NULL);
+
+		if (lnk)
+			route_table = lnk->table;
+	}
+
+	if (   route_table == 0u
+	    && connection
+	    && (s_vrf = (NMSettingVrf *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VRF))) {
+		route_table = nm_setting_vrf_get_table (s_vrf);
 	}
 
 	klass = NM_DEVICE_GET_CLASS (self);
@@ -17152,7 +17178,7 @@ set_property (GObject *object, guint prop_id,
 		nm_assert (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
 		nm_assert (priv->type > NM_DEVICE_TYPE_UNKNOWN);
-		nm_assert (priv->type <= NM_DEVICE_TYPE_WIFI_P2P);
+		nm_assert (priv->type <= NM_DEVICE_TYPE_VRF);
 		break;
 	case PROP_LINK_TYPE:
 		/* construct-only */

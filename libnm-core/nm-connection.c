@@ -887,6 +887,7 @@ static gboolean
 _supports_addr_family (NMConnection *self, int family)
 {
 	const char *connection_type = nm_connection_get_connection_type (self);
+	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (connection_type, TRUE);
 	if (strcmp (connection_type, NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0)
@@ -895,6 +896,9 @@ _supports_addr_family (NMConnection *self, int family)
 		return FALSE;
 	if (strcmp (connection_type, NM_SETTING_6LOWPAN_SETTING_NAME) == 0)
 		return family == AF_INET6 || family == AF_UNSPEC;
+	if (   (s_con = nm_connection_get_setting_connection (self))
+	    && (nm_streq0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_VRF_SETTING_NAME)))
+		return TRUE;
 
 	return !nm_setting_connection_get_master (nm_connection_get_setting_connection (self));
 }
@@ -2687,6 +2691,7 @@ nm_connection_is_virtual (NMConnection *connection)
 	                        NM_SETTING_TEAM_SETTING_NAME,
 	                        NM_SETTING_TUN_SETTING_NAME,
 	                        NM_SETTING_VLAN_SETTING_NAME,
+	                        NM_SETTING_VRF_SETTING_NAME,
 	                        NM_SETTING_VXLAN_SETTING_NAME,
 	                        NM_SETTING_WIREGUARD_SETTING_NAME))
 		return TRUE;

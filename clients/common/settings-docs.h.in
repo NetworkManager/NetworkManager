@@ -354,6 +354,7 @@
 #define DESCRIBE_DOC_NM_SETTING_VPN_SERVICE_TYPE N_("D-Bus service name of the VPN plugin that this setting uses to connect to its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin.")
 #define DESCRIBE_DOC_NM_SETTING_VPN_TIMEOUT N_("Timeout for the VPN service to establish the connection. Some services may take quite a long time to connect. Value of 0 means a default timeout, which is 60 seconds (unless overridden by vpn.timeout in configuration file). Values greater than zero mean timeout in seconds.")
 #define DESCRIBE_DOC_NM_SETTING_VPN_USER_NAME N_("If the VPN connection requires a user name for authentication, that name should be provided here.  If the connection is available to more than one user, and the VPN requires each user to supply a different name, then leave this property empty.  If this property is empty, NetworkManager will automatically supply the username of the user which requested the VPN connection.")
+#define DESCRIBE_DOC_NM_SETTING_VRF_TABLE N_("The routing table for this VRF.")
 #define DESCRIBE_DOC_NM_SETTING_VXLAN_AGEING N_("Specifies the lifetime in seconds of FDB entries learnt by the kernel.")
 #define DESCRIBE_DOC_NM_SETTING_VXLAN_DESTINATION_PORT N_("Specifies the UDP destination port to communicate to the remote VXLAN tunnel endpoint.")
 #define DESCRIBE_DOC_NM_SETTING_VXLAN_ID N_("Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use.")

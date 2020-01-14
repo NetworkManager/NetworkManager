@@ -151,15 +151,18 @@ _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_t
 
 	if (!slave_type)
 		found = FALSE;
-	else if (!strcmp (slave_type, NM_SETTING_BOND_SETTING_NAME))
-		;
-	else if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
+	else if (NM_IN_STRSET (slave_type,
+	                       NM_SETTING_BOND_SETTING_NAME,
+	                       NM_SETTING_VRF_SETTING_NAME)) {
+		/* pass */
+	}
+	else if (nm_streq (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
 		port_type = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
-	else if (!strcmp (slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME))
+	else if (nm_streq (slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME))
 		port_type = NM_SETTING_OVS_PORT_SETTING_NAME;
-	else if (!strcmp (slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
+	else if (nm_streq (slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
 		port_type = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
-	else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME))
+	else if (nm_streq (slave_type, NM_SETTING_TEAM_SETTING_NAME))
 		port_type = NM_SETTING_TEAM_PORT_SETTING_NAME;
 	else
 		found = FALSE;

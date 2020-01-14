@@ -5127,7 +5127,8 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	                                                  NM_SETTING_BRIDGE_SETTING_NAME,
 	                                                  NM_SETTING_OVS_BRIDGE_SETTING_NAME,
 	                                                  NM_SETTING_OVS_PORT_SETTING_NAME,
-	                                                  NM_SETTING_TEAM_SETTING_NAME),
+	                                                  NM_SETTING_TEAM_SETTING_NAME,
+	                                                  NM_SETTING_VRF_SETTING_NAME),
 	    ),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
@@ -6915,6 +6916,20 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VRF
+static const NMMetaPropertyInfo *const property_infos_VRF[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_VRF_TABLE,
+	    .is_cli_option =                TRUE,
+	    .property_alias =               "table",
+	    .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+	    .prompt =                       N_("Table [0]"),
+	    .property_type =                &_pt_gobject_int,
+	),
+	NULL
+};
+
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VXLAN
 static const NMMetaPropertyInfo *const property_infos_VXLAN[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VXLAN_PARENT,
@@ -7698,6 +7713,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_USER                N_("User settings")
 #define SETTING_PRETTY_NAME_VLAN                N_("VLAN connection")
 #define SETTING_PRETTY_NAME_VPN                 N_("VPN connection")
+#define SETTING_PRETTY_NAME_VRF                 N_("VRF connection")
 #define SETTING_PRETTY_NAME_VXLAN               N_("VXLAN connection")
 #define SETTING_PRETTY_NAME_WIFI_P2P            N_("Wi-Fi P2P connection")
 #define SETTING_PRETTY_NAME_WIMAX               N_("WiMAX connection")
@@ -7938,6 +7954,13 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	        NM_META_SETTING_VALID_PART_ITEM (VPN,                   TRUE),
 	    ),
 	),
+	SETTING_INFO (VRF,
+	    .valid_parts = NM_META_SETTING_VALID_PARTS (
+	        NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+	        NM_META_SETTING_VALID_PART_ITEM (VRF,                   TRUE),
+	    ),
+	),
+
 	SETTING_INFO (VXLAN,
 	    .valid_parts = NM_META_SETTING_VALID_PARTS (
 	        NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8061,6 +8084,10 @@ nm_meta_setting_info_valid_parts_for_slave_type (const char *slave_type, const c
 	if (nm_streq (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
 		NM_SET_OUT (out_slave_name, "team-slave");
 		return valid_settings_slave_team;
+	}
+	if (nm_streq (slave_type, NM_SETTING_VRF_SETTING_NAME)) {
+		NM_SET_OUT (out_slave_name, "vrf-slave");
+		return valid_settings_noslave;
 	}
 	return NULL;
 }

@@ -505,7 +505,7 @@ struct _NMLDBusMetaIface {
 	NML_DBUS_META_IFACE_INIT (__VA_ARGS__ \
 	                          NML_DBUS_META_IFACE_OBJ_PROPERTIES ())
 
-extern const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[43];
+extern const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[44];
 
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_accesspoint;
@@ -535,6 +535,7 @@ extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_team;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_tun;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vlan;
+extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vrf;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vxlan;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wifip2p;
 extern const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired;

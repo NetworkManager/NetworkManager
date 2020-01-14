@@ -287,6 +287,10 @@ typedef struct {
 } NMPObjectLnkVlan;
 
 typedef struct {
+	NMPlatformLnkVrf _public;
+} NMPObjectLnkVrf;
+
+typedef struct {
 	NMPlatformLnkVxlan _public;
 } NMPObjectLnkVxlan;
 
@@ -365,6 +369,9 @@ struct _NMPObject {
 
 		NMPlatformLnkVlan       lnk_vlan;
 		NMPObjectLnkVlan        _lnk_vlan;
+
+		NMPlatformLnkVrf        lnk_vrf;
+		NMPObjectLnkVrf         _lnk_vrf;
 
 		NMPlatformLnkVxlan      lnk_vxlan;
 		NMPObjectLnkVxlan       _lnk_vxlan;

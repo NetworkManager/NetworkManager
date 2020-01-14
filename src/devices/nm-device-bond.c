@@ -414,7 +414,7 @@ release_slave (NMDevice *device,
 	ifindex_slave = nm_device_get_ip_ifindex (slave);
 
 	if (ifindex_slave <= 0)
-		_LOGD (LOGD_TEAM, "bond slave %s is already released", nm_device_get_ip_iface (slave));
+		_LOGD (LOGD_BOND, "bond slave %s is already released", nm_device_get_ip_iface (slave));
 
 	if (configure) {
 		/* When the last slave is released the bond MAC will be set to a random

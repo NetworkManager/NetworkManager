@@ -656,6 +656,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_TUN,           "tun",         "tun",         NULL },
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
 	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
+	{ NM_LINK_TYPE_VRF,           "vrf",         "vrf",         "vrf" },
 	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
 	{ NM_LINK_TYPE_WIREGUARD,     "wireguard",   "wireguard",   "wireguard" },
 
@@ -1754,6 +1755,8 @@ _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 #undef IFLA_VXLAN_MAX
 #define IFLA_VXLAN_MAX IFLA_VXLAN_LOCAL6
 
+#define IFLA_VRF_TABLE        1
+
 /* older kernel header might not contain 'struct ifla_vxlan_port_range'.
  * Redefine it. */
 struct nm_ifla_vxlan_port_range {
@@ -1844,6 +1847,33 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 		props->l2miss = !!nla_get_u8 (tb[IFLA_VXLAN_L2MISS]);
 	if (tb[IFLA_VXLAN_L3MISS])
 		props->l3miss = !!nla_get_u8 (tb[IFLA_VXLAN_L3MISS]);
+
+	return obj;
+}
+
+static NMPObject *
+_parse_lnk_vrf (const char *kind, struct nlattr *info_data)
+{
+	static const struct nla_policy policy[] = {
+		[IFLA_VRF_TABLE]         = { .type = NLA_U32 },
+	};
+	NMPlatformLnkVrf *props;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
+	NMPObject *obj;
+
+	if (   !info_data
+	    || !nm_streq0 (kind, "vrf"))
+		return NULL;
+
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_VRF, NULL);
+
+	props = &obj->lnk_vrf;
+
+	if (tb[IFLA_VRF_TABLE])
+		props->table = nla_get_u32 (tb[IFLA_VRF_TABLE]);
 
 	return obj;
 }
@@ -2798,6 +2828,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	case NM_LINK_TYPE_VLAN:
 		lnk_data = _parse_lnk_vlan (nl_info_kind, nl_info_data);
 		break;
+	case NM_LINK_TYPE_VRF:
+		lnk_data = _parse_lnk_vrf (nl_info_kind, nl_info_data);
+		break;
 	case NM_LINK_TYPE_VXLAN:
 		lnk_data = _parse_lnk_vxlan (nl_info_kind, nl_info_data);
 		break;
@@ -3726,6 +3759,17 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 
 			NLA_PUT (msg, IFLA_VLAN_FLAGS, sizeof (flags), &flags);
 		}
+		break;
+	}
+	case NM_LINK_TYPE_VRF: {
+		const NMPlatformLnkVrf *props = extra_data;
+
+		nm_assert (extra_data);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		NLA_PUT_U32 (msg, IFLA_VRF_TABLE, props->table);
 		break;
 	}
 	case NM_LINK_TYPE_VXLAN: {
