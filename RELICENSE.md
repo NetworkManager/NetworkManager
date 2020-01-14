@@ -61,7 +61,7 @@ How to Track Consent/Disapproval?
 
 The consent/disapproval is tracked in this file for the copyright holders
 who made their wish known. In the list below [Y] indicates consent while [N]
-indicates disapproval.
+indicates disapproval. [?] indicates yet unknown data.
 To express the wish either send an email to our mailing list <networkmanager-list@gnome.org>
 or open a merge request against this file, adding your name to the list. Then this
 file will be updated to track the information. The git commit messages in the history
@@ -71,5 +71,14 @@ of this file will give details when/how an entry was added.
 Consent/Disapproval List
 ========================
 
-- [Y] Beniamino Galvani <bgalvani@redhat.com>
-- [Y] Thomas Haller <thaller@redhat.com>
+- [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
+- [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
+
+Copyright Hold by Other Legal Entities
+======================================
+
+The contributors above may have contributed the code on behalf of a company
+that holds the copyright. This list tracks such legal entities. The contributor
+list above indicates whether a contributor provided code for a legal entity here.
+
+- [?] Red Hat, Inc.
