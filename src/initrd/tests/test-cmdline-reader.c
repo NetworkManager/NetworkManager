@@ -815,6 +815,7 @@ static void
 test_ibft_ip (void)
 {
 	const char *const*ARGV = NM_MAKE_STRV ("ip=ibft");
+
 	_test_ibft_ip (ARGV);
 }
 
@@ -822,6 +823,7 @@ static void
 test_ibft_rd_iscsi_ibft (void)
 {
 	const char *const*ARGV = NM_MAKE_STRV ("rd.iscsi.ibft");
+
 	_test_ibft_ip (ARGV);
 }
 
