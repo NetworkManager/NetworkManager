@@ -544,6 +544,7 @@ test_ip4_route_options (gconstpointer test_data)
 		                                       a->address,
 		                                       a->plen,
 		                                       a->peer_address,
+		                                       nm_platform_ip4_broadcast_address_create (a->address, a->plen),
 		                                       a->lifetime,
 		                                       a->preferred,
 		                                       a->n_ifa_flags,
