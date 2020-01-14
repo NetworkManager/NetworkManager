@@ -2263,13 +2263,13 @@ name_owner_changed (NMBluezManager *self,
 
 	priv->get_managed_objects_cancellable = g_cancellable_new ();
 
-	priv->managed_objects_changed_id = nm_dbus_connection_signal_subscribe_object_manager_plain (priv->dbus_connection,
-	                                                                                             priv->name_owner,
-	                                                                                             NM_BLUEZ_MANAGER_PATH,
-	                                                                                             NULL,
-	                                                                                             _dbus_managed_objects_changed_cb,
-	                                                                                             self,
-	                                                                                             NULL);
+	priv->managed_objects_changed_id = nm_dbus_connection_signal_subscribe_object_manager (priv->dbus_connection,
+	                                                                                       priv->name_owner,
+	                                                                                       NM_BLUEZ_MANAGER_PATH,
+	                                                                                       NULL,
+	                                                                                       _dbus_managed_objects_changed_cb,
+	                                                                                       self,
+	                                                                                       NULL);
 
 	priv->properties_changed_id = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
 	                                                                                      priv->name_owner,

@@ -6635,13 +6635,13 @@ _init_fetch_all (NMClient *self)
 
 	priv->get_managed_objects_cancellable = g_cancellable_new ();
 
-	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager_plain (priv->dbus_connection,
-	                                                                                          priv->name_owner,
-	                                                                                          "/org/freedesktop",
-	                                                                                          NULL,
-	                                                                                          _dbus_managed_objects_changed_cb,
-	                                                                                          self,
-	                                                                                          NULL);
+	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager (priv->dbus_connection,
+	                                                                                    priv->name_owner,
+	                                                                                    "/org/freedesktop",
+	                                                                                    NULL,
+	                                                                                    _dbus_managed_objects_changed_cb,
+	                                                                                    self,
+	                                                                                    NULL);
 
 	priv->dbsid_dbus_properties_properties_changed = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
 	                                                                                                         priv->name_owner,
