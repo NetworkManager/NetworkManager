@@ -72,6 +72,10 @@ Consent/Disapproval List
 ========================
 
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
+- [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
+- [Y] Dan Winship <dwinship@redhat.com> (Red Hat, Inc.)
+- [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
+- [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
 Copyright Hold by Other Legal Entities
