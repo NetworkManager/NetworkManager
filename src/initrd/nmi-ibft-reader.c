@@ -296,6 +296,7 @@ connection_setting_add (GHashTable *nic,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_ID, id,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, NULL,
 	              NULL);
 
 	g_free (uuid);

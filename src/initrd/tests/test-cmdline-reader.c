@@ -768,10 +768,30 @@ test_team (void)
 }
 
 static void
-test_ibft (void)
+test_ibft_ip_dev (void)
+{
+	const char *const*ARGV = NM_MAKE_STRV ("ip=eth0:ibft");
+	gs_unref_hashtable GHashTable *connections = NULL;
+	NMSettingConnection *s_con;
+	NMConnection *connection;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+
+	connection = g_hash_table_lookup (connections, "eth0");
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_VLAN_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, NULL);
+}
+
+static void
+_test_ibft_ip (const char *const*ARGV)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	const char *const*ARGV = NM_MAKE_STRV ("ip=ibft");
 	NMConnection *connection;
 
 	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV);
@@ -782,11 +802,29 @@ test_ibft (void)
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "iBFT VLAN Connection 0");
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, NULL);
 
 	connection = g_hash_table_lookup (connections, "ibft2");
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "iBFT Connection 2");
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, NULL);
+}
+
+static void
+test_ibft_ip (void)
+{
+	const char *const*ARGV = NM_MAKE_STRV ("ip=ibft");
+
+	_test_ibft_ip (ARGV);
+}
+
+static void
+test_ibft_rd_iscsi_ibft (void)
+{
+	const char *const*ARGV = NM_MAKE_STRV ("rd.iscsi.ibft");
+
+	_test_ibft_ip (ARGV);
 }
 
 static void
@@ -1045,7 +1083,9 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/team", test_team);
 	g_test_add_func ("/initrd/cmdline/bridge", test_bridge);
 	g_test_add_func ("/initrd/cmdline/bridge/default", test_bridge_default);
-	g_test_add_func ("/initrd/cmdline/ibft", test_ibft);
+	g_test_add_func ("/initrd/cmdline/ibft/ip_dev", test_ibft_ip_dev);
+	g_test_add_func ("/initrd/cmdline/ibft/ip", test_ibft_ip);
+	g_test_add_func ("/initrd/cmdline/ibft/rd_iscsi_ibft", test_ibft_rd_iscsi_ibft);
 	g_test_add_func ("/initrd/cmdline/ignore_extra", test_ignore_extra);
 	g_test_add_func ("/initrd/cmdline/rd_znet", test_rd_znet);
 	g_test_add_func ("/initrd/cmdline/rd_znet/legacy", test_rd_znet_legacy);
