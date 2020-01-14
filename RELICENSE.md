@@ -75,6 +75,7 @@ Consent/Disapproval List
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <dwinship@redhat.com> (Red Hat, Inc.)
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
+- [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
