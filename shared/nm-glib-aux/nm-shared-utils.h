@@ -973,6 +973,14 @@ NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_
 NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default)
 #define nm_auto_pop_gmaincontext nm_auto (_nm_auto_pop_gmaincontext)
 
+static inline gboolean
+nm_source_func_unref_gobject (gpointer user_data)
+{
+	nm_assert (G_IS_OBJECT (user_data));
+	g_object_unref (user_data);
+	return G_SOURCE_REMOVE;
+}
+
 GSource *nm_g_idle_source_new (int priority,
                                GSourceFunc func,
                                gpointer user_data,
