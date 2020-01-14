@@ -7481,6 +7481,32 @@ dispose (GObject *object)
 
 	nm_clear_pointer (&priv->udev, udev_unref);
 
+	if (   priv->context_busy_watcher
+	    && priv->dbus_context) {
+		GSource *cleanup_source;
+
+		/* Technically, we cancelled all pending actions (and these actions keep
+		 * the context_busy_watcher object alive). Also, we passed
+		 * no destroy notify to g_dbus_connection_signal_subscribe().
+		 * That means, there should be no other unaccounted GSource'es left.
+		 *
+		 * However, we really need to be sure that the context_busy_watcher's
+		 * lifetime matches the time that the context is busy. That is especially
+		 * important with synchronous initialization, where the context-busy-watcher
+		 * keeps the inner GMainContext integrated in the caller's.
+		 * We must not g_source_destroy() that integration too early.
+		 *
+		 * So to be really sure all this is given, always schedule one last
+		 * cleanup idle action with low priority. This should be the last
+		 * thing related to this instance that keeps the context busy. */
+		cleanup_source = nm_g_idle_source_new (G_PRIORITY_LOW + 10,
+		                                       nm_source_func_unref_gobject,
+		                                       g_steal_pointer (&priv->context_busy_watcher),
+		                                       NULL);
+		g_source_attach (cleanup_source, priv->dbus_context);
+		g_source_unref (cleanup_source);
+	}
+
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
 
