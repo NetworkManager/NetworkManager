@@ -2996,9 +2996,12 @@ _dbus_handle_interface_removed (NMClient *self,
 }
 
 static void
-_dbus_managed_objects_changed_cb (const char *object_path,
-                                  GVariant *added_interfaces_and_properties,
-                                  const char *const*removed_interfaces,
+_dbus_managed_objects_changed_cb (GDBusConnection *connection,
+                                  const char *sender_name,
+                                  const char *arg_object_path,
+                                  const char *interface_name,
+                                  const char *signal_name,
+                                  GVariant *parameters,
                                   gpointer user_data)
 {
 	NMClient *self = user_data;
@@ -3006,19 +3009,50 @@ _dbus_managed_objects_changed_cb (const char *object_path,
 	const char *log_context;
 	gboolean changed;
 
+	nm_assert (nm_streq0 (interface_name, DBUS_INTERFACE_OBJECT_MANAGER));
+
 	if (priv->get_managed_objects_cancellable) {
 		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
 		return;
 	}
 
-	if (!added_interfaces_and_properties) {
-		log_context = "interfaces-removed";
-		changed = _dbus_handle_interface_removed (self, log_context, object_path, NULL, removed_interfaces);
-	} else {
+	if (nm_streq (signal_name, "InterfacesAdded")) {
+		gs_unref_variant GVariant *interfaces_and_properties = NULL;
+		const char *object_path;
+
+		if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oa{sa{sv}})")))
+			return;
+
+		g_variant_get (parameters,
+		               "(&o@a{sa{sv}})",
+		               &object_path,
+		               &interfaces_and_properties);
+
 		log_context = "interfaces-added";
-		changed = _dbus_handle_interface_added (self, log_context, object_path, added_interfaces_and_properties);
+		changed = _dbus_handle_interface_added (self, log_context, object_path, interfaces_and_properties);
+		goto out;
 	}
 
+	if (nm_streq (signal_name, "InterfacesRemoved")) {
+		gs_free const char **interfaces = NULL;
+		const char *object_path;
+
+		if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oas)")))
+			return;
+
+		g_variant_get (parameters,
+		               "(&o^a&s)",
+		               &object_path,
+		               &interfaces);
+
+		log_context = "interfaces-removed";
+		changed = _dbus_handle_interface_removed (self, log_context, object_path, NULL, interfaces);
+		goto out;
+	}
+
+	return;
+
+out:
 	if (changed)
 		_dbus_handle_changes (self, log_context, TRUE);
 }
@@ -6601,12 +6635,13 @@ _init_fetch_all (NMClient *self)
 
 	priv->get_managed_objects_cancellable = g_cancellable_new ();
 
-	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager (priv->dbus_connection,
-	                                                                                    priv->name_owner,
-	                                                                                    "/org/freedesktop",
-	                                                                                    _dbus_managed_objects_changed_cb,
-	                                                                                    self,
-	                                                                                    NULL);
+	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager_plain (priv->dbus_connection,
+	                                                                                          priv->name_owner,
+	                                                                                          "/org/freedesktop",
+	                                                                                          NULL,
+	                                                                                          _dbus_managed_objects_changed_cb,
+	                                                                                          self,
+	                                                                                          NULL);
 
 	priv->dbsid_dbus_properties_properties_changed = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
 	                                                                                                         priv->name_owner,
