@@ -195,6 +195,47 @@ _base_setting_set (NMConnection *connection, const char *property, const char *v
 }
 
 static void
+read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
+{
+	gs_unref_hashtable GHashTable *ibft = NULL;
+	NMConnection *connection;
+	GHashTableIter iter;
+	const char *mac;
+	GHashTable *nic;
+	const char *index;
+	GError *error = NULL;
+
+	ibft = nmi_ibft_read (sysfs_dir);
+
+	g_hash_table_iter_init (&iter, ibft);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &mac, (gpointer *) &nic)) {
+		connection = nm_simple_connection_new ();
+
+		index = g_hash_table_lookup (nic, "index");
+		if (!index) {
+			_LOGW (LOGD_CORE, "Ignoring an iBFT entry without an index");
+			continue;
+		}
+
+		if (!nmi_ibft_update_connection_from_nic (connection, nic, &error)) {
+			_LOGW (LOGD_CORE, "Unable to merge iBFT configuration: %s", error->message);
+			g_error_free (error);
+		}
+
+		g_hash_table_insert (connections,
+		                     g_strdup_printf ("ibft%s", index),
+		                     connection);
+	}
+
+	connection = nmi_dt_reader_parse (sysfs_dir);
+	if (connection) {
+		g_hash_table_insert (connections,
+		                     g_strdup ("ofw"),
+		                     connection);
+	}
+}
+
+static void
 parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 {
 	NMConnection *connection;
@@ -258,44 +299,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 
 	if (ifname == NULL && (   g_strcmp0 (kind, "fw") == 0
 	                       || g_strcmp0 (kind, "ibft") == 0)) {
-		GHashTableIter iter;
-		const char *mac;
-		GHashTable *nic;
-		const char *index;
-
-		/* This is the ip=ibft case. Just take all we got from iBFT
-		 * and don't process anything else, since there's no ifname
-		 * specified to apply it to. */
-		if (!ibft)
-			ibft = nmi_ibft_read (sysfs_dir);
-
-		g_hash_table_iter_init (&iter, ibft);
-		while (g_hash_table_iter_next (&iter, (gpointer)&mac, (gpointer)&nic)) {
-			connection = nm_simple_connection_new ();
-
-			index = g_hash_table_lookup (nic, "index");
-			if (!index) {
-				_LOGW (LOGD_CORE, "Ignoring an iBFT entry without an index");
-				continue;
-			}
-
-			if (!nmi_ibft_update_connection_from_nic (connection, nic, &error)) {
-				_LOGW (LOGD_CORE, "Unable to merge iBFT configuration: %s", error->message);
-				g_error_free (error);
-			}
-
-			g_hash_table_insert (connections,
-			                     g_strdup_printf ("ibft%s", index),
-			                     connection);
-		}
-
-		connection = nmi_dt_reader_parse (sysfs_dir);
-		if (connection) {
-			g_hash_table_insert (connections,
-			                     g_strdup ("ofw"),
-			                     connection);
-		}
-
+		read_all_connections_from_fw (connections, sysfs_dir);
 		return;
 	}
 
@@ -421,8 +425,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 		if (mac) {
 			g_strchomp (mac);
 			mac_up = g_ascii_strup (mac, -1);
-			if (!ibft)
-				ibft = nmi_ibft_read (sysfs_dir);
+			ibft = nmi_ibft_read (sysfs_dir);
 			nic = g_hash_table_lookup (ibft, mac_up);
 			if (!nic)
 				_LOGW (LOGD_CORE, "No iBFT NIC for %s (%s)", ifname, mac_up);
@@ -838,6 +841,8 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 			parse_nameserver (connections, argument);
 		else if (strcmp (tag, "rd.peerdns") == 0)
 			parse_rd_peerdns (connections, argument);
+		else if (strcmp (tag, "rd.iscsi.ibft") == 0 && _nm_utils_ascii_str_to_bool (argument, TRUE))
+			read_all_connections_from_fw (connections, sysfs_dir);
 		else if (strcmp (tag, "rd.bootif") == 0)
 			ignore_bootif = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.neednet") == 0)
