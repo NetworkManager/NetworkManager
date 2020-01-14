@@ -1005,9 +1005,9 @@ static int n_dhcp4_client_probe_transition_nak(NDhcp4ClientProbe *probe) {
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
                 probe->ns_deferred = n_dhcp4_gettime(CLOCK_BOOTTIME) + probe->ns_nak_restart_delay;
-                probe->ns_nak_restart_delay = C_CLAMP(probe->ns_nak_restart_delay * 2,
-                                                      UINT64_C(1000000000 * 2),
-                                                      UINT64_C(1000000000 * 300));
+                probe->ns_nak_restart_delay = C_CLAMP(probe->ns_nak_restart_delay * 2u,
+                                                      UINT64_C(2)   * UINT64_C(1000000000),
+                                                      UINT64_C(300) * UINT64_C(1000000000));
                 break;
         case N_DHCP4_CLIENT_PROBE_STATE_SELECTING:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
