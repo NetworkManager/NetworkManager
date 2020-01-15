@@ -525,6 +525,7 @@ nmc_password_subst_char (void)
 
 #pragma GCC visibility push(hidden)
 NM_PRAGMA_WARNING_DISABLE("-Wdeclaration-after-statement")
+#undef NDEBUG
 #define NDEBUG
 #include "qrcodegen.c"
 NM_PRAGMA_WARNING_REENABLE
