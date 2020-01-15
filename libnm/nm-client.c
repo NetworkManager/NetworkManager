@@ -5232,7 +5232,7 @@ nm_client_add_and_activate_connection2_finish (NMClient *client,
 {
 	return NM_ACTIVE_CONNECTION (_request_wait_finish (client,
 	                                                   result,
-	                                                   nm_client_add_connection2,
+	                                                   nm_client_add_and_activate_connection2,
 	                                                   out_result,
 	                                                   error));
 }
