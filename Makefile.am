@@ -3684,8 +3684,9 @@ src_devices_wifi_tests_test_devices_wifi_SOURCES = \
 src_devices_wifi_tests_test_devices_wifi_CPPFLAGS = $(src_cppflags_base_test)
 
 src_devices_wifi_tests_test_devices_wifi_LDADD = \
-	src/libNetworkManagerTest.la \
 	src/devices/wifi/libnm-wifi-base.la \
+	src/libNetworkManagerTest.la \
+	src/libNetworkManagerBase.la \
 	$(NULL)
 
 src_devices_wifi_tests_test_devices_wifi_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
