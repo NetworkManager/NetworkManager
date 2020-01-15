@@ -24,7 +24,6 @@
 #define NM_WIFI_P2P_PEER_MODEL_NUMBER         "model-number"
 #define NM_WIFI_P2P_PEER_SERIAL               "serial"
 #define NM_WIFI_P2P_PEER_WFD_IES              "wfd-ies"
-#define NM_WIFI_P2P_PEER_GROUPS               "groups"
 #define NM_WIFI_P2P_PEER_HW_ADDRESS           "hw-address"
 #define NM_WIFI_P2P_PEER_STRENGTH             "strength"
 #define NM_WIFI_P2P_PEER_LAST_SEEN            "last-seen"

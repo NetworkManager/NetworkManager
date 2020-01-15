@@ -28,7 +28,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMWifiP2PPeer,
 	PROP_MODEL_NUMBER,
 	PROP_SERIAL,
 	PROP_WFD_IES,
-	PROP_GROUPS,
 	PROP_HW_ADDRESS,
 	PROP_STRENGTH,
 	PROP_LAST_SEEN,
@@ -314,26 +313,6 @@ nm_wifi_p2p_peer_get_groups (const NMWifiP2PPeer *peer)
 	return (const char * const*) NM_WIFI_P2P_PEER_GET_PRIVATE (peer)->groups;
 }
 
-static gboolean
-nm_wifi_p2p_peer_set_groups (NMWifiP2PPeer *peer, const char** groups)
-{
-	NMWifiP2PPeerPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
-	g_return_val_if_fail (groups != NULL, FALSE);
-
-	priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
-
-	if (_nm_utils_strv_equal (priv->groups, (char **) groups))
-		return FALSE;
-
-	g_strfreev (priv->groups);
-	priv->groups = g_strdupv ((char**) groups);
-
-	_notify (peer, PROP_GROUPS);
-	return TRUE;
-}
-
 const char *
 nm_wifi_p2p_peer_get_address (const NMWifiP2PPeer *peer)
 {
@@ -434,7 +413,6 @@ nm_wifi_p2p_peer_update_from_properties (NMWifiP2PPeer *peer,
 	GVariant *v;
 	gsize len;
 	const char *s;
-	const char **sv;
 	gint32 i32;
 	gboolean changed = FALSE;
 
@@ -483,16 +461,6 @@ nm_wifi_p2p_peer_update_from_properties (NMWifiP2PPeer *peer,
 		changed |= nm_wifi_p2p_peer_set_wfd_ies (peer, b);
 		g_variant_unref (v);
 	}
-
-	v = g_variant_lookup_value (properties, "Groups", G_VARIANT_TYPE_OBJECT_PATH_ARRAY);
-	if (v) {
-		sv = g_variant_get_objv (v, NULL);
-		changed |= nm_wifi_p2p_peer_set_groups (peer, sv);
-		g_free (sv);
-	}
-
-	/*if (max_rate)
-		changed |= nm_wifi_p2p_peer_set_max_bitrate (peer, max_rate / 1000);*/
 
 	if (!priv->supplicant_path) {
 		priv->supplicant_path = g_strdup (supplicant_path);
@@ -600,12 +568,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WFD_IES:
 		g_value_take_variant (value, nm_utils_gbytes_to_variant_ay (priv->wfd_ies));
-		break;
-	case PROP_GROUPS:
-		g_value_set_variant (value,
-		                      g_variant_new_strv (   (const char*const*) priv->groups
-		                                          ?: NM_PTRARRAY_EMPTY (const char *),
-		                                          -1));
 		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->address);
@@ -753,12 +715,6 @@ nm_wifi_p2p_peer_class_init (NMWifiP2PPeerClass *klass)
 	obj_properties[PROP_WFD_IES] =
 	    g_param_spec_variant (NM_WIFI_P2P_PEER_WFD_IES, "", "",
 	                          G_VARIANT_TYPE ("ay"),
-	                          NULL,
-	                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-
-	obj_properties[PROP_GROUPS] =
-	    g_param_spec_variant (NM_WIFI_P2P_PEER_GROUPS, "", "",
-	                          G_VARIANT_TYPE ("as"),
 	                          NULL,
 	                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
