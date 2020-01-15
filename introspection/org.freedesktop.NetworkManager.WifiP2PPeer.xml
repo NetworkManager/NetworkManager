@@ -10,6 +10,11 @@
     <annotation name="org.gtk.GDBus.C.Name" value="Wifi_P2P_Peer"/>
 
     <!--
+        before 1.24, we wrongly exposed a property "Groups" ("as"). Don't reuse
+        that property name.
+    -->
+
+    <!--
         Name:
 
         Device name.
