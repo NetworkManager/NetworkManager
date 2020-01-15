@@ -21,6 +21,7 @@ _LOG_DECLARE_SELF(NMDeviceOvsInterface);
 
 typedef struct {
 	bool waiting_for_interface:1;
+	int link_ifindex;
 } NMDeviceOvsInterfacePrivate;
 
 struct _NMDeviceOvsInterface {
@@ -98,6 +99,9 @@ link_changed (NMDevice *device,
 {
 	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
 
+	if (pllink)
+		priv->link_ifindex = pllink->ifindex;
+
 	if (   pllink
 	    && priv->waiting_for_interface
 	    && nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
@@ -153,6 +157,116 @@ deactivate (NMDevice *device)
 	priv->waiting_for_interface = FALSE;
 }
 
+typedef struct {
+	NMDeviceOvsInterface *self;
+	GCancellable *cancellable;
+	NMDeviceDeactivateCallback callback;
+	gpointer callback_user_data;
+	gulong link_changed_id;
+	gulong cancelled_id;
+} DeactivateData;
+
+static void
+deactivate_invoke_cb (DeactivateData *data, GError *error)
+{
+	data->callback (NM_DEVICE (data->self),
+	                error,
+	                data->callback_user_data);
+
+	nm_clear_g_signal_handler (nm_device_get_platform (NM_DEVICE (data->self)),
+	                           &data->link_changed_id);
+	nm_clear_g_signal_handler (data->cancellable,
+	                           &data->cancelled_id);
+	g_object_unref (data->self);
+	g_object_unref (data->cancellable);
+	nm_g_slice_free (data);
+}
+
+static void
+link_changed_cb (NMPlatform *platform,
+                 int obj_type_i,
+                 int ifindex,
+                 NMPlatformLink *info,
+                 int change_type_i,
+                 DeactivateData *data)
+{
+	NMDeviceOvsInterface *self = data->self;
+	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (self);
+	const NMPlatformSignalChangeType change_type = change_type_i;
+
+	if (   change_type == NM_PLATFORM_SIGNAL_REMOVED
+	    && ifindex == priv->link_ifindex) {
+		_LOGT (LOGD_DEVICE,
+		       "link %d gone, proceeding with deactivation",
+		       priv->link_ifindex);
+		priv->link_ifindex = 0;
+		deactivate_invoke_cb (data, NULL);
+		return;
+	}
+}
+
+static void
+deactivate_cancelled_cb (GCancellable *cancellable,
+                         gpointer user_data)
+{
+	gs_free_error GError *error = NULL;
+
+	nm_utils_error_set_cancelled (&error, FALSE, NULL);
+	deactivate_invoke_cb ((DeactivateData *) user_data, error);
+}
+
+static void
+deactivate_cb_on_idle (gpointer user_data,
+                       GCancellable *cancellable)
+{
+	DeactivateData *data = user_data;
+	gs_free_error GError *cancelled_error = NULL;
+
+	g_cancellable_set_error_if_cancelled (data->cancellable, &cancelled_error);
+	deactivate_invoke_cb (data, cancelled_error);
+}
+
+static void
+deactivate_async (NMDevice *device,
+                  GCancellable *cancellable,
+                  NMDeviceDeactivateCallback callback,
+                  gpointer callback_user_data) {
+
+	NMDeviceOvsInterface *self = NM_DEVICE_OVS_INTERFACE (device);
+	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (self);
+	DeactivateData *data;
+
+	priv->waiting_for_interface = FALSE;
+
+	data = g_slice_new (DeactivateData);
+	*data = (DeactivateData) {
+		.self = g_object_ref (self),
+		.cancellable = g_object_ref (cancellable),
+		.callback = callback,
+		.callback_user_data = callback_user_data,
+	};
+
+	if (   !priv->link_ifindex
+	    || !nm_platform_link_get (nm_device_get_platform (device), priv->link_ifindex)) {
+		priv->link_ifindex = 0;
+		nm_utils_invoke_on_idle (deactivate_cb_on_idle, data, cancellable);
+		return;
+	}
+
+	_LOGT (LOGD_DEVICE,
+	       "async deactivation: waiting for link %d to disappear",
+	       priv->link_ifindex);
+
+	data->cancelled_id = g_cancellable_connect (cancellable,
+	                                            G_CALLBACK (deactivate_cancelled_cb),
+	                                            data,
+	                                            NULL);
+	data->link_changed_id = g_signal_connect (nm_device_get_platform (device),
+	                                          NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	                                          G_CALLBACK (link_changed_cb),
+	                                          data);
+}
+
 /*****************************************************************************/
 
 static void
@@ -183,6 +297,7 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_OPENVSWITCH);
 
 	device_class->deactivate = deactivate;
+	device_class->deactivate_async = deactivate_async;
 	device_class->get_type_description = get_type_description;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
