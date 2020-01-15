@@ -10,6 +10,15 @@
     <annotation name="org.gtk.GDBus.C.Name" value="Wifi_P2P_Peer"/>
 
     <!--
+        Name:
+
+        Device name.
+
+        Since: 1.16
+    -->
+    <property name="Name" type="s" access="read"/>
+
+    <!--
         Flags:
 
         Flags describing the capabilities of the access point.
