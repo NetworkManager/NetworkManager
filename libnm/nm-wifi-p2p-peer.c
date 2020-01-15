@@ -415,6 +415,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_wifip2ppeer = NML_DBUS_META_IFACE
 		NML_DBUS_META_PROPERTY_INIT_S  ("Manufacturer", PROP_MANUFACTURER, NMWifiP2PPeer, _priv.manufacturer ),
 		NML_DBUS_META_PROPERTY_INIT_S  ("Model",        PROP_MODEL,        NMWifiP2PPeer, _priv.model        ),
 		NML_DBUS_META_PROPERTY_INIT_S  ("ModelNumber",  PROP_MODEL_NUMBER, NMWifiP2PPeer, _priv.model_number ),
+		NML_DBUS_META_PROPERTY_INIT_S  ("Name",         PROP_NAME,         NMWifiP2PPeer, _priv.name         ),
 		NML_DBUS_META_PROPERTY_INIT_S  ("Serial",       PROP_SERIAL,       NMWifiP2PPeer, _priv.serial       ),
 		NML_DBUS_META_PROPERTY_INIT_Y  ("Strength",     PROP_STRENGTH,     NMWifiP2PPeer, _priv.strength     ),
 		NML_DBUS_META_PROPERTY_INIT_AY ("WfdIEs",       PROP_WFD_IES,      NMWifiP2PPeer, _priv.wfd_ies      ),
