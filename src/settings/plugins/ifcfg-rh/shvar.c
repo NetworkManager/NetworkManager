@@ -71,6 +71,10 @@ struct _shvarFile {
 
 /*****************************************************************************/
 
+static void _line_link_parse (shvarFile *s, const char *value, gsize len);
+
+/*****************************************************************************/
+
 #define ASSERT_key_is_well_known(key) \
 	nm_assert ( ({ \
 		const char *_key = (key); \
@@ -629,16 +633,33 @@ out_error:
 
 /*****************************************************************************/
 
-static shvarFile *
-svFile_new (const char *name)
+shvarFile *
+svFile_new (const char *name,
+            int fd,
+            const char *content)
 {
 	shvarFile *s;
+	const char *p;
+	const char *q;
 
-	s = g_slice_new0 (shvarFile);
-	s->fd = -1;
-	s->fileName = g_strdup (name);
-	c_list_init (&s->lst_head);
-	s->lst_idx = g_hash_table_new (nm_pstr_hash, nm_pstr_equal);
+	nm_assert (name);
+	nm_assert (fd >= -1);
+
+	s = g_slice_new (shvarFile);
+	*s = (shvarFile) {
+		.fileName = g_strdup (name),
+		.fd       = fd,
+		.lst_head = C_LIST_INIT (s->lst_head),
+		.lst_idx  = g_hash_table_new (nm_pstr_hash, nm_pstr_equal),
+	};
+
+	if (content) {
+		for (p = content; (q = strchr (p, '\n')) != NULL; p = q + 1)
+			_line_link_parse (s, p, q - p);
+		if (p[0])
+			_line_link_parse (s, p, strlen (p));
+	}
+
 	return s;
 }
 
@@ -839,11 +860,9 @@ do_link:
 static shvarFile *
 svOpenFileInternal (const char *name, gboolean create, GError **error)
 {
-	shvarFile *s;
 	gboolean closefd = FALSE;
 	int errsv = 0;
-	gs_free char *arena = NULL;
-	const char *p, *q;
+	gs_free char *content = NULL;
 	gs_free_error GError *local = NULL;
 	nm_auto_close int fd = -1;
 
@@ -860,7 +879,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 	if (fd < 0) {
 		if (create)
-			return svFile_new (name);
+			return svFile_new (name, -1, NULL);
 
 		g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
 		             "Could not read file '%s': %s",
@@ -872,12 +891,12 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	                               closefd,
 	                               10 * 1024 * 1024,
 	                               NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
-	                               &arena,
+	                               &content,
 	                               NULL,
 	                               NULL,
 	                               &local)) {
 		if (create)
-			return svFile_new (name);
+			return svFile_new (name, -1, NULL);
 
 		g_set_error (error, G_FILE_ERROR,
 		             local->domain == G_FILE_ERROR ? local->code : G_FILE_ERROR_FAILED,
@@ -886,21 +905,14 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 		return NULL;
 	}
 
-	s = svFile_new (name);
-
-	for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
-		_line_link_parse (s, p, q - p);
-	if (p[0])
-		_line_link_parse (s, p, strlen (p));
-
 	/* closefd is set if we opened the file read-only, so go ahead and
 	 * close it, because we can't write to it anyway */
-	if (!closefd) {
-		nm_assert (fd > 0);
-		s->fd = nm_steal_fd (&fd);
-	}
-
-	return s;
+	nm_assert (closefd || fd >= 0);
+	return svFile_new (name,
+	                     !closefd
+	                   ? nm_steal_fd (&fd)
+	                   : -1,
+	                   content);
 }
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */

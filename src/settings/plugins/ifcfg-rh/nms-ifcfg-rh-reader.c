@@ -1345,39 +1345,40 @@ read_one_ip4_route (shvarFile *ifcfg,
 }
 
 static gboolean
-read_route_file (int addr_family,
-                 const char *filename,
-                 NMSettingIPConfig *s_ip,
-                 GError **error)
+read_route_file_parse (int addr_family,
+                       const char *filename,
+                       const char *contents,
+                       gsize len,
+                       NMSettingIPConfig *s_ip,
+                       GError **error)
 {
-	gs_free char *contents = NULL;
-	char *contents_rest = NULL;
-	const char *line;
-	gsize len = 0;
 	gsize line_num;
 
-	g_return_val_if_fail (filename, FALSE);
-	g_return_val_if_fail (   (addr_family == AF_INET  && NM_IS_SETTING_IP4_CONFIG (s_ip))
-	                      || (addr_family == AF_INET6 && NM_IS_SETTING_IP6_CONFIG (s_ip)), FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
+	nm_assert (filename);
+	nm_assert (addr_family == nm_setting_ip_config_get_addr_family (s_ip));
+	nm_assert (!error || !*error);
 
-	if (   !g_file_get_contents (filename, &contents, &len, NULL)
-	    || !len) {
+	if (len <= 0)
 		return TRUE;  /* missing/empty = success */
-	}
 
 	line_num = 0;
-	for (line = strtok_r (contents, "\n", &contents_rest);
-	     line;
-	     line = strtok_r (NULL, "\n", &contents_rest)) {
+	while (TRUE) {
 		nm_auto_unref_ip_route NMIPRoute *route = NULL;
 		gs_free_error GError *local = NULL;
+		const char *line = contents;
+		char *eol;
 		int e;
+
+		eol = strchr (contents, '\n');
+		if (eol) {
+			eol[0] = '\0';
+			contents = &eol[1];
+		}
 
 		line_num++;
 
 		if (parse_route_line_is_comment (line))
-			continue;
+			goto next;
 
 		e = parse_route_line (line, addr_family, NULL, &route, &local);
 
@@ -1389,14 +1390,38 @@ read_route_file (int addr_family,
 				 * entire connection. */
 				PARSE_WARNING ("ignoring invalid route at \"%s\" (%s:%lu): %s", line, filename, (long unsigned) line_num, local->message);
 			}
-			continue;
+			goto next;
 		}
 
 		if (!nm_setting_ip_config_add_route (s_ip, route))
 			PARSE_WARNING ("duplicate IPv%c route", addr_family == AF_INET ? '4' : '6');
-	}
 
-	return TRUE;
+next:
+		if (!eol)
+			return TRUE;
+
+		/* restore original content. */
+		eol[0] = '\n';
+	}
+}
+
+static gboolean
+read_route_file (int addr_family,
+                 const char *filename,
+                 NMSettingIPConfig *s_ip,
+                 GError **error)
+{
+	gs_free char *contents = NULL;
+	gsize len;
+
+	nm_assert (filename);
+	nm_assert (addr_family == nm_setting_ip_config_get_addr_family (s_ip));
+	nm_assert (!error || !*error);
+
+	if (!g_file_get_contents (filename, &contents, &len, NULL))
+		return TRUE;  /* missing/empty = success */
+
+	return read_route_file_parse (addr_family, filename, contents, len, s_ip, error);
 }
 
 static void
@@ -1595,7 +1620,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	int i;
 	guint32 a;
 	gboolean has_key;
-	shvarFile *route_ifcfg;
 	gboolean never_default;
 	gint64 i64;
 	int priority;
@@ -1832,32 +1856,34 @@ make_ip4_setting (shvarFile *ifcfg,
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (svFileGetName (ifcfg));
 
-	if (!routes_read) {
-		/* NOP */
-	} else if (utils_has_route_file_new_syntax (route_path)) {
-		/* Parse route file in new syntax */
-		route_ifcfg = utils_get_route_ifcfg (svFileGetName (ifcfg), FALSE);
-		if (route_ifcfg) {
-			for (i = 0;; i++) {
-				NMIPRoute *route = NULL;
+	if (routes_read) {
+		gs_free char *contents = NULL;
+		gsize len;
 
-				if (!read_one_ip4_route (route_ifcfg, i, &route, error)) {
-					svCloseFile (route_ifcfg);
+		if (!g_file_get_contents (route_path, &contents, &len, NULL))
+			len = 0;
+
+		if (utils_has_route_file_new_syntax_content (contents, len)) {
+			nm_auto_shvar_file_close shvarFile *route_ifcfg = NULL;
+
+			/* Parse route file in new syntax */
+			route_ifcfg = svFile_new (route_path, -1, contents);
+			for (i = 0;; i++) {
+				nm_auto_unref_ip_route NMIPRoute *route = NULL;
+
+				if (!read_one_ip4_route (route_ifcfg, i, &route, error))
 					return NULL;
-				}
 
 				if (!route)
 					break;
 
 				if (!nm_setting_ip_config_add_route (s_ip4, route))
 					PARSE_WARNING ("duplicate IP4 route");
-				nm_ip_route_unref (route);
 			}
-			svCloseFile (route_ifcfg);
+		} else {
+			if (!read_route_file_parse (AF_INET, route_path, contents, len, s_ip4, error))
+				return NULL;
 		}
-	} else {
-		if (!read_route_file (AF_INET, route_path, s_ip4, error))
-			return NULL;
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */

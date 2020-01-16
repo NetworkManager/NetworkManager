@@ -260,27 +260,60 @@ utils_get_route_ifcfg (const char *parent, gboolean should_create)
 gboolean
 utils_has_route_file_new_syntax (const char *filename)
 {
-	char *contents = NULL;
-	gsize len = 0;
-	gboolean ret = FALSE;
-	const char *pattern = "^[[:space:]]*ADDRESS[0-9]+=";
+	gs_free char *contents_data = NULL;
+	gsize len;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
-	if (!g_file_get_contents (filename, &contents, &len, NULL))
+	if (!g_file_get_contents (filename, &contents_data, &len, NULL))
 		return TRUE;
 
-	if (len <= 0) {
-		ret = TRUE;
-		goto gone;
+	return utils_has_route_file_new_syntax_content (contents_data, len);
+}
+
+gboolean
+utils_has_route_file_new_syntax_content (const char *contents,
+                                         gsize len)
+{
+	if (len <= 0)
+		return TRUE;
+
+	while (TRUE) {
+		const char *line = contents;
+		char *eol;
+		gboolean found = FALSE;
+
+		/* matches regex "^[[:space:]]*ADDRESS[0-9]+=" */
+
+		eol = (char *) strchr (contents, '\n');
+		if (eol) {
+			eol[0] = '\0';
+			contents = &eol[1];
+		}
+
+		line = nm_str_skip_leading_spaces (line);
+		if (NM_STR_HAS_PREFIX (line, "ADDRESS")) {
+			line += NM_STRLEN ("ADDRESS");
+			if (g_ascii_isdigit (line[0])) {
+				while (g_ascii_isdigit ((++line)[0])) {
+					/* pass */
+				}
+				if (line[0] == '=')
+					found = TRUE;
+			}
+		}
+
+		if (eol) {
+			/* restore the line ending. We don't want to mangle the content from
+			 * POV of the caller. */
+			eol[0] = '\n';
+		}
+
+		if (found)
+			return TRUE;
+		if (!eol)
+			return FALSE;
 	}
-
-	if (g_regex_match_simple (pattern, contents, G_REGEX_MULTILINE, 0))
-		ret = TRUE;
-
-gone:
-	g_free (contents);
-	return ret;
 }
 
 gboolean

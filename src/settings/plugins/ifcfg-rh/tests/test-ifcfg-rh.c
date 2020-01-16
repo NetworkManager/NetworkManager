@@ -10305,6 +10305,42 @@ test_well_known_keys (void)
 
 /*****************************************************************************/
 
+static void
+_do_utils_has_route_file_new_syntax_size (gboolean has_new_syntax,
+                                          const char *content,
+                                          gssize content_len)
+{
+	nmtst_auto_unlinkfile char *testfile = g_strdup (TEST_SCRATCH_DIR"/utils-has-route-file-new-syntax-test.txt");
+	gboolean val;
+
+	nmtst_file_set_contents_size (testfile, content, content_len);
+
+	val = utils_has_route_file_new_syntax (testfile);
+
+	g_assert_cmpint (val, ==, has_new_syntax);
+}
+#define _do_utils_has_route_file_new_syntax(has_new_syntax, content) \
+	_do_utils_has_route_file_new_syntax_size (has_new_syntax, (content), NM_STRLEN (content))
+
+static void
+test_utils_has_route_file_new_syntax (void)
+{
+	_do_utils_has_route_file_new_syntax (TRUE,  "");
+	_do_utils_has_route_file_new_syntax (FALSE, "\0");
+	_do_utils_has_route_file_new_syntax (FALSE, "\n");
+	_do_utils_has_route_file_new_syntax (FALSE, "ADDRESS=bogus");
+	_do_utils_has_route_file_new_syntax (FALSE, "ADDRESS=bogus\0");
+	_do_utils_has_route_file_new_syntax (TRUE,  "ADDRESS1=b\0ogus\0");
+	_do_utils_has_route_file_new_syntax (TRUE,  "ADDRESS1=bogus\0");
+	_do_utils_has_route_file_new_syntax (TRUE,  "\n\n\tADDRESS1=bogus\0");
+	_do_utils_has_route_file_new_syntax (FALSE, "\n\n\tADDRESS=bogus\n");
+	_do_utils_has_route_file_new_syntax (TRUE,  "\n\n\tADDRESS=bogus\n  ADDRESS000=\n");
+	_do_utils_has_route_file_new_syntax (FALSE, "\n\n\tROUTE1=bogus\n  ADDRES=\n");
+	_do_utils_has_route_file_new_syntax (FALSE, "\n\n\tADDRESS=bogus\n  ADDRESS\000000=\n");
+}
+
+/*****************************************************************************/
+
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-long-quoted"
@@ -10602,6 +10638,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "tc/read", test_tc_read);
 	g_test_add_func (TPATH "tc/write", test_tc_write);
 	g_test_add_func (TPATH "utils/test_well_known_keys", test_well_known_keys);
+	g_test_add_func (TPATH "utils/test_utils_has_route_file_new_syntax", test_utils_has_route_file_new_syntax);
 
 	return g_test_run ();
 }

@@ -24,11 +24,19 @@ const char *svFileGetName (const shvarFile *s);
 void _nmtst_svFileSetName (shvarFile *s, const char *fileName);
 void _nmtst_svFileSetModified (shvarFile *s);
 
+/*****************************************************************************/
+
+shvarFile *svFile_new (const char *name,
+                       int fd,
+                       const char *content);
+
 /* Create the file <name>, return a shvarFile (never fails) */
 shvarFile *svCreateFile (const char *name);
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
 shvarFile *svOpenFile (const char *name, GError **error);
+
+/*****************************************************************************/
 
 const char *svFindFirstNumberedKey (shvarFile *s, const char *key_prefix);
 

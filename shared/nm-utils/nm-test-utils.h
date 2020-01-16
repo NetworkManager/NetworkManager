@@ -1362,14 +1362,26 @@ nmtst_file_get_contents (const char *filename)
 	return contents;
 }
 
-#define nmtst_file_set_contents(filename, content) \
+#define nmtst_file_set_contents_size(filename, content, size) \
 	G_STMT_START { \
 		GError *_error = NULL; \
 		gboolean _success; \
+		const char *_content = (content); \
+		gssize _size = (size); \
 		\
-		_success = g_file_set_contents ((filename), (content), -1, &_error); \
+		g_assert (_content); \
+		\
+		if (_size < 0) { \
+			g_assert (_size == -1); \
+			_size = strlen (_content); \
+		} \
+		\
+		_success = g_file_set_contents ((filename), _content, _size, &_error); \
 		nmtst_assert_success (_success, _error); \
 	} G_STMT_END
+
+#define nmtst_file_set_contents(filename, content) \
+	nmtst_file_set_contents_size (filename, content, -1)
 
 /*****************************************************************************/
 
