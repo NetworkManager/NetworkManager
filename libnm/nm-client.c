@@ -2988,9 +2988,12 @@ _dbus_handle_interface_removed (NMClient *self,
 }
 
 static void
-_dbus_managed_objects_changed_cb (const char *object_path,
-                                  GVariant *added_interfaces_and_properties,
-                                  const char *const*removed_interfaces,
+_dbus_managed_objects_changed_cb (GDBusConnection *connection,
+                                  const char *sender_name,
+                                  const char *arg_object_path,
+                                  const char *interface_name,
+                                  const char *signal_name,
+                                  GVariant *parameters,
                                   gpointer user_data)
 {
 	NMClient *self = user_data;
@@ -2998,19 +3001,50 @@ _dbus_managed_objects_changed_cb (const char *object_path,
 	const char *log_context;
 	gboolean changed;
 
+	nm_assert (nm_streq0 (interface_name, DBUS_INTERFACE_OBJECT_MANAGER));
+
 	if (priv->get_managed_objects_cancellable) {
 		/* we still wait for the initial GetManagedObjects(). Ignore the event. */
 		return;
 	}
 
-	if (!added_interfaces_and_properties) {
-		log_context = "interfaces-removed";
-		changed = _dbus_handle_interface_removed (self, log_context, object_path, NULL, removed_interfaces);
-	} else {
+	if (nm_streq (signal_name, "InterfacesAdded")) {
+		gs_unref_variant GVariant *interfaces_and_properties = NULL;
+		const char *object_path;
+
+		if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oa{sa{sv}})")))
+			return;
+
+		g_variant_get (parameters,
+		               "(&o@a{sa{sv}})",
+		               &object_path,
+		               &interfaces_and_properties);
+
 		log_context = "interfaces-added";
-		changed = _dbus_handle_interface_added (self, log_context, object_path, added_interfaces_and_properties);
+		changed = _dbus_handle_interface_added (self, log_context, object_path, interfaces_and_properties);
+		goto out;
 	}
 
+	if (nm_streq (signal_name, "InterfacesRemoved")) {
+		gs_free const char **interfaces = NULL;
+		const char *object_path;
+
+		if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oas)")))
+			return;
+
+		g_variant_get (parameters,
+		               "(&o^a&s)",
+		               &object_path,
+		               &interfaces);
+
+		log_context = "interfaces-removed";
+		changed = _dbus_handle_interface_removed (self, log_context, object_path, NULL, interfaces);
+		goto out;
+	}
+
+	return;
+
+out:
 	if (changed)
 		_dbus_handle_changes (self, log_context, TRUE);
 }
@@ -6512,12 +6546,13 @@ _init_fetch_all (NMClient *self)
 
 	priv->get_managed_objects_cancellable = g_cancellable_new ();
 
-	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager (priv->dbus_connection,
-	                                                                                    priv->name_owner,
-	                                                                                    "/org/freedesktop",
-	                                                                                    _dbus_managed_objects_changed_cb,
-	                                                                                    self,
-	                                                                                    NULL);
+	priv->dbsid_nm_object_manager = nm_dbus_connection_signal_subscribe_object_manager_plain (priv->dbus_connection,
+	                                                                                          priv->name_owner,
+	                                                                                          "/org/freedesktop",
+	                                                                                          NULL,
+	                                                                                          _dbus_managed_objects_changed_cb,
+	                                                                                          self,
+	                                                                                          NULL);
 
 	priv->dbsid_dbus_properties_properties_changed = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
 	                                                                                                         priv->name_owner,
@@ -7445,6 +7480,32 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 
 	nm_clear_pointer (&priv->udev, udev_unref);
+
+	if (   priv->context_busy_watcher
+	    && priv->dbus_context) {
+		GSource *cleanup_source;
+
+		/* Technically, we cancelled all pending actions (and these actions keep
+		 * the context_busy_watcher object alive). Also, we passed
+		 * no destroy notify to g_dbus_connection_signal_subscribe().
+		 * That means, there should be no other unaccounted GSource'es left.
+		 *
+		 * However, we really need to be sure that the context_busy_watcher's
+		 * lifetime matches the time that the context is busy. That is especially
+		 * important with synchronous initialization, where the context-busy-watcher
+		 * keeps the inner GMainContext integrated in the caller's.
+		 * We must not g_source_destroy() that integration too early.
+		 *
+		 * So to be really sure all this is given, always schedule one last
+		 * cleanup idle action with low priority. This should be the last
+		 * thing related to this instance that keeps the context busy. */
+		cleanup_source = nm_g_idle_source_new (G_PRIORITY_LOW + 10,
+		                                       nm_source_func_unref_gobject,
+		                                       g_steal_pointer (&priv->context_busy_watcher),
+		                                       NULL);
+		g_source_attach (cleanup_source, priv->dbus_context);
+		g_source_unref (cleanup_source);
+	}
 
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
 	nm_clear_pointer (&priv->main_context, g_main_context_unref);
