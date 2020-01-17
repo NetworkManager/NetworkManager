@@ -15541,6 +15541,12 @@ _set_state_full (NMDevice *self,
 	       reason_to_string_a (reason),
 	       _sys_iface_state_to_str (priv->sys_iface_state));
 
+	/* in order to prevent triggering any callback caused
+	 * by the device not having any pending action anymore
+	 * we add one here that gets removed at the end of the function */
+	nm_device_add_pending_action (self,
+	                              NM_PENDING_ACTION_IN_STATE_CHANGE,
+	                              TRUE);
 	priv->in_state_changed = TRUE;
 
 	priv->state = state;
@@ -15844,6 +15850,9 @@ _set_state_full (NMDevice *self,
 	concheck_update_interval (self, AF_INET6, concheck_now);
 
 	priv->in_state_changed = FALSE;
+	nm_device_remove_pending_action (self,
+	                                 NM_PENDING_ACTION_IN_STATE_CHANGE,
+	                                 TRUE);
 
 	if ((old_state > NM_DEVICE_STATE_UNMANAGED) != (state > NM_DEVICE_STATE_UNMANAGED))
 		_notify (self, PROP_MANAGED);
