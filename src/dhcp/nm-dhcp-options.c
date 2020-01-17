@@ -34,7 +34,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP4_NIS_DOMAIN,                        "nis_domain",                      TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NIS_SERVERS,                       "nis_servers",                     TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP4_NTP_SERVER,                        "ntp_servers",                     TRUE ),
-	REQ (NM_DHCP_OPTION_DHCP4_SERVER_ID,                         "dhcp_server_identifier",          TRUE ),
+	REQ (NM_DHCP_OPTION_DHCP4_SERVER_ID,                         "dhcp_server_identifier",          FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST,                "domain_search",                   TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE,    "ms_classless_static_routes",      TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,       "wpad",                            TRUE ),
