@@ -15497,7 +15497,7 @@ _set_state_full (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 	NMDeviceState old_state;
-	NMActRequest *req;
+	gs_unref_object NMActRequest *req = NULL;
 	gboolean no_firmware = FALSE;
 	NMSettingsConnection *sett_conn;
 	NMSettingSriov *s_sriov;
@@ -15833,18 +15833,15 @@ _set_state_full (NMDevice *self,
 	/* IP-related properties are only valid when the device has IP configuration.
 	 * If it no longer does, ensure their change notifications are emitted.
 	 */
-	if (ip_config_valid (old_state) && !ip_config_valid (state))
-	    notify_ip_properties (self);
+	if (   ip_config_valid (old_state)
+	    && !ip_config_valid (state))
+		notify_ip_properties (self);
 
 	concheck_now =    NM_IN_SET (state, NM_DEVICE_STATE_ACTIVATED,
 	                                    NM_DEVICE_STATE_DISCONNECTED)
 	               || old_state >= NM_DEVICE_STATE_ACTIVATED;
 	concheck_update_interval (self, AF_INET, concheck_now);
 	concheck_update_interval (self, AF_INET6, concheck_now);
-
-	/* Dispose of the cached activation request */
-	if (req)
-		g_object_unref (req);
 
 	priv->in_state_changed = FALSE;
 
