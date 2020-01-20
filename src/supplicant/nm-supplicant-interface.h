@@ -136,18 +136,11 @@ const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 
 guint nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self);
 
-gboolean nm_supplicant_interface_get_has_credentials_request (NMSupplicantInterface *self);
-
 gboolean nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self);
 
 const char* nm_supplicant_interface_get_p2p_group_path (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self);
-
-gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
-                                                    const char *field,
-                                                    const char *value,
-                                                    GError **error);
 
 void nm_supplicant_interface_p2p_start_find (NMSupplicantInterface *self,
                                              guint timeout);

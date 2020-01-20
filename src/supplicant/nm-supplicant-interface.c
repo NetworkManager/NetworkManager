@@ -630,40 +630,6 @@ iface_check_ready (NMSupplicantInterface *self)
 	}
 }
 
-gboolean
-nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
-                                           const char *field,
-                                           const char *value,
-                                           GError **error)
-{
-	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *reply = NULL;
-
-	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
-	g_return_val_if_fail (field != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
-
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	g_return_val_if_fail (priv->has_credreq == TRUE, FALSE);
-
-	/* Need a network block object path */
-	g_return_val_if_fail (priv->net_path, FALSE);
-	reply = g_dbus_proxy_call_sync (priv->iface_proxy,
-	                                "NetworkReply",
-	                                g_variant_new ("(oss)",
-	                                               priv->net_path,
-	                                               field,
-	                                               value),
-	                                G_DBUS_CALL_FLAGS_NONE,
-	                                5000,
-	                                NULL,
-	                                error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-
-	return !!reply;
-}
-
 static void
 iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
