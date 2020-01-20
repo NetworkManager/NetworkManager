@@ -104,7 +104,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 typedef struct _NMSupplicantInterfacePrivate {
 	char *         dev;
 	NMSupplicantDriver driver;
-	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
 	NMSupplCapMask global_capabilities;
 	NMSupplCapMask iface_capabilities;
 	guint32        max_scan_ssids;
@@ -627,37 +626,6 @@ iface_check_ready (NMSupplicantInterface *self)
 		if (priv->ready_count == 0)
 			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
 	}
-}
-
-static void
-iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *variant = NULL;
-	gs_free_error GError *error = NULL;
-
-	/* We know NetworkReply is supported if the NetworkReply method returned
-	 * successfully (which is unexpected since we sent a bogus network
-	 * object path) or if we got an "InvalidArgs" (which indicates NetworkReply
-	 * is supported).  We know it's not supported if we get an
-	 * "UnknownMethod" error.
-	 */
-
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (variant || _nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs"))
-		priv->has_credreq = TRUE;
-
-	_LOGD ("supplicant %s network credentials requests",
-	       priv->has_credreq ? "supports" : "does not support");
-
-	iface_check_ready (self);
 }
 
 static void
@@ -1583,21 +1551,6 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL,
 	                   NULL);
 
-	/* Check whether NetworkReply and AP mode are supported.
-	 * ready_count was initialized to 1 in interface_add_done().
-	 */
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "NetworkReply",
-	                   g_variant_new ("(oss)",
-	                                  "/fff",
-	                                  "foobar",
-	                                  "foobar"),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->init_cancellable,
-	                   (GAsyncReadyCallback) iface_check_netreply_cb,
-	                   self);
-
 	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF) == NM_TERNARY_TRUE) {
 		/* Initialize global PMF setting to 'optional' */
 		priv->ready_count++;
@@ -1630,6 +1583,8 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		                   (GAsyncReadyCallback) iface_introspect_cb,
 		                   self);
 	}
+
+	iface_check_ready (self);
 }
 
 static void
@@ -1683,7 +1638,6 @@ interface_add_done (NMSupplicantInterface *self, const char *path)
 
 	_LOGD ("interface added to supplicant");
 
-	/* Iface ready check happens in iface_check_netreply_cb */
 	priv->ready_count = 1;
 
 	priv->object_path = g_strdup (path);
