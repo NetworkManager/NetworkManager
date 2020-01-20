@@ -80,7 +80,6 @@ enum {
 	PEER_UPDATED,            /* a new Peer appeared or an existing had properties changed */
 	PEER_REMOVED,            /* supplicant removed Peer from its scan list */
 	SCAN_DONE,               /* wifi scan is complete */
-	CREDENTIALS_REQUEST,     /* 802.1x identity or password requested */
 	WPS_CREDENTIALS,         /* WPS credentials received */
 	GROUP_STARTED,           /* a new Group (interface) was created */
 	GROUP_FINISHED,          /* a Group (interface) has been finished */
@@ -1200,20 +1199,6 @@ wpas_iface_bss_removed (GDBusProxy *proxy,
 }
 
 static void
-wpas_iface_network_request (GDBusProxy *proxy,
-                            const char *path,
-                            const char *field,
-                            const char *message,
-                            gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (priv->has_credreq && priv->net_path && !g_strcmp0 (path, priv->net_path))
-		g_signal_emit (self, signals[CREDENTIALS_REQUEST], 0, field, message);
-}
-
-static void
 eap_changed (GDBusProxy *proxy,
              const char *status,
              const char *parameter,
@@ -1571,8 +1556,6 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                         G_CALLBACK (wpas_iface_bss_added), self);
 	_nm_dbus_signal_connect (priv->iface_proxy, "BSSRemoved", G_VARIANT_TYPE ("(o)"),
 	                         G_CALLBACK (wpas_iface_bss_removed), self);
-	_nm_dbus_signal_connect (priv->iface_proxy, "NetworkRequest", G_VARIANT_TYPE ("(oss)"),
-	                         G_CALLBACK (wpas_iface_network_request), self);
 	_nm_dbus_signal_connect (priv->iface_proxy, "EAP", G_VARIANT_TYPE ("(ss)"),
 	                         G_CALLBACK (eap_changed), self);
 
@@ -2909,14 +2892,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
-
-	signals[CREDENTIALS_REQUEST] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 
 	signals[WPS_CREDENTIALS] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS,
