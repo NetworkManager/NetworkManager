@@ -6971,6 +6971,68 @@ name_owner_get_call (NMClient *self)
 
 /*****************************************************************************/
 
+static inline gboolean
+_nml_cleanup_context_busy_watcher_on_idle_cb (gpointer user_data)
+{
+	nm_auto_unref_gmaincontext GMainContext *context = NULL;
+	gs_unref_object GObject *context_busy_watcher = NULL;
+
+	nm_utils_user_data_unpack (user_data, &context, &context_busy_watcher);
+
+	nm_assert (context);
+	nm_assert (G_IS_OBJECT (context_busy_watcher));
+	return G_SOURCE_REMOVE;
+}
+
+void
+nml_cleanup_context_busy_watcher_on_idle (GObject *context_busy_watcher_take,
+                                          GMainContext *context)
+{
+	gs_unref_object GObject *context_busy_watcher = g_steal_pointer (&context_busy_watcher_take);
+	GSource *cleanup_source;
+
+	nm_assert (G_IS_OBJECT (context_busy_watcher));
+	nm_assert (context);
+
+	/* Technically, we cancelled all pending actions (and these actions
+	 * (GTask) keep the context_busy_watcher object alive). Also, we passed
+	 * no destroy notify to g_dbus_connection_signal_subscribe().
+	 * That means, there should be no other unaccounted GSource'es left.
+	 *
+	 * However, we really need to be sure that the context_busy_watcher's
+	 * lifetime matches the time that the context is busy. That is especially
+	 * important with synchronous initialization, where the context-busy-watcher
+	 * keeps the inner GMainContext integrated in the caller's.
+	 * We must not g_source_destroy() that integration too early.
+	 *
+	 * So to be really sure all this is given, always schedule one last
+	 * cleanup idle action with low priority. This should be the last
+	 * thing related to this instance that keeps the context busy.
+	 *
+	 * Note that we could also *not* take a reference on @context
+	 * and unref @context_busy_watcher via the GDestroyNotify. That would
+	 * allow for the context to be wrapped up early, and when the last user
+	 * gives up the reference to the context, the destroy notify could complete
+	 * without even invoke the idle handler. However, that destroy notify may
+	 * not be called in the right thread. So, we want to be sure that we unref
+	 * the context-busy-watcher in the right context. Hence, we always take an
+	 * additional reference and always cleanup in the idle handler. This means:
+	 * the user *MUST* always keep iterating the context after NMClient got destroyed.
+	 * But that is not a severe limitation, because the user anyway must be prepared
+	 * to do that. That is because in many cases it is necessary anyway (and the user
+	 * wouldn't know a priory when not). This way, it is just always necessary. */
+
+	cleanup_source = nm_g_idle_source_new (G_PRIORITY_LOW + 10,
+	                                       _nml_cleanup_context_busy_watcher_on_idle_cb,
+	                                       nm_utils_user_data_pack (g_main_context_ref (context),
+	                                                                g_steal_pointer (&context_busy_watcher)),
+	                                       NULL);
+	g_source_attach (cleanup_source, context);
+	g_source_unref (cleanup_source);
+}
+
+/*****************************************************************************/
+
 static void
 _init_start_complete (NMClient *self,
                       GError *error_take)
@@ -7568,18 +7630,6 @@ constructed (GObject *object)
 	NML_NMCLIENT_LOG_D (self, "new NMClient instance");
 }
 
-static inline gboolean
-_dispose_cleanup_context_busy_watcher_cb (gpointer user_data)
-{
-	nm_auto_unref_gmaincontext GMainContext *context = NULL;
-	gs_unref_object GObject *context_busy_watcher = NULL;
-
-	nm_utils_user_data_unpack (user_data, &context, &context_busy_watcher);
-
-	nm_assert (G_IS_OBJECT (context_busy_watcher));
-	return G_SOURCE_REMOVE;
-}
-
 static void
 dispose (GObject *object)
 {
@@ -7630,42 +7680,8 @@ dispose (GObject *object)
 
 	if (   priv->context_busy_watcher
 	    && priv->dbus_context) {
-		GSource *cleanup_source;
-
-		/* Technically, we cancelled all pending actions (and these actions
-		 * (GTask) keep the context_busy_watcher object alive). Also, we passed
-		 * no destroy notify to g_dbus_connection_signal_subscribe().
-		 * That means, there should be no other unaccounted GSource'es left.
-		 *
-		 * However, we really need to be sure that the context_busy_watcher's
-		 * lifetime matches the time that the context is busy. That is especially
-		 * important with synchronous initialization, where the context-busy-watcher
-		 * keeps the inner GMainContext integrated in the caller's.
-		 * We must not g_source_destroy() that integration too early.
-		 *
-		 * So to be really sure all this is given, always schedule one last
-		 * cleanup idle action with low priority. This should be the last
-		 * thing related to this instance that keeps the context busy.
-		 *
-		 * Note that we could also *not* take a reference on priv->dbus_context
-		 * and unref priv->context_busy_watcher via the GDestroyNotify. That would
-		 * allow for the context to be wrapped up early, and when the last user
-		 * gives up the reference to the context, the destroy notify could complete
-		 * without even invoke the idle handler. However, that destroy notify may
-		 * not be called in the right thread. So, we want to be sure that we unref
-		 * the context-busy-watcher in the right context. Hence, we always take an
-		 * additional reference and always cleanup in the idle handler. This means:
-		 * the user *MUST* always keep iterating the context after NMClient got destroyed.
-		 * But that is not a severe limitation, because the user anyway must be prepared
-		 * to do that. That is because in many cases it is necessary anyway (and the user
-		 * wouldn't know a priory when not). This way, it is just always necessary. */
-		cleanup_source = nm_g_idle_source_new (G_PRIORITY_LOW + 10,
-		                                       _dispose_cleanup_context_busy_watcher_cb,
-		                                       nm_utils_user_data_pack (g_main_context_ref (priv->dbus_context),
-		                                                                g_steal_pointer (&priv->context_busy_watcher)),
-		                                       NULL);
-		g_source_attach (cleanup_source, priv->dbus_context);
-		g_source_unref (cleanup_source);
+		nml_cleanup_context_busy_watcher_on_idle (g_steal_pointer (&priv->context_busy_watcher),
+		                                          priv->dbus_context);
 	}
 
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
