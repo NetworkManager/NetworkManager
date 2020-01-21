@@ -16,10 +16,9 @@
  *   A mix of wpa_supplicant interface states and internal states.
  */
 typedef enum {
-	NM_SUPPLICANT_INTERFACE_STATE_INVALID = -1,
-	NM_SUPPLICANT_INTERFACE_STATE_INIT = 0,
-	NM_SUPPLICANT_INTERFACE_STATE_STARTING,
-	NM_SUPPLICANT_INTERFACE_STATE_READY,
+	NM_SUPPLICANT_INTERFACE_STATE_INVALID = 0,
+
+	NM_SUPPLICANT_INTERFACE_STATE_STARTING = 1,
 
 	NM_SUPPLICANT_INTERFACE_STATE_DISABLED,
 	NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,
@@ -34,6 +33,13 @@ typedef enum {
 
 	NM_SUPPLICANT_INTERFACE_STATE_DOWN,
 } NMSupplicantInterfaceState;
+
+static inline gboolean
+NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (NMSupplicantInterfaceState state)
+{
+	return    state > NM_SUPPLICANT_INTERFACE_STATE_STARTING
+	       && state < NM_SUPPLICANT_INTERFACE_STATE_DOWN;
+}
 
 typedef enum {
 	NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
@@ -50,8 +56,9 @@ typedef enum {
 #define NM_IS_SUPPLICANT_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_INTERFACE))
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
-#define NM_SUPPLICANT_INTERFACE_IFACE               "iface"
-#define NM_SUPPLICANT_INTERFACE_OBJECT_PATH         "object-path"
+#define NM_SUPPLICANT_INTERFACE_SUPPLICANT_MANAGER  "supplicant-manager"
+#define NM_SUPPLICANT_INTERFACE_DBUS_OBJECT_PATH    "dbus-object-path"
+#define NM_SUPPLICANT_INTERFACE_IFINDEX             "ifindex"
 #define NM_SUPPLICANT_INTERFACE_SCANNING            "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS         "current-bss"
 #define NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED    "p2p-group-joined"
@@ -59,15 +66,11 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_P2P_GROUP_OWNER     "p2p-group-owner"
 #define NM_SUPPLICANT_INTERFACE_DRIVER              "driver"
 #define NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE       "p2p-available"
-#define NM_SUPPLICANT_INTERFACE_GLOBAL_CAPABILITIES "global-capabilities"
 #define NM_SUPPLICANT_INTERFACE_AUTH_STATE          "auth-state"
 
 #define NM_SUPPLICANT_INTERFACE_STATE                   "state"
-#define NM_SUPPLICANT_INTERFACE_REMOVED                 "removed"
-#define NM_SUPPLICANT_INTERFACE_BSS_UPDATED             "bss-updated"
-#define NM_SUPPLICANT_INTERFACE_BSS_REMOVED             "bss-removed"
-#define NM_SUPPLICANT_INTERFACE_PEER_UPDATED            "peer-updated"
-#define NM_SUPPLICANT_INTERFACE_PEER_REMOVED            "peer-removed"
+#define NM_SUPPLICANT_INTERFACE_BSS_CHANGED             "bss-changed"
+#define NM_SUPPLICANT_INTERFACE_PEER_CHANGED            "peer-changed"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE               "scan-done"
 #define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS         "wps-credentials"
 #define NM_SUPPLICANT_INTERFACE_GROUP_STARTED           "group-started"
@@ -85,13 +88,17 @@ struct _NMSupplicantInterface {
 
 GType nm_supplicant_interface_get_type (void);
 
-NMSupplicantInterface *nm_supplicant_interface_new (const char *ifname,
-                                                    const char *object_path,
-                                                    NMSupplicantDriver driver,
-                                                    NMSupplCapMask global_capabilities);
+NMSupplicantInterface *nm_supplicant_interface_new (NMSupplicantManager *supplicant_manager,
+                                                    NMRefString *object_path,
+                                                    int ifindex,
+                                                    NMSupplicantDriver driver);
 
-void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
-                                                       gboolean available);
+NMRefString *nm_supplicant_interface_get_name_owner (NMSupplicantInterface *self);
+NMRefString *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
+
+void _nm_supplicant_interface_set_state_down (NMSupplicantInterface * self,
+                                              gboolean force_remove_from_supplicant,
+                                              const char *reason);
 
 typedef void (*NMSupplicantInterfaceAssocCb) (NMSupplicantInterface *iface,
                                               GError *error,
@@ -115,8 +122,6 @@ nm_supplicant_interface_disconnect_async (NMSupplicantInterface * self,
                                           NMSupplicantInterfaceDisconnectCb callback,
                                           gpointer user_data);
 
-const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
-
 void nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
                                            GBytes *const*ssids,
                                            guint ssids_len);
@@ -127,13 +132,15 @@ const char *nm_supplicant_interface_state_to_string (NMSupplicantInterfaceState 
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
-const char *nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self);
+NMRefString *nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self);
 
 gint64 nm_supplicant_interface_get_last_scan (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 
 guint nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self);
+
+gboolean nm_supplicant_interface_get_p2p_available (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self);
 

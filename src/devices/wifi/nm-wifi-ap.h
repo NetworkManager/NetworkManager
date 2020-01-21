@@ -36,17 +36,17 @@ typedef struct {
 	struct _NMWifiAPPrivate *_priv;
 } NMWifiAP;
 
+struct _NMSupplicantBssInfo;
+
 typedef struct _NMWifiAPClass NMWifiAPClass;
 
 GType nm_wifi_ap_get_type (void);
 
-NMWifiAP *   nm_wifi_ap_new_from_properties      (const char *supplicant_path,
-                                                  GVariant *properties);
-NMWifiAP *   nm_wifi_ap_new_fake_from_connection (NMConnection *connection);
+NMWifiAP *nm_wifi_ap_new_from_properties (const struct _NMSupplicantBssInfo *bss_info);
+NMWifiAP *nm_wifi_ap_new_fake_from_connection (NMConnection *connection);
 
-gboolean          nm_wifi_ap_update_from_properties   (NMWifiAP *ap,
-                                                       const char *supplicant_path,
-                                                       GVariant *properties);
+gboolean nm_wifi_ap_update_from_properties (NMWifiAP *ap,
+                                            const struct _NMSupplicantBssInfo *bss_info);
 
 gboolean          nm_wifi_ap_check_compatible         (NMWifiAP *self,
                                                        NMConnection *connection);

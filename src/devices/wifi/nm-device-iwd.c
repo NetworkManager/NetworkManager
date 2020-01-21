@@ -7,24 +7,26 @@
 
 #include "nm-device-iwd.h"
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
-#include "devices/nm-device.h"
 #include "devices/nm-device-private.h"
-#include "nm-utils.h"
+#include "devices/nm-device.h"
 #include "nm-act-request.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-wireless-security.h"
+#include "nm-config.h"
+#include "nm-core-internal.h"
+#include "nm-dbus-manager.h"
+#include "nm-glib-aux/nm-ref-string.h"
+#include "nm-iwd-manager.h"
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-wireless.h"
+#include "nm-std-aux/nm-dbus-compat.h"
+#include "nm-utils.h"
+#include "nm-wifi-common.h"
+#include "nm-wifi-utils.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
-#include "nm-wifi-utils.h"
-#include "nm-wifi-common.h"
-#include "nm-core-internal.h"
-#include "nm-config.h"
-#include "nm-iwd-manager.h"
-#include "nm-dbus-manager.h"
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "supplicant/nm-supplicant-types.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);
@@ -191,45 +193,41 @@ remove_all_aps (NMDeviceIwd *self)
 	nm_device_recheck_available_connections (NM_DEVICE (self));
 }
 
-static GVariant *
-vardict_from_network_type (const char *type)
+static NM80211ApSecurityFlags
+ap_security_flags_from_network_type (const char *type)
 {
-	GVariantBuilder builder;
-	const char *key_mgmt = "";
-	const char *pairwise = "ccmp";
+	NM80211ApSecurityFlags flags;
 
-	if (!strcmp (type, "psk"))
-		key_mgmt = "wpa-psk";
-	else if (!strcmp (type, "8021x"))
-		key_mgmt = "wpa-eap";
+	if (nm_streq (type, "psk"))
+		flags = NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (nm_streq (type, "8021x"))
+		flags = NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 	else
-		return NULL;
+		return NM_802_11_AP_SEC_NONE;
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
-	g_variant_builder_add (&builder, "{sv}", "KeyMgmt",
-	                       g_variant_new_strv (&key_mgmt, 1));
-	g_variant_builder_add (&builder, "{sv}", "Pairwise",
-	                       g_variant_new_strv (&pairwise, 1));
-	g_variant_builder_add (&builder, "{sv}", "Group",
-	                       g_variant_new_string ("ccmp"));
-	return g_variant_new ("a{sv}", &builder);
+	flags |= NM_802_11_AP_SEC_PAIR_CCMP;
+	flags |= NM_802_11_AP_SEC_GROUP_CCMP;
+	return flags;
 }
 
 static void
 insert_ap_from_network (NMDeviceIwd *self,
                         GHashTable *aps,
                         const char *path,
+                        gint64 last_seen_msec,
                         int16_t signal,
                         uint32_t ap_id)
 {
 	gs_unref_object GDBusProxy *network_proxy = NULL;
-	gs_unref_variant GVariant *name_value = NULL, *type_value = NULL;
-	const char *name, *type;
-	GVariantBuilder builder;
-	gs_unref_variant GVariant *props = NULL;
-	GVariant *rsn;
+	gs_unref_variant GVariant *name_value = NULL;
+	gs_unref_variant GVariant *type_value = NULL;
+	nm_auto_ref_string NMRefString *bss_path = NULL;
+	const char *name;
+	const char *type;
+	NMSupplicantBssInfo bss_info;
 	uint8_t bssid[6];
 	NMWifiAP *ap;
+	gs_unref_bytes GBytes *ssid = NULL;
 
 	if (g_hash_table_lookup (aps, path)) {
 		_LOGD (LOGD_WIFI, "Duplicate network at %s", path);
@@ -253,6 +251,11 @@ insert_ap_from_network (NMDeviceIwd *self,
 	name = g_variant_get_string (name_value, NULL);
 	type = g_variant_get_string (type_value, NULL);
 
+	if (nm_streq (type, "wep")) {
+		/* WEP not supported */
+		return;
+	}
+
 	/* What we get from IWD are networks, or ESSs, that may contain
 	 * multiple APs, or BSSs, each.  We don't get information about any
 	 * specific BSSs within an ESS but we can safely present each ESS
@@ -268,31 +271,24 @@ insert_ap_from_network (NMDeviceIwd *self,
 	bssid[4] = ap_id >> 8;
 	bssid[5] = ap_id;
 
-	/* WEP not supported */
-	if (nm_streq (type, "wep"))
-		return;
+	ssid = g_bytes_new (name, NM_MIN (32u, strlen (name)));
+	bss_path = nm_ref_string_new (path);
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
-	g_variant_builder_add (&builder, "{sv}", "BSSID",
-	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, bssid, 6, 1));
-	g_variant_builder_add (&builder, "{sv}", "Mode",
-	                       g_variant_new_string ("infrastructure"));
+	bss_info = (NMSupplicantBssInfo) {
+		.bss_path       = bss_path,
+		.last_seen_msec = last_seen_msec,
+		.bssid_valid    = TRUE,
+		.mode           = NM_802_11_MODE_INFRA,
+		.rsn_flags      = ap_security_flags_from_network_type (type),
+		.ssid           = ssid,
+		.signal_percent = nm_wifi_utils_level_to_quality (signal / 100),
+		.frequency      = 2417,
+		.max_rate       = 65000,
+	};
+	memcpy (bss_info.bssid, bssid, sizeof (bssid));
 
-	rsn = vardict_from_network_type (type);
-	if (rsn)
-		g_variant_builder_add (&builder, "{sv}", "RSN", rsn);
+	ap = nm_wifi_ap_new_from_properties (&bss_info);
 
-	props = g_variant_new ("a{sv}", &builder);
-
-	ap = nm_wifi_ap_new_from_properties (path, props);
-
-	nm_wifi_ap_set_ssid_arr (ap,
-	                         (const guint8 *) name,
-	                         NM_MIN (32, strlen (name)));
-
-	nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
-	nm_wifi_ap_set_freq (ap, 2417);
-	nm_wifi_ap_set_max_bitrate (ap, 65000);
 	g_hash_table_insert (aps, (gpointer) nm_wifi_ap_get_supplicant_path (ap), ap);
 }
 
@@ -313,6 +309,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gboolean compat;
 	const char *return_sig;
 	static uint32_t ap_id = 0;
+	gint64 last_seen_msec;
 
 	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
 	if (!variant) {
@@ -340,12 +337,13 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	g_variant_get (variant, return_sig, &networks);
 
+	last_seen_msec = nm_utils_get_monotonic_timestamp_msec ();
 	if (compat) {
 		while (g_variant_iter_next (networks, "(&o&sn&s)", &path, &name, &signal, &type))
-			insert_ap_from_network (self, new_aps, path, signal, ap_id++);
+			insert_ap_from_network (self, new_aps, path, last_seen_msec, signal, ap_id++);
 	} else {
 		while (g_variant_iter_next (networks, "(&on)", &path, &signal))
-			insert_ap_from_network (self, new_aps, path, signal, ap_id++);
+			insert_ap_from_network (self, new_aps, path, last_seen_msec, signal, ap_id++);
 	}
 
 	g_variant_iter_free (networks);
@@ -1148,7 +1146,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 
 	*replied = FALSE;
 
-	if (!strcmp (method_name, "RequestPassphrase")) {
+	if (nm_streq (method_name, "RequestPassphrase")) {
 		const char *psk;
 
 		if (!s_wireless_sec)
@@ -1168,7 +1166,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 		*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
 		*setting_key = NM_SETTING_WIRELESS_SECURITY_PSK;
 		return TRUE;
-	} else if (!strcmp (method_name, "RequestPrivateKeyPassphrase")) {
+	} else if (nm_streq (method_name, "RequestPrivateKeyPassphrase")) {
 		const char *password;
 
 		if (!s_8021x)
@@ -1188,7 +1186,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 		*setting_name = NM_SETTING_802_1X_SETTING_NAME;
 		*setting_key = NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD;
 		return TRUE;
-	} else if (!strcmp (method_name, "RequestUserNameAndPassword")) {
+	} else if (nm_streq (method_name, "RequestUserNameAndPassword")) {
 		const char *identity, *password;
 
 		if (!s_8021x)
@@ -1212,7 +1210,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 		else
 			*setting_key = NM_SETTING_802_1X_PASSWORD;
 		return TRUE;
-	} else if (!strcmp (method_name, "RequestUserPassword")) {
+	} else if (nm_streq (method_name, "RequestUserPassword")) {
 		const char *password;
 
 		if (!s_8021x)
