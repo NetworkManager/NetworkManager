@@ -56,7 +56,7 @@ nm_dbus_connection_call_get_name_owner (GDBusConnection *dbus_connection,
 /*****************************************************************************/
 
 static void
-_nm_dbus_connection_call_get_all_cb (GObject *source,
+_nm_dbus_connection_call_default_cb (GObject *source,
                                      GAsyncResult *res,
                                      gpointer user_data)
 {
@@ -96,8 +96,38 @@ nm_dbus_connection_call_get_all (GDBusConnection *dbus_connection,
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        timeout_msec,
 	                        cancellable,
-	                        _nm_dbus_connection_call_get_all_cb,
+	                        _nm_dbus_connection_call_default_cb,
 	                        nm_utils_user_data_pack (user_data, callback));
+}
+
+void nm_dbus_connection_call_set (GDBusConnection *dbus_connection,
+                                  const char *bus_name,
+                                  const char *object_path,
+                                  const char *interface_name,
+                                  const char *property_name,
+                                  GVariant *value,
+                                  int timeout_msec,
+                                  GCancellable *cancellable,
+                                  NMDBusConnectionCallDefaultCb callback,
+                                  gpointer user_data)
+{
+	nm_assert (callback);
+
+	g_dbus_connection_call (dbus_connection,
+	                        bus_name,
+	                        object_path,
+	                        DBUS_INTERFACE_PROPERTIES,
+	                        "Set",
+	                        g_variant_new ("(ssv)",
+	                                       interface_name,
+	                                       property_name,
+	                                       value),
+	                        G_VARIANT_TYPE ("()"),
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        timeout_msec,
+	                        cancellable,
+	                        callback ? _nm_dbus_connection_call_default_cb : NULL,
+	                        callback ? nm_utils_user_data_pack (user_data, callback) : NULL);
 }
 
 /*****************************************************************************/
