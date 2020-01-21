@@ -993,6 +993,7 @@ nm_str_realloc (char *str)
 	(cond) ? (str) : (str_else), \
 	(cond) ? (suffix) : ""
 #define NM_PRINT_FMT_QUOTE_STRING(arg) NM_PRINT_FMT_QUOTED((arg), "\"", (arg), "\"", "(null)")
+#define NM_PRINT_FMT_QUOTE_REF_STRING(arg) NM_PRINT_FMT_QUOTED((arg), "\"", (arg)->str, "\"", "(null)")
 
 /*****************************************************************************/
 
