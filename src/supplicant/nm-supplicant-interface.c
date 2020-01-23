@@ -274,8 +274,7 @@ bss_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	gboolean success;
 
 	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (   !success
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -392,8 +391,7 @@ peer_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	gboolean success;
 
 	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (   !success
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -636,7 +634,7 @@ iface_set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	variant = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -784,8 +782,7 @@ _wps_handle_start_cb (GObject *source_object,
 	gs_free_error GError *error = NULL;
 
 	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
-	if (   !result
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	data = user_data;
@@ -815,8 +812,7 @@ _wps_handle_set_pc_cb (GObject *source_object,
 	guint8 bssid_buf[ETH_ALEN];
 
 	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
-	if (   !result
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	data = user_data;
@@ -884,8 +880,7 @@ _wps_handle_proxy_cb (GObject *source_object,
 	GDBusProxy *proxy;
 
 	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-	if (   !proxy
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	data = user_data;
@@ -916,8 +911,7 @@ _wps_handle_cancel_cb (GObject *source_object,
 	gs_free_error GError *error = NULL;
 
 	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
-	if (   !result
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	data = user_data;
@@ -1060,7 +1054,7 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 	variant = _nm_dbus_proxy_call_finish (proxy, result,
 	                                      G_VARIANT_TYPE ("(s)"),
 	                                      &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -1329,8 +1323,7 @@ group_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	gboolean success;
 
 	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (   !success
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -1507,7 +1500,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	gs_free_error GError *error = NULL;
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		if (!nm_utils_error_is_cancelled (error)) {
 			self = NM_SUPPLICANT_INTERFACE (user_data);
 			_LOGW ("failed to acquire wpa_supplicant interface proxy: (%s)", error->message);
 			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -1595,7 +1588,7 @@ on_p2p_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	gs_free_error GError *error = NULL;
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		if (!nm_utils_error_is_cancelled (error)) {
 			self = NM_SUPPLICANT_INTERFACE (user_data);
 			priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 			_LOGW ("failed to acquire wpa_supplicant p2p proxy: (%s)", error->message);
@@ -1685,7 +1678,7 @@ interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	variant = _nm_dbus_proxy_call_finish (proxy, result,
 	                                      G_VARIANT_TYPE ("(o)"),
 	                                      &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -1712,7 +1705,7 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	variant = _nm_dbus_proxy_call_finish (proxy, result,
 	                                      G_VARIANT_TYPE ("(o)"),
 	                                      &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -1803,7 +1796,7 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 
 	wpas_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (!wpas_proxy) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		if (!nm_utils_error_is_cancelled (error)) {
 			self = NM_SUPPLICANT_INTERFACE (user_data);
 			_LOGW ("failed to acquire wpa_supplicant proxy: (%s)", error->message);
 			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -1922,7 +1915,7 @@ log_result_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
 	if (   !reply
-	    && !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
+	    && !nm_utils_error_is_cancelled (error)
 	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
 		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (_NMLOG_DOMAIN, "%s: failed to %s: %s",
@@ -2077,7 +2070,7 @@ assoc_select_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	gs_free_error GError *error = NULL;
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -2111,7 +2104,7 @@ assoc_add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -2218,7 +2211,7 @@ assoc_set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	AddNetworkData *add_network_data;
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
@@ -2335,7 +2328,7 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
