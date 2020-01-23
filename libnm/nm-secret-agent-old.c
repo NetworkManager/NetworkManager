@@ -1148,7 +1148,7 @@ _register_call_cb (GObject *source,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	nm_assert (!priv->registering_retry_source);
@@ -1229,7 +1229,7 @@ _get_connection_unix_user_cb (GObject *source,
 	guint32 sender_uid = 0;
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = user_data;
@@ -1324,7 +1324,7 @@ _name_owner_get_cb (const char *name_owner,
                     gpointer user_data)
 {
 	if (   name_owner
-	    || !nm_utils_error_is_cancelled (error, FALSE))
+	    || !nm_utils_error_is_cancelled (error))
 		_name_owner_changed (user_data, name_owner, FALSE);
 }
 

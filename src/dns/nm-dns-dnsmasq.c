@@ -304,7 +304,7 @@ _gl_pid_spawn_notify (GlPidSpawnAsyncData *sdata,
 	if (error) {
 		nm_assert (pid == 0);
 		nm_assert (!p_exit_code);
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			_LOGD ("spawn: dnsmasq failed: %s", error->message);
 	} else if (p_exit_code) {
 		/* the only caller already logged about this condition extensively. */
@@ -838,7 +838,7 @@ dnsmasq_update_done (GObject *source_object, GAsyncResult *res, gpointer user_da
 
 	response = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source_object), res, &error);
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = user_data;
@@ -987,7 +987,7 @@ spawn_notify (GCancellable *cancellable,
 	NMDnsDnsmasq *self;
 	NMDnsDnsmasqPrivate *priv;
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = notify_user_data;

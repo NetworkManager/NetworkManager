@@ -518,7 +518,7 @@ _bt_register_bridge_cb (GError *error,
 {
 	NMDeviceBridge *self;
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = user_data;

@@ -31,7 +31,7 @@ _provider_detect_cb (GObject *source,
 
 	nm_assert (success != (!!error));
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	dd = user_data;
@@ -219,7 +219,7 @@ _get_config_cb (GObject *source,
 	config_dict = nmcs_provider_get_config_finish (NMCS_PROVIDER (source), result, &error);
 
 	if (!config_dict) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			_LOGI ("failure to get meta data: %s", error->message);
 	} else
 		_LOGD ("meta data received");
@@ -426,7 +426,7 @@ try_again:
 	                                                         &applied_version_id,
 	                                                         &error);
 	if (!applied_connection) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			_LOGD ("config device %s: device has no applied connection (%s). Skip", hwaddr, error->message);
 		return any_changes;
 	}
@@ -477,7 +477,7 @@ try_again:
 			goto try_again;
 		}
 
-		if (!nm_utils_error_is_cancelled (error, FALSE)) {
+		if (!nm_utils_error_is_cancelled (error)) {
 			_LOGD ("config device %s: failure to reapply connection \"%s\" (%s): %s",
 			       hwaddr,
 			       nm_connection_get_id (applied_connection),
@@ -576,7 +576,7 @@ main (int argc, const char *const*argv)
 	nmcs_wait_for_objects_register (nm_client_get_context_busy_watcher (nmc));
 
 	if (error) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			_LOGI ("failure to talk to NetworkManager: %s", error->message);
 		goto done;
 	}

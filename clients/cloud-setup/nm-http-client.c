@@ -163,7 +163,7 @@ _ehandle_complete (EHandleData *edata,
 	                                    &edata->cancellable_id);
 
 	if (error_take) {
-		if (nm_utils_error_is_cancelled (error_take, FALSE))
+		if (nm_utils_error_is_cancelled (error_take))
 			_LOG2T (edata, "cancelled");
 		else
 			_LOG2D (edata, "failed with %s", error_take->message);
@@ -422,7 +422,7 @@ _poll_get_probe_finish_fcn (GObject *source,
 	                                     &local_error);
 
 	if (!success) {
-		if (nm_utils_error_is_cancelled (local_error, FALSE)) {
+		if (nm_utils_error_is_cancelled (local_error)) {
 			g_propagate_error (error, g_steal_pointer (&local_error));
 			return TRUE;
 		}

@@ -623,7 +623,7 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
 
-	if (error && !nm_utils_error_is_cancelled (error, TRUE)) {
+	if (error && !nm_utils_error_is_cancelled_or_disposing (error)) {
 		supplicant_interface_release (self);
 		nm_device_queue_state (NM_DEVICE (self),
 		                       NM_DEVICE_STATE_FAILED,

@@ -265,7 +265,7 @@ _handle_dbus_cb (GObject *source,
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	call_id = user_data;

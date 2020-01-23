@@ -1194,7 +1194,7 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
 
 	priv->fw_call = NULL;
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	if (error) {

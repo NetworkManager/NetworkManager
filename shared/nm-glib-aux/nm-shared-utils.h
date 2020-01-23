@@ -883,8 +883,15 @@ nm_utils_error_new_cancelled (gboolean is_disposing,
 	return error;
 }
 
-gboolean nm_utils_error_is_cancelled (GError *error,
-                                      gboolean consider_is_disposing);
+gboolean nm_utils_error_is_cancelled_or_disposing (GError *error);
+
+static inline gboolean
+nm_utils_error_is_cancelled (GError *error)
+{
+	return    error
+	       && error->code == G_IO_ERROR_CANCELLED
+	       && error->domain == G_IO_ERROR;
+}
 
 gboolean nm_utils_error_is_notfound (GError *error);
 

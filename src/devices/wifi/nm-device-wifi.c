@@ -2171,7 +2171,7 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDevice *device = NM_DEVICE (self);
 
-	if (   error && !nm_utils_error_is_cancelled (error, TRUE)
+	if (   error && !nm_utils_error_is_cancelled_or_disposing (error)
 	    && nm_device_is_activating (device)) {
 		cleanup_association_attempt (self, TRUE);
 		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);

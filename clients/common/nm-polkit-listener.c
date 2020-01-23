@@ -233,7 +233,7 @@ agent_register_cb (GObject *source_object,
 	                                     res,
 	                                     &error);
 
-	if (nm_utils_error_is_cancelled (error, FALSE)) {
+	if (nm_utils_error_is_cancelled (error)) {
 		return;
 	}
 
@@ -328,7 +328,7 @@ retrieve_session_id_cb (GObject *source_object,
 	                                     res,
 	                                     &error);
 
-	if (nm_utils_error_is_cancelled (error, FALSE)) {
+	if (nm_utils_error_is_cancelled (error)) {
 		return;
 	}
 

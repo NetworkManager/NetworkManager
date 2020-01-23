@@ -6505,7 +6505,7 @@ sriov_params_cb (GError *error, gpointer data)
 
 	nm_utils_user_data_unpack (data, &self, &plat_vfs);
 
-	if (nm_utils_error_is_cancelled (error, TRUE))
+	if (nm_utils_error_is_cancelled_or_disposing (error))
 		return;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -10713,7 +10713,7 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
 
 	priv->fw_call = NULL;
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	switch (priv->fw_state) {
@@ -15466,7 +15466,7 @@ sriov_deactivate_cb (GError *error, gpointer user_data)
 	NMDevice *self;
 	gpointer reason;
 
-	if (nm_utils_error_is_cancelled (error, TRUE))
+	if (nm_utils_error_is_cancelled_or_disposing (error))
 		return;
 
 	nm_utils_user_data_unpack (user_data, &self, &reason);

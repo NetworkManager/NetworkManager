@@ -993,7 +993,7 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
-	if (!variant && nm_utils_error_is_cancelled (error, FALSE))
+	if (!variant && nm_utils_error_is_cancelled (error))
 		return;
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
@@ -1270,7 +1270,7 @@ wifi_secrets_cb (NMActRequest *req,
 
 	priv->wifi_secrets_id = NULL;
 
-	if (nm_utils_error_is_cancelled (error, FALSE)) {
+	if (nm_utils_error_is_cancelled (error)) {
 		g_dbus_method_invocation_return_error_literal (invocation, NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                                               "NM secrets request cancelled");
@@ -1366,7 +1366,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		       "Activation: (wifi) Network.Connect failed: %s",
 		       error->message);
 
-		if (nm_utils_error_is_cancelled (error, FALSE))
+		if (nm_utils_error_is_cancelled (error))
 			return;
 
 		if (!NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
@@ -1438,7 +1438,7 @@ act_failed_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
-	if (!variant && nm_utils_error_is_cancelled (error, FALSE))
+	if (!variant && nm_utils_error_is_cancelled (error))
 		return;
 
 	/* Change state to FAILED unless already done by state_changed
@@ -1467,7 +1467,7 @@ act_start_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		       "Activation: (wifi) Network.Connect failed: %s",
 		       error->message);
 
-		if (nm_utils_error_is_cancelled (error, FALSE))
+		if (nm_utils_error_is_cancelled (error))
 			return;
 
 		if (!NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG))
@@ -1587,7 +1587,7 @@ act_set_mode_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		       "Activation: (wifi) Setting Device.Mode failed: %s",
 		       error->message);
 
-		if (nm_utils_error_is_cancelled (error, FALSE))
+		if (nm_utils_error_is_cancelled (error))
 			return;
 
 		if (   !NM_IN_SET (nm_device_get_state (device), NM_DEVICE_STATE_CONFIG)
@@ -1647,7 +1647,7 @@ act_psk_cb (NMActRequest *req,
 	NMDeviceIwdPrivate *priv;
 	NMDevice *device;
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);

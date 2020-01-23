@@ -294,7 +294,7 @@ _poll_done_cb (GObject *source,
 	                                                poll_task_data->probe_user_data,
 	                                                &error);
 
-	if (nm_utils_error_is_cancelled (error, FALSE)) {
+	if (nm_utils_error_is_cancelled (error)) {
 		/* we already handle this differently. Nothing to do. */
 		return;
 	}
