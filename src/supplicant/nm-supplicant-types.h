@@ -10,6 +10,23 @@
 #define NM_WPAS_DBUS_PATH          "/fi/w1/wpa_supplicant1"
 #define NM_WPAS_DBUS_INTERFACE     "fi.w1.wpa_supplicant1"
 
+#if HAVE_WEXT
+#define NM_WPAS_DEFAULT_WIFI_DRIVER "nl80211,wext"
+#else
+#define NM_WPAS_DEFAULT_WIFI_DRIVER "nl80211"
+#endif
+
+#define NM_WPAS_DBUS_IFACE_INTERFACE             NM_WPAS_DBUS_INTERFACE ".Interface"
+#define NM_WPAS_DBUS_IFACE_INTERFACE_WPS         NM_WPAS_DBUS_INTERFACE ".Interface.WPS"
+#define NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE  NM_WPAS_DBUS_INTERFACE ".Interface.P2PDevice"
+#define NM_WPAS_DBUS_IFACE_BSS                   NM_WPAS_DBUS_INTERFACE ".BSS"
+#define NM_WPAS_DBUS_IFACE_PEER                  NM_WPAS_DBUS_INTERFACE ".Peer"
+#define NM_WPAS_DBUS_IFACE_GROUP                 NM_WPAS_DBUS_INTERFACE ".Group"
+#define NM_WPAS_DBUS_IFACE_NETWORK               NM_WPAS_DBUS_INTERFACE ".Network"
+#define NM_WPAS_ERROR_INVALID_IFACE              NM_WPAS_DBUS_INTERFACE ".InvalidInterface"
+#define NM_WPAS_ERROR_EXISTS_ERROR               NM_WPAS_DBUS_INTERFACE ".InterfaceExists"
+#define NM_WPAS_ERROR_UNKNOWN_IFACE              NM_WPAS_DBUS_INTERFACE ".InterfaceUnknown"
+
 typedef struct _NMSupplicantManager NMSupplicantManager;
 typedef struct _NMSupplicantInterface NMSupplicantInterface;
 typedef struct _NMSupplicantConfig NMSupplicantConfig;

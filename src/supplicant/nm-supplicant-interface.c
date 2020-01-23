@@ -16,16 +16,6 @@
 #include "nm-core-internal.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 
-#define NM_WPAS_DBUS_IFACE_INTERFACE             NM_WPAS_DBUS_INTERFACE ".Interface"
-#define NM_WPAS_DBUS_IFACE_INTERFACE_WPS         NM_WPAS_DBUS_INTERFACE ".Interface.WPS"
-#define NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE  NM_WPAS_DBUS_INTERFACE ".Interface.P2PDevice"
-#define NM_WPAS_DBUS_IFACE_BSS                   NM_WPAS_DBUS_INTERFACE ".BSS"
-#define NM_WPAS_DBUS_IFACE_PEER                  NM_WPAS_DBUS_INTERFACE ".Peer"
-#define NM_WPAS_DBUS_IFACE_GROUP                 NM_WPAS_DBUS_INTERFACE ".Group"
-#define NM_WPAS_DBUS_IFACE_NETWORK               NM_WPAS_DBUS_INTERFACE ".Network"
-#define NM_WPAS_ERROR_INVALID_IFACE              NM_WPAS_DBUS_INTERFACE ".InvalidInterface"
-#define NM_WPAS_ERROR_EXISTS_ERROR               NM_WPAS_DBUS_INTERFACE ".InterfaceExists"
-
 /*****************************************************************************/
 
 typedef struct {
@@ -1779,12 +1769,6 @@ interface_removed_cb (GDBusProxy *proxy,
 	g_object_unref (self);
 }
 
-#if HAVE_WEXT
-#define DEFAULT_WIFI_DRIVER "nl80211,wext"
-#else
-#define DEFAULT_WIFI_DRIVER "nl80211"
-#endif
-
 static void
 on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -1823,7 +1807,7 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 
 		switch (priv->driver) {
 		case NM_SUPPLICANT_DRIVER_WIRELESS:
-			driver_name = DEFAULT_WIFI_DRIVER;
+			driver_name = NM_WPAS_DEFAULT_WIFI_DRIVER;
 			break;
 		case NM_SUPPLICANT_DRIVER_WIRED:
 			driver_name = "wired";
