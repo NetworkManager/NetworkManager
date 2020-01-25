@@ -326,7 +326,7 @@ static int n_dhcp4_incoming_query_u8(NDhcp4Incoming *message, uint8_t option, ui
         r = n_dhcp4_incoming_query(message, option, &data, &n_data);
         if (r)
                 return r;
-        else if (n_data != sizeof(*data))
+        else if (n_data < sizeof(*data))
                 return N_DHCP4_E_MALFORMED;
 
         *u8p = *data;
@@ -342,7 +342,7 @@ static int n_dhcp4_incoming_query_u16(NDhcp4Incoming *message, uint8_t option, u
         r = n_dhcp4_incoming_query(message, option, &data, &n_data);
         if (r)
                 return r;
-        else if (n_data != sizeof(be16))
+        else if (n_data < sizeof(be16))
                 return N_DHCP4_E_MALFORMED;
 
         memcpy(&be16, data, sizeof(be16));
@@ -360,7 +360,7 @@ static int n_dhcp4_incoming_query_u32(NDhcp4Incoming *message, uint8_t option, u
         r = n_dhcp4_incoming_query(message, option, &data, &n_data);
         if (r)
                 return r;
-        else if (n_data != sizeof(be32))
+        else if (n_data < sizeof(be32))
                 return N_DHCP4_E_MALFORMED;
 
         memcpy(&be32, data, sizeof(be32));
@@ -378,7 +378,7 @@ static int n_dhcp4_incoming_query_in_addr(NDhcp4Incoming *message, uint8_t optio
         r = n_dhcp4_incoming_query(message, option, &data, &n_data);
         if (r)
                 return r;
-        else if (n_data != sizeof(be32))
+        else if (n_data < sizeof(be32))
                 return N_DHCP4_E_MALFORMED;
 
         memcpy(&be32, data, sizeof(be32));
