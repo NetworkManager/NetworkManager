@@ -76,7 +76,7 @@ _LOG_DECLARE_SELF (NMDevice);
 /*****************************************************************************/
 
 #define DEFAULT_AUTOCONNECT    TRUE
-#define DHCP_GRACE_PERIOD_SEC  480
+#define DHCP_GRACE_PERIOD_MULTIPLIER 2U
 
 #define CARRIER_WAIT_TIME_MS 6000
 #define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
@@ -7834,12 +7834,24 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	 * wait for some time before failing the IP method.
 	 */
 	if (!priv->dhcp4.grace_id) {
-		priv->dhcp4.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
+		guint32 timeout;
+
+		/* Start a grace period equal to the DHCP timeout multiplied
+		 * by a constant factor. */
+		timeout = get_dhcp_timeout (self, AF_INET);
+		if (timeout < G_MAXUINT32 / DHCP_GRACE_PERIOD_MULTIPLIER) {
+			timeout *= DHCP_GRACE_PERIOD_MULTIPLIER;
+			_LOGI (LOGD_DHCP4,
+			       "DHCPv4: trying to acquire a new lease within %u seconds",
+			       timeout);
+		} else {
+			timeout = G_MAXUINT32;
+			_LOGI (LOGD_DHCP4, "DHCPv4: trying to acquire a new lease");
+		}
+
+		priv->dhcp4.grace_id = g_timeout_add_seconds (timeout,
 		                                              dhcp4_grace_period_expired,
 		                                              self);
-		_LOGI (LOGD_DHCP4,
-		       "DHCPv4: %u seconds grace period started",
-		       DHCP_GRACE_PERIOD_SEC);
 		goto clear_config;
 	}
 	return;
@@ -8627,12 +8639,24 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		 * wait for some time before failing the IP method.
 		 */
 		if (!priv->dhcp6.grace_id) {
-			priv->dhcp6.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
+			guint32 timeout;
+
+			/* Start a grace period equal to the DHCP timeout multiplied
+			 * by a constant factor. */
+			timeout = get_dhcp_timeout (self, AF_INET6);
+			if (timeout < G_MAXUINT32 / DHCP_GRACE_PERIOD_MULTIPLIER) {
+				timeout *= DHCP_GRACE_PERIOD_MULTIPLIER;
+				_LOGI (LOGD_DHCP6,
+				       "DHCPv6: trying to acquire a new lease within %u seconds",
+				       timeout);
+			} else {
+				timeout = G_MAXUINT32;
+				_LOGI (LOGD_DHCP6, "DHCPv6: trying to acquire a new lease");
+			}
+
+			priv->dhcp6.grace_id = g_timeout_add_seconds (timeout,
 			                                              dhcp6_grace_period_expired,
 			                                              self);
-			_LOGI (LOGD_DHCP6,
-			       "DHCPv6: %u seconds grace period started",
-			       DHCP_GRACE_PERIOD_SEC);
 			goto clear_config;
 		}
 	} else {
