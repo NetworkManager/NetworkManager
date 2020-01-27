@@ -1322,7 +1322,7 @@ nm_platform_link_get_ifindex (NMPlatform *self, const char *name)
 }
 
 const char *
-nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */)
+nm_platform_if_indextoname (NMPlatform *self, int ifindex, char out_ifname[static 16 /* IFNAMSIZ */])
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
