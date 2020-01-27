@@ -2011,6 +2011,20 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		return device;
 	}
 
+	if (!find_master (self,
+	                  connection,
+	                  device,
+	                  NULL,
+	                  NULL,
+	                  NULL,
+	                  &error)) {
+		_LOG3D (LOGD_DEVICE, connection,
+		        "skip activation: %s",
+		        error->message);
+		g_error_free (error);
+		return device;
+	}
+
 	/* Create backing resources if the device has any autoconnect connections */
 	connections = nm_settings_get_connections_clone (priv->settings, NULL,
 	                                                 NULL, NULL,
