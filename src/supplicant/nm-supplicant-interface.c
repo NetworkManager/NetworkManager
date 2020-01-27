@@ -84,7 +84,6 @@ enum {
 	WPS_CREDENTIALS,         /* WPS credentials received */
 	GROUP_STARTED,           /* a new Group (interface) was created */
 	GROUP_FINISHED,          /* a Group (interface) has been finished */
-	GROUP_FORMATION_FAILURE, /* P2P Group formation failed */
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -1647,16 +1646,6 @@ p2p_group_started (GDBusProxy *proxy,
 }
 
 static void
-p2p_group_formation_failure (GDBusProxy *proxy,
-                             const char *group,
-                             gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-
-	g_signal_emit (self, signals[GROUP_FORMATION_FAILURE], 0, group);
-}
-
-static void
 p2p_group_finished (GDBusProxy *proxy,
                     GVariant *params,
                     gpointer user_data)
@@ -1812,8 +1801,6 @@ on_p2p_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	                         G_CALLBACK (p2p_device_lost), self);
 	_nm_dbus_signal_connect (priv->p2p_proxy, "GroupStarted", G_VARIANT_TYPE ("(a{sv})"),
 	                         G_CALLBACK (p2p_group_started), self);
-	_nm_dbus_signal_connect (priv->p2p_proxy, "GroupFormationFailure", G_VARIANT_TYPE ("(s)"),
-	                         G_CALLBACK (p2p_group_formation_failure), self);
 	_nm_dbus_signal_connect (priv->p2p_proxy, "GroupFinished", G_VARIANT_TYPE ("(a{sv})"),
 	                         G_CALLBACK (p2p_group_finished), self);
 	/* TODO:
@@ -3172,14 +3159,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 
 	signals[GROUP_FINISHED] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_GROUP_FINISHED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1, G_TYPE_STRING);
-
-	signals[GROUP_FORMATION_FAILURE] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_GROUP_FORMATION_FAILURE,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
