@@ -7474,6 +7474,41 @@ ensure_con_ip_config (NMDevice *self, int addr_family)
 /*****************************************************************************/
 /* DHCPv4 stuff */
 
+static int
+get_dhcp_timeout (NMDevice *self, int addr_family)
+{
+	NMDeviceClass *klass;
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	guint32 timeout;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert_addr_family (addr_family);
+
+	connection = nm_device_get_applied_connection (self);
+
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+
+	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip);
+	if (timeout)
+		return timeout;
+
+	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                       addr_family == AF_INET
+	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
+	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
+	                                                       self,
+	                                                       0, G_MAXINT32, 0);
+	if (timeout)
+		return timeout;
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->get_dhcp_timeout)
+		timeout = klass->get_dhcp_timeout (self, addr_family);
+
+	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
+}
+
 static void
 dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
@@ -7917,41 +7952,6 @@ dhcp4_state_changed (NMDhcpClient *client,
 	default:
 		break;
 	}
-}
-
-static int
-get_dhcp_timeout (NMDevice *self, int addr_family)
-{
-	NMDeviceClass *klass;
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip;
-	guint32 timeout;
-
-	nm_assert (NM_IS_DEVICE (self));
-	nm_assert_addr_family (addr_family);
-
-	connection = nm_device_get_applied_connection (self);
-
-	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
-
-	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip);
-	if (timeout)
-		return timeout;
-
-	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                       addr_family == AF_INET
-	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
-	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
-	                                                       self,
-	                                                       0, G_MAXINT32, 0);
-	if (timeout)
-		return timeout;
-
-	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->get_dhcp_timeout)
-		timeout = klass->get_dhcp_timeout (self, addr_family);
-
-	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
 /**
