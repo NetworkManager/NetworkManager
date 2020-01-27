@@ -7500,7 +7500,7 @@ ensure_con_ip_config (NMDevice *self, int addr_family)
 /*****************************************************************************/
 /* DHCPv4 stuff */
 
-static int
+static guint32
 get_dhcp_timeout (NMDevice *self, int addr_family)
 {
 	NMDeviceClass *klass;
