@@ -569,7 +569,7 @@ foreach prog_name : ['resolvconf', 'netconfig']
       prog = find_program(prog_name,
                           '/usr/' + prog_name,
                           '/usr/sbin/' + prog_name,
-                          '/usr/local/sbin' + prog_name,
+                          '/usr/local/sbin/' + prog_name,
                           required : false)
       if prog.found()
         prog_path = prog.path()
