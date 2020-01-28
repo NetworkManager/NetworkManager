@@ -2719,7 +2719,7 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 	switch (mode) {
 	case CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART:
 		priv->concheck_x[IS_IPv4].p_cur_interval = NM_MIN (priv->concheck_x[IS_IPv4].p_max_interval, CONCHECK_P_PROBE_INTERVAL);
-		priv->concheck_x[IS_IPv4].p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		priv->concheck_x[IS_IPv4].p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_nsec_cached (&now_ns);
 		if (concheck_periodic_schedule_do (self, addr_family, now_ns))
 			concheck_start (self, addr_family, NULL, NULL, TRUE);
 		return;
@@ -2740,7 +2740,7 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 		}
 
 		cur_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_max_interval * NM_UTILS_NSEC_PER_SEC);
-		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		nm_utils_get_monotonic_timestamp_nsec_cached (&now_ns);
 
 		priv->concheck_x[IS_IPv4].p_cur_interval = priv->concheck_x[IS_IPv4].p_max_interval;
 		if (cur_expiry <= now_ns) {
@@ -2763,7 +2763,7 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 
 	case CONCHECK_SCHEDULE_CHECK_EXTERNAL:
 		/* a external connectivity check delays our periodic check. We reset the counter. */
-		priv->concheck_x[IS_IPv4].p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		priv->concheck_x[IS_IPv4].p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_nsec_cached (&now_ns);
 		concheck_periodic_schedule_do (self, addr_family, now_ns);
 		return;
 
@@ -2794,7 +2794,7 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 		 * pretty close to now_ns.
 		 *
 		 * We want to reschedule the timeout at exp_expiry (aka now) + cur_interval. */
-		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		nm_utils_get_monotonic_timestamp_nsec_cached (&now_ns);
 		exp_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (old_interval * NM_UTILS_NSEC_PER_SEC);
 		new_expiry = exp_expiry + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 		tdiff = NM_MAX (new_expiry - now_ns, 0);
@@ -2833,7 +2833,7 @@ concheck_periodic_schedule_set (NMDevice *self, int addr_family, ConcheckSchedul
 	 * when we schedule checks be at precise intervals, without including the time it took for
 	 * the connectivity check. */
 	new_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
-	tdiff = NM_MAX (new_expiry - nm_utils_get_monotonic_timestamp_ns_cached (&now_ns), 0);
+	tdiff = NM_MAX (new_expiry - nm_utils_get_monotonic_timestamp_nsec_cached (&now_ns), 0);
 	priv->concheck_x[IS_IPv4].p_cur_basetime_ns = now_ns + tdiff - (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
 	concheck_periodic_schedule_do (self, addr_family, now_ns);
 }

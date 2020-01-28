@@ -2434,7 +2434,7 @@ _host_id_read_timestamp (gboolean use_secret_key_file,
 	    && stat (SECRET_KEY_FILE, &st) == 0) {
 		/* don't check for overflow or timestamps in the future. We get whatever
 		 * (bogus) date is on the file. */
-		*out_timestamp_ns = nm_utils_timespec_to_ns (&st.st_mtim);
+		*out_timestamp_ns = nm_utils_timespec_to_nsec (&st.st_mtim);
 		return TRUE;
 	}
 

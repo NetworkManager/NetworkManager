@@ -5846,7 +5846,7 @@ nm_utils_get_timestamp_msec (void)
 {
 	gint64 ts;
 
-	ts = nm_utils_clock_gettime_ms (CLOCK_BOOTTIME);
+	ts = nm_utils_clock_gettime_msec (CLOCK_BOOTTIME);
 	if (ts >= 0)
 		return ts;
 
@@ -5855,7 +5855,7 @@ nm_utils_get_timestamp_msec (void)
 		 * criminally old kernel, prior to 2.6.39 (released on 18 May, 2011).
 		 * That happens during buildcheck on old builders, we don't expect to
 		 * be actually runs on kernels that old. */
-		ts = nm_utils_clock_gettime_ms (CLOCK_MONOTONIC);
+		ts = nm_utils_clock_gettime_msec (CLOCK_MONOTONIC);
 		if (ts >= 0)
 			return ts;
 	}

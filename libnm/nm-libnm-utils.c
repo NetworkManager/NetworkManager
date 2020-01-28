@@ -89,7 +89,7 @@ _nml_dbus_log (NMLDBusLogLevel level,
 		break;
 	}
 
-	ts = nm_utils_clock_gettime_ns (CLOCK_BOOTTIME);
+	ts = nm_utils_clock_gettime_nsec (CLOCK_BOOTTIME);
 
 	g_printerr ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
 	            prefix,

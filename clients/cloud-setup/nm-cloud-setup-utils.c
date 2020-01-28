@@ -49,7 +49,7 @@ _nm_log_impl_cs (NMLogLevel level,
 		break;
 	}
 
-	ts = nm_utils_clock_gettime_ns (CLOCK_BOOTTIME);
+	ts = nm_utils_clock_gettime_nsec (CLOCK_BOOTTIME);
 
 	g_print ("[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s %s\n",
 	         ts / NM_UTILS_NSEC_PER_SEC,

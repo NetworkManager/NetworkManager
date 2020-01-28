@@ -741,7 +741,7 @@ _addrtime_timestamp_to_nm (guint32 timestamp, gint32 *out_now_nm)
 	/* do all the calculations in milliseconds scale */
 
 	now_nm = nm_utils_get_monotonic_timestamp_msec ();
-	now_nl = nm_utils_clock_gettime_ms (CLOCK_MONOTONIC);
+	now_nl = nm_utils_clock_gettime_msec (CLOCK_MONOTONIC);
 
 	nm_assert (now_nm >= 1000);
 	nm_assert (now_nl >= 0);
