@@ -406,7 +406,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 		return FALSE;
 	}
 
-	nm_utils_inet4_ntop (a_address.s_addr, addr_str);
+	_nm_utils_inet4_ntop (a_address.s_addr, addr_str);
 	a_plen = nm_utils_ip4_netmask_to_prefix (a_netmask.s_addr);
 
 	nm_dhcp_option_add_option (options,
@@ -416,7 +416,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 	nm_dhcp_option_add_option (options,
 	                           _nm_dhcp_option_dhcp4_options,
 	                           NM_DHCP_OPTION_DHCP4_SUBNET_MASK,
-	                           nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
+	                           _nm_utils_inet4_ntop (a_netmask.s_addr, addr_str));
 
 	nm_dhcp_option_add_option_u64 (options,
 	                               _nm_dhcp_option_dhcp4_options,
@@ -433,7 +433,7 @@ lease_parse_address (NDhcp4ClientLease *lease,
 
 	n_dhcp4_client_lease_get_siaddr (lease, &a_next_server);
 	if (a_next_server.s_addr != INADDR_ANY) {
-		nm_utils_inet4_ntop (a_next_server.s_addr, addr_str);
+		_nm_utils_inet4_ntop (a_next_server.s_addr, addr_str);
 		nm_dhcp_option_add_option (options,
 		                           _nm_dhcp_option_dhcp4_options,
 		                           NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,
@@ -474,7 +474,7 @@ lease_parse_domain_name_servers (NDhcp4ClientLease *lease,
 
 	while (lease_option_next_in_addr (&addr, &data, &n_data)) {
 
-		nm_utils_inet4_ntop (addr.s_addr, addr_str);
+		_nm_utils_inet4_ntop (addr.s_addr, addr_str);
 		g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 
 		if (   addr.s_addr == 0
@@ -520,8 +520,8 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 
 		while (lease_option_next_route (&dest, &plen, &gateway, TRUE, &data, &n_data)) {
 
-			nm_utils_inet4_ntop (dest.s_addr, dest_str);
-			nm_utils_inet4_ntop (gateway.s_addr, gateway_str);
+			_nm_utils_inet4_ntop (dest.s_addr, dest_str);
+			_nm_utils_inet4_ntop (gateway.s_addr, gateway_str);
 
 			g_string_append_printf (nm_gstring_add_space_delimiter (str),
 			                        "%s/%d %s",
@@ -564,8 +564,8 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 
 		while (lease_option_next_route (&dest, &plen, &gateway, FALSE, &data, &n_data)) {
 
-			nm_utils_inet4_ntop (dest.s_addr, dest_str);
-			nm_utils_inet4_ntop (gateway.s_addr, gateway_str);
+			_nm_utils_inet4_ntop (dest.s_addr, dest_str);
+			_nm_utils_inet4_ntop (gateway.s_addr, gateway_str);
 
 			g_string_append_printf (nm_gstring_add_space_delimiter (str),
 			                        "%s/%d %s",
@@ -610,7 +610,7 @@ lease_parse_routes (NDhcp4ClientLease *lease,
 		nm_gstring_prepare (&str);
 
 		while (lease_option_next_in_addr (&gateway, &data, &n_data)) {
-			s = nm_utils_inet4_ntop (gateway.s_addr, gateway_str);
+			s = _nm_utils_inet4_ntop (gateway.s_addr, gateway_str);
 			g_string_append (nm_gstring_add_space_delimiter (str), s);
 
 			if (gateway.s_addr == 0) {
@@ -709,7 +709,7 @@ lease_parse_ntps (NDhcp4ClientLease *lease,
 	nm_gstring_prepare (&str);
 
 	while (lease_option_next_in_addr (&addr, &data, &n_data)) {
-		nm_utils_inet4_ntop (addr.s_addr, addr_str);
+		_nm_utils_inet4_ntop (addr.s_addr, addr_str);
 		g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 	}
 
@@ -966,7 +966,7 @@ lease_save (NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fi
 		return;
 
 	g_string_append_printf (new_contents,
-	                        "ADDRESS=%s\n", nm_utils_inet4_ntop (a_address.s_addr, sbuf));
+	                        "ADDRESS=%s\n", _nm_utils_inet4_ntop (a_address.s_addr, sbuf));
 
 	if (!g_file_set_contents (lease_file,
 	                          new_contents->str,

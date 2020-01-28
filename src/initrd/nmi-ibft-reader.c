@@ -204,19 +204,19 @@ ip_setting_add_from_block (GHashTable *nic,
                       NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
 	              NULL);
 
-	if (s_gateway && !nm_utils_ipaddr_valid (family, s_gateway)) {
+	if (s_gateway && !nm_utils_ipaddr_is_valid (family, s_gateway)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: invalid IP gateway '%s'.", s_gateway);
 		return FALSE;
 	}
 
-	if (s_dns1 && !nm_utils_ipaddr_valid (family, s_dns1)) {
+	if (s_dns1 && !nm_utils_ipaddr_is_valid (family, s_dns1)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: invalid DNS1 address '%s'.", s_dns1);
 		return FALSE;
 	}
 
-	if (s_dns2 && !nm_utils_ipaddr_valid (family, s_dns2)) {
+	if (s_dns2 && !nm_utils_ipaddr_is_valid (family, s_dns2)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: invalid DNS2 address '%s'.", s_dns2);
 		return FALSE;

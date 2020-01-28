@@ -184,12 +184,12 @@ acd_event (int fd,
 				r = n_acd_probe_announce (info->probe, N_ACD_DEFEND_ONCE);
 				if (r) {
 					_LOGW ("couldn't announce address %s on interface '%s': %s",
-					       nm_utils_inet4_ntop (info->address, address_str),
+					       _nm_utils_inet4_ntop (info->address, address_str),
 					       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 					       acd_error_to_string (r));
 				} else {
 					_LOGD ("announcing address %s",
-					       nm_utils_inet4_ntop (info->address, address_str));
+					       _nm_utils_inet4_ntop (info->address, address_str));
 				}
 			}
 			check_probing_done = TRUE;
@@ -202,14 +202,14 @@ acd_event (int fd,
 		case N_ACD_EVENT_DEFENDED:
 			n_acd_probe_get_userdata (event->defended.probe, (void **) &info);
 			_LOGD ("defended address %s from host %s",
-			       nm_utils_inet4_ntop (info->address, address_str),
+			       _nm_utils_inet4_ntop (info->address, address_str),
 			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
 			                                           event->defended.n_sender)));
 			break;
 		case N_ACD_EVENT_CONFLICT:
 			n_acd_probe_get_userdata (event->conflict.probe, (void **) &info);
 			_LOGW ("conflict for address %s detected with host %s on interface '%s'",
-			       nm_utils_inet4_ntop (info->address, address_str),
+			       _nm_utils_inet4_ntop (info->address, address_str),
 			       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
 			                                           event->defended.n_sender)),
 			       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex));
@@ -249,7 +249,7 @@ acd_probe_add (NMAcdManager *self,
 	r = n_acd_probe_config_new (&probe_config);
 	if (r) {
 		_LOGW ("could not create probe config for %s on interface '%s': %s",
-		       nm_utils_inet4_ntop (info->address, sbuf),
+		       _nm_utils_inet4_ntop (info->address, sbuf),
 		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		return FALSE;
@@ -261,7 +261,7 @@ acd_probe_add (NMAcdManager *self,
 	r = n_acd_probe (self->acd, &info->probe, probe_config);
 	if (r) {
 		_LOGW ("could not start probe for %s on interface '%s': %s",
-		       nm_utils_inet4_ntop (info->address, sbuf),
+		       _nm_utils_inet4_ntop (info->address, sbuf),
 		       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 		       acd_error_to_string (r));
 		n_acd_probe_config_free (probe_config);
@@ -417,12 +417,12 @@ nm_acd_manager_announce_addresses (NMAcdManager *self)
 			r = n_acd_probe_announce (info->probe, N_ACD_DEFEND_ONCE);
 			if (r) {
 				_LOGW ("couldn't announce address %s on interface '%s': %s",
-				       nm_utils_inet4_ntop (info->address, sbuf),
+				       _nm_utils_inet4_ntop (info->address, sbuf),
 				       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex),
 				       acd_error_to_string (r));
 				success = FALSE;
 			} else
-				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, sbuf));
+				_LOGD ("announcing address %s", _nm_utils_inet4_ntop (info->address, sbuf));
 		}
 	}
 

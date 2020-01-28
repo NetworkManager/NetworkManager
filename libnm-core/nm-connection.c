@@ -999,7 +999,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 
 				if (   inet_pton (AF_INET6, token, &i6_token) == 1
 				    && _nm_utils_inet6_is_token (&i6_token)) {
-					nm_utils_inet6_ntop (&i6_token, normalized);
+					_nm_utils_inet6_ntop (&i6_token, normalized);
 					if (g_strcmp0 (token, normalized)) {
 						g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, normalized, NULL);
 						changed = TRUE;

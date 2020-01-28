@@ -50,19 +50,6 @@ const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
 	{ NULL,                                        FALSE,   FALSE }
 };
 
-static int
-_addr_size (int family)
-{
-	switch (family) {
-	case AF_INET:
-		return sizeof (in_addr_t);
-	case AF_INET6:
-		return sizeof (struct in6_addr);
-	default:
-		g_return_val_if_reached (0);
-	}
-}
-
 static char *
 canonicalize_ip (int family, const char *ip, gboolean null_any)
 {
@@ -84,7 +71,7 @@ canonicalize_ip (int family, const char *ip, gboolean null_any)
 	g_return_val_if_fail (ret == 1, NULL);
 
 	if (null_any) {
-		if (!memcmp (addr_bytes, &in6addr_any, _addr_size (family)))
+		if (!memcmp (addr_bytes, &in6addr_any, nm_utils_addr_family_to_size (family)))
 			return NULL;
 	}
 
@@ -106,7 +93,7 @@ canonicalize_ip_binary (int family, gconstpointer ip, gboolean null_any)
 		g_return_val_if_reached (NULL);
 	}
 	if (null_any) {
-		if (!memcmp (ip, &in6addr_any, _addr_size (family)))
+		if (!memcmp (ip, &in6addr_any, nm_utils_addr_family_to_size (family)))
 			return NULL;
 	}
 	return g_strdup (inet_ntop (family, ip, string, sizeof (string)));
@@ -120,7 +107,7 @@ valid_ip (int family, const char *ip, GError **error)
 		             family == AF_INET ? _("Missing IPv4 address") : _("Missing IPv6 address"));
 		return FALSE;
 	}
-	if (!nm_utils_ipaddr_valid (family, ip)) {
+	if (!nm_utils_ipaddr_is_valid (family, ip)) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             family == AF_INET ? _("Invalid IPv4 address '%s'") : _("Invalid IPv6 address '%s'"),
 		             ip);
@@ -446,7 +433,7 @@ nm_ip_address_set_address (NMIPAddress *address,
 {
 	g_return_if_fail (address != NULL);
 	g_return_if_fail (addr != NULL);
-	g_return_if_fail (nm_utils_ipaddr_valid (address->family, addr));
+	g_return_if_fail (nm_utils_ipaddr_is_valid (address->family, addr));
 
 	g_free (address->address);
 	address->address = canonicalize_ip (address->family, addr, FALSE);
@@ -900,14 +887,14 @@ nm_ip_route_get_dest (NMIPRoute *route)
  * Sets the destination property of this route object.
  *
  * @dest must be a valid address of @route's family. If you aren't sure you
- * have a valid address, use nm_utils_ipaddr_valid() to check it.
+ * have a valid address, use nm_utils_ipaddr_is_valid() to check it.
  **/
 void
 nm_ip_route_set_dest (NMIPRoute *route,
                       const char *dest)
 {
 	g_return_if_fail (route != NULL);
-	g_return_if_fail (nm_utils_ipaddr_valid (route->family, dest));
+	g_return_if_fail (nm_utils_ipaddr_is_valid (route->family, dest));
 
 	g_free (route->dest);
 	route->dest = canonicalize_ip (route->family, dest, FALSE);
@@ -1022,7 +1009,7 @@ nm_ip_route_set_next_hop (NMIPRoute *route,
                           const char *next_hop)
 {
 	g_return_if_fail (route != NULL);
-	g_return_if_fail (!next_hop || nm_utils_ipaddr_valid (route->family, next_hop));
+	g_return_if_fail (!next_hop || nm_utils_ipaddr_is_valid (route->family, next_hop));
 
 	g_free (route->next_hop);
 	route->next_hop = canonicalize_ip (route->family, next_hop, TRUE);
@@ -1051,7 +1038,7 @@ nm_ip_route_get_next_hop_binary (NMIPRoute *route,
 		inet_pton (route->family, route->next_hop, next_hop);
 		return TRUE;
 	} else {
-		memset (next_hop, 0, _addr_size (route->family));
+		memset (next_hop, 0, nm_utils_addr_family_to_size (route->family));
 		return FALSE;
 	}
 }
@@ -1310,7 +1297,7 @@ nm_ip_route_attribute_validate  (const char *name,
 
 		switch (spec->str_type) {
 		case 'a': /* IP address */
-			if (!nm_utils_ipaddr_valid (family, string)) {
+			if (!nm_utils_ipaddr_is_valid (family, string)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_FAILED,
@@ -1338,7 +1325,7 @@ nm_ip_route_attribute_validate  (const char *name,
 					return FALSE;
 				}
 			}
-			if (!nm_utils_ipaddr_valid (family, addr)) {
+			if (!nm_utils_ipaddr_is_valid (family, addr)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_FAILED,
@@ -3698,7 +3685,7 @@ nm_setting_ip_config_add_dns (NMSettingIPConfig *setting, const char *dns)
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
 	g_return_val_if_fail (dns != NULL, FALSE);
-	g_return_val_if_fail (nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns), FALSE);
+	g_return_val_if_fail (nm_utils_ipaddr_is_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns), FALSE);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 
@@ -3754,7 +3741,7 @@ nm_setting_ip_config_remove_dns_by_value (NMSettingIPConfig *setting, const char
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
 	g_return_val_if_fail (dns != NULL, FALSE);
-	g_return_val_if_fail (nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns), FALSE);
+	g_return_val_if_fail (nm_utils_ipaddr_is_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns), FALSE);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 
@@ -4959,7 +4946,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	for (i = 0; i < priv->dns->len; i++) {
 		const char *dns = priv->dns->pdata[i];
 
-		if (!nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns)) {
+		if (!nm_utils_ipaddr_is_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5019,7 +5006,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			return FALSE;
 		}
 
-		if (!nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), priv->gateway)) {
+		if (!nm_utils_ipaddr_is_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), priv->gateway)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5441,7 +5428,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_GATEWAY:
 		gateway = g_value_get_string (value);
-		g_return_if_fail (!gateway || nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway));
+		g_return_if_fail (!gateway || nm_utils_ipaddr_is_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway));
 		g_free (priv->gateway);
 		priv->gateway = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway, TRUE);
 		break;

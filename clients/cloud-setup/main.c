@@ -335,7 +335,7 @@ _nmc_mangle_connection (NMDevice *device,
 		entry = nm_ip_routing_rule_new (AF_INET);
 		nm_ip_routing_rule_set_priority (entry, rt_table);
 		nm_ip_routing_rule_set_from (entry,
-		                             nm_utils_inet4_ntop (config_data->ipv4s_arr[i], sbuf),
+		                             _nm_utils_inet4_ntop (config_data->ipv4s_arr[i], sbuf),
 		                             32);
 		nm_ip_routing_rule_set_table (entry, rt_table);
 

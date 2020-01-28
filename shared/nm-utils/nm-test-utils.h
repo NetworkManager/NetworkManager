@@ -1597,9 +1597,9 @@ nmtst_setting_ip_config_add_address (NMSettingIPConfig *s_ip,
 
 	g_assert (s_ip);
 
-	if (nm_utils_ipaddr_valid (AF_INET, address))
+	if (nm_utils_ipaddr_is_valid (AF_INET, address))
 		family = AF_INET;
-	else if (nm_utils_ipaddr_valid (AF_INET6, address))
+	else if (nm_utils_ipaddr_is_valid (AF_INET6, address))
 		family = AF_INET6;
 	else
 		g_assert_not_reached ();
@@ -1622,9 +1622,9 @@ nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
 
 	g_assert (s_ip);
 
-	if (nm_utils_ipaddr_valid (AF_INET, dest))
+	if (nm_utils_ipaddr_is_valid (AF_INET, dest))
 		family = AF_INET;
-	else if (nm_utils_ipaddr_valid (AF_INET6, dest))
+	else if (nm_utils_ipaddr_is_valid (AF_INET6, dest))
 		family = AF_INET6;
 	else
 		g_assert_not_reached ();

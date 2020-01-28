@@ -2999,12 +2999,14 @@ nm_utils_ipv6_interface_identifier_get_from_token (NMUtilsIPv6IfaceId *iid,
  * Returns: the input buffer filled with the id as string.
  */
 const char *
-nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
+nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid,
+                                              char buf[static INET6_ADDRSTRLEN])
 {
 	struct in6_addr i6_token = { .s6_addr = { 0, } };
 
+	nm_assert (buf);
 	nm_utils_ipv6_addr_set_interface_identifier (&i6_token, iid);
-	return nm_utils_inet6_ntop (&i6_token, buf);
+	return _nm_utils_inet6_ntop (&i6_token, buf);
 }
 
 /*****************************************************************************/

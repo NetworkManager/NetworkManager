@@ -364,7 +364,7 @@ _parse_ip_route (int family,
 	for (i = 1; routev[i]; i++) {
 		gint64 tmp64;
 
-		if (nm_utils_ipaddr_valid (family, routev[i])) {
+		if (nm_utils_ipaddr_is_valid (family, routev[i])) {
 			if (metric != -1 || attrs) {
 				g_set_error (error, 1, 0, _("the next hop ('%s') must be first"), routev[i]);
 				return NULL;
@@ -3336,7 +3336,7 @@ _set_fcn_ip_config_gateway (ARGS_SET_FCN)
 
 	value = nm_strstrip_avoid_copy_a (300, value, &value_to_free);
 
-	if (!nm_utils_ipaddr_valid (addr_family, value)) {
+	if (!nm_utils_ipaddr_is_valid (addr_family, value)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		             _("invalid gateway address '%s'"),
 		             value);

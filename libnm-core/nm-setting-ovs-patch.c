@@ -81,8 +81,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   !nm_utils_ipaddr_valid (AF_INET, self->peer)
-	    && !nm_utils_ipaddr_valid (AF_INET6, self->peer)) {
+	if (   !nm_utils_ipaddr_is_valid (AF_INET, self->peer)
+	    && !nm_utils_ipaddr_is_valid (AF_INET6, self->peer)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,

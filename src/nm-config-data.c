@@ -1024,8 +1024,8 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 		if (strv) {
 			_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
 			for (i = 0, j = 0; strv[i]; i++) {
-				if (   nm_utils_ipaddr_valid (AF_INET, strv[i])
-				    || nm_utils_ipaddr_valid (AF_INET6, strv[i]))
+				if (   nm_utils_ipaddr_is_valid (AF_INET, strv[i])
+				    || nm_utils_ipaddr_is_valid (AF_INET6, strv[i]))
 					strv[j++] = strv[i];
 				else
 					g_free (strv[i]);
@@ -1147,8 +1147,8 @@ global_dns_domain_from_dbus (char *name, GVariant *variant)
 			strv = g_variant_dup_strv (val, NULL);
 			_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
 			for (i = 0, j = 0; strv && strv[i]; i++) {
-				if (   nm_utils_ipaddr_valid (AF_INET, strv[i])
-				    || nm_utils_ipaddr_valid (AF_INET6, strv[i]))
+				if (   nm_utils_ipaddr_is_valid (AF_INET, strv[i])
+				    || nm_utils_ipaddr_is_valid (AF_INET6, strv[i]))
 					strv[j++] = strv[i];
 				else
 					g_free (strv[i]);

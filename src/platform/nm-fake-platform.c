@@ -1237,10 +1237,10 @@ ip_route_add (NMPlatform *platform,
 
 			if (addr_family == AF_INET) {
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
-				             r->ifindex, nm_utils_inet4_ntop (r4->network, sbuf), r->plen, r->metric);
+				             r->ifindex, _nm_utils_inet4_ntop (r4->network, sbuf), r->plen, r->metric);
 			} else {
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
-				             r->ifindex, nm_utils_inet6_ntop (&r6->network, sbuf), r->plen, r->metric);
+				             r->ifindex, _nm_utils_inet6_ntop (&r6->network, sbuf), r->plen, r->metric);
 			}
 			return -NME_UNSPEC;
 		}

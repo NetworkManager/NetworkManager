@@ -1097,8 +1097,8 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 	    && nm_setting_ip_config_get_num_addresses (s_ip4) > 0) {
 		g_object_set (s_ip4,
 		              NM_SETTING_IP_CONFIG_GATEWAY,
-		              nm_utils_inet4_ntop (NMP_OBJECT_CAST_IP4_ROUTE (priv->best_default_route)->gateway,
-		                                   sbuf),
+		              _nm_utils_inet4_ntop (NMP_OBJECT_CAST_IP4_ROUTE (priv->best_default_route)->gateway,
+		                                    sbuf),
 		              NULL);
 	}
 
@@ -1133,7 +1133,7 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 	for (i = 0; i < nnameservers; i++) {
 		guint32 nameserver = nm_ip4_config_get_nameserver (self, i);
 
-		nm_setting_ip_config_add_dns (s_ip4, nm_utils_inet4_ntop (nameserver, sbuf));
+		nm_setting_ip_config_add_dns (s_ip4, _nm_utils_inet4_ntop (nameserver, sbuf));
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip4_config_get_search (self, i);
@@ -3096,14 +3096,14 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "address",
-				                       g_variant_new_string (nm_utils_inet4_ntop (address->address, addr_str)));
+				                       g_variant_new_string (_nm_utils_inet4_ntop (address->address, addr_str)));
 				g_variant_builder_add (&addr_builder, "{sv}",
 				                       "prefix",
 				                       g_variant_new_uint32 (address->plen));
 				if (address->peer_address != address->address) {
 					g_variant_builder_add (&addr_builder, "{sv}",
 					                       "peer",
-					                       g_variant_new_string (nm_utils_inet4_ntop (address->peer_address, addr_str)));
+					                       g_variant_new_string (_nm_utils_inet4_ntop (address->peer_address, addr_str)));
 				}
 
 				if (*address->label) {
@@ -3158,14 +3158,14 @@ out_addresses_cached:
 			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&route_builder, "{sv}",
 			                       "dest",
-			                       g_variant_new_string (nm_utils_inet4_ntop (route->network, addr_str)));
+			                       g_variant_new_string (_nm_utils_inet4_ntop (route->network, addr_str)));
 			g_variant_builder_add (&route_builder, "{sv}",
 			                       "prefix",
 			                       g_variant_new_uint32 (route->plen));
 			if (route->gateway) {
 				g_variant_builder_add (&route_builder, "{sv}",
 				                       "next-hop",
-				                       g_variant_new_string (nm_utils_inet4_ntop (route->gateway, addr_str)));
+				                       g_variant_new_string (_nm_utils_inet4_ntop (route->gateway, addr_str)));
 			}
 			g_variant_builder_add (&route_builder, "{sv}",
 			                       "metric",
@@ -3218,8 +3218,8 @@ out_routes_cached:
 		for (i = 0; i < priv->nameservers->len; i++) {
 			GVariantBuilder nested_builder;
 
-			nm_utils_inet4_ntop (g_array_index (priv->nameservers, in_addr_t, i),
-			                     addr_str);
+			_nm_utils_inet4_ntop (g_array_index (priv->nameservers, in_addr_t, i),
+			                      addr_str);
 
 			g_variant_builder_init (&nested_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&nested_builder, "{sv}",
@@ -3255,8 +3255,8 @@ out_routes_cached:
 		for (i = 0; i < priv->wins->len; i++) {
 			g_variant_builder_add (&builder_data,
 			                       "s",
-			                       nm_utils_inet4_ntop (g_array_index (priv->wins, in_addr_t, i),
-			                                            addr_str));
+			                       _nm_utils_inet4_ntop (g_array_index (priv->wins, in_addr_t, i),
+			                                             addr_str));
 		}
 		g_value_take_variant (value,
 		                      g_variant_builder_end (&builder_data));

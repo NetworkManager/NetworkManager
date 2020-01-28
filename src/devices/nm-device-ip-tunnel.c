@@ -96,35 +96,63 @@ ip6tnl_flags_plat_to_setting (guint32 flags)
 /*****************************************************************************/
 
 static gboolean
-address_equal_pp (int family, const char *a, const char *b)
+address_equal_pp (int addr_family, const char *a, const char *b)
 {
-	char buffer1[sizeof (struct in6_addr)] = { };
-	char buffer2[sizeof (struct in6_addr)] = { };
+	const NMIPAddr *addr_a = &nm_ip_addr_zero;
+	const NMIPAddr *addr_b = &nm_ip_addr_zero;
+	NMIPAddr addr_a_val;
+	NMIPAddr addr_b_val;
 
-	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+	nm_assert_addr_family (addr_family);
 
-	if (a)
-		inet_pton (family, a, buffer1);
-	if (b)
-		inet_pton (family, b, buffer2);
+	if (a) {
+		if (!nm_utils_parse_inaddr_bin (addr_family, a, NULL, &addr_a_val))
+			nm_assert_not_reached ();
+		addr_a = &addr_a_val;
+	}
+	if (b) {
+		if (!nm_utils_parse_inaddr_bin (addr_family, b, NULL, &addr_b_val))
+			nm_assert_not_reached ();
+		addr_b = &addr_b_val;
+	}
 
-	return !memcmp (buffer1, buffer2,
-	                family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr));
+	return nm_ip_addr_equal (addr_family, addr_a, addr_b);
 }
 
 static gboolean
-address_equal_pn (int family, const char *a, const void *b)
+address_set (int addr_family,
+             char **p_addr,
+             const NMIPAddr *addr_new)
 {
-	char buffer1[sizeof (struct in6_addr)] = { };
+	nm_assert_addr_family (addr_family);
+	nm_assert (p_addr);
+	nm_assert (   !*p_addr
+	           || nm_utils_ipaddr_is_normalized (addr_family, *p_addr));
 
-	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+	if (   !addr_new
+	    || nm_ip_addr_is_null (addr_family, addr_new)) {
+		if (nm_clear_g_free (p_addr))
+			return TRUE;
+		return FALSE;
+	}
 
-	if (a)
-		inet_pton (family, a, buffer1);
+	if (*p_addr) {
+		NMIPAddr addr_val;
 
-	return !memcmp (buffer1, b,
-	                family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr));
+		if (!nm_utils_parse_inaddr_bin (addr_family,
+		                                *p_addr,
+		                                NULL,
+		                                &addr_val))
+			nm_assert_not_reached ();
 
+		if (nm_ip_addr_equal (addr_family, &addr_val, addr_new))
+			return FALSE;
+
+		g_free (*p_addr);
+	}
+
+	*p_addr = nm_utils_inet_ntop_dup (addr_family, addr_new);
+	return TRUE;
 }
 
 static void
@@ -133,10 +161,8 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 	int parent_ifindex = 0;
-	in_addr_t local4 = 0;
-	in_addr_t remote4 = 0;
-	struct in6_addr local6 = IN6ADDR_ANY_INIT;
-	struct in6_addr remote6 = IN6ADDR_ANY_INIT;
+	NMIPAddr local = NM_IP_ADDR_INIT;
+	NMIPAddr remote = NM_IP_ADDR_INIT;
 	guint8 ttl = 0;
 	guint8 tos = 0;
 	guint8 encap_limit = 0;
@@ -181,8 +207,8 @@ clear:
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
-		local4 = lnk->local;
-		remote4 = lnk->remote;
+		local.addr4 = lnk->local;
+		remote.addr4 = lnk->remote;
 		ttl = lnk->ttl;
 		tos = lnk->tos;
 		pmtud = lnk->path_mtu_discovery;
@@ -226,8 +252,8 @@ clear:
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
-		local4 = lnk->local;
-		remote4 = lnk->remote;
+		local.addr4 = lnk->local;
+		remote.addr4 = lnk->remote;
 		ttl = lnk->ttl;
 		tos = lnk->tos;
 		pmtud = lnk->path_mtu_discovery;
@@ -241,8 +267,8 @@ clear:
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
-		local4 = lnk->local;
-		remote4 = lnk->remote;
+		local.addr4 = lnk->local;
+		remote.addr4 = lnk->remote;
 		ttl = lnk->ttl;
 		tos = lnk->tos;
 		pmtud = lnk->path_mtu_discovery;
@@ -267,8 +293,8 @@ clear:
 		}
 
 		parent_ifindex = lnk->parent_ifindex;
-		local6 = lnk->local;
-		remote6 = lnk->remote;
+		local.addr6 = lnk->local;
+		remote.addr6 = lnk->remote;
 		ttl = lnk->ttl;
 		tos = lnk->tclass;
 		encap_limit = lnk->encap_limit;
@@ -313,35 +339,10 @@ clear:
 
 	nm_device_parent_set_ifindex (device, parent_ifindex);
 
-	if (priv->addr_family == AF_INET) {
-		if (!address_equal_pn (AF_INET, priv->local, &local4)) {
-			g_clear_pointer (&priv->local, g_free);
-			if (local4)
-				priv->local = nm_utils_inet4_ntop_dup (local4);
-			_notify (self, PROP_LOCAL);
-		}
-
-		if (!address_equal_pn (AF_INET, priv->remote, &remote4)) {
-			g_clear_pointer (&priv->remote, g_free);
-			if (remote4)
-				priv->remote = nm_utils_inet4_ntop_dup (remote4);
-			_notify (self, PROP_REMOTE);
-		}
-	} else {
-		if (!address_equal_pn (AF_INET6, priv->local, &local6)) {
-			g_clear_pointer (&priv->local, g_free);
-			if (memcmp (&local6, &in6addr_any, sizeof (in6addr_any)))
-				priv->local = nm_utils_inet6_ntop_dup (&local6);
-			_notify (self, PROP_LOCAL);
-		}
-
-		if (!address_equal_pn (AF_INET6, priv->remote, &remote6)) {
-			g_clear_pointer (&priv->remote, g_free);
-			if (memcmp (&remote6, &in6addr_any, sizeof (in6addr_any)))
-				priv->remote = nm_utils_inet6_ntop_dup (&remote6);
-			_notify (self, PROP_REMOTE);
-		}
-	}
+	if (address_set (priv->addr_family, &priv->local, &local))
+		_notify (self, PROP_LOCAL);
+	if (address_set (priv->addr_family, &priv->remote, &remote))
+		_notify (self, PROP_REMOTE);
 
 out:
 

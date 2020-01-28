@@ -390,11 +390,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!address_matches (nm_setting_vxlan_get_remote (s_vxlan), priv->props.group, &priv->props.group6)) {
 		if (priv->props.group) {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_REMOTE,
-			              nm_utils_inet4_ntop (priv->props.group, sbuf),
+			              _nm_utils_inet4_ntop (priv->props.group, sbuf),
 			              NULL);
 		} else {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_REMOTE,
-			              nm_utils_inet6_ntop (&priv->props.group6, sbuf),
+			              _nm_utils_inet6_ntop (&priv->props.group6, sbuf),
 			              NULL);
 		}
 	}
@@ -402,11 +402,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!address_matches (nm_setting_vxlan_get_local (s_vxlan), priv->props.local, &priv->props.local6)) {
 		if (priv->props.local) {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_LOCAL,
-			              nm_utils_inet4_ntop (priv->props.local, sbuf),
+			              _nm_utils_inet4_ntop (priv->props.local, sbuf),
 			              NULL);
 		} else if (memcmp (&priv->props.local6, &in6addr_any, sizeof (in6addr_any))) {
 			g_object_set (s_vxlan, NM_SETTING_VXLAN_LOCAL,
-			              nm_utils_inet6_ntop (&priv->props.local6, sbuf),
+			              _nm_utils_inet6_ntop (&priv->props.local6, sbuf),
 			              NULL);
 		}
 	}

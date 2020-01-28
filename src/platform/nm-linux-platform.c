@@ -3790,12 +3790,12 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 
 		if (props->group)
 			NLA_PUT (msg, IFLA_VXLAN_GROUP, sizeof (props->group), &props->group);
-		else if (memcmp (&props->group6, &in6addr_any, sizeof (in6addr_any)))
+		else if (!IN6_IS_ADDR_UNSPECIFIED (&props->group6))
 			NLA_PUT (msg, IFLA_VXLAN_GROUP6, sizeof (props->group6), &props->group6);
 
 		if (props->local)
 			NLA_PUT (msg, IFLA_VXLAN_LOCAL, sizeof (props->local), &props->local);
-		else if (memcmp (&props->local6, &in6addr_any, sizeof (in6addr_any)))
+		else if (!IN6_IS_ADDR_UNSPECIFIED (&props->local6))
 			NLA_PUT (msg, IFLA_VXLAN_LOCAL6, sizeof (props->local6), &props->local6);
 
 		if (props->parent_ifindex >= 0)
@@ -3893,9 +3893,9 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		if (props->parent_ifindex)
 			NLA_PUT_U32 (msg, IFLA_IPTUN_LINK, props->parent_ifindex);
 
-		if (memcmp (&props->local, &in6addr_any, sizeof (in6addr_any)))
+		if (!IN6_IS_ADDR_UNSPECIFIED (&props->local))
 			NLA_PUT (msg, IFLA_IPTUN_LOCAL, sizeof (props->local), &props->local);
-		if (memcmp (&props->remote, &in6addr_any, sizeof (in6addr_any)))
+		if (!IN6_IS_ADDR_UNSPECIFIED (&props->remote))
 			NLA_PUT (msg, IFLA_IPTUN_REMOTE, sizeof (props->remote), &props->remote);
 
 		NLA_PUT_U8 (msg, IFLA_IPTUN_TTL, props->ttl);
@@ -3928,9 +3928,9 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		NLA_PUT_U16 (msg, IFLA_GRE_IFLAGS, htons (props->input_flags));
 		NLA_PUT_U16 (msg, IFLA_GRE_OFLAGS, htons (props->output_flags));
 
-		if (memcmp (&props->local, &in6addr_any, sizeof (in6addr_any)))
+		if (!IN6_IS_ADDR_UNSPECIFIED (&props->local))
 			NLA_PUT (msg, IFLA_GRE_LOCAL, sizeof (props->local), &props->local);
-		if (memcmp (&props->remote, &in6addr_any, sizeof (in6addr_any)))
+		if (!IN6_IS_ADDR_UNSPECIFIED (&props->local))
 			NLA_PUT (msg, IFLA_GRE_REMOTE, sizeof (props->remote), &props->remote);
 
 		NLA_PUT_U8 (msg, IFLA_GRE_TTL, props->ttl);

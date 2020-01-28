@@ -115,10 +115,30 @@ typedef struct {
 		 * However, as ethernet addresses fit in here nicely, use
 		 * it also for an ethernet MAC address. */
 		guint8 addr_eth[6 /*ETH_ALEN*/];
+
+		guint8 array[sizeof (struct in6_addr)];
 	};
 } NMIPAddr;
 
+#define NM_IP_ADDR_INIT { .array = { 0 } }
+
 extern const NMIPAddr nm_ip_addr_zero;
+
+static inline int
+nm_ip_addr_cmp (int addr_family, gconstpointer a, gconstpointer b)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (a);
+	nm_assert (b);
+
+	return memcmp (a, b, nm_utils_addr_family_to_size (addr_family));
+}
+
+static inline gboolean
+nm_ip_addr_equal (int addr_family, gconstpointer a, gconstpointer b)
+{
+	return nm_ip_addr_cmp (addr_family, a, b) == 0;
+}
 
 static inline gboolean
 nm_ip_addr_is_null (int addr_family, gconstpointer addr)
@@ -155,6 +175,72 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
 {
 	return (addr4 & htonl (0xFF000000u)) == htonl (0x7F000000u);
 }
+
+/*****************************************************************************/
+
+#define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
+
+static inline const char *
+nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
+{
+	const char *s;
+
+	const char *inet_ntop (int af,
+	                       const void *src,
+	                       char *dst,
+	                       socklen_t size);
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+	nm_assert (dst);
+
+	s = inet_ntop (addr_family,
+	               addr,
+	               dst,
+	               addr_family == AF_INET6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN);
+	nm_assert (s);
+	return s;
+}
+
+static inline const char *
+_nm_utils_inet4_ntop (in_addr_t addr, char dst[static INET_ADDRSTRLEN])
+{
+	return nm_utils_inet_ntop (AF_INET, &addr, dst);
+}
+
+static inline const char *
+_nm_utils_inet6_ntop (const struct in6_addr *addr, char dst[static INET6_ADDRSTRLEN])
+{
+	return nm_utils_inet_ntop (AF_INET6, addr, dst);
+}
+
+static inline char *
+nm_utils_inet_ntop_dup (int addr_family, gconstpointer addr)
+{
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	return g_strdup (nm_utils_inet_ntop (addr_family, addr, buf));
+}
+
+static inline char *
+nm_utils_inet4_ntop_dup (in_addr_t addr)
+{
+	return nm_utils_inet_ntop_dup (AF_INET, &addr);
+}
+
+static inline char *
+nm_utils_inet6_ntop_dup (const struct in6_addr *addr)
+{
+	return nm_utils_inet_ntop_dup (AF_INET6, addr);
+}
+
+/*****************************************************************************/
+
+gboolean nm_utils_ipaddr_is_valid (int addr_family,
+                                   const char *str_addr);
+
+gboolean nm_utils_ipaddr_is_normalized (int addr_family,
+                                        const char *str_addr);
 
 /*****************************************************************************/
 

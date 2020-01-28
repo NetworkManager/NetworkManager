@@ -2094,7 +2094,7 @@ test_read_wired_aliases_good (gconstpointer test_data)
 		g_assert (ip4_addr != NULL);
 
 		addr = nm_ip_address_get_address (ip4_addr);
-		g_assert (nm_utils_ipaddr_valid (AF_INET, addr));
+		g_assert (nm_utils_ipaddr_is_valid (AF_INET, addr));
 
 		for (j = 0; j < expected_num_addresses; j++) {
 			if (!g_strcmp0 (addr, expected_address[j]))

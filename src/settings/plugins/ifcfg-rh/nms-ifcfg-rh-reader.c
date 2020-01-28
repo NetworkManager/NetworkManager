@@ -727,7 +727,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 			else {
 				/* Try to autodetermine the prefix for the address' class */
 				prefix = _nm_utils_ip4_get_default_prefix (ipaddr);
-				PARSE_WARNING ("missing %s, assuming %s/%d", prefix_tag, nm_utils_inet4_ntop (ipaddr, inet_buf), prefix);
+				PARSE_WARNING ("missing %s, assuming %s/%d", prefix_tag, _nm_utils_inet4_ntop (ipaddr, inet_buf), prefix);
 			}
 		}
 	}
@@ -1305,7 +1305,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 		if (netmask != _nm_utils_ip4_prefix_to_netmask (prefix)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, inet_buf));
+			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, _nm_utils_inet4_ntop (netmask, inet_buf));
 			return FALSE;
 		}
 	} else {
@@ -1813,10 +1813,10 @@ make_ip4_setting (shvarFile *ifcfg,
 			nm_clear_g_free (&value);
 			v = svGetValueStr (ifcfg, tag, &value);
 			if (v) {
-				if (nm_utils_ipaddr_valid (AF_INET, v)) {
+				if (nm_utils_ipaddr_is_valid (AF_INET, v)) {
 					if (!nm_setting_ip_config_add_dns (s_ip4, v))
 						PARSE_WARNING ("duplicate DNS server %s", tag);
-				} else if (nm_utils_ipaddr_valid (AF_INET6, v)) {
+				} else if (nm_utils_ipaddr_is_valid (AF_INET6, v)) {
 					/* Ignore IPv6 addresses */
 				} else {
 					PARSE_WARNING ("invalid DNS server address %s", v);
@@ -2256,7 +2256,7 @@ make_ip6_setting (shvarFile *ifcfg,
 			char *ptr;
 			if ((ptr = strchr (v, '%')) != NULL)
 				*ptr = '\0';  /* remove %interface prefix if present */
-			if (!nm_utils_ipaddr_valid (AF_INET6, v)) {
+			if (!nm_utils_ipaddr_is_valid (AF_INET6, v)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 address '%s'", v);
 				return NULL;
@@ -2295,10 +2295,10 @@ make_ip6_setting (shvarFile *ifcfg,
 			break;
 		}
 
-		if (nm_utils_ipaddr_valid (AF_INET6, v)) {
+		if (nm_utils_ipaddr_is_valid (AF_INET6, v)) {
 			if (!nm_setting_ip_config_add_dns (s_ip6, v))
 				PARSE_WARNING ("duplicate DNS server %s", tag);
-		} else if (nm_utils_ipaddr_valid (AF_INET, v)) {
+		} else if (nm_utils_ipaddr_is_valid (AF_INET, v)) {
 			/* Ignore IPv4 addresses */
 		} else {
 			PARSE_WARNING ("invalid DNS server address %s", v);

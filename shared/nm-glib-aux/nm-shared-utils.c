@@ -882,6 +882,43 @@ nm_utils_parse_inaddr_prefix (int addr_family,
 
 /*****************************************************************************/
 
+gboolean
+nm_utils_ipaddr_is_valid (int addr_family,
+                          const char *str_addr)
+{
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	return    str_addr
+	       && nm_utils_parse_inaddr_bin (addr_family,
+	                                     str_addr,
+	                                     NULL,
+	                                     NULL);
+}
+
+gboolean
+nm_utils_ipaddr_is_normalized (int addr_family,
+                               const char *str_addr)
+{
+	NMIPAddr addr;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	if (!str_addr)
+		return FALSE;
+
+	if (!nm_utils_parse_inaddr_bin (addr_family,
+	                                str_addr,
+	                                &addr_family,
+	                                &addr))
+		return FALSE;
+
+	nm_utils_inet_ntop (addr_family, &addr, sbuf);
+	return nm_streq (sbuf, str_addr);
+}
+
+/*****************************************************************************/
+
 /* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string

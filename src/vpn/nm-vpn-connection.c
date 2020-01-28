@@ -984,10 +984,10 @@ print_vpn_config (NMVpnConnection *self)
 
 	if (priv->ip4_external_gw) {
 		_LOGI ("Data: VPN Gateway: %s",
-		       nm_utils_inet4_ntop (priv->ip4_external_gw, b1));
+		       _nm_utils_inet4_ntop (priv->ip4_external_gw, b1));
 	} else if (priv->ip6_external_gw) {
 		_LOGI ("Data: VPN Gateway: %s",
-		       nm_utils_inet6_ntop (priv->ip6_external_gw, b1));
+		       _nm_utils_inet6_ntop (priv->ip6_external_gw, b1));
 	}
 
 	_LOGI ("Data: Tunnel Device: %s%s%s", NM_PRINT_FMT_QUOTE_STRING (priv->ip_iface));
@@ -1001,22 +1001,22 @@ print_vpn_config (NMVpnConnection *self)
 		nm_assert (address4);
 
 		if (priv->ip4_internal_gw)
-			_LOGI ("Data:   Internal Gateway: %s", nm_utils_inet4_ntop (priv->ip4_internal_gw, b1));
-		_LOGI ("Data:   Internal Address: %s", address4 ? nm_utils_inet4_ntop (address4->address, b1) : "??");
+			_LOGI ("Data:   Internal Gateway: %s", _nm_utils_inet4_ntop (priv->ip4_internal_gw, b1));
+		_LOGI ("Data:   Internal Address: %s", address4 ? _nm_utils_inet4_ntop (address4->address, b1) : "??");
 		_LOGI ("Data:   Internal Prefix: %d", address4 ? (int) address4->plen : -1);
-		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, b1));
+		_LOGI ("Data:   Internal Point-to-Point Address: %s", _nm_utils_inet4_ntop (address4->peer_address, b1));
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route) {
 			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
-			       nm_utils_inet4_ntop (route->network, b1),
+			       _nm_utils_inet4_ntop (route->network, b1),
 			       route->plen,
-			       nm_utils_inet4_ntop (route->gateway, b2));
+			       _nm_utils_inet4_ntop (route->gateway, b2));
 		}
 
 		num = nm_ip4_config_get_num_nameservers (priv->ip4_config);
 		for (i = 0; i < num; i++) {
 			_LOGI ("Data:   Internal DNS: %s",
-			       nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (priv->ip4_config, i), b1));
+			       _nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (priv->ip4_config, i), b1));
 		}
 
 		if (nm_ip4_config_get_num_domains (priv->ip4_config) > 0)
@@ -1035,22 +1035,22 @@ print_vpn_config (NMVpnConnection *self)
 		nm_assert (address6);
 
 		if (priv->ip6_internal_gw)
-			_LOGI ("Data:   Internal Gateway: %s", nm_utils_inet6_ntop (priv->ip6_internal_gw, b1));
-		_LOGI ("Data:   Internal Address: %s", nm_utils_inet6_ntop (&address6->address, b1));
+			_LOGI ("Data:   Internal Gateway: %s", _nm_utils_inet6_ntop (priv->ip6_internal_gw, b1));
+		_LOGI ("Data:   Internal Address: %s", _nm_utils_inet6_ntop (&address6->address, b1));
 		_LOGI ("Data:   Internal Prefix: %d", address6->plen);
-		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet6_ntop (&address6->peer_address, b1));
+		_LOGI ("Data:   Internal Point-to-Point Address: %s", _nm_utils_inet6_ntop (&address6->peer_address, b1));
 
 		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route) {
 			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
-			       nm_utils_inet6_ntop (&route->network, b1),
+			       _nm_utils_inet6_ntop (&route->network, b1),
 			       route->plen,
-			       nm_utils_inet6_ntop (&route->gateway, b2));
+			       _nm_utils_inet6_ntop (&route->gateway, b2));
 		}
 
 		num = nm_ip6_config_get_num_nameservers (priv->ip6_config);
 		for (i = 0; i < num; i++) {
 			_LOGI ("Data:   Internal DNS: %s",
-			       nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (priv->ip6_config, i), b1));
+			       _nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (priv->ip6_config, i), b1));
 		}
 
 		if (nm_ip6_config_get_num_domains (priv->ip6_config) > 0)

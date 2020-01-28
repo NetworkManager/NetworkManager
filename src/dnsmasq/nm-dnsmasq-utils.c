@@ -95,9 +95,8 @@ nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,
 	first = htonl (first);
 	last = htonl (last);
 
-	nm_utils_inet4_ntop (first, out_first);
-	nm_utils_inet4_ntop (last, out_last);
+	_nm_utils_inet4_ntop (first, out_first);
+	_nm_utils_inet4_ntop (last, out_last);
 
 	return TRUE;
 }
-

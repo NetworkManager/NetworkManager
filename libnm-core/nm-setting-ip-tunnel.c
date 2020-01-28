@@ -341,7 +341,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->local && !nm_utils_ipaddr_valid (family, priv->local)) {
+	if (priv->local && !nm_utils_ipaddr_is_valid (family, priv->local)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -361,7 +361,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_utils_ipaddr_valid (family, priv->remote)) {
+	if (!nm_utils_ipaddr_is_valid (family, priv->remote)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
