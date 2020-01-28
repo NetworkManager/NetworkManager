@@ -477,7 +477,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 /*****************************************************************************/
 
 static void
-bound4_handle (NMDhcpSystemd *self)
+bound4_handle (NMDhcpSystemd *self, gboolean extended)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
@@ -514,7 +514,7 @@ bound4_handle (NMDhcpSystemd *self)
 	dhcp_lease_save (lease, priv->lease_file);
 
 	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
-	                          NM_DHCP_STATE_BOUND,
+	                          extended ? NM_DHCP_STATE_EXTENDED : NM_DHCP_STATE_BOUND,
 	                          NM_IP_CONFIG_CAST (ip4_config),
 	                          options);
 }
@@ -538,8 +538,10 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 		break;
 	case SD_DHCP_CLIENT_EVENT_RENEW:
 	case SD_DHCP_CLIENT_EVENT_IP_CHANGE:
+		bound4_handle (self, TRUE);
+		break;
 	case SD_DHCP_CLIENT_EVENT_IP_ACQUIRE:
-		bound4_handle (self);
+		bound4_handle (self, FALSE);
 		break;
 	case SD_DHCP_CLIENT_EVENT_SELECTING:
 		break;

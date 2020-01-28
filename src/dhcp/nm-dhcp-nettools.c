@@ -976,7 +976,7 @@ lease_save (NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fi
 }
 
 static void
-bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
+bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended)
 {
 	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
@@ -984,7 +984,7 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
 	gs_unref_hashtable GHashTable *options = NULL;
 	GError *error = NULL;
 
-	_LOGT ("lease available");
+	_LOGT ("lease available (%s)", extended ? "extended" : "new");
 
 	ip4_config = lease_to_ip4_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
@@ -1005,7 +1005,7 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease)
 	lease_save (self, lease, priv->lease_file);
 
 	nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
-	                          NM_DHCP_STATE_BOUND,
+	                          extended ? NM_DHCP_STATE_EXTENDED : NM_DHCP_STATE_BOUND,
 	                          NM_IP_CONFIG_CAST (ip4_config),
 	                          options);
 }
@@ -1036,10 +1036,10 @@ dhcp4_event_handle (NMDhcpNettools *self,
 		break;
 	case N_DHCP4_CLIENT_EVENT_GRANTED:
 		priv->lease = n_dhcp4_client_lease_ref (event->granted.lease);
-		bound4_handle (self, event->granted.lease);
+		bound4_handle (self, event->granted.lease, FALSE);
 		break;
 	case N_DHCP4_CLIENT_EVENT_EXTENDED:
-		bound4_handle (self, event->extended.lease);
+		bound4_handle (self, event->extended.lease, TRUE);
 		break;
 	case N_DHCP4_CLIENT_EVENT_DOWN:
 		/* ignore down events, they are purely informational */
