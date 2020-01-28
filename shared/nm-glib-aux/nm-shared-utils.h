@@ -1051,6 +1051,24 @@ nm_g_variant_unref_floating (GVariant *var)
 		g_variant_unref (var);
 }
 
+#define nm_g_variant_lookup(dictionary, ...) \
+	({ \
+		GVariant *const _dictionary = (dictionary); \
+		\
+		(   _dictionary \
+		 && g_variant_lookup (_dictionary, __VA_ARGS__)); \
+	})
+
+static inline GVariant *
+nm_g_variant_lookup_value (GVariant *dictionary,
+                           const char *key,
+                           const GVariantType *expected_type)
+{
+	return   dictionary
+	       ? g_variant_lookup_value (dictionary, key, expected_type)
+	       : NULL;
+}
+
 static inline void
 nm_g_source_destroy_and_unref (GSource *source)
 {
