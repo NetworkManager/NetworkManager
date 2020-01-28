@@ -4663,6 +4663,19 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	if (nm_active_connection_get_activation_type (active) == NM_ACTIVATION_TYPE_MANAGED)
 		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
+	/* Try to find the master connection/device if the connection has a dependency */
+	if (!find_master (self,
+	                  applied,
+	                  device,
+	                  &master_connection,
+	                  &master_device,
+	                  &master_ac,
+	                  error)) {
+		g_prefix_error (error, "Can not find a master for %s: ",
+		                nm_settings_connection_get_id (sett_conn));
+		return FALSE;
+	}
+
 	/* Create any backing resources the device needs */
 	if (!nm_device_is_real (device)) {
 		NMDevice *parent;
@@ -4729,19 +4742,6 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 				return FALSE;
 			}
 		}
-	}
-
-	/* Try to find the master connection/device if the connection has a dependency */
-	if (!find_master (self,
-	                  applied,
-	                  device,
-	                  &master_connection,
-	                  &master_device,
-	                  &master_ac,
-	                  error)) {
-		g_prefix_error (error, "Can not find a master for %s: ",
-		                nm_settings_connection_get_id (sett_conn));
-		return FALSE;
 	}
 
 	/* Ensure there's a master active connection the new connection we're
