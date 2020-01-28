@@ -1615,4 +1615,18 @@ guint nm_utils_parse_debug_string (const char *string,
                                    const GDebugKey *keys,
                                    guint nkeys);
 
+/*****************************************************************************/
+
+static inline gboolean
+nm_utils_strdup_reset (char **dst, const char *src)
+{
+	nm_assert (dst);
+
+	if (nm_streq0 (*dst, src))
+		return FALSE;
+	g_free (*dst);
+	*dst = g_strdup (src);
+	return TRUE;
+}
+
 #endif /* __NM_SHARED_UTILS_H__ */
