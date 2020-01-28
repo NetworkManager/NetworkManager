@@ -968,6 +968,26 @@ nmtst_rand_perm_gslist (GRand *rand, GSList *list)
 /*****************************************************************************/
 
 static inline gboolean
+nmtst_g_source_assert_not_called (gpointer user_data)
+{
+	g_assert_not_reached ();
+	return G_SOURCE_CONTINUE;
+}
+
+static inline gboolean
+nmtst_g_source_set_boolean_true (gpointer user_data)
+{
+	gboolean *ptr = user_data;
+
+	g_assert (ptr);
+	g_assert (!*ptr);
+	*ptr = TRUE;
+	return G_SOURCE_CONTINUE;
+}
+
+/*****************************************************************************/
+
+static inline gboolean
 _nmtst_main_loop_run_timeout (gpointer user_data)
 {
 	GMainLoop **p_loop = user_data;
@@ -1010,33 +1030,120 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 }
 #define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
 
-static inline gboolean
-_nmtst_main_context_iterate_until_timeout (gpointer user_data)
-{
-	gboolean *p_had_pointer = user_data;
-
-	g_assert (!*p_had_pointer);
-	*p_had_pointer = TRUE;
-	return G_SOURCE_CONTINUE;
-}
-
 #define nmtst_main_context_iterate_until(context, timeout_msec, condition) \
-	G_STMT_START { \
+	({ \
 		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
 		GMainContext *_context = (context); \
 		gboolean _had_timeout = FALSE; \
 		\
 		_source = g_timeout_source_new (timeout_msec); \
-		g_source_set_callback (_source, _nmtst_main_context_iterate_until_timeout, &_had_timeout, NULL); \
+		g_source_set_callback (_source, nmtst_g_source_set_boolean_true, &_had_timeout, NULL); \
 		g_source_attach (_source, _context); \
 		\
 		while (TRUE) { \
 			if (condition) \
 				break; \
 			g_main_context_iteration (_context, TRUE); \
-			g_assert (!_had_timeout && #condition); \
+			if (_had_timeout) \
+				break; \
 		} \
+		\
+		!_had_timeout; \
+	})
+
+#define nmtst_main_context_iterate_until_assert(context, timeout_msec, condition) \
+	G_STMT_START { \
+		if (!nmtst_main_context_iterate_until (context, timeout_msec, condition)) \
+			g_assert (FALSE && #condition); \
 	} G_STMT_END
+
+/*****************************************************************************/
+
+static inline void
+nmtst_main_context_assert_no_dispatch (GMainContext *context,
+                                       guint timeout_msec)
+{
+	nm_auto_destroy_and_unref_gsource GSource *source = NULL;
+	gboolean timeout_hit = FALSE;
+
+	source = g_timeout_source_new (timeout_msec);
+	g_source_set_callback (source, nmtst_g_source_set_boolean_true, &timeout_hit, NULL);
+	g_source_attach (source, context);
+
+	while (g_main_context_iteration (context, TRUE)) {
+		if (timeout_hit)
+			return;
+		g_assert_not_reached ();
+	}
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	GMainLoop *_main_loop;
+	union {
+		GSList *_list;
+		const void *const is_waiting;
+	};
+} NMTstContextBusyWatcherData;
+
+static inline void
+_nmtst_context_busy_watcher_add_cb (gpointer data,
+                                    GObject *where_the_object_was)
+{
+	NMTstContextBusyWatcherData *watcher_data = data;
+	GSList *l;
+
+	g_assert (watcher_data);
+
+	l = g_slist_find (watcher_data->_list, where_the_object_was);
+	g_assert (l);
+
+	watcher_data->_list = g_slist_delete_link (watcher_data->_list, l);
+	if (!watcher_data->_list)
+		g_main_loop_quit (watcher_data->_main_loop);
+}
+
+static inline void
+nmtst_context_busy_watcher_add (NMTstContextBusyWatcherData *watcher_data,
+                                GObject *object)
+{
+	g_assert (watcher_data);
+	g_assert (G_IS_OBJECT (object));
+
+	if (!watcher_data->_main_loop) {
+		watcher_data->_main_loop = g_main_loop_new (g_main_context_get_thread_default (),
+		                                            FALSE);
+		g_assert (!watcher_data->_list);
+	} else {
+		g_assert (   g_main_loop_get_context (watcher_data->_main_loop)
+		          == (g_main_context_get_thread_default () ?: g_main_context_default ()));
+	}
+
+	g_object_weak_ref (object,
+	                   _nmtst_context_busy_watcher_add_cb,
+	                   watcher_data);
+	watcher_data->_list = g_slist_prepend (watcher_data->_list, object);
+}
+
+static inline void
+nmtst_context_busy_watcher_wait (NMTstContextBusyWatcherData *watcher_data)
+{
+	g_assert (watcher_data);
+
+	if (!watcher_data->_main_loop) {
+		g_assert (!watcher_data->_list);
+		return;
+	}
+
+	if (watcher_data->_list) {
+		if (!nmtst_main_loop_run (watcher_data->_main_loop, 5000))
+			g_error ("timeout running mainloop waiting for GObject to destruct");
+	}
+
+	g_assert (!watcher_data->_list);
+	nm_clear_pointer (&watcher_data->_main_loop, g_main_loop_unref);
+}
 
 /*****************************************************************************/
 
@@ -2319,15 +2426,6 @@ nmtst_keyfile_get_num_keys (GKeyFile *keyfile,
 	g_assert_cmpint (NM_PTRARRAY_LEN (keys), ==, l);
 
 	return l;
-}
-
-/*****************************************************************************/
-
-static inline gboolean
-nmtst_g_source_assert_not_called (gpointer user_data)
-{
-	g_assert_not_reached ();
-	return G_SOURCE_CONTINUE;
 }
 
 /*****************************************************************************/

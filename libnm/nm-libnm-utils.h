@@ -31,6 +31,8 @@ gboolean nm_utils_g_param_spec_is_default (const GParamSpec *pspec);
 /*****************************************************************************/
 
 typedef enum {
+	_NML_DBUS_LOG_LEVEL_NONE        = 0x00,
+
 	_NML_DBUS_LOG_LEVEL_INITIALIZED = 0x01,
 
 	_NML_DBUS_LOG_LEVEL_TRACE       = 0x02,
@@ -83,6 +85,7 @@ nml_dbus_log_enabled (NMLDBusLogLevel level)
 	int l;
 
 	nm_assert (NM_IN_SET (level, NML_DBUS_LOG_LEVEL_ANY,
+	                             _NML_DBUS_LOG_LEVEL_NONE,
 	                             NML_DBUS_LOG_LEVEL_TRACE,
 	                             NML_DBUS_LOG_LEVEL_DEBUG,
 	                             NML_DBUS_LOG_LEVEL_WARN,
@@ -104,7 +107,8 @@ void _nml_dbus_log (NMLDBusLogLevel level,
 
 #define NML_DBUS_LOG(level, ...) \
 	G_STMT_START { \
-		G_STATIC_ASSERT (   (level) == NML_DBUS_LOG_LEVEL_TRACE \
+		G_STATIC_ASSERT (   (level) == _NML_DBUS_LOG_LEVEL_NONE \
+		                 || (level) == NML_DBUS_LOG_LEVEL_TRACE \
 		                 || (level) == NML_DBUS_LOG_LEVEL_DEBUG \
 		                 || (level) == NML_DBUS_LOG_LEVEL_WARN \
 		                 || (level) == NML_DBUS_LOG_LEVEL_ERROR); \
@@ -119,8 +123,19 @@ void _nml_dbus_log (NMLDBusLogLevel level,
 #define NML_DBUS_LOG_W(...) NML_DBUS_LOG (NML_DBUS_LOG_LEVEL_WARN,  __VA_ARGS__)
 #define NML_DBUS_LOG_E(...) NML_DBUS_LOG (NML_DBUS_LOG_LEVEL_ERROR, __VA_ARGS__)
 
+/* _NML_NMCLIENT_LOG_LEVEL_COERCE is only for printf debugging. You can disable client logging by
+ * mapping the requested log level to a different one (or disable it altogether).
+ * That's useful for example if you are interested in *other* trace logging messages from
+ * libnm and don't want to get flooded by NMClient's trace messages. */
+#define _NML_NMCLIENT_LOG_LEVEL_COERCE(level) \
+	/* for example, change condition below to suppress <trace> messages from NMClient. */ \
+	((   TRUE \
+	  || ((level) != NML_DBUS_LOG_LEVEL_TRACE)) \
+	 ? (level) \
+	 : _NML_DBUS_LOG_LEVEL_NONE)
+
 #define NML_NMCLIENT_LOG(level, self, ...) \
-	NML_DBUS_LOG ((level), \
+	NML_DBUS_LOG (_NML_NMCLIENT_LOG_LEVEL_COERCE (level), \
 	              "nmclient["NM_HASH_OBFUSCATE_PTR_FMT"]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
 	              NM_HASH_OBFUSCATE_PTR (self) \
 	              _NM_UTILS_MACRO_REST (__VA_ARGS__))
@@ -157,6 +172,45 @@ _nml_coerce_property_strv_not_null (char **strv)
 {
 	return ((const char *const*) strv) ?: NM_PTRARRAY_EMPTY (const char *);
 }
+
+/*****************************************************************************/
+
+GQuark nm_context_busy_watcher_quark (void);
+
+void nm_context_busy_watcher_integrate_source (GMainContext *outer_context,
+                                               GMainContext *inner_context,
+                                               GObject *context_busy_watcher);
+
+/*****************************************************************************/
+
+typedef struct {
+	GCancellable *cancellable;
+	GSource *cancel_on_idle_source;
+	gulong cancelled_id;
+	union {
+		struct {
+			GTask *task;
+		} async;
+		struct {
+			GMainLoop *main_loop;
+			GError **error_location;
+		} sync;
+	} data;
+	bool is_sync:1;
+} NMLInitData;
+
+NMLInitData *nml_init_data_new_sync (GCancellable *cancellable,
+                                     GMainLoop *main_loop,
+                                     GError **error_location);
+
+NMLInitData *nml_init_data_new_async (GCancellable *cancellable,
+                                      GTask *task_take);
+
+void nml_init_data_return (NMLInitData *init_data,
+                           GError *error_take);
+
+void nml_cleanup_context_busy_watcher_on_idle (GObject *context_busy_watcher_take,
+                                               GMainContext *context);
 
 /*****************************************************************************/
 

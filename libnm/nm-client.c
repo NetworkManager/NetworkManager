@@ -60,7 +60,7 @@
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("nm-client-context-busy-watcher", nm_client_context_busy_watcher_quark)
+NM_CACHED_QUARK_FCN ("nm-context-busy-watcher", nm_context_busy_watcher_quark)
 
 static void
 _context_busy_watcher_attach_integration_source_cb (gpointer data,
@@ -69,10 +69,21 @@ _context_busy_watcher_attach_integration_source_cb (gpointer data,
 	nm_g_source_destroy_and_unref (data);
 }
 
-static void
-_context_busy_watcher_attach_integration_source (GObject *context_busy_watcher,
-                                                 GSource *source_take)
+void
+nm_context_busy_watcher_integrate_source (GMainContext *outer_context,
+                                          GMainContext *inner_context,
+                                          GObject *context_busy_watcher)
 {
+	GSource *source;
+
+	nm_assert (outer_context);
+	nm_assert (inner_context);
+	nm_assert (outer_context != inner_context);
+	nm_assert (G_IS_OBJECT (context_busy_watcher));
+
+	source = nm_utils_g_main_context_create_integrate_source (inner_context);
+	g_source_attach (source, outer_context);
+
 	/* The problem is...
 	 *
 	 * NMClient is associated with a GMainContext, just like its underlying GDBusConnection
@@ -114,7 +125,7 @@ _context_busy_watcher_attach_integration_source (GObject *context_busy_watcher,
 
 	g_object_weak_ref (context_busy_watcher,
 	                   _context_busy_watcher_attach_integration_source_cb,
-	                   source_take);
+	                   source);
 }
 
 /*****************************************************************************/
@@ -174,22 +185,6 @@ typedef struct {
 } NMLDBusObjWatcherWithPtr;
 
 /*****************************************************************************/
-
-typedef struct {
-	GCancellable *cancellable;
-	GSource *cancel_on_idle_source;
-	gulong cancelled_id;
-	union {
-		struct {
-			GTask *task;
-		} async;
-		struct {
-			GMainLoop *main_loop;
-			GError **error_location;
-		} sync;
-	} data;
-	bool is_sync:1;
-} InitData;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMClient,
 	PROP_DBUS_CONNECTION,
@@ -263,7 +258,7 @@ typedef struct {
 	GMainContext *dbus_context;
 	GObject *context_busy_watcher;
 	GDBusConnection *dbus_connection;
-	InitData *init_data;
+	NMLInitData *init_data;
 	GHashTable *dbus_objects;
 	CList obj_changed_lst_head;
 	GCancellable *name_owner_get_cancellable;
@@ -409,15 +404,15 @@ NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 
 /*****************************************************************************/
 
-static InitData *
-_init_data_new_sync (GCancellable *cancellable,
-                     GMainLoop *main_loop,
-                     GError **error_location)
+NMLInitData *
+nml_init_data_new_sync (GCancellable *cancellable,
+                        GMainLoop *main_loop,
+                        GError **error_location)
 {
-	InitData *init_data;
+	NMLInitData *init_data;
 
-	init_data = g_slice_new (InitData);
-	*init_data = (InitData) {
+	init_data = g_slice_new (NMLInitData);
+	*init_data = (NMLInitData) {
 		.cancellable = nm_g_object_ref (cancellable),
 		.is_sync     = TRUE,
 		.data.sync   = {
@@ -428,14 +423,14 @@ _init_data_new_sync (GCancellable *cancellable,
 	return init_data;
 }
 
-static InitData *
-_init_data_new_async (GCancellable *cancellable,
-                      GTask *task_take)
+NMLInitData *
+nml_init_data_new_async (GCancellable *cancellable,
+                         GTask *task_take)
 {
-	InitData *init_data;
+	NMLInitData *init_data;
 
-	init_data = g_slice_new (InitData);
-	*init_data = (InitData) {
+	init_data = g_slice_new (NMLInitData);
+	*init_data = (NMLInitData) {
 		.cancellable = nm_g_object_ref (cancellable),
 		.is_sync     = FALSE,
 		.data.async  = {
@@ -443,6 +438,30 @@ _init_data_new_async (GCancellable *cancellable,
 		},
 	};
 	return init_data;
+}
+
+void
+nml_init_data_return (NMLInitData *init_data,
+                      GError *error_take)
+{
+	nm_assert (init_data);
+
+	nm_clear_pointer (&init_data->cancel_on_idle_source, nm_g_source_destroy_and_unref);
+	nm_clear_g_signal_handler (init_data->cancellable, &init_data->cancelled_id);
+
+	if (init_data->is_sync) {
+		if (error_take)
+			g_propagate_error (init_data->data.sync.error_location, error_take);
+		g_main_loop_quit (init_data->data.sync.main_loop);
+	} else {
+		if (error_take)
+			g_task_return_error (init_data->data.async.task, error_take);
+		else
+			g_task_return_boolean (init_data->data.async.task, TRUE);
+		g_object_unref (init_data->data.async.task);
+	}
+	nm_g_object_unref (init_data->cancellable);
+	nm_g_slice_free (init_data);
 }
 
 /*****************************************************************************/
@@ -1008,7 +1027,7 @@ nm_client_get_context_busy_watcher (NMClient *self)
 	g_return_val_if_fail (NM_IS_CLIENT (self), NULL);
 
 	w = NM_CLIENT_GET_PRIVATE (self)->context_busy_watcher;
-	return    g_object_get_qdata (w, nm_client_context_busy_watcher_quark ())
+	return    g_object_get_qdata (w, nm_context_busy_watcher_quark ())
 	       ?: w;
 }
 
@@ -6816,7 +6835,7 @@ name_owner_changed (NMClient *self,
 
 		old_context_busy_watcher = g_steal_pointer (&priv->context_busy_watcher);
 		priv->context_busy_watcher = g_object_ref (g_object_get_qdata (old_context_busy_watcher,
-		                                                               nm_client_context_busy_watcher_quark ()));
+		                                                               nm_context_busy_watcher_quark ()));
 
 		g_main_context_ref (priv->main_context);
 		g_main_context_unref (priv->dbus_context);
@@ -6952,35 +6971,80 @@ name_owner_get_call (NMClient *self)
 
 /*****************************************************************************/
 
+static inline gboolean
+_nml_cleanup_context_busy_watcher_on_idle_cb (gpointer user_data)
+{
+	nm_auto_unref_gmaincontext GMainContext *context = NULL;
+	gs_unref_object GObject *context_busy_watcher = NULL;
+
+	nm_utils_user_data_unpack (user_data, &context, &context_busy_watcher);
+
+	nm_assert (context);
+	nm_assert (G_IS_OBJECT (context_busy_watcher));
+	return G_SOURCE_REMOVE;
+}
+
+void
+nml_cleanup_context_busy_watcher_on_idle (GObject *context_busy_watcher_take,
+                                          GMainContext *context)
+{
+	gs_unref_object GObject *context_busy_watcher = g_steal_pointer (&context_busy_watcher_take);
+	GSource *cleanup_source;
+
+	nm_assert (G_IS_OBJECT (context_busy_watcher));
+	nm_assert (context);
+
+	/* Technically, we cancelled all pending actions (and these actions
+	 * (GTask) keep the context_busy_watcher object alive). Also, we passed
+	 * no destroy notify to g_dbus_connection_signal_subscribe().
+	 * That means, there should be no other unaccounted GSource'es left.
+	 *
+	 * However, we really need to be sure that the context_busy_watcher's
+	 * lifetime matches the time that the context is busy. That is especially
+	 * important with synchronous initialization, where the context-busy-watcher
+	 * keeps the inner GMainContext integrated in the caller's.
+	 * We must not g_source_destroy() that integration too early.
+	 *
+	 * So to be really sure all this is given, always schedule one last
+	 * cleanup idle action with low priority. This should be the last
+	 * thing related to this instance that keeps the context busy.
+	 *
+	 * Note that we could also *not* take a reference on @context
+	 * and unref @context_busy_watcher via the GDestroyNotify. That would
+	 * allow for the context to be wrapped up early, and when the last user
+	 * gives up the reference to the context, the destroy notify could complete
+	 * without even invoke the idle handler. However, that destroy notify may
+	 * not be called in the right thread. So, we want to be sure that we unref
+	 * the context-busy-watcher in the right context. Hence, we always take an
+	 * additional reference and always cleanup in the idle handler. This means:
+	 * the user *MUST* always keep iterating the context after NMClient got destroyed.
+	 * But that is not a severe limitation, because the user anyway must be prepared
+	 * to do that. That is because in many cases it is necessary anyway (and the user
+	 * wouldn't know a priory when not). This way, it is just always necessary. */
+
+	cleanup_source = nm_g_idle_source_new (G_PRIORITY_LOW + 10,
+	                                       _nml_cleanup_context_busy_watcher_on_idle_cb,
+	                                       nm_utils_user_data_pack (g_main_context_ref (context),
+	                                                                g_steal_pointer (&context_busy_watcher)),
+	                                       NULL);
+	g_source_attach (cleanup_source, context);
+	g_source_unref (cleanup_source);
+}
+
+/*****************************************************************************/
+
 static void
 _init_start_complete (NMClient *self,
                       GError *error_take)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-	InitData *init_data;
-
-	init_data = g_steal_pointer (&priv->init_data);
 
 	NML_NMCLIENT_LOG_D (self, "%s init complete with %s%s%s",
-	                   init_data->is_sync ? "sync" : "async",
+	                   priv->init_data->is_sync ? "sync" : "async",
 	                   NM_PRINT_FMT_QUOTED (error_take, "error: ", error_take->message, "", "success"));
 
-	nm_clear_pointer (&init_data->cancel_on_idle_source, nm_g_source_destroy_and_unref);
-	nm_clear_g_signal_handler (init_data->cancellable, &init_data->cancelled_id);
-
-	if (init_data->is_sync) {
-		if (error_take)
-			g_propagate_error (init_data->data.sync.error_location, error_take);
-		g_main_loop_quit (init_data->data.sync.main_loop);
-	} else {
-		if (error_take)
-			g_task_return_error (init_data->data.async.task, error_take);
-		else
-			g_task_return_boolean (init_data->data.async.task, TRUE);
-		g_object_unref (init_data->data.async.task);
-	}
-	nm_g_object_unref (init_data->cancellable);
-	nm_g_slice_free (init_data);
+	nml_init_data_return (g_steal_pointer (&priv->init_data),
+	                      error_take);
 }
 
 static void
@@ -7379,12 +7443,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	 * to resync and drop the inner context. That means, requests made against the inner
 	 * context have a different lifetime. Hence, we create a separate tracking
 	 * object. This "wraps" the outer context-busy-watcher and references it, so
-	 * that the work together. Grep for nm_client_context_busy_watcher_quark() to
+	 * that the work together. Grep for nm_context_busy_watcher_quark() to
 	 * see how this works. */
 	parent_context_busy_watcher = g_steal_pointer (&priv->context_busy_watcher);
 	priv->context_busy_watcher = g_object_new (G_TYPE_OBJECT, NULL);
 	g_object_set_qdata_full (priv->context_busy_watcher,
-	                         nm_client_context_busy_watcher_quark (),
+	                         nm_context_busy_watcher_quark (),
 	                         parent_context_busy_watcher,
 	                         g_object_unref);
 
@@ -7392,7 +7456,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	main_loop = g_main_loop_new (dbus_context, FALSE);
 
-	priv->init_data = _init_data_new_sync (cancellable, main_loop, &local_error);
+	priv->init_data = nml_init_data_new_sync (cancellable, main_loop, &local_error);
 
 	_init_start (self);
 
@@ -7403,12 +7467,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	g_main_context_pop_thread_default (dbus_context);
 
 	if (priv->main_context != priv->dbus_context) {
-		GSource *source;
-
-		source = nm_utils_g_main_context_create_integrate_source (priv->dbus_context);
-		g_source_attach (source, priv->main_context);
-		_context_busy_watcher_attach_integration_source (priv->context_busy_watcher,
-		                                                 g_steal_pointer (&source));
+		nm_context_busy_watcher_integrate_source (priv->main_context,
+		                                          priv->dbus_context,
+		                                          priv->context_busy_watcher);
 	}
 
 	g_main_context_unref (dbus_context);
@@ -7448,7 +7509,7 @@ init_async (GAsyncInitable *initable,
 	task = nm_g_task_new (self, cancellable, init_async, callback, user_data);
 	g_task_set_priority (task, io_priority);
 
-	priv->init_data = _init_data_new_async (cancellable, g_steal_pointer (&task));
+	priv->init_data = nml_init_data_new_async (cancellable, g_steal_pointer (&task));
 
 	_init_start (self);
 }
@@ -7569,18 +7630,6 @@ constructed (GObject *object)
 	NML_NMCLIENT_LOG_D (self, "new NMClient instance");
 }
 
-static inline gboolean
-_dispose_cleanup_context_busy_watcher_cb (gpointer user_data)
-{
-	nm_auto_unref_gmaincontext GMainContext *context = NULL;
-	gs_unref_object GObject *context_busy_watcher = NULL;
-
-	nm_utils_user_data_unpack (user_data, &context, &context_busy_watcher);
-
-	nm_assert (G_IS_OBJECT (context_busy_watcher));
-	return G_SOURCE_REMOVE;
-}
-
 static void
 dispose (GObject *object)
 {
@@ -7631,42 +7680,8 @@ dispose (GObject *object)
 
 	if (   priv->context_busy_watcher
 	    && priv->dbus_context) {
-		GSource *cleanup_source;
-
-		/* Technically, we cancelled all pending actions (and these actions
-		 * (GTask) keep the context_busy_watcher object alive). Also, we passed
-		 * no destroy notify to g_dbus_connection_signal_subscribe().
-		 * That means, there should be no other unaccounted GSource'es left.
-		 *
-		 * However, we really need to be sure that the context_busy_watcher's
-		 * lifetime matches the time that the context is busy. That is especially
-		 * important with synchronous initialization, where the context-busy-watcher
-		 * keeps the inner GMainContext integrated in the caller's.
-		 * We must not g_source_destroy() that integration too early.
-		 *
-		 * So to be really sure all this is given, always schedule one last
-		 * cleanup idle action with low priority. This should be the last
-		 * thing related to this instance that keeps the context busy.
-		 *
-		 * Note that we could also *not* take a reference on priv->dbus_context
-		 * and unref priv->context_busy_watcher via the GDestroyNotify. That would
-		 * allow for the context to be wrapped up early, and when the last user
-		 * gives up the reference to the context, the destroy notify could complete
-		 * without even invoke the idle handler. However, that destroy notify may
-		 * not be called in the right thread. So, we want to be sure that we unref
-		 * the context-busy-watcher in the right context. Hence, we always take an
-		 * additional reference and always cleanup in the idle handler. This means:
-		 * the user *MUST* always keep iterating the context after NMClient got destroyed.
-		 * But that is not a severe limitation, because the user anyway must be prepared
-		 * to do that. That is because in many cases it is necessary anyway (and the user
-		 * wouldn't know a priory when not). This way, it is just always necessary. */
-		cleanup_source = nm_g_idle_source_new (G_PRIORITY_LOW + 10,
-		                                       _dispose_cleanup_context_busy_watcher_cb,
-		                                       nm_utils_user_data_pack (g_main_context_ref (priv->dbus_context),
-		                                                                g_steal_pointer (&priv->context_busy_watcher)),
-		                                       NULL);
-		g_source_attach (cleanup_source, priv->dbus_context);
-		g_source_unref (cleanup_source);
+		nml_cleanup_context_busy_watcher_on_idle (g_steal_pointer (&priv->context_busy_watcher),
+		                                          priv->dbus_context);
 	}
 
 	nm_clear_pointer (&priv->dbus_context, g_main_context_unref);
@@ -7682,6 +7697,8 @@ dispose (GObject *object)
 
 	priv->nm.capabilities_len = 0;
 	nm_clear_g_free (&priv->nm.capabilities_arr);
+
+	NML_NMCLIENT_LOG_D (self, "disposed");
 }
 
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_agentmanager = NML_DBUS_META_IFACE_INIT (

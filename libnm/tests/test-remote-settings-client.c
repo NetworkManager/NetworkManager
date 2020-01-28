@@ -62,7 +62,7 @@ test_add_connection (void)
 	                                add_cb,
 	                                &done);
 
-	nmtst_main_context_iterate_until (NULL, 5000, done);
+	nmtst_main_context_iterate_until_assert (NULL, 5000, done);
 
 	g_assert (gl.remote != NULL);
 
@@ -151,7 +151,7 @@ test_make_invisible (void)
 	                   set_visible_cb, NULL);
 
 	/* Wait for the connection to be removed */
-	nmtst_main_context_iterate_until (NULL, 5000, visible_changed && connection_removed);
+	nmtst_main_context_iterate_until_assert (NULL, 5000, visible_changed && connection_removed);
 
 	g_signal_handlers_disconnect_by_func (gl.remote, G_CALLBACK (visible_changed_cb), &visible_changed);
 	g_signal_handlers_disconnect_by_func (gl.client, G_CALLBACK (connection_removed_cb), &connection_removed);
@@ -225,7 +225,7 @@ test_make_visible (void)
 	                   set_visible_cb, NULL);
 
 	/* Wait for the settings service to announce the connection again */
-	nmtst_main_context_iterate_until (NULL, 5000, new);
+	nmtst_main_context_iterate_until_assert (NULL, 5000, new);
 
 	/* Ensure the new connection is the same as the one we made visible again */
 	g_assert (new == gl.remote);
@@ -313,7 +313,7 @@ test_remove_connection (void)
 	                   NULL,
 	                   deleted_cb, NULL);
 
-	nmtst_main_context_iterate_until (NULL, 5000, done && !gl.remote);
+	nmtst_main_context_iterate_until_assert (NULL, 5000, done && !gl.remote);
 
 	/* Ensure NMClient no longer has the connection */
 	conns = nm_client_get_connections (gl.client);
@@ -378,7 +378,7 @@ test_add_remove_connection (void)
 	                                add_remove_cb,
 	                                &done);
 
-	nmtst_main_context_iterate_until (NULL, 5000, done);
+	nmtst_main_context_iterate_until_assert (NULL, 5000, done);
 }
 
 /*****************************************************************************/
@@ -417,7 +417,7 @@ test_add_bad_connection (void)
 	                                &done);
 	g_clear_object (&connection);
 
-	nmtst_main_context_iterate_until (NULL, 5000, done);
+	nmtst_main_context_iterate_until_assert (NULL, 5000, done);
 	g_assert (gl.remote == NULL);
 }
 

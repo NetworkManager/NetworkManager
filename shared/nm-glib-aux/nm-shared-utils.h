@@ -1026,6 +1026,25 @@ nm_g_main_context_push_thread_default (GMainContext *context)
 	return context;
 }
 
+static inline gboolean
+nm_g_main_context_is_thread_default (GMainContext *context)
+{
+	GMainContext *cur_context;
+
+	cur_context = g_main_context_get_thread_default ();
+	if (cur_context == context)
+		return TRUE;
+
+	if (G_UNLIKELY (!cur_context))
+		cur_context = g_main_context_default ();
+	else if (G_UNLIKELY (!context))
+		context = g_main_context_default ();
+	else
+		return FALSE;
+
+	return (cur_context == context);
+}
+
 static inline GMainContext *
 nm_g_main_context_push_thread_default_if_necessary (GMainContext *context)
 {
@@ -1198,8 +1217,9 @@ _nm_utils_strv_equal (char **strv1, char **strv2)
 /*****************************************************************************/
 
 #define NM_UTILS_NSEC_PER_SEC  ((gint64) 1000000000)
-#define NM_UTILS_NSEC_PER_MSEC ((gint64) 1000000)
+#define NM_UTILS_USEC_PER_SEC  ((gint64) 1000000)
 #define NM_UTILS_MSEC_PER_SEC  ((gint64) 1000)
+#define NM_UTILS_NSEC_PER_MSEC ((gint64) 1000000)
 
 static inline gint64
 NM_UTILS_NSEC_TO_MSEC_CEIL (gint64 nsec)
