@@ -124,6 +124,22 @@ typedef struct {
 
 extern const NMIPAddr nm_ip_addr_zero;
 
+static inline int
+nm_ip_addr_cmp (int addr_family, gconstpointer a, gconstpointer b)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (a);
+	nm_assert (b);
+
+	return memcmp (a, b, nm_utils_addr_family_to_size (addr_family));
+}
+
+static inline gboolean
+nm_ip_addr_equal (int addr_family, gconstpointer a, gconstpointer b)
+{
+	return nm_ip_addr_cmp (addr_family, a, b) == 0;
+}
+
 static inline gboolean
 nm_ip_addr_is_null (int addr_family, gconstpointer addr)
 {
