@@ -1429,6 +1429,14 @@ fcn_name (lookup_type val) \
 			: _flags & (~_val); \
 	})
 
+#define NM_FLAGS_ASSIGN_MASK(flags, mask, val)  ({ \
+		const typeof(flags) _flags = (flags); \
+		const typeof(flags) _mask = (mask); \
+		const typeof(flags) _val = (val); \
+		\
+		((_flags & ~_mask) | (_mask & _val)); \
+	})
+
 /*****************************************************************************/
 
 #define _NM_BACKPORT_SYMBOL_IMPL(version, return_type, orig_func, versioned_func, args_typed, args) \
