@@ -53,6 +53,7 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 }
 
 #define NM_PENDING_ACTION_AUTOACTIVATE              "autoactivate"
+#define NM_PENDING_ACTION_IN_STATE_CHANGE           "in-state-change"
 #define NM_PENDING_ACTION_RECHECK_AVAILABLE         "recheck-available"
 #define NM_PENDING_ACTION_CARRIER_WAIT              "carrier-wait"
 #define NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT    "waiting-for-supplicant"
