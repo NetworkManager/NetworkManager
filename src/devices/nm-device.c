@@ -7784,9 +7784,10 @@ ip_config_merge_and_apply (NMDevice *self,
 }
 
 static gboolean
-dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
+dhcp4_lease_change (NMDevice *self, NMIP4Config *config, gboolean bound)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free_error GError *error = NULL;
 
 	g_return_val_if_fail (config, FALSE);
 
@@ -7794,6 +7795,15 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 
 	if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
 		_LOGW (LOGD_DHCP4, "failed to update IPv4 config for DHCP change.");
+		return FALSE;
+	}
+
+	/* TODO: we should perform DAD again whenever we obtain a
+	 * new lease after an expiry. But what should we do if
+	 * a duplicate address is detected? Fail the connection;
+	 * restart DHCP; continue without an address? */
+	if (bound && !nm_dhcp_client_accept (priv->dhcp4.client, &error)) {
+		_LOGW (LOGD_DHCP4, "error accepting lease: %s", error->message);
 		return FALSE;
 	}
 
@@ -7969,7 +7979,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 			ipv4_dad_start (self, configs, dhcp4_dad_cb);
 		} else if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
-			if (dhcp4_lease_change (self, ip4_config))
+			if (dhcp4_lease_change (self, ip4_config,
+			                        state == NM_DHCP_STATE_BOUND))
 				nm_device_update_metered (self);
 			else
 				dhcp4_fail (self, state);
