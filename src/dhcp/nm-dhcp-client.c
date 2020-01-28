@@ -317,6 +317,7 @@ nm_dhcp_client_get_use_fqdn (NMDhcpClient *self)
 static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
 	[NM_DHCP_STATE_UNKNOWN]    = "unknown",
 	[NM_DHCP_STATE_BOUND]      = "bound",
+	[NM_DHCP_STATE_EXTENDED]   = "extended",
 	[NM_DHCP_STATE_TIMEOUT]    = "timeout",
 	[NM_DHCP_STATE_EXPIRE]     = "expire",
 	[NM_DHCP_STATE_DONE]       = "done",
@@ -336,13 +337,14 @@ static NMDhcpState
 reason_to_state (NMDhcpClient *self, const char *iface, const char *reason)
 {
 	if (g_ascii_strcasecmp (reason, "bound") == 0 ||
-	    g_ascii_strcasecmp (reason, "bound6") == 0 ||
-	    g_ascii_strcasecmp (reason, "renew") == 0 ||
-	    g_ascii_strcasecmp (reason, "renew6") == 0 ||
-	    g_ascii_strcasecmp (reason, "reboot") == 0 ||
-	    g_ascii_strcasecmp (reason, "rebind") == 0 ||
-	    g_ascii_strcasecmp (reason, "rebind6") == 0)
+	    g_ascii_strcasecmp (reason, "bound6") == 0)
 		return NM_DHCP_STATE_BOUND;
+	else if (g_ascii_strcasecmp (reason, "renew") == 0 ||
+	         g_ascii_strcasecmp (reason, "renew6") == 0 ||
+	         g_ascii_strcasecmp (reason, "reboot") == 0 ||
+	         g_ascii_strcasecmp (reason, "rebind") == 0 ||
+	         g_ascii_strcasecmp (reason, "rebind6") == 0)
+		return NM_DHCP_STATE_EXTENDED;
 	else if (g_ascii_strcasecmp (reason, "timeout") == 0)
 		return NM_DHCP_STATE_TIMEOUT;
 	else if (g_ascii_strcasecmp (reason, "nak") == 0 ||
@@ -415,7 +417,7 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	gs_free char *event_id = NULL;
 
-	if (new_state == NM_DHCP_STATE_BOUND) {
+	if (NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
 		g_return_if_fail (NM_IS_IP_CONFIG (ip_config, priv->addr_family));
 		g_return_if_fail (options);
 	} else {
@@ -430,10 +432,11 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 
 	/* The client may send same-state transitions for RENEW/REBIND events and
 	 * the lease may have changed, so handle same-state transitions for the
-	 * BOUND state.  Ignore same-state transitions for other events since
-	 * the lease won't have changed and the state was already handled.
+	 * EXTENDED and BOUND states.  Ignore same-state transitions for other
+	 * events since the lease won't have changed and the state was already handled.
 	 */
-	if ((priv->state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
+	if (   (priv->state == new_state)
+	    && !NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED))
 		return;
 
 	if (_LOGI_ENABLED ()) {
@@ -448,7 +451,7 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	}
 
 	if (   priv->addr_family == AF_INET6
-	    && new_state == NM_DHCP_STATE_BOUND) {
+	    && NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
 		char *start, *iaid;
 
 		iaid = g_hash_table_lookup (options, "iaid");
@@ -877,7 +880,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 	_LOGD ("DHCP state '%s' -> '%s' (reason: '%s')",
 	       state_to_string (old_state), state_to_string (new_state), reason);
 
-	if (new_state == NM_DHCP_STATE_BOUND) {
+	if (NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
 		GVariantIter iter;
 		const char *name;
 		GVariant *value;
@@ -918,7 +921,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 		nm_dhcp_client_emit_ipv6_prefix_delegated (self, &prefix);
 	} else {
 		/* Fail if no valid IP config was received */
-		if (   new_state == NM_DHCP_STATE_BOUND
+		if (   NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)
 		    && !ip_config) {
 			_LOGW ("client bound but IP config not received");
 			new_state = NM_DHCP_STATE_FAIL;

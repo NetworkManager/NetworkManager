@@ -106,6 +106,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
+	case NM_DHCP_STATE_EXTENDED:
 		g_assert (ip4_config);
 		g_assert (nm_ip4_config_get_ifindex (ip4_config) == gl.ifindex);
 

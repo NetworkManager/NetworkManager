@@ -7900,6 +7900,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
+	case NM_DHCP_STATE_EXTENDED:
 		if (!ip4_config) {
 			_LOGW (LOGD_DHCP4, "failed to get IPv4 config in response to DHCP event.");
 			dhcp4_fail (self, state);
@@ -8694,6 +8695,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
+	case NM_DHCP_STATE_EXTENDED:
 		nm_clear_g_source (&priv->dhcp6.grace_id);
 		/* If the server sends multiple IPv6 addresses, we receive a state
 		 * changed event for each of them. Use the event ID to merge IPv6
