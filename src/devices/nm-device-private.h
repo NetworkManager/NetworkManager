@@ -180,7 +180,7 @@ void nm_device_commit_mtu (NMDevice *self);
 	((NM_NARG (__VA_ARGS__) == 0) \
 	  ? NULL \
 	  : ({ \
-	      const NMLinkType _types[NM_NARG (__VA_ARGS__) + 1] = { \
+	      static const NMLinkType _types[NM_NARG (__VA_ARGS__) + 1] = { \
 	          __VA_ARGS__ \
 	          _NM_MACRO_COMMA_IF_ARGS (__VA_ARGS__) \
 	          NM_LINK_TYPE_NONE, \
