@@ -341,7 +341,7 @@ no-auto-default=*
 
         <para>When using <literal>dnsmasq</literal> and <literal>systemd-resolved</literal>
         per-connection added dns servers will always be queried using
-        the device the connection has been activated on.
+        the device the connection has been activated on.</para>
         </listitem>
       </varlistentry>
 
