@@ -5333,9 +5333,9 @@ impl_manager_activate_connection (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(&o&o&o)", &connection_path, &device_path, &specific_object_path);
 
-	connection_path = nm_utils_dbus_normalize_object_path (connection_path);
-	specific_object_path = nm_utils_dbus_normalize_object_path (specific_object_path);
-	device_path = nm_utils_dbus_normalize_object_path (device_path);
+	connection_path = nm_dbus_path_not_empty (connection_path);
+	specific_object_path = nm_dbus_path_not_empty (specific_object_path);
+	device_path = nm_dbus_path_not_empty (device_path);
 
 	/* If the connection path is given and valid, that connection is activated.
 	 * Otherwise the "best" connection for the device is chosen and activated,
@@ -5623,8 +5623,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 		}
 	}
 
-	specific_object_path = nm_utils_dbus_normalize_object_path (specific_object_path);
-	device_path = nm_utils_dbus_normalize_object_path (device_path);
+	specific_object_path = nm_dbus_path_not_empty (specific_object_path);
+	device_path = nm_dbus_path_not_empty (device_path);
 
 	/* Try to create a new connection with the given settings.
 	 * We allow empty settings for AddAndActivateConnection(). In that case,

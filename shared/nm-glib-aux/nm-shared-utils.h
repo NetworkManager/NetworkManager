@@ -1346,18 +1346,6 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
-static inline const char *
-nm_utils_dbus_normalize_object_path (const char *path)
-{
-	/* D-Bus does not allow an empty object path. Hence, whenever we mean NULL / no-object
-	 * on D-Bus, it's path is actually "/".
-	 *
-	 * Normalize that away, and return %NULL in that case. */
-	if (path && path[0] == '/' && path[1] == '\0')
-		return NULL;
-	return path;
-}
-
 #define NM_DEFINE_GDBUS_ARG_INFO_FULL(name_, ...) \
 	((GDBusArgInfo *) (&((const GDBusArgInfo) { \
 		.ref_count = -1, \
