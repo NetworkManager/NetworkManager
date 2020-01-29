@@ -30,6 +30,9 @@ stamp-*
 gtk-doc.make
 *.pc
 cscope.*out
+.clangd/
+compile_commands.json
+tags
 valgrind-*.log
 test-*.log
 test-*.trs
