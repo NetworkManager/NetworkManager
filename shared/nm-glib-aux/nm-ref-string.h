@@ -50,6 +50,18 @@ nm_ref_string_get_len (NMRefString *rstr)
 }
 
 static inline gboolean
+nm_ref_string_equals_str (NMRefString *rstr, const char *s)
+{
+	/* Note that rstr->len might be greater than strlen(rstr->str). This function does
+	 * not cover that and would ignore everything after the first NUL byte. If you need
+	 * that distinction, this function is not for you. */
+
+	return   rstr
+	       ? nm_streq (rstr->str, s)
+	       : (s == NULL);
+}
+
+static inline gboolean
 NM_IS_REF_STRING (const NMRefString *rstr)
 {
 #if NM_MORE_ASSERTS > 10
