@@ -338,6 +338,10 @@ no-auto-default=*
         setting below), the name server there will be localhost only.
         NetworkManager also writes a file <filename>&nmrundir;/no-stub-resolv.conf</filename>
         that contains the original name servers pushed to the DNS plugin.</para>
+
+        <para>When using <literal>dnsmasq</literal> and <literal>systemd-resolved</literal>
+        per-connection added dns servers will always be queried using
+        the device the connection has been activated on.
         </listitem>
       </varlistentry>
 
