@@ -923,7 +923,7 @@ nm_ndisc_start (NMNDisc *ndisc)
 	switch (priv->node_type) {
 	case NM_NDISC_NODE_TYPE_HOST:
 		ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
-		ra_wait_secs = CLAMP (ra_wait_secs, 30, 120);
+		ra_wait_secs = MAX (ra_wait_secs, 30);
 		priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, ndisc_ra_timeout_cb, ndisc);
 		_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
 		solicit_routers (ndisc);
