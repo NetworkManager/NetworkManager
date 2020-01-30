@@ -841,11 +841,10 @@ static int n_dhcp4_client_probe_transition_lifetime(NDhcp4ClientProbe *probe) {
                         return r;
 
                 c_assert(probe->client->current_probe == probe);
-                probe->client->current_probe = NULL;
+                probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
 
-                n_dhcp4_c_connection_close(&probe->connection);
-
-                probe->state = N_DHCP4_CLIENT_PROBE_STATE_EXPIRED;
+                probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
+                probe->ns_deferred =  n_dhcp4_gettime(CLOCK_BOOTTIME) + UINT64_C(1);
 
                 break;
 
