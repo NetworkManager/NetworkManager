@@ -210,6 +210,8 @@ gpointer nml_dbus_property_o_get_obj (NMLDBusPropertyO *pr_o);
 
 gboolean nml_dbus_property_o_is_ready (const NMLDBusPropertyO *pr_o);
 
+gboolean nml_dbus_property_o_is_ready_fully (const NMLDBusPropertyO *pr_o);
+
 void nml_dbus_property_o_clear (NMLDBusPropertyO *pr_o,
                                 NMClient *client);
 
