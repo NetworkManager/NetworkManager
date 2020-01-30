@@ -1256,7 +1256,7 @@ nml_dbus_object_obj_changed_link (NMClient *self,
 	nm_assert (changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
 
 	if (!NM_FLAGS_ALL ((NMLDBusObjChangedType ) dbobj->obj_changed_type, changed_type))
-		NML_NMCLIENT_LOG_T (self, "[%s] changed-type 0x%02x linked", dbobj->dbus_path->str, (guint) changed_type);
+		NML_NMCLIENT_LOG_T (self, "[%s]: changed-type 0x%02x linked", dbobj->dbus_path->str, (guint) changed_type);
 
 	if (dbobj->obj_changed_type == NML_DBUS_OBJ_CHANGED_TYPE_NONE) {
 		NMClientPrivate *priv;
@@ -1302,7 +1302,7 @@ nml_dbus_object_obj_changed_consume (NMClient *self,
 	if (dbobj->obj_changed_type == NML_DBUS_OBJ_CHANGED_TYPE_NONE) {
 		c_list_unlink (&dbobj->obj_changed_lst);
 		nm_assert (changed_type_res != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
-		NML_NMCLIENT_LOG_T (self, "[%s] changed-type 0x%02x consumed", dbobj->dbus_path->str, (guint) changed_type_res);
+		NML_NMCLIENT_LOG_T (self, "[%s]: changed-type 0x%02x consumed", dbobj->dbus_path->str, (guint) changed_type_res);
 		return changed_type_res;
 	}
 
@@ -1310,7 +1310,7 @@ nml_dbus_object_obj_changed_consume (NMClient *self,
 
 	nm_assert (!c_list_contains (&priv->obj_changed_lst_head, &dbobj->obj_changed_lst));
 	nm_c_list_move_tail (&priv->obj_changed_lst_head, &dbobj->obj_changed_lst);
-	NML_NMCLIENT_LOG_T (self, "[%s] changed-type 0x%02x consumed  (still has 0x%02x)", dbobj->dbus_path->str, (guint) changed_type_res, (guint) dbobj->obj_changed_type);
+	NML_NMCLIENT_LOG_T (self, "[%s]: changed-type 0x%02x consumed  (still has 0x%02x)", dbobj->dbus_path->str, (guint) changed_type_res, (guint) dbobj->obj_changed_type);
 	return changed_type_res;
 }
 
