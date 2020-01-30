@@ -76,7 +76,7 @@ _LOG_DECLARE_SELF (NMDevice);
 /*****************************************************************************/
 
 #define DEFAULT_AUTOCONNECT    TRUE
-#define DHCP_GRACE_PERIOD_SEC  480
+#define DHCP_GRACE_PERIOD_MULTIPLIER 2U
 
 #define CARRIER_WAIT_TIME_MS 6000
 #define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
@@ -7474,6 +7474,41 @@ ensure_con_ip_config (NMDevice *self, int addr_family)
 /*****************************************************************************/
 /* DHCPv4 stuff */
 
+static guint32
+get_dhcp_timeout (NMDevice *self, int addr_family)
+{
+	NMDeviceClass *klass;
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	guint32 timeout;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert_addr_family (addr_family);
+
+	connection = nm_device_get_applied_connection (self);
+
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+
+	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip);
+	if (timeout)
+		return timeout;
+
+	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                       addr_family == AF_INET
+	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
+	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
+	                                                       self,
+	                                                       0, G_MAXINT32, 0);
+	if (timeout)
+		return timeout;
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->get_dhcp_timeout)
+		timeout = klass->get_dhcp_timeout (self, addr_family);
+
+	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
+}
+
 static void
 dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
@@ -7723,9 +7758,10 @@ ip_config_merge_and_apply (NMDevice *self,
 }
 
 static gboolean
-dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
+dhcp4_lease_change (NMDevice *self, NMIP4Config *config, gboolean bound)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free_error GError *error = NULL;
 
 	g_return_val_if_fail (config, FALSE);
 
@@ -7733,6 +7769,15 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 
 	if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
 		_LOGW (LOGD_DHCP4, "failed to update IPv4 config for DHCP change.");
+		return FALSE;
+	}
+
+	/* TODO: we should perform DAD again whenever we obtain a
+	 * new lease after an expiry. But what should we do if
+	 * a duplicate address is detected? Fail the connection;
+	 * restart DHCP; continue without an address? */
+	if (bound && !nm_dhcp_client_accept (priv->dhcp4.client, &error)) {
+		_LOGW (LOGD_DHCP4, "error accepting lease: %s", error->message);
 		return FALSE;
 	}
 
@@ -7799,12 +7844,24 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	 * wait for some time before failing the IP method.
 	 */
 	if (!priv->dhcp4.grace_id) {
-		priv->dhcp4.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
+		guint32 timeout;
+
+		/* Start a grace period equal to the DHCP timeout multiplied
+		 * by a constant factor. */
+		timeout = get_dhcp_timeout (self, AF_INET);
+		if (timeout < G_MAXUINT32 / DHCP_GRACE_PERIOD_MULTIPLIER) {
+			timeout *= DHCP_GRACE_PERIOD_MULTIPLIER;
+			_LOGI (LOGD_DHCP4,
+			       "DHCPv4: trying to acquire a new lease within %u seconds",
+			       timeout);
+		} else {
+			timeout = G_MAXUINT32;
+			_LOGI (LOGD_DHCP4, "DHCPv4: trying to acquire a new lease");
+		}
+
+		priv->dhcp4.grace_id = g_timeout_add_seconds (timeout,
 		                                              dhcp4_grace_period_expired,
 		                                              self);
-		_LOGI (LOGD_DHCP4,
-		       "DHCPv4: %u seconds grace period started",
-		       DHCP_GRACE_PERIOD_SEC);
 		goto clear_config;
 	}
 	return;
@@ -7853,6 +7910,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
+	case NM_DHCP_STATE_EXTENDED:
 		if (!ip4_config) {
 			_LOGW (LOGD_DHCP4, "failed to get IPv4 config in response to DHCP event.");
 			dhcp4_fail (self, state);
@@ -7895,7 +7953,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 			ipv4_dad_start (self, configs, dhcp4_dad_cb);
 		} else if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
-			if (dhcp4_lease_change (self, ip4_config))
+			if (dhcp4_lease_change (self, ip4_config,
+			                        state == NM_DHCP_STATE_BOUND))
 				nm_device_update_metered (self);
 			else
 				dhcp4_fail (self, state);
@@ -7917,41 +7976,6 @@ dhcp4_state_changed (NMDhcpClient *client,
 	default:
 		break;
 	}
-}
-
-static int
-get_dhcp_timeout (NMDevice *self, int addr_family)
-{
-	NMDeviceClass *klass;
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip;
-	guint32 timeout;
-
-	nm_assert (NM_IS_DEVICE (self));
-	nm_assert_addr_family (addr_family);
-
-	connection = nm_device_get_applied_connection (self);
-
-	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
-
-	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip);
-	if (timeout)
-		return timeout;
-
-	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                       addr_family == AF_INET
-	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
-	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
-	                                                       self,
-	                                                       0, G_MAXINT32, 0);
-	if (timeout)
-		return timeout;
-
-	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->get_dhcp_timeout)
-		timeout = klass->get_dhcp_timeout (self, addr_family);
-
-	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
 /**
@@ -8627,12 +8651,24 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		 * wait for some time before failing the IP method.
 		 */
 		if (!priv->dhcp6.grace_id) {
-			priv->dhcp6.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
+			guint32 timeout;
+
+			/* Start a grace period equal to the DHCP timeout multiplied
+			 * by a constant factor. */
+			timeout = get_dhcp_timeout (self, AF_INET6);
+			if (timeout < G_MAXUINT32 / DHCP_GRACE_PERIOD_MULTIPLIER) {
+				timeout *= DHCP_GRACE_PERIOD_MULTIPLIER;
+				_LOGI (LOGD_DHCP6,
+				       "DHCPv6: trying to acquire a new lease within %u seconds",
+				       timeout);
+			} else {
+				timeout = G_MAXUINT32;
+				_LOGI (LOGD_DHCP6, "DHCPv6: trying to acquire a new lease");
+			}
+
+			priv->dhcp6.grace_id = g_timeout_add_seconds (timeout,
 			                                              dhcp6_grace_period_expired,
 			                                              self);
-			_LOGI (LOGD_DHCP6,
-			       "DHCPv6: %u seconds grace period started",
-			       DHCP_GRACE_PERIOD_SEC);
 			goto clear_config;
 		}
 	} else {
@@ -8670,6 +8706,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
+	case NM_DHCP_STATE_EXTENDED:
 		nm_clear_g_source (&priv->dhcp6.grace_id);
 		/* If the server sends multiple IPv6 addresses, we receive a state
 		 * changed event for each of them. Use the event ID to merge IPv6
