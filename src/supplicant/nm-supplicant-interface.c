@@ -3184,5 +3184,5 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1, G_TYPE_VARIANT);
+	                  G_TYPE_NONE, 1, G_TYPE_STRING);
 }
