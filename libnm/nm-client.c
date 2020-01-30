@@ -1594,6 +1594,14 @@ nml_dbus_property_o_is_ready (const NMLDBusPropertyO *pr_o)
 	       || !pr_o->owner_dbobj;
 }
 
+gboolean
+nml_dbus_property_o_is_ready_fully (const NMLDBusPropertyO *pr_o)
+{
+	return    !pr_o->owner_dbobj
+	       || !pr_o->obj_watcher
+	       || pr_o->nmobj;
+}
+
 static void
 nml_dbus_property_o_notify_changed (NMLDBusPropertyO *pr_o,
                                     NMClient *self)
