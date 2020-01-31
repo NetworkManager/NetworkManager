@@ -363,7 +363,8 @@ const NMPlatformLink *nmtstp_link_tun_add (NMPlatform *platform,
 const NMPlatformLink *nmtstp_link_vrf_add (NMPlatform *platform,
                                            gboolean external_command,
                                            const char *name,
-                                           const NMPlatformLnkVrf *lnk);
+                                           const NMPlatformLnkVrf *lnk,
+                                           gboolean *out_not_supported);
 const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
                                              gboolean external_command,
                                              const char *name,

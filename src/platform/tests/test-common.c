@@ -1590,32 +1590,38 @@ const NMPlatformLink *
 nmtstp_link_vrf_add (NMPlatform *platform,
                      gboolean external_command,
                      const char *name,
-                     const NMPlatformLnkVrf *lnk)
+                     const NMPlatformLnkVrf *lnk,
+                     gboolean *out_not_supported)
 {
 	const NMPlatformLink *pllink = NULL;
-	int err;
-	int r;
+	int r = 0;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 
+	NM_SET_OUT (out_not_supported, FALSE);
 	external_command = nmtstp_run_command_check_external (external_command);
 
 	_init_platform (&platform, external_command);
 
 	if (external_command) {
-		err = nmtstp_run_command ("ip link add %s type vrf table %u",
-		                          name,
-		                          lnk->table);
-		if (err == 0)
+		r = nmtstp_run_command ("ip link add %s type vrf table %u",
+		                        name,
+		                        lnk->table);
+
+		if (r == 0)
 			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_VRF, 100);
-	} else {
-		r = nm_platform_link_vrf_add (platform, name, lnk, &pllink);
-		g_assert (NMTST_NM_ERR_SUCCESS (r));
-		g_assert (pllink);
+		else
+			_LOGI ("Adding vrf device via iproute2 failed. Assume iproute2 is not up to the task.");
 	}
 
-	g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_VRF);
-	g_assert_cmpstr (pllink->name, ==, name);
+	if (!pllink) {
+		r = nm_platform_link_vrf_add (platform, name, lnk, &pllink);
+		if (r == -EOPNOTSUPP)
+			NM_SET_OUT (out_not_supported, TRUE);
+	}
+
+	_assert_pllink (platform, r == 0, pllink, name, NM_LINK_TYPE_VRF);
+
 	return pllink;
 }
 

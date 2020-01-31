@@ -1184,10 +1184,17 @@ test_software_detect (gconstpointer user_data)
 		break;
 	case NM_LINK_TYPE_VRF: {
 		NMPlatformLnkVrf lnk_vrf = { };
+		gboolean not_supported;
 
 		lnk_vrf.table = 9876;
 
-		nmtstp_link_vrf_add (NULL, ext, DEVICE_NAME, &lnk_vrf);
+		if (!nmtstp_link_vrf_add (NULL, ext, DEVICE_NAME, &lnk_vrf, &not_supported)) {
+			if (not_supported) {
+				g_test_skip ("Cannot create VRF interface because of missing kernel support");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding VRF interface");
+		}
 		break;
 	}
 	case NM_LINK_TYPE_VXLAN: {
