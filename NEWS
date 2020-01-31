@@ -1,4 +1,17 @@
 ===============================================
+NetworkManager-1.22.6
+Overview of changes since NetworkManager-1.22.4
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Various fixes for the internal DHCP client
+* Updated translations (fr,ja,zh-CN)
+* Slave devices now do not get created/activated if master is missing
+* Fixed 'startup-complete' bug where NetworkManager would reach the network-online.target
+  even when not all the connections had been tried.
+
+===============================================
 NetworkManager-1.22.4
 Overview of changes since NetworkManager-1.22.2
 ===============================================
