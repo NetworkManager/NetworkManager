@@ -696,8 +696,6 @@ constructed (GObject *object)
 		curl_multi_setopt (priv->mhandle, CURLMOPT_SOCKETDATA, self);
 		curl_multi_setopt (priv->mhandle, CURLMOPT_TIMERFUNCTION, _mhandle_timerfunction_cb);
 		curl_multi_setopt (priv->mhandle, CURLMOPT_TIMERDATA, self);
-		if (NM_CURL_DEBUG)
-			curl_multi_setopt (priv->mhandle, CURLOPT_VERBOSE, 1);
 	}
 
 	G_OBJECT_CLASS (nm_http_client_parent_class)->constructed (object);
