@@ -686,7 +686,6 @@ do_curl_request (NMConnectivityCheckHandle *cb_data)
 	curl_multi_setopt (mhandle, CURLMOPT_SOCKETDATA, cb_data);
 	curl_multi_setopt (mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
 	curl_multi_setopt (mhandle, CURLMOPT_TIMERDATA, cb_data);
-	curl_multi_setopt (mhandle, CURLOPT_VERBOSE, 1);
 
 	switch (cb_data->addr_family) {
 	case AF_INET:
