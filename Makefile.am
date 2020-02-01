@@ -1008,6 +1008,7 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 
 if WITH_JSON_VALIDATION
 libnm_core_libnm_core_la_CPPFLAGS += $(JANSSON_CFLAGS)
+libnm_core_libnm_core_la_CFLAGS = -fcommon
 endif
 
 libnm_core_libnm_core_la_SOURCES = \
