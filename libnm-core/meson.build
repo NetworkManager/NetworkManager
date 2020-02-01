@@ -200,9 +200,12 @@ cflags = [
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
 ]
 
+libnm_core_c_args = cflags
+
 if enable_json_validation
   libnm_core_sources += files('nm-json.c')
   deps += jansson_dep
+  libnm_core_c_args += ['-fcommon']
 endif
 
 if (crypto_gnutls_dep.found())
@@ -240,8 +243,8 @@ libnm_core = static_library(
   'nm-core',
   sources: libnm_core_sources_all,
   dependencies: deps,
+  c_args: libnm_core_c_args,
   link_with: libnm_crypto,
-  c_args: cflags,
 )
 
 libnm_core_dep = declare_dependency(
