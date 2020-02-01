@@ -832,41 +832,42 @@ nmp_utils_ethtool_get_permanent_address (int ifindex,
                                          guint8 *buf,
                                          size_t *length)
 {
-	struct {
-		struct ethtool_perm_addr e;
-		guint8 _extra_data[NM_UTILS_HWADDR_LEN_MAX + 1];
-	} edata = {
-		.e.cmd = ETHTOOL_GPERMADDR,
-		.e.size = NM_UTILS_HWADDR_LEN_MAX,
-	};
+	char ebuf[sizeof (struct ethtool_perm_addr) + NM_UTILS_HWADDR_LEN_MAX + 1];
+	struct ethtool_perm_addr *edata;
 
 	guint i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (_ethtool_call_once (ifindex, &edata, sizeof (edata)) < 0)
+	edata = (struct ethtool_perm_addr *) ebuf;
+	*edata = (struct ethtool_perm_addr) {
+		.cmd = ETHTOOL_GPERMADDR,
+		.size = NM_UTILS_HWADDR_LEN_MAX,
+	};
+
+	if (_ethtool_call_once (ifindex, edata, sizeof (*edata)) < 0)
 		return FALSE;
 
-	if (edata.e.size > NM_UTILS_HWADDR_LEN_MAX)
+	if (edata->size > NM_UTILS_HWADDR_LEN_MAX)
 		return FALSE;
-	if (edata.e.size < 1)
+	if (edata->size < 1)
 		return FALSE;
 
-	if (NM_IN_SET (edata.e.data[0], 0, 0xFF)) {
+	if (NM_IN_SET (edata->data[0], 0, 0xFF)) {
 		/* Some drivers might return a permanent address of all zeros.
 		 * Reject that (rh#1264024)
 		 *
 		 * Some drivers return a permanent address of all ones. Reject that too */
-		for (i = 1; i < edata.e.size; i++) {
-			if (edata.e.data[0] != edata.e.data[i])
+		for (i = 1; i < edata->size; i++) {
+			if (edata->data[0] != edata->data[i])
 				goto not_all_0or1;
 		}
 		return FALSE;
 	}
 
 not_all_0or1:
-	memcpy (buf, edata.e.data, edata.e.size);
-	*length = edata.e.size;
+	memcpy (buf, edata->data, edata->size);
+	*length = edata->size;
 	return TRUE;
 }
 
