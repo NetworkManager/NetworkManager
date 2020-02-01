@@ -3668,8 +3668,6 @@ src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
 	src/devices/wifi/libnm-wifi-base.la \
 	$(GLIB_LIBS)
 
-$(src_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
 check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so)
