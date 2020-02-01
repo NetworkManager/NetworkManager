@@ -516,7 +516,7 @@ struct _NMMetaPropertyTypDataNested  {
 	guint nested_len;
 };
 
-const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond;
+extern const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond;
 
 /*****************************************************************************/
 
