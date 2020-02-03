@@ -277,6 +277,7 @@ int n_dhcp4_outgoing_append(NDhcp4Outgoing *outgoing,
                         return 0;
                 }
 
+                overload = outgoing->overload;
                 if (overload & N_DHCP4_OVERLOAD_SNAME)
                         outgoing->i_message = offsetof(NDhcp4Message, sname);
                 else

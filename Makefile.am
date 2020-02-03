@@ -1084,6 +1084,7 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 
 if WITH_JSON_VALIDATION
 libnm_core_libnm_core_la_CPPFLAGS += $(JANSSON_CFLAGS)
+libnm_core_libnm_core_la_CFLAGS = -fcommon
 endif
 
 libnm_core_libnm_core_la_SOURCES = \
@@ -3666,8 +3667,6 @@ src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
 	src/devices/wifi/libnm-wifi-base.la \
 	$(GLIB_LIBS)
-
-$(src_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
