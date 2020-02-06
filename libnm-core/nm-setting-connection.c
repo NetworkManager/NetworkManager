@@ -973,20 +973,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->interface_name) {
-		GError *tmp_error = NULL;
-
-		if (!nm_utils_is_valid_iface_name (priv->interface_name, &tmp_error)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "'%s': %s", priv->interface_name, tmp_error->message);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-			g_error_free (tmp_error);
-			return FALSE;
-		}
-	}
-
 	type = priv->type;
 	if (!type) {
 		if (   !connection
@@ -1041,6 +1027,34 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				_set_error_missing_base_setting (error, type);
 				return FALSE;
 			}
+		}
+	}
+
+	if (priv->interface_name) {
+		GError *tmp_error = NULL;
+		gboolean valid_ifname = FALSE;
+
+		/* do not perform a interface name length check for OVS connection types
+		 * as they don't have a corresponding kernel link that enforces the 15 bytes limit.
+		 * Here we're whitelisting the OVS interface type as well, even if most OVS
+		 * iface types do have the limit, to let the OVS specific nm-setting verify whether the iface name
+		 * is good or not according to the internal type (internal, patch, ...) */
+		if (NM_IN_STRSET (type,
+		                  NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+		                  NM_SETTING_OVS_PORT_SETTING_NAME,
+		                  NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+			valid_ifname = nm_utils_ifname_valid (priv->interface_name, NMU_IFACE_OVS, &tmp_error);
+		else
+			valid_ifname = nm_utils_ifname_valid (priv->interface_name, NMU_IFACE_KERNEL, &tmp_error);
+
+		if (!valid_ifname) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             "'%s': %s", priv->interface_name, tmp_error->message);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+			g_error_free (tmp_error);
+			return FALSE;
 		}
 	}
 

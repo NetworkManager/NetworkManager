@@ -8319,6 +8319,203 @@ test_integrate_maincontext (gconstpointer test_data)
 	}
 }
 
+static void
+test_connection_ovs_ifname (gconstpointer test_data)
+{
+	const guint TEST_CASE = GPOINTER_TO_UINT (test_data);
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con = NULL;
+	NMSettingOvsBridge *s_ovs_bridge = NULL;
+	NMSettingOvsPort *s_ovs_port = NULL;
+	NMSettingOvsInterface *s_ovs_iface = NULL;
+	NMSettingOvsPatch *s_ovs_patch = NULL;
+	const char *ovs_iface_type = NULL;
+
+	switch (TEST_CASE) {
+	case 1:
+		con = nmtst_create_minimal_connection ("test_connection_ovs_ifname_bridge",
+		                                       NULL,
+		                                       NM_SETTING_OVS_BRIDGE_SETTING_NAME, &s_con);
+		s_ovs_bridge = nm_connection_get_setting_ovs_bridge (con);
+		g_assert (s_ovs_bridge);
+		break;
+	case 2:
+		con = nmtst_create_minimal_connection ("test_connection_ovs_ifname_port",
+		                                       NULL,
+		                                       NM_SETTING_OVS_PORT_SETTING_NAME, &s_con);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER,
+		              "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE,
+		              NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+		              NULL);
+
+		s_ovs_port = nm_connection_get_setting_ovs_port (con);
+		g_assert (s_ovs_port);
+		break;
+	case 3:
+		con = nmtst_create_minimal_connection ("test_connection_ovs_ifname_interface_patch",
+		                                       NULL,
+		                                       NM_SETTING_OVS_INTERFACE_SETTING_NAME, &s_con);
+		s_ovs_iface = nm_connection_get_setting_ovs_interface (con);
+		g_assert (s_ovs_iface);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER,
+		              "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE,
+		              NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		g_object_set (s_ovs_iface,
+		              NM_SETTING_OVS_INTERFACE_TYPE,
+		              "patch",
+		              NULL);
+
+		s_ovs_patch = NM_SETTING_OVS_PATCH (nm_setting_ovs_patch_new());
+		g_assert (s_ovs_patch);
+
+		g_object_set (s_ovs_patch,
+		              NM_SETTING_OVS_PATCH_PEER, "1.2.3.4",
+		              NULL);
+
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_patch));
+		s_ovs_patch = nm_connection_get_setting_ovs_patch (con);
+		g_assert (s_ovs_patch);
+		ovs_iface_type = "patch";
+		break;
+	case 4:
+		con = nmtst_create_minimal_connection ("test_connection_ovs_ifname_interface_internal",
+		                                       NULL,
+		                                       NM_SETTING_OVS_INTERFACE_SETTING_NAME, &s_con);
+		s_ovs_iface = nm_connection_get_setting_ovs_interface (con);
+		g_assert (s_ovs_iface);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER,
+		              "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE,
+		              NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		g_object_set (s_ovs_iface,
+		              NM_SETTING_OVS_INTERFACE_TYPE,
+		              "internal",
+		              NULL);
+		ovs_iface_type = "internal";
+		break;
+	case 5:
+		con = nmtst_create_minimal_connection ("test_connection_ovs_ifname_interface_system",
+		                                       NULL,
+		                                       NM_SETTING_WIRED_SETTING_NAME, &s_con);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER,
+		              "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE,
+		              NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		s_ovs_iface = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new());
+		g_assert (s_ovs_iface);
+
+		g_object_set (s_ovs_iface,
+		              NM_SETTING_OVS_INTERFACE_TYPE,
+		              "system",
+		              NULL);
+
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_iface));
+		s_ovs_iface = nm_connection_get_setting_ovs_interface (con);
+		g_assert (s_ovs_iface);
+
+		ovs_iface_type = "system";
+		break;
+	case 6:
+		con = nmtst_create_minimal_connection ("test_connection_ovs_ifname_interface_dpdk",
+		                                       NULL,
+		                                       NM_SETTING_OVS_INTERFACE_SETTING_NAME, &s_con);
+		s_ovs_iface = nm_connection_get_setting_ovs_interface (con);
+		g_assert (s_ovs_iface);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER,
+		              "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE,
+		              NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		g_object_set (s_ovs_iface,
+		              NM_SETTING_OVS_INTERFACE_TYPE,
+		              "dpdk",
+		              NULL);
+		ovs_iface_type = "dpdk";
+		break;
+	}
+
+	if (!nm_streq0 (ovs_iface_type, "system")) {
+		/* wrong: contains backward slash */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs\\0",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con,
+		                                        NM_CONNECTION_ERROR,
+		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+		/* wrong: contains forward slash */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs/0",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con,
+		                                        NM_CONNECTION_ERROR,
+		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+		/* wrong: contains non-alphanumerical char */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs-0",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con,
+		                                        NM_CONNECTION_ERROR,
+		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs@0",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con,
+		                                        NM_CONNECTION_ERROR,
+		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	}
+
+	/* wrong: contains space */
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs 0",
+	              NULL);
+	nmtst_assert_connection_unnormalizable (con,
+	                                        NM_CONNECTION_ERROR,
+	                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	/* good */
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs0",
+	              NULL);
+	nmtst_assert_connection_verifies (con);
+
+	/* good if bridge, port, or patch interface */
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs123123123123130123123",
+	              NULL);
+
+	if (!ovs_iface_type || nm_streq (ovs_iface_type, "patch"))
+		nmtst_assert_connection_verifies (con);
+	else {
+		nmtst_assert_connection_unnormalizable (con,
+		                                        NM_CONNECTION_ERROR,
+		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	}
+}
+
+
+
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -8410,6 +8607,13 @@ int main (int argc, char **argv)
 	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/10", GUINT_TO_POINTER (10), test_connection_normalize_ovs_interface_type_ovs_interface);
 	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/11", GUINT_TO_POINTER (11), test_connection_normalize_ovs_interface_type_ovs_interface);
 	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/12", GUINT_TO_POINTER (12), test_connection_normalize_ovs_interface_type_ovs_interface);
+
+	g_test_add_data_func ("/core/general/test_connection_ovs_ifname/1", GUINT_TO_POINTER (1), test_connection_ovs_ifname);
+	g_test_add_data_func ("/core/general/test_connection_ovs_ifname/2", GUINT_TO_POINTER (2), test_connection_ovs_ifname);
+	g_test_add_data_func ("/core/general/test_connection_ovs_ifname/3", GUINT_TO_POINTER (3), test_connection_ovs_ifname);
+	g_test_add_data_func ("/core/general/test_connection_ovs_ifname/4", GUINT_TO_POINTER (4), test_connection_ovs_ifname);
+	g_test_add_data_func ("/core/general/test_connection_ovs_ifname/5", GUINT_TO_POINTER (5), test_connection_ovs_ifname);
+	g_test_add_data_func ("/core/general/test_connection_ovs_ifname/6", GUINT_TO_POINTER (6), test_connection_ovs_ifname);
 
 	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
 	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);
