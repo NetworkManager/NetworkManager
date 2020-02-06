@@ -2089,8 +2089,6 @@ _set_fcn_gobject_ifname (ARGS_SET_FCN)
 	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
-	if (!nm_utils_is_valid_iface_name (value, error))
-		return FALSE;
 	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
@@ -2564,24 +2562,6 @@ _multilist_remove_by_value_fcn_connection_permissions (NMSetting *setting,
 
 	sanitized = _sanitize_connection_permission_user (item);
 	nm_setting_connection_remove_permission_by_value (NM_SETTING_CONNECTION (setting), "user", sanitized ?: item, NULL);
-	return TRUE;
-}
-
-static gboolean
-_set_fcn_connection_master (ARGS_SET_FCN)
-{
-	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
-		value = NULL;
-	else if (!*value)
-		value = NULL;
-	else if (   !nm_utils_is_valid_iface_name (value, NULL)
-	         && !nm_utils_is_uuid (value)) {
-		g_set_error (error, 1, 0,
-		             _("'%s' is not valid master; use ifname or connection UUID"),
-		             value);
-		return FALSE;
-	}
-	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
 
@@ -5129,7 +5109,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	    .prompt =                       NM_META_TEXT_PROMPT_MASTER,
 	    .property_type = DEFINE_PROPERTY_TYPE (
 	        .get_fcn =                  _get_fcn_gobject,
-	        .set_fcn =                  _set_fcn_connection_master,
+	        .set_fcn =                  _set_fcn_gobject_string,
 	        .complete_fcn =             _complete_fcn_connection_master,
 	    ),
 	),
