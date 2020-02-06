@@ -477,7 +477,7 @@ int n_dhcp4_outgoing_append_lifetime(NDhcp4Outgoing *message, uint32_t lifetime)
 int n_dhcp4_outgoing_append_server_identifier(NDhcp4Outgoing *message, struct in_addr addr);
 int n_dhcp4_outgoing_append_requested_ip(NDhcp4Outgoing *message, struct in_addr addr);
 
-void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint32_t secs);
+void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint16_t secs);
 void n_dhcp4_outgoing_set_xid(NDhcp4Outgoing *message, uint32_t xid);
 void n_dhcp4_outgoing_set_yiaddr(NDhcp4Outgoing *message, struct in_addr yiaddr);
 
