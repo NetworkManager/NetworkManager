@@ -342,7 +342,7 @@ int n_dhcp4_outgoing_append_requested_ip(NDhcp4Outgoing *message, struct in_addr
         return n_dhcp4_outgoing_append_in_addr(message, N_DHCP4_OPTION_REQUESTED_IP_ADDRESS, addr);
 }
 
-void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint32_t secs) {
+void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint16_t secs) {
         NDhcp4Header *header = n_dhcp4_outgoing_get_header(message);
 
         /*
@@ -351,7 +351,7 @@ void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint32_t secs) {
          */
         c_assert(secs);
 
-        header->secs = htonl(secs);
+        header->secs = htons(secs);
 }
 
 void n_dhcp4_outgoing_set_xid(NDhcp4Outgoing *message, uint32_t xid) {
