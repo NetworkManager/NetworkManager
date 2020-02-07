@@ -356,6 +356,12 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	_LOGI (LOGD_TEAM, "teamd appeared on D-Bus");
 	nm_device_queue_recheck_assume (device);
 
+	if (priv->kill_in_progress) {
+		/* If we are currently killing teamd, we are not
+		 * interested in knowing when it becomes ready. */
+		return;
+	}
+
 	/* If another teamd grabbed the bus name while our teamd was starting,
 	 * just ignore the death of our teamd and run with the existing one.
 	 */
