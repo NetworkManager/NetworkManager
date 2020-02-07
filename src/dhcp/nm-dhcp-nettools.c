@@ -1064,8 +1064,18 @@ dhcp4_event_cb (GIOChannel *source,
 	int r;
 
 	r = n_dhcp4_client_dispatch (priv->client);
-	if (r < 0)
-		return G_SOURCE_CONTINUE;
+	if (r < 0) {
+		/* FIXME: if any operation (e.g. send()) fails during the
+		 * dispatch, n-dhcp4 returns an error without arming timers
+		 * or progressing state, so the only reasonable thing to do
+		 * is to move to failed state so that the client will be
+		 * restarted. Ideally n-dhcp4 should retry failed operations
+		 * a predefined number of times (possibly infinite).
+		 */
+		_LOGE ("error %d dispatching events", r);
+		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+		return G_SOURCE_REMOVE;
+	}
 
 	while (!n_dhcp4_client_pop_event (priv->client, &event) && event) {
 		dhcp4_event_handle (self, event);
