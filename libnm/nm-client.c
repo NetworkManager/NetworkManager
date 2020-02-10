@@ -3142,7 +3142,7 @@ _dbus_get_managed_objects_cb (GObject *source,
 	nm_assert ((!!ret) != (!!error));
 
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	priv = NM_CLIENT_GET_PRIVATE (self);
@@ -3193,7 +3193,7 @@ _nm_client_get_settings_call_cb (GObject *source, GAsyncResult *result, gpointer
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	remote_connection = user_data;
@@ -3432,7 +3432,7 @@ _dbus_check_permissions_start_cb (GObject *source, GAsyncResult *result, gpointe
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	self = user_data;
@@ -4865,7 +4865,7 @@ activate_connection_cb (GObject *object,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
 	if (!ret) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
@@ -5003,7 +5003,7 @@ _add_and_activate_connection_done (GObject *object,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
 	if (!ret) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
@@ -5526,7 +5526,7 @@ _add_connection_cb (GObject *source,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (!ret) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
@@ -6268,7 +6268,7 @@ checkpoint_create_cb (GObject *object,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (object), result, &error);
 	if (!ret) {
-		if (!nm_utils_error_is_cancelled (error, FALSE))
+		if (!nm_utils_error_is_cancelled (error))
 			g_dbus_error_strip_remote_error (error);
 		g_task_return_error (task, error);
 		return;
@@ -6942,7 +6942,7 @@ name_owner_get_cb (GObject *source,
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	priv = NM_CLIENT_GET_PRIVATE (self);

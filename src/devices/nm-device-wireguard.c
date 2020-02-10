@@ -684,7 +684,7 @@ _peers_resolve_cb (GObject *source_object,
 
 	list = g_resolver_lookup_by_name_finish (G_RESOLVER (source_object), res, &resolv_error);
 
-	if (nm_utils_error_is_cancelled (resolv_error, FALSE))
+	if (nm_utils_error_is_cancelled (resolv_error))
 		return;
 
 	peer_data = user_data;

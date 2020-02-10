@@ -43,6 +43,8 @@ typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 
 struct _NMDedupMultiIndex;
 
+typedef struct _NMRefString NMRefString;
+
 /*****************************************************************************/
 
 typedef enum {

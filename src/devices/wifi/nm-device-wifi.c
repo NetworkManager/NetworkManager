@@ -694,7 +694,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 		}
 
 		if (priv->sup_iface) {
-			if (nm_supplicant_interface_get_ap_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_NO) {
+			if (nm_supplicant_interface_get_capability (priv->sup_iface, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_FALSE) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 				                            "wpa_supplicant does not support Access Point mode");
 				return FALSE;
@@ -708,7 +708,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 		}
 
 		if (priv->sup_iface) {
-			if (nm_supplicant_interface_get_mesh_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_NO) {
+			if (nm_supplicant_interface_get_capability (priv->sup_iface, NM_SUPPL_CAP_TYPE_MESH) == NM_TERNARY_FALSE) {
 				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 				                            "wpa_supplicant does not support Mesh mode");
 				return FALSE;
@@ -2171,7 +2171,7 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDevice *device = NM_DEVICE (self);
 
-	if (   error && !nm_utils_error_is_cancelled (error, TRUE)
+	if (   error && !nm_utils_error_is_cancelled_or_disposing (error)
 	    && nm_device_is_activating (device)) {
 		cleanup_association_attempt (self, TRUE);
 		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -2481,15 +2481,11 @@ build_supplicant_config (NMDeviceWifi *self,
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
-	config = nm_supplicant_config_new (
-		nm_supplicant_interface_get_pmf_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_YES,
-		nm_supplicant_interface_get_fils_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_YES,
-		nm_supplicant_interface_get_ft_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_YES,
-		nm_supplicant_interface_get_sha384_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_YES);
+	config = nm_supplicant_config_new (nm_supplicant_interface_get_capabilities (priv->sup_iface));
 
 	/* Warn if AP mode may not be supported */
-	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
-	    && nm_supplicant_interface_get_ap_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_UNKNOWN) {
+	if (   nm_streq0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP)
+	    && nm_supplicant_interface_get_capability (priv->sup_iface, NM_SUPPL_CAP_TYPE_AP) != NM_TERNARY_TRUE) {
 		_LOGW (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
 	}
 

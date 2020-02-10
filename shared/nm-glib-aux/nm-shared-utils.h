@@ -883,8 +883,15 @@ nm_utils_error_new_cancelled (gboolean is_disposing,
 	return error;
 }
 
-gboolean nm_utils_error_is_cancelled (GError *error,
-                                      gboolean consider_is_disposing);
+gboolean nm_utils_error_is_cancelled_or_disposing (GError *error);
+
+static inline gboolean
+nm_utils_error_is_cancelled (GError *error)
+{
+	return    error
+	       && error->code == G_IO_ERROR_CANCELLED
+	       && error->domain == G_IO_ERROR;
+}
 
 gboolean nm_utils_error_is_notfound (GError *error);
 
@@ -1042,6 +1049,24 @@ nm_g_variant_unref_floating (GVariant *var)
 	 *   - unrefs (consumes) @var if it is floating. */
 	if (g_variant_is_floating (var))
 		g_variant_unref (var);
+}
+
+#define nm_g_variant_lookup(dictionary, ...) \
+	({ \
+		GVariant *const _dictionary = (dictionary); \
+		\
+		(   _dictionary \
+		 && g_variant_lookup (_dictionary, __VA_ARGS__)); \
+	})
+
+static inline GVariant *
+nm_g_variant_lookup_value (GVariant *dictionary,
+                           const char *key,
+                           const GVariantType *expected_type)
+{
+	return   dictionary
+	       ? g_variant_lookup_value (dictionary, key, expected_type)
+	       : NULL;
 }
 
 static inline void
@@ -1321,18 +1346,6 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
-static inline const char *
-nm_utils_dbus_normalize_object_path (const char *path)
-{
-	/* D-Bus does not allow an empty object path. Hence, whenever we mean NULL / no-object
-	 * on D-Bus, it's path is actually "/".
-	 *
-	 * Normalize that away, and return %NULL in that case. */
-	if (path && path[0] == '/' && path[1] == '\0')
-		return NULL;
-	return path;
-}
-
 #define NM_DEFINE_GDBUS_ARG_INFO_FULL(name_, ...) \
 	((GDBusArgInfo *) (&((const GDBusArgInfo) { \
 		.ref_count = -1, \
@@ -1530,6 +1543,56 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
 
 /*****************************************************************************/
 
+#define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(scope, fcn_name, result_type, unknown_val, ...) \
+scope result_type \
+fcn_name (const char *name) \
+{ \
+	static const struct { \
+		const char *name; \
+		result_type value; \
+	} LIST[] = { \
+		__VA_ARGS__ \
+	}; \
+	gssize idx; \
+	\
+	nm_assert (name); \
+	\
+	if (NM_MORE_ASSERTS > 5) { \
+		static gboolean checked = FALSE; \
+		int i; \
+		\
+		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) > 1); \
+		\
+		if (!checked) { \
+			checked = TRUE; \
+			\
+			for (i = 0; i < G_N_ELEMENTS (LIST); i++) { \
+				nm_assert (LIST[i].name); \
+				if (i > 0) \
+					nm_assert (strcmp (LIST[i - 1].name, LIST[i].name) < 0); \
+			} \
+		} \
+	} \
+	\
+	idx = nm_utils_array_find_binary_search (LIST, \
+	                                         sizeof (LIST[0]), \
+	                                         G_N_ELEMENTS (LIST), \
+	                                         &name, \
+	                                         nm_strcmp_p_with_data, \
+	                                         NULL); \
+	if (idx >= 0) \
+		return LIST[idx].value; \
+	\
+	{ unknown_val; } \
+}
+
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (static, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+
+/*****************************************************************************/
+
 static inline GTask *
 nm_g_task_new (gpointer source_object,
                GCancellable *cancellable,
@@ -1557,5 +1620,19 @@ nm_g_task_is_valid (gpointer task,
 guint nm_utils_parse_debug_string (const char *string,
                                    const GDebugKey *keys,
                                    guint nkeys);
+
+/*****************************************************************************/
+
+static inline gboolean
+nm_utils_strdup_reset (char **dst, const char *src)
+{
+	nm_assert (dst);
+
+	if (nm_streq0 (*dst, src))
+		return FALSE;
+	g_free (*dst);
+	*dst = g_strdup (src);
+	return TRUE;
+}
 
 #endif /* __NM_SHARED_UTILS_H__ */

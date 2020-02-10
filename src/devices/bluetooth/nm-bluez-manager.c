@@ -1089,7 +1089,7 @@ _network_server_register_cb (GObject *source_object,
 
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source_object), res, &error);
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	bzobj = user_data;
@@ -2172,7 +2172,7 @@ _dbus_get_managed_objects_cb (GVariant *result,
 	GVariant *ifaces;
 
 	if (   !result
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	self = user_data;
@@ -2475,7 +2475,7 @@ _connect_dun_step2_cb (NMBluez5DunContext *context,
 {
 	BzDBusObj *bzobj;
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	bzobj = user_data;
@@ -2517,7 +2517,7 @@ _connect_dun_step1_cb (GObject *source_object,
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source_object), res, &error);
 
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	bzobj = user_data;
@@ -2564,7 +2564,7 @@ _connect_nap_cb (GObject *source_object,
 	ret = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source_object), res, &error);
 
 	if (   !ret
-	    && nm_utils_error_is_cancelled (error, FALSE))
+	    && nm_utils_error_is_cancelled (error))
 		return;
 
 	if (ret)

@@ -830,7 +830,7 @@ connect_bz_cb (NMBluezManager *bz_mgr,
 	NMDeviceBtPrivate *priv;
 	char sbuf[100];
 
-	if (nm_utils_error_is_cancelled (error, FALSE))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = user_data;

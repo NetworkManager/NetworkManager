@@ -473,6 +473,15 @@ const char *nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
 
 /*****************************************************************************/
 
+void nm_wifi_utils_parse_ies (const guint8 *bytes,
+                              gsize len,
+                              guint32 *out_max_rate,
+                              gboolean *out_metered);
+
+guint8 nm_wifi_utils_level_to_quality (int val);
+
+/*****************************************************************************/
+
 #define NM_VPN_ROUTE_METRIC_DEFAULT     50
 
 #define NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED   "Unable to authenticate the request"

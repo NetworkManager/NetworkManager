@@ -1398,7 +1398,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_SPECIFIC_OBJECT:
 		/* construct-only */
 		tmp = g_value_get_string (value);
-		tmp = nm_utils_dbus_normalize_object_path (tmp);
+		tmp = nm_dbus_path_not_empty (tmp);
 		priv->specific_object = g_strdup (tmp);
 		break;
 	case PROP_DEFAULT:

@@ -1394,7 +1394,7 @@ static void
 _monitor_bridges_cb (NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 {
 	if (error) {
-		if (!nm_utils_error_is_cancelled (error, TRUE)) {
+		if (!nm_utils_error_is_cancelled_or_disposing (error)) {
 			_LOGI ("%s", error->message);
 			ovsdb_disconnect (self, FALSE);
 		}

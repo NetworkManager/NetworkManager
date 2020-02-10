@@ -993,6 +993,7 @@ nm_str_realloc (char *str)
 	(cond) ? (str) : (str_else), \
 	(cond) ? (suffix) : ""
 #define NM_PRINT_FMT_QUOTE_STRING(arg) NM_PRINT_FMT_QUOTED((arg), "\"", (arg), "\"", "(null)")
+#define NM_PRINT_FMT_QUOTE_REF_STRING(arg) NM_PRINT_FMT_QUOTED((arg), "\"", (arg)->str, "\"", "(null)")
 
 /*****************************************************************************/
 
@@ -1078,9 +1079,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY (obj_type, obj_properties, _PropertyEnums, P
 #if _NM_CC_SUPPORT_AUTO_TYPE
 #define _NM_GET_PRIVATE_PTR(self, type, is_check, ...) \
 	({ \
-		_nm_auto_type _self = NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__); \
+		_nm_auto_type _self_get_private = NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__); \
 		\
-		NM_PROPAGATE_CONST (_self, _self->_priv); \
+		NM_PROPAGATE_CONST (_self_get_private, _self_get_private->_priv); \
 	})
 #else
 #define _NM_GET_PRIVATE_PTR(self, type, is_check, ...) (NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv)
@@ -1426,6 +1427,14 @@ fcn_name (lookup_type val) \
 		(assign) \
 			? _flags | (_val) \
 			: _flags & (~_val); \
+	})
+
+#define NM_FLAGS_ASSIGN_MASK(flags, mask, val)  ({ \
+		const typeof(flags) _flags = (flags); \
+		const typeof(flags) _mask = (mask); \
+		const typeof(flags) _val = (val); \
+		\
+		((_flags & ~_mask) | (_mask & _val)); \
 	})
 
 /*****************************************************************************/

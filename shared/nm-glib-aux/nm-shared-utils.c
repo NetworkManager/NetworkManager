@@ -1643,16 +1643,13 @@ nm_utils_error_set_cancelled (GError **error,
 }
 
 gboolean
-nm_utils_error_is_cancelled (GError *error,
-                             gboolean consider_is_disposing)
+nm_utils_error_is_cancelled_or_disposing (GError *error)
 {
 	if (error) {
 		if (error->domain == G_IO_ERROR)
 			return NM_IN_SET (error->code, G_IO_ERROR_CANCELLED);
-		if (consider_is_disposing) {
-			if (error->domain == NM_UTILS_ERROR)
-				return NM_IN_SET (error->code, NM_UTILS_ERROR_CANCELLED_DISPOSING);
-		}
+		if (error->domain == NM_UTILS_ERROR)
+			return NM_IN_SET (error->code, NM_UTILS_ERROR_CANCELLED_DISPOSING);
 	}
 	return FALSE;
 }

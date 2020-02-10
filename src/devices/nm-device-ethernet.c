@@ -605,7 +605,7 @@ build_supplicant_config (NMDeviceEthernet *self,
 	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
-	config = nm_supplicant_config_new (FALSE, FALSE, FALSE, FALSE);
+	config = nm_supplicant_config_new (NM_SUPPL_CAP_MASK_NONE);
 
 	security = nm_connection_get_setting_802_1x (connection);
 	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, mtu, TRUE, error)) {
@@ -623,7 +623,7 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
 
-	if (error && !nm_utils_error_is_cancelled (error, TRUE)) {
+	if (error && !nm_utils_error_is_cancelled_or_disposing (error)) {
 		supplicant_interface_release (self);
 		nm_device_queue_state (NM_DEVICE (self),
 		                       NM_DEVICE_STATE_FAILED,

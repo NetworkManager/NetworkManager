@@ -162,18 +162,12 @@ nm_wifi_p2p_peer_get_name (const NMWifiP2PPeer *peer)
 }
 
 gboolean
-nm_wifi_p2p_peer_set_name (NMWifiP2PPeer *peer, const char *name)
+nm_wifi_p2p_peer_set_name (NMWifiP2PPeer *peer, const char *str)
 {
 	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
 
-	if (g_strcmp0 (name, priv->name) == 0)
+	if (!nm_utils_strdup_reset (&priv->name, str))
 		return FALSE;
-
-	g_clear_pointer (&priv->name, g_free);
-	if (name)
-		priv->name = g_strdup (name);
-
 	_notify (peer, PROP_NAME);
 	return TRUE;
 }
@@ -187,18 +181,12 @@ nm_wifi_p2p_peer_get_manufacturer (const NMWifiP2PPeer *peer)
 }
 
 gboolean
-nm_wifi_p2p_peer_set_manufacturer (NMWifiP2PPeer *peer, const char *manufacturer)
+nm_wifi_p2p_peer_set_manufacturer (NMWifiP2PPeer *peer, const char *str)
 {
 	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
 
-	if (g_strcmp0 (manufacturer, priv->manufacturer) == 0)
+	if (!nm_utils_strdup_reset (&priv->manufacturer, str))
 		return FALSE;
-
-	g_clear_pointer (&priv->manufacturer, g_free);
-	if (manufacturer)
-		priv->manufacturer = g_strdup (manufacturer);
-
 	_notify (peer, PROP_MANUFACTURER);
 	return TRUE;
 }
@@ -212,18 +200,12 @@ nm_wifi_p2p_peer_get_model (const NMWifiP2PPeer *peer)
 }
 
 gboolean
-nm_wifi_p2p_peer_set_model (NMWifiP2PPeer *peer, const char *model)
+nm_wifi_p2p_peer_set_model (NMWifiP2PPeer *peer, const char *str)
 {
 	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
 
-	if (g_strcmp0 (model, priv->model) == 0)
+	if (!nm_utils_strdup_reset (&priv->model, str))
 		return FALSE;
-
-	g_clear_pointer (&priv->model, g_free);
-	if (model)
-		priv->model = g_strdup (model);
-
 	_notify (peer, PROP_MODEL);
 	return TRUE;
 }
@@ -237,18 +219,12 @@ nm_wifi_p2p_peer_get_model_number (const NMWifiP2PPeer *peer)
 }
 
 gboolean
-nm_wifi_p2p_peer_set_model_number (NMWifiP2PPeer *peer, const char *model_number)
+nm_wifi_p2p_peer_set_model_number (NMWifiP2PPeer *peer, const char *str)
 {
 	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
 
-	if (g_strcmp0 (model_number, priv->model_number) == 0)
+	if (!nm_utils_strdup_reset (&priv->model_number, str))
 		return FALSE;
-
-	g_clear_pointer (&priv->model_number, g_free);
-	if (model_number)
-		priv->model_number = g_strdup (model_number);
-
 	_notify (peer, PROP_MODEL_NUMBER);
 	return TRUE;
 }
@@ -262,18 +238,12 @@ nm_wifi_p2p_peer_get_serial (const NMWifiP2PPeer *peer)
 }
 
 gboolean
-nm_wifi_p2p_peer_set_serial (NMWifiP2PPeer *peer, const char *serial)
+nm_wifi_p2p_peer_set_serial (NMWifiP2PPeer *peer, const char *str)
 {
 	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
 
-	if (g_strcmp0 (serial, priv->serial) == 0)
+	if (!nm_utils_strdup_reset (&priv->serial, str))
 		return FALSE;
-
-	g_clear_pointer (&priv->serial, g_free);
-	if (serial)
-		priv->serial = g_strdup (serial);
-
 	_notify (peer, PROP_SERIAL);
 	return TRUE;
 }
@@ -310,7 +280,7 @@ nm_wifi_p2p_peer_get_groups (const NMWifiP2PPeer *peer)
 {
 	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), NULL);
 
-	return (const char * const*) NM_WIFI_P2P_PEER_GET_PRIVATE (peer)->groups;
+	return (const char *const*) NM_WIFI_P2P_PEER_GET_PRIVATE (peer)->groups;
 }
 
 const char *
@@ -361,11 +331,7 @@ nm_wifi_p2p_peer_get_strength (NMWifiP2PPeer *peer)
 gboolean
 nm_wifi_p2p_peer_set_strength (NMWifiP2PPeer *peer, const gint8 strength)
 {
-	NMWifiP2PPeerPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
-
-	priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
+	NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE (peer);
 
 	if (priv->strength != strength) {
 		priv->strength = strength;

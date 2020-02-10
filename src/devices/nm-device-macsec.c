@@ -226,7 +226,7 @@ build_supplicant_config (NMDeviceMacsec *self, GError **error)
 	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
-	config = nm_supplicant_config_new (FALSE, FALSE, FALSE, FALSE);
+	config = nm_supplicant_config_new (NM_SUPPL_CAP_MASK_NONE);
 
 	s_macsec = nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_MACSEC);
 
@@ -270,7 +270,7 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceMacsec *self = NM_DEVICE_MACSEC (user_data);
 
-	if (error && !nm_utils_error_is_cancelled (error, TRUE)) {
+	if (error && !nm_utils_error_is_cancelled_or_disposing (error)) {
 		supplicant_interface_release (self);
 		nm_device_queue_state (NM_DEVICE (self),
 		                       NM_DEVICE_STATE_FAILED,

@@ -805,7 +805,7 @@ _context_invoke_callback (NMBluez5DunContext *context,
 
 	if (!error)
 		_LOGD (context, "connected via \"%s\"", context->rfcomm_tty_path);
-	else if (nm_utils_error_is_cancelled (error, FALSE))
+	else if (nm_utils_error_is_cancelled (error))
 		_LOGD (context, "cancelled");
 	else
 		_LOGD (context, "failed to connect: %s", error->message);

@@ -1350,7 +1350,8 @@ int nm_platform_sysctl_ip_conf_get_rp_filter_ipv4 (NMPlatform *platform,
                                                    gboolean consider_all,
                                                    gboolean *out_due_to_all);
 
-const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */);
+const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex,
+                                        char out_ifname[static 16 /* IFNAMSIZ */]);
 int nm_platform_if_nametoindex (NMPlatform *self, const char *ifname);
 
 const NMPObject *nm_platform_link_get_obj (NMPlatform *self,
