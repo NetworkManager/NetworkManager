@@ -335,25 +335,27 @@ _ethtool_call_once (int ifindex, gpointer edata, gsize edata_size)
 static struct ethtool_gstrings *
 ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
 {
-	char buf[sizeof (struct ethtool_sset_info) + sizeof (guint32)];
-	struct ethtool_sset_info *sset_info;
+	struct {
+		struct ethtool_sset_info info;
+		guint32 sentinel;
+	} sset_info = {
+		.info.cmd = ETHTOOL_GSSET_INFO,
+		.info.reserved = 0,
+		.info.sset_mask = (1ULL << stringset_id),
+	};
+	const guint32 *pdata;
 	gs_free struct ethtool_gstrings *gstrings = NULL;
 	gsize gstrings_len;
 	guint32 i, len;
 
-	sset_info = (struct ethtool_sset_info *) buf;
-	*sset_info = (struct ethtool_sset_info) {
-		.cmd = ETHTOOL_GSSET_INFO,
-		.reserved = 0,
-		.sset_mask = (1ULL << stringset_id),
-	};
-
-	if (_ethtool_call_handle (shandle, sset_info, sizeof (*sset_info)) < 0)
+	if (_ethtool_call_handle (shandle, &sset_info, sizeof (sset_info)) < 0)
 		return NULL;
-	if (!sset_info->sset_mask)
+	if (!sset_info.info.sset_mask)
 		return NULL;
 
-	len = sset_info->data[0];
+	pdata = (guint32 *) sset_info.info.data;
+
+	len = *pdata;
 
 	gstrings_len = sizeof (*gstrings) + (len * ETH_GSTRING_LEN);
 	gstrings = g_malloc0 (gstrings_len);
@@ -832,42 +834,44 @@ nmp_utils_ethtool_get_permanent_address (int ifindex,
                                          guint8 *buf,
                                          size_t *length)
 {
-	char ebuf[sizeof (struct ethtool_perm_addr) + NM_UTILS_HWADDR_LEN_MAX + 1];
-	struct ethtool_perm_addr *edata;
+	struct {
+		struct ethtool_perm_addr e;
+		guint8 _extra_data[NM_UTILS_HWADDR_LEN_MAX + 1];
+	} edata = {
+		.e.cmd = ETHTOOL_GPERMADDR,
+		.e.size = NM_UTILS_HWADDR_LEN_MAX,
+	};
+	const guint8 *pdata;
 
 	guint i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	edata = (struct ethtool_perm_addr *) ebuf;
-	*edata = (struct ethtool_perm_addr) {
-		.cmd = ETHTOOL_GPERMADDR,
-		.size = NM_UTILS_HWADDR_LEN_MAX,
-	};
-
-	if (_ethtool_call_once (ifindex, edata, sizeof (*edata)) < 0)
+	if (_ethtool_call_once (ifindex, &edata, sizeof (edata)) < 0)
 		return FALSE;
 
-	if (edata->size > NM_UTILS_HWADDR_LEN_MAX)
+	if (edata.e.size > NM_UTILS_HWADDR_LEN_MAX)
 		return FALSE;
-	if (edata->size < 1)
+	if (edata.e.size < 1)
 		return FALSE;
 
-	if (NM_IN_SET (edata->data[0], 0, 0xFF)) {
+	pdata = (const guint8 *) edata.e.data;
+
+	if (NM_IN_SET (pdata[0], 0, 0xFF)) {
 		/* Some drivers might return a permanent address of all zeros.
 		 * Reject that (rh#1264024)
 		 *
 		 * Some drivers return a permanent address of all ones. Reject that too */
-		for (i = 1; i < edata->size; i++) {
-			if (edata->data[0] != edata->data[i])
+		for (i = 1; i < edata.e.size; i++) {
+			if (pdata[0] != pdata[i])
 				goto not_all_0or1;
 		}
 		return FALSE;
 	}
 
 not_all_0or1:
-	memcpy (buf, edata->data, edata->size);
-	*length = edata->size;
+	memcpy (buf, pdata, edata.e.size);
+	*length = edata.e.size;
 	return TRUE;
 }
 
