@@ -12,7 +12,7 @@
 
 set -xe
 
-DNF="$(which dnf &>/dev/null && echo dnf || echo yum)"
+DNF="$( ( which dnf || dnf --version ) &>/dev/null && echo dnf || echo yum)"
 
 install() {
     if [ "$NM_INSTALL" != "" ]; then
@@ -81,6 +81,7 @@ install \
     vala-devel \
     vala-tools \
     valgrind \
+    which \
     "${EXTRA_PACKAGES[@]}"
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
