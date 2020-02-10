@@ -45,7 +45,6 @@ install \
     audit-libs-devel \
     bluez-libs-devel \
     dbus-devel \
-    dbus-python \
     dbus-x11 \
     dhclient \
     gcc-c++ \
@@ -72,7 +71,6 @@ install \
     polkit-devel \
     ppp \
     ppp-devel \
-    pygobject3-base \
     python3-dbus \
     python3-gobject \
     qt-devel \
@@ -88,4 +86,6 @@ install \
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
     python-gobject-base \
+    dbus-python \
+    pygobject3-base \
     #end
