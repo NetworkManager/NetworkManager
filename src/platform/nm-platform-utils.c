@@ -197,6 +197,7 @@ ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
 		struct ethtool_sset_info info;
 		guint32 sentinel;
 	} sset_info = { };
+	const guint32 *pdata;
 	gs_free struct ethtool_gstrings *gstrings = NULL;
 	guint32 i, len;
 
@@ -209,7 +210,9 @@ ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
 	if (!sset_info.info.sset_mask)
 		return NULL;
 
-	len = sset_info.info.data[0];
+	pdata = (guint32 *) sset_info.info.data;
+
+	len = *pdata;
 
 	gstrings = g_malloc0 (sizeof (*gstrings) + (len * ETH_GSTRING_LEN));
 	gstrings->cmd = ETHTOOL_GSTRINGS;
