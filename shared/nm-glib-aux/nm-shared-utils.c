@@ -784,7 +784,11 @@ nm_utils_parse_inaddr_bin_full (int addr_family,
 
 		/* The legacy parser should accept everything that inet_pton() accepts too. Meaning,
 		 * it should strictly parse *more* formats. And of course, parse it the same way. */
-		nm_assert (_parse_legacy_addr4 (text, &a));
+		if (!_parse_legacy_addr4 (text, &a)) {
+			char buf[INET_ADDRSTRLEN];
+
+			g_error ("unexpected assertion failure: could parse \"%s\" as %s, but not accepted by legacy parser", text, _nm_utils_inet4_ntop (addrbin.addr4, buf));
+		}
 		nm_assert (addrbin.addr4 == a);
 	}
 #endif
