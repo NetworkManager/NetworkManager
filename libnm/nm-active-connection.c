@@ -425,6 +425,33 @@ _nm_active_connection_state_changed_commit (NMActiveConnection *self,
 	                                        _notify_event_state_changed,
 	                                        g_object_ref (self));
 }
+/*****************************************************************************/
+
+static gboolean
+is_ready (NMObject *nmobj)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (nmobj);
+
+	/* Usually, we don't want to expose our NMObject instances until they are fully initialized.
+	 * For NMRemoteSetting this means to wait until GetSettings() returns.
+	 *
+	 * Note that most object types reference each other (directly or indirectly). E.g. the
+	 * NMActiveConnection refers to the NMRemoteConnection and the NMDevice instance. So,
+	 * we don't want to hide them too long, otherwise basically the entire set of objects
+	 * will be hidden until they are all initialized. So, usually, when a NMObject references
+	 * objects that are not yet initialized, that reference will just be NULL but the object
+	 * will be considered ready already.
+	 *
+	 * For NMActiveConnection referencing a NMRemoteConnection don't do that. Here we wait for the
+	 * NMRemoteConnection to be ready as well. This is somewhat arbitrary special casing, but
+	 * the effect is that when nm_client_add_and_activate*() returns, the NMActiveConnection already
+	 * references a initialized NMRemoteConnection.
+	 */
+	if (!nml_dbus_property_o_is_ready_fully (&priv->property_o[PROPERTY_O_IDX_CONNECTION]))
+		return FALSE;
+
+	return NM_OBJECT_CLASS (nm_active_connection_parent_class)->is_ready (nmobj);
+}
 
 /*****************************************************************************/
 
@@ -549,6 +576,8 @@ nm_active_connection_class_init (NMActiveConnectionClass *klass)
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+
+	nm_object_class->is_ready = is_ready;
 
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_INDIRECT (nm_object_class, NMActiveConnection);
 
