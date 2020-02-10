@@ -335,25 +335,24 @@ _ethtool_call_once (int ifindex, gpointer edata, gsize edata_size)
 static struct ethtool_gstrings *
 ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
 {
-	char buf[sizeof (struct ethtool_sset_info) + sizeof (guint32)];
-	struct ethtool_sset_info *sset_info;
+	struct {
+		struct ethtool_sset_info info;
+		guint32 sentinel;
+	} sset_info = {
+		.info.cmd = ETHTOOL_GSSET_INFO,
+		.info.reserved = 0,
+		.info.sset_mask = (1ULL << stringset_id),
+	};
 	gs_free struct ethtool_gstrings *gstrings = NULL;
 	gsize gstrings_len;
 	guint32 i, len;
 
-	sset_info = (struct ethtool_sset_info *) buf;
-	*sset_info = (struct ethtool_sset_info) {
-		.cmd = ETHTOOL_GSSET_INFO,
-		.reserved = 0,
-		.sset_mask = (1ULL << stringset_id),
-	};
-
-	if (_ethtool_call_handle (shandle, sset_info, sizeof (*sset_info)) < 0)
+	if (_ethtool_call_handle (shandle, &sset_info, sizeof (sset_info)) < 0)
 		return NULL;
-	if (!sset_info->sset_mask)
+	if (!sset_info.info.sset_mask)
 		return NULL;
 
-	len = sset_info->data[0];
+	len = sset_info.info.data[0];
 
 	gstrings_len = sizeof (*gstrings) + (len * ETH_GSTRING_LEN);
 	gstrings = g_malloc0 (gstrings_len);
