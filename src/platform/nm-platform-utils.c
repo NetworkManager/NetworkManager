@@ -343,6 +343,7 @@ ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
 		.info.reserved = 0,
 		.info.sset_mask = (1ULL << stringset_id),
 	};
+	const guint32 *pdata;
 	gs_free struct ethtool_gstrings *gstrings = NULL;
 	gsize gstrings_len;
 	guint32 i, len;
@@ -352,7 +353,9 @@ ethtool_get_stringset (SocketHandle *shandle, int stringset_id)
 	if (!sset_info.info.sset_mask)
 		return NULL;
 
-	len = sset_info.info.data[0];
+	pdata = (guint32 *) sset_info.info.data;
+
+	len = *pdata;
 
 	gstrings_len = sizeof (*gstrings) + (len * ETH_GSTRING_LEN);
 	gstrings = g_malloc0 (gstrings_len);
