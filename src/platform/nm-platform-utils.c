@@ -855,6 +855,7 @@ nmp_utils_ethtool_get_permanent_address (int ifindex,
 		.e.cmd = ETHTOOL_GPERMADDR,
 		.e.size = NM_UTILS_HWADDR_LEN_MAX,
 	};
+	const guint8 *pdata;
 
 	guint i;
 
@@ -868,20 +869,22 @@ nmp_utils_ethtool_get_permanent_address (int ifindex,
 	if (edata.e.size < 1)
 		return FALSE;
 
-	if (NM_IN_SET (edata.e.data[0], 0, 0xFF)) {
+	pdata = (const guint8 *) edata.e.data;
+
+	if (NM_IN_SET (pdata[0], 0, 0xFF)) {
 		/* Some drivers might return a permanent address of all zeros.
 		 * Reject that (rh#1264024)
 		 *
 		 * Some drivers return a permanent address of all ones. Reject that too */
 		for (i = 1; i < edata.e.size; i++) {
-			if (edata.e.data[0] != edata.e.data[i])
+			if (pdata[0] != pdata[i])
 				goto not_all_0or1;
 		}
 		return FALSE;
 	}
 
 not_all_0or1:
-	memcpy (buf, edata.e.data, edata.e.size);
+	memcpy (buf, pdata, edata.e.size);
 	*length = edata.e.size;
 	return TRUE;
 }
