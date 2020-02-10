@@ -22,9 +22,10 @@
 
 #include "nm-sd-adapt-shared.h"
 
-#include "path-util.h"
-#include "hexdecoct.h"
 #include "dns-domain.h"
+#include "hexdecoct.h"
+#include "hostname-util.h"
+#include "path-util.h"
 
 /*****************************************************************************/
 
@@ -52,7 +53,7 @@ nm_sd_utils_path_startswith (const char *path, const char *prefix)
 
 /*****************************************************************************/
 
-gboolean
+int
 nm_sd_utils_unbase64char (char ch, gboolean accept_padding_equal)
 {
 	if (   ch == '='
@@ -95,4 +96,14 @@ int nm_sd_dns_name_to_wire_format (const char *domain,
                                    gboolean canonical)
 {
 	return dns_name_to_wire_format (domain, buffer, len, canonical);
+}
+
+int nm_sd_dns_name_is_valid (const char *s)
+{
+	return dns_name_is_valid (s);
+}
+
+gboolean nm_sd_hostname_is_valid (const char *s, bool allow_trailing_dot)
+{
+	return hostname_is_valid (s, allow_trailing_dot);
 }
