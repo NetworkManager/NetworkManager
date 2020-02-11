@@ -1805,19 +1805,9 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	 */
 
 	if (priv->dev != NULL) {
-		const char *driver_name = NULL;
+		const char *driver_name;
 
-		switch (priv->driver) {
-		case NM_SUPPLICANT_DRIVER_WIRELESS:
-			driver_name = NM_WPAS_DEFAULT_WIFI_DRIVER;
-			break;
-		case NM_SUPPLICANT_DRIVER_WIRED:
-			driver_name = "wired";
-			break;
-		case NM_SUPPLICANT_DRIVER_MACSEC:
-			driver_name = "macsec_linux";
-			break;
-		}
+		driver_name = nm_supplicant_driver_to_string (priv->driver);
 
 		g_return_if_fail (driver_name);
 
