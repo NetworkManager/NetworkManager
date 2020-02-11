@@ -1349,9 +1349,9 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 	const char *base_hdr = _("Connection profile details");
 	gboolean was_output = FALSE;
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
-	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
 	else
 		fields_str = nmc->required_fields;
@@ -1437,8 +1437,8 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 	const char *base_hdr = _("Activate connection details");
 	gboolean was_output = FALSE;
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
-	} else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0) {
+	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0) {
+	} else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
 	} else
 		fields_str = nmc->required_fields;
 
@@ -1501,7 +1501,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* IP4 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[1]->name) == 0) {
+		if (g_ascii_strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[1]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg4 = nm_active_connection_get_ip4_config (acon);
 
@@ -1510,7 +1510,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* DHCP4 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[2]->name) == 0) {
+		if (g_ascii_strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[2]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
@@ -1519,7 +1519,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* IP6 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[3]->name) == 0) {
+		if (g_ascii_strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[3]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg6 = nm_active_connection_get_ip6_config (acon);
 
@@ -1528,7 +1528,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* DHCP6 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[4]->name) == 0) {
+		if (g_ascii_strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[4]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
@@ -1595,13 +1595,13 @@ split_required_fields_for_con_show (const char *input,
 		if (dot)
 			*dot = '\0';
 
-		is_all = !dot && strcasecmp (s_mutable, "all") == 0;
-		is_common = !dot && strcasecmp (s_mutable, "common") == 0;
+		is_all = !dot && g_ascii_strcasecmp (s_mutable, "all") == 0;
+		is_common = !dot && g_ascii_strcasecmp (s_mutable, "common") == 0;
 
 		found = FALSE;
 		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
 			if (   is_all || is_common
-			    || !strcasecmp (s_mutable, nm_meta_setting_infos[i].setting_name)) {
+			    || !g_ascii_strcasecmp (s_mutable, nm_meta_setting_infos[i].setting_name)) {
 				if (dot)
 					*dot = '.';
 				g_string_append (str1, s_mutable);
@@ -1615,7 +1615,7 @@ split_required_fields_for_con_show (const char *input,
 
 		for (i = 0; nmc_fields_con_active_details_groups[i]; i++) {
 			if (   is_all || is_common
-			    || !strcasecmp (s_mutable, nmc_fields_con_active_details_groups[i]->name)) {
+			    || !g_ascii_strcasecmp (s_mutable, nmc_fields_con_active_details_groups[i]->name)) {
 				if (dot)
 					*dot = '.';
 				g_string_append (str2, s_mutable);
@@ -1627,9 +1627,9 @@ split_required_fields_for_con_show (const char *input,
 		if (!found) {
 			if (dot)
 				*dot = '.';
-			if (!strcasecmp (s_mutable, CON_SHOW_DETAIL_GROUP_PROFILE))
+			if (!g_ascii_strcasecmp (s_mutable, CON_SHOW_DETAIL_GROUP_PROFILE))
 				group_profile = TRUE;
-			else if (!strcasecmp (s_mutable, CON_SHOW_DETAIL_GROUP_ACTIVE))
+			else if (!g_ascii_strcasecmp (s_mutable, CON_SHOW_DETAIL_GROUP_ACTIVE))
 				group_active = TRUE;
 			else {
 				gs_free char *allowed1 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (), NULL);
@@ -2056,9 +2056,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		if (nmc->complete)
 			goto finish;
 
-		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+		if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 			fields_str = NMC_FIELDS_CON_SHOW_COMMON;
-		else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0) {
+		else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
 		} else
 			fields_str = nmc->required_fields;
 

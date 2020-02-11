@@ -3829,7 +3829,7 @@ make_leap_setting (shvarFile *ifcfg,
 	nm_clear_g_free (&value);
 
 	value = svGetValueStr_cp (ifcfg, "SECURITYMODE");
-	if (!value || strcasecmp (value, "leap"))
+	if (!value || g_ascii_strcasecmp (value, "leap"))
 		return NULL; /* Not LEAP */
 	nm_clear_g_free (&value);
 
@@ -5171,9 +5171,9 @@ handle_bridge_option (NMSetting *setting,
 		switch (param_spec->value_type) {
 		case G_TYPE_BOOLEAN:
 			if (m[i].extended_bool) {
-				if (!strcasecmp (value, "on") || !strcasecmp (value, "yes") || !strcmp (value, "1"))
+				if (!g_ascii_strcasecmp (value, "on") || !g_ascii_strcasecmp (value, "yes") || !strcmp (value, "1"))
 					v = TRUE;
-				else if (!strcasecmp (value, "off") || !strcasecmp (value, "no"))
+				else if (!g_ascii_strcasecmp (value, "off") || !g_ascii_strcasecmp (value, "no"))
 					v = FALSE;
 				else {
 					error_message = "is not a boolean";
@@ -5306,11 +5306,11 @@ make_bridge_setting (shvarFile *ifcfg,
 
 	value = svGetValueStr (ifcfg, "STP", &value_to_free);
 	if (value) {
-		if (!strcasecmp (value, "on") || !strcasecmp (value, "yes")) {
+		if (!g_ascii_strcasecmp (value, "on") || !g_ascii_strcasecmp (value, "yes")) {
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, TRUE, NULL);
 			stp = TRUE;
 			stp_set = TRUE;
-		} else if (!strcasecmp (value, "off") || !strcasecmp (value, "no")) {
+		} else if (!g_ascii_strcasecmp (value, "off") || !g_ascii_strcasecmp (value, "no")) {
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
 			stp_set = TRUE;
 		} else
@@ -5821,9 +5821,9 @@ connection_from_file_full (const char *filename,
 
 	devtype = svGetValueStr_cp (main_ifcfg, "DEVICETYPE");
 	if (devtype) {
-		if (!strcasecmp (devtype, TYPE_TEAM))
+		if (!g_ascii_strcasecmp (devtype, TYPE_TEAM))
 			type = g_strdup (TYPE_TEAM);
-		else if (!strcasecmp (devtype, TYPE_TEAM_PORT)) {
+		else if (!g_ascii_strcasecmp (devtype, TYPE_TEAM_PORT)) {
 			gs_free char *device = NULL;
 
 			type = svGetValueStr_cp (main_ifcfg, "TYPE");
@@ -5957,26 +5957,26 @@ connection_from_file_full (const char *filename,
 	}
 
 	if (svGetValueBoolean (main_ifcfg, "BONDING_MASTER", FALSE) &&
-	    strcasecmp (type, TYPE_BOND)) {
+	    g_ascii_strcasecmp (type, TYPE_BOND)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "BONDING_MASTER=yes key only allowed in TYPE=bond connections");
 		return NULL;
 	}
 
 	/* Construct the connection */
-	if (!strcasecmp (type, TYPE_ETHERNET))
+	if (!g_ascii_strcasecmp (type, TYPE_ETHERNET))
 		connection = wired_connection_from_ifcfg (filename, main_ifcfg, error);
-	else if (!strcasecmp (type, TYPE_WIRELESS))
+	else if (!g_ascii_strcasecmp (type, TYPE_WIRELESS))
 		connection = wireless_connection_from_ifcfg (filename, main_ifcfg, error);
-	else if (!strcasecmp (type, TYPE_INFINIBAND))
+	else if (!g_ascii_strcasecmp (type, TYPE_INFINIBAND))
 		connection = infiniband_connection_from_ifcfg (filename, main_ifcfg, error);
-	else if (!strcasecmp (type, TYPE_BOND))
+	else if (!g_ascii_strcasecmp (type, TYPE_BOND))
 		connection = bond_connection_from_ifcfg (filename, main_ifcfg, error);
-	else if (!strcasecmp (type, TYPE_TEAM))
+	else if (!g_ascii_strcasecmp (type, TYPE_TEAM))
 		connection = team_connection_from_ifcfg (filename, main_ifcfg, error);
-	else if (!strcasecmp (type, TYPE_VLAN))
+	else if (!g_ascii_strcasecmp (type, TYPE_VLAN))
 		connection = vlan_connection_from_ifcfg (filename, main_ifcfg, error);
-	else if (!strcasecmp (type, TYPE_BRIDGE))
+	else if (!g_ascii_strcasecmp (type, TYPE_BRIDGE))
 		connection = bridge_connection_from_ifcfg (filename, main_ifcfg, error);
 	else {
 		connection = create_unhandled_connection (filename, main_ifcfg, "unrecognized", out_unhandled);

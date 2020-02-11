@@ -849,7 +849,7 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.znet") == 0)
 			parse_rd_znet (connections, argument, net_ifnames);
-		else if (strcasecmp (tag, "BOOTIF") == 0) {
+		else if (g_ascii_strcasecmp (tag, "BOOTIF") == 0) {
 			nm_clear_g_free (&bootif_val);
 			bootif_val = g_strdup (argument);
 		}

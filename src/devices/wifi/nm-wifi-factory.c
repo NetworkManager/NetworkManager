@@ -95,7 +95,7 @@ create_device (NMDeviceFactory *factory,
 	            iface,
 	            NM_PRINT_FMT_QUOTE_STRING (backend),
 	            WITH_IWD ? " (iwd support enabled)" : "");
-	if (!backend || !strcasecmp (backend, "wpa_supplicant")) {
+	if (!backend || !g_ascii_strcasecmp (backend, "wpa_supplicant")) {
 		NMDevice *device;
 		NMDeviceWifiCapabilities capabilities;
 		NM80211Mode mode;
@@ -129,7 +129,7 @@ create_device (NMDeviceFactory *factory,
 		return device;
 	}
 #if WITH_IWD
-	else if (!strcasecmp (backend, "iwd"))
+	else if (!g_ascii_strcasecmp (backend, "iwd"))
 		return nm_device_iwd_new (iface);
 #endif
 

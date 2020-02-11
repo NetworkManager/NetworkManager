@@ -166,7 +166,7 @@ nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, cons
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->proto; iter; iter = g_slist_next (iter)) {
-		if (strcasecmp (proto, (char *) iter->data) == 0)
+		if (g_ascii_strcasecmp (proto, (char *) iter->data) == 0)
 			return FALSE;
 	}
 
@@ -220,7 +220,7 @@ nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *s
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->proto; iter; iter = g_slist_next (iter)) {
-		if (strcasecmp (proto, (char *) iter->data) == 0) {
+		if (g_ascii_strcasecmp (proto, (char *) iter->data) == 0) {
 			priv->proto = g_slist_delete_link (priv->proto, iter);
 			_notify (setting, PROP_PROTO);
 			return TRUE;
@@ -310,7 +310,7 @@ nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, c
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
-		if (strcasecmp (pairwise, (char *) iter->data) == 0)
+		if (g_ascii_strcasecmp (pairwise, (char *) iter->data) == 0)
 			return FALSE;
 	}
 
@@ -366,7 +366,7 @@ nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
-		if (strcasecmp (pairwise, (char *) iter->data) == 0) {
+		if (g_ascii_strcasecmp (pairwise, (char *) iter->data) == 0) {
 			priv->pairwise = g_slist_delete_link (priv->pairwise, iter);
 			_notify (setting, PROP_PAIRWISE);
 			return TRUE;
@@ -457,7 +457,7 @@ nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, cons
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->group; iter; iter = g_slist_next (iter)) {
-		if (strcasecmp (group, (char *) iter->data) == 0)
+		if (g_ascii_strcasecmp (group, (char *) iter->data) == 0)
 			return FALSE;
 	}
 
@@ -514,7 +514,7 @@ nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *s
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->group; iter; iter = g_slist_next (iter)) {
-		if (strcasecmp (group, (char *) iter->data) == 0) {
+		if (g_ascii_strcasecmp (group, (char *) iter->data) == 0) {
 			priv->group = g_slist_delete_link (priv->group, iter);
 			_notify (setting, PROP_GROUP);
 			return TRUE;

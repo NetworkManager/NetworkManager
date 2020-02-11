@@ -467,9 +467,9 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	const char *fields_all =    print_flds ?: NMC_FIELDS_NM_STATUS_ALL;
 	const char *fields_common = print_flds ?: NMC_FIELDS_NM_STATUS_COMMON;
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
-	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
 	else
 		fields_str = nmc->required_fields;
@@ -544,8 +544,8 @@ print_permissions (void *user_data)
 		return;
 	}
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
-	} else if (strcasecmp (nmc->required_fields, "all") == 0) {
+	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0) {
+	} else if (g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
 	} else
 		fields_str = nmc->required_fields;
 
@@ -694,8 +694,8 @@ show_general_logging (NmCli *nmc)
 		.domains = &domains_cache,
 	};
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
-	} else if (strcasecmp (nmc->required_fields, "all") == 0) {
+	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0) {
+	} else if (g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
 	} else
 		fields_str = nmc->required_fields;
 
@@ -874,7 +874,7 @@ nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
 	g_return_val_if_fail (nmc != NULL, FALSE);
 	g_return_val_if_fail (switch_name != NULL, FALSE);
 
-	if (nmc->required_fields && strcasecmp (nmc->required_fields, switch_name) != 0) {
+	if (nmc->required_fields && g_ascii_strcasecmp (nmc->required_fields, switch_name) != 0) {
 		g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed field: %s)"),
 		                 nmc->required_fields, switch_name);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
