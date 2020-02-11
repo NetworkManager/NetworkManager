@@ -1104,12 +1104,13 @@ int n_dhcp4_c_connection_start_request(NDhcp4CConnection *connection,
         if (request->userdata.start_time == 0)
                 request->userdata.start_time = timestamp;
 
-        n_dhcp4_outgoing_free(connection->request);
-        connection->request = request;
+        connection->request = n_dhcp4_outgoing_free(connection->request);
 
         r = n_dhcp4_c_connection_send_request(connection, request, timestamp);
         if (r)
                 return r;
+
+        connection->request = request;
 
         return 0;
 }
