@@ -4717,6 +4717,8 @@ nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
 gboolean
 nm_utils_is_valid_iface_name (const char *name, GError **error)
 {
+	g_return_val_if_fail (!error || !*error, FALSE);
+
 	return nm_utils_ifname_valid_kernel (name, error);
 }
 
