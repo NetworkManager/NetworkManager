@@ -871,6 +871,22 @@ is_loopback (NMDevice *self)
 	       && NM_DEVICE_GET_PRIVATE (self)->ifindex == 1;
 }
 
+gboolean
+nm_device_is_vpn (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	/* NetworkManager currently treats VPN connections (loaded from NetworkManager VPN plugins)
+	 * differently. Those are considered VPNs.
+	 * However, some native device types may also be considered VPNs...
+	 *
+	 * We should avoid distinguishing between is-vpn and "regular" devices. Is an (unencrypted)
+	 * IP tunnel a VPN? Is MACSec on top of an IP tunnel a VPN?
+	 * Sometimes we differentiate, but avoid unless reasonable. */
+
+	return NM_IS_DEVICE_WIREGUARD (self);
+}
+
 NMSettings *
 nm_device_get_settings (NMDevice *self)
 {

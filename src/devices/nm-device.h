@@ -881,4 +881,6 @@ struct _NMBtVTableNetworkServer {
 const char *nm_device_state_to_str (NMDeviceState state);
 const char *nm_device_state_reason_to_str (NMDeviceStateReason reason);
 
+gboolean nm_device_is_vpn (NMDevice *self);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
