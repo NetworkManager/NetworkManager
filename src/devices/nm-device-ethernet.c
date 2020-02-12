@@ -82,9 +82,9 @@ typedef struct _NMDeviceEthernetPrivate {
 
 		/* Timeouts and idles */
 		guint con_timeout_id;
-	} supplicant;
 
-	guint               supplicant_timeout_id;
+		guint timeout_id;
+	} supplicant;
 
 	NMActRequestGetSecretsCallId *wired_secrets_id;
 
@@ -399,7 +399,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->supplicant_timeout_id);
+	nm_clear_g_source (&priv->supplicant.timeout_id);
 	nm_clear_g_source (&priv->supplicant.con_timeout_id);
 	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_state_id);
 	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.auth_state_id);
@@ -546,7 +546,7 @@ link_timeout_cb (gpointer user_data)
 	NMConnection *applied_connection;
 	const char *setting_name;
 
-	priv->supplicant_timeout_id = 0;
+	priv->supplicant.timeout_id = 0;
 
 	req = nm_device_get_act_request (device);
 
@@ -674,7 +674,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
-		nm_clear_g_source (&priv->supplicant_timeout_id);
+		nm_clear_g_source (&priv->supplicant.timeout_id);
 		nm_clear_g_source (&priv->supplicant.con_timeout_id);
 
 		/* If this is the initial association during device activation,
@@ -689,8 +689,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
 		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
 			/* Start the link timeout so we allow some time for reauthentication */
-			if (!priv->supplicant_timeout_id)
-				priv->supplicant_timeout_id = g_timeout_add_seconds (15, link_timeout_cb, device);
+			if (!priv->supplicant.timeout_id)
+				priv->supplicant.timeout_id = g_timeout_add_seconds (15, link_timeout_cb, device);
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
