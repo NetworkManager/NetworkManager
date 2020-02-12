@@ -405,7 +405,7 @@ state_changed (NMDevice *device,
 }
 
 static guint32
-get_dhcp_timeout (NMDevice *device, int addr_family)
+get_dhcp_timeout_for_device (NMDevice *device, int addr_family)
 {
 	/* shorter timeout for mesh connectivity */
 	return 20;
@@ -521,7 +521,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->state_changed = state_changed;
-	device_class->get_dhcp_timeout = get_dhcp_timeout;
+	device_class->get_dhcp_timeout_for_device = get_dhcp_timeout_for_device;
 
 	obj_properties[PROP_COMPANION] =
 	     g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
