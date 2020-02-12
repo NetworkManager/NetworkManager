@@ -14,7 +14,6 @@
 #include <libintl.h>
 #include <gmodule.h>
 #include <sys/stat.h>
-#include <net/if.h>
 #include <linux/pkt_sched.h>
 
 #if WITH_JSON_VALIDATION
@@ -4718,45 +4717,7 @@ nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
 gboolean
 nm_utils_is_valid_iface_name (const char *name, GError **error)
 {
-	int i;
-
-	if (!name) {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		                     _("interface name is missing"));
-		return FALSE;
-	}
-
-	if (name[0] == '\0') {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		                     _("interface name is too short"));
-		return FALSE;
-	}
-
-	if (   name[0] == '.'
-	    && (   name[1] == '\0'
-	        || (   name[1] == '.'
-	            && name[2] == '\0'))) {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		                     _("interface name is reserved"));
-		return FALSE;
-	}
-
-	for (i = 0; i < IFNAMSIZ; i++) {
-		char ch = name[i];
-
-		if (ch == '\0')
-			return TRUE;
-		if (   NM_IN_SET (ch, '/', ':')
-		    || g_ascii_isspace (ch)) {
-			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			                     _("interface name contains an invalid character"));
-			return FALSE;
-		}
-	}
-
-	g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-	                     _("interface name is longer than 15 characters"));
-	return FALSE;
+	return nm_utils_ifname_valid_kernel (name, error);
 }
 
 /**
