@@ -178,7 +178,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (priv->parent) {
 		GError *tmp_error = NULL;
 
-		if (!nm_utils_is_valid_iface_name (priv->parent, &tmp_error)) {
+		if (!nm_utils_ifname_valid_kernel (priv->parent, &tmp_error)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -215,7 +215,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 		if (!interface_name)
 			;
-		else if (!nm_utils_is_valid_iface_name (interface_name, &tmp_error)) {
+		else if (!nm_utils_ifname_valid_kernel (interface_name, &tmp_error)) {
 			/* report the error for NMSettingConnection:interface-name, because
 			 * it's that property that is invalid -- although we currently verify()
 			 * NMSettingInfiniband.

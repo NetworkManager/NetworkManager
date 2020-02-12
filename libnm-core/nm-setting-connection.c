@@ -1276,7 +1276,7 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
 	 * overridden by a valid connection.interface-name.
 	 */
 	interface_name = find_virtual_interface_name (connection_dict);
-	if (!interface_name || nm_utils_is_valid_iface_name (interface_name, NULL))
+	if (!interface_name || nm_utils_ifname_valid_kernel (interface_name, NULL))
 		interface_name = g_variant_get_string (value, NULL);
 
 	g_object_set (G_OBJECT (setting),

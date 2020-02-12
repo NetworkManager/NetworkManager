@@ -4697,7 +4697,7 @@ nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
 		}
 	}
 
-	return nm_utils_is_valid_iface_name (bin, NULL);
+	return nm_utils_ifname_valid_kernel (bin, NULL);
 }
 
 /**

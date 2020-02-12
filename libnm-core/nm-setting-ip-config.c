@@ -4908,7 +4908,7 @@ verify_label (const char *label)
 	if (!p)
 		return FALSE;
 	iface = g_strndup (label, p - label);
-	if (!nm_utils_is_valid_iface_name (iface, NULL)) {
+	if (!nm_utils_ifname_valid_kernel (iface, NULL)) {
 		g_free (iface);
 		return FALSE;
 	}
