@@ -23,17 +23,6 @@ _LOG_DECLARE_SELF(NMDeviceMacsec);
 
 /*****************************************************************************/
 
-typedef struct Supplicant {
-	NMSupplicantManager *mgr;
-	NMSupplicantInterface *iface;
-
-	/* signal handler ids */
-	gulong iface_state_id;
-
-	/* Timeouts and idles */
-	guint con_timeout_id;
-} Supplicant;
-
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceMacsec,
 	PROP_SCI,
 	PROP_CIPHER_SUITE,
@@ -53,7 +42,18 @@ typedef struct {
 	NMPlatformLnkMacsec props;
 	gulong parent_state_id;
 	gulong parent_mtu_id;
-	Supplicant supplicant;
+
+	struct {
+		NMSupplicantManager *mgr;
+		NMSupplicantInterface *iface;
+
+		/* signal handler ids */
+		gulong iface_state_id;
+
+		/* Timeouts and idles */
+		guint con_timeout_id;
+	} supplicant;
+
 	guint supplicant_timeout_id;
 	NMActRequestGetSecretsCallId *macsec_secrets_id;
 } NMDeviceMacsecPrivate;

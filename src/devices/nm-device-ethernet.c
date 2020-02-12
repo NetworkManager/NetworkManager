@@ -45,18 +45,6 @@ _LOG_DECLARE_SELF(NMDeviceEthernet);
 
 /*****************************************************************************/
 
-typedef struct Supplicant {
-	NMSupplicantManager *mgr;
-	NMSupplicantInterface *iface;
-
-	/* signal handler ids */
-	gulong iface_state_id;
-	gulong auth_state_id;
-
-	/* Timeouts and idles */
-	guint con_timeout_id;
-} Supplicant;
-
 typedef enum {
 	DCB_WAIT_UNKNOWN = 0,
 	/* Ensure carrier is up before enabling DCB */
@@ -75,7 +63,18 @@ typedef struct _NMDeviceEthernetPrivate {
 	guint32             speed;
 	gulong              carrier_id;
 
-	Supplicant          supplicant;
+	struct {
+		NMSupplicantManager *mgr;
+		NMSupplicantInterface *iface;
+
+		/* signal handler ids */
+		gulong iface_state_id;
+		gulong auth_state_id;
+
+		/* Timeouts and idles */
+		guint con_timeout_id;
+	} supplicant;
+
 	guint               supplicant_timeout_id;
 
 	/* s390 */
