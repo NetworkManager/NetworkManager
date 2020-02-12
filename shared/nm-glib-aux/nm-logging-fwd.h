@@ -63,6 +63,14 @@ typedef enum  { /*< skip >*/
 	LOGD_IP         = LOGD_IP4 | LOGD_IP6,
 } NMLogDomain;
 
+static inline NMLogDomain
+LOGD_DHCP_from_addr_family (int addr_family)
+{
+	nm_assert_addr_family (addr_family);
+
+	return addr_family == AF_INET6 ? LOGD_DHCP6 : LOGD_DHCP4;
+}
+
 /* Log levels */
 typedef enum  { /*< skip >*/
 	LOGL_TRACE,
