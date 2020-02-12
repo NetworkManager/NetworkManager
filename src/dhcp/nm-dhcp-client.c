@@ -1203,6 +1203,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 
+	G_STATIC_ASSERT_EXPR (G_MAXINT32 == NM_DHCP_TIMEOUT_INFINITY);
 	obj_properties[PROP_TIMEOUT] =
 	    g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT, "", "",
 	                       1, G_MAXINT32, NM_DHCP_TIMEOUT_DEFAULT,
