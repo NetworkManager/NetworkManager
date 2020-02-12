@@ -7503,8 +7503,8 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 		return timeout;
 
 	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->get_dhcp_timeout)
-		timeout = klass->get_dhcp_timeout (self, addr_family);
+	if (klass->get_dhcp_timeout_for_device)
+		timeout = klass->get_dhcp_timeout_for_device (self, addr_family);
 
 	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }

@@ -437,8 +437,8 @@ typedef struct _NMDeviceClass {
 	                                        NMConnection *con_old,
 	                                        NMConnection *con_new);
 
-	guint32         (* get_dhcp_timeout) (NMDevice *self,
-	                                      int addr_family);
+	guint32         (* get_dhcp_timeout_for_device) (NMDevice *self,
+	                                                 int addr_family);
 
 	gboolean        (* get_guessed_metered) (NMDevice *self);
 

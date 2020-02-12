@@ -732,7 +732,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 }
 
 static guint32
-get_dhcp_timeout (NMDevice *device, int addr_family)
+get_dhcp_timeout_for_device (NMDevice *device, int addr_family)
 {
 	/* DHCP is always done by the modem firmware, not by the network, and
 	 * by the time we get around to DHCP the firmware should already know
@@ -897,7 +897,7 @@ nm_device_modem_class_init (NMDeviceModemClass *klass)
 	device_class->is_available = is_available;
 	device_class->get_ip_iface_identifier = get_ip_iface_identifier;
 	device_class->get_configured_mtu = nm_modem_get_configured_mtu;
-	device_class->get_dhcp_timeout = get_dhcp_timeout;
+	device_class->get_dhcp_timeout_for_device = get_dhcp_timeout_for_device;
 
 	device_class->state_changed = device_state_changed;
 
