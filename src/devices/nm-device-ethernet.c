@@ -60,6 +60,15 @@ typedef enum {
 } DcbWait;
 
 typedef struct _NMDeviceEthernetPrivate {
+	/* s390 */
+	char *              subchan1;
+	char *              subchan2;
+	char *              subchan3;
+	char *              subchannels; /* Composite used for checking unmanaged specs */
+	char **             subchannels_dbus; /* Array exported on D-Bus */
+	char *              s390_nettype;
+	GHashTable *        s390_options;
+
 	guint32             speed;
 	gulong              carrier_id;
 
@@ -76,15 +85,6 @@ typedef struct _NMDeviceEthernetPrivate {
 	} supplicant;
 
 	guint               supplicant_timeout_id;
-
-	/* s390 */
-	char *              subchan1;
-	char *              subchan2;
-	char *              subchan3;
-	char *              subchannels; /* Composite used for checking unmanaged specs */
-	char **             subchannels_dbus; /* Array exported on D-Bus */
-	char *              s390_nettype;
-	GHashTable *        s390_options;
 
 	NMActRequestGetSecretsCallId *wired_secrets_id;
 
