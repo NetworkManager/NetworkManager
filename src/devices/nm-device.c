@@ -159,6 +159,11 @@ typedef struct {
 	                          that the original configuration didn't change. */
 } AppliedConfig;
 
+typedef struct {
+	guint grace_id;
+	bool grace_pending:1;
+} DhcpData;
+
 struct _NMDeviceConnectivityHandle {
 	CList concheck_lst;
 	NMDevice *self;
@@ -480,10 +485,16 @@ typedef struct _NMDevicePrivate {
 		char *          pac_url;
 		char *          root_path;
 		gulong          state_sigid;
-		guint           grace_id;
 		bool            was_active:1;
-		bool            grace_pending:1;
 	} dhcp4;
+
+	union {
+		struct {
+			DhcpData dhcp_data_6;
+			DhcpData dhcp_data_4;
+		};
+		DhcpData dhcp_data_x[2];
+	};
 
 	struct {
 		NMLogDomain log_domain;
@@ -556,9 +567,7 @@ typedef struct _NMDevicePrivate {
 		gulong           prefix_sigid;
 		NMNDiscDHCPLevel mode;
 		guint            needed_prefixes;
-		guint            grace_id;
 		bool             was_active:1;
-		bool             grace_pending:1;
 	} dhcp6;
 
 	gboolean needs_ip6_subnet;
@@ -7594,8 +7603,8 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->dhcp4.was_active = FALSE;
-	nm_clear_g_source (&priv->dhcp4.grace_id);
-	priv->dhcp4.grace_pending = FALSE;
+	nm_clear_g_source (&priv->dhcp_data_4.grace_id);
+	priv->dhcp_data_4.grace_pending = FALSE;
 	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
 	g_clear_pointer (&priv->dhcp4.root_path, g_free);
 
@@ -7875,8 +7884,8 @@ dhcp4_grace_period_expired (gpointer user_data)
 	NMDevice *self = user_data;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	priv->dhcp4.grace_id = 0;
-	priv->dhcp4.grace_pending = FALSE;
+	priv->dhcp_data_4.grace_id = 0;
+	priv->dhcp_data_4.grace_pending = FALSE;
 	_LOGI (LOGD_DHCP4, "DHCPv4: grace period expired");
 
 	nm_device_ip_method_failed (self, AF_INET,
@@ -7924,7 +7933,7 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 	/* In any other case (expired lease, assumed connection, etc.),
 	 * wait for some time before failing the IP method.
 	 */
-	if (!priv->dhcp4.grace_pending) {
+	if (!priv->dhcp_data_4.grace_pending) {
 		guint32 timeout;
 
 		/* Start a grace period equal to the DHCP timeout multiplied
@@ -7937,13 +7946,13 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 			_LOGI (LOGD_DHCP4,
 			       "DHCPv4: trying to acquire a new lease within %u seconds",
 			       timeout);
-			nm_assert (!priv->dhcp4.grace_id);
-			priv->dhcp4.grace_id = g_timeout_add_seconds (timeout,
-			                                              dhcp4_grace_period_expired,
-			                                              self);
+			nm_assert (!priv->dhcp_data_4.grace_id);
+			priv->dhcp_data_4.grace_id = g_timeout_add_seconds (timeout,
+			                                                    dhcp4_grace_period_expired,
+			                                                    self);
 		}
 
-		priv->dhcp4.grace_pending = TRUE;
+		priv->dhcp_data_4.grace_pending = TRUE;
 		goto clear_config;
 	}
 	return;
@@ -7999,8 +8008,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 			break;
 		}
 
-		nm_clear_g_source (&priv->dhcp4.grace_id);
-		priv->dhcp4.grace_pending = FALSE;
+		nm_clear_g_source (&priv->dhcp_data_4.grace_id);
+		priv->dhcp_data_4.grace_pending = FALSE;
 
 		/* After some failures, we have been able to renew the lease:
 		 * update the ip state
@@ -8626,8 +8635,8 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
 	applied_config_clear (&priv->dhcp6.ip6_config);
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
-	nm_clear_g_source (&priv->dhcp6.grace_id);
-	priv->dhcp6.grace_pending = FALSE;
+	nm_clear_g_source (&priv->dhcp_data_6.grace_id);
+	priv->dhcp_data_6.grace_pending = FALSE;
 
 	if (priv->dhcp6.client) {
 		nm_clear_g_signal_handler (priv->dhcp6.client, &priv->dhcp6.state_sigid);
@@ -8682,8 +8691,8 @@ dhcp6_grace_period_expired (gpointer user_data)
 	NMDevice *self = user_data;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	priv->dhcp6.grace_id = 0;
-	priv->dhcp6.grace_pending = FALSE;
+	priv->dhcp_data_6.grace_id = 0;
+	priv->dhcp_data_6.grace_pending = FALSE;
 	_LOGI (LOGD_DHCP6, "DHCPv6: grace period expired");
 
 	nm_device_ip_method_failed (self, AF_INET6,
@@ -8735,7 +8744,7 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 		/* In any other case (expired lease, assumed connection, etc.),
 		 * wait for some time before failing the IP method.
 		 */
-		if (!priv->dhcp6.grace_pending) {
+		if (!priv->dhcp_data_6.grace_pending) {
 			guint32 timeout;
 
 			/* Start a grace period equal to the DHCP timeout multiplied
@@ -8748,13 +8757,13 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 				_LOGI (LOGD_DHCP6,
 				       "DHCPv6: trying to acquire a new lease within %u seconds",
 				       timeout);
-				nm_assert (!priv->dhcp6.grace_id);
-				priv->dhcp6.grace_id = g_timeout_add_seconds (timeout,
-				                                              dhcp6_grace_period_expired,
-				                                              self);
+				nm_assert (!priv->dhcp_data_6.grace_id);
+				priv->dhcp_data_6.grace_id = g_timeout_add_seconds (timeout,
+				                                                    dhcp6_grace_period_expired,
+				                                                    self);
 			}
 
-			priv->dhcp6.grace_pending = TRUE;
+			priv->dhcp_data_6.grace_pending = TRUE;
 			goto clear_config;
 		}
 	} else {
@@ -8793,8 +8802,8 @@ dhcp6_state_changed (NMDhcpClient *client,
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
 	case NM_DHCP_STATE_EXTENDED:
-		nm_clear_g_source (&priv->dhcp6.grace_id);
-		priv->dhcp6.grace_pending = FALSE;
+		nm_clear_g_source (&priv->dhcp_data_6.grace_id);
+		priv->dhcp_data_6.grace_pending = FALSE;
 		/* If the server sends multiple IPv6 addresses, we receive a state
 		 * changed event for each of them. Use the event ID to merge IPv6
 		 * addresses from the same transaction into a single configuration.
