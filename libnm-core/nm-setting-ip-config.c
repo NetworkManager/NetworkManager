@@ -5637,10 +5637,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * When using dns=default, servers with higher priority will be on top of
 	 * resolv.conf.  To prioritize a given server over another one within the
 	 * same connection, just specify them in the desired order.  When multiple
-	 * devices have configurations with the same priority, the one with an
-	 * active default route will be preferred.  Negative values have the special
+	 * devices have configurations with the same priority, VPNs will be
+	 * considered first, then devices with the best (lowest metric) default
+	 * route and then all other devices.  Negative values have the special
 	 * effect of excluding other configurations with a greater priority value;
-	 * so in presence of at least a negative priority, only DNS servers from
+	 * so in presence of at least one negative priority, only DNS servers from
 	 * connections with the lowest priority value will be used.
 	 *
 	 * When using a DNS resolver that supports Conditional Forwarding as dns=dnsmasq or
