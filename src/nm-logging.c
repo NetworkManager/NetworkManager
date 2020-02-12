@@ -729,6 +729,11 @@ _nm_log_impl (const char *file,
 			struct iovec *iov = iov_data;
 			char *iov_free_data[5];
 			char **iov_free = iov_free_data;
+			const LogDesc *diter;
+			NMLogDomain dom_all;
+			char s_log_domains_buf[NM_STRLEN ("NM_LOG_DOMAINS=") + sizeof (_all_logging_domains_to_str)];
+			char *s_log_domains;
+			gsize l_log_domains;
 
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
@@ -737,25 +742,23 @@ _nm_log_impl (const char *file,
 			_iovec_set_format (iov++, iov_free++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (g->prefix, tv, msg));
 			_iovec_set_string (iov++, syslog_identifier_full (g->syslog_identifier));
 			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
-			{
-				const LogDesc *diter;
-				NMLogDomain dom_all = domain;
-				char s_log_domains_buf[NM_STRLEN ("NM_LOG_DOMAINS=") + sizeof (_all_logging_domains_to_str)];
-				char *s_log_domains = s_log_domains_buf;
-				gsize l_log_domains = sizeof (s_log_domains_buf);
 
-				nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, "NM_LOG_DOMAINS=");
-				for (diter = &domain_desc[0]; dom_all != 0 && diter->name; diter++) {
-					if (!NM_FLAGS_ANY (dom_all, diter->num))
-						continue;
-					if (dom_all != domain)
-						nm_utils_strbuf_append_c (&s_log_domains, &l_log_domains, ',');
-					nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, diter->name);
-					dom_all &= ~diter->num;
-				}
-				nm_assert (l_log_domains > 0);
-				_iovec_set (iov++, s_log_domains_buf, s_log_domains - s_log_domains_buf);
+			dom_all = domain;
+			s_log_domains = s_log_domains_buf;
+			l_log_domains = sizeof (s_log_domains_buf);
+
+			nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, "NM_LOG_DOMAINS=");
+			for (diter = &domain_desc[0]; dom_all != 0 && diter->name; diter++) {
+				if (!NM_FLAGS_ANY (dom_all, diter->num))
+					continue;
+				if (dom_all != domain)
+					nm_utils_strbuf_append_c (&s_log_domains, &l_log_domains, ',');
+				nm_utils_strbuf_append_str (&s_log_domains, &l_log_domains, diter->name);
+				dom_all &= ~diter->num;
 			}
+			nm_assert (l_log_domains > 0);
+			_iovec_set (iov++, s_log_domains_buf, s_log_domains - s_log_domains_buf);
+
 			G_STATIC_ASSERT_EXPR (LOG_FAC (LOG_DAEMON) == 3);
 			_iovec_set_string_literal (iov++, "SYSLOG_FACILITY=3");
 			_iovec_set_format_str_a (iov++, 15, "NM_LOG_LEVEL=%s", level_desc[level].name);
