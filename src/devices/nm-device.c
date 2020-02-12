@@ -1184,7 +1184,14 @@ init_ip_config_dns_priority (NMDevice *self, NMIPConfig *config)
 	                                                        G_MININT,
 	                                                        G_MAXINT,
 	                                                        0);
-	nm_ip_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
+
+	if (priority == 0) {
+		priority =   nm_device_is_vpn (self)
+		           ? NM_DNS_PRIORITY_DEFAULT_VPN
+		           : NM_DNS_PRIORITY_DEFAULT_NORMAL;
+	}
+
+	nm_ip_config_set_dns_priority (config, priority);
 }
 
 /*****************************************************************************/

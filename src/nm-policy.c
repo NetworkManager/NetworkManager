@@ -1105,7 +1105,8 @@ update_ip_dns (NMPolicy *self, int addr_family)
 		 */
 		_dns_manager_set_ip_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
 		                            ip_config,
-		                            vpn
+		                              (   vpn
+		                               || (device && nm_device_is_vpn (device)))
 		                            ? NM_DNS_IP_CONFIG_TYPE_VPN
 		                            : NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
 		                            device);

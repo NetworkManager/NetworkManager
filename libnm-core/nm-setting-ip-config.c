@@ -5618,7 +5618,7 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * The relative priority for DNS servers specified by this setting.  A lower
 	 * value is better (higher priority). Zero selects a globally configured
 	 * default value. If the latter is missing or zero too, it defaults to
-	 * 50 for VPNs and 100 for other connections.
+	 * 50 for VPNs (including WireGuard) and 100 for other connections.
 	 *
 	 * Note that the priority is to order DNS settings for multiple active
 	 * connections.  It does not disambiguate multiple DNS servers within the
