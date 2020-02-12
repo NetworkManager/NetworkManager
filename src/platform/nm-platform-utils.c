@@ -155,7 +155,7 @@ again:
 		const char *ifname = known_ifnames[try_count % 2];
 
 		nm_assert (ifindex > 0);
-		nm_assert (ifname && nm_utils_is_valid_iface_name (ifname, NULL));
+		nm_assert (ifname && nm_utils_ifname_valid_kernel (ifname, NULL));
 		nm_assert (fd >= 0);
 
 		memset (&ifr, 0, sizeof (ifr));
@@ -1416,7 +1416,7 @@ nmp_utils_sysctl_open_netdir (int ifindex,
 				return -1;
 		}
 
-		nm_assert (nm_utils_is_valid_iface_name (ifname, NULL));
+		nm_assert (nm_utils_ifname_valid_kernel (ifname, NULL));
 
 		if (g_strlcpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], ifname, IFNAMSIZ) >= IFNAMSIZ)
 			g_return_val_if_reached (-1);

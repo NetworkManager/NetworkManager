@@ -368,7 +368,7 @@ nm_vpn_wireguard_import (const char *filename,
 			memcpy (ifname, cstr, len);
 			ifname[len] = '\0';
 
-			if (nm_utils_is_valid_iface_name (ifname, NULL))
+			if (nm_utils_ifname_valid_kernel (ifname, NULL))
 				ifname_valid = TRUE;
 		}
 	}
