@@ -5854,7 +5854,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	/**
 	 * NMSettingIPConfig:dhcp-timeout:
 	 *
-	 * A timeout for a DHCP transaction in seconds.
+	 * A timeout for a DHCP transaction in seconds. If zero (the default), a
+	 * globally configured default is used. If still unspecified, a device specific
+	 * timeout is used (usually 45 seconds).
+	 *
+	 * Set to 2147483647 (MAXINT32) for infinity.
 	 **/
 	obj_properties[PROP_DHCP_TIMEOUT] =
 	    g_param_spec_int (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
