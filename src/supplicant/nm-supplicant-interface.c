@@ -189,6 +189,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplican
 NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC (
 	wpas_state_string_to_enum,
 	NMSupplicantInterfaceState,
+	{ nm_assert (name); },
 	{ return NM_SUPPLICANT_INTERFACE_STATE_INVALID; },
 	{ "4way_handshake",     NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE  },
 	{ "associated",         NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED      },

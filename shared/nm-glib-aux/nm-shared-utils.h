@@ -1543,7 +1543,12 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
 
 /*****************************************************************************/
 
-#define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(scope, fcn_name, result_type, unknown_val, ...) \
+#define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(scope, \
+                                             fcn_name, \
+                                             result_type, \
+                                             entry_cmd, \
+                                             unknown_val_cmd, \
+                                             ...) \
 scope result_type \
 fcn_name (const char *name) \
 { \
@@ -1553,9 +1558,8 @@ fcn_name (const char *name) \
 	} LIST[] = { \
 		__VA_ARGS__ \
 	}; \
-	gssize idx; \
 	\
-	nm_assert (name); \
+	{ entry_cmd; } \
 	\
 	if (NM_MORE_ASSERTS > 5) { \
 		static gboolean checked = FALSE; \
@@ -1574,22 +1578,26 @@ fcn_name (const char *name) \
 		} \
 	} \
 	\
-	idx = nm_utils_array_find_binary_search (LIST, \
-	                                         sizeof (LIST[0]), \
-	                                         G_N_ELEMENTS (LIST), \
-	                                         &name, \
-	                                         nm_strcmp_p_with_data, \
-	                                         NULL); \
-	if (idx >= 0) \
-		return LIST[idx].value; \
+	if (G_LIKELY (name)) { \
+		gssize idx; \
+		\
+		idx = nm_utils_array_find_binary_search (LIST, \
+		                                         sizeof (LIST[0]), \
+		                                         G_N_ELEMENTS (LIST), \
+		                                         &name, \
+		                                         nm_strcmp_p_with_data, \
+		                                         NULL); \
+		if (G_LIKELY (idx >= 0)) \
+			return LIST[idx].value; \
+	} \
 	\
-	{ unknown_val; } \
+	{ unknown_val_cmd; } \
 }
 
-#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
-	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
-#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
-	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (static, fcn_name, lookup_type, unknown_val, __VA_ARGS__)
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, lookup_type, entry_cmd, unknown_val_cmd, ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (, fcn_name, lookup_type, entry_cmd, unknown_val_cmd, __VA_ARGS__)
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC(fcn_name, lookup_type, entry_cmd, unknown_val_cmd, ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (static, fcn_name, lookup_type, entry_cmd, unknown_val_cmd, __VA_ARGS__)
 
 /*****************************************************************************/
 
