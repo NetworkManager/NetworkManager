@@ -154,7 +154,8 @@ ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_lldp_attr_id_to_name, LldpAttrId,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_lldp_attr_id_to_name, LldpAttrId,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_PORT_DESCRIPTION,         NM_LLDP_ATTR_PORT_DESCRIPTION),
 	NM_UTILS_LOOKUP_STR_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,              NM_LLDP_ATTR_SYSTEM_NAME),
@@ -174,7 +175,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_lldp_attr_id_to_name, LldpAttrId,
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_LLDP_ATTR_ID_COUNT),
 );
 
-_NM_UTILS_LOOKUP_DEFINE (static, _lldp_attr_id_to_type, LldpAttrId, LldpAttrType,
+static
+NM_UTILS_LOOKUP_DEFINE (_lldp_attr_id_to_type, LldpAttrId, LldpAttrType,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (LLDP_ATTR_TYPE_NONE),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_PORT_DESCRIPTION,            LLDP_ATTR_TYPE_STRING),
 	NM_UTILS_LOOKUP_ITEM (LLDP_ATTR_ID_SYSTEM_NAME,                 LLDP_ATTR_TYPE_STRING),

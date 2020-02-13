@@ -11,7 +11,8 @@
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_geterror,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_geterror,
 #if 0
 	enum _NMErrno,
 #else

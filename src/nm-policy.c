@@ -2500,7 +2500,8 @@ nm_policy_get_activating_ip6_ac (NMPolicy *self)
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_hostname_mode_to_string, NMPolicyHostnameMode,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_hostname_mode_to_string, NMPolicyHostnameMode,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_NONE,  "none"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_DHCP,  "dhcp"),

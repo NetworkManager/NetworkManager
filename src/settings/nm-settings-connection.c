@@ -1968,7 +1968,8 @@ _nm_settings_connection_emit_signal_updated_internal (NMSettingsConnection *self
 
 /*****************************************************************************/
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_settings_connection_flags_to_string, NMSettingsConnectionIntFlags,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_settings_connection_flags_to_string, NMSettingsConnectionIntFlags,
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,          "none"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED,       "unsaved"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,  "nm-generated"),
@@ -2413,7 +2414,8 @@ nm_settings_connection_autoconnect_retries_blocked_until (NMSettingsConnection *
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retries_blocked_until;
 }
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_autoconnect_blocked_reason_to_string, NMSettingsAutoconnectBlockedReason,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_autoconnect_blocked_reason_to_string, NMSettingsAutoconnectBlockedReason,
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE, "none"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST, "user-request"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, "failed"),

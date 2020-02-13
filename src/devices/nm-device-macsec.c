@@ -77,7 +77,8 @@ static void macsec_secrets_cancel (NMDeviceMacsec *self);
 
 /******************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (validation_mode_to_string, guint8,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (validation_mode_to_string, guint8,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("<unknown>"),
 	NM_UTILS_LOOKUP_STR_ITEM (0, "disable"),
 	NM_UTILS_LOOKUP_STR_ITEM (1, "check"),

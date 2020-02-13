@@ -554,7 +554,8 @@ test_nm_ref_string (void)
 
 /*****************************************************************************/
 
-NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC (
+static
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 	_do_string_table_lookup,
 	int,
 	{ ; },

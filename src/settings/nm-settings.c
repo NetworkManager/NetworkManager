@@ -67,7 +67,8 @@
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
+static
+NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
 
 /*****************************************************************************/
 

@@ -298,7 +298,8 @@ nm_platform_get_multi_idx (NMPlatform *self)
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_ADD,     "add"),
 	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_CHANGE,  "change"),
@@ -2276,7 +2277,8 @@ nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatf
 
 /*****************************************************************************/
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_flags_to_string, NMPlatformWireGuardChangeFlags,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_wireguard_change_flags_to_string, NMPlatformWireGuardChangeFlags,
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE,            "none"),
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS,   "replace-peers"),
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY, "has-private-key"),
@@ -2284,7 +2286,8 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_flags_to_string, NMPlatformW
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_FWMARK,      "has-fwmark"),
 );
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_wireguard_change_peer_flags_to_string, NMPlatformWireGuardChangePeerFlags,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_wireguard_change_peer_flags_to_string, NMPlatformWireGuardChangePeerFlags,
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE,                   "none"),
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REMOVE_ME,              "remove"),
 	NM_UTILS_FLAGS2STR (NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_PRESHARED_KEY,      "psk"),
@@ -5887,7 +5890,8 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	return buf;
 }
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_rtm_flags_to_string, unsigned,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_rtm_flags_to_string, unsigned,
 	NM_UTILS_FLAGS2STR (RTNH_F_DEAD,                   "dead"),
 	NM_UTILS_FLAGS2STR (RTNH_F_PERVASIVE,              "pervasive"),
 	NM_UTILS_FLAGS2STR (RTNH_F_ONLINK,                 "onlink"),

@@ -107,7 +107,8 @@ G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_capabilities_to_string, NMSecretAgentCapabilities,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_capabilities_to_string, NMSecretAgentCapabilities,
 	NM_UTILS_FLAGS2STR (NM_SECRET_AGENT_CAPABILITY_NONE,      "none"),
 	NM_UTILS_FLAGS2STR (NM_SECRET_AGENT_CAPABILITY_VPN_HINTS, "vpn-hints"),
 );

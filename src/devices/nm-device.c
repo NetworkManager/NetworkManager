@@ -684,7 +684,8 @@ static void (*const activate_stage5_ip_config_result_x[2]) (NMDevice *self) = {
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (queued_state_to_string, NMDeviceState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (queued_state_to_string, NMDeviceState,
 	NM_UTILS_LOOKUP_DEFAULT  (                              NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "???"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_UNKNOWN,      NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_UNMANAGED,    NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unmanaged"),
@@ -781,7 +782,8 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_device_state_reason_to_str, NMDeviceStateReason,
 
 #define reason_to_string_a(reason) NM_UTILS_LOOKUP_STR_A (nm_device_state_reason_to_str, reason)
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (mtu_source_to_str, NMDeviceMtuSource,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (mtu_source_to_str, NMDeviceMtuSource,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_MTU_SOURCE_NONE,       "none"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_MTU_SOURCE_PARENT,     "parent"),
@@ -1042,7 +1044,8 @@ applied_config_reset_nameservers (AppliedConfig *config)
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_sys_iface_state_to_str, NMDeviceSysIfaceState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_sys_iface_state_to_str, NMDeviceSysIfaceState,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_SYS_IFACE_STATE_EXTERNAL, "external"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_SYS_IFACE_STATE_ASSUME,   "assume"),
@@ -1380,7 +1383,8 @@ _get_stable_id (NMDevice *self,
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_ip_state_to_string, NMDeviceIPState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_ip_state_to_string, NMDeviceIPState,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_IP_STATE_NONE, "none"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_IP_STATE_WAIT, "wait"),
@@ -5481,7 +5485,8 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_autoconnect_blocked_flags_to_string, NMDeviceAutoconnectBlockedFlags,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_autoconnect_blocked_flags_to_string, NMDeviceAutoconnectBlockedFlags,
 	NM_UTILS_FLAGS2STR (NM_DEVICE_AUTOCONNECT_BLOCKED_NONE,              "none"),
 	NM_UTILS_FLAGS2STR (NM_DEVICE_AUTOCONNECT_BLOCKED_USER,              "user"),
 	NM_UTILS_FLAGS2STR (NM_DEVICE_AUTOCONNECT_BLOCKED_WRONG_PIN,         "wrong-pin"),

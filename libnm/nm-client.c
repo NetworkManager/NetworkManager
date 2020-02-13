@@ -382,7 +382,8 @@ static NMRefString *_dbus_path_dns_manager = NULL;
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nml_dbus_obj_state_to_string, NMLDBusObjState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (nml_dbus_obj_state_to_string, NMLDBusObjState,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
 	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_UNLINKED,             "unlinked"),
 	NM_UTILS_LOOKUP_ITEM (NML_DBUS_OBJ_STATE_WATCHED_ONLY,         "watched-only"),

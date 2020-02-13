@@ -26,7 +26,8 @@
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, int /*NMConnectivityState*/,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_state_to_string, int /*NMConnectivityState*/,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_UNKNOWN,  "UNKNOWN"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_NONE,     "NONE"),

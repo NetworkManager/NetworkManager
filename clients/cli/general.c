@@ -28,7 +28,8 @@ static void permission_changed (GObject *gobject,
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_state_to_string, NMState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (nm_state_to_string, NMState,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_STATE_ASLEEP,           N_("asleep")),
 	NM_UTILS_LOOKUP_ITEM (NM_STATE_CONNECTING,       N_("connecting")),
@@ -87,7 +88,8 @@ permission_to_string (NMClientPermission perm)
 	       ?: _("unknown");
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (permission_result_to_string, NMClientPermissionResult,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (permission_result_to_string, NMClientPermissionResult,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  N_("yes")),
 	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   N_("no")),
@@ -95,7 +97,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (permission_result_to_string, NMClientPermissi
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CLIENT_PERMISSION_RESULT_UNKNOWN),
 );
 
-_NM_UTILS_LOOKUP_DEFINE (static, permission_result_to_color, NMClientPermissionResult, NMMetaColor,
+static
+NM_UTILS_LOOKUP_DEFINE (permission_result_to_color, NMClientPermissionResult, NMMetaColor,
 	NM_UTILS_LOOKUP_DEFAULT (NM_META_COLOR_PERMISSION_UNKNOWN),
 	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  NM_META_COLOR_PERMISSION_YES),
 	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   NM_META_COLOR_PERMISSION_NO),
