@@ -554,6 +554,35 @@ test_nm_ref_string (void)
 
 /*****************************************************************************/
 
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC (
+	_do_string_table_lookup,
+	int,
+	{ ; },
+	{ return -1; },
+	{ "0", 0 },
+	{ "1", 1 },
+	{ "2", 2 },
+	{ "3", 3 },
+)
+
+static void
+test_string_table_lookup (void)
+{
+	const char *const args[] = { NULL, "0", "1", "2", "3", "x", };
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (args); i++) {
+		const char *needle = args[i];
+		const int val2 = _nm_utils_ascii_str_to_int64 (needle, 10, 0, 100, -1);
+		int val;
+
+		val = _do_string_table_lookup (needle);
+		g_assert_cmpint (val, ==, val2);
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -572,6 +601,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);
 	g_test_add_func ("/general/test_nm_utils_bin2hexstr", test_nm_utils_bin2hexstr);
 	g_test_add_func ("/general/test_nm_ref_string", test_nm_ref_string);
+	g_test_add_func ("/general/test_string_table_lookup", test_string_table_lookup);
 
 	return g_test_run ();
 }
