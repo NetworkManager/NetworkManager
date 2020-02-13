@@ -84,7 +84,7 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 
 	NM_SET_OUT (out_modified, FALSE);
 
-	type = self ? self->type : NULL;
+	type = self->type;
 
 	if (   type
 	    && !NM_IN_STRSET (type, "internal", "system", "patch", "dpdk")) {
