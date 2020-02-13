@@ -461,28 +461,19 @@ _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name)
 	g_assert_not_reached ();
 }
 
-NMBondMode
-_nm_setting_bond_mode_from_string (const char *str)
-{
-	g_return_val_if_fail (str, NM_BOND_MODE_UNKNOWN);
-
-	if (nm_streq (str, "balance-rr"))
-		return NM_BOND_MODE_ROUNDROBIN;
-	if (nm_streq (str, "active-backup"))
-		return NM_BOND_MODE_ACTIVEBACKUP;
-	if (nm_streq (str, "balance-xor"))
-		return NM_BOND_MODE_XOR;
-	if (nm_streq (str, "broadcast"))
-		return NM_BOND_MODE_BROADCAST;
-	if (nm_streq (str, "802.3ad"))
-		return NM_BOND_MODE_8023AD;
-	if (nm_streq (str, "balance-tlb"))
-		return NM_BOND_MODE_TLB;
-	if (nm_streq (str, "balance-alb"))
-		return NM_BOND_MODE_ALB;
-
-	return NM_BOND_MODE_UNKNOWN;
-}
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_nm_setting_bond_mode_from_string,
+	NMBondMode,
+	{ g_return_val_if_fail (name, NM_BOND_MODE_UNKNOWN); },
+	{ return NM_BOND_MODE_UNKNOWN; },
+	{ "802.3ad",       NM_BOND_MODE_8023AD       },
+	{ "active-backup", NM_BOND_MODE_ACTIVEBACKUP },
+	{ "balance-alb",   NM_BOND_MODE_ALB          },
+	{ "balance-rr",    NM_BOND_MODE_ROUNDROBIN   },
+	{ "balance-tlb",   NM_BOND_MODE_TLB          },
+	{ "balance-xor",   NM_BOND_MODE_XOR          },
+	{ "broadcast",     NM_BOND_MODE_BROADCAST    },
+);
 
 /*****************************************************************************/
 
