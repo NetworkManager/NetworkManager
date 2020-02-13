@@ -1565,8 +1565,6 @@ fcn_name (const char *name) \
 		static gboolean checked = FALSE; \
 		int i; \
 		\
-		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) > 1); \
-		\
 		if (!checked) { \
 			checked = TRUE; \
 			\
@@ -1579,16 +1577,29 @@ fcn_name (const char *name) \
 	} \
 	\
 	if (G_LIKELY (name)) { \
-		gssize idx; \
+		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) > 1); \
+		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) < G_MAXUINT / 2u - 10u); \
+		unsigned imin = 0; \
+		unsigned imax = (G_N_ELEMENTS (LIST) - 1); \
+		unsigned imid = (G_N_ELEMENTS (LIST) - 1) / 2; \
 		\
-		idx = nm_utils_array_find_binary_search (LIST, \
-		                                         sizeof (LIST[0]), \
-		                                         G_N_ELEMENTS (LIST), \
-		                                         &name, \
-		                                         nm_strcmp_p_with_data, \
-		                                         NULL); \
-		if (G_LIKELY (idx >= 0)) \
-			return LIST[idx].value; \
+		for (;;) { \
+			const int cmp = strcmp (LIST[imid].name, name); \
+			\
+			if (G_UNLIKELY (cmp == 0)) \
+				return LIST[imid].value; \
+			\
+			if (cmp < 0) \
+				imin = imid + 1u; \
+			else \
+				imax = imid - 1u; \
+			\
+			if (G_UNLIKELY (imin > imax)) \
+				break; \
+			\
+			/* integer overflow cannot happen, because LIST is shorter than G_MAXUINT/2. */ \
+			imid = (imin + imax) / 2u;\
+		} \
 	} \
 	\
 	{ unknown_val_cmd; } \
