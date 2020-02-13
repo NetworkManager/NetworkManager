@@ -815,6 +815,7 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("IPV6_PEERROUTES",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_PRIVACY",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_PRIVACY_PREFER_PUBLIC_IP",               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_RA_TIMEOUT",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_RES_OPTIONS",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_ROUTE_METRIC",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_ROUTE_TABLE",                            NMS_IFCFG_KEY_TYPE_IS_PLAIN ),

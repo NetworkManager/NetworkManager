@@ -2680,6 +2680,12 @@ write_ip6_setting (NMConnection *connection,
 	if (!nm_setting_ip_config_get_dhcp_send_hostname (s_ip6))
 		svSetValueStr (ifcfg, "DHCPV6_SEND_HOSTNAME", "no");
 
+	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (s_ip6));
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV6_RA_TIMEOUT",
+	                      timeout != 0,
+	                      timeout);
+
 	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip6);
 	svSetValueInt64_cond (ifcfg,
 	                      "IPV6_DHCP_TIMEOUT",
