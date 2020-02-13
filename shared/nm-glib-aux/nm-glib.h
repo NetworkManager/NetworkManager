@@ -193,22 +193,6 @@ __g_test_add_data_func_full (const char     *testpath,
 
 /*****************************************************************************/
 
-#if !GLIB_CHECK_VERSION (2, 34, 0)
-#define G_DEFINE_QUARK(QN, q_n)               \
-GQuark                                        \
-q_n##_quark (void)                            \
-{                                             \
-	static GQuark q;                          \
-                                              \
-	if G_UNLIKELY (q == 0)                    \
-		q = g_quark_from_static_string (#QN); \
-                                              \
-	return q;                                 \
-}
-#endif
-
-/*****************************************************************************/
-
 static inline gboolean
 nm_g_hash_table_replace (GHashTable *hash, gpointer key, gpointer value)
 {
