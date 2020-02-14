@@ -15545,6 +15545,31 @@ deactivate_dispatcher_complete (NMDispatcherCallId *call_id, gpointer user_data)
 		nm_assert_not_reached ();
 
 	if (NM_DEVICE_GET_CLASS (self)->deactivate_async) {
+		/* FIXME: the virtual function deactivate_async() has only this caller here.
+		 * And the NMDevice subtypes are well aware of the circumstances when they
+		 * are called. We shall make the function less generic and thus (as the scope
+		 * is narrower) more convenient.
+		 *
+		 * - Drop the callback argument. Instead, when deactivate_async() completes, the
+		 *   subtype shall call a method _nm_device_deactivate_async_done(). Because as
+		 *   it is currently, subtypes need to pretend this callback and the user-data
+		 *   would be opaque, and carry it around. When it's in fact very clear what this
+		 *   is.
+		 *
+		 * - Also drop the GCancellable argument. Upon cancellation, NMDevice shall
+		 *   call another virtual function deactivate_async_abort(). As it is currently,
+		 *   callers need to register to the cancelled signal of the cancellable. It
+		 *   seems simpler to just implement the deactivate_async_abort() function.
+		 *   On the other hand, some implementations actually use the GCancellable.
+		 *   So, NMDevice shall do both: it shall both pass a cancellable, but also
+		 *   invoke deactivate_async_abort(). It allow the implementation to honor
+		 *   whatever is simpler for their purpose.
+		 *
+		 * - sometimes, the subclass can complete right away. Scheduling the completion
+		 *   in an idle handler is cumbersome. Allow the function to return FALSE to
+		 *   indicate that the device is already deactivated and the callback (or
+		 *   _nm_device_deactivate_async_done()) won't be invoked.
+		 */
 		priv->deactivating_cancellable = g_cancellable_new ();
 		NM_DEVICE_GET_CLASS (self)->deactivate_async (self,
 		                                              priv->deactivating_cancellable,
