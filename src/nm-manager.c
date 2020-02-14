@@ -195,7 +195,6 @@ typedef struct {
 	NMConnectivityState connectivity_state;
 
 	bool startup:1;
-	bool devices_inited:1;
 
 	bool sleeping:1;
 	bool net_enabled:1;
@@ -1541,7 +1540,7 @@ check_if_startup_complete (NMManager *self)
 	if (!priv->startup)
 		return;
 
-	if (!priv->devices_inited)
+	if (priv->devices_inited_id)
 		return;
 
 	reason = nm_settings_get_startup_complete_blocked_reason (priv->settings);
@@ -6620,7 +6619,6 @@ devices_inited_cb (gpointer user_data)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	priv->devices_inited_id = 0;
-	priv->devices_inited = TRUE;
 	check_if_startup_complete (self);
 	return G_SOURCE_REMOVE;
 }
@@ -6690,8 +6688,8 @@ nm_manager_start (NMManager *self, GError **error)
 	for (i = 0; connections[i]; i++)
 		connection_changed (self, connections[i]);
 
-	nm_clear_g_source (&priv->devices_inited_id);
-	priv->devices_inited_id = g_idle_add_full (G_PRIORITY_LOW + 10, devices_inited_cb, self, NULL);
+	if (!priv->devices_inited_id)
+		priv->devices_inited_id = g_idle_add_full (G_PRIORITY_LOW + 10, devices_inited_cb, self, NULL);
 
 	return TRUE;
 }
