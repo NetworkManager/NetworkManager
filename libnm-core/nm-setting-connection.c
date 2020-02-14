@@ -1895,7 +1895,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * variable: MULTI_CONNECT(+)
 	 * description: whether the profile can be active on multiple devices at a given
 	 *   moment. The values are numbers corresponding to #NMConnectionMultiConnect enum.
-	 * example: ZONE=3
+	 * example: MULTI_CONNECT=3
 	 * ---end---
 	 */
 	obj_properties[PROP_MULTI_CONNECT] =
