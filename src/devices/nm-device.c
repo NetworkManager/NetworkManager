@@ -10086,7 +10086,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	                                           G_CALLBACK (ndisc_config_changed),
 	                                           self);
 	priv->ndisc_timeout_id = g_signal_connect (priv->ndisc,
-	                                           NM_NDISC_RA_TIMEOUT,
+	                                           NM_NDISC_RA_TIMEOUT_SIGNAL,
 	                                           G_CALLBACK (ndisc_ra_timeout),
 	                                           self);
 
