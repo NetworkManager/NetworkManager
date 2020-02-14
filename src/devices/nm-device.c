@@ -4255,6 +4255,12 @@ nm_device_create_and_realize (NMDevice *self,
 	return TRUE;
 }
 
+static gboolean
+can_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
+{
+	return TRUE;
+}
+
 void
 nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 {
@@ -4262,6 +4268,9 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	const char *str;
 	int ifindex;
 	guint32 mtu;
+
+	if (!NM_DEVICE_GET_CLASS (self)->can_update_from_platform_link (self, plink))
+		return;
 
 	g_return_if_fail (plink == NULL || link_type_compatible (self, plink->type, NULL, NULL));
 
@@ -17609,6 +17618,7 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	klass->get_type_description = get_type_description;
 	klass->can_auto_connect = can_auto_connect;
+	klass->can_update_from_platform_link = can_update_from_platform_link;
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;

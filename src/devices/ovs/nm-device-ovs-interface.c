@@ -299,6 +299,18 @@ deactivate_async (NMDevice *device,
 	                                          data);
 }
 
+static gboolean
+can_update_from_platform_link (NMDevice *device, const NMPlatformLink *plink)
+{
+	/* If the device is deactivating, we already sent the
+	 * deletion command to ovsdb and we don't want to deal
+	 * with any new link appearing from the previous
+	 * activation.
+	 */
+	return    !plink
+	       || nm_device_get_state (device) != NM_DEVICE_STATE_DEACTIVATING;
+}
+
 /*****************************************************************************/
 
 static void
@@ -328,6 +340,7 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	device_class->connection_type_check_compatible = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_OPENVSWITCH);
 
+	device_class->can_update_from_platform_link = can_update_from_platform_link;
 	device_class->deactivate = deactivate;
 	device_class->deactivate_async = deactivate_async;
 	device_class->get_type_description = get_type_description;
