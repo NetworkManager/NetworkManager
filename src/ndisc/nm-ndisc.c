@@ -906,34 +906,38 @@ void
 nm_ndisc_start (NMNDisc *ndisc)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
-	NMNDiscClass *klass = NM_NDISC_GET_CLASS (ndisc);
+	NMNDiscPrivate *priv;
 	gint64 ra_wait_secs;
 
-	g_return_if_fail (klass->start);
-	g_return_if_fail (!priv->ra_timeout_id);
+	g_return_if_fail (NM_IS_NDISC (ndisc));
 
-	_LOGD ("starting neighbor discovery: %d", priv->ifindex);
+	priv = NM_NDISC_GET_PRIVATE (ndisc);
+
+	nm_assert (NM_NDISC_GET_CLASS (ndisc)->start);
+	nm_assert (!priv->ra_timeout_id);
+
+	_LOGD ("starting neighbor discovery for ifindex %d%s",
+	       priv->ifindex,
+	         priv->node_type == NM_NDISC_NODE_TYPE_HOST
+	       ? " (solicit)"
+	       : " (announce)");
 
 	if (!nm_ndisc_netns_push (ndisc, &netns))
 		return;
 
-	klass->start (ndisc);
+	NM_NDISC_GET_CLASS (ndisc)->start (ndisc);
 
-	switch (priv->node_type) {
-	case NM_NDISC_NODE_TYPE_HOST:
+	if (priv->node_type == NM_NDISC_NODE_TYPE_HOST) {
 		ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
 		ra_wait_secs = MAX (ra_wait_secs, 30);
 		priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, ndisc_ra_timeout_cb, ndisc);
 		_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
 		solicit_routers (ndisc);
-		break;
-	case NM_NDISC_NODE_TYPE_ROUTER:
-		announce_router_initial (ndisc);
-		break;
-	default:
-		g_assert_not_reached ();
+		return;
 	}
+
+	nm_assert (priv->node_type == NM_NDISC_NODE_TYPE_ROUTER);
+	announce_router_initial (ndisc);
 }
 
 NMNDiscConfigMap
@@ -1323,6 +1327,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NODE_TYPE:
 		/* construct-only */
 		priv->node_type = g_value_get_int (value);
+		nm_assert (NM_IN_SET (priv->node_type, NM_NDISC_NODE_TYPE_HOST,
+		                                       NM_NDISC_NODE_TYPE_ROUTER));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
