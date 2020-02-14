@@ -806,6 +806,7 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("IPV6_DEFAULTDEV",                             NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_DEFAULTGW",                              NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_DEFROUTE",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("IPV6_DHCP_TIMEOUT",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_DISABLED",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_DNS_PRIORITY",                           NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("IPV6_DOMAIN",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
