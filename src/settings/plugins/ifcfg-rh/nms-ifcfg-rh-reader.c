@@ -1734,7 +1734,7 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
-	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, (int) svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
 	              NULL);
 
 	nm_clear_g_free (&value);
