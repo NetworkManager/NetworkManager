@@ -436,7 +436,10 @@ int n_dhcp4_client_probe_new(NDhcp4ClientProbe **probep,
         if (r)
                 return r;
 
-        if (probe->config->init_reboot && probe->config->requested_ip.s_addr != INADDR_ANY)
+        if (probe->config->requested_ip.s_addr != INADDR_ANY)
+                probe->last_address = probe->config->requested_ip;
+
+        if (probe->config->init_reboot && probe->last_address.s_addr != INADDR_ANY)
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT;
         else
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
@@ -648,7 +651,7 @@ static int n_dhcp4_client_probe_transition_reboot(NDhcp4ClientProbe *probe, uint
                 if (r)
                         return r;
 
-                r = n_dhcp4_c_connection_reboot_new(&probe->connection, &request, &probe->config->requested_ip);
+                r = n_dhcp4_c_connection_reboot_new(&probe->connection, &request, &probe->last_address);
                 if (r)
                         return r;
 
@@ -700,8 +703,8 @@ static int n_dhcp4_client_probe_transition_deferred(NDhcp4ClientProbe *probe, ui
                 if (r)
                         return r;
 
-                if (!probe->config->init_reboot && probe->config->requested_ip.s_addr != INADDR_ANY) {
-                        r = n_dhcp4_outgoing_append_requested_ip(request, probe->config->requested_ip);
+                if (probe->last_address.s_addr != INADDR_ANY) {
+                        r = n_dhcp4_outgoing_append_requested_ip(request, probe->last_address);
                         if (r)
                                 return r;
                 }
@@ -841,6 +844,7 @@ static int n_dhcp4_client_probe_transition_lifetime(NDhcp4ClientProbe *probe) {
                         return r;
 
                 c_assert(probe->client->current_probe == probe);
+
                 probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
@@ -945,6 +949,7 @@ static int n_dhcp4_client_probe_transition_ack(NDhcp4ClientProbe *probe, NDhcp4I
                 n_dhcp4_client_lease_unref(probe->current_lease);
                 probe->current_lease = n_dhcp4_client_lease_ref(lease);
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_BOUND;
+                n_dhcp4_client_lease_get_yiaddr(lease, &probe->last_address);
                 probe->ns_nak_restart_delay = 0;
                 break;
 

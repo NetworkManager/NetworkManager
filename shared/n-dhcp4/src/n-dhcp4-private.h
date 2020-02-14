@@ -350,6 +350,7 @@ struct NDhcp4ClientProbe {
         void *userdata;
 
         unsigned int state;                     /* current probe state */
+        struct in_addr last_address;            /* last address obtained */
         uint64_t ns_deferred;                   /* timeout for deferred action */
         uint64_t ns_reinit;
         uint64_t ns_nak_restart_delay;          /* restart delay after a nak */
