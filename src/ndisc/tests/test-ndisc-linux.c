@@ -52,6 +52,7 @@ main (int argc, char **argv)
 	                           "8ce666e8-d34d-4fb1-b858-f15a7al28086",
 	                           NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
 	                           NM_NDISC_NODE_TYPE_HOST,
+	                           0,
 	                           &error);
 	if (!ndisc) {
 		g_print ("Failed to create NMNDisc instance: %s\n", error->message);

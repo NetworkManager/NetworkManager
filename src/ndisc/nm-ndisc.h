@@ -16,6 +16,9 @@
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
 
+#define NM_RA_TIMEOUT_DEFAULT    ((gint32) 0)
+#define NM_RA_TIMEOUT_INFINITY   G_MAXINT32
+
 #define NM_TYPE_NDISC            (nm_ndisc_get_type ())
 #define NM_NDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NDISC, NMNDisc))
 #define NM_NDISC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_NDISC, NMNDiscClass))
@@ -31,6 +34,7 @@
 #define NM_NDISC_STABLE_TYPE    "stable-type"
 #define NM_NDISC_NODE_TYPE      "node-type"
 #define NM_NDISC_MAX_ADDRESSES  "max-addresses"
+#define NM_NDISC_RA_TIMEOUT     "ra-timeout"
 #define NM_NDISC_ROUTER_SOLICITATIONS "router-solicitations"
 #define NM_NDISC_ROUTER_SOLICITATION_INTERVAL "router-solicitation-interval"
 

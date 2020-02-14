@@ -563,6 +563,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
                    const char *network_id,
                    NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                    NMNDiscNodeType node_type,
+                   gint32 ra_timeout,
                    GError **error)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
@@ -588,6 +589,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 	                      NM_NDISC_MAX_ADDRESSES, ipv6_sysctl_get (platform, ifname,
 	                                                               "max_addresses",
 	                                                               0, G_MAXINT32, NM_NDISC_MAX_ADDRESSES_DEFAULT),
+	                      NM_NDISC_RA_TIMEOUT, (int) ra_timeout,
 	                      NM_NDISC_ROUTER_SOLICITATIONS, ipv6_sysctl_get (platform, ifname,
 	                                                                      "router_solicitations",
 	                                                                      1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT),

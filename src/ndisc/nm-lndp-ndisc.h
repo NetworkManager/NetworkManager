@@ -28,6 +28,7 @@ NMNDisc *nm_lndp_ndisc_new (NMPlatform *platform,
                             const char *network_id,
                             NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                             NMNDiscNodeType node_type,
+                            gint32 ra_timeout,
                             GError **error);
 
 #endif /* __NETWORKMANAGER_LNDP_NDISC_H__ */

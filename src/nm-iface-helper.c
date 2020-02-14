@@ -552,10 +552,14 @@ main (int argc, char *argv[])
 			stable_type = (global_opt.stable_id[0] - '0');
 			stable_id = &global_opt.stable_id[2];
 		}
-		ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET, gl.ifindex, global_opt.ifname,
-		                           stable_type, stable_id,
+		ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET,
+		                           gl.ifindex,
+		                           global_opt.ifname,
+		                           stable_type,
+		                           stable_id,
 		                           global_opt.addr_gen_mode,
 		                           NM_NDISC_NODE_TYPE_HOST,
+		                           NM_RA_TIMEOUT_DEFAULT,
 		                           NULL);
 		g_assert (ndisc);
 

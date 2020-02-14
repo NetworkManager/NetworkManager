@@ -10159,6 +10159,28 @@ ndisc_node_type (NMDevice *self)
 	return NM_NDISC_NODE_TYPE_HOST;
 }
 
+static gint32
+get_ra_timeout (NMDevice *self)
+{
+	NMConnection *connection;
+	gint32 timeout;
+
+	G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_DEFAULT == 0);
+	G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
+
+	connection = nm_device_get_applied_connection (self);
+
+	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection)));
+	nm_assert (timeout >= 0);
+	if (timeout)
+		return timeout;
+
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    NM_CON_DEFAULT ("ipv6.ra-timeout"),
+	                                                    self,
+	                                                    0, G_MAXINT32, 0);
+}
+
 static gboolean
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
@@ -10189,6 +10211,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	                                 stable_id,
 	                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
 	                                 ndisc_node_type (self),
+	                                 get_ra_timeout (self),
 	                                 &error);
 	if (!priv->ndisc) {
 		_LOGE (LOGD_IP6, "addrconf6: failed to start neighbor discovery: %s", error->message);

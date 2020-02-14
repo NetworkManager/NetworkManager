@@ -750,6 +750,10 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv6.ra-timeout</varname></term>
+          <listitem><para>If left unspecified, the default value depends on the sysctl solicitation settings.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.dhcp-duid</varname></term>
           <listitem><para>If left unspecified, it defaults to "lease".</para></listitem>
         </varlistentry>
