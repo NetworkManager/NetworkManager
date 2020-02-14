@@ -2889,7 +2889,7 @@ nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes
 static void
 finalize (GObject *gobject)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE ((NMConfig *) gobject);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (gobject);
 
 	state_free (priv->state);
 

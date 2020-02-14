@@ -1431,7 +1431,7 @@ nm_dhcp_nettools_init (NMDhcpNettools *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE ((NMDhcpNettools *) object);
+	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE (object);
 
 	nm_clear_pointer (&priv->lease_file, g_free);
 	nm_clear_g_source_inst (&priv->event_source);

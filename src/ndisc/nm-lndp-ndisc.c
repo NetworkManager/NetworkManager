@@ -42,14 +42,14 @@ struct _NMLndpNDiscClass {
 
 G_DEFINE_TYPE (NMLndpNDisc, nm_lndp_ndisc, NM_TYPE_NDISC)
 
-#define NM_LNDP_NDISC_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMLndpNDisc, NM_IS_LNDP_NDISC)
+#define NM_LNDP_NDISC_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMLndpNDisc, NM_IS_LNDP_NDISC, NMNDisc)
 
 /*****************************************************************************/
 
 static gboolean
 send_rs (NMNDisc *ndisc, GError **error)
 {
-	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 	struct ndp_msg *msg;
 	int errsv;
 
@@ -344,7 +344,7 @@ typedef struct {
 static gboolean
 send_ra (NMNDisc *ndisc, GError **error)
 {
-	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 	NMNDiscDataInternal *rdata = ndisc->rdata;
 	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	int errsv;
@@ -488,7 +488,7 @@ event_ready (int fd,
 {
 	gs_unref_object NMNDisc *ndisc = g_object_ref (NM_NDISC (user_data));
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 
 	_LOGD ("processing libndp events");
 
@@ -505,7 +505,7 @@ event_ready (int fd,
 static void
 start (NMNDisc *ndisc)
 {
-	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 	int fd;
 
 	g_return_if_fail (!priv->event_source);
@@ -596,7 +596,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 	                                                                              1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT),
 	                      NULL);
 
-	priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 
 	errsv = ndp_open (&priv->ndp);
 
@@ -614,8 +614,8 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 static void
 dispose (GObject *object)
 {
-	NMNDisc *ndisc = (NMNDisc *) object;
-	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	NMNDisc *ndisc = NM_NDISC (object);
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 
 	nm_clear_g_source_inst (&priv->event_source);
 

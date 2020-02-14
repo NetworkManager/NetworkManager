@@ -256,7 +256,7 @@ nm_supplicant_config_add_blob_for_connection (NMSupplicantConfig *self,
 static void
 nm_supplicant_config_finalize (GObject *object)
 {
-	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE ((NMSupplicantConfig *) object);
+	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (object);
 
 	g_hash_table_destroy (priv->config);
 	g_hash_table_destroy (priv->blobs);

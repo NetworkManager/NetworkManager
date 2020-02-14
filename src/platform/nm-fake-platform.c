@@ -46,7 +46,7 @@ struct _NMFakePlatformClass {
 
 G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 
-#define NM_FAKE_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakePlatform, NM_IS_FAKE_PLATFORM)
+#define NM_FAKE_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakePlatform, NM_IS_FAKE_PLATFORM, NMPlatform)
 
 /*****************************************************************************/
 
@@ -126,7 +126,7 @@ static gboolean ip6_address_delete (NMPlatform *platform, int ifindex, struct in
 static gboolean
 sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 
 	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
@@ -138,7 +138,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 static char *
 sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *path)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	const char *v;
 
 	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
@@ -155,7 +155,7 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 static NMFakePlatformLink *
 link_get (NMPlatform *platform, int ifindex)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink *device;
 	int idx;
 
@@ -223,7 +223,7 @@ link_add_pre (NMPlatform *platform,
               const void *address,
               size_t address_len)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink *device;
 	int ifindex;
 	NMPObject *o;
@@ -1338,7 +1338,7 @@ nm_fake_platform_setup (void)
 static void
 finalize (GObject *object)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) object);
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (object);
 	int i;
 
 	g_hash_table_unref (priv->options);

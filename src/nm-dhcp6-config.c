@@ -82,7 +82,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE ((NMDhcp6Config *) object);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
@@ -112,7 +112,7 @@ nm_dhcp6_config_new (void)
 static void
 finalize (GObject *object)
 {
-	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE ((NMDhcp6Config *) object);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 
 	g_variant_unref (priv->options);
 

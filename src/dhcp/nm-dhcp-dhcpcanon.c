@@ -207,7 +207,7 @@ nm_dhcp_dhcpcanon_init (NMDhcpDhcpcanon *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE ((NMDhcpDhcpcanon *) object);
+	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE (object);
 
 	if (priv->dhcp_listener) {
 		g_signal_handlers_disconnect_by_func (priv->dhcp_listener,

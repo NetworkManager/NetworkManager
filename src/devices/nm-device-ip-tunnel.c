@@ -67,7 +67,7 @@ struct _NMDeviceIPTunnelClass {
 
 G_DEFINE_TYPE (NMDeviceIPTunnel, nm_device_ip_tunnel, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceIPTunnel, NM_IS_DEVICE_IP_TUNNEL)
+#define NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceIPTunnel, NM_IS_DEVICE_IP_TUNNEL, NMDevice)
 
 /*****************************************************************************/
 
@@ -935,7 +935,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -981,7 +981,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -1002,7 +1002,7 @@ nm_device_ip_tunnel_init (NMDeviceIPTunnel *self)
 static void
 constructed (GObject *object)
 {
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
 
 	if (NM_IN_SET (priv->mode,
 	               NM_IP_TUNNEL_MODE_IPIP6,

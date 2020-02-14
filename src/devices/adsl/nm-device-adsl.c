@@ -58,7 +58,7 @@ struct _NMDeviceAdslClass {
 
 G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_ADSL_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceAdsl, NM_IS_DEVICE_ADSL)
+#define NM_DEVICE_ADSL_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceAdsl, NM_IS_DEVICE_ADSL, NMDevice)
 
 /*****************************************************************************/
 
@@ -577,7 +577,7 @@ get_property (GObject *object, guint prop_id,
 {
 	switch (prop_id) {
 	case PROP_ATM_INDEX:
-		g_value_set_int (value, NM_DEVICE_ADSL_GET_PRIVATE ((NMDeviceAdsl *) object)->atm_index);
+		g_value_set_int (value, NM_DEVICE_ADSL_GET_PRIVATE (object)->atm_index);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -592,7 +592,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_ATM_INDEX:
 		/* construct-only */
-		NM_DEVICE_ADSL_GET_PRIVATE ((NMDeviceAdsl *) object)->atm_index = g_value_get_int (value);
+		NM_DEVICE_ADSL_GET_PRIVATE (object)->atm_index = g_value_get_int (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -646,7 +646,7 @@ dispose (GObject *object)
 {
 	adsl_cleanup (NM_DEVICE_ADSL (object));
 
-	nm_clear_g_source (&NM_DEVICE_ADSL_GET_PRIVATE ((NMDeviceAdsl *) object)->carrier_poll_id);
+	nm_clear_g_source (&NM_DEVICE_ADSL_GET_PRIVATE (object)->carrier_poll_id);
 
 	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
 }

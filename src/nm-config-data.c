@@ -1875,7 +1875,7 @@ nm_config_data_new_update_no_auto_default (const NMConfigData *base,
 static void
 finalize (GObject *gobject)
 {
-	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE ((NMConfigData *) gobject);
+	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (gobject);
 
 	g_free (priv->config_main_file);
 	g_free (priv->config_description);

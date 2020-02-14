@@ -1261,7 +1261,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_PARENT_IFACE:
@@ -1277,7 +1277,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_PARENT_IFACE:
@@ -1335,7 +1335,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
 	g_free (priv->parent_iface);
 

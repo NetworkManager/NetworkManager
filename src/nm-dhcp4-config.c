@@ -82,7 +82,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE ((NMDhcp4Config *) object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
@@ -114,7 +114,7 @@ nm_dhcp4_config_new (void)
 static void
 finalize (GObject *object)
 {
-	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE ((NMDhcp4Config *) object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
 	g_variant_unref (priv->options);
 

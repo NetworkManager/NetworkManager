@@ -69,7 +69,7 @@ struct _NMDeviceMacsecClass {
 
 G_DEFINE_TYPE (NMDeviceMacsec, nm_device_macsec, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_MACSEC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceMacsec, NM_IS_DEVICE_MACSEC)
+#define NM_DEVICE_MACSEC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceMacsec, NM_IS_DEVICE_MACSEC, NMDevice)
 
 /******************************************************************/
 

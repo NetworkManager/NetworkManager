@@ -57,7 +57,7 @@ struct _NMDeviceVxlanClass {
 
 G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_VXLAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceVxlan, NM_IS_DEVICE_VXLAN)
+#define NM_DEVICE_VXLAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceVxlan, NM_IS_DEVICE_VXLAN, NMDevice)
 
 /*****************************************************************************/
 
@@ -232,7 +232,7 @@ address_matches (const char *str, in_addr_t addr4, struct in6_addr *addr6)
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) device);
+	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (device);
 	NMSettingVxlan *s_vxlan;
 	const char *parent;
 
@@ -369,7 +369,7 @@ complete_connection (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) device);
+	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (device);
 	NMSettingVxlan *s_vxlan = nm_connection_get_setting_vxlan (connection);
 	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -473,7 +473,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) object);
+	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_ID:

@@ -182,7 +182,7 @@ update_properties (NMDevice *device)
 
 	g_return_if_fail (NM_IS_DEVICE_VLAN (device));
 
-	priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) device);
+	priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 
 	ifindex = nm_device_get_ifindex (device);
 
@@ -221,7 +221,7 @@ create_and_realize (NMDevice *device,
                     const NMPlatformLink **out_plink,
                     GError **error)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) device);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	const char *iface = nm_device_get_iface (device);
 	NMSettingVlan *s_vlan;
 	int parent_ifindex;
@@ -318,7 +318,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) device);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
 	const char *parent;
 

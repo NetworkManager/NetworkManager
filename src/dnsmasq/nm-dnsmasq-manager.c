@@ -339,7 +339,7 @@ nm_dnsmasq_manager_new (const char *iface)
 static void
 finalize (GObject *object)
 {
-	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE ((NMDnsMasqManager *) object);
+	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (object);
 
 	nm_dnsmasq_manager_stop (NM_DNSMASQ_MANAGER (object));
 

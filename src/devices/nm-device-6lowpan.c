@@ -34,7 +34,7 @@ struct _NMDevice6LowpanClass {
 
 G_DEFINE_TYPE (NMDevice6Lowpan, nm_device_6lowpan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_6LOWPAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDevice6Lowpan, NM_IS_DEVICE_6LOWPAN)
+#define NM_DEVICE_6LOWPAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDevice6Lowpan, NM_IS_DEVICE_6LOWPAN, NMDevice)
 
 /*****************************************************************************/
 

@@ -2534,7 +2534,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_SCANNING:
@@ -2570,7 +2570,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_IFACE:

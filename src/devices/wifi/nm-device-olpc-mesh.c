@@ -57,7 +57,7 @@ struct _NMDeviceOlpcMeshClass {
 
 G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_OLPC_MESH_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceOlpcMesh, NM_IS_DEVICE_OLPC_MESH)
+#define NM_DEVICE_OLPC_MESH_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceOlpcMesh, NM_IS_DEVICE_OLPC_MESH, NMDevice)
 
 /*****************************************************************************/
 

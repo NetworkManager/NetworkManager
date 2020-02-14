@@ -43,7 +43,7 @@ struct _NMDeviceInfinibandClass {
 
 G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_INFINIBAND_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceInfiniband, NM_IS_DEVICE_INFINIBAND)
+#define NM_DEVICE_INFINIBAND_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceInfiniband, NM_IS_DEVICE_INFINIBAND, NMDevice)
 
 /*****************************************************************************/
 
@@ -52,7 +52,7 @@ get_generic_capabilities (NMDevice *device)
 {
 	guint32 caps = NM_DEVICE_CAP_CARRIER_DETECT;
 
-	if (NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device)->is_partition)
+	if (NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->is_partition)
 		caps |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 	return caps;
@@ -223,7 +223,7 @@ create_and_realize (NMDevice *device,
                     const NMPlatformLink **out_plink,
                     GError **error)
 {
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device);
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 	NMSettingInfiniband *s_infiniband;
 	int r;
 
@@ -281,7 +281,7 @@ unrealize (NMDevice *device, GError **error)
 
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), FALSE);
 
-	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) device);
+	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 
 	if (priv->p_key < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
@@ -309,7 +309,7 @@ get_property (GObject *object, guint prop_id,
 {
 	switch (prop_id) {
 	case PROP_IS_PARTITION:
-		g_value_set_boolean (value, NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) object)->is_partition);
+		g_value_set_boolean (value, NM_DEVICE_INFINIBAND_GET_PRIVATE (object)->is_partition);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -323,7 +323,7 @@ set_property (GObject *object, guint prop_id,
 {
 	switch (prop_id) {
 	case PROP_IS_PARTITION:
-		NM_DEVICE_INFINIBAND_GET_PRIVATE ((NMDeviceInfiniband *) object)->is_partition = g_value_get_boolean (value);
+		NM_DEVICE_INFINIBAND_GET_PRIVATE (object)->is_partition = g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

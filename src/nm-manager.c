@@ -7845,7 +7845,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE ((NMManager *) object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
 
 	g_array_free (priv->capabilities, TRUE);
 

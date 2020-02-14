@@ -48,7 +48,7 @@ struct _NMDeviceTunClass {
 
 G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_TUN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceTun, NM_IS_DEVICE_TUN)
+#define NM_DEVICE_TUN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceTun, NM_IS_DEVICE_TUN, NMDevice)
 
 /*****************************************************************************/
 

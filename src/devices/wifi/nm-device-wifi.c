@@ -131,7 +131,7 @@ struct _NMDeviceWifiClass
 
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_WIFI_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWifi, NM_IS_DEVICE_WIFI)
+#define NM_DEVICE_WIFI_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceWifi, NM_IS_DEVICE_WIFI, NMDevice)
 
 /*****************************************************************************/
 
@@ -3114,7 +3114,7 @@ device_state_changed (NMDevice *device,
 static gboolean
 get_enabled (NMDevice *device)
 {
-	return NM_DEVICE_WIFI_GET_PRIVATE ((NMDeviceWifi *) device)->enabled;
+	return NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled;
 }
 
 static void

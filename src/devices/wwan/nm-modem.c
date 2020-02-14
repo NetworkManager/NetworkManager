@@ -1710,7 +1710,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 	const char *s;
 
 	switch (prop_id) {
@@ -1796,7 +1796,7 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
 	g_clear_object (&priv->act_request);
 
@@ -1806,7 +1806,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
 	g_free (priv->uid);
 	g_free (priv->path);

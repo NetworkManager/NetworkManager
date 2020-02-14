@@ -665,7 +665,7 @@ nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE ((NMDhcpDhclient *) object);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
 
 	if (priv->dhcp_listener) {
 		g_signal_handlers_disconnect_by_func (priv->dhcp_listener,

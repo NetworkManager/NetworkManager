@@ -1493,7 +1493,7 @@ nm_agent_manager_init (NMAgentManager *self)
 static void
 constructed (GObject *object)
 {
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE ((NMAgentManager *) object);
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->constructed (object);
 

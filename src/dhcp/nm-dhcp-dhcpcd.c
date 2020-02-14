@@ -200,7 +200,7 @@ nm_dhcp_dhcpcd_init (NMDhcpDhcpcd *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE ((NMDhcpDhcpcd *) object);
+	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (object);
 
 	if (priv->dhcp_listener) {
 		g_signal_handlers_disconnect_by_func (priv->dhcp_listener,

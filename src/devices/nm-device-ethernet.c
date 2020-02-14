@@ -109,7 +109,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceEthernet,
 
 G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_ETHERNET_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDeviceEthernet, NM_IS_DEVICE_ETHERNET)
+#define NM_DEVICE_ETHERNET_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDeviceEthernet, NM_IS_DEVICE_ETHERNET, NMDevice)
 
 /*****************************************************************************/
 
@@ -1427,7 +1427,7 @@ get_configured_mtu (NMDevice *device,
                     gboolean *out_force)
 {
 	/* MTU only set for plain ethernet */
-	if (NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device)->ppp_manager)
+	if (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->ppp_manager)
 		return 0;
 
 	return nm_device_get_configured_mtu_for_wired (device, out_source, out_force);
@@ -1588,13 +1588,13 @@ get_s390_subchannels (NMDevice *device)
 {
 	nm_assert (NM_IS_DEVICE_ETHERNET (device));
 
-	return NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device)->subchannels;
+	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->subchannels;
 }
 
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
 	gboolean perm_hw_addr_is_fake;
 	const char *perm_hw_addr;

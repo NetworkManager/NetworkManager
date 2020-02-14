@@ -940,7 +940,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_IFACE:
@@ -989,7 +989,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (object);
 	guint flags;
 
 	switch (prop_id) {

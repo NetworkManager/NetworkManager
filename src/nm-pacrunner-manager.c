@@ -610,7 +610,7 @@ nm_pacrunner_manager_init (NMPacrunnerManager *self)
 static void
 dispose (GObject *object)
 {
-	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE ((NMPacrunnerManager *) object);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (object);
 
 	nm_assert (c_list_is_empty (&priv->conf_id_lst_head));
 

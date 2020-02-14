@@ -244,7 +244,7 @@ nm_vpn_manager_init (NMVpnManager *self)
 static void
 dispose (GObject *object)
 {
-	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE ((NMVpnManager *) object);
+	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (object);
 
 	if (priv->monitor_etc) {
 		if (priv->monitor_id_etc)

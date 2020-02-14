@@ -49,7 +49,7 @@ struct _NMDeviceMacvlanClass {
 
 G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_MACVLAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceMacvlan, NM_IS_DEVICE_MACVLAN)
+#define NM_DEVICE_MACVLAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceMacvlan, NM_IS_DEVICE_MACVLAN, NMDevice)
 
 /*****************************************************************************/
 
@@ -292,7 +292,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) device);
+	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	NMSettingMacvlan *s_macvlan;
 	const char *parent = NULL;
 
@@ -390,7 +390,7 @@ complete_connection (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) device);
+	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	NMSettingMacvlan *s_macvlan = nm_connection_get_setting_macvlan (connection);
 	int new_mode;
 
@@ -422,7 +422,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) object);
+	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -444,7 +444,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) object);
+	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_TAP:

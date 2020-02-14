@@ -86,7 +86,7 @@ struct _NMDeviceIwdClass {
 
 G_DEFINE_TYPE (NMDeviceIwd, nm_device_iwd, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_IWD_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceIwd, NM_IS_DEVICE_IWD)
+#define NM_DEVICE_IWD_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceIwd, NM_IS_DEVICE_IWD, NMDevice)
 
 /*****************************************************************************/
 
@@ -1987,7 +1987,7 @@ device_state_changed (NMDevice *device,
 static gboolean
 get_enabled (NMDevice *device)
 {
-	return NM_DEVICE_IWD_GET_PRIVATE ((NMDeviceIwd *) device)->enabled;
+	return NM_DEVICE_IWD_GET_PRIVATE (device)->enabled;
 }
 
 static void

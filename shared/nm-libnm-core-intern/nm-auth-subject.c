@@ -231,7 +231,7 @@ nm_auth_subject_new_unix_process_self (void)
 static void
 get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE ((NMAuthSubject *) object);
+	NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_SUBJECT_TYPE:
@@ -258,7 +258,7 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE ((NMAuthSubject *) object);
+	NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE (object);
 	NMAuthSubjectType subject_type;
 	int i;
 	const char *str;

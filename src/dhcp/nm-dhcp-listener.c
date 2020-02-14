@@ -287,7 +287,7 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE ((NMDhcpListener *) object);
+	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (object);
 
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->new_conn_id);
 	nm_clear_g_signal_handler (priv->dbus_mgr, &priv->dis_conn_id);

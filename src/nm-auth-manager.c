@@ -465,7 +465,7 @@ nm_auth_manager_force_shutdown (NMAuthManager *self)
 static void
 set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE ((NMAuthManager *) object);
+	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (object);
 	int v_int;
 
 	switch (prop_id) {

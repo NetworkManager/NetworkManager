@@ -1056,7 +1056,7 @@ nm_dhcp_systemd_init (NMDhcpSystemd *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE ((NMDhcpSystemd *) object);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (object);
 
 	g_clear_pointer (&priv->lease_file, g_free);
 

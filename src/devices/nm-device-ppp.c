@@ -39,7 +39,7 @@ struct _NMDevicePppClass {
 
 G_DEFINE_TYPE (NMDevicePpp, nm_device_ppp, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_PPP_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDevicePpp, NM_IS_DEVICE_PPP)
+#define NM_DEVICE_PPP_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDevicePpp, NM_IS_DEVICE_PPP, NMDevice)
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)

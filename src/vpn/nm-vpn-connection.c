@@ -141,7 +141,7 @@ struct _NMVpnConnectionClass {
 
 G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
-#define NM_VPN_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMVpnConnection, NM_IS_VPN_CONNECTION)
+#define NM_VPN_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMVpnConnection, NM_IS_VPN_CONNECTION, NMActiveConnection)
 
 /*****************************************************************************/
 
@@ -2717,7 +2717,7 @@ device_changed (NMActiveConnection *active,
                 NMDevice *new_device,
                 NMDevice *old_device)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) active);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (active);
 
 	if (!_service_and_connection_can_persist (NM_VPN_CONNECTION (active)))
 		return;
@@ -2792,7 +2792,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	g_free (priv->banner);
 	g_free (priv->ip_iface);
@@ -2815,7 +2815,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE ((NMVpnConnection *) object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 	NMDevice *parent_dev;
 
 	switch (prop_id) {

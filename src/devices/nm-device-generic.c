@@ -32,7 +32,7 @@ struct _NMDeviceGenericClass {
 
 G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_GENERIC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceGeneric, NM_IS_DEVICE_GENERIC)
+#define NM_DEVICE_GENERIC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceGeneric, NM_IS_DEVICE_GENERIC, NMDevice)
 
 /*****************************************************************************/
 
@@ -50,8 +50,8 @@ get_generic_capabilities (NMDevice *device)
 static const char *
 get_type_description (NMDevice *device)
 {
-	if (NM_DEVICE_GENERIC_GET_PRIVATE ((NMDeviceGeneric *) device)->type_description)
-		return NM_DEVICE_GENERIC_GET_PRIVATE ((NMDeviceGeneric *) device)->type_description;
+	if (NM_DEVICE_GENERIC_GET_PRIVATE (device)->type_description)
+		return NM_DEVICE_GENERIC_GET_PRIVATE (device)->type_description;
 	return NM_DEVICE_CLASS (nm_device_generic_parent_class)->get_type_description (device);
 }
 

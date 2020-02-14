@@ -62,7 +62,7 @@ struct _NMFakeRNDiscClass {
 
 G_DEFINE_TYPE (NMFakeNDisc, nm_fake_ndisc, NM_TYPE_NDISC)
 
-#define NM_FAKE_NDISC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakeNDisc, NM_IS_FAKE_NDISC)
+#define NM_FAKE_NDISC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakeNDisc, NM_IS_FAKE_NDISC, NMNDisc)
 
 /*****************************************************************************/
 
@@ -326,7 +326,7 @@ receive_ra (gpointer user_data)
 static void
 start (NMNDisc *ndisc)
 {
-	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE ((NMFakeNDisc *) ndisc);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (ndisc);
 	FakeRa *ra;
 
 	/* Queue up the first fake RA */
@@ -366,7 +366,7 @@ nm_fake_ndisc_new (int ifindex, const char *ifname)
 static void
 dispose (GObject *object)
 {
-	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE ((NMFakeNDisc *) object);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (object);
 
 	nm_clear_g_source (&priv->receive_ra_id);
 

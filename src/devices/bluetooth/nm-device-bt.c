@@ -1153,7 +1153,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_BT_NAME:
@@ -1172,7 +1172,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_BT_BZ_MGR:
@@ -1296,7 +1296,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
 	g_free (priv->connect_rfcomm_iface);
 	g_free (priv->dbus_path);
