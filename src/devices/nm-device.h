@@ -460,6 +460,8 @@ typedef struct _NMDeviceClass {
 	guint32         (* get_dhcp_timeout) (NMDevice *self,
 	                                      int addr_family);
 
+	gboolean        (* can_update_from_platform_link) (NMDevice *self, const NMPlatformLink *plink);
+
 	/* Controls, whether to call act_stage2_config() callback also for assuming
 	 * a device or for external activations. In this case, act_stage2_config() must
 	 * take care not to touch the device's configuration. */
