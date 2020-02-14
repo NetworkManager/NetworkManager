@@ -74,7 +74,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 enum {
 	CONFIG_RECEIVED,
-	RA_TIMEOUT,
+	RA_TIMEOUT_SIGNAL,
 	LAST_SIGNAL
 };
 
@@ -898,7 +898,7 @@ ndisc_ra_timeout_cb (gpointer user_data)
 	NMNDisc *ndisc = NM_NDISC (user_data);
 
 	NM_NDISC_GET_PRIVATE (ndisc)->ra_timeout_id = 0;
-	g_signal_emit (ndisc, signals[RA_TIMEOUT], 0);
+	g_signal_emit (ndisc, signals[RA_TIMEOUT_SIGNAL], 0);
 	return G_SOURCE_REMOVE;
 }
 
@@ -1479,8 +1479,8 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
-	signals[RA_TIMEOUT] =
-	    g_signal_new (NM_NDISC_RA_TIMEOUT,
+	signals[RA_TIMEOUT_SIGNAL] =
+	    g_signal_new (NM_NDISC_RA_TIMEOUT_SIGNAL,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,

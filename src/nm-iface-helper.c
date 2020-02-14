@@ -573,7 +573,7 @@ main (int argc, char *argv[])
 		                  G_CALLBACK (ndisc_config_changed),
 		                  NULL);
 		g_signal_connect (ndisc,
-		                  NM_NDISC_RA_TIMEOUT,
+		                  NM_NDISC_RA_TIMEOUT_SIGNAL,
 		                  G_CALLBACK (ndisc_ra_timeout),
 		                  NULL);
 		nm_ndisc_start (ndisc);
