@@ -658,6 +658,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 */
 
 	/* ---ifcfg-rh---
+	 * property: dhcp-timeout
+	 * variable: IPV6_DHCP_TIMEOUT(+)
+	 * description: A timeout after which the DHCP transaction fails in case of no response.
+	 * example: IPV6_DHCP_TIMEOUT=10
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
 	 * property: dhcp-hostname-flags
 	 * variable: DHCPV6_HOSTNAME_FLAGS
 	 * description: flags for the DHCP hostname property

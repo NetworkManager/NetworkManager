@@ -2767,6 +2767,7 @@ write_ip6_setting (NMConnection *connection,
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMDhcpHostnameFlags flags;
 	const char *hostname;
+	int timeout;
 
 	NM_SET_OUT (out_route6_content, NULL);
 
@@ -2843,6 +2844,12 @@ write_ip6_setting (NMConnection *connection,
 		svUnsetValue (ifcfg, "DHCPV6_SEND_HOSTNAME");
 	else
 		svSetValueStr (ifcfg, "DHCPV6_SEND_HOSTNAME", "no");
+
+	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip6);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV6_DHCP_TIMEOUT",
+	                      timeout != 0,
+	                      timeout);
 
 	flags = nm_setting_ip_config_get_dhcp_hostname_flags (s_ip6);
 	svSetValueInt64_cond (ifcfg,
