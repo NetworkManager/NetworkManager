@@ -31,7 +31,8 @@
 #define _CLONE_NS_ALL    ((int) (CLONE_NEWNS | CLONE_NEWNET))
 #define _CLONE_NS_ALL_V          CLONE_NEWNS , CLONE_NEWNET
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_clone_ns_to_str, int,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_clone_ns_to_str, int,
 	NM_UTILS_FLAGS2STR (CLONE_NEWNS,  "mnt"),
 	NM_UTILS_FLAGS2STR (CLONE_NEWNET, "net"),
 );

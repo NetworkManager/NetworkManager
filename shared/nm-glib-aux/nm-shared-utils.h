@@ -679,8 +679,8 @@ typedef struct {
 
 #define NM_UTILS_FLAGS2STR(f, n) { .flag = f, .name = ""n, }
 
-#define _NM_UTILS_FLAGS2STR_DEFINE(scope, fcn_name, flags_type, ...) \
-scope const char * \
+#define NM_UTILS_FLAGS2STR_DEFINE(fcn_name, flags_type, ...) \
+const char * \
 fcn_name (flags_type flags, char *buf, gsize len) \
 { \
 	static const NMUtilsFlags2StrDesc descs[] = { \
@@ -689,11 +689,6 @@ fcn_name (flags_type flags, char *buf, gsize len) \
 	G_STATIC_ASSERT (sizeof (flags_type) <= sizeof (unsigned)); \
 	return nm_utils_flags2str (descs, G_N_ELEMENTS (descs), flags, buf, len); \
 };
-
-#define NM_UTILS_FLAGS2STR_DEFINE(fcn_name, flags_type, ...) \
-	_NM_UTILS_FLAGS2STR_DEFINE (, fcn_name, flags_type, __VA_ARGS__)
-#define NM_UTILS_FLAGS2STR_DEFINE_STATIC(fcn_name, flags_type, ...) \
-	_NM_UTILS_FLAGS2STR_DEFINE (static, fcn_name, flags_type, __VA_ARGS__)
 
 const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
                                 gsize n_descs,
@@ -706,8 +701,8 @@ const char *nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 #define NM_UTILS_ENUM2STR(v, n)     (void) 0; case v: s = ""n""; break; (void) 0
 #define NM_UTILS_ENUM2STR_IGNORE(v) (void) 0; case v: break; (void) 0
 
-#define _NM_UTILS_ENUM2STR_DEFINE(scope, fcn_name, lookup_type, int_fmt, ...) \
-scope const char * \
+#define NM_UTILS_ENUM2STR_DEFINE_FULL(fcn_name, lookup_type, int_fmt, ...) \
+const char * \
 fcn_name (lookup_type val, char *buf, gsize len) \
 { \
 	nm_utils_to_string_buffer_init (&buf, &len); \
@@ -727,9 +722,7 @@ fcn_name (lookup_type val, char *buf, gsize len) \
 }
 
 #define NM_UTILS_ENUM2STR_DEFINE(fcn_name, lookup_type, ...) \
-	_NM_UTILS_ENUM2STR_DEFINE (, fcn_name, lookup_type, "d", __VA_ARGS__)
-#define NM_UTILS_ENUM2STR_DEFINE_STATIC(fcn_name, lookup_type, ...) \
-	_NM_UTILS_ENUM2STR_DEFINE (static, fcn_name, lookup_type, "d", __VA_ARGS__)
+	NM_UTILS_ENUM2STR_DEFINE_FULL (fcn_name, lookup_type, "d", __VA_ARGS__)
 
 /*****************************************************************************/
 
@@ -1543,13 +1536,12 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
 
 /*****************************************************************************/
 
-#define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(scope, \
-                                             fcn_name, \
-                                             result_type, \
-                                             entry_cmd, \
-                                             unknown_val_cmd, \
-                                             ...) \
-scope result_type \
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, \
+                                            result_type, \
+                                            entry_cmd, \
+                                            unknown_val_cmd, \
+                                            ...) \
+result_type \
 fcn_name (const char *name) \
 { \
 	static const struct { \
@@ -1604,11 +1596,6 @@ fcn_name (const char *name) \
 	\
 	{ unknown_val_cmd; } \
 }
-
-#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, lookup_type, entry_cmd, unknown_val_cmd, ...) \
-	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (, fcn_name, lookup_type, entry_cmd, unknown_val_cmd, __VA_ARGS__)
-#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE_STATIC(fcn_name, lookup_type, entry_cmd, unknown_val_cmd, ...) \
-	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (static, fcn_name, lookup_type, entry_cmd, unknown_val_cmd, __VA_ARGS__)
 
 /*****************************************************************************/
 

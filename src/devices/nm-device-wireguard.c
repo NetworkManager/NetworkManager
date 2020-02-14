@@ -168,7 +168,8 @@ static gboolean link_config_delayed_ratelimit_cb (gpointer user_data);
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_link_config_mode_to_string, LinkConfigMode,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_link_config_mode_to_string, LinkConfigMode,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT (NULL),
 	NM_UTILS_LOOKUP_ITEM (LINK_CONFIG_MODE_FULL,      "full"),
 	NM_UTILS_LOOKUP_ITEM (LINK_CONFIG_MODE_REAPPLY,   "reapply"),

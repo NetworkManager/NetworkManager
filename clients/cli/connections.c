@@ -62,7 +62,8 @@ typedef struct _OptionInfo {
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (active_connection_state_to_string, NMActiveConnectionState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (active_connection_state_to_string, NMActiveConnectionState,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   N_("activating")),
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATED,    N_("activated")),
@@ -71,7 +72,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (active_connection_state_to_string, NMActiveCo
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_ACTIVE_CONNECTION_STATE_UNKNOWN),
 )
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (vpn_connection_state_to_string, NMVpnConnectionState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (vpn_connection_state_to_string, NMVpnConnectionState,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_PREPARE,       N_("VPN connecting (prepare)")),
 	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_NEED_AUTH,     N_("VPN connecting (need authentication)")),

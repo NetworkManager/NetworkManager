@@ -262,7 +262,8 @@ out:
  * ethtool
  *****************************************************************************/
 
-NM_UTILS_ENUM2STR_DEFINE_STATIC (_ethtool_cmd_to_string, guint32,
+static
+NM_UTILS_ENUM2STR_DEFINE (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GDRVINFO,   "ETHTOOL_GDRVINFO"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GFEATURES,  "ETHTOOL_GFEATURES"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GLINK,      "ETHTOOL_GLINK"),

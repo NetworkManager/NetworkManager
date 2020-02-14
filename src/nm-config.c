@@ -2193,7 +2193,8 @@ _nm_config_state_set (NMConfig *self,
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROOT_PATH           "root-path"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NEXT_SERVER         "next-server"
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_device_state_managed_type_to_str, NMConfigDeviceStateManagedType,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_device_state_managed_type_to_str, NMConfigDeviceStateManagedType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN,   "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED, "unmanaged"),

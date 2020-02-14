@@ -138,7 +138,8 @@ static void auth_complete (NMActiveConnection *self, gboolean result, const char
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_state_to_string, NMActiveConnectionState,
 	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_UNKNOWN,      "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   "activating"),
@@ -152,7 +153,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 /* the maximum required buffer size for _state_flags_to_string(). */
 #define _NM_ACTIVATION_STATE_FLAG_TO_STRING_BUFSIZE (255)
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags,
+static
+NM_UTILS_FLAGS2STR_DEFINE (_state_flags_to_string, NMActivationStateFlags,
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                                 "none"),
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_MASTER,                            "is-master"),
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_SLAVE,                             "is-slave"),

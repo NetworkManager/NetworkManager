@@ -382,7 +382,8 @@ static void _activation_auth_done (NMManager *self,
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
+static
+NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
 
 /*****************************************************************************/
 

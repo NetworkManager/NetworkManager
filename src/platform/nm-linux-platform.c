@@ -5193,7 +5193,8 @@ refresh_all_type_get_info (RefreshAllType refresh_all_type)
 	return &infos[refresh_all_type];
 }
 
-_NM_UTILS_LOOKUP_DEFINE (static, delayed_action_type_to_refresh_all_type, DelayedActionType, RefreshAllType,
+static
+NM_UTILS_LOOKUP_DEFINE (delayed_action_type_to_refresh_all_type, DelayedActionType, RefreshAllType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT (0),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,             REFRESH_ALL_TYPE_LINKS),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES,     REFRESH_ALL_TYPE_IP4_ADDRESSES),
@@ -5276,7 +5277,8 @@ delayed_action_refresh_from_needle_object (const NMPObject *obj_needle)
 	return delayed_action_type_from_refresh_all_type (refresh_all_type_from_needle_object (obj_needle));
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (delayed_action_to_string, DelayedActionType,
+static
+NM_UTILS_LOOKUP_STR_DEFINE (delayed_action_to_string, DelayedActionType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS,             "refresh-all-links"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES,     "refresh-all-ip4-addresses"),
