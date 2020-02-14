@@ -111,8 +111,6 @@ void nm_dbus_connection_call_set (GDBusConnection *dbus_connection,
                                   NMDBusConnectionCallDefaultCb callback,
                                   gpointer user_data)
 {
-	nm_assert (callback);
-
 	g_dbus_connection_call (dbus_connection,
 	                        bus_name,
 	                        object_path,

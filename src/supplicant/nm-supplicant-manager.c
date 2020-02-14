@@ -48,6 +48,16 @@ NM_CACHED_QUARK_FCN ("nm-supplicant-error-quark", nm_supplicant_error_quark)
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_driver_to_string, NMSupplicantDriver,
+	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
+	NM_UTILS_LOOKUP_ITEM    (NM_SUPPLICANT_DRIVER_UNKNOWN,  "???"),
+	NM_UTILS_LOOKUP_ITEM    (NM_SUPPLICANT_DRIVER_WIRELESS, NM_WPAS_DEFAULT_WIFI_DRIVER),
+	NM_UTILS_LOOKUP_ITEM    (NM_SUPPLICANT_DRIVER_WIRED,    "wired"),
+	NM_UTILS_LOOKUP_ITEM    (NM_SUPPLICANT_DRIVER_MACSEC,   "macsec_linux"),
+);
+
+/*****************************************************************************/
+
 static void
 _caps_set (NMSupplicantManagerPrivate *priv,
            NMSupplCapType type,
