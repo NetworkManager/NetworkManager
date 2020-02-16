@@ -87,4 +87,4 @@ The contributors above may have contributed the code on behalf of a company
 that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
-- [?] Red Hat, Inc.
+- [Y] Red Hat, Inc.
