@@ -1678,7 +1678,8 @@ nm_utils_strdup_reset (char **dst, const char *src)
 /*****************************************************************************/
 
 typedef enum {
-	NMU_IFACE_KERNEL = 0,
+	NMU_IFACE_ANY,
+	NMU_IFACE_KERNEL,
 	NMU_IFACE_OVS,
 } NMUtilsIfaceType;
 

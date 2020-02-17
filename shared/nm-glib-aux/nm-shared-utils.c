@@ -4211,6 +4211,17 @@ nm_utils_ifname_valid (const char* name,
 		return _nm_utils_ifname_valid_kernel (name, error);
 	case NMU_IFACE_OVS:
 		return _nm_utils_ifname_valid_ovs (name, error);
+	case NMU_IFACE_ANY: {
+		gs_free_error GError *local = NULL;
+
+		if (_nm_utils_ifname_valid_kernel (name, error ? &local : NULL))
+			return TRUE;
+		if (_nm_utils_ifname_valid_ovs (name, NULL))
+			return TRUE;
+		if (error)
+			g_propagate_error (error, g_steal_pointer (&local));
+		return FALSE;
+	}
 	}
 
 	g_return_val_if_reached (FALSE);
