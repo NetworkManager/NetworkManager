@@ -430,7 +430,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 		 *
 		 * Instead, try the interface-name...  */
 		ifname = nm_device_get_ip_iface (device);
-		if (!nm_utils_is_valid_iface_name (ifname, NULL))
+		if (!nm_utils_ifname_valid_kernel (ifname, NULL))
 			return;
 
 		spec_to_free = g_strdup_printf (NM_MATCH_SPEC_INTERFACE_NAME_TAG"=%s", ifname);

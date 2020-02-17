@@ -225,7 +225,7 @@ validate_ifname (const char *name, const char *value)
 	if (!value || !value[0])
 		return FALSE;
 
-	return nm_utils_is_valid_iface_name (value, NULL);
+	return nm_utils_ifname_valid_kernel (value, NULL);
 }
 
 /**
@@ -611,7 +611,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (strcmp (mode_new, "active-backup") == 0) {
 		GError *tmp_error = NULL;
 
-		if (primary && !nm_utils_is_valid_iface_name (primary, &tmp_error)) {
+		if (primary && !nm_utils_ifname_valid_kernel (primary, &tmp_error)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
