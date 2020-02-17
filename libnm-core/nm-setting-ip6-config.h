@@ -31,6 +31,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_DHCP_DUID "dhcp-duid"
 
+#define NM_SETTING_IP6_CONFIG_RA_TIMEOUT "ra-timeout"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -159,6 +161,8 @@ NM_AVAILABLE_IN_1_4
 const char *nm_setting_ip6_config_get_token (NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_12
 const char *nm_setting_ip6_config_get_dhcp_duid (NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_24
+gint32 nm_setting_ip6_config_get_ra_timeout (NMSettingIP6Config *setting);
 
 G_END_DECLS
 

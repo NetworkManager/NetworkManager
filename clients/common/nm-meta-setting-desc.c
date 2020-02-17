@@ -4487,6 +4487,22 @@ static const NMMetaPropertyType _pt_objlist = {
         ), \
     ),
 
+static const NMMetaPropertyTypData _ptd_gobject_int_timeout = {
+    PROPERTY_TYP_DATA_SUBTYPE (
+        gobject_int,
+        .value_infos = INT_VALUE_INFOS (
+            {
+                .value.i64 = 0,
+                .nick = "default",
+            },
+            {
+                .value.i64 = G_MAXINT32,
+                .nick = "infinity",
+            },
+        ),
+    ),
+};
+
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_6LOWPAN
 static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_6LOWPAN_PARENT,
@@ -5645,18 +5661,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT,
 	    .property_type =                &_pt_gobject_int,
-	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
-	        .value_infos =              INT_VALUE_INFOS (
-	            {
-	                .value.i64 = 0,
-	                .nick = "default",
-	            },
-	            {
-	                .value.i64 = G_MAXINT32,
-	                .nick = "infinity",
-	            },
-	        ),
-	    ),
+	    .property_typ_data =            &_ptd_gobject_int_timeout,
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
 	    .property_type =                &_pt_gobject_bool,
@@ -5893,11 +5898,19 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	                                    | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 	    ),
 	),
+	PROPERTY_INFO (NM_SETTING_IP6_CONFIG_RA_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_RA_TIMEOUT,
+	    .property_type =                &_pt_gobject_int,
+	    .property_typ_data =            &_ptd_gobject_int_timeout,
+	),
 	PROPERTY_INFO (NM_SETTING_IP6_CONFIG_DHCP_DUID, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_DUID,
 	    .property_type =                &_pt_gobject_string,
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_IAID, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_IAID,
 	    .property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_TIMEOUT,
+	    .property_type =                &_pt_gobject_int,
+	    .property_typ_data =            &_ptd_gobject_int_timeout,
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DHCP_SEND_HOSTNAME,
 	    .property_type =                &_pt_gobject_bool,

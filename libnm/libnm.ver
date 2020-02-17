@@ -1673,6 +1673,7 @@ global:
 	nm_secret_agent_old_get_dbus_connection;
 	nm_secret_agent_old_get_dbus_name_owner;
 	nm_secret_agent_old_get_main_context;
+	nm_setting_ip6_config_get_ra_timeout;
 	nm_setting_vrf_get_table;
 	nm_setting_vrf_get_type;
 	nm_setting_vrf_new;
