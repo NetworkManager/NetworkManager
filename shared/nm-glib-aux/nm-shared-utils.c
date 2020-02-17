@@ -2507,6 +2507,7 @@ nm_utils_hash_values_to_array (GHashTable *hash,
 		                   user_data);
 	}
 
+	NM_SET_OUT (out_len, len);
 	return arr;
 }
 
