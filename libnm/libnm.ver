@@ -1658,6 +1658,11 @@ global:
 	nm_client_get_capabilities;
 } libnm_1_22_0;
 
+libnm_1_22_8 {
+global:
+	nm_setting_ip6_config_get_ra_timeout;
+} libnm_1_22_2;
+
 libnm_1_24_0 {
 global:
 	nm_client_get_instance_flags;
@@ -1673,8 +1678,7 @@ global:
 	nm_secret_agent_old_get_dbus_connection;
 	nm_secret_agent_old_get_dbus_name_owner;
 	nm_secret_agent_old_get_main_context;
-	nm_setting_ip6_config_get_ra_timeout;
 	nm_setting_vrf_get_table;
 	nm_setting_vrf_get_type;
 	nm_setting_vrf_new;
-} libnm_1_22_0;
+} libnm_1_22_8;
