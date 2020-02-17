@@ -78,6 +78,7 @@ Consent/Disapproval List
 - [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
+- [Y] Michael Biebl <biebl@debian.org>
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
 Copyright Hold by Other Legal Entities
