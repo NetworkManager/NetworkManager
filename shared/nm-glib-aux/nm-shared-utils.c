@@ -4127,7 +4127,11 @@ nm_utils_ifname_valid (const char* name,
 		return FALSE;
 	}
 
-	g_return_val_if_fail (g_utf8_validate (name, -1, NULL), FALSE);
+	if (!g_utf8_validate (name, -1, NULL)) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name must be UTF-8 encoded"));
+		return FALSE;
+	}
 
 	switch (type) {
 	case NMU_IFACE_KERNEL:
