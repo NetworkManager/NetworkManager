@@ -1280,32 +1280,6 @@ find_virtual_interface_name (GVariant *connection_dict,
 }
 
 static gboolean
-nm_setting_connection_set_interface_name (NMSetting *setting,
-                                          GVariant *connection_dict,
-                                          const char *property,
-                                          GVariant *value,
-                                          NMSettingParseFlags parse_flags,
-                                          GError **error)
-{
-	const char *interface_name;
-	gs_unref_variant GVariant *variant_to_free = NULL;
-
-	/* For compatibility reasons, if there is an invalid virtual interface name,
-	 * we need to make verification fail, even if that virtual name would be
-	 * overridden by a valid connection.interface-name.
-	 */
-	interface_name = find_virtual_interface_name (connection_dict, &variant_to_free);
-	if (!interface_name || nm_utils_ifname_valid_kernel (interface_name, NULL))
-		interface_name = g_variant_get_string (value, NULL);
-
-	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name,
-	              NULL);
-
-	return TRUE;
-}
-
-static gboolean
 nm_setting_connection_no_interface_name (NMSetting *setting,
                                          GVariant *connection_dict,
                                          const char *property,
@@ -1765,7 +1739,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                              obj_properties[PROP_INTERFACE_NAME],
 	                              NM_SETT_INFO_PROPERT_TYPE (
 	                                  .dbus_type             = G_VARIANT_TYPE_STRING,
-	                                  .from_dbus_fcn         = nm_setting_connection_set_interface_name,
 	                                  .missing_from_dbus_fcn = nm_setting_connection_no_interface_name,
 	                              ));
 
