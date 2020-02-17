@@ -2145,7 +2145,7 @@ nm_utils_sysctl_ip_conf_path (int addr_family, char *buf, const char *ifname, co
 	nm_assert (buf);
 	nm_assert_addr_family (addr_family);
 
-	g_assert (nm_utils_is_valid_iface_name (ifname, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (ifname, NULL));
 	property = NM_ASSERT_VALID_PATH_COMPONENT (property);
 
 	len = g_snprintf (buf,
@@ -2163,7 +2163,7 @@ nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, const char *
 {
 	g_return_val_if_fail (path, FALSE);
 	NM_ASSERT_VALID_PATH_COMPONENT (property);
-	g_assert (!ifname || nm_utils_is_valid_iface_name (ifname, NULL));
+	g_assert (!ifname || nm_utils_ifname_valid_kernel (ifname, NULL));
 
 	if (addr_family == AF_INET) {
 		if (!g_str_has_prefix (path, IPV4_PROPERTY_DIR))
@@ -2196,7 +2196,7 @@ nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, const char *
 			return FALSE;
 		memcpy (buf, path, l);
 		buf[l] = '\0';
-		if (!nm_utils_is_valid_iface_name (buf, NULL))
+		if (!nm_utils_ifname_valid_kernel (buf, NULL))
 			return FALSE;
 		path = slash + 1;
 	}
@@ -3637,7 +3637,7 @@ nm_utils_ifname_cpy (char *dst, const char *name)
 	g_return_if_fail (dst);
 	g_return_if_fail (name && name[0]);
 
-	nm_assert (nm_utils_is_valid_iface_name (name, NULL));
+	nm_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	/* ensures NUL padding of the entire IFNAMSIZ buffer. */
 

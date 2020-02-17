@@ -1176,7 +1176,7 @@ nmtstp_link_veth_add (NMPlatform *platform,
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1205,7 +1205,7 @@ nmtstp_link_dummy_add (NMPlatform *platform,
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1236,7 +1236,7 @@ nmtstp_link_gre_add (NMPlatform *platform,
 	char b2[INET_ADDRSTRLEN];
 	NMLinkType link_type;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 	link_type = lnk->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE;
@@ -1288,7 +1288,7 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 	gboolean encap_ignore;
 	gboolean tclass_inherit;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 	g_assert (!lnk->is_gre);
 
 	external_command = nmtstp_run_command_check_external (external_command);
@@ -1349,7 +1349,7 @@ nmtstp_link_ip6gre_add (NMPlatform *platform,
 	char tclass[20];
 	gboolean tclass_inherit;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 	g_assert (lnk->is_gre);
 
 	external_command = nmtstp_run_command_check_external (external_command);
@@ -1398,7 +1398,7 @@ nmtstp_link_ipip_add (NMPlatform *platform,
 	char b1[INET_ADDRSTRLEN];
 	char b2[INET_ADDRSTRLEN];
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1439,7 +1439,7 @@ nmtstp_link_macvlan_add (NMPlatform *platform,
 	gboolean success;
 	NMLinkType link_type;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1487,7 +1487,7 @@ nmtstp_link_sit_add (NMPlatform *platform,
 	char b1[INET_ADDRSTRLEN];
 	char b2[INET_ADDRSTRLEN];
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1533,7 +1533,7 @@ nmtstp_link_tun_add (NMPlatform *platform,
 	int err;
 	int r;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 	g_assert (lnk);
 	g_assert (NM_IN_SET (lnk->type, IFF_TUN, IFF_TAP));
 	g_assert (!out_fd || *out_fd == -1);
@@ -1596,7 +1596,7 @@ nmtstp_link_vrf_add (NMPlatform *platform,
 	const NMPlatformLink *pllink = NULL;
 	int r = 0;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	NM_SET_OUT (out_not_supported, FALSE);
 	external_command = nmtstp_run_command_check_external (external_command);
@@ -1635,7 +1635,7 @@ nmtstp_link_vxlan_add (NMPlatform *platform,
 	int err;
 	int r;
 
-	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1724,7 +1724,7 @@ nmtstp_link_get_typed (NMPlatform *platform,
 			g_assert_cmpstr (name, ==, pllink->name);
 	}
 
-	g_assert (!name || nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (!name || nm_utils_ifname_valid_kernel (name, NULL));
 
 	if (pllink && link_type != NM_LINK_TYPE_NONE)
 		g_assert_cmpint (pllink->type, ==, link_type);

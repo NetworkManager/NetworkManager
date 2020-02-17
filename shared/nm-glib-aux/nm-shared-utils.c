@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <glib-unix.h>
+#include <net/if.h>
 
 #include "nm-errno.h"
 
@@ -4044,4 +4045,92 @@ nm_utils_g_main_context_create_integrate_source (GMainContext *inner_context)
 	_CTX_LOG ("create new integ-source for %p", inner_context);
 
 	return &ctx_src->source;
+}
+
+gboolean
+nm_utils_ifname_valid_kernel (const char *name, GError **error)
+{
+	int i;
+
+	if (!name) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is missing"));
+		return FALSE;
+	}
+
+	if (name[0] == '\0') {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is too short"));
+		return FALSE;
+	}
+
+	if (   name[0] == '.'
+	    && (   name[1] == '\0'
+	        || (   name[1] == '.'
+	            && name[2] == '\0'))) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is reserved"));
+		return FALSE;
+	}
+
+	for (i = 0; i < IFNAMSIZ; i++) {
+		char ch = name[i];
+
+		if (ch == '\0')
+			return TRUE;
+		if (   NM_IN_SET (ch, '/', ':')
+		    || g_ascii_isspace (ch)) {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     _("interface name contains an invalid character"));
+			return FALSE;
+		}
+	}
+
+	g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+	                     _("interface name is longer than 15 characters"));
+	return FALSE;
+}
+
+static gboolean
+_nm_utils_ifname_valid_ovs (const char* name, GError **error)
+{
+	const char *ch;
+
+	for (ch = name; *ch; ++ch) {
+		if (   *ch == '\\'
+		    || *ch == '/'
+		    || g_ascii_isspace (*ch)
+		    || !g_ascii_isalnum (*ch)) {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     _("interface name must be alphanumerical with "
+			                       "no forward or backward slashes"));
+			return FALSE;
+		}
+	};
+	return TRUE;
+}
+
+gboolean
+nm_utils_ifname_valid (const char* name,
+                       NMUtilsIfaceType type,
+                       GError **error)
+{
+	g_return_val_if_fail (!error || !(*error), FALSE);
+
+	if (!name || !(name[0])) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name must not be empty"));
+		return FALSE;
+	}
+
+	g_return_val_if_fail (g_utf8_validate (name, -1, NULL), FALSE);
+
+	switch (type) {
+	case NMU_IFACE_KERNEL:
+		return nm_utils_ifname_valid_kernel (name, error);
+	case NMU_IFACE_OVS:
+		return _nm_utils_ifname_valid_ovs (name, error);
+	}
+
+	g_return_val_if_reached (FALSE);
 }

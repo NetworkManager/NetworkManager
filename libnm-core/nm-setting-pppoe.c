@@ -149,7 +149,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (   priv->parent
-	    && !nm_utils_is_valid_iface_name (priv->parent, &local_error)) {
+	    && !nm_utils_ifname_valid_kernel (priv->parent, &local_error)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -1641,4 +1641,17 @@ nm_utils_strdup_reset (char **dst, const char *src)
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+typedef enum {
+	NMU_IFACE_KERNEL = 0,
+	NMU_IFACE_OVS,
+} NMUtilsIfaceType;
+
+gboolean nm_utils_ifname_valid_kernel (const char *name, GError **error);
+
+gboolean nm_utils_ifname_valid (const char* name,
+                                NMUtilsIfaceType type,
+                                GError **error);
+
 #endif /* __NM_SHARED_UTILS_H__ */

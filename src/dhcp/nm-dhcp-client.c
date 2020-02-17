@@ -1010,8 +1010,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		/* construct-only */
 		priv->iface = g_value_dup_string (value);
-		g_return_if_fail (   priv->iface
-		                  && nm_utils_is_valid_iface_name (priv->iface, NULL));
+		g_return_if_fail (priv->iface);
+		nm_assert (nm_utils_ifname_valid_kernel (priv->iface, NULL));
 		break;
 	case PROP_IFINDEX:
 		/* construct-only */

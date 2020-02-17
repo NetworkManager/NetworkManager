@@ -1239,6 +1239,7 @@ _normalize_ovs_interface_type (NMConnection *self)
 	                                                     self,
 	                                                     TRUE,
 	                                                     &modified,
+	                                                     NULL,
 	                                                     NULL);
 	if (v != TRUE)
 		g_return_val_if_reached (modified);

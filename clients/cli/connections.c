@@ -4255,18 +4255,10 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 static gboolean
 set_connection_iface (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
-	GError *tmp_error = NULL;
-
 	if (value) {
 		/* Special value of '*' means no specific interface name */
 		if (strcmp (value, "*") == 0)
 			value = NULL;
-		else if (!nm_utils_is_valid_iface_name (value, &tmp_error)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: '%s': %s"), value, tmp_error->message);
-			g_error_free (tmp_error);
-			return FALSE;
-		}
 	}
 
 	return set_property (nmc->client,
