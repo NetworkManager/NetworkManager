@@ -1657,3 +1657,8 @@ libnm_1_22_2 {
 global:
 	nm_client_get_capabilities;
 } libnm_1_22_0;
+
+libnm_1_22_8 {
+global:
+	nm_setting_ip6_config_get_ra_timeout;
+} libnm_1_22_2;

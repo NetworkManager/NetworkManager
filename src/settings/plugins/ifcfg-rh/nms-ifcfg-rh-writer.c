@@ -2748,30 +2748,6 @@ write_ip4_aliases (NMConnection *connection, const char *base_ifcfg_path)
 	}
 }
 
-static void
-write_ip6_setting_dhcp_hostname (NMSettingIPConfig *s_ip6, shvarFile *ifcfg)
-{
-	NMDhcpHostnameFlags flags;
-	const char *hostname;
-
-	hostname = nm_setting_ip_config_get_dhcp_hostname (s_ip6);
-	svSetValueStr (ifcfg, "DHCPV6_HOSTNAME", hostname);
-
-	/* Missing DHCPV6_SEND_HOSTNAME means TRUE, and we prefer not write it
-	 * explicitly in that case, because it is NM-specific variable
-	 */
-	if (nm_setting_ip_config_get_dhcp_send_hostname (s_ip6))
-		svUnsetValue (ifcfg, "DHCPV6_SEND_HOSTNAME");
-	else
-		svSetValueStr (ifcfg, "DHCPV6_SEND_HOSTNAME", "no");
-
-	flags = nm_setting_ip_config_get_dhcp_hostname_flags (s_ip6);
-	svSetValueInt64_cond (ifcfg,
-	                      "DHCPV6_HOSTNAME_FLAGS",
-	                      flags != NM_DHCP_HOSTNAME_FLAG_NONE,
-	                      flags);
-}
-
 static gboolean
 write_ip6_setting (NMConnection *connection,
                    shvarFile *ifcfg,
@@ -2789,6 +2765,9 @@ write_ip6_setting (NMConnection *connection,
 	NMIPRouteTableSyncMode route_table;
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	NMDhcpHostnameFlags flags;
+	const char *hostname;
+	int timeout;
 
 	NM_SET_OUT (out_route6_content, NULL);
 
@@ -2855,7 +2834,34 @@ write_ip6_setting (NMConnection *connection,
 	svSetValueStr (ifcfg, "DHCPV6_IAID",
 	               nm_setting_ip_config_get_dhcp_iaid (s_ip6));
 
-	write_ip6_setting_dhcp_hostname (s_ip6, ifcfg);
+	hostname = nm_setting_ip_config_get_dhcp_hostname (s_ip6);
+	svSetValueStr (ifcfg, "DHCPV6_HOSTNAME", hostname);
+
+	/* Missing DHCPV6_SEND_HOSTNAME means TRUE, and we prefer not write it
+	 * explicitly in that case, because it is NM-specific variable
+	 */
+	if (nm_setting_ip_config_get_dhcp_send_hostname (s_ip6))
+		svUnsetValue (ifcfg, "DHCPV6_SEND_HOSTNAME");
+	else
+		svSetValueStr (ifcfg, "DHCPV6_SEND_HOSTNAME", "no");
+
+	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (s_ip6));
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV6_RA_TIMEOUT",
+	                      timeout != 0,
+	                      timeout);
+
+	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip6);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV6_DHCP_TIMEOUT",
+	                      timeout != 0,
+	                      timeout);
+
+	flags = nm_setting_ip_config_get_dhcp_hostname_flags (s_ip6);
+	svSetValueInt64_cond (ifcfg,
+	                      "DHCPV6_HOSTNAME_FLAGS",
+	                      flags != NM_DHCP_HOSTNAME_FLAG_NONE,
+	                      flags);
 
 	/* Write out IP addresses */
 	num = nm_setting_ip_config_get_num_addresses (s_ip6);

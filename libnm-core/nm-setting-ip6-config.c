@@ -43,13 +43,15 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_ADDR_GEN_MODE,
 	PROP_TOKEN,
 	PROP_DHCP_DUID,
+	PROP_RA_TIMEOUT,
 );
 
 typedef struct {
-	NMSettingIP6ConfigPrivacy ip6_privacy;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *token;
 	char *dhcp_duid;
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	gint32 ra_timeout;
 } NMSettingIP6ConfigPrivate;
 
 G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
@@ -132,6 +134,23 @@ nm_setting_ip6_config_get_dhcp_duid (NMSettingIP6Config *setting)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dhcp_duid;
+}
+
+/**
+ * nm_setting_ip6_config_get_ra_timeout:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: The configured %NM_SETTING_IP6_CONFIG_RA_TIMEOUT value with the
+ * timeout for router advertisements in seconds.
+ *
+ * Since: 1.24, 1.22.8
+ **/
+gint32
+nm_setting_ip6_config_get_ra_timeout (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), 0);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ra_timeout;
 }
 
 static gboolean
@@ -475,6 +494,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DHCP_DUID:
 		g_value_set_string (value, priv->dhcp_duid);
 		break;
+	case PROP_RA_TIMEOUT:
+		g_value_set_int (value, priv->ra_timeout);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -501,6 +523,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DHCP_DUID:
 		g_free (priv->dhcp_duid);
 		priv->dhcp_duid = g_value_dup_string (value);
+		break;
+	case PROP_RA_TIMEOUT:
+		priv->ra_timeout = g_value_get_int (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -654,6 +679,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	 * property: dhcp-hostname
 	 * variable: DHCPV6_HOSTNAME
 	 * description: Hostname to send the DHCP server.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dhcp-timeout
+	 * variable: IPV6_DHCP_TIMEOUT(+)
+	 * description: A timeout after which the DHCP transaction fails in case of no response.
+	 * example: IPV6_DHCP_TIMEOUT=10
 	 * ---end---
 	 */
 
@@ -827,6 +860,32 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingIP6Config:ra-timeout:
+	 *
+	 * A timeout for waiting Router Advertisements in seconds. If zero (the default), a
+	 * globally configured default is used. If still unspecified, the timeout depends on the
+	 * sysctl settings of the device.
+	 *
+	 * Set to 2147483647 (MAXINT32) for infinity.
+	 *
+	 * Since: 1.24, 1.22.8
+	 **/
+	/* ---ifcfg-rh---
+	 * property: dhcp-timeout
+	 * variable: IPV6_RA_TIMEOUT(+)
+	 * description: A timeout for waiting Router Advertisements in seconds.
+	 * example: IPV6_RA_TIMEOUT=10
+	 * ---end---
+	 */
+
+	obj_properties[PROP_RA_TIMEOUT] =
+	    g_param_spec_int (NM_SETTING_IP6_CONFIG_RA_TIMEOUT, "", "",
+	                      0, G_MAXINT32, 0,
+	                      G_PARAM_READWRITE |
+	                      NM_SETTING_PARAM_FUZZY_IGNORE |
+	                      G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMSettingIP6Config:dhcp-duid:

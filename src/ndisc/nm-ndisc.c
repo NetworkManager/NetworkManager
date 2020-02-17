@@ -48,6 +48,7 @@ struct _NMNDiscPrivate {
 	char *network_id;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMUtilsStableType stable_type;
+	gint32 ra_timeout;
 	gint32 max_addresses;
 	gint32 router_solicitations;
 	gint32 router_solicitation_interval;
@@ -67,6 +68,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_NETWORK_ID,
 	PROP_ADDR_GEN_MODE,
 	PROP_MAX_ADDRESSES,
+	PROP_RA_TIMEOUT,
 	PROP_ROUTER_SOLICITATIONS,
 	PROP_ROUTER_SOLICITATION_INTERVAL,
 	PROP_NODE_TYPE,
@@ -74,7 +76,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 enum {
 	CONFIG_RECEIVED,
-	RA_TIMEOUT,
+	RA_TIMEOUT_SIGNAL,
 	LAST_SIGNAL
 };
 
@@ -898,7 +900,7 @@ ndisc_ra_timeout_cb (gpointer user_data)
 	NMNDisc *ndisc = NM_NDISC (user_data);
 
 	NM_NDISC_GET_PRIVATE (ndisc)->ra_timeout_id = 0;
-	g_signal_emit (ndisc, signals[RA_TIMEOUT], 0);
+	g_signal_emit (ndisc, signals[RA_TIMEOUT_SIGNAL], 0);
 	return G_SOURCE_REMOVE;
 }
 
@@ -906,34 +908,46 @@ void
 nm_ndisc_start (NMNDisc *ndisc)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
-	NMNDiscClass *klass = NM_NDISC_GET_CLASS (ndisc);
-	gint64 ra_wait_secs;
+	NMNDiscPrivate *priv;
 
-	g_return_if_fail (klass->start);
-	g_return_if_fail (!priv->ra_timeout_id);
+	g_return_if_fail (NM_IS_NDISC (ndisc));
 
-	_LOGD ("starting neighbor discovery: %d", priv->ifindex);
+	priv = NM_NDISC_GET_PRIVATE (ndisc);
+
+	nm_assert (NM_NDISC_GET_CLASS (ndisc)->start);
+	nm_assert (!priv->ra_timeout_id);
+
+	_LOGD ("starting neighbor discovery for ifindex %d%s",
+	       priv->ifindex,
+	         priv->node_type == NM_NDISC_NODE_TYPE_HOST
+	       ? " (solicit)"
+	       : " (announce)");
 
 	if (!nm_ndisc_netns_push (ndisc, &netns))
 		return;
 
-	klass->start (ndisc);
+	NM_NDISC_GET_CLASS (ndisc)->start (ndisc);
 
-	switch (priv->node_type) {
-	case NM_NDISC_NODE_TYPE_HOST:
-		ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
-		ra_wait_secs = MAX (ra_wait_secs, 30);
-		priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, ndisc_ra_timeout_cb, ndisc);
-		_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
+	if (priv->node_type == NM_NDISC_NODE_TYPE_HOST) {
+		gint32 ra_timeout = priv->ra_timeout;
+
+		G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_DEFAULT == 0);
+		G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
+		if (ra_timeout != NM_RA_TIMEOUT_INFINITY) {
+			if (ra_timeout == NM_RA_TIMEOUT_DEFAULT) {
+				ra_timeout = NM_MAX ((((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1,
+				                     30);
+			}
+			nm_assert (ra_timeout > 0 && ra_timeout < NM_RA_TIMEOUT_INFINITY);
+			_LOGD ("scheduling RA timeout in %d seconds", ra_timeout);
+			priv->ra_timeout_id = g_timeout_add_seconds (ra_timeout, ndisc_ra_timeout_cb, ndisc);
+		}
 		solicit_routers (ndisc);
-		break;
-	case NM_NDISC_NODE_TYPE_ROUTER:
-		announce_router_initial (ndisc);
-		break;
-	default:
-		g_assert_not_reached ();
+		return;
 	}
+
+	nm_assert (priv->node_type == NM_NDISC_NODE_TYPE_ROUTER);
+	announce_router_initial (ndisc);
 }
 
 NMNDiscConfigMap
@@ -1312,6 +1326,10 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->max_addresses = g_value_get_int (value);
 		break;
+	case PROP_RA_TIMEOUT:
+		/* construct-only */
+		priv->ra_timeout = g_value_get_int (value);
+		break;
 	case PROP_ROUTER_SOLICITATIONS:
 		/* construct-only */
 		priv->router_solicitations = g_value_get_int (value);
@@ -1323,6 +1341,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NODE_TYPE:
 		/* construct-only */
 		priv->node_type = g_value_get_int (value);
+		nm_assert (NM_IN_SET (priv->node_type, NM_NDISC_NODE_TYPE_HOST,
+		                                       NM_NDISC_NODE_TYPE_ROUTER));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1401,8 +1421,8 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	g_type_class_add_private (klass, sizeof (NMNDiscPrivate));
 
 	object_class->set_property = set_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->dispose      = dispose;
+	object_class->finalize     = finalize;
 
 	obj_properties[PROP_PLATFORM] =
 	    g_param_spec_object (NM_NDISC_PLATFORM, "", "",
@@ -1446,6 +1466,13 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                      G_PARAM_WRITABLE |
 	                      G_PARAM_CONSTRUCT_ONLY |
 	                      G_PARAM_STATIC_STRINGS);
+	G_STATIC_ASSERT_EXPR (G_MAXINT32 == NM_RA_TIMEOUT_INFINITY);
+	obj_properties[PROP_RA_TIMEOUT] =
+	    g_param_spec_int (NM_NDISC_RA_TIMEOUT, "", "",
+	                      0, G_MAXINT32, 0,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTER_SOLICITATIONS] =
 	    g_param_spec_int (NM_NDISC_ROUTER_SOLICITATIONS, "", "",
 	                      1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
@@ -1473,8 +1500,8 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
-	signals[RA_TIMEOUT] =
-	    g_signal_new (NM_NDISC_RA_TIMEOUT,
+	signals[RA_TIMEOUT_SIGNAL] =
+	    g_signal_new (NM_NDISC_RA_TIMEOUT_SIGNAL,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,

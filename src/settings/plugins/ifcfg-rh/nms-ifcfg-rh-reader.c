@@ -1692,7 +1692,7 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
-	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, (int) svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
 	              NULL);
 
 	nm_clear_g_free (&value);
@@ -2159,9 +2159,11 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (v)
 		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, v, NULL);
 
-	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
-	              svGetValueBoolean (ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE), NULL);
-
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE),
+	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, (int) svGetValueInt64 (ifcfg, "IPV6_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+	              NM_SETTING_IP6_CONFIG_RA_TIMEOUT, (int) svGetValueInt64 (ifcfg, "IPV6_RA_TIMEOUT", 10, 0, G_MAXINT32, 0),
+	              NULL);
 
 	i64 = svGetValueInt64 (ifcfg, "DHCPV6_HOSTNAME_FLAGS", 10, 0, G_MAXUINT32, -1);
 	if (i64 > -1) {
