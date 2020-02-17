@@ -2316,16 +2316,21 @@ nm_connection_is_type (NMConnection *connection, const char *type)
 }
 
 static int
-_for_each_sort (NMSetting **p_a, NMSetting **p_b, void *unused)
+_get_settings_sort (gconstpointer p_a, gconstpointer p_b, gpointer unused)
 {
-	NMSetting *a = *p_a;
-	NMSetting *b = *p_b;
-	int c;
+	NMSetting *a = *((NMSetting **) p_a);
+	NMSetting *b = *((NMSetting **) p_b);
 
-	c = _nm_setting_compare_priority (a, b);
-	if (c != 0)
-		return c;
-	return strcmp (nm_setting_get_name (a), nm_setting_get_name (b));
+	nm_assert (NM_IS_SETTING (a));
+	nm_assert (NM_IS_SETTING (b));
+	nm_assert (a != b);
+	nm_assert (G_OBJECT_TYPE (a) != G_OBJECT_TYPE (b));
+
+	NM_CMP_RETURN (_nm_setting_compare_priority (a, b));
+	NM_CMP_DIRECT_STRCMP (nm_setting_get_name (a), nm_setting_get_name (b));
+
+	nm_assert_not_reached ();
+	return 0;
 }
 
 /**
@@ -2348,38 +2353,12 @@ NMSetting **
 nm_connection_get_settings (NMConnection *connection,
                             guint *out_length)
 {
-	NMConnectionPrivate *priv;
-	NMSetting **arr;
-	GHashTableIter iter;
-	NMSetting *setting;
-	guint i, size;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	size = g_hash_table_size (priv->settings);
-
-	if (!size) {
-		NM_SET_OUT (out_length, 0);
-		return NULL;
-	}
-
-	arr = g_new (NMSetting *, size + 1);
-
-	g_hash_table_iter_init (&iter, priv->settings);
-	for (i = 0; g_hash_table_iter_next (&iter, NULL, (gpointer *) &setting); i++)
-		arr[i] = setting;
-	nm_assert (i == size);
-	arr[size] = NULL;
-
-	/* sort the settings. This has an effect on the order in which keyfile
-	 * prints them. */
-	if (size > 1)
-		g_qsort_with_data (arr, size, sizeof (NMSetting *), (GCompareDataFunc) _for_each_sort, NULL);
-
-	NM_SET_OUT (out_length, size);
-	return arr;
+	return (NMSetting **) nm_utils_hash_values_to_array (NM_CONNECTION_GET_PRIVATE (connection)->settings,
+	                                                     _get_settings_sort,
+	                                                     NULL,
+	                                                     out_length);
 }
 
 /**
