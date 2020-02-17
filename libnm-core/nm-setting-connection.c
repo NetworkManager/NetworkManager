@@ -1251,10 +1251,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static const char *
-find_virtual_interface_name (GVariant *connection_dict)
+find_virtual_interface_name (GVariant *connection_dict,
+                             GVariant **variant_to_free)
 {
 	GVariant *setting_dict;
 	const char *interface_name;
+
+	nm_assert (variant_to_free && !*variant_to_free);
 
 	setting_dict = g_variant_lookup_value (connection_dict, NM_SETTING_BOND_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
 	if (!setting_dict)
@@ -1267,11 +1270,12 @@ find_virtual_interface_name (GVariant *connection_dict)
 	if (!setting_dict)
 		return NULL;
 
+	*variant_to_free = setting_dict;
+
 	/* All of the deprecated virtual interface name properties were named "interface-name". */
 	if (!g_variant_lookup (setting_dict, "interface-name", "&s", &interface_name))
 		interface_name = NULL;
 
-	g_variant_unref (setting_dict);
 	return interface_name;
 }
 
@@ -1284,12 +1288,13 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
                                           GError **error)
 {
 	const char *interface_name;
+	gs_unref_variant GVariant *variant_to_free = NULL;
 
 	/* For compatibility reasons, if there is an invalid virtual interface name,
 	 * we need to make verification fail, even if that virtual name would be
 	 * overridden by a valid connection.interface-name.
 	 */
-	interface_name = find_virtual_interface_name (connection_dict);
+	interface_name = find_virtual_interface_name (connection_dict, &variant_to_free);
 	if (!interface_name || nm_utils_ifname_valid_kernel (interface_name, NULL))
 		interface_name = g_variant_get_string (value, NULL);
 
@@ -1308,8 +1313,9 @@ nm_setting_connection_no_interface_name (NMSetting *setting,
                                          GError **error)
 {
 	const char *virtual_interface_name;
+	gs_unref_variant GVariant *variant_to_free = NULL;
 
-	virtual_interface_name = find_virtual_interface_name (connection_dict);
+	virtual_interface_name = find_virtual_interface_name (connection_dict, &variant_to_free);
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, virtual_interface_name,
 	              NULL);
