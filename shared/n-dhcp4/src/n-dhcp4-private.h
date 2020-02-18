@@ -702,10 +702,11 @@ static inline uint64_t n_dhcp4_gettime(clockid_t clock) {
 #define n_dhcp4_c_log(_config, _level, ...)                                    \
         do {                                                                   \
                 const NDhcp4ClientConfig *__config = _config;                  \
+                int __level = _level;                                          \
                                                                                \
-                if (_level <= __config->log.level && __config->log.func) {     \
+                if (__level <= __config->log.level && __config->log.func) {    \
                         if (1) {                                               \
-                                _config->log.func(_level,                      \
+                                _config->log.func(__level,                     \
                                                   __config->log.data,          \
                                                   __VA_ARGS__);                \
                         } else {                                               \
