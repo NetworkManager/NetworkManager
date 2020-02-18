@@ -8503,21 +8503,6 @@ test_connection_ovs_ifname (gconstpointer test_data)
 		nmtst_assert_connection_unnormalizable (con,
 		                                        NM_CONNECTION_ERROR,
 		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
-
-		/* wrong: contains non-alphanumerical char */
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs-0",
-		              NULL);
-		nmtst_assert_connection_unnormalizable (con,
-		                                        NM_CONNECTION_ERROR,
-		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
-
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs@0",
-		              NULL);
-		nmtst_assert_connection_unnormalizable (con,
-		                                        NM_CONNECTION_ERROR,
-		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	}
 
 	/* wrong: contains space */
@@ -8531,6 +8516,11 @@ test_connection_ovs_ifname (gconstpointer test_data)
 	/* good */
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs0",
+	              NULL);
+	nmtst_assert_connection_verifies (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "ovs-br0",
 	              NULL);
 	nmtst_assert_connection_verifies (con);
 
