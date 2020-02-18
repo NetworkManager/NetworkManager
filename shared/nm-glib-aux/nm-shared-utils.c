@@ -4053,6 +4053,10 @@ nm_utils_ifname_valid_kernel (const char *name, GError **error)
 {
 	int i;
 
+	/* This function follows kernel's interface validation
+	 * function dev_valid_name() in net/core/dev.c.
+	 */
+
 	if (!name) {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     _("interface name is missing"));
