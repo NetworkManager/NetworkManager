@@ -1,4 +1,18 @@
 ===============================================
+NetworkManager-1.22.8
+Overview of changes since NetworkManager-1.22.6
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Added configuration option to customize IPv6 RA timeout
+* Internal DHCP client will now request a lease renewal using the previously obtained IP address when expired
+* Removed length limitation for OVS Bridge, Patches and Interfaces (only Patch types) names
+* Fixed initialization of 'secs' DHCP header field, this caused some DHCP relays to drop packets
+* Fixed failure when creating team interfaces using 'nmstate'
+* Various bug fixes and improvements
+
+===============================================
 NetworkManager-1.22.6
 Overview of changes since NetworkManager-1.22.4
 ===============================================
