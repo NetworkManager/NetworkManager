@@ -257,8 +257,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingOvsInterface *self = NM_SETTING_OVS_INTERFACE (setting);
 	NMSettingConnection *s_con = NULL;
-	const char *normalized_type = NULL;
-	int result = NM_SETTING_VERIFY_ERROR;
 
 	if (connection) {
 		const char *slave_type;
@@ -298,38 +296,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	result = _nm_setting_ovs_interface_verify_interface_type (self,
-	                                                          self->type,
-	                                                          connection,
-	                                                          FALSE,
-	                                                          NULL,
-	                                                          &normalized_type,
-	                                                          error);
-
-	/* From 'man ovs-vswitchd.conf.db': OVS patch interfaces do not have
-	 * a limit on interface name length, all the other types do */
-	if (result != NM_SETTING_VERIFY_ERROR && s_con) {
-		gs_free_error GError *ifname_error = NULL;
-		const char *ifname = nm_setting_connection_get_interface_name (s_con);
-
-		if (   ifname
-		    && !nm_streq0 (normalized_type, "patch")
-		    && !nm_utils_ifname_valid (ifname,
-		                               NMU_IFACE_KERNEL,
-		                               &ifname_error)) {
-			g_clear_error (error);
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "'%s': %s", ifname, ifname_error->message);
-			g_prefix_error (error, "%s.%s: ",
-			                NM_SETTING_CONNECTION_SETTING_NAME,
-			                NM_SETTING_CONNECTION_INTERFACE_NAME);
-			return NM_SETTING_VERIFY_ERROR;
-		}
-	}
-
-	return result;
+	return _nm_setting_ovs_interface_verify_interface_type (self,
+	                                                        self->type,
+	                                                        connection,
+	                                                        FALSE,
+	                                                        NULL,
+	                                                        NULL,
+	                                                        error);
 }
 
 /*****************************************************************************/
