@@ -4039,11 +4039,14 @@ _nm_utils_ifname_valid_ovs (const char* name, GError **error)
 {
 	const char *ch;
 
+	/* OVS actually accepts a wider range of chars (all printable UTF-8 chars),
+	 NetworkManager restricts this to ASCII char as it's a safer option for
+	 now since OVS is not well documented on this matter.
+	 */
 	for (ch = name; *ch; ++ch) {
 		if (   *ch == '\\'
 		    || *ch == '/'
-		    || g_ascii_isspace (*ch)
-		    || !g_ascii_isalnum (*ch)) {
+		    || !g_ascii_isgraph (*ch)) {
 			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 			                     _("interface name must be alphanumerical with "
 			                       "no forward or backward slashes"));
