@@ -1923,6 +1923,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValueStr (ifcfg, "BRIDGE", NULL);
 	svSetValueStr (ifcfg, "TEAM_MASTER_UUID", NULL);
 	svSetValueStr (ifcfg, "TEAM_MASTER", NULL);
+	svSetValueStr (ifcfg, "OVS_PORT_UUID", NULL);
+	svSetValueStr (ifcfg, "OVS_PORT", NULL);
 
 	master = nm_setting_connection_get_master (s_con);
 	if (master) {
