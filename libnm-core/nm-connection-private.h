@@ -28,7 +28,7 @@ int _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self
                                                      NMConnection *connection,
                                                      gboolean normalize,
                                                      gboolean *out_modified,
-                                                     const char **normalized_type,
+                                                     const char **out_normalized_type,
                                                      GError **error);
 
 #endif  /* __NM_CONNECTION_PRIVATE_H__ */
