@@ -328,9 +328,6 @@ validate_ip (const char *name, const char *value)
 static gboolean
 validate_ifname (const char *name, const char *value)
 {
-	if (!value || !value[0])
-		return FALSE;
-
 	return nm_utils_ifname_valid_kernel (value, NULL);
 }
 
