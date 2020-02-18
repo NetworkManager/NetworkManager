@@ -7956,6 +7956,8 @@ dhcp_grace_period_start (NMDevice *self, int addr_family)
 		                                                             self);
 	}
 
+	priv->dhcp_data_x[IS_IPv4].grace_pending = TRUE;
+
 	return TRUE;
 }
 static void
