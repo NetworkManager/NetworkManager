@@ -24,6 +24,7 @@ gboolean    _nm_connection_verify_required_interface_name (NMConnection *connect
                                                            GError **error);
 
 int _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
+                                                     const char *type,
                                                      NMConnection *connection,
                                                      gboolean normalize,
                                                      gboolean *out_modified,

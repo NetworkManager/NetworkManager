@@ -1236,6 +1236,7 @@ _normalize_ovs_interface_type (NMConnection *self)
 		return FALSE;
 
 	v = _nm_setting_ovs_interface_verify_interface_type (s_ovs_interface,
+	                                                     nm_setting_ovs_interface_get_interface_type (s_ovs_interface),
 	                                                     self,
 	                                                     TRUE,
 	                                                     &modified,

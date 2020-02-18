@@ -64,30 +64,30 @@ nm_setting_ovs_interface_get_interface_type (NMSettingOvsInterface *self)
 
 int
 _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
+                                                 const char *type,
                                                  NMConnection *connection,
                                                  gboolean normalize,
                                                  gboolean *out_modified,
                                                  const char **normalized_type,
                                                  GError **error)
 {
-	const char *type;
 	const char *type_from_setting = NULL;
 	const char *type_setting = NULL;
 	const char *connection_type;
 	gboolean is_ovs_connection_type;
 
-	g_return_val_if_fail (NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 	if (normalize) {
+		g_return_val_if_fail (NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 		g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 		nm_assert (self == nm_connection_get_setting_ovs_interface (connection));
-	} else
+	} else {
+		g_return_val_if_fail (!self || NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 		g_return_val_if_fail (!connection || NM_IS_CONNECTION (connection), FALSE);
+	}
 
 	g_return_val_if_fail (!normalized_type || !(*normalized_type), FALSE);
 
 	NM_SET_OUT (out_modified, FALSE);
-
-	type = self->type;
 
 	if (   type
 	    && !NM_IN_STRSET (type, "internal", "system", "patch", "dpdk")) {
@@ -296,6 +296,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	result = _nm_setting_ovs_interface_verify_interface_type (self,
+	                                                          self->type,
 	                                                          connection,
 	                                                          FALSE,
 	                                                          NULL,
