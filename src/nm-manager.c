@@ -168,9 +168,6 @@ typedef struct {
 
 	NMSettings *settings;
 
-	CList connection_changed_on_idle_lst;
-	guint connection_changed_on_idle_id;
-
 	RadioState radio_states[RFKILL_TYPE_MAX];
 	NMVpnManager *vpn_manager;
 
@@ -2099,17 +2096,11 @@ static void
 connection_changed (NMManager *self,
                     NMSettingsConnection *sett_conn)
 {
-	NMManagerPrivate *priv;
 	NMConnection *connection;
 	NMDevice *device;
 
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (sett_conn),
 	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
-		return;
-
-	priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (!nm_settings_has_connection (priv->settings, sett_conn))
 		return;
 
 	connection = nm_settings_connection_get_connection (sett_conn);
@@ -2127,46 +2118,12 @@ connection_changed (NMManager *self,
 	retry_connections_for_parent_device (self, device);
 }
 
-static gboolean
-connection_changed_on_idle_cb (gpointer user_data)
-{
-	NMManager *self = user_data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMCListElem *elem;
-
-	priv->connection_changed_on_idle_id = 0;
-
-	while ((elem = c_list_first_entry (&priv->connection_changed_on_idle_lst, NMCListElem, lst))) {
-		gs_unref_object NMSettingsConnection *sett_conn = NULL;
-
-		sett_conn = nm_c_list_elem_free_steal (elem);
-		connection_changed (self, sett_conn);
-	}
-
-	return G_SOURCE_REMOVE;
-}
-
-static void
-connection_changed_on_idle (NMManager *self,
-                            NMSettingsConnection *sett_conn)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->connection_changed_on_idle_id == 0)
-		priv->connection_changed_on_idle_id = g_idle_add (connection_changed_on_idle_cb, self);
-
-	if (!nm_c_list_elem_find_first_ptr (&priv->connection_changed_on_idle_lst, sett_conn)) {
-		c_list_link_tail (&priv->connection_changed_on_idle_lst,
-		                  &nm_c_list_elem_new_stale (g_object_ref (sett_conn))->lst);
-	}
-}
-
 static void
 connection_added_cb (NMSettings *settings,
                      NMSettingsConnection *sett_conn,
                      NMManager *self)
 {
-	connection_changed_on_idle (self, sett_conn);
+	connection_changed (self, sett_conn);
 }
 
 static void
@@ -2175,7 +2132,7 @@ connection_updated_cb (NMSettings *settings,
                        guint update_reason_u,
                        NMManager *self)
 {
-	connection_changed_on_idle (self, sett_conn);
+	connection_changed (self, sett_conn);
 }
 
 /*****************************************************************************/
@@ -7481,7 +7438,6 @@ nm_manager_init (NMManager *self)
 	c_list_init (&priv->active_connections_lst_head);
 	c_list_init (&priv->async_op_lst_head);
 	c_list_init (&priv->delete_volatile_connection_lst_head);
-	c_list_init (&priv->connection_changed_on_idle_lst);
 
 	priv->platform = g_object_ref (NM_PLATFORM_GET);
 
@@ -7786,9 +7742,6 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_ac_changed, self);
 		g_clear_object (&priv->policy);
 	}
-
-	nm_clear_g_source (&priv->connection_changed_on_idle_id);
-	nm_c_list_elem_free_all (&priv->connection_changed_on_idle_lst, g_object_unref);
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, self);
