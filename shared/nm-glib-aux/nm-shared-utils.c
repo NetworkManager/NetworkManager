@@ -4126,8 +4126,34 @@ nm_utils_ifname_valid_kernel (const char *name, GError **error)
 	return FALSE;
 }
 
+/*****************************************************************************/
+
 static gboolean
-_nm_utils_ifname_valid_ovs (const char* name, GError **error)
+_nm_utils_ifname_valid_kernel (const char *name, GError **error)
+{
+	if (!nm_utils_ifname_valid_kernel (name, error))
+		return FALSE;
+
+	if (strchr (name, '%')) {
+		/* Kernel's dev_valid_name() accepts (almost) any binary up to 15 chars.
+		 * However, '%' is treated special as a format specifier. Try
+		 *
+		 *   ip link add 'dummy%dx' type dummy
+		 *
+		 * Don't allow that for "connection.interface-name", which either
+		 * matches an existing netdev name (thus, it cannot have a '%') or
+		 * is used to configure a name (in which case we don't want kernel
+		 * to replace the format specifier). */
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("'%%' is not allowed in interface names"));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+_nm_utils_ifname_valid_ovs (const char *name, GError **error)
 {
 	const char *ch;
 
@@ -4169,7 +4195,7 @@ nm_utils_ifname_valid (const char* name,
 
 	switch (type) {
 	case NMU_IFACE_KERNEL:
-		return nm_utils_ifname_valid_kernel (name, error);
+		return _nm_utils_ifname_valid_kernel (name, error);
 	case NMU_IFACE_OVS:
 		return _nm_utils_ifname_valid_ovs (name, error);
 	}
