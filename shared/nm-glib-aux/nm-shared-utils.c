@@ -4149,6 +4149,19 @@ _nm_utils_ifname_valid_kernel (const char *name, GError **error)
 		return FALSE;
 	}
 
+	if (NM_IN_STRSET (name, "all",
+	                        "default",
+	                        "bonding_masters")) {
+		/* Certain names are not allowed. The "all" and "default" names are reserved
+		 * due to their directories in "/proc/sys/net/ipv4/conf/" and "/proc/sys/net/ipv6/conf/".
+		 *
+		 * Also, there is "/sys/class/net/bonding_masters" file.
+		 */
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    _("'%s' is not allowed as interface name"), name);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
