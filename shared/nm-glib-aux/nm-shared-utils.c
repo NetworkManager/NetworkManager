@@ -4211,6 +4211,9 @@ nm_utils_ifname_valid (const char* name,
 		return _nm_utils_ifname_valid_kernel (name, error);
 	case NMU_IFACE_OVS:
 		return _nm_utils_ifname_valid_ovs (name, error);
+	case NMU_IFACE_OVS_AND_KERNEL:
+		return    _nm_utils_ifname_valid_kernel (name, error)
+		       && _nm_utils_ifname_valid_ovs (name, error);
 	case NMU_IFACE_ANY: {
 		gs_free_error GError *local = NULL;
 

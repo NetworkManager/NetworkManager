@@ -1681,6 +1681,7 @@ typedef enum {
 	NMU_IFACE_ANY,
 	NMU_IFACE_KERNEL,
 	NMU_IFACE_OVS,
+	NMU_IFACE_OVS_AND_KERNEL,
 } NMUtilsIfaceType;
 
 gboolean nm_utils_ifname_valid_kernel (const char *name, GError **error);
