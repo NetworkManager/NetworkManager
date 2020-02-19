@@ -210,6 +210,13 @@ _get_option_sort (gconstpointer p_a, gconstpointer p_b, gpointer _unused)
 	return 0;
 }
 
+static void
+_ensure_options_idx_cache (NMSettingBondPrivate *priv)
+{
+	if (!G_UNLIKELY (priv->options_idx_cache))
+		priv->options_idx_cache = nm_utils_named_values_from_str_dict_with_sort (priv->options, NULL, _get_option_sort, NULL);
+}
+
 /**
  * nm_setting_bond_get_option:
  * @setting: the #NMSettingBond
@@ -248,8 +255,7 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 	if (idx >= len)
 		return FALSE;
 
-	if (!G_UNLIKELY (priv->options_idx_cache))
-		priv->options_idx_cache = nm_utils_named_values_from_str_dict_with_sort (priv->options, NULL, _get_option_sort, NULL);
+	_ensure_options_idx_cache (priv);
 
 	NM_SET_OUT (out_name, priv->options_idx_cache[idx].name);
 	NM_SET_OUT (out_value, priv->options_idx_cache[idx].value_str);
@@ -596,26 +602,37 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
-	GHashTableIter iter;
-	const char *key, *value;
-	int mode, miimon = 0, arp_interval = 0;
-	int num_grat_arp = -1, num_unsol_na = -1;
-	const char *mode_orig, *mode_new;
+	int mode;
+	int miimon = 0;
+	int arp_interval = 0;
+	int num_grat_arp = -1;
+	int num_unsol_na = -1;
+	const char *mode_orig;
+	const char *mode_new;
 	const char *arp_ip_target = NULL;
 	const char *lacp_rate;
 	const char *primary;
 	NMBondMode bond_mode;
+	guint i;
+	const NMUtilsNamedValue *n;
+	const char *value;
 
-	g_hash_table_iter_init (&iter, priv->options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
-		if (!value[0] || !nm_setting_bond_validate_option (key, value)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("invalid option '%s' or its value '%s'"),
-			             key, value);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
-			return FALSE;
+	_ensure_options_idx_cache (priv);
+
+	if (priv->options_idx_cache) {
+		for (i = 0; priv->options_idx_cache[i].name; i++) {
+			n = &priv->options_idx_cache[i];
+
+			if (   !n->value_str
+			    || !nm_setting_bond_validate_option (n->name, n->value_str)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("invalid option '%s' or its value '%s'"),
+				             n->name, n->value_str);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+				return FALSE;
+			}
 		}
 	}
 
@@ -841,16 +858,14 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	/* normalize unsupported options for the current mode */
 	bond_mode = _nm_setting_bond_mode_from_string (mode_new);
-	g_hash_table_iter_init (&iter, priv->options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
-		if (nm_streq (key, "mode"))
-			continue;
-		if (!_nm_setting_bond_option_supported (key, bond_mode)) {
+	for (i = 0; priv->options_idx_cache[i].name; i++) {
+		n = &priv->options_idx_cache[i];
+		if (!_nm_setting_bond_option_supported (n->name, bond_mode)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' option is not valid with mode '%s'"),
-			             key, mode_new);
+			             n->name, mode_new);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return NM_SETTING_VERIFY_NORMALIZABLE;
 		}
