@@ -1207,7 +1207,18 @@ typedef struct {
 	};
 } NMUtilsNamedValue;
 
-NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
+NMUtilsNamedValue *nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
+                                                                  guint *out_len,
+                                                                  GCompareDataFunc compare_func,
+                                                                  gpointer user_data);
+
+static inline NMUtilsNamedValue *
+nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
+{
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
+
+	return nm_utils_named_values_from_str_dict_with_sort (hash, out_len, nm_strcmp_p_with_data, NULL);
+}
 
 gssize nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,
                                        gsize len,

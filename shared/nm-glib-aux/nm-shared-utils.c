@@ -2357,7 +2357,10 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 /*****************************************************************************/
 
 NMUtilsNamedValue *
-nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
+nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
+                                               guint *out_len,
+                                               GCompareDataFunc compare_func,
+                                               gpointer user_data)
 {
 	GHashTableIter iter;
 	NMUtilsNamedValue *values;
@@ -2380,7 +2383,8 @@ nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
 	values[i].name = NULL;
 	values[i].value_ptr = NULL;
 
-	nm_utils_named_value_list_sort (values, len, NULL, NULL);
+	if (compare_func)
+		nm_utils_named_value_list_sort (values, len, compare_func, user_data);
 
 	NM_SET_OUT (out_len, len);
 	return values;
