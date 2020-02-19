@@ -197,6 +197,19 @@ nm_setting_bond_get_num_options (NMSettingBond *setting)
 	return g_hash_table_size (NM_SETTING_BOND_GET_PRIVATE (setting)->options);
 }
 
+static int
+_get_option_sort (gconstpointer p_a, gconstpointer p_b, gpointer _unused)
+{
+	const char *a = *((const char *const*) p_a);
+	const char *b = *((const char *const*) p_b);
+
+	NM_CMP_DIRECT (nm_streq (b, NM_SETTING_BOND_OPTION_MODE),
+	               nm_streq (a, NM_SETTING_BOND_OPTION_MODE));
+	NM_CMP_DIRECT_STRCMP (a, b);
+	nm_assert_not_reached ();
+	return 0;
+}
+
 /**
  * nm_setting_bond_get_option:
  * @setting: the #NMSettingBond
@@ -236,7 +249,7 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 		return FALSE;
 
 	if (!G_UNLIKELY (priv->options_idx_cache))
-		priv->options_idx_cache = nm_utils_named_values_from_str_dict (priv->options, NULL);
+		priv->options_idx_cache = nm_utils_named_values_from_str_dict_with_sort (priv->options, NULL, _get_option_sort, NULL);
 
 	NM_SET_OUT (out_name, priv->options_idx_cache[idx].name);
 	NM_SET_OUT (out_value, priv->options_idx_cache[idx].value_str);
