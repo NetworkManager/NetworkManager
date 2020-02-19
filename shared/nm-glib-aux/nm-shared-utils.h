@@ -1207,7 +1207,18 @@ typedef struct {
 	};
 } NMUtilsNamedValue;
 
-NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
+NMUtilsNamedValue *nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
+                                                                  guint *out_len,
+                                                                  GCompareDataFunc compare_func,
+                                                                  gpointer user_data);
+
+static inline NMUtilsNamedValue *
+nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
+{
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
+
+	return nm_utils_named_values_from_str_dict_with_sort (hash, out_len, nm_strcmp_p_with_data, NULL);
+}
 
 gssize nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,
                                        gsize len,
@@ -1536,35 +1547,32 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
 
 /*****************************************************************************/
 
-#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, \
-                                            result_type, \
-                                            entry_cmd, \
-                                            unknown_val_cmd, \
-                                            ...) \
-result_type \
+#define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, \
+                                             value_type, \
+                                             value_type_result, \
+                                             entry_cmd, \
+                                             unknown_val_cmd, \
+                                             get_operator, \
+                                             ...) \
+value_type_result \
 fcn_name (const char *name) \
 { \
 	static const struct { \
 		const char *name; \
-		result_type value; \
+		value_type value; \
 	} LIST[] = { \
 		__VA_ARGS__ \
 	}; \
 	\
 	{ entry_cmd; } \
 	\
-	if (NM_MORE_ASSERTS > 5) { \
-		static gboolean checked = FALSE; \
+	if (NM_MORE_ASSERT_ONCE (5)) { \
 		int i; \
 		\
-		if (!checked) { \
-			checked = TRUE; \
-			\
-			for (i = 0; i < G_N_ELEMENTS (LIST); i++) { \
-				nm_assert (LIST[i].name); \
-				if (i > 0) \
-					nm_assert (strcmp (LIST[i - 1].name, LIST[i].name) < 0); \
-			} \
+		for (i = 0; i < G_N_ELEMENTS (LIST); i++) { \
+			nm_assert (LIST[i].name); \
+			if (i > 0) \
+				nm_assert (strcmp (LIST[i - 1].name, LIST[i].name) < 0); \
 		} \
 	} \
 	\
@@ -1579,7 +1587,7 @@ fcn_name (const char *name) \
 			const int cmp = strcmp (LIST[imid].name, name); \
 			\
 			if (G_UNLIKELY (cmp == 0)) \
-				return LIST[imid].value; \
+				return get_operator (LIST[imid].value); \
 			\
 			if (cmp < 0) \
 				imin = imid + 1u; \
@@ -1596,6 +1604,32 @@ fcn_name (const char *name) \
 	\
 	{ unknown_val_cmd; } \
 }
+
+#define NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(fcn_name, \
+                                                   result_type, \
+                                                   entry_cmd, \
+                                                   unknown_val_cmd, \
+                                                   ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (fcn_name, \
+	                                      result_type, \
+	                                      const result_type *, \
+	                                      entry_cmd, \
+	                                      unknown_val_cmd, \
+	                                      &, \
+	                                      __VA_ARGS__)
+
+#define NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, \
+                                            result_type, \
+                                            entry_cmd, \
+                                            unknown_val_cmd, \
+                                            ...) \
+	_NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (fcn_name, \
+	                                      result_type, \
+	                                      result_type, \
+	                                      entry_cmd, \
+	                                      unknown_val_cmd, \
+	                                      , \
+	                                      __VA_ARGS__)
 
 /*****************************************************************************/
 
