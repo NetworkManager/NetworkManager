@@ -488,7 +488,6 @@ NMSettingIPConfig *nm_connection_get_setting_ip_config (NMConnection *connection
 
 typedef enum {
 	NM_BOND_OPTION_TYPE_INT,
-	NM_BOND_OPTION_TYPE_STRING,
 	NM_BOND_OPTION_TYPE_BOTH,
 	NM_BOND_OPTION_TYPE_IP,
 	NM_BOND_OPTION_TYPE_MAC,
