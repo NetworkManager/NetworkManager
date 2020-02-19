@@ -214,7 +214,7 @@ apply_bonding_config (NMDeviceBond *self)
 	 *
 	 * arp_interval conflicts miimon > 0
 	 * arp_interval conflicts [ alb, tlb ]
-	 * arp_validate needs [ active-backup ]
+	 * arp_validate does not work with [ BOND_MODE_8023AD, BOND_MODE_TLB, BOND_MODE_ALB ]
 	 * downdelay needs miimon
 	 * updelay needs miimon
 	 * primary needs [ active-backup, tlb, alb ]
@@ -266,15 +266,8 @@ apply_bonding_config (NMDeviceBond *self)
 		 */
 	}
 
-	/* ARP validate: value > 0 only valid in active-backup mode */
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_VALIDATE);
-	if (   value
-	    && !nm_streq (value, "0")
-	    && !nm_streq (value, "none")
-	    && mode == NM_BOND_MODE_ACTIVEBACKUP)
-		set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_ARP_VALIDATE, value);
-	else
-		set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_ARP_VALIDATE, "0");
+	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_ARP_VALIDATE, value ?: "0");
 
 	/* Primary */
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
