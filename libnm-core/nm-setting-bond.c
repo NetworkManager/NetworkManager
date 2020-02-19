@@ -477,36 +477,34 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 
 /*****************************************************************************/
 
-#define BIT(x) (1 << (x))
+#define BIT(x) (((guint32) 1) << (x))
 
-static const struct {
-	const char *option;
-	NMBondMode unsupp_modes;
-} bond_unsupp_modes[] = {
-	{ NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, ~(BIT (NM_BOND_MODE_ROUNDROBIN)) },
-	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,      BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
-	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,      BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
-	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,     BIT (NM_BOND_MODE_8023AD) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB) },
-	{ NM_SETTING_BOND_OPTION_LACP_RATE,         ~(BIT (NM_BOND_MODE_8023AD)) },
-	{ NM_SETTING_BOND_OPTION_PRIMARY,           ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+static
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_bond_option_unsupp_mode,
+	guint32,
+	{ ; },
+	{ return 0; },
 	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,      ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
-	{ NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,    ~(BIT (NM_BOND_MODE_TLB)) },
 	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, ~(BIT (NM_BOND_MODE_8023AD)) },
 	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,   ~(BIT (NM_BOND_MODE_8023AD)) },
 	{ NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY,  ~(BIT (NM_BOND_MODE_8023AD)) },
-};
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,       (BIT (NM_BOND_MODE_8023AD)       | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,      (BIT (NM_BOND_MODE_8023AD)       | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,       (BIT (NM_BOND_MODE_8023AD)       | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_LACP_RATE,         ~(BIT (NM_BOND_MODE_8023AD)) },
+	{ NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, ~(BIT (NM_BOND_MODE_ROUNDROBIN)) },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,           ~(BIT (NM_BOND_MODE_ACTIVEBACKUP) | BIT (NM_BOND_MODE_TLB) | BIT (NM_BOND_MODE_ALB)) },
+	{ NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,    ~(BIT (NM_BOND_MODE_TLB)) },
+)
 
 gboolean
 _nm_setting_bond_option_supported (const char *option, NMBondMode mode)
 {
-	guint i;
+	nm_assert (option);
+	nm_assert (_NM_INT_NOT_NEGATIVE (mode) && mode < 32);
 
-	for (i = 0; i < G_N_ELEMENTS (bond_unsupp_modes); i++) {
-		if (nm_streq (option, bond_unsupp_modes[i].option))
-			return !NM_FLAGS_ANY (bond_unsupp_modes[i].unsupp_modes, BIT (mode));
-	}
-
-	return TRUE;
+	return !NM_FLAGS_ANY (_bond_option_unsupp_mode (option), BIT (mode));
 }
 
 static gboolean
