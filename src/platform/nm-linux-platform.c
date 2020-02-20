@@ -749,6 +749,67 @@ _link_type_from_rtnl_type (const char *name) \
 	}
 }
 
+static NMLinkType
+_link_type_from_devtype (const char *name) \
+{
+	static const NMLinkType LIST[] = {
+		NM_LINK_TYPE_BNEP,      /* "bluetooth" */
+		NM_LINK_TYPE_BOND,      /* "bond"      */
+		NM_LINK_TYPE_BRIDGE,    /* "bridge"    */
+		NM_LINK_TYPE_PPP,       /* "ppp"       */
+		NM_LINK_TYPE_VLAN,      /* "vlan"      */
+		NM_LINK_TYPE_VRF,       /* "vrf"       */
+		NM_LINK_TYPE_VXLAN,     /* "vxlan"     */
+		NM_LINK_TYPE_WIMAX,     /* "wimax"     */
+		NM_LINK_TYPE_WIREGUARD, /* "wireguard" */
+		NM_LINK_TYPE_WIFI,      /* "wlan"      */
+		NM_LINK_TYPE_WWAN_NET,  /* "wwan"      */
+	};
+
+	nm_assert (name);
+
+	if (NM_MORE_ASSERT_ONCE (5)) {
+		int i, j, k;
+
+		for (i = 0; i < G_N_ELEMENTS (LIST); i++) {
+			nm_assert (_link_desc_from_link_type (LIST[i]) == &link_descs[LIST[i]]);
+			nm_assert (link_descs[LIST[i]].devtype);
+			if (i > 0)
+				nm_assert (strcmp (link_descs[LIST[i - 1]].devtype, link_descs[LIST[i]].devtype) < 0);
+		}
+		for (i = 0; i < G_N_ELEMENTS (link_descs); i++) {
+			if (!link_descs[i].devtype)
+				continue;
+			for (j = 0, k = 0; j < G_N_ELEMENTS (LIST); j++)
+				k += (LIST[j] == i);
+			nm_assert (k == 1);
+		}
+	}
+
+	{
+		unsigned imin = 0;
+		unsigned imax = (G_N_ELEMENTS (LIST) - 1);
+		unsigned imid = (G_N_ELEMENTS (LIST) - 1) / 2;
+
+		for (;;) {
+			const int cmp = strcmp (link_descs[LIST[imid]].devtype, name);
+
+			if (G_UNLIKELY (cmp == 0))
+				return LIST[imid];
+
+			if (cmp < 0)
+				imin = imid + 1u;
+			else
+				imax = imid - 1u;
+
+			if (G_UNLIKELY (imin > imax))
+				return NM_LINK_TYPE_NONE;
+
+			imid = (imin + imax) / 2u;
+		}
+	}
+}
+
 static const char *
 nm_link_type_to_rtnl_type_string (NMLinkType link_type)
 {
@@ -969,10 +1030,11 @@ _linktype_get_type (NMPlatform *platform,
                     const char **out_kind)
 {
 	NMLinkType link_type;
-	guint i;
 
 	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (platform);
 	nm_assert (ifname);
+	nm_assert (_link_type_from_devtype ("wlan") == NM_LINK_TYPE_WIFI);
+	nm_assert (_link_type_from_rtnl_type ("bond") == NM_LINK_TYPE_BOND);
 
 	if (completed_from_cache) {
 		const NMPObject *obj;
@@ -1060,16 +1122,16 @@ _linktype_get_type (NMPlatform *platform,
 				return NM_LINK_TYPE_OLPC_MESH;
 
 			devtype = _linktype_read_devtype (dirfd);
-			for (i = 0; devtype && i < G_N_ELEMENTS (link_descs); i++) {
-				if (g_strcmp0 (devtype, link_descs[i].devtype) == 0) {
-					if (i == NM_LINK_TYPE_BNEP) {
+			if (devtype) {
+				link_type = _link_type_from_devtype (devtype);
+				if (link_type != NM_LINK_TYPE_NONE) {
+					if (   link_type == NM_LINK_TYPE_BNEP
+					    && arptype != ARPHRD_ETHER) {
 						/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
 						 * use arptype to distinguish between them.
 						 */
-						if (arptype != ARPHRD_ETHER)
-							continue;
-					}
-					return i;
+					} else
+						return link_type;
 				}
 			}
 
