@@ -29,7 +29,7 @@
 #include "settings/nm-settings.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-agent-manager.h"
-#include "nm-dhcp4-config.h"
+#include "nm-dhcp-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-config.h"
 #include "nm-netns.h"

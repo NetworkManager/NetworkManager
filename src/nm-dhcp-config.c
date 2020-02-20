@@ -5,7 +5,7 @@
 
 #include "nm-default.h"
 
-#include "nm-dhcp4-config.h"
+#include "nm-dhcp-config.h"
 
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"

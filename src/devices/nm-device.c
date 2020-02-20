@@ -43,7 +43,7 @@
 #include "nm-ip6-config.h"
 #include "nm-pacrunner-manager.h"
 #include "dnsmasq/nm-dnsmasq-manager.h"
-#include "nm-dhcp4-config.h"
+#include "nm-dhcp-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-rfkill-manager.h"
 #include "nm-firewall-manager.h"

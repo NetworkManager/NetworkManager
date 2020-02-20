@@ -9,7 +9,7 @@
 
 #include "nm-dhcp-client.h"
 #include "nm-ip4-config.h"
-#include "nm-dhcp4-config.h"
+#include "nm-dhcp-config.h"
 
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
 #define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManager))

@@ -14,7 +14,7 @@
 #include "nm-connectivity.h"
 #include "nm-act-request.h"
 #include "devices/nm-device.h"
-#include "nm-dhcp4-config.h"
+#include "nm-dhcp-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
