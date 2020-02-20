@@ -605,15 +605,29 @@ _nm_setting_bond_option_supported (const char *option, NMBondMode mode)
 	return !NM_FLAGS_ANY (_bond_option_unsupp_mode (option), BIT (mode));
 }
 
+const char*
+bond_get_option_or_default (NMSettingBond *self,
+                            const char *option)
+{
+	const char *value;
+
+	value = g_hash_table_lookup (NM_SETTING_BOND_GET_PRIVATE (self)->options, option);
+	if (!value)
+		return nm_setting_bond_get_option_default (self, option);
+
+	return value;
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
+	NMSettingBond *self = NM_SETTING_BOND (setting);
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 	int mode;
-	int miimon = 0;
-	int arp_interval = 0;
-	int num_grat_arp = -1;
-	int num_unsol_na = -1;
+	int miimon;
+	int arp_interval;
+	int num_grat_arp;
+	int num_unsol_na;
 	const char *mode_orig;
 	const char *mode_new;
 	const char *arp_ip_target = NULL;
@@ -622,7 +636,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMBondMode bond_mode;
 	guint i;
 	const NMUtilsNamedValue *n;
-	const char *value;
 
 	_ensure_options_idx_cache (priv);
 
@@ -643,18 +656,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MIIMON);
-	if (value)
-		miimon = atoi (value);
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
-	if (value)
-		arp_interval = atoi (value);
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
-	if (value)
-		num_grat_arp = atoi (value);
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
-	if (value)
-		num_unsol_na = atoi (value);
+	miimon = _atoi (bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_MIIMON));
+	arp_interval = _atoi (bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_ARP_INTERVAL));
+	num_grat_arp = _atoi (bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP));
+	num_unsol_na = _atoi (bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA));
 
 	/* Can only set one of miimon and arp_interval */
 	if (miimon > 0 && arp_interval > 0) {
@@ -685,7 +690,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for '%s'"),
-		             value, NM_SETTING_BOND_OPTION_MODE);
+		             mode_orig, NM_SETTING_BOND_OPTION_MODE);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
@@ -840,8 +845,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   (num_grat_arp != -1 && num_unsol_na != -1)
-	    && (num_grat_arp != num_unsol_na)) {
+	if (   g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP)
+	    && g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA)
+	    && num_grat_arp != num_unsol_na) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -497,6 +497,10 @@ typedef enum {
 NMBondOptionType
 _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
 
+
+const char*
+bond_get_option_or_default (NMSettingBond *self, const char *option);
+
 /*****************************************************************************/
 
 /* nm_connection_get_uuid() asserts against NULL, which is the right thing to
