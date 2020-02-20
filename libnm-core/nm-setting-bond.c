@@ -767,7 +767,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (arp_interval > 0) {
 		char **addrs;
 		guint32 addr;
-		int i;
 
 		if (!arp_ip_target) {
 			g_set_error (error,
