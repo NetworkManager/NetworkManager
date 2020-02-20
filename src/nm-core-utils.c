@@ -4055,18 +4055,18 @@ GVariant *
 nm_utils_strdict_to_variant (GHashTable *options)
 {
 	GVariantBuilder builder;
-	gs_free const char **keys = NULL;
+	gs_free NMUtilsNamedValue *values = NULL;
 	guint i;
-	guint nkeys;
+	guint n;
 
-	keys = nm_utils_strdict_get_keys (options, TRUE, &nkeys);
+	values = nm_utils_named_values_from_str_dict (options, &n);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	for (i = 0; i < nkeys; i++) {
+	for (i = 0; i < n; i++) {
 		g_variant_builder_add (&builder,
 		                       "{sv}",
-		                       keys[i],
-		                       g_variant_new_string (g_hash_table_lookup (options, keys[i])));
+		                       values[i].name,
+		                       g_variant_new_string (values[i].value_str));
 	}
 	return g_variant_builder_end (&builder);
 }
