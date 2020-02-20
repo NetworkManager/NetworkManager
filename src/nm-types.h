@@ -118,20 +118,18 @@ typedef struct _NMPNetns                 NMPNetns;
 typedef struct _NMPObject                NMPObject;
 
 typedef enum {
-	/* Please don't interpret type numbers outside nm-platform and use functions
-	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
-	 *
-	 * type & 0x10000 -> Software device type
-	 * type & 0x20000 -> Type supports slaves
-	 */
 
 	/* No type, used as error value */
 	NM_LINK_TYPE_NONE,
 
-	/* Unknown type  */
 	NM_LINK_TYPE_UNKNOWN,
 
+	NM_LINK_TYPE_ANY,
+
+#define _NM_LINK_TYPE_REAL_FIRST NM_LINK_TYPE_ETHERNET
+
 	/* Hardware types */
+#define _NM_LINK_TYPE_HW_FIRST NM_LINK_TYPE_ETHERNET
 	NM_LINK_TYPE_ETHERNET,
 	NM_LINK_TYPE_INFINIBAND,
 	NM_LINK_TYPE_OLPC_MESH,
@@ -141,9 +139,11 @@ typedef enum {
 	NM_LINK_TYPE_WPAN,
 	NM_LINK_TYPE_6LOWPAN,
 	NM_LINK_TYPE_WIFI_P2P,
+#define _NM_LINK_TYPE_HW_LAST  NM_LINK_TYPE_WIFI_P2P
 
 	/* Software types */
-	NM_LINK_TYPE_BNEP = 0x10000,   /* Bluetooth Ethernet emulation */
+#define _NM_LINK_TYPE_SW_FIRST NM_LINK_TYPE_BNEP
+	NM_LINK_TYPE_BNEP,   /* Bluetooth Ethernet emulation */
 	NM_LINK_TYPE_DUMMY,
 	NM_LINK_TYPE_GRE,
 	NM_LINK_TYPE_GRETAP,
@@ -165,14 +165,36 @@ typedef enum {
 	NM_LINK_TYPE_VRF,
 	NM_LINK_TYPE_VXLAN,
 	NM_LINK_TYPE_WIREGUARD,
+#define _NM_LINK_TYPE_SW_LAST  NM_LINK_TYPE_WIREGUARD
 
 	/* Software types with slaves */
-	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
+#define _NM_LINK_TYPE_SW_MASTER_FIRST NM_LINK_TYPE_BRIDGE
+	NM_LINK_TYPE_BRIDGE,
 	NM_LINK_TYPE_BOND,
 	NM_LINK_TYPE_TEAM,
+#define _NM_LINK_TYPE_SW_MASTER_LAST NM_LINK_TYPE_TEAM
 
-	NM_LINK_TYPE_ANY = G_MAXUINT32,
+#define _NM_LINK_TYPE_REAL_LAST NM_LINK_TYPE_TEAM
+
+#define _NM_LINK_TYPE_REAL_NUM ((int) (_NM_LINK_TYPE_REAL_LAST - _NM_LINK_TYPE_REAL_FIRST + 1))
+
 } NMLinkType;
+
+static inline gboolean
+nm_link_type_is_software (NMLinkType link_type)
+{
+	G_STATIC_ASSERT (_NM_LINK_TYPE_SW_LAST + 1 == _NM_LINK_TYPE_SW_MASTER_FIRST);
+
+	return    link_type >= _NM_LINK_TYPE_SW_FIRST
+	       && link_type <= _NM_LINK_TYPE_SW_MASTER_LAST;
+}
+
+static inline gboolean
+nm_link_type_supports_slaves (NMLinkType link_type)
+{
+	return    link_type >= _NM_LINK_TYPE_SW_MASTER_FIRST
+	       && link_type <= _NM_LINK_TYPE_SW_MASTER_LAST;
+}
 
 typedef enum {
 	NMP_OBJECT_TYPE_UNKNOWN,
