@@ -676,6 +676,79 @@ _link_desc_from_link_type (NMLinkType link_type)
 	return &link_descs[link_type];
 }
 
+static NMLinkType
+_link_type_from_rtnl_type (const char *name) \
+{
+	static const NMLinkType LIST[] = {
+		NM_LINK_TYPE_BOND,        /* "bond"        */
+		NM_LINK_TYPE_BRIDGE,      /* "bridge"      */
+		NM_LINK_TYPE_DUMMY,       /* "dummy"       */
+		NM_LINK_TYPE_GRE,         /* "gre"         */
+		NM_LINK_TYPE_GRETAP,      /* "gretap"      */
+		NM_LINK_TYPE_IFB,         /* "ifb"         */
+		NM_LINK_TYPE_IP6GRE,      /* "ip6gre"      */
+		NM_LINK_TYPE_IP6GRETAP,   /* "ip6gretap"   */
+		NM_LINK_TYPE_IP6TNL,      /* "ip6tnl"      */
+		NM_LINK_TYPE_IPIP,        /* "ipip"        */
+		NM_LINK_TYPE_MACSEC,      /* "macsec"      */
+		NM_LINK_TYPE_MACVLAN,     /* "macvlan"     */
+		NM_LINK_TYPE_MACVTAP,     /* "macvtap"     */
+		NM_LINK_TYPE_OPENVSWITCH, /* "openvswitch" */
+		NM_LINK_TYPE_SIT,         /* "sit"         */
+		NM_LINK_TYPE_TEAM,        /* "team"        */
+		NM_LINK_TYPE_TUN,         /* "tun"         */
+		NM_LINK_TYPE_VETH,        /* "veth"        */
+		NM_LINK_TYPE_VLAN,        /* "vlan"        */
+		NM_LINK_TYPE_VRF,         /* "vrf"         */
+		NM_LINK_TYPE_VXLAN,       /* "vxlan"       */
+		NM_LINK_TYPE_WIMAX,       /* "wimax"       */
+		NM_LINK_TYPE_WIREGUARD,   /* "wireguard"   */
+	};
+
+	nm_assert (name);
+
+	if (NM_MORE_ASSERT_ONCE (5)) {
+		int i, j, k;
+
+		for (i = 0; i < G_N_ELEMENTS (LIST); i++) {
+			nm_assert (_link_desc_from_link_type (LIST[i]) == &link_descs[LIST[i]]);
+			nm_assert (link_descs[LIST[i]].rtnl_type);
+			if (i > 0)
+				nm_assert (strcmp (link_descs[LIST[i - 1]].rtnl_type, link_descs[LIST[i]].rtnl_type) < 0);
+		}
+		for (i = 0; i < G_N_ELEMENTS (link_descs); i++) {
+			if (!link_descs[i].rtnl_type)
+				continue;
+			for (j = 0, k = 0; j < G_N_ELEMENTS (LIST); j++)
+				k += (LIST[j] == i);
+			nm_assert (k == 1);
+		}
+	}
+
+	{
+		unsigned imin = 0;
+		unsigned imax = (G_N_ELEMENTS (LIST) - 1);
+		unsigned imid = (G_N_ELEMENTS (LIST) - 1) / 2;
+
+		for (;;) {
+			const int cmp = strcmp (link_descs[LIST[imid]].rtnl_type, name);
+
+			if (G_UNLIKELY (cmp == 0))
+				return LIST[imid];
+
+			if (cmp < 0)
+				imin = imid + 1u;
+			else
+				imax = imid - 1u;
+
+			if (G_UNLIKELY (imin > imax))
+				return NM_LINK_TYPE_NONE;
+
+			imid = (imin + imax) / 2u;
+		}
+	}
+}
+
 static const char *
 nm_link_type_to_rtnl_type_string (NMLinkType link_type)
 {
@@ -895,6 +968,7 @@ _linktype_get_type (NMPlatform *platform,
                     const NMPObject **link_cached,
                     const char **out_kind)
 {
+	NMLinkType link_type;
 	guint i;
 
 	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (platform);
@@ -937,11 +1011,9 @@ _linktype_get_type (NMPlatform *platform,
 	*out_kind = g_intern_string (kind);
 
 	if (kind) {
-		for (i = 0; i < G_N_ELEMENTS (link_descs); i++) {
-			if (nm_streq0 (kind, link_descs[i].rtnl_type)) {
-				return i;
-			}
-		}
+		link_type = _link_type_from_rtnl_type (kind);
+		if (link_type != NM_LINK_TYPE_NONE)
+			return link_type;
 	}
 
 	if (arptype == ARPHRD_LOOPBACK)
