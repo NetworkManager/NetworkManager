@@ -3,29 +3,33 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_DHCP4_CONFIG_H__
-#define __NETWORKMANAGER_DHCP4_CONFIG_H__
+#ifndef __NM_DHCP_CONFIG_H__
+#define __NM_DHCP_CONFIG_H__
 
-#define NM_TYPE_DHCP4_CONFIG            (nm_dhcp4_config_get_type ())
-#define NM_DHCP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4Config))
-#define NM_DHCP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigClass))
-#define NM_IS_DHCP4_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP4_CONFIG))
-#define NM_IS_DHCP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP4_CONFIG))
-#define NM_DHCP4_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigClass))
+/*****************************************************************************/
 
-#define NM_DHCP4_CONFIG_OPTIONS "options"
+#define NM_TYPE_DHCP_CONFIG            (nm_dhcp_config_get_type ())
+#define NM_DHCP_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_CONFIG, NMDhcpConfig))
+#define NM_DHCP_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_CONFIG, NMDhcpConfigClass))
+#define NM_IS_DHCP_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_CONFIG))
+#define NM_IS_DHCP_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_CONFIG))
+#define NM_DHCP_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CONFIG, NMDhcpConfigClass))
 
-typedef struct _NMDhcp4ConfigClass NMDhcp4ConfigClass;
+#define NM_DHCP_CONFIG_OPTIONS "options"
 
-GType nm_dhcp4_config_get_type (void);
+typedef struct _NMDhcpConfigClass NMDhcpConfigClass;
 
-NMDhcp4Config *nm_dhcp4_config_new (void);
+GType nm_dhcp_config_get_type (void);
 
-void nm_dhcp4_config_set_options (NMDhcp4Config *config,
-                                  GHashTable *options);
+NMDhcpConfig *nm_dhcp_config_new (int addr_family);
 
-const char *nm_dhcp4_config_get_option (NMDhcp4Config *config, const char *option);
+int nm_dhcp_config_get_addr_family (NMDhcpConfig *self);
 
-GVariant *nm_dhcp4_config_get_options (NMDhcp4Config *config);
+void nm_dhcp_config_set_options (NMDhcpConfig *self,
+                                 GHashTable *options);
 
-#endif /* __NETWORKMANAGER_DHCP4_CONFIG_H__ */
+const char *nm_dhcp_config_get_option (NMDhcpConfig *self, const char *option);
+
+GVariant *nm_dhcp_config_get_options (NMDhcpConfig *self);
+
+#endif /* __NM_DHCP_CONFIG_H__ */

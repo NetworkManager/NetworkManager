@@ -136,7 +136,6 @@ sources = files(
   'nm-connectivity.c',
   'nm-dcb.c',
   'nm-dhcp-config.c',
-  'nm-dhcp6-config.c',
   'nm-dispatcher.c',
   'nm-firewall-manager.c',
   'nm-hostname-manager.c',

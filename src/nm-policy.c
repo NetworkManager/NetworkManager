@@ -30,7 +30,6 @@
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-agent-manager.h"
 #include "nm-dhcp-config.h"
-#include "nm-dhcp6-config.h"
 #include "nm-config.h"
 #include "nm-netns.h"
 #include "nm-hostname-manager.h"
@@ -692,6 +691,7 @@ update_system_hostname (NMPolicy *self, const char *msg)
 	const NMPlatformIP4Address *addr4;
 	const NMPlatformIP6Address *addr6;
 	NMDevice *device;
+	NMDhcpConfig *dhcp_config;
 
 	g_return_if_fail (self != NULL);
 
@@ -745,12 +745,10 @@ update_system_hostname (NMPolicy *self, const char *msg)
 	}
 
 	if (priv->default_ac4) {
-		NMDhcp4Config *dhcp4_config;
-
 		/* Grab a hostname out of the device's DHCP4 config */
-		dhcp4_config = nm_device_get_dhcp4_config (get_default_device (self, AF_INET));
-		if (dhcp4_config) {
-			dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+		dhcp_config = nm_device_get_dhcp4_config (get_default_device (self, AF_INET));
+		if (dhcp_config) {
+			dhcp_hostname = nm_dhcp_config_get_option (dhcp_config, "host_name");
 			if (dhcp_hostname && dhcp_hostname[0]) {
 				p = nm_str_skip_leading_spaces (dhcp_hostname);
 				if (p[0]) {
@@ -765,12 +763,10 @@ update_system_hostname (NMPolicy *self, const char *msg)
 	}
 
 	if (priv->default_ac6) {
-		NMDhcp6Config *dhcp6_config;
-
 		/* Grab a hostname out of the device's DHCP6 config */
-		dhcp6_config = nm_device_get_dhcp6_config (get_default_device (self, AF_INET6));
-		if (dhcp6_config) {
-			dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
+		dhcp_config = nm_device_get_dhcp6_config (get_default_device (self, AF_INET6));
+		if (dhcp_config) {
+			dhcp_hostname = nm_dhcp_config_get_option (dhcp_config, "host_name");
 			if (dhcp_hostname && dhcp_hostname[0]) {
 				p = nm_str_skip_leading_spaces (dhcp_hostname);
 				if (p[0]) {
