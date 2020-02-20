@@ -117,6 +117,11 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection, gboo
 	}
 
 	bridge_device = nm_active_connection_get_device (ac_bridge);
+	if (!bridge_device) {
+		_LOGW (LOGD_DEVICE, "can't enslave %s: bridge device not found",
+		       nm_device_get_iface (slave));
+		return FALSE;
+	}
 
 	nm_ovsdb_add_interface (nm_ovsdb_get (),
 	                        nm_active_connection_get_applied_connection (ac_bridge),
