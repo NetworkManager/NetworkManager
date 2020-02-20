@@ -358,11 +358,11 @@ fill_device_props (NMDevice *device,
 	if (ip6_config)
 		dump_ip6_to_props (ip6_config, ip6_builder);
 
-	dhcp_config = nm_device_get_dhcp4_config (device);
+	dhcp_config = nm_device_get_dhcp_config (device, AF_INET);
 	if (dhcp_config)
 		*dhcp4_props = nm_g_variant_ref (nm_dhcp_config_get_options (dhcp_config));
 
-	dhcp_config = nm_device_get_dhcp6_config (device);
+	dhcp_config = nm_device_get_dhcp_config (device, AF_INET6);
 	if (dhcp_config)
 		*dhcp6_props = nm_g_variant_ref (nm_dhcp_config_get_options (dhcp_config));
 }

@@ -6534,7 +6534,7 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	route_metric_default_effective = _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN,
 	                                                           TRUE, &route_metric_default_aspired);
 
-	dhcp_config = nm_device_get_dhcp4_config (device);
+	dhcp_config = nm_device_get_dhcp_config (device, AF_INET);
 	if (dhcp_config) {
 		root_path = nm_dhcp_config_get_option (dhcp_config, "root_path");
 		next_server = nm_dhcp_config_get_option (dhcp_config, "next_server");

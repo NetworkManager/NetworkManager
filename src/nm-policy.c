@@ -746,7 +746,7 @@ update_system_hostname (NMPolicy *self, const char *msg)
 
 	if (priv->default_ac4) {
 		/* Grab a hostname out of the device's DHCP4 config */
-		dhcp_config = nm_device_get_dhcp4_config (get_default_device (self, AF_INET));
+		dhcp_config = nm_device_get_dhcp_config (get_default_device (self, AF_INET), AF_INET);
 		if (dhcp_config) {
 			dhcp_hostname = nm_dhcp_config_get_option (dhcp_config, "host_name");
 			if (dhcp_hostname && dhcp_hostname[0]) {
@@ -764,7 +764,7 @@ update_system_hostname (NMPolicy *self, const char *msg)
 
 	if (priv->default_ac6) {
 		/* Grab a hostname out of the device's DHCP6 config */
-		dhcp_config = nm_device_get_dhcp6_config (get_default_device (self, AF_INET6));
+		dhcp_config = nm_device_get_dhcp_config (get_default_device (self, AF_INET6), AF_INET6);
 		if (dhcp_config) {
 			dhcp_hostname = nm_dhcp_config_get_option (dhcp_config, "host_name");
 			if (dhcp_hostname && dhcp_hostname[0]) {

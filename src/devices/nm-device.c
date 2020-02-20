@@ -12824,11 +12824,15 @@ nm_device_set_proxy_config (NMDevice *self, const char *pac_url)
 
 /* IP Configuration stuff */
 NMDhcpConfig *
-nm_device_get_dhcp4_config (NMDevice *self)
+nm_device_get_dhcp_config (NMDevice *self, int addr_family)
 {
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (self)->dhcp_data_4.config;
+	nm_assert_addr_family (addr_family);
+
+	return NM_DEVICE_GET_PRIVATE (self)->dhcp_data_x[IS_IPv4].config;
 }
 
 NMIP4Config *
@@ -13080,14 +13084,6 @@ nm_device_replace_vpn6_config (NMDevice *self, NMIP6Config *old, NMIP6Config *co
 	/* NULL to use existing configs */
 	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to set VPN routes for device");
-}
-
-NMDhcpConfig *
-nm_device_get_dhcp6_config (NMDevice *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->dhcp_data_6.config;
 }
 
 NMIP6Config *
