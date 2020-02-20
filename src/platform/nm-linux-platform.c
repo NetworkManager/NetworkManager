@@ -1042,7 +1042,7 @@ _linktype_get_type (NMPlatform *platform,
 		obj = _lookup_cached_link (cache, ifindex, completed_from_cache, link_cached);
 
 		/* If we detected the link type before, we stick to that
-		 * decision unless the "kind" no "name" changed. If "name" changed,
+		 * decision unless the "kind" or "name" changed. If "name" changed,
 		 * it means that their type may not have been determined correctly
 		 * due to race conditions while accessing sysfs.
 		 *
@@ -1157,13 +1157,14 @@ _linktype_get_type (NMPlatform *platform,
 			 */
 			if (!kind && !devtype)
 				return NM_LINK_TYPE_ETHERNET;
+
 			/* The USB gadget interfaces behave and look like ordinary ethernet devices
 			 * aside from the DEVTYPE. */
-			if (!g_strcmp0 (devtype, "gadget"))
+			if (nm_streq0 (devtype, "gadget"))
 				return NM_LINK_TYPE_ETHERNET;
 
 			/* Distributed Switch Architecture switch chips */
-			if (!g_strcmp0 (devtype, "dsa"))
+			if (nm_streq0 (devtype, "dsa"))
 				return NM_LINK_TYPE_ETHERNET;
 		}
 	}
@@ -4653,7 +4654,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
 	if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
 		goto nla_put_failure;
 
-	if (strcmp (qdisc->kind, "fq_codel") == 0) {
+	if (nm_streq (qdisc->kind, "fq_codel")) {
 		if (qdisc->fq_codel.limit)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_LIMIT, qdisc->fq_codel.limit);
 		if (qdisc->fq_codel.flows)
