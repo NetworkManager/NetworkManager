@@ -1043,17 +1043,17 @@ nm_str_realloc (char *str)
 
 /*****************************************************************************/
 
-#define NM_GOBJECT_PROPERTIES_DEFINE_BASE(...) \
+#define NM_GOBJECT_PROPERTIES_DEFINE_BASE_FULL(suffix, ...) \
 typedef enum { \
-	PROP_0, \
+	PROP_0##suffix, \
 	__VA_ARGS__ \
-	_PROPERTY_ENUMS_LAST, \
-} _PropertyEnums; \
-static GParamSpec *obj_properties[_PROPERTY_ENUMS_LAST] = { NULL, }
+	_PROPERTY_ENUMS_LAST##suffix, \
+} _PropertyEnums##suffix; \
+static GParamSpec *obj_properties##suffix[_PROPERTY_ENUMS_LAST##suffix] = { NULL, }
 
-#define NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY(obj_type, obj_properties, property_enums_type, prop_0) \
+#define NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY(suffix, obj_type) \
 static inline void \
-_nm_gobject_notify_together_impl (obj_type *obj, guint n, const property_enums_type *props) \
+_nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums##suffix *props) \
 { \
 	const gboolean freeze_thaw = (n > 1); \
 	\
@@ -1063,12 +1063,12 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const property_enums_t
 	if (freeze_thaw) \
 		g_object_freeze_notify ((GObject *) obj); \
 	while (n-- > 0) { \
-		const property_enums_type prop = *props++; \
+		const _PropertyEnums##suffix prop = *props++; \
 		\
-		if (prop != prop_0) { \
-			nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
-			nm_assert (obj_properties[prop]); \
-			g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+		if (prop != PROP_0##suffix) { \
+			nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties##suffix)); \
+			nm_assert (obj_properties##suffix[prop]); \
+			g_object_notify_by_pspec ((GObject *) obj, obj_properties##suffix[prop]); \
 		} \
 	} \
 	if (freeze_thaw) \
@@ -1076,20 +1076,26 @@ _nm_gobject_notify_together_impl (obj_type *obj, guint n, const property_enums_t
 } \
 \
 _nm_unused static inline void \
-_notify (obj_type *obj, property_enums_type prop) \
+_notify (obj_type *obj, _PropertyEnums##suffix prop) \
 { \
 	_nm_gobject_notify_together_impl (obj, 1, &prop); \
 } \
 
+#define NM_GOBJECT_PROPERTIES_DEFINE_BASE(...) \
+	NM_GOBJECT_PROPERTIES_DEFINE_BASE_FULL (, __VA_ARGS__); \
+
 #define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (__VA_ARGS__); \
-NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY (obj_type, obj_properties, _PropertyEnums, PROP_0)
+	NM_GOBJECT_PROPERTIES_DEFINE_BASE_FULL (, __VA_ARGS__); \
+	NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY (, obj_type)
 
 /* invokes _notify() for all arguments (of type _PropertyEnums). Note, that if
  * there are more than one prop arguments, this will involve a freeze/thaw
  * of GObject property notifications. */
+#define nm_gobject_notify_together_full(suffix, obj, ...) \
+	_nm_gobject_notify_together_impl (obj, NM_NARG (__VA_ARGS__), (const _PropertyEnums##suffix[]) { __VA_ARGS__ })
+
 #define nm_gobject_notify_together(obj, ...) \
-	_nm_gobject_notify_together_impl (obj, NM_NARG (__VA_ARGS__), (const _PropertyEnums[]) { __VA_ARGS__ })
+	nm_gobject_notify_together_full (, obj, __VA_ARGS__)
 
 /*****************************************************************************/
 

@@ -2277,10 +2277,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-dcb.h \
 	src/nm-netns.c \
 	src/nm-netns.h \
-	src/nm-dhcp4-config.c \
-	src/nm-dhcp4-config.h \
-	src/nm-dhcp6-config.c \
-	src/nm-dhcp6-config.h \
+	src/nm-dhcp-config.c \
+	src/nm-dhcp-config.h \
 	src/nm-dispatcher.c \
 	src/nm-dispatcher.h \
 	src/nm-firewall-manager.c \

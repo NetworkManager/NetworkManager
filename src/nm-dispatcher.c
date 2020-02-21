@@ -14,8 +14,7 @@
 #include "nm-connectivity.h"
 #include "nm-act-request.h"
 #include "devices/nm-device.h"
-#include "nm-dhcp4-config.h"
-#include "nm-dhcp6-config.h"
+#include "nm-dhcp-config.h"
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -331,8 +330,7 @@ fill_device_props (NMDevice *device,
 	NMProxyConfig *proxy_config;
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
-	NMDhcp4Config *dhcp4_config;
-	NMDhcp6Config *dhcp6_config;
+	NMDhcpConfig *dhcp_config;
 
 	/* If the action is for a VPN, send the VPN's IP interface instead of the device's */
 	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_IP_INTERFACE,
@@ -360,13 +358,13 @@ fill_device_props (NMDevice *device,
 	if (ip6_config)
 		dump_ip6_to_props (ip6_config, ip6_builder);
 
-	dhcp4_config = nm_device_get_dhcp4_config (device);
-	if (dhcp4_config)
-		*dhcp4_props = nm_dhcp4_config_get_options (dhcp4_config);
+	dhcp_config = nm_device_get_dhcp_config (device, AF_INET);
+	if (dhcp_config)
+		*dhcp4_props = nm_g_variant_ref (nm_dhcp_config_get_options (dhcp_config));
 
-	dhcp6_config = nm_device_get_dhcp6_config (device);
-	if (dhcp6_config)
-		*dhcp6_props = nm_dhcp6_config_get_options (dhcp6_config);
+	dhcp_config = nm_device_get_dhcp_config (device, AF_INET6);
+	if (dhcp_config)
+		*dhcp6_props = nm_g_variant_ref (nm_dhcp_config_get_options (dhcp_config));
 }
 
 static void

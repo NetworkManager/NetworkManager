@@ -504,8 +504,7 @@ const char *    nm_device_get_initial_hw_address (NMDevice *dev);
 
 NMProxyConfig * nm_device_get_proxy_config      (NMDevice *dev);
 
-NMDhcp4Config * nm_device_get_dhcp4_config      (NMDevice *dev);
-NMDhcp6Config * nm_device_get_dhcp6_config      (NMDevice *dev);
+NMDhcpConfig *  nm_device_get_dhcp_config       (NMDevice *dev, int addr_family);
 NMIP4Config *   nm_device_get_ip4_config        (NMDevice *dev);
 void            nm_device_replace_vpn4_config   (NMDevice *dev,
                                                  NMIP4Config *old,

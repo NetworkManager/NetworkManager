@@ -43,8 +43,7 @@
 #include "nm-ip6-config.h"
 #include "nm-pacrunner-manager.h"
 #include "dnsmasq/nm-dnsmasq-manager.h"
-#include "nm-dhcp4-config.h"
-#include "nm-dhcp6-config.h"
+#include "nm-dhcp-config.h"
 #include "nm-rfkill-manager.h"
 #include "nm-firewall-manager.h"
 #include "settings/nm-settings-connection.h"
@@ -161,11 +160,7 @@ typedef struct {
 
 typedef struct {
 	NMDhcpClient *client;
-	union {
-		NMDhcp4Config *config_4;
-		NMDhcp6Config *config_6;
-		gpointer config;
-	};
+	NMDhcpConfig *config;
 	gulong state_sigid;
 	guint grace_id;
 	bool grace_pending:1;
@@ -7628,8 +7623,8 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		g_clear_object (&priv->dhcp_data_4.client);
 	}
 
-	if (priv->dhcp_data_4.config_4) {
-		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config_4);
+	if (priv->dhcp_data_4.config) {
+		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config);
 		_notify (self, PROP_DHCP4_CONFIG);
 	}
 }
@@ -8002,9 +7997,9 @@ dhcp4_fail (NMDevice *self, NMDhcpState dhcp_state)
 
 clear_config:
 	/* The previous configuration is no longer valid */
-	if (priv->dhcp_data_4.config_4) {
-		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config_4);
-		priv->dhcp_data_4.config_4 = nm_dhcp4_config_new ();
+	if (priv->dhcp_data_4.config) {
+		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config);
+		priv->dhcp_data_4.config = nm_dhcp_config_new (AF_INET);
 		_notify (self, PROP_DHCP4_CONFIG);
 	}
 }
@@ -8067,7 +8062,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		g_free (priv->dhcp4.root_path);
 		priv->dhcp4.root_path = g_strdup (g_hash_table_lookup (options, "root_path"));
 
-		nm_dhcp4_config_set_options (priv->dhcp_data_4.config_4, options);
+		nm_dhcp_config_set_options (priv->dhcp_data_4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);
 
 		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF) {
@@ -8446,8 +8441,8 @@ dhcp4_start (NMDevice *self)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 
 	/* Clear old exported DHCP options */
-	nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config_4);
-	priv->dhcp_data_4.config_4 = nm_dhcp4_config_new ();
+	nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config);
+	priv->dhcp_data_4.config = nm_dhcp_config_new (AF_INET);
 
 	pllink = nm_platform_link_get (nm_device_get_platform (self), nm_device_get_ip_ifindex (self));
 	if (pllink) {
@@ -8692,8 +8687,8 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		g_clear_object (&priv->dhcp_data_6.client);
 	}
 
-	if (priv->dhcp_data_6.config_6) {
-		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_6.config_6);
+	if (priv->dhcp_data_6.config) {
+		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_6.config);
 		_notify (self, PROP_DHCP6_CONFIG);
 	}
 }
@@ -8779,9 +8774,9 @@ dhcp6_fail (NMDevice *self, NMDhcpState dhcp_state)
 
 clear_config:
 	/* The previous configuration is no longer valid */
-	if (priv->dhcp_data_6.config_6) {
-		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_6.config_6);
-		priv->dhcp_data_6.config_6 = nm_dhcp6_config_new ();
+	if (priv->dhcp_data_6.config) {
+		nm_dbus_object_clear_and_unexport (&priv->dhcp_data_6.config);
+		priv->dhcp_data_6.config = nm_dhcp_config_new (AF_INET6);
 		_notify (self, PROP_DHCP6_CONFIG);
 	}
 }
@@ -8825,7 +8820,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 			if (ip6_config) {
 				applied_config_init (&priv->dhcp6.ip6_config, ip6_config);
 				priv->dhcp6.event_id = g_strdup (event_id);
-				nm_dhcp6_config_set_options (priv->dhcp_data_6.config_6, options);
+				nm_dhcp_config_set_options (priv->dhcp_data_6.config, options);
 				_notify (self, PROP_DHCP6_CONFIG);
 			} else
 				applied_config_clear (&priv->dhcp6.ip6_config);
@@ -9300,8 +9295,8 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 
-	nm_dbus_object_clear_and_unexport (&priv->dhcp_data_6.config_6);
-	priv->dhcp_data_6.config_6 = nm_dhcp6_config_new ();
+	nm_dbus_object_clear_and_unexport (&priv->dhcp_data_6.config);
+	priv->dhcp_data_6.config = nm_dhcp_config_new (AF_INET6);
 
 	nm_assert (!applied_config_get_current (&priv->dhcp6.ip6_config));
 	applied_config_clear (&priv->dhcp6.ip6_config);
@@ -12828,12 +12823,16 @@ nm_device_set_proxy_config (NMDevice *self, const char *pac_url)
 }
 
 /* IP Configuration stuff */
-NMDhcp4Config *
-nm_device_get_dhcp4_config (NMDevice *self)
+NMDhcpConfig *
+nm_device_get_dhcp_config (NMDevice *self, int addr_family)
 {
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (self)->dhcp_data_4.config_4;
+	nm_assert_addr_family (addr_family);
+
+	return NM_DEVICE_GET_PRIVATE (self)->dhcp_data_x[IS_IPv4].config;
 }
 
 NMIP4Config *
@@ -13085,14 +13084,6 @@ nm_device_replace_vpn6_config (NMDevice *self, NMIP6Config *old, NMIP6Config *co
 	/* NULL to use existing configs */
 	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to set VPN routes for device");
-}
-
-NMDhcp6Config *
-nm_device_get_dhcp6_config (NMDevice *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->dhcp_data_6.config_6;
 }
 
 NMIP6Config *
@@ -17434,13 +17425,13 @@ get_property (GObject *object, guint prop_id,
 		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip_config_4 : NULL);
 		break;
 	case PROP_DHCP4_CONFIG:
-		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_4.config_4 : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_4.config : NULL);
 		break;
 	case PROP_IP6_CONFIG:
 		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip_config_6 : NULL);
 		break;
 	case PROP_DHCP6_CONFIG:
-		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_6.config_6 : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_6.config : NULL);
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
