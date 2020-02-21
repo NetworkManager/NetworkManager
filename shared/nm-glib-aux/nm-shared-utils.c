@@ -685,7 +685,7 @@ nm_utils_ip_is_site_local (int addr_family,
 /*****************************************************************************/
 
 static gboolean
-_parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
+_parse_legacy_addr4 (const char *text, in_addr_t *out_addr, GError **error)
 {
 	gs_free char *s_free = NULL;
 	struct in_addr a1;
@@ -693,8 +693,13 @@ _parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
 	char *s;
 	int i;
 
-	if (inet_aton (text, &a1) != 1)
+	if (inet_aton (text, &a1) != 1) {
+		g_set_error_literal (error,
+		                     NM_UTILS_ERROR,
+		                     NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                     "address invalid according to inet_aton()");
 		return FALSE;
+	}
 
 	/* OK, inet_aton() accepted the format. That's good, because we want
 	 * to accept IPv4 addresses in octal format, like 255.255.000.000.
@@ -711,6 +716,10 @@ _parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
 	if (NM_STRCHAR_ANY (text, ch, (   !(ch >= '0' && ch <= '9')
 	                               && !NM_IN_SET (ch, '.', 'x')))) {
 		/* We only accepts '.', digits, and 'x' for "0x". */
+		g_set_error_literal (error,
+		                     NM_UTILS_ERROR,
+		                     NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                     "contains an invalid character");
 		return FALSE;
 	}
 
@@ -729,6 +738,11 @@ _parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
 		if ((i == G_N_ELEMENTS (bin) - 1) != (s == NULL)) {
 			/* Exactly for the last digit, we expect to have no more following token.
 			 * But this isn't the case. Abort. */
+			g_set_error (error,
+			             NM_UTILS_ERROR,
+			             NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             "wrong number of tokens (index %d, token '%s')",
+			             i, s);
 			return FALSE;
 		}
 
@@ -736,6 +750,10 @@ _parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
 		if (v == -1) {
 			/* we do accept octal and hex (even with leading "0x"). But something
 			 * about this token is wrong. */
+			g_set_error (error,
+			             NM_UTILS_ERROR,
+			             NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             "invalid token '%s'", current_token);
 			return FALSE;
 		}
 
@@ -745,6 +763,12 @@ _parse_legacy_addr4 (const char *text, in_addr_t *out_addr)
 	if (memcmp (bin, &a1, sizeof (bin)) != 0) {
 		/* our parsing did not agree with what inet_aton() gave. Something
 		 * is wrong. Abort. */
+		g_set_error (error,
+		             NM_UTILS_ERROR,
+		             NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             "inet_aton() result 0x%08x differs from computed value 0x%02hhx%02hhx%02hhx%02hhx",
+		             a1.s_addr,
+		             bin[0], bin[1], bin[2], bin[3]);
 		return FALSE;
 	}
 
@@ -772,7 +796,7 @@ nm_utils_parse_inaddr_bin_full (int addr_family,
 	if (inet_pton (addr_family, text, &addrbin) != 1) {
 		if (   accept_legacy
 		    && addr_family == AF_INET
-		    && _parse_legacy_addr4 (text, &addrbin.addr4)) {
+		    && _parse_legacy_addr4 (text, &addrbin.addr4, NULL)) {
 			/* The address is in some legacy format which inet_aton() accepts, but not inet_pton().
 			 * Most likely octal digits (leading zeros). We accept the address. */
 		} else
@@ -781,14 +805,16 @@ nm_utils_parse_inaddr_bin_full (int addr_family,
 
 #if NM_MORE_ASSERTS > 10
 	if (addr_family == AF_INET) {
+		gs_free_error GError *error = NULL;
 		in_addr_t a;
 
 		/* The legacy parser should accept everything that inet_pton() accepts too. Meaning,
 		 * it should strictly parse *more* formats. And of course, parse it the same way. */
-		if (!_parse_legacy_addr4 (text, &a)) {
+		if (!_parse_legacy_addr4 (text, &a, &error)) {
 			char buf[INET_ADDRSTRLEN];
 
-			g_error ("unexpected assertion failure: could parse \"%s\" as %s, but not accepted by legacy parser", text, _nm_utils_inet4_ntop (addrbin.addr4, buf));
+			g_error ("unexpected assertion failure: could parse \"%s\" as %s, but not accepted by legacy parser: %s",
+			         text, _nm_utils_inet4_ntop (addrbin.addr4, buf), error->message);
 		}
 		nm_assert (addrbin.addr4 == a);
 	}
