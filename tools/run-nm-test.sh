@@ -295,12 +295,18 @@ fi
 if [ $HAS_ERRORS -eq 0 ]; then
     # valgrind doesn't support setns syscall and spams the logfile.
     # hack around it...
-    if [ "$TEST_NAME" = 'test-link-linux' -o \
-         "$TEST_NAME" = 'test-acd' ]; then
-        if [ -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
-            HAS_ERRORS=1
-        fi
-    fi
+    case "$TEST_NAME" in
+        'test-link-linux' | \
+        'test-acd' | \
+        'test-service-providers' | \
+        'test-remote-settings-client' | \
+        'test-secret-agent' | \
+        'test-nm-client' )
+            if [ -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
+                HAS_ERRORS=1
+            fi
+            ;;
+    esac
 fi
 
 if [ $HAS_ERRORS -eq 0 ]; then
