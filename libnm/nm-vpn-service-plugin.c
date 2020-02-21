@@ -200,7 +200,7 @@ nm_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin, GError **err)
 		break;
 	case NM_VPN_SERVICE_STATE_STARTING:
 		_emit_failure (plugin, NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
-		/* fall through */
+		/* fall-through */
 	case NM_VPN_SERVICE_STATE_STARTED:
 		nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPING);
 		ret = NM_VPN_SERVICE_PLUGIN_GET_CLASS (plugin)->disconnect (plugin, err);
