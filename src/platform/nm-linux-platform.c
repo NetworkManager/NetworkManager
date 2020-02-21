@@ -604,7 +604,7 @@ _vlan_qos_mapping_cmp_from_ptr (gconstpointer a, gconstpointer b, gpointer user_
  ******************************************************************/
 
 typedef struct {
-	const NMLinkType nm_type;
+
 	const char *type_string;
 
 	/* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
@@ -624,69 +624,202 @@ typedef struct {
 	const char *devtype;
 } LinkDesc;
 
-static const LinkDesc linktypes[] = {
-	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
-	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
+static const LinkDesc link_descs[] = {
+	[NM_LINK_TYPE_NONE] =        { "none",        NULL,          NULL        },
+	[NM_LINK_TYPE_UNKNOWN] =     { "unknown",     NULL,          NULL        },
+	[NM_LINK_TYPE_ANY] =         { "any",         NULL,          NULL        },
 
-	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
-	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
-	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
-	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
-	{ NM_LINK_TYPE_WWAN_NET,      "wwan",        NULL,          "wwan" },
-	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
-	{ NM_LINK_TYPE_WPAN,          "wpan",        NULL,          NULL },
-	{ NM_LINK_TYPE_6LOWPAN,       "6lowpan",     NULL,          NULL },
+	[NM_LINK_TYPE_ETHERNET] =    { "ethernet",    NULL,          NULL        },
+	[NM_LINK_TYPE_INFINIBAND] =  { "infiniband",  NULL,          NULL        },
+	[NM_LINK_TYPE_OLPC_MESH] =   { "olpc-mesh",   NULL,          NULL        },
+	[NM_LINK_TYPE_WIFI] =        { "wifi",        NULL,          "wlan"      },
+	[NM_LINK_TYPE_WWAN_NET] =    { "wwan",        NULL,          "wwan"      },
+	[NM_LINK_TYPE_WIMAX] =       { "wimax",       "wimax",       "wimax"     },
+	[NM_LINK_TYPE_WPAN] =        { "wpan",        NULL,          NULL        },
+	[NM_LINK_TYPE_6LOWPAN] =     { "6lowpan",     NULL,          NULL        },
 
-	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
-	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
-	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
-	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
-	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
-	{ NM_LINK_TYPE_IP6TNL,        "ip6tnl",      "ip6tnl",      NULL },
-	{ NM_LINK_TYPE_IP6GRE,        "ip6gre",      "ip6gre",      NULL },
-	{ NM_LINK_TYPE_IP6GRETAP,     "ip6gretap",   "ip6gretap",   NULL },
-	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
-	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
-	{ NM_LINK_TYPE_MACSEC,        "macsec",      "macsec",      NULL },
-	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
-	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
-	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
-	{ NM_LINK_TYPE_PPP,           "ppp",         NULL,          "ppp" },
-	{ NM_LINK_TYPE_SIT,           "sit",         "sit",         NULL },
-	{ NM_LINK_TYPE_TUN,           "tun",         "tun",         NULL },
-	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
-	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
-	{ NM_LINK_TYPE_VRF,           "vrf",         "vrf",         "vrf" },
-	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
-	{ NM_LINK_TYPE_WIREGUARD,     "wireguard",   "wireguard",   "wireguard" },
+	[NM_LINK_TYPE_BNEP] =        { "bluetooth",   NULL,          "bluetooth" },
+	[NM_LINK_TYPE_DUMMY] =       { "dummy",       "dummy",       NULL        },
+	[NM_LINK_TYPE_GRE] =         { "gre",         "gre",         NULL        },
+	[NM_LINK_TYPE_GRETAP] =      { "gretap",      "gretap",      NULL        },
+	[NM_LINK_TYPE_IFB] =         { "ifb",         "ifb",         NULL        },
+	[NM_LINK_TYPE_IP6TNL] =      { "ip6tnl",      "ip6tnl",      NULL        },
+	[NM_LINK_TYPE_IP6GRE] =      { "ip6gre",      "ip6gre",      NULL        },
+	[NM_LINK_TYPE_IP6GRETAP] =   { "ip6gretap",   "ip6gretap",   NULL        },
+	[NM_LINK_TYPE_IPIP] =        { "ipip",        "ipip",        NULL        },
+	[NM_LINK_TYPE_LOOPBACK] =    { "loopback",    NULL,          NULL        },
+	[NM_LINK_TYPE_MACSEC] =      { "macsec",      "macsec",      NULL        },
+	[NM_LINK_TYPE_MACVLAN] =     { "macvlan",     "macvlan",     NULL        },
+	[NM_LINK_TYPE_MACVTAP] =     { "macvtap",     "macvtap",     NULL        },
+	[NM_LINK_TYPE_OPENVSWITCH] = { "openvswitch", "openvswitch", NULL        },
+	[NM_LINK_TYPE_PPP] =         { "ppp",         NULL,          "ppp"       },
+	[NM_LINK_TYPE_SIT] =         { "sit",         "sit",         NULL        },
+	[NM_LINK_TYPE_TUN] =         { "tun",         "tun",         NULL        },
+	[NM_LINK_TYPE_VETH] =        { "veth",        "veth",        NULL        },
+	[NM_LINK_TYPE_VLAN] =        { "vlan",        "vlan",        "vlan"      },
+	[NM_LINK_TYPE_VRF] =         { "vrf",         "vrf",         "vrf"       },
+	[NM_LINK_TYPE_VXLAN] =       { "vxlan",       "vxlan",       "vxlan"     },
+	[NM_LINK_TYPE_WIREGUARD] =   { "wireguard",   "wireguard",   "wireguard" },
 
-	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
-	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
-	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
+	[NM_LINK_TYPE_BRIDGE] =      { "bridge",      "bridge",      "bridge"    },
+	[NM_LINK_TYPE_BOND] =        { "bond",        "bond",        "bond"      },
+	[NM_LINK_TYPE_TEAM] =        { "team",        "team",        NULL        },
 };
 
-static const char *
-nm_link_type_to_rtnl_type_string (NMLinkType type)
+static const LinkDesc *
+_link_desc_from_link_type (NMLinkType link_type)
 {
-	int i;
+	nm_assert (_NM_INT_NOT_NEGATIVE (link_type));
+	nm_assert (link_type < G_N_ELEMENTS (link_descs));
+	nm_assert (link_descs[link_type].type_string);
 
-	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-		if (type == linktypes[i].nm_type)
-			return linktypes[i].rtnl_type;
+	return &link_descs[link_type];
+}
+
+static NMLinkType
+_link_type_from_rtnl_type (const char *name) \
+{
+	static const NMLinkType LIST[] = {
+		NM_LINK_TYPE_BOND,        /* "bond"        */
+		NM_LINK_TYPE_BRIDGE,      /* "bridge"      */
+		NM_LINK_TYPE_DUMMY,       /* "dummy"       */
+		NM_LINK_TYPE_GRE,         /* "gre"         */
+		NM_LINK_TYPE_GRETAP,      /* "gretap"      */
+		NM_LINK_TYPE_IFB,         /* "ifb"         */
+		NM_LINK_TYPE_IP6GRE,      /* "ip6gre"      */
+		NM_LINK_TYPE_IP6GRETAP,   /* "ip6gretap"   */
+		NM_LINK_TYPE_IP6TNL,      /* "ip6tnl"      */
+		NM_LINK_TYPE_IPIP,        /* "ipip"        */
+		NM_LINK_TYPE_MACSEC,      /* "macsec"      */
+		NM_LINK_TYPE_MACVLAN,     /* "macvlan"     */
+		NM_LINK_TYPE_MACVTAP,     /* "macvtap"     */
+		NM_LINK_TYPE_OPENVSWITCH, /* "openvswitch" */
+		NM_LINK_TYPE_SIT,         /* "sit"         */
+		NM_LINK_TYPE_TEAM,        /* "team"        */
+		NM_LINK_TYPE_TUN,         /* "tun"         */
+		NM_LINK_TYPE_VETH,        /* "veth"        */
+		NM_LINK_TYPE_VLAN,        /* "vlan"        */
+		NM_LINK_TYPE_VRF,         /* "vrf"         */
+		NM_LINK_TYPE_VXLAN,       /* "vxlan"       */
+		NM_LINK_TYPE_WIMAX,       /* "wimax"       */
+		NM_LINK_TYPE_WIREGUARD,   /* "wireguard"   */
+	};
+
+	nm_assert (name);
+
+	if (NM_MORE_ASSERT_ONCE (5)) {
+		int i, j, k;
+
+		for (i = 0; i < G_N_ELEMENTS (LIST); i++) {
+			nm_assert (_link_desc_from_link_type (LIST[i]) == &link_descs[LIST[i]]);
+			nm_assert (link_descs[LIST[i]].rtnl_type);
+			if (i > 0)
+				nm_assert (strcmp (link_descs[LIST[i - 1]].rtnl_type, link_descs[LIST[i]].rtnl_type) < 0);
+		}
+		for (i = 0; i < G_N_ELEMENTS (link_descs); i++) {
+			if (!link_descs[i].rtnl_type)
+				continue;
+			for (j = 0, k = 0; j < G_N_ELEMENTS (LIST); j++)
+				k += (LIST[j] == i);
+			nm_assert (k == 1);
+		}
 	}
-	g_return_val_if_reached (NULL);
+
+	{
+		unsigned imin = 0;
+		unsigned imax = (G_N_ELEMENTS (LIST) - 1);
+		unsigned imid = (G_N_ELEMENTS (LIST) - 1) / 2;
+
+		for (;;) {
+			const int cmp = strcmp (link_descs[LIST[imid]].rtnl_type, name);
+
+			if (G_UNLIKELY (cmp == 0))
+				return LIST[imid];
+
+			if (cmp < 0)
+				imin = imid + 1u;
+			else
+				imax = imid - 1u;
+
+			if (G_UNLIKELY (imin > imax))
+				return NM_LINK_TYPE_NONE;
+
+			imid = (imin + imax) / 2u;
+		}
+	}
+}
+
+static NMLinkType
+_link_type_from_devtype (const char *name) \
+{
+	static const NMLinkType LIST[] = {
+		NM_LINK_TYPE_BNEP,      /* "bluetooth" */
+		NM_LINK_TYPE_BOND,      /* "bond"      */
+		NM_LINK_TYPE_BRIDGE,    /* "bridge"    */
+		NM_LINK_TYPE_PPP,       /* "ppp"       */
+		NM_LINK_TYPE_VLAN,      /* "vlan"      */
+		NM_LINK_TYPE_VRF,       /* "vrf"       */
+		NM_LINK_TYPE_VXLAN,     /* "vxlan"     */
+		NM_LINK_TYPE_WIMAX,     /* "wimax"     */
+		NM_LINK_TYPE_WIREGUARD, /* "wireguard" */
+		NM_LINK_TYPE_WIFI,      /* "wlan"      */
+		NM_LINK_TYPE_WWAN_NET,  /* "wwan"      */
+	};
+
+	nm_assert (name);
+
+	if (NM_MORE_ASSERT_ONCE (5)) {
+		int i, j, k;
+
+		for (i = 0; i < G_N_ELEMENTS (LIST); i++) {
+			nm_assert (_link_desc_from_link_type (LIST[i]) == &link_descs[LIST[i]]);
+			nm_assert (link_descs[LIST[i]].devtype);
+			if (i > 0)
+				nm_assert (strcmp (link_descs[LIST[i - 1]].devtype, link_descs[LIST[i]].devtype) < 0);
+		}
+		for (i = 0; i < G_N_ELEMENTS (link_descs); i++) {
+			if (!link_descs[i].devtype)
+				continue;
+			for (j = 0, k = 0; j < G_N_ELEMENTS (LIST); j++)
+				k += (LIST[j] == i);
+			nm_assert (k == 1);
+		}
+	}
+
+	{
+		unsigned imin = 0;
+		unsigned imax = (G_N_ELEMENTS (LIST) - 1);
+		unsigned imid = (G_N_ELEMENTS (LIST) - 1) / 2;
+
+		for (;;) {
+			const int cmp = strcmp (link_descs[LIST[imid]].devtype, name);
+
+			if (G_UNLIKELY (cmp == 0))
+				return LIST[imid];
+
+			if (cmp < 0)
+				imin = imid + 1u;
+			else
+				imax = imid - 1u;
+
+			if (G_UNLIKELY (imin > imax))
+				return NM_LINK_TYPE_NONE;
+
+			imid = (imin + imax) / 2u;
+		}
+	}
+}
+
+static const char *
+nm_link_type_to_rtnl_type_string (NMLinkType link_type)
+{
+	return _link_desc_from_link_type (link_type)->rtnl_type;
 }
 
 const char *
-nm_link_type_to_string (NMLinkType type)
+nm_link_type_to_string (NMLinkType link_type)
 {
-	int i;
-
-	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-		if (type == linktypes[i].nm_type)
-			return linktypes[i].type_string;
-	}
-	g_return_val_if_reached (NULL);
+	return _link_desc_from_link_type (link_type)->type_string;
 }
 
 /******************************************************************
@@ -896,10 +1029,12 @@ _linktype_get_type (NMPlatform *platform,
                     const NMPObject **link_cached,
                     const char **out_kind)
 {
-	guint i;
+	NMLinkType link_type;
 
 	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (platform);
 	nm_assert (ifname);
+	nm_assert (_link_type_from_devtype ("wlan") == NM_LINK_TYPE_WIFI);
+	nm_assert (_link_type_from_rtnl_type ("bond") == NM_LINK_TYPE_BOND);
 
 	if (completed_from_cache) {
 		const NMPObject *obj;
@@ -907,7 +1042,7 @@ _linktype_get_type (NMPlatform *platform,
 		obj = _lookup_cached_link (cache, ifindex, completed_from_cache, link_cached);
 
 		/* If we detected the link type before, we stick to that
-		 * decision unless the "kind" no "name" changed. If "name" changed,
+		 * decision unless the "kind" or "name" changed. If "name" changed,
 		 * it means that their type may not have been determined correctly
 		 * due to race conditions while accessing sysfs.
 		 *
@@ -938,11 +1073,9 @@ _linktype_get_type (NMPlatform *platform,
 	*out_kind = g_intern_string (kind);
 
 	if (kind) {
-		for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-			if (nm_streq0 (kind, linktypes[i].rtnl_type)) {
-				return linktypes[i].nm_type;
-			}
-		}
+		link_type = _link_type_from_rtnl_type (kind);
+		if (link_type != NM_LINK_TYPE_NONE)
+			return link_type;
 	}
 
 	if (arptype == ARPHRD_LOOPBACK)
@@ -989,16 +1122,16 @@ _linktype_get_type (NMPlatform *platform,
 				return NM_LINK_TYPE_OLPC_MESH;
 
 			devtype = _linktype_read_devtype (dirfd);
-			for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
-				if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
-					if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
+			if (devtype) {
+				link_type = _link_type_from_devtype (devtype);
+				if (link_type != NM_LINK_TYPE_NONE) {
+					if (   link_type == NM_LINK_TYPE_BNEP
+					    && arptype != ARPHRD_ETHER) {
 						/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
 						 * use arptype to distinguish between them.
 						 */
-						if (arptype != ARPHRD_ETHER)
-							continue;
-					}
-					return linktypes[i].nm_type;
+					} else
+						return link_type;
 				}
 			}
 
@@ -1024,13 +1157,14 @@ _linktype_get_type (NMPlatform *platform,
 			 */
 			if (!kind && !devtype)
 				return NM_LINK_TYPE_ETHERNET;
+
 			/* The USB gadget interfaces behave and look like ordinary ethernet devices
 			 * aside from the DEVTYPE. */
-			if (!g_strcmp0 (devtype, "gadget"))
+			if (nm_streq0 (devtype, "gadget"))
 				return NM_LINK_TYPE_ETHERNET;
 
 			/* Distributed Switch Architecture switch chips */
-			if (!g_strcmp0 (devtype, "dsa"))
+			if (nm_streq0 (devtype, "dsa"))
 				return NM_LINK_TYPE_ETHERNET;
 		}
 	}
@@ -4520,7 +4654,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
 	if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
 		goto nla_put_failure;
 
-	if (strcmp (qdisc->kind, "fq_codel") == 0) {
+	if (nm_streq (qdisc->kind, "fq_codel")) {
 		if (qdisc->fq_codel.limit)
 			NLA_PUT_U32 (msg, TCA_FQ_CODEL_LIMIT, qdisc->fq_codel.limit);
 		if (qdisc->fq_codel.flows)

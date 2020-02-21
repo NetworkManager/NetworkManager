@@ -1448,7 +1448,7 @@ nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanag
 gboolean
 nm_platform_link_is_software (NMPlatform *self, int ifindex)
 {
-	return (nm_platform_link_get_type (self, ifindex) & 0x10000);
+	return nm_link_type_is_software (nm_platform_link_get_type (self, ifindex));
 }
 
 /**
@@ -1462,7 +1462,7 @@ nm_platform_link_is_software (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_supports_slaves (NMPlatform *self, int ifindex)
 {
-	return (nm_platform_link_get_type (self, ifindex) & 0x20000);
+	return nm_link_type_supports_slaves (nm_platform_link_get_type (self, ifindex));
 }
 
 /**
