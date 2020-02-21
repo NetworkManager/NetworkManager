@@ -661,17 +661,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	num_grat_arp = _atoi (bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP));
 	num_unsol_na = _atoi (bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA));
 
-	/* Can only set one of miimon and arp_interval */
-	if (miimon > 0 && arp_interval > 0) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("only one of '%s' and '%s' can be set"),
-		             NM_SETTING_BOND_OPTION_MIIMON,
-		             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
-		return FALSE;
-	}
 
 	/* Verify bond mode */
 	mode_orig = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);

@@ -595,6 +595,16 @@ test_bond_verify (void)
 	                     "mode", "0",
 	                     "downdelay", "0",
 	                     "updelay", "0");
+	test_verify_options (TRUE,
+	                     "mode", "0",
+	                     "miimon", "100",
+	                     "arp_ip_target", "1.1.1.1",
+	                     "arp_interval", "200");
+	test_verify_options (TRUE,
+	                     "mode", "0",
+	                     "downdelay", "100",
+	                     "arp_ip_target", "1.1.1.1",
+	                     "arp_interval", "200");
 }
 
 static void
