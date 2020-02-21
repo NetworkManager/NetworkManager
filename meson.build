@@ -179,7 +179,6 @@ if nm_debug
     '-Wfloat-equal',
     '-Wformat-nonliteral',
     '-Wformat-security',
-    '-Wimplicit-fallthrough',
     '-Wimplicit-function-declaration',
     '-Winit-self',
     '-Wlogical-op',
@@ -211,6 +210,28 @@ if nm_debug
     '-Wunknown-attributes',
     '-fno-strict-aliasing',
   ])
+
+  if cc.has_argument('-Wimplicit-fallthrough')
+    if cc.compiles('''
+                   int main(int argc, char **argv) {
+                       int r = 0;
+                       switch (argc) {
+                       case 0:
+                           r++;
+                           /* fall-through */
+                       case 1:
+                           r++;
+                           break;
+                       }
+                       return r;
+                   }
+                   ''',
+                   args: '-Werror=implicit-fallthrough',
+                   name: '-Werror=implicit-fallthrough')
+      common_flags += '-Wimplicit-fallthrough'
+    endif
+  endif
+
 endif
 
 add_project_arguments(common_flags, language: 'c')

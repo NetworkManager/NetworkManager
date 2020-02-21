@@ -70,7 +70,6 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wfloat-equal \
 		      -Wformat-nonliteral \
 		      -Wformat-security \
-		      -Wimplicit-fallthrough \
 		      -Wimplicit-function-declaration \
 		      -Winit-self \
 		      -Wlogical-op \
@@ -135,6 +134,26 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		[static void nm_object_init (NMObject *object) { } ]
 		[static void nm_object_class_init (NMObjectClass *object) { }]
 		[G_DEFINE_TYPE (NMObject, nm_object, G_TYPE_OBJECT)]
+	)
+
+	dnl clang started supporting -Wimplicit-fallthrough, but it does not
+	dnl honor the code comments to suppress the warning. Disable the
+	dnl warning with clang.
+	dnl
+	NM_COMPILER_WARNING([$1], [implicit-fallthrough],
+		[int foo(int a);
+	     int foo(int a) {
+		    int r = 0;
+		    switch (a) {
+		    case 1:
+		       r++;
+		       /* fall-through */
+		    case 2:
+		       r++;
+		       break;
+		    }
+		    return r;
+		 }]
 	)
 
 	eval "AS_TR_SH([$1])='$CFLAGS_MORE_WARNINGS $$1'"
