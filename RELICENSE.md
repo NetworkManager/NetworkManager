@@ -79,6 +79,7 @@ Consent/Disapproval List
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Michael Biebl <biebl@debian.org>
+- [Y] Robert Love <rml@novell.com> (Novell, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
 Copyright Hold by Other Legal Entities
@@ -88,4 +89,5 @@ The contributors above may have contributed the code on behalf of a company
 that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
+- [?] Novell, Inc.
 - [Y] Red Hat, Inc.
