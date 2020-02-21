@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# contrib/scripts/checkpatch-git-post-commit-hook:
+#   Call this script via ".git/hooks/post-commit"
+
+DISABLED=${NM_HOOK_DISABLED:0}
+
+if [ "$DISABLED" == 1 ]; then
+    echo "COMMIT HOOK DISABLED"
+    exit 0
+fi
+
+FILE=contrib/scripts/checkpatch-feature-branch.sh
+if [ -x "$FILE" ]; then
+    "$FILE"
+    exit 0
+fi
+
+FILE=contrib/scripts/checkpatch.pl
+if [ -x "$FILE" ]; then
+    git format-patch -U65535 --stdout -1 | "$FILE"
+    exit 0
+fi
