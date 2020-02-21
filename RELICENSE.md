@@ -53,7 +53,7 @@ Consent/Disapproval about What?
 ===============================
 
 Whether the copyright holder agrees to relicense the code in a3e75f329446a93a61ca4c458a7657bd919f4fe6
-and its parents under terms of LGPL-2.1+.
+and its parent commits under terms of LGPL-2.1+.
 
 
 How to Track Consent/Disapproval?
@@ -82,7 +82,7 @@ Consent/Disapproval List
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
-Copyright Hold by Other Legal Entities
+Copyright Held by Other Legal Entities
 ======================================
 
 The contributors above may have contributed the code on behalf of a company
