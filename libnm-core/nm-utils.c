@@ -1185,7 +1185,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
 		if (adhoc)
 			return FALSE;
-		/* fall through */
+		/* fall-through */
 	case NMU_SEC_STATIC_WEP:
 		g_assert (have_ap);
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
