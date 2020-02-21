@@ -80,6 +80,7 @@ Consent/Disapproval List
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Michael Biebl <biebl@debian.org>
+- [Y] Pavel Šimerda <pavlix@pavlix.net> (Red Hat, Inc.)
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
 - [Y] Sebastien Fabre <sebastien.fabre@sigfox.com> (Sigfox)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
