@@ -290,6 +290,7 @@ libnm_libnm_aux = static_library(
   ],
   dependencies: [
     libnm_core_nm_default_dep,
+    libnm_libnm_core_intern_dep,
     libnm_dep,
   ],
 )
