@@ -96,6 +96,12 @@ t_fedora:30:
   <<: *fedora_install
   image: fedora:30
   <<: *do_build
+  when: manual
+
+t_fedora:31:
+  <<: *fedora_install
+  image: fedora:31
+  <<: *do_build
   variables:
     NM_BUILD_TARBALL: 1
   artifacts:
@@ -105,9 +111,9 @@ t_fedora:30:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
 
-t_fedora:31:
+t_fedora:32:
   <<: *fedora_install
-  image: fedora:31
+  image: fedora:32
   <<: *do_build
   when: manual
 
