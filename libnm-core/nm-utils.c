@@ -1178,7 +1178,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
 		if (adhoc)
 			return FALSE;
-		/* fall through */
+		/* fall-through */
 	case NMU_SEC_STATIC_WEP:
 		if (!have_ap) {
 			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))

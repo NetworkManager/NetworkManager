@@ -548,7 +548,7 @@ connect_context_step (NMModemBroadband *self)
 	switch (ctx->step) {
 	case CONNECT_STEP_FIRST:
 		ctx->step++;
-		/* fall through */
+		/* fall-through */
 
 	case CONNECT_STEP_WAIT_FOR_SIM:
 		if (MODEM_CAPS_3GPP (ctx->caps) && !self->_priv.sim_iface) {
@@ -556,7 +556,7 @@ connect_context_step (NMModemBroadband *self)
 			break;
 		}
 		ctx->step++;
-		/* fall through */
+		/* fall-through */
 
 	case CONNECT_STEP_UNLOCK:
 		if (   MODEM_CAPS_3GPP (ctx->caps)
@@ -577,7 +577,7 @@ connect_context_step (NMModemBroadband *self)
 			break;
 		}
 		ctx->step++;
-		/* fall through */
+		/* fall-through */
 	case CONNECT_STEP_WAIT_FOR_READY: {
 		GError *error = NULL;
 
@@ -605,7 +605,7 @@ connect_context_step (NMModemBroadband *self)
 
 		ctx->step++;
 	}
-		/* fall through */
+		/* fall-through */
 	case CONNECT_STEP_CONNECT:
 		if (!ctx->connect_properties)
 			break;
@@ -639,7 +639,7 @@ connect_context_step (NMModemBroadband *self)
 		}
 
 		ctx->step++;
-		/* fall through */
+		/* fall-through */
 
 	case CONNECT_STEP_LAST:
 		if (self->_priv.ipv4_config || self->_priv.ipv6_config)
