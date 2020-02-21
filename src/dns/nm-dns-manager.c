@@ -1805,7 +1805,7 @@ _check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 	case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN:
 	case NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE:
 		nm_assert_not_reached ();
-		/* fall through */
+		/* fall-through */
 	case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
 		return NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
 	default:
@@ -1825,7 +1825,7 @@ _check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE:
 				nm_assert_not_reached ();
-				/* fall through */
+				/* fall-through */
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:

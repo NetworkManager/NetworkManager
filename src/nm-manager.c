@@ -3335,7 +3335,7 @@ add:
 			_LOGI (LOGD_PLATFORM, "(%s): '%s' plugin not available; creating generic device",
 			       plink->name, nm_link_type_to_string (plink->type));
 			nm_plugin_missing = TRUE;
-			/* fall through */
+			/* fall-through */
 		default:
 			device = nm_device_generic_new (plink, nm_plugin_missing);
 			break;

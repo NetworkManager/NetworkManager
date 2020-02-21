@@ -8097,7 +8097,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
 		if (priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF)
 			break;
-		/* fall through */
+		/* fall-through */
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
 	case NM_DHCP_STATE_TERMINATED:
@@ -8864,7 +8864,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 		 */
 		if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF)
 			break;
-		/* fall through */
+		/* fall-through */
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
 		dhcp6_fail (self, state);
@@ -13906,7 +13906,7 @@ device_ipx_changed (NMPlatform *platform,
 			                                           (gpointer) nmp_object_ref (NMP_OBJECT_UP_CAST (addr)));
 		}
 
-		/* fall through */
+		/* fall-through */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		if (!priv->queued_ip_config_id_6) {
 			priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
