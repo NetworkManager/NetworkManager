@@ -199,6 +199,7 @@ if nm_debug
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',
     '-Wno-sign-compare',
+    '-Wno-tautological-constant-out-of-range-compare',
     '-Wno-unknown-pragmas',
     '-Wno-unused-parameter',
     '-Wparentheses-equality',

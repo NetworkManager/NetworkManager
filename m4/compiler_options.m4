@@ -89,6 +89,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wno-missing-field-initializers \
 		      -Wno-pragmas \
 		      -Wno-sign-compare \
+		      -Wno-tautological-constant-out-of-range-compare \
 		      -Wno-unknown-pragmas \
 		      -Wno-unused-parameter \
 		      ; do
