@@ -187,7 +187,7 @@ t_debian:sid:
 pages:
   stage: deploy
   dependencies:
-    - t_fedora:30
+    - t_fedora:31
   script:
     - mv docs-html public
   artifacts:
