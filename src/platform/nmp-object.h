@@ -511,10 +511,16 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 	case NMP_OBJECT_TYPE_LNK_VXLAN:
 	case NMP_OBJECT_TYPE_LNK_WIREGUARD:
 		return TRUE;
-	default:
-		nm_assert (nmp_class_from_type (obj_type));
+
+	case NMP_OBJECT_TYPE_ROUTING_RULE:
 		return FALSE;
+
+	case NMP_OBJECT_TYPE_UNKNOWN:
+	case __NMP_OBJECT_TYPE_LAST:
+		break;
 	}
+	nm_assert_not_reached ();
+	return FALSE;
 }
 
 #define NMP_OBJECT_CAST_OBJECT(obj) \
