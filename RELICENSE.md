@@ -71,6 +71,7 @@ of this file will give details when/how an entry was added.
 Consent/Disapproval List
 ========================
 
+- [Y] Antoine Faure <antoine.faure@sigfox.com> (Sigfox)
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <dwinship@redhat.com> (Red Hat, Inc.)
@@ -80,6 +81,7 @@ Consent/Disapproval List
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Michael Biebl <biebl@debian.org>
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
+- [Y] Sebastien Fabre <sebastien.fabre@sigfox.com> (Sigfox)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
 Copyright Held by Other Legal Entities
@@ -90,4 +92,6 @@ that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
 - [?] Novell, Inc.
+
 - [Y] Red Hat, Inc.
+- [Y] Sigfox
