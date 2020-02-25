@@ -584,6 +584,154 @@ test_string_table_lookup (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_utils_get_next_realloc_size (void)
+{
+	static const struct {
+		gsize requested;
+		gsize reserved_true;
+		gsize reserved_false;
+	} test_data[] = {
+		{      0,     8,     8 },
+		{      1,     8,     8 },
+		{      8,     8,     8 },
+		{      9,    16,    16 },
+		{     16,    16,    16 },
+		{     17,    32,    32 },
+		{     32,    32,    32 },
+		{     33,    40,    40 },
+		{     40,    40,    40 },
+		{     41,   104,   104 },
+		{    104,   104,   104 },
+		{    105,   232,   232 },
+		{    232,   232,   232 },
+		{    233,   488,   488 },
+		{    488,   488,   488 },
+		{    489,  1000,  1000 },
+		{   1000,  1000,  1000 },
+		{   1001,  2024,  2024 },
+		{   2024,  2024,  2024 },
+		{   2025,  4072,  4072 },
+		{   4072,  4072,  4072 },
+		{   4073,  8168,  8168 },
+		{   8168,  8168,  8168 },
+		{   8169, 12264, 16360 },
+		{  12263, 12264, 16360 },
+		{  12264, 12264, 16360 },
+		{  12265, 16360, 16360 },
+		{  16360, 16360, 16360 },
+		{  16361, 20456, 32744 },
+		{  20456, 20456, 32744 },
+		{  20457, 24552, 32744 },
+		{  24552, 24552, 32744 },
+		{  24553, 28648, 32744 },
+		{  28648, 28648, 32744 },
+		{  28649, 32744, 32744 },
+		{  32744, 32744, 32744 },
+		{  32745, 36840, 65512 },
+		{  36840, 36840, 65512 },
+		{  G_MAXSIZE - 0x1000u,  G_MAXSIZE, G_MAXSIZE },
+		{  G_MAXSIZE - 25u,      G_MAXSIZE, G_MAXSIZE },
+		{  G_MAXSIZE - 24u,      G_MAXSIZE, G_MAXSIZE },
+		{  G_MAXSIZE - 1u,       G_MAXSIZE, G_MAXSIZE },
+		{  G_MAXSIZE,            G_MAXSIZE, G_MAXSIZE },
+	};
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (test_data) + 5000u; i++) {
+		gsize requested0;
+
+		if (i < G_N_ELEMENTS (test_data))
+			requested0 = test_data[i].requested;
+		else {
+			/* find some interesting random values for testing. */
+			switch (nmtst_get_rand_uint32 () % 5) {
+			case 0:
+				requested0 = nmtst_get_rand_size ();
+				break;
+			case 1:
+				/* values close to G_MAXSIZE. */
+				requested0 = G_MAXSIZE - (nmtst_get_rand_uint32 () % 12000u);
+				break;
+			case 2:
+				/* values around G_MAXSIZE/2. */
+				requested0 = (G_MAXSIZE / 2u) + 6000u - (nmtst_get_rand_uint32 () % 12000u);
+				break;
+			case 3:
+				/* values around powers of 2. */
+				requested0 = (((gsize) 1) << (nmtst_get_rand_uint32 () % 64)) + 6000u - (nmtst_get_rand_uint32 () % 12000u);
+				break;
+			case 4:
+				/* values around 4k borders. */
+				requested0 = (nmtst_get_rand_size () & ~((gsize) 0xFFFu)) + 30u - (nmtst_get_rand_uint32 () % 60u);
+				break;
+			default: g_assert_not_reached ();
+			}
+		}
+
+		{
+			const gsize requested = requested0;
+			const gsize reserved_true = nm_utils_get_next_realloc_size (TRUE, requested);
+			const gsize reserved_false = nm_utils_get_next_realloc_size (FALSE, requested);
+
+			g_assert_cmpuint (reserved_true, >, 0);
+			g_assert_cmpuint (reserved_false, >, 0);
+			g_assert_cmpuint (reserved_true, >=, requested);
+			g_assert_cmpuint (reserved_false, >=, requested);
+			g_assert_cmpuint (reserved_false, >=, reserved_true);
+
+			if (i < G_N_ELEMENTS (test_data)) {
+				g_assert_cmpuint (reserved_true, ==, test_data[i].reserved_true);
+				g_assert_cmpuint (reserved_false, ==, test_data[i].reserved_false);
+			}
+
+			/* reserved_false is generally the next power of two - 24. */
+			if (reserved_false == G_MAXSIZE)
+				g_assert_cmpuint (requested, >, G_MAXSIZE / 2u - 24u);
+			else {
+				g_assert_cmpuint (reserved_false, <=, G_MAXSIZE - 24u);
+				if (reserved_false >= 40) {
+					const gsize _pow2 = reserved_false + 24u;
+
+					/* reserved_false must always be a power of two minus 24. */
+					g_assert_cmpuint (_pow2, >=, 64u);
+					g_assert_cmpuint (_pow2, >, requested);
+					g_assert (nm_utils_is_power_of_two (_pow2));
+
+					/* but _pow2/2 must also be smaller than what we requested. */
+					g_assert_cmpuint (_pow2 / 2u - 24u, <, requested);
+				} else {
+					/* smaller values are hard-coded. */
+				}
+			}
+
+			/* reserved_true is generally the next 4k border - 24. */
+			if (reserved_true == G_MAXSIZE)
+				g_assert_cmpuint (requested, >, G_MAXSIZE - 0x1000u - 24u);
+			else {
+				g_assert_cmpuint (reserved_true, <=, G_MAXSIZE - 24u);
+				if (reserved_true > 8168u) {
+					const gsize page_border = reserved_true + 24u;
+
+					/* reserved_true must always be aligned to 4k (minus 24). */
+					g_assert_cmpuint (page_border % 0x1000u, ==, 0);
+					if (requested > 0x1000u - 24u) {
+						/* page_border not be more than 4k above requested. */
+						g_assert_cmpuint (page_border, >=, 0x1000u - 24u);
+						g_assert_cmpuint (page_border - 0x1000u - 24u, <, requested);
+					}
+				} else {
+					/* for smaller sizes, reserved_true and reserved_false are the same. */
+					g_assert_cmpuint (reserved_true, ==, reserved_false);
+				}
+			}
+
+		}
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -603,6 +751,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_utils_bin2hexstr", test_nm_utils_bin2hexstr);
 	g_test_add_func ("/general/test_nm_ref_string", test_nm_ref_string);
 	g_test_add_func ("/general/test_string_table_lookup", test_string_table_lookup);
+	g_test_add_func ("/general/test_nm_utils_get_next_realloc_size", test_nm_utils_get_next_realloc_size);
 
 	return g_test_run ();
 }
