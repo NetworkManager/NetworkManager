@@ -16,7 +16,7 @@ void
 nm_explicit_bzero (void *s, gsize n)
 {
 	/* gracefully handle n == 0. This is important, callers rely on it. */
-	if (n == 0)
+	if (G_UNLIKELY (n == 0))
 		return;
 
 	nm_assert (s);
