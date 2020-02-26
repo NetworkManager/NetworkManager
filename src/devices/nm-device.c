@@ -241,9 +241,9 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_LLDP_NEIGHBORS,
 	PROP_REAL,
 	PROP_SLAVES,
-	PROP_REFRESH_RATE_MS,
-	PROP_TX_BYTES,
-	PROP_RX_BYTES,
+	PROP_STATISTICS_REFRESH_RATE_MS,
+	PROP_STATISTICS_TX_BYTES,
+	PROP_STATISTICS_RX_BYTES,
 	PROP_IP4_CONNECTIVITY,
 	PROP_IP6_CONNECTIVITY,
 	PROP_INTERFACE_FLAGS,
@@ -1868,11 +1868,11 @@ _stats_update_counters (NMDevice *self,
 
 	if (priv->stats.tx_bytes != tx_bytes) {
 		priv->stats.tx_bytes = tx_bytes;
-		_notify (self, PROP_TX_BYTES);
+		_notify (self, PROP_STATISTICS_TX_BYTES);
 	}
 	if (priv->stats.rx_bytes != rx_bytes) {
 		priv->stats.rx_bytes = rx_bytes;
-		_notify (self, PROP_RX_BYTES);
+		_notify (self, PROP_STATISTICS_RX_BYTES);
 	}
 }
 
@@ -1929,7 +1929,7 @@ _stats_set_refresh_rate (NMDevice *self, guint refresh_rate_ms)
 
 	old_rate = priv->stats.refresh_rate_ms;
 	priv->stats.refresh_rate_ms = refresh_rate_ms;
-	_notify (self, PROP_REFRESH_RATE_MS);
+	_notify (self, PROP_STATISTICS_REFRESH_RATE_MS);
 
 	_LOGD (LOGD_DEVICE, "stats: set refresh to %u ms", priv->stats.refresh_rate_ms);
 
@@ -17339,7 +17339,7 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->hw_addr_perm = g_value_dup_string (value);
 		break;
-	case PROP_REFRESH_RATE_MS:
+	case PROP_STATISTICS_REFRESH_RATE_MS:
 		/* via D-Bus */
 		_stats_set_refresh_rate (self, g_value_get_uint (value));
 		break;
@@ -17525,13 +17525,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, slave_list);
 		break;
 	}
-	case PROP_REFRESH_RATE_MS:
+	case PROP_STATISTICS_REFRESH_RATE_MS:
 		g_value_set_uint (value, priv->stats.refresh_rate_ms);
 		break;
-	case PROP_TX_BYTES:
+	case PROP_STATISTICS_TX_BYTES:
 		g_value_set_uint64 (value, priv->stats.tx_bytes);
 		break;
-	case PROP_RX_BYTES:
+	case PROP_STATISTICS_RX_BYTES:
 		g_value_set_uint64 (value, priv->stats.rx_bytes);
 		break;
 	case PROP_IP4_CONNECTIVITY:
@@ -17882,17 +17882,17 @@ nm_device_class_init (NMDeviceClass *klass)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	obj_properties[PROP_REFRESH_RATE_MS] =
+	obj_properties[PROP_STATISTICS_REFRESH_RATE_MS] =
 	    g_param_spec_uint (NM_DEVICE_STATISTICS_REFRESH_RATE_MS, "", "",
 	                       0, UINT32_MAX, 0,
 	                       G_PARAM_READWRITE | /* via D-Bus */
 	                       G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_TX_BYTES] =
+	obj_properties[PROP_STATISTICS_TX_BYTES] =
 	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_TX_BYTES, "", "",
 	                         0, UINT64_MAX, 0,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_RX_BYTES] =
+	obj_properties[PROP_STATISTICS_RX_BYTES] =
 	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_RX_BYTES, "", "",
 	                         0, UINT64_MAX, 0,
 	                         G_PARAM_READABLE |
