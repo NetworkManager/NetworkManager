@@ -17284,10 +17284,6 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->driver_version = g_value_dup_string (value);
 		break;
-	case PROP_FIRMWARE_VERSION:
-		/* construct-only */
-		priv->firmware_version = g_value_dup_string (value);
-		break;
 	case PROP_MANAGED:
 		if (nm_device_is_real (self)) {
 			gboolean managed;
@@ -17725,7 +17721,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_FIRMWARE_VERSION] =
 	    g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_CAPABILITIES] =
 	    g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
