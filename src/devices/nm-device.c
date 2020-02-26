@@ -16992,6 +16992,297 @@ _activation_func_to_string (ActivationHandleFunc func)
 /*****************************************************************************/
 
 static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GVariantBuilder array_builder;
+
+	switch (prop_id) {
+	case PROP_UDI:
+		/* UDI is (depending on the device type) a path to sysfs and can contain
+		 * non-UTF-8.
+		 *   ip link add name $'d\xccf\\c' type dummy  */
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->udi,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
+		break;
+	case PROP_IFACE:
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->iface,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		break;
+	case PROP_IP_IFACE:
+		if (ip_config_valid (priv->state)) {
+			g_value_take_string (value,
+			                     nm_utils_str_utf8safe_escape_cp (nm_device_get_ip_iface (self),
+			                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		} else
+			g_value_set_string (value, NULL);
+		break;
+	case PROP_IFINDEX:
+		g_value_set_int (value, priv->ifindex);
+		break;
+	case PROP_DRIVER:
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->driver,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		break;
+	case PROP_DRIVER_VERSION:
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->driver_version,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		break;
+	case PROP_FIRMWARE_VERSION:
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->firmware_version,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
+		break;
+	case PROP_IP4_ADDRESS:
+		g_value_set_uint (value, priv->ip4_address);
+		break;
+	case PROP_CARRIER:
+		g_value_set_boolean (value, priv->carrier);
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, priv->mtu);
+		break;
+	case PROP_IP4_CONFIG:
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip_config_4 : NULL);
+		break;
+	case PROP_DHCP4_CONFIG:
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_4.config : NULL);
+		break;
+	case PROP_IP6_CONFIG:
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip_config_6 : NULL);
+		break;
+	case PROP_DHCP6_CONFIG:
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_6.config : NULL);
+		break;
+	case PROP_STATE:
+		g_value_set_uint (value, priv->state);
+		break;
+	case PROP_STATE_REASON:
+		g_value_take_variant (value,
+		                      g_variant_new ("(uu)", priv->state, priv->state_reason));
+		break;
+	case PROP_ACTIVE_CONNECTION:
+		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->act_request));
+		break;
+	case PROP_DEVICE_TYPE:
+		g_value_set_uint (value, priv->type);
+		break;
+	case PROP_LINK_TYPE:
+		g_value_set_uint (value, priv->link_type);
+		break;
+	case PROP_MANAGED:
+		/* The managed state exposed on D-Bus only depends on the current device state alone. */
+		g_value_set_boolean (value, nm_device_get_state (self) > NM_DEVICE_STATE_UNMANAGED);
+		break;
+	case PROP_AUTOCONNECT:
+		g_value_set_boolean (value,
+		                     nm_device_autoconnect_blocked_get (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL)
+		                       ? FALSE
+		                       : TRUE);
+		break;
+	case PROP_FIRMWARE_MISSING:
+		g_value_set_boolean (value, priv->firmware_missing);
+		break;
+	case PROP_NM_PLUGIN_MISSING:
+		g_value_set_boolean (value, priv->nm_plugin_missing);
+		break;
+	case PROP_TYPE_DESC:
+		g_value_set_string (value, priv->type_desc);
+		break;
+	case PROP_RFKILL_TYPE:
+		g_value_set_uint (value, priv->rfkill_type);
+		break;
+	case PROP_AVAILABLE_CONNECTIONS:
+		nm_dbus_utils_g_value_set_object_path_from_hash (value,
+		                                                 priv->available_connections,
+		                                                 TRUE);
+		break;
+	case PROP_PHYSICAL_PORT_ID:
+		g_value_set_string (value, priv->physical_port_id);
+		break;
+	case PROP_MASTER:
+		g_value_set_object (value, nm_device_get_master (self));
+		break;
+	case PROP_PARENT:
+		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->parent_device));
+		break;
+	case PROP_HW_ADDRESS:
+		g_value_set_string (value, priv->hw_addr);
+		break;
+	case PROP_PERM_HW_ADDRESS: {
+		const char *perm_hw_addr;
+		gboolean perm_hw_addr_is_fake;
+
+		perm_hw_addr = nm_device_get_permanent_hw_address_full (self, FALSE, &perm_hw_addr_is_fake);
+		/* this property is exposed on D-Bus for NMDeviceEthernet and NMDeviceWifi. */
+		g_value_set_string (value, perm_hw_addr && !perm_hw_addr_is_fake ? perm_hw_addr : NULL);
+		break;
+	}
+	case PROP_HAS_PENDING_ACTION:
+		g_value_set_boolean (value, nm_device_has_pending_action (self));
+		break;
+	case PROP_METERED:
+		g_value_set_uint (value, priv->metered);
+		break;
+	case PROP_LLDP_NEIGHBORS:
+		if (priv->lldp_listener)
+			g_value_set_variant (value, nm_lldp_listener_get_neighbors (priv->lldp_listener));
+		else {
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
+		}
+		break;
+	case PROP_REAL:
+		g_value_set_boolean (value, nm_device_is_real (self));
+		break;
+	case PROP_SLAVES: {
+		CList *slave_iter;
+		char **slave_list;
+		gsize i, n;
+
+		n = c_list_length (&priv->slaves);
+		slave_list = g_new (char *, n + 1);
+		i = 0;
+		c_list_for_each (slave_iter, &priv->slaves) {
+			SlaveInfo *info = c_list_entry (slave_iter, SlaveInfo, lst_slave);
+			const char *path;
+
+			if (!NM_DEVICE_GET_PRIVATE (info->slave)->is_enslaved)
+				continue;
+			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (info->slave));
+			if (path)
+				slave_list[i++] = g_strdup (path);
+		}
+		nm_assert (i <= n);
+		slave_list[i] = NULL;
+		g_value_take_boxed (value, slave_list);
+		break;
+	}
+	case PROP_STATISTICS_REFRESH_RATE_MS:
+		g_value_set_uint (value, priv->stats.refresh_rate_ms);
+		break;
+	case PROP_STATISTICS_TX_BYTES:
+		g_value_set_uint64 (value, priv->stats.tx_bytes);
+		break;
+	case PROP_STATISTICS_RX_BYTES:
+		g_value_set_uint64 (value, priv->stats.rx_bytes);
+		break;
+	case PROP_IP4_CONNECTIVITY:
+		g_value_set_uint (value, priv->concheck_x[1].state);
+		break;
+	case PROP_IP6_CONNECTIVITY:
+		g_value_set_uint (value, priv->concheck_x[0].state);
+		break;
+	case PROP_INTERFACE_FLAGS:
+		g_value_set_uint (value, priv->interface_flags);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMDevice *self = (NMDevice *) object;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_UDI:
+		/* construct-only */
+		priv->udi = g_value_dup_string (value);
+		break;
+	case PROP_IFACE:
+		/* construct-only */
+		priv->iface = g_value_dup_string (value);
+		break;
+	case PROP_DRIVER:
+		/* construct-only */
+		priv->driver = g_value_dup_string (value);
+		break;
+	case PROP_MANAGED:
+		/* via D-Bus */
+		if (nm_device_is_real (self)) {
+			gboolean managed;
+			NMDeviceStateReason reason;
+
+			managed = g_value_get_boolean (value);
+			if (managed) {
+				reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+				if (NM_IN_SET_TYPED (NMDeviceSysIfaceState,
+				                     priv->sys_iface_state,
+				                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
+				                     NM_DEVICE_SYS_IFACE_STATE_REMOVED))
+					nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+			} else {
+				reason = NM_DEVICE_STATE_REASON_REMOVED;
+				nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
+			}
+			nm_device_set_unmanaged_by_flags (self,
+			                                  NM_UNMANAGED_USER_EXPLICIT,
+			                                  !managed,
+			                                  reason);
+		}
+		break;
+	case PROP_AUTOCONNECT:
+		/* via D-Bus */
+		if (g_value_get_boolean (value))
+			nm_device_autoconnect_blocked_unset (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
+		else
+			nm_device_autoconnect_blocked_set (self, NM_DEVICE_AUTOCONNECT_BLOCKED_USER);
+		break;
+	case PROP_NM_PLUGIN_MISSING:
+		/* construct-only */
+		priv->nm_plugin_missing = g_value_get_boolean (value);
+		break;
+	case PROP_DEVICE_TYPE:
+		/* construct-only */
+		nm_assert (priv->type == NM_DEVICE_TYPE_UNKNOWN);
+		priv->type = g_value_get_uint (value);
+		nm_assert (priv->type > NM_DEVICE_TYPE_UNKNOWN);
+		nm_assert (priv->type <= NM_DEVICE_TYPE_VRF);
+		break;
+	case PROP_LINK_TYPE:
+		/* construct-only */
+		nm_assert (priv->link_type == NM_LINK_TYPE_NONE);
+		priv->link_type = g_value_get_uint (value);
+		break;
+	case PROP_TYPE_DESC:
+		/* construct-only */
+		priv->type_desc = g_value_dup_string (value);
+		break;
+	case PROP_RFKILL_TYPE:
+		/* construct-only */
+		priv->rfkill_type = g_value_get_uint (value);
+		break;
+	case PROP_PERM_HW_ADDRESS:
+		/* construct-only */
+		priv->hw_addr_perm = g_value_dup_string (value);
+		break;
+	case PROP_STATISTICS_REFRESH_RATE_MS:
+		/* via D-Bus */
+		_stats_set_refresh_rate (self, g_value_get_uint (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
 nm_device_init (NMDevice *self)
 {
 	NMDevicePrivate *priv;
@@ -17260,294 +17551,7 @@ finalize (GObject *object)
 	g_object_unref (priv->netns);
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMDevice *self = (NMDevice *) object;
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	switch (prop_id) {
-	case PROP_UDI:
-		/* construct-only */
-		priv->udi = g_value_dup_string (value);
-		break;
-	case PROP_IFACE:
-		/* construct-only */
-		priv->iface = g_value_dup_string (value);
-		break;
-	case PROP_DRIVER:
-		/* construct-only */
-		priv->driver = g_value_dup_string (value);
-		break;
-	case PROP_MANAGED:
-		/* via D-Bus */
-		if (nm_device_is_real (self)) {
-			gboolean managed;
-			NMDeviceStateReason reason;
-
-			managed = g_value_get_boolean (value);
-			if (managed) {
-				reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-				if (NM_IN_SET_TYPED (NMDeviceSysIfaceState,
-				                     priv->sys_iface_state,
-				                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-				                     NM_DEVICE_SYS_IFACE_STATE_REMOVED))
-					nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
-			} else {
-				reason = NM_DEVICE_STATE_REASON_REMOVED;
-				nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
-			}
-			nm_device_set_unmanaged_by_flags (self,
-			                                  NM_UNMANAGED_USER_EXPLICIT,
-			                                  !managed,
-			                                  reason);
-		}
-		break;
-	case PROP_AUTOCONNECT:
-		/* via D-Bus */
-		if (g_value_get_boolean (value))
-			nm_device_autoconnect_blocked_unset (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
-		else
-			nm_device_autoconnect_blocked_set (self, NM_DEVICE_AUTOCONNECT_BLOCKED_USER);
-		break;
-	case PROP_NM_PLUGIN_MISSING:
-		/* construct-only */
-		priv->nm_plugin_missing = g_value_get_boolean (value);
-		break;
-	case PROP_DEVICE_TYPE:
-		/* construct-only */
-		nm_assert (priv->type == NM_DEVICE_TYPE_UNKNOWN);
-		priv->type = g_value_get_uint (value);
-		nm_assert (priv->type > NM_DEVICE_TYPE_UNKNOWN);
-		nm_assert (priv->type <= NM_DEVICE_TYPE_VRF);
-		break;
-	case PROP_LINK_TYPE:
-		/* construct-only */
-		nm_assert (priv->link_type == NM_LINK_TYPE_NONE);
-		priv->link_type = g_value_get_uint (value);
-		break;
-	case PROP_TYPE_DESC:
-		/* construct-only */
-		priv->type_desc = g_value_dup_string (value);
-		break;
-	case PROP_RFKILL_TYPE:
-		/* construct-only */
-		priv->rfkill_type = g_value_get_uint (value);
-		break;
-	case PROP_PERM_HW_ADDRESS:
-		/* construct-only */
-		priv->hw_addr_perm = g_value_dup_string (value);
-		break;
-	case PROP_STATISTICS_REFRESH_RATE_MS:
-		/* via D-Bus */
-		_stats_set_refresh_rate (self, g_value_get_uint (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDevice *self = NM_DEVICE (object);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GVariantBuilder array_builder;
-
-	switch (prop_id) {
-	case PROP_UDI:
-		/* UDI is (depending on the device type) a path to sysfs and can contain
-		 * non-UTF-8.
-		 *   ip link add name $'d\xccf\\c' type dummy  */
-		g_value_take_string (value,
-		                     nm_utils_str_utf8safe_escape_cp (priv->udi,
-		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
-		break;
-	case PROP_IFACE:
-		g_value_take_string (value,
-		                     nm_utils_str_utf8safe_escape_cp (priv->iface,
-		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
-		break;
-	case PROP_IP_IFACE:
-		if (ip_config_valid (priv->state)) {
-			g_value_take_string (value,
-			                     nm_utils_str_utf8safe_escape_cp (nm_device_get_ip_iface (self),
-			                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
-		} else
-			g_value_set_string (value, NULL);
-		break;
-	case PROP_IFINDEX:
-		g_value_set_int (value, priv->ifindex);
-		break;
-	case PROP_DRIVER:
-		g_value_take_string (value,
-		                     nm_utils_str_utf8safe_escape_cp (priv->driver,
-		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
-		break;
-	case PROP_DRIVER_VERSION:
-		g_value_take_string (value,
-		                     nm_utils_str_utf8safe_escape_cp (priv->driver_version,
-		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
-		break;
-	case PROP_FIRMWARE_VERSION:
-		g_value_take_string (value,
-		                     nm_utils_str_utf8safe_escape_cp (priv->firmware_version,
-		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
-		break;
-	case PROP_CAPABILITIES:
-		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
-		break;
-	case PROP_IP4_ADDRESS:
-		g_value_set_uint (value, priv->ip4_address);
-		break;
-	case PROP_CARRIER:
-		g_value_set_boolean (value, priv->carrier);
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, priv->mtu);
-		break;
-	case PROP_IP4_CONFIG:
-		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip_config_4 : NULL);
-		break;
-	case PROP_DHCP4_CONFIG:
-		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_4.config : NULL);
-		break;
-	case PROP_IP6_CONFIG:
-		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip_config_6 : NULL);
-		break;
-	case PROP_DHCP6_CONFIG:
-		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp_data_6.config : NULL);
-		break;
-	case PROP_STATE:
-		g_value_set_uint (value, priv->state);
-		break;
-	case PROP_STATE_REASON:
-		g_value_take_variant (value,
-		                      g_variant_new ("(uu)", priv->state, priv->state_reason));
-		break;
-	case PROP_ACTIVE_CONNECTION:
-		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->act_request));
-		break;
-	case PROP_DEVICE_TYPE:
-		g_value_set_uint (value, priv->type);
-		break;
-	case PROP_LINK_TYPE:
-		g_value_set_uint (value, priv->link_type);
-		break;
-	case PROP_MANAGED:
-		/* The managed state exposed on D-Bus only depends on the current device state alone. */
-		g_value_set_boolean (value, nm_device_get_state (self) > NM_DEVICE_STATE_UNMANAGED);
-		break;
-	case PROP_AUTOCONNECT:
-		g_value_set_boolean (value,
-		                     nm_device_autoconnect_blocked_get (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL)
-		                       ? FALSE
-		                       : TRUE);
-		break;
-	case PROP_FIRMWARE_MISSING:
-		g_value_set_boolean (value, priv->firmware_missing);
-		break;
-	case PROP_NM_PLUGIN_MISSING:
-		g_value_set_boolean (value, priv->nm_plugin_missing);
-		break;
-	case PROP_TYPE_DESC:
-		g_value_set_string (value, priv->type_desc);
-		break;
-	case PROP_RFKILL_TYPE:
-		g_value_set_uint (value, priv->rfkill_type);
-		break;
-	case PROP_AVAILABLE_CONNECTIONS:
-		nm_dbus_utils_g_value_set_object_path_from_hash (value,
-		                                                 priv->available_connections,
-		                                                 TRUE);
-		break;
-	case PROP_PHYSICAL_PORT_ID:
-		g_value_set_string (value, priv->physical_port_id);
-		break;
-	case PROP_MASTER:
-		g_value_set_object (value, nm_device_get_master (self));
-		break;
-	case PROP_PARENT:
-		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->parent_device));
-		break;
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, priv->hw_addr);
-		break;
-	case PROP_PERM_HW_ADDRESS: {
-		const char *perm_hw_addr;
-		gboolean perm_hw_addr_is_fake;
-
-		perm_hw_addr = nm_device_get_permanent_hw_address_full (self, FALSE, &perm_hw_addr_is_fake);
-		/* this property is exposed on D-Bus for NMDeviceEthernet and NMDeviceWifi. */
-		g_value_set_string (value, perm_hw_addr && !perm_hw_addr_is_fake ? perm_hw_addr : NULL);
-		break;
-	}
-	case PROP_HAS_PENDING_ACTION:
-		g_value_set_boolean (value, nm_device_has_pending_action (self));
-		break;
-	case PROP_METERED:
-		g_value_set_uint (value, priv->metered);
-		break;
-	case PROP_LLDP_NEIGHBORS:
-		if (priv->lldp_listener)
-			g_value_set_variant (value, nm_lldp_listener_get_neighbors (priv->lldp_listener));
-		else {
-			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
-			g_value_take_variant (value, g_variant_builder_end (&array_builder));
-		}
-		break;
-	case PROP_REAL:
-		g_value_set_boolean (value, nm_device_is_real (self));
-		break;
-	case PROP_SLAVES: {
-		CList *slave_iter;
-		char **slave_list;
-		gsize i, n;
-
-		n = c_list_length (&priv->slaves);
-		slave_list = g_new (char *, n + 1);
-		i = 0;
-		c_list_for_each (slave_iter, &priv->slaves) {
-			SlaveInfo *info = c_list_entry (slave_iter, SlaveInfo, lst_slave);
-			const char *path;
-
-			if (!NM_DEVICE_GET_PRIVATE (info->slave)->is_enslaved)
-				continue;
-			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (info->slave));
-			if (path)
-				slave_list[i++] = g_strdup (path);
-		}
-		nm_assert (i <= n);
-		slave_list[i] = NULL;
-		g_value_take_boxed (value, slave_list);
-		break;
-	}
-	case PROP_STATISTICS_REFRESH_RATE_MS:
-		g_value_set_uint (value, priv->stats.refresh_rate_ms);
-		break;
-	case PROP_STATISTICS_TX_BYTES:
-		g_value_set_uint64 (value, priv->stats.tx_bytes);
-		break;
-	case PROP_STATISTICS_RX_BYTES:
-		g_value_set_uint64 (value, priv->stats.rx_bytes);
-		break;
-	case PROP_IP4_CONNECTIVITY:
-		g_value_set_uint (value, priv->concheck_x[1].state);
-		break;
-	case PROP_IP6_CONNECTIVITY:
-		g_value_set_uint (value, priv->concheck_x[0].state);
-		break;
-	case PROP_INTERFACE_FLAGS:
-		g_value_set_uint (value, priv->interface_flags);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
+/*****************************************************************************/
 
 static const GDBusSignalInfo signal_info_state_changed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
 	"StateChanged",
