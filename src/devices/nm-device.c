@@ -17742,22 +17742,22 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_IP4_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_IP4_CONFIG, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE |
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DHCP4_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_DHCP4_CONFIG, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE |
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP6_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_IP6_CONFIG, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE |
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DHCP6_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_DHCP6_CONFIG, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE |
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_STATE] =
 	    g_param_spec_uint (NM_DEVICE_STATE, "", "",
