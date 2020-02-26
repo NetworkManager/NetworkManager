@@ -2154,26 +2154,29 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 
 	/* Send blobs first; otherwise jump to selecting the network */
 	blobs = nm_supplicant_config_get_blobs (priv->assoc_data->cfg);
-	priv->assoc_data->blobs_left = g_hash_table_size (blobs);
+	priv->assoc_data->blobs_left =   blobs
+	                               ? g_hash_table_size (blobs)
+	                               : 0u;
 
 	_LOGT ("assoc[%p]: network added (%s) (%u blobs left)", priv->assoc_data, priv->net_path, priv->assoc_data->blobs_left);
 
-	if (priv->assoc_data->blobs_left == 0)
+	if (priv->assoc_data->blobs_left == 0) {
 		assoc_call_select_network (self);
-	else {
-		g_hash_table_iter_init (&iter, blobs);
-		while (g_hash_table_iter_next (&iter, (gpointer) &blob_name, (gpointer) &blob_data)) {
-			g_dbus_proxy_call (priv->iface_proxy,
-			                   "AddBlob",
-			                   g_variant_new ("(s@ay)",
-			                                  blob_name,
-			                                  nm_utils_gbytes_to_variant_ay (blob_data)),
-			                   G_DBUS_CALL_FLAGS_NONE,
-			                   -1,
-			                   priv->assoc_data->cancellable,
-			                   (GAsyncReadyCallback) assoc_add_blob_cb,
-			                   self);
-		}
+		return;
+	}
+
+	g_hash_table_iter_init (&iter, blobs);
+	while (g_hash_table_iter_next (&iter, (gpointer) &blob_name, (gpointer) &blob_data)) {
+		g_dbus_proxy_call (priv->iface_proxy,
+		                   "AddBlob",
+		                   g_variant_new ("(s@ay)",
+		                                  blob_name,
+		                                  nm_utils_gbytes_to_variant_ay (blob_data)),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   priv->assoc_data->cancellable,
+		                   (GAsyncReadyCallback) assoc_add_blob_cb,
+		                   self);
 	}
 }
 

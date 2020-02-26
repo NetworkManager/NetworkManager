@@ -88,10 +88,6 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	                                      g_free,
 	                                      (GDestroyNotify) config_option_free);
 
-	priv->blobs = g_hash_table_new_full (nm_str_hash, g_str_equal,
-	                                     g_free,
-	                                     (GDestroyNotify) g_bytes_unref);
-
 	priv->ap_scan = 1;
 	priv->dispose_has_run = FALSE;
 }
@@ -224,6 +220,11 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, opt->value);
 
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
+	if (!priv->blobs) {
+		priv->blobs = g_hash_table_new_full (nm_str_hash, g_str_equal,
+		                                     g_free,
+		                                     (GDestroyNotify) g_bytes_unref);
+	}
 	g_hash_table_insert (priv->blobs,
 	                     g_strdup (blobid),
 	                     g_bytes_ref (value));
@@ -259,7 +260,7 @@ nm_supplicant_config_finalize (GObject *object)
 	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (object);
 
 	g_hash_table_destroy (priv->config);
-	g_hash_table_destroy (priv->blobs);
+	nm_clear_pointer (&priv->blobs, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_supplicant_config_parent_class)->finalize (object);
 }
