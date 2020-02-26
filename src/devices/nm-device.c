@@ -17281,6 +17281,7 @@ set_property (GObject *object, guint prop_id,
 		priv->driver = g_value_dup_string (value);
 		break;
 	case PROP_MANAGED:
+		/* via D-Bus */
 		if (nm_device_is_real (self)) {
 			gboolean managed;
 			NMDeviceStateReason reason;
@@ -17304,6 +17305,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_AUTOCONNECT:
+		/* via D-Bus */
 		if (g_value_get_boolean (value))
 			nm_device_autoconnect_blocked_unset (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
 		else
@@ -17338,6 +17340,7 @@ set_property (GObject *object, guint prop_id,
 		priv->hw_addr_perm = g_value_dup_string (value);
 		break;
 	case PROP_REFRESH_RATE_MS:
+		/* via D-Bus */
 		_stats_set_refresh_rate (self, g_value_get_uint (value));
 		break;
 	default:
@@ -17788,12 +17791,12 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_MANAGED] =
 	    g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
 	                          FALSE,
-	                          G_PARAM_READWRITE |
+	                          G_PARAM_READWRITE | /* via D-Bus */
 	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AUTOCONNECT] =
 	    g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
 	                          DEFAULT_AUTOCONNECT,
-	                          G_PARAM_READWRITE |
+	                          G_PARAM_READWRITE | /* via D-Bus */
 	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_FIRMWARE_MISSING] =
 	    g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
@@ -17882,7 +17885,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_REFRESH_RATE_MS] =
 	    g_param_spec_uint (NM_DEVICE_STATISTICS_REFRESH_RATE_MS, "", "",
 	                       0, UINT32_MAX, 0,
-	                       G_PARAM_READWRITE |
+	                       G_PARAM_READWRITE | /* via D-Bus */
 	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_TX_BYTES] =
 	    g_param_spec_uint64 (NM_DEVICE_STATISTICS_TX_BYTES, "", "",
