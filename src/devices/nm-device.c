@@ -17317,10 +17317,6 @@ set_property (GObject *object, guint prop_id,
 		else
 			nm_device_autoconnect_blocked_set (self, NM_DEVICE_AUTOCONNECT_BLOCKED_USER);
 		break;
-	case PROP_FIRMWARE_MISSING:
-		/* construct-only */
-		priv->firmware_missing = g_value_get_boolean (value);
-		break;
 	case PROP_NM_PLUGIN_MISSING:
 		/* construct-only */
 		priv->nm_plugin_missing = g_value_get_boolean (value);
@@ -17810,7 +17806,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_FIRMWARE_MISSING] =
 	    g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
 	                          FALSE,
-	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NM_PLUGIN_MISSING] =
 	    g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
