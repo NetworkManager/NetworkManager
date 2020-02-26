@@ -4126,8 +4126,47 @@ nm_utils_ifname_valid_kernel (const char *name, GError **error)
 	return FALSE;
 }
 
+/*****************************************************************************/
+
 static gboolean
-_nm_utils_ifname_valid_ovs (const char* name, GError **error)
+_nm_utils_ifname_valid_kernel (const char *name, GError **error)
+{
+	if (!nm_utils_ifname_valid_kernel (name, error))
+		return FALSE;
+
+	if (strchr (name, '%')) {
+		/* Kernel's dev_valid_name() accepts (almost) any binary up to 15 chars.
+		 * However, '%' is treated special as a format specifier. Try
+		 *
+		 *   ip link add 'dummy%dx' type dummy
+		 *
+		 * Don't allow that for "connection.interface-name", which either
+		 * matches an existing netdev name (thus, it cannot have a '%') or
+		 * is used to configure a name (in which case we don't want kernel
+		 * to replace the format specifier). */
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("'%%' is not allowed in interface names"));
+		return FALSE;
+	}
+
+	if (NM_IN_STRSET (name, "all",
+	                        "default",
+	                        "bonding_masters")) {
+		/* Certain names are not allowed. The "all" and "default" names are reserved
+		 * due to their directories in "/proc/sys/net/ipv4/conf/" and "/proc/sys/net/ipv6/conf/".
+		 *
+		 * Also, there is "/sys/class/net/bonding_masters" file.
+		 */
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    _("'%s' is not allowed as interface name"), name);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+_nm_utils_ifname_valid_ovs (const char *name, GError **error)
 {
 	const char *ch;
 
@@ -4169,9 +4208,23 @@ nm_utils_ifname_valid (const char* name,
 
 	switch (type) {
 	case NMU_IFACE_KERNEL:
-		return nm_utils_ifname_valid_kernel (name, error);
+		return _nm_utils_ifname_valid_kernel (name, error);
 	case NMU_IFACE_OVS:
 		return _nm_utils_ifname_valid_ovs (name, error);
+	case NMU_IFACE_OVS_AND_KERNEL:
+		return    _nm_utils_ifname_valid_kernel (name, error)
+		       && _nm_utils_ifname_valid_ovs (name, error);
+	case NMU_IFACE_ANY: {
+		gs_free_error GError *local = NULL;
+
+		if (_nm_utils_ifname_valid_kernel (name, error ? &local : NULL))
+			return TRUE;
+		if (_nm_utils_ifname_valid_ovs (name, NULL))
+			return TRUE;
+		if (error)
+			g_propagate_error (error, g_steal_pointer (&local));
+		return FALSE;
+	}
 	}
 
 	g_return_val_if_reached (FALSE);

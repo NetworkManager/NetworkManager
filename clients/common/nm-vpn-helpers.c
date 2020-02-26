@@ -368,13 +368,13 @@ nm_vpn_wireguard_import (const char *filename,
 			memcpy (ifname, cstr, len);
 			ifname[len] = '\0';
 
-			if (nm_utils_ifname_valid_kernel (ifname, NULL))
+			if (nm_utils_ifname_valid (ifname, NMU_IFACE_KERNEL, NULL))
 				ifname_valid = TRUE;
 		}
 	}
 	if (!ifname_valid) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN,
-		                            _("The WireGuard config file must be a valid interface name followed by \".conf\""));
+		                            _("The name of the WireGuard config must be a valid interface name followed by \".conf\""));
 		return FALSE;
 	}
 

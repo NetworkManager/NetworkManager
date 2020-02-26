@@ -399,7 +399,9 @@ make_connection_setting (const char *file,
 	if (v) {
 		GError *error = NULL;
 
-		if (nm_utils_ifname_valid_kernel (v, &error)) {
+		/* Only validate for NMU_IFACE_KERNEL, because ifcfg plugin anyway
+		 * doesn't support OVS types. */
+		if (nm_utils_ifname_valid (v, NMU_IFACE_KERNEL, &error)) {
 			g_object_set (s_con,
 			              NM_SETTING_CONNECTION_INTERFACE_NAME, v,
 			              NULL);

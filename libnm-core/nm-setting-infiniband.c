@@ -211,39 +211,23 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		const char *interface_name = nm_setting_connection_get_interface_name (s_con);
-		GError *tmp_error = NULL;
 
-		if (!interface_name)
-			;
-		else if (!nm_utils_ifname_valid_kernel (interface_name, &tmp_error)) {
-			/* report the error for NMSettingConnection:interface-name, because
-			 * it's that property that is invalid -- although we currently verify()
-			 * NMSettingInfiniband.
-			 **/
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "'%s': %s", interface_name, tmp_error->message);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-			g_error_free (tmp_error);
-			return FALSE;
-		} else {
-			if (priv->p_key != -1) {
-				if (!priv->virtual_iface_name)
-					priv->virtual_iface_name = g_strdup_printf ("%s.%04x", priv->parent, priv->p_key);
+		if (   interface_name
+		    && priv->p_key != -1) {
+			if (!priv->virtual_iface_name)
+				priv->virtual_iface_name = g_strdup_printf ("%s.%04x", priv->parent, priv->p_key);
 
-				if (strcmp (interface_name, priv->virtual_iface_name) != 0) {
-					/* We don't support renaming software infiniband devices. Later we might, but
-					 * for now just reject such connections.
-					 **/
-					g_set_error (error,
-					             NM_CONNECTION_ERROR,
-					             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-					             _("interface name of software infiniband device must be '%s' or unset (instead it is '%s')"),
-					             priv->virtual_iface_name, interface_name);
-					g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-					return FALSE;
-				}
+			if (strcmp (interface_name, priv->virtual_iface_name) != 0) {
+				/* We don't support renaming software infiniband devices. Later we might, but
+				 * for now just reject such connections.
+				 **/
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("interface name of software infiniband device must be '%s' or unset (instead it is '%s')"),
+				             priv->virtual_iface_name, interface_name);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+				return FALSE;
 			}
 		}
 	}

@@ -4647,7 +4647,7 @@ test_connection_normalize_virtual_iface_name (void)
 	g_variant_unref (setting_dict);
 	g_variant_unref (var);
 
-	/* If vlan.interface-name is invalid, deserialization will fail. */
+	/* If vlan.interface-name will be ignored. */
 	NMTST_VARIANT_EDITOR (connection_dict,
 	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_VLAN_SETTING_NAME,
 	                                                     "interface-name",
@@ -4656,8 +4656,9 @@ test_connection_normalize_virtual_iface_name (void)
 	                      );
 
 	con = _connection_new_from_dbus (connection_dict, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_clear_error (&error);
+	nmtst_assert_success (con, error);
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_clear_object (&con);
 
 	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */
 	NMTST_VARIANT_EDITOR (connection_dict,

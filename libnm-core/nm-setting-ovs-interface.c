@@ -64,30 +64,29 @@ nm_setting_ovs_interface_get_interface_type (NMSettingOvsInterface *self)
 
 int
 _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
+                                                 const char *type,
                                                  NMConnection *connection,
                                                  gboolean normalize,
                                                  gboolean *out_modified,
-                                                 const char **normalized_type,
+                                                 const char **out_normalized_type,
                                                  GError **error)
 {
-	const char *type;
 	const char *type_from_setting = NULL;
 	const char *type_setting = NULL;
 	const char *connection_type;
 	gboolean is_ovs_connection_type;
 
-	g_return_val_if_fail (NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 	if (normalize) {
+		g_return_val_if_fail (NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 		g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 		nm_assert (self == nm_connection_get_setting_ovs_interface (connection));
-	} else
+	} else {
+		g_return_val_if_fail (!self || NM_IS_SETTING_OVS_INTERFACE (self), FALSE);
 		g_return_val_if_fail (!connection || NM_IS_CONNECTION (connection), FALSE);
-
-	g_return_val_if_fail (!normalized_type || !(*normalized_type), FALSE);
+	}
 
 	NM_SET_OUT (out_modified, FALSE);
-
-	type = self->type;
+	NM_SET_OUT (out_normalized_type, NULL);
 
 	if (   type
 	    && !NM_IN_STRSET (type, "internal", "system", "patch", "dpdk")) {
@@ -100,8 +99,10 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 		return FALSE;
 	}
 
-	if (!connection)
+	if (!connection) {
+		NM_SET_OUT (out_normalized_type, type);
 		return TRUE;
+	}
 
 	connection_type = nm_connection_get_connection_type (connection);
 	if (!connection_type) {
@@ -192,6 +193,7 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_OVS_INTERFACE_SETTING_NAME, NM_SETTING_OVS_INTERFACE_TYPE);
 				return FALSE;
 			}
+			NM_SET_OUT (out_normalized_type, type);
 			return TRUE;
 		}
 		type = type_from_setting;
@@ -208,16 +210,17 @@ _nm_setting_ovs_interface_verify_interface_type (NMSettingOvsInterface *self,
 		}
 	}
 
-	if (type)
+	if (type) {
+		NM_SET_OUT (out_normalized_type, type);
 		return TRUE;
+	}
 
 	if (is_ovs_connection_type)
 		type = "internal";
 	else
 		type = "system";
 
-	if (normalized_type)
-		*normalized_type = type;
+	NM_SET_OUT (out_normalized_type, type);
 
 normalize:
 	if (!normalize) {
@@ -254,8 +257,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingOvsInterface *self = NM_SETTING_OVS_INTERFACE (setting);
 	NMSettingConnection *s_con = NULL;
-	const char *normalized_type = NULL;
-	int result = NM_SETTING_VERIFY_ERROR;
 
 	if (connection) {
 		const char *slave_type;
@@ -295,39 +296,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	result = _nm_setting_ovs_interface_verify_interface_type (self,
-	                                                          connection,
-	                                                          FALSE,
-	                                                          NULL,
-	                                                          &normalized_type,
-	                                                          error);
-
-	/* From 'man ovs-vswitchd.conf.db': OVS patch interfaces do not have
-	 * a limit on interface name length, all the other types do */
-	if (result != NM_SETTING_VERIFY_ERROR && s_con) {
-		gs_free_error GError *ifname_error = NULL;
-		const char *ifname = nm_setting_connection_get_interface_name (s_con);
-
-		normalized_type = self->type ? self->type : normalized_type;
-
-		if (   ifname
-		    && !nm_streq0 (normalized_type, "patch")
-		    && !nm_utils_ifname_valid (ifname,
-		                               NMU_IFACE_KERNEL,
-		                               &ifname_error)) {
-			g_clear_error (error);
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "'%s': %s", ifname, ifname_error->message);
-			g_prefix_error (error, "%s.%s: ",
-			                NM_SETTING_CONNECTION_SETTING_NAME,
-			                NM_SETTING_CONNECTION_INTERFACE_NAME);
-			return NM_SETTING_VERIFY_ERROR;
-		}
-	}
-
-	return result;
+	return _nm_setting_ovs_interface_verify_interface_type (self,
+	                                                        self->type,
+	                                                        connection,
+	                                                        FALSE,
+	                                                        NULL,
+	                                                        NULL,
+	                                                        error);
 }
 
 /*****************************************************************************/
