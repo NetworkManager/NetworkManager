@@ -158,7 +158,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_USERNAME);
 		return FALSE;
-	} else if (!strlen (priv->username)) {
+	}
+	if (!priv->username[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -167,10 +168,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   !priv->protocol
-	    || (   strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA)
-	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)
-	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM))){
+	if (!NM_IN_STRSET (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA,
+	                                   NM_SETTING_ADSL_PROTOCOL_PPPOE,
+	                                   NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -180,9 +180,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   priv->encapsulation
-	    && (   strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_VCMUX)
-	        && strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_LLC) )) {
+	if (!NM_IN_STRSET (priv->encapsulation, NULL,
+	                                        NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
+	                                        NM_SETTING_ADSL_ENCAPSULATION_LLC)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
