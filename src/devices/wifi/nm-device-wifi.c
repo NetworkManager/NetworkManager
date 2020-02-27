@@ -2780,8 +2780,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMSupplicantConfig *config = NULL;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	NM80211Mode ap_mode;
 	NMActRequest *req;
 	NMWifiAP *ap;
@@ -2801,15 +2800,14 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	ap = priv->current_ap;
 	if (!ap) {
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		goto out;
+		goto out_fail;
 	}
+
 	ap_mode = nm_wifi_ap_get_mode (ap);
 
 	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
-
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	g_assert (s_wireless);
+	nm_assert (s_wireless);
 
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
@@ -2818,13 +2816,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		       "Activation: (wifi) access point '%s' has security, but secrets are required.",
 		       nm_connection_get_id (connection));
 
-		if (handle_auth_or_fail (self, req, FALSE))
-			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-		else {
+		if (!handle_auth_or_fail (self, req, FALSE)) {
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
+			goto out_fail;
 		}
-		goto out;
+
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
 	if (!wake_on_wlan_enable (self))
@@ -2857,17 +2854,19 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	/* Build up the supplicant configuration */
 	config = build_supplicant_config (self, connection, nm_wifi_ap_get_freq (ap), &error);
-	if (config == NULL) {
+	if (!config) {
 		_LOGE (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: (wifi) couldn't build wireless configuration: %s",
 		       error->message);
 		g_clear_error (&error);
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
-		goto out;
+		goto out_fail;
 	}
 
-	nm_supplicant_interface_assoc (priv->sup_iface, config,
-	                               supplicant_iface_assoc_cb, self);
+	nm_supplicant_interface_assoc (priv->sup_iface,
+	                               config,
+	                               supplicant_iface_assoc_cb,
+	                               self);
 
 	/* Set up a timeout on the association attempt */
 	timeout = nm_device_get_supplicant_timeout (NM_DEVICE (self));
@@ -2879,21 +2878,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update_cb, self);
 
 	/* We'll get stage3 started when the supplicant connects */
-	ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 
-out:
-	if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-		cleanup_association_attempt (self, TRUE);
-		wake_on_wlan_restore (self);
-	}
-
-	if (config) {
-		/* Supplicant interface object refs the config; we no longer care about
-		 * it after this function.
-		 */
-		g_object_unref (config);
-	}
-	return ret;
+out_fail:
+	cleanup_association_attempt (self, TRUE);
+	wake_on_wlan_restore (self);
+	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 static NMActStageReturn

@@ -734,7 +734,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		supplicant_iface_state_is_completed (self, new_state);
 }
 
-static NMActStageReturn
+static gboolean
 handle_auth_or_fail (NMDeviceEthernet *self,
                      NMActRequest *req,
                      gboolean new_secrets)
@@ -743,7 +743,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	NMConnection *applied_connection;
 
 	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		return FALSE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
@@ -753,7 +753,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (!setting_name) {
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		return FALSE;
 	}
 
 	_LOGI (LOGD_DEVICE | LOGD_ETHER, "Activation: (ethernet) asking for new secrets");
@@ -768,7 +768,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	wired_secrets_get_secrets (self, setting_name,
 	                             NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 	                           | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+	return TRUE;
 }
 
 static gboolean
@@ -800,7 +800,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	if (nm_settings_connection_get_timestamp (connection, &timestamp))
 		new_secrets = !timestamp;
 
-	if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_FAILURE) {
+	if (!handle_auth_or_fail (self, req, new_secrets)) {
 		wired_auth_cond_fail (self, NM_DEVICE_STATE_REASON_NO_SECRETS);
 		return G_SOURCE_REMOVE;
 	}
@@ -1003,7 +1003,6 @@ supplicant_check_secrets_needed (NMDeviceEthernet *self, NMDeviceStateReason *ou
 	NMConnection *connection;
 	NMSetting8021x *security;
 	const char *setting_name;
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
@@ -1012,7 +1011,7 @@ supplicant_check_secrets_needed (NMDeviceEthernet *self, NMDeviceStateReason *ou
 	if (!security) {
 		_LOGE (LOGD_DEVICE, "Invalid or missing 802.1X security");
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-		return ret;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
 	if (!priv->supplicant.mgr)
@@ -1027,10 +1026,11 @@ supplicant_check_secrets_needed (NMDeviceEthernet *self, NMDeviceStateReason *ou
 		       "Activation: (ethernet) connection '%s' has security, but secrets are required.",
 		       nm_connection_get_id (connection));
 
-		ret = handle_auth_or_fail (self, req, FALSE);
-		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
+		if (!handle_auth_or_fail (self, req, FALSE)) {
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-		return ret;
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
 	_LOGI (LOGD_DEVICE | LOGD_ETHER,
@@ -1056,33 +1056,17 @@ carrier_changed (NMSupplicantInterface *iface,
 	NMDeviceStateReason reason;
 	NMActStageReturn ret;
 
-	if (nm_device_has_carrier (NM_DEVICE (self))) {
-		_LOGD (LOGD_DEVICE | LOGD_ETHER, "got carrier, initializing supplicant");
-		nm_clear_g_signal_handler (self, &priv->carrier_id);
-		ret = supplicant_check_secrets_needed (self, &reason);
-		if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-			nm_device_state_changed (NM_DEVICE (self),
-			                         NM_DEVICE_STATE_FAILED,
-			                         reason);
-		}
+	if (!nm_device_has_carrier (NM_DEVICE (self)))
+		return;
+
+	_LOGD (LOGD_DEVICE | LOGD_ETHER, "got carrier, initializing supplicant");
+	nm_clear_g_signal_handler (self, &priv->carrier_id);
+	ret = supplicant_check_secrets_needed (self, &reason);
+	if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         reason);
 	}
-}
-
-static NMActStageReturn
-nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure_reason)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	if (!nm_device_has_carrier (NM_DEVICE (self))) {
-		_LOGD (LOGD_DEVICE | LOGD_ETHER, "delay supplicant initialization until carrier goes up");
-		priv->carrier_id = g_signal_connect (self,
-		                                     "notify::" NM_DEVICE_CARRIER,
-		                                     G_CALLBACK (carrier_changed),
-		                                     self);
-		return NM_ACT_STAGE_RETURN_POSTPONE;
-	}
-
-	return supplicant_check_secrets_needed (self, out_failure_reason);
 }
 
 /*****************************************************************************/
@@ -1388,7 +1372,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	const char *connection_type;
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	gboolean do_postpone = FALSE;
 	NMSettingDcb *s_dcb;
 
 	s_con = nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION);
@@ -1402,14 +1386,23 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	 * process opens the port up for normal traffic.
 	 */
 	connection_type = nm_setting_connection_get_connection_type (s_con);
-	if (!strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
+	if (nm_streq (connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
 		NMSetting8021x *security;
 
 		security = nm_device_get_applied_setting (device, NM_TYPE_SETTING_802_1X);
 
 		if (security) {
 			/* FIXME: for now 802.1x is mutually exclusive with DCB */
-			return nm_8021x_stage2_config (self, out_failure_reason);
+			if (!nm_device_has_carrier (NM_DEVICE (self))) {
+				_LOGD (LOGD_DEVICE | LOGD_ETHER, "delay supplicant initialization until carrier goes up");
+				priv->carrier_id = g_signal_connect (self,
+				                                     "notify::" NM_DEVICE_CARRIER,
+				                                     G_CALLBACK (carrier_changed),
+				                                     self);
+				return NM_ACT_STAGE_RETURN_POSTPONE;
+			}
+
+			return supplicant_check_secrets_needed (self, out_failure_reason);
 		}
 	}
 
@@ -1431,7 +1424,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		}
 
 		priv->dcb_handle_carrier_changes = TRUE;
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		do_postpone = TRUE;
 	}
 
 	/* PPPoE setup */
@@ -1441,11 +1434,13 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 		s_ppp = nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPP);
 		if (s_ppp) {
-			guint32 mtu = 0, mru = 0, mxu;
+			guint32 mtu;
+			guint32 mru;
+			guint32 mxu;
 
 			mtu = nm_setting_ppp_get_mtu (s_ppp);
 			mru = nm_setting_ppp_get_mru (s_ppp);
-			mxu = mru > mtu ? mru : mtu;
+			mxu = MAX (mru, mtu);
 			if (mxu) {
 				_LOGD (LOGD_PPP, "set MTU to %u (PPP interface MRU %u, MTU %u)",
 				       mxu + PPPOE_ENCAP_OVERHEAD, mru, mtu);
@@ -1456,7 +1451,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		}
 	}
 
-	return ret;
+	return   do_postpone
+	       ? NM_ACT_STAGE_RETURN_POSTPONE
+	       : NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn

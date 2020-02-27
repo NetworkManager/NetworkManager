@@ -189,10 +189,10 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	gboolean success;
 
 	s_mesh = nm_device_get_applied_setting (device, NM_TYPE_SETTING_OLPC_MESH);
-
 	g_return_val_if_fail (s_mesh, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ssid = nm_setting_olpc_mesh_get_ssid (s_mesh);
+
 	nm_device_take_down (NM_DEVICE (self), TRUE);
 	success = nm_platform_mesh_set_ssid (nm_device_get_platform (device),
 	                                     nm_device_get_ifindex (device),

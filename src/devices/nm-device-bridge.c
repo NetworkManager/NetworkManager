@@ -561,40 +561,38 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	NMConnection *connection;
 	NMSettingBluetooth *s_bt;
+	gs_free_error GError *error = NULL;
 
 	connection = nm_device_get_applied_connection (device);
 
 	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-	if (s_bt) {
-		gs_free_error GError *error = NULL;
+	if (!s_bt)
+		return NM_ACT_STAGE_RETURN_SUCCESS;
 
-		if (!nm_bt_vtable_network_server) {
-			_LOGD (LOGD_DEVICE, "bluetooth NAP server failed because bluetooth plugin not available");
-			*out_failure_reason = NM_DEVICE_STATE_REASON_BT_FAILED;
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		if (self->bt_cancellable)
-			return NM_ACT_STAGE_RETURN_POSTPONE;
-
-		self->bt_cancellable = g_cancellable_new ();
-		if (!nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
-		                                                   nm_setting_bluetooth_get_bdaddr (s_bt),
-		                                                   device,
-		                                                   self->bt_cancellable,
-		                                                   _bt_register_bridge_cb,
-		                                                   device,
-		                                                   &error)) {
-			_LOGD (LOGD_DEVICE, "bluetooth NAP server failed to register bridge: %s", error->message);
-			*out_failure_reason = NM_DEVICE_STATE_REASON_BT_FAILED;
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		self->bt_registered = TRUE;
-		return NM_ACT_STAGE_RETURN_POSTPONE;
+	if (!nm_bt_vtable_network_server) {
+		_LOGD (LOGD_DEVICE, "bluetooth NAP server failed because bluetooth plugin not available");
+		*out_failure_reason = NM_DEVICE_STATE_REASON_BT_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	return NM_ACT_STAGE_RETURN_SUCCESS;
+	if (self->bt_cancellable)
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+
+	self->bt_cancellable = g_cancellable_new ();
+	if (!nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
+	                                                   nm_setting_bluetooth_get_bdaddr (s_bt),
+	                                                   device,
+	                                                   self->bt_cancellable,
+	                                                   _bt_register_bridge_cb,
+	                                                   device,
+	                                                   &error)) {
+		_LOGD (LOGD_DEVICE, "bluetooth NAP server failed to register bridge: %s", error->message);
+		*out_failure_reason = NM_DEVICE_STATE_REASON_BT_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	self->bt_registered = TRUE;
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
 static void

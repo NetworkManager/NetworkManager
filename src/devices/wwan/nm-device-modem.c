@@ -605,7 +605,6 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem);
-
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 

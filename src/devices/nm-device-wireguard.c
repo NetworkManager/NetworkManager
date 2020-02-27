@@ -1522,28 +1522,26 @@ act_stage2_config (NMDevice *device,
 	}
 
 	ret = link_config (NM_DEVICE_WIREGUARD (device),
-	                                        "configure",
-	                                          (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
-	                                        ? LINK_CONFIG_MODE_ASSUME
-	                                        : LINK_CONFIG_MODE_FULL,
-	                                        &failure_reason);
+	                   "configure",
+	                     (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
+	                   ? LINK_CONFIG_MODE_ASSUME
+	                   : LINK_CONFIG_MODE_FULL,
+	                   &failure_reason);
 
 	if (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME) {
 		/* this never fails. */
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NONE);
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
-	if (ret != NM_ACT_STAGE_RETURN_FAILURE) {
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NONE);
-		return ret;
+	if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         failure_reason);
+		NM_SET_OUT (out_failure_reason, failure_reason);
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	nm_device_state_changed (device,
-	                         NM_DEVICE_STATE_FAILED,
-	                         failure_reason);
-	NM_SET_OUT (out_failure_reason, failure_reason);
-	return NM_ACT_STAGE_RETURN_FAILURE;
+	return ret;
 }
 
 static NMIPConfig *

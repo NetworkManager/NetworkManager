@@ -567,7 +567,7 @@ is_connection_known_network (NMConnection *connection)
 static gboolean
 is_ap_known_network (NMWifiAP *ap)
 {
-	GDBusProxy *network_proxy;
+	gs_unref_object GDBusProxy *network_proxy = NULL;
 	gs_unref_variant GVariant *known_network = NULL;
 
 	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
@@ -577,10 +577,7 @@ is_ap_known_network (NMWifiAP *ap)
 		return FALSE;
 
 	known_network = g_dbus_proxy_get_cached_property (network_proxy, "KnownNetwork");
-	g_object_unref (network_proxy);
-
-	return    known_network
-	       && g_variant_is_of_type (known_network, G_VARIANT_TYPE_OBJECT_PATH);
+	return nm_g_variant_is_of_type (known_network, G_VARIANT_TYPE_OBJECT_PATH);
 }
 
 static gboolean
@@ -1773,29 +1770,25 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	const char *mode;
 
 	req = nm_device_get_act_request (device);
-	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
-
 	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
-
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
+
 	if (NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
-		GDBusProxy *network_proxy;
+		gs_unref_object GDBusProxy *network_proxy = NULL;
 		NMWifiAP *ap = priv->current_ap;
 
 		if (!ap) {
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-			goto out;
+			goto out_fail;
 		}
 
 		/* 802.1x networks that are not IWD Known Networks will definitely
@@ -1809,7 +1802,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			       nm_connection_get_id (connection));
 
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-			goto out;
+			goto out_fail;
 		}
 
 		network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
@@ -1820,7 +1813,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			       "Activation: (wifi) could not get Network interface proxy for %s",
 			       nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)));
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-			goto out;
+			goto out_fail;
 		}
 
 		if (!priv->cancellable)
@@ -1833,12 +1826,15 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		                   NULL, G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
 		                   priv->cancellable, network_connect_cb, self);
 
-		g_object_unref (network_proxy);
-	} else if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC)) {
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
+	if (NM_IN_STRSET (mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC)) {
 		NMSettingWirelessSecurity *s_wireless_sec;
 
 		s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
-		if (s_wireless_sec && !nm_setting_wireless_security_get_psk (s_wireless_sec)) {
+		if (   s_wireless_sec
+		    && !nm_setting_wireless_security_get_psk (s_wireless_sec)) {
 			/* PSK is missing from the settings, have to request it */
 
 			wifi_secrets_cancel (self);
@@ -1853,16 +1849,15 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 		} else
 			act_set_mode (self);
+
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	/* We'll get stage3 started when the supplicant connects */
-	ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 
-out:
-	if (ret == NM_ACT_STAGE_RETURN_FAILURE)
-		cleanup_association_attempt (self, FALSE);
-
-	return ret;
+out_fail:
+	cleanup_association_attempt (self, FALSE);
+	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 static guint32

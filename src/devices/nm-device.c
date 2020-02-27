@@ -7067,10 +7067,11 @@ activate_stage2_device_config (NMDevice *self)
 
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
-			if (no_firmware)
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
-			else
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_FAILED,
+			                           no_firmware
+			                         ? NM_DEVICE_STATE_REASON_FIRMWARE_MISSING
+			                         : NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 			return;
 		}
 	}
