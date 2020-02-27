@@ -353,10 +353,19 @@ _insert_interface (json_t *params, NMConnection *interface, NMDevice *interface_
 	gs_free char *cloned_mac = NULL;
 	gs_free_error GError *error = NULL;
 	json_t *row;
+	guint32 mtu = 0;
 
 	s_ovs_iface = nm_connection_get_setting_ovs_interface (interface);
 	if (s_ovs_iface)
 		type = nm_setting_ovs_interface_get_interface_type (s_ovs_iface);
+
+	if (nm_streq0 (type, "internal")) {
+		NMSettingWired *s_wired;
+
+		s_wired = _nm_connection_get_setting (interface, NM_TYPE_SETTING_WIRED);
+		if (s_wired)
+			mtu = nm_setting_wired_get_mtu (s_wired);
+	}
 
 	if (!nm_device_hw_addr_get_cloned (interface_device,
 	                                   interface,
@@ -398,6 +407,9 @@ _insert_interface (json_t *params, NMConnection *interface, NMDevice *interface_
 
 	if (cloned_mac)
 		json_object_set_new (row, "mac", json_string (cloned_mac));
+
+	if (mtu != 0)
+		json_object_set_new (row, "mtu_request", json_integer (mtu));
 
 	json_array_append_new (params,
 	        json_pack ("{s:s, s:s, s:o, s:s}",
