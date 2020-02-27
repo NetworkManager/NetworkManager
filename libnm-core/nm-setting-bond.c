@@ -179,6 +179,16 @@ NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE (
 
 /*****************************************************************************/
 
+static int
+_atoi (const char *value)
+{
+	int v;
+
+	v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT, -1);
+	nm_assert (v >= 0);
+	return v;
+};
+
 /**
  * nm_setting_bond_get_num_options:
  * @setting: the #NMSettingBond
@@ -736,21 +746,26 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (miimon == 0) {
-		/* updelay and downdelay can only be used with miimon */
-		if (g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_UPDELAY)) {
+		gpointer delayopt;
+
+		/* updelay and downdelay need miimon to be enabled to be valid */
+		delayopt = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_UPDELAY);
+		if (delayopt && _atoi (delayopt) > 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' option requires '%s' option to be set"),
+			             _("'%s' option requires '%s' option to be enabled"),
 			             NM_SETTING_BOND_OPTION_UPDELAY, NM_SETTING_BOND_OPTION_MIIMON);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
-		if (g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_DOWNDELAY)) {
+
+		delayopt = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_DOWNDELAY);
+		if (delayopt && _atoi (delayopt) > 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' option requires '%s' option to be set"),
+			             _("'%s' option requires '%s' option to be enabled"),
 			             NM_SETTING_BOND_OPTION_DOWNDELAY, NM_SETTING_BOND_OPTION_MIIMON);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
