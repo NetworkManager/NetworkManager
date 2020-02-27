@@ -586,6 +586,15 @@ test_bond_verify (void)
 	test_verify_options (TRUE,
 	                     "mode", "802.3ad",
 	                     "ad_actor_system", "ae:00:11:33:44:55");
+	test_verify_options (TRUE,
+	                     "mode", "0",
+	                     "miimon", "0",
+	                     "updelay", "0",
+	                     "downdelay", "0");
+	test_verify_options (TRUE,
+	                     "mode", "0",
+	                     "downdelay", "0",
+	                     "updelay", "0");
 }
 
 static void
