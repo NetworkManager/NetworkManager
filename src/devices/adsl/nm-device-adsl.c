@@ -303,7 +303,7 @@ nas_update_cb (gpointer user_data)
 		return G_SOURCE_REMOVE;
 	}
 
-	nm_device_activate_schedule_stage3_ip_config_start (device);
+	nm_device_activate_schedule_stage2_device_config (device, TRUE);
 	return G_SOURCE_REMOVE;
 }
 
@@ -362,6 +362,7 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
 
@@ -379,11 +380,16 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	if (nm_streq0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
 		/* PPPoE needs RFC2684 bridging before we can do PPP over it */
-		if (!br2684_create_iface (self)) {
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_BR2684_FAILED);
-			return NM_ACT_STAGE_RETURN_FAILURE;
+		if (priv->nas_ifindex <= 0) {
+			if (priv->nas_update_id == 0) {
+				if (!br2684_create_iface (self)) {
+					NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_BR2684_FAILED);
+					return NM_ACT_STAGE_RETURN_FAILURE;
+				}
+			}
+			return NM_ACT_STAGE_RETURN_POSTPONE;
 		}
-		return NM_ACT_STAGE_RETURN_POSTPONE;
+		return NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
 	_LOGW (LOGD_ADSL, "unhandled ADSL protocol '%s'", protocol);
