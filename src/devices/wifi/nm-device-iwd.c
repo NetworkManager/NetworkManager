@@ -1853,7 +1853,10 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+	_LOGW (LOGD_DEVICE | LOGD_WIFI,
+	       "Activation: (wifi) iwd cannot handle mode %s",
+	       mode);
+	NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 
 out_fail:
 	cleanup_association_attempt (self, FALSE);
