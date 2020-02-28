@@ -532,7 +532,7 @@ _bt_register_bridge_cb (GError *error,
 		return;
 	}
 
-	nm_device_activate_schedule_stage3_ip_config_start (NM_DEVICE (self));
+	nm_device_activate_schedule_stage2_device_config (NM_DEVICE (self), FALSE);
 }
 
 void
@@ -576,6 +576,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	}
 
 	if (self->bt_cancellable)
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+
+	if (self->bt_registered)
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 
 	self->bt_cancellable = g_cancellable_new ();
