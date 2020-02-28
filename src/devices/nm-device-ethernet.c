@@ -505,7 +505,7 @@ wired_secrets_cb (NMActRequest *req,
 	}
 
 	supplicant_interface_release (self);
-	nm_device_activate_schedule_stage1_device_prepare (device);
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 }
 
 static void
@@ -954,7 +954,7 @@ pppoe_reconnect_delay (gpointer user_data)
 	priv->pppoe_wait_id = 0;
 	priv->last_pppoe_time = 0;
 	_LOGI (LOGD_DEVICE, "PPPoE reconnect delay complete, resuming connection...");
-	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
+	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 	return G_SOURCE_REMOVE;
 }
 

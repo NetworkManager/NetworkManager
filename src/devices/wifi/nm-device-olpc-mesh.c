@@ -256,7 +256,7 @@ companion_notify_cb (NMDeviceWifi *companion, GParamSpec *pspec, gpointer user_d
 	g_object_get (companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
 	if (!scanning) {
 		priv->stage1_waiting = FALSE;
-		nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
+		nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 	}
 }
 

@@ -1743,7 +1743,7 @@ wifi_secrets_cb (NMActRequest *req,
 		return;
 	}
 
-	nm_device_activate_schedule_stage1_device_prepare (device);
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 }
 
 static void
@@ -1810,7 +1810,7 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 	}
 
 	wifi_secrets_cancel (self);
-	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
+	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 }
 
 static gboolean

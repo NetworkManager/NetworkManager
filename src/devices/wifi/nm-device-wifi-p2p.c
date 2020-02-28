@@ -523,7 +523,7 @@ peer_add_remove (NMDeviceWifiP2P *self,
 			if (peer) {
 				/* A peer for the connection was found, cancel the timeout and go to configure state. */
 				nm_clear_g_source (&priv->find_peer_timeout_id);
-				nm_device_activate_schedule_stage1_device_prepare (device);
+				nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 			}
 		}
 

@@ -6438,7 +6438,7 @@ master_ready_cb (NMActiveConnection *active,
 	nm_assert (nm_active_connection_get_master_ready (active));
 
 	if (priv->state == NM_DEVICE_STATE_PREPARE)
-		nm_device_activate_schedule_stage1_device_prepare (self);
+		nm_device_activate_schedule_stage1_device_prepare (self, FALSE);
 }
 
 static void
@@ -6586,7 +6586,7 @@ sriov_params_cb (GError *error, gpointer data)
 
 	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
 
-	nm_device_activate_schedule_stage1_device_prepare (self);
+	nm_device_activate_schedule_stage1_device_prepare (self, FALSE);
 }
 
 /*
@@ -6729,23 +6729,19 @@ activate_stage1_device_prepare (NMDevice *self)
 	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
 }
 
-/*
- * nm_device_activate_schedule_stage1_device_prepare
- *
- * Prepare a device for activation
- *
- */
 void
-nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
+nm_device_activate_schedule_stage1_device_prepare (NMDevice *self,
+                                                   gboolean do_sync)
 {
-	NMDevicePrivate *priv;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_DEVICE_GET_PRIVATE (self)->act_request.obj);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request.obj);
+	if (!do_sync) {
+		activation_source_schedule (self, activate_stage1_device_prepare, AF_INET);
+		return;
+	}
 
-	activation_source_schedule (self, activate_stage1_device_prepare, AF_INET);
+	activation_source_invoke_sync (self, activate_stage1_device_prepare, AF_INET);
 }
 
 static NMActStageReturn
@@ -12600,7 +12596,7 @@ _device_activate (NMDevice *self, NMActRequest *req)
 
 	act_request_set (self, req);
 
-	nm_device_activate_schedule_stage1_device_prepare (self);
+	nm_device_activate_schedule_stage1_device_prepare (self, FALSE);
 }
 
 static void
