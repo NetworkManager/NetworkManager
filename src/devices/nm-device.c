@@ -691,8 +691,6 @@ static void (*const activate_stage4_ip_config_timeout_x[2]) (NMDevice *self) = {
 
 static void sriov_op_cb (GError *error, gpointer user_data);
 
-static void activate_stage2_device_config (NMDevice *self);
-
 static void activate_stage5_ip_config_result_4 (NMDevice *self);
 static void activate_stage5_ip_config_result_6 (NMDevice *self);
 
@@ -6726,7 +6724,7 @@ activate_stage1_device_prepare (NMDevice *self)
 	if (master)
 		master_ready (self, active);
 
-	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
+	nm_device_activate_schedule_stage2_device_config (self, TRUE);
 }
 
 void
@@ -7105,18 +7103,18 @@ activate_stage2_device_config (NMDevice *self)
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 }
 
-/*
- * nm_device_activate_schedule_stage2_device_config
- *
- * Schedule setup of the hardware device
- *
- */
 void
-nm_device_activate_schedule_stage2_device_config (NMDevice *self)
+nm_device_activate_schedule_stage2_device_config (NMDevice *self,
+                                                  gboolean do_sync)
 {
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	activation_source_schedule (self, activate_stage2_device_config, AF_INET);
+	if (!do_sync) {
+		activation_source_schedule (self, activate_stage2_device_config, AF_INET);
+		return;
+	}
+
+	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
 }
 
 void

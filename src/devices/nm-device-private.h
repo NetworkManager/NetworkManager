@@ -73,7 +73,8 @@ void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 
 void nm_device_activate_schedule_stage1_device_prepare (NMDevice *device,
                                                         gboolean do_sync);
-void nm_device_activate_schedule_stage2_device_config (NMDevice *device);
+void nm_device_activate_schedule_stage2_device_config (NMDevice *device,
+                                                       gboolean do_sync);
 
 void nm_device_activate_schedule_ip_config_result (NMDevice *device,
                                                    int addr_family,
