@@ -1074,6 +1074,7 @@ dhcp4_event_cb (GIOChannel *source,
 		 */
 		_LOGE ("error %d dispatching events", r);
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
+		priv->event_id = 0;
 		return G_SOURCE_REMOVE;
 	}
 
