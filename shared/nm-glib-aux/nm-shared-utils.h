@@ -1564,8 +1564,6 @@ fcn_name (const char *name) \
 		__VA_ARGS__ \
 	}; \
 	\
-	{ entry_cmd; } \
-	\
 	if (NM_MORE_ASSERT_ONCE (5)) { \
 		int i; \
 		\
@@ -1575,6 +1573,8 @@ fcn_name (const char *name) \
 				nm_assert (strcmp (LIST[i - 1].name, LIST[i].name) < 0); \
 		} \
 	} \
+	\
+	{ entry_cmd; } \
 	\
 	if (G_LIKELY (name)) { \
 		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) > 1); \
