@@ -57,7 +57,7 @@ nm_ref_string_equals_str (NMRefString *rstr, const char *s)
 	 * that distinction, this function is not for you. */
 
 	return   rstr
-	       ? nm_streq (rstr->str, s)
+	       ? (s && nm_streq (rstr->str, s))
 	       : (s == NULL);
 }
 
