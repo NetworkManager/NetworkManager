@@ -1072,8 +1072,8 @@ dhcp4_event_cb (int fd,
 		 * a predefined number of times (possibly infinite).
 		 */
 		_LOGE ("error %d dispatching events", r);
+		nm_clear_g_source_inst (&priv->event_source);
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self), NM_DHCP_STATE_FAIL, NULL, NULL);
-		priv->event_source = NULL;
 		return G_SOURCE_REMOVE;
 	}
 
