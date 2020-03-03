@@ -40,8 +40,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMWifiAP,
 );
 
 struct _NMWifiAPPrivate {
-	NMRefString *supplicant_path;
-
 	/* Scanned or cached values */
 	GBytes *           ssid;
 	char *             address;
@@ -75,14 +73,6 @@ G_DEFINE_TYPE (NMWifiAP, nm_wifi_ap, NM_TYPE_DBUS_OBJECT)
 #define NM_WIFI_AP_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMWifiAP, NM_IS_WIFI_AP)
 
 /*****************************************************************************/
-
-const char *
-nm_wifi_ap_get_supplicant_path (NMWifiAP *ap)
-{
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), NULL);
-
-	return nm_ref_string_get_str (NM_WIFI_AP_GET_PRIVATE (ap)->supplicant_path);
-}
 
 GBytes *
 nm_wifi_ap_get_ssid (const NMWifiAP *ap)
@@ -392,13 +382,13 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	nm_assert (   !priv->supplicant_path
-	           || priv->supplicant_path == bss_info->bss_path);
+	nm_assert (   !ap->_supplicant_path
+	           || ap->_supplicant_path == bss_info->bss_path);
 
 	g_object_freeze_notify (G_OBJECT (ap));
 
-	if (!priv->supplicant_path) {
-		priv->supplicant_path = nm_ref_string_ref (bss_info->bss_path);
+	if (!ap->_supplicant_path) {
+		ap->_supplicant_path = nm_ref_string_ref (bss_info->bss_path);
 		changed = TRUE;
 	}
 
@@ -526,8 +516,8 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	priv = NM_WIFI_AP_GET_PRIVATE (self);
 
 	chan = nm_utils_wifi_freq_to_channel (priv->freq);
-	if (priv->supplicant_path)
-		supplicant_id = strrchr (priv->supplicant_path->str, '/') ?: supplicant_id;
+	if (self->_supplicant_path)
+		supplicant_id = strrchr (self->_supplicant_path->str, '/') ?: supplicant_id;
 
 	export_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
 	if (export_path)
@@ -871,7 +861,7 @@ finalize (GObject *object)
 	nm_assert (!self->wifi_device);
 	nm_assert (c_list_is_empty (&self->aps_lst));
 
-	nm_ref_string_unref (priv->supplicant_path);
+	nm_ref_string_unref (self->_supplicant_path);
 	if (priv->ssid)
 		g_bytes_unref (priv->ssid);
 	g_free (priv->address);
@@ -1039,14 +1029,14 @@ nm_wifi_aps_find_first_compatible (const CList *aps_lst_head,
 }
 
 NMWifiAP *
-nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head, const char *path)
+nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head, NMRefString *path)
 {
 	NMWifiAP *ap;
 
-	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (path, NULL);
 
 	c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
-		if (nm_streq0 (path, nm_wifi_ap_get_supplicant_path (ap)))
+		if (path == nm_wifi_ap_get_supplicant_path (ap))
 			return ap;
 	}
 	return NULL;

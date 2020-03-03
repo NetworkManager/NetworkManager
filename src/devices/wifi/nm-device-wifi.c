@@ -1592,7 +1592,7 @@ supplicant_iface_bss_changed_cb (NMSupplicantInterface *iface,
 	NMWifiAP *found_ap;
 	GBytes *ssid;
 
-	found_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, bss_info->bss_path->str);
+	found_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, bss_info->bss_path);
 
 	if (!is_present) {
 		if (!found_ap)
@@ -2222,7 +2222,7 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 
 	current_bss = nm_supplicant_interface_get_current_bss (iface);
 	if (current_bss)
-		new_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, current_bss->str);
+		new_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, current_bss);
 
 	if (new_ap != priv->current_ap) {
 		const char *new_bssid = NULL;

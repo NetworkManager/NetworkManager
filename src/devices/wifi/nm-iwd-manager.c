@@ -874,7 +874,8 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
 }
 
 GDBusProxy *
-nm_iwd_manager_get_dbus_interface (NMIwdManager *self, const char *path,
+nm_iwd_manager_get_dbus_interface (NMIwdManager *self,
+                                   const char *path,
                                    const char *name)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);

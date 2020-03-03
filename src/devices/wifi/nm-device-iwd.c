@@ -229,6 +229,8 @@ insert_ap_from_network (NMDeviceIwd *self,
 	NMWifiAP *ap;
 	gs_unref_bytes GBytes *ssid = NULL;
 
+	bss_path = nm_ref_string_new (path);
+
 	if (g_hash_table_lookup (aps, path)) {
 		_LOGD (LOGD_WIFI, "Duplicate network at %s", path);
 		return;
@@ -272,7 +274,6 @@ insert_ap_from_network (NMDeviceIwd *self,
 	bssid[5] = ap_id;
 
 	ssid = g_bytes_new (name, NM_MIN (32u, strlen (name)));
-	bss_path = nm_ref_string_new (path);
 
 	bss_info = (NMSupplicantBssInfo) {
 		.bss_path       = bss_path,
@@ -289,7 +290,9 @@ insert_ap_from_network (NMDeviceIwd *self,
 
 	ap = nm_wifi_ap_new_from_properties (&bss_info);
 
-	g_hash_table_insert (aps, (gpointer) nm_wifi_ap_get_supplicant_path (ap), ap);
+	nm_assert (bss_path == nm_wifi_ap_get_supplicant_path (ap));
+
+	g_hash_table_insert (aps, bss_path, ap);
 }
 
 static void
@@ -333,7 +336,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		return;
 	}
 
-	new_aps = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
+	new_aps = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_object_unref);
 
 	g_variant_get (variant, return_sig, &networks);
 
@@ -568,7 +571,7 @@ is_ap_known_network (NMWifiAP *ap)
 	gs_unref_variant GVariant *known_network = NULL;
 
 	network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
-	                                                   nm_wifi_ap_get_supplicant_path (ap),
+	                                                   nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)),
 	                                                   NM_IWD_NETWORK_INTERFACE);
 	if (!network_proxy)
 		return FALSE;
@@ -1810,12 +1813,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		}
 
 		network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
-		                                                   nm_wifi_ap_get_supplicant_path (ap),
+		                                                   nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)),
 		                                                   NM_IWD_NETWORK_INTERFACE);
 		if (!network_proxy) {
 			_LOGE (LOGD_DEVICE | LOGD_WIFI,
 			       "Activation: (wifi) could not get Network interface proxy for %s",
-			       nm_wifi_ap_get_supplicant_path (ap));
+			       nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)));
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 			goto out;
 		}
