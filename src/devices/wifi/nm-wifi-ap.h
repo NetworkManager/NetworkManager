@@ -102,9 +102,6 @@ const char      **nm_wifi_aps_get_paths        (const CList *aps_lst_head,
 NMWifiAP         *nm_wifi_aps_find_first_compatible (const CList *aps_lst_head,
                                                      NMConnection *connection);
 
-NMWifiAP         *nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head,
-                                                       NMRefString *path);
-
 NMWifiAP         *nm_wifi_ap_lookup_for_device (NMDevice *device, const char *exported_path);
 
 #endif /* __NM_WIFI_AP_H__ */

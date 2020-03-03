@@ -75,6 +75,7 @@ typedef struct {
 	gint8             invalid_strength_counter;
 
 	CList             aps_lst_head;
+	GHashTable       *aps_idx_by_supplicant_path;
 
 	NMWifiAP *        current_ap;
 	guint32           rate;
@@ -508,12 +509,16 @@ ap_add_remove (NMDeviceWifi *self,
 		g_object_ref (ap);
 		ap->wifi_device = NM_DEVICE (self);
 		c_list_link_tail (&priv->aps_lst_head, &ap->aps_lst);
+		if (!g_hash_table_insert (priv->aps_idx_by_supplicant_path, nm_wifi_ap_get_supplicant_path (ap), ap))
+			nm_assert_not_reached ();
 		nm_dbus_object_export (NM_DBUS_OBJECT (ap));
 		_ap_dump (self, LOGL_DEBUG, ap, "added", 0);
 		nm_device_wifi_emit_signal_access_point (NM_DEVICE (self), ap, TRUE);
 	} else {
 		ap->wifi_device = NULL;
 		c_list_unlink (&ap->aps_lst);
+		if (!g_hash_table_remove (priv->aps_idx_by_supplicant_path, nm_wifi_ap_get_supplicant_path (ap)))
+			nm_assert_not_reached ();
 		_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
 	}
 
@@ -1592,7 +1597,7 @@ supplicant_iface_bss_changed_cb (NMSupplicantInterface *iface,
 	NMWifiAP *found_ap;
 	GBytes *ssid;
 
-	found_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, bss_info->bss_path);
+	found_ap = g_hash_table_lookup (priv->aps_idx_by_supplicant_path, bss_info->bss_path);
 
 	if (!is_present) {
 		if (!found_ap)
@@ -2222,7 +2227,7 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 
 	current_bss = nm_supplicant_interface_get_current_bss (iface);
 	if (current_bss)
-		new_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, current_bss);
+		new_ap = g_hash_table_lookup (priv->aps_idx_by_supplicant_path, current_bss);
 
 	if (new_ap != priv->current_ap) {
 		const char *new_bssid = NULL;
@@ -3311,6 +3316,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	c_list_init (&priv->aps_lst_head);
+	priv->aps_idx_by_supplicant_path = g_hash_table_new (nm_direct_hash, NULL);
 
 	priv->hidden_probe_scan_warn = TRUE;
 	priv->mode = NM_802_11_MODE_INFRA;
@@ -3379,6 +3385,9 @@ finalize (GObject *object)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	nm_assert (c_list_is_empty (&priv->aps_lst_head));
+	nm_assert (g_hash_table_size (priv->aps_idx_by_supplicant_path) == 0);
+
+	g_hash_table_unref (priv->aps_idx_by_supplicant_path);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }

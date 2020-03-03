@@ -1028,20 +1028,6 @@ nm_wifi_aps_find_first_compatible (const CList *aps_lst_head,
 	return NULL;
 }
 
-NMWifiAP *
-nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head, NMRefString *path)
-{
-	NMWifiAP *ap;
-
-	g_return_val_if_fail (path, NULL);
-
-	c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
-		if (path == nm_wifi_ap_get_supplicant_path (ap))
-			return ap;
-	}
-	return NULL;
-}
-
 /*****************************************************************************/
 
 NMWifiAP *
