@@ -260,6 +260,7 @@ gboolean
 nm_wifi_p2p_peer_set_wfd_ies (NMWifiP2PPeer *peer, GBytes *wfd_ies)
 {
 	NMWifiP2PPeerPrivate *priv;
+	gs_unref_bytes GBytes *wfd_ies_old = NULL;
 
 	g_return_val_if_fail (NM_IS_WIFI_P2P_PEER (peer), FALSE);
 
@@ -268,7 +269,7 @@ nm_wifi_p2p_peer_set_wfd_ies (NMWifiP2PPeer *peer, GBytes *wfd_ies)
 	if (nm_gbytes_equal0 (priv->wfd_ies, wfd_ies))
 		return FALSE;
 
-	g_bytes_unref (priv->wfd_ies);
+	wfd_ies_old = g_steal_pointer (&priv->wfd_ies);
 	priv->wfd_ies = wfd_ies ? g_bytes_ref (wfd_ies) : NULL;
 
 	_notify (peer, PROP_WFD_IES);
