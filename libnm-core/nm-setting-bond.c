@@ -662,6 +662,29 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 }
 
 /**
+ * nm_setting_bond_get_option_normalized:
+ * @setting: the #NMSettingBond
+ * @name: the name of the option
+ *
+ * Since: 1.24
+ *
+ * Returns: the value of the bond option after normalization, which is what NetworkManager
+ *   will actually apply when activating the connection. %NULL if the option won't be applied
+ *   to the connection.
+ **/
+const char *
+nm_setting_bond_get_option_normalized (NMSettingBond *setting,
+                                       const char *name)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
+	g_return_val_if_fail (name, NULL);
+
+	return _bond_get_option_normalized (setting,
+	                                    name,
+	                                    FALSE);
+}
+
+/**
  * nm_setting_bond_get_option_type:
  * @setting: the #NMSettingBond
  * @name: the name of the option
