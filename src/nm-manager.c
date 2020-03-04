@@ -50,6 +50,8 @@
 #include "nm-dispatcher.h"
 #include "NetworkManagerUtils.h"
 
+#define DEVICE_STATE_PRUNE_RATELIMIT_MAX 100u
+
 /*****************************************************************************/
 
 typedef struct {
@@ -190,6 +192,8 @@ typedef struct {
 	guint devices_inited_id;
 
 	NMConnectivityState connectivity_state;
+
+	guint8 device_state_prune_ratelimit_count;
 
 	bool startup:1;
 	bool devices_inited:1;
@@ -1514,8 +1518,22 @@ manager_device_state_changed (NMDevice *device,
 	if (NM_IN_SET (new_state,
 	               NM_DEVICE_STATE_UNMANAGED,
 	               NM_DEVICE_STATE_DISCONNECTED,
-	               NM_DEVICE_STATE_ACTIVATED))
+	               NM_DEVICE_STATE_ACTIVATED)) {
 		nm_manager_write_device_state (self, device, NULL);
+
+		G_STATIC_ASSERT_EXPR (DEVICE_STATE_PRUNE_RATELIMIT_MAX < G_MAXUINT8);
+		if (priv->device_state_prune_ratelimit_count++ > DEVICE_STATE_PRUNE_RATELIMIT_MAX) {
+			/* We write the device state to /run. The state files are named after the
+			 * ifindex (which is assumed to be unique and not repeat -- in practice
+			 * it may repeat). So from time to time, we prune device state files
+			 * for interfaces that no longer exist.
+			 *
+			 * Otherwise, the files might pile up if you create (and destroy) a large
+			 * number of software devices. */
+			priv->device_state_prune_ratelimit_count = 0;
+			nm_config_device_state_prune_stale (NULL, priv->platform);
+		}
+	}
 
 	if (NM_IN_SET (new_state,
 	               NM_DEVICE_STATE_UNAVAILABLE,
