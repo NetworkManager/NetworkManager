@@ -860,9 +860,11 @@ update_resolv_conf (NMDnsManager *self,
 		if (!g_file_set_contents (rc_path, content, -1, &local)) {
 			_LOGT ("update-resolv-conf: write to %s failed (rc-manager=%s, %s)",
 			       rc_path, _rc_manager_to_string (rc_manager), local->message);
-			write_file_result = SR_ERROR;
 			g_propagate_error (error, local);
+			/* clear @error, so that we don't try reset it. This is the error
+			 * we want to propagate to the caller. */
 			error = NULL;
+			write_file_result = SR_ERROR;
 		} else {
 			_LOGT ("update-resolv-conf: write to %s succeeded (rc-manager=%s)",
 			       rc_path, _rc_manager_to_string (rc_manager));
@@ -930,7 +932,7 @@ update_resolv_conf (NMDnsManager *self,
 	if (   rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK
 	    || !_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link)) {
 		_LOGT ("update-resolv-conf: write internal file %s succeeded", MY_RESOLV_CONF);
-		return SR_SUCCESS;
+		return write_file_result;
 	}
 
 	if (!nm_streq0 (_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link),
@@ -938,7 +940,7 @@ update_resolv_conf (NMDnsManager *self,
 		_LOGT ("update-resolv-conf: write internal file %s succeeded (don't touch symlink %s linking to %s)",
 		       MY_RESOLV_CONF, _PATH_RESCONF,
 		       _read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link));
-		return SR_SUCCESS;
+		return write_file_result;
 	}
 
 	/* By this point, /etc/resolv.conf exists and is a symlink to our internal
@@ -991,7 +993,7 @@ update_resolv_conf (NMDnsManager *self,
 
 	_LOGT ("update-resolv-conf: write internal file %s succeeded and update symlink %s",
 	       MY_RESOLV_CONF, _PATH_RESCONF);
-	return SR_SUCCESS;
+	return write_file_result;
 }
 
 static void
