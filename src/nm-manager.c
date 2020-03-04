@@ -6585,19 +6585,19 @@ void
 nm_manager_write_device_state_all (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
+	gs_unref_hashtable GHashTable *preserve_ifindexes = NULL;
 	NMDevice *device;
 
-	seen_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
+	preserve_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		if (nm_manager_write_device_state (self, device)) {
-			g_hash_table_add (seen_ifindexes,
+			g_hash_table_add (preserve_ifindexes,
 			                  GINT_TO_POINTER (nm_device_get_ip_ifindex (device)));
 		}
 	}
 
-	nm_config_device_state_prune_unseen (seen_ifindexes);
+	nm_config_device_state_prune_unseen (preserve_ifindexes, NULL);
 }
 
 static gboolean

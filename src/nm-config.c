@@ -2298,6 +2298,8 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	return device_state;
 }
 
+#define DEVICE_STATE_FILENAME_LEN_MAX 60
+
 /**
  * nm_config_device_state_load:
  * @ifindex: the ifindex for which the state is to load
@@ -2309,7 +2311,7 @@ NMConfigDeviceStateData *
 nm_config_device_state_load (int ifindex)
 {
 	NMConfigDeviceStateData *device_state;
-	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
+	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + DEVICE_STATE_FILENAME_LEN_MAX + 1];
 	gs_unref_keyfile GKeyFile *kf = NULL;
 	const char *nm_owned_str;
 
@@ -2393,7 +2395,7 @@ nm_config_device_state_write (int ifindex,
                               const char *next_server,
                               const char *root_path)
 {
-	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
+	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + DEVICE_STATE_FILENAME_LEN_MAX + 1];
 	GError *local = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 
@@ -2476,35 +2478,43 @@ nm_config_device_state_write (int ifindex,
 }
 
 void
-nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes)
+nm_config_device_state_prune_unseen (GHashTable *preserve_ifindexes,
+                                     NMPlatform *preserve_in_platform)
 {
 	GDir *dir;
 	const char *fn;
-	int ifindex;
-	gsize fn_len;
-	char buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + 30 + 3] = NM_CONFIG_DEVICE_STATE_DIR"/";
+	char buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + DEVICE_STATE_FILENAME_LEN_MAX + 1] = NM_CONFIG_DEVICE_STATE_DIR"/";
 	char *buf_p = &buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/")];
-
-	g_return_if_fail (seen_ifindexes);
 
 	dir = g_dir_open (NM_CONFIG_DEVICE_STATE_DIR, 0, NULL);
 	if (!dir)
 		return;
 
 	while ((fn = g_dir_read_name (dir))) {
+		int ifindex;
+		gsize fn_len;
+
 		ifindex = _device_state_parse_filename (fn);
 		if (ifindex <= 0)
 			continue;
-		if (g_hash_table_contains (seen_ifindexes, GINT_TO_POINTER (ifindex)))
+
+		if (   preserve_ifindexes
+		    && g_hash_table_contains (preserve_ifindexes, GINT_TO_POINTER (ifindex)))
 			continue;
 
-		fn_len = strlen (fn) + 1;
+		if (   preserve_in_platform
+		    && nm_platform_link_get (preserve_in_platform, ifindex))
+			continue;
+
+		fn_len = strlen (fn);
+		nm_assert (fn_len > 0);
 		nm_assert (&buf_p[fn_len] < &buf[G_N_ELEMENTS (buf)]);
-		memcpy (buf_p, fn, fn_len);
+		memcpy (buf_p, fn, fn_len + 1u);
 		nm_assert (({
 		                char bb[30];
-		                nm_sprintf_buf (bb, "%d", ifindex);
-		                nm_streq0 (bb, buf_p);
+
+		                nm_streq0 (nm_sprintf_buf (bb, "%d", ifindex),
+		                           buf_p);
 		           }));
 		_LOGT ("device-state: prune #%d (%s)", ifindex, buf);
 		(void) unlink (buf);
