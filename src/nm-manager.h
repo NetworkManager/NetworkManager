@@ -103,7 +103,7 @@ NMSettingsConnection **nm_manager_get_activatable_connections (NMManager *manage
                                                                guint *out_len);
 
 void          nm_manager_write_device_state_all (NMManager *manager);
-gboolean      nm_manager_write_device_state (NMManager *manager, NMDevice *device);
+gboolean      nm_manager_write_device_state (NMManager *manager, NMDevice *device, int *out_ifindex);
 
 /* Device handling */
 
