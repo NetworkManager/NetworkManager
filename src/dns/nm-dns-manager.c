@@ -1573,7 +1573,6 @@ nm_dns_manager_set_ip_config (NMDnsManager *self,
                               NMDnsIPConfigType ip_config_type)
 {
 	NMDnsManagerPrivate *priv;
-	GError *error = NULL;
 	NMDnsIPConfigData *ip_data;
 	NMDnsConfigData *data;
 	int ifindex;
@@ -1646,10 +1645,11 @@ nm_dns_manager_set_ip_config (NMDnsManager *self,
 	}
 
 changed:
-	if (   !priv->updates_queue
-	    && !update_dns (self, FALSE, &error)) {
-		_LOGW ("could not commit DNS changes: %s", error->message);
-		g_clear_error (&error);
+	if (!priv->updates_queue) {
+		gs_free_error GError *error = NULL;
+
+		if (!update_dns (self, FALSE, &error))
+			_LOGW ("could not commit DNS changes: %s", error->message);
 	}
 
 	return TRUE;
@@ -1671,7 +1671,6 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
                              gboolean skip_update)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
 	const char *filtered = NULL;
 
 	/* Certain hostnames we don't want to include in resolv.conf 'searches' */
@@ -1691,9 +1690,12 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
 
 	if (skip_update)
 		return;
-	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
-		_LOGW ("could not commit DNS changes: %s", error->message);
-		g_clear_error (&error);
+
+	if (!priv->updates_queue) {
+		gs_free_error GError *error = NULL;
+
+		if (!update_dns (self, FALSE, &error))
+			_LOGW ("could not commit DNS changes: %s", error->message);
 	}
 }
 
@@ -1718,7 +1720,7 @@ void
 nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 {
 	NMDnsManagerPrivate *priv;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean changed;
 	guint8 new[HASH_LEN];
 
@@ -1739,10 +1741,8 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 
 	/* Commit all the outstanding changes */
 	_LOGD ("(%s): committing DNS changes (%d)", func, priv->updates_queue);
-	if (!update_dns (self, FALSE, &error)) {
+	if (!update_dns (self, FALSE, &error))
 		_LOGW ("could not commit DNS changes: %s", error->message);
-		g_clear_error (&error);
-	}
 
 	memset (priv->prev_hash, 0, sizeof (priv->prev_hash));
 }
@@ -1751,7 +1751,6 @@ void
 nm_dns_manager_stop (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv;
-	GError *error = NULL;
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
@@ -1768,10 +1767,11 @@ nm_dns_manager_stop (NMDnsManager *self)
 	if (   priv->dns_touched
 	    && priv->plugin
 	    && NM_IS_DNS_DNSMASQ (priv->plugin)) {
-		if (!update_dns (self, TRUE, &error)) {
+		gs_free_error GError *error = NULL;
+
+		if (!update_dns (self, TRUE, &error))
 			_LOGW ("could not commit DNS changes on shutdown: %s", error->message);
-			g_clear_error (&error);
-		}
+
 		priv->dns_touched = FALSE;
 	}
 
@@ -2045,8 +2045,6 @@ config_changed_cb (NMConfig *config,
                    NMConfigData *old_data,
                    NMDnsManager *self)
 {
-	GError *error = NULL;
-
 	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
 	                           NM_CONFIG_CHANGE_CAUSE_SIGHUP |
@@ -2067,10 +2065,10 @@ config_changed_cb (NMConfig *config,
 	                           NM_CONFIG_CHANGE_DNS_MODE |
 	                           NM_CONFIG_CHANGE_RC_MANAGER |
 	                           NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG)) {
-		if (!update_dns (self, FALSE, &error)) {
+		gs_free_error GError *error = NULL;
+
+		if (!update_dns (self, FALSE, &error))
 			_LOGW ("could not commit DNS changes: %s", error->message);
-			g_clear_error (&error);
-		}
 	}
 }
 
