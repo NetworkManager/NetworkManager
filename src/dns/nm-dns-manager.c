@@ -1377,21 +1377,24 @@ update_dns (NMDnsManager *self,
             gboolean no_caching,
             GError **error)
 {
-	NMDnsManagerPrivate *priv;
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	const char *nis_domain = NULL;
 	gs_strfreev char **searches = NULL;
 	gs_strfreev char **options = NULL;
 	gs_strfreev char **nameservers = NULL;
 	gs_strfreev char **nis_servers = NULL;
-	gboolean caching = FALSE, update = TRUE;
+	gboolean caching = FALSE;
+	gboolean do_update = TRUE;
 	gboolean resolv_conf_updated = FALSE;
-	SpawnResult result = SR_ERROR;
+	SpawnResult result = SR_SUCCESS;
 	NMConfigData *data;
 	NMGlobalDnsConfig *global_config;
+	gs_free_error GError *local_error = NULL;
+	GError **const p_local_error =   error
+	                               ? &local_error
+	                               : NULL;
 
-	g_return_val_if_fail (!error || !*error, FALSE);
-
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	nm_assert (!error || !*error);
 
 	if (priv->is_stopped) {
 		_LOGD ("update-dns: not updating resolv.conf (is stopped)");
@@ -1402,7 +1405,7 @@ update_dns (NMDnsManager *self,
 
 	if (NM_IN_SET (priv->rc_manager, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
 	                                 NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE)) {
-		update = FALSE;
+		do_update = FALSE;
 		_LOGD ("update-dns: not updating resolv.conf");
 	} else {
 		priv->dns_touched = TRUE;
@@ -1440,7 +1443,7 @@ update_dns (NMDnsManager *self,
 			if (no_caching) {
 				_LOGD ("update-dns: plugin %s ignored (caching disabled)",
 				       plugin_name);
-				goto skip;
+				goto plugin_skip;
 			}
 			caching = TRUE;
 		}
@@ -1459,7 +1462,7 @@ update_dns (NMDnsManager *self,
 			caching = FALSE;
 		}
 
-	skip:
+plugin_skip:
 		;
 	}
 
@@ -1490,7 +1493,7 @@ update_dns (NMDnsManager *self,
 		nameservers[0] = g_strdup (lladdr);
 	}
 
-	if (update) {
+	if (do_update) {
 		switch (priv->rc_manager) {
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
@@ -1498,7 +1501,7 @@ update_dns (NMDnsManager *self,
 			                             NM_CAST_STRV_CC (searches),
 			                             NM_CAST_STRV_CC (nameservers),
 			                             NM_CAST_STRV_CC (options),
-			                             error,
+			                             p_local_error,
 			                             priv->rc_manager);
 			resolv_conf_updated = TRUE;
 			/* If we have ended with no nameservers avoid updating again resolv.conf
@@ -1507,7 +1510,11 @@ update_dns (NMDnsManager *self,
 				priv->dns_touched = FALSE;
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
-			result = dispatch_resolvconf (self, searches, nameservers, options, error);
+			result = dispatch_resolvconf (self,
+			                              searches,
+			                              nameservers,
+			                              options,
+			                              p_local_error);
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
 			result = dispatch_netconfig (self,
@@ -1515,20 +1522,20 @@ update_dns (NMDnsManager *self,
 			                             (const char *const*) nameservers,
 			                             nis_domain,
 			                             (const char *const*) nis_servers,
-			                             error);
+			                             p_local_error);
 			break;
 		default:
-			g_assert_not_reached ();
+			nm_assert_not_reached ();
 		}
 
 		if (result == SR_NOTFOUND) {
 			_LOGD ("update-dns: program not available, writing to resolv.conf");
-			g_clear_error (error);
+			g_clear_error (&local_error);
 			result = update_resolv_conf (self,
 			                             NM_CAST_STRV_CC (searches),
 			                             NM_CAST_STRV_CC (nameservers),
 			                             NM_CAST_STRV_CC (options),
-			                             error,
+			                             p_local_error,
 			                             NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK);
 			resolv_conf_updated = TRUE;
 		}
@@ -1546,13 +1553,21 @@ update_dns (NMDnsManager *self,
 	}
 
 	/* signal that resolv.conf was changed */
-	if (update && result == SR_SUCCESS)
+	if (   do_update
+	    && result == SR_SUCCESS)
 		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
 
 	g_clear_pointer (&priv->config_variant, g_variant_unref);
 	_notify (self, PROP_CONFIGURATION);
 
-	return !update || result == SR_SUCCESS;
+	if (result != SR_SUCCESS) {
+		if (error)
+			g_propagate_error (error, g_steal_pointer (&local_error));
+		return FALSE;
+	}
+
+	nm_assert (!local_error);
+	return TRUE;
 }
 
 /*****************************************************************************/
