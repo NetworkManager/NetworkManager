@@ -6567,7 +6567,7 @@ nm_manager_write_device_state_all (NMManager *self)
 		}
 	}
 
-	nm_config_device_state_prune_unseen (preserve_ifindexes, NULL);
+	nm_config_device_state_prune_stale (preserve_ifindexes, NULL);
 }
 
 static gboolean

@@ -258,8 +258,8 @@ gboolean nm_config_device_state_write (int ifindex,
                                        const char *next_server,
                                        const char *root_path);
 
-void nm_config_device_state_prune_unseen (GHashTable *preserve_ifindexes,
-                                          NMPlatform *preserve_in_platform);
+void nm_config_device_state_prune_stale (GHashTable *preserve_ifindexes,
+                                         NMPlatform *preserve_in_platform);
 
 const GHashTable *nm_config_device_state_get_all (NMConfig *self);
 const NMConfigDeviceStateData *nm_config_device_state_get (NMConfig *self,
