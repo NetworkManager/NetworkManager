@@ -1515,7 +1515,7 @@ manager_device_state_changed (NMDevice *device,
 	               NM_DEVICE_STATE_UNMANAGED,
 	               NM_DEVICE_STATE_DISCONNECTED,
 	               NM_DEVICE_STATE_ACTIVATED))
-		nm_manager_write_device_state (self, device);
+		nm_manager_write_device_state (self, device, NULL);
 
 	if (NM_IN_SET (new_state,
 	               NM_DEVICE_STATE_UNAVAILABLE,
@@ -6514,7 +6514,7 @@ start_factory (NMDeviceFactory *factory, gpointer user_data)
 }
 
 gboolean
-nm_manager_write_device_state (NMManager *self, NMDevice *device)
+nm_manager_write_device_state (NMManager *self, NMDevice *device, int *out_ifindex)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	int ifindex;
@@ -6529,6 +6529,8 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	NMDhcp4Config *dhcp4_config;
 	const char *next_server = NULL;
 	const char *root_path = NULL;
+
+	NM_SET_OUT (out_ifindex, 0);
 
 	ifindex = nm_device_get_ip_ifindex (device);
 	if (ifindex <= 0)
@@ -6570,15 +6572,19 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 		next_server = nm_dhcp4_config_get_option (dhcp4_config, "next_server");
 	}
 
-	return nm_config_device_state_write (ifindex,
-	                                     managed_type,
-	                                     perm_hw_addr_fake,
-	                                     uuid,
-	                                     nm_owned,
-	                                     route_metric_default_aspired,
-	                                     route_metric_default_effective,
-	                                     next_server,
-	                                     root_path);
+	if (!nm_config_device_state_write (ifindex,
+	                                   managed_type,
+	                                   perm_hw_addr_fake,
+	                                   uuid,
+	                                   nm_owned,
+	                                   route_metric_default_aspired,
+	                                   route_metric_default_effective,
+	                                   next_server,
+	                                   root_path))
+		return FALSE;
+
+	NM_SET_OUT (out_ifindex, ifindex);
+	return TRUE;
 }
 
 void
@@ -6591,9 +6597,11 @@ nm_manager_write_device_state_all (NMManager *self)
 	preserve_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		if (nm_manager_write_device_state (self, device)) {
+		int ifindex;
+
+		if (nm_manager_write_device_state (self, device, &ifindex)) {
 			g_hash_table_add (preserve_ifindexes,
-			                  GINT_TO_POINTER (nm_device_get_ip_ifindex (device)));
+			                  GINT_TO_POINTER (ifindex));
 		}
 	}
 
