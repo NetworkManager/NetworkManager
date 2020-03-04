@@ -2478,8 +2478,8 @@ nm_config_device_state_write (int ifindex,
 }
 
 void
-nm_config_device_state_prune_unseen (GHashTable *preserve_ifindexes,
-                                     NMPlatform *preserve_in_platform)
+nm_config_device_state_prune_stale (GHashTable *preserve_ifindexes,
+                                    NMPlatform *preserve_in_platform)
 {
 	GDir *dir;
 	const char *fn;
