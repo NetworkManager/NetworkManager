@@ -31,7 +31,9 @@ typedef struct _NMDeviceInfinibandClass NMDeviceInfinibandClass;
 
 GType nm_device_infiniband_get_type (void);
 
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_infiniband_get_hw_address (NMDeviceInfiniband *device);
+
 gboolean     nm_device_infiniband_get_carrier (NMDeviceInfiniband *device);
 
 G_END_DECLS

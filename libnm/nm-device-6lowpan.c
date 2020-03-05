@@ -13,12 +13,10 @@
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PARENT,
-	PROP_HW_ADDRESS,
 );
 
 typedef struct {
 	NMLDBusPropertyO parent;
-	char *hw_address;
 } NMDevice6LowpanPrivate;
 
 struct _NMDevice6Lowpan {
@@ -62,19 +60,15 @@ nm_device_6lowpan_get_parent (NMDevice6Lowpan *device)
  * device, and must not be modified.
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_6lowpan_get_hw_address (NMDevice6Lowpan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_6LOWPAN (device), NULL);
 
-	return NM_DEVICE_6LOWPAN_GET_PRIVATE (device)->hw_address;
-}
-
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_6lowpan_get_hw_address (NM_DEVICE_6LOWPAN (device));
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /*****************************************************************************/
@@ -82,16 +76,6 @@ get_hw_address (NMDevice *device)
 static void
 nm_device_6lowpan_init (NMDevice6Lowpan *device)
 {
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDevice6LowpanPrivate *priv = NM_DEVICE_6LOWPAN_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_6lowpan_parent_class)->dispose (object);
-
-	nm_clear_g_free (&priv->hw_address);
 }
 
 static void
@@ -106,9 +90,6 @@ get_property (GObject *object,
 	case PROP_PARENT:
 		g_value_set_object (value, nm_device_6lowpan_get_parent (device));
 		break;
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_6lowpan_get_hw_address (device));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -120,8 +101,8 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_lowpan = NML_DBUS_META_IFA
 	nm_device_6lowpan_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress", PROP_HW_ADDRESS, NMDevice6Lowpan, _priv.hw_address                    ),
-		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDevice6Lowpan, _priv.parent,    nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("HwAddress", 0,               "s",             _nm_device_notify_update_prop_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDevice6Lowpan, _priv.parent,                            nm_device_get_type ),
 	),
 );
 
@@ -130,16 +111,12 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->dispose      = dispose;
 
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDevice6Lowpan);
 
 	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDevice6LowpanPrivate, parent);
-
-	device_class->get_hw_address = get_hw_address;
 
 	/**
 	 * NMDevice6Lowpan:parent:
@@ -151,19 +128,6 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	obj_properties[PROP_PARENT] =
 	    g_param_spec_object (NM_DEVICE_6LOWPAN_PARENT, "", "",
 	                         NM_TYPE_DEVICE,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
-
-	/**
-	 * NMDevice6Lowpan:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Since: 1.14
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_6LOWPAN_HW_ADDRESS, "", "",
-	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 

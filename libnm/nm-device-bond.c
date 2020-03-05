@@ -16,7 +16,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_SLAVES,
 );
@@ -50,13 +49,15 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_bond_get_hw_address (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_BOND_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -116,12 +117,6 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_BOND;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_bond_get_hw_address (NM_DEVICE_BOND (device));
-}
-
 /*****************************************************************************/
 
 static void
@@ -148,9 +143,6 @@ get_property (GObject *object,
 	NMDeviceBond *device = NM_DEVICE_BOND (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_bond_get_hw_address (device));
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_bond_get_carrier (device));
 		break;
@@ -168,9 +160,9 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_bond = NML_DBUS_META_IFACE
 	nm_device_bond_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceBond, _priv.carrier                        ),
-		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress", PROP_HW_ADDRESS, NMDeviceBond, _priv.hw_address                     ),
-		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceBond, _priv.slaves,     nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceBond, _priv.carrier                                               ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("HwAddress", 0,               "s",          _nm_device_notify_update_prop_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceBond, _priv.slaves,                            nm_device_get_type ),
 	),
 );
 
@@ -190,18 +182,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceBond:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_BOND_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceBond:carrier:

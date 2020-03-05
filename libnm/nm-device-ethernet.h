@@ -35,7 +35,9 @@ typedef struct _NMDeviceEthernetClass NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type (void);
 
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_ethernet_get_hw_address (NMDeviceEthernet *device);
+
 const char * nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device);
 guint32      nm_device_ethernet_get_speed   (NMDeviceEthernet *device);
 gboolean     nm_device_ethernet_get_carrier (NMDeviceEthernet *device);

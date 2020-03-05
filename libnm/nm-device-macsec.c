@@ -15,7 +15,6 @@
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PARENT,
-	PROP_HW_ADDRESS,
 	PROP_SCI,
 	PROP_CIPHER_SUITE,
 	PROP_ICV_LENGTH,
@@ -32,7 +31,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	NMLDBusPropertyO parent;
-	char *hw_address;
 	char *validation;
 	guint64 sci;
 	guint64 cipher_suite;
@@ -88,13 +86,15 @@ nm_device_macsec_get_parent (NMDeviceMacsec *device)
  * device, and must not be modified.
  *
  * Since: 1.6
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_macsec_get_hw_address (NMDeviceMacsec *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACSEC (device), NULL);
 
-	return NM_DEVICE_MACSEC_GET_PRIVATE (device)->hw_address;
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -318,12 +318,6 @@ nm_device_macsec_get_replay_protect (NMDeviceMacsec *device)
 	return NM_DEVICE_MACSEC_GET_PRIVATE (device)->replay_protect;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_macsec_get_hw_address (NM_DEVICE_MACSEC (device));
-}
-
 /***********************************************************/
 
 static void
@@ -337,7 +331,6 @@ finalize (GObject *object)
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (object);
 
 	g_free (priv->validation);
-	g_free (priv->hw_address);
 
 	G_OBJECT_CLASS (nm_device_macsec_parent_class)->finalize (object);
 }
@@ -353,9 +346,6 @@ get_property (GObject *object,
 	switch (prop_id) {
 	case PROP_PARENT:
 		g_value_set_object (value, nm_device_macsec_get_parent (device));
-		break;
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_macsec_get_hw_address (device));
 		break;
 	case PROP_SCI:
 		g_value_set_uint64 (value, nm_device_macsec_get_sci (device));
@@ -425,7 +415,6 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
@@ -433,8 +422,6 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceMacsec);
 
 	_NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1 (nm_object_class, NMDeviceMacsecPrivate, parent);
-
-	device_class->get_hw_address = get_hw_address;
 
 	/**
 	 * NMDeviceMacsec:parent:
@@ -446,19 +433,6 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	obj_properties[PROP_PARENT] =
 	    g_param_spec_object (NM_DEVICE_MACSEC_PARENT, "", "",
 	                         NM_TYPE_DEVICE,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
-
-	/**
-	 * NMDeviceMacsec:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Since: 1.6
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_MACSEC_HW_ADDRESS, "", "",
-	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 

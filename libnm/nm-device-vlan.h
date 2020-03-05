@@ -33,7 +33,9 @@ typedef struct _NMDeviceVlanClass NMDeviceVlanClass;
 
 GType nm_device_vlan_get_type (void);
 
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_vlan_get_hw_address (NMDeviceVlan *device);
+
 gboolean     nm_device_vlan_get_carrier (NMDeviceVlan *device);
 NMDevice *   nm_device_vlan_get_parent  (NMDeviceVlan *device);
 guint        nm_device_vlan_get_vlan_id (NMDeviceVlan *device);

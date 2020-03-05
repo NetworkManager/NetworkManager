@@ -32,6 +32,7 @@ NM_AVAILABLE_IN_1_14
 GType nm_device_wpan_get_type (void);
 
 NM_AVAILABLE_IN_1_14
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char *nm_device_wpan_get_hw_address (NMDeviceWpan *device);
 
 G_END_DECLS

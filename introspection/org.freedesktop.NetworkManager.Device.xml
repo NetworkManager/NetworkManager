@@ -290,6 +290,17 @@
     <property name="InterfaceFlags" type="u" access="read"/>
 
     <!--
+        HwAddress:
+
+        The hardware address of the device.
+
+        This replaces the other 'HwAddress' properties on the device-specific D-Bus interfaces.
+
+        Since: 1.24
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
         Reapply:
         @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarly differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
         @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows to catch concurrent modifications between the GetAppliedConnection call and Reapply.

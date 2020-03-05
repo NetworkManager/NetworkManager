@@ -15,12 +15,10 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 );
 
 typedef struct {
-	char *hw_address;
 	bool carrier;
 } NMDeviceInfinibandPrivate;
 
@@ -47,13 +45,15 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_infiniband_get_hw_address (NMDeviceInfiniband *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -87,7 +87,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		return FALSE;
 	}
 
-	hwaddr = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
+	hwaddr = nm_device_get_hw_address (NM_DEVICE (device));
 	if (hwaddr) {
 		if (!nm_utils_hwaddr_valid (hwaddr, INFINIBAND_ALEN)) {
 			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
@@ -113,27 +113,11 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_INFINIBAND;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
-}
-
 /*****************************************************************************/
 
 static void
 nm_device_infiniband_init (NMDeviceInfiniband *device)
 {
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
-
-	g_free (priv->hw_address);
-
-	G_OBJECT_CLASS (nm_device_infiniband_parent_class)->finalize (object);
 }
 
 static void
@@ -145,9 +129,6 @@ get_property (GObject *object,
 	NMDeviceInfiniband *device = NM_DEVICE_INFINIBAND (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_infiniband_get_hw_address (device));
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_infiniband_get_carrier (device));
 		break;
@@ -162,8 +143,8 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_infiniband = NML_DBUS_META
 	nm_device_infiniband_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_B ("Carrier",   PROP_CARRIER,    NMDeviceInfiniband, _priv.carrier    ),
-		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress", PROP_HW_ADDRESS, NMDeviceInfiniband, _priv.hw_address ),
+		NML_DBUS_META_PROPERTY_INIT_B   ("Carrier",   PROP_CARRIER,    NMDeviceInfiniband, _priv.carrier                            ),
+		NML_DBUS_META_PROPERTY_INIT_FCN ("HwAddress", 0,               "s",                _nm_device_notify_update_prop_hw_address ),
 	),
 );
 
@@ -174,22 +155,9 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *ib_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (ib_class);
 
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceInfiniband:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_INFINIBAND_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceInfiniband:carrier:

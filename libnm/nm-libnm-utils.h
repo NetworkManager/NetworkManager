@@ -822,8 +822,6 @@ struct _NMDeviceClass {
 
 	const char *(*get_type_description) (NMDevice *device);
 
-	const char *(*get_hw_address) (NMDevice *device);
-
 	GType (*get_setting_type) (NMDevice *device);
 };
 
@@ -1015,6 +1013,15 @@ void _nm_active_connection_state_changed_commit (NMActiveConnection *self,
 void _nm_vpn_connection_state_changed_commit (NMVpnConnection *self,
                                               guint32 state,
                                               guint32 reason);
+
+/*****************************************************************************/
+
+NMLDBusNotifyUpdatePropFlags
+_nm_device_notify_update_prop_hw_address (NMClient *client,
+                                          NMLDBusObject *dbobj,
+                                          const NMLDBusMetaIface *meta_iface,
+                                          guint dbus_property_idx,
+                                          GVariant *value);
 
 /*****************************************************************************/
 

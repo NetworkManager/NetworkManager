@@ -17636,6 +17636,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("Ip4Connectivity",      "u",      NM_DEVICE_IP4_CONNECTIVITY),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("Ip6Connectivity",      "u",      NM_DEVICE_IP6_CONNECTIVITY),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("InterfaceFlags",       "u",      NM_DEVICE_INTERFACE_FLAGS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("HwAddress",            "s",      NM_DEVICE_HW_ADDRESS),
 		),
 	),
 };

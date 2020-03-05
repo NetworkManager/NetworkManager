@@ -16,7 +16,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_SLAVES,
 	PROP_CONFIG,
@@ -24,7 +23,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	NMLDBusPropertyAO slaves;
-	char *hw_address;
 	char *config;
 	bool carrier;
 } NMDeviceTeamPrivate;
@@ -52,13 +50,15 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_team_get_hw_address (NMDeviceTeam *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -114,12 +114,6 @@ nm_device_team_get_config (NMDeviceTeam *device)
 	return _nml_coerce_property_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (device)->config);
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_team_get_hw_address (NM_DEVICE_TEAM (device));
-}
-
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -155,7 +149,6 @@ finalize (GObject *object)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
 
-	g_free (priv->hw_address);
 	g_free (priv->config);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->finalize (object);
@@ -170,9 +163,6 @@ get_property (GObject *object,
 	NMDeviceTeam *device = NM_DEVICE_TEAM (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_team_get_hw_address (device));
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_team_get_carrier (device));
 		break;
@@ -193,10 +183,10 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_team = NML_DBUS_META_IFACE
 	nm_device_team_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceTeam, _priv.carrier                        ),
-		NML_DBUS_META_PROPERTY_INIT_S       ("Config",    PROP_CONFIG,     NMDeviceTeam, _priv.config                         ),
-		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress", PROP_HW_ADDRESS, NMDeviceTeam, _priv.hw_address                     ),
-		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceTeam, _priv.slaves,     nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceTeam, _priv.carrier                                               ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("Config",    PROP_CONFIG,     NMDeviceTeam, _priv.config                                                ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("HwAddress", 0,               "s",          _nm_device_notify_update_prop_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceTeam, _priv.slaves,                            nm_device_get_type ),
 	),
 );
 
@@ -216,18 +206,6 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceTeam:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTeam:carrier:

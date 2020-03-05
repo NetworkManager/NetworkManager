@@ -38,7 +38,9 @@ typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
 
 GType nm_device_wifi_get_type (void);
 
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char *             nm_device_wifi_get_hw_address           (NMDeviceWifi *device);
+
 const char *             nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device);
 NM80211Mode              nm_device_wifi_get_mode                 (NMDeviceWifi *device);
 guint32                  nm_device_wifi_get_bitrate              (NMDeviceWifi *device);

@@ -14,6 +14,8 @@
 
         The active hardware address of the device.
 
+        DEPRECATED. Use the "HwAddress" property in "org.freedesktop.NetworkManager.Device" instead which exists since version NetworkManager 1.24.0.
+
         Since: 1.16
     -->
     <property name="HwAddress" type="s" access="read"/>

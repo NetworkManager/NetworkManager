@@ -20,7 +20,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MODE,
 	PROP_NO_PROMISC,
 	PROP_TAP,
-	PROP_HW_ADDRESS,
 );
 
 typedef struct {
@@ -128,13 +127,15 @@ nm_device_macvlan_get_tap (NMDeviceMacvlan *device)
  * Since: 1.2
  *
  * This property is not implemented yet, and the function always return NULL.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_macvlan_get_hw_address (NMDeviceMacvlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACVLAN (device), NULL);
 
-	return NULL;
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 static gboolean
@@ -159,12 +160,6 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	return TRUE;
-}
-
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_macvlan_get_hw_address (NM_DEVICE_MACVLAN (device));
 }
 
 static GType
@@ -211,9 +206,6 @@ get_property (GObject *object,
 	case PROP_TAP:
 		g_value_set_boolean (value, nm_device_macvlan_get_tap (device));
 		break;
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_macvlan_get_hw_address (device));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -248,7 +240,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
 
 	/**
 	 * NMDeviceMacvlan:parent:
@@ -301,21 +292,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
-
-	/**
-	 * NMDeviceMacvlan:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Since: 1.2
-	 *
-	 * This property is not implemented yet, and the function always return NULL.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_MACVLAN_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device_macvlan);
 }

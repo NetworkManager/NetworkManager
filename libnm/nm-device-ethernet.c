@@ -17,7 +17,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_CARRIER,
@@ -26,7 +25,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	char **s390_subchannels;
-	char *hw_address;
 	char *perm_hw_address;
 	guint32 speed;
 	bool carrier;
@@ -55,13 +53,15 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
  *
  * Returns: the active hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -210,7 +210,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 			/* Virtual devices will have empty permanent addr but they should not be excluded
 			 * from the MAC address check specified in the connection */
 			if (*perm_addr == 0)
-				perm_addr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
+				perm_addr = nm_device_get_hw_address (NM_DEVICE (device));
 
 			if (!nm_utils_hwaddr_valid (perm_addr, ETH_ALEN)) {
 				g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
@@ -251,12 +251,6 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_WIRED;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
-}
-
 /*****************************************************************************/
 
 static void
@@ -269,7 +263,6 @@ finalize (GObject *object)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
 
-	g_free (priv->hw_address);
 	g_free (priv->perm_hw_address);
 	g_strfreev (priv->s390_subchannels);
 
@@ -286,9 +279,6 @@ get_property (GObject *object,
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_ethernet_get_hw_address (device));
-		break;
 	case PROP_PERM_HW_ADDRESS:
 		g_value_set_string (value, nm_device_ethernet_get_permanent_hw_address (device));
 		break;
@@ -319,11 +309,11 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired = NML_DBUS_META_IFAC
 	nm_device_ethernet_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_B  ("Carrier",         PROP_CARRIER,          NMDeviceEthernet, _priv.carrier          ),
-		NML_DBUS_META_PROPERTY_INIT_S  ("HwAddress",       PROP_HW_ADDRESS,       NMDeviceEthernet, _priv.hw_address       ),
-		NML_DBUS_META_PROPERTY_INIT_S  ("PermHwAddress",   PROP_PERM_HW_ADDRESS,  NMDeviceEthernet, _priv.perm_hw_address  ),
-		NML_DBUS_META_PROPERTY_INIT_AS ("S390Subchannels", PROP_S390_SUBCHANNELS, NMDeviceEthernet, _priv.s390_subchannels ),
-		NML_DBUS_META_PROPERTY_INIT_U  ("Speed",           PROP_SPEED,            NMDeviceEthernet, _priv.speed            ),
+		NML_DBUS_META_PROPERTY_INIT_B   ("Carrier",         PROP_CARRIER,          NMDeviceEthernet, _priv.carrier                            ),
+		NML_DBUS_META_PROPERTY_INIT_FCN ("HwAddress",       0,                     "s",              _nm_device_notify_update_prop_hw_address ),
+		NML_DBUS_META_PROPERTY_INIT_S   ("PermHwAddress",   PROP_PERM_HW_ADDRESS,  NMDeviceEthernet, _priv.perm_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_AS  ("S390Subchannels", PROP_S390_SUBCHANNELS, NMDeviceEthernet, _priv.s390_subchannels                   ),
+		NML_DBUS_META_PROPERTY_INIT_U   ("Speed",           PROP_SPEED,            NMDeviceEthernet, _priv.speed                              ),
 	),
 );
 
@@ -338,18 +328,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceEthernet:hw-address:
-	 *
-	 * The active hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_ETHERNET_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceEthernet:perm-hw-address:
