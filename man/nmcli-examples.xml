@@ -87,6 +87,10 @@
       </para>
     </example>
 
+    <example><title>Connect to a password-protected wifi network</title>
+<screen><prompt>$ </prompt><userinput>nmcli device wifi connect "ssid" password "password"</userinput></screen>
+    </example>
+
     <example><title>Showing general information and properties for a Wi-Fi interface</title>
 <screen><prompt>$ </prompt><userinput>nmcli -p -f general,wifi-properties device show wlan0</userinput>
 ===========================================================================
