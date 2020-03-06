@@ -494,8 +494,9 @@ typedef enum {
 	NM_BOND_OPTION_TYPE_IFNAME,
 } NMBondOptionType;
 
-NMBondOptionType
-_nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
+NMBondOptionType _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
+
+const char* nm_setting_bond_get_option_or_default (NMSettingBond *self, const char *option);
 
 /*****************************************************************************/
 
