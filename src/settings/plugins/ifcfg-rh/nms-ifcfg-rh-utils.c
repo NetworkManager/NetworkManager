@@ -579,31 +579,15 @@ const char *const _nm_ethtool_ifcfg_names[] = {
 	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,       "tx-vlan-stag-hw-insert"),
 };
 
-const NMEthtoolData *
-nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
-{
-	static const struct {
-		NMEthtoolID ethtool_id;
-		const char *kernel_name;
-	} kernel_names[] = {
-		{ NM_ETHTOOL_ID_FEATURE_GRO,    "rx-gro" },
-		{ NM_ETHTOOL_ID_FEATURE_GSO,    "tx-generic-segmentation" },
-		{ NM_ETHTOOL_ID_FEATURE_LRO,    "rx-lro" },
-		{ NM_ETHTOOL_ID_FEATURE_NTUPLE, "rx-ntuple-filter" },
-		{ NM_ETHTOOL_ID_FEATURE_RX,     "rx-checksum" },
-		{ NM_ETHTOOL_ID_FEATURE_RXHASH, "rx-hashing" },
-		{ NM_ETHTOOL_ID_FEATURE_RXVLAN, "rx-vlan-hw-parse" },
-		{ NM_ETHTOOL_ID_FEATURE_TXVLAN, "tx-vlan-hw-insert" },
-	};
-	guint i;
+static
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_get_ethtoolid_by_name,
+	NMEthtoolID,
+	{ nm_assert (name); },
+	{ return NM_ETHTOOL_ID_UNKNOWN; },
 
-	for (i = 0; i < G_N_ELEMENTS (_nm_ethtool_ifcfg_names); i++) {
-		if (nm_streq (name, _nm_ethtool_ifcfg_names[i]))
-			return nm_ethtool_data[i];
-	}
-
-	/* Option not found. Note that ethtool utility has built-in features and
-	 * NetworkManager's API follows the naming of these built-in features, whenever
+	/* Map the names from kernel/ethtool/ifcfg to NMEthtoolID. Note that ethtool utility has built-in
+	 * features and NetworkManager's API follows the naming of these built-in features, whenever
 	 * they exist.
 	 * For example, NM's "ethtool.feature-ntuple" corresponds to ethtool utility's "ntuple"
 	 * feature. However the underlying kernel feature is called "rx-ntuple-filter" (as reported
@@ -611,13 +595,85 @@ nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
 	 *
 	 * With ethtool utility, whose command line we attempt to parse here, the user can also
 	 * specify the name of the underlying kernel feature directly. So, check whether that is
-	 * the case and if yes, map them to the corresponding NetworkManager's features. */
-	for (i = 0; i < G_N_ELEMENTS (kernel_names); i++) {
-		if (nm_streq (name, kernel_names[i].kernel_name))
-			return nm_ethtool_data[kernel_names[i].ethtool_id];
-	}
+	 * the case and if yes, map them to the corresponding NetworkManager's features.
+	 *
+	 * That is why there are duplicate IDs in this list. */
+	{ "esp-hw-offload",               NM_ETHTOOL_ID_FEATURE_ESP_HW_OFFLOAD               },
+	{ "esp-tx-csum-hw-offload",       NM_ETHTOOL_ID_FEATURE_ESP_TX_CSUM_HW_OFFLOAD       },
+	{ "fcoe-mtu",                     NM_ETHTOOL_ID_FEATURE_FCOE_MTU                     },
+	{ "gro",                          NM_ETHTOOL_ID_FEATURE_GRO                          },
+	{ "gso",                          NM_ETHTOOL_ID_FEATURE_GSO                          },
+	{ "highdma",                      NM_ETHTOOL_ID_FEATURE_HIGHDMA                      },
+	{ "hw-tc-offload",                NM_ETHTOOL_ID_FEATURE_HW_TC_OFFLOAD                },
+	{ "l2-fwd-offload",               NM_ETHTOOL_ID_FEATURE_L2_FWD_OFFLOAD               },
+	{ "loopback",                     NM_ETHTOOL_ID_FEATURE_LOOPBACK                     },
+	{ "lro",                          NM_ETHTOOL_ID_FEATURE_LRO                          },
+	{ "ntuple",                       NM_ETHTOOL_ID_FEATURE_NTUPLE                       },
+	{ "rx",                           NM_ETHTOOL_ID_FEATURE_RX                           },
+	{ "rx-all",                       NM_ETHTOOL_ID_FEATURE_RX_ALL                       },
+	{ "rx-checksum",                  NM_ETHTOOL_ID_FEATURE_RX                           }, // kernel-only name
+	{ "rx-fcs",                       NM_ETHTOOL_ID_FEATURE_RX_FCS                       },
+	{ "rx-gro",                       NM_ETHTOOL_ID_FEATURE_GRO                          }, // kernel-only name
+	{ "rx-gro-hw",                    NM_ETHTOOL_ID_FEATURE_RX_GRO_HW                    },
+	{ "rx-hashing",                   NM_ETHTOOL_ID_FEATURE_RXHASH                       }, // kernel-only name
+	{ "rx-lro",                       NM_ETHTOOL_ID_FEATURE_LRO                          }, // kernel-only name
+	{ "rx-ntuple-filter",             NM_ETHTOOL_ID_FEATURE_NTUPLE                       }, // kernel-only name
+	{ "rx-udp_tunnel-port-offload",   NM_ETHTOOL_ID_FEATURE_RX_UDP_TUNNEL_PORT_OFFLOAD   },
+	{ "rx-vlan-filter",               NM_ETHTOOL_ID_FEATURE_RX_VLAN_FILTER               },
+	{ "rx-vlan-hw-parse",             NM_ETHTOOL_ID_FEATURE_RXVLAN                       }, // kernel-only name
+	{ "rx-vlan-stag-filter",          NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_FILTER          },
+	{ "rx-vlan-stag-hw-parse",        NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_HW_PARSE        },
+	{ "rxhash",                       NM_ETHTOOL_ID_FEATURE_RXHASH                       },
+	{ "rxvlan",                       NM_ETHTOOL_ID_FEATURE_RXVLAN                       },
+	{ "sg",                           NM_ETHTOOL_ID_FEATURE_SG                           },
+	{ "tls-hw-record",                NM_ETHTOOL_ID_FEATURE_TLS_HW_RECORD                },
+	{ "tls-hw-tx-offload",            NM_ETHTOOL_ID_FEATURE_TLS_HW_TX_OFFLOAD            },
+	{ "tso",                          NM_ETHTOOL_ID_FEATURE_TSO                          },
+	{ "tx",                           NM_ETHTOOL_ID_FEATURE_TX                           },
+	{ "tx-checksum-fcoe-crc",         NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_FCOE_CRC         },
+	{ "tx-checksum-ip-generic",       NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IP_GENERIC       },
+	{ "tx-checksum-ipv4",             NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV4             },
+	{ "tx-checksum-ipv6",             NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV6             },
+	{ "tx-checksum-sctp",             NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_SCTP             },
+	{ "tx-esp-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_ESP_SEGMENTATION          },
+	{ "tx-fcoe-segmentation",         NM_ETHTOOL_ID_FEATURE_TX_FCOE_SEGMENTATION         },
+	{ "tx-generic-segmentation",      NM_ETHTOOL_ID_FEATURE_GSO                          }, // kernel-only name
+	{ "tx-gre-csum-segmentation",     NM_ETHTOOL_ID_FEATURE_TX_GRE_CSUM_SEGMENTATION     },
+	{ "tx-gre-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_GRE_SEGMENTATION          },
+	{ "tx-gso-partial",               NM_ETHTOOL_ID_FEATURE_TX_GSO_PARTIAL               },
+	{ "tx-gso-robust",                NM_ETHTOOL_ID_FEATURE_TX_GSO_ROBUST                },
+	{ "tx-ipxip4-segmentation",       NM_ETHTOOL_ID_FEATURE_TX_IPXIP4_SEGMENTATION       },
+	{ "tx-ipxip6-segmentation",       NM_ETHTOOL_ID_FEATURE_TX_IPXIP6_SEGMENTATION       },
+	{ "tx-nocache-copy",              NM_ETHTOOL_ID_FEATURE_TX_NOCACHE_COPY              },
+	{ "tx-scatter-gather",            NM_ETHTOOL_ID_FEATURE_TX_SCATTER_GATHER            },
+	{ "tx-scatter-gather-fraglist",   NM_ETHTOOL_ID_FEATURE_TX_SCATTER_GATHER_FRAGLIST   },
+	{ "tx-sctp-segmentation",         NM_ETHTOOL_ID_FEATURE_TX_SCTP_SEGMENTATION         },
+	{ "tx-tcp-ecn-segmentation",      NM_ETHTOOL_ID_FEATURE_TX_TCP_ECN_SEGMENTATION      },
+	{ "tx-tcp-mangleid-segmentation", NM_ETHTOOL_ID_FEATURE_TX_TCP_MANGLEID_SEGMENTATION },
+	{ "tx-tcp-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_TCP_SEGMENTATION          },
+	{ "tx-tcp6-segmentation",         NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION         },
+	{ "tx-udp-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_UDP_SEGMENTATION          },
+	{ "tx-udp_tnl-csum-segmentation", NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION },
+	{ "tx-udp_tnl-segmentation",      NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION      },
+	{ "tx-vlan-hw-insert",            NM_ETHTOOL_ID_FEATURE_TXVLAN                       }, // kernel-only name
+	{ "tx-vlan-stag-hw-insert",       NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT       },
+	{ "txvlan",                       NM_ETHTOOL_ID_FEATURE_TXVLAN                       },
+);
 
-	return NULL;
+const NMEthtoolData *
+nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
+{
+	NMEthtoolID id;
+
+	id = _get_ethtoolid_by_name (name);
+	if (id == NM_ETHTOOL_ID_UNKNOWN)
+		return NULL;
+
+	nm_assert (_NM_INT_NOT_NEGATIVE (id));
+	nm_assert (id < G_N_ELEMENTS (nm_ethtool_data));
+	nm_assert (nm_ethtool_data[id]);
+	nm_assert (nm_ethtool_data[id]->id == id);
+	return nm_ethtool_data[id];
 }
 
 /*****************************************************************************/
