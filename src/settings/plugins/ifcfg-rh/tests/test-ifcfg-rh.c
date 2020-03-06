@@ -10341,6 +10341,61 @@ test_utils_has_route_file_new_syntax (void)
 
 /*****************************************************************************/
 
+static void
+test_ethtool_names (void)
+{
+	static const struct {
+		NMEthtoolID ethtool_id;
+		const char *kernel_name;
+	} kernel_names[] = {
+		{ NM_ETHTOOL_ID_FEATURE_GRO,    "rx-gro" },
+		{ NM_ETHTOOL_ID_FEATURE_GSO,    "tx-generic-segmentation" },
+		{ NM_ETHTOOL_ID_FEATURE_LRO,    "rx-lro" },
+		{ NM_ETHTOOL_ID_FEATURE_NTUPLE, "rx-ntuple-filter" },
+		{ NM_ETHTOOL_ID_FEATURE_RX,     "rx-checksum" },
+		{ NM_ETHTOOL_ID_FEATURE_RXHASH, "rx-hashing" },
+		{ NM_ETHTOOL_ID_FEATURE_RXVLAN, "rx-vlan-hw-parse" },
+		{ NM_ETHTOOL_ID_FEATURE_TXVLAN, "tx-vlan-hw-insert" },
+	};
+	const NMEthtoolData *data;
+	NMEthtoolID id;
+	int i;
+
+	for (id = _NM_ETHTOOL_ID_FEATURE_FIRST; id <= _NM_ETHTOOL_ID_FEATURE_LAST; id++) {
+		const char *ifcfg_rh_name;
+		int idx;
+
+		idx = id - _NM_ETHTOOL_ID_FEATURE_FIRST;
+		g_assert (idx >= 0);
+		g_assert (idx < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
+		ifcfg_rh_name = _nm_ethtool_ifcfg_names[idx];
+		g_assert (ifcfg_rh_name && ifcfg_rh_name[0]);
+
+		for (i = 0; i < G_N_ELEMENTS (_nm_ethtool_ifcfg_names); i++) {
+			if (i != idx)
+				g_assert_cmpstr (ifcfg_rh_name, !=, _nm_ethtool_ifcfg_names[i]);
+		}
+
+		g_assert_cmpstr (nms_ifcfg_rh_utils_get_ethtool_name (id), ==, ifcfg_rh_name);
+
+		data = nms_ifcfg_rh_utils_get_ethtool_by_name (ifcfg_rh_name);
+		g_assert (data);
+		g_assert (data->id == id);
+	}
+
+	for (i = 0; i < G_N_ELEMENTS (kernel_names); i++) {
+		const char *name = kernel_names[i].kernel_name;
+
+		id = kernel_names[i].ethtool_id;
+		data = nms_ifcfg_rh_utils_get_ethtool_by_name (name);
+		g_assert (data);
+		g_assert (data->id == id);
+		g_assert_cmpstr (nms_ifcfg_rh_utils_get_ethtool_name (id), !=, name);
+	}
+}
+
+/*****************************************************************************/
+
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-long-quoted"
@@ -10639,6 +10694,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "tc/write", test_tc_write);
 	g_test_add_func (TPATH "utils/test_well_known_keys", test_well_known_keys);
 	g_test_add_func (TPATH "utils/test_utils_has_route_file_new_syntax", test_utils_has_route_file_new_syntax);
+
+	g_test_add_func (TPATH "utils/test_ethtool_names", test_ethtool_names);
 
 	return g_test_run ();
 }
