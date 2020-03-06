@@ -79,7 +79,7 @@ typedef struct {
 	NMEthtoolID id;
 } NMEthtoolData;
 
-extern const NMEthtoolData *const nm_ethtool_data[/*_NM_ETHTOOL_ID_NUM + NULL-terminated*/];
+extern const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1];
 
 const NMEthtoolData *nm_ethtool_data_get_by_optname (const char *optname);
 
