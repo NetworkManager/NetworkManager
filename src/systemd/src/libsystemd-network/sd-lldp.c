@@ -21,6 +21,7 @@
 #include "nm-sd-adapt.h"
 
 #include <arpa/inet.h>
+#include <linux/sockios.h>
 
 #include "sd-lldp.h"
 
