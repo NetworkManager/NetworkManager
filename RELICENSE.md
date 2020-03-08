@@ -72,6 +72,7 @@ Consent/Disapproval List
 ========================
 
 - [Y] Antoine Faure <antoine.faure@sigfox.com> (Sigfox)
+- [Y] Atul Anand <atulhjp@gmail.com>
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <dwinship@redhat.com> (Red Hat, Inc.)
