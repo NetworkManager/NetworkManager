@@ -1101,17 +1101,16 @@ compare_aps (gconstpointer a, gconstpointer b, gpointer user_data)
 {
 	NMAccessPoint *apa = *(NMAccessPoint **)a;
 	NMAccessPoint *apb = *(NMAccessPoint **)b;
-	int cmp;
 
-	cmp = nm_access_point_get_strength (apb) - nm_access_point_get_strength (apa);
-	if (cmp != 0)
-		return cmp;
+	NM_CMP_DIRECT (nm_access_point_get_strength (apb), nm_access_point_get_strength (apa));
+	NM_CMP_DIRECT (nm_access_point_get_frequency (apa), nm_access_point_get_frequency (apb));
+	NM_CMP_DIRECT (nm_access_point_get_max_bitrate (apb), nm_access_point_get_max_bitrate (apa));
 
-	cmp = nm_access_point_get_frequency (apa) - nm_access_point_get_frequency (apb);
-	if (cmp != 0)
-		return cmp;
+	/* as fallback, just give it some stable order and use the D-Bus path (literally). */
+	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (apa)),
+	                       nm_object_get_path (NM_OBJECT (apb)));
 
-	return nm_access_point_get_max_bitrate (apb) - nm_access_point_get_max_bitrate (apa);
+	return 0;
 }
 
 static GPtrArray *
