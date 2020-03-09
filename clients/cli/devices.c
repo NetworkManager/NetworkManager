@@ -1117,13 +1117,14 @@ static GPtrArray *
 sort_access_points (const GPtrArray *aps)
 {
 	GPtrArray *sorted;
-	int i;
+	guint i;
 
 	g_return_val_if_fail (aps, NULL);
 
 	sorted = g_ptr_array_sized_new (aps->len);
+	g_ptr_array_set_free_func (sorted, nm_g_object_unref);
 	for (i = 0; i < aps->len; i++)
-		g_ptr_array_add (sorted, aps->pdata[i]);
+		g_ptr_array_add (sorted, g_object_ref (aps->pdata[i]));
 	g_ptr_array_sort_with_data (sorted, compare_aps, NULL);
 	return sorted;
 }
@@ -1542,7 +1543,6 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		if ((NM_IS_DEVICE_WIFI (device))) {
 			NMAccessPoint *active_ap = NULL;
 			const char *active_bssid = NULL;
-			GPtrArray *aps;
 
 			/* section AP */
 			if (!g_ascii_strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[4]->name)) {
@@ -1560,6 +1560,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (out.output_data, arr);
 
 				{
+					gs_unref_ptrarray GPtrArray *aps = NULL;
 					APInfo info = {
 						.nmc = nmc,
 						.index = 1,
@@ -1571,7 +1572,6 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 					aps = sort_access_points (nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device)));
 					g_ptr_array_foreach (aps, fill_output_access_point, &info);
-					g_ptr_array_free (aps, FALSE);
 				}
 
 				print_data_prepare_width (out.output_data);
@@ -2784,7 +2784,6 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 {
 	NMAccessPoint *active_ap = NULL;
 	const char *active_bssid = NULL;
-	GPtrArray *aps;
 	NmcOutputField *arr;
 
 	if (nm_device_get_state (NM_DEVICE (wifi)) == NM_DEVICE_STATE_ACTIVATED) {
@@ -2797,6 +2796,7 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 	g_ptr_array_add (out->output_data, arr);
 
 	{
+		gs_unref_ptrarray GPtrArray *aps = NULL;
 		APInfo info = {
 			.nmc = nmc,
 			.index = 1,
@@ -2808,7 +2808,6 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 
 		aps = sort_access_points (nm_device_wifi_get_access_points (wifi));
 		g_ptr_array_foreach (aps, fill_output_access_point, &info);
-		g_ptr_array_free (aps, TRUE);
 	}
 
 	print_data_prepare_width (out->output_data);
