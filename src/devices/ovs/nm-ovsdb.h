@@ -34,4 +34,7 @@ void nm_ovsdb_add_interface (NMOvsdb *self,
 void nm_ovsdb_del_interface (NMOvsdb *self, const char *ifname,
                              NMOvsdbCallback callback, gpointer user_data);
 
+void nm_ovsdb_set_interface_mtu (NMOvsdb *self, const char *ifname, guint32 mtu,
+                                 NMOvsdbCallback callback, gpointer user_data);
+
 #endif /* __NETWORKMANAGER_OVSDB_H__ */

@@ -103,6 +103,7 @@ typedef enum {
 	OVSDB_MONITOR,
 	OVSDB_ADD_INTERFACE,
 	OVSDB_DEL_INTERFACE,
+	OVSDB_SET_INTERFACE_MTU,
 } OvsdbCommand;
 
 typedef struct {
@@ -112,7 +113,10 @@ typedef struct {
 	OvsdbMethodCallback callback;
 	gpointer user_data;
 	union {
-		char *ifname;
+		struct {
+			char *ifname;
+			guint32 mtu;
+		};
 		struct {
 			NMConnection *bridge;
 			NMConnection *port;
@@ -154,6 +158,13 @@ _call_trace (const char *comment, OvsdbMethodCall *call, json_t *msg)
 		       msg ? ": " : "",
 		       msg ? str : "");
 		break;
+	case OVSDB_SET_INTERFACE_MTU:
+		_LOGT ("%s: set-iface-mtu interface=%s%s%s mtu=%u",
+		       comment, call->ifname,
+		       msg ? ": " : "",
+		       msg ? str : "",
+		       call->mtu);
+		break;
 	}
 
 	if (msg)
@@ -172,7 +183,7 @@ ovsdb_call_method (NMOvsdb *self, OvsdbCommand command,
                    const char *ifname,
                    NMConnection *bridge, NMConnection *port, NMConnection *interface,
                    NMDevice *bridge_device, NMDevice *interface_device,
-                   OvsdbMethodCallback callback, gpointer user_data)
+                   guint32 mtu, OvsdbMethodCallback callback, gpointer user_data)
 {
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 	OvsdbMethodCall *call;
@@ -199,6 +210,10 @@ ovsdb_call_method (NMOvsdb *self, OvsdbCommand command,
 		break;
 	case OVSDB_DEL_INTERFACE:
 		call->ifname = g_strdup (ifname);
+		break;
+	case OVSDB_SET_INTERFACE_MTU:
+		call->ifname = g_strdup (ifname);
+		call->mtu = mtu;
 		break;
 	}
 
@@ -815,6 +830,22 @@ ovsdb_next_command (NMOvsdb *self)
 		json_array_append_new (params, _inc_next_cfg (priv->db_uuid));
 
 		_delete_interface (self, params, call->ifname);
+
+		msg = json_pack ("{s:i, s:s, s:o}",
+		                 "id", call->id,
+		                 "method", "transact", "params", params);
+		break;
+	case OVSDB_SET_INTERFACE_MTU:
+		params = json_array ();
+		json_array_append_new (params, json_string ("Open_vSwitch"));
+		json_array_append_new (params, _inc_next_cfg (priv->db_uuid));
+
+		json_array_append_new (params,
+		                       json_pack ("{s:s, s:s, s:{s: i}, s:[[s, s, s]]}",
+		                                  "op", "update",
+		                                  "table", "Interface",
+		                                  "row", "mtu_request", call->mtu,
+		                                  "where", "name", "==", call->ifname));
 
 		msg = json_pack ("{s:i, s:s, s:o}",
 		                 "id", call->id,
@@ -1461,7 +1492,7 @@ ovsdb_try_connect (NMOvsdb *self)
 	/* Queue a monitor call before any other command, ensuring that we have an up
 	 * to date view of existing bridged that we need for add and remove ops. */
 	ovsdb_call_method (self, OVSDB_MONITOR, NULL,
-	                   NULL, NULL, NULL, NULL, NULL, _monitor_bridges_cb, NULL);
+	                   NULL, NULL, NULL, NULL, NULL, 0, _monitor_bridges_cb, NULL);
 }
 
 /*****************************************************************************/
@@ -1499,36 +1530,49 @@ out:
 	g_slice_free (OvsdbCall, call);
 }
 
+static OvsdbCall *
+ovsdb_call_new (NMOvsdbCallback callback, gpointer user_data)
+{
+	OvsdbCall *call;
+
+	call = g_slice_new (OvsdbCall);
+	call->callback = callback;
+	call->user_data = user_data;
+
+	return call;
+}
+
 void
 nm_ovsdb_add_interface (NMOvsdb *self,
                         NMConnection *bridge, NMConnection *port, NMConnection *interface,
                         NMDevice *bridge_device, NMDevice *interface_device,
                         NMOvsdbCallback callback, gpointer user_data)
 {
-	OvsdbCall *call;
-
-	call = g_slice_new (OvsdbCall);
-	call->callback = callback;
-	call->user_data = user_data;
-
 	ovsdb_call_method (self, OVSDB_ADD_INTERFACE, NULL,
 	                   bridge, port, interface,
 	                   bridge_device, interface_device,
-	                   _transact_cb, call);
+	                   0,
+	                   _transact_cb,
+	                   ovsdb_call_new (callback, user_data));
 }
 
 void
 nm_ovsdb_del_interface (NMOvsdb *self, const char *ifname,
                         NMOvsdbCallback callback, gpointer user_data)
 {
-	OvsdbCall *call;
-
-	call = g_slice_new (OvsdbCall);
-	call->callback = callback;
-	call->user_data = user_data;
-
 	ovsdb_call_method (self, OVSDB_DEL_INTERFACE, ifname,
-	                   NULL, NULL, NULL, NULL, NULL, _transact_cb, call);
+	                   NULL, NULL, NULL, NULL, NULL, 0,
+	                   _transact_cb,
+	                   ovsdb_call_new (callback, user_data));
+}
+
+void nm_ovsdb_set_interface_mtu (NMOvsdb *self, const char *ifname, guint32 mtu,
+                                 NMOvsdbCallback callback, gpointer user_data)
+{
+	ovsdb_call_method (self, OVSDB_SET_INTERFACE_MTU, ifname,
+	                   NULL, NULL, NULL, NULL, NULL, mtu,
+	                   _transact_cb,
+	                   ovsdb_call_new (callback, user_data));
 }
 
 /*****************************************************************************/
@@ -1549,6 +1593,7 @@ _clear_call (gpointer data)
 		g_clear_object (&call->interface_device);
 		break;
 	case OVSDB_DEL_INTERFACE:
+	case OVSDB_SET_INTERFACE_MTU:
 		nm_clear_g_free (&call->ifname);
 		break;
 	}
