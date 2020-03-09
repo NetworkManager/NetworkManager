@@ -321,19 +321,14 @@ nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GErr
 char *
 ssid_to_hex (const char *str, gsize len)
 {
-	GString *printable;
-	char *printable_str;
-	int i;
-
-	if (str == NULL || len == 0)
+	if (len == 0)
 		return NULL;
 
-	printable = g_string_new (NULL);
-	for (i = 0; i < len; i++) {
-		g_string_append_printf (printable, "%02X", (unsigned char) str[i]);
-	}
-	printable_str = g_string_free (printable, FALSE);
-	return printable_str;
+	return nm_utils_bin2hexstr_full (str,
+	                                 len,
+	                                 '\0',
+	                                 TRUE,
+	                                 NULL);
 }
 
 /*
