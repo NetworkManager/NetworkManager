@@ -25,7 +25,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 /**
  * NMSettingVrf:
  *
- * VRF settings.
+ * VRF settings
  *
  * Since: 1.24
  */

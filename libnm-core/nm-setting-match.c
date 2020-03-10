@@ -25,7 +25,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
 /**
  * NMSettingMatch:
  *
- * Match settings.
+ * Match settings
  *
  * Since: 1.14
  */

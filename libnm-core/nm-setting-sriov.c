@@ -27,7 +27,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingSriov,
 /**
  * NMSettingSriov:
  *
- * SR-IOV settings.
+ * SR-IOV settings
  *
  * Since: 1.14
  */
