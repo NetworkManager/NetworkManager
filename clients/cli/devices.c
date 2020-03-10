@@ -2921,14 +2921,14 @@ wifi_list_finish (WifiListData *data)
 	g_signal_handler_disconnect (data->wifi, data->last_scan_id);
 	nm_clear_g_source (&data->timeout_id);
 	nm_clear_g_cancellable (&data->scan_cancellable);
-	g_slice_free (WifiListData, data);
+	nm_g_slice_free (data);
 
 	if (info->nmc->should_wait == 0) {
 		for (i = 0; info->devices[i]; i++)
 			g_object_unref (info->devices[i]);
 		g_free (info->devices);
 		g_array_unref (info->out_indices);
-		g_free (info);
+		nm_g_slice_free (info);
 	}
 }
 
@@ -3149,25 +3149,36 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		g_object_ref (wifi);
 
 		if (   rescan_cutoff == 0
-		    || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) >= rescan_cutoff))
+		    || (   rescan_cutoff > 0
+		        && nm_device_wifi_get_last_scan (wifi) >= rescan_cutoff))
 			continue;
 
 		if (!scan_info) {
-			scan_info = g_new0 (ScanInfo, 1);
-			scan_info->out_indices = g_array_ref (out_indices);
-			scan_info->tmpl = tmpl;
-			scan_info->bssid_user = bssid_user;
-			scan_info->nmc = nmc;
+			scan_info = g_slice_new (ScanInfo);
+			*scan_info = (ScanInfo) {
+				.out_indices = g_array_ref (out_indices),
+				.tmpl        = tmpl,
+				.bssid_user  = bssid_user,
+				.nmc         = nmc,
+			};
 		}
 
 		nmc->should_wait++;
-		data = g_slice_new0 (WifiListData);
-		data->wifi = wifi;
-		data->scan_info = scan_info;
-		data->last_scan_id = g_signal_connect (wifi, "notify::" NM_DEVICE_WIFI_LAST_SCAN,
-		                                       G_CALLBACK (wifi_last_scan_updated), data);
-		data->scan_cancellable = g_cancellable_new ();
-		data->timeout_id = g_timeout_add_seconds (15, wifi_list_scan_timeout, data);
+
+		data = g_slice_new (WifiListData);
+		*data = (WifiListData) {
+			.wifi             = wifi,
+			.scan_info        = scan_info,
+			.last_scan_id     = g_signal_connect (wifi,
+			                                      "notify::" NM_DEVICE_WIFI_LAST_SCAN,
+			                                      G_CALLBACK (wifi_last_scan_updated),
+			                                      data),
+			.scan_cancellable = g_cancellable_new (),
+			.timeout_id       = g_timeout_add_seconds (15,
+			                                           wifi_list_scan_timeout,
+			                                           data),
+		};
+
 		nm_device_wifi_request_scan_async (wifi, data->scan_cancellable, wifi_list_rescan_cb, data);
 	}
 
