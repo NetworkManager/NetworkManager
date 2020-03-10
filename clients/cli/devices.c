@@ -3010,6 +3010,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	NMDeviceWifi *wifi;
 	ScanInfo *scan_info = NULL;
 	WifiListData *data;
+	gboolean ifname_handled;
+	NMDevice *ifname_handled_candidate;
 	guint i, j;
 
 	devices = nmc_get_devices_sorted (nmc->client);
@@ -3058,6 +3060,9 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = NMC_FIELDS_DEV_WIFI_LIST_COMMON;
 	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
@@ -3072,9 +3077,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		g_error_free (error);
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
-
-	if (nmc->complete)
-		return nmc->return_value;
 
 	if (argc) {
 		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
@@ -3092,37 +3094,54 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	if (ifname) {
-		device = find_wifi_device_by_iface (devices, ifname, NULL);
-		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-			return NMC_RESULT_ERROR_NOT_FOUND;
-		}
+	ifname_handled = (ifname == NULL);
+	ifname_handled_candidate = NULL;
 
-		if (NM_IS_DEVICE_WIFI (device)) {
-			devices[0] = device;
-			devices[1] = NULL;
-		} else {
-			if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
-			    && g_strcmp0 (nm_device_get_type_description (device), "wifi") == 0) {
-				g_string_printf (nmc->return_text,
-				                 _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin."),
-				                 ifname);
-			} else {
-				g_string_printf (nmc->return_text,
-				                 _("Error: Device '%s' is not a Wi-Fi device."),
-				                 ifname);
+	j = 0;
+	for (i = 0; devices[i]; i++) {
+		const char *dev_iface;
+
+		device = devices[i];
+		dev_iface = nm_device_get_iface (device);
+
+		if (ifname) {
+			if (!nm_streq0 (ifname, dev_iface))
+				continue;
+			if (!NM_IS_DEVICE_WIFI (device)) {
+				if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
+				    && nm_streq0 (nm_device_get_type_description (device), "wifi"))
+					ifname_handled_candidate = device;
+				else if (!ifname_handled_candidate)
+					ifname_handled_candidate = device;
+				continue;
 			}
-			return NMC_RESULT_ERROR_UNKNOWN;
+			ifname_handled = TRUE;
+		} else {
+			if (!NM_IS_DEVICE_WIFI (device))
+				continue;
 		}
-	}
 
-	/* Filter out non-wifi devices */
-	for (i = 0, j = 0; devices[i]; i++) {
-		if (NM_IS_DEVICE_WIFI (devices[i]))
-			devices[j++] = devices[i];
+		devices[j++] = device;
 	}
 	devices[j] = NULL;
+
+	if (!ifname_handled) {
+		if (!ifname_handled_candidate) {
+			g_string_printf (nmc->return_text,
+			                 _("Error: Device '%s' not found."),
+			                 ifname);
+		} else if (   nm_device_get_device_type (ifname_handled_candidate) == NM_DEVICE_TYPE_GENERIC
+		           && nm_streq0 (nm_device_get_type_description (ifname_handled_candidate), "wifi")) {
+			g_string_printf (nmc->return_text,
+			                 _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin."),
+			                 ifname);
+		} else {
+			g_string_printf (nmc->return_text,
+			                 _("Error: Device '%s' is not a Wi-Fi device."),
+			                 ifname);
+		}
+		return NMC_RESULT_ERROR_NOT_FOUND;
+	}
 
 	/* Start a new scan for devices that need it */
 	for (i = 0; devices[i]; i++) {
