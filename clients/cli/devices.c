@@ -27,9 +27,9 @@
 /*****************************************************************************/
 
 static char *
-ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
+ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags, NMMetaAccessorGetType get_type)
 {
-	char *flags_str[14];
+	char *flags_str[16];
 	int i = 0;
 
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP40)
@@ -56,13 +56,17 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 		flags_str[i++] = "sae";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
 		flags_str[i++] = "owe";
-	/* Make sure you grow flags_str when adding items here. */
 
-	if (i == 0)
-		flags_str[i++] = _("(none)");
+	/* Make sure you grow flags_str when adding items here. */
+	nm_assert (i < G_N_ELEMENTS (flags_str));
+
+	if (i == 0) {
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return g_strdup (_("(none)"));
+		return g_strdup ("(none)");
+	}
 
 	flags_str[i] = NULL;
-
 	return g_strjoinv (" ", flags_str);
 }
 
@@ -1189,8 +1193,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u Mbit/s"), bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
-	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
-	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
+	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
+	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
 	sig_bars = nmc_wifi_strength_bars (strength);
 
 	security_str = g_string_new (NULL);
