@@ -3254,6 +3254,11 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 			_LOGW ("write: failure to re-read connection \"%s\": %s",
 			       svFileGetName (ifcfg), "connection is unhandled");
 		} else {
+			/* ifcfg-rh doesn't support the 'timestamp' property, let's add it here */
+			g_object_set (nm_connection_get_setting_connection (reread),
+			              NM_SETTING_CONNECTION_TIMESTAMP,
+			              nm_setting_connection_get_timestamp (nm_connection_get_setting_connection (connection)),
+			              NULL);
 			if (out_reread_same) {
 				reread_same = nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT);
 				if (!reread_same) {
