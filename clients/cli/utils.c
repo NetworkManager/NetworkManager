@@ -773,7 +773,8 @@ _output_selection_complete (GArray *cols)
 static gboolean
 _output_selection_parse (const NMMetaAbstractInfo *const*fields,
                          const char *fields_str,
-                         GArray **out_cols,
+                         PrintDataCol **out_cols_data,
+                         guint *out_cols_len,
                          GPtrArray **out_gfree_keeper,
                          GError **error)
 {
@@ -807,7 +808,8 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 
 	_output_selection_complete (cols);
 
-	*out_cols = g_steal_pointer (&cols);
+	*out_cols_len = cols->len;
+	*out_cols_data = (PrintDataCol *) g_array_free (g_steal_pointer (&cols), FALSE);
 	*out_gfree_keeper = g_steal_pointer (&gfree_keeper);
 	return TRUE;
 }
@@ -1374,20 +1376,24 @@ nmc_print (const NmcConfig *nmc_config,
            GError **error)
 {
 	gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
-	gs_unref_array GArray *cols = NULL;
+	gs_free PrintDataCol *cols_data = NULL;
+	guint cols_len;
 	gs_unref_array GArray *header_row = NULL;
 	gs_unref_array GArray *cells = NULL;
 
-	if (!_output_selection_parse (fields, fields_str,
-	                              &cols, &gfree_keeper,
+	if (!_output_selection_parse (fields,
+	                              fields_str,
+	                              &cols_data,
+	                              &cols_len,
+	                              &gfree_keeper,
 	                              error))
 		return FALSE;
 
 	_print_fill (nmc_config,
 	             targets,
 	             targets_data,
-	             &g_array_index (cols, PrintDataCol, 0),
-	             cols->len,
+	             cols_data,
+	             cols_len,
 	             &header_row,
 	             &cells);
 
