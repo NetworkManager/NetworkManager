@@ -7,38 +7,34 @@
 #include "nm-default.h"
 
 #include "nm-supplicant-interface.h"
-#include "nm-supplicant-manager.h"
 
 #include <stdio.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-supplicant-config.h"
 #include "nm-core-internal.h"
+#include "nm-glib-aux/nm-c-list.h"
+#include "nm-glib-aux/nm-ref-string.h"
 #include "nm-std-aux/nm-dbus-compat.h"
+#include "nm-supplicant-config.h"
+#include "nm-supplicant-manager.h"
+#include "shared/nm-glib-aux/nm-dbus-aux.h"
+
+#define DBUS_TIMEOUT_MSEC 20000
 
 /*****************************************************************************/
-
-typedef struct {
-	GDBusProxy *proxy;
-	gulong change_id;
-} BssData;
-
-typedef struct {
-	GDBusProxy *proxy;
-	gulong change_id;
-} PeerData;
-
-struct _AddNetworkData;
 
 typedef struct {
 	NMSupplicantInterface *self;
 	char *type;
 	char *bssid;
 	char *pin;
-	GDBusProxy *proxy;
+	guint signal_id;
 	GCancellable *cancellable;
-	bool is_cancelling;
+	bool needs_cancelling:1;
+	bool is_cancelling:1;
 } WpsData;
+
+struct _AddNetworkData;
 
 typedef struct {
 	NMSupplicantInterface *self;
@@ -54,32 +50,28 @@ typedef struct {
 typedef struct _AddNetworkData {
 	/* the assoc_data at the time when doing the call. */
 	AssocData *assoc_data;
+	NMRefString *name_owner;
+	NMRefString *object_path;
+	GObject *shutdown_wait_obj;
 } AddNetworkData;
-
-typedef struct {
-	NMSupplicantInterface *self;
-	NMSupplicantInterfaceDisconnectCb callback;
-	gpointer user_data;
-} DisconnectData;
 
 enum {
 	STATE,                   /* change in the interface's state */
-	REMOVED,                 /* interface was removed by the supplicant */
-	BSS_UPDATED,             /* a new BSS appeared or an existing had properties changed */
-	BSS_REMOVED,             /* supplicant removed BSS from its scan list */
-	PEER_UPDATED,            /* a new Peer appeared or an existing had properties changed */
-	PEER_REMOVED,            /* supplicant removed Peer from its scan list */
+	BSS_CHANGED,             /* a new BSS appeared, was updated, or was removed. */
+	PEER_CHANGED,            /* a new Peer appeared, was updated, or was removed */
 	SCAN_DONE,               /* wifi scan is complete */
 	WPS_CREDENTIALS,         /* WPS credentials received */
 	GROUP_STARTED,           /* a new Group (interface) was created */
 	GROUP_FINISHED,          /* a Group (interface) has been finished */
 	LAST_SIGNAL
 };
+
 static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
-	PROP_IFACE,
-	PROP_OBJECT_PATH,
+	PROP_SUPPLICANT_MANAGER,
+	PROP_DBUS_OBJECT_PATH,
+	PROP_IFINDEX,
 	PROP_P2P_GROUP_JOINED,
 	PROP_P2P_GROUP_PATH,
 	PROP_P2P_GROUP_OWNER,
@@ -87,53 +79,76 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_CURRENT_BSS,
 	PROP_DRIVER,
 	PROP_P2P_AVAILABLE,
-	PROP_GLOBAL_CAPABILITIES,
 	PROP_AUTH_STATE,
 );
 
 typedef struct _NMSupplicantInterfacePrivate {
-	char *         dev;
-	NMSupplicantDriver driver;
-	NMSupplCapMask global_capabilities;
-	NMSupplCapMask iface_capabilities;
-	guint32        max_scan_ssids;
-	guint32        ready_count;
 
-	char *         object_path;
-	NMSupplicantInterfaceState state;
-	int            disconnect_reason;
+	NMSupplicantManager *supplicant_manager;
 
-	GDBusProxy *   wpas_proxy;
-	GCancellable * init_cancellable;
-	GDBusProxy *   iface_proxy;
-	GCancellable * other_cancellable;
-	GDBusProxy *   p2p_proxy;
-	GDBusProxy *   group_proxy;
+	GDBusConnection *dbus_connection;
+	NMRefString *name_owner;
+	NMRefString *object_path;
 
-	WpsData *wps_data;
+	char          *ifname;
 
-	AssocData *    assoc_data;
+	GCancellable  *main_cancellable;
 
-	char *         net_path;
-	GHashTable *   bss_proxies;
-	char *         current_bss;
+	NMRefString   *p2p_group_path;
 
-	GHashTable *   peer_proxies;
+	GCancellable  *p2p_group_properties_cancellable;
 
-	gint64         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_msec() */
+	WpsData       *wps_data;
+
+	AssocData     *assoc_data;
+
+	char          *net_path;
+
+	char          *driver;
+
+	GHashTable    *bss_idx;
+	CList          bss_lst_head;
+	CList          bss_initializing_lst_head;
+
+	NMRefString   *current_bss;
+
+	GHashTable    *peer_idx;
+	CList          peer_lst_head;
+	CList          peer_initializing_lst_head;
+
+	gint64         last_scan_msec;
 
 	NMSupplicantAuthState auth_state;
 
+	NMSupplicantDriver requested_driver;
+	NMSupplCapMask global_capabilities;
+	NMSupplCapMask iface_capabilities;
+
+	guint          properties_changed_id;
+	guint          signal_id;
+	guint          bss_properties_changed_id;
+	guint          peer_properties_changed_id;
+	guint          p2p_group_properties_changed_id;
+
+	int            ifindex;
+
+	int            starting_pending_count;
+
+	guint32        max_scan_ssids;
+
+	gint32         disconnect_reason;
+
+	NMSupplicantInterfaceState state;
+	NMSupplicantInterfaceState supp_state;
+
 	bool           scanning:1;
 
-	bool           scan_done_pending:1;
-	bool           scan_done_success:1;
-
-	bool           p2p_proxy_acquired:1;
-	bool           group_proxy_acquired:1;
 	bool           p2p_capable:1;
 
-	bool           p2p_group_owner:1;
+	bool           p2p_group_is_owner:1;
+
+	bool           is_ready_main:1;
+	bool           is_ready_p2p_device:1;
 
 } NMSupplicantInterfacePrivate;
 
@@ -147,43 +162,73 @@ G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static const char *
+_log_pretty_object_path (NMSupplicantInterfacePrivate *priv)
+{
+	const char *s;
+
+	nm_assert (priv);
+	nm_assert (NM_IS_REF_STRING (priv->object_path));
+
+	s = priv->object_path->str;
+	if (NM_STR_HAS_PREFIX (s, "/fi/w1/wpa_supplicant1/Interfaces/")) {
+		s += NM_STRLEN ("/fi/w1/wpa_supplicant1/Interfaces/");
+		if (   s[0]
+		    && s[0] != '/')
+			return s;
+	}
+	return priv->object_path->str;
+}
+
 #define _NMLOG_DOMAIN           LOGD_SUPPLICANT
 #define _NMLOG_PREFIX_NAME      "sup-iface"
 #define _NMLOG(level, ...) \
     G_STMT_START { \
-         char _sbuf[64]; \
-         const char *__ifname = self ?  NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev : NULL; \
+         NMSupplicantInterface *_self = (self); \
+         NMSupplicantInterfacePrivate *_priv = _self ? NM_SUPPLICANT_INTERFACE_GET_PRIVATE (_self) : NULL; \
+         char _sbuf[255]; \
+         const char *_ifname = _priv ? _priv->ifname : NULL; \
          \
-         nm_log ((level), _NMLOG_DOMAIN, __ifname, NULL, \
+         nm_log ((level), _NMLOG_DOMAIN, _ifname, NULL, \
                  "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                  _NMLOG_PREFIX_NAME, \
-                 ((self) ? nm_sprintf_buf (_sbuf, "[%p,%s]", (self), __ifname) : "") \
+                 (  _self \
+                  ? nm_sprintf_buf (_sbuf, \
+                                    "["NM_HASH_OBFUSCATE_PTR_FMT",%s,%s]", \
+                                    NM_HASH_OBFUSCATE_PTR (_self), \
+                                    _log_pretty_object_path (_priv), \
+                                    _ifname ?: "???") \
+                  : "") \
                  _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
 
 /*****************************************************************************/
 
-static void scan_done_emit_signal (NMSupplicantInterface *self);
+static void _starting_check_ready (NMSupplicantInterface *self);
+
+static void assoc_return (NMSupplicantInterface *self,
+                          GError *error,
+                          const char *message);
 
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplicantInterfaceState,
-	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INVALID,         "invalid"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INIT,            "init"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_STARTING,        "starting"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_READY,           "ready"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISABLED,        "disabled"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,    "disconnected"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INACTIVE,        "inactive"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_SCANNING,        "scanning"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING,  "authenticating"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,     "associating"),
+	NM_UTILS_LOOKUP_DEFAULT_WARN ("internal-unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INVALID,         "internal-invalid"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_STARTING,        "internal-starting"),
+
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,  "4way_handshake"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,      "associated"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,  "4-way handshake"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE, "group handshake"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,     "associating"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING,  "authenticating"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,       "completed"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DOWN,            "down"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,    "disconnected"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE, "group_handshake"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INACTIVE,        "inactive"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISABLED,        "interface_disabled"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_SCANNING,        "scanning"),
+
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DOWN,            "internal-down"),
 );
 
 static
@@ -206,243 +251,776 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 
 /*****************************************************************************/
 
-static void
-bss_data_destroy (gpointer user_data)
+static NM80211ApSecurityFlags
+security_from_vardict (GVariant *security)
 {
-	BssData *bss_data = user_data;
+	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
+	const char **array;
+	const char *tmp;
 
-	nm_clear_g_signal_handler (bss_data->proxy, &bss_data->change_id);
-	g_object_unref (bss_data->proxy);
-	g_slice_free (BssData, bss_data);
-}
+	nm_assert (g_variant_is_of_type (security, G_VARIANT_TYPE_VARDICT));
 
-static void
-bss_proxy_properties_changed_cb (GDBusProxy *proxy,
-                                 GVariant *changed_properties,
-                                 char **invalidated_properties,
-                                 gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (priv->scanning)
-		priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
-
-	g_signal_emit (self, signals[BSS_UPDATED], 0,
-	               g_dbus_proxy_get_object_path (proxy),
-	               changed_properties);
-}
-
-static GVariant *
-bss_proxy_get_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
-{
-	gs_strfreev char **properties = NULL;
-	GVariantBuilder builder;
-	char **iter;
-
-	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
-
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	if (iter) {
-		while (*iter) {
-			GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
-
-			g_variant_builder_add (&builder, "{sv}", *iter++, copy);
-			g_variant_unref (copy);
-		}
-	}
-	return g_variant_builder_end (&builder);
-}
-
-static void
-bss_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
-	GVariant *props = NULL;
-	const char *object_path;
-	BssData *bss_data;
-	gboolean success;
-
-	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (!success) {
-		_LOGD ("failed to acquire BSS proxy: (%s)", error->message);
-		g_hash_table_remove (priv->bss_proxies,
-		                     g_dbus_proxy_get_object_path (proxy));
-		return;
+	if (g_variant_lookup (security, "KeyMgmt", "^a&s", &array)) {
+		if (g_strv_contains (array, "wpa-psk") ||
+		    g_strv_contains (array, "wpa-ft-psk"))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
+		if (g_strv_contains (array, "wpa-eap") ||
+		    g_strv_contains (array, "wpa-ft-eap") ||
+		    g_strv_contains (array, "wpa-fils-sha256") ||
+		    g_strv_contains (array, "wpa-fils-sha384"))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+		if (g_strv_contains (array, "sae"))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
+		if (g_strv_contains (array, "owe"))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+		g_free (array);
 	}
 
-	object_path = g_dbus_proxy_get_object_path (proxy);
-	bss_data = g_hash_table_lookup (priv->bss_proxies, object_path);
-	if (!bss_data)
-		return;
-
-	bss_data->change_id = g_signal_connect (proxy, "g-properties-changed", G_CALLBACK (bss_proxy_properties_changed_cb), self);
-
-	props = bss_proxy_get_properties (self, proxy);
-	g_signal_emit (self, signals[BSS_UPDATED], 0,
-	               g_dbus_proxy_get_object_path (proxy),
-	               g_variant_ref_sink (props));
-	g_variant_unref (props);
-
-	if (priv->scan_done_pending)
-		scan_done_emit_signal (self);
-}
-
-static void
-bss_add_new (NMSupplicantInterface *self, const char *object_path)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	GDBusProxy *bss_proxy;
-	BssData *bss_data;
-
-	g_return_if_fail (object_path != NULL);
-
-	if (g_hash_table_lookup (priv->bss_proxies, object_path))
-		return;
-
-	bss_proxy = g_object_new (G_TYPE_DBUS_PROXY,
-	                          "g-bus-type", G_BUS_TYPE_SYSTEM,
-	                          "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-	                          "g-name", NM_WPAS_DBUS_SERVICE,
-	                          "g-object-path", object_path,
-	                          "g-interface-name", NM_WPAS_DBUS_IFACE_BSS,
-	                          NULL);
-	bss_data = g_slice_new0 (BssData);
-	bss_data->proxy = bss_proxy;
-	g_hash_table_insert (priv->bss_proxies,
-	                     (char *) g_dbus_proxy_get_object_path (bss_proxy),
-	                     bss_data);
-	g_async_initable_init_async (G_ASYNC_INITABLE (bss_proxy),
-	                             G_PRIORITY_DEFAULT,
-	                             priv->other_cancellable,
-	                             (GAsyncReadyCallback) bss_proxy_acquired_cb,
-	                             self);
-}
-
-static void
-peer_data_destroy (gpointer user_data)
-{
-	PeerData *peer_data = user_data;
-
-	nm_clear_g_signal_handler (peer_data->proxy, &peer_data->change_id);
-	g_object_unref (peer_data->proxy);
-	g_slice_free (PeerData, peer_data);
-}
-
-static void
-peer_proxy_properties_changed_cb (GDBusProxy *proxy,
-                                  GVariant *changed_properties,
-                                  char **invalidated_properties,
-                                  gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-
-	g_signal_emit (self, signals[PEER_UPDATED], 0,
-	               g_dbus_proxy_get_object_path (proxy),
-	               changed_properties);
-}
-
-static GVariant *
-peer_proxy_get_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
-{
-	gs_strfreev char **properties = NULL;
-	GVariantBuilder builder;
-	char **iter;
-
-	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
-
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	if (iter) {
-		while (*iter) {
-			GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
-
-			g_variant_builder_add (&builder, "{sv}", *iter++, copy);
-			g_variant_unref (copy);
-		}
-	}
-	return g_variant_builder_end (&builder);
-}
-
-static void
-peer_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
-	GVariant *props = NULL;
-	const char *object_path;
-	PeerData *peer_data;
-	gboolean success;
-
-	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (!success) {
-		_LOGD ("failed to acquire Peer proxy: (%s)", error->message);
-		g_hash_table_remove (priv->peer_proxies,
-		                     g_dbus_proxy_get_object_path (proxy));
-		return;
+	if (g_variant_lookup (security, "Pairwise", "^a&s", &array)) {
+		if (g_strv_contains (array, "tkip"))
+			flags |= NM_802_11_AP_SEC_PAIR_TKIP;
+		if (g_strv_contains (array, "ccmp"))
+			flags |= NM_802_11_AP_SEC_PAIR_CCMP;
+		g_free (array);
 	}
 
-	object_path = g_dbus_proxy_get_object_path (proxy);
-	peer_data = g_hash_table_lookup (priv->peer_proxies, object_path);
-	if (!peer_data)
-		return;
+	if (g_variant_lookup (security, "Group", "&s", &tmp)) {
+		if (nm_streq (tmp, "wep40"))
+			flags |= NM_802_11_AP_SEC_GROUP_WEP40;
+		else if (nm_streq (tmp, "wep104"))
+			flags |= NM_802_11_AP_SEC_GROUP_WEP104;
+		else if (nm_streq (tmp, "tkip"))
+			flags |= NM_802_11_AP_SEC_GROUP_TKIP;
+		else if (nm_streq (tmp, "ccmp"))
+			flags |= NM_802_11_AP_SEC_GROUP_CCMP;
+	}
 
-	peer_data->change_id = g_signal_connect (proxy, "g-properties-changed", G_CALLBACK (peer_proxy_properties_changed_cb), self);
-
-	props = peer_proxy_get_properties (self, proxy);
-
-	g_signal_emit (self, signals[PEER_UPDATED], 0,
-	               g_dbus_proxy_get_object_path (proxy),
-	               g_variant_ref_sink (props));
-	g_variant_unref (props);
-}
-
-static void
-peer_add_new (NMSupplicantInterface *self, const char *object_path)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	GDBusProxy *peer_proxy;
-	PeerData *peer_data;
-
-	g_return_if_fail (object_path != NULL);
-
-	if (g_hash_table_lookup (priv->peer_proxies, object_path))
-		return;
-
-	peer_proxy = g_object_new (G_TYPE_DBUS_PROXY,
-	                           "g-bus-type", G_BUS_TYPE_SYSTEM,
-	                           "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-	                           "g-name", NM_WPAS_DBUS_SERVICE,
-	                           "g-object-path", object_path,
-	                           "g-interface-name", NM_WPAS_DBUS_IFACE_PEER,
-	                           NULL);
-	peer_data = g_slice_new0 (PeerData);
-	peer_data->proxy = peer_proxy;
-	g_hash_table_insert (priv->peer_proxies,
-	                     (char *) g_dbus_proxy_get_object_path (peer_proxy),
-	                     peer_data);
-	g_async_initable_init_async (G_ASYNC_INITABLE (peer_proxy),
-	                             G_PRIORITY_DEFAULT,
-	                             priv->other_cancellable,
-	                             (GAsyncReadyCallback) peer_proxy_acquired_cb,
-	                             self);
+	return flags;
 }
 
 /*****************************************************************************/
+
+/* Various conditions prevent _starting_check_ready() from completing. For example,
+ * bss_initializing_lst_head, peer_initializing_lst_head and p2p_group_properties_cancellable.
+ * At some places, these conditions might toggle, and it would seems we would have
+ * to call _starting_check_ready() at that point, to ensure we don't miss a state
+ * change that we are ready. However, these places are deep in the call stack and
+ * not suitable to perform this state change. Instead, the callers *MUST* have
+ * added their own starting_pending_count to delay _starting_check_ready().
+ *
+ * Assert that is the case. */
+#define nm_assert_starting_has_pending_count(v) nm_assert ((v) > 0)
+
+/*****************************************************************************/
+
+static void
+_dbus_connection_call (NMSupplicantInterface *self,
+                       const char *interface_name,
+                       const char *method_name,
+                       GVariant *parameters,
+                       const GVariantType *reply_type,
+                       GDBusCallFlags flags,
+                       int timeout_msec,
+                       GCancellable *cancellable,
+                       GAsyncReadyCallback callback,
+                       gpointer user_data)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_dbus_connection_call (priv->dbus_connection,
+	                        priv->name_owner->str,
+	                        priv->object_path->str,
+	                        interface_name,
+	                        method_name,
+	                        parameters,
+	                        reply_type,
+	                        flags,
+	                        timeout_msec,
+	                        cancellable,
+	                        callback,
+	                        user_data);
+}
+
+static void
+_dbus_connection_call_simple_cb (GObject *source,
+                                 GAsyncResult *result,
+                                 gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	gs_unref_variant GVariant *res = NULL;
+	gs_free_error GError *error = NULL;
+	const char *log_reason;
+	gs_free char *remote_error = NULL;
+
+	nm_utils_user_data_unpack (user_data, &self, &log_reason);
+
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	if (res) {
+		_LOGT ("call-%s: success", log_reason);
+		return;
+	}
+
+	remote_error = g_dbus_error_get_remote_error (error);
+	if (!nm_streq0 (remote_error, "fi.w1.wpa_supplicant1.NotConnected")) {
+		g_dbus_error_strip_remote_error (error);
+		_LOGW ("call-%s: failed with %s", log_reason, error->message);
+		return;
+	}
+
+	_LOGT ("call-%s: failed with %s", log_reason, error->message);
+}
+
+static void
+_dbus_connection_call_simple (NMSupplicantInterface *self,
+                              const char *interface_name,
+                              const char *method_name,
+                              GVariant *parameters,
+                              const GVariantType *reply_type,
+                              const char *log_reason)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	_dbus_connection_call (self,
+	                       interface_name,
+	                       method_name,
+	                       parameters,
+	                       reply_type,
+	                       G_DBUS_CALL_FLAGS_NONE,
+	                       DBUS_TIMEOUT_MSEC,
+	                       priv->main_cancellable,
+	                       _dbus_connection_call_simple_cb,
+	                       nm_utils_user_data_pack (self, log_reason));
+}
+
+/*****************************************************************************/
+
+static void
+_emit_signal_state (NMSupplicantInterface *self,
+                    NMSupplicantInterfaceState new_state,
+                    NMSupplicantInterfaceState old_state,
+                    gint32 disconnect_reason)
+{
+	g_signal_emit (self,
+	               signals[STATE],
+	               0,
+	               (int) new_state,
+	               (int) old_state,
+	               (int) disconnect_reason);
+}
+
+/*****************************************************************************/
+
+static void
+_remove_network (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gs_free char *net_path = NULL;
+
+	if (!priv->net_path)
+		return;
+
+	net_path = g_steal_pointer (&priv->net_path);
+	_dbus_connection_call_simple (self,
+	                              NM_WPAS_DBUS_IFACE_INTERFACE,
+	                              "RemoveNetwork",
+	                              g_variant_new ("(o)", net_path),
+	                              G_VARIANT_TYPE ("()"),
+	                              "remove-network");
+}
+
+/*****************************************************************************/
+
+static gboolean
+_prop_p2p_available_get (NMSupplicantInterfacePrivate *priv)
+{
+	return    priv->is_ready_p2p_device
+	       && priv->p2p_capable;
+}
+
+/*****************************************************************************/
+
+static void
+_bss_info_destroy (NMSupplicantBssInfo *bss_info)
+{
+	c_list_unlink_stale (&bss_info->_bss_lst);
+	nm_clear_g_cancellable (&bss_info->_init_cancellable);
+	g_bytes_unref (bss_info->ssid);
+	nm_ref_string_unref (bss_info->bss_path);
+	nm_g_slice_free (bss_info);
+}
+
+static void
+_bss_info_changed_emit (NMSupplicantInterface *self,
+                        NMSupplicantBssInfo *bss_info,
+                        gboolean is_present)
+{
+	g_signal_emit (self,
+	               signals[BSS_CHANGED],
+	               0,
+	               bss_info,
+	               is_present);
+}
+
+static void
+_bss_info_properties_changed (NMSupplicantInterface *self,
+                              NMSupplicantBssInfo *bss_info,
+                              GVariant *properties,
+                              gboolean initial)
+{
+	gboolean v_b;
+	GVariant *v_v;
+	const char *v_s;
+	gint16 v_i16;
+	guint16 v_u16;
+	guint32 v_u32;
+	NM80211ApFlags p_ap_flags;
+	NM80211Mode p_mode;
+	guint8 p_signal_percent;
+	const guint8 *arr_data;
+	gsize arr_len;
+	gboolean p_metered;
+	guint32 p_max_rate;
+	gboolean p_max_rate_has;
+	gint64 now_msec = 0;
+
+	if (nm_g_variant_lookup (properties, "Age", "u", &v_u32)) {
+		bss_info->last_seen_msec =   nm_utils_get_monotonic_timestamp_msec_cached (&now_msec)
+		                           - (((gint64) v_u32) * 1000);
+	} else if (initial) {
+		/* Unknown Age. Assume we just received it. */
+		bss_info->last_seen_msec = nm_utils_get_monotonic_timestamp_msec_cached (&now_msec);
+	}
+
+	p_ap_flags = bss_info->ap_flags;
+	if (nm_g_variant_lookup (properties, "Privacy", "b", &v_b))
+		p_ap_flags = NM_FLAGS_ASSIGN (p_ap_flags, NM_802_11_AP_FLAGS_PRIVACY, v_b);
+	else {
+		nm_assert (  !initial
+		           || !NM_FLAGS_HAS (p_ap_flags, NM_802_11_AP_FLAGS_PRIVACY));
+	}
+	v_v = nm_g_variant_lookup_value (properties, "WPS", G_VARIANT_TYPE_VARDICT);
+	if (   v_v
+	    || initial) {
+		NM80211ApFlags f = NM_802_11_AP_FLAGS_NONE;
+
+		if (v_v) {
+			if (g_variant_lookup (v_v, "Type", "&s", &v_s)) {
+				p_ap_flags = NM_802_11_AP_FLAGS_WPS;
+				if (nm_streq (v_s, "pcb"))
+					f |= NM_802_11_AP_FLAGS_WPS_PBC;
+				else if (nm_streq (v_s, "pin"))
+					f |= NM_802_11_AP_FLAGS_WPS_PIN;
+			}
+			g_variant_unref (v_v);
+		}
+		p_ap_flags = NM_FLAGS_ASSIGN_MASK (p_ap_flags,
+		                                     NM_802_11_AP_FLAGS_WPS
+		                                   | NM_802_11_AP_FLAGS_WPS_PBC
+		                                   | NM_802_11_AP_FLAGS_WPS_PIN,
+		                                   f);
+	}
+	if (bss_info->ap_flags != p_ap_flags) {
+		bss_info->ap_flags = p_ap_flags;
+		nm_assert (bss_info->ap_flags == p_ap_flags);
+	}
+
+	if (nm_g_variant_lookup (properties, "Mode", "&s", &v_s)) {
+		if (nm_streq (v_s, "infrastructure"))
+			p_mode = NM_802_11_MODE_INFRA;
+		else if (nm_streq (v_s, "ad-hoc"))
+			p_mode = NM_802_11_MODE_ADHOC;
+		else if (nm_streq (v_s, "mesh"))
+			p_mode = NM_802_11_MODE_MESH;
+		else
+			p_mode = NM_802_11_MODE_UNKNOWN;
+	} else if (initial)
+		p_mode = NM_802_11_MODE_UNKNOWN;
+	else
+		p_mode = bss_info->mode;
+	if (bss_info->mode != p_mode) {
+		bss_info->mode = p_mode;
+		nm_assert (bss_info->mode == p_mode);
+	}
+
+	if (nm_g_variant_lookup (properties, "Signal", "n", &v_i16))
+		p_signal_percent = nm_wifi_utils_level_to_quality (v_i16);
+	else if (initial)
+		p_signal_percent = 0;
+	else
+		p_signal_percent = bss_info->signal_percent;
+	bss_info->signal_percent = p_signal_percent;
+
+	if (nm_g_variant_lookup (properties, "Frequency", "q", &v_u16))
+		bss_info->frequency = v_u16;
+
+	v_v = nm_g_variant_lookup_value (properties, "SSID", G_VARIANT_TYPE_BYTESTRING);
+	if (v_v) {
+		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
+		arr_len = MIN (32, arr_len);
+
+		/* Stupid ieee80211 layer uses <hidden> */
+		if (   arr_data
+		    && arr_len
+		    && !(   NM_IN_SET (arr_len, 8, 9)
+		         && memcmp (arr_data, "<hidden>", arr_len) == 0)
+		    && !nm_utils_is_empty_ssid (arr_data, arr_len)) {
+			/* good */
+		} else
+			arr_len = 0;
+
+		if (!nm_utils_gbytes_equal_mem (bss_info->ssid, arr_data, arr_len)) {
+			_nm_unused gs_unref_bytes GBytes *old_free = g_steal_pointer (&bss_info->ssid);
+
+			bss_info->ssid =   (arr_len == 0)
+			                 ? NULL
+			                 : g_bytes_new (arr_data, arr_len);
+		}
+
+		g_variant_unref (v_v);
+	} else {
+		nm_assert (   !initial
+		           || !bss_info->ssid);
+	}
+
+	v_v = nm_g_variant_lookup_value (properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
+	if (v_v) {
+		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
+		if (   arr_len == ETH_ALEN
+		    && memcmp (arr_data, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
+		    && memcmp (arr_data, (char[ETH_ALEN]) { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, ETH_ALEN) != 0) {
+			/* pass */
+		} else
+			arr_len = 0;
+
+		if (arr_len != 0) {
+			nm_assert (arr_len == sizeof (bss_info->bssid));
+			bss_info->bssid_valid = TRUE;
+			memcpy (bss_info->bssid, arr_data, sizeof (bss_info->bssid));
+		} else if (bss_info->bssid_valid) {
+			bss_info->bssid_valid = FALSE;
+			memset (bss_info->bssid, 0, sizeof (bss_info->bssid));
+		}
+		g_variant_unref (v_v);
+	} else {
+		nm_assert (   !initial
+		           || !bss_info->bssid_valid);
+	}
+	nm_assert (   (   bss_info->bssid_valid
+	               && !nm_utils_memeqzero (bss_info->bssid, sizeof (bss_info->bssid)))
+	           || (  !bss_info->bssid_valid
+	               && nm_utils_memeqzero (bss_info->bssid, sizeof (bss_info->bssid))));
+
+	p_max_rate_has = FALSE;
+	p_max_rate = 0;
+	v_v = nm_g_variant_lookup_value (properties, "Rates", G_VARIANT_TYPE ("au"));
+	if (v_v) {
+		const guint32 *rates = g_variant_get_fixed_array (v_v, &arr_len, sizeof (guint32));
+		gsize i;
+
+		for (i = 0; i < arr_len; i++)
+			p_max_rate = NM_MAX (p_max_rate, rates[i]);
+		p_max_rate_has = TRUE;
+		g_variant_unref (v_v);
+	}
+	v_v = nm_g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
+	if (v_v) {
+		guint32 rate;
+
+		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
+		nm_wifi_utils_parse_ies (arr_data, arr_len, &rate, &p_metered);
+		p_max_rate = NM_MAX (p_max_rate, rate);
+		p_max_rate_has = TRUE;
+		g_variant_unref (v_v);
+
+		bss_info->metered = p_metered;
+	}
+	if (p_max_rate_has)
+		bss_info->max_rate = p_max_rate / 1000u;
+
+
+	v_v = nm_g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
+	if (v_v) {
+		bss_info->wpa_flags = security_from_vardict (v_v);
+		g_variant_unref (v_v);
+	}
+
+	v_v = nm_g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
+	if (v_v) {
+		bss_info->rsn_flags = security_from_vardict (v_v);
+		g_variant_unref (v_v);
+	}
+
+	_bss_info_changed_emit (self, bss_info, TRUE);
+}
+
+static void
+_bss_info_get_all_cb (GVariant *result,
+                      GError *error,
+                      gpointer user_data)
+{
+	NMSupplicantBssInfo *bss_info;
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_unref_variant GVariant *properties = NULL;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	bss_info = user_data;
+	self = bss_info->_self;
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_clear_object (&bss_info->_init_cancellable);
+	nm_c_list_move_tail (&priv->bss_lst_head, &bss_info->_bss_lst);
+
+	if (result)
+		g_variant_get (result, "(@a{sv})", &properties);
+
+	_bss_info_properties_changed (self, bss_info, properties, TRUE);
+
+	_starting_check_ready (self);
+}
+
+static void
+_bss_info_add (NMSupplicantInterface *self, const char *object_path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	nm_auto_ref_string NMRefString *bss_path = NULL;
+	NMSupplicantBssInfo *bss_info;
+
+	bss_path = nm_ref_string_new (nm_dbus_path_not_empty (object_path));
+	if (!bss_path)
+		return;
+
+	bss_info = g_hash_table_lookup (priv->bss_idx, &bss_path);
+	if (bss_info) {
+		bss_info->_bss_dirty = FALSE;
+		return;
+	}
+
+	bss_info = g_slice_new (NMSupplicantBssInfo);
+	*bss_info = (NMSupplicantBssInfo) {
+		._self             = self,
+		.bss_path          = g_steal_pointer (&bss_path),
+		._init_cancellable = g_cancellable_new (),
+	};
+	c_list_link_tail (&priv->bss_initializing_lst_head, &bss_info->_bss_lst);
+	g_hash_table_add (priv->bss_idx, bss_info);
+
+	nm_dbus_connection_call_get_all (priv->dbus_connection,
+	                                 priv->name_owner->str,
+	                                 bss_info->bss_path->str,
+	                                 NM_WPAS_DBUS_IFACE_BSS,
+	                                 5000,
+	                                 bss_info->_init_cancellable,
+	                                 _bss_info_get_all_cb,
+	                                 bss_info);
+}
+
+static gboolean
+_bss_info_remove (NMSupplicantInterface *self,
+                  NMRefString **p_bss_path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantBssInfo *bss_info;
+	gpointer unused_but_required;
+
+	if (!g_hash_table_steal_extended (priv->bss_idx,
+	                                  p_bss_path,
+	                                  (gpointer *) &bss_info,
+	                                  &unused_but_required))
+		return FALSE;
+
+	c_list_unlink (&bss_info->_bss_lst);
+	if (!bss_info->_init_cancellable)
+		_bss_info_changed_emit (self, bss_info, FALSE);
+	_bss_info_destroy (bss_info);
+
+	nm_assert_starting_has_pending_count (priv->starting_pending_count);
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+_peer_info_destroy (NMSupplicantPeerInfo *peer_info)
+{
+	c_list_unlink (&peer_info->_peer_lst);
+	nm_clear_g_cancellable (&peer_info->_init_cancellable);
+
+	g_free (peer_info->device_name);
+	g_free (peer_info->manufacturer);
+	g_free (peer_info->model);
+	g_free (peer_info->model_number);
+	g_free (peer_info->serial);
+	g_bytes_unref (peer_info->ies);
+
+	nm_g_slice_free (peer_info);
+}
+
+static void
+_peer_info_changed_emit (NMSupplicantInterface *self,
+                         NMSupplicantPeerInfo *peer_info,
+                         gboolean is_present)
+{
+	g_signal_emit (self,
+	               signals[PEER_CHANGED],
+	               0,
+	               peer_info,
+	               is_present);
+}
+
+static void
+_peer_info_properties_changed (NMSupplicantInterface *self,
+                               NMSupplicantPeerInfo *peer_info,
+                               GVariant *properties,
+                               gboolean initial)
+{
+	GVariant *v_v;
+	const char *v_s;
+	gint32 v_i32;
+	const guint8 *arr_data;
+	gsize arr_len;
+
+	peer_info->last_seen_msec = nm_utils_get_monotonic_timestamp_msec ();
+
+	if (nm_g_variant_lookup (properties, "level", "i", &v_i32))
+		peer_info->signal_percent = nm_wifi_utils_level_to_quality (v_i32);
+
+	if (nm_g_variant_lookup (properties, "DeviceName", "&s", &v_s))
+		nm_utils_strdup_reset (&peer_info->device_name, v_s);
+
+	if (nm_g_variant_lookup (properties, "Manufacturer", "&s", &v_s))
+		nm_utils_strdup_reset (&peer_info->manufacturer, v_s);
+
+	if (nm_g_variant_lookup (properties, "Model", "&s", &v_s))
+		nm_utils_strdup_reset (&peer_info->model, v_s);
+
+	if (nm_g_variant_lookup (properties, "ModelNumber", "&s", &v_s))
+		nm_utils_strdup_reset (&peer_info->model_number, v_s);
+
+	if (nm_g_variant_lookup (properties, "Serial", "&s", &v_s))
+		nm_utils_strdup_reset (&peer_info->serial, v_s);
+
+	v_v = nm_g_variant_lookup_value (properties, "DeviceAddress", G_VARIANT_TYPE_BYTESTRING);
+	if (v_v) {
+		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
+		if (   arr_len == ETH_ALEN
+		    && memcmp (arr_data, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
+		    && memcmp (arr_data, (char[ETH_ALEN]) { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, ETH_ALEN) != 0) {
+			/* pass */
+		} else
+			arr_len = 0;
+
+		if (arr_len != 0) {
+			nm_assert (arr_len == sizeof (peer_info->address));
+			peer_info->address_valid = TRUE;
+			memcpy (peer_info->address, arr_data, sizeof (peer_info->address));
+		} else if (peer_info->address_valid) {
+			peer_info->address_valid = FALSE;
+			memset (peer_info->address, 0, sizeof (peer_info->address));
+		}
+		g_variant_unref (v_v);
+	} else {
+		nm_assert (   !initial
+		           || !peer_info->address_valid);
+	}
+	nm_assert (   (   peer_info->address_valid
+	               && !nm_utils_memeqzero (peer_info->address, sizeof (peer_info->address)))
+	           || (  !peer_info->address_valid
+	               && nm_utils_memeqzero (peer_info->address, sizeof (peer_info->address))));
+
+	/* The IEs property contains the WFD R1 subelements */
+	v_v = nm_g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
+	if (v_v) {
+		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
+		if (!nm_utils_gbytes_equal_mem (peer_info->ies, arr_data, arr_len)) {
+			_nm_unused gs_unref_bytes GBytes *old_free = g_steal_pointer (&peer_info->ies);
+
+			peer_info->ies = g_bytes_new (arr_data, arr_len);
+		} else if (   arr_len == 0
+		           && !peer_info->ies)
+			peer_info->ies = g_bytes_new (NULL, 0);
+		g_variant_unref (v_v);
+	}
+
+	_peer_info_changed_emit (self, peer_info, TRUE);
+}
+
+static void
+_peer_info_get_all_cb (GVariant *result,
+                       GError *error,
+                       gpointer user_data)
+{
+	NMSupplicantPeerInfo *peer_info;
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_unref_variant GVariant *properties = NULL;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	peer_info = user_data;
+	self = peer_info->_self;
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_clear_object (&peer_info->_init_cancellable);
+	nm_c_list_move_tail (&priv->peer_lst_head, &peer_info->_peer_lst);
+
+	if (result)
+		g_variant_get (result, "(@a{sv})", &properties);
+
+	_peer_info_properties_changed (self, peer_info, properties, TRUE);
+
+	_starting_check_ready (self);
+}
+
+static void
+_peer_info_add (NMSupplicantInterface *self, const char *object_path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	nm_auto_ref_string NMRefString *peer_path = NULL;
+	NMSupplicantPeerInfo *peer_info;
+
+	peer_path = nm_ref_string_new (nm_dbus_path_not_empty (object_path));
+	if (!peer_path)
+		return;
+
+	peer_info = g_hash_table_lookup (priv->peer_idx, &peer_path);
+
+	if (peer_info) {
+		peer_info->_peer_dirty = FALSE;
+		return;
+	}
+
+	peer_info = g_slice_new (NMSupplicantPeerInfo);
+	*peer_info = (NMSupplicantPeerInfo) {
+		._self             = self,
+		.peer_path         = g_steal_pointer (&peer_path),
+		._init_cancellable = g_cancellable_new (),
+	};
+	c_list_link_tail (&priv->peer_initializing_lst_head, &peer_info->_peer_lst);
+	g_hash_table_add (priv->peer_idx, peer_info);
+
+	nm_dbus_connection_call_get_all (priv->dbus_connection,
+	                                 priv->name_owner->str,
+	                                 peer_info->peer_path->str,
+	                                 NM_WPAS_DBUS_IFACE_PEER,
+	                                 5000,
+	                                 peer_info->_init_cancellable,
+	                                 _peer_info_get_all_cb,
+	                                 peer_info);
+}
+
+static gboolean
+_peer_info_remove (NMSupplicantInterface *self,
+                   NMRefString **p_peer_path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantPeerInfo *peer_info;
+	gpointer unused_but_required;
+
+	if (!g_hash_table_steal_extended (priv->peer_idx,
+	                                  p_peer_path,
+	                                  (gpointer *) &peer_info,
+	                                  &unused_but_required))
+		return FALSE;
+
+	c_list_unlink (&peer_info->_peer_lst);
+	if (!peer_info->_init_cancellable)
+		_peer_info_changed_emit (self, peer_info, FALSE);
+	_peer_info_destroy (peer_info);
+
+	nm_assert_starting_has_pending_count (priv->starting_pending_count);
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+set_state_down (NMSupplicantInterface *self,
+                gboolean force_remove_from_supplicant,
+                const char *reason)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantBssInfo *bss_info;
+	NMSupplicantPeerInfo *peer_info;
+	NMSupplicantInterfaceState old_state;
+
+	nm_assert (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+	nm_assert (!c_list_is_empty (&self->supp_lst));
+
+	_LOGD ("remove interface \"%s\" on %s (%s)%s",
+	       priv->object_path->str,
+	       priv->name_owner->str,
+	       reason,
+	       force_remove_from_supplicant ? " (remove in wpa_supplicant)" : "");
+
+	old_state = priv->state;
+
+	priv->state = NM_SUPPLICANT_INTERFACE_STATE_DOWN;
+
+	_nm_supplicant_manager_unregister_interface (priv->supplicant_manager, self);
+
+	nm_assert (c_list_is_empty (&self->supp_lst));
+
+	if (force_remove_from_supplicant) {
+		_nm_supplicant_manager_dbus_call_remove_interface (priv->supplicant_manager,
+		                                                   priv->name_owner->str,
+		                                                   priv->object_path->str);
+	}
+
+	_emit_signal_state (self, priv->state, old_state, 0);
+
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection, &priv->properties_changed_id);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection, &priv->signal_id);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection, &priv->bss_properties_changed_id);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection, &priv->peer_properties_changed_id);
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection, &priv->p2p_group_properties_changed_id);
+
+	nm_supplicant_interface_cancel_wps (self);
+
+	if (priv->assoc_data) {
+		gs_free_error GError *error = NULL;
+
+		nm_utils_error_set_cancelled (&error, TRUE, "NMSupplicantInterface");
+		assoc_return (self, error, "cancelled because supplicant interface is going down");
+	}
+
+	while ((bss_info = c_list_first_entry (&priv->bss_initializing_lst_head, NMSupplicantBssInfo, _bss_lst))) {
+		g_hash_table_remove (priv->bss_idx, bss_info);
+		_bss_info_destroy (bss_info);
+	}
+	while ((bss_info = c_list_first_entry (&priv->bss_lst_head, NMSupplicantBssInfo, _bss_lst))) {
+		g_hash_table_remove (priv->bss_idx, bss_info);
+		_bss_info_destroy (bss_info);
+	}
+	nm_assert (g_hash_table_size (priv->bss_idx) == 0);
+
+	while ((peer_info = c_list_first_entry (&priv->peer_initializing_lst_head, NMSupplicantPeerInfo, _peer_lst))) {
+		g_hash_table_remove (priv->peer_idx, peer_info);
+		_peer_info_destroy (peer_info);
+	}
+	while ((peer_info = c_list_first_entry (&priv->peer_lst_head, NMSupplicantPeerInfo, _peer_lst))) {
+		g_hash_table_remove (priv->peer_idx, peer_info);
+		_peer_info_destroy (peer_info);
+	}
+	nm_assert (g_hash_table_size (priv->peer_idx) == 0);
+
+	nm_clear_g_cancellable (&priv->main_cancellable);
+	nm_clear_g_cancellable (&priv->p2p_group_properties_cancellable);
+
+	nm_clear_pointer (&priv->p2p_group_path, nm_ref_string_unref);
+
+	_remove_network (self);
+
+	nm_clear_pointer (&priv->current_bss, nm_ref_string_unref);
+}
 
 static void
 set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
@@ -450,102 +1028,70 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	NMSupplicantInterfaceState old_state = priv->state;
 
+	nm_assert (new_state > NM_SUPPLICANT_INTERFACE_STATE_STARTING);
+	nm_assert (new_state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+	nm_assert (NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (new_state));
+
+	nm_assert (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_STARTING);
+	nm_assert (priv->state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+
 	if (new_state == priv->state)
 		return;
 
-	/* DOWN is a terminal state */
-	g_return_if_fail (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+	_LOGT ("set state \"%s\" (was \"%s\")",
+	       nm_supplicant_interface_state_to_string (new_state),
+	       nm_supplicant_interface_state_to_string (priv->state));
 
-	/* Cannot regress to READY, STARTING, or INIT from higher states */
-	if (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
-		g_return_if_fail (new_state > NM_SUPPLICANT_INTERFACE_STATE_READY);
-
-	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		nm_clear_g_cancellable (&priv->other_cancellable);
-		priv->other_cancellable = g_cancellable_new ();
-	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
-		nm_clear_g_cancellable (&priv->init_cancellable);
-		nm_clear_g_cancellable (&priv->other_cancellable);
-
-		if (priv->iface_proxy)
-			g_signal_handlers_disconnect_by_data (priv->iface_proxy, self);
-	}
+	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
+		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
 
 	priv->state = new_state;
 
-	if (   priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
-	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
-
-	/* Disconnect reason is no longer relevant when not in the DISCONNECTED state */
-	if (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED)
-		priv->disconnect_reason = 0;
-
-	g_signal_emit (self, signals[STATE], 0,
-	               (int) priv->state,
-	               (int) old_state,
-	               (int) priv->disconnect_reason);
+	_emit_signal_state (self,
+	                    priv->state,
+	                    old_state,
+	                      priv->state != NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED
+	                    ? 0u
+	                    : priv->disconnect_reason);
 }
 
-static void
-set_state_from_string (NMSupplicantInterface *self, const char *new_state)
+NMRefString *
+nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self)
 {
-	NMSupplicantInterfaceState state;
+	g_return_val_if_fail (self != NULL, FALSE);
 
-	state = wpas_state_string_to_enum (new_state);
-	if (state == NM_SUPPLICANT_INTERFACE_STATE_INVALID) {
-		_LOGW ("unknown supplicant state '%s'", new_state);
-		return;
-	}
-	set_state (self, state);
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->current_bss;
 }
 
-static void
-set_scanning (NMSupplicantInterface *self, gboolean new_scanning)
+static inline gboolean
+_prop_scanning_get (NMSupplicantInterfacePrivate *priv)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (priv->scanning != new_scanning) {
-		priv->scanning = new_scanning;
-
-		/* Cache time of last scan completion */
-		if (priv->scanning == FALSE)
-			priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
-
-		_notify (self, PROP_SCANNING);
-	}
+	return    (   priv->scanning
+	           || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
+	       && NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->state);
 }
 
 gboolean
 nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 {
-	NMSupplicantInterfacePrivate *priv;
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 
-	g_return_val_if_fail (self, FALSE);
-
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	if (priv->scanning)
-		return TRUE;
-	if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		return TRUE;
-	return FALSE;
-}
-
-const char *
-nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self)
-{
-	NMSupplicantInterfacePrivate *priv;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	return priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY ? priv->current_bss : NULL;
+	return _prop_scanning_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
 }
 
 gint64
 nm_supplicant_interface_get_last_scan (NMSupplicantInterface *self)
 {
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->last_scan;
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	/* returns -1 if we are currently scanning. */
+	return   _prop_scanning_get (priv)
+	       ? -1
+	       : priv->last_scan_msec;
 }
 
 #define MATCH_PROPERTY(p, n, v, t) (!strcmp (p, n) && g_variant_is_of_type (v, t))
@@ -556,12 +1102,11 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	gboolean have_active = FALSE;
 	gboolean have_ssid = FALSE;
-	gboolean have_p2p = FALSE;
 	gboolean have_ft = FALSE;
 	gint32 max_scan_ssids = -1;
 	const char **array;
 
-	g_return_if_fail (capabilities && g_variant_is_of_type (capabilities, G_VARIANT_TYPE_VARDICT));
+	nm_assert (capabilities && g_variant_is_of_type (capabilities, G_VARIANT_TYPE_VARDICT));
 
 	if (g_variant_lookup (capabilities, "KeyMgmt", "^a&s", &array)) {
 		have_ft = g_strv_contains (array, "wpa-ft-psk");
@@ -575,14 +1120,11 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 	                                                  : NM_TERNARY_FALSE);
 
 	if (g_variant_lookup (capabilities, "Modes", "^a&s", &array)) {
-		if (g_strv_contains (array, "p2p"))
-			have_p2p = TRUE;
+		/* Setting p2p_capable might toggle _prop_p2p_available_get(). However,
+		 * we don't need to check for a property changed notification, because
+		 * the caller did g_object_freeze_notify() and will perform the check. */
+		priv->p2p_capable = g_strv_contains (array, "p2p");
 		g_free (array);
-	}
-
-	if (priv->p2p_capable != have_p2p) {
-		priv->p2p_capable = have_p2p;
-		_notify (self, PROP_P2P_AVAILABLE);
 	}
 
 	if (g_variant_lookup (capabilities, "Scan", "^a&s", &array)) {
@@ -601,63 +1143,40 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 			 * list, we'll limit to 5.
 			 */
 			priv->max_scan_ssids = CLAMP (max_scan_ssids, 0, 5);
-			_LOGI ("supports %d scan SSIDs", priv->max_scan_ssids);
+			_LOGD ("supports %d scan SSIDs", priv->max_scan_ssids);
 		}
 	}
 }
 
 static void
-iface_check_ready (NMSupplicantInterface *self)
+_starting_check_ready (NMSupplicantInterface *self)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (priv->ready_count && priv->state < NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		priv->ready_count--;
-		if (priv->ready_count == 0)
-			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
-	}
-}
-
-static void
-iface_set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	gs_unref_variant GVariant *variant = NULL;
-	gs_free_error GError *error = NULL;
-
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (nm_utils_error_is_cancelled (error))
+	if (priv->state != NM_SUPPLICANT_INTERFACE_STATE_STARTING)
 		return;
 
-	self = NM_SUPPLICANT_INTERFACE (user_data);
+	if (priv->starting_pending_count > 0)
+		return;
 
-	if (error)
-		_LOGW ("failed to set Pmf=1: %s", error->message);
+	if (!c_list_is_empty (&priv->bss_initializing_lst_head))
+		return;
 
-	iface_check_ready (self);
-}
+	if (!c_list_is_empty (&priv->peer_initializing_lst_head))
+		return;
 
-gboolean
-nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->group_proxy_acquired;
-}
+	if (priv->p2p_group_properties_cancellable)
+		return;
 
-const char*
-nm_supplicant_interface_get_p2p_group_path (NMSupplicantInterface *self)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	nm_assert (priv->state == NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 
-	if (priv->group_proxy_acquired)
-		return g_dbus_proxy_get_object_path (priv->group_proxy);
-	else
-		return NULL;
-}
+	if (!NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->supp_state)) {
+		_LOGW ("Supplicant state is unknown during initialization. Destroy the interface");
+		set_state_down (self, TRUE, "failure to get valid interface state");
+		return;
+	}
 
-gboolean
-nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self)
-{
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_group_owner;
+	set_state (self, priv->supp_state);
 }
 
 static NMTernary
@@ -739,179 +1258,328 @@ nm_supplicant_interface_get_auth_state (NMSupplicantInterface *self)
 
 /*****************************************************************************/
 
-static void
-_wps_data_free (WpsData *data)
+static gboolean
+_prop_p2p_group_joined_get (NMSupplicantInterfacePrivate *priv)
 {
-	g_free (data->type);
-	g_free (data->pin);
-	g_free (data->bssid);
-	g_clear_object (&data->cancellable);
-	if (data->proxy && data->self)
-		g_signal_handlers_disconnect_by_data (data->proxy, data->self);
-	g_clear_object (&data->proxy);
-	g_slice_free (WpsData, data);
+	return    priv->p2p_group_path
+	       && !priv->p2p_group_properties_cancellable;
+}
+
+static gboolean
+_prop_p2p_group_is_owner_get (NMSupplicantInterfacePrivate *priv)
+{
+	return    _prop_p2p_group_joined_get (priv)
+	       && priv->p2p_group_is_owner;
 }
 
 static void
-_wps_credentials_changed_cb (GDBusProxy *proxy,
-                             GVariant *props,
-                             gpointer user_data)
+_p2p_group_properties_changed (NMSupplicantInterface *self,
+                               GVariant *properties)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean old_val_p2p_group_is_owner;
+	const char *s;
+
+	old_val_p2p_group_is_owner = _prop_p2p_group_is_owner_get (priv);
+
+	if (!properties)
+		priv->p2p_group_is_owner = FALSE;
+	else if (g_variant_lookup (properties, "Role", "&s", &s))
+		priv->p2p_group_is_owner = nm_streq (s, "GO");
+
+	if (old_val_p2p_group_is_owner != _prop_p2p_group_is_owner_get (priv))
+		_notify (self, PROP_P2P_GROUP_OWNER);
+}
+
+static void
+_p2p_group_properties_changed_cb (GDBusConnection *connection,
+                                  const char *sender_name,
+                                  const char *object_path,
+                                  const char *signal_interface_name,
+                                  const char *signal_name,
+                                  GVariant *parameters,
+                                  gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gs_unref_variant GVariant *changed_properties = NULL;
+
+	if (priv->p2p_group_properties_cancellable)
+		return;
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sa{sv}as)")))
+		return;
+
+	g_variant_get (parameters,
+	               "(&s@a{sv}^a&s)",
+	               NULL,
+	               &changed_properties,
+	               NULL);
+
+	_p2p_group_properties_changed (self, changed_properties);
+}
+
+static void
+_p2p_group_properties_get_all_cb (GVariant *result,
+                                  GError *error,
+                                  gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gboolean old_val_p2p_group_joined;
+	gboolean old_val_p2p_group_is_owner;
+	gs_unref_variant GVariant *properties = NULL;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_object_freeze_notify (G_OBJECT (self));
+
+	old_val_p2p_group_joined = _prop_p2p_group_joined_get (priv);
+	old_val_p2p_group_is_owner = _prop_p2p_group_is_owner_get (priv);
+
+	nm_clear_g_cancellable (&priv->p2p_group_properties_cancellable);
+
+	if (result)
+		g_variant_get (result, "(@a{sv})", &properties);
+
+	_p2p_group_properties_changed (self, properties);
+
+	_starting_check_ready (self);
+
+	if (old_val_p2p_group_joined != _prop_p2p_group_joined_get (priv))
+		_notify (self, PROP_P2P_GROUP_JOINED);
+	if (old_val_p2p_group_is_owner != _prop_p2p_group_is_owner_get (priv))
+		_notify (self, PROP_P2P_GROUP_OWNER);
+
+	g_object_thaw_notify (G_OBJECT (self));
+}
+
+static void
+_p2p_group_set_path (NMSupplicantInterface *self,
+                     const char *path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	nm_auto_ref_string NMRefString *group_path = NULL;
+	gboolean old_val_p2p_group_joined;
+	gboolean old_val_p2p_group_is_owner;
+
+	group_path = nm_ref_string_new (nm_dbus_path_not_empty (path));
+
+	if (priv->p2p_group_path == group_path)
+		return;
+
+	old_val_p2p_group_joined = _prop_p2p_group_joined_get (priv);
+	old_val_p2p_group_is_owner = _prop_p2p_group_is_owner_get (priv);
+
+	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+	                                   &priv->p2p_group_properties_changed_id);
+	nm_clear_g_cancellable (&priv->p2p_group_properties_cancellable);
+
+	nm_ref_string_unref (priv->p2p_group_path);
+	priv->p2p_group_path = g_steal_pointer (&group_path);
+
+	if (priv->p2p_group_path) {
+		priv->p2p_group_properties_cancellable = g_cancellable_new ();
+		priv->p2p_group_properties_changed_id = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
+		                                                                                                priv->name_owner->str,
+		                                                                                                priv->p2p_group_path->str,
+		                                                                                                NM_WPAS_DBUS_IFACE_GROUP,
+		                                                                                                _p2p_group_properties_changed_cb,
+		                                                                                                self,
+		                                                                                                NULL);
+		nm_dbus_connection_call_get_all (priv->dbus_connection,
+		                                 priv->name_owner->str,
+		                                 priv->p2p_group_path->str,
+		                                 NM_WPAS_DBUS_IFACE_GROUP,
+		                                 5000,
+		                                 priv->p2p_group_properties_cancellable,
+		                                 _p2p_group_properties_get_all_cb,
+		                                 self);
+	}
+
+	_notify (self, PROP_P2P_GROUP_PATH);
+	if (old_val_p2p_group_joined != _prop_p2p_group_joined_get (priv))
+		_notify (self, PROP_P2P_GROUP_JOINED);
+	if (old_val_p2p_group_is_owner != _prop_p2p_group_is_owner_get (priv))
+		_notify (self, PROP_P2P_GROUP_OWNER);
+
+	nm_assert_starting_has_pending_count (priv->starting_pending_count);
+}
+
+/*****************************************************************************/
+
+static void
+_wps_data_free (WpsData *wps_data,
+                GDBusConnection *dbus_connection)
+{
+	nm_clear_g_dbus_connection_signal (dbus_connection,
+	                                   &wps_data->signal_id);
+	nm_clear_g_cancellable (&wps_data->cancellable);
+	g_free (wps_data->type);
+	g_free (wps_data->pin);
+	g_free (wps_data->bssid);
+	nm_g_slice_free (wps_data);
+}
+
+static void
+_wps_credentials_changed_cb (GDBusConnection *connection,
+                             const char *sender_name,
+                             const char *object_path,
+                             const char *signal_interface_name,
+                             const char *signal_name,
+                             GVariant *parameters,
+                             gpointer user_data)
+{
+	NMSupplicantInterface *self = user_data;
+	gs_unref_variant GVariant *props = NULL;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
+		return;
+
+	g_variant_get (parameters, "(@a{sv})", &props);
 
 	_LOGT ("wps: new credentials");
 	g_signal_emit (self, signals[WPS_CREDENTIALS], 0, props);
 }
 
 static void
-_wps_handle_start_cb (GObject *source_object,
-                      GAsyncResult *res,
+_wps_handle_start_cb (GObject *source,
+                      GAsyncResult *result,
                       gpointer user_data)
 {
 	NMSupplicantInterface *self;
-	WpsData *data;
-	gs_unref_variant GVariant *result = NULL;
+	WpsData *wps_data;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 
-	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	data = user_data;
-	self = data->self;
+	wps_data = user_data;
+	self = wps_data->self;
 
-	if (result)
+	if (res)
 		_LOGT ("wps: started with success");
 	else
 		_LOGW ("wps: start failed with %s", error->message);
 
-	g_clear_object (&data->cancellable);
-	nm_clear_g_free (&data->type);
-	nm_clear_g_free (&data->pin);
-	nm_clear_g_free (&data->bssid);
+	g_clear_object (&wps_data->cancellable);
+	nm_clear_g_free (&wps_data->type);
+	nm_clear_g_free (&wps_data->pin);
+	nm_clear_g_free (&wps_data->bssid);
 }
 
 static void
-_wps_handle_set_pc_cb (GObject *source_object,
-                       GAsyncResult *res,
+_wps_handle_set_pc_cb (GVariant *res,
+                       GError *error,
                        gpointer user_data)
 {
-	WpsData *data;
 	NMSupplicantInterface *self;
-	gs_unref_variant GVariant *result = NULL;
-	gs_free_error GError *error = NULL;
+	NMSupplicantInterfacePrivate *priv;
+	WpsData *wps_data;
 	GVariantBuilder start_args;
 	guint8 bssid_buf[ETH_ALEN];
 
-	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	data = user_data;
-	self = data->self;
+	wps_data = user_data;
+	self = wps_data->self;
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (result)
+	if (res)
 		_LOGT ("wps: ProcessCredentials successfully set, starting...");
 	else
 		_LOGW ("wps: ProcessCredentials failed to set (%s), starting...", error->message);
 
-	_nm_dbus_signal_connect (data->proxy, "Credentials", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (_wps_credentials_changed_cb), self);
+	wps_data->signal_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                          priv->name_owner->str,
+	                                                          NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                                                          "Credentials",
+	                                                          priv->object_path->str,
+	                                                          NULL,
+	                                                          G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                          _wps_credentials_changed_cb,
+	                                                          self,
+	                                                          NULL);
 
 	g_variant_builder_init (&start_args, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&start_args, "{sv}", "Role", g_variant_new_string ("enrollee"));
-	g_variant_builder_add (&start_args, "{sv}", "Type", g_variant_new_string (data->type));
-	if (data->pin)
-		g_variant_builder_add (&start_args, "{sv}", "Pin", g_variant_new_string (data->pin));
-
-	if (data->bssid) {
+	g_variant_builder_add (&start_args, "{sv}", "Type", g_variant_new_string (wps_data->type));
+	if (wps_data->pin)
+		g_variant_builder_add (&start_args, "{sv}", "Pin", g_variant_new_string (wps_data->pin));
+	if (wps_data->bssid) {
 		/* The BSSID is in fact not mandatory. If it is not set the supplicant would
 		 * enroll with any BSS in range. */
-		if (!nm_utils_hwaddr_aton (data->bssid, bssid_buf, sizeof (bssid_buf)))
+		if (!nm_utils_hwaddr_aton (wps_data->bssid, bssid_buf, sizeof (bssid_buf)))
 			nm_assert_not_reached ();
 		g_variant_builder_add (&start_args, "{sv}", "Bssid",
 		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, bssid_buf,
 		                                                  ETH_ALEN, sizeof (guint8)));
 	}
 
-	g_dbus_proxy_call (data->proxy,
-	                   "Start",
-	                   g_variant_new ("(a{sv})", &start_args),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   data->cancellable,
-	                   _wps_handle_start_cb,
-	                   data);
+	wps_data->needs_cancelling = TRUE;
+	if (!wps_data->cancellable)
+		wps_data->cancellable = g_cancellable_new ();
+
+	_dbus_connection_call (self,
+	                       NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                       "Start",
+	                       g_variant_new ("(a{sv})", &start_args),
+	                       G_VARIANT_TYPE ("(a{sv})"),
+	                       G_DBUS_CALL_FLAGS_NONE,
+	                       5000,
+	                       wps_data->cancellable,
+	                       _wps_handle_start_cb,
+	                       wps_data);
 }
 
 static void
-_wps_call_set_pc (WpsData *data)
+_wps_call_set_pc (NMSupplicantInterface *self,
+                  WpsData *wps_data)
 {
-	g_dbus_proxy_call (data->proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
-	                   g_variant_new ("(ssv)",
-	                                  NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
-	                                  "ProcessCredentials",
-	                                  g_variant_new_boolean (TRUE)),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   data->cancellable,
-	                   _wps_handle_set_pc_cb,
-	                   data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (!wps_data->cancellable)
+		wps_data->cancellable = g_cancellable_new ();
+
+	nm_dbus_connection_call_set (priv->dbus_connection,
+	                             priv->name_owner->str,
+	                             priv->object_path->str,
+	                             NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                             "ProcessCredentials",
+	                             g_variant_new_boolean (TRUE),
+	                             5000,
+	                             wps_data->cancellable,
+	                             _wps_handle_set_pc_cb,
+	                             wps_data);
 }
 
 static void
-_wps_handle_proxy_cb (GObject *source_object,
-                      GAsyncResult *res,
-                      gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	WpsData *data;
-	gs_free_error GError *error = NULL;
-	GDBusProxy *proxy;
-
-	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	data = user_data;
-	self = data->self;
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (!proxy) {
-		_LOGW ("wps: failure to create D-Bus proxy: %s", error->message);
-		_wps_data_free (data);
-		priv->wps_data = NULL;
-		return;
-	}
-
-	data->proxy = proxy;
-	_LOGT ("wps: D-Bus proxy created. set ProcessCredentials...");
-	_wps_call_set_pc (data);
-}
-
-static void
-_wps_handle_cancel_cb (GObject *source_object,
-                       GAsyncResult *res,
+_wps_handle_cancel_cb (GObject *source,
+                       GAsyncResult *result,
                        gpointer user_data)
 {
+	GDBusConnection *dbus_connection = G_DBUS_CONNECTION (source);
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	WpsData *data;
-	gs_unref_variant GVariant *result = NULL;
+	WpsData *wps_data;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 
-	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
+	res = g_dbus_connection_call_finish (dbus_connection, result, &error);
+	nm_assert (!nm_utils_error_is_cancelled (error));
 
-	data = user_data;
-	self = data->self;
+	wps_data = user_data;
+	self = wps_data->self;
 
 	if (!self) {
-		_wps_data_free (data);
-		if (result)
+		_wps_data_free (wps_data, dbus_connection);
+		if (res)
 			_LOGT ("wps: cancel completed successfully, after supplicant interface is gone");
 		else
 			_LOGW ("wps: cancel failed (%s), after supplicant interface is gone", error->message);
@@ -920,23 +1588,24 @@ _wps_handle_cancel_cb (GObject *source_object,
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	data->is_cancelling = FALSE;
+	wps_data->is_cancelling = FALSE;
 
-	if (!data->type) {
+	if (!wps_data->type) {
 		priv->wps_data = NULL;
-		_wps_data_free (data);
-		if (result)
+		_wps_data_free (wps_data, dbus_connection);
+		if (res)
 			_LOGT ("wps: cancel completed successfully");
 		else
 			_LOGW ("wps: cancel failed (%s)", error->message);
 		return;
 	}
 
-	if (result)
+	if (res)
 		_LOGT ("wps: cancel completed successfully, setting ProcessCredentials now...");
 	else
 		_LOGW ("wps: cancel failed (%s), setting ProcessCredentials now...", error->message);
-	_wps_call_set_pc (data);
+
+	_wps_call_set_pc (self, wps_data);
 }
 
 static void
@@ -946,74 +1615,71 @@ _wps_start (NMSupplicantInterface *self,
             const char *pin)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	WpsData *data = priv->wps_data;
+	WpsData *wps_data;
 
 	if (type)
 		_LOGI ("wps: type %s start...", type);
 
-	if (!data) {
+	wps_data = priv->wps_data;
+
+	if (!wps_data) {
 		if (!type)
 			return;
 
-		data = g_slice_new0 (WpsData);
-		data->self = self;
-		data->type = g_strdup (type);
-		data->bssid = g_strdup (bssid);
-		data->pin = g_strdup (pin);
-		data->cancellable = g_cancellable_new ();
+		if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+			_LOGD ("wps: interface is down. Cannot start with WPS");
+			return;
+		}
 
-		priv->wps_data = data;
+		wps_data = g_slice_new (WpsData);
+		*wps_data = (WpsData) {
+			.self        = self,
+			.type        = g_strdup (type),
+			.bssid       = g_strdup (bssid),
+			.pin         = g_strdup (pin),
+		};
+		priv->wps_data = wps_data;
+	} else {
+		g_free (wps_data->type);
+		g_free (wps_data->bssid);
+		g_free (wps_data->pin);
+		wps_data->type = g_strdup (type);
+		wps_data->bssid = g_strdup (bssid);
+		wps_data->pin = g_strdup (pin);
+	}
 
-		_LOGT ("wps: create D-Bus proxy...");
-
-		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-		                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-		                          NULL,
-		                          NM_WPAS_DBUS_SERVICE,
-		                          priv->object_path,
-		                          NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
-		                          data->cancellable,
-		                          _wps_handle_proxy_cb,
-		                          data);
+	if (wps_data->is_cancelling) {
+		/* we wait for cancellation to complete. */
 		return;
 	}
 
-	g_free (data->type);
-	g_free (data->bssid);
-	g_free (data->pin);
-	data->type = g_strdup (type);
-	data->bssid = g_strdup (bssid);
-	data->pin = g_strdup (pin);
+	if (   !type
+	    || wps_data->needs_cancelling) {
 
-	if (!data->proxy) {
-		if (!type) {
-			nm_clear_g_cancellable (&data->cancellable);
-			priv->wps_data = NULL;
-			_wps_data_free (data);
+		_LOGT ("wps: cancel %senrollment...",
+		       wps_data->needs_cancelling ? "previous " : "");
 
-			_LOGT ("wps: abort creation of D-Bus proxy");
-		} else
-			_LOGT ("wps: new enrollment. Wait for D-Bus proxy...");
+		wps_data->is_cancelling = TRUE;
+		wps_data->needs_cancelling = FALSE;
+		nm_clear_g_cancellable (&wps_data->cancellable);
+		nm_clear_g_dbus_connection_signal (priv->dbus_connection,
+		                                   &wps_data->signal_id);
+
+		_dbus_connection_call (self,
+		                       NM_WPAS_DBUS_IFACE_INTERFACE_WPS,
+		                       "Cancel",
+		                       NULL,
+		                       G_VARIANT_TYPE ("()"),
+		                       G_DBUS_CALL_FLAGS_NONE,
+		                       5000,
+		                       NULL,
+		                       _wps_handle_cancel_cb,
+		                       wps_data);
 		return;
 	}
 
-	if (data->is_cancelling)
-		return;
-
-	_LOGT ("wps: cancel previous enrollment...");
-
-	data->is_cancelling = TRUE;
-	nm_clear_g_cancellable (&data->cancellable);
-	data->cancellable = g_cancellable_new ();
-	g_signal_handlers_disconnect_by_data (data->proxy, self);
-	g_dbus_proxy_call (data->proxy,
-	                   "Cancel",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   data->cancellable,
-	                   _wps_handle_cancel_cb,
-	                   data);
+	_LOGT ("wps: setting ProcessCredentials...");
+	_wps_call_set_pc (self, wps_data);
 }
 
 void
@@ -1034,875 +1700,202 @@ nm_supplicant_interface_cancel_wps (NMSupplicantInterface *self)
 /*****************************************************************************/
 
 static void
-iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+iface_introspect_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *variant = NULL;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 	const char *data;
 	NMTernary value;
 
-	variant = _nm_dbus_proxy_call_finish (proxy, result,
-	                                      G_VARIANT_TYPE ("(s)"),
-	                                      &error);
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (NM_SUPPL_CAP_MASK_GET (priv->global_capabilities, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT) {
-		/* if the global value is set, we trust it and ignore whatever we get from introspection. */
-	} else {
-		value = NM_TERNARY_DEFAULT;
-		if (variant) {
-			g_variant_get (variant, "(&s)", &data);
+	nm_assert (NM_SUPPL_CAP_MASK_GET (priv->global_capabilities, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT);
 
-			/* The ProbeRequest method only exists if AP mode has been enabled */
-			value =   strstr (data, "ProbeRequest")
-			        ? NM_TERNARY_TRUE
-			        : NM_TERNARY_FALSE;
-		}
-		priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET (priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP, value);
+	value = NM_TERNARY_DEFAULT;
+	if (res) {
+		g_variant_get (res, "(&s)", &data);
+
+		/* The ProbeRequest method only exists if AP mode has been enabled */
+		value =   strstr (data, "ProbeRequest")
+		        ? NM_TERNARY_TRUE
+		        : NM_TERNARY_FALSE;
 	}
 
-	iface_check_ready (self);
+	priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET (priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP, value);
+
+	priv->starting_pending_count--;
+	_starting_check_ready (self);
 }
 
 static void
-scan_done_emit_signal (NMSupplicantInterface *self)
+_properties_changed_main (NMSupplicantInterface *self,
+                          GVariant *properties)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	const char *object_path;
-	BssData *bss_data;
-	gboolean success;
-	GHashTableIter iter;
+	const char **v_strv;
+	const char *v_s;
+	gboolean v_b;
+	gint32 v_i32;
+	GVariant *v_v;
+	gboolean do_log_driver_info = FALSE;
+	gboolean do_set_state = FALSE;
+	gboolean do_notify_current_bss = FALSE;
 
-	g_hash_table_iter_init (&iter, priv->bss_proxies);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &bss_data)) {
-		/* we have some BSS' that need to be initialized first. Delay
-		 * emitting signal. */
-		if (!bss_data->change_id) {
-			priv->scan_done_pending = TRUE;
-			return;
-		}
+	nm_assert (properties || g_variant_is_of_type (properties, G_VARIANT_TYPE ("a{sv}")));
+
+	v_v = g_variant_lookup_value (properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
+	if (v_v) {
+		parse_capabilities (self, v_v);
+		g_variant_unref (v_v);
 	}
 
-	/* Emit BSS_UPDATED so that wifi device has the APs (in case it removed them) */
-	g_hash_table_iter_init (&iter, priv->bss_proxies);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &object_path, (gpointer *) &bss_data)) {
-		gs_unref_variant GVariant *props = NULL;
-
-		props = bss_proxy_get_properties (self, bss_data->proxy);
-		g_signal_emit (self, signals[BSS_UPDATED], 0,
-		               object_path,
-		               g_variant_ref_sink (props));
-	}
-
-	success = priv->scan_done_success;
-	priv->scan_done_success = FALSE;
-	priv->scan_done_pending = FALSE;
-	g_signal_emit (self, signals[SCAN_DONE], 0, success);
-}
-
-static void
-wpas_iface_scan_done (GDBusProxy *proxy,
-                      gboolean success,
-                      gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* Cache last scan completed time */
-	priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
-	priv->scan_done_success |= success;
-	scan_done_emit_signal (self);
-}
-
-static void
-wpas_iface_bss_added (GDBusProxy *proxy,
-                      const char *path,
-                      GVariant *props,
-                      gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (priv->scanning)
-		priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
-
-	bss_add_new (self, path);
-}
-
-static void
-wpas_iface_bss_removed (GDBusProxy *proxy,
-                        const char *path,
-                        gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	BssData *bss_data;
-
-	bss_data = g_hash_table_lookup (priv->bss_proxies, path);
-	if (!bss_data)
-		return;
-	g_hash_table_steal (priv->bss_proxies, path);
-	g_signal_emit (self, signals[BSS_REMOVED], 0, path);
-	bss_data_destroy (bss_data);
-}
-
-static void
-eap_changed (GDBusProxy *proxy,
-             const char *status,
-             const char *parameter,
-             gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	NMSupplicantAuthState auth_state = NM_SUPPLICANT_AUTH_STATE_UNKNOWN;
-
-	if (nm_streq0 (status, "started"))
-		auth_state = NM_SUPPLICANT_AUTH_STATE_STARTED;
-	else if (nm_streq0 (status, "completion")) {
-		if (nm_streq0 (parameter, "success"))
-			auth_state = NM_SUPPLICANT_AUTH_STATE_SUCCESS;
-		else if (nm_streq0 (parameter, "failure"))
-			auth_state = NM_SUPPLICANT_AUTH_STATE_FAILURE;
-	}
-
-	/* the state eventually reaches one of started, success or failure
-	 * so ignore any other intermediate (unknown) state change. */
-	if (   auth_state != NM_SUPPLICANT_AUTH_STATE_UNKNOWN
-	    && auth_state != priv->auth_state) {
-		priv->auth_state = auth_state;
-		_notify (self, PROP_AUTH_STATE);
-	}
-}
-
-static void
-props_changed_cb (GDBusProxy *proxy,
-                  GVariant *changed_properties,
-                  GStrv invalidated_properties,
-                  gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	const char *s, **array, **iter;
-	gboolean b = FALSE;
-	gint32 i32;
-	GVariant *v;
-
-	g_object_freeze_notify (G_OBJECT (self));
-
-	if (g_variant_lookup (changed_properties, "Scanning", "b", &b))
-		set_scanning (self, b);
-
-	if (   g_variant_lookup (changed_properties, "State", "&s", &s)
-	    && priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		/* Only transition to actual wpa_supplicant interface states (ie,
-		 * anything > READY) after the NMSupplicantInterface has had a
-		 * chance to initialize, which is signalled by entering the READY
-		 * state.
-		 */
-		set_state_from_string (self, s);
-	}
-
-	if (g_variant_lookup (changed_properties, "BSSs", "^a&o", &array)) {
-		iter = array;
-		while (*iter)
-			bss_add_new (self, *iter++);
-		g_free (array);
-	}
-
-	if (g_variant_lookup (changed_properties, "CurrentBSS", "&o", &s)) {
-		s = nm_dbus_path_not_empty (s);
-		if (!nm_streq0 (s, priv->current_bss)) {
-			g_free (priv->current_bss);
-			priv->current_bss = g_strdup (s);
-			_notify (self, PROP_CURRENT_BSS);
+	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b)) {
+		if (priv->scanning != (!!v_b)) {
+			if (priv->scanning)
+				priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
+			priv->scanning = v_b;
 		}
 	}
 
-	v = g_variant_lookup_value (changed_properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
-	if (v) {
-		parse_capabilities (self, v);
-		g_variant_unref (v);
+	if (nm_g_variant_lookup (properties, "Ifname", "&s", &v_s)) {
+		if (nm_utils_strdup_reset (&priv->ifname, v_s))
+			do_log_driver_info = TRUE;
+	}
+	if (nm_g_variant_lookup (properties, "Driver", "&s", &v_s)) {
+		if (nm_utils_strdup_reset (&priv->driver, v_s))
+			do_log_driver_info = TRUE;
 	}
 
-	if (g_variant_lookup (changed_properties, "DisconnectReason", "i", &i32)) {
+	if (nm_g_variant_lookup (properties, "DisconnectReason", "i", &v_i32)) {
 		/* Disconnect reason is currently only given for deauthentication events,
 		 * not disassociation; currently they are IEEE 802.11 "reason codes",
 		 * defined by (IEEE 802.11-2007, 7.3.1.7, Table 7-22).  Any locally caused
 		 * deauthentication will be negative, while authentications caused by the
 		 * AP will be positive.
 		 */
-		priv->disconnect_reason = i32;
-		if (priv->disconnect_reason != 0)
-			_LOGW ("connection disconnected (reason %d)", priv->disconnect_reason);
+		priv->disconnect_reason = v_i32;
 	}
 
-	/* We may not have priv->dev set yet if this interface was created from a
-	 * known wpa_supplicant interface without knowing the device name.
-	 */
-	if (priv->dev == NULL && g_variant_lookup (changed_properties, "Ifname", "&s", &s)) {
-		priv->dev = g_strdup (s);
-		_notify (self, PROP_IFACE);
-	}
+	if (nm_g_variant_lookup (properties, "State", "&s", &v_s)) {
+		NMSupplicantInterfaceState state;
 
-	g_object_thaw_notify (G_OBJECT (self));
-}
-
-static void
-group_props_changed_cb (GDBusProxy *proxy,
-                        GVariant *changed_properties,
-                        char **invalidated_properties,
-                        gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	char *s;
-
-	g_object_freeze_notify (G_OBJECT (self));
-
-#if 0
-	v = g_variant_lookup_value (properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
-	if (v) {
-		bytes = g_variant_get_fixed_array (v, &len, 1);
-		if (   len == ETH_ALEN
-		    && memcmp (bytes, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
-		    && memcmp (bytes, (char[ETH_ALEN]) { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, ETH_ALEN) != 0)
-			nm_wifi_p2p_group_set_bssid_bin (group, bytes);
-		g_variant_unref (v);
-	}
-
-	v = g_variant_lookup_value (properties, "SSID", G_VARIANT_TYPE_BYTESTRING);
-	if (v) {
-		bytes = g_variant_get_fixed_array (v, &len, 1);
-		len = MIN (32, len);
-
-		/* Stupid ieee80211 layer uses <hidden> */
-		if (   bytes && len
-		    && !(((len == 8) || (len == 9)) && !memcmp (bytes, "<hidden>", 8))
-		    && !nm_utils_is_empty_ssid (bytes, len))
-			nm_wifi_p2p_group_set_ssid (group, bytes, len);
-
-		g_variant_unref (v);
-	}
-#endif
-
-	if (g_variant_lookup (changed_properties, "Role", "s", &s)) {
-		priv->p2p_group_owner = g_strcmp0 (s, "GO") == 0;
-		_notify (self, PROP_P2P_GROUP_OWNER);
-		g_free (s);
-	}
-
-	/* NOTE: We do not seem to get any property change notifications for the Members
-	 *       property. However, we can keep track of these indirectly either by querying
-	 *       the groups that each peer is in or listening to the Join/Disconnect
-	 *       notifications.
-	 */
-
-	g_object_thaw_notify (G_OBJECT (self));
-}
-
-static void
-group_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
-	gboolean success;
-
-	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (!success) {
-		_LOGD ("failed to acquire Group proxy: (%s)", error->message);
-		g_clear_object (&priv->group_proxy);
-		return;
-	}
-
-	priv->group_proxy_acquired = TRUE;
-	_notify (self, PROP_P2P_GROUP_JOINED);
-	_notify (self, PROP_P2P_GROUP_PATH);
-
-	iface_check_ready (self);
-}
-
-static void
-p2p_props_changed_cb (GDBusProxy *proxy,
-                      GVariant *changed_properties,
-                      GStrv invalidated_properties,
-                      gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	const char **array, **iter;
-	const char *path = NULL;
-
-	g_object_freeze_notify (G_OBJECT (self));
-
-	if (g_variant_lookup (changed_properties, "Peers", "^a&o", &array)) {
-		iter = array;
-		while (*iter)
-			peer_add_new (self, *iter++);
-		g_free (array);
-	}
-
-	if (g_variant_lookup (changed_properties, "Group", "&o", &path)) {
-		if (priv->group_proxy && g_strcmp0 (path, g_dbus_proxy_get_object_path (priv->group_proxy)) == 0) {
-			/* We already have the proxy, nothing to do. */
-		} else if (nm_dbus_path_not_empty (path)) {
-			if (priv->group_proxy != NULL) {
-				_LOGW ("P2P: Unexpected update of the group object path");
-				priv->group_proxy_acquired = FALSE;
-				_notify (self, PROP_P2P_GROUP_JOINED);
-				_notify (self, PROP_P2P_GROUP_PATH);
-				g_clear_object (&priv->group_proxy);
+		state = wpas_state_string_to_enum (v_s);
+		if (state == NM_SUPPLICANT_INTERFACE_STATE_INVALID)
+			_LOGT ("ignore unknown supplicant state '%s'", v_s);
+		else if (priv->supp_state != state) {
+			priv->supp_state = state;
+			if (priv->state > NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
+				/* Only transition to actual wpa_supplicant interface states (ie,
+				 * anything > STARTING) after the NMSupplicantInterface has had a
+				 * chance to initialize, which is signalled by entering the STARTING
+				 * state.
+				 */
+				do_set_state = TRUE;
 			}
-
-			/* Delay ready state if we have not reached it yet. */
-			if (priv->ready_count)
-				priv->ready_count++;
-
-			priv->group_proxy = g_object_new (G_TYPE_DBUS_PROXY,
-			                                  "g-bus-type", G_BUS_TYPE_SYSTEM,
-			                                  "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-			                                  "g-name", NM_WPAS_DBUS_SERVICE,
-			                                  "g-object-path", path,
-			                                  "g-interface-name", NM_WPAS_DBUS_IFACE_GROUP,
-			                                  NULL);
-			g_signal_connect (priv->group_proxy, "g-properties-changed", G_CALLBACK (group_props_changed_cb), self);
-			g_async_initable_init_async (G_ASYNC_INITABLE (priv->group_proxy),
-			                             G_PRIORITY_DEFAULT,
-			                             priv->other_cancellable,
-			                             (GAsyncReadyCallback) group_proxy_acquired_cb,
-			                             self);
-		} else {
-			priv->group_proxy_acquired = FALSE;
-			_notify (self, PROP_P2P_GROUP_JOINED);
-			_notify (self, PROP_P2P_GROUP_PATH);
-			g_clear_object (&priv->group_proxy);
 		}
 	}
 
-	g_object_thaw_notify (G_OBJECT (self));
-}
-
-static void
-p2p_device_found (GDBusProxy *proxy,
-                  const char *path,
-                  gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-
-	peer_add_new (self, path);
-}
-
-static void
-p2p_device_lost (GDBusProxy *proxy,
-                 const char *path,
-                 gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	PeerData *peer_data;
-
-	peer_data = g_hash_table_lookup (priv->peer_proxies, path);
-	if (!peer_data)
-		return;
-	g_hash_table_steal (priv->peer_proxies, path);
-	g_signal_emit (self, signals[PEER_REMOVED], 0, path);
-	peer_data_destroy (peer_data);
-}
-
-static void
-p2p_group_started (GDBusProxy *proxy,
-                   GVariant *params,
-                   gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	NMSupplicantInterface *iface = NULL;
-	char *group_path = NULL;
-	char *iface_path = NULL;
-
-	/* There is one more parameter: the role, but we don't really care about that here. */
-	if (!g_variant_lookup (params, "group_object", "&o", &group_path)) {
-		_LOGW ("P2P: GroupStarted signal is missing the \"group_object\" parameter");
-		return;
-	}
-
-	if (!g_variant_lookup (params, "interface_object", "&o", &iface_path)) {
-		_LOGW ("P2P: GroupStarted signal is missing the \"interface\" parameter");
-		return;
-	}
-
-	if (g_strcmp0 (iface_path, priv->object_path) == 0) {
-		_LOGW ("P2P: GroupStarted on existing interface");
-		iface = g_object_ref (self);
-	} else {
-		iface = nm_supplicant_manager_create_interface_from_path (nm_supplicant_manager_get (),
-		                                                          iface_path);
-		if (iface == NULL) {
-			_LOGW ("P2P: Group interface already exists in GroupStarted handler, aborting further processing.");
-			return;
+	if (nm_g_variant_lookup (properties, "CurrentBSS", "&o", &v_s)) {
+		v_s = nm_dbus_path_not_empty (v_s);
+		if (!nm_ref_string_equals_str (priv->current_bss, v_s)) {
+			nm_ref_string_unref (priv->current_bss);
+			priv->current_bss = nm_ref_string_new (v_s);
+			do_notify_current_bss = TRUE;
 		}
 	}
 
-	/* Signal existence of the (new) interface. */
-	g_signal_emit (self, signals[GROUP_STARTED], 0, iface);
-	g_object_unref (iface);
-}
-
-static void
-p2p_group_finished (GDBusProxy *proxy,
-                    GVariant *params,
-                    gpointer user_data)
-{
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	const char *iface_path = NULL;
-	/* TODO: Group finished is called on the management interface!
-	 *       This means the signal consumer will currently need to assume which
-	 *       interface is finishing or it needs to match the object paths.
-	 */
-
-	if (!g_variant_lookup (params, "interface_object", "&o", &iface_path)) {
-		_LOGW ("P2P: GroupFinished signal is missing the \"interface\" parameter");
-		return;
+	if (do_log_driver_info) {
+		_LOGD ("supplicant interface for ifindex=%d, ifname=%s%s%s, driver=%s%s%s (requested %s)",
+		       priv->ifindex,
+		       NM_PRINT_FMT_QUOTE_STRING (priv->ifname),
+		       NM_PRINT_FMT_QUOTE_STRING (priv->driver),
+		       nm_supplicant_driver_to_string (priv->requested_driver));
 	}
 
-	_LOGD ("P2P: GroupFinished signal on interface %s for interface %s", priv->object_path, iface_path);
+	if (nm_g_variant_lookup (properties, "BSSs", "^a&o", &v_strv)) {
+		NMSupplicantBssInfo *bss_info;
+		NMSupplicantBssInfo *bss_info_safe;
+		const char **iter;
 
-	/* Signal group finish interface (on management interface). */
-	g_signal_emit (self, signals[GROUP_FINISHED], 0, iface_path);
-}
+		c_list_for_each_entry (bss_info, &priv->bss_lst_head, _bss_lst)
+			bss_info->_bss_dirty = TRUE;
+		c_list_for_each_entry (bss_info, &priv->bss_initializing_lst_head, _bss_lst)
+			bss_info->_bss_dirty = TRUE;
 
-static void
-on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
+		for (iter = v_strv; *iter; iter++)
+			_bss_info_add (self, *iter);
 
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
-		if (!nm_utils_error_is_cancelled (error)) {
-			self = NM_SUPPLICANT_INTERFACE (user_data);
-			_LOGW ("failed to acquire wpa_supplicant interface proxy: (%s)", error->message);
-			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+		g_free (v_strv);
+
+		c_list_for_each_entry_safe (bss_info, bss_info_safe, &priv->bss_initializing_lst_head, _bss_lst) {
+			if (bss_info->_bss_dirty)
+				_bss_info_remove (self, &bss_info->bss_path);
 		}
-		return;
-	}
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	_nm_dbus_signal_connect (priv->iface_proxy, "ScanDone", G_VARIANT_TYPE ("(b)"),
-	                         G_CALLBACK (wpas_iface_scan_done), self);
-	_nm_dbus_signal_connect (priv->iface_proxy, "BSSAdded", G_VARIANT_TYPE ("(oa{sv})"),
-	                         G_CALLBACK (wpas_iface_bss_added), self);
-	_nm_dbus_signal_connect (priv->iface_proxy, "BSSRemoved", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (wpas_iface_bss_removed), self);
-	_nm_dbus_signal_connect (priv->iface_proxy, "EAP", G_VARIANT_TYPE ("(ss)"),
-	                         G_CALLBACK (eap_changed), self);
-
-	/* Scan result aging parameters */
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   DBUS_INTERFACE_PROPERTIES ".Set",
-	                   g_variant_new ("(ssv)",
-	                                  NM_WPAS_DBUS_IFACE_INTERFACE,
-	                                  "BSSExpireAge",
-	                                  g_variant_new_uint32 (250)),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->init_cancellable,
-	                   NULL,
-	                   NULL);
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   DBUS_INTERFACE_PROPERTIES ".Set",
-	                   g_variant_new ("(ssv)",
-	                                  NM_WPAS_DBUS_IFACE_INTERFACE,
-	                                  "BSSExpireCount",
-	                                  g_variant_new_uint32 (2)),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->init_cancellable,
-	                   NULL,
-	                   NULL);
-
-	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF) == NM_TERNARY_TRUE) {
-		/* Initialize global PMF setting to 'optional' */
-		priv->ready_count++;
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   DBUS_INTERFACE_PROPERTIES ".Set",
-		                   g_variant_new ("(ssv)",
-		                                  NM_WPAS_DBUS_IFACE_INTERFACE,
-		                                  "Pmf",
-		                                  g_variant_new_string ("1")),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->init_cancellable,
-		                   (GAsyncReadyCallback) iface_set_pmf_cb,
-		                   self);
-	}
-
-	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT) {
-		/* If the global supplicant capabilities property is not present, we can
-		 * fall back to checking whether the ProbeRequest method is supported.  If
-		 * neither of these works we have no way of determining if AP mode is
-		 * supported or not.  hostap 1.0 and earlier don't support either of these.
-		 */
-		priv->ready_count++;
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   DBUS_INTERFACE_INTROSPECTABLE ".Introspect",
-		                   NULL,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->init_cancellable,
-		                   (GAsyncReadyCallback) iface_introspect_cb,
-		                   self);
-	}
-
-	iface_check_ready (self);
-}
-
-static void
-on_p2p_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
-
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
-		if (!nm_utils_error_is_cancelled (error)) {
-			self = NM_SUPPLICANT_INTERFACE (user_data);
-			priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-			_LOGW ("failed to acquire wpa_supplicant p2p proxy: (%s)", error->message);
-
-			g_clear_object (&priv->p2p_proxy);
-
-			iface_check_ready (self);
+		c_list_for_each_entry_safe (bss_info, bss_info_safe, &priv->bss_lst_head, _bss_lst) {
+			if (bss_info->_bss_dirty)
+				_bss_info_remove (self, &bss_info->bss_path);
 		}
-		return;
 	}
 
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	if (do_notify_current_bss)
+		_notify (self, PROP_CURRENT_BSS);
 
-	_nm_dbus_signal_connect (priv->p2p_proxy, "DeviceFound", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (p2p_device_found), self);
-	_nm_dbus_signal_connect (priv->p2p_proxy, "DeviceLost", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (p2p_device_lost), self);
-	_nm_dbus_signal_connect (priv->p2p_proxy, "GroupStarted", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (p2p_group_started), self);
-	_nm_dbus_signal_connect (priv->p2p_proxy, "GroupFinished", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (p2p_group_finished), self);
-	/* TODO:
-	 *  * WpsFailed
-	 *  * FindStopped
-	 *  * GONegotationFailure
-	 *  * InvitationReceived
-	 */
-
-	priv->p2p_proxy_acquired = TRUE;
-	_notify (self, PROP_P2P_AVAILABLE);
-
-	iface_check_ready (self);
+	if (do_set_state)
+		set_state (self, priv->supp_state);
 }
 
 static void
-interface_add_done (NMSupplicantInterface *self, const char *path)
+_properties_changed_p2p_device (NMSupplicantInterface *self,
+                                GVariant *properties)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	const char **v_strv;
+	const char *v_s;
 
-	_LOGD ("interface added to supplicant");
+	nm_assert (!properties || g_variant_is_of_type (properties, G_VARIANT_TYPE ("a{sv}")));
 
-	priv->ready_count = 1;
+	if (nm_g_variant_lookup (properties, "Peers", "^a&o", &v_strv)) {
+		NMSupplicantPeerInfo *peer_info;
+		NMSupplicantPeerInfo *peer_info_safe;
+		const char *const*iter;
 
-	priv->object_path = g_strdup (path);
-	_notify (self, PROP_OBJECT_PATH);
-	priv->iface_proxy = g_object_new (G_TYPE_DBUS_PROXY,
-	                                  "g-bus-type", G_BUS_TYPE_SYSTEM,
-	                                  "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-	                                  "g-name", NM_WPAS_DBUS_SERVICE,
-	                                  "g-object-path", priv->object_path,
-	                                  "g-interface-name", NM_WPAS_DBUS_IFACE_INTERFACE,
-	                                  NULL);
-	g_signal_connect (priv->iface_proxy, "g-properties-changed", G_CALLBACK (props_changed_cb), self);
-	g_async_initable_init_async (G_ASYNC_INITABLE (priv->iface_proxy),
-	                             G_PRIORITY_DEFAULT,
-	                             priv->init_cancellable,
-	                             (GAsyncReadyCallback) on_iface_proxy_acquired,
-	                             self);
+		c_list_for_each_entry (peer_info, &priv->peer_lst_head, _peer_lst)
+			peer_info->_peer_dirty = TRUE;
+		c_list_for_each_entry (peer_info, &priv->peer_initializing_lst_head, _peer_lst)
+			peer_info->_peer_dirty = TRUE;
 
-	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_P2P) == NM_TERNARY_TRUE) {
-		priv->ready_count++;
-		priv->p2p_proxy = g_object_new (G_TYPE_DBUS_PROXY,
-		                                "g-bus-type", G_BUS_TYPE_SYSTEM,
-		                                "g-flags", G_DBUS_PROXY_FLAGS_NONE,
-		                                "g-name", NM_WPAS_DBUS_SERVICE,
-		                                "g-object-path", priv->object_path,
-		                                "g-interface-name", NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
-		                                NULL);
-		g_signal_connect (priv->p2p_proxy, "g-properties-changed", G_CALLBACK (p2p_props_changed_cb), self);
-		g_async_initable_init_async (G_ASYNC_INITABLE (priv->p2p_proxy),
-		                             G_PRIORITY_DEFAULT,
-		                             priv->init_cancellable,
-		                             (GAsyncReadyCallback) on_p2p_proxy_acquired,
-		                             self);
-	}
-}
+		for (iter = v_strv; *iter; iter++)
+			_peer_info_add (self, *iter);
 
-static void
-interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	gs_unref_variant GVariant *variant = NULL;
-	gs_free_error GError *error = NULL;
-	const char *path;
+		g_free (v_strv);
 
-	variant = _nm_dbus_proxy_call_finish (proxy, result,
-	                                      G_VARIANT_TYPE ("(o)"),
-	                                      &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-
-	if (variant) {
-		g_variant_get (variant, "(&o)", &path);
-		interface_add_done (self, path);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		_LOGE ("error getting interface: %s", error->message);
-		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-	}
-}
-
-static void
-interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *variant = NULL;
-	const char *path;
-
-	variant = _nm_dbus_proxy_call_finish (proxy, result,
-	                                      G_VARIANT_TYPE ("(o)"),
-	                                      &error);
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (variant) {
-		g_variant_get (variant, "(&o)", &path);
-		interface_add_done (self, path);
-	} else if (_nm_dbus_error_has_name (error, NM_WPAS_ERROR_EXISTS_ERROR)) {
-		/* Interface already added, just get its object path */
-		g_dbus_proxy_call (priv->wpas_proxy,
-		                   "GetInterface",
-		                   g_variant_new ("(s)", priv->dev),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->init_cancellable,
-		                   (GAsyncReadyCallback) interface_get_cb,
-		                   self);
-	} else if (   g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_EXEC_FAILED)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FORK_FAILED)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FAILED)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_TIMEOUT)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_NO_REPLY)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_TIMED_OUT)
-	           || g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
-		/* Supplicant wasn't running and could not be launched via service
-		 * activation.  Wait for it to start by moving back to the INIT
-		 * state.
-		 */
-		g_dbus_error_strip_remote_error (error);
-		_LOGD ("failed to activate supplicant: %s", error->message);
-		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_INIT);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		_LOGE ("error adding interface: %s", error->message);
-		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-	}
-}
-
-static void
-interface_removed_cb (GDBusProxy *proxy,
-                      const char *path,
-                      gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (g_strcmp0 (priv->object_path, path) != 0)
-		return;
-
-	_LOGD ("Received interface removed signal");
-
-	/* The interface may lose its last reference during signal handling otherwise. */
-	g_object_ref (self);
-
-	/* Invalidate the object path to prevent the manager from trying to remove
-	 * a non-existing interface. */
-	g_clear_pointer (&priv->object_path, g_free);
-	_notify (self, PROP_OBJECT_PATH);
-
-	/* No need to clean up everything now, that will happen at dispose time. */
-
-	/* Interface is down and has been removed. */
-	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-	g_signal_emit (self, signals[REMOVED], 0);
-
-	g_object_unref (self);
-}
-
-static void
-on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_free_error GError *error = NULL;
-	GDBusProxy *wpas_proxy;
-	GVariantBuilder props;
-
-	wpas_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
-	if (!wpas_proxy) {
-		if (!nm_utils_error_is_cancelled (error)) {
-			self = NM_SUPPLICANT_INTERFACE (user_data);
-			_LOGW ("failed to acquire wpa_supplicant proxy: (%s)", error->message);
-			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+		c_list_for_each_entry_safe (peer_info, peer_info_safe, &priv->peer_initializing_lst_head, _peer_lst) {
+			if (peer_info->_peer_dirty)
+				_peer_info_remove (self, &peer_info->peer_path);
 		}
-		return;
+		c_list_for_each_entry_safe (peer_info, peer_info_safe, &priv->peer_lst_head, _peer_lst) {
+			if (peer_info->_peer_dirty)
+				_peer_info_remove (self, &peer_info->peer_path);
+		}
 	}
 
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->wpas_proxy = wpas_proxy;
-
-	/* Watch for interface removal. */
-	_nm_dbus_signal_connect (priv->wpas_proxy, "InterfaceRemoved", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (interface_removed_cb), self);
-
-	/* Try to add the interface to the supplicant.  If the supplicant isn't
-	 * running, this will start it via D-Bus activation and return the response
-	 * when the supplicant has started.
-	 */
-
-	if (priv->dev != NULL) {
-		const char *driver_name;
-
-		driver_name = nm_supplicant_driver_to_string (priv->driver);
-
-		g_return_if_fail (driver_name);
-
-		g_variant_builder_init (&props, G_VARIANT_TYPE_VARDICT);
-		g_variant_builder_add (&props, "{sv}",
-		                       "Driver",
-		                       g_variant_new_string (driver_name));
-		g_variant_builder_add (&props, "{sv}",
-		                       "Ifname",
-		                       g_variant_new_string (priv->dev));
-
-		g_dbus_proxy_call (priv->wpas_proxy,
-		                   "CreateInterface",
-		                   g_variant_new ("(a{sv})", &props),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->init_cancellable,
-		                   (GAsyncReadyCallback) interface_add_cb,
-		                   self);
-	} else if (priv->object_path) {
-		interface_add_done (self, priv->object_path);
-	} else {
-		g_assert_not_reached ();
-	}
-}
-
-static void
-interface_add (NMSupplicantInterface *self)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* Can only start the interface from INIT state */
-	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
-
-	_LOGD ("adding interface to supplicant");
-
-	/* Move to starting to prevent double-calls of interface_add() */
-	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_STARTING);
-
-	nm_clear_g_cancellable (&priv->init_cancellable);
-	priv->init_cancellable = g_cancellable_new ();
-
-	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                          NULL,
-	                          NM_WPAS_DBUS_SERVICE,
-	                          NM_WPAS_DBUS_PATH,
-	                          NM_WPAS_DBUS_INTERFACE,
-	                          priv->init_cancellable,
-	                          (GAsyncReadyCallback) on_wpas_proxy_acquired,
-	                          self);
-}
-
-void
-nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
-                                                  gboolean available)
-{
-	NMSupplicantInterfacePrivate *priv;
-
-	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
-
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (available) {
-		/* This can happen if the supplicant couldn't be activated but
-		 * for some reason was started after the activation failure.
-		 */
-		if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT)
-			interface_add (self);
-	} else {
-		/* The supplicant stopped; so we must tear down the interface */
-		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-	}
-}
-
-static void
-log_result_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	gs_unref_variant GVariant *reply = NULL;
-	gs_free_error GError *error = NULL;
-
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (   !reply
-	    && !nm_utils_error_is_cancelled (error)
-	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
-		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (_NMLOG_DOMAIN, "%s: failed to %s: %s",
-		             _NMLOG_PREFIX_NAME, (const char *) user_data, error->message);
-	}
+	if (nm_g_variant_lookup (properties, "Group", "&o", &v_s))
+		_p2p_group_set_path (self, v_s);
 }
 
 /*****************************************************************************/
 
 static void
-assoc_return (NMSupplicantInterface *self, GError *error, const char *message)
+assoc_return (NMSupplicantInterface *self,
+              GError *error,
+              const char *message)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	AssocData *assoc_data;
@@ -1913,9 +1906,14 @@ assoc_return (NMSupplicantInterface *self, GError *error, const char *message)
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		_LOGW ("assoc[%p]: %s: %s", assoc_data, message, error->message);
-	} else
-		_LOGD ("assoc[%p]: association request successful", assoc_data);
+		_LOGW ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: %s: %s",
+		       NM_HASH_OBFUSCATE_PTR (assoc_data),
+		       message,
+		       error->message);
+	} else {
+		_LOGD ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: association request successful",
+		       NM_HASH_OBFUSCATE_PTR (assoc_data));
+	}
 
 	if (assoc_data->add_network_data) {
 		/* signal that this request already completed */
@@ -1941,6 +1939,22 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
+	/* Disconnect from the current AP */
+	if (   (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
+	    && (priv->state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)) {
+		_dbus_connection_call_simple (self,
+		                              NM_WPAS_DBUS_IFACE_INTERFACE,
+		                              "Disconnect",
+		                              NULL,
+		                              G_VARIANT_TYPE ("()"),
+		                              "disconnect");
+	}
+
+	_remove_network (self);
+
+	/* Cancel any WPS enrollment, if any */
+	nm_supplicant_interface_cancel_wps (self);
+
 	/* Cancel all pending calls related to a prior connection attempt */
 	if (priv->assoc_data) {
 		gs_free_error GError *error = NULL;
@@ -1948,104 +1962,59 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 		nm_utils_error_set_cancelled (&error, FALSE, "NMSupplicantInterface");
 		assoc_return (self, error, "abort due to disconnect");
 	}
-
-	/* Don't do anything if there is no connection to the supplicant yet. */
-	if (!priv->iface_proxy)
-		return;
-
-	/* Disconnect from the current AP */
-	if (   (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-	    && (priv->state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)) {
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   "Disconnect",
-		                   NULL,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   NULL,
-		                   (GAsyncReadyCallback) log_result_cb,
-		                   "disconnect");
-	}
-
-	/* Remove any network that was added by NetworkManager */
-	if (priv->net_path) {
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   "RemoveNetwork",
-		                   g_variant_new ("(o)", priv->net_path),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->other_cancellable,
-		                   (GAsyncReadyCallback) log_result_cb,
-		                   "remove network");
-		g_free (priv->net_path);
-		priv->net_path = NULL;
-	}
-
-	/* Cancel any WPS enrollment, if any */
-	nm_supplicant_interface_cancel_wps (self);
 }
 
 static void
-disconnect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+disconnect_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
-	DisconnectData *disconnect_data = user_data;
-	gs_unref_object NMSupplicantInterface *self = disconnect_data->self;
-	gs_unref_variant GVariant *reply = NULL;
+	gs_unref_object NMSupplicantInterface *self = NULL;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
+	NMSupplicantInterfaceDisconnectCb callback;
+	gpointer callback_user_data;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	nm_utils_user_data_unpack (user_data, &self, &callback, &callback_user_data);
 
-	/* an already disconnected interface is not an error*/
-	if (   !reply
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
+
+	if (   !res
 	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
+		/* an already disconnected interface is not an error*/
 		g_clear_error(&error);
 	}
 
-	disconnect_data->callback(self, error, disconnect_data->user_data);
-	g_slice_free (DisconnectData, disconnect_data);
+	callback (self, error, callback_user_data);
 }
 
 void
-nm_supplicant_interface_disconnect_async ( NMSupplicantInterface * self,
-                                           GCancellable * cancellable,
-                                           NMSupplicantInterfaceDisconnectCb callback,
-                                           gpointer user_data)
+nm_supplicant_interface_disconnect_async (NMSupplicantInterface *self,
+                                          GCancellable *cancellable,
+                                          NMSupplicantInterfaceDisconnectCb callback,
+                                          gpointer user_data)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	DisconnectData *disconnect_data;
-
-	/* Don't do anything if there is no connection to the supplicant yet. */
-	if (!priv->iface_proxy)
-		return;
-
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
-	g_return_if_fail (NULL != callback);
+	g_return_if_fail (callback);
 
-	disconnect_data = g_slice_new0(DisconnectData);
-
-	/* Keep interface alive until disconnect finishes */
-	disconnect_data->self = g_object_ref (self);
-	disconnect_data->callback = callback;
-	disconnect_data->user_data = user_data;
-
-	/* Disconnect the interface */
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "Disconnect",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   cancellable,
-	                   (GAsyncReadyCallback) disconnect_cb,
-	                   disconnect_data);
+	_dbus_connection_call (self,
+	                       NM_WPAS_DBUS_IFACE_INTERFACE,
+	                       "Disconnect",
+	                       NULL,
+	                       G_VARIANT_TYPE ("()"),
+	                       G_DBUS_CALL_FLAGS_NONE,
+	                       DBUS_TIMEOUT_MSEC,
+	                       cancellable,
+	                       disconnect_cb,
+	                       nm_utils_user_data_pack (g_object_ref (self), callback, user_data));
 }
 
 static void
-assoc_select_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+assoc_select_network_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
-	gs_unref_variant GVariant *reply = NULL;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
@@ -2061,25 +2030,27 @@ assoc_call_select_network (NMSupplicantInterface *self)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "SelectNetwork",
-	                   g_variant_new ("(o)", priv->net_path),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->assoc_data->cancellable,
-	                   (GAsyncReadyCallback) assoc_select_network_cb,
-	                   self);
+	_dbus_connection_call (self,
+	                       NM_WPAS_DBUS_IFACE_INTERFACE,
+	                       "SelectNetwork",
+	                       g_variant_new ("(o)", priv->net_path),
+	                       G_VARIANT_TYPE ("()"),
+	                       G_DBUS_CALL_FLAGS_NONE,
+	                       DBUS_TIMEOUT_MSEC,
+	                       priv->assoc_data->cancellable,
+	                       assoc_select_network_cb,
+	                       self);
 }
 
 static void
-assoc_add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+assoc_add_blob_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *reply = NULL;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
@@ -2092,52 +2063,62 @@ assoc_add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	}
 
 	priv->assoc_data->blobs_left--;
-	_LOGT ("assoc[%p]: blob added (%u left)", priv->assoc_data, priv->assoc_data->blobs_left);
+	_LOGT ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: blob added (%u left)",
+	       NM_HASH_OBFUSCATE_PTR (priv->assoc_data),
+	       priv->assoc_data->blobs_left);
 	if (priv->assoc_data->blobs_left == 0)
 		assoc_call_select_network (self);
 }
 
 static void
-assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+assoc_add_network_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	AddNetworkData *add_network_data = user_data;
 	AssocData *assoc_data;
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *reply = NULL;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 	GHashTable *blobs;
 	GHashTableIter iter;
 	const char *blob_name;
 	GBytes *blob_data;
+	nm_auto_ref_string NMRefString *name_owner = NULL;
+	nm_auto_ref_string NMRefString *object_path = NULL;
+
+	g_clear_object (&add_network_data->shutdown_wait_obj);
 
 	assoc_data = add_network_data->assoc_data;
 	if (assoc_data)
 		assoc_data->add_network_data = NULL;
-	g_slice_free (AddNetworkData, add_network_data);
+	name_owner = g_steal_pointer (&add_network_data->name_owner);
+	object_path = g_steal_pointer (&add_network_data->object_path);
+	nm_g_slice_free (add_network_data);
 
-	reply = _nm_dbus_proxy_call_finish (proxy, result,
-	                                    G_VARIANT_TYPE ("(o)"),
-	                                    &error);
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 
 	if (!assoc_data) {
 		if (!error) {
-			gs_free char *net_path = NULL;
+			const char *net_path;
 
 			/* the assoc-request was already cancelled, but the AddNetwork request succeeded.
 			 * Cleanup the created network.
 			 *
 			 * This cleanup action does not work when NetworkManager is about to exit
 			 * and leaves the mainloop. During program shutdown, we may orphan networks. */
-			g_variant_get (reply, "(o)", &net_path);
-			g_dbus_proxy_call (proxy,
-			                   "RemoveNetwork",
-			                   g_variant_new ("(o)", net_path),
-			                   G_DBUS_CALL_FLAGS_NONE,
-			                   -1,
-			                   NULL,
-			                   NULL,
-			                   NULL);
+			g_variant_get (res, "(&o)", &net_path);
+			g_dbus_connection_call (G_DBUS_CONNECTION (source),
+			                        name_owner->str,
+			                        object_path->str,
+			                        NM_WPAS_DBUS_IFACE_INTERFACE,
+			                        "RemoveNetwork",
+			                        g_variant_new ("(o)", net_path),
+			                        G_VARIANT_TYPE ("()"),
+			                        G_DBUS_CALL_FLAGS_NONE,
+			                        DBUS_TIMEOUT_MSEC,
+			                        NULL,
+			                        NULL,
+			                        NULL);
 		}
 		return;
 	}
@@ -2150,7 +2131,8 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 		return;
 	}
 
-	g_variant_get (reply, "(o)", &priv->net_path);
+	nm_assert (!priv->net_path);
+	g_variant_get (res, "(o)", &priv->net_path);
 
 	/* Send blobs first; otherwise jump to selecting the network */
 	blobs = nm_supplicant_config_get_blobs (priv->assoc_data->cfg);
@@ -2158,7 +2140,10 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	                               ? g_hash_table_size (blobs)
 	                               : 0u;
 
-	_LOGT ("assoc[%p]: network added (%s) (%u blobs left)", priv->assoc_data, priv->net_path, priv->assoc_data->blobs_left);
+	_LOGT ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: network added (%s) (%u blobs left)",
+	       NM_HASH_OBFUSCATE_PTR (priv->assoc_data),
+	       priv->net_path,
+	       priv->assoc_data->blobs_left);
 
 	if (priv->assoc_data->blobs_left == 0) {
 		assoc_call_select_network (self);
@@ -2167,29 +2152,28 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 
 	g_hash_table_iter_init (&iter, blobs);
 	while (g_hash_table_iter_next (&iter, (gpointer) &blob_name, (gpointer) &blob_data)) {
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   "AddBlob",
-		                   g_variant_new ("(s@ay)",
-		                                  blob_name,
-		                                  nm_utils_gbytes_to_variant_ay (blob_data)),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->assoc_data->cancellable,
-		                   (GAsyncReadyCallback) assoc_add_blob_cb,
-		                   self);
+		_dbus_connection_call (self,
+		                       NM_WPAS_DBUS_IFACE_INTERFACE,
+		                       "AddBlob",
+		                       g_variant_new ("(s@ay)",
+		                                      blob_name,
+		                                      nm_utils_gbytes_to_variant_ay (blob_data)),
+		                       G_VARIANT_TYPE ("()"),
+		                       G_DBUS_CALL_FLAGS_NONE,
+		                       DBUS_TIMEOUT_MSEC,
+		                       priv->assoc_data->cancellable,
+		                       assoc_add_blob_cb,
+		                       self);
 	}
 }
 
 static void
-assoc_set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+assoc_set_ap_scan_cb (GVariant *ret, GError *error, gpointer user_data)
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *reply = NULL;
-	gs_free_error GError *error = NULL;
 	AddNetworkData *add_network_data;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
@@ -2201,23 +2185,36 @@ assoc_set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 		return;
 	}
 
-	_LOGT ("assoc[%p]: set interface ap_scan to %d",
-	       priv->assoc_data,
+	_LOGT ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: interface ap_scan set to %d",
+	       NM_HASH_OBFUSCATE_PTR (priv->assoc_data),
 	       nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg));
 
-	add_network_data = g_slice_new0 (AddNetworkData);
+	/* the association does not keep @self alive. We want to be able to remove
+	 * the network again, even if @self is already gone. Hence, track the data
+	 * separately.
+	 *
+	 * For that we also have a shutdown_wait_obj so that on exit we still wait
+	 * to handle the response. */
+	add_network_data = g_slice_new (AddNetworkData);
+	*add_network_data = (AddNetworkData) {
+		.assoc_data        = priv->assoc_data,
+		.name_owner        = nm_ref_string_ref (priv->name_owner),
+		.object_path       = nm_ref_string_ref (priv->object_path),
+		.shutdown_wait_obj = g_object_new (G_TYPE_OBJECT, NULL),
+	};
+	nm_shutdown_wait_obj_register_object (add_network_data->shutdown_wait_obj, "supplicant-add-network");
 	priv->assoc_data->add_network_data = add_network_data;
 
-	add_network_data->assoc_data = priv->assoc_data;
-
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "AddNetwork",
-	                   g_variant_new ("(@a{sv})", nm_supplicant_config_to_variant (priv->assoc_data->cfg)),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   NULL,
-	                   (GAsyncReadyCallback) assoc_add_network_cb,
-	                   add_network_data);
+	_dbus_connection_call (self,
+	                       NM_WPAS_DBUS_IFACE_INTERFACE,
+	                       "AddNetwork",
+	                       g_variant_new ("(@a{sv})", nm_supplicant_config_to_variant (priv->assoc_data->cfg)),
+	                       G_VARIANT_TYPE ("(o)"),
+	                       G_DBUS_CALL_FLAGS_NONE,
+	                       DBUS_TIMEOUT_MSEC,
+	                       NULL,
+	                       assoc_add_network_cb,
+	                       add_network_data);
 }
 
 static gboolean
@@ -2264,49 +2261,51 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 
 	nm_supplicant_interface_disconnect (self);
 
-	assoc_data = g_slice_new0 (AssocData);
+	assoc_data = g_slice_new (AssocData);
+	*assoc_data = (AssocData) {
+		.self      = self,
+		.cfg       = g_object_ref (cfg),
+		.callback  = callback,
+		.user_data = user_data,
+	};
+
 	priv->assoc_data = assoc_data;
 
-	assoc_data->self = self;
-	assoc_data->cfg = g_object_ref (cfg);
-	assoc_data->callback = callback;
-	assoc_data->user_data = user_data;
+	_LOGD ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: starting association...",
+	       NM_HASH_OBFUSCATE_PTR (assoc_data));
 
-	_LOGD ("assoc[%p]: starting association...", assoc_data);
-
-	/* Make sure the supplicant supports EAP-FAST before trying to send
-	 * it an EAP-FAST configuration.
-	 */
 	if (   _get_capability (priv, NM_SUPPL_CAP_TYPE_FAST) == NM_TERNARY_FALSE
 	    && nm_supplicant_config_fast_required (cfg)) {
+		/* Make sure the supplicant supports EAP-FAST before trying to send
+		 * it an EAP-FAST configuration.
+		 */
 		assoc_data->fail_on_idle_id = g_idle_add (assoc_fail_on_idle_cb, self);
 		return;
 	}
 
 	assoc_data->cancellable = g_cancellable_new();
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   DBUS_INTERFACE_PROPERTIES ".Set",
-	                   g_variant_new ("(ssv)",
-	                                  NM_WPAS_DBUS_IFACE_INTERFACE,
-	                                  "ApScan",
-	                                  g_variant_new_uint32 (nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg))),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->assoc_data->cancellable,
-	                   (GAsyncReadyCallback) assoc_set_ap_scan_cb,
-	                   self);
+	nm_dbus_connection_call_set (priv->dbus_connection,
+	                             priv->name_owner->str,
+	                             priv->object_path->str,
+	                             NM_WPAS_DBUS_IFACE_INTERFACE,
+	                             "ApScan",
+	                             g_variant_new_uint32 (nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg)),
+	                             DBUS_TIMEOUT_MSEC,
+	                             assoc_data->cancellable,
+	                             assoc_set_ap_scan_cb,
+	                             self);
 }
 
 /*****************************************************************************/
 
 static void
-scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+scan_request_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
-	gs_unref_variant GVariant *reply = NULL;
+	gs_unref_variant GVariant *res = NULL;
 	gs_free_error GError *error = NULL;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	res = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), result, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
@@ -2350,14 +2349,16 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
 		g_variant_builder_add (&builder, "{sv}", "SSIDs", g_variant_builder_end (&ssids_builder));
 	}
 
-	g_dbus_proxy_call (priv->iface_proxy,
-	                   "Scan",
-	                   g_variant_new ("(a{sv})", &builder),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->other_cancellable,
-	                   (GAsyncReadyCallback) scan_request_cb,
-	                   self);
+	_dbus_connection_call (self,
+	                       NM_WPAS_DBUS_IFACE_INTERFACE,
+	                       "Scan",
+	                       g_variant_new ("(a{sv})", &builder),
+	                       G_VARIANT_TYPE ("()"),
+	                       G_DBUS_CALL_FLAGS_NONE,
+	                       DBUS_TIMEOUT_MSEC,
+	                       priv->main_cancellable,
+	                       scan_request_cb,
+	                       self);
 }
 
 /*****************************************************************************/
@@ -2370,7 +2371,23 @@ nm_supplicant_interface_get_state (NMSupplicantInterface * self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->state;
 }
 
-const char *
+void
+_nm_supplicant_interface_set_state_down (NMSupplicantInterface * self,
+                                         gboolean force_remove_from_supplicant,
+                                         const char *reason)
+{
+	set_state_down (self, force_remove_from_supplicant, reason);
+}
+
+NMRefString *
+nm_supplicant_interface_get_name_owner (NMSupplicantInterface *self)
+{
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
+
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->name_owner;
+}
+
+NMRefString *
 nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
@@ -2383,7 +2400,7 @@ nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
 
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->ifname;
 }
 
 guint
@@ -2400,133 +2417,478 @@ void
 nm_supplicant_interface_p2p_start_find (NMSupplicantInterface *self,
                                         guint timeout)
 {
-	NMSupplicantInterfacePrivate *priv;
 	GVariantBuilder builder;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 	g_return_if_fail (timeout > 0 && timeout <= 600);
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&builder, "{sv}", "Timeout", g_variant_new_int32 (timeout));
 
-	g_dbus_proxy_call (priv->p2p_proxy,
-	                   "Find",
-	                   g_variant_new ("(a{sv})", &builder),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->other_cancellable,
-	                   (GAsyncReadyCallback) log_result_cb,
-	                   self);
+	_dbus_connection_call_simple (self,
+	                              NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+	                              "Find",
+	                              g_variant_new ("(a{sv})", &builder),
+	                              G_VARIANT_TYPE ("()"),
+	                              "p2p-find");
 }
 
 void
 nm_supplicant_interface_p2p_stop_find (NMSupplicantInterface *self)
 {
-	NMSupplicantInterfacePrivate *priv;
-
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	g_dbus_proxy_call (priv->p2p_proxy,
-	                   "StopFind",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->other_cancellable,
-	                   (GAsyncReadyCallback) scan_request_cb,
-	                   self);
+	_dbus_connection_call_simple (self,
+	                              NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+	                              "StopFind",
+	                              NULL,
+	                              G_VARIANT_TYPE ("()"),
+	                              "p2p-stop-find");
 }
 
 /*****************************************************************************/
 
 void
-nm_supplicant_interface_p2p_connect (NMSupplicantInterface * self,
-                                     const char * peer,
-                                     const char * wps_method,
-                                     const char * wps_pin)
+nm_supplicant_interface_p2p_connect (NMSupplicantInterface *self,
+                                     const char *peer,
+                                     const char *wps_method,
+                                     const char *wps_pin)
 {
-	NMSupplicantInterfacePrivate *priv;
 	GVariantBuilder builder;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* Don't do anything if there is no connection to the supplicant yet. */
-	if (!priv->p2p_proxy || !priv->object_path)
-		return;
-
-	/* Connect parameters */
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
 	g_variant_builder_add (&builder, "{sv}", "wps_method", g_variant_new_string (wps_method));
-
 	if (wps_pin)
 		g_variant_builder_add (&builder, "{sv}", "pin", g_variant_new_string (wps_pin));
-
 	g_variant_builder_add (&builder, "{sv}", "peer", g_variant_new_object_path (peer));
-
 	g_variant_builder_add (&builder, "{sv}", "join", g_variant_new_boolean (FALSE));
 	g_variant_builder_add (&builder, "{sv}", "persistent", g_variant_new_boolean (FALSE));
 	g_variant_builder_add (&builder, "{sv}", "go_intent", g_variant_new_int32 (7));
 
-	g_dbus_proxy_call (priv->p2p_proxy,
-	                   "Connect",
-	                   g_variant_new ("(a{sv})", &builder),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->other_cancellable,
-	                   (GAsyncReadyCallback) log_result_cb,
-	                   "p2p connect");
+	_dbus_connection_call_simple (self,
+	                              NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+	                              "Connect",
+	                              g_variant_new ("(a{sv})", &builder),
+	                              G_VARIANT_TYPE ("()"),
+	                              "p2p-connect");
 }
 
 void
 nm_supplicant_interface_p2p_cancel_connect (NMSupplicantInterface * self)
 {
-	NMSupplicantInterfacePrivate *priv;
-
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* Don't do anything if there is no connection to the supplicant yet. */
-	if (!priv->p2p_proxy || !priv->object_path)
-		return;
-
-	g_dbus_proxy_call (priv->p2p_proxy,
-	                   "Cancel",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->other_cancellable,
-	                   (GAsyncReadyCallback) log_result_cb,
-	                   "cancel p2p connect");
+	_dbus_connection_call_simple (self,
+	                              NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+	                              "Cancel",
+	                              NULL,
+	                              G_VARIANT_TYPE ("()"),
+	                              "p2p-cancel");
 }
 
 void
 nm_supplicant_interface_p2p_disconnect (NMSupplicantInterface * self)
 {
-	NMSupplicantInterfacePrivate *priv;
-
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	_dbus_connection_call_simple (self,
+	                              NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+	                              "Disconnect",
+	                              NULL,
+	                              G_VARIANT_TYPE ("()"),
+	                              "p2p-disconnect");
+}
 
-	/* Don't do anything if there is no connection to the supplicant. */
-	if (!priv->p2p_proxy || !priv->object_path)
+/*****************************************************************************/
+
+static void
+_properties_changed (NMSupplicantInterface *self,
+                     const char *interface_name,
+                     GVariant *properties,
+                     gboolean initial)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean is_main;
+	gboolean old_val_scanning;
+	gboolean old_val_p2p_available;
+
+	nm_assert (!properties || g_variant_is_of_type (properties, G_VARIANT_TYPE ("a{sv}")));
+
+	if (initial)
+		priv->starting_pending_count--;
+
+	if (   (initial || priv->is_ready_main)
+	    && nm_streq (interface_name, NM_WPAS_DBUS_IFACE_INTERFACE))
+		is_main = TRUE;
+	else if (   (initial || priv->is_ready_p2p_device)
+	         && nm_streq (interface_name, NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE)) {
+		nm_assert (_get_capability (priv, NM_SUPPL_CAP_TYPE_P2P) == NM_TERNARY_TRUE);
+		is_main = FALSE;
+	} else
 		return;
 
-	g_dbus_proxy_call (priv->p2p_proxy,
-	                   "Disconnect",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->other_cancellable,
-	                   (GAsyncReadyCallback) log_result_cb,
-	                   "p2p disconnect");
+	g_object_freeze_notify (G_OBJECT (self));
+
+	priv->starting_pending_count++;
+
+	old_val_scanning = _prop_scanning_get (priv);
+	old_val_p2p_available = _prop_p2p_available_get (priv);
+
+	if (is_main) {
+		priv->is_ready_main = TRUE;
+		_properties_changed_main (self, properties);
+	} else {
+		priv->is_ready_p2p_device = TRUE;
+		_properties_changed_p2p_device (self, properties);
+	}
+
+	priv->starting_pending_count--;
+	_starting_check_ready (self);
+
+	if (old_val_scanning != _prop_scanning_get (priv))
+		_notify (self, PROP_SCANNING);
+	if (old_val_p2p_available != _prop_p2p_available_get (priv))
+		_notify (self, PROP_P2P_AVAILABLE);
+
+	g_object_thaw_notify (G_OBJECT (self));
+}
+
+static void
+_properties_changed_cb (GDBusConnection *connection,
+                        const char *sender_name,
+                        const char *object_path,
+                        const char *signal_interface_name,
+                        const char *signal_name,
+                        GVariant *parameters,
+                        gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	const char *interface_name;
+	gs_unref_variant GVariant *changed_properties = NULL;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sa{sv}as)")))
+		return;
+
+	g_variant_get (parameters,
+	               "(&s@a{sv}^a&s)",
+	               &interface_name,
+	               &changed_properties,
+	               NULL);
+	_properties_changed (self,
+	                     interface_name,
+	                     changed_properties,
+	                     FALSE);
+}
+
+static void
+_bss_properties_changed_cb (GDBusConnection *connection,
+                            const char *sender_name,
+                            const char *object_path,
+                            const char *signal_interface_name,
+                            const char *signal_name,
+                            GVariant *parameters,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	nm_auto_ref_string NMRefString *bss_path = NULL;
+	gs_unref_variant GVariant *changed_properties = NULL;
+	NMSupplicantBssInfo *bss_info;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sa{sv}as)")))
+		return;
+
+	bss_path = nm_ref_string_new (object_path);
+
+	bss_info = g_hash_table_lookup (priv->bss_idx, &bss_path);
+	if (!bss_info)
+		return;
+	if (bss_info->_init_cancellable)
+		return;
+
+	g_variant_get (parameters,
+	               "(&s@a{sv}^a&s)",
+	               NULL,
+	               &changed_properties,
+	               NULL);
+	_bss_info_properties_changed (self, bss_info, changed_properties, FALSE);
+}
+
+static void
+_peer_properties_changed_cb (GDBusConnection *connection,
+                             const char *sender_name,
+                             const char *object_path,
+                             const char *signal_interface_name,
+                             const char *signal_name,
+                             GVariant *parameters,
+                             gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	nm_auto_ref_string NMRefString *peer_path = NULL;
+	gs_unref_variant GVariant *changed_properties = NULL;
+	NMSupplicantPeerInfo *peer_info;
+
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sa{sv}as)")))
+		return;
+
+	peer_path = nm_ref_string_new (object_path);
+
+	peer_info = g_hash_table_lookup (priv->peer_idx, &peer_path);
+	if (!peer_info)
+		return;
+	if (peer_info->_init_cancellable)
+		return;
+
+	g_variant_get (parameters,
+	               "(&s@a{sv}^a&s)",
+	               NULL,
+	               &changed_properties,
+	               NULL);
+	_peer_info_properties_changed (self, peer_info, changed_properties, FALSE);
+}
+
+static void
+_get_all_main_cb (GVariant *result,
+                  GError *error,
+                  gpointer user_data)
+{
+	gs_unref_variant GVariant *properties = NULL;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	if (result)
+		g_variant_get (result, "(@a{sv})", &properties);
+	_properties_changed (user_data,
+	                     NM_WPAS_DBUS_IFACE_INTERFACE,
+	                     properties,
+	                     TRUE);
+}
+
+static void
+_get_all_p2p_device_cb (GVariant *result,
+                        GError *error,
+                        gpointer user_data)
+{
+	gs_unref_variant GVariant *properties = NULL;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	if (result)
+		g_variant_get (result, "(@a{sv})", &properties);
+	_properties_changed (user_data,
+	                     NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+	                     properties,
+	                     TRUE);
+}
+
+static void
+_signal_handle (NMSupplicantInterface *self,
+                const char *signal_interface_name,
+                const char *signal_name,
+                GVariant *parameters)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	const char *path;
+
+	if (nm_streq (signal_interface_name, NM_WPAS_DBUS_IFACE_INTERFACE)) {
+
+		if (!priv->is_ready_main)
+			return;
+
+		if (nm_streq (signal_name, "ScanDone")) {
+			priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
+			_LOGT ("ScanDone signal received");
+			if (priv->state > NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
+				nm_assert (priv->state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+				g_signal_emit (self, signals[SCAN_DONE], 0);
+			}
+			return;
+		}
+
+		if (nm_streq (signal_name, "BSSAdded")) {
+			if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oa{sv})")))
+				return;
+
+			g_variant_get (parameters, "(&oa{sv})", &path, NULL);
+			_bss_info_add (self, path);
+			return;
+		}
+
+		if (nm_streq (signal_name, "BSSRemoved")) {
+			nm_auto_ref_string NMRefString *bss_path = NULL;
+
+			if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(o)")))
+				return;
+
+			g_variant_get (parameters, "(&o)", &path);
+			bss_path = nm_ref_string_new (path);
+			_bss_info_remove (self, &bss_path);
+			return;
+		}
+
+		if (nm_streq (signal_name, "EAP")) {
+			NMSupplicantAuthState auth_state = NM_SUPPLICANT_AUTH_STATE_UNKNOWN;
+			const char *status;
+			const char *parameter;
+
+			if (g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(ss)")))
+				return;
+
+			g_variant_get (parameters, "(&s&s)", &status, &parameter);
+
+			if (nm_streq (status, "started"))
+				auth_state = NM_SUPPLICANT_AUTH_STATE_STARTED;
+			else if (nm_streq (status, "completion")) {
+				if (nm_streq (parameter, "success"))
+					auth_state = NM_SUPPLICANT_AUTH_STATE_SUCCESS;
+				else if (nm_streq (parameter, "failure"))
+					auth_state = NM_SUPPLICANT_AUTH_STATE_FAILURE;
+			}
+
+			/* the state eventually reaches one of started, success or failure
+			 * so ignore any other intermediate (unknown) state change. */
+			if (   auth_state != NM_SUPPLICANT_AUTH_STATE_UNKNOWN
+			    && auth_state != priv->auth_state) {
+				priv->auth_state = auth_state;
+				_notify (self, PROP_AUTH_STATE);
+			}
+			return;
+		}
+
+		return;
+	}
+
+	if (nm_streq (signal_interface_name, NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE)) {
+
+		if (!priv->is_ready_p2p_device)
+			return;
+
+		if (nm_streq (signal_name, "DeviceFound")) {
+			if (g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(o)"))) {
+				g_variant_get (parameters, "(&o)", &path);
+				_peer_info_add (self, path);
+			}
+			return;
+		}
+
+		if (nm_streq (signal_name, "DeviceLost")) {
+			if (g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(o)"))) {
+				nm_auto_ref_string NMRefString *peer_path = NULL;
+
+				g_variant_get (parameters, "(&o)", &path);
+				peer_path = nm_ref_string_new (path);
+				_peer_info_remove (self, &peer_path);
+			}
+			return;
+		}
+
+		if (nm_streq (signal_name, "GroupStarted")) {
+			if (g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})"))) {
+				gs_unref_variant GVariant *args = NULL;
+				gs_unref_object NMSupplicantInterface *iface = NULL;
+				const char *group_path;
+				const char *iface_path;
+
+				g_variant_get (parameters, "(@a{sv})", &args);
+				if (!g_variant_lookup (args, "group_object", "&o", &group_path))
+					return;
+				if (!g_variant_lookup (args, "interface_object", "&o", &iface_path))
+					return;
+
+				if (nm_streq (iface_path, priv->object_path->str)) {
+					_LOGW ("P2P: GroupStarted on existing interface");
+					iface = g_object_ref (self);
+				} else {
+					iface = nm_supplicant_manager_create_interface_from_path (priv->supplicant_manager,
+					                                                          iface_path);
+					if (iface == NULL) {
+						_LOGW ("P2P: Group interface already exists in GroupStarted handler, aborting further processing.");
+						return;
+					}
+				}
+
+				/* Signal existence of the (new) interface. */
+				g_signal_emit (self, signals[GROUP_STARTED], 0, iface);
+			}
+			return;
+		}
+
+		if (nm_streq (signal_name, "GroupFinished")) {
+			if (g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})"))) {
+				gs_unref_variant GVariant *args = NULL;
+				const char *iface_path;
+
+				g_variant_get (parameters, "(@a{sv})", &args);
+
+				/* TODO: Group finished is called on the management interface!
+				 *       This means the signal consumer will currently need to assume which
+				 *       interface is finishing or it needs to match the object paths.
+				 */
+				if (!g_variant_lookup (args, "interface_object", "&o", &iface_path))
+					return;
+
+				_LOGD ("P2P: GroupFinished signal on interface %s for interface %s", priv->object_path->str, iface_path);
+
+				/* Signal group finish interface (on management interface). */
+				g_signal_emit (self, signals[GROUP_FINISHED], 0, iface_path);
+			}
+			return;
+		}
+
+		return;
+	}
+}
+
+static void
+_signal_cb (GDBusConnection *connection,
+            const char *sender_name,
+            const char *object_path,
+            const char *signal_interface_name,
+            const char *signal_name,
+            GVariant *parameters,
+            gpointer user_data)
+{
+	NMSupplicantInterface *self = user_data;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	priv->starting_pending_count++;
+
+	_signal_handle (self, signal_interface_name, signal_name, parameters);
+
+	priv->starting_pending_count--;
+	_starting_check_ready (self);
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_supplicant_interface_get_p2p_available (NMSupplicantInterface *self)
+{
+	return _prop_p2p_available_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+}
+
+gboolean
+nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self)
+{
+	return _prop_p2p_group_joined_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+}
+
+const char*
+nm_supplicant_interface_get_p2p_group_path (NMSupplicantInterface *self)
+{
+	return nm_ref_string_get_str (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_group_path);
+}
+
+gboolean
+nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self)
+{
+	return _prop_p2p_group_is_owner_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
 }
 
 /*****************************************************************************/
@@ -2537,26 +2899,27 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_SCANNING:
-		g_value_set_boolean (value, priv->scanning);
+		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (self));
 		break;
 	case PROP_CURRENT_BSS:
-		g_value_set_string (value, priv->current_bss);
+		g_value_set_string (value, nm_ref_string_get_str (nm_supplicant_interface_get_current_bss (self)));
 		break;
 	case PROP_P2P_GROUP_JOINED:
-		g_value_set_boolean (value, priv->p2p_capable && priv->group_proxy_acquired);
+		g_value_set_boolean (value, nm_supplicant_interface_get_p2p_group_joined (self));
 		break;
 	case PROP_P2P_GROUP_PATH:
-		g_value_set_string (value, nm_supplicant_interface_get_p2p_group_path (NM_SUPPLICANT_INTERFACE (object)));
+		g_value_set_string (value, nm_supplicant_interface_get_p2p_group_path (self));
 		break;
 	case PROP_P2P_GROUP_OWNER:
-		g_value_set_boolean (value, priv->p2p_group_owner);
+		g_value_set_boolean (value, nm_supplicant_interface_get_p2p_group_owner (self));
 		break;
 	case PROP_P2P_AVAILABLE:
-		g_value_set_boolean (value, priv->p2p_capable && priv->p2p_proxy_acquired);
+		g_value_set_boolean (value, nm_supplicant_interface_get_p2p_available (self));
 		break;
 	case PROP_AUTH_STATE:
 		g_value_set_uint (value, priv->auth_state);
@@ -2576,27 +2939,39 @@ set_property (GObject *object,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_IFACE:
+	case PROP_SUPPLICANT_MANAGER:
 		/* construct-only */
-		priv->dev = g_value_dup_string (value);
+		priv->supplicant_manager = g_object_ref (g_value_get_pointer (value));
+		nm_assert (NM_IS_SUPPLICANT_MANAGER (priv->supplicant_manager));
+
+		priv->dbus_connection = g_object_ref (nm_supplicant_manager_get_dbus_connection (priv->supplicant_manager));
+		nm_assert (G_IS_DBUS_CONNECTION (priv->dbus_connection));
+
+		priv->name_owner = nm_ref_string_ref (nm_supplicant_manager_get_dbus_name_owner (priv->supplicant_manager));
+		nm_assert (NM_IS_REF_STRING (priv->name_owner));
+
+		priv->global_capabilities = nm_supplicant_manager_get_global_capabilities (priv->supplicant_manager);
 		break;
-	case PROP_OBJECT_PATH:
+	case PROP_DBUS_OBJECT_PATH:
 		/* construct-only */
-		priv->object_path = g_value_dup_string (value);
+		priv->object_path = nm_ref_string_ref (g_value_get_pointer (value));
+		nm_assert (NM_IS_REF_STRING (priv->object_path));
+		break;
+	case PROP_IFINDEX:
+		/* construct-only */
+		priv->ifindex = g_value_get_int (value);
 		break;
 	case PROP_DRIVER:
 		/* construct-only */
-		priv->driver = g_value_get_uint (value);
-		break;
-	case PROP_GLOBAL_CAPABILITIES:
-		/* construct-only */
-		priv->global_capabilities = g_value_get_uint64 (value);
+		priv->requested_driver = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
 }
+
+/*****************************************************************************/
 
 static void
 nm_supplicant_interface_init (NMSupplicantInterface * self)
@@ -2607,30 +2982,167 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 
 	self->_priv = priv;
 
-	c_list_init (&self->supp_lst);
-
 	nm_assert (priv->global_capabilities == NM_SUPPL_CAP_MASK_NONE);
 	nm_assert (priv->iface_capabilities == NM_SUPPL_CAP_MASK_NONE);
 
-	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
-	priv->bss_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, bss_data_destroy);
-	priv->peer_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, peer_data_destroy);
+	priv->state = NM_SUPPLICANT_INTERFACE_STATE_STARTING;
+	priv->supp_state = NM_SUPPLICANT_INTERFACE_STATE_INVALID;
+
+	c_list_init (&self->supp_lst);
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMSupplicantBssInfo, bss_path) == 0);
+	priv->bss_idx = g_hash_table_new (nm_pdirect_hash, nm_pdirect_equal);
+
+	c_list_init (&priv->bss_lst_head);
+	c_list_init (&priv->bss_initializing_lst_head);
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMSupplicantPeerInfo, peer_path) == 0);
+	priv->peer_idx = g_hash_table_new (nm_pdirect_hash, nm_pdirect_equal);
+
+	c_list_init (&priv->peer_lst_head);
+	c_list_init (&priv->peer_initializing_lst_head);
+
+	priv->main_cancellable = g_cancellable_new ();
+}
+
+static void
+constructed (GObject *object)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->constructed (object);
+
+	_LOGD ("new supplicant interface %s on %s",
+	       priv->object_path->str,
+	       priv->name_owner->str);
+
+	priv->properties_changed_id = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
+	                                                                                      priv->name_owner->str,
+	                                                                                      priv->object_path->str,
+	                                                                                      NULL,
+	                                                                                      _properties_changed_cb,
+	                                                                                      self,
+	                                                                                      NULL);
+
+	priv->bss_properties_changed_id = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
+	                                                                                          priv->name_owner->str,
+	                                                                                          NULL,
+	                                                                                          NM_WPAS_DBUS_IFACE_BSS,
+	                                                                                          _bss_properties_changed_cb,
+	                                                                                          self,
+	                                                                                          NULL);
+
+	priv->signal_id = g_dbus_connection_signal_subscribe (priv->dbus_connection,
+	                                                      priv->name_owner->str,
+	                                                      NULL,
+	                                                      NULL,
+	                                                      priv->object_path->str,
+	                                                      NULL,
+	                                                      G_DBUS_SIGNAL_FLAGS_NONE,
+	                                                      _signal_cb,
+	                                                      self,
+	                                                      NULL);
+
+	/* Scan result aging parameters */
+	nm_dbus_connection_call_set (priv->dbus_connection,
+	                             priv->name_owner->str,
+	                             priv->object_path->str,
+	                             NM_WPAS_DBUS_IFACE_INTERFACE,
+	                             "BSSExpireAge",
+	                             g_variant_new_uint32 (250),
+	                             DBUS_TIMEOUT_MSEC,
+	                             NULL,
+	                             NULL,
+	                             NULL);
+	nm_dbus_connection_call_set (priv->dbus_connection,
+	                             priv->name_owner->str,
+	                             priv->object_path->str,
+	                             NM_WPAS_DBUS_IFACE_INTERFACE,
+	                             "BSSExpireCount",
+	                             g_variant_new_uint32 (2),
+	                             DBUS_TIMEOUT_MSEC,
+	                             NULL,
+	                             NULL,
+	                             NULL);
+
+	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_PMF) == NM_TERNARY_TRUE) {
+		/* Initialize global PMF setting to 'optional' */
+		nm_dbus_connection_call_set (priv->dbus_connection,
+		                             priv->name_owner->str,
+		                             priv->object_path->str,
+		                             NM_WPAS_DBUS_IFACE_INTERFACE,
+		                             "Pmf",
+		                             g_variant_new_string ("1"),
+		                             DBUS_TIMEOUT_MSEC,
+		                             NULL,
+		                             NULL,
+		                             NULL);
+	}
+
+	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT) {
+		/* If the global supplicant capabilities property is not present, we can
+		 * fall back to checking whether the ProbeRequest method is supported.  If
+		 * neither of these works we have no way of determining if AP mode is
+		 * supported or not.  hostap 1.0 and earlier don't support either of these.
+		 */
+		priv->starting_pending_count++;
+		_dbus_connection_call (self,
+		                       DBUS_INTERFACE_INTROSPECTABLE,
+		                       "Introspect",
+		                       NULL,
+		                       G_VARIANT_TYPE ("(s)"),
+		                       G_DBUS_CALL_FLAGS_NONE,
+		                       5000,
+		                       priv->main_cancellable,
+		                       iface_introspect_cb,
+		                       self);
+	}
+
+	priv->starting_pending_count++;
+	nm_dbus_connection_call_get_all (priv->dbus_connection,
+	                                 priv->name_owner->str,
+	                                 priv->object_path->str,
+	                                 NM_WPAS_DBUS_IFACE_INTERFACE,
+	                                 5000,
+	                                 priv->main_cancellable,
+	                                 _get_all_main_cb,
+	                                 self);
+
+	if (_get_capability (priv, NM_SUPPL_CAP_TYPE_P2P) == NM_TERNARY_TRUE) {
+		priv->peer_properties_changed_id = nm_dbus_connection_signal_subscribe_properties_changed (priv->dbus_connection,
+		                                                                                           priv->name_owner->str,
+		                                                                                           NULL,
+		                                                                                           NM_WPAS_DBUS_IFACE_PEER,
+		                                                                                           _peer_properties_changed_cb,
+		                                                                                           self,
+		                                                                                           NULL);
+
+		priv->starting_pending_count++;
+		nm_dbus_connection_call_get_all (priv->dbus_connection,
+		                                 priv->name_owner->str,
+		                                 priv->object_path->str,
+		                                 NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+		                                 5000,
+		                                 priv->main_cancellable,
+		                                 _get_all_p2p_device_cb,
+		                                 self);
+	}
 }
 
 NMSupplicantInterface *
-nm_supplicant_interface_new (const char *ifname,
-                             const char *object_path,
-                             NMSupplicantDriver driver,
-                             NMSupplCapMask global_capabilities)
+nm_supplicant_interface_new (NMSupplicantManager *supplicant_manager,
+                             NMRefString *object_path,
+                             int ifindex,
+                             NMSupplicantDriver driver)
 {
-	/* One of ifname or path need to be set */
-	g_return_val_if_fail ((ifname != NULL) != (object_path != NULL), NULL);
+	nm_assert (NM_IS_SUPPLICANT_MANAGER (supplicant_manager));
 
 	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
-	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
-	                     NM_SUPPLICANT_INTERFACE_OBJECT_PATH, object_path,
+	                     NM_SUPPLICANT_INTERFACE_SUPPLICANT_MANAGER, supplicant_manager,
+	                     NM_SUPPLICANT_INTERFACE_DBUS_OBJECT_PATH, object_path,
+	                     NM_SUPPLICANT_INTERFACE_IFINDEX, ifindex,
 	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
-	                     NM_SUPPLICANT_INTERFACE_GLOBAL_CAPABILITIES, (guint64) global_capabilities,
 	                     NULL);
 }
 
@@ -2640,9 +3152,11 @@ dispose (GObject *object)
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (object);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
+	if (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DOWN)
+		set_state_down (self, TRUE, "NMSupplicantInterface is disposing");
+
 	nm_assert (c_list_is_empty (&self->supp_lst));
 
-	nm_supplicant_interface_cancel_wps (self);
 	if (priv->wps_data) {
 		/* we shut down, but an asynchronous Cancel request is pending.
 		 * We don't want to cancel it, so mark wps-data that @self is gone.
@@ -2652,38 +3166,21 @@ dispose (GObject *object)
 		priv->wps_data = NULL;
 	}
 
-	if (priv->assoc_data) {
-		gs_free_error GError *error = NULL;
+	nm_assert (!priv->assoc_data);
 
-		nm_utils_error_set_cancelled (&error, TRUE, "NMSupplicantInterface");
-		assoc_return (self, error, "cancelled due to dispose of supplicant interface");
-	}
+	g_clear_pointer (&priv->bss_idx, g_hash_table_destroy);
+	g_clear_pointer (&priv->peer_idx, g_hash_table_destroy);
 
-	if (priv->iface_proxy)
-		g_signal_handlers_disconnect_by_data (priv->iface_proxy, object);
-	g_clear_object (&priv->iface_proxy);
-	if (priv->p2p_proxy)
-		g_signal_handlers_disconnect_by_data (priv->p2p_proxy, object);
-	g_clear_object (&priv->p2p_proxy);
-	if (priv->group_proxy)
-		g_signal_handlers_disconnect_by_data (priv->group_proxy, object);
-	g_clear_object (&priv->group_proxy);
-
-	nm_clear_g_cancellable (&priv->init_cancellable);
-	nm_clear_g_cancellable (&priv->other_cancellable);
-
-	if (priv->wpas_proxy)
-		g_signal_handlers_disconnect_by_data (priv->wpas_proxy, object);
-	g_clear_object (&priv->wpas_proxy);
-	g_clear_pointer (&priv->bss_proxies, g_hash_table_destroy);
-	g_clear_pointer (&priv->peer_proxies, g_hash_table_destroy);
-
-	g_clear_pointer (&priv->net_path, g_free);
-	g_clear_pointer (&priv->dev, g_free);
-	g_clear_pointer (&priv->object_path, g_free);
-	g_clear_pointer (&priv->current_bss, g_free);
+	nm_clear_pointer (&priv->current_bss, nm_ref_string_unref);
 
 	G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
+
+	nm_clear_pointer (&priv->object_path, nm_ref_string_unref);
+	nm_clear_pointer (&priv->name_owner, nm_ref_string_unref);
+	g_clear_object (&priv->supplicant_manager);
+	g_clear_object (&priv->dbus_connection);
+	nm_clear_g_free (&priv->ifname);
+	nm_assert (!priv->net_path);
 }
 
 static void
@@ -2693,9 +3190,33 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMSupplicantInterfacePrivate));
 
+	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+
+	obj_properties[PROP_SUPPLICANT_MANAGER] =
+	    g_param_spec_pointer (NM_SUPPLICANT_INTERFACE_SUPPLICANT_MANAGER, "", "",
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DBUS_OBJECT_PATH] =
+	    g_param_spec_pointer (NM_SUPPLICANT_INTERFACE_DBUS_OBJECT_PATH, "", "",
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IFINDEX] =
+	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_IFINDEX, "", "",
+	                      0, G_MAXINT, 0,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DRIVER] =
+	    g_param_spec_uint (NM_SUPPLICANT_INTERFACE_DRIVER, "", "",
+	                       0, G_MAXUINT, NM_SUPPLICANT_DRIVER_WIRELESS,
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_SCANNING] =
 	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_SCANNING, "", "",
@@ -2706,18 +3227,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_CURRENT_BSS, "", "",
 	                         NULL,
 	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_IFACE] =
-	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_IFACE, "", "",
-	                         NULL,
-	                         G_PARAM_WRITABLE |
-	                         G_PARAM_CONSTRUCT_ONLY |
-	                         G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_OBJECT_PATH] =
-	    g_param_spec_string (NM_SUPPLICANT_INTERFACE_OBJECT_PATH, "", "",
-	                         NULL,
-	                         G_PARAM_WRITABLE |
-	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_P2P_GROUP_JOINED] =
 	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED, "", "",
@@ -2734,25 +3243,11 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_DRIVER] =
-	    g_param_spec_uint (NM_SUPPLICANT_INTERFACE_DRIVER, "", "",
-	                       0, G_MAXUINT, NM_SUPPLICANT_DRIVER_WIRELESS,
-	                       G_PARAM_WRITABLE |
-	                       G_PARAM_CONSTRUCT_ONLY |
-	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_P2P_AVAILABLE] =
 	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_P2P_AVAILABLE, "", "",
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_GLOBAL_CAPABILITIES] =
-	    g_param_spec_uint64 (NM_SUPPLICANT_INTERFACE_GLOBAL_CAPABILITIES, "", "",
-	                         0,
-	                         NM_SUPPL_CAP_MASK_ALL,
-	                         0,
-	                         G_PARAM_WRITABLE |
-	                         G_PARAM_CONSTRUCT_ONLY |
-	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AUTH_STATE] =
 	    g_param_spec_uint (NM_SUPPLICANT_INTERFACE_AUTH_STATE, "", "",
 	                       NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
@@ -2771,45 +3266,21 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
 
-	signals[REMOVED] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_REMOVED,
+	signals[BSS_CHANGED] =
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
+	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_BOOLEAN);
 
-	signals[BSS_UPDATED] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
+	signals[PEER_CHANGED] =
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_PEER_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
-
-	signals[BSS_REMOVED] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1, G_TYPE_STRING);
-
-	signals[PEER_UPDATED] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_PEER_UPDATED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
-
-	signals[PEER_REMOVED] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_PEER_REMOVED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1, G_TYPE_STRING);
+	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_BOOLEAN);
 
 	signals[SCAN_DONE] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_SCAN_DONE,
@@ -2817,7 +3288,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+	                  G_TYPE_NONE, 0);
 
 	signals[WPS_CREDENTIALS] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS,

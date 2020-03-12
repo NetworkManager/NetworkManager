@@ -12,19 +12,20 @@
 #include "supplicant/nm-supplicant-manager.h"
 #include "supplicant/nm-supplicant-interface.h"
 
-#include "nm-manager.h"
-#include "nm-utils.h"
-#include "nm-wifi-p2p-peer.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
-#include "settings/nm-settings.h"
-#include "nm-setting-wifi-p2p.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
-#include "platform/nm-platform.h"
-#include "nm-manager.h"
 #include "nm-core-internal.h"
+#include "nm-glib-aux/nm-ref-string.h"
+#include "nm-ip4-config.h"
+#include "nm-manager.h"
+#include "nm-manager.h"
+#include "nm-setting-wifi-p2p.h"
+#include "nm-utils.h"
+#include "nm-wifi-p2p-peer.h"
+#include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
+#include "settings/nm-settings.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceWifiP2P);
@@ -227,11 +228,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	supplicant_state = nm_supplicant_interface_get_state (priv->mgmt_iface);
-	if (   supplicant_state < NM_SUPPLICANT_INTERFACE_STATE_READY
-	    || supplicant_state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
-		return FALSE;
-
-	return TRUE;
+	return NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (supplicant_state);
 }
 
 static gboolean
@@ -649,52 +646,49 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	NMSupplicantInterfaceState new_state = new_state_i;
 	NMSupplicantInterfaceState old_state = old_state_i;
 
-	if (new_state == old_state)
-		return;
-
 	_LOGI (LOGD_DEVICE | LOGD_WIFI,
 	       "supplicant management interface state: %s -> %s",
 	       nm_supplicant_interface_state_to_string (old_state),
 	       nm_supplicant_interface_state_to_string (new_state));
 
-	switch (new_state) {
-	case NM_SUPPLICANT_INTERFACE_STATE_READY:
-		_LOGD (LOGD_WIFI, "supplicant ready");
-		nm_device_queue_recheck_available (device,
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-
-		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			_set_is_waiting_for_supplicant (self, FALSE);
-		break;
-	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
+	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		supplicant_interfaces_release (self, TRUE);
 		nm_device_queue_recheck_available (device,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		break;
-	default:
-		break;
+		return;
+	}
+
+	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
+		_LOGD (LOGD_WIFI, "supplicant ready");
+		nm_device_queue_recheck_available (device,
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		_set_is_waiting_for_supplicant (self, FALSE);
 	}
 }
 
 static void
-supplicant_iface_peer_updated_cb (NMSupplicantInterface *iface,
-                                  const char *object_path,
-                                  GVariant *properties,
+supplicant_iface_peer_changed_cb (NMSupplicantInterface *iface,
+                                  NMSupplicantPeerInfo *peer_info,
+                                  gboolean is_present,
                                   NMDeviceWifiP2P *self)
 {
-	NMDeviceWifiP2PPrivate *priv;
+	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 	NMWifiP2PPeer *found_peer;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (object_path != NULL);
+	found_peer = nm_wifi_p2p_peers_find_by_supplicant_path (&priv->peers_lst_head, peer_info->peer_path->str);
 
-	priv  = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
+	if (!is_present) {
+		if (!found_peer)
+			return;
 
-	found_peer = nm_wifi_p2p_peers_find_by_supplicant_path (&priv->peers_lst_head, object_path);
+		peer_add_remove (self, FALSE, found_peer, TRUE);
+		goto out;
+	}
+
 	if (found_peer) {
-		if (!nm_wifi_p2p_peer_update_from_properties (found_peer, object_path, properties))
+		if (!nm_wifi_p2p_peer_update_from_properties (found_peer, peer_info))
 			return;
 
 		update_disconnect_on_connection_peer_missing (self);
@@ -702,35 +696,11 @@ supplicant_iface_peer_updated_cb (NMSupplicantInterface *iface,
 	} else {
 		gs_unref_object NMWifiP2PPeer *peer = NULL;
 
-		peer = nm_wifi_p2p_peer_new_from_properties (object_path, properties);
-		if (!peer) {
-			_LOGD (LOGD_WIFI, "invalid P2P peer properties received for %s", object_path);
-			return;
-		}
-
+		peer = nm_wifi_p2p_peer_new_from_properties (peer_info);
 		peer_add_remove (self, TRUE, peer, TRUE);
 	}
 
-	schedule_peer_list_dump (self);
-}
-
-static void
-supplicant_iface_peer_removed_cb (NMSupplicantInterface *iface,
-                                  const char *object_path,
-                                  NMDeviceWifiP2P *self)
-{
-	NMDeviceWifiP2PPrivate *priv;
-	NMWifiP2PPeer *peer;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (object_path != NULL);
-
-	priv  = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
-	peer = nm_wifi_p2p_peers_find_by_supplicant_path (&priv->peers_lst_head, object_path);
-	if (!peer)
-		return;
-
-	peer_add_remove (self, FALSE, peer, TRUE);
+out:
 	schedule_peer_list_dump (self);
 }
 
@@ -742,7 +712,7 @@ check_group_iface_ready (NMDeviceWifiP2P *self)
 	if (!priv->group_iface)
 		return;
 
-	if (nm_supplicant_interface_get_state (priv->group_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (!NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (priv->group_iface)))
 		return;
 
 	if (!nm_supplicant_interface_get_p2p_group_joined (priv->group_iface))
@@ -755,6 +725,24 @@ check_group_iface_ready (NMDeviceWifiP2P *self)
 }
 
 static void
+supplicant_group_iface_is_ready (NMDeviceWifiP2P *self)
+{
+	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
+
+	_LOGD (LOGD_WIFI, "P2P Group supplicant ready");
+
+	if (!nm_device_set_ip_iface (NM_DEVICE (self), nm_supplicant_interface_get_ifname (priv->group_iface))) {
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		return;
+	}
+
+	_set_is_waiting_for_supplicant (self, FALSE);
+	check_group_iface_ready (self);
+}
+
+static void
 supplicant_group_iface_state_cb (NMSupplicantInterface *iface,
                                  int new_state_i,
                                  int old_state_i,
@@ -762,44 +750,26 @@ supplicant_group_iface_state_cb (NMSupplicantInterface *iface,
                                  gpointer user_data)
 {
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (user_data);
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
-	NMDevice *device = NM_DEVICE (self);
 	NMSupplicantInterfaceState new_state = new_state_i;
 	NMSupplicantInterfaceState old_state = old_state_i;
-
-	if (new_state == old_state)
-		return;
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI,
 	       "P2P Group supplicant interface state: %s -> %s",
 	       nm_supplicant_interface_state_to_string (old_state),
 	       nm_supplicant_interface_state_to_string (new_state));
 
-	switch (new_state) {
-	case NM_SUPPLICANT_INTERFACE_STATE_READY:
-		_LOGD (LOGD_WIFI, "P2P Group supplicant ready");
-
-		if (!nm_device_set_ip_iface (device, nm_supplicant_interface_get_ifname (priv->group_iface))) {
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-			break;
-		}
-
-		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			_set_is_waiting_for_supplicant (self, FALSE);
-
-		check_group_iface_ready (self);
-		break;
-	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
+	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		supplicant_group_interface_release (self);
 
-		nm_device_state_changed (device,
+		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-		break;
-	default:
-		break;
+		return;
+	}
+
+	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
+		supplicant_group_iface_is_ready (self);
+		return;
 	}
 }
 
@@ -833,8 +803,9 @@ supplicant_iface_group_started_cb (NMSupplicantInterface *iface,
                                    NMDeviceWifiP2P *self)
 {
 	NMDeviceWifiP2PPrivate *priv;
+	NMSupplicantInterfaceState state;
 
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (self);
 
 	if (!nm_device_is_activating (NM_DEVICE (self))) {
 		_LOGW (LOGD_DEVICE | LOGD_WIFI, "P2P: WPA supplicant notified a group start but we are not trying to connect! Ignoring the event.");
@@ -844,6 +815,7 @@ supplicant_iface_group_started_cb (NMSupplicantInterface *iface,
 	priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 
 	supplicant_group_interface_release (self);
+
 	priv->group_iface = g_object_ref (group_iface);
 
 	/* We need to wait for the interface to be ready and the group
@@ -862,10 +834,13 @@ supplicant_iface_group_started_cb (NMSupplicantInterface *iface,
 	                  G_CALLBACK (supplicant_group_iface_group_finished_cb),
 	                  self);
 
-	if (nm_supplicant_interface_get_state (priv->group_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
+	state = nm_supplicant_interface_get_state (priv->group_iface);
+	if (state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
 		_set_is_waiting_for_supplicant (self, TRUE);
+		return;
+	}
 
-	check_group_iface_ready (self);
+	supplicant_group_iface_is_ready (self);
 }
 
 static void
@@ -935,9 +910,8 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (   !priv->mgmt_iface
-		    || nm_supplicant_interface_get_state (priv->mgmt_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
+		    || !NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (priv->mgmt_iface)))
 			_set_is_waiting_for_supplicant (self, TRUE);
-
 		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
 		/* Disconnect? */
@@ -1084,20 +1058,20 @@ nm_device_wifi_p2p_set_mgmt_iface (NMDeviceWifiP2P *self,
 		goto done;
 
 	_LOGD (LOGD_DEVICE | LOGD_WIFI, "P2P: WPA supplicant management interface changed to %s.",
-	       nm_supplicant_interface_get_object_path (iface));
+	       nm_ref_string_get_str (nm_supplicant_interface_get_object_path (iface)));
 
 	priv->mgmt_iface = g_object_ref (iface);
 
-	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_STATE,
+	g_signal_connect (priv->mgmt_iface,
+	                  NM_SUPPLICANT_INTERFACE_STATE,
 	                  G_CALLBACK (supplicant_iface_state_cb),
 	                  self);
-	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_PEER_UPDATED,
-	                  G_CALLBACK (supplicant_iface_peer_updated_cb),
+	g_signal_connect (priv->mgmt_iface,
+	                  NM_SUPPLICANT_INTERFACE_PEER_CHANGED,
+	                  G_CALLBACK (supplicant_iface_peer_changed_cb),
 	                  self);
-	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_PEER_REMOVED,
-	                  G_CALLBACK (supplicant_iface_peer_removed_cb),
-	                  self);
-	g_signal_connect (priv->mgmt_iface, NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
+	g_signal_connect (priv->mgmt_iface,
+	                  NM_SUPPLICANT_INTERFACE_GROUP_STARTED,
 	                  G_CALLBACK (supplicant_iface_group_started_cb),
 	                  self);
 done:
@@ -1106,8 +1080,7 @@ done:
 	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	_set_is_waiting_for_supplicant (self,
 	                                   !priv->mgmt_iface
-	                                || (  nm_supplicant_interface_get_state (priv->mgmt_iface)
-	                                    < NM_SUPPLICANT_INTERFACE_STATE_READY));
+	                                || !NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (priv->mgmt_iface)));
 }
 
 void

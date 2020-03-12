@@ -6,6 +6,8 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_TYPES_H__
 #define __NETWORKMANAGER_SUPPLICANT_TYPES_H__
 
+#include "c-list/src/c-list.h"
+
 #define NM_WPAS_DBUS_SERVICE       "fi.w1.wpa_supplicant1"
 #define NM_WPAS_DBUS_PATH          "/fi/w1/wpa_supplicant1"
 #define NM_WPAS_DBUS_INTERFACE     "fi.w1.wpa_supplicant1"
@@ -137,5 +139,66 @@ const char *nm_supplicant_driver_to_string (NMSupplicantDriver driver);
 
 #define NM_SUPPLICANT_ERROR (nm_supplicant_error_quark ())
 GQuark nm_supplicant_error_quark (void);
+
+typedef struct _NMSupplicantBssInfo {
+	NMRefString *bss_path;
+
+	NMSupplicantInterface *_self;
+	CList _bss_lst;
+	GCancellable *_init_cancellable;
+
+	GBytes *ssid;
+
+	gint64 last_seen_msec;
+
+	NM80211ApSecurityFlags wpa_flags; /* WPA-related flags */
+	NM80211ApSecurityFlags rsn_flags; /* RSN (WPA2) -related flags */
+
+	guint32 frequency;
+
+	guint32 max_rate;
+
+	guint8 signal_percent;
+
+	guint8 bssid[6 /* ETH_ALEN */];
+
+	NM80211ApFlags ap_flags:5;
+
+	NM80211Mode mode:4;
+
+	bool bssid_valid:1;
+
+	bool metered:1;
+
+	bool _bss_dirty:1;
+
+} NMSupplicantBssInfo;
+
+typedef struct _NMSupplicantPeerInfo{
+	NMRefString *peer_path;
+
+	CList _peer_lst;
+	NMSupplicantInterface *_self;
+	GCancellable *_init_cancellable;
+
+	char *device_name;
+	char *manufacturer;
+	char *model;
+	char *model_number;
+	char *serial;
+
+	GBytes *ies;
+
+	gint64 last_seen_msec;
+
+	guint8 address[6 /* ETH_ALEN */];
+
+	gint8 signal_percent;
+
+	bool address_valid:1;
+
+	bool _peer_dirty:1;
+
+} NMSupplicantPeerInfo;
 
 #endif  /* NM_SUPPLICANT_TYPES_H */

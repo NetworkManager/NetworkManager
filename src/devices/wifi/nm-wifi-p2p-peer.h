@@ -37,14 +37,14 @@ typedef struct {
 
 typedef struct _NMWifiP2PPeerClass NMWifiP2PPeerClass;
 
+struct _NMSupplicantPeerInfo;
+
 GType nm_wifi_p2p_peer_get_type (void);
 
-NMWifiP2PPeer *   nm_wifi_p2p_peer_new_from_properties      (const char *supplicant_path,
-                                                             GVariant *properties);
+NMWifiP2PPeer *nm_wifi_p2p_peer_new_from_properties (const struct _NMSupplicantPeerInfo *peer_info);
 
-gboolean          nm_wifi_p2p_peer_update_from_properties   (NMWifiP2PPeer *peer,
-                                                             const char *supplicant_path,
-                                                             GVariant *properties);
+gboolean nm_wifi_p2p_peer_update_from_properties (NMWifiP2PPeer *peer,
+                                                  const struct _NMSupplicantPeerInfo *peer_info);
 
 gboolean          nm_wifi_p2p_peer_check_compatible         (NMWifiP2PPeer *self,
                                                              NMConnection *connection);

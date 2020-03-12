@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include "nm-glib-aux/nm-ref-string.h"
 #include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -74,6 +75,7 @@ typedef struct {
 	gint8             invalid_strength_counter;
 
 	CList             aps_lst_head;
+	GHashTable       *aps_idx_by_supplicant_path;
 
 	NMWifiAP *        current_ap;
 	guint32           rate;
@@ -90,6 +92,7 @@ typedef struct {
 	guint             ap_dump_id;
 
 	NMSupplicantManager   *sup_mgr;
+	NMSupplMgrCreateIfaceHandle *sup_create_handle;
 	NMSupplicantInterface *sup_iface;
 	guint                  sup_timeout_id; /* supplicant association timeout */
 
@@ -137,10 +140,18 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
 static gboolean check_scanning_prohibited (NMDeviceWifi *self, gboolean periodic);
 
+static void supplicant_iface_state_down (NMDeviceWifi *self);
+
 static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
 
 static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
+
+static void supplicant_iface_state (NMDeviceWifi *self,
+                                    NMSupplicantInterfaceState new_state,
+                                    NMSupplicantInterfaceState old_state,
+                                    int disconnect_reason,
+                                    gboolean is_real_signal);
 
 static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        int new_state_i,
@@ -148,17 +159,12 @@ static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        int disconnect_reason,
                                        gpointer user_data);
 
-static void supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
-                                             const char *object_path,
-                                             GVariant *properties,
-                                             NMDeviceWifi *self);
-
-static void supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
-                                             const char *object_path,
+static void supplicant_iface_bss_changed_cb (NMSupplicantInterface *iface,
+                                             NMSupplicantBssInfo *bss_info,
+                                             gboolean is_present,
                                              NMDeviceWifi *self);
 
 static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
-                                           gboolean success,
                                            NMDeviceWifi * self);
 
 static void supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
@@ -237,36 +243,40 @@ unmanaged_on_quit (NMDevice *self)
 	return TRUE;
 }
 
-static gboolean
-supplicant_interface_acquire (NMDeviceWifi *self)
+static void
+supplicant_interface_acquire_cb (NMSupplicantManager *supplicant_manager,
+                                 NMSupplMgrCreateIfaceHandle *handle,
+                                 NMSupplicantInterface *iface,
+                                 GError *error,
+                                 gpointer user_data)
 {
+	NMDeviceWifi *self = user_data;
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (!priv->sup_iface, TRUE);
+	if (nm_utils_error_is_cancelled (error))
+		return;
 
-	priv->sup_iface = nm_supplicant_manager_create_interface (priv->sup_mgr,
-	                                                          nm_device_get_iface (NM_DEVICE (self)),
-	                                                          NM_SUPPLICANT_DRIVER_WIRELESS);
-	if (!priv->sup_iface) {
-		_LOGE (LOGD_WIFI, "Couldn't initialize supplicant interface");
-		return FALSE;
+	nm_assert (priv->sup_create_handle == handle);
+
+	priv->sup_create_handle = NULL;
+
+	if (error) {
+		_LOGE (LOGD_WIFI, "Couldn't initialize supplicant interface: %s",
+		       error->message);
+		supplicant_iface_state_down (self);
+		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
+		return;
 	}
 
-	if (nm_supplicant_interface_get_state (priv->sup_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
-		nm_device_add_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);
+	priv->sup_iface = g_object_ref (iface);
 
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
 	                  G_CALLBACK (supplicant_iface_state_cb),
 	                  self);
 	g_signal_connect (priv->sup_iface,
-	                  NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
-	                  G_CALLBACK (supplicant_iface_bss_updated_cb),
-	                  self);
-	g_signal_connect (priv->sup_iface,
-	                  NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
-	                  G_CALLBACK (supplicant_iface_bss_removed_cb),
+	                  NM_SUPPLICANT_INTERFACE_BSS_CHANGED,
+	                  G_CALLBACK (supplicant_iface_bss_changed_cb),
 	                  self);
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_SCAN_DONE,
@@ -291,7 +301,30 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 
 	_notify_scanning (self);
 
-	return TRUE;
+	if (nm_supplicant_interface_get_state (priv->sup_iface) != NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
+		/* fake an initial state change. */
+		supplicant_iface_state (user_data,
+		                        NM_SUPPLICANT_INTERFACE_STATE_STARTING,
+		                        nm_supplicant_interface_get_state (priv->sup_iface),
+		                        0,
+		                        FALSE);
+	}
+}
+
+static void
+supplicant_interface_acquire (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_assert (!priv->sup_iface);
+	nm_assert (!priv->sup_create_handle);
+
+	priv->sup_create_handle = nm_supplicant_manager_create_interface (priv->sup_mgr,
+	                                                                  nm_device_get_ifindex (NM_DEVICE (self)),
+	                                                                  NM_SUPPLICANT_DRIVER_WIRELESS,
+	                                                                  supplicant_interface_acquire_cb,
+	                                                                  self);
+	nm_device_add_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
 }
 
 static void
@@ -310,18 +343,17 @@ _requested_scan_set (NMDeviceWifi *self, gboolean value)
 		nm_device_add_pending_action ((NMDevice *) self, NM_PENDING_ACTION_WIFI_SCAN, TRUE);
 	else {
 		nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
-		nm_device_remove_pending_action ((NMDevice *) self, NM_PENDING_ACTION_WIFI_SCAN, TRUE);
+		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WIFI_SCAN, TRUE);
 	}
 }
 
 static void
 supplicant_interface_release (NMDeviceWifi *self)
 {
-	NMDeviceWifiPrivate *priv;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	g_return_if_fail (self != NULL);
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	if (nm_clear_pointer (&priv->sup_create_handle, nm_supplicant_manager_create_interface_cancel))
+		nm_device_remove_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
 
 	_requested_scan_set (self, FALSE);
 
@@ -477,12 +509,16 @@ ap_add_remove (NMDeviceWifi *self,
 		g_object_ref (ap);
 		ap->wifi_device = NM_DEVICE (self);
 		c_list_link_tail (&priv->aps_lst_head, &ap->aps_lst);
+		if (!g_hash_table_insert (priv->aps_idx_by_supplicant_path, nm_wifi_ap_get_supplicant_path (ap), ap))
+			nm_assert_not_reached ();
 		nm_dbus_object_export (NM_DBUS_OBJECT (ap));
 		_ap_dump (self, LOGL_DEBUG, ap, "added", 0);
 		nm_device_wifi_emit_signal_access_point (NM_DEVICE (self), ap, TRUE);
 	} else {
 		ap->wifi_device = NULL;
 		c_list_unlink (&ap->aps_lst);
+		if (!g_hash_table_remove (priv->aps_idx_by_supplicant_path, nm_wifi_ap_get_supplicant_path (ap)))
+			nm_assert_not_reached ();
 		_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
 	}
 
@@ -936,7 +972,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	supplicant_state = nm_supplicant_interface_get_state (priv->sup_iface);
-	if (   supplicant_state < NM_SUPPLICANT_INTERFACE_STATE_READY
+	if (   supplicant_state <= NM_SUPPLICANT_INTERFACE_STATE_STARTING
 	    || supplicant_state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		return FALSE;
 
@@ -1198,7 +1234,8 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 	}
 
 	last_scan = nm_supplicant_interface_get_last_scan (priv->sup_iface);
-	if (last_scan && (nm_utils_get_monotonic_timestamp_msec () - last_scan) < 10 * NM_UTILS_MSEC_PER_SEC) {
+	if (   last_scan > 0
+	    && (nm_utils_get_monotonic_timestamp_msec () - last_scan) < 10 * NM_UTILS_MSEC_PER_SEC) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
@@ -1469,16 +1506,15 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 
 static void
 supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
-                               gboolean success,
                                NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback: %s", success ? "successful" : "failed");
+	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback");
 
 	priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
 	_notify (self, PROP_LAST_SCAN);
-	schedule_scan (self, success);
+	schedule_scan (self, TRUE);
 
 	_requested_scan_set (self, FALSE);
 }
@@ -1552,40 +1588,43 @@ try_fill_ssid_for_hidden_ap (NMDeviceWifi *self,
 }
 
 static void
-supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
-                                 const char *object_path,
-                                 GVariant *properties,
+supplicant_iface_bss_changed_cb (NMSupplicantInterface *iface,
+                                 NMSupplicantBssInfo *bss_info,
+                                 gboolean is_present,
                                  NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMDeviceState state;
-	NMWifiAP *found_ap = NULL;
+	NMWifiAP *found_ap;
 	GBytes *ssid;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (properties != NULL);
-	g_return_if_fail (iface != NULL);
+	found_ap = g_hash_table_lookup (priv->aps_idx_by_supplicant_path, bss_info->bss_path);
 
-	/* Ignore new APs when unavailable, unmanaged, or in AP mode */
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+	if (!is_present) {
+		if (!found_ap)
+			return;
+		if (found_ap == priv->current_ap) {
+			/* The current AP cannot be removed (to prevent NM indicating that
+			 * it is connected, but to nothing), but it must be removed later
+			 * when the current AP is changed or cleared.  Set 'fake' to
+			 * indicate that this AP is now unknown to the supplicant.
+			 */
+			if (nm_wifi_ap_set_fake (found_ap, TRUE))
+				_ap_dump (self, LOGL_DEBUG, found_ap, "updated", 0);
+		} else {
+			ap_add_remove (self, FALSE, found_ap, TRUE);
+			schedule_ap_list_dump (self);
+		}
 		return;
-	if (NM_DEVICE_WIFI_GET_PRIVATE (self)->mode == NM_802_11_MODE_AP)
-		return;
+	}
 
-	found_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, object_path);
 	if (found_ap) {
-		if (!nm_wifi_ap_update_from_properties (found_ap, object_path, properties))
+		if (!nm_wifi_ap_update_from_properties (found_ap, bss_info))
 			return;
 		_ap_dump (self, LOGL_DEBUG, found_ap, "updated", 0);
 	} else {
 		gs_unref_object NMWifiAP *ap = NULL;
 
-		ap = nm_wifi_ap_new_from_properties (object_path, properties);
-		if (!ap) {
-			_LOGD (LOGD_WIFI, "invalid AP properties received for %s", object_path);
-			return;
-		}
+		ap = nm_wifi_ap_new_from_properties (bss_info);
 
 		/* Let the manager try to fill in the SSID from seen-bssids lists */
 		ssid = nm_wifi_ap_get_ssid (ap);
@@ -1615,40 +1654,10 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 	/* Update the current AP if the supplicant notified a current BSS change
 	 * before it sent the current BSS's scan result.
 	 */
-	if (g_strcmp0 (nm_supplicant_interface_get_current_bss (iface), object_path) == 0)
+	if (nm_supplicant_interface_get_current_bss (iface) == bss_info->bss_path)
 		supplicant_iface_notify_current_bss (priv->sup_iface, NULL, self);
 
 	schedule_ap_list_dump (self);
-}
-
-static void
-supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
-                                 const char *object_path,
-                                 NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv;
-	NMWifiAP *ap;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (object_path != NULL);
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, object_path);
-	if (!ap)
-		return;
-
-	if (ap == priv->current_ap) {
-		/* The current AP cannot be removed (to prevent NM indicating that
-		 * it is connected, but to nothing), but it must be removed later
-		 * when the current AP is changed or cleared.  Set 'fake' to
-		 * indicate that this AP is now unknown to the supplicant.
-		 */
-		if (nm_wifi_ap_set_fake (ap, TRUE))
-			_ap_dump (self, LOGL_DEBUG, ap, "updated", 0);
-	} else {
-		ap_add_remove (self, FALSE, ap, TRUE);
-		schedule_ap_list_dump (self);
-	}
 }
 
 static void
@@ -2029,50 +2038,71 @@ reacquire_interface_cb (gpointer user_data)
 }
 
 static void
-supplicant_iface_state_cb (NMSupplicantInterface *iface,
-                           int new_state_i,
-                           int old_state_i,
-                           int disconnect_reason,
-                           gpointer user_data)
+supplicant_iface_state_down (NMDeviceWifi *self)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+
+	nm_device_queue_recheck_available (device,
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+	cleanup_association_attempt (self, FALSE);
+
+	/* If the device is already in UNAVAILABLE state then the state change
+	 * is a NOP and the interface won't be re-acquired in the device state
+	 * change handler.  So ensure we have a new one here so that we're
+	 * ready if the supplicant comes back.
+	 */
+	supplicant_interface_release (self);
+	if (priv->failed_iface_count < 5)
+		priv->reacquire_iface_id = g_timeout_add_seconds (10, reacquire_interface_cb, self);
+	else
+		_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
+}
+
+static void
+supplicant_iface_state (NMDeviceWifi *self,
+                        NMSupplicantInterfaceState new_state,
+                        NMSupplicantInterfaceState old_state,
+                        int disconnect_reason,
+                        gboolean is_real_signal)
+{
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState devstate;
 	gboolean scanning;
-	NMSupplicantInterfaceState new_state = new_state_i;
-	NMSupplicantInterfaceState old_state = old_state_i;
-
-	if (new_state == old_state)
-		return;
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI,
-	       "supplicant interface state: %s -> %s",
+	       "supplicant interface state: %s -> %s%s",
 	       nm_supplicant_interface_state_to_string (old_state),
-	       nm_supplicant_interface_state_to_string (new_state));
+	       nm_supplicant_interface_state_to_string (new_state),
+	       is_real_signal ? "" : " (simulated signal)");
+
+	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+		supplicant_iface_state_down (self);
+		goto out;
+	}
 
 	devstate = nm_device_get_state (device);
-	scanning = nm_supplicant_interface_get_scanning (iface);
+	scanning = nm_supplicant_interface_get_scanning (priv->sup_iface);
+
+	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
+		_LOGD (LOGD_WIFI, "supplicant ready");
+		nm_device_queue_recheck_available (NM_DEVICE (device),
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		priv->scan_interval = SCAN_INTERVAL_MIN;
+	}
 
 	/* In these states we know the supplicant is actually talking to something */
 	if (   new_state >= NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING
 	    && new_state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		priv->ssid_found = TRUE;
 
-	if (   old_state < NM_SUPPLICANT_INTERFACE_STATE_READY
-	    && new_state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_STARTING)
 		recheck_p2p_availability (self);
 
 	switch (new_state) {
-	case NM_SUPPLICANT_INTERFACE_STATE_READY:
-		_LOGD (LOGD_WIFI, "supplicant ready");
-		nm_device_queue_recheck_available (NM_DEVICE (device),
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		priv->scan_interval = SCAN_INTERVAL_MIN;
-		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			nm_device_remove_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
-		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
 		nm_clear_g_source (&priv->sup_timeout_id);
 		nm_clear_g_source (&priv->link_timeout_id);
@@ -2127,26 +2157,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			}
 		}
 		break;
-	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
-		nm_device_queue_recheck_available (NM_DEVICE (device),
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		cleanup_association_attempt (self, FALSE);
-
-		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			nm_device_remove_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
-
-		/* If the device is already in UNAVAILABLE state then the state change
-		 * is a NOP and the interface won't be re-acquired in the device state
-		 * change handler.  So ensure we have a new one here so that we're
-		 * ready if the supplicant comes back.
-		 */
-		supplicant_interface_release (self);
-		if (priv->failed_iface_count < 5)
-			priv->reacquire_iface_id = g_timeout_add_seconds (10, reacquire_interface_cb, self);
-		else
-			_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
-		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
 		/* we would clear _requested_scan_set() and trigger a new scan.
 		 * However, we don't want to cancel the current pending action, so force
@@ -2157,10 +2167,25 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	}
 
-	/* Signal scanning state changes */
-	if (   new_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
-	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		_notify_scanning (self);
+out:
+	_notify_scanning (self);
+
+	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_STARTING)
+		nm_device_remove_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
+}
+
+static void
+supplicant_iface_state_cb (NMSupplicantInterface *iface,
+                           int new_state_i,
+                           int old_state_i,
+                           int disconnect_reason,
+                           gpointer user_data)
+{
+	supplicant_iface_state (user_data,
+	                        new_state_i,
+	                        old_state_i,
+	                        disconnect_reason,
+	                        TRUE);
 }
 
 static void
@@ -2197,12 +2222,12 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
                                      NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	const char *current_bss;
+	NMRefString *current_bss;
 	NMWifiAP *new_ap = NULL;
 
 	current_bss = nm_supplicant_interface_get_current_bss (iface);
 	if (current_bss)
-		new_ap = nm_wifi_aps_find_by_supplicant_path (&priv->aps_lst_head, current_bss);
+		new_ap = g_hash_table_lookup (priv->aps_idx_by_supplicant_path, current_bss);
 
 	if (new_ap != priv->current_ap) {
 		const char *new_bssid = NULL;
@@ -2293,11 +2318,8 @@ supplicant_iface_notify_p2p_available (NMSupplicantInterface *iface,
                                        GParamSpec *pspec,
                                        NMDeviceWifi *self)
 {
-	/* Do not update when the interface is still initializing. */
-	if (nm_supplicant_interface_get_state (iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
-		return;
-
-	recheck_p2p_availability (self);
+	if (nm_supplicant_interface_get_state (iface) > NM_SUPPLICANT_INTERFACE_STATE_STARTING)
+		recheck_p2p_availability (self);
 }
 
 static gboolean
@@ -3058,8 +3080,7 @@ device_state_changed (NMDevice *device,
 		/* Clean up the supplicant interface because in these states the
 		 * device cannot be used.
 		 */
-		if (priv->sup_iface)
-			supplicant_interface_release (self);
+		supplicant_interface_release (self);
 
 		nm_clear_g_source (&priv->periodic_source_id);
 
@@ -3160,8 +3181,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 
 		/* Re-initialize the supplicant interface and wait for it to be ready */
 		cleanup_supplicant_failures (self);
-		if (priv->sup_iface)
-			supplicant_interface_release (self);
+		supplicant_interface_release (self);
 		supplicant_interface_acquire (self);
 
 		_LOGD (LOGD_WIFI, "enable waiting on supplicant state");
@@ -3296,6 +3316,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	c_list_init (&priv->aps_lst_head);
+	priv->aps_idx_by_supplicant_path = g_hash_table_new (nm_direct_hash, NULL);
 
 	priv->hidden_probe_scan_warn = TRUE;
 	priv->mode = NM_802_11_MODE_INFRA;
@@ -3364,6 +3385,9 @@ finalize (GObject *object)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	nm_assert (c_list_is_empty (&priv->aps_lst_head));
+	nm_assert (g_hash_table_size (priv->aps_idx_by_supplicant_path) == 0);
+
+	g_hash_table_unref (priv->aps_idx_by_supplicant_path);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }

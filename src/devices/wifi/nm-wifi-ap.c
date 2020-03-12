@@ -10,15 +10,16 @@
 
 #include <stdlib.h>
 
-#include "nm-setting-wireless.h"
-
-#include "nm-wifi-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-utils.h"
-#include "nm-core-internal.h"
-#include "platform/nm-platform.h"
 #include "devices/nm-device.h"
+#include "nm-core-internal.h"
 #include "nm-dbus-manager.h"
+#include "nm-glib-aux/nm-ref-string.h"
+#include "nm-setting-wireless.h"
+#include "nm-utils.h"
+#include "nm-wifi-utils.h"
+#include "platform/nm-platform.h"
+#include "supplicant/nm-supplicant-interface.h"
 
 #define PROTO_WPA "wpa"
 #define PROTO_RSN "rsn"
@@ -39,8 +40,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMWifiAP,
 );
 
 struct _NMWifiAPPrivate {
-	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
-
 	/* Scanned or cached values */
 	GBytes *           ssid;
 	char *             address;
@@ -48,6 +47,9 @@ struct _NMWifiAPPrivate {
 	guint8             strength;
 	guint32            freq;        /* Frequency in MHz; ie 2412 (== 2.412 GHz) */
 	guint32            max_bitrate; /* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
+
+	gint64             last_seen_msec; /* Timestamp when the AP was seen lastly (in nm_utils_get_monotonic_timestamp_*() scale).
+	                                    * Note that this value might be negative! */
 
 	NM80211ApFlags         flags;      /* General flags */
 	NM80211ApSecurityFlags wpa_flags;  /* WPA-related flags */
@@ -58,7 +60,6 @@ struct _NMWifiAPPrivate {
 	/* Non-scanned attributes */
 	bool               fake:1;       /* Whether or not the AP is from a scan */
 	bool               hotspot:1;    /* Whether the AP is a local device's hotspot network */
-	gint32             last_seen;    /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_sec()) */
 };
 
 typedef struct _NMWifiAPPrivate NMWifiAPPrivate;
@@ -72,14 +73,6 @@ G_DEFINE_TYPE (NMWifiAP, nm_wifi_ap, NM_TYPE_DBUS_OBJECT)
 #define NM_WIFI_AP_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMWifiAP, NM_IS_WIFI_AP)
 
 /*****************************************************************************/
-
-const char *
-nm_wifi_ap_get_supplicant_path (NMWifiAP *ap)
-{
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), NULL);
-
-	return NM_WIFI_AP_GET_PRIVATE (ap)->supplicant_path;
-}
 
 GBytes *
 nm_wifi_ap_get_ssid (const NMWifiAP *ap)
@@ -148,11 +141,7 @@ nm_wifi_ap_set_ssid (NMWifiAP *ap, GBytes *ssid)
 static gboolean
 nm_wifi_ap_set_flags (NMWifiAP *ap, NM80211ApFlags flags)
 {
-	NMWifiAPPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
 	if (priv->flags != flags) {
 		priv->flags = flags;
@@ -165,11 +154,8 @@ nm_wifi_ap_set_flags (NMWifiAP *ap, NM80211ApFlags flags)
 static gboolean
 nm_wifi_ap_set_wpa_flags (NMWifiAP *ap, NM80211ApSecurityFlags flags)
 {
-	NMWifiAPPrivate *priv;
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 	if (priv->wpa_flags != flags) {
 		priv->wpa_flags = flags;
 		_notify (ap, PROP_WPA_FLAGS);
@@ -181,11 +167,8 @@ nm_wifi_ap_set_wpa_flags (NMWifiAP *ap, NM80211ApSecurityFlags flags)
 static gboolean
 nm_wifi_ap_set_rsn_flags (NMWifiAP *ap, NM80211ApSecurityFlags flags)
 {
-	NMWifiAPPrivate *priv;
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 	if (priv->rsn_flags != flags) {
 		priv->rsn_flags = flags;
 		_notify (ap, PROP_RSN_FLAGS);
@@ -203,11 +186,9 @@ nm_wifi_ap_get_address (const NMWifiAP *ap)
 }
 
 static gboolean
-nm_wifi_ap_set_address_bin (NMWifiAP *ap, const guint8 *addr /* ETH_ALEN bytes */)
+nm_wifi_ap_set_address_bin (NMWifiAP *ap, const guint8 addr[static 6 /* ETH_ALEN */])
 {
-	NMWifiAPPrivate *priv;
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
 	if (   !priv->address
 	    || !nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->address, -1)) {
@@ -241,16 +222,14 @@ nm_wifi_ap_get_mode (NMWifiAP *ap)
 }
 
 static gboolean
-nm_wifi_ap_set_mode (NMWifiAP *ap, const NM80211Mode mode)
+nm_wifi_ap_set_mode (NMWifiAP *ap, NM80211Mode mode)
 {
-	NMWifiAPPrivate *priv;
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-	g_return_val_if_fail (   mode == NM_802_11_MODE_ADHOC
-	                      || mode == NM_802_11_MODE_INFRA
-	                      || mode == NM_802_11_MODE_MESH, FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+	nm_assert (NM_IN_SET (mode, NM_802_11_MODE_UNKNOWN,
+	                            NM_802_11_MODE_ADHOC,
+	                            NM_802_11_MODE_INFRA,
+	                            NM_802_11_MODE_MESH));
 
 	if (priv->mode != mode) {
 		priv->mode = mode;
@@ -277,13 +256,9 @@ nm_wifi_ap_get_strength (NMWifiAP *ap)
 }
 
 gboolean
-nm_wifi_ap_set_strength (NMWifiAP *ap, const gint8 strength)
+nm_wifi_ap_set_strength (NMWifiAP *ap, gint8 strength)
 {
-	NMWifiAPPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
 	if (priv->strength != strength) {
 		priv->strength = strength;
@@ -303,13 +278,9 @@ nm_wifi_ap_get_freq (NMWifiAP *ap)
 
 gboolean
 nm_wifi_ap_set_freq (NMWifiAP *ap,
-                     const guint32 freq)
+                     guint32 freq)
 {
-	NMWifiAPPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
 	if (priv->freq != freq) {
 		priv->freq = freq;
@@ -378,16 +349,12 @@ nm_wifi_ap_get_flags (const NMWifiAP *ap)
 }
 
 static gboolean
-nm_wifi_ap_set_last_seen (NMWifiAP *ap, gint32 last_seen)
+nm_wifi_ap_set_last_seen (NMWifiAP *ap, gint32 last_seen_msec)
 {
-	NMWifiAPPrivate *priv;
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
-
-	if (priv->last_seen != last_seen) {
-		priv->last_seen = last_seen;
+	if (priv->last_seen_msec != last_seen_msec) {
+		priv->last_seen_msec = last_seen_msec;
 		_notify (ap, PROP_LAST_SEEN);
 		return TRUE;
 	}
@@ -402,180 +369,53 @@ nm_wifi_ap_get_metered (const NMWifiAP *self)
 
 /*****************************************************************************/
 
-static NM80211ApSecurityFlags
-security_from_vardict (GVariant *security)
-{
-	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
-	const char **array, *tmp;
-
-	g_return_val_if_fail (g_variant_is_of_type (security, G_VARIANT_TYPE_VARDICT), NM_802_11_AP_SEC_NONE);
-
-	if (   g_variant_lookup (security, "KeyMgmt", "^a&s", &array)
-	    && array) {
-		if (g_strv_contains (array, "wpa-psk") ||
-		    g_strv_contains (array, "wpa-ft-psk"))
-			flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-		if (g_strv_contains (array, "wpa-eap") ||
-		    g_strv_contains (array, "wpa-ft-eap") ||
-		    g_strv_contains (array, "wpa-fils-sha256") ||
-		    g_strv_contains (array, "wpa-fils-sha384"))
-			flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-		if (g_strv_contains (array, "sae"))
-			flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
-		if (g_strv_contains (array, "owe"))
-			flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
-		g_free (array);
-	}
-
-	if (   g_variant_lookup (security, "Pairwise", "^a&s", &array)
-	    && array) {
-		if (g_strv_contains (array, "tkip"))
-			flags |= NM_802_11_AP_SEC_PAIR_TKIP;
-		if (g_strv_contains (array, "ccmp"))
-			flags |= NM_802_11_AP_SEC_PAIR_CCMP;
-		g_free (array);
-	}
-
-	if (g_variant_lookup (security, "Group", "&s", &tmp)) {
-		if (strcmp (tmp, "wep40") == 0)
-			flags |= NM_802_11_AP_SEC_GROUP_WEP40;
-		if (strcmp (tmp, "wep104") == 0)
-			flags |= NM_802_11_AP_SEC_GROUP_WEP104;
-		if (strcmp (tmp, "tkip") == 0)
-			flags |= NM_802_11_AP_SEC_GROUP_TKIP;
-		if (strcmp (tmp, "ccmp") == 0)
-			flags |= NM_802_11_AP_SEC_GROUP_CCMP;
-	}
-
-	return flags;
-}
-
-/*****************************************************************************/
-
 gboolean
 nm_wifi_ap_update_from_properties (NMWifiAP *ap,
-                                   const char *supplicant_path,
-                                   GVariant *properties)
+                                   const NMSupplicantBssInfo *bss_info)
 {
 	NMWifiAPPrivate *priv;
-	const guint8 *bytes;
-	GVariant *v;
-	gsize len;
-	gsize i;
-	gboolean b = FALSE;
-	const char *s;
-	gint16 i16;
-	guint16 u16;
 	gboolean changed = FALSE;
-	gboolean metered;
-	guint32 max_rate, rate;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
-	g_return_val_if_fail (properties, FALSE);
+	g_return_val_if_fail (bss_info, FALSE);
+	nm_assert (NM_IS_REF_STRING (bss_info->bss_path));
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
+	nm_assert (   !ap->_supplicant_path
+	           || ap->_supplicant_path == bss_info->bss_path);
+
 	g_object_freeze_notify (G_OBJECT (ap));
 
-	if (g_variant_lookup (properties, "Privacy", "b", &b) && b)
-		changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_PRIVACY);
-
-	v = g_variant_lookup_value (properties, "WPS", G_VARIANT_TYPE_VARDICT);
-	if (v) {
-		if (g_variant_lookup (v, "Type", "&s", &s)) {
-			changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_WPS);
-			if (strcmp (s, "pbc") == 0)
-				changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_WPS_PBC);
-			else if (strcmp (s, "pin") == 0)
-				changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_WPS_PIN);
-		}
-		g_variant_unref (v);
-	}
-
-	if (g_variant_lookup (properties, "Mode", "&s", &s)) {
-		if (!g_strcmp0 (s, "infrastructure"))
-			changed |= nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-		else if (!g_strcmp0 (s, "ad-hoc"))
-			changed |= nm_wifi_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
-		else if (!g_strcmp0 (s, "mesh"))
-			changed |= nm_wifi_ap_set_mode (ap, NM_802_11_MODE_MESH);
-	}
-
-	if (g_variant_lookup (properties, "Signal", "n", &i16))
-		changed |= nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (i16));
-
-	if (g_variant_lookup (properties, "Frequency", "q", &u16))
-		changed |= nm_wifi_ap_set_freq (ap, u16);
-
-	v = g_variant_lookup_value (properties, "SSID", G_VARIANT_TYPE_BYTESTRING);
-	if (v) {
-		bytes = g_variant_get_fixed_array (v, &len, 1);
-		len = MIN (32, len);
-
-		/* Stupid ieee80211 layer uses <hidden> */
-		if (   bytes
-		    && len
-		    && !(   NM_IN_SET (len, 8, 9)
-		         && memcmp (bytes, "<hidden>", len) == 0)
-		    && !nm_utils_is_empty_ssid (bytes, len)) {
-			/* good */
-		} else
-			len = 0;
-
-		changed |= nm_wifi_ap_set_ssid_arr (ap, bytes, len);
-
-		g_variant_unref (v);
-	}
-
-	v = g_variant_lookup_value (properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
-	if (v) {
-		bytes = g_variant_get_fixed_array (v, &len, 1);
-		if (   len == ETH_ALEN
-		    && memcmp (bytes, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
-		    && memcmp (bytes, (char[ETH_ALEN]) { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, ETH_ALEN) != 0)
-			changed |= nm_wifi_ap_set_address_bin (ap, bytes);
-		g_variant_unref (v);
-	}
-
-	max_rate = 0;
-	v = g_variant_lookup_value (properties, "Rates", G_VARIANT_TYPE ("au"));
-	if (v) {
-		const guint32 *rates = g_variant_get_fixed_array (v, &len, sizeof (guint32));
-
-		for (i = 0; i < len; i++)
-			max_rate = NM_MAX (max_rate, rates[i]);
-		g_variant_unref (v);
-	}
-	v = g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
-	if (v) {
-		bytes = g_variant_get_fixed_array (v, &len, 1);
-		nm_wifi_utils_parse_ies (bytes, len, &rate, &metered);
-		max_rate = NM_MAX (max_rate, rate);
-		g_variant_unref (v);
-		priv->metered = metered;
-	}
-
-	if (max_rate)
-		changed |= nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
-
-	v = g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
-	if (v) {
-		changed |= nm_wifi_ap_set_wpa_flags (ap, priv->wpa_flags | security_from_vardict (v));
-		g_variant_unref (v);
-	}
-
-	v = g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
-	if (v) {
-		changed |= nm_wifi_ap_set_rsn_flags (ap, priv->rsn_flags | security_from_vardict (v));
-		g_variant_unref (v);
-	}
-
-	if (!priv->supplicant_path) {
-		priv->supplicant_path = g_strdup (supplicant_path);
+	if (!ap->_supplicant_path) {
+		ap->_supplicant_path = nm_ref_string_ref (bss_info->bss_path);
 		changed = TRUE;
 	}
 
-	changed |= nm_wifi_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_sec ());
+	changed |= nm_wifi_ap_set_flags (ap, bss_info->ap_flags);
+	changed |= nm_wifi_ap_set_mode (ap, bss_info->mode);
+	changed |= nm_wifi_ap_set_strength (ap, bss_info->signal_percent);
+	changed |= nm_wifi_ap_set_freq (ap, bss_info->frequency);
+	changed |= nm_wifi_ap_set_ssid (ap, bss_info->ssid);
+
+	if (bss_info->bssid_valid)
+		changed |= nm_wifi_ap_set_address_bin (ap, bss_info->bssid);
+	else {
+		/* we don't actually clear the value. */
+	}
+
+	changed |= nm_wifi_ap_set_max_bitrate (ap, bss_info->max_rate);
+
+	if (priv->metered != bss_info->metered) {
+		priv->metered = bss_info->metered;
+		changed = TRUE;
+	}
+
+	changed |= nm_wifi_ap_set_wpa_flags (ap, bss_info->wpa_flags);
+	changed |= nm_wifi_ap_set_rsn_flags (ap, bss_info->rsn_flags);
+
+	changed |= nm_wifi_ap_set_last_seen (ap, bss_info->last_seen_msec);
+
 	changed |= nm_wifi_ap_set_fake (ap, FALSE);
 
 	g_object_thaw_notify (G_OBJECT (ap));
@@ -674,9 +514,10 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	g_return_val_if_fail (NM_IS_WIFI_AP (self), NULL);
 
 	priv = NM_WIFI_AP_GET_PRIVATE (self);
+
 	chan = nm_utils_wifi_freq_to_channel (priv->freq);
-	if (priv->supplicant_path)
-		supplicant_id = strrchr (priv->supplicant_path, '/') ?: supplicant_id;
+	if (self->_supplicant_path)
+		supplicant_id = strrchr (self->_supplicant_path->str, '/') ?: supplicant_id;
 
 	export_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
 	if (export_path)
@@ -703,7 +544,9 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	            priv->metered ? 'M' : '_',
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
-	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_sec ()) - priv->last_seen) : -1,
+	              priv->last_seen_msec != G_MININT64
+	            ? (int) ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_sec ()) - (priv->last_seen_msec / 1000))
+	            : -1,
 	            supplicant_id,
 	            export_path);
 	return str_buf;
@@ -856,9 +699,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LAST_SEEN:
 		g_value_set_int (value,
-		                 priv->last_seen > 0
-		                     ? (int) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NSEC_PER_SEC)
-		                     : -1);
+		                   priv->last_seen_msec != G_MININT64
+		                 ? (int) NM_MAX (nm_utils_monotonic_timestamp_as_boottime (priv->last_seen_msec, NM_UTILS_NSEC_PER_MSEC) / 1000, 1)
+		                 : -1);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -883,26 +726,16 @@ nm_wifi_ap_init (NMWifiAP *self)
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
 	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
 	priv->rsn_flags = NM_802_11_AP_SEC_NONE;
-	priv->last_seen = -1;
+	priv->last_seen_msec = G_MININT64;
 }
 
 NMWifiAP *
-nm_wifi_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
+nm_wifi_ap_new_from_properties (const NMSupplicantBssInfo *bss_info)
 {
 	NMWifiAP *ap;
 
-	g_return_val_if_fail (supplicant_path != NULL, NULL);
-	g_return_val_if_fail (properties != NULL, NULL);
-
-	ap = (NMWifiAP *) g_object_new (NM_TYPE_WIFI_AP, NULL);
-	nm_wifi_ap_update_from_properties (ap, supplicant_path, properties);
-
-	/* ignore APs with invalid or missing BSSIDs */
-	if (!nm_wifi_ap_get_address (ap)) {
-		g_object_unref (ap);
-		return NULL;
-	}
-
+	ap = g_object_new (NM_TYPE_WIFI_AP, NULL);
+	nm_wifi_ap_update_from_properties (ap, bss_info);
 	return ap;
 }
 
@@ -1028,7 +861,7 @@ finalize (GObject *object)
 	nm_assert (!self->wifi_device);
 	nm_assert (c_list_is_empty (&self->aps_lst));
 
-	g_free (priv->supplicant_path);
+	nm_ref_string_unref (self->_supplicant_path);
 	if (priv->ssid)
 		g_bytes_unref (priv->ssid);
 	g_free (priv->address);
@@ -1190,20 +1023,6 @@ nm_wifi_aps_find_first_compatible (const CList *aps_lst_head,
 
 	c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
 		if (nm_wifi_ap_check_compatible (ap, connection))
-			return ap;
-	}
-	return NULL;
-}
-
-NMWifiAP *
-nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head, const char *path)
-{
-	NMWifiAP *ap;
-
-	g_return_val_if_fail (path != NULL, NULL);
-
-	c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
-		if (nm_streq0 (path, nm_wifi_ap_get_supplicant_path (ap)))
 			return ap;
 	}
 	return NULL;
