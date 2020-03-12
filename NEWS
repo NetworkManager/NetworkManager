@@ -1,16 +1,28 @@
 ===============================================
+NetworkManager-1.22.10
+Overview of changes since NetworkManager-1.22.8
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* core: periodically cleanup stale device state files from /run.
+* dhcp: fix crash in nettools client.
+* bond: fixed the validation of the miimon option.
+* Various minor bug fixes and improvements.
+
+===============================================
 NetworkManager-1.22.8
 Overview of changes since NetworkManager-1.22.6
 ===============================================
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Added configuration option to customize IPv6 RA timeout
-* Internal DHCP client will now request a lease renewal using the previously obtained IP address when expired
-* Removed length limitation for OVS Bridge, Patches and Interfaces (only Patch types) names
-* Fixed initialization of 'secs' DHCP header field, this caused some DHCP relays to drop packets
-* Fixed failure when creating team interfaces using 'nmstate'
-* Various bug fixes and improvements
+* Added configuration option to customize IPv6 RA timeout.
+* Internal DHCP client will now request a lease renewal using the previously obtained IP address when expired.
+* Removed length limitation for OVS Bridge, Patches and Interfaces (only Patch types) names.
+* Fixed initialization of 'secs' DHCP header field, this caused some DHCP relays to drop packets.
+* Fixed failure when creating team interfaces using 'nmstate'.
+* Various bug fixes and improvements.
 
 ===============================================
 NetworkManager-1.22.6
@@ -19,11 +31,11 @@ Overview of changes since NetworkManager-1.22.4
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Various fixes for the internal DHCP client
-* Updated translations (fr,ja,zh-CN)
-* Slave devices now do not get created/activated if master is missing
+* Various fixes for the internal DHCP client.
+* Updated translations (fr,ja,zh-CN).
+* Slave devices now do not get created/activated if master is missing.
 * Fixed 'startup-complete' bug where NetworkManager would reach the network-online.target
-  even when not all the connections had been tried.
+  even when not all the connections had been tried..
 
 ===============================================
 NetworkManager-1.22.4
