@@ -15,7 +15,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_PARENT,
 	PROP_ID,
@@ -37,7 +36,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	NMLDBusPropertyO parent;
-	char *hw_address;
 	char *group;
 	char *local;
 	guint32 id;
@@ -80,13 +78,15 @@ G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)
  * device, and must not be modified.
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_vxlan_get_hw_address (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -398,12 +398,6 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_VXLAN;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_vxlan_get_hw_address (NM_DEVICE_VXLAN (device));
-}
-
 /*****************************************************************************/
 
 static void
@@ -416,7 +410,6 @@ finalize (GObject *object)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (object);
 
-	g_free (priv->hw_address);
 	g_free (priv->group);
 	g_free (priv->local);
 
@@ -432,9 +425,6 @@ get_property (GObject *object,
 	NMDeviceVxlan *device = NM_DEVICE_VXLAN (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_vxlan_get_hw_address (device));
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_vxlan_get_carrier (device));
 		break;
@@ -497,23 +487,23 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vxlan = NML_DBUS_META_IFAC
 	nm_device_vxlan_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_U      ("Ageing",     PROP_AGEING,       NMDeviceVxlan, _priv.ageing                           ),
-		NML_DBUS_META_PROPERTY_INIT_Q      ("DstPort",    PROP_DST_PORT,     NMDeviceVxlan, _priv.dst_port                         ),
-		NML_DBUS_META_PROPERTY_INIT_S      ("Group",      PROP_GROUP,        NMDeviceVxlan, _priv.group                            ),
-		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress",  PROP_HW_ADDRESS,   NMDeviceVxlan, _priv.hw_address                       ),
-		NML_DBUS_META_PROPERTY_INIT_U      ("Id",         PROP_ID,           NMDeviceVxlan, _priv.id                               ),
-		NML_DBUS_META_PROPERTY_INIT_B      ("L2miss",     PROP_L2MISS,       NMDeviceVxlan, _priv.l2miss                           ),
-		NML_DBUS_META_PROPERTY_INIT_B      ("L3miss",     PROP_L3MISS,       NMDeviceVxlan, _priv.l3miss                           ),
-		NML_DBUS_META_PROPERTY_INIT_B      ("Learning",   PROP_LEARNING,     NMDeviceVxlan, _priv.learning                         ),
-		NML_DBUS_META_PROPERTY_INIT_U      ("Limit",      PROP_LIMIT,        NMDeviceVxlan, _priv.limit                            ),
-		NML_DBUS_META_PROPERTY_INIT_S      ("Local",      PROP_LOCAL,        NMDeviceVxlan, _priv.local                            ),
-		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",     PROP_PARENT,       NMDeviceVxlan, _priv.parent,       nm_device_get_type ),
-		NML_DBUS_META_PROPERTY_INIT_B      ("Proxy",      PROP_PROXY,        NMDeviceVxlan, _priv.proxy                            ),
-		NML_DBUS_META_PROPERTY_INIT_B      ("Rsc",        PROP_RSC,          NMDeviceVxlan, _priv.rsc                              ),
-		NML_DBUS_META_PROPERTY_INIT_Q      ("SrcPortMax", PROP_SRC_PORT_MAX, NMDeviceVxlan, _priv.src_port_max                     ),
-		NML_DBUS_META_PROPERTY_INIT_Q      ("SrcPortMin", PROP_SRC_PORT_MIN, NMDeviceVxlan, _priv.src_port_min                     ),
-		NML_DBUS_META_PROPERTY_INIT_Y      ("Tos",        PROP_TOS,          NMDeviceVxlan, _priv.tos                              ),
-		NML_DBUS_META_PROPERTY_INIT_Y      ("Ttl",        PROP_TTL,          NMDeviceVxlan, _priv.ttl                              ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("Ageing",     PROP_AGEING,       NMDeviceVxlan, _priv.ageing                                                ),
+		NML_DBUS_META_PROPERTY_INIT_Q      ("DstPort",    PROP_DST_PORT,     NMDeviceVxlan, _priv.dst_port                                              ),
+		NML_DBUS_META_PROPERTY_INIT_S      ("Group",      PROP_GROUP,        NMDeviceVxlan, _priv.group                                                 ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("HwAddress",  0,                 "s",           _nm_device_notify_update_prop_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("Id",         PROP_ID,           NMDeviceVxlan, _priv.id                                                    ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("L2miss",     PROP_L2MISS,       NMDeviceVxlan, _priv.l2miss                                                ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("L3miss",     PROP_L3MISS,       NMDeviceVxlan, _priv.l3miss                                                ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Learning",   PROP_LEARNING,     NMDeviceVxlan, _priv.learning                                              ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("Limit",      PROP_LIMIT,        NMDeviceVxlan, _priv.limit                                                 ),
+		NML_DBUS_META_PROPERTY_INIT_S      ("Local",      PROP_LOCAL,        NMDeviceVxlan, _priv.local                                                 ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",     PROP_PARENT,       NMDeviceVxlan, _priv.parent,                            nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Proxy",      PROP_PROXY,        NMDeviceVxlan, _priv.proxy                                                 ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Rsc",        PROP_RSC,          NMDeviceVxlan, _priv.rsc                                                   ),
+		NML_DBUS_META_PROPERTY_INIT_Q      ("SrcPortMax", PROP_SRC_PORT_MAX, NMDeviceVxlan, _priv.src_port_max                                          ),
+		NML_DBUS_META_PROPERTY_INIT_Q      ("SrcPortMin", PROP_SRC_PORT_MIN, NMDeviceVxlan, _priv.src_port_min                                          ),
+		NML_DBUS_META_PROPERTY_INIT_Y      ("Tos",        PROP_TOS,          NMDeviceVxlan, _priv.tos                                                   ),
+		NML_DBUS_META_PROPERTY_INIT_Y      ("Ttl",        PROP_TTL,          NMDeviceVxlan, _priv.ttl                                                   ),
 	),
 );
 
@@ -533,20 +523,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceVxlan:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Since: 1.2
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_VXLAN_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVxlan:carrier:

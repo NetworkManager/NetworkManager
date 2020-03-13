@@ -21,7 +21,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_PERM_HW_ADDRESS,
 	PROP_MODE,
 	PROP_BITRATE,
@@ -34,7 +33,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	NMLDBusPropertyAO access_points;
 	NMLDBusPropertyO active_access_point;
-	char *hw_address;
 	char *perm_hw_address;
 	gint64 last_scan;
 	guint32 mode;
@@ -74,13 +72,15 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
  *
  * Returns: the actual hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -515,12 +515,6 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_WIRELESS;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
-}
-
 /*****************************************************************************/
 
 static void
@@ -558,9 +552,6 @@ get_property (GObject *object,
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_wifi_get_hw_address (self));
-		break;
 	case PROP_PERM_HW_ADDRESS:
 		g_value_set_string (value, nm_device_wifi_get_permanent_hw_address (self));
 		break;
@@ -593,7 +584,6 @@ finalize (GObject *object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 
-	g_free (priv->hw_address);
 	g_free (priv->perm_hw_address);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
@@ -604,14 +594,14 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wireless = NML_DBUS_META_I
 	nm_device_wifi_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("AccessPoints",         PROP_ACCESS_POINTS,         NMDeviceWifi, _priv.access_points,       nm_access_point_get_type, .notify_changed_ao = _property_ao_notify_changed_access_points_cb ),
-		NML_DBUS_META_PROPERTY_INIT_O_PROP  ("ActiveAccessPoint",    PROP_ACTIVE_ACCESS_POINT,   NMDeviceWifi, _priv.active_access_point, nm_access_point_get_type                                                                    ),
-		NML_DBUS_META_PROPERTY_INIT_U       ("Bitrate",              PROP_BITRATE,               NMDeviceWifi, _priv.bitrate                                                                                                          ),
-		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress",            PROP_HW_ADDRESS,            NMDeviceWifi, _priv.hw_address                                                                                                       ),
-		NML_DBUS_META_PROPERTY_INIT_X       ("LastScan",             PROP_LAST_SCAN,             NMDeviceWifi, _priv.last_scan                                                                                                        ),
-		NML_DBUS_META_PROPERTY_INIT_U       ("Mode",                 PROP_MODE,                  NMDeviceWifi, _priv.mode                                                                                                             ),
-		NML_DBUS_META_PROPERTY_INIT_S       ("PermHwAddress",        PROP_PERM_HW_ADDRESS,       NMDeviceWifi, _priv.perm_hw_address                                                                                                  ),
-		NML_DBUS_META_PROPERTY_INIT_U       ("WirelessCapabilities", PROP_WIRELESS_CAPABILITIES, NMDeviceWifi, _priv.wireless_capabilities                                                                                            ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("AccessPoints",         PROP_ACCESS_POINTS,         NMDeviceWifi, _priv.access_points,                     nm_access_point_get_type, .notify_changed_ao = _property_ao_notify_changed_access_points_cb ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP  ("ActiveAccessPoint",    PROP_ACTIVE_ACCESS_POINT,   NMDeviceWifi, _priv.active_access_point,               nm_access_point_get_type                                                                    ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("Bitrate",              PROP_BITRATE,               NMDeviceWifi, _priv.bitrate                                                                                                                        ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("HwAddress",            0,                          "s",          _nm_device_notify_update_prop_hw_address                                                                                             ),
+		NML_DBUS_META_PROPERTY_INIT_X       ("LastScan",             PROP_LAST_SCAN,             NMDeviceWifi, _priv.last_scan                                                                                                                      ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("Mode",                 PROP_MODE,                  NMDeviceWifi, _priv.mode                                                                                                                           ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("PermHwAddress",        PROP_PERM_HW_ADDRESS,       NMDeviceWifi, _priv.perm_hw_address                                                                                                                ),
+		NML_DBUS_META_PROPERTY_INIT_U       ("WirelessCapabilities", PROP_WIRELESS_CAPABILITIES, NMDeviceWifi, _priv.wireless_capabilities                                                                                                          ),
 	),
 );
 
@@ -632,18 +622,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceWifi:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifi:perm-hw-address:

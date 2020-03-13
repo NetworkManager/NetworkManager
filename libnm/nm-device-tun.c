@@ -17,7 +17,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_MODE,
 	PROP_OWNER,
 	PROP_GROUP,
@@ -27,7 +26,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct {
-	char *hw_address;
 	char *mode;
 	gint64 owner;
 	gint64 group;
@@ -61,13 +59,15 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
  * device, and must not be modified.
  *
  * Since: 1.2
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_tun_get_hw_address (NMDeviceTun *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TUN (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_TUN_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -221,12 +221,6 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_TUN;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_tun_get_hw_address (NM_DEVICE_TUN (device));
-}
-
 /*****************************************************************************/
 
 static void
@@ -240,7 +234,6 @@ finalize (GObject *object)
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
 
 	g_free (priv->mode);
-	g_free (priv->hw_address);
 
 	G_OBJECT_CLASS (nm_device_tun_parent_class)->finalize (object);
 }
@@ -254,9 +247,6 @@ get_property (GObject *object,
 	NMDeviceTun *device = NM_DEVICE_TUN (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_tun_get_hw_address (device));
-		break;
 	case PROP_MODE:
 		g_value_set_string (value, nm_device_tun_get_mode (device));
 		break;
@@ -287,13 +277,13 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_tun = NML_DBUS_META_IFACE_
 	nm_device_tun_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_X ("Group",      PROP_GROUP,       NMDeviceTun, _priv.group       ),
-		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress",  PROP_HW_ADDRESS,  NMDeviceTun, _priv.hw_address  ),
-		NML_DBUS_META_PROPERTY_INIT_S ("Mode",       PROP_MODE,        NMDeviceTun, _priv.mode        ),
-		NML_DBUS_META_PROPERTY_INIT_B ("MultiQueue", PROP_MULTI_QUEUE, NMDeviceTun, _priv.multi_queue ),
-		NML_DBUS_META_PROPERTY_INIT_B ("NoPi",       PROP_NO_PI,       NMDeviceTun, _priv.no_pi       ),
-		NML_DBUS_META_PROPERTY_INIT_X ("Owner",      PROP_OWNER,       NMDeviceTun, _priv.owner       ),
-		NML_DBUS_META_PROPERTY_INIT_B ("VnetHdr",    PROP_VNET_HDR,    NMDeviceTun, _priv.vnet_hdr    ),
+		NML_DBUS_META_PROPERTY_INIT_X   ("Group",      PROP_GROUP,       NMDeviceTun, _priv.group                              ),
+		NML_DBUS_META_PROPERTY_INIT_FCN ("HwAddress",  0,                "s",         _nm_device_notify_update_prop_hw_address ),
+		NML_DBUS_META_PROPERTY_INIT_S   ("Mode",       PROP_MODE,        NMDeviceTun, _priv.mode                               ),
+		NML_DBUS_META_PROPERTY_INIT_B   ("MultiQueue", PROP_MULTI_QUEUE, NMDeviceTun, _priv.multi_queue                        ),
+		NML_DBUS_META_PROPERTY_INIT_B   ("NoPi",       PROP_NO_PI,       NMDeviceTun, _priv.no_pi                              ),
+		NML_DBUS_META_PROPERTY_INIT_X   ("Owner",      PROP_OWNER,       NMDeviceTun, _priv.owner                              ),
+		NML_DBUS_META_PROPERTY_INIT_B   ("VnetHdr",    PROP_VNET_HDR,    NMDeviceTun, _priv.vnet_hdr                           ),
 	),
 );
 
@@ -308,20 +298,6 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceTun:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Since: 1.2
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_TUN_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceTun:mode:

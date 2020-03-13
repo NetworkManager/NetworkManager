@@ -16,14 +16,12 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_SLAVES,
 );
 
 typedef struct {
 	NMLDBusPropertyAO slaves;
-	char *hw_address;
 	bool carrier;
 } NMDeviceBridgePrivate;
 
@@ -50,13 +48,15 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_bridge_get_hw_address (NMDeviceBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BRIDGE (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_BRIDGE_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -121,27 +121,11 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_BRIDGE;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_bridge_get_hw_address (NM_DEVICE_BRIDGE (device));
-}
-
 /*****************************************************************************/
 
 static void
 nm_device_bridge_init (NMDeviceBridge *device)
 {
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (object);
-
-	g_free (priv->hw_address);
-
-	G_OBJECT_CLASS (nm_device_bridge_parent_class)->finalize (object);
 }
 
 static void
@@ -153,9 +137,6 @@ get_property (GObject *object,
 	NMDeviceBridge *device = NM_DEVICE_BRIDGE (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_bridge_get_hw_address (device));
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_bridge_get_carrier (device));
 		break;
@@ -173,9 +154,9 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_bridge = NML_DBUS_META_IFA
 	nm_device_bridge_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceBridge, _priv.carrier                        ),
-		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress", PROP_HW_ADDRESS, NMDeviceBridge, _priv.hw_address                     ),
-		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceBridge, _priv.slaves,     nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_B       ("Carrier",   PROP_CARRIER,    NMDeviceBridge, _priv.carrier                                               ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("HwAddress", 0,               "s",            _nm_device_notify_update_prop_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Slaves",    PROP_SLAVES,     NMDeviceBridge, _priv.slaves,                            nm_device_get_type ),
 	),
 );
 
@@ -186,7 +167,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	object_class->finalize     = finalize;
 	object_class->get_property = get_property;
 
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceBridge);
@@ -195,18 +175,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceBridge:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_BRIDGE_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceBridge:carrier:

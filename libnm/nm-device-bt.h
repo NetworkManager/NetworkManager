@@ -33,6 +33,7 @@ typedef struct _NMDeviceBtClass NMDeviceBtClass;
 
 GType nm_device_bt_get_type (void);
 
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char *nm_device_bt_get_hw_address   (NMDeviceBt *device);
 
 const char *nm_device_bt_get_name         (NMDeviceBt *device);

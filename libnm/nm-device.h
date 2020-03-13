@@ -55,6 +55,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_DEVICE_IP4_CONNECTIVITY "ip4-connectivity"
 #define NM_DEVICE_IP6_CONNECTIVITY "ip6-connectivity"
 #define NM_DEVICE_INTERFACE_FLAGS "interface-flags"
+#define NM_DEVICE_HW_ADDRESS "hw-address"
 
 /**
  * NMDevice:

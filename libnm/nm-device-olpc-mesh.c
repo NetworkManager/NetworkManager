@@ -15,14 +15,12 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_COMPANION,
 	PROP_ACTIVE_CHANNEL,
 );
 
 typedef struct {
 	NMLDBusPropertyO companion;
-	char *hw_address;
 	guint32 active_channel;
 } NMDeviceOlpcMeshPrivate;
 
@@ -49,13 +47,15 @@ G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_olpc_mesh_get_hw_address (NMDeviceOlpcMesh *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OLPC_MESH (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -90,12 +90,6 @@ nm_device_olpc_mesh_get_active_channel (NMDeviceOlpcMesh *device)
 	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->active_channel;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_olpc_mesh_get_hw_address (NM_DEVICE_OLPC_MESH (device));
-}
-
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -125,16 +119,6 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh *device)
 }
 
 static void
-finalize (GObject *object)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
-
-	g_free (priv->hw_address);
-
-	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->finalize (object);
-}
-
-static void
 get_property (GObject *object,
               guint prop_id,
               GValue *value,
@@ -143,9 +127,6 @@ get_property (GObject *object,
 	NMDeviceOlpcMesh *device = NM_DEVICE_OLPC_MESH (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_olpc_mesh_get_hw_address (device));
-		break;
 	case PROP_COMPANION:
 		g_value_set_object (value, nm_device_olpc_mesh_get_companion (device));
 		break;
@@ -163,9 +144,9 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_olpcmesh = NML_DBUS_META_I
 	nm_device_olpc_mesh_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_U      ("ActiveChannel", PROP_ACTIVE_CHANNEL, NMDeviceOlpcMesh, _priv.active_channel                         ),
-		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Companion",     PROP_COMPANION,      NMDeviceOlpcMesh, _priv.companion,     nm_device_wifi_get_type ),
-		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress",     PROP_HW_ADDRESS,     NMDeviceOlpcMesh, _priv.hw_address                             ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("ActiveChannel", PROP_ACTIVE_CHANNEL, NMDeviceOlpcMesh, _priv.active_channel                                             ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Companion",     PROP_COMPANION,      NMDeviceOlpcMesh, _priv.companion,                         nm_device_wifi_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("HwAddress",     0,                   "s",              _nm_device_notify_update_prop_hw_address                         ),
 	),
 );
 
@@ -177,7 +158,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceOlpcMesh);
 
@@ -185,18 +165,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceOlpcMesh:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_OLPC_MESH_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceOlpcMesh:companion:

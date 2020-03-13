@@ -60,6 +60,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_IP4_CONNECTIVITY,
 	PROP_IP6_CONNECTIVITY,
 	PROP_INTERFACE_FLAGS,
+	PROP_HW_ADDRESS,
 );
 
 enum {
@@ -85,6 +86,7 @@ typedef struct _NMDevicePrivate {
 	GPtrArray *lldp_neighbors;
 	char *driver;
 	char *driver_version;
+	char *hw_address;
 	char *interface;
 	char *ip_interface;
 	char *firmware_version;
@@ -104,6 +106,8 @@ typedef struct _NMDevicePrivate {
 	bool autoconnect;
 	bool managed;
 	bool real;
+
+	bool hw_address_is_new:1;
 
 	guint32 old_state;
 
@@ -340,6 +344,7 @@ finalize (GObject *object)
 	g_free (priv->bus_name);
 	g_free (priv->type_description);
 	g_free (priv->physical_port_id);
+	g_free (priv->hw_address);
 
 	nm_clear_pointer (&priv->udev, udev_unref);
 
@@ -445,6 +450,9 @@ get_property (GObject *object,
 	case PROP_INTERFACE_FLAGS:
 		g_value_set_uint (value, nm_device_get_interface_flags (device));
 		break;
+	case PROP_HW_ADDRESS:
+		g_value_set_string (value, nm_device_get_hw_address (device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -501,6 +509,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
 		NML_DBUS_META_PROPERTY_INIT_S       ("DriverVersion",        PROP_DRIVER_VERSION,        NMDevicePrivate, driver_version                                                                                       ),
 		NML_DBUS_META_PROPERTY_INIT_B       ("FirmwareMissing",      PROP_FIRMWARE_MISSING,      NMDevicePrivate, firmware_missing                                                                                     ),
 		NML_DBUS_META_PROPERTY_INIT_S       ("FirmwareVersion",      PROP_FIRMWARE_VERSION,      NMDevicePrivate, firmware_version                                                                                     ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("HwAddress",            0,                          "s",             _nm_device_notify_update_prop_hw_address                                                             ),
 		NML_DBUS_META_PROPERTY_INIT_S       ("Interface",            PROP_INTERFACE,             NMDevicePrivate, interface                                                                                            ),
 		NML_DBUS_META_PROPERTY_INIT_U       ("InterfaceFlags",       PROP_INTERFACE_FLAGS,       NMDevicePrivate, interface_flags                                                                                      ),
 		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("Ip4Address",           "u"                                                                                                                                               ),
@@ -903,6 +912,19 @@ nm_device_class_init (NMDeviceClass *klass)
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 
+	/**
+	 * NMDevice:hw-address:
+	 *
+	 * The hardware address of the device.
+	 *
+	 * Since: 1.24
+	 **/
+	obj_properties[PROP_HW_ADDRESS] =
+	    g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
 	_nml_dbus_meta_class_init_with_properties (object_class, &_nml_dbus_meta_iface_nm_device);
 
 	/**
@@ -1081,6 +1103,50 @@ nm_device_get_type_description (NMDevice *device)
 	return _nml_coerce_property_str_not_empty (priv->type_description);
 }
 
+ NMLDBusNotifyUpdatePropFlags
+_nm_device_notify_update_prop_hw_address (NMClient *client,
+                                          NMLDBusObject *dbobj,
+                                          const NMLDBusMetaIface *meta_iface,
+                                          guint dbus_property_idx,
+                                          GVariant *value)
+{
+	NMDevice *self = NM_DEVICE (dbobj->nmobj);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean is_new = (meta_iface == &_nml_dbus_meta_iface_nm_device);
+	gboolean changed = FALSE;
+
+	if (   !is_new
+	    && priv->hw_address_is_new) {
+		/* once the instance is marked to honor the new property, the
+		 * changed signal for the old variant gets ignored. */
+		goto out;
+	}
+
+	if (!value) {
+		if (nm_clear_g_free (&priv->hw_address))
+			changed = TRUE;
+		goto out;
+	}
+
+	priv->hw_address_is_new = is_new;
+
+	nm_utils_strdup_reset (&priv->hw_address,
+	                       _nml_coerce_property_str_not_empty (g_variant_get_string (value, NULL)));
+
+	/* always emit a changed signal here, even if "priv->hw_address" might be unchanged.
+	 * We want to emit the signal because we received a PropertiesChanged signal on D-Bus,
+	 * even if nothing actually changed. */
+	changed = TRUE;
+
+out:
+	if (changed) {
+		_nm_client_queue_notify_object (client,
+		                                self,
+		                                obj_properties[PROP_HW_ADDRESS]);
+	}
+	return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
+}
+
 /**
  * nm_device_get_hw_address:
  * @device: a #NMDevice
@@ -1093,12 +1159,15 @@ nm_device_get_type_description (NMDevice *device)
 const char *
 nm_device_get_hw_address (NMDevice *device)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	if (NM_DEVICE_GET_CLASS (device)->get_hw_address)
-		return NM_DEVICE_GET_CLASS (device)->get_hw_address (device);
+	priv = NM_DEVICE_GET_PRIVATE (device);
 
-	return NULL;
+	nm_assert (!nm_streq0 (priv->hw_address, ""));
+
+	return priv->hw_address;
 }
 
 /**

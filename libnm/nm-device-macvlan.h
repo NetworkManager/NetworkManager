@@ -43,7 +43,9 @@ NM_AVAILABLE_IN_1_2
 gboolean     nm_device_macvlan_get_no_promisc  (NMDeviceMacvlan *device);
 NM_AVAILABLE_IN_1_2
 gboolean     nm_device_macvlan_get_tap         (NMDeviceMacvlan *device);
+
 NM_AVAILABLE_IN_1_2
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_macvlan_get_hw_address  (NMDeviceMacvlan *device);
 
 G_END_DECLS

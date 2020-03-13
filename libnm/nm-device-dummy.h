@@ -29,7 +29,9 @@ G_BEGIN_DECLS
 typedef struct _NMDeviceDummyClass NMDeviceDummyClass;
 
 GType nm_device_dummy_get_type (void);
+
 NM_AVAILABLE_IN_1_10
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char *nm_device_dummy_get_hw_address (NMDeviceDummy *device);
 
 G_END_DECLS

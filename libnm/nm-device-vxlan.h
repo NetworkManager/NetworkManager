@@ -47,8 +47,11 @@ typedef struct _NMDeviceVxlanClass NMDeviceVxlanClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_device_vxlan_get_type (void);
+
 NM_AVAILABLE_IN_1_2
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_vxlan_get_hw_address (NMDeviceVxlan *device);
+
 NM_AVAILABLE_IN_1_2
 gboolean     nm_device_vxlan_get_carrier (NMDeviceVxlan *device);
 NM_AVAILABLE_IN_1_2

@@ -34,8 +34,11 @@ GType nm_device_6lowpan_get_type (void);
 
 NM_AVAILABLE_IN_1_14
 NMDevice *   nm_device_6lowpan_get_parent (NMDevice6Lowpan *device);
+
 NM_AVAILABLE_IN_1_14
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_6lowpan_get_hw_address (NMDevice6Lowpan *device);
+
 G_END_DECLS
 
 #endif /* __NM_DEVICE_6LOWPAN_H__ */

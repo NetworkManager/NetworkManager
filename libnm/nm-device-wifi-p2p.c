@@ -19,7 +19,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_PEERS,
 );
 
@@ -34,7 +33,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	NMLDBusPropertyAO peers;
-	char *hw_address;
 } NMDeviceWifiP2PPrivate;
 
 struct _NMDeviceWifiP2P {
@@ -62,13 +60,15 @@ G_DEFINE_TYPE (NMDeviceWifiP2P, nm_device_wifi_p2p, NM_TYPE_DEVICE)
  * device, and must not be modified.
  *
  * Since: 1.16
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_wifi_p2p_get_hw_address (NMDeviceWifiP2P *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI_P2P (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_WIFI_P2P_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -279,12 +279,6 @@ get_setting_type (NMDevice *device)
 }
 
 static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_wifi_p2p_get_hw_address (NM_DEVICE_WIFI_P2P (device));
-}
-
-static const char *
 get_type_description (NMDevice *device)
 {
 	return "wifi-p2p";
@@ -319,9 +313,6 @@ get_property (GObject *object,
 	NMDeviceWifiP2P *self = NM_DEVICE_WIFI_P2P (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_wifi_p2p_get_hw_address (self));
-		break;
 	case PROP_PEERS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_wifi_p2p_get_peers (self)));
 		break;
@@ -338,23 +329,13 @@ nm_device_wifi_p2p_init (NMDeviceWifiP2P *device)
 {
 }
 
-static void
-finalize (GObject *object)
-{
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (object);
-
-	g_free (priv->hw_address);
-
-	G_OBJECT_CLASS (nm_device_wifi_p2p_parent_class)->finalize (object);
-}
-
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wifip2p = NML_DBUS_META_IFACE_INIT_PROP (
 	NM_DBUS_INTERFACE_DEVICE_WIFI_P2P,
 	nm_device_wifi_p2p_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_S       ("HwAddress", PROP_HW_ADDRESS, NMDeviceWifiP2P, _priv.hw_address                                                                                      ),
-		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Peers",     PROP_PEERS,      NMDeviceWifiP2P, _priv.peers,     nm_wifi_p2p_peer_get_type, .notify_changed_ao = _property_ao_notify_changed_peers_cb ),
+		NML_DBUS_META_PROPERTY_INIT_FCN     ("HwAddress", 0,               "s",             _nm_device_notify_update_prop_hw_address                                                                                      ),
+		NML_DBUS_META_PROPERTY_INIT_AO_PROP ("Peers",     PROP_PEERS,      NMDeviceWifiP2P, _priv.peers,                             nm_wifi_p2p_peer_get_type, .notify_changed_ao = _property_ao_notify_changed_peers_cb ),
 	),
 );
 
@@ -366,7 +347,6 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceWifiP2P);
 
@@ -374,21 +354,7 @@ nm_device_wifi_p2p_class_init (NMDeviceWifiP2PClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
 	device_class->get_type_description  = get_type_description;
-
-	/**
-	 * NMDeviceWifiP2P:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Since: 1.16
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_WIFI_P2P_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceWifiP2P:peers: (type GPtrArray(NMWifiP2PPeer))

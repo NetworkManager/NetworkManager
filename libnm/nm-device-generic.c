@@ -14,12 +14,10 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_TYPE_DESCRIPTION,
 );
 
 typedef struct {
-	char *hw_address;
 	char *type_description;
 } NMDeviceGenericPrivate;
 
@@ -46,13 +44,15 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_generic_get_hw_address (NMDeviceGeneric *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_GENERIC (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_GENERIC_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /*****************************************************************************/
@@ -63,12 +63,6 @@ get_type_description (NMDevice *device)
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (device);
 
 	return _nml_coerce_property_str_not_empty (priv->type_description);
-}
-
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_generic_get_hw_address (NM_DEVICE_GENERIC (device));
 }
 
 static gboolean
@@ -113,7 +107,6 @@ finalize (GObject *object)
 {
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (object);
 
-	g_free (priv->hw_address);
 	g_free (priv->type_description);
 
 	G_OBJECT_CLASS (nm_device_generic_parent_class)->finalize (object);
@@ -126,12 +119,8 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
-	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, priv->hw_address);
-		break;
 	case PROP_TYPE_DESCRIPTION:
 		g_value_set_string (value, get_type_description ((NMDevice *) self));
 		break;
@@ -146,8 +135,8 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_generic = NML_DBUS_META_IF
 	nm_device_generic_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_S ("HwAddress",       PROP_HW_ADDRESS,       NMDeviceGeneric, _priv.hw_address       ),
-		NML_DBUS_META_PROPERTY_INIT_S ("TypeDescription", PROP_TYPE_DESCRIPTION, NMDeviceGeneric, _priv.type_description ),
+		NML_DBUS_META_PROPERTY_INIT_FCN ("HwAddress",       0,                     "s",             _nm_device_notify_update_prop_hw_address ),
+		NML_DBUS_META_PROPERTY_INIT_S   ("TypeDescription", PROP_TYPE_DESCRIPTION, NMDeviceGeneric, _priv.type_description                   ),
 	),
 );
 
@@ -161,20 +150,9 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->finalize     = finalize;
 
 	device_class->get_type_description  = get_type_description;
-	device_class->get_hw_address        = get_hw_address;
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
 
-	/**
-	 * NMDeviceGeneric:hw-address:
-	 *
-	 * The hardware address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_GENERIC_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceGeneric:type-description:

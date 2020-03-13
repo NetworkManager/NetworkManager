@@ -46,8 +46,11 @@ GType nm_device_macsec_get_type (void);
 
 NM_AVAILABLE_IN_1_6
 NMDevice *   nm_device_macsec_get_parent (NMDeviceMacsec *device);
+
 NM_AVAILABLE_IN_1_6
+NM_DEPRECATED_IN_1_24_FOR (nm_device_get_hw_address)
 const char * nm_device_macsec_get_hw_address (NMDeviceMacsec *device);
+
 NM_AVAILABLE_IN_1_6
 guint64      nm_device_macsec_get_sci (NMDeviceMacsec *device);
 NM_AVAILABLE_IN_1_6

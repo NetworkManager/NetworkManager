@@ -16,7 +16,6 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_PARENT,
 	PROP_VLAN_ID,
@@ -24,7 +23,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 typedef struct {
 	NMLDBusPropertyO parent;
-	char *hw_address;
 	guint32 vlan_id;
 	bool carrier;
 } NMDeviceVlanPrivate;
@@ -52,13 +50,15 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Deprecated: 1.24 use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_vlan_get_hw_address (NMDeviceVlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), NULL);
 
-	return _nml_coerce_property_str_not_empty (NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address);
+	return nm_device_get_hw_address (NM_DEVICE (device));
 }
 
 /**
@@ -108,10 +108,10 @@ nm_device_vlan_get_vlan_id (NMDeviceVlan *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMDeviceVlanPrivate *priv;
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
 	const char *setting_hwaddr;
+	const char *hw_address;
 
 	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
@@ -135,10 +135,11 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	else
 		setting_hwaddr = NULL;
 	if (setting_hwaddr) {
-		priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
-		if (   !priv->hw_address
+		hw_address = nm_device_get_hw_address (NM_DEVICE (device));
+
+		if (   !hw_address
 		    || !nm_utils_hwaddr_matches (setting_hwaddr, -1,
-		                                 priv->hw_address, -1)) {
+		                                 hw_address, -1)) {
 			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     _("The hardware address of the device and the connection didn't match."));
 		}
@@ -153,27 +154,11 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_VLAN;
 }
 
-static const char *
-get_hw_address (NMDevice *device)
-{
-	return nm_device_vlan_get_hw_address (NM_DEVICE_VLAN (device));
-}
-
 /*****************************************************************************/
 
 static void
 nm_device_vlan_init (NMDeviceVlan *device)
 {
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-
-	g_free (priv->hw_address);
-
-	G_OBJECT_CLASS (nm_device_vlan_parent_class)->finalize (object);
 }
 
 static void
@@ -185,9 +170,6 @@ get_property (GObject *object,
 	NMDeviceVlan *device = NM_DEVICE_VLAN (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_vlan_get_hw_address (device));
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_vlan_get_carrier (device));
 		break;
@@ -208,10 +190,10 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vlan = NML_DBUS_META_IFACE
 	nm_device_vlan_get_type,
 	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
 	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
-		NML_DBUS_META_PROPERTY_INIT_B      ("Carrier",   PROP_CARRIER,    NMDeviceVlan, _priv.carrier                       ),
-		NML_DBUS_META_PROPERTY_INIT_S      ("HwAddress", PROP_HW_ADDRESS, NMDeviceVlan, _priv.hw_address                    ),
-		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDeviceVlan, _priv.parent,    nm_device_get_type ),
-		NML_DBUS_META_PROPERTY_INIT_U      ("VlanId",    PROP_VLAN_ID,    NMDeviceVlan, _priv.vlan_id                       ),
+		NML_DBUS_META_PROPERTY_INIT_B      ("Carrier",   PROP_CARRIER,    NMDeviceVlan, _priv.carrier                                               ),
+		NML_DBUS_META_PROPERTY_INIT_FCN    ("HwAddress", 0,               "s",          _nm_device_notify_update_prop_hw_address                    ),
+		NML_DBUS_META_PROPERTY_INIT_O_PROP ("Parent",    PROP_PARENT,     NMDeviceVlan, _priv.parent,                            nm_device_get_type ),
+		NML_DBUS_META_PROPERTY_INIT_U      ("VlanId",    PROP_VLAN_ID,    NMDeviceVlan, _priv.vlan_id                                               ),
 	),
 );
 
@@ -223,7 +205,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
 	_NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT (nm_object_class, NMDeviceVlan);
 
@@ -231,18 +212,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type      = get_setting_type;
-	device_class->get_hw_address        = get_hw_address;
-
-	/**
-	 * NMDeviceVlan:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
-	obj_properties[PROP_HW_ADDRESS] =
-	    g_param_spec_string (NM_DEVICE_VLAN_HW_ADDRESS, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
 
 	/**
 	 * NMDeviceVlan:carrier:

@@ -544,7 +544,7 @@ struct _NMLDBusMetaIface {
 
 #define NML_DBUS_META_IFACE_DBUS_PROPERTIES(...) \
 	.dbus_properties            = ((const NMLDBusMetaProperty []) { __VA_ARGS__ }), \
-	.n_dbus_properties          = sizeof ((const NMLDBusMetaProperty []) { __VA_ARGS__ }) / sizeof (NMLDBusMetaProperty) \
+	.n_dbus_properties          = (sizeof ((const NMLDBusMetaProperty []) { __VA_ARGS__ }) / sizeof (NMLDBusMetaProperty))
 
 #define NML_DBUS_META_IFACE_INIT(v_dbus_iface_name, \
                                  v_get_type_fcn, \
@@ -557,9 +557,15 @@ struct _NMLDBusMetaIface {
 		##__VA_ARGS__ \
 	}
 
-#define NML_DBUS_META_IFACE_INIT_PROP(...) \
-	NML_DBUS_META_IFACE_INIT (__VA_ARGS__ \
-	                          NML_DBUS_META_IFACE_OBJ_PROPERTIES ())
+#define NML_DBUS_META_IFACE_INIT_PROP(v_dbus_iface_name, \
+                                      v_get_type_fcn, \
+                                      v_interface_prio, \
+                                      ...) \
+	NML_DBUS_META_IFACE_INIT (v_dbus_iface_name, \
+	                          v_get_type_fcn, \
+	                          v_interface_prio, \
+	                          NML_DBUS_META_IFACE_OBJ_PROPERTIES (), \
+	                          ##__VA_ARGS__)
 
 extern const NMLDBusMetaIface *const _nml_dbus_meta_ifaces[44];
 
@@ -816,8 +822,6 @@ struct _NMDeviceClass {
 
 	const char *(*get_type_description) (NMDevice *device);
 
-	const char *(*get_hw_address) (NMDevice *device);
-
 	GType (*get_setting_type) (NMDevice *device);
 };
 
@@ -1009,6 +1013,15 @@ void _nm_active_connection_state_changed_commit (NMActiveConnection *self,
 void _nm_vpn_connection_state_changed_commit (NMVpnConnection *self,
                                               guint32 state,
                                               guint32 reason);
+
+/*****************************************************************************/
+
+NMLDBusNotifyUpdatePropFlags
+_nm_device_notify_update_prop_hw_address (NMClient *client,
+                                          NMLDBusObject *dbobj,
+                                          const NMLDBusMetaIface *meta_iface,
+                                          guint dbus_property_idx,
+                                          GVariant *value);
 
 /*****************************************************************************/
 
