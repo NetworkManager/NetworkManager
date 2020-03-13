@@ -4039,14 +4039,13 @@ nm_client_networking_get_enabled (NMClient *client)
  *
  * Returns: %TRUE on success, %FALSE otherwise
  *
- * Deprecated: 1.22, use nm_client_networking_set_enabled_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_call() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to call "Enable" with "(b)" arguments and no return value.
  **/
 gboolean
 nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	/* FIXME(libnm-async-api): add nm_client_networking_set_enabled_async(). */
 
 	return _nm_client_dbus_call_sync_void (client,
 	                                       NULL,
@@ -4083,14 +4082,13 @@ nm_client_wireless_get_enabled (NMClient *client)
  *
  * Enables or disables wireless devices.
  *
- * Deprecated: 1.22, use nm_client_wireless_set_enabled_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to set "WirelessEnabled" property to a "(b)" value.
  */
 void
 nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
 
 	_nm_client_set_property_sync_legacy (client,
 	                                     NM_DBUS_PATH,
@@ -4138,13 +4136,14 @@ nm_client_wwan_get_enabled (NMClient *client)
  * @enabled: %TRUE to enable WWAN
  *
  * Enables or disables WWAN devices.
+ *
+ * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to set "WwanEnabled" property to a "(b)" value.
  **/
 void
 nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	/* FIXME(libnm-async-api): add nm_client_wwan_set_enabled_async(). */
 
 	_nm_client_set_property_sync_legacy (client,
 	                                     NM_DBUS_PATH,
@@ -4269,13 +4268,14 @@ nm_client_connectivity_check_get_enabled (NMClient *client)
  * have any effect.
  *
  * Since: 1.10
+ *
+ * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to set "ConnectivityCheckEnabled" property to a "(b)" value.
  */
 void
 nm_client_connectivity_check_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
 
 	_nm_client_set_property_sync_legacy (client,
 	                                     NM_DBUS_PATH,
@@ -4316,7 +4316,9 @@ nm_client_connectivity_check_get_uri (NMClient *client)
  *
  * Returns: %TRUE on success, %FALSE otherwise
  *
- * Deprecated: 1.22, use nm_client_get_logging_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_call() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to call "GetLogging" with no arguments to get "(ss)" for level
+ * and domains.
  **/
 gboolean
 nm_client_get_logging (NMClient *client,
@@ -4330,8 +4332,6 @@ nm_client_get_logging (NMClient *client,
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	/* FIXME(libnm-async-api): add nm_client_get_logging_async(). */
 
 	ret = _nm_client_dbus_call_sync (client,
 	                                 NULL,
@@ -4366,15 +4366,14 @@ nm_client_get_logging (NMClient *client,
  *
  * Returns: %TRUE on success, %FALSE otherwise
  *
- * Deprecated: 1.22, use nm_client_set_logging_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_call() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to call "SetLogging" with "(ss)" arguments for level and domains.
  **/
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	/* FIXME(libnm-async-api): add nm_client_set_logging_async(). */
 
 	return _nm_client_dbus_call_sync_void (client,
 	                                       NULL,
