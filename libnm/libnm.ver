@@ -1667,6 +1667,8 @@ libnm_1_24_0 {
 global:
 	nm_client_dbus_call;
 	nm_client_dbus_call_finish;
+	nm_client_dbus_set_property;
+	nm_client_dbus_set_property_finish;
 	nm_client_get_instance_flags;
 	nm_client_get_object_by_path;
 	nm_client_get_permissions_state;

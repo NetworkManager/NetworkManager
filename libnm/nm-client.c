@@ -6735,6 +6735,88 @@ nm_client_dbus_call_finish (NMClient *client,
 
 /*****************************************************************************/
 
+/**
+ * nm_client_dbus_set_property:
+ * @client: the #NMClient
+ * @object_path: path of remote object
+ * @interface_name: D-Bus interface to invoke method on
+ * @property_name: the name of the property to set
+ * @value: a #GVariant tuple with the value to set
+ * @timeout_msec: the timeout in milliseconds, -1 to use the default
+ *     timeout or %G_MAXINT for no timeout
+ * @cancellable: (nullable): a #GCancellable or %NULL
+ * @callback: (nullable): a #GAsyncReadyCallback to call when the request
+ *     is satisfied or %NULL if you don't care about the result of the
+ *     method invocation
+ * @user_data: the data to pass to @callback
+ *
+ * Like nm_client_dbus_call() but calls "Set" on the standard "org.freedesktop.DBus.Properties"
+ * D-Bus interface.
+ *
+ * Since: 1.24
+ **/
+void
+nm_client_dbus_set_property (NMClient *client,
+                             const char *object_path,
+                             const char *interface_name,
+                             const char *property_name,
+                             GVariant *value,
+                             int timeout_msec,
+                             GCancellable *cancellable,
+                             GAsyncReadyCallback callback,
+                             gpointer user_data)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (interface_name);
+	g_return_if_fail (property_name);
+	g_return_if_fail (value);
+
+	_nm_client_dbus_call (client,
+	                      client,
+	                      nm_client_dbus_set_property,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      object_path,
+	                      DBUS_INTERFACE_PROPERTIES,
+	                      "Set",
+	                      g_variant_new ("(ssv)",
+	                                     interface_name,
+	                                     property_name,
+	                                     value),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                        timeout_msec == -1
+	                      ? NM_DBUS_DEFAULT_TIMEOUT_MSEC
+	                      : timeout_msec,
+	                      nm_dbus_connection_call_finish_void_cb);
+}
+
+/**
+ * nm_client_dbus_set_property_finish:
+ * @client: the #NMClient instance
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_dbus_set_property().
+ *
+ * Returns: %TRUE on success or %FALSE on failure.
+ *
+ * Since: 1.24
+ **/
+gboolean
+nm_client_dbus_set_property_finish (NMClient *client,
+                                    GAsyncResult *result,
+                                    GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_dbus_set_property), FALSE);
+
+	return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+/*****************************************************************************/
+
 static void
 _init_fetch_all (NMClient *self)
 {
