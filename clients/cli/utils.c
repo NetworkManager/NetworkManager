@@ -662,7 +662,6 @@ _output_selection_append (GArray *cols,
 	guint i;
 	const NMMetaAbstractInfo *const*nested;
 	NMMetaSelectionResultList *selection;
-	const NMMetaSelectionItem *si;
 
 	col_idx = cols->len;
 
@@ -683,6 +682,8 @@ _output_selection_append (GArray *cols,
 			gs_free char *allowed_fields = NULL;
 
 			if (parent_idx != PRINT_DATA_COL_PARENT_NIL) {
+				const NMMetaSelectionItem *si;
+
 				si = g_array_index (cols, PrintDataCol, parent_idx).selection_item;
 				allowed_fields = nm_meta_abstract_info_get_nested_names_str (si->info, si->self_selection);
 			}
@@ -714,10 +715,9 @@ _output_selection_append (GArray *cols,
 		g_ptr_array_add (gfree_keeper, selection);
 
 		for (i = 0; i < selection->num; i++) {
-			si = &selection->items[i];
 			if (!_output_selection_append (cols,
 			                               col_idx,
-			                               si,
+			                               &selection->items[i],
 			                               gfree_keeper,
 			                               error))
 				return FALSE;
@@ -799,10 +799,11 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 	cols = g_array_new (FALSE, TRUE, sizeof (PrintDataCol));
 
 	for (i = 0; i < selection->num; i++) {
-		const NMMetaSelectionItem *si = &selection->items[i];
-
-		if (!_output_selection_append (cols, PRINT_DATA_COL_PARENT_NIL,
-		                               si, gfree_keeper, error))
+		if (!_output_selection_append (cols,
+		                               PRINT_DATA_COL_PARENT_NIL,
+		                               &selection->items[i],
+		                               gfree_keeper,
+		                               error))
 			return FALSE;
 	}
 
