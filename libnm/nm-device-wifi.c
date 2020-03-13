@@ -73,7 +73,7 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
  * Returns: the actual hardware address. This is the internal string used by the
  * device, and must not be modified.
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_wifi_get_hw_address (NMDeviceWifi *device)
@@ -266,7 +266,7 @@ nm_device_wifi_get_last_scan (NMDeviceWifi *device)
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be
  * set.
  *
- * Deprecated: 1.22, use nm_device_wifi_request_scan_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_wifi_request_scan_async() or GDBusConnection.
  **/
 gboolean
 nm_device_wifi_request_scan (NMDeviceWifi *device,
@@ -296,7 +296,7 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
  *
  * Since: 1.2
  *
- * Deprecated: 1.22, use nm_device_wifi_request_scan_options_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_wifi_request_scan_options_async() or GDBusConnection.
  **/
 gboolean
 nm_device_wifi_request_scan_options (NMDeviceWifi *device,

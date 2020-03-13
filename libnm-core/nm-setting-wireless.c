@@ -1708,7 +1708,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 * 'cloned-mac-address'.
 	 *
 	 * Since: 1.2
-	 * Deprecated: 1.4: Deprecated by NMSettingWireless:cloned-mac-address property
+	 * Deprecated: 1.4: Deprecated by NMSettingWireless:cloned-mac-address property.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: mac-address-randomization

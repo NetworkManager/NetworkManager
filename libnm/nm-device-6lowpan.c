@@ -61,7 +61,7 @@ nm_device_6lowpan_get_parent (NMDevice6Lowpan *device)
  *
  * Since: 1.14
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_6lowpan_get_hw_address (NMDevice6Lowpan *device)

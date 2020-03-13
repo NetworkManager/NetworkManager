@@ -60,7 +60,7 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
  *
  * Since: 1.2
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_tun_get_hw_address (NMDeviceTun *device)

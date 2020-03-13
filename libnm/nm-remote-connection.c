@@ -164,7 +164,7 @@ nm_remote_connection_update2_finish (NMRemoteConnection *connection,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
  *
- * Deprecated: 1.22, use nm_remote_connection_commit_changes_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_remote_connection_commit_changes_async() or GDBusConnection.
  **/
 gboolean
 nm_remote_connection_commit_changes (NMRemoteConnection *connection,
@@ -269,7 +269,7 @@ nm_remote_connection_commit_changes_finish (NMRemoteConnection *connection,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
  *
- * Deprecated: 1.22, use nm_remote_connection_save_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_remote_connection_save_async() or GDBusConnection.
  **/
 gboolean
 nm_remote_connection_save (NMRemoteConnection *connection,
@@ -359,7 +359,7 @@ nm_remote_connection_save_finish (NMRemoteConnection *connection,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
  *
- * Deprecated: 1.22, use nm_remote_connection_delete_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_remote_connection_delete_async() or GDBusConnection.
  **/
 gboolean
 nm_remote_connection_delete (NMRemoteConnection *connection,
@@ -448,7 +448,7 @@ nm_remote_connection_delete_finish (NMRemoteConnection *connection,
  * Returns: (transfer full): a #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing
  * @connection's secrets, or %NULL on error.
  *
- * Deprecated: 1.22, use nm_remote_connection_get_secrets_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_remote_connection_get_secrets_async() or GDBusConnection.
  **/
 GVariant *
 nm_remote_connection_get_secrets (NMRemoteConnection *connection,

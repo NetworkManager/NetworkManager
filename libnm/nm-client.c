@@ -4178,7 +4178,7 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
  *
  * Returns: %TRUE if WiMAX is enabled
  *
- * Deprecated: 1.22 This function always returns FALSE because WiMax is no longer supported
+ * Deprecated: 1.22: This function always returns FALSE because WiMax is no longer supported.
  **/
 gboolean
 nm_client_wimax_get_enabled (NMClient *client)
@@ -4195,7 +4195,7 @@ nm_client_wimax_get_enabled (NMClient *client)
  *
  * Enables or disables WiMAX devices.
  *
- * Deprecated: 1.22 This function does nothing because WiMax is no longer supported
+ * Deprecated: 1.22: This function does nothing because WiMax is no longer supported.
  **/
 void
 nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
@@ -4211,7 +4211,7 @@ nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
  *
  * Returns: %TRUE if the WiMAX hardware is enabled
  *
- * Deprecated: 1.22 This function always returns FALSE because WiMax is no longer supported
+ * Deprecated: 1.22: This function always returns FALSE because WiMax is no longer supported.
  **/
 gboolean
 nm_client_wimax_hardware_get_enabled (NMClient *client)
@@ -4473,7 +4473,7 @@ nm_client_get_connectivity (NMClient *client)
  *
  * Returns: the (new) current connectivity state
  *
- * Deprecated: 1.22, use nm_client_check_connectivity_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_check_connectivity_async() or GDBusConnection.
  */
 NMConnectivityState
 nm_client_check_connectivity (NMClient *client,
@@ -4602,7 +4602,7 @@ nm_client_check_connectivity_finish (NMClient *client,
  *
  * Returns: %TRUE if the request was successful, %FALSE if it failed
  *
- * Deprecated: 1.22, use nm_client_save_hostname_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_save_hostname_async() or GDBusConnection.
  **/
 gboolean
 nm_client_save_hostname (NMClient *client,
@@ -5312,7 +5312,7 @@ nm_client_add_and_activate_connection2_finish (NMClient *client,
  *
  * Returns: success or failure
  *
- * Deprecated: 1.22, use nm_client_deactivate_connection_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_deactivate_connection_async() or GDBusConnection.
  **/
 gboolean
 nm_client_deactivate_connection (NMClient *client,
@@ -5817,7 +5817,7 @@ nm_client_add_connection2_finish (NMClient *client,
  *   set. Note that even in the success case, you might have individual @failures.
  *   With 1.22, the return value is consistent with nm_client_load_connections_finish().
  *
- * Deprecated: 1.22, use nm_client_load_connections_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_load_connections_async() or GDBusConnection.
  **/
 gboolean
 nm_client_load_connections (NMClient *client,
@@ -5948,7 +5948,7 @@ nm_client_load_connections_finish (NMClient *client,
  *
  * Return value: %TRUE on success, %FALSE on failure
  *
- * Deprecated: 1.22, use nm_client_reload_connections_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_reload_connections_async() or GDBusConnection.
  **/
 gboolean
 nm_client_reload_connections (NMClient *client,

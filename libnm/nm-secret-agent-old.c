@@ -732,7 +732,7 @@ nm_secret_agent_old_destroy (NMSecretAgentOld *self)
  * Since 1.24, registration is idempotent. It has the same effect as setting
  * %NM_SECRET_AGENT_OLD_AUTO_REGISTER to %TRUE or nm_secret_agent_old_enable().
  *
- * Deprecated: 1.24: use nm_secret_agent_old_enable() or nm_secret_agent_old_register_async().
+ * Deprecated: 1.24: Use nm_secret_agent_old_enable() or nm_secret_agent_old_register_async().
  **/
 gboolean
 nm_secret_agent_old_register (NMSecretAgentOld *self,
@@ -900,7 +900,7 @@ nm_secret_agent_old_register_finish (NMSecretAgentOld *self,
  * the same effect as setting %NM_SECRET_AGENT_OLD_AUTO_REGISTER to %FALSE
  * or nm_secret_agent_old_enable().
  *
- * Deprecated: 1.24: use nm_secret_agent_old_enable()
+ * Deprecated: 1.24: Use nm_secret_agent_old_enable().
  **/
 gboolean
 nm_secret_agent_old_unregister (NMSecretAgentOld *self,
@@ -938,7 +938,7 @@ nm_secret_agent_old_unregister (NMSecretAgentOld *self,
  * the same effect as setting %NM_SECRET_AGENT_OLD_AUTO_REGISTER to %FALSE
  * or nm_secret_agent_old_enable().
  *
- * Deprecated: 1.24: use nm_secret_agent_old_enable()
+ * Deprecated: 1.24: Use nm_secret_agent_old_enable().
  **/
 void
 nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
@@ -980,7 +980,7 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
  * the same effect as setting %NM_SECRET_AGENT_OLD_AUTO_REGISTER to %FALSE
  * or nm_secret_agent_old_enable().
  *
- * Deprecated: 1.24: use nm_secret_agent_old_enable()
+ * Deprecated: 1.24: Use nm_secret_agent_old_enable().
  **/
 gboolean
 nm_secret_agent_old_unregister_finish (NMSecretAgentOld *self,

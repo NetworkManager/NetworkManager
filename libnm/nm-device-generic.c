@@ -45,7 +45,7 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_generic_get_hw_address (NMDeviceGeneric *device)

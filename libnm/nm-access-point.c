@@ -573,7 +573,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 *
 	 * Alias for #NMAccessPoint:bssid.
 	 *
-	 * Deprecated: 1.0: use #NMAccessPoint:bssid.
+	 * Deprecated: 1.0: Use #NMAccessPoint:bssid.
 	 **/
 	obj_properties[PROP_HW_ADDRESS] =
 	    g_param_spec_string (NM_ACCESS_POINT_HW_ADDRESS, "", "",

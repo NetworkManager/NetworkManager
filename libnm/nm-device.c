@@ -1259,7 +1259,7 @@ nm_device_get_autoconnect (NMDevice *device)
  *
  * Enables or disables automatic activation of the #NMDevice.
  *
- * Deprecated: 1.22, use nm_device_set_autoconnect_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_set_autoconnect_async() or GDBusConnection.
  *
  * This function is deprecated because it calls a synchronous D-Bus method
  * and modifies the content of the NMClient cache client side.
@@ -2149,7 +2149,7 @@ nm_device_is_software (NMDevice *device)
  *
  * Since: 1.2
  *
- * Deprecated: 1.22, use nm_device_reapply_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_reapply_async() or GDBusConnection.
  **/
 gboolean
 nm_device_reapply (NMDevice *device,
@@ -2289,7 +2289,7 @@ nm_device_reapply_finish (NMDevice *device,
  *
  * Since: 1.2
  *
- * Deprecated: 1.22, use nm_device_get_applied_connection_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_get_applied_connection_async() or GDBusConnection.
  **/
 NMConnection *
 nm_device_get_applied_connection (NMDevice *device,
@@ -2436,7 +2436,7 @@ nm_device_get_applied_connection_finish (NMDevice *device,
  *
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
  *
- * Deprecated: 1.22, use nm_device_disconnect_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_disconnect_async() or GDBusConnection.
  **/
 gboolean
 nm_device_disconnect (NMDevice *device,
@@ -2528,7 +2528,7 @@ nm_device_disconnect_finish (NMDevice *device,
  * Returns: %TRUE on success, %FALSE on error, in which case @error
  * will be set.
  *
- * Deprecated: 1.22, use nm_device_delete_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_device_delete_async() or GDBusConnection.
  **/
 gboolean
 nm_device_delete (NMDevice *device,

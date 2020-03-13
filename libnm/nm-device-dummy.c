@@ -38,7 +38,7 @@ G_DEFINE_TYPE (NMDeviceDummy, nm_device_dummy, NM_TYPE_DEVICE)
  *
  * Since: 1.10
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_dummy_get_hw_address (NMDeviceDummy *device)
