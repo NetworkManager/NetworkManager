@@ -1140,7 +1140,8 @@ _print_fill (const NmcConfig *nmc_config,
 		header_cell->width = nmc_string_screen_width (header_cell->title, NULL);
 
 		for (i_row = 0; i_row < targets_len; i_row++) {
-			const PrintDataCell *cell = &g_array_index (cells, PrintDataCell, i_row * cols_len + i_col);
+			const PrintDataCell *cells_line = &g_array_index (cells, PrintDataCell, i_row * header_row->len);
+			const PrintDataCell *cell = &cells_line[i_col];
 			const char *const*i_strv;
 
 			switch (cell->text_format) {
