@@ -6649,6 +6649,92 @@ nm_client_reload_finish (NMClient *client,
 
 /*****************************************************************************/
 
+/**
+ * nm_client_dbus_call:
+ * @client: the #NMClient
+ * @object_path: path of remote object
+ * @interface_name: D-Bus interface to invoke method on
+ * @method_name: the name of the method to invoke
+ * @parameters: (nullable): a #GVariant tuple with parameters for the method
+ *     or %NULL if not passing parameters
+ * @reply_type: (nullable): the expected type of the reply (which will be a
+ *     tuple), or %NULL
+ * @timeout_msec: the timeout in milliseconds, -1 to use the default
+ *     timeout or %G_MAXINT for no timeout
+ * @cancellable: (nullable): a #GCancellable or %NULL
+ * @callback: (nullable): a #GAsyncReadyCallback to call when the request
+ *     is satisfied or %NULL if you don't care about the result of the
+ *     method invocation
+ * @user_data: the data to pass to @callback
+ *
+ * Call g_dbus_connection_call() on the current name owner with the specified
+ * arguments. Most importantly, this invokes g_dbus_connection_call() with the
+ * client's #GMainContext, so that the response is always in order with other
+ * events D-Bus events. Of course, the call uses #GTask and will invoke the
+ * callback on the current g_main_context_get_thread_default().
+ *
+ * This API is merely a convenient wrapper for g_dbus_connection_call(). You can
+ * also use g_dbus_connection_call() directly, with the same effect.
+ *
+ * Since: 1.24
+ **/
+void
+nm_client_dbus_call (NMClient *client,
+                     const char *object_path,
+                     const char *interface_name,
+                     const char *method_name,
+                     GVariant *parameters,
+                     const GVariantType *reply_type,
+                     int timeout_msec,
+                     GCancellable *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	_nm_client_dbus_call (client,
+	                      client,
+	                      nm_client_dbus_call,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      object_path,
+	                      interface_name,
+	                      method_name,
+	                      parameters,
+	                      reply_type,
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                        timeout_msec == -1
+	                      ? NM_DBUS_DEFAULT_TIMEOUT_MSEC
+	                      : timeout_msec,
+	                      nm_dbus_connection_call_finish_variant_cb);
+}
+
+/**
+ * nm_client_dbus_call_finish:
+ * @client: the #NMClient instance
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_dbus_call().
+ *
+ * Returns: (transfer full): the result #GVariant or %NULL on error.
+ *
+ * Since: 1.24
+ **/
+GVariant *
+nm_client_dbus_call_finish (NMClient *client,
+                            GAsyncResult *result,
+                            GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_dbus_call), FALSE);
+
+	return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/*****************************************************************************/
+
 static void
 _init_fetch_all (NMClient *self)
 {
