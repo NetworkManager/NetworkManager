@@ -1088,6 +1088,21 @@ do_radio_all (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static void
+_do_radio_wifi_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NmCli *nmc = user_data;
+	gs_free_error GError *error = NULL;
+
+	if (!nm_client_dbus_set_property_finish (NM_CLIENT (object), result, &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_string_printf (nmc->return_text, _("Error: failed to set Wi-Fi radio: %s"),
+		                 nmc_error_get_simple_message (error));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
 static NMCResultCode
 do_radio_wifi (NmCli *nmc, int argc, char **argv)
 {
@@ -1109,7 +1124,18 @@ do_radio_wifi (NmCli *nmc, int argc, char **argv)
 		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 			return nmc->return_value;
 
-		nm_client_wireless_set_enabled (nmc->client, enable_flag);
+		nmc_start_polkit_agent_start_try (nmc);
+
+		nmc->should_wait++;
+		nm_client_dbus_set_property (nmc->client,
+		                             NM_DBUS_PATH,
+		                             NM_DBUS_INTERFACE,
+		                             "WirelessEnabled",
+		                             g_variant_new_boolean (enable_flag),
+		                             -1,
+		                             NULL,
+		                             _do_radio_wifi_cb,
+		                             nmc);
 	}
 
 	return nmc->return_value;
