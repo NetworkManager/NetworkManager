@@ -933,16 +933,48 @@ nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolea
 	return TRUE;
 }
 
+static void
+_do_networking_on_off_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NmCli *nmc = user_data;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
+
+	ret = nm_client_dbus_call_finish (NM_CLIENT (object), result, &error);
+	if (!ret) {
+		if (g_error_matches (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED)) {
+			/* This is fine. Be quiet about it. */
+		} else {
+			g_dbus_error_strip_remote_error (error);
+			g_string_printf (nmc->return_text, _("Error: failed to set networking: %s"),
+			                 nmc_error_get_simple_message (error));
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		}
+	}
+	quit ();
+}
+
 static NMCResultCode
 do_networking_on_off (NmCli *nmc, int argc, char **argv, gboolean enable)
 {
 	if (nmc->complete)
 		return nmc->return_value;
 
-	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	nm_client_networking_set_enabled (nmc->client, enable, NULL);
+	nmc->should_wait++;
+	nm_client_dbus_call (nmc->client,
+	                     NM_DBUS_PATH,
+	                     NM_DBUS_INTERFACE,
+	                     "Enable",
+	                     g_variant_new ("(b)", enable),
+	                     G_VARIANT_TYPE ("()"),
+	                     -1,
+	                     NULL,
+	                     _do_networking_on_off_cb,
+	                     nmc);
 
 	return nmc->return_value;
 }
