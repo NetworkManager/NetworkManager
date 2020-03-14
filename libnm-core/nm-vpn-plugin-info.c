@@ -52,6 +52,12 @@ G_DEFINE_TYPE_WITH_CODE (NMVpnPluginInfo, nm_vpn_plugin_info, G_TYPE_OBJECT,
 
 /*****************************************************************************/
 
+static NMVpnPluginInfo *_list_find_by_service (GSList *list,
+                                               const char *name,
+                                               const char *service);
+
+/*****************************************************************************/
+
 /**
  * nm_vpn_plugin_info_validate_filename:
  * @filename: the filename to check
@@ -351,33 +357,16 @@ nm_vpn_plugin_info_list_load ()
 NMVpnPluginInfo *
 nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
 {
-	NMVpnPluginInfo *plugin_info = NULL;
+	NMVpnPluginInfo *info;
 	GSList *infos;
-	GSList *info;
 
 	if (!name && !service)
 		g_return_val_if_reached (NULL);
 
 	infos = nm_vpn_plugin_info_list_load ();
-
-	for (info = infos; info; info = info->next) {
-		NMVpnPluginInfo *p = info->data;
-
-		if (   name
-		    && !nm_streq (nm_vpn_plugin_info_get_name (p), name))
-			continue;
-		if (   service
-		    && !nm_streq (nm_vpn_plugin_info_get_service (p), service)
-		    && (nm_utils_strv_find_first (NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases,
-		                                  -1, service) < 0))
-			continue;
-		plugin_info = g_object_ref (p);
-		break;
-	}
-
+	info = nm_g_object_ref (_list_find_by_service (infos, name, service));
 	g_slist_free_full (infos, g_object_unref);
-
-	return plugin_info;
+	return info;
 }
 
 /*****************************************************************************/
@@ -542,14 +531,22 @@ nm_vpn_plugin_info_list_find_by_filename (GSList *list, const char *filename)
 }
 
 static NMVpnPluginInfo *
-_list_find_by_service (GSList *list, const char *service)
+_list_find_by_service (GSList *list,
+                       const char *name,
+                       const char *service)
 {
 	for (; list; list = list->next) {
 		NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (list->data);
 
-		if (   nm_streq (priv->service, service)
-		    || nm_utils_strv_find_first (priv->aliases, -1, service) >= 0)
-			return list->data;
+		if (   name
+		    && !nm_streq (name, priv->name))
+			continue;
+		if (   service
+		    && !nm_streq (priv->service, service)
+		    && (nm_utils_strv_find_first (priv->aliases, -1, service) < 0))
+			continue;
+
+		return list->data;
 	}
 	return NULL;
 }
@@ -569,7 +566,7 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
 {
 	if (!service)
 		g_return_val_if_reached (NULL);
-	return _list_find_by_service (list, service);
+	return _list_find_by_service (list, NULL, service);
 }
 
 /* known_names are well known short names for the service-type. They all implicitly
@@ -612,26 +609,26 @@ static const char *known_names[] = {
 char *
 nm_vpn_plugin_info_list_find_service_type (GSList *list, const char *name)
 {
-	GSList *iter;
+	NMVpnPluginInfo *info;
 	char *n;
 
 	if (!name)
 		g_return_val_if_reached (NULL);
 	if (!*name)
 		return NULL;
+	if (!list)
+		return NULL;
 
 	/* First, try to interpret @name as a full service-type (or alias). */
-	if (_list_find_by_service (list, name))
+	info = _list_find_by_service (list, NULL, name);
+	if (info)
 		return g_strdup (name);
 
 	/* try to interpret @name as plugin name, in which case we return
 	 * the main service-type (not an alias). */
-	for (iter = list; iter; iter = iter->next) {
-		NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (iter->data);
-
-		if (nm_streq (priv->name, name))
-			return g_strdup (priv->service);
-	}
+	info = _list_find_by_service (list, name, NULL);
+	if (info)
+		return g_strdup (NM_VPN_PLUGIN_INFO_GET_PRIVATE (info)->service);
 
 	/* check the hard-coded list of short-names. They all have have the same
 	 * well-known prefix org.freedesktop.NetworkManager and the name. */
@@ -641,7 +638,7 @@ nm_vpn_plugin_info_list_find_service_type (GSList *list, const char *name)
 	/* try, if there exists a plugin with @name under org.freedesktop.NetworkManager.
 	 * Allow this to be a valid abbreviation. */
 	n = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);
-	if (_list_find_by_service (list, n))
+	if (_list_find_by_service (list, NULL, n))
 		return n;
 	g_free (n);
 
