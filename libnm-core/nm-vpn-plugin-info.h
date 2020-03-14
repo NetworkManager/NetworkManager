@@ -29,24 +29,7 @@ G_BEGIN_DECLS
 #define NM_VPN_PLUGIN_INFO_KF_GROUP_LIBNM        "libnm"
 #define NM_VPN_PLUGIN_INFO_KF_GROUP_GNOME        "GNOME"
 
-struct _NMVpnPluginInfo;
-
-/**
- * NMVpnPluginInfo:
- */
-struct _NMVpnPluginInfo {
-	NM_AVAILABLE_IN_1_2
-	GObject parent;
-};
-
-typedef struct {
-	NM_AVAILABLE_IN_1_2
-	GObjectClass parent;
-
-	/*< private >*/
-	NM_AVAILABLE_IN_1_2
-	gpointer padding[8];
-} NMVpnPluginInfoClass NM_AVAILABLE_IN_1_2;
+typedef struct _NMVpnPluginInfoClass NMVpnPluginInfoClass;
 
 NM_AVAILABLE_IN_1_2
 GType  nm_vpn_plugin_info_get_type       (void);

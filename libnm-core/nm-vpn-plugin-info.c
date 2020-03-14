@@ -42,13 +42,25 @@ typedef struct {
 	NMVpnEditorPlugin *editor_plugin;
 } NMVpnPluginInfoPrivate;
 
+/**
+ * NMVpnPluginInfo:
+ */
+struct _NMVpnPluginInfo {
+	GObject parent;
+	NMVpnPluginInfoPrivate _priv;
+};
+
+struct _NMVpnPluginInfoClass {
+	GObjectClass parent;
+};
+
+#define NM_VPN_PLUGIN_INFO_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMVpnPluginInfo, NM_IS_VPN_PLUGIN_INFO)
+
 static void nm_vpn_plugin_info_initable_iface_init (GInitableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (NMVpnPluginInfo, nm_vpn_plugin_info, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_vpn_plugin_info_initable_iface_init);
                          )
-
-#define NM_VPN_PLUGIN_INFO_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_PLUGIN_INFO, NMVpnPluginInfoPrivate))
 
 /*****************************************************************************/
 
@@ -1260,8 +1272,6 @@ static void
 nm_vpn_plugin_info_class_init (NMVpnPluginInfoClass *plugin_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (plugin_class);
-
-	g_type_class_add_private (object_class, sizeof (NMVpnPluginInfoPrivate));
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
