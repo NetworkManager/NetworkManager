@@ -172,23 +172,6 @@ _sort_files (LoadDirInfo *a, LoadDirInfo *b)
 	                  nm_vpn_plugin_info_get_filename (b->plugin_info));
 }
 
-#define DEFINE_DEFAULT_DIR_LIST(dir) \
-	const char *dir[] = { \
-		/* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
-		 * preference to the former.
-		 *
-		 * load user directory with highest priority. */ \
-		_nm_vpn_plugin_info_get_default_dir_user (), \
-		\
-		/* lib directory has higher priority then etc. The reason is that
-		 * etc is deprecated and used by old plugins. We expect newer plugins
-		 * to install their file in lib, where they have higher priority.
-		 *
-		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */ \
-		_nm_vpn_plugin_info_get_default_dir_lib (), \
-		_nm_vpn_plugin_info_get_default_dir_etc (), \
-	}
-
 /**
  * _nm_vpn_plugin_info_get_default_dir_etc:
  *
@@ -223,7 +206,7 @@ _nm_vpn_plugin_info_get_default_dir_lib ()
 const char *
 _nm_vpn_plugin_info_get_default_dir_user ()
 {
-	return g_getenv ("NM_VPN_PLUGIN_DIR");
+	return nm_str_not_empty (g_getenv ("NM_VPN_PLUGIN_DIR"));
 }
 
 /**
@@ -316,7 +299,21 @@ nm_vpn_plugin_info_list_load ()
 	gint64 uid;
 	GSList *list = NULL;
 	GSList *infos, *info;
-	DEFINE_DEFAULT_DIR_LIST (dir);
+	const char *const dir[] = {
+		/* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
+		 * preference to the former.
+		 *
+		 * load user directory with highest priority. */
+		_nm_vpn_plugin_info_get_default_dir_user (),
+
+		/* lib directory has higher priority then etc. The reason is that
+		 * etc is deprecated and used by old plugins. We expect newer plugins
+		 * to install their file in lib, where they have higher priority.
+		 *
+		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */
+		_nm_vpn_plugin_info_get_default_dir_lib (),
+		_nm_vpn_plugin_info_get_default_dir_etc (),
+	};
 
 	uid = getuid ();
 
@@ -354,44 +351,32 @@ nm_vpn_plugin_info_list_load ()
 NMVpnPluginInfo *
 nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
 {
-	int i;
-	gint64 uid;
 	NMVpnPluginInfo *plugin_info = NULL;
-	GSList *infos, *info;
-	DEFINE_DEFAULT_DIR_LIST (dir);
+	GSList *infos;
+	GSList *info;
 
 	if (!name && !service)
 		g_return_val_if_reached (NULL);
 
-	uid = getuid ();
+	infos = nm_vpn_plugin_info_list_load ();
 
-	for (i = 0; !plugin_info && i < G_N_ELEMENTS (dir); i++) {
-		if (   !dir[i]
-		    || nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
+	for (info = infos; info; info = info->next) {
+		NMVpnPluginInfo *p = info->data;
+
+		if (   name
+		    && !nm_streq (nm_vpn_plugin_info_get_name (p), name))
 			continue;
-
-		/* We still must load the entire directory while searching for the matching
-		 * plugin-info. The reason is that reading the directory has no stable
-		 * order and we can only sort them after reading the entire directory --
-		 * which _nm_vpn_plugin_info_list_load_dir() does. */
-		infos = _nm_vpn_plugin_info_list_load_dir (dir[i], TRUE, uid, NULL, NULL);
-
-		for (info = infos; info; info = info->next) {
-			NMVpnPluginInfo *p = info->data;
-
-			if (name && !nm_streq (nm_vpn_plugin_info_get_name (p), name))
-				continue;
-			if (   service
-			    && !nm_streq (nm_vpn_plugin_info_get_service (p), service)
-			    && (nm_utils_strv_find_first (NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases,
-			                                  -1, service) < 0))
-				continue;
-			plugin_info = g_object_ref (p);
-			break;
-		}
-
-		g_slist_free_full (infos, g_object_unref);
+		if (   service
+		    && !nm_streq (nm_vpn_plugin_info_get_service (p), service)
+		    && (nm_utils_strv_find_first (NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases,
+		                                  -1, service) < 0))
+			continue;
+		plugin_info = g_object_ref (p);
+		break;
 	}
+
+	g_slist_free_full (infos, g_object_unref);
+
 	return plugin_info;
 }
 
