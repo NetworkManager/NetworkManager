@@ -731,11 +731,26 @@ nmc_complete_strings_nocase (const char *prefix, ...)
 	va_end (args);
 }
 
+static void
+_set_logging_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NmCli *nmc = user_data;
+	gs_unref_variant GVariant *res = NULL;
+	gs_free_error GError *error = NULL;
+
+	res = nm_client_dbus_call_finish (NM_CLIENT (object), result, &error);
+	if (!res) {
+		g_dbus_error_strip_remote_error (error);
+		g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
+		                 nmc_error_get_simple_message (error));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
 static NMCResultCode
 do_general_logging (NmCli *nmc, int argc, char **argv)
 {
-	gs_free_error GError *error = NULL;
-
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		if (nmc->complete)
@@ -789,12 +804,19 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 		if (nmc->complete)
 			return nmc->return_value;
 
-		nm_client_set_logging (nmc->client, level, domains, &error);
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
-			                 nmc_error_get_simple_message (error));
-			return NMC_RESULT_ERROR_UNKNOWN;
-		}
+		nmc->should_wait++;
+		nm_client_dbus_call (nmc->client,
+		                     NM_DBUS_PATH,
+		                     NM_DBUS_INTERFACE,
+		                     "SetLogging",
+		                     g_variant_new ("(ss)",
+		                                    level ?: "",
+		                                    domains ?: ""),
+		                     G_VARIANT_TYPE ("()"),
+		                     -1,
+		                     NULL,
+		                     _set_logging_cb,
+		                     nmc);
 	}
 
 	return nmc->return_value;
