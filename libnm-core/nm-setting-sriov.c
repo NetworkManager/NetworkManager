@@ -1267,7 +1267,8 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 *
 	 * Note that when the sriov setting is present NetworkManager
 	 * enforces the number of virtual functions on the interface
-	 * also when it is zero. To prevent any changes to SR-IOV
+	 * (also when it is zero) during activation and resets it
+	 * upon deactivation. To prevent any changes to SR-IOV
 	 * parameters don't add a sriov setting to the connection.
 	 *
 	 * Since: 1.14
