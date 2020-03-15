@@ -2741,6 +2741,51 @@ nm_utils_boot_id_bin (void)
 
 /*****************************************************************************/
 
+const char *
+nm_utils_proc_cmdline (void)
+{
+	static const char *volatile proc_cmdline_cached = NULL;
+	const char *proc_cmdline;
+
+again:
+	proc_cmdline = g_atomic_pointer_get (&proc_cmdline_cached);
+	if (G_UNLIKELY (!proc_cmdline)) {
+		gs_free char *str = NULL;
+
+		g_file_get_contents ("/proc/cmdline", &str, NULL, NULL);
+		str = nm_str_realloc (str);
+
+		proc_cmdline = str ?: "";
+		if (!g_atomic_pointer_compare_and_exchange (&proc_cmdline_cached, NULL, proc_cmdline))
+			goto again;
+
+		g_steal_pointer (&str);
+	}
+
+	return proc_cmdline;
+}
+
+const char *const*
+nm_utils_proc_cmdline_split (void)
+{
+	static const char *const* volatile proc_cmdline_cached = NULL;
+	const char *const* proc_cmdline;
+
+again:
+	proc_cmdline = g_atomic_pointer_get (&proc_cmdline_cached);
+	if (G_UNLIKELY (!proc_cmdline)) {
+		const char *proc_cl_str = nm_utils_proc_cmdline();
+		proc_cmdline = (const char *const*) g_strsplit (proc_cl_str, " ", -1);
+
+		if (!g_atomic_pointer_compare_and_exchange (&proc_cmdline_cached, NULL, proc_cmdline))
+			goto again;
+	}
+
+	return proc_cmdline;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_arp_type_detect_from_hwaddrlen:
  * @hwaddr_len: the length of the hardware address in bytes.
