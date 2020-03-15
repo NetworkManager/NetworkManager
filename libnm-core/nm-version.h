@@ -249,10 +249,11 @@
  *     around g_dbus_connection_call_sync(). You may call it directly
  *     without feeling dirty.
  *
- * We don't want to force users away from this API, for that reason the
- * macro does not yet expand to G_DEPRECATED.
+ * The API is marked as deprecated since 1.22, however the macro only starts
+ * complaining in 1.24. That's intentional, because in 1.22 the asynchronous
+ * alternative was not yet available.
  */
-#define _NM_DEPRECATED_SYNC_METHOD            /*NM_DEPRECATED_IN_1_22*/
-#define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY /*NM_DEPRECATED_IN_1_22*/
+#define _NM_DEPRECATED_SYNC_METHOD               NM_DEPRECATED_IN_1_24
+#define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY /* NM_DEPRECATED_IN_1_22 */
 
 #endif  /* NM_VERSION_H */
