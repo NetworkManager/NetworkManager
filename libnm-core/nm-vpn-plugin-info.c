@@ -628,8 +628,6 @@ nm_vpn_plugin_info_list_find_service_type (GSList *list, const char *name)
 		g_return_val_if_reached (NULL);
 	if (!*name)
 		return NULL;
-	if (!list)
-		return NULL;
 
 	/* First, try to interpret @name as a full service-type (or alias). */
 	info = _list_find_by_service (list, NULL, name);
