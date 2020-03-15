@@ -1114,6 +1114,10 @@ usage_connection_modify (void)
 	              "The '+' sign allows appending items instead of overwriting the whole value.\n"
 	              "The '-' sign allows removing selected items instead of the whole value.\n"
 	              "\n"
+	              "ARGUMENTS := remove <setting>\n"
+	              "\n"
+	              "Remove a setting from the connection profile.\n"
+	              "\n"
 	              "Examples:\n"
 	              "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
 	              "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
@@ -1121,7 +1125,8 @@ usage_connection_modify (void)
 	              "nmcli con mod em1-1 -ipv4.dns 1\n"
 	              "nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
 	              "nmcli con mod bond0 +bond.options mii=500\n"
-	              "nmcli con mod bond0 -bond.options downdelay\n\n"));
+	              "nmcli con mod bond0 -bond.options downdelay\n"
+	              "nmcli con mod em1-1 remove sriov\n\n"));
 }
 
 static void
@@ -4662,6 +4667,27 @@ complete_option (NmCli *nmc, const NMMetaAbstractInfo *abstract_info, const char
 }
 
 static void
+complete_existing_setting (NmCli *nmc, NMConnection *connection, const char *prefix)
+{
+	gs_free NMSetting **settings = NULL;
+	const NMMetaSettingInfoEditor *editor;
+	guint i;
+
+	settings = nm_connection_get_settings (connection, NULL);
+	for (i = 0; settings && settings[i]; i++) {
+		editor = nm_meta_setting_info_editor_find_by_setting (settings[i]);
+
+		if (!prefix || g_str_has_prefix (editor->general->setting_name, prefix))
+			g_print ("%s\n", editor->general->setting_name);
+
+		if (editor->alias) {
+			if (!prefix || g_str_has_prefix (editor->alias, prefix))
+				g_print ("%s\n", editor->alias);
+		}
+	}
+}
+
+static void
 complete_property (NmCli *nmc, const char *setting_name, const char *property, const char *prefix, NMConnection *connection)
 {
 	const NMMetaPropertyInfo *property_info;
@@ -4672,6 +4698,24 @@ complete_property (NmCli *nmc, const char *setting_name, const char *property, c
 }
 
 /*****************************************************************************/
+
+static gboolean
+connection_remove_setting (NMConnection *connection, NMSetting *setting, GError **error)
+{
+	gboolean mandatory;
+
+	g_return_val_if_fail (setting, FALSE);
+
+	mandatory = is_setting_mandatory (connection, setting);
+	if (!mandatory) {
+		nm_connection_remove_setting (connection, G_OBJECT_TYPE (setting));
+		return TRUE;
+	}
+	g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+	             _("Error: setting '%s' is mandatory and cannot be removed."),
+	             nm_setting_get_name (setting));
+	return FALSE;
+}
 
 static gboolean
 get_value (const char **value, int *argc, char ***argv, const char *option, GError **error)
@@ -4694,11 +4738,12 @@ get_value (const char **value, int *argc, char ***argv, const char *option, GErr
 }
 
 gboolean
-nmc_read_connection_properties (NmCli *nmc,
-                                NMConnection *connection,
-                                int *argc,
-                                char ***argv,
-                                GError **error)
+nmc_process_connection_properties (NmCli *nmc,
+                                   NMConnection *connection,
+                                   int *argc,
+                                   char ***argv,
+                                   gboolean allow_setting_removal,
+                                   GError **error)
 {
 	/* First check if we have a slave-type, as this would mean we will not
 	 * have ip properties but possibly others, slave-type specific.
@@ -4732,7 +4777,53 @@ nmc_read_connection_properties (NmCli *nmc,
 		default:  modifier = NM_META_ACCESSOR_MODIFIER_SET; option = option_orig;     break;
 		}
 
-		if ((tmp = strchr (option, '.'))) {
+		if (   allow_setting_removal
+		    && modifier == NM_META_ACCESSOR_MODIFIER_SET
+		    && nm_streq (option, "remove")) {
+			NMSetting *ss;
+			char *setting_name;
+
+			(*argc)--;
+			(*argv)++;
+
+			if (*argc == 1 && nmc->complete) {
+				complete_existing_setting (nmc, connection, value);
+				return TRUE;
+			}
+
+			if (!*argc) {
+				g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				                     _("Error: missing setting."));
+				return FALSE;
+			}
+
+			setting_name = **argv;
+			(*argc)--;
+			(*argv)++;
+
+			ss = is_setting_valid (connection,
+			                       type_settings,
+			                       slv_settings,
+			                       setting_name);
+			if (!ss) {
+				if (check_valid_name (setting_name,
+				                      type_settings,
+				                      slv_settings,
+				                      NULL)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Setting '%s' is not present in the connection."),
+					             setting_name);
+				} else {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: invalid setting argument '%s'."),
+					             setting_name);
+				}
+				return FALSE;
+			}
+
+			if (!connection_remove_setting (connection, ss, error))
+				return FALSE;
+		} else if ((tmp = strchr (option, '.'))) {
 			gs_free char *option_sett = g_strndup (option, tmp - option);
 			const char *option_prop = &tmp[1];
 			const char *option_sett_expanded;
@@ -4826,8 +4917,12 @@ nmc_read_connection_properties (NmCli *nmc,
 			}
 
 			if (!chosen) {
-				if (*argc == 1 && nmc->complete)
+				if (*argc == 1 && nmc->complete) {
+					if (   allow_setting_removal
+					    && g_str_has_prefix ("remove", option))
+						g_print ("remove\n");
 					complete_property_name (nmc, connection, modifier, option, NULL);
+				}
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: invalid <setting>.<property> '%s'."), option);
 				return FALSE;
@@ -4847,7 +4942,6 @@ nmc_read_connection_properties (NmCli *nmc,
 			if (!set_option (nmc, connection, chosen, value, error))
 				return FALSE;
 		}
-
 	} while (*argc);
 
 	return TRUE;
@@ -5270,7 +5364,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 read_properties:
 	g_clear_error (&error);
 	/* Get the arguments from the command line if any */
-	if (argc && !nmc_read_connection_properties (nmc, connection, &argc, &argv, &error)) {
+	if (argc && !nmc_process_connection_properties (nmc, connection, &argc, &argv, FALSE, &error)) {
 		if (g_strcmp0 (*argv, "--") == 0 && !seen_dash_dash) {
 			/* This is for compatibility with older nmcli that required
 			 * options and properties to be separated with "--" */
@@ -6881,23 +6975,6 @@ print_setting_description (NMSetting *setting)
 	g_strfreev (all_props);
 }
 
-static gboolean
-connection_remove_setting (NMConnection *connection, NMSetting *setting)
-{
-	gboolean mandatory;
-
-	g_return_val_if_fail (setting, FALSE);
-
-	mandatory = is_setting_mandatory (connection, setting);
-	if (!mandatory) {
-		nm_connection_remove_setting (connection, G_OBJECT_TYPE (setting));
-		return TRUE;
-	}
-	g_print (_("Error: setting '%s' is mandatory and cannot be removed.\n"),
-	         nm_setting_get_name (setting));
-	return FALSE;
-}
-
 static void
 editor_show_status_line (NMConnection *connection, gboolean dirty, gboolean temp)
 {
@@ -7635,8 +7712,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					ss = menu_ctx.curr_setting;
 
 				if (descr_all) {
+					gs_free_error GError *local = NULL;
+
 					/* Remove setting from the connection */
-					connection_remove_setting (connection, ss);
+					if (!connection_remove_setting (connection, ss, &local))
+						g_print ("%s\n", local->message);
+
 					if (ss == menu_ctx.curr_setting) {
 						/* If we removed the setting we are in, go up */
 						menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
@@ -7667,8 +7748,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						                          valid_settings_slave,
 						                          cmd_arg_p);
 						if (s_tmp) {
+							gs_free_error GError *local = NULL;
+
 							/* Remove setting from the connection */
-							connection_remove_setting (connection, s_tmp);
+							if (!connection_remove_setting (connection, s_tmp, &local))
+								g_print ("%s\n", local->message);
 
 							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
@@ -8510,7 +8594,7 @@ do_connection_modify (NmCli *nmc,
 		return NMC_RESULT_ERROR_NOT_FOUND;
 	}
 
-	if (!nmc_read_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, &error)) {
+	if (!nmc_process_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, TRUE, &error)) {
 		g_string_assign (nmc->return_text, error->message);
 		return error->code;
 	}

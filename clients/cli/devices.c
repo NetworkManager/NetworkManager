@@ -2300,7 +2300,7 @@ modify_get_applied_cb (GObject *object,
 		return;
 	}
 
-	if (!nmc_read_connection_properties (info->nmc, connection, &info->argc, &info->argv, &error)) {
+	if (!nmc_process_connection_properties (info->nmc, connection, &info->argc, &info->argv, TRUE, &error)) {
 		g_string_assign (nmc->return_text, error->message);
 		nmc->return_value = error->code;
 		g_slice_free (ModifyInfo, info);
