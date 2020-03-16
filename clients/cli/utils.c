@@ -321,19 +321,14 @@ nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GErr
 char *
 ssid_to_hex (const char *str, gsize len)
 {
-	GString *printable;
-	char *printable_str;
-	int i;
-
-	if (str == NULL || len == 0)
+	if (len == 0)
 		return NULL;
 
-	printable = g_string_new (NULL);
-	for (i = 0; i < len; i++) {
-		g_string_append_printf (printable, "%02X", (unsigned char) str[i]);
-	}
-	printable_str = g_string_free (printable, FALSE);
-	return printable_str;
+	return nm_utils_bin2hexstr_full (str,
+	                                 len,
+	                                 '\0',
+	                                 TRUE,
+	                                 NULL);
 }
 
 /*
@@ -667,7 +662,6 @@ _output_selection_append (GArray *cols,
 	guint i;
 	const NMMetaAbstractInfo *const*nested;
 	NMMetaSelectionResultList *selection;
-	const NMMetaSelectionItem *si;
 
 	col_idx = cols->len;
 
@@ -688,6 +682,8 @@ _output_selection_append (GArray *cols,
 			gs_free char *allowed_fields = NULL;
 
 			if (parent_idx != PRINT_DATA_COL_PARENT_NIL) {
+				const NMMetaSelectionItem *si;
+
 				si = g_array_index (cols, PrintDataCol, parent_idx).selection_item;
 				allowed_fields = nm_meta_abstract_info_get_nested_names_str (si->info, si->self_selection);
 			}
@@ -719,10 +715,9 @@ _output_selection_append (GArray *cols,
 		g_ptr_array_add (gfree_keeper, selection);
 
 		for (i = 0; i < selection->num; i++) {
-			si = &selection->items[i];
 			if (!_output_selection_append (cols,
 			                               col_idx,
-			                               si,
+			                               &selection->items[i],
 			                               gfree_keeper,
 			                               error))
 				return FALSE;
@@ -778,7 +773,8 @@ _output_selection_complete (GArray *cols)
 static gboolean
 _output_selection_parse (const NMMetaAbstractInfo *const*fields,
                          const char *fields_str,
-                         GArray **out_cols,
+                         PrintDataCol **out_cols_data,
+                         guint *out_cols_len,
                          GPtrArray **out_gfree_keeper,
                          GError **error)
 {
@@ -803,16 +799,18 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 	cols = g_array_new (FALSE, TRUE, sizeof (PrintDataCol));
 
 	for (i = 0; i < selection->num; i++) {
-		const NMMetaSelectionItem *si = &selection->items[i];
-
-		if (!_output_selection_append (cols, PRINT_DATA_COL_PARENT_NIL,
-		                               si, gfree_keeper, error))
+		if (!_output_selection_append (cols,
+		                               PRINT_DATA_COL_PARENT_NIL,
+		                               &selection->items[i],
+		                               gfree_keeper,
+		                               error))
 			return FALSE;
 	}
 
 	_output_selection_complete (cols);
 
-	*out_cols = g_steal_pointer (&cols);
+	*out_cols_len = cols->len;
+	*out_cols_data = (PrintDataCol *) g_array_free (g_steal_pointer (&cols), FALSE);
 	*out_gfree_keeper = g_steal_pointer (&gfree_keeper);
 	return TRUE;
 }
@@ -1142,7 +1140,8 @@ _print_fill (const NmcConfig *nmc_config,
 		header_cell->width = nmc_string_screen_width (header_cell->title, NULL);
 
 		for (i_row = 0; i_row < targets_len; i_row++) {
-			const PrintDataCell *cell = &g_array_index (cells, PrintDataCell, i_row * cols_len + i_col);
+			const PrintDataCell *cells_line = &g_array_index (cells, PrintDataCell, i_row * header_row->len);
+			const PrintDataCell *cell = &cells_line[i_col];
 			const char *const*i_strv;
 
 			switch (cell->text_format) {
@@ -1379,20 +1378,24 @@ nmc_print (const NmcConfig *nmc_config,
            GError **error)
 {
 	gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
-	gs_unref_array GArray *cols = NULL;
+	gs_free PrintDataCol *cols_data = NULL;
+	guint cols_len;
 	gs_unref_array GArray *header_row = NULL;
 	gs_unref_array GArray *cells = NULL;
 
-	if (!_output_selection_parse (fields, fields_str,
-	                              &cols, &gfree_keeper,
+	if (!_output_selection_parse (fields,
+	                              fields_str,
+	                              &cols_data,
+	                              &cols_len,
+	                              &gfree_keeper,
 	                              error))
 		return FALSE;
 
 	_print_fill (nmc_config,
 	             targets,
 	             targets_data,
-	             &g_array_index (cols, PrintDataCol, 0),
-	             cols->len,
+	             cols_data,
+	             cols_len,
 	             &header_row,
 	             &cells);
 

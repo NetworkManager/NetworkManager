@@ -27,9 +27,9 @@
 /*****************************************************************************/
 
 static char *
-ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
+ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags, NMMetaAccessorGetType get_type)
 {
-	char *flags_str[14];
+	char *flags_str[16];
 	int i = 0;
 
 	if (flags & NM_802_11_AP_SEC_PAIR_WEP40)
@@ -56,13 +56,17 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 		flags_str[i++] = "sae";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
 		flags_str[i++] = "owe";
-	/* Make sure you grow flags_str when adding items here. */
 
-	if (i == 0)
-		flags_str[i++] = _("(none)");
+	/* Make sure you grow flags_str when adding items here. */
+	nm_assert (i < G_N_ELEMENTS (flags_str));
+
+	if (i == 0) {
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return g_strdup (_("(none)"));
+		return g_strdup ("(none)");
+	}
 
 	flags_str[i] = NULL;
-
 	return g_strjoinv (" ", flags_str);
 }
 
@@ -1101,30 +1105,30 @@ compare_aps (gconstpointer a, gconstpointer b, gpointer user_data)
 {
 	NMAccessPoint *apa = *(NMAccessPoint **)a;
 	NMAccessPoint *apb = *(NMAccessPoint **)b;
-	int cmp;
 
-	cmp = nm_access_point_get_strength (apb) - nm_access_point_get_strength (apa);
-	if (cmp != 0)
-		return cmp;
+	NM_CMP_DIRECT (nm_access_point_get_strength (apb), nm_access_point_get_strength (apa));
+	NM_CMP_DIRECT (nm_access_point_get_frequency (apa), nm_access_point_get_frequency (apb));
+	NM_CMP_DIRECT (nm_access_point_get_max_bitrate (apb), nm_access_point_get_max_bitrate (apa));
 
-	cmp = nm_access_point_get_frequency (apa) - nm_access_point_get_frequency (apb);
-	if (cmp != 0)
-		return cmp;
+	/* as fallback, just give it some stable order and use the D-Bus path (literally). */
+	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (apa)),
+	                       nm_object_get_path (NM_OBJECT (apb)));
 
-	return nm_access_point_get_max_bitrate (apb) - nm_access_point_get_max_bitrate (apa);
+	return 0;
 }
 
 static GPtrArray *
 sort_access_points (const GPtrArray *aps)
 {
 	GPtrArray *sorted;
-	int i;
+	guint i;
 
 	g_return_val_if_fail (aps, NULL);
 
 	sorted = g_ptr_array_sized_new (aps->len);
+	g_ptr_array_set_free_func (sorted, nm_g_object_unref);
 	for (i = 0; i < aps->len; i++)
-		g_ptr_array_add (sorted, aps->pdata[i]);
+		g_ptr_array_add (sorted, g_object_ref (aps->pdata[i]));
 	g_ptr_array_sort_with_data (sorted, compare_aps, NULL);
 	return sorted;
 }
@@ -1189,8 +1193,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u Mbit/s"), bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
-	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
-	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
+	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
+	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
 	sig_bars = nmc_wifi_strength_bars (strength);
 
 	security_str = g_string_new (NULL);
@@ -1543,7 +1547,6 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		if ((NM_IS_DEVICE_WIFI (device))) {
 			NMAccessPoint *active_ap = NULL;
 			const char *active_bssid = NULL;
-			GPtrArray *aps;
 
 			/* section AP */
 			if (!g_ascii_strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[4]->name)) {
@@ -1561,6 +1564,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (out.output_data, arr);
 
 				{
+					gs_unref_ptrarray GPtrArray *aps = NULL;
 					APInfo info = {
 						.nmc = nmc,
 						.index = 1,
@@ -1572,7 +1576,6 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 					aps = sort_access_points (nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device)));
 					g_ptr_array_foreach (aps, fill_output_access_point, &info);
-					g_ptr_array_free (aps, FALSE);
 				}
 
 				print_data_prepare_width (out.output_data);
@@ -2785,7 +2788,6 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 {
 	NMAccessPoint *active_ap = NULL;
 	const char *active_bssid = NULL;
-	GPtrArray *aps;
 	NmcOutputField *arr;
 
 	if (nm_device_get_state (NM_DEVICE (wifi)) == NM_DEVICE_STATE_ACTIVATED) {
@@ -2798,6 +2800,7 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 	g_ptr_array_add (out->output_data, arr);
 
 	{
+		gs_unref_ptrarray GPtrArray *aps = NULL;
 		APInfo info = {
 			.nmc = nmc,
 			.index = 1,
@@ -2809,7 +2812,6 @@ show_access_point_info (NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 
 		aps = sort_access_points (nm_device_wifi_get_access_points (wifi));
 		g_ptr_array_foreach (aps, fill_output_access_point, &info);
-		g_ptr_array_free (aps, TRUE);
 	}
 
 	print_data_prepare_width (out->output_data);
@@ -2923,14 +2925,14 @@ wifi_list_finish (WifiListData *data)
 	g_signal_handler_disconnect (data->wifi, data->last_scan_id);
 	nm_clear_g_source (&data->timeout_id);
 	nm_clear_g_cancellable (&data->scan_cancellable);
-	g_slice_free (WifiListData, data);
+	nm_g_slice_free (data);
 
 	if (info->nmc->should_wait == 0) {
 		for (i = 0; info->devices[i]; i++)
 			g_object_unref (info->devices[i]);
 		g_free (info->devices);
 		g_array_unref (info->out_indices);
-		g_free (info);
+		nm_g_slice_free (info);
 	}
 }
 
@@ -3012,6 +3014,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	NMDeviceWifi *wifi;
 	ScanInfo *scan_info = NULL;
 	WifiListData *data;
+	gboolean ifname_handled;
+	NMDevice *ifname_handled_candidate;
 	guint i, j;
 
 	devices = nmc_get_devices_sorted (nmc->client);
@@ -3060,6 +3064,9 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+	if (nmc->complete)
+		return nmc->return_value;
+
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = NMC_FIELDS_DEV_WIFI_LIST_COMMON;
 	else if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
@@ -3074,9 +3081,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		g_error_free (error);
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
-
-	if (nmc->complete)
-		return nmc->return_value;
 
 	if (argc) {
 		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
@@ -3094,37 +3098,54 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	if (ifname) {
-		device = find_wifi_device_by_iface (devices, ifname, NULL);
-		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
-			return NMC_RESULT_ERROR_NOT_FOUND;
-		}
+	ifname_handled = (ifname == NULL);
+	ifname_handled_candidate = NULL;
 
-		if (NM_IS_DEVICE_WIFI (device)) {
-			devices[0] = device;
-			devices[1] = NULL;
-		} else {
-			if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
-			    && g_strcmp0 (nm_device_get_type_description (device), "wifi") == 0) {
-				g_string_printf (nmc->return_text,
-				                 _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin."),
-				                 ifname);
-			} else {
-				g_string_printf (nmc->return_text,
-				                 _("Error: Device '%s' is not a Wi-Fi device."),
-				                 ifname);
+	j = 0;
+	for (i = 0; devices[i]; i++) {
+		const char *dev_iface;
+
+		device = devices[i];
+		dev_iface = nm_device_get_iface (device);
+
+		if (ifname) {
+			if (!nm_streq0 (ifname, dev_iface))
+				continue;
+			if (!NM_IS_DEVICE_WIFI (device)) {
+				if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
+				    && nm_streq0 (nm_device_get_type_description (device), "wifi"))
+					ifname_handled_candidate = device;
+				else if (!ifname_handled_candidate)
+					ifname_handled_candidate = device;
+				continue;
 			}
-			return NMC_RESULT_ERROR_UNKNOWN;
+			ifname_handled = TRUE;
+		} else {
+			if (!NM_IS_DEVICE_WIFI (device))
+				continue;
 		}
-	}
 
-	/* Filter out non-wifi devices */
-	for (i = 0, j = 0; devices[i]; i++) {
-		if (NM_IS_DEVICE_WIFI (devices[i]))
-			devices[j++] = devices[i];
+		devices[j++] = device;
 	}
 	devices[j] = NULL;
+
+	if (!ifname_handled) {
+		if (!ifname_handled_candidate) {
+			g_string_printf (nmc->return_text,
+			                 _("Error: Device '%s' not found."),
+			                 ifname);
+		} else if (   nm_device_get_device_type (ifname_handled_candidate) == NM_DEVICE_TYPE_GENERIC
+		           && nm_streq0 (nm_device_get_type_description (ifname_handled_candidate), "wifi")) {
+			g_string_printf (nmc->return_text,
+			                 _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin."),
+			                 ifname);
+		} else {
+			g_string_printf (nmc->return_text,
+			                 _("Error: Device '%s' is not a Wi-Fi device."),
+			                 ifname);
+		}
+		return NMC_RESULT_ERROR_NOT_FOUND;
+	}
 
 	/* Start a new scan for devices that need it */
 	for (i = 0; devices[i]; i++) {
@@ -3132,25 +3153,36 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		g_object_ref (wifi);
 
 		if (   rescan_cutoff == 0
-		    || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) >= rescan_cutoff))
+		    || (   rescan_cutoff > 0
+		        && nm_device_wifi_get_last_scan (wifi) >= rescan_cutoff))
 			continue;
 
 		if (!scan_info) {
-			scan_info = g_new0 (ScanInfo, 1);
-			scan_info->out_indices = g_array_ref (out_indices);
-			scan_info->tmpl = tmpl;
-			scan_info->bssid_user = bssid_user;
-			scan_info->nmc = nmc;
+			scan_info = g_slice_new (ScanInfo);
+			*scan_info = (ScanInfo) {
+				.out_indices = g_array_ref (out_indices),
+				.tmpl        = tmpl,
+				.bssid_user  = bssid_user,
+				.nmc         = nmc,
+			};
 		}
 
 		nmc->should_wait++;
-		data = g_slice_new0 (WifiListData);
-		data->wifi = wifi;
-		data->scan_info = scan_info;
-		data->last_scan_id = g_signal_connect (wifi, "notify::" NM_DEVICE_WIFI_LAST_SCAN,
-		                                       G_CALLBACK (wifi_last_scan_updated), data);
-		data->scan_cancellable = g_cancellable_new ();
-		data->timeout_id = g_timeout_add_seconds (15, wifi_list_scan_timeout, data);
+
+		data = g_slice_new (WifiListData);
+		*data = (WifiListData) {
+			.wifi             = wifi,
+			.scan_info        = scan_info,
+			.last_scan_id     = g_signal_connect (wifi,
+			                                      "notify::" NM_DEVICE_WIFI_LAST_SCAN,
+			                                      G_CALLBACK (wifi_last_scan_updated),
+			                                      data),
+			.scan_cancellable = g_cancellable_new (),
+			.timeout_id       = g_timeout_add_seconds (15,
+			                                           wifi_list_scan_timeout,
+			                                           data),
+		};
+
 		nm_device_wifi_request_scan_async (wifi, data->scan_cancellable, wifi_list_rescan_cb, data);
 	}
 
