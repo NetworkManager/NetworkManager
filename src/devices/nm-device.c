@@ -9739,6 +9739,17 @@ _set_mtu (NMDevice *self, guint32 mtu)
 	}
 }
 
+static gboolean
+set_platform_mtu (NMDevice *self, guint32 mtu)
+{
+	int r;
+
+	r = nm_platform_link_set_mtu (nm_device_get_platform (self),
+	                              nm_device_get_ip_ifindex (self),
+	                              mtu);
+	return (r != -NME_PL_CANT_SET_MTU);
+}
+
 static void
 _commit_mtu (NMDevice *self, const NMIP4Config *config)
 {
@@ -9898,10 +9909,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 
 		if (mtu_desired && mtu_desired != mtu_plat) {
-			int r;
-
-			r = nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, mtu_desired);
-			if (r == -NME_PL_CANT_SET_MTU) {
+			if (!NM_DEVICE_GET_CLASS (self)->set_platform_mtu (self, mtu_desired)) {
 				anticipated_failure = TRUE;
 				success = FALSE;
 				_LOGW (LOGD_DEVICE, "mtu: failure to set MTU. %s",
@@ -17691,6 +17699,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->parent_changed_notify = parent_changed_notify;
 	klass->can_reapply_change = can_reapply_change;
 	klass->reapply_connection = reapply_connection;
+	klass->set_platform_mtu = set_platform_mtu;
 
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
