@@ -240,6 +240,10 @@ typedef struct _NMDeviceClass {
 
 	const NMLinkType *link_types;
 
+	/* if the device MTU is set based on parent's one, this specifies
+	 * a delta in the MTU allowed value due the encapsulation overhead */
+	guint16 mtu_parent_delta;
+
 	/* Whether the device type is a master-type. This depends purely on the
 	 * type (NMDeviceClass), not the actual device instance. */
 	bool is_master:1;
@@ -330,7 +334,9 @@ typedef struct _NMDeviceClass {
 	                                  NMSettingsConnection *sett_conn,
 	                                  char **specific_object);
 
-	guint32     (*get_configured_mtu) (NMDevice *self, NMDeviceMtuSource *out_source);
+	guint32     (*get_configured_mtu) (NMDevice *self,
+	                                   NMDeviceMtuSource *out_source,
+	                                   gboolean *out_force);
 
 	const char *(*get_auto_ip_config_method) (NMDevice *self, int addr_family);
 

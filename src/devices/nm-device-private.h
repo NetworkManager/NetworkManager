@@ -175,7 +175,11 @@ guint32 nm_device_get_configured_mtu_from_connection (NMDevice *device,
                                                       GType setting_type,
                                                       NMDeviceMtuSource *out_source);
 
-guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, NMDeviceMtuSource *out_source);
+guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, NMDeviceMtuSource *out_source, gboolean *out_force);
+
+guint32 nm_device_get_configured_mtu_wired_parent (NMDevice *self,
+                                                   NMDeviceMtuSource *out_source,
+                                                   gboolean *out_force);
 
 void nm_device_commit_mtu (NMDevice *self);
 
