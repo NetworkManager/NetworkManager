@@ -482,6 +482,7 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 	const guint8 *arr_data;
 	gsize arr_len;
 	gboolean p_metered;
+	gboolean p_owe_transition_mode = FALSE;
 	guint32 p_max_rate;
 	gboolean p_max_rate_has;
 	gint64 now_msec = 0;
@@ -630,10 +631,17 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 		guint32 rate;
 
 		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
-		nm_wifi_utils_parse_ies (arr_data, arr_len, &rate, &p_metered);
+		nm_wifi_utils_parse_ies (arr_data, arr_len, &rate, &p_metered, &p_owe_transition_mode);
 		p_max_rate = NM_MAX (p_max_rate, rate);
 		p_max_rate_has = TRUE;
 		g_variant_unref (v_v);
+
+
+		/* Add OWE Security type if OWE transition mode is available */
+		if (p_owe_transition_mode)
+			bss_info->rsn_flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+		else
+			bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE;
 
 		bss_info->metered = p_metered;
 	}
