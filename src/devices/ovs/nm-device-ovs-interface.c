@@ -121,6 +121,43 @@ _is_internal_interface (NMDevice *device)
 	return nm_streq (nm_setting_ovs_interface_get_interface_type (s_ovs_iface), "internal");
 }
 
+static void
+set_platform_mtu_cb (GError *error, gpointer user_data)
+{
+	NMDevice *device = user_data;
+	NMDeviceOvsInterface *self = NM_DEVICE_OVS_INTERFACE (device);
+
+	if (   error
+	    && !g_error_matches (error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
+		_LOGW (LOGD_DEVICE, "could not change mtu of '%s': %s",
+		       nm_device_get_iface (device), error->message);
+	}
+
+	g_object_unref (device);
+}
+
+static gboolean
+set_platform_mtu (NMDevice *device, guint32 mtu)
+{
+	/*
+	 * If the MTU is not set in ovsdb, Open vSwitch will change
+	 * the MTU of an internal interface to match the minimum of
+	 * the other interfaces in the bridge.
+	 */
+	/* FIXME(shutdown): the function should become cancellable so
+	 * that it doesn't need to hold a reference to the device, and
+	 * it can be stopped during shutdown.
+	 */
+	if (_is_internal_interface (device)) {
+		nm_ovsdb_set_interface_mtu (nm_ovsdb_get (),
+		                            nm_device_get_ip_iface (device),
+		                            mtu, set_platform_mtu_cb,
+		                            g_object_ref (device));
+	}
+
+	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->set_platform_mtu (device, mtu);
+}
+
 static NMActStageReturn
 act_stage3_ip_config_start (NMDevice *device,
                             int addr_family,
@@ -351,4 +388,6 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	device_class->link_changed = link_changed;
 	device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
+	device_class->set_platform_mtu = set_platform_mtu;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 }
