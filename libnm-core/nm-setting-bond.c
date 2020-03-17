@@ -1033,7 +1033,7 @@ options_equal_asym (NMSettingBond *s_bond,
                     NMSettingCompareFlags flags)
 {
 	GHashTableIter iter;
-	const char *key, *value, *value2;
+	const char *key, *value;
 
 	g_hash_table_iter_init (&iter, NM_SETTING_BOND_GET_PRIVATE (s_bond)->options);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
@@ -1048,18 +1048,7 @@ options_equal_asym (NMSettingBond *s_bond,
 				continue;
 		}
 
-		value2 = _bond_get_option (s_bond2, key);
-
-		if (!value2) {
-			if (nm_streq (key, "num_grat_arp"))
-				value2 = _bond_get_option (s_bond2, "num_unsol_na");
-			else if (nm_streq (key, "num_unsol_na"))
-				value2 = _bond_get_option (s_bond2, "num_grat_arp");
-		}
-
-		if (!value2)
-			value2 = _bond_get_option_default (s_bond2, key);
-		if (!nm_streq (value, value2))
+		if (!nm_streq0 (value, _bond_get_option (s_bond2, key)))
 			return FALSE;
 	}
 

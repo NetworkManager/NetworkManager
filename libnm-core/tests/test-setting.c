@@ -641,21 +641,23 @@ test_bond_compare (void)
 	                           ((const char *[]){ "mode", "balance-rr", "miimon", "1", NULL }),
 	                           ((const char *[]){ "mode", "balance-rr", "miimon", "2", NULL }));
 
-	/* ignore default values */
-	test_bond_compare_options (TRUE,
+	test_bond_compare_options (FALSE,
 	                           ((const char *[]){ "miimon", "1", NULL }),
 	                           ((const char *[]){ "miimon", "1", "updelay", "0", NULL }));
 
-	/* special handling of num_grat_arp, num_unsol_na */
 	test_bond_compare_options (FALSE,
 	                           ((const char *[]){ "num_grat_arp", "2", NULL }),
 	                           ((const char *[]){ "num_grat_arp", "1", NULL }));
-	test_bond_compare_options (TRUE,
+	test_bond_compare_options (FALSE,
 	                           ((const char *[]){ "num_grat_arp", "3", NULL }),
 	                           ((const char *[]){ "num_unsol_na", "3", NULL }));
-	test_bond_compare_options (TRUE,
+	test_bond_compare_options (FALSE,
 	                           ((const char *[]){ "num_grat_arp", "4", NULL }),
 	                           ((const char *[]){ "num_unsol_na", "4", "num_grat_arp", "4", NULL }));
+
+	test_bond_compare_options (FALSE,
+	                           ((const char *[]){ "mode", "balance-rr", "miimon", "100", NULL }),
+	                           ((const char *[]){ "mode", "balance-rr", NULL }));
 }
 
 static void
