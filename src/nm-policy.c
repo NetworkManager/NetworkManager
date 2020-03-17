@@ -1003,21 +1003,6 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 }
 
 static void
-update_ip6_dns_delegation (NMPolicy *self)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	NMDevice *device;
-	NMActiveConnection *ac;
-	const CList *tmp_list;
-
-	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-		device = nm_active_connection_get_device (ac);
-		if (device && nm_device_needs_ip6_subnet (device))
-			nm_device_copy_ip6_dns_config (device, get_default_device (self, AF_INET6));
-	}
-}
-
-static void
 update_ip6_prefix_delegation (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
@@ -1085,8 +1070,9 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 }
 
 static void
-update_ip_dns (NMPolicy *self, int addr_family)
+update_ip_dns (NMPolicy *self, int addr_family, NMDevice *changed_device)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	gpointer ip_config;
 	const char *ip_iface = NULL;
 	NMVpnConnection *vpn = NULL;
@@ -1108,19 +1094,32 @@ update_ip_dns (NMPolicy *self, int addr_family)
 		                            device);
 	}
 
-	if (addr_family == AF_INET6)
-		update_ip6_dns_delegation (self);
+	if (addr_family == AF_INET6) {
+		NMActiveConnection *ac;
+		const CList *tmp_list;
+
+		/* Tell devices needing a subnet about the new DNS configuration */
+		nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+			device = nm_active_connection_get_device (ac);
+			if (   device
+			    && device != changed_device
+			    && nm_device_needs_ip6_subnet (device))
+				nm_device_copy_ip6_dns_config (device, get_default_device (self, AF_INET6));
+		}
+	}
 }
 
 static void
-update_routing_and_dns (NMPolicy *self, gboolean force_update)
+update_routing_and_dns (NMPolicy *self,
+                        gboolean force_update,
+                        NMDevice *changed_device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	update_ip_dns (self, AF_INET);
-	update_ip_dns (self, AF_INET6);
+	update_ip_dns (self, AF_INET, changed_device);
+	update_ip_dns (self, AF_INET6, changed_device);
 
 	update_ip4_routing (self, force_update);
 	update_ip6_routing (self, force_update);
@@ -1855,14 +1854,14 @@ device_state_changed (NMDevice *device,
 		if (ip6_config)
 			_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT, device);
 
-		update_routing_and_dns (self, FALSE);
+		update_routing_and_dns (self, FALSE, device);
 
 		nm_dns_manager_end_updates (priv->dns_manager, __func__);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
-			update_routing_and_dns (self, FALSE);
+			update_routing_and_dns (self, FALSE, device);
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
 		if (sett_conn) {
@@ -1897,7 +1896,7 @@ device_state_changed (NMDevice *device,
 			reset_autoconnect_all (self, device, FALSE);
 
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
-			update_routing_and_dns (self, FALSE);
+			update_routing_and_dns (self, FALSE, device);
 
 		/* Device is now available for auto-activation */
 		schedule_activate_check (self, device);
@@ -1928,7 +1927,7 @@ device_state_changed (NMDevice *device,
 		if (   s_con
 		    && nm_setting_connection_get_num_secondaries (s_con) > 0) {
 			/* Make routes and DNS up-to-date before activating dependent connections */
-			update_routing_and_dns (self, FALSE);
+			update_routing_and_dns (self, FALSE, device);
 
 			/* Activate secondary (VPN) connections */
 			if (!activate_secondary_connections (self,
@@ -1984,7 +1983,7 @@ device_ip_config_changed (NMDevice *device,
 			if (old_config)
 				nm_dns_manager_set_ip_config (priv->dns_manager, old_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
 		}
-		update_ip_dns (self, addr_family);
+		update_ip_dns (self, addr_family, device);
 		if (addr_family == AF_INET)
 			update_ip4_routing (self, TRUE);
 		else
@@ -2106,7 +2105,7 @@ vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
 	if (ip6_config)
 		nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_VPN);
 
-	update_routing_and_dns (self, TRUE);
+	update_routing_and_dns (self, TRUE, NULL);
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
@@ -2128,7 +2127,7 @@ vpn_connection_deactivated (NMPolicy *self, NMVpnConnection *vpn)
 	if (ip6_config)
 		nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
-	update_routing_and_dns (self, TRUE);
+	update_routing_and_dns (self, TRUE, NULL);
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
