@@ -80,6 +80,7 @@ Consent/Disapproval List
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
+- [Y] Javier Arteaga <jarteaga@jbeta.is>
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Michael Biebl <biebl@debian.org>
