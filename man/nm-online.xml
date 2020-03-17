@@ -57,12 +57,17 @@
     connection, or specified timeout expires. On exit, the returned status code
     should be checked (see the return codes below).</para>
 
-    <para>By default NetworkManager waits for IPv4 dynamic addressing to complete
-    but does not wait for the <literal>auto</literal> IPv6 dynamic addressing. To
-    wait for IPv6 addressing to complete, either (1) change the network
-    connection's IPv6 <literal>may-fail</literal> setting to <literal>no</literal>,
-    and/or (2) change the IPv6 addressing method to <literal>manual</literal> or
-    <literal>dhcp</literal>, to indicate that IPv6 connectivity is expected.</para>
+    <para>This tool is not very useful to call directly. It is however used by
+    <literal>NetworkManager-wait-online.service</literal> with
+    <literal>--wait-for-startup</literal> argument. This is used to delay
+    the service and indirectly <literal>network-online.target</literal>,
+    until networking is up. Don't order your own systemd services after
+    <literal>NetworkManager-wait-online.service</literal> directly. Instead
+    if necessary, order your services after <literal>network-online.target</literal>.
+    Even better is to have your services react to network changes dynamically
+    and don't order them with respect to <literal>network-online.target</literal>
+    at all.
+    </para>
   </refsect1>
 
   <refsect1 id='options'><title>Options</title>
@@ -99,10 +104,24 @@
           <para>Wait for NetworkManager startup to complete, rather than waiting for
           network connectivity specifically. Startup is considered complete once
           NetworkManager has activated (or attempted to activate) every auto-activate
-          connection which is available given the current network state. (This is
-          generally only useful at boot time; after startup has completed,
+          connection which is available given the current network state. This corresponds
+          to the moment when NetworkManager logs <literal>"startup complete"</literal>.
+          This mode is generally only useful at boot time. After startup has completed,
           <command>nm-online -s</command> will just return immediately, regardless of the
-          current network state.)</para>
+          current network state.</para>
+          <para>There are various ways to affect when startup complete is reached.
+          For example, by setting a connection profile to autoconnect, such a profile
+          possibly will activate during startup and thus delay startup complete being reached.
+          Also, a profile is considered ready when it fully reached the logical <literal>connected</literal>
+          state in NetworkManager. That means, properties like <literal>ipv4.may-fail</literal> and <literal>ipv6.may-fail</literal>
+          affect whether a certain address family is required.
+          Generally, a failure of <literal>NetworkManager-wait-online.service</literal>
+          indicates a configuration error, where NetworkManager won't be able to reach the
+          desired connectivity state during startup. An example for that are bridge or bond master
+          profiles, that get autoconnected but without activating any slaves. Such master devices
+          hang in activating state indefinitely, and cause <literal>NetworkManager-wait-online.service</literal>
+          to fail.
+          </para>
         </listitem>
       </varlistentry>
 
