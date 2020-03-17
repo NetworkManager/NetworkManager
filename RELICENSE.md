@@ -90,6 +90,7 @@ Consent/Disapproval List
 - [Y] Pavel Šimerda <pavlix@pavlix.net> (Red Hat, Inc.)
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
 - [Y] Sebastien Fabre <sebastien.fabre@sigfox.com> (Sigfox)
+- [Y] Soapux <2375-Soapux@users.noreply.gitlab.freedesktop.org>
 - [Y] Tambet Ingo <tambet@gmail.com> (Novell, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 
