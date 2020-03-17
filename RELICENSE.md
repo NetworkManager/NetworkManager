@@ -78,7 +78,7 @@ Consent/Disapproval List
 - [Y] Christian Kellner <christian@kellner.me> (Red Hat, Inc.)
 - [Y] Corentin Noël <corentin@elementary.io>
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
-- [Y] Dan Winship <dwinship@redhat.com> (Red Hat, Inc.)
+- [Y] Dan Winship <danw@redhat.com> (Red Hat, Inc.)
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
