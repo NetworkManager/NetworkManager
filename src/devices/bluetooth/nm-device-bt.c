@@ -484,7 +484,7 @@ modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 	}
 
 	priv->stage1_modem_prepare_state = NM_DEVICE_STAGE_STATE_INIT;
-	nm_device_activate_schedule_stage1_device_prepare (device);
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 }
 
 static void
@@ -519,7 +519,7 @@ modem_prepare_result (NMModem *modem,
 	}
 
 	priv->stage1_modem_prepare_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
+	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 }
 
 static void
@@ -719,7 +719,7 @@ mm_modem_added_cb (NMModemManager *manager,
 	priv = NM_DEVICE_BT_GET_PRIVATE (self);
 
 	if (priv->stage1_bt_state == NM_DEVICE_STAGE_STATE_COMPLETED)
-		nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
+		nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 }
 
 /*****************************************************************************/
@@ -903,7 +903,7 @@ connect_bz_cb (NMBluezManager *bz_mgr,
 	}
 
 	priv->stage1_bt_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self));
+	nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 }
 
 static NMActStageReturn

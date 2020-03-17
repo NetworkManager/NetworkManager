@@ -137,11 +137,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	GError *error = NULL;
 
 	req = nm_device_get_act_request (device);
-
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_pppoe = nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE);
-
 	g_return_val_if_fail (s_pppoe, NM_ACT_STAGE_RETURN_FAILURE);
 
 	g_clear_object (&priv->ip4_config);
@@ -157,9 +155,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	}
 
 	if (   !priv->ppp_manager
-	    || !nm_ppp_manager_start (priv->ppp_manager, req,
+	    || !nm_ppp_manager_start (priv->ppp_manager,
+	                              req,
 	                              nm_setting_pppoe_get_username (s_pppoe),
-	                              30, 0, &error)) {
+	                              30,
+	                              0,
+	                              &error)) {
 		_LOGW (LOGD_DEVICE | LOGD_PPP, "PPPoE failed to start: %s", error->message);
 		g_error_free (error);
 
@@ -169,16 +170,18 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
+	g_signal_connect (priv->ppp_manager,
+	                  NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
 	                  G_CALLBACK (ppp_state_changed),
 	                  self);
-	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
+	g_signal_connect (priv->ppp_manager,
+	                  NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
 	                  G_CALLBACK (ppp_ifindex_set),
 	                  self);
-	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
+	g_signal_connect (priv->ppp_manager,
+	                  NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
 	                  G_CALLBACK (ppp_ip4_config),
 	                  self);
-
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 

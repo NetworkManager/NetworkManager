@@ -416,7 +416,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	}
 
 	priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-	nm_device_activate_schedule_stage1_device_prepare (device);
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 }
 
 static void

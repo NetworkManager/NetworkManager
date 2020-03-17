@@ -156,7 +156,7 @@ modem_prepare_result (NMModem *modem,
 	}
 
 	priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-	nm_device_activate_schedule_stage1_device_prepare (device);
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 }
 
 static void
@@ -191,7 +191,7 @@ modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 	}
 
 	priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
-	nm_device_activate_schedule_stage1_device_prepare (device);
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 }
 
 static void
@@ -605,7 +605,6 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem);
-
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 

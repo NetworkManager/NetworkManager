@@ -1062,6 +1062,14 @@ nm_g_variant_lookup_value (GVariant *dictionary,
 	       : NULL;
 }
 
+static inline gboolean
+nm_g_variant_is_of_type (GVariant *value,
+                         const GVariantType *type)
+{
+	return    value
+	       && g_variant_is_of_type (value, type);
+}
+
 static inline void
 nm_g_source_destroy_and_unref (GSource *source)
 {

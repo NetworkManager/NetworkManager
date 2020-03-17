@@ -429,7 +429,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	connection = nm_device_get_applied_connection (device);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
-
 	nm_assert (NM_IS_SETTING_WIFI_P2P (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIFI_P2P)));
 
 	/* The prepare stage ensures that the peer has been found */
@@ -449,7 +448,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	/* TODO: Fix "pbc" being hardcoded here! */
 	nm_supplicant_interface_p2p_connect (priv->mgmt_iface,
 	                                     nm_wifi_p2p_peer_get_supplicant_path (peer),
-	                                     "pbc", NULL);
+	                                     "pbc",
+	                                     NULL);
 
 	/* Set up a timeout on the connect attempt */
 	if (priv->sup_timeout_id == 0) {
@@ -523,7 +523,7 @@ peer_add_remove (NMDeviceWifiP2P *self,
 			if (peer) {
 				/* A peer for the connection was found, cancel the timeout and go to configure state. */
 				nm_clear_g_source (&priv->find_peer_timeout_id);
-				nm_device_activate_schedule_stage1_device_prepare (device);
+				nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
 			}
 		}
 

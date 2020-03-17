@@ -228,7 +228,8 @@ link_changed_cb (NMPlatform *platform,
 
 		/* This only gets called for PPPoE connections and "nas" interfaces */
 
-		if (priv->nas_ifindex > 0 && ifindex == priv->nas_ifindex) {
+		if (   priv->nas_ifindex > 0
+		    && ifindex == priv->nas_ifindex) {
 			/* NAS device went away for some reason; kill the connection */
 			_LOGD (LOGD_ADSL, "br2684 interface disappeared");
 			nm_device_state_changed (device,
@@ -273,11 +274,17 @@ nas_update_cb (gpointer user_data)
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 
-	g_assert (priv->nas_ifname);
+	nm_assert (priv->nas_ifname);
 
 	priv->nas_update_count++;
 
-	if (priv->nas_update_count > 10) {
+	nm_assert (priv->nas_ifindex <= 0);
+	priv->nas_ifindex = nm_platform_link_get_ifindex (nm_device_get_platform (device), priv->nas_ifname);
+	if (priv->nas_ifindex <= 0) {
+		if (priv->nas_update_count <= 10) {
+			/* Keep waiting for it to appear */
+			return G_SOURCE_CONTINUE;
+		}
 		priv->nas_update_id = 0;
 		_LOGW (LOGD_ADSL, "failed to find br2684 interface %s ifindex after timeout", priv->nas_ifname);
 		nm_device_state_changed (device,
@@ -286,31 +293,22 @@ nas_update_cb (gpointer user_data)
 		return G_SOURCE_REMOVE;
 	}
 
-	g_warn_if_fail (priv->nas_ifindex < 0);
-	priv->nas_ifindex = nm_platform_link_get_ifindex (nm_device_get_platform (device), priv->nas_ifname);
-	if (priv->nas_ifindex < 0) {
-		/* Keep waiting for it to appear */
-		return G_SOURCE_CONTINUE;
-	}
-
 	priv->nas_update_id = 0;
 	_LOGD (LOGD_ADSL, "using br2684 iface '%s' index %d", priv->nas_ifname, priv->nas_ifindex);
 
-	if (pppoe_vcc_config (self)) {
-		nm_device_activate_schedule_stage3_ip_config_start (device);
-	} else {
+	if (!pppoe_vcc_config (self)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_BR2684_FAILED);
+		return G_SOURCE_REMOVE;
 	}
 
+	nm_device_activate_schedule_stage2_device_config (device, TRUE);
 	return G_SOURCE_REMOVE;
 }
 
-static NMActStageReturn
-br2684_create_iface (NMDeviceAdsl *self,
-                     NMSettingAdsl *s_adsl,
-                     NMDeviceStateReason *out_failure_reason)
+static gboolean
+br2684_create_iface (NMDeviceAdsl *self)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 	struct atm_newif_br2684 ni;
@@ -318,19 +316,14 @@ br2684_create_iface (NMDeviceAdsl *self,
 	int err, errsv;
 	guint num = 0;
 
-	g_return_val_if_fail (s_adsl != NULL, FALSE);
-
-	if (priv->nas_update_id) {
-		g_warn_if_fail (priv->nas_update_id == 0);
-		nm_clear_g_source (&priv->nas_update_id);
-	}
+	if (nm_clear_g_source (&priv->nas_update_id))
+		nm_assert_not_reached ();
 
 	fd = socket (PF_ATMPVC, SOCK_DGRAM | SOCK_CLOEXEC, ATM_AAL5);
 	if (fd < 0) {
 		errsv = errno;
 		_LOGE (LOGD_ADSL, "failed to open ATM control socket (%d)", errsv);
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_BR2684_FAILED);
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		return FALSE;
 	}
 
 	memset (&ni, 0, sizeof (ni));
@@ -343,36 +336,33 @@ br2684_create_iface (NMDeviceAdsl *self,
 	 * cannot return that name to us.  Since we want to know the name right
 	 * away, just brute-force it.
 	 */
-	while (num < 10000) {
+	while (TRUE) {
 		memset (&ni.ifname, 0, sizeof (ni.ifname));
-		g_snprintf (ni.ifname, sizeof (ni.ifname), "nas%d", num++);
+		g_snprintf (ni.ifname, sizeof (ni.ifname), "nas%u", num++);
 
 		err = ioctl (fd, ATM_NEWBACKENDIF, &ni);
-		if (err == 0) {
-			g_free (priv->nas_ifname);
-			priv->nas_ifname = g_strdup (ni.ifname);
-			_LOGD (LOGD_ADSL, "waiting for br2684 iface '%s' to appear", priv->nas_ifname);
+		if (err != 0) {
+			errsv = errno;
+			if (errsv == EEXIST)
+				continue;
 
-			priv->nas_update_count = 0;
-			priv->nas_update_id = g_timeout_add (100, nas_update_cb, self);
-			return NM_ACT_STAGE_RETURN_POSTPONE;
-		}
-		errsv = errno;
-		if (errsv != EEXIST) {
 			_LOGW (LOGD_ADSL, "failed to create br2684 interface (%d)", errsv);
-			break;
+			return FALSE;
 		}
-	}
 
-	NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_BR2684_FAILED);
-	return NM_ACT_STAGE_RETURN_FAILURE;
+		nm_utils_strdup_reset (&priv->nas_ifname, ni.ifname);
+		_LOGD (LOGD_ADSL, "waiting for br2684 iface '%s' to appear", priv->nas_ifname);
+		priv->nas_update_count = 0;
+		priv->nas_update_id = g_timeout_add (100, nas_update_cb, self);
+		return TRUE;
+	}
 }
 
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
 
@@ -383,16 +373,27 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	protocol = nm_setting_adsl_get_protocol (s_adsl);
 	_LOGD (LOGD_ADSL, "using ADSL protocol '%s'", protocol);
 
-	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE) == 0) {
-		/* PPPoE needs RFC2684 bridging before we can do PPP over it */
-		ret = br2684_create_iface (self, s_adsl, out_failure_reason);
-	} else if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) == 0) {
+	if (nm_streq0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA)) {
 		/* PPPoA doesn't need anything special */
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	} else
-		_LOGW (LOGD_ADSL, "unhandled ADSL protocol '%s'", protocol);
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+	}
 
-	return ret;
+	if (nm_streq0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
+		/* PPPoE needs RFC2684 bridging before we can do PPP over it */
+		if (priv->nas_ifindex <= 0) {
+			if (priv->nas_update_id == 0) {
+				if (!br2684_create_iface (self)) {
+					NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_BR2684_FAILED);
+					return NM_ACT_STAGE_RETURN_FAILURE;
+				}
+			}
+			return NM_ACT_STAGE_RETURN_POSTPONE;
+		}
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+	}
+
+	_LOGW (LOGD_ADSL, "unhandled ADSL protocol '%s'", protocol);
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static void
@@ -460,8 +461,8 @@ act_stage3_ip4_config_start (NMDevice *device,
 	g_return_val_if_fail (s_adsl, NM_ACT_STAGE_RETURN_FAILURE);
 
 	/* PPPoE uses the NAS interface, not the ATM interface */
-	if (g_strcmp0 (nm_setting_adsl_get_protocol (s_adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE) == 0) {
-		g_assert (priv->nas_ifname);
+	if (nm_streq0 (nm_setting_adsl_get_protocol (s_adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
+		nm_assert (priv->nas_ifname);
 		ppp_iface = priv->nas_ifname;
 
 		_LOGD (LOGD_ADSL, "starting PPPoE on br2684 interface %s", priv->nas_ifname);
@@ -540,8 +541,8 @@ adsl_cleanup (NMDeviceAdsl *self)
 	 * so it gets leaked.  It does get destroyed when it's no longer in use,
 	 * but we have no control over that.
 	 */
-	priv->nas_ifindex = -1;
-	g_clear_pointer (&priv->nas_ifname, g_free);
+	priv->nas_ifindex = 0;
+	nm_clear_g_free (&priv->nas_ifname);
 }
 
 static void

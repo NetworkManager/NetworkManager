@@ -691,8 +691,6 @@ static void (*const activate_stage4_ip_config_timeout_x[2]) (NMDevice *self) = {
 
 static void sriov_op_cb (GError *error, gpointer user_data);
 
-static void activate_stage2_device_config (NMDevice *self);
-
 static void activate_stage5_ip_config_result_4 (NMDevice *self);
 static void activate_stage5_ip_config_result_6 (NMDevice *self);
 
@@ -6438,7 +6436,7 @@ master_ready_cb (NMActiveConnection *active,
 	nm_assert (nm_active_connection_get_master_ready (active));
 
 	if (priv->state == NM_DEVICE_STATE_PREPARE)
-		nm_device_activate_schedule_stage1_device_prepare (self);
+		nm_device_activate_schedule_stage1_device_prepare (self, FALSE);
 }
 
 static void
@@ -6586,7 +6584,7 @@ sriov_params_cb (GError *error, gpointer data)
 
 	priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
 
-	nm_device_activate_schedule_stage1_device_prepare (self);
+	nm_device_activate_schedule_stage1_device_prepare (self, FALSE);
 }
 
 /*
@@ -6726,26 +6724,22 @@ activate_stage1_device_prepare (NMDevice *self)
 	if (master)
 		master_ready (self, active);
 
-	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
+	nm_device_activate_schedule_stage2_device_config (self, TRUE);
 }
 
-/*
- * nm_device_activate_schedule_stage1_device_prepare
- *
- * Prepare a device for activation
- *
- */
 void
-nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
+nm_device_activate_schedule_stage1_device_prepare (NMDevice *self,
+                                                   gboolean do_sync)
 {
-	NMDevicePrivate *priv;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_DEVICE_GET_PRIVATE (self)->act_request.obj);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request.obj);
+	if (!do_sync) {
+		activation_source_schedule (self, activate_stage1_device_prepare, AF_INET);
+		return;
+	}
 
-	activation_source_schedule (self, activate_stage1_device_prepare, AF_INET);
+	activation_source_invoke_sync (self, activate_stage1_device_prepare, AF_INET);
 }
 
 static NMActStageReturn
@@ -7067,10 +7061,11 @@ activate_stage2_device_config (NMDevice *self)
 
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
-			if (no_firmware)
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
-			else
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_FAILED,
+			                           no_firmware
+			                         ? NM_DEVICE_STATE_REASON_FIRMWARE_MISSING
+			                         : NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 			return;
 		}
 	}
@@ -7108,18 +7103,18 @@ activate_stage2_device_config (NMDevice *self)
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 }
 
-/*
- * nm_device_activate_schedule_stage2_device_config
- *
- * Schedule setup of the hardware device
- *
- */
 void
-nm_device_activate_schedule_stage2_device_config (NMDevice *self)
+nm_device_activate_schedule_stage2_device_config (NMDevice *self,
+                                                  gboolean do_sync)
 {
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	activation_source_schedule (self, activate_stage2_device_config, AF_INET);
+	if (!do_sync) {
+		activation_source_schedule (self, activate_stage2_device_config, AF_INET);
+		return;
+	}
+
+	activation_source_invoke_sync (self, activate_stage2_device_config, AF_INET);
 }
 
 void
@@ -12599,7 +12594,7 @@ _device_activate (NMDevice *self, NMActRequest *req)
 
 	act_request_set (self, req);
 
-	nm_device_activate_schedule_stage1_device_prepare (self);
+	nm_device_activate_schedule_stage1_device_prepare (self, FALSE);
 }
 
 static void
