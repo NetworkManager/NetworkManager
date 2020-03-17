@@ -75,6 +75,7 @@ Consent/Disapproval List
 - [Y] Atul Anand <atulhjp@gmail.com>
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
 - [Y] Benjamin Berg <bberg@redhat.com> (Red Hat, Inc.)
+- [Y] Christian Kellner <christian@kellner.me> (Red Hat, Inc.)
 - [Y] Corentin Noël <corentin@elementary.io>
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <dwinship@redhat.com> (Red Hat, Inc.)
