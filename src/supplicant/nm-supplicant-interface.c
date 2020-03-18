@@ -59,7 +59,6 @@ enum {
 	STATE,                   /* change in the interface's state */
 	BSS_CHANGED,             /* a new BSS appeared, was updated, or was removed. */
 	PEER_CHANGED,            /* a new Peer appeared, was updated, or was removed */
-	SCAN_DONE,               /* wifi scan is complete */
 	WPS_CREDENTIALS,         /* WPS credentials received */
 	GROUP_STARTED,           /* a new Group (interface) was created */
 	GROUP_FINISHED,          /* a Group (interface) has been finished */
@@ -451,6 +450,22 @@ _notify_maybe_scanning (NMSupplicantInterface *self)
 	if (priv->scanning_cached == scanning)
 		return;
 
+	if (   !scanning
+	    && !c_list_is_empty (&priv->bss_initializing_lst_head)) {
+		/* we would change state to indicate we no longer scan. However,
+		 * we still have BSS instances to be initialized. Delay the
+		 * state change further. */
+		return;
+	}
+
+	_LOGT ("scanning: %s", scanning ? "yes" : "no");
+
+	if (!scanning)
+		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
+	else {
+		/* while we are scanning, we set the timestamp to -1. */
+		priv->last_scan_msec = -1;
+	}
 	priv->scanning_cached = scanning;
 	_notify (self, PROP_SCANNING);
 }
@@ -514,6 +529,9 @@ _bss_info_changed_emit (NMSupplicantInterface *self,
                         NMSupplicantBssInfo *bss_info,
                         gboolean is_present)
 {
+	_LOGT ("BSS %s %s",
+	       bss_info->bss_path->str,
+	       is_present ? "updated" : "deleted");
 	g_signal_emit (self,
 	               signals[BSS_CHANGED],
 	               0,
@@ -744,6 +762,8 @@ _bss_info_get_all_cb (GVariant *result,
 	_bss_info_properties_changed (self, bss_info, properties, TRUE);
 
 	_starting_check_ready (self);
+
+	_notify_maybe_scanning (self);
 }
 
 static void
@@ -1083,6 +1103,8 @@ set_state_down (NMSupplicantInterface *self,
 	_remove_network (self);
 
 	nm_clear_pointer (&priv->current_bss, nm_ref_string_unref);
+
+	_notify_maybe_scanning (self);
 }
 
 static void
@@ -1104,9 +1126,6 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 	_LOGT ("set state \"%s\" (was \"%s\")",
 	       nm_supplicant_interface_state_to_string (new_state),
 	       nm_supplicant_interface_state_to_string (priv->state));
-
-	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
 
 	priv->state = new_state;
 
@@ -1137,16 +1156,9 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 gint64
 nm_supplicant_interface_get_last_scan (NMSupplicantInterface *self)
 {
-	NMSupplicantInterfacePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* returns -1 if we are currently scanning. */
-	return   priv->scanning_cached
-	       ? -1
-	       : priv->last_scan_msec;
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->last_scan_msec;
 }
 
 #define MATCH_PROPERTY(p, n, v, t) (!strcmp (p, n) && g_variant_is_of_type (v, t))
@@ -1777,13 +1789,8 @@ _properties_changed_main (NMSupplicantInterface *self,
 		g_variant_unref (v_v);
 	}
 
-	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b)) {
-		if (priv->scanning_cached != (!!v_b)) {
-			if (priv->scanning_cached)
-				priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
-			priv->scanning_cached = v_b;
-		}
-	}
+	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b))
+		priv->scanning_property = v_b;
 
 	if (nm_g_variant_lookup (properties, "Ifname", "&s", &v_s)) {
 		if (nm_utils_strdup_reset (&priv->ifname, v_s))
@@ -1870,6 +1877,8 @@ _properties_changed_main (NMSupplicantInterface *self,
 
 	if (do_set_state)
 		set_state (self, priv->supp_state);
+
+	_notify_maybe_scanning (self);
 }
 
 static void
@@ -2717,16 +2726,6 @@ _signal_handle (NMSupplicantInterface *self,
 		if (!priv->is_ready_main)
 			return;
 
-		if (nm_streq (signal_name, "ScanDone")) {
-			priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
-			_LOGT ("ScanDone signal received");
-			if (priv->state > NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
-				nm_assert (priv->state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-				g_signal_emit (self, signals[SCAN_DONE], 0);
-			}
-			return;
-		}
-
 		if (nm_streq (signal_name, "BSSAdded")) {
 			if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oa{sv})")))
 				return;
@@ -2874,11 +2873,11 @@ _signal_cb (GDBusConnection *connection,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->starting_pending_count++;
-
 	_signal_handle (self, signal_interface_name, signal_name, parameters);
-
 	priv->starting_pending_count--;
 	_starting_check_ready (self);
+
+	_notify_maybe_scanning (self);
 }
 
 /*****************************************************************************/
@@ -3003,6 +3002,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_STARTING;
 	priv->supp_state = NM_SUPPLICANT_INTERFACE_STATE_INVALID;
+	priv->last_scan_msec = -1;
 
 	c_list_init (&self->supp_lst);
 
@@ -3297,14 +3297,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_BOOLEAN);
-
-	signals[SCAN_DONE] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_SCAN_DONE,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
 
 	signals[WPS_CREDENTIALS] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS,

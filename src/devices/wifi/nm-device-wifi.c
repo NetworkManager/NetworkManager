@@ -165,16 +165,9 @@ static void supplicant_iface_bss_changed_cb (NMSupplicantInterface *iface,
                                              gboolean is_present,
                                              NMDeviceWifi *self);
 
-static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
-                                           NMDeviceWifi * self);
-
 static void supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
                                                  GVariant *credentials,
                                                  NMDeviceWifi *self);
-
-static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
-                                                 GParamSpec * pspec,
-                                                 NMDeviceWifi * self);
 
 static void supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
                                                  GParamSpec *pspec,
@@ -183,6 +176,10 @@ static void supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 static void supplicant_iface_notify_p2p_available (NMSupplicantInterface *iface,
                                                    GParamSpec *pspec,
                                                    NMDeviceWifi *self);
+
+static void _requested_scan_set (NMDeviceWifi *self, gboolean value);
+
+static void periodic_update (NMDeviceWifi *self);
 
 static void request_wireless_scan (NMDeviceWifi *self,
                                    gboolean periodic,
@@ -220,6 +217,7 @@ _notify_scanning (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean scanning;
+	gboolean last_scan_changed = FALSE;
 
 	scanning =    priv->sup_iface
 	           && nm_supplicant_interface_get_scanning (priv->sup_iface);
@@ -229,7 +227,36 @@ _notify_scanning (NMDeviceWifi *self)
 
 	_LOGD (LOGD_WIFI, "wifi-scan: scanning-state: %s", scanning ? "scanning" : "idle");
 	priv->is_scanning = scanning;
-	_notify (self, PROP_SCANNING);
+
+	if (   !scanning
+	    || priv->last_scan_msec == 0) {
+		last_scan_changed = TRUE;
+		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
+	}
+
+	schedule_scan (self, TRUE);
+
+	nm_gobject_notify_together (self,
+	                            PROP_SCANNING,
+	                              last_scan_changed
+	                            ? PROP_LAST_SCAN
+	                            : PROP_0);
+
+	if (!priv->is_scanning) {
+		_requested_scan_set (self, FALSE);
+		if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED) {
+			/* Run a quick update of current AP when coming out of a scan */
+			periodic_update (self);
+		}
+	}
+}
+
+static void
+supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
+                                     GParamSpec *pspec,
+                                     NMDeviceWifi *self)
+{
+	_notify_scanning (self);
 }
 
 static gboolean
@@ -278,10 +305,6 @@ supplicant_interface_acquire_cb (NMSupplicantManager *supplicant_manager,
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_BSS_CHANGED,
 	                  G_CALLBACK (supplicant_iface_bss_changed_cb),
-	                  self);
-	g_signal_connect (priv->sup_iface,
-	                  NM_SUPPLICANT_INTERFACE_SCAN_DONE,
-	                  G_CALLBACK (supplicant_iface_scan_done_cb),
 	                  self);
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS,
@@ -1236,7 +1259,12 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 
 	last_scan = nm_supplicant_interface_get_last_scan (priv->sup_iface);
 	if (   last_scan > 0
-	    && (nm_utils_get_monotonic_timestamp_msec () - last_scan) < 10 * NM_UTILS_MSEC_PER_SEC) {
+	    && nm_utils_get_monotonic_timestamp_msec () < last_scan + (10 * NM_UTILS_MSEC_PER_SEC)) {
+		/* FIXME: we really should not outright reject a scan request in this case. We should
+		 * ensure to start a scan request soon, possibly with rate limiting. And there is no
+		 * need to tell the caller that we aren't going to scan...
+		 *
+		 * Same above, if we are currently scanning... */
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
@@ -1503,21 +1531,6 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 		_LOGD (LOGD_WIFI, "wifi-scan: scheduled in %d seconds (interval now %d seconds)",
 		       next_scan, priv->scan_interval);
 	}
-}
-
-static void
-supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
-                               NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback");
-
-	priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
-	_notify (self, PROP_LAST_SCAN);
-	schedule_scan (self, TRUE);
-
-	_requested_scan_set (self, FALSE);
 }
 
 /****************************************************************************
@@ -2209,19 +2222,6 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 		cleanup_association_attempt (self, TRUE);
 		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	}
-}
-
-static void
-supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
-                                     GParamSpec *pspec,
-                                     NMDeviceWifi *self)
-{
-	_notify_scanning (self);
-
-	/* Run a quick update of current AP when coming out of a scan */
-	if (   !NM_DEVICE_WIFI_GET_PRIVATE (self)->is_scanning
-	    && nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED)
-		periodic_update (self);
 }
 
 static void

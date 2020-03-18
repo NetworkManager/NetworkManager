@@ -71,7 +71,6 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_STATE                   "state"
 #define NM_SUPPLICANT_INTERFACE_BSS_CHANGED             "bss-changed"
 #define NM_SUPPLICANT_INTERFACE_PEER_CHANGED            "peer-changed"
-#define NM_SUPPLICANT_INTERFACE_SCAN_DONE               "scan-done"
 #define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS         "wps-credentials"
 #define NM_SUPPLICANT_INTERFACE_GROUP_STARTED           "group-started"
 #define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED          "group-finished"
