@@ -4189,12 +4189,15 @@ ip6_address_scope_priority (const struct in6_addr *addr)
 }
 
 static int
-ip6_address_scope_cmp (gconstpointer a, gconstpointer b)
+ip6_address_scope_cmp (gconstpointer a, gconstpointer b, gpointer increasing)
 {
 	const NMPlatformIP6Address *x = NMP_OBJECT_CAST_IP6_ADDRESS (*(const void **) a);
 	const NMPlatformIP6Address *y = NMP_OBJECT_CAST_IP6_ADDRESS (*(const void **) b);
+	int ret;
 
-	return ip6_address_scope_priority (&x->address) - ip6_address_scope_priority (&y->address);
+	ret = ip6_address_scope_priority (&x->address) - ip6_address_scope_priority (&y->address);
+
+	return GPOINTER_TO_INT (increasing) ? ret : -ret;
 }
 
 /**
@@ -4235,7 +4238,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	 * apply the same sorting to known addresses, so that we don't try to
 	 * unnecessary change the order of addresses with different scopes. */
 	if (known_addresses)
-		g_ptr_array_sort (known_addresses, ip6_address_scope_cmp);
+		g_ptr_array_sort_with_data (known_addresses, ip6_address_scope_cmp, GINT_TO_POINTER (TRUE));
 
 	if (!_addr_array_clean_expired (AF_INET6, ifindex, known_addresses, now, &known_addresses_idx))
 		known_addresses = NULL;
@@ -4250,6 +4253,8 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 
 	if (plat_addresses) {
 		guint known_addresses_len;
+
+		g_ptr_array_sort_with_data (plat_addresses, ip6_address_scope_cmp, GINT_TO_POINTER (FALSE));
 
 		known_addresses_len = known_addresses ? known_addresses->len : 0;
 
