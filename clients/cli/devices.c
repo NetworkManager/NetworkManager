@@ -11,14 +11,13 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 
-#include "nm-secret-agent-simple.h"
-#include "nm-client-utils.h"
-
-#include "polkit-agent.h"
-#include "utils.h"
+#include "nm-glib-aux/nm-secret-utils.h"
 #include "common.h"
 #include "connections.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "nm-client-utils.h"
+#include "nm-secret-agent-simple.h"
+#include "polkit-agent.h"
+#include "utils.h"
 
 /* define some prompts */
 #define PROMPT_INTERFACE  _("Interface: ")
@@ -2822,7 +2821,8 @@ wifi_print_aps (NMDeviceWifi *wifi,
                 NmCli *nmc,
                 GArray *_out_indices,
                 const NMMetaAbstractInfo *const*tmpl,
-                const char *bssid_user)
+                const char *bssid_user,
+                gboolean *bssid_found)
 {
 	NMAccessPoint *ap = NULL;
 	const GPtrArray *aps;
@@ -2873,7 +2873,7 @@ wifi_print_aps (NMDeviceWifi *wifi,
 			print_data (&nmc->nmc_config, out_indices, header_name, 0, &out);
 			g_free (info);
 
-			nmc->return_value = NMC_RESULT_SUCCESS;
+			*bssid_found = TRUE;
 			empty_line = TRUE;
 		}
 	} else {
@@ -2883,12 +2883,25 @@ wifi_print_aps (NMDeviceWifi *wifi,
 	}
 }
 
+static gint64
+_device_wifi_get_last_scan (NMDeviceWifi *wifi)
+{
+	gint64 timestamp;
+
+	timestamp = nm_device_wifi_get_last_scan (wifi);
+	if (timestamp == -1)
+		return G_MININT64;
+	return timestamp;
+}
+
 typedef struct {
 	NmCli *nmc;
 	NMDevice **devices;
 	const NMMetaAbstractInfo *const *tmpl;
 	const char *bssid_user;
 	GArray *out_indices;
+	gint64 rescan_cutoff_msec;
+	guint pending;
 } ScanInfo;
 
 typedef struct {
@@ -2900,79 +2913,94 @@ typedef struct {
 } WifiListData;
 
 static void
-wifi_list_finish (WifiListData *data)
+wifi_list_finish (WifiListData *wifi_list_data,
+                  gboolean force_finished)
 {
-	ScanInfo *info = data->scan_info;
-	NmCli *nmc = info->nmc;
+	ScanInfo *scan_info = wifi_list_data->scan_info;
+	NmCli *nmc = scan_info->nmc;
+	gboolean bssid_found = FALSE;
 	guint i;
 
-	if (--info->nmc->should_wait == 0) {
-		for (i = 0; info->devices[i]; i++) {
-			wifi_print_aps (NM_DEVICE_WIFI (info->devices[i]),
-			                info->nmc,
-			                info->out_indices,
-			                info->tmpl,
-			                info->bssid_user);
-		}
-		if (nmc->return_value == NMC_RESULT_ERROR_NOT_FOUND) {
-			g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
-			                 data->scan_info->bssid_user);
-		}
-		g_main_loop_quit (loop);
+	if (   !force_finished
+	    && scan_info->rescan_cutoff_msec != G_MAXINT64
+	    && scan_info->rescan_cutoff_msec > _device_wifi_get_last_scan (wifi_list_data->wifi)) {
+		/* wait longer... */
+		return;
 	}
 
-	g_signal_handler_disconnect (data->wifi, data->last_scan_id);
-	nm_clear_g_source (&data->timeout_id);
-	nm_clear_g_cancellable (&data->scan_cancellable);
-	nm_g_slice_free (data);
+	nm_clear_g_signal_handler (wifi_list_data->wifi, &wifi_list_data->last_scan_id);
+	nm_clear_g_source (&wifi_list_data->timeout_id);
+	nm_clear_g_cancellable (&wifi_list_data->scan_cancellable);
+	nm_g_slice_free (wifi_list_data);
 
-	if (info->nmc->should_wait == 0) {
-		for (i = 0; info->devices[i]; i++)
-			g_object_unref (info->devices[i]);
-		g_free (info->devices);
-		g_array_unref (info->out_indices);
-		nm_g_slice_free (info);
+	if (--scan_info->pending > 0)
+		return;
+
+	for (i = 0; scan_info->devices[i]; i++) {
+		wifi_print_aps (NM_DEVICE_WIFI (scan_info->devices[i]),
+		                scan_info->nmc,
+		                scan_info->out_indices,
+		                scan_info->tmpl,
+		                scan_info->bssid_user,
+		                &bssid_found);
 	}
+
+	if (   scan_info->bssid_user
+	    && !bssid_found) {
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
+		                 scan_info->bssid_user);
+	}
+
+	for (i = 0; scan_info->devices[i]; i++)
+		g_object_unref (scan_info->devices[i]);
+	g_free (scan_info->devices);
+	g_array_unref (scan_info->out_indices);
+	nm_g_slice_free (scan_info);
+
+	scan_info->nmc->should_wait--;
+	g_main_loop_quit (loop);
 }
 
 static void
 wifi_last_scan_updated (GObject *gobject, GParamSpec *pspec, gpointer user_data)
 {
-	WifiListData *data = user_data;
-
-	wifi_list_finish (data);
+	wifi_list_finish (user_data, FALSE);
 }
 
 static void
 wifi_list_rescan_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
 	NMDeviceWifi *wifi = NM_DEVICE_WIFI (source_object);
-	WifiListData *data = user_data;
 	gs_free_error GError *error = NULL;
+	WifiListData *wifi_list_data;
+	gboolean force_finished;
 
-	if (!nm_device_wifi_request_scan_finish (wifi, res, &error)) {
-		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			return;
+	nm_device_wifi_request_scan_finish (wifi, res, &error);
+	if (nm_utils_error_is_cancelled (error))
+		return;
 
-		if (g_error_matches (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ALLOWED)) {
-			/* This likely means that scanning is already in progress. There's
-			 * a good chance we'll get updated results soon; wait for them. */
-			return;
-		}
+	if (g_error_matches (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ALLOWED)) {
+		/* This likely means that scanning is already in progress. There's
+		 * a good chance we'll get updated results soon; wait for them. */
+		force_finished = FALSE;
+	} else if (error)
+		force_finished = TRUE;
+	else
+		force_finished = FALSE;
 
-		/* Scanning could not be initiated for unknown reason,
-		 * no point in waiting for results. */
-		wifi_list_finish (data);
-	}
+	wifi_list_data = user_data;
+	g_clear_object (&wifi_list_data->scan_cancellable);
+	wifi_list_finish (wifi_list_data, force_finished);
 }
 
 static gboolean
 wifi_list_scan_timeout (gpointer user_data)
 {
-	WifiListData *data = user_data;
+	WifiListData *wifi_list_data = user_data;
 
-	wifi_list_finish (data);
-
+	wifi_list_data->timeout_id = 0;
+	wifi_list_finish (user_data, TRUE);
 	return G_SOURCE_REMOVE;
 }
 
@@ -3009,10 +3037,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	const NMMetaAbstractInfo *const*tmpl;
 	gs_unref_array GArray *out_indices = NULL;
 	int option;
-	guint64 rescan_cutoff;
-	NMDeviceWifi *wifi;
+	gint64 rescan_cutoff_msec;
 	ScanInfo *scan_info = NULL;
-	WifiListData *data;
 	gboolean ifname_handled;
 	NMDevice *ifname_handled_candidate;
 	guint i, j;
@@ -3043,8 +3069,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			bssid_user = *argv;
 			if (argc == 1 && nmc->complete)
 				complete_aps (devices, NULL, bssid_user, NULL);
-			/* We'll switch this to NMC_RESULT_SUCCESS if we find an access point. */
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			break;
 		case 4: /* --rescan */
 			argc--;
@@ -3086,13 +3110,13 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
 
-	if (rescan == NULL || strcmp (rescan, "auto") == 0) {
-		rescan_cutoff = NM_MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SEC, 0);
-	} else if (strcmp (rescan, "no") == 0) {
-		rescan_cutoff = 0;
-	} else if (strcmp (rescan, "yes") == 0) {
-		rescan_cutoff = -1;
-	} else {
+	if (NM_IN_STRSET (rescan, NULL, "auto"))
+		rescan_cutoff_msec = nm_utils_get_timestamp_msec () - (30 * NM_UTILS_MSEC_PER_SEC);
+	else if (nm_streq (rescan, "no"))
+		rescan_cutoff_msec = G_MININT64;
+	else if (nm_streq (rescan, "yes"))
+		rescan_cutoff_msec = G_MAXINT64;
+	else {
 		g_string_printf (nmc->return_text, _("Error: invalid rescan argument: '%s' not among [auto, no, yes]"), rescan);
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
@@ -3146,57 +3170,52 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_NOT_FOUND;
 	}
 
-	/* Start a new scan for devices that need it */
+	scan_info = g_slice_new (ScanInfo);
+	*scan_info = (ScanInfo) {
+		.out_indices        = g_array_ref (out_indices),
+		.tmpl               = tmpl,
+		.bssid_user         = bssid_user,
+		.nmc                = nmc,
+		.rescan_cutoff_msec = rescan_cutoff_msec,
+	};
+
+	for (i = 0; devices[i]; i++)
+		g_object_ref (devices[i]);
+
 	for (i = 0; devices[i]; i++) {
-		wifi = (NMDeviceWifi *) devices[i];
-		g_object_ref (wifi);
+		NMDeviceWifi *wifi = NM_DEVICE_WIFI (devices[i]);
+		WifiListData *wifi_list_data;
+		int timeout_msec;
 
-		if (   rescan_cutoff == 0
-		    || (   rescan_cutoff > 0
-		        && nm_device_wifi_get_last_scan (wifi) >= rescan_cutoff))
-			continue;
+		if (rescan_cutoff_msec <= _device_wifi_get_last_scan (wifi))
+			timeout_msec = 0;
+		else
+			timeout_msec = 15000;
 
-		if (!scan_info) {
-			scan_info = g_slice_new (ScanInfo);
-			*scan_info = (ScanInfo) {
-				.out_indices = g_array_ref (out_indices),
-				.tmpl        = tmpl,
-				.bssid_user  = bssid_user,
-				.nmc         = nmc,
-			};
-		}
-
-		nmc->should_wait++;
-
-		data = g_slice_new (WifiListData);
-		*data = (WifiListData) {
+		wifi_list_data = g_slice_new (WifiListData);
+		*wifi_list_data = (WifiListData) {
 			.wifi             = wifi,
 			.scan_info        = scan_info,
-			.last_scan_id     = g_signal_connect (wifi,
-			                                      "notify::" NM_DEVICE_WIFI_LAST_SCAN,
-			                                      G_CALLBACK (wifi_last_scan_updated),
-			                                      data),
-			.scan_cancellable = g_cancellable_new (),
-			.timeout_id       = g_timeout_add_seconds (15,
-			                                           wifi_list_scan_timeout,
-			                                           data),
+			.timeout_id       = g_timeout_add (timeout_msec,
+			                                   wifi_list_scan_timeout,
+			                                   wifi_list_data),
 		};
 
-		nm_device_wifi_request_scan_async (wifi, data->scan_cancellable, wifi_list_rescan_cb, data);
-	}
+		scan_info->pending++;
 
-	if (scan_info) {
-		scan_info->devices = g_steal_pointer (&devices);
-	} else {
-		/* Print results right away if no scan is pending */
-		for (i = 0; devices[i]; i++) {
-			wifi_print_aps (NM_DEVICE_WIFI (devices[i]),
-			                nmc, out_indices,
-			                tmpl, bssid_user);
-			g_object_unref (devices[i]);
+		if (timeout_msec > 0) {
+			wifi_list_data->last_scan_id = g_signal_connect (wifi,
+			                                                 "notify::" NM_DEVICE_WIFI_LAST_SCAN,
+			                                                 G_CALLBACK (wifi_last_scan_updated),
+			                                                 wifi_list_data),
+			wifi_list_data->scan_cancellable = g_cancellable_new (),
+			nm_device_wifi_request_scan_async (wifi, wifi_list_data->scan_cancellable, wifi_list_rescan_cb, wifi_list_data);
 		}
 	}
 
+	scan_info->devices = g_steal_pointer (&devices);
+
+	nmc->should_wait++;
 	return nmc->return_value;
 }
 
