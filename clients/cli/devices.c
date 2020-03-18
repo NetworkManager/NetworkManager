@@ -2846,14 +2846,13 @@ wifi_print_aps (NMDeviceWifi *wifi,
 		/* Specific AP requested - list only that */
 		aps = nm_device_wifi_get_access_points (wifi);
 		for (i = 0; i < aps->len; i++) {
-			char *bssid_up;
 			NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
-			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
 
-			bssid_up = g_ascii_strup (bssid_user, -1);
-			if (!strcmp (bssid_up, candidate_bssid))
+			if (nm_utils_hwaddr_matches (bssid_user,
+			                             -1,
+			                             nm_access_point_get_bssid (candidate_ap),
+			                             -1))
 				ap = candidate_ap;
-			g_free (bssid_up);
 		}
 		if (ap) {
 			/* Add headers (field names) */
