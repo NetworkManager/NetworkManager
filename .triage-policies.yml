@@ -3,7 +3,7 @@ host_url: https://gitlab.freedesktop.org
 resource_rules:
   issues:
     rules:
-      - name: Close issues with not activity for 6 months
+      - name: Close issues with no activity for 6 months
         conditions:
           date:
             attribute: updated_at
@@ -13,11 +13,11 @@ resource_rules:
           state: opened
         actions:
             comment: |
-                "This issue has been inactive for 6 months, closing automatically, please reopen if you think the issue is still relevant."
+                This issue has been inactive for 6 months, closing automatically, please reopen if you think the issue is still relevant.
             status: close
             labels:
                 - auto-closed
-      - name: Close RFE with not activity for 12 months
+      - name: Close RFE with no activity for 12 months
         conditions:
           date:
             attribute: updated_at
@@ -29,7 +29,7 @@ resource_rules:
               - enhancement
         actions:
             comment: |
-                "This enhancement issue has been inactive for 12 months, closing automatically, please reopen if you think the issue is still relevant."
+                This enhancement issue has been inactive for 12 months, closing automatically, please reopen if you think the issue is still relevant.
             status: close
             labels:
                 - auto-closed
@@ -53,7 +53,7 @@ resource_rules:
           state: opened
         actions:
             comment: |
-                "This MR has been inactive for more than 2 months, closing automatically, please reopen if you think it is still relevant."
+                This MR has been inactive for more than 2 months, closing automatically, please reopen if you think it is still relevant.
             status: close
             labels:
                 - auto-closed

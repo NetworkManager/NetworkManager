@@ -200,8 +200,9 @@ pages:
 
 triage:issues:
   stage: triage
+  image: ruby:2.7
   script:
     - gem install gitlab-triage
-    - gitlab-triage --token $API_TOKEN --source-id $SOURCE_ID
+    - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
   only:
     - schedules
