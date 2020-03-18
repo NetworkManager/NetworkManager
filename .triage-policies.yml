@@ -1,0 +1,67 @@
+host_url: https://gitlab.freedesktop.org
+
+resource_rules:
+  issues:
+    rules:
+      - name: Close issues with not activity for 6 months
+        conditions:
+          date:
+            attribute: updated_at
+            condition: older_than
+            interval_type: months
+            interval: 6
+          state: opened
+        actions:
+            comment: |
+                "This issue has been inactive for 6 months, closing automatically, please reopen if you think the issue is still relevant."
+            status: close
+            labels:
+                - auto-closed
+      - name: Close RFE with not activity for 12 months
+        conditions:
+          date:
+            attribute: updated_at
+            condition: older_than
+            interval_type: months
+            interval: 12
+          state: opened
+          labels:
+              - enhancement
+        actions:
+            comment: |
+                "This enhancement issue has been inactive for 12 months, closing automatically, please reopen if you think the issue is still relevant."
+            status: close
+            labels:
+                - auto-closed
+      - name: Clear auto-closed label for open issues
+        conditions:
+          state: opened
+          labels:
+                - auto-closed
+        actions:
+            remove_labels:
+                - auto-closed
+  merge_requests:
+    rules:
+      - name: Close MRs with no activity after 2 month
+        conditions:
+          date:
+            attribute: updated_at
+            condition: older_than
+            interval_type: months
+            interval: 2
+          state: opened
+        actions:
+            comment: |
+                "This MR has been inactive for more than 2 months, closing automatically, please reopen if you think it is still relevant."
+            status: close
+            labels:
+                - auto-closed
+      - name: Clear auto-closed label for open MRs
+        conditions:
+          state: opened
+          labels:
+                - auto-closed
+        actions:
+            remove_labels:
+                - auto-closed

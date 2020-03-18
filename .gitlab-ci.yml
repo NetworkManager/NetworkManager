@@ -7,6 +7,7 @@
 stages:
   - test
   - deploy
+  - triage
 
 .fedora_install: &fedora_install
   before_script:
@@ -196,3 +197,11 @@ pages:
       - public
   only:
     - master
+
+triage:issues:
+  stage: triage
+  script:
+    - gem install gitlab-triage
+    - gitlab-triage --token $API_TOKEN --source-id $SOURCE_ID
+  only:
+    - schedules
