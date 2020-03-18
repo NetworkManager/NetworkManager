@@ -36,15 +36,15 @@ typedef struct _NMSupplicantConfig NMSupplicantConfig;
 /*****************************************************************************/
 
 typedef enum {
-	NM_SUPPL_CAP_TYPE_AP = 0,
-	NM_SUPPL_CAP_TYPE_FAST,
+	NM_SUPPL_CAP_TYPE_AP,
 	NM_SUPPL_CAP_TYPE_PMF,
 	NM_SUPPL_CAP_TYPE_FILS,
 	NM_SUPPL_CAP_TYPE_P2P,
-	NM_SUPPL_CAP_TYPE_MESH,
-	NM_SUPPL_CAP_TYPE_WFD,
 	NM_SUPPL_CAP_TYPE_FT,
 	NM_SUPPL_CAP_TYPE_SHA384,
+	NM_SUPPL_CAP_TYPE_MESH,
+	NM_SUPPL_CAP_TYPE_FAST,
+	NM_SUPPL_CAP_TYPE_WFD,
 	_NM_SUPPL_CAP_TYPE_NUM,
 } NMSupplCapType;
 

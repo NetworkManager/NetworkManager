@@ -166,18 +166,18 @@ _caps_set (NMSupplicantManagerPrivate *priv,
 	priv->capabilities = NM_SUPPL_CAP_MASK_SET (priv->capabilities, type, value);
 }
 
-static const char *
-_caps_to_str (NMSupplicantManagerPrivate *priv,
-              NMSupplCapType type)
+static char
+_caps_to_char (NMSupplicantManagerPrivate *priv,
+               NMSupplCapType type)
 {
 	NMTernary val;
 
-	val = NM_SUPPL_CAP_MASK_GET (priv->capabilities, type);;
+	val = NM_SUPPL_CAP_MASK_GET (priv->capabilities, type);
 	if (val == NM_TERNARY_TRUE)
-		return "supported";
+		return '+';
 	if (val == NM_TERNARY_FALSE)
-		return "not supported";
-	return "possibly supported";
+		return '-';
+	return '?';
 }
 
 /*****************************************************************************/
@@ -992,15 +992,26 @@ _dbus_get_capabilities_cb (GVariant *res,
 		}
 	}
 
-	_LOGD ("AP mode is %s",  _caps_to_str (priv, NM_SUPPL_CAP_TYPE_AP));
-	_LOGD ("PMF is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_PMF));
-	_LOGD ("FILS is %s",     _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FILS));
-	_LOGD ("P2P is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_P2P));
-	_LOGD ("FT is %s",       _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FT));
-	_LOGD ("SHA384 is %s",   _caps_to_str (priv, NM_SUPPL_CAP_TYPE_SHA384));
-	_LOGD ("Mesh is %s",     _caps_to_str (priv, NM_SUPPL_CAP_TYPE_MESH));
-	_LOGD ("EAP-FAST is %s", _caps_to_str (priv, NM_SUPPL_CAP_TYPE_FAST));
-	_LOGD ("WFD is %s",      _caps_to_str (priv, NM_SUPPL_CAP_TYPE_WFD));
+	_LOGD ("supported features:"
+	       " AP%c"
+	       " PMF%c"
+	       " FILS%c"
+	       " P2P%c"
+	       " FT%c"
+	       " SHA384%c"
+	       " MESH%c"
+	       " FAST%c"
+	       " WFD%c"
+	       "",
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_AP),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_PMF),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_FILS),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_P2P),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_FT),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_SHA384),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_MESH),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_FAST),
+	       _caps_to_char (priv, NM_SUPPL_CAP_TYPE_WFD));
 
 	nm_assert (g_hash_table_size (priv->supp_ifaces) == 0);
 	nm_assert (c_list_is_empty (&priv->supp_lst_head));
