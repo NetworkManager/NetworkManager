@@ -141,9 +141,11 @@ typedef struct _NMSupplicantInterfacePrivate {
 	NMSupplicantInterfaceState state;
 	NMSupplicantInterfaceState supp_state;
 
-	bool           scanning:1;
+	bool           scanning_property:1;
+	bool           scanning_cached:1;
 
-	bool           p2p_capable:1;
+	bool           p2p_capable_property:1;
+	bool           p2p_capable_cached:1;
 
 	bool           p2p_group_is_owner:1;
 
@@ -433,11 +435,37 @@ _remove_network (NMSupplicantInterface *self)
 
 /*****************************************************************************/
 
-static gboolean
-_prop_p2p_available_get (NMSupplicantInterfacePrivate *priv)
+static void
+_notify_maybe_scanning (NMSupplicantInterface *self)
 {
-	return    priv->is_ready_p2p_device
-	       && priv->p2p_capable;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean scanning;
+
+	scanning =   NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->state)
+	          && (   priv->scanning_property
+	              || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING);
+
+	if (priv->scanning_cached == scanning)
+		return;
+
+	priv->scanning_cached = scanning;
+	_notify (self, PROP_SCANNING);
+}
+
+static void
+_notify_maybe_p2p_available (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean value;
+
+	value =    priv->is_ready_p2p_device
+	        && priv->p2p_capable_property;
+
+	if (priv->p2p_capable_cached == value)
+		return;
+
+	priv->p2p_capable_cached = value;
+	_notify (self, PROP_P2P_AVAILABLE);
 }
 
 /*****************************************************************************/
@@ -1069,20 +1097,12 @@ nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->current_bss;
 }
 
-static inline gboolean
-_prop_scanning_get (NMSupplicantInterfacePrivate *priv)
-{
-	return    (   priv->scanning
-	           || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-	       && NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->state);
-}
-
 gboolean
 nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 
-	return _prop_scanning_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->scanning_cached;
 }
 
 gint64
@@ -1095,7 +1115,7 @@ nm_supplicant_interface_get_last_scan (NMSupplicantInterface *self)
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	/* returns -1 if we are currently scanning. */
-	return   _prop_scanning_get (priv)
+	return   priv->scanning_cached
 	       ? -1
 	       : priv->last_scan_msec;
 }
@@ -1129,7 +1149,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 		/* Setting p2p_capable might toggle _prop_p2p_available_get(). However,
 		 * we don't need to check for a property changed notification, because
 		 * the caller did g_object_freeze_notify() and will perform the check. */
-		priv->p2p_capable = g_strv_contains (array, "p2p");
+		priv->p2p_capable_property = g_strv_contains (array, "p2p");
 		g_free (array);
 	}
 
@@ -1763,10 +1783,10 @@ _properties_changed_main (NMSupplicantInterface *self,
 	}
 
 	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b)) {
-		if (priv->scanning != (!!v_b)) {
-			if (priv->scanning)
+		if (priv->scanning_cached != (!!v_b)) {
+			if (priv->scanning_cached)
 				priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
-			priv->scanning = v_b;
+			priv->scanning_cached = v_b;
 		}
 	}
 
@@ -2520,8 +2540,6 @@ _properties_changed (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	gboolean is_main;
-	gboolean old_val_scanning;
-	gboolean old_val_p2p_available;
 
 	nm_assert (!properties || g_variant_is_of_type (properties, G_VARIANT_TYPE ("a{sv}")));
 
@@ -2542,9 +2560,6 @@ _properties_changed (NMSupplicantInterface *self,
 
 	priv->starting_pending_count++;
 
-	old_val_scanning = _prop_scanning_get (priv);
-	old_val_p2p_available = _prop_p2p_available_get (priv);
-
 	if (is_main) {
 		priv->is_ready_main = TRUE;
 		_properties_changed_main (self, properties);
@@ -2556,10 +2571,8 @@ _properties_changed (NMSupplicantInterface *self,
 	priv->starting_pending_count--;
 	_starting_check_ready (self);
 
-	if (old_val_scanning != _prop_scanning_get (priv))
-		_notify (self, PROP_SCANNING);
-	if (old_val_p2p_available != _prop_p2p_available_get (priv))
-		_notify (self, PROP_P2P_AVAILABLE);
+	_notify_maybe_scanning (self);
+	_notify_maybe_p2p_available (self);
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -2878,7 +2891,7 @@ _signal_cb (GDBusConnection *connection,
 gboolean
 nm_supplicant_interface_get_p2p_available (NMSupplicantInterface *self)
 {
-	return _prop_p2p_available_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_capable_cached;
 }
 
 gboolean
