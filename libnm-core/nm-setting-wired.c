@@ -1343,7 +1343,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_addrees);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_MAC_ADDRESS], &nm_sett_info_propert_type_mac_address);
 
 	/**
 	 * NMSettingWired:cloned-mac-address:

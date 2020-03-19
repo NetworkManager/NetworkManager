@@ -49,7 +49,7 @@ gboolean _nm_utils_wps_method_validate (NMSettingWirelessSecurityWpsMethod wps_m
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_strdict;
 
-extern const NMSettInfoPropertType nm_sett_info_propert_type_mac_addrees;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_mac_address;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address;
 
