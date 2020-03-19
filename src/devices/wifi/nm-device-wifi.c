@@ -85,7 +85,8 @@ typedef struct {
 	bool              is_scanning:1;
 	bool              hidden_probe_scan_warn:1;
 
-	gint64            last_scan; /* milliseconds */
+	gint64            last_scan_msec;
+
 	gint32            scheduled_scan_time; /* seconds */
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
@@ -1512,7 +1513,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 
 	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback");
 
-	priv->last_scan = nm_utils_get_monotonic_timestamp_msec ();
+	priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
 	_notify (self, PROP_LAST_SCAN);
 	schedule_scan (self, TRUE);
 
@@ -1538,7 +1539,7 @@ ap_list_dump (gpointer user_data)
 
 		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%" G_GINT64_FORMAT " next:%u]",
 		       now_s,
-		       priv->last_scan / NM_UTILS_MSEC_PER_SEC,
+		       priv->last_scan_msec / NM_UTILS_MSEC_PER_SEC,
 		       priv->scheduled_scan_time);
 		c_list_for_each_entry (ap, &priv->aps_lst_head, aps_lst)
 			_ap_dump (self, LOGL_DEBUG, ap, "dump", now_s);
@@ -3270,9 +3271,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LAST_SCAN:
 		g_value_set_int64 (value,
-		                   priv->last_scan > 0
-		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NSEC_PER_MSEC)
-		                       : (gint64) -1);
+		                     priv->last_scan_msec > 0
+		                   ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan_msec, NM_UTILS_NSEC_PER_MSEC)
+		                   : (gint64) -1);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
