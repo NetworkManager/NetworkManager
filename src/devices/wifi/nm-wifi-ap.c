@@ -503,13 +503,14 @@ const char *
 nm_wifi_ap_to_string (const NMWifiAP *self,
                       char *str_buf,
                       gulong buf_len,
-                      gint32 now_s)
+                      gint64 now_msec)
 {
 	const NMWifiAPPrivate *priv;
 	const char *supplicant_id = "-";
 	const char *export_path;
 	guint32 chan;
 	gs_free char *ssid_to_free = NULL;
+	char str_buf_ts[100];
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (self), NULL);
 
@@ -525,8 +526,10 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	else
 		export_path = "/";
 
+	nm_utils_get_monotonic_timestamp_msec_cached (&now_msec);
+
 	g_snprintf (str_buf, buf_len,
-	            "%17s %-35s [ %c %3u %3u%% %c%c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
+	            "%17s %-35s [ %c %3u %3u%% %c%c W:%04X R:%04X ] %s sup:%s [nm:%s]",
 	            priv->address ?: "(none)",
 	            (ssid_to_free = _nm_utils_ssid_to_string (priv->ssid)),
 	            (priv->mode == NM_802_11_MODE_ADHOC
@@ -545,8 +548,11 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
 	              priv->last_seen_msec != G_MININT64
-	            ? (int) ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_sec ()) - (priv->last_seen_msec / 1000))
-	            : -1,
+	            ? nm_sprintf_buf (str_buf_ts,
+	                              "%3u.%03us",
+	                              (guint) ((now_msec - priv->last_seen_msec) / 1000),
+	                              (guint) ((now_msec - priv->last_seen_msec) % 1000))
+	            : "        ",
 	            supplicant_id,
 	            export_path);
 	return str_buf;

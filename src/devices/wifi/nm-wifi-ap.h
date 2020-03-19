@@ -94,7 +94,7 @@ gboolean          nm_wifi_ap_get_metered              (const NMWifiAP *self);
 const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
                                                        char *str_buf,
                                                        gulong buf_len,
-                                                       gint32 now_s);
+                                                       gint64 now_msec);
 
 const char      **nm_wifi_aps_get_paths        (const CList *aps_lst_head,
                                                 gboolean include_without_ssid);

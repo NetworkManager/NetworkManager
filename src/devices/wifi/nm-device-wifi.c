@@ -205,14 +205,14 @@ _ap_dump (NMDeviceWifi *self,
           NMLogLevel log_level,
           const NMWifiAP *ap,
           const char *prefix,
-          gint32 now_s)
+          gint64 now_msec)
 {
 	char buf[1024];
 
 	buf[0] = '\0';
 	_NMLOG (log_level, LOGD_WIFI_SCAN, "wifi-ap: %-7s %s",
 	        prefix,
-	        nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
+	        nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_msec));
 }
 
 static void
@@ -1535,14 +1535,21 @@ ap_list_dump (gpointer user_data)
 
 	if (_LOGD_ENABLED (LOGD_WIFI_SCAN)) {
 		NMWifiAP *ap;
-		gint32 now_s = nm_utils_get_monotonic_timestamp_sec ();
+		gint64 now_msec = nm_utils_get_monotonic_timestamp_msec ();
+		char str_buf[100];
 
-		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%" G_GINT64_FORMAT " next:%u]",
-		       now_s,
-		       priv->last_scan_msec / NM_UTILS_MSEC_PER_SEC,
+		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u.%03u, last:%s, next:%u]",
+		       (guint) (now_msec / NM_UTILS_MSEC_PER_SEC),
+		       (guint) (now_msec % NM_UTILS_MSEC_PER_SEC),
+		         priv->last_scan_msec > 0
+		       ? nm_sprintf_buf (str_buf,
+		                         "%u.%03u",
+		                         (guint) (priv->last_scan_msec / NM_UTILS_MSEC_PER_SEC),
+		                         (guint) (priv->last_scan_msec % NM_UTILS_MSEC_PER_SEC))
+		       : "-1",
 		       priv->scheduled_scan_time);
 		c_list_for_each_entry (ap, &priv->aps_lst_head, aps_lst)
-			_ap_dump (self, LOGL_DEBUG, ap, "dump", now_s);
+			_ap_dump (self, LOGL_DEBUG, ap, "dump", now_msec);
 	}
 	return G_SOURCE_REMOVE;
 }
