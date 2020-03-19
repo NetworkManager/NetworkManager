@@ -2938,7 +2938,7 @@ wifi_list_finish (WifiListData *wifi_list_data,
 
 	for (i = 0; scan_info->devices[i]; i++) {
 		wifi_print_aps (NM_DEVICE_WIFI (scan_info->devices[i]),
-		                scan_info->nmc,
+		                nmc,
 		                scan_info->out_indices,
 		                scan_info->tmpl,
 		                scan_info->bssid_user,
@@ -2958,7 +2958,7 @@ wifi_list_finish (WifiListData *wifi_list_data,
 	g_array_unref (scan_info->out_indices);
 	nm_g_slice_free (scan_info);
 
-	scan_info->nmc->should_wait--;
+	nmc->should_wait--;
 	g_main_loop_quit (loop);
 }
 
