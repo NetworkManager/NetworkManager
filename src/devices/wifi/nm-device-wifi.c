@@ -72,8 +72,6 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	gint8             invalid_strength_counter;
-
 	CList             aps_lst_head;
 	GHashTable       *aps_idx_by_supplicant_path;
 
@@ -500,16 +498,14 @@ periodic_update (NMDeviceWifi *self)
 	if (priv->current_ap) {
 		int percent;
 
-		/* Smooth out the strength to work around crappy drivers */
 		percent = nm_platform_wifi_get_quality (nm_device_get_platform (NM_DEVICE (self)), ifindex);
-		if (  percent >= 0
-		    || ++priv->invalid_strength_counter > 3) {
+		if (   percent >= 0
+		    && percent <= 100) {
 			if (nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent)) {
 #if NM_MORE_LOGGING
 				_ap_dump (self, LOGL_TRACE, priv->current_ap, "updated", 0);
 #endif
 			}
-			priv->invalid_strength_counter = 0;
 		}
 	}
 
