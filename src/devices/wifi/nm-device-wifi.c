@@ -101,7 +101,7 @@ typedef struct {
 
 	NMActRequestGetSecretsCallId *wifi_secrets_id;
 
-	guint             periodic_source_id;
+	guint             periodic_update_id;
 	guint             link_timeout_id;
 	guint32           failed_iface_count;
 	guint             reacquire_iface_id;
@@ -466,38 +466,44 @@ set_current_ap (NMDeviceWifi *self, NMWifiAP *new_ap, gboolean recheck_available
 static void
 periodic_update (NMDeviceWifi *self)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int ifindex = nm_device_get_ifindex (NM_DEVICE (self));
+	NMDeviceWifiPrivate *priv;
+	int ifindex;
 	guint32 new_rate;
-	int percent;
-	NMDeviceState state;
-	NMSupplicantInterfaceState supplicant_state;
 
-	/* BSSID and signal strength have meaningful values only if the device
-	 * is activated and not scanning.
-	 */
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (state != NM_DEVICE_STATE_ACTIVATED)
+	if (nm_device_get_state (NM_DEVICE (self)) != NM_DEVICE_STATE_ACTIVATED) {
+		/* BSSID and signal strength have meaningful values only if the device
+		 * is activated and not scanning.
+		 */
 		return;
+	}
 
-	/* Only update current AP if we're actually talking to something, otherwise
-	 * assume the old one (if any) is still valid until we're told otherwise or
-	 * the connection fails.
-	 */
-	supplicant_state = nm_supplicant_interface_get_state (priv->sup_iface);
-	if (   supplicant_state < NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING
-	    || supplicant_state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED
-	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
-		return;
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	/* In AP mode we currently have nothing to do. */
-	if (priv->mode == NM_802_11_MODE_AP)
+	if (   !nm_supplicant_interface_state_is_associated (nm_supplicant_interface_get_state (priv->sup_iface))
+	    || nm_supplicant_interface_get_scanning (priv->sup_iface)) {
+		/* Only update current AP if we're actually talking to something, otherwise
+		 * assume the old one (if any) is still valid until we're told otherwise or
+		 * the connection fails.
+		 */
 		return;
+	}
+
+	if (priv->mode == NM_802_11_MODE_AP) {
+		/* In AP mode we currently have nothing to do. */
+		return;
+	}
+
+	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
+	if (ifindex <= 0)
+		g_return_if_reached ();
 
 	if (priv->current_ap) {
+		int percent;
+
 		/* Smooth out the strength to work around crappy drivers */
 		percent = nm_platform_wifi_get_quality (nm_device_get_platform (NM_DEVICE (self)), ifindex);
-		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
+		if (  percent >= 0
+		    || ++priv->invalid_strength_counter > 3) {
 			if (nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent)) {
 #if NM_MORE_LOGGING
 				_ap_dump (self, LOGL_TRACE, priv->current_ap, "updated", 0);
@@ -517,7 +523,7 @@ periodic_update (NMDeviceWifi *self)
 static gboolean
 periodic_update_cb (gpointer user_data)
 {
-	periodic_update (NM_DEVICE_WIFI (user_data));
+	periodic_update (user_data);
 	return TRUE;
 }
 
@@ -653,7 +659,7 @@ deactivate (NMDevice *device)
 	int ifindex = nm_device_get_ifindex (device);
 	NM80211Mode old_mode = priv->mode;
 
-	nm_clear_g_source (&priv->periodic_source_id);
+	nm_clear_g_source (&priv->periodic_update_id);
 
 	cleanup_association_attempt (self, TRUE);
 
@@ -2882,8 +2888,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	                                              supplicant_connection_timeout_cb,
 	                                              self);
 
-	if (!priv->periodic_source_id)
-		priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update_cb, self);
+	if (!priv->periodic_update_id)
+		priv->periodic_update_id = g_timeout_add_seconds (6, periodic_update_cb, self);
 
 	/* We'll get stage3 started when the supplicant connects */
 	return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -3080,7 +3086,7 @@ device_state_changed (NMDevice *device,
 		 */
 		supplicant_interface_release (self);
 
-		nm_clear_g_source (&priv->periodic_source_id);
+		nm_clear_g_source (&priv->periodic_update_id);
 
 		cleanup_association_attempt (self, TRUE);
 		cleanup_supplicant_failures (self);
@@ -3355,7 +3361,7 @@ dispose (GObject *object)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->periodic_source_id);
+	nm_clear_g_source (&priv->periodic_update_id);
 
 	wifi_secrets_cancel (self);
 

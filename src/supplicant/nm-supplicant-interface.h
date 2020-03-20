@@ -41,6 +41,13 @@ nm_supplicant_interface_state_is_operational (NMSupplicantInterfaceState state)
 	       && state < NM_SUPPLICANT_INTERFACE_STATE_DOWN;
 }
 
+static inline gboolean
+nm_supplicant_interface_state_is_associated (NMSupplicantInterfaceState state)
+{
+	return    state >= NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING
+	       && state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
+}
+
 typedef enum {
 	NM_SUPPLICANT_AUTH_STATE_UNKNOWN,
 	NM_SUPPLICANT_AUTH_STATE_STARTED,
