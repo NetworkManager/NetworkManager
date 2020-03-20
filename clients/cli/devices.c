@@ -3170,6 +3170,16 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		return NMC_RESULT_ERROR_NOT_FOUND;
 	}
 
+	if (!devices[0]) {
+		if (bssid_user) {
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+			g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
+			                 bssid_user);
+			return NMC_RESULT_ERROR_NOT_FOUND;
+		}
+		return NMC_RESULT_SUCCESS;
+	}
+
 	scan_info = g_slice_new (ScanInfo);
 	*scan_info = (ScanInfo) {
 		.out_indices        = g_array_ref (out_indices),
