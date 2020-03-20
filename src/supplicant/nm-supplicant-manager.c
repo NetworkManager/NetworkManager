@@ -1053,6 +1053,10 @@ _supp_iface_remove_one (NMSupplicantManager *self,
                         gboolean force_remove_from_supplicant,
                         const char *reason)
 {
+#if NM_MORE_ASSERTS
+	_nm_unused gs_unref_object NMSupplicantInterface *supp_iface_keep_alive = g_object_ref (supp_iface);
+#endif
+
 	nm_assert (NM_IS_SUPPLICANT_MANAGER (self));
 	nm_assert (NM_IS_SUPPLICANT_INTERFACE (supp_iface));
 	nm_assert (c_list_contains (&NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->supp_lst_head, &supp_iface->supp_lst));

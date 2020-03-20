@@ -947,6 +947,7 @@ set_state_down (NMSupplicantInterface *self,
                 gboolean force_remove_from_supplicant,
                 const char *reason)
 {
+	_nm_unused gs_unref_object NMSupplicantInterface *self_keep_alive = g_object_ref (self);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	NMSupplicantBssInfo *bss_info;
 	NMSupplicantPeerInfo *peer_info;
