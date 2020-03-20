@@ -209,6 +209,14 @@ _ap_dump (NMDeviceWifi *self,
 	        nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_msec));
 }
 
+gboolean
+nm_device_wifi_get_scanning (NMDeviceWifi *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), FALSE);
+
+	return NM_DEVICE_WIFI_GET_PRIVATE (self)->is_scanning;
+}
+
 static void
 _notify_scanning (NMDeviceWifi *self)
 {
@@ -3276,7 +3284,7 @@ get_property (GObject *object, guint prop_id,
 		nm_dbus_utils_g_value_set_object_path (value, priv->current_ap);
 		break;
 	case PROP_SCANNING:
-		g_value_set_boolean (value, priv->is_scanning);
+		g_value_set_boolean (value, nm_device_wifi_get_scanning (self));
 		break;
 	case PROP_LAST_SCAN:
 		g_value_set_int64 (value,

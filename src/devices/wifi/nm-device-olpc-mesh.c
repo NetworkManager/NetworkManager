@@ -130,7 +130,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	gboolean scanning;
 
 	/* disconnect companion device, if it is connected */
 	if (nm_device_get_act_request (NM_DEVICE (priv->companion))) {
@@ -145,8 +144,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	}
 
 	/* wait with continuing configuration until the companion device is done scanning */
-	g_object_get (priv->companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
-	if (scanning) {
+	if (nm_device_wifi_get_scanning (NM_DEVICE_WIFI (priv->companion))) {
 		priv->stage1_waiting = TRUE;
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
@@ -248,13 +246,14 @@ companion_notify_cb (NMDeviceWifi *companion, GParamSpec *pspec, gpointer user_d
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	gboolean scanning;
+
+	nm_assert (NM_IS_DEVICE_WIFI (companion));
+	nm_assert (priv->companion == (gpointer) companion);
 
 	if (!priv->stage1_waiting)
 		return;
 
-	g_object_get (companion, NM_DEVICE_WIFI_SCANNING, &scanning, NULL);
-	if (!scanning) {
+	if (!nm_device_wifi_get_scanning (NM_DEVICE_WIFI (companion))) {
 		priv->stage1_waiting = FALSE;
 		nm_device_activate_schedule_stage1_device_prepare (NM_DEVICE (self), FALSE);
 	}

@@ -42,4 +42,6 @@ void _nm_device_wifi_request_scan (NMDeviceWifi *self,
 
 GPtrArray *nmtst_ssids_options_to_ptrarray (GVariant *value, GError **error);
 
+gboolean nm_device_wifi_get_scanning (NMDeviceWifi *self);
+
 #endif /* __NETWORKMANAGER_DEVICE_WIFI_H__ */
