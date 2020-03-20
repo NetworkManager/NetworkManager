@@ -314,6 +314,11 @@ gboolean nm_ppdirect_equal (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 
+guint nm_pgbytes_hash (gconstpointer p);
+gboolean nm_pgbytes_equal (gconstpointer a, gconstpointer b);
+
+/*****************************************************************************/
+
 #define NM_HASH_OBFUSCATE_PTR_FMT "%016" G_GINT64_MODIFIER "x"
 
 /* sometimes we want to log a pointer directly, for providing context/information about
