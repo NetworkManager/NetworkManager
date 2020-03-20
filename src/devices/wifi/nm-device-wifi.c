@@ -1146,7 +1146,7 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 	if (num_ssids > 32) {
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
-		                     NM_DEVICE_ERROR_NOT_ALLOWED,
+		                     NM_DEVICE_ERROR_INVALID_ARGUMENT,
 		                     "too many SSIDs requested to scan");
 		return NULL;
 	}
@@ -1163,7 +1163,7 @@ ssids_options_to_ptrarray (GVariant *value, GError **error)
 			if (len > 32) {
 				g_set_error (error,
 				             NM_DEVICE_ERROR,
-				             NM_DEVICE_ERROR_NOT_ALLOWED,
+				             NM_DEVICE_ERROR_INVALID_ARGUMENT,
 				             "SSID at index %d more than 32 bytes", (int) i);
 				return NULL;
 			}
@@ -1189,8 +1189,7 @@ dbus_request_scan_cb (NMDevice *device,
                       gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	gs_unref_variant GVariant *scan_options = user_data;
-	gs_unref_ptrarray GPtrArray *ssids = NULL;
+	gs_unref_ptrarray GPtrArray *ssids = user_data;
 
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
@@ -1205,28 +1204,6 @@ dbus_request_scan_cb (NMDevice *device,
 		return;
 	}
 
-	if (scan_options) {
-		gs_unref_variant GVariant *val = g_variant_lookup_value (scan_options, "ssids", NULL);
-
-		if (val) {
-			gs_free_error GError *ssid_error = NULL;
-
-			if (!g_variant_is_of_type (val, G_VARIANT_TYPE ("aay"))) {
-				g_dbus_method_invocation_return_error_literal (context,
-				                                               NM_DEVICE_ERROR,
-				                                               NM_DEVICE_ERROR_NOT_ALLOWED,
-				                                               "Invalid 'ssid' scan option");
-				return;
-			}
-
-			ssids = ssids_options_to_ptrarray (val, &ssid_error);
-			if (ssid_error) {
-				g_dbus_method_invocation_return_gerror (context, ssid_error);
-				return;
-			}
-		}
-	}
-
 	request_wireless_scan (self, FALSE, FALSE, ssids);
 	g_dbus_method_invocation_return_value (context, NULL);
 }
@@ -1239,6 +1216,29 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	gint64 last_scan;
+	gs_unref_ptrarray GPtrArray *ssids = NULL;
+
+	if (options) {
+		gs_unref_variant GVariant *val = g_variant_lookup_value (options, "ssids", NULL);
+
+		if (val) {
+			gs_free_error GError *ssid_error = NULL;
+
+			if (!g_variant_is_of_type (val, G_VARIANT_TYPE ("aay"))) {
+				g_dbus_method_invocation_return_error_literal (invocation,
+				                                               NM_DEVICE_ERROR,
+				                                               NM_DEVICE_ERROR_INVALID_ARGUMENT,
+				                                               "Invalid 'ssid' scan option");
+				return;
+			}
+
+			ssids = ssids_options_to_ptrarray (val, &ssid_error);
+			if (ssid_error) {
+				g_dbus_method_invocation_return_gerror (invocation, ssid_error);
+				return;
+			}
+		}
+	}
 
 	if (   !priv->enabled
 	    || !priv->sup_iface
@@ -1281,7 +1281,7 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 	                       NM_AUTH_PERMISSION_WIFI_SCAN,
 	                       TRUE,
 	                       dbus_request_scan_cb,
-	                       options ? g_variant_ref (options) : NULL);
+	                       g_steal_pointer (&ssids));
 }
 
 static gboolean
