@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "nm-glib-aux/nm-ref-string.h"
+#include "nm-glib-aux/nm-c-list.h"
 #include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -62,7 +63,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifi,
 );
 
 enum {
-	SCANNING_PROHIBITED,
 	P2P_DEVICE_CREATED,
 
 	LAST_SIGNAL
@@ -73,6 +73,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	CList             aps_lst_head;
 	GHashTable       *aps_idx_by_supplicant_path;
+
+	CList             scanning_prohibited_lst_head;
 
 	NMWifiAP *        current_ap;
 	guint32           rate;
@@ -123,9 +125,6 @@ struct _NMDeviceWifi
 struct _NMDeviceWifiClass
 {
 	NMDeviceClass parent;
-
-	/* Signals */
-	gboolean (*scanning_prohibited) (NMDeviceWifi *device, gboolean periodic);
 };
 
 /*****************************************************************************/
@@ -194,6 +193,45 @@ static void recheck_p2p_availability (NMDeviceWifi *self);
 
 /*****************************************************************************/
 
+void
+nm_device_wifi_scanning_prohibited_track (NMDeviceWifi *self,
+                                          gpointer tag,
+                                          gboolean temporarily_prohibited)
+{
+	NMDeviceWifiPrivate *priv;
+	NMCListElem *elem;
+
+	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
+	nm_assert (tag);
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	/* We track these with a simple CList. This would be not efficient, if
+	 * there would be many users that need to be tracked at the same time (there
+	 * aren't). In fact, most of the time there is no NMDeviceOlpcMesh and
+	 * nobody tracks itself here. Optimize for that and simplicity. */
+
+	elem = nm_c_list_elem_find_first (&priv->scanning_prohibited_lst_head,
+	                                  iter,
+	                                  iter == tag);
+
+	if (!temporarily_prohibited) {
+		if (!elem)
+			return;
+
+		nm_c_list_elem_free (elem);
+		return;
+	}
+
+	if (elem)
+		return;
+
+	c_list_link_tail (&priv->scanning_prohibited_lst_head,
+	                  &nm_c_list_elem_new_stale (tag)->lst);
+}
+
+/*****************************************************************************/
+
 static void
 _ap_dump (NMDeviceWifi *self,
           NMLogLevel log_level,
@@ -230,7 +268,6 @@ _notify_scanning (NMDeviceWifi *self)
 	if (scanning == priv->is_scanning)
 		return;
 
-	_LOGD (LOGD_WIFI, "wifi-scan: scanning-state: %s", scanning ? "scanning" : "idle");
 	priv->is_scanning = scanning;
 
 	if (   !scanning
@@ -238,6 +275,11 @@ _notify_scanning (NMDeviceWifi *self)
 		last_scan_changed = TRUE;
 		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
 	}
+
+	_LOGD (LOGD_WIFI,
+	       "wifi-scan: scanning-state: %s%s",
+	       scanning ? "scanning" : "idle",
+	       last_scan_changed ? " (notify last-scan)" : "");
 
 	schedule_scan (self, TRUE);
 
@@ -1292,12 +1334,15 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 }
 
 static gboolean
-scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
+check_scanning_prohibited (NMDeviceWifi *self,
+                           gboolean periodic)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMSupplicantInterfaceState supplicant_state;
 
-	g_return_val_if_fail (priv->sup_iface != NULL, TRUE);
+	nm_assert (NM_IS_SUPPLICANT_INTERFACE (priv->sup_iface));
+
+	if (!c_list_is_empty (&priv->scanning_prohibited_lst_head))
+		return TRUE;
 
 	/* Don't scan when a an AP or Ad-Hoc connection is active as it will
 	 * disrupt connected clients or peers.
@@ -1334,25 +1379,16 @@ scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
 	}
 
 	/* Prohibit scans if the supplicant is busy */
-	supplicant_state = nm_supplicant_interface_get_state (priv->sup_iface);
-	if (   supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING
-	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED
-	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE
-	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE
+	if (   NM_IN_SET (nm_supplicant_interface_get_state (priv->sup_iface),
+	                  NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,
+	                  NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,
+	                  NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,
+	                  NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE)
 	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
 		return TRUE;
 
 	/* Allow the scan */
 	return FALSE;
-}
-
-static gboolean
-check_scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
-{
-	gboolean prohibited = FALSE;
-
-	g_signal_emit (self, signals[SCANNING_PROHIBITED], 0, periodic, &prohibited);
-	return prohibited;
 }
 
 static gboolean
@@ -3324,6 +3360,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	c_list_init (&priv->aps_lst_head);
+	c_list_init (&priv->scanning_prohibited_lst_head);
 	priv->aps_idx_by_supplicant_path = g_hash_table_new (nm_direct_hash, NULL);
 
 	priv->hidden_probe_scan_warn = TRUE;
@@ -3364,6 +3401,8 @@ dispose (GObject *object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_assert (c_list_is_empty (&priv->scanning_prohibited_lst_head));
 
 	nm_clear_g_source (&priv->periodic_update_id);
 
@@ -3443,8 +3482,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	device_class->state_changed = device_state_changed;
 
-	klass->scanning_prohibited = scanning_prohibited;
-
 	obj_properties[PROP_MODE] =
 	    g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
 	                       NM_802_11_MODE_UNKNOWN,
@@ -3490,14 +3527,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	signals[SCANNING_PROHIBITED] =
-	    g_signal_new (NM_DEVICE_WIFI_SCANNING_PROHIBITED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_prohibited),
-	                  NULL, NULL, NULL,
-	                  G_TYPE_BOOLEAN, 1, G_TYPE_BOOLEAN);
 
 	signals[P2P_DEVICE_CREATED] =
 	    g_signal_new (NM_DEVICE_WIFI_P2P_DEVICE_CREATED,

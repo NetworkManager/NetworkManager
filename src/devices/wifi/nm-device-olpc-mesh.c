@@ -235,6 +235,9 @@ companion_cleanup (NMDeviceOlpcMesh *self)
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
 	if (priv->companion) {
+		nm_device_wifi_scanning_prohibited_track (NM_DEVICE_WIFI (priv->companion),
+		                                          self,
+		                                          FALSE);
 		g_signal_handlers_disconnect_by_data (priv->companion, self);
 		g_clear_object (&priv->companion);
 	}
@@ -289,16 +292,6 @@ companion_state_changed_cb (NMDeviceWifi *companion,
 }
 
 static gboolean
-companion_scan_prohibited_cb (NMDeviceWifi *companion, gboolean periodic, gpointer user_data)
-{
-	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
-	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
-
-	/* Don't allow the companion to scan while configuring the mesh interface */
-	return (state >= NM_DEVICE_STATE_PREPARE) && (state <= NM_DEVICE_STATE_IP_CONFIG);
-}
-
-static gboolean
 companion_autoconnect_allowed_cb (NMDeviceWifi *companion, gpointer user_data)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
@@ -323,7 +316,7 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	if (!nm_utils_hwaddr_matches (my_addr, -1, their_addr, -1))
 		return FALSE;
 
-	g_assert (priv->companion == NULL);
+	nm_assert (priv->companion == NULL);
 	priv->companion = g_object_ref (other);
 
 	_LOGI (LOGD_OLPC, "found companion Wi-Fi device %s",
@@ -334,9 +327,6 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 
 	g_signal_connect (G_OBJECT (other), "notify::" NM_DEVICE_WIFI_SCANNING,
 	                  G_CALLBACK (companion_notify_cb), self);
-
-	g_signal_connect (G_OBJECT (other), NM_DEVICE_WIFI_SCANNING_PROHIBITED,
-	                  G_CALLBACK (companion_scan_prohibited_cb), self);
 
 	g_signal_connect (G_OBJECT (other), NM_DEVICE_AUTOCONNECT_ALLOWED,
 	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
@@ -399,8 +389,24 @@ state_changed (NMDevice *device,
                NMDeviceState old_state,
                NMDeviceStateReason reason)
 {
+	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+
 	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
-		find_companion (NM_DEVICE_OLPC_MESH (device));
+		find_companion (self);
+
+	if (priv->companion) {
+		gboolean temporarily_prohibited = FALSE;
+
+		if (   new_state >= NM_DEVICE_STATE_PREPARE
+		    && new_state <= NM_DEVICE_STATE_IP_CONFIG) {
+			/* Don't allow the companion to scan while configuring the mesh interface */
+			temporarily_prohibited = TRUE;
+		}
+		nm_device_wifi_scanning_prohibited_track (NM_DEVICE_WIFI (priv->companion),
+		                                          self,
+		                                          temporarily_prohibited);
+	}
 }
 
 static guint32
