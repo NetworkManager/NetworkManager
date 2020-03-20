@@ -43,14 +43,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIwd,
 	PROP_LAST_SCAN,
 );
 
-enum {
-	SCANNING_PROHIBITED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
 typedef struct {
 	GDBusObject *   dbus_obj;
 	GDBusProxy *    dbus_device_proxy;
@@ -79,9 +71,6 @@ struct _NMDeviceIwd {
 
 struct _NMDeviceIwdClass {
 	NMDeviceClass parent;
-
-	/* Signals */
-	gboolean (*scanning_prohibited) (NMDeviceIwd *device, gboolean periodic);
 };
 
 /*****************************************************************************/
@@ -94,6 +83,8 @@ G_DEFINE_TYPE (NMDeviceIwd, nm_device_iwd, NM_TYPE_DEVICE)
 
 static void schedule_periodic_scan (NMDeviceIwd *self,
                                     gboolean initial_scan);
+
+static gboolean check_scanning_prohibited (NMDeviceIwd *self, gboolean periodic);
 
 /*****************************************************************************/
 
@@ -972,15 +963,6 @@ _nm_device_iwd_get_aps (NMDeviceIwd *self)
 	return &NM_DEVICE_IWD_GET_PRIVATE (self)->aps_lst_head;
 }
 
-static gboolean
-check_scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
-{
-	gboolean prohibited = FALSE;
-
-	g_signal_emit (self, signals[SCANNING_PROHIBITED], 0, periodic, &prohibited);
-	return prohibited;
-}
-
 static void
 scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
@@ -1090,7 +1072,7 @@ _nm_device_iwd_request_scan (NMDeviceIwd *self,
 }
 
 static gboolean
-scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
+check_scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
@@ -2580,8 +2562,6 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 
 	device_class->state_changed = device_state_changed;
 
-	klass->scanning_prohibited = scanning_prohibited;
-
 	obj_properties[PROP_MODE] =
 	    g_param_spec_uint (NM_DEVICE_IWD_MODE, "", "",
 	                       NM_802_11_MODE_UNKNOWN,
@@ -2626,12 +2606,4 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	signals[SCANNING_PROHIBITED] =
-	    g_signal_new (NM_DEVICE_IWD_SCANNING_PROHIBITED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  G_STRUCT_OFFSET (NMDeviceIwdClass, scanning_prohibited),
-	                  NULL, NULL, NULL,
-	                  G_TYPE_BOOLEAN, 1, G_TYPE_BOOLEAN);
 }
