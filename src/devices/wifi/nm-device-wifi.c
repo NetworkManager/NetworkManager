@@ -43,10 +43,9 @@
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceWifi);
 
-/* All of these are in seconds */
-#define SCAN_INTERVAL_MIN 3
-#define SCAN_INTERVAL_STEP 20
-#define SCAN_INTERVAL_MAX 120
+#define SCAN_INTERVAL_SEC_MIN   3
+#define SCAN_INTERVAL_SEC_STEP 20
+#define SCAN_INTERVAL_SEC_MAX 120
 
 #define SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN 5
 
@@ -86,7 +85,7 @@ typedef struct {
 	gint64            last_scan_msec;
 
 	gint32            scheduled_scan_time; /* seconds */
-	guint8            scan_interval; /* seconds */
+	guint8            scan_interval_sec;
 	guint             pending_scan_id;
 	guint             ap_dump_id;
 
@@ -382,9 +381,9 @@ supplicant_interface_release (NMDeviceWifi *self)
 	nm_clear_g_source (&priv->pending_scan_id);
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
-	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
+	priv->scan_interval_sec = SCAN_INTERVAL_SEC_MIN + SCAN_INTERVAL_SEC_STEP;
 	_LOGD (LOGD_WIFI, "wifi-scan: reset interval to %u seconds",
-	       (unsigned) priv->scan_interval);
+	       (unsigned) priv->scan_interval_sec);
 
 	nm_clear_g_source (&priv->ap_dump_id);
 
@@ -1499,14 +1498,15 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 
-	/* Cancel the pending scan if it would happen later than (now + the scan_interval) */
+	/* Cancel the pending scan if it would happen later than (now + the scan_interval_sec) */
 	if (priv->pending_scan_id) {
-		if (now + priv->scan_interval < priv->scheduled_scan_time)
+		if (now + priv->scan_interval_sec < priv->scheduled_scan_time)
 			nm_clear_g_source (&priv->pending_scan_id);
 	}
 
 	if (!priv->pending_scan_id) {
-		guint factor = 2, next_scan = priv->scan_interval;
+		guint factor = 2;
+		guint next_scan = priv->scan_interval_sec;
 
 		if (    nm_device_is_activating (NM_DEVICE (self))
 		    || (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED))
@@ -1516,22 +1516,22 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 		                                               request_wireless_scan_periodic,
 		                                               self);
 
-		priv->scheduled_scan_time = now + priv->scan_interval;
-		if (backoff && (priv->scan_interval < (SCAN_INTERVAL_MAX / factor))) {
-				priv->scan_interval += (SCAN_INTERVAL_STEP / factor);
+		priv->scheduled_scan_time = now + priv->scan_interval_sec;
+		if (backoff && (priv->scan_interval_sec < (SCAN_INTERVAL_SEC_MAX / factor))) {
+				priv->scan_interval_sec += (SCAN_INTERVAL_SEC_STEP / factor);
 				/* Ensure the scan interval will never be less than 20s... */
-				priv->scan_interval = MAX(priv->scan_interval, SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP);
+				priv->scan_interval_sec = MAX(priv->scan_interval_sec, SCAN_INTERVAL_SEC_MIN + SCAN_INTERVAL_SEC_STEP);
 				/* ... or more than 120s */
-				priv->scan_interval = MIN(priv->scan_interval, SCAN_INTERVAL_MAX);
-		} else if (!backoff && (priv->scan_interval == 0)) {
+				priv->scan_interval_sec = MIN(priv->scan_interval_sec, SCAN_INTERVAL_SEC_MAX);
+		} else if (!backoff && (priv->scan_interval_sec == 0)) {
 			/* Invalid combination; would cause continual rescheduling of
 			 * the scan and hog CPU.  Reset to something minimally sane.
 			 */
-			priv->scan_interval = 5;
+			priv->scan_interval_sec = 5;
 		}
 
 		_LOGD (LOGD_WIFI, "wifi-scan: scheduled in %d seconds (interval now %d seconds)",
-		       next_scan, priv->scan_interval);
+		       next_scan, priv->scan_interval_sec);
 	}
 }
 
@@ -2114,7 +2114,7 @@ supplicant_iface_state (NMDeviceWifi *self,
 		nm_device_queue_recheck_available (NM_DEVICE (device),
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-		priv->scan_interval = SCAN_INTERVAL_MIN;
+		priv->scan_interval_sec = SCAN_INTERVAL_SEC_MIN;
 	}
 
 	/* In these states we know the supplicant is actually talking to something */
@@ -3060,7 +3060,7 @@ activation_success_handler (NMDevice *device)
 	update_seen_bssids_cache (self, priv->current_ap);
 
 	/* Reset scan interval to something reasonable */
-	priv->scan_interval = SCAN_INTERVAL_MIN + (SCAN_INTERVAL_STEP * 2);
+	priv->scan_interval_sec = SCAN_INTERVAL_SEC_MIN + (SCAN_INTERVAL_SEC_STEP * 2);
 }
 
 static void
@@ -3121,7 +3121,7 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Kick off a scan to get latest results */
-		priv->scan_interval = SCAN_INTERVAL_MIN;
+		priv->scan_interval_sec = SCAN_INTERVAL_SEC_MIN;
 		request_wireless_scan (self, FALSE, FALSE, NULL);
 		break;
 	default:
