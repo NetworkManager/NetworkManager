@@ -17,33 +17,65 @@
 
 /*****************************************************************************/
 
-static gboolean
-_connection_matches_type (gpointer key, gpointer value, gpointer user_data)
-{
-	NMConnection *connection = value;
-	const char *type_name = user_data;
-	NMSettingConnection *s_con;
+typedef struct {
+	GHashTable *hash;
+	GPtrArray *array;
+} Reader;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (type_name == NULL)
-		return nm_setting_connection_get_master (s_con) == NULL;
-	else
-		return strcmp (nm_setting_connection_get_connection_type (s_con), type_name) == 0;
+static Reader *
+reader_new (void)
+{
+	Reader *reader;
+
+	reader = g_slice_new (Reader);
+	*reader = (Reader) {
+		.hash  = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref),
+		.array = g_ptr_array_new (),
+	};
+
+	return reader;
+}
+
+static GHashTable *
+reader_destroy (Reader *reader, gboolean free_hash)
+{
+	gs_unref_hashtable GHashTable *hash = NULL;
+
+	g_ptr_array_unref (reader->array);
+	hash = g_steal_pointer (&reader->hash);
+	nm_g_slice_free (reader);
+	if (!free_hash)
+		return g_steal_pointer (&hash);
+	return NULL;
 }
 
 static NMConnection *
-add_conn (GHashTable *connections,
-          const char *basename,
-          const char *id,
-          const char *ifname,
-          const char *type_name,
-          NMConnectionMultiConnect multi_connect)
+add_connection (Reader *reader, const char *name, NMConnection *connection_take)
+{
+	char *name_dup;
+
+	name_dup = g_strdup (name);
+	if (g_hash_table_insert (reader->hash, name_dup, connection_take))
+		g_ptr_array_add (reader->array, name_dup);
+
+	return connection_take;
+}
+
+/* Returns a new connection owned by the reader */
+static NMConnection *
+create_connection (Reader *reader,
+                   const char *basename,
+                   const char *id,
+                   const char *ifname,
+                   const char *type_name,
+                   NMConnectionMultiConnect multi_connect)
 {
 	NMConnection *connection;
 	NMSetting *setting;
 
-	connection = nm_simple_connection_new ();
-	g_hash_table_insert (connections, g_strdup (basename), connection);
+	connection = add_connection (reader,
+	                             basename,
+	                             nm_simple_connection_new ());
 
 	/* Start off assuming dynamic IP configurations. */
 
@@ -76,7 +108,7 @@ add_conn (GHashTable *connections,
 }
 
 static NMConnection *
-get_conn (GHashTable *connections, const char *ifname, const char *type_name)
+get_connection (Reader *reader, const char *ifname, const char *type_name)
 {
 	NMConnection *connection;
 	NMSetting *setting;
@@ -92,26 +124,44 @@ get_conn (GHashTable *connections, const char *ifname, const char *type_name)
 		multi_connect = NM_CONNECTION_MULTI_CONNECT_MULTIPLE;
 	}
 
-	connection = g_hash_table_lookup (connections, (gpointer) basename);
+	connection = g_hash_table_lookup (reader->hash, (gpointer) basename);
 	if (!connection && !ifname) {
+		NMConnection *candidate;
+		NMSettingConnection *s_con;
+		guint i;
+
 		/*
 		 * If ifname was not given, we'll match the connection by type.
 		 * If the type was not given either, then we're happy with any connection but slaves.
 		 * This is so that things like "bond=bond0:eth1,eth2 nameserver=1.3.3.7 end up
 		 * slapping the nameserver to the most reasonable connection (bond0).
 		 */
-		connection = g_hash_table_find (connections,
-		                                _connection_matches_type,
-		                                (gpointer) type_name);
+
+		for (i = 0; i < reader->array->len; i++) {
+			candidate = g_hash_table_lookup (reader->hash, reader->array->pdata[i]);
+			s_con = nm_connection_get_setting_connection (candidate);
+
+			if (   type_name == NULL
+			    && nm_setting_connection_get_master (s_con) == NULL) {
+				connection = candidate;
+				break;
+			}
+
+			if (   type_name != NULL
+			    && nm_streq (nm_setting_connection_get_connection_type (s_con), type_name)) {
+				connection = candidate;
+				break;
+			}
+		}
 	}
 
 	if (!connection) {
 		if (!type_name)
 			type_name = NM_SETTING_WIRED_SETTING_NAME;
 
-		connection = add_conn (connections, basename,
-		                       ifname ?: "Wired Connection",
-		                       ifname, type_name, multi_connect);
+		connection = create_connection (reader, basename,
+		                                ifname ?: "Wired Connection",
+		                                ifname, type_name, multi_connect);
 	}
 	setting = (NMSetting *)nm_connection_get_setting_connection (connection);
 
@@ -195,7 +245,7 @@ _base_setting_set (NMConnection *connection, const char *property, const char *v
 }
 
 static void
-read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
+read_all_connections_from_fw (Reader *reader, const char *sysfs_dir)
 {
 	gs_unref_hashtable GHashTable *ibft = NULL;
 	NMConnection *dt_connection;
@@ -210,6 +260,7 @@ read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 	g_hash_table_iter_init (&iter, ibft);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &mac, (gpointer *) &nic)) {
 		gs_unref_object NMConnection *connection = NULL;
+		gs_free char *name = NULL;
 
 		connection = nm_simple_connection_new ();
 		index = g_hash_table_lookup (nic, "index");
@@ -224,21 +275,17 @@ read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 			continue;
 		}
 
-		g_hash_table_insert (connections,
-		                     g_strdup_printf ("ibft%s", index),
-		                     g_steal_pointer (&connection));
+		name = g_strdup_printf ("ibft%s", index);
+		add_connection (reader, name, g_steal_pointer (&connection));
 	}
 
 	dt_connection = nmi_dt_reader_parse (sysfs_dir);
-	if (dt_connection) {
-		g_hash_table_insert (connections,
-		                     g_strdup ("ofw"),
-		                     dt_connection);
-	}
+	if (dt_connection)
+		add_connection (reader, "ofw", dt_connection);
 }
 
 static void
-parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
+parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4 = NULL, *s_ip6 = NULL;
@@ -301,12 +348,12 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 
 	if (ifname == NULL && (   g_strcmp0 (kind, "fw") == 0
 	                       || g_strcmp0 (kind, "ibft") == 0)) {
-		read_all_connections_from_fw (connections, sysfs_dir);
+		read_all_connections_from_fw (reader, sysfs_dir);
 		return;
 	}
 
 	/* Parsing done, construct the NMConnection. */
-	connection = get_conn (connections, ifname, NULL);
+	connection = get_connection (reader, ifname, NULL);
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 
@@ -497,7 +544,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 }
 
 static void
-parse_master (GHashTable *connections,
+parse_master (Reader *reader,
               char *argument,
               const char *type_name,
               const char *default_name)
@@ -519,7 +566,7 @@ parse_master (GHashTable *connections,
 		master = master_to_free = g_strdup_printf ("%s0", default_name ?: type_name);
 	slaves = get_word (&argument, ':');
 
-	connection = get_conn (connections, master, type_name);
+	connection = get_connection (reader, master, type_name);
 	s_con = nm_connection_get_setting_connection (connection);
 	master = nm_setting_connection_get_uuid (s_con);
 
@@ -541,7 +588,7 @@ parse_master (GHashTable *connections,
 		if (slave == NULL)
 			slave = "eth0";
 
-		connection = get_conn (connections, slave, NULL);
+		connection = get_connection (reader, slave, NULL);
 		s_con = nm_connection_get_setting_connection (connection);
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, type_name,
@@ -556,7 +603,7 @@ parse_master (GHashTable *connections,
 }
 
 static void
-parse_rd_route (GHashTable *connections, char *argument)
+parse_rd_route (Reader *reader, char *argument)
 {
 	NMConnection *connection;
 	const char *net;
@@ -574,7 +621,7 @@ parse_rd_route (GHashTable *connections, char *argument)
 	gateway = get_word (&argument, ':');
 	interface = get_word (&argument, ':');
 
-	connection = get_conn (connections, interface, NULL);
+	connection = get_connection (reader, interface, NULL);
 
 	if (net && *net) {
 		if (!nm_utils_parse_inaddr_prefix_bin (family, net, &family, &net_addr, &net_prefix)) {
@@ -618,7 +665,7 @@ parse_rd_route (GHashTable *connections, char *argument)
 }
 
 static void
-parse_vlan (GHashTable *connections, char *argument)
+parse_vlan (Reader *reader, char *argument)
 {
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
@@ -634,7 +681,7 @@ parse_vlan (GHashTable *connections, char *argument)
 			break;
 	}
 
-	connection = get_conn (connections, vlan, NM_SETTING_VLAN_SETTING_NAME);
+	connection = get_connection (reader, vlan, NM_SETTING_VLAN_SETTING_NAME);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_object_set (s_vlan,
@@ -647,18 +694,18 @@ parse_vlan (GHashTable *connections, char *argument)
 }
 
 static void
-parse_bootdev (GHashTable *connections, char *argument)
+parse_bootdev (Reader *reader, char *argument)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 
-	connection = get_conn (connections, NULL, NULL);
+	connection = get_connection (reader, NULL, NULL);
 
 	if (   nm_connection_get_interface_name (connection)
 	    && strcmp (nm_connection_get_interface_name (connection), argument) != 0) {
 		/* If the default connection already has an interface name,
 		 * we should not overwrite it. Create a new one instead. */
-		connection = get_conn (connections, argument, NULL);
+		connection = get_connection (reader, argument, NULL);
 	}
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -668,13 +715,13 @@ parse_bootdev (GHashTable *connections, char *argument)
 }
 
 static void
-parse_nameserver (GHashTable *connections, char *argument)
+parse_nameserver (Reader *reader, char *argument)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip = NULL;
 	char *dns;
 
-	connection = get_conn (connections, NULL, NULL);
+	connection = get_connection (reader, NULL, NULL);
 
 	dns = get_word (&argument, '\0');
 
@@ -697,13 +744,13 @@ parse_nameserver (GHashTable *connections, char *argument)
 }
 
 static void
-parse_rd_peerdns (GHashTable *connections, char *argument)
+parse_rd_peerdns (Reader *reader, char *argument)
 {
 	gboolean auto_dns = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip = NULL;
 
-	connection = get_conn (connections, NULL, NULL);
+	connection = get_connection (reader, NULL, NULL);
 
 	s_ip = nm_connection_get_setting_ip4_config (connection);
 	g_object_set (s_ip,
@@ -717,7 +764,7 @@ parse_rd_peerdns (GHashTable *connections, char *argument)
 }
 
 static void
-parse_rd_znet (GHashTable *connections, char *argument, gboolean net_ifnames)
+parse_rd_znet (Reader *reader, char *argument, gboolean net_ifnames)
 {
 	const char *nettype;
 	const char *subchannels[4] = { 0, 0, 0, 0 };
@@ -767,7 +814,7 @@ parse_rd_znet (GHashTable *connections, char *argument, gboolean net_ifnames)
 		ifname = g_strdup_printf ("%s%d", prefix, index);
 	}
 
-	connection = get_conn (connections, ifname, NM_SETTING_WIRED_SETTING_NAME);
+	connection = get_connection (reader, ifname, NM_SETTING_WIRED_SETTING_NAME);
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
@@ -800,7 +847,7 @@ _normalize_conn (gpointer key, gpointer value, gpointer user_data)
 GHashTable *
 nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 {
-	GHashTable *connections;
+	Reader *reader;
 	const char *tag;
 	gboolean ignore_bootif = FALSE;
 	gboolean neednet = FALSE;
@@ -808,7 +855,7 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 	gboolean net_ifnames = TRUE;
 	int i;
 
-	connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
+	reader = reader_new ();
 
 	for (i = 0; argv[i]; i++) {
 		if (strcmp (argv[i], "net.ifnames=0") == 0)
@@ -826,31 +873,31 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 
 		tag = get_word (&argument, '=');
 		if (strcmp (tag, "ip") == 0)
-			parse_ip (connections, sysfs_dir, argument);
+			parse_ip (reader, sysfs_dir, argument);
 		else if (strcmp (tag, "rd.route") == 0)
-			parse_rd_route (connections, argument);
+			parse_rd_route (reader, argument);
 		else if (strcmp (tag, "bridge") == 0)
-			parse_master (connections, argument, NM_SETTING_BRIDGE_SETTING_NAME, "br");
+			parse_master (reader, argument, NM_SETTING_BRIDGE_SETTING_NAME, "br");
 		else if (strcmp (tag, "bond") == 0)
-			parse_master (connections, argument, NM_SETTING_BOND_SETTING_NAME, NULL);
+			parse_master (reader, argument, NM_SETTING_BOND_SETTING_NAME, NULL);
 		else if (strcmp (tag, "team") == 0)
-			parse_master (connections, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
+			parse_master (reader, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
 		else if (strcmp (tag, "vlan") == 0)
-			parse_vlan (connections, argument);
+			parse_vlan (reader, argument);
 		else if (strcmp (tag, "bootdev") == 0)
-			parse_bootdev (connections, argument);
+			parse_bootdev (reader, argument);
 		else if (strcmp (tag, "nameserver") == 0)
-			parse_nameserver (connections, argument);
+			parse_nameserver (reader, argument);
 		else if (strcmp (tag, "rd.peerdns") == 0)
-			parse_rd_peerdns (connections, argument);
+			parse_rd_peerdns (reader, argument);
 		else if (strcmp (tag, "rd.iscsi.ibft") == 0 && _nm_utils_ascii_str_to_bool (argument, TRUE))
-			read_all_connections_from_fw (connections, sysfs_dir);
+			read_all_connections_from_fw (reader, sysfs_dir);
 		else if (strcmp (tag, "rd.bootif") == 0)
 			ignore_bootif = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.neednet") == 0)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.znet") == 0)
-			parse_rd_znet (connections, argument, net_ifnames);
+			parse_rd_znet (reader, argument, net_ifnames);
 		else if (g_ascii_strcasecmp (tag, "BOOTIF") == 0) {
 			nm_clear_g_free (&bootif_val);
 			bootif_val = g_strdup (argument);
@@ -874,16 +921,16 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 			bootif += 3;
 		}
 
-		connection = get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
+		connection = get_connection (reader, NULL, NM_SETTING_WIRED_SETTING_NAME);
 		s_wired = nm_connection_get_setting_wired (connection);
 
 		if (   nm_connection_get_interface_name (connection)
 		    || (   nm_setting_wired_get_mac_address (s_wired)
 		        && !nm_utils_hwaddr_matches (nm_setting_wired_get_mac_address (s_wired), -1,
 		                                     bootif, -1))) {
-			connection = add_conn (connections, "bootif_connection", "BOOTIF Connection",
-			                       NULL, NM_SETTING_WIRED_SETTING_NAME,
-			                       NM_CONNECTION_MULTI_CONNECT_SINGLE);
+			connection = create_connection (reader, "bootif_connection", "BOOTIF Connection",
+			                                NULL, NM_SETTING_WIRED_SETTING_NAME,
+			                                NM_CONNECTION_MULTI_CONNECT_SINGLE);
 			s_wired = (NMSettingWired *) nm_setting_wired_new ();
 			nm_connection_add_setting (connection, (NMSetting *) s_wired);
 		}
@@ -892,12 +939,11 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
 		              NULL);
 	}
-	if (neednet && g_hash_table_size (connections) == 0) {
+	if (neednet && g_hash_table_size (reader->hash) == 0) {
 		/* Make sure there's some connection. */
-		get_conn (connections, NULL, NM_SETTING_WIRED_SETTING_NAME);
+		get_connection (reader, NULL, NM_SETTING_WIRED_SETTING_NAME);
 	}
 
-	g_hash_table_foreach (connections, _normalize_conn, NULL);
-
-	return connections;
+	g_hash_table_foreach (reader->hash, _normalize_conn, NULL);
+	return reader_destroy (reader, FALSE);
 }
