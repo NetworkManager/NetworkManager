@@ -249,19 +249,22 @@ read_all_connections_from_fw (Reader *reader, const char *sysfs_dir)
 {
 	gs_unref_hashtable GHashTable *ibft = NULL;
 	NMConnection *dt_connection;
-	GHashTableIter iter;
 	const char *mac;
 	GHashTable *nic;
 	const char *index;
 	GError *error = NULL;
+	guint i, length;
+	gs_free const char **keys = NULL;
 
 	ibft = nmi_ibft_read (sysfs_dir);
+	keys = nm_utils_strdict_get_keys (ibft, TRUE, &length);
 
-	g_hash_table_iter_init (&iter, ibft);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &mac, (gpointer *) &nic)) {
+	for (i = 0; i < length; i++) {
 		gs_unref_object NMConnection *connection = NULL;
 		gs_free char *name = NULL;
 
+		mac = keys[i];
+		nic = g_hash_table_lookup (ibft, mac);
 		connection = nm_simple_connection_new ();
 		index = g_hash_table_lookup (nic, "index");
 		if (!index) {
