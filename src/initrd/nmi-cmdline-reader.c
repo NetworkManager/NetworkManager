@@ -20,6 +20,8 @@
 typedef struct {
 	GHashTable *hash;
 	GPtrArray *array;
+	NMConnection *bootdev_connection;   /* connection for bootdev=$ifname */
+	NMConnection *default_connection;   /* connection not bound to any ifname */
 } Reader;
 
 static Reader *
@@ -108,24 +110,32 @@ create_connection (Reader *reader,
 }
 
 static NMConnection *
-get_connection (Reader *reader, const char *ifname, const char *type_name)
+get_default_connection (Reader *reader)
 {
-	NMConnection *connection;
-	NMSetting *setting;
-	const char *basename;
-	NMConnectionMultiConnect multi_connect;
+	NMConnection *con;
 
-	if (ifname) {
-		basename = ifname;
-		multi_connect = NM_CONNECTION_MULTI_CONNECT_SINGLE;
-	} else {
-		/* This is essentially for the "ip=dhcp" scenario. */
-		basename = "default_connection";
-		multi_connect = NM_CONNECTION_MULTI_CONNECT_MULTIPLE;
+	if (!reader->default_connection) {
+		con = create_connection (reader,
+		                         "default_connection",
+		                         "Wired Connection",
+		                         NULL,
+		                         NM_SETTING_WIRED_SETTING_NAME,
+		                         NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
+		reader->default_connection = con;
 	}
+	return reader->default_connection;
+}
 
-	connection = g_hash_table_lookup (reader->hash, (gpointer) basename);
-	if (!connection && !ifname) {
+static NMConnection *
+get_connection (Reader *reader,
+                const char *ifname,
+                const char *type_name,
+                gboolean create_if_missing)
+{
+	NMConnection *connection = NULL;
+	NMSetting *setting;
+
+	if (!ifname) {
 		NMConnection *candidate;
 		NMSettingConnection *s_con;
 		guint i;
@@ -136,7 +146,6 @@ get_connection (Reader *reader, const char *ifname, const char *type_name)
 		 * This is so that things like "bond=bond0:eth1,eth2 nameserver=1.3.3.7 end up
 		 * slapping the nameserver to the most reasonable connection (bond0).
 		 */
-
 		for (i = 0; i < reader->array->len; i++) {
 			candidate = g_hash_table_lookup (reader->hash, reader->array->pdata[i]);
 			s_con = nm_connection_get_setting_connection (candidate);
@@ -153,17 +162,22 @@ get_connection (Reader *reader, const char *ifname, const char *type_name)
 				break;
 			}
 		}
-	}
+	} else
+		connection = g_hash_table_lookup (reader->hash, (gpointer) ifname);
 
 	if (!connection) {
+		if (!create_if_missing)
+			return NULL;
+
 		if (!type_name)
 			type_name = NM_SETTING_WIRED_SETTING_NAME;
 
-		connection = create_connection (reader, basename,
+		connection = create_connection (reader, ifname,
 		                                ifname ?: "Wired Connection",
-		                                ifname, type_name, multi_connect);
+		                                ifname, type_name,
+		                                NM_CONNECTION_MULTI_CONNECT_SINGLE);
 	}
-	setting = (NMSetting *)nm_connection_get_setting_connection (connection);
+	setting = (NMSetting *) nm_connection_get_setting_connection (connection);
 
 	if (type_name) {
 		g_object_set (setting, NM_SETTING_CONNECTION_TYPE, type_name, NULL);
@@ -356,7 +370,11 @@ parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 	}
 
 	/* Parsing done, construct the NMConnection. */
-	connection = get_connection (reader, ifname, NULL);
+	if (ifname)
+		connection = get_connection (reader, ifname, NULL, TRUE);
+	else
+		connection = get_default_connection (reader);
+
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 
@@ -569,7 +587,7 @@ parse_master (Reader *reader,
 		master = master_to_free = g_strdup_printf ("%s0", default_name ?: type_name);
 	slaves = get_word (&argument, ':');
 
-	connection = get_connection (reader, master, type_name);
+	connection = get_connection (reader, master, type_name, TRUE);
 	s_con = nm_connection_get_setting_connection (connection);
 	master = nm_setting_connection_get_uuid (s_con);
 
@@ -591,7 +609,7 @@ parse_master (Reader *reader,
 		if (slave == NULL)
 			slave = "eth0";
 
-		connection = get_connection (reader, slave, NULL);
+		connection = get_connection (reader, slave, NULL, TRUE);
 		s_con = nm_connection_get_setting_connection (connection);
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, type_name,
@@ -606,65 +624,77 @@ parse_master (Reader *reader,
 }
 
 static void
-parse_rd_route (Reader *reader, char *argument)
+add_routes (Reader *reader, GPtrArray *array)
 {
-	NMConnection *connection;
-	const char *net;
-	const char *gateway;
-	const char *interface;
-	int family = AF_UNSPEC;
-	NMIPAddr net_addr = { };
-	NMIPAddr gateway_addr = { };
-	int net_prefix = -1;
-	NMIPRoute *route;
-	NMSettingIPConfig *s_ip;
-	GError *error = NULL;
+	guint i;
 
-	net = get_word (&argument, ':');
-	gateway = get_word (&argument, ':');
-	interface = get_word (&argument, ':');
+	for (i = 0; i < array->len; i++) {
+		NMConnection *connection = NULL;
+		const char *net;
+		const char *gateway;
+		const char *interface;
+		int family = AF_UNSPEC;
+		NMIPAddr net_addr = { };
+		NMIPAddr gateway_addr = { };
+		int net_prefix = -1;
+		NMIPRoute *route;
+		NMSettingIPConfig *s_ip;
+		char *argument;
+		gs_free_error GError *error = NULL;
 
-	connection = get_connection (reader, interface, NULL);
+		argument = array->pdata[i];
+		net = get_word (&argument, ':');
+		gateway = get_word (&argument, ':');
+		interface = get_word (&argument, ':');
 
-	if (net && *net) {
-		if (!nm_utils_parse_inaddr_prefix_bin (family, net, &family, &net_addr, &net_prefix)) {
-			_LOGW (LOGD_CORE, "Unrecognized address: %s", net);
-			return;
+		if (interface)
+			connection = get_connection (reader, interface, NULL, TRUE);
+		if (!connection)
+			connection = reader->bootdev_connection;
+		if (!connection)
+			connection = get_connection (reader, interface, NULL, FALSE);
+		if (!connection)
+			connection = get_default_connection (reader);
+
+		if (net && *net) {
+			if (!nm_utils_parse_inaddr_prefix_bin (family, net, &family, &net_addr, &net_prefix)) {
+				_LOGW (LOGD_CORE, "Unrecognized address: %s", net);
+				continue;
+			}
 		}
-	}
 
-	if (gateway && *gateway) {
-		if (!nm_utils_parse_inaddr_bin (family, gateway, &family, &gateway_addr)) {
-			_LOGW (LOGD_CORE, "Unrecognized address: %s", gateway);
-			return;
+		if (gateway && *gateway) {
+			if (!nm_utils_parse_inaddr_bin (family, gateway, &family, &gateway_addr)) {
+				_LOGW (LOGD_CORE, "Unrecognized address: %s", gateway);
+				continue;
+			}
 		}
-	}
 
-	switch (family) {
-	case AF_INET:
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-		if (net_prefix == -1)
-			net_prefix = 32;
-		break;
-	case AF_INET6:
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-		if (net_prefix == -1)
-			net_prefix = 128;
-		break;
-	default:
-		_LOGW (LOGD_CORE, "Unknown address family: %s", net);
-		return;
-	}
+		switch (family) {
+		case AF_INET:
+			s_ip = nm_connection_get_setting_ip4_config (connection);
+			if (net_prefix == -1)
+				net_prefix = 32;
+			break;
+		case AF_INET6:
+			s_ip = nm_connection_get_setting_ip6_config (connection);
+			if (net_prefix == -1)
+				net_prefix = 128;
+			break;
+		default:
+			_LOGW (LOGD_CORE, "Unknown address family: %s", net);
+			continue;
+		}
 
-	route = nm_ip_route_new_binary (family, &net_addr.addr_ptr, net_prefix, &gateway_addr.addr_ptr, -1, &error);
-	if (!route) {
-		g_warning ("Invalid route '%s via %s': %s\n", net, gateway, error->message);
-		g_clear_error (&error);
-		return;
-	}
+		route = nm_ip_route_new_binary (family, &net_addr.addr_ptr, net_prefix, &gateway_addr.addr_ptr, -1, &error);
+		if (!route) {
+			g_warning ("Invalid route '%s via %s': %s\n", net, gateway, error->message);
+			continue;
+		}
 
-	nm_setting_ip_config_add_route (s_ip, route);
-	nm_ip_route_unref (route);
+		nm_setting_ip_config_add_route (s_ip, route);
+		nm_ip_route_unref (route);
+	}
 }
 
 static void
@@ -684,7 +714,7 @@ parse_vlan (Reader *reader, char *argument)
 			break;
 	}
 
-	connection = get_connection (reader, vlan, NM_SETTING_VLAN_SETTING_NAME);
+	connection = get_connection (reader, vlan, NM_SETTING_VLAN_SETTING_NAME, TRUE);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_object_set (s_vlan,
@@ -694,76 +724,6 @@ parse_vlan (Reader *reader, char *argument)
 
 	if (argument && *argument)
 		_LOGW (LOGD_CORE, "Ignoring extra: '%s'.", argument);
-}
-
-static void
-parse_bootdev (Reader *reader, char *argument)
-{
-	NMConnection *connection;
-	NMSettingConnection *s_con;
-
-	connection = get_connection (reader, NULL, NULL);
-
-	if (   nm_connection_get_interface_name (connection)
-	    && strcmp (nm_connection_get_interface_name (connection), argument) != 0) {
-		/* If the default connection already has an interface name,
-		 * we should not overwrite it. Create a new one instead. */
-		connection = get_connection (reader, argument, NULL);
-	}
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_INTERFACE_NAME, argument,
-	              NULL);
-}
-
-static void
-parse_nameserver (Reader *reader, char *argument)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-	char *dns;
-
-	connection = get_connection (reader, NULL, NULL);
-
-	dns = get_word (&argument, '\0');
-
-	switch (guess_ip_address_family (dns)) {
-	case AF_INET:
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-		break;
-	case AF_INET6:
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-		break;
-	default:
-		_LOGW (LOGD_CORE, "Unknown address family: %s", dns);
-		break;
-	}
-
-	nm_setting_ip_config_add_dns (s_ip, dns);
-
-	if (argument && *argument)
-		_LOGW (LOGD_CORE, "Ignoring extra: '%s'.", argument);
-}
-
-static void
-parse_rd_peerdns (Reader *reader, char *argument)
-{
-	gboolean auto_dns = !_nm_utils_ascii_str_to_bool (argument, TRUE);
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-
-	connection = get_connection (reader, NULL, NULL);
-
-	s_ip = nm_connection_get_setting_ip4_config (connection);
-	g_object_set (s_ip,
-	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, auto_dns,
-	              NULL);
-
-	s_ip = nm_connection_get_setting_ip6_config (connection);
-	g_object_set (s_ip,
-	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, auto_dns,
-	              NULL);
 }
 
 static void
@@ -817,7 +777,7 @@ parse_rd_znet (Reader *reader, char *argument, gboolean net_ifnames)
 		ifname = g_strdup_printf ("%s%d", prefix, index);
 	}
 
-	connection = get_connection (reader, ifname, NM_SETTING_WIRED_SETTING_NAME);
+	connection = get_connection (reader, ifname, NM_SETTING_WIRED_SETTING_NAME, TRUE);
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
@@ -847,6 +807,72 @@ _normalize_conn (gpointer key, gpointer value, gpointer user_data)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 }
 
+static void
+set_ignore_auto_dns (Reader *reader)
+{
+	GHashTableIter iter;
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip = NULL;
+
+	g_hash_table_iter_init (&iter, reader->hash);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+		g_object_set (s_ip,
+		              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
+		              NULL);
+
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+		g_object_set (s_ip,
+		              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
+		              NULL);
+	}
+}
+
+static void
+add_nameservers (Reader *reader, GPtrArray *nameservers)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	GHashTableIter iter;
+	int addr_family;
+	const char *ns;
+	guint i;
+
+	for (i = 0; i < nameservers->len; i++) {
+		ns = nameservers->pdata[i];
+		addr_family = guess_ip_address_family (ns);
+		if (addr_family == AF_UNSPEC) {
+			_LOGW (LOGD_CORE, "Unknown address family: %s", ns);
+			continue;
+		}
+
+		g_hash_table_iter_init (&iter, reader->hash);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
+			switch (addr_family) {
+			case AF_INET:
+				s_ip = nm_connection_get_setting_ip4_config (connection);
+				if (!NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip),
+				                   NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+				                   NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+					continue;
+				break;
+			case AF_INET6:
+				s_ip = nm_connection_get_setting_ip6_config (connection);
+				if (!NM_IN_STRSET (nm_setting_ip_config_get_method (s_ip),
+				                   NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+				                   NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+				                   NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
+					continue;
+				break;
+			default:
+				nm_assert_not_reached ();
+			}
+
+			nm_setting_ip_config_add_dns (s_ip, ns);
+		}
+	}
+}
+
 GHashTable *
 nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 {
@@ -855,7 +881,11 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 	gboolean ignore_bootif = FALSE;
 	gboolean neednet = FALSE;
 	gs_free char *bootif_val = NULL;
+	gs_free char *bootdev = NULL;
 	gboolean net_ifnames = TRUE;
+	gs_unref_ptrarray GPtrArray *nameservers = NULL;
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gboolean ignore_auto_dns = FALSE;
 	int i;
 
 	reader = reader_new ();
@@ -870,6 +900,7 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 	for (i = 0; argv[i]; i++) {
 		gs_free char *argument_clone = NULL;
 		char *argument;
+		char *word;
 
 		argument_clone = g_strdup (argv[i]);
 		argument = argument_clone;
@@ -877,9 +908,11 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		tag = get_word (&argument, '=');
 		if (strcmp (tag, "ip") == 0)
 			parse_ip (reader, sysfs_dir, argument);
-		else if (strcmp (tag, "rd.route") == 0)
-			parse_rd_route (reader, argument);
-		else if (strcmp (tag, "bridge") == 0)
+		else if (strcmp (tag, "rd.route") == 0) {
+			if (!routes)
+				routes = g_ptr_array_new_with_free_func (g_free);
+			g_ptr_array_add (routes, g_strdup (argument));
+		} else if (strcmp (tag, "bridge") == 0)
 			parse_master (reader, argument, NM_SETTING_BRIDGE_SETTING_NAME, "br");
 		else if (strcmp (tag, "bond") == 0)
 			parse_master (reader, argument, NM_SETTING_BOND_SETTING_NAME, NULL);
@@ -887,12 +920,20 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 			parse_master (reader, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
 		else if (strcmp (tag, "vlan") == 0)
 			parse_vlan (reader, argument);
-		else if (strcmp (tag, "bootdev") == 0)
-			parse_bootdev (reader, argument);
-		else if (strcmp (tag, "nameserver") == 0)
-			parse_nameserver (reader, argument);
-		else if (strcmp (tag, "rd.peerdns") == 0)
-			parse_rd_peerdns (reader, argument);
+		else if (strcmp (tag, "bootdev") == 0) {
+			g_free (bootdev);
+			bootdev = g_strdup (argument);
+		} else if (strcmp (tag, "nameserver") == 0) {
+			word = get_word (&argument, '\0');
+			if (word) {
+				if (!nameservers)
+					nameservers = g_ptr_array_new_with_free_func (g_free);
+				g_ptr_array_add (nameservers, g_strdup (word));
+			}
+			if (argument && *argument)
+				_LOGW (LOGD_CORE, "Ignoring extra: '%s'.", argument);
+		} else if (strcmp (tag, "rd.peerdns") == 0)
+			ignore_auto_dns = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.iscsi.ibft") == 0 && _nm_utils_ascii_str_to_bool (argument, TRUE))
 			read_all_connections_from_fw (reader, sysfs_dir);
 		else if (strcmp (tag, "rd.bootif") == 0)
@@ -924,7 +965,10 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 			bootif += 3;
 		}
 
-		connection = get_connection (reader, NULL, NM_SETTING_WIRED_SETTING_NAME);
+		connection = get_connection (reader, NULL, NM_SETTING_WIRED_SETTING_NAME, FALSE);
+		if (!connection)
+			connection = get_default_connection (reader);
+
 		s_wired = nm_connection_get_setting_wired (connection);
 
 		if (   nm_connection_get_interface_name (connection)
@@ -942,10 +986,27 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
 		              NULL);
 	}
+
+	if (bootdev) {
+		NMConnection *connection;
+
+		connection = get_connection (reader, bootdev, NULL, TRUE);
+		reader->bootdev_connection = connection;
+	}
+
 	if (neednet && g_hash_table_size (reader->hash) == 0) {
 		/* Make sure there's some connection. */
-		get_connection (reader, NULL, NM_SETTING_WIRED_SETTING_NAME);
+		get_default_connection (reader);
 	}
+
+	if (routes)
+		add_routes (reader, routes);
+
+	if (nameservers)
+		add_nameservers (reader, nameservers);
+
+	if (ignore_auto_dns)
+		set_ignore_auto_dns (reader);
 
 	g_hash_table_foreach (reader->hash, _normalize_conn, NULL);
 	return reader_destroy (reader, FALSE);
