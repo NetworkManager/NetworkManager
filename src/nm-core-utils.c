@@ -4355,13 +4355,14 @@ nm_wifi_utils_parse_ies (const guint8 *bytes,
                          gsize len,
                          guint32 *out_max_rate,
                          gboolean *out_metered,
-                         gboolean *owe_transition_mode)
+                         gboolean *out_owe_transition_mode)
 {
 	guint8 id, elem_len;
 	guint32 m;
 
 	NM_SET_OUT (out_max_rate, 0);
 	NM_SET_OUT (out_metered, FALSE);
+	NM_SET_OUT (out_owe_transition_mode, FALSE);
 
 	while (len) {
 		if (len < 2)
@@ -4396,13 +4397,13 @@ nm_wifi_utils_parse_ies (const guint8 *bytes,
 				    && bytes[3] == 0x11)           /* OUI type: Network cost */
 					*out_metered = (bytes[7] > 1); /* Cost level > 1 */
 			}
-			if (   owe_transition_mode
+			if (   out_owe_transition_mode
 			    && elem_len >= 10
 			    && bytes[0] == 0x50            /* OUI: WiFi Alliance */
 			    && bytes[1] == 0x6f
 			    && bytes[2] == 0x9a
 			    && bytes[3] == 0x1c)           /* OUI type: OWE Transition Mode */
-				*owe_transition_mode = TRUE;
+				*out_owe_transition_mode = TRUE;
 			break;
 		}
 
