@@ -481,7 +481,6 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 	guint8 p_signal_percent;
 	const guint8 *arr_data;
 	gsize arr_len;
-	gboolean p_metered;
 	guint32 p_max_rate;
 	gboolean p_max_rate_has;
 	gint64 now_msec = 0;
@@ -627,19 +626,25 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 	}
 	v_v = nm_g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
 	if (v_v) {
+		gboolean p_owe_transition_mode;
+		gboolean p_metered;
 		guint32 rate;
 
 		arr_data = g_variant_get_fixed_array (v_v, &arr_len, 1);
-		nm_wifi_utils_parse_ies (arr_data, arr_len, &rate, &p_metered);
+		nm_wifi_utils_parse_ies (arr_data, arr_len, &rate, &p_metered, &p_owe_transition_mode);
 		p_max_rate = NM_MAX (p_max_rate, rate);
 		p_max_rate_has = TRUE;
 		g_variant_unref (v_v);
+
+		if (p_owe_transition_mode)
+			bss_info->rsn_flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+		else
+			bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE;
 
 		bss_info->metered = p_metered;
 	}
 	if (p_max_rate_has)
 		bss_info->max_rate = p_max_rate / 1000u;
-
 
 	v_v = nm_g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
 	if (v_v) {
