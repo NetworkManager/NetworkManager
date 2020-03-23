@@ -908,6 +908,23 @@
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term>
+          <command>modify</command>
+          <arg><option>--temporary</option></arg>
+          <group>
+            <arg choice='plain'><option>id</option></arg>
+            <arg choice='plain'><option>uuid</option></arg>
+            <arg choice='plain'><option>path</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>ID</replaceable></arg>
+          <arg choice='plain'><option>remove</option> <replaceable>setting</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Removes a setting from the connection profile.</para>
+        </listitem>
+      </varlistentry>
 
       <varlistentry>
         <term>

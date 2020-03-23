@@ -13,11 +13,12 @@ NMCResultCode do_connections (NmCli *nmc, int argc, char **argv);
 void monitor_connections (NmCli *nmc);
 
 gboolean
-nmc_read_connection_properties (NmCli *nmc,
-                                NMConnection *connection,
-                                int *argc,
-                                char ***argv,
-                                GError **error);
+nmc_process_connection_properties (NmCli *nmc,
+                                   NMConnection *connection,
+                                   int *argc,
+                                   char ***argv,
+                                   gboolean allow_remove_setting,
+                                   GError **error);
 
 NMMetaColor nmc_active_connection_state_to_color (NMActiveConnectionState state);
 

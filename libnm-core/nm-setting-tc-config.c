@@ -967,7 +967,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTCConfig,
 /**
  * NMSettingTCConfig:
  *
- * Linux Traffic Control Settings.
+ * Linux Traffic Control Settings
  *
  * Since: 1.12
  */
