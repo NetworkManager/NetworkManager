@@ -327,7 +327,7 @@ out:
 		/* setting a value purges all invalid values that were set
 		 * via GObject property. */
 		changed = TRUE;
-		g_clear_pointer (&priv->data_invalid, g_hash_table_unref);
+		nm_clear_pointer (&priv->data_invalid, g_hash_table_unref);
 	}
 	if (changed)
 		_notify (self, PROP_DATA);
@@ -462,8 +462,8 @@ set_property (GObject *object, guint prop_id,
 
 		data = g_value_get_boxed (value);
 		if (!data || !g_hash_table_size (data)) {
-			g_clear_pointer (&priv->data, g_hash_table_unref);
-			g_clear_pointer (&priv->data_invalid, g_hash_table_unref);
+			nm_clear_pointer (&priv->data, g_hash_table_unref);
+			nm_clear_pointer (&priv->data_invalid, g_hash_table_unref);
 			return;
 		}
 
@@ -488,7 +488,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		if (   priv->data_invalid
 		    && !g_hash_table_size (priv->data_invalid))
-			g_clear_pointer (&priv->data_invalid, g_hash_table_unref);
+			nm_clear_pointer (&priv->data_invalid, g_hash_table_unref);
 
 		break;
 	default:

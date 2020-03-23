@@ -349,7 +349,7 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 				;
 			}
 		}
-		g_clear_pointer (&neighbor->variant, g_variant_unref);
+		nm_clear_pointer (&neighbor->variant, g_variant_unref);
 		g_slice_free (LldpNeighbor, neighbor);
 	}
 }

@@ -84,7 +84,7 @@ test_secret_agent_get_secrets (NMSecretAgentOld                 *agent,
 done:
 	callback (agent, connection, secrets, error, callback_data);
 	g_clear_error (&error);
-	g_clear_pointer (&secrets, g_variant_unref);
+	nm_clear_pointer (&secrets, g_variant_unref);
 	g_free (secret);
 }
 

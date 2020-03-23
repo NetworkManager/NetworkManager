@@ -274,7 +274,7 @@ nm_config_get_warnings (NMConfig *config)
 void
 nm_config_clear_warnings (NMConfig *config)
 {
-	g_clear_pointer (&NM_CONFIG_GET_PRIVATE (config)->warnings, g_strfreev);
+	nm_clear_pointer (&NM_CONFIG_GET_PRIVATE (config)->warnings, g_strfreev);
 }
 
 NMConfigData *

@@ -185,8 +185,8 @@ out:
 	if (error)
 		_LOGE ("failed to load ConsoleKit database: %s", error->message);
 	g_clear_error (&error);
-	g_clear_pointer (&groups, g_strfreev);
-	g_clear_pointer (&keyfile, g_key_file_free);
+	nm_clear_pointer (&groups, g_strfreev);
+	nm_clear_pointer (&keyfile, g_key_file_free);
 
 	return finished;
 }
@@ -271,7 +271,7 @@ ck_init (NMSessionMonitor *monitor)
 static void
 ck_finalize (NMSessionMonitor *monitor)
 {
-	g_clear_pointer (&monitor->ck.cache, g_hash_table_unref);
+	nm_clear_pointer (&monitor->ck.cache, g_hash_table_unref);
 	g_clear_object (&monitor->ck.monitor);
 }
 #endif /* SESSION_TRACKING_CONSOLEKIT */

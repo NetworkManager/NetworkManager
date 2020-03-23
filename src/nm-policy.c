@@ -2668,7 +2668,7 @@ dispose (GObject *object)
 	nm_clear_g_object (&priv->default_ac6);
 	nm_clear_g_object (&priv->activating_ac4);
 	nm_clear_g_object (&priv->activating_ac6);
-	g_clear_pointer (&priv->pending_active_connections, g_hash_table_unref);
+	nm_clear_pointer (&priv->pending_active_connections, g_hash_table_unref);
 
 	c_list_for_each_entry_safe (data, data_safe, &priv->pending_activation_checks, pending_lst)
 		activate_data_free (data);

@@ -248,7 +248,7 @@ dispose (GObject *object)
 
 	for (iter = priv->devices; iter; iter = iter->next)
 		g_object_weak_unref (G_OBJECT (iter->data), device_destroyed, self);
-	g_clear_pointer (&priv->devices, g_slist_free);
+	nm_clear_pointer (&priv->devices, g_slist_free);
 
 	priv->udev_client = nm_udev_client_unref (priv->udev_client);
 

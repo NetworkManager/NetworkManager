@@ -8351,7 +8351,7 @@ ip_route_get (NMPlatform *platform,
 			.r.rtm_flags = 0x1000 /* RTM_F_LOOKUP_TABLE */,
 		};
 
-		g_clear_pointer (&route, nmp_object_unref);
+		nm_clear_pointer (&route, nmp_object_unref);
 
 		if (!_nl_addattr_l (&req.n, sizeof (req), RTA_DST, address, addr_len))
 			nm_assert_not_reached ();
@@ -8554,7 +8554,7 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 	nm_auto_free unsigned char *buf = NULL;
 
 continue_reading:
-	g_clear_pointer (&buf, free);
+	nm_clear_pointer (&buf, free);
 	n = nl_recv (sk, &nla, &buf, &creds, &creds_has);
 
 	if (n <= 0) {

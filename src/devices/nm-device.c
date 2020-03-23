@@ -8509,7 +8509,7 @@ shared_ip_release (gpointer data)
 {
 	g_hash_table_remove (shared_ips, data);
 	if (!g_hash_table_size (shared_ips))
-		g_clear_pointer (&shared_ips, g_hash_table_unref);
+		nm_clear_pointer (&shared_ips, g_hash_table_unref);
 }
 
 static NMIP4Config *
@@ -10199,7 +10199,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	nm_assert (!applied_config_get_current (&priv->ac_ip6_config));
 	applied_config_clear (&priv->ac_ip6_config);
 
-	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+	nm_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
@@ -10250,7 +10250,7 @@ addrconf6_cleanup (NMDevice *self)
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
 
 	applied_config_clear (&priv->ac_ip6_config);
-	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+	nm_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 	g_clear_object (&priv->ndisc);
 }
@@ -12365,7 +12365,7 @@ _rt6_temporary_not_available_set (NMDevice *self,
 	if (   !temporary_not_available
 	    || !temporary_not_available->len) {
 		/* nothing outstanding. Clear tracking the routes. */
-		g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+		nm_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 		nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 		return success;
 	}
@@ -15166,7 +15166,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	priv->ipv6ll_has = FALSE;
 	memset (&priv->ipv6ll_addr, 0, sizeof (priv->ipv6ll_addr));
 
-	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+	nm_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 
 	g_slist_free_full (priv->vpn_configs_4, g_object_unref);

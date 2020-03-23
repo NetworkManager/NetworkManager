@@ -183,7 +183,7 @@ set_property (GObject *object, guint prop_id,
 		priv->wps_method = g_value_get_uint (value);
 		break;
 	case PROP_WFD_IES:
-		g_clear_pointer (&priv->wfd_ies, g_bytes_unref);
+		nm_clear_pointer (&priv->wfd_ies, g_bytes_unref);
 		priv->wfd_ies = g_value_dup_boxed (value);
 		break;
 	default:

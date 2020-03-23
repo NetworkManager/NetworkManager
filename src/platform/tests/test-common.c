@@ -190,7 +190,7 @@ _accept_or_wait_signal (const char *file, int line, const char *func, SignalData
 	if (data->received_count == 0) {
 		data->loop = g_main_loop_new (NULL, FALSE);
 		g_main_loop_run (data->loop);
-		g_clear_pointer (&data->loop, g_main_loop_unref);
+		nm_clear_pointer (&data->loop, g_main_loop_unref);
 	}
 
 	_accept_signal (file, line, func, data);
@@ -205,7 +205,7 @@ _wait_signal (const char *file, int line, const char *func, SignalData *data)
 
 	data->loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (data->loop);
-	g_clear_pointer (&data->loop, g_main_loop_unref);
+	nm_clear_pointer (&data->loop, g_main_loop_unref);
 
 	_accept_signal (file, line, func, data);
 }
@@ -590,7 +590,7 @@ nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_msec)
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip4_route));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_route));
 
-	g_clear_pointer (&data.loop, g_main_loop_unref);
+	nm_clear_pointer (&data.loop, g_main_loop_unref);
 
 	/* return the number of signals, or 0 if timeout was reached .*/
 	return data.signal_counts;

@@ -1368,7 +1368,7 @@ clear_domain_lists (NMDnsManager *self)
 	head = _ip_config_lst_head (self);
 	c_list_for_each_entry (ip_data, head, ip_config_lst) {
 		nm_clear_g_free (&ip_data->domains.search);
-		g_clear_pointer (&ip_data->domains.reverse, g_strfreev);
+		nm_clear_pointer (&ip_data->domains.reverse, g_strfreev);
 	}
 }
 
@@ -1557,7 +1557,7 @@ plugin_skip:
 	    && result == SR_SUCCESS)
 		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
 
-	g_clear_pointer (&priv->config_variant, g_variant_unref);
+	nm_clear_pointer (&priv->config_variant, g_variant_unref);
 	_notify (self, PROP_CONFIGURATION);
 
 	if (result != SR_SUCCESS) {
@@ -2313,7 +2313,7 @@ dispose (GObject *object)
 	c_list_for_each_entry_safe (ip_data, ip_data_safe, &priv->ip_config_lst_head, ip_config_lst)
 		_ip_config_data_free (ip_data);
 
-	g_clear_pointer (&priv->configs, g_hash_table_destroy);
+	nm_clear_pointer (&priv->configs, g_hash_table_destroy);
 
 	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 
@@ -2321,7 +2321,7 @@ dispose (GObject *object)
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
 
-	g_clear_pointer (&priv->config_variant, g_variant_unref);
+	nm_clear_pointer (&priv->config_variant, g_variant_unref);
 }
 
 static void

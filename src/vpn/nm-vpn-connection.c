@@ -1636,7 +1636,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		nm_ip4_config_add_route (config, &r, NULL);
 	}
 
-	g_clear_pointer (&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
+	nm_clear_pointer (&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
 
 	nm_ip4_config_add_dependent_routes (config,
 	                                    route_table,
@@ -1883,7 +1883,7 @@ connect_success (NMVpnConnection *self)
 	}
 	priv->connect_timeout = g_timeout_add_seconds (timeout, connect_timeout_cb, self);
 
-	g_clear_pointer (&priv->connect_hash, g_variant_unref);
+	nm_clear_pointer (&priv->connect_hash, g_variant_unref);
 }
 
 static void
@@ -1980,7 +1980,7 @@ really_activate (NMVpnConnection *self, const char *username)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	g_return_if_fail (priv->vpn_state == STATE_NEED_AUTH);
 
-	g_clear_pointer (&priv->connect_hash, g_variant_unref);
+	nm_clear_pointer (&priv->connect_hash, g_variant_unref);
 	priv->connect_hash = _hash_with_username (_get_applied_connection (self), username);
 	g_variant_ref_sink (priv->connect_hash);
 
@@ -2764,9 +2764,9 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->start_timeout);
 
-	g_clear_pointer (&priv->connect_hash, g_variant_unref);
+	nm_clear_pointer (&priv->connect_hash, g_variant_unref);
 
-	g_clear_pointer (&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
+	nm_clear_pointer (&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
 
 	nm_clear_g_source (&priv->connect_timeout);
 

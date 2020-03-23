@@ -1631,7 +1631,7 @@ dispose (GObject *object)
 	nm_assert (!priv->objects_by_path || g_hash_table_size (priv->objects_by_path) == 0);
 	nm_assert (c_list_is_empty (&priv->objects_lst_head));
 
-	g_clear_pointer (&priv->objects_by_path, g_hash_table_destroy);
+	nm_clear_pointer (&priv->objects_by_path, g_hash_table_destroy);
 
 	c_list_for_each_entry_safe (s, s_safe, &priv->private_servers_lst_head, private_servers_lst)
 		private_server_free (s);

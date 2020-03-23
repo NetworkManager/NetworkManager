@@ -329,7 +329,7 @@ finalize (GObject *object)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
-	g_clear_pointer (&priv->lldp_neighbors, g_ptr_array_unref);
+	nm_clear_pointer (&priv->lldp_neighbors, g_ptr_array_unref);
 
 	g_free (priv->interface);
 	g_free (priv->ip_interface);

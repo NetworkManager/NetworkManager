@@ -925,7 +925,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 		    && !ip_config) {
 			_LOGW ("client bound but IP config not received");
 			new_state = NM_DHCP_STATE_FAIL;
-			g_clear_pointer (&str_options, g_hash_table_unref);
+			nm_clear_pointer (&str_options, g_hash_table_unref);
 		}
 
 		nm_dhcp_client_set_state (self, new_state, ip_config, str_options);
@@ -1102,9 +1102,9 @@ dispose (GObject *object)
 	nm_clear_g_free (&priv->iface);
 	nm_clear_g_free (&priv->hostname);
 	nm_clear_g_free (&priv->uuid);
-	g_clear_pointer (&priv->client_id, g_bytes_unref);
-	g_clear_pointer (&priv->hwaddr, g_bytes_unref);
-	g_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);
+	nm_clear_pointer (&priv->client_id, g_bytes_unref);
+	nm_clear_pointer (&priv->hwaddr, g_bytes_unref);
+	nm_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 

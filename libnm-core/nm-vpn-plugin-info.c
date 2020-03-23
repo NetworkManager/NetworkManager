@@ -1176,7 +1176,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		}
 	}
 
-	g_clear_pointer (&priv->keyfile, g_key_file_unref);
+	nm_clear_pointer (&priv->keyfile, g_key_file_unref);
 
 	return TRUE;
 }
@@ -1261,7 +1261,7 @@ finalize (GObject *object)
 	g_free (priv->filename);
 	g_hash_table_unref (priv->keys);
 
-	g_clear_pointer (&priv->keyfile, g_key_file_unref);
+	nm_clear_pointer (&priv->keyfile, g_key_file_unref);
 
 	G_OBJECT_CLASS (nm_vpn_plugin_info_parent_class)->finalize (object);
 }

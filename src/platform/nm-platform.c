@@ -4761,7 +4761,7 @@ _ip4_dev_route_blacklist_schedule (NMPlatform *self)
 
 	if (   !priv->ip4_dev_route_blacklist_hash
 	    || g_hash_table_size (priv->ip4_dev_route_blacklist_hash) == 0) {
-		g_clear_pointer (&priv->ip4_dev_route_blacklist_hash, g_hash_table_unref);
+		nm_clear_pointer (&priv->ip4_dev_route_blacklist_hash, g_hash_table_unref);
 		nm_clear_g_source (&priv->ip4_dev_route_blacklist_gc_timeout_id);
 	} else {
 		if (!priv->ip4_dev_route_blacklist_gc_timeout_id) {
@@ -7943,7 +7943,7 @@ finalize (GObject *object)
 
 	nm_clear_g_source (&priv->ip4_dev_route_blacklist_check_id);
 	nm_clear_g_source (&priv->ip4_dev_route_blacklist_gc_timeout_id);
-	g_clear_pointer (&priv->ip4_dev_route_blacklist_hash, g_hash_table_unref);
+	nm_clear_pointer (&priv->ip4_dev_route_blacklist_hash, g_hash_table_unref);
 	g_clear_object (&self->_netns);
 	nm_dedup_multi_index_unref (priv->multi_idx);
 	nmp_cache_free (priv->cache);

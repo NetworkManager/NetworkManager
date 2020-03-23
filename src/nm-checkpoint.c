@@ -723,8 +723,8 @@ dispose (GObject *object)
 
 	nm_assert (c_list_is_empty (&self->checkpoints_lst));
 
-	g_clear_pointer (&priv->devices, g_hash_table_unref);
-	g_clear_pointer (&priv->connection_uuids, g_hash_table_unref);
+	nm_clear_pointer (&priv->devices, g_hash_table_unref);
+	nm_clear_pointer (&priv->connection_uuids, g_hash_table_unref);
 	nm_clear_pointer (&priv->removed_devices, g_ptr_array_unref);
 
 	nm_clear_g_signal_handler (priv->manager, &priv->dev_removed_id);

@@ -99,7 +99,7 @@ test_encode_key (void)
 		GKeyFile **_keyfile = (keyfile); \
 		\
 		g_clear_object (_con); \
-		g_clear_pointer (_keyfile, g_key_file_unref); \
+		nm_clear_pointer (_keyfile, g_key_file_unref); \
 	} G_STMT_END
 
 static void

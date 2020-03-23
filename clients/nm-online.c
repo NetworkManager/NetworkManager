@@ -303,7 +303,7 @@ main (int argc, char *argv[])
 	nm_clear_g_signal_handler (data.client, &data.client_notify_id);
 	g_clear_object (&data.client);
 
-	g_clear_pointer (&data.loop, g_main_loop_unref);
+	nm_clear_pointer (&data.loop, g_main_loop_unref);
 
 	if (!data.quiet)
 		_print_progress (data.wait_startup, -1, NM_MAX (0, data.end_timestamp_ms - _now_ms ()), data.retval);

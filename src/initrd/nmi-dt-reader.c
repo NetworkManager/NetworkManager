@@ -363,7 +363,7 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
 		_LOGW (LOGD_CORE, "Generated an invalid connection: %s",
 		       error->message);
-		g_clear_pointer (&connection, g_object_unref);
+		nm_clear_pointer (&connection, g_object_unref);
 	}
 
 	return g_steal_pointer (&connection);

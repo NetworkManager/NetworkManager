@@ -1161,7 +1161,7 @@ dispose (GObject *object)
 
 	_main_cleanup (self, FALSE);
 
-	g_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
+	nm_clear_pointer (&priv->set_server_ex_args, g_variant_unref);
 
 	G_OBJECT_CLASS (nm_dns_dnsmasq_parent_class)->dispose (object);
 

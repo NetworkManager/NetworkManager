@@ -324,7 +324,7 @@ connect_context_clear (NMModemBroadband *self)
 		ConnectContext *ctx = self->_priv.ctx;
 
 		g_clear_error (&ctx->first_error);
-		g_clear_pointer (&ctx->ip_types, g_array_unref);
+		nm_clear_pointer (&ctx->ip_types, g_array_unref);
 		nm_clear_g_cancellable (&ctx->cancellable);
 		g_clear_object (&ctx->connection);
 		g_clear_object (&ctx->connect_properties);

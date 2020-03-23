@@ -3174,8 +3174,8 @@ dispose (GObject *object)
 
 	nm_assert (!priv->assoc_data);
 
-	g_clear_pointer (&priv->bss_idx, g_hash_table_destroy);
-	g_clear_pointer (&priv->peer_idx, g_hash_table_destroy);
+	nm_clear_pointer (&priv->bss_idx, g_hash_table_destroy);
+	nm_clear_pointer (&priv->peer_idx, g_hash_table_destroy);
 
 	nm_clear_pointer (&priv->current_bss, nm_ref_string_unref);
 

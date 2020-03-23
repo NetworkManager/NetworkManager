@@ -7731,7 +7731,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->devices_inited_id);
 
-	g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
+	nm_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
 
 	if (priv->concheck_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->concheck_mgr,
@@ -7786,7 +7786,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->vpn_manager);
 
 	sleep_devices_clear (self);
-	g_clear_pointer (&priv->sleep_devices, g_hash_table_unref);
+	nm_clear_pointer (&priv->sleep_devices, g_hash_table_unref);
 
 	if (priv->sleep_monitor) {
 		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, self);
@@ -7816,7 +7816,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->timestamp_update_id);
 
-	g_clear_pointer (&priv->device_route_metrics, g_hash_table_destroy);
+	nm_clear_pointer (&priv->device_route_metrics, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }

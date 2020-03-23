@@ -3500,7 +3500,7 @@ test_setting_compare_addresses (void)
 
 	success = nm_setting_diff (s1, s2, NM_SETTING_COMPARE_FLAG_EXACT, FALSE, &result);
 	g_assert (!success);
-	g_clear_pointer (&result, g_hash_table_unref);
+	nm_clear_pointer (&result, g_hash_table_unref);
 }
 
 static void
@@ -3532,7 +3532,7 @@ test_setting_compare_routes (void)
 
 	success = nm_setting_diff (s1, s2, NM_SETTING_COMPARE_FLAG_EXACT, FALSE, &result);
 	g_assert (!success);
-	g_clear_pointer (&result, g_hash_table_unref);
+	nm_clear_pointer (&result, g_hash_table_unref);
 }
 
 static void

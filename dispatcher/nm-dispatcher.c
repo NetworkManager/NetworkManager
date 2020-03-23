@@ -1090,7 +1090,7 @@ done:
 	nm_clear_g_source (&signal_id_term);
 	nm_clear_g_source (&signal_id_int);
 	nm_clear_g_source (&gl.quit_id);
-	g_clear_pointer (&gl.loop, g_main_loop_unref);
+	nm_clear_pointer (&gl.loop, g_main_loop_unref);
 	g_clear_object (&gl.dbus_connection);
 
 	if (!gl.debug)

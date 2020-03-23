@@ -148,7 +148,7 @@ nmt_route_entry_finalize (GObject *object)
 {
 	NmtRouteEntryPrivate *priv = NMT_ROUTE_ENTRY_GET_PRIVATE (object);
 
-	g_clear_pointer (&priv->route, nm_ip_route_unref);
+	nm_clear_pointer (&priv->route, nm_ip_route_unref);
 
 	G_OBJECT_CLASS (nmt_route_entry_parent_class)->finalize (object);
 }

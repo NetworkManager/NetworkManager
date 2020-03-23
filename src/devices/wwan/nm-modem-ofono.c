@@ -769,7 +769,7 @@ stage1_prepare_done (GObject *source,
 
 	g_clear_object (&priv->context_proxy_cancellable);
 
-	g_clear_pointer (&priv->connect_properties, g_hash_table_destroy);
+	nm_clear_pointer (&priv->connect_properties, g_hash_table_destroy);
 
 	if (error) {
 		_LOGW ("connection failed: %s", error->message);

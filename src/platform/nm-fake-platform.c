@@ -1346,7 +1346,7 @@ finalize (GObject *object)
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
 		g_free (device->udi);
-		g_clear_pointer (&device->obj, nmp_object_unref);
+		nm_clear_pointer (&device->obj, nmp_object_unref);
 	}
 	g_array_unref (priv->links);
 

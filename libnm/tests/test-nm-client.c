@@ -364,7 +364,7 @@ test_wifi_ap_added_removed (void)
 	                              NULL,
 	                              &error);
 	g_assert_no_error (error);
-	g_clear_pointer (&ret, g_variant_unref);
+	nm_clear_pointer (&ret, g_variant_unref);
 
 	g_signal_connect (wifi,
 	                  "access-point-removed",
@@ -590,7 +590,7 @@ test_client_nm_running (void)
 	g_source_remove (quit_id);
 
 	/* And kill it */
-	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
+	nm_clear_pointer (&sinfo, nmtstc_service_cleanup);
 
 	g_assert (nm_client_get_nm_running (client1));
 

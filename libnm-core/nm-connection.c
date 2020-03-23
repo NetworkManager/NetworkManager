@@ -1914,7 +1914,7 @@ nm_connection_update_secrets (NMConnection *connection,
 		                                             error);
 		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
 
-		g_clear_pointer (&setting_dict, g_variant_unref);
+		nm_clear_pointer (&setting_dict, g_variant_unref);
 
 		if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR) {
 			nm_assert (!error || *error);

@@ -1624,9 +1624,9 @@ dispose (GObject *object)
 		priv->calls = NULL;
 	}
 
-	g_clear_pointer (&priv->bridges, g_hash_table_destroy);
-	g_clear_pointer (&priv->ports, g_hash_table_destroy);
-	g_clear_pointer (&priv->interfaces, g_hash_table_destroy);
+	nm_clear_pointer (&priv->bridges, g_hash_table_destroy);
+	nm_clear_pointer (&priv->ports, g_hash_table_destroy);
+	nm_clear_pointer (&priv->interfaces, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_ovsdb_parent_class)->dispose (object);
 }

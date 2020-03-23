@@ -175,8 +175,8 @@ nmt_password_dialog_finalize (GObject *object)
 
 	g_free (priv->request_id);
 	g_free (priv->prompt);
-	g_clear_pointer (&priv->entries, g_ptr_array_unref);
-	g_clear_pointer (&priv->secrets, g_ptr_array_unref);
+	nm_clear_pointer (&priv->entries, g_ptr_array_unref);
+	nm_clear_pointer (&priv->secrets, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nmt_password_dialog_parent_class)->finalize (object);
 }

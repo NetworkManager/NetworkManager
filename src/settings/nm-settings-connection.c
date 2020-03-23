@@ -2611,14 +2611,14 @@ dispose (GObject *object)
 	nm_clear_pointer (&priv->system_secrets, g_variant_unref);
 	nm_clear_pointer (&priv->agent_secrets, g_variant_unref);
 
-	g_clear_pointer (&priv->seen_bssids, g_hash_table_destroy);
+	nm_clear_pointer (&priv->seen_bssids, g_hash_table_destroy);
 
 	g_clear_object (&priv->agent_mgr);
 
 	g_clear_object (&priv->connection);
 
-	g_clear_pointer (&priv->kf_db_timestamps, nm_key_file_db_unref);
-	g_clear_pointer (&priv->kf_db_seen_bssids, nm_key_file_db_unref);
+	nm_clear_pointer (&priv->kf_db_timestamps, nm_key_file_db_unref);
+	nm_clear_pointer (&priv->kf_db_seen_bssids, nm_key_file_db_unref);
 
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);
 

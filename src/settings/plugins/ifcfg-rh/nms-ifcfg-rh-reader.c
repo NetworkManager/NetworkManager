@@ -1338,7 +1338,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	v = svGetValueStr (ifcfg, numbered_tag (tag, "OPTIONS", which), &value);
 	if (v) {
 		if (parse_route_line (v, AF_INET, *out_route, NULL, error) < 0) {
-			g_clear_pointer (out_route, nm_ip_route_unref);
+			nm_clear_pointer (out_route, nm_ip_route_unref);
 			return FALSE;
 		}
 	}

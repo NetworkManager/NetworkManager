@@ -423,7 +423,7 @@ _metagen_con_show_row_data_init_primary_active (MetagenConShowRowData *row_data)
 		g_object_unref (row_data->primary_active);
 		row_data->primary_active = g_object_ref (best_ac);
 	}
-	g_clear_pointer (&row_data->all_active, g_ptr_array_unref);
+	nm_clear_pointer (&row_data->all_active, g_ptr_array_unref);
 }
 
 static void
@@ -436,7 +436,7 @@ _metagen_con_show_row_data_destroy (gpointer data)
 
 	g_clear_object (&row_data->connection);
 	g_clear_object (&row_data->primary_active);
-	g_clear_pointer (&row_data->all_active, g_ptr_array_unref);
+	nm_clear_pointer (&row_data->all_active, g_ptr_array_unref);
 	g_slice_free (MetagenConShowRowData, row_data);
 }
 
@@ -9246,7 +9246,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
 
-	g_clear_pointer (&nmc_tab_completion.words, g_strfreev);
+	nm_clear_pointer (&nmc_tab_completion.words, g_strfreev);
 	return match_array;
 }
 
