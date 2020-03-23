@@ -478,6 +478,41 @@ gboolean nm_client_reload_finish (NMClient *client,
                                   GAsyncResult *result,
                                   GError **error);
 
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_24
+void nm_client_dbus_call (NMClient *client,
+                          const char *object_path,
+                          const char *interface_name,
+                          const char *method_name,
+                          GVariant *parameters,
+                          const GVariantType *reply_type,
+                          int timeout_msec,
+                          GCancellable *cancellable,
+                          GAsyncReadyCallback callback,
+                          gpointer user_data);
+
+NM_AVAILABLE_IN_1_24
+GVariant *nm_client_dbus_call_finish (NMClient *client,
+                                      GAsyncResult *result,
+                                      GError **error);
+
+NM_AVAILABLE_IN_1_24
+void nm_client_dbus_set_property (NMClient *client,
+                                  const char *object_path,
+                                  const char *interface_name,
+                                  const char *property_name,
+                                  GVariant *value,
+                                  int timeout_msec,
+                                  GCancellable *cancellable,
+                                  GAsyncReadyCallback callback,
+                                  gpointer user_data);
+
+NM_AVAILABLE_IN_1_24
+gboolean nm_client_dbus_set_property_finish (NMClient *client,
+                                             GAsyncResult *result,
+                                             GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */

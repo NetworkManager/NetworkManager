@@ -61,7 +61,7 @@ G_DEFINE_TYPE (NMDeviceWifiP2P, nm_device_wifi_p2p, NM_TYPE_DEVICE)
  *
  * Since: 1.16
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_wifi_p2p_get_hw_address (NMDeviceWifiP2P *device)

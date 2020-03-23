@@ -205,10 +205,9 @@ _call_finish_cb (GObject *source,
 		return;
 	}
 
-	if (!return_void) {
-		nm_assert (!g_variant_is_of_type (ret, G_VARIANT_TYPE ("()")));
+	if (!return_void)
 		g_task_return_pointer (task, g_steal_pointer (&ret), (GDestroyNotify) g_variant_unref);
-	} else {
+	else {
 		nm_assert (g_variant_is_of_type (ret, G_VARIANT_TYPE ("()")));
 		g_task_return_boolean (task, TRUE);
 	}
@@ -253,7 +252,6 @@ nm_dbus_connection_call_finish_void_strip_dbus_error_cb (GObject *source,
  *
  * - user_data must be a GTask, whose reference will be consumed by the
  *   callback.
- * - the return GVariant must not be an empty tuple "()".
  * - the GTask is returned either with error or with a pointer containing the GVariant.
  */
 void

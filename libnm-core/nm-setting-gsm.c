@@ -85,7 +85,7 @@ nm_setting_gsm_get_auto_config (NMSettingGsm *setting)
  *
  * Returns: the #NMSettingGsm:number property of the setting
  *
- * Deprecated: 1.16:  user-provided values for this setting are no longer used.
+ * Deprecated: 1.16: User-provided values for this setting are no longer used.
  **/
 const char *
 nm_setting_gsm_get_number (NMSettingGsm *setting)
@@ -659,7 +659,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	 * Legacy setting that used to help establishing PPP data sessions for
 	 * GSM-based modems.
 	 *
-	 * Deprecated: 1.16: user-provided values for this setting are no longer used.
+	 * Deprecated: 1.16: User-provided values for this setting are no longer used.
 	 **/
 	obj_properties[PROP_NUMBER] =
 	    g_param_spec_string (NM_SETTING_GSM_NUMBER, "", "",

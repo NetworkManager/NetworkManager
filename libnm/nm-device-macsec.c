@@ -87,7 +87,7 @@ nm_device_macsec_get_parent (NMDeviceMacsec *device)
  *
  * Since: 1.6
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_macsec_get_hw_address (NMDeviceMacsec *device)

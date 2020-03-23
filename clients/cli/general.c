@@ -731,11 +731,26 @@ nmc_complete_strings_nocase (const char *prefix, ...)
 	va_end (args);
 }
 
+static void
+_set_logging_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NmCli *nmc = user_data;
+	gs_unref_variant GVariant *res = NULL;
+	gs_free_error GError *error = NULL;
+
+	res = nm_client_dbus_call_finish (NM_CLIENT (object), result, &error);
+	if (!res) {
+		g_dbus_error_strip_remote_error (error);
+		g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
+		                 nmc_error_get_simple_message (error));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
 static NMCResultCode
 do_general_logging (NmCli *nmc, int argc, char **argv)
 {
-	gs_free_error GError *error = NULL;
-
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		if (nmc->complete)
@@ -789,12 +804,19 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 		if (nmc->complete)
 			return nmc->return_value;
 
-		nm_client_set_logging (nmc->client, level, domains, &error);
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
-			                 nmc_error_get_simple_message (error));
-			return NMC_RESULT_ERROR_UNKNOWN;
-		}
+		nmc->should_wait++;
+		nm_client_dbus_call (nmc->client,
+		                     NM_DBUS_PATH,
+		                     NM_DBUS_INTERFACE,
+		                     "SetLogging",
+		                     g_variant_new ("(ss)",
+		                                    level ?: "",
+		                                    domains ?: ""),
+		                     G_VARIANT_TYPE ("()"),
+		                     -1,
+		                     NULL,
+		                     _set_logging_cb,
+		                     nmc);
 	}
 
 	return nmc->return_value;
@@ -911,16 +933,48 @@ nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolea
 	return TRUE;
 }
 
+static void
+_do_networking_on_off_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NmCli *nmc = user_data;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
+
+	ret = nm_client_dbus_call_finish (NM_CLIENT (object), result, &error);
+	if (!ret) {
+		if (g_error_matches (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED)) {
+			/* This is fine. Be quiet about it. */
+		} else {
+			g_dbus_error_strip_remote_error (error);
+			g_string_printf (nmc->return_text, _("Error: failed to set networking: %s"),
+			                 nmc_error_get_simple_message (error));
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		}
+	}
+	quit ();
+}
+
 static NMCResultCode
 do_networking_on_off (NmCli *nmc, int argc, char **argv, gboolean enable)
 {
 	if (nmc->complete)
 		return nmc->return_value;
 
-	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	nm_client_networking_set_enabled (nmc->client, enable, NULL);
+	nmc->should_wait++;
+	nm_client_dbus_call (nmc->client,
+	                     NM_DBUS_PATH,
+	                     NM_DBUS_INTERFACE,
+	                     "Enable",
+	                     g_variant_new ("(b)", enable),
+	                     G_VARIANT_TYPE ("()"),
+	                     -1,
+	                     NULL,
+	                     _do_networking_on_off_cb,
+	                     nmc);
 
 	return nmc->return_value;
 }
@@ -1034,6 +1088,21 @@ do_radio_all (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static void
+_do_radio_wifi_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NmCli *nmc = user_data;
+	gs_free_error GError *error = NULL;
+
+	if (!nm_client_dbus_set_property_finish (NM_CLIENT (object), result, &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_string_printf (nmc->return_text, _("Error: failed to set Wi-Fi radio: %s"),
+		                 nmc_error_get_simple_message (error));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
 static NMCResultCode
 do_radio_wifi (NmCli *nmc, int argc, char **argv)
 {
@@ -1055,7 +1124,18 @@ do_radio_wifi (NmCli *nmc, int argc, char **argv)
 		if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 			return nmc->return_value;
 
-		nm_client_wireless_set_enabled (nmc->client, enable_flag);
+		nmc_start_polkit_agent_start_try (nmc);
+
+		nmc->should_wait++;
+		nm_client_dbus_set_property (nmc->client,
+		                             NM_DBUS_PATH,
+		                             NM_DBUS_INTERFACE,
+		                             "WirelessEnabled",
+		                             g_variant_new_boolean (enable_flag),
+		                             -1,
+		                             NULL,
+		                             _do_radio_wifi_cb,
+		                             nmc);
 	}
 
 	return nmc->return_value;

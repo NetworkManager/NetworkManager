@@ -4039,14 +4039,13 @@ nm_client_networking_get_enabled (NMClient *client)
  *
  * Returns: %TRUE on success, %FALSE otherwise
  *
- * Deprecated: 1.22, use nm_client_networking_set_enabled_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_call() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to call "Enable" with "(b)" arguments and no return value.
  **/
 gboolean
 nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	/* FIXME(libnm-async-api): add nm_client_networking_set_enabled_async(). */
 
 	return _nm_client_dbus_call_sync_void (client,
 	                                       NULL,
@@ -4083,14 +4082,13 @@ nm_client_wireless_get_enabled (NMClient *client)
  *
  * Enables or disables wireless devices.
  *
- * Deprecated: 1.22, use nm_client_wireless_set_enabled_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to set "WirelessEnabled" property to a "(b)" value.
  */
 void
 nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
 
 	_nm_client_set_property_sync_legacy (client,
 	                                     NM_DBUS_PATH,
@@ -4138,13 +4136,14 @@ nm_client_wwan_get_enabled (NMClient *client)
  * @enabled: %TRUE to enable WWAN
  *
  * Enables or disables WWAN devices.
+ *
+ * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to set "WwanEnabled" property to a "(b)" value.
  **/
 void
 nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	/* FIXME(libnm-async-api): add nm_client_wwan_set_enabled_async(). */
 
 	_nm_client_set_property_sync_legacy (client,
 	                                     NM_DBUS_PATH,
@@ -4178,7 +4177,7 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
  *
  * Returns: %TRUE if WiMAX is enabled
  *
- * Deprecated: 1.22 This function always returns FALSE because WiMax is no longer supported
+ * Deprecated: 1.22: This function always returns FALSE because WiMax is no longer supported.
  **/
 gboolean
 nm_client_wimax_get_enabled (NMClient *client)
@@ -4195,7 +4194,7 @@ nm_client_wimax_get_enabled (NMClient *client)
  *
  * Enables or disables WiMAX devices.
  *
- * Deprecated: 1.22 This function does nothing because WiMax is no longer supported
+ * Deprecated: 1.22: This function does nothing because WiMax is no longer supported.
  **/
 void
 nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
@@ -4211,7 +4210,7 @@ nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
  *
  * Returns: %TRUE if the WiMAX hardware is enabled
  *
- * Deprecated: 1.22 This function always returns FALSE because WiMax is no longer supported
+ * Deprecated: 1.22: This function always returns FALSE because WiMax is no longer supported.
  **/
 gboolean
 nm_client_wimax_hardware_get_enabled (NMClient *client)
@@ -4269,13 +4268,14 @@ nm_client_connectivity_check_get_enabled (NMClient *client)
  * have any effect.
  *
  * Since: 1.10
+ *
+ * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to set "ConnectivityCheckEnabled" property to a "(b)" value.
  */
 void
 nm_client_connectivity_check_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
-
-	/* FIXME(libnm-async-api): add nm_client_wireless_set_enabled_async(). */
 
 	_nm_client_set_property_sync_legacy (client,
 	                                     NM_DBUS_PATH,
@@ -4316,7 +4316,9 @@ nm_client_connectivity_check_get_uri (NMClient *client)
  *
  * Returns: %TRUE on success, %FALSE otherwise
  *
- * Deprecated: 1.22, use nm_client_get_logging_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_call() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to call "GetLogging" with no arguments to get "(ss)" for level
+ * and domains.
  **/
 gboolean
 nm_client_get_logging (NMClient *client,
@@ -4330,8 +4332,6 @@ nm_client_get_logging (NMClient *client,
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	/* FIXME(libnm-async-api): add nm_client_get_logging_async(). */
 
 	ret = _nm_client_dbus_call_sync (client,
 	                                 NULL,
@@ -4366,15 +4366,14 @@ nm_client_get_logging (NMClient *client,
  *
  * Returns: %TRUE on success, %FALSE otherwise
  *
- * Deprecated: 1.22, use nm_client_set_logging_async() or GDBusConnection
+ * Deprecated: 1.22: Use the async command nm_client_dbus_call() on %NM_DBUS_PATH,
+ * %NM_DBUS_INTERFACE to call "SetLogging" with "(ss)" arguments for level and domains.
  **/
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	/* FIXME(libnm-async-api): add nm_client_set_logging_async(). */
 
 	return _nm_client_dbus_call_sync_void (client,
 	                                       NULL,
@@ -4473,7 +4472,7 @@ nm_client_get_connectivity (NMClient *client)
  *
  * Returns: the (new) current connectivity state
  *
- * Deprecated: 1.22, use nm_client_check_connectivity_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_check_connectivity_async() or GDBusConnection.
  */
 NMConnectivityState
 nm_client_check_connectivity (NMClient *client,
@@ -4602,7 +4601,7 @@ nm_client_check_connectivity_finish (NMClient *client,
  *
  * Returns: %TRUE if the request was successful, %FALSE if it failed
  *
- * Deprecated: 1.22, use nm_client_save_hostname_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_save_hostname_async() or GDBusConnection.
  **/
 gboolean
 nm_client_save_hostname (NMClient *client,
@@ -5312,7 +5311,7 @@ nm_client_add_and_activate_connection2_finish (NMClient *client,
  *
  * Returns: success or failure
  *
- * Deprecated: 1.22, use nm_client_deactivate_connection_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_deactivate_connection_async() or GDBusConnection.
  **/
 gboolean
 nm_client_deactivate_connection (NMClient *client,
@@ -5817,7 +5816,7 @@ nm_client_add_connection2_finish (NMClient *client,
  *   set. Note that even in the success case, you might have individual @failures.
  *   With 1.22, the return value is consistent with nm_client_load_connections_finish().
  *
- * Deprecated: 1.22, use nm_client_load_connections_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_load_connections_async() or GDBusConnection.
  **/
 gboolean
 nm_client_load_connections (NMClient *client,
@@ -5948,7 +5947,7 @@ nm_client_load_connections_finish (NMClient *client,
  *
  * Return value: %TRUE on success, %FALSE on failure
  *
- * Deprecated: 1.22, use nm_client_reload_connections_async() or GDBusConnection
+ * Deprecated: 1.22: Use nm_client_reload_connections_async() or GDBusConnection.
  **/
 gboolean
 nm_client_reload_connections (NMClient *client,
@@ -6643,6 +6642,174 @@ nm_client_reload_finish (NMClient *client,
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_reload), FALSE);
+
+	return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_client_dbus_call:
+ * @client: the #NMClient
+ * @object_path: path of remote object
+ * @interface_name: D-Bus interface to invoke method on
+ * @method_name: the name of the method to invoke
+ * @parameters: (nullable): a #GVariant tuple with parameters for the method
+ *     or %NULL if not passing parameters
+ * @reply_type: (nullable): the expected type of the reply (which will be a
+ *     tuple), or %NULL
+ * @timeout_msec: the timeout in milliseconds, -1 to use the default
+ *     timeout or %G_MAXINT for no timeout
+ * @cancellable: (nullable): a #GCancellable or %NULL
+ * @callback: (nullable): a #GAsyncReadyCallback to call when the request
+ *     is satisfied or %NULL if you don't care about the result of the
+ *     method invocation
+ * @user_data: the data to pass to @callback
+ *
+ * Call g_dbus_connection_call() on the current name owner with the specified
+ * arguments. Most importantly, this invokes g_dbus_connection_call() with the
+ * client's #GMainContext, so that the response is always in order with other
+ * events D-Bus events. Of course, the call uses #GTask and will invoke the
+ * callback on the current g_main_context_get_thread_default().
+ *
+ * This API is merely a convenient wrapper for g_dbus_connection_call(). You can
+ * also use g_dbus_connection_call() directly, with the same effect.
+ *
+ * Since: 1.24
+ **/
+void
+nm_client_dbus_call (NMClient *client,
+                     const char *object_path,
+                     const char *interface_name,
+                     const char *method_name,
+                     GVariant *parameters,
+                     const GVariantType *reply_type,
+                     int timeout_msec,
+                     GCancellable *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	_nm_client_dbus_call (client,
+	                      client,
+	                      nm_client_dbus_call,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      object_path,
+	                      interface_name,
+	                      method_name,
+	                      parameters,
+	                      reply_type,
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                        timeout_msec == -1
+	                      ? NM_DBUS_DEFAULT_TIMEOUT_MSEC
+	                      : timeout_msec,
+	                      nm_dbus_connection_call_finish_variant_cb);
+}
+
+/**
+ * nm_client_dbus_call_finish:
+ * @client: the #NMClient instance
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_dbus_call().
+ *
+ * Returns: (transfer full): the result #GVariant or %NULL on error.
+ *
+ * Since: 1.24
+ **/
+GVariant *
+nm_client_dbus_call_finish (NMClient *client,
+                            GAsyncResult *result,
+                            GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_dbus_call), FALSE);
+
+	return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_client_dbus_set_property:
+ * @client: the #NMClient
+ * @object_path: path of remote object
+ * @interface_name: D-Bus interface to invoke method on
+ * @property_name: the name of the property to set
+ * @value: a #GVariant tuple with the value to set
+ * @timeout_msec: the timeout in milliseconds, -1 to use the default
+ *     timeout or %G_MAXINT for no timeout
+ * @cancellable: (nullable): a #GCancellable or %NULL
+ * @callback: (nullable): a #GAsyncReadyCallback to call when the request
+ *     is satisfied or %NULL if you don't care about the result of the
+ *     method invocation
+ * @user_data: the data to pass to @callback
+ *
+ * Like nm_client_dbus_call() but calls "Set" on the standard "org.freedesktop.DBus.Properties"
+ * D-Bus interface.
+ *
+ * Since: 1.24
+ **/
+void
+nm_client_dbus_set_property (NMClient *client,
+                             const char *object_path,
+                             const char *interface_name,
+                             const char *property_name,
+                             GVariant *value,
+                             int timeout_msec,
+                             GCancellable *cancellable,
+                             GAsyncReadyCallback callback,
+                             gpointer user_data)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (interface_name);
+	g_return_if_fail (property_name);
+	g_return_if_fail (value);
+
+	_nm_client_dbus_call (client,
+	                      client,
+	                      nm_client_dbus_set_property,
+	                      cancellable,
+	                      callback,
+	                      user_data,
+	                      object_path,
+	                      DBUS_INTERFACE_PROPERTIES,
+	                      "Set",
+	                      g_variant_new ("(ssv)",
+	                                     interface_name,
+	                                     property_name,
+	                                     value),
+	                      G_VARIANT_TYPE ("()"),
+	                      G_DBUS_CALL_FLAGS_NONE,
+	                        timeout_msec == -1
+	                      ? NM_DBUS_DEFAULT_TIMEOUT_MSEC
+	                      : timeout_msec,
+	                      nm_dbus_connection_call_finish_void_cb);
+}
+
+/**
+ * nm_client_dbus_set_property_finish:
+ * @client: the #NMClient instance
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_dbus_set_property().
+ *
+ * Returns: %TRUE on success or %FALSE on failure.
+ *
+ * Since: 1.24
+ **/
+gboolean
+nm_client_dbus_set_property_finish (NMClient *client,
+                                    GAsyncResult *result,
+                                    GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_dbus_set_property), FALSE);
 
 	return g_task_propagate_boolean (G_TASK (result), error);
 }

@@ -54,7 +54,7 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
  * Returns: the active hardware address. This is the internal string used by the
  * device, and must not be modified.
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)

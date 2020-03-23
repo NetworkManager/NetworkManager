@@ -92,7 +92,7 @@ nm_vpn_plugin_old_set_connection (NMVpnPluginOld *plugin,
  *
  * Returns: (transfer full):
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 GDBusConnection *
 nm_vpn_plugin_old_get_connection (NMVpnPluginOld *plugin)
@@ -112,7 +112,7 @@ nm_vpn_plugin_old_get_connection (NMVpnPluginOld *plugin)
 /**
  * nm_vpn_plugin_old_get_state:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 NMVpnServiceState
 nm_vpn_plugin_old_get_state (NMVpnPluginOld *plugin)
@@ -125,7 +125,7 @@ nm_vpn_plugin_old_get_state (NMVpnPluginOld *plugin)
 /**
  * nm_vpn_plugin_old_set_state:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_set_state (NMVpnPluginOld *plugin,
@@ -145,7 +145,7 @@ nm_vpn_plugin_old_set_state (NMVpnPluginOld *plugin,
 /**
  * nm_vpn_plugin_old_set_login_banner:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_set_login_banner (NMVpnPluginOld *plugin,
@@ -160,7 +160,7 @@ nm_vpn_plugin_old_set_login_banner (NMVpnPluginOld *plugin,
 /**
  * nm_vpn_plugin_old_failure:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_failure (NMVpnPluginOld *plugin,
@@ -174,7 +174,7 @@ nm_vpn_plugin_old_failure (NMVpnPluginOld *plugin,
 /**
  * nm_vpn_plugin_old_disconnect:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 gboolean
 nm_vpn_plugin_old_disconnect (NMVpnPluginOld *plugin, GError **err)
@@ -288,7 +288,7 @@ schedule_fail_stop (NMVpnPluginOld *plugin, guint timeout_secs)
 /**
  * nm_vpn_plugin_old_set_config:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
@@ -332,7 +332,7 @@ nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
 /**
  * nm_vpn_plugin_old_set_ip4_config:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_set_ip4_config (NMVpnPluginOld *plugin,
@@ -392,7 +392,7 @@ nm_vpn_plugin_old_set_ip4_config (NMVpnPluginOld *plugin,
 /**
  * nm_vpn_plugin_old_set_ip6_config:
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_set_ip6_config (NMVpnPluginOld *plugin,
@@ -637,7 +637,7 @@ impl_vpn_plugin_old_new_secrets (NMVpnPluginOld *plugin,
  * are insufficient, or the VPN process indicates that it needs additional
  * information to complete the request.
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  */
 void
 nm_vpn_plugin_old_secrets_required (NMVpnPluginOld *plugin,
@@ -677,7 +677,7 @@ nm_vpn_plugin_old_secrets_required (NMVpnPluginOld *plugin,
  *
  * Returns: %TRUE if reading values was successful, %FALSE if not
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  **/
 gboolean
 nm_vpn_plugin_old_read_vpn_details (int fd,
@@ -700,7 +700,7 @@ nm_vpn_plugin_old_read_vpn_details (int fd,
  * Returns: %TRUE if the flag data item was found and successfully converted
  * to flags, %FALSE if not
  *
- * Deprecated: 1.2: replaced by NMVpnServicePlugin
+ * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
  **/
 gboolean
 nm_vpn_plugin_old_get_secret_flags (GHashTable *data,
@@ -1012,7 +1012,7 @@ nm_vpn_plugin_old_class_init (NMVpnPluginOldClass *plugin_class)
 	 *
 	 * The D-Bus service name of this plugin.
 	 *
-	 * Deprecated: 1.2: replaced by NMVpnServicePlugin
+	 * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
 	 */
 	obj_properties[PROP_DBUS_SERVICE_NAME] =
 	    g_param_spec_string (NM_VPN_PLUGIN_OLD_DBUS_SERVICE_NAME, "", "",
@@ -1026,7 +1026,7 @@ nm_vpn_plugin_old_class_init (NMVpnPluginOldClass *plugin_class)
 	 *
 	 * The state of the plugin.
 	 *
-	 * Deprecated: 1.2: replaced by NMVpnServicePlugin
+	 * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
 	 */
 	obj_properties[PROP_STATE] =
 	    g_param_spec_enum (NM_VPN_PLUGIN_OLD_STATE, "", "",

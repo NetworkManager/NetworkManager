@@ -128,7 +128,7 @@ nm_device_macvlan_get_tap (NMDeviceMacvlan *device)
  *
  * This property is not implemented yet, and the function always return NULL.
  *
- * Deprecated: 1.24 use nm_device_get_hw_address() instead.
+ * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
  **/
 const char *
 nm_device_macvlan_get_hw_address (NMDeviceMacvlan *device)
