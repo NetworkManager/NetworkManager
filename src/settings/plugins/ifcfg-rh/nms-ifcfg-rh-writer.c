@@ -1438,8 +1438,8 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	NMSettingBridge *s_bridge;
 	guint32 i;
 	gboolean b;
+	const char *s;
 	GString *opts;
-	const char *mac;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	if (!s_bridge) {
@@ -1450,8 +1450,8 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 
 	svSetValueBoolean (ifcfg, "STP", FALSE);
 
-	mac = nm_setting_bridge_get_mac_address (s_bridge);
-	svSetValueStr (ifcfg, "BRIDGE_MACADDR", mac);
+	s = nm_setting_bridge_get_mac_address (s_bridge);
+	svSetValueStr (ifcfg, "BRIDGE_MACADDR", s);
 
 	/* Bridge options */
 	opts = g_string_sized_new (32);
@@ -1485,6 +1485,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "ageing_time=%u", i);
+	}
+
+	s = nm_setting_bridge_get_group_address (s_bridge);
+	if (s) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "group_address=%s", s);
 	}
 
 	i = nm_setting_bridge_get_group_forward_mask (s_bridge);

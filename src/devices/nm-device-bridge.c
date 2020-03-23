@@ -158,11 +158,26 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
+static void
+from_sysfs_group_address (const char *value, GValue *out)
+{
+	if (!nm_utils_hwaddr_matches (value, -1, "01:80:C2:00:00:00", -1))
+		g_value_set_string (out, value);
+}
+
+static const char *
+to_sysfs_group_address (GValue *value)
+{
+	return g_value_get_string (value) ?: "01:80:C2:00:00:00";
+}
+
 /*****************************************************************************/
 
 typedef struct {
 	const char *name;
 	const char *sysname;
+	const char *(*to_sysfs) (GValue *value);
+	void (*from_sysfs) (const char *value, GValue *out);
 	uint nm_min;
 	uint nm_max;
 	uint nm_default;
@@ -173,40 +188,55 @@ typedef struct {
 
 static const Option master_options[] = {
 	{ NM_SETTING_BRIDGE_STP,                "stp_state", /* this must stay as the first item */
+	                                        NULL, NULL,
 	                                        0, 1, 1,
 	                                        FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_PRIORITY,           "priority",
+	                                        NULL, NULL,
 	                                        0, G_MAXUINT16, 0x8000,
 	                                        TRUE, FALSE, TRUE },
 	{ NM_SETTING_BRIDGE_FORWARD_DELAY,      "forward_delay",
+	                                        NULL, NULL,
 	                                        0, NM_BR_MAX_FORWARD_DELAY, 15,
 	                                        TRUE, TRUE, TRUE},
 	{ NM_SETTING_BRIDGE_HELLO_TIME,         "hello_time",
+	                                        NULL, NULL,
 	                                        0, NM_BR_MAX_HELLO_TIME, 2,
 	                                        TRUE, TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_MAX_AGE,            "max_age",
+	                                        NULL, NULL,
 	                                        0, NM_BR_MAX_MAX_AGE, 20,
 	                                        TRUE, TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_AGEING_TIME,        "ageing_time",
+	                                        NULL, NULL,
 	                                        NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
 	                                        TRUE, TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, "group_fwd_mask",
+	                                        NULL, NULL,
 	                                        0, 0xFFFF, 0,
 	                                        TRUE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping",
+	                                        NULL, NULL,
 	                                        0, 1, 1,
+	                                        FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_GROUP_ADDRESS,      "group_addr",
+	                                        to_sysfs_group_address, from_sysfs_group_address,
+	                                        0, 0, 0,
 	                                        FALSE, FALSE, FALSE },
 	{ NULL, NULL }
 };
 
 static const Option slave_options[] = {
 	{ NM_SETTING_BRIDGE_PORT_PRIORITY,     "priority",
+	                                       NULL, NULL,
 	                                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
 	                                       TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_PATH_COST,    "path_cost",
+	                                       NULL, NULL,
 	                                       0, NM_BR_PORT_MAX_PATH_COST, 100,
 	                                       TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode",
+	                                       NULL, NULL,
 	                                       0, 1, 0,
 	                                       FALSE, FALSE },
 	{ NULL, NULL }
@@ -216,10 +246,9 @@ static void
 commit_option (NMDevice *device, NMSetting *setting, const Option *option, gboolean slave)
 {
 	int ifindex = nm_device_get_ifindex (device);
+	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 	GParamSpec *pspec;
-	GValue val = G_VALUE_INIT;
-	guint32 uval = 0;
-	char value[100];
+	const char *value;
 
 	g_assert (setting);
 
@@ -229,37 +258,67 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 	/* Get the property's value */
 	g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
 	g_object_get_property ((GObject *) setting, option->name, &val);
-	if (G_VALUE_HOLDS_BOOLEAN (&val))
-		uval = g_value_get_boolean (&val) ? 1 : 0;
-	else if (G_VALUE_HOLDS_UINT (&val)) {
-		uval = g_value_get_uint (&val);
 
-		/* zero means "unspecified" for some NM properties but isn't in the
-		 * allowed kernel range, so reset the property to the default value.
-		 */
-		if (option->default_if_zero && uval == 0) {
-			g_value_unset (&val);
-			g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
-			g_param_value_set_default (pspec, &val);
-			uval = g_value_get_uint (&val);
-		}
+	if (option->to_sysfs) {
+		value = option->to_sysfs(&val);
+		goto out;
+	}
 
-		/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
-		 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
-		 * is almost always works out to be a multiplier of 100, so we can assume
-		 * centiseconds.  See clock_t_to_jiffies().
-		 */
-		if (option->user_hz_compensate)
-			uval *= 100;
-	} else
-		nm_assert_not_reached ();
-	g_value_unset (&val);
+	switch (pspec->value_type) {
+		case G_TYPE_BOOLEAN:
+			value = g_value_get_boolean (&val) ? "1" : "0";
+			break;
+		case G_TYPE_UINT: {
+				char value_buf[100];
+				guint uval;
 
-	nm_sprintf_buf (value, "%u", uval);
-	if (slave)
-		nm_platform_sysctl_slave_set_option (nm_device_get_platform (device), ifindex, option->sysname, value);
-	else
-		nm_platform_sysctl_master_set_option (nm_device_get_platform (device), ifindex, option->sysname, value);
+				uval = g_value_get_uint (&val);
+
+				/* zero means "unspecified" for some NM properties but isn't in the
+				 * allowed kernel range, so reset the property to the default value.
+				 */
+				if (option->default_if_zero && uval == 0) {
+					g_value_unset (&val);
+					g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
+					g_param_value_set_default (pspec, &val);
+					uval = g_value_get_uint (&val);
+				}
+
+				/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
+				 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
+				 * is almost always works out to be a multiplier of 100, so we can assume
+				 * centiseconds.  See clock_t_to_jiffies().
+				 */
+				if (option->user_hz_compensate)
+					uval *= 100;
+
+				nm_sprintf_buf (value_buf, "%u", uval);
+				value = value_buf;
+			}
+			break;
+		case G_TYPE_STRING:
+			value = g_value_get_string (&val);
+			break;
+		default:
+			nm_assert_not_reached ();
+			break;
+	}
+
+out:
+	if (!value)
+		return;
+
+	if (slave) {
+		nm_platform_sysctl_slave_set_option (nm_device_get_platform (device),
+		                                     ifindex,
+		                                     option->sysname,
+		                                     value);
+	} else {
+		nm_platform_sysctl_master_set_option (nm_device_get_platform (device),
+		                                      ifindex,
+		                                      option->sysname,
+		                                      value);
+	}
 }
 
 static const NMPlatformBridgeVlan **
@@ -335,29 +394,68 @@ update_connection (NMDevice *device, NMConnection *connection)
 	option++;
 
 	for (; option->name; option++) {
-		gs_free char *str = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex, option->sysname);
-		uint value;
+		nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+		gs_free char *str = NULL;
+		GParamSpec *pspec;
+
+		str = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex, option->sysname);
+		pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (s_bridge), option->name);
 
 		if (!stp_value && option->only_with_stp)
 			continue;
 
-		if (str) {
-			/* See comments in set_sysfs_uint() about centiseconds. */
-			if (option->user_hz_compensate) {
-				value = _nm_utils_ascii_str_to_int64 (str, 10,
-				                                      option->nm_min * 100,
-				                                      option->nm_max * 100,
-				                                      option->nm_default * 100);
-				value /= 100;
-			} else {
-				value = _nm_utils_ascii_str_to_int64 (str, 10,
-				                                      option->nm_min,
-				                                      option->nm_max,
-				                                      option->nm_default);
-			}
-			g_object_set (s_bridge, option->name, value, NULL);
-		} else
+		if (!str) {
 			_LOGW (LOGD_BRIDGE, "failed to read bridge setting '%s'", option->sysname);
+			continue;
+		}
+
+		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
+
+		if (option->from_sysfs) {
+			option->from_sysfs(str, &value);
+			goto out;
+		}
+
+		switch (pspec->value_type) {
+		case G_TYPE_UINT: {
+				guint uvalue;
+
+				/* See comments in set_sysfs_uint() about centiseconds. */
+				if (option->user_hz_compensate) {
+					uvalue = _nm_utils_ascii_str_to_int64 (str, 10,
+					                                       option->nm_min * 100,
+					                                       option->nm_max * 100,
+					                                       option->nm_default * 100);
+					uvalue /= 100;
+				} else {
+					uvalue = _nm_utils_ascii_str_to_int64 (str, 10,
+					                                       option->nm_min,
+					                                       option->nm_max,
+					                                       option->nm_default);
+				}
+				g_value_set_uint (&value, uvalue);
+			}
+			break;
+		case G_TYPE_BOOLEAN: {
+				gboolean bvalue;
+
+				bvalue = _nm_utils_ascii_str_to_int64 (str, 10,
+				                                       option->nm_min,
+				                                       option->nm_max,
+				                                       option->nm_default);
+				g_value_set_boolean (&value, bvalue);
+			}
+			break;
+		case G_TYPE_STRING:
+			g_value_set_string (&value, str);
+			break;
+		default:
+			nm_assert_not_reached();
+			break;
+		}
+
+out:
+		g_object_set_property (G_OBJECT (s_bridge), option->name, &value);
 	}
 }
 

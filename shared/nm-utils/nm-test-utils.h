@@ -1803,7 +1803,11 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 	con = nm_connection_new ();
 #endif
 
+	g_assert (con);
+
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+
+	g_assert (s_con);
 
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, id,

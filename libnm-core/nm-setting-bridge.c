@@ -41,6 +41,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_HELLO_TIME,
 	PROP_MAX_AGE,
 	PROP_AGEING_TIME,
+	PROP_GROUP_ADDRESS,
 	PROP_GROUP_FORWARD_MASK,
 	PROP_MULTICAST_SNOOPING,
 	PROP_VLAN_FILTERING,
@@ -51,6 +52,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 typedef struct {
 	GPtrArray *vlans;
 	char *   mac_address;
+	char *   group_address;
 	guint32  ageing_time;
 	guint16  priority;
 	guint16  forward_delay;
@@ -899,6 +901,22 @@ nm_setting_bridge_clear_vlans (NMSettingBridge *setting)
 	}
 }
 
+/**
+ * nm_setting_bridge_get_group_address:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:group-address property of the setting
+ *
+ * Since 1.24
+ **/
+const char *
+nm_setting_bridge_get_group_address (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), NULL);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->group_address;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -989,6 +1007,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	                                        NM_SETTING_BRIDGE_VLANS))
 		return FALSE;
 
+	if (   priv->group_address
+	    && !_nm_utils_hwaddr_link_local_valid (priv->group_address)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("is not a valid link local MAC address"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_GROUP_ADDRESS);
+		return FALSE;
+	}
+
 	/* Failures from here on are NORMALIZABLE... */
 
 	if (!_nm_utils_bridge_vlan_verify_list (priv->vlans,
@@ -1069,6 +1097,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_AGEING_TIME:
 		g_value_set_uint (value, priv->ageing_time);
 		break;
+	case PROP_GROUP_ADDRESS:
+		g_value_set_string (value, priv->group_address);
+		break;
 	case PROP_GROUP_FORWARD_MASK:
 		g_value_set_uint (value, priv->group_forward_mask);
 		break;
@@ -1121,6 +1152,11 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AGEING_TIME:
 		priv->ageing_time = g_value_get_uint (value);
+		break;
+	case PROP_GROUP_ADDRESS:
+		g_free (priv->group_address);
+		priv->group_address = _nm_utils_hwaddr_canonical_or_invalid (g_value_get_string (value),
+		                                                             ETH_ALEN);
 		break;
 	case PROP_GROUP_FORWARD_MASK:
 		priv->group_forward_mask = (guint16) g_value_get_uint (value);
@@ -1184,6 +1220,7 @@ finalize (GObject *object)
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (object);
 
 	g_free (priv->mac_address);
+	g_free (priv->group_address);
 	g_ptr_array_unref (priv->vlans);
 
 	G_OBJECT_CLASS (nm_setting_bridge_parent_class)->finalize (object);
@@ -1492,6 +1529,32 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * ---end---
 	 */
 	_nm_properties_override_dbus (properties_override, "interface-name", &nm_sett_info_propert_type_deprecated_interface_name);
+
+	/**
+	 * NMSettingBridge:group-address:
+	 *
+	 * If specified, The MAC address of the multicast group this bridge uses for STP.
+	 *
+	 * The address must be a link-local address in standard Ethernet MAC address format,
+	 * ie an address of the form 01:80:C2:00:00:0X, with X in [0, 4..F].
+	 * If not specified the default value is 01:80:C2:00:00:00.
+	 *
+	 * Since: 1.24
+	 **/
+	/* ---ifcfg-rh---
+	 * property: group-address
+	 * variable: BRIDGING_OPTS: group_address=
+	 * description: STP group address.
+	 * example: BRIDGING_OPTS="group_address=01:80:C2:00:00:0A"
+	 * ---end---
+	 */
+	obj_properties[PROP_GROUP_ADDRESS] =
+	    g_param_spec_string (NM_SETTING_BRIDGE_GROUP_ADDRESS, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	_nm_properties_override_gobj (properties_override, obj_properties[PROP_GROUP_ADDRESS], &nm_sett_info_propert_type_mac_address);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

@@ -5160,6 +5160,7 @@ handle_bridge_option (NMSetting *setting,
 		{ "multicast_snooping", NM_SETTING_BRIDGE_MULTICAST_SNOOPING, BRIDGE_OPT_TYPE_OPTION },
 		{ "vlan_filtering",     NM_SETTING_BRIDGE_VLAN_FILTERING,     BRIDGE_OPT_TYPE_OPTION },
 		{ "default_pvid",       NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,  BRIDGE_OPT_TYPE_OPTION },
+		{ "group_address",      NM_SETTING_BRIDGE_GROUP_ADDRESS,      BRIDGE_OPT_TYPE_OPTION },
 		{ "group_fwd_mask",     NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, BRIDGE_OPT_TYPE_OPTION },
 		{ "priority",           NM_SETTING_BRIDGE_PORT_PRIORITY,      BRIDGE_OPT_TYPE_PORT_OPTION },
 		{ "path_cost",          NM_SETTING_BRIDGE_PORT_PATH_COST,     BRIDGE_OPT_TYPE_PORT_OPTION },
@@ -5215,6 +5216,9 @@ handle_bridge_option (NMSetting *setting,
 				error_message = "number is out of range";
 				goto warn;
 			}
+			return;
+		case G_TYPE_STRING:
+			nm_g_object_set_property_string (G_OBJECT (setting), m[i].property_name, value, NULL);
 			return;
 		default:
 			nm_assert_not_reached ();

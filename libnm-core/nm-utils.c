@@ -4186,6 +4186,41 @@ _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length)
 		return g_strdup (mac);
 }
 
+/*
+ * Determine if given Ethernet address is link-local
+ *
+ * Return value: %TRUE if @mac is link local
+ * reserved addr (01:80:c2:00:00:0X) per IEEE 802.1Q 8.6.3 Frame filtering, %FALSE if not.
+ */
+gboolean
+_nm_utils_hwaddr_link_local_valid (const char *mac)
+{
+	guint8 mac_net[ETH_ALEN];
+	static const guint8 eth_reserved_addr_base[] = {
+		0x01, 0x80,
+		0xc2, 0x00,
+		0x00
+	};
+
+	if (!mac)
+		return FALSE;
+
+	if (!nm_utils_hwaddr_aton (mac, mac_net, ETH_ALEN))
+		return FALSE;
+
+	if (   memcmp (mac_net,
+	               eth_reserved_addr_base, ETH_ALEN - 1)
+	    || (mac_net[5] & 0xF0))
+		return FALSE;
+
+	if (   mac_net[5] == 1  /* 802.3x Pause address */
+	    || mac_net[5] == 2  /* 802.3ad Slow protocols */
+	    || mac_net[5] == 3) /* 802.1X PAE address */
+		return FALSE;
+
+	return TRUE;
+}
+
 /**
  * nm_utils_hwaddr_matches:
  * @hwaddr1: (nullable): pointer to a binary or ASCII hardware address, or %NULL
