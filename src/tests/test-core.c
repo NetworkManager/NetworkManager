@@ -1019,7 +1019,7 @@ _test_connection_sort_autoconnect_priority_one (NMConnection **list, gboolean sh
 	if (shuffle) {
 		for (i = count - 1; i > 0; i--) {
 			j = g_rand_int (nmtst_get_rand ()) % (i + 1);
-			NMTST_SWAP (connections->pdata[i], connections->pdata[j]);
+			NM_SWAP (connections->pdata[i], connections->pdata[j]);
 		}
 	}
 
