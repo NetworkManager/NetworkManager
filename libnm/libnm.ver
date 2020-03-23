@@ -1682,6 +1682,8 @@ global:
 	nm_secret_agent_old_get_dbus_connection;
 	nm_secret_agent_old_get_dbus_name_owner;
 	nm_secret_agent_old_get_main_context;
+	nm_setting_802_1x_get_domain_match;
+	nm_setting_802_1x_get_phase2_domain_match;
 	nm_setting_bond_get_option_normalized;
 	nm_setting_vrf_get_table;
 	nm_setting_vrf_get_type;

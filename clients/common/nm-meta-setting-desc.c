@@ -4562,6 +4562,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH,
 	    .property_type =                &_pt_gobject_string,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_DOMAIN_MATCH,
+	    .property_type =                &_pt_gobject_string,
+	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_CLIENT_CERT,
 	    .describe_message =
 	        N_("Enter file path to client certificate (optionally prefixed with file://).\n"
@@ -4657,6 +4660,9 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	    ),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH,
+	    .property_type =                &_pt_gobject_string,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_DOMAIN_MATCH,
 	    .property_type =                &_pt_gobject_string,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,

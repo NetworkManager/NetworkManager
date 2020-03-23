@@ -1329,6 +1329,14 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	if (!add_string_val (self, value, "domain_suffix_match2", FALSE, NULL, error))
 		return FALSE;
 
+	/* domain match */
+	value = nm_setting_802_1x_get_domain_match (setting);
+	if (!add_string_val (self, value, "domain_match", FALSE, NULL, error))
+		return FALSE;
+	value = nm_setting_802_1x_get_phase2_domain_match (setting);
+	if (!add_string_val (self, value, "domain_match2", FALSE, NULL, error))
+		return FALSE;
+
 	/* Private key */
 	added = FALSE;
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {

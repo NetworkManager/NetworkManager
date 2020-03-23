@@ -92,6 +92,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSetting8021x,
 	PROP_SUBJECT_MATCH,
 	PROP_ALTSUBJECT_MATCHES,
 	PROP_DOMAIN_SUFFIX_MATCH,
+	PROP_DOMAIN_MATCH,
 	PROP_CLIENT_CERT,
 	PROP_CLIENT_CERT_PASSWORD,
 	PROP_CLIENT_CERT_PASSWORD_FLAGS,
@@ -108,6 +109,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSetting8021x,
 	PROP_PHASE2_SUBJECT_MATCH,
 	PROP_PHASE2_ALTSUBJECT_MATCHES,
 	PROP_PHASE2_DOMAIN_SUFFIX_MATCH,
+	PROP_PHASE2_DOMAIN_MATCH,
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PHASE2_CLIENT_CERT_PASSWORD,
 	PROP_PHASE2_CLIENT_CERT_PASSWORD_FLAGS,
@@ -139,6 +141,7 @@ typedef struct {
 	char *subject_match;
 	GSList *altsubject_matches;
 	char *domain_suffix_match;
+	char *domain_match;
 	GBytes *client_cert;
 	char *client_cert_password;
 	char *phase1_peapver;
@@ -152,6 +155,7 @@ typedef struct {
 	char *phase2_subject_match;
 	GSList *phase2_altsubject_matches;
 	char *phase2_domain_suffix_match;
+	char *phase2_domain_match;
 	GBytes *phase2_client_cert;
 	char *phase2_client_cert_password;
 	char *password;
@@ -1245,6 +1249,22 @@ nm_setting_802_1x_get_domain_suffix_match (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_domain_match:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:domain-match property.
+ *
+ * Since: 1.24
+ **/
+const char *
+nm_setting_802_1x_get_domain_match (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->domain_match;
+}
+
+/**
  * nm_setting_802_1x_get_client_cert_scheme:
  * @setting: the #NMSetting8021x
  *
@@ -1689,6 +1709,22 @@ nm_setting_802_1x_get_phase2_domain_suffix_match (NMSetting8021x *setting)
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_domain_suffix_match;
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_domain_match:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:phase2-domain-match property.
+ *
+ * Since: 1.24
+ **/
+const char *
+nm_setting_802_1x_get_phase2_domain_match (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_domain_match;
 }
 
 /**
@@ -3074,6 +3110,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DOMAIN_SUFFIX_MATCH:
 		g_value_set_string (value, priv->domain_suffix_match);
 		break;
+	case PROP_DOMAIN_MATCH:
+		g_value_set_string (value, priv->domain_match);
+		break;
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, priv->client_cert);
 		break;
@@ -3121,6 +3160,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
 		g_value_set_string (value, priv->phase2_domain_suffix_match);
+		break;
+	case PROP_PHASE2_DOMAIN_MATCH:
+		g_value_set_string (value, priv->phase2_domain_match);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, priv->phase2_client_cert);
@@ -3233,6 +3275,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->domain_suffix_match);
 		priv->domain_suffix_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
+	case PROP_DOMAIN_MATCH:
+		g_free (priv->domain_match);
+		priv->domain_match = nm_strdup_not_empty (g_value_get_string (value));
+		break;
 	case PROP_CLIENT_CERT:
 		g_bytes_unref (priv->client_cert);
 		priv->client_cert = g_value_dup_boxed (value);
@@ -3293,6 +3339,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
 		g_free (priv->phase2_domain_suffix_match);
 		priv->phase2_domain_suffix_match = nm_strdup_not_empty (g_value_get_string (value));
+		break;
+	case PROP_PHASE2_DOMAIN_MATCH:
+		g_free (priv->phase2_domain_match);
+		priv->phase2_domain_match = nm_strdup_not_empty (g_value_get_string (value));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_bytes_unref (priv->phase2_client_cert);
@@ -3656,6 +3706,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 * the authentication server.  If a matching dNSName is found, this
 	 * constraint is met.  If no dNSName values are present, this constraint is
 	 * matched against SubjectName CN using same suffix match comparison.
+	 * Since version 1.24, multiple valid FQDNs can be passed as a ";" delimited
+	 * list.
 	 *
 	 * Since: 1.2
 	 **/
@@ -3667,6 +3719,30 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 */
 	obj_properties[PROP_DOMAIN_SUFFIX_MATCH] =
 	    g_param_spec_string (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSetting8021x:domain-match:
+	 *
+	 * Constraint for server domain name. If set, this list of FQDNs is used as
+	 * a match requirement for dNSName element(s) of the certificate presented
+	 * by the authentication server.  If a matching dNSName is found, this
+	 * constraint is met.  If no dNSName values are present, this constraint is
+	 * matched against SubjectName CN using the same comparison.
+	 * Multiple valid FQDNs can be passed as a ";" delimited list.
+	 *
+	 * Since: 1.24
+	 **/
+	/* ---ifcfg-rh---
+	 * property: domain-match
+	 * description: Value to match domain of server certificate against.
+	 * variable: IEEE_8021X_DOMAIN_MATCH(+)
+	 * ---end---
+	 */
+	obj_properties[PROP_DOMAIN_MATCH] =
+	    g_param_spec_string (NM_SETTING_802_1X_DOMAIN_MATCH, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
@@ -4006,6 +4082,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 * a matching dNSName is found, this constraint is met.  If no dNSName
 	 * values are present, this constraint is matched against SubjectName CN
 	 * using same suffix match comparison.
+	 * Since version 1.24, multiple valid FQDNs can be passed as a ";" delimited
+	 * list.
 	 *
 	 * Since: 1.2
 	 **/
@@ -4017,6 +4095,31 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 */
 	obj_properties[PROP_PHASE2_DOMAIN_SUFFIX_MATCH] =
 	    g_param_spec_string (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSetting8021x:phase2-domain-match:
+	 *
+	 * Constraint for server domain name. If set, this list of FQDNs is used as
+	 * a match requirement for dNSName element(s) of the certificate presented
+	 * by the authentication server during the inner "phase 2" authentication.
+	 * If a matching dNSName is found, this constraint is met.  If no dNSName
+	 * values are present, this constraint is matched against SubjectName CN
+	 * using the same comparison.
+	 * Multiple valid FQDNs can be passed as a ";" delimited list.
+	 *
+	 * Since: 1.24
+	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-domain-match
+	 * description: Value to match domain of server certificate for phase 2 against.
+	 * variable: IEEE_8021X_PHASE2_DOMAIN_MATCH(+)
+	 * ---end---
+	 */
+	obj_properties[PROP_PHASE2_DOMAIN_MATCH] =
+	    g_param_spec_string (NM_SETTING_802_1X_PHASE2_DOMAIN_MATCH, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);

@@ -503,6 +503,11 @@ write_8021x_setting (NMConnection *connection,
 	svSetValueStr (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH",
 	               nm_setting_802_1x_get_phase2_domain_suffix_match (s_8021x));
 
+	svSetValueStr (ifcfg, "IEEE_8021X_DOMAIN_MATCH",
+	               nm_setting_802_1x_get_domain_match (s_8021x));
+	svSetValueStr (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_MATCH",
+	               nm_setting_802_1x_get_phase2_domain_match (s_8021x));
+
 	vint = nm_setting_802_1x_get_auth_timeout (s_8021x);
 	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", vint > 0, vint);
 

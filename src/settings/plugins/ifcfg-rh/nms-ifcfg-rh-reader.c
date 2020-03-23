@@ -3669,6 +3669,14 @@ next:
 	v = svGetValueStr (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH", &value);
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, v, NULL);
 
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "IEEE_8021X_DOMAIN_MATCH", &value);
+	g_object_set (s_8021x, NM_SETTING_802_1X_DOMAIN_MATCH, v, NULL);
+
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_MATCH", &value);
+	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_DOMAIN_MATCH, v, NULL);
+
 	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", 10, 0, G_MAXINT32, 0);
 	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (int) timeout, NULL);
 
