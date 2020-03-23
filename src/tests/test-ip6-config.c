@@ -246,7 +246,7 @@ test_nm_ip6_config_addresses_sort_check (NMIP6Config *config, NMSettingIP6Config
 		for (i = 0; i < addr_count; i++) {
 			int j = g_rand_int_range (nmtst_get_rand (), i, addr_count);
 
-			NMTST_SWAP (idx[i], idx[j]);
+			NM_SWAP (idx[i], idx[j]);
 			nm_ip6_config_add_address (copy, _nmtst_ip6_config_get_address (config, idx[i]));
 		}
 

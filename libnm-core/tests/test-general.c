@@ -3493,7 +3493,7 @@ test_setting_compare_addresses (void)
 	nm_ip_address_unref (a);
 
 	if (nmtst_get_rand_uint32 () % 2)
-		NMTST_SWAP (s1, s2);
+		NM_SWAP (s1, s2);
 
 	success = nm_setting_compare (s1, s2, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (!success);
@@ -3525,7 +3525,7 @@ test_setting_compare_routes (void)
 	nm_ip_route_unref (r);
 
 	if (nmtst_get_rand_uint32 () % 2)
-		NMTST_SWAP (s1, s2);
+		NM_SWAP (s1, s2);
 
 	success = nm_setting_compare (s1, s2, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (!success);
@@ -6820,7 +6820,7 @@ _team_config_equal_check (const char *conf1,
 	gboolean is_same;
 
 	if (nmtst_get_rand_bool ())
-		NMTST_SWAP (conf1, conf2);
+		NM_SWAP (conf1, conf2);
 
 	if (!nm_streq0 (conf1, conf2)) {
 		_team_config_equal_check (conf1, conf1, port_config, TRUE);
