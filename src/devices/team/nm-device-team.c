@@ -932,7 +932,7 @@ dispose (GObject *object)
 	}
 
 	teamd_cleanup (self, TRUE);
-	g_clear_pointer (&priv->config, g_free);
+	nm_clear_g_free (&priv->config);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
 }

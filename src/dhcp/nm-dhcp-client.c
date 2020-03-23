@@ -1099,9 +1099,9 @@ dispose (GObject *object)
 	watch_cleanup (self);
 	timeout_cleanup (self);
 
-	g_clear_pointer (&priv->iface, g_free);
-	g_clear_pointer (&priv->hostname, g_free);
-	g_clear_pointer (&priv->uuid, g_free);
+	nm_clear_g_free (&priv->iface);
+	nm_clear_g_free (&priv->hostname);
+	nm_clear_g_free (&priv->uuid);
 	g_clear_pointer (&priv->client_id, g_bytes_unref);
 	g_clear_pointer (&priv->hwaddr, g_bytes_unref);
 	g_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);

@@ -390,7 +390,7 @@ nm_logging_setup (const char  *level,
 		}
 	}
 
-	g_clear_pointer (&gl_main.logging_domains_to_string, g_free);
+	nm_clear_g_free (&gl_main.logging_domains_to_string);
 
 	had_platform_debug = _nm_logging_enabled_lockfree (LOGL_DEBUG, LOGD_PLATFORM);
 

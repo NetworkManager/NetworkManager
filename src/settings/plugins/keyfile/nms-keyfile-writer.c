@@ -60,7 +60,7 @@ cert_writer (NMConnection *connection,
 					 * that would be interpreted as legacy binary format by reader. */
 					tmp = nm_keyfile_detect_unqualified_path_scheme (info->keyfile_dir, p, -1, FALSE, NULL);
 					if (tmp) {
-						g_clear_pointer (&tmp, g_free);
+						nm_clear_g_free (&tmp);
 						accepted_path = p;
 					}
 				}
@@ -71,7 +71,7 @@ cert_writer (NMConnection *connection,
 			 * Otherwise, add a file:// prefix */
 			tmp = nm_keyfile_detect_unqualified_path_scheme (info->keyfile_dir, path, -1, FALSE, NULL);
 			if (tmp) {
-				g_clear_pointer (&tmp, g_free);
+				nm_clear_g_free (&tmp);
 				accepted_path = path;
 			}
 		}

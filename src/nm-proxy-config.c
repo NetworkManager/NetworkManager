@@ -65,7 +65,7 @@ nm_proxy_config_merge_setting (NMProxyConfig *config, NMSettingProxy *setting)
 
 	priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
-	g_clear_pointer (&priv->pac_script, g_free);
+	nm_clear_g_free (&priv->pac_script);
 
 	method = nm_setting_proxy_get_method (setting);
 	switch (method) {

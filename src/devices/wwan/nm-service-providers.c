@@ -118,11 +118,11 @@ parser_gsm_start (ParseContext *parse_context,
 		}
 	} else if (strcmp (name, "apn") == 0) {
 		parse_context->found_internet_apn = FALSE;
-		g_clear_pointer (&parse_context->apn, g_free);
-		g_clear_pointer (&parse_context->username, g_free);
-		g_clear_pointer (&parse_context->password, g_free);
-		g_clear_pointer (&parse_context->gateway, g_free);
-		g_clear_pointer (&parse_context->auth_method, g_free);
+		nm_clear_g_free (&parse_context->apn);
+		nm_clear_g_free (&parse_context->username);
+		nm_clear_g_free (&parse_context->password);
+		nm_clear_g_free (&parse_context->gateway);
+		nm_clear_g_free (&parse_context->auth_method);
 		g_slist_free_full (parse_context->dns, g_free);
 		parse_context->dns = NULL;
 
@@ -155,7 +155,7 @@ parser_gsm_apn_start (ParseContext *parse_context,
 	} else if (strcmp (name, "authentication") == 0) {
 		for (i = 0; attribute_names && attribute_names[i]; i++) {
 			if (strcmp (attribute_names[i], "method") == 0) {
-				g_clear_pointer (&parse_context->auth_method, g_free);
+				nm_clear_g_free (&parse_context->auth_method);
 				parse_context->auth_method = g_strstrip (g_strdup (attribute_values[i]));
 				break;
 			}
@@ -173,7 +173,7 @@ parser_start_element (GMarkupParseContext *context,
 {
 	ParseContext *parse_context = user_data;
 
-	g_clear_pointer (&parse_context->text_buffer, g_free);
+	nm_clear_g_free (&parse_context->text_buffer);
 
 	switch (parse_context->state) {
 	case PARSER_TOPLEVEL:
@@ -205,7 +205,7 @@ parser_country_end (ParseContext *parse_context,
                     const char *name)
 {
 	if (strcmp (name, "country") == 0) {
-		g_clear_pointer (&parse_context->text_buffer, g_free);
+		nm_clear_g_free (&parse_context->text_buffer);
 		parse_context->state = PARSER_TOPLEVEL;
 	}
 }
@@ -215,7 +215,7 @@ parser_provider_end (ParseContext *parse_context,
                      const char *name)
 {
 	if (strcmp (name, "provider") == 0) {
-		g_clear_pointer (&parse_context->text_buffer, g_free);
+		nm_clear_g_free (&parse_context->text_buffer);
 		parse_context->state = PARSER_COUNTRY;
 	}
 }
@@ -225,7 +225,7 @@ parser_gsm_end (ParseContext *parse_context,
                 const char *name)
 {
 	if (strcmp (name, "gsm") == 0) {
-		g_clear_pointer (&parse_context->text_buffer, g_free);
+		nm_clear_g_free (&parse_context->text_buffer);
 		parse_context->state = PARSER_PROVIDER;
 	}
 }
@@ -235,19 +235,19 @@ parser_gsm_apn_end (ParseContext *parse_context,
                     const char *name)
 {
 	if (strcmp (name, "username") == 0) {
-		g_clear_pointer (&parse_context->username, g_free);
+		nm_clear_g_free (&parse_context->username);
 		parse_context->username = g_steal_pointer (&parse_context->text_buffer);
 	} else if (strcmp (name, "password") == 0) {
-		g_clear_pointer (&parse_context->password, g_free);
+		nm_clear_g_free (&parse_context->password);
 		parse_context->password = g_steal_pointer (&parse_context->text_buffer);
 	} else if (strcmp (name, "dns") == 0) {
 		parse_context->dns = g_slist_prepend (parse_context->dns,
 		                                   g_steal_pointer (&parse_context->text_buffer));
 	} else if (strcmp (name, "gateway") == 0) {
-		g_clear_pointer (&parse_context->gateway, g_free);
+		nm_clear_g_free (&parse_context->gateway);
 		parse_context->gateway = g_steal_pointer (&parse_context->text_buffer);
 	} else if (strcmp (name, "apn") == 0) {
-		g_clear_pointer (&parse_context->text_buffer, g_free);
+		nm_clear_g_free (&parse_context->text_buffer);
 
 		if (parse_context->mccmnc_matched && parse_context->found_internet_apn)
 			parse_context->state = PARSER_DONE;
@@ -262,7 +262,7 @@ parser_cdma_end (ParseContext *parse_context,
                  const char *name)
 {
 	if (strcmp (name, "cdma") == 0) {
-		g_clear_pointer (&parse_context->text_buffer, g_free);
+		nm_clear_g_free (&parse_context->text_buffer);
 		parse_context->state = PARSER_PROVIDER;
 	}
 }

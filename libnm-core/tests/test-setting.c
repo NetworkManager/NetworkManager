@@ -1852,7 +1852,7 @@ test_bridge_vlans (void)
 	str = nm_bridge_vlan_to_str (v1, &error);
 	nmtst_assert_success (str, error);
 	g_assert_cmpstr (str, ==, "10 pvid");
-	g_clear_pointer (&str, g_free);
+	nm_clear_g_free (&str);
 
 	v2 = nm_bridge_vlan_from_str ("  10  pvid  ", &error);
 	nmtst_assert_success (v2, error);

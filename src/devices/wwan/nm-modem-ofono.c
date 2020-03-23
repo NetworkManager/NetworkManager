@@ -449,7 +449,7 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 			g_signal_handlers_disconnect_by_data (priv->sim_proxy, self);
 			g_clear_object (&priv->sim_proxy);
 		}
-		g_clear_pointer (&priv->imsi, g_free);
+		nm_clear_g_free (&priv->imsi);
 		update_modem_state (self);
 	} else if (found && (!priv->sim_proxy && !priv->sim_proxy_cancellable)) {
 		_LOGI ("found new SimManager interface");

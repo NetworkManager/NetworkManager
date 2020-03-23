@@ -77,7 +77,7 @@ nmt_editor_grid_finalize (GObject *object)
 	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (object);
 
 	g_array_unref (priv->rows);
-	g_clear_pointer (&priv->row_heights, g_free);
+	nm_clear_g_free (&priv->row_heights);
 
 	G_OBJECT_CLASS (nmt_editor_grid_parent_class)->finalize (object);
 }

@@ -109,7 +109,7 @@ main (int argc, char *argv[])
 	if (!sysfs_dir)
 		sysfs_dir = g_strdup (DEFAULT_SYSFS_DIR);
 	if (dump_to_stdout)
-		g_clear_pointer (&connections_dir, g_free);
+		nm_clear_g_free (&connections_dir);
 
 	if (connections_dir && g_mkdir_with_parents (connections_dir, 0755) != 0) {
 		errsv = errno;

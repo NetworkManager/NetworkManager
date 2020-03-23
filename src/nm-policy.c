@@ -2706,9 +2706,9 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->reset_retries_id);
 	nm_clear_g_source (&priv->schedule_activate_all_id);
 
-	g_clear_pointer (&priv->orig_hostname, g_free);
-	g_clear_pointer (&priv->cur_hostname, g_free);
-	g_clear_pointer (&priv->last_hostname, g_free);
+	nm_clear_g_free (&priv->orig_hostname);
+	nm_clear_g_free (&priv->cur_hostname);
+	nm_clear_g_free (&priv->last_hostname);
 
 	if (priv->hostname_manager) {
 		g_signal_handlers_disconnect_by_data (priv->hostname_manager, priv);

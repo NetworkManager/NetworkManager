@@ -1155,7 +1155,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->aliases = g_key_file_get_string_list (priv->keyfile, NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION, "aliases", NULL, NULL);
 	if (priv->aliases && !priv->aliases[0])
-		g_clear_pointer (&priv->aliases, g_free);
+		nm_clear_g_free (&priv->aliases);
 
 	priv->keys = g_hash_table_new_full (_nm_utils_strstrdictkey_hash,
 	                                    _nm_utils_strstrdictkey_equal,

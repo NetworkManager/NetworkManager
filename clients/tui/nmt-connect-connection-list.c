@@ -80,7 +80,7 @@ nmt_connect_connection_free (NmtConnectConnection *nmtconn)
 static void
 nmt_connect_device_free (NmtConnectDevice *nmtdev)
 {
-	g_clear_pointer (&nmtdev->name, g_free);
+	nm_clear_g_free (&nmtdev->name);
 	g_clear_object (&nmtdev->device);
 
 	g_slist_free_full (nmtdev->conns, (GDestroyNotify) nmt_connect_connection_free);

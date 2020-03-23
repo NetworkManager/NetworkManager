@@ -152,7 +152,7 @@ dispose (GObject *object)
 {
 	NMWifiUtilsNl80211 *self = NM_WIFI_UTILS_NL80211 (object);
 
-	g_clear_pointer (&self->freqs, g_free);
+	nm_clear_g_free (&self->freqs);
 }
 
 struct nl80211_iface_info {

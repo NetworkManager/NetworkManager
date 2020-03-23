@@ -50,7 +50,7 @@ edit_clicked (NmtNewtButton *button,
 	new_config = nmt_newt_edit_string (config);
 
 	if (new_config && !*new_config)
-		g_clear_pointer (&new_config, g_free);
+		nm_clear_g_free (&new_config);
 	g_object_set (G_OBJECT (priv->s_port),
 	              NM_SETTING_TEAM_PORT_CONFIG, new_config,
 	              NULL);

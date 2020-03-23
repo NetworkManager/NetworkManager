@@ -4855,19 +4855,19 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	_set_mtu (self, 0);
 
 	if (priv->driver_version) {
-		g_clear_pointer (&priv->driver_version, g_free);
+		nm_clear_g_free (&priv->driver_version);
 		_notify (self, PROP_DRIVER_VERSION);
 	}
 	if (priv->firmware_version) {
-		g_clear_pointer (&priv->firmware_version, g_free);
+		nm_clear_g_free (&priv->firmware_version);
 		_notify (self, PROP_FIRMWARE_VERSION);
 	}
 	if (priv->udi) {
-		g_clear_pointer (&priv->udi, g_free);
+		nm_clear_g_free (&priv->udi);
 		_notify (self, PROP_UDI);
 	}
 	if (priv->physical_port_id) {
-		g_clear_pointer (&priv->physical_port_id, g_free);
+		nm_clear_g_free (&priv->physical_port_id);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
 	}
 
@@ -4880,7 +4880,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv->hw_addr_type = HW_ADDR_TYPE_UNSET;
 	if (nm_clear_g_free (&priv->hw_addr_perm))
 		_notify (self, PROP_PERM_HW_ADDRESS);
-	g_clear_pointer (&priv->hw_addr_initial, g_free);
+	nm_clear_g_free (&priv->hw_addr_initial);
 
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
@@ -7604,8 +7604,8 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	priv->dhcp_data_4.was_active = FALSE;
 	nm_clear_g_source (&priv->dhcp_data_4.grace_id);
 	priv->dhcp_data_4.grace_pending = FALSE;
-	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
-	g_clear_pointer (&priv->dhcp4.root_path, g_free);
+	nm_clear_g_free (&priv->dhcp4.pac_url);
+	nm_clear_g_free (&priv->dhcp4.root_path);
 
 	if (priv->dhcp_data_4.client) {
 		/* Stop any ongoing DHCP transaction on this device */
@@ -8667,7 +8667,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	priv->dhcp_data_6.was_active = FALSE;
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
 	applied_config_clear (&priv->dhcp6.ip6_config);
-	g_clear_pointer (&priv->dhcp6.event_id, g_free);
+	nm_clear_g_free (&priv->dhcp6.event_id);
 	nm_clear_g_source (&priv->dhcp_data_6.grace_id);
 	priv->dhcp_data_6.grace_pending = FALSE;
 
@@ -8811,7 +8811,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 			nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6_config, &a)
 				applied_config_add_address (&priv->dhcp6.ip6_config, NM_PLATFORM_IP_ADDRESS_CAST (a));
 		} else {
-			g_clear_pointer (&priv->dhcp6.event_id, g_free);
+			nm_clear_g_free (&priv->dhcp6.event_id);
 			if (ip6_config) {
 				applied_config_init (&priv->dhcp6.ip6_config, ip6_config);
 				priv->dhcp6.event_id = g_strdup (event_id);
@@ -9295,7 +9295,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 
 	nm_assert (!applied_config_get_current (&priv->dhcp6.ip6_config));
 	applied_config_clear (&priv->dhcp6.ip6_config);
-	g_clear_pointer (&priv->dhcp6.event_id, g_free);
+	nm_clear_g_free (&priv->dhcp6.event_id);
 
 	connection = nm_device_get_applied_connection (self);
 	g_return_val_if_fail (connection, FALSE);
@@ -13157,8 +13157,8 @@ ip_check_gw_ping_cleanup (NMDevice *self)
 		priv->gw_ping.pid = 0;
 	}
 
-	g_clear_pointer (&priv->gw_ping.binary, g_free);
-	g_clear_pointer (&priv->gw_ping.address, g_free);
+	nm_clear_g_free (&priv->gw_ping.binary);
+	nm_clear_g_free (&priv->gw_ping.address);
 }
 
 static gboolean
@@ -17352,7 +17352,7 @@ constructor (GType type,
 		gsize l;
 
 		if (!_nm_utils_hwaddr_aton (priv->hw_addr_perm, buf, sizeof (buf), &l)) {
-			g_clear_pointer (&priv->hw_addr_perm, g_free);
+			nm_clear_g_free (&priv->hw_addr_perm);
 			g_return_val_if_reached (object);
 		}
 
@@ -17518,7 +17518,7 @@ finalize (GObject *object)
 	g_free (priv->hw_addr_initial);
 	g_slist_free (priv->pending_actions);
 	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
-	g_clear_pointer (&priv->physical_port_id, g_free);
+	nm_clear_g_free (&priv->physical_port_id);
 	g_free (priv->udi);
 	g_free (priv->iface);
 	g_free (priv->ip_iface);

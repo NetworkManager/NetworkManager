@@ -78,10 +78,10 @@ nmt_newt_grid_finalize (GObject *object)
 	NmtNewtGridPrivate *priv = NMT_NEWT_GRID_GET_PRIVATE (object);
 
 	g_array_unref (priv->children);
-	g_clear_pointer (&priv->row_heights, g_free);
-	g_clear_pointer (&priv->col_widths, g_free);
-	g_clear_pointer (&priv->expand_rows, g_free);
-	g_clear_pointer (&priv->expand_cols, g_free);
+	nm_clear_g_free (&priv->row_heights);
+	nm_clear_g_free (&priv->col_widths);
+	nm_clear_g_free (&priv->expand_rows);
+	nm_clear_g_free (&priv->expand_cols);
 
 	G_OBJECT_CLASS (nmt_newt_grid_parent_class)->finalize (object);
 }

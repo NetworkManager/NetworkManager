@@ -234,7 +234,7 @@ vf_add_vlan (NMSriovVF *vf,
 		vf->vlans = _vf_vlan_create_hash ();
 
 	g_hash_table_add (vf->vlans, vlan);
-	g_clear_pointer (&vf->vlan_ids, g_free);
+	nm_clear_g_free (&vf->vlan_ids);
 }
 
 /**
@@ -530,7 +530,7 @@ nm_sriov_vf_remove_vlan (NMSriovVF *vf, guint vlan_id)
 	    || !g_hash_table_remove (vf->vlans, &vlan_id))
 		return FALSE;
 
-	g_clear_pointer (&vf->vlan_ids, g_free);
+	nm_clear_g_free (&vf->vlan_ids);
 	return TRUE;
 }
 

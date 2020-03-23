@@ -448,7 +448,7 @@ main (int argc, char *argv[])
 		fprintf (stderr,
 		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
 		         bad_domains);
-		g_clear_pointer (&bad_domains, g_free);
+		nm_clear_g_free (&bad_domains);
 	}
 
 	if (global_opt.become_daemon && !global_opt.debug) {

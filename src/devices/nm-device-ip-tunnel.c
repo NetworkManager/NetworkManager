@@ -175,19 +175,19 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 clear:
 		nm_device_parent_set_ifindex (device, 0);
 		if (priv->local) {
-			g_clear_pointer (&priv->local, g_free);
+			nm_clear_g_free (&priv->local);
 			_notify (self, PROP_LOCAL);
 		}
 		if (priv->remote) {
-			g_clear_pointer (&priv->remote, g_free);
+			nm_clear_g_free (&priv->remote);
 			_notify (self, PROP_REMOTE);
 		}
 		if (priv->input_key) {
-			g_clear_pointer (&priv->input_key, g_free);
+			nm_clear_g_free (&priv->input_key);
 			_notify (self, PROP_INPUT_KEY);
 		}
 		if (priv->output_key) {
-			g_clear_pointer (&priv->output_key, g_free);
+			nm_clear_g_free (&priv->output_key);
 			_notify (self, PROP_OUTPUT_KEY);
 		}
 
@@ -223,7 +223,7 @@ clear:
 				g_free (key);
 		} else {
 			if (priv->input_key) {
-				g_clear_pointer (&priv->input_key, g_free);
+				nm_clear_g_free (&priv->input_key);
 				_notify (self, PROP_INPUT_KEY);
 			}
 		}
@@ -238,7 +238,7 @@ clear:
 				g_free (key);
 		} else {
 			if (priv->output_key) {
-				g_clear_pointer (&priv->output_key, g_free);
+				nm_clear_g_free (&priv->output_key);
 				_notify (self, PROP_OUTPUT_KEY);
 			}
 		}
@@ -314,7 +314,7 @@ clear:
 					g_free (key);
 			} else {
 				if (priv->input_key) {
-					g_clear_pointer (&priv->input_key, g_free);
+					nm_clear_g_free (&priv->input_key);
 					_notify (self, PROP_INPUT_KEY);
 				}
 			}
@@ -329,7 +329,7 @@ clear:
 					g_free (key);
 			} else {
 				if (priv->output_key) {
-					g_clear_pointer (&priv->output_key, g_free);
+					nm_clear_g_free (&priv->output_key);
 					_notify (self, PROP_OUTPUT_KEY);
 				}
 			}
@@ -1022,10 +1022,10 @@ dispose (GObject *object)
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (object);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 
-	g_clear_pointer (&priv->local, g_free);
-	g_clear_pointer (&priv->remote, g_free);
-	g_clear_pointer (&priv->input_key, g_free);
-	g_clear_pointer (&priv->output_key, g_free);
+	nm_clear_g_free (&priv->local);
+	nm_clear_g_free (&priv->remote);
+	nm_clear_g_free (&priv->input_key);
+	nm_clear_g_free (&priv->output_key);
 
 	G_OBJECT_CLASS (nm_device_ip_tunnel_parent_class)->dispose (object);
 }

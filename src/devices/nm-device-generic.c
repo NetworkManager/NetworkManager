@@ -64,7 +64,7 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 
 	NM_DEVICE_CLASS (nm_device_generic_parent_class)->realize_start_notify (device, plink);
 
-	g_clear_pointer (&priv->type_description, g_free);
+	nm_clear_g_free (&priv->type_description);
 	ifindex = nm_device_get_ip_ifindex (NM_DEVICE (self));
 	if (ifindex > 0)
 		priv->type_description = g_strdup (nm_platform_link_get_type_name (nm_device_get_platform (device), ifindex));
@@ -181,7 +181,7 @@ dispose (GObject *object)
 	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
 
-	g_clear_pointer (&priv->type_description, g_free);
+	nm_clear_g_free (&priv->type_description);
 
 	G_OBJECT_CLASS (nm_device_generic_parent_class)->dispose (object);
 }

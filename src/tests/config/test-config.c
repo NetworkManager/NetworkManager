@@ -978,7 +978,7 @@ test_config_enable (void)
 	guint match_nm_version = _nm_config_match_nm_version;
 	char *match_env = g_strdup (_nm_config_match_env);
 
-	g_clear_pointer (&_nm_config_match_env, g_free);
+	nm_clear_g_free (&_nm_config_match_env);
 	_nm_config_match_env = g_strdup ("something-else");
 
 	_nm_config_match_nm_version = nm_encode_version (1, 3, 4);
@@ -992,14 +992,14 @@ test_config_enable (void)
 	g_clear_object (&config);
 
 	_nm_config_match_nm_version = nm_encode_version (1, 5, 3);
-	g_clear_pointer (&_nm_config_match_env, g_free);
+	nm_clear_g_free (&_nm_config_match_env);
 	_nm_config_match_env = g_strdup ("test-match-env-1");
 	config = setup_config (NULL, TEST_DIR "/NetworkManager.conf", "", NULL, TEST_DIR "/conf.d", "", NULL);
 	assert_config_value (nm_config_get_data_orig (config), "test-group-config-enable-1", "key1", "enabled");
 	g_clear_object (&config);
 
 	_nm_config_match_nm_version = match_nm_version;
-	g_clear_pointer (&_nm_config_match_env, g_free);
+	nm_clear_g_free (&_nm_config_match_env);
 	_nm_config_match_env = match_env;
 }
 

@@ -1058,7 +1058,7 @@ dispose (GObject *object)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (object);
 
-	g_clear_pointer (&priv->lease_file, g_free);
+	nm_clear_g_free (&priv->lease_file);
 
 	if (priv->client4) {
 		sd_dhcp_client_stop (priv->client4);

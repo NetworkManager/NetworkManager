@@ -1303,7 +1303,7 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 		priv->service_can_persist = TRUE;
 	}
 
-	g_clear_pointer (&priv->ip_iface, g_free);
+	nm_clear_g_free (&priv->ip_iface);
 	priv->ip_ifindex = 0;
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_TUNDEV, "&s", &str)) {
@@ -1321,14 +1321,14 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 		}
 		if (priv->ip_ifindex <= 0) {
 			_LOGE ("failed to look up VPN interface index for \"%s\"", priv->ip_iface);
-			g_clear_pointer (&priv->ip_iface, g_free);
+			nm_clear_g_free (&priv->ip_iface);
 			priv->ip_ifindex = 0;
 			nm_vpn_connection_config_maybe_complete (self, FALSE);
 			return FALSE;
 		}
 	}
 
-	g_clear_pointer (&priv->banner, g_free);
+	nm_clear_g_free (&priv->banner);
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &str)) {
 		priv->banner = g_strdup (str);
 		_notify (self, PROP_BANNER);
@@ -1350,7 +1350,7 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 
 	/* External world-visible address of the VPN server */
 	priv->ip4_external_gw = 0;
-	g_clear_pointer (&priv->ip6_external_gw, g_free);
+	nm_clear_g_free (&priv->ip6_external_gw);
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "u", &u32)) {
 		priv->ip4_external_gw = u32;
@@ -1702,7 +1702,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	address.plen = 128;
 
 	/* Internal address of the VPN subnet's gateway */
-	g_clear_pointer (&priv->ip6_internal_gw, g_free);
+	nm_clear_g_free (&priv->ip6_internal_gw);
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY, "@ay", &v)) {
 		priv->ip6_internal_gw = ip6_addr_dup_from_variant (v);
 		g_variant_unref (v);

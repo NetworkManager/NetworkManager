@@ -420,7 +420,7 @@ link_delete (NMPlatform *platform, int ifindex)
 		return FALSE;
 
 	obj_old = g_steal_pointer (&device->obj);
-	g_clear_pointer (&device->udi, g_free);
+	nm_clear_g_free (&device->udi);
 
 	cache_op = nmp_cache_remove (nm_platform_get_cache (platform),
 	                             obj_old,

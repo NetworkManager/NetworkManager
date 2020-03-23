@@ -481,17 +481,17 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 static void
 _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 {
-	g_clear_pointer (&cli->config_main_file, g_free);
-	g_clear_pointer (&cli->config_dir, g_free);
-	g_clear_pointer (&cli->system_config_dir, g_free);
-	g_clear_pointer (&cli->no_auto_default_file, g_free);
-	g_clear_pointer (&cli->intern_config_file, g_free);
-	g_clear_pointer (&cli->state_file, g_free);
-	g_clear_pointer (&cli->plugins, g_free);
+	nm_clear_g_free (&cli->config_main_file);
+	nm_clear_g_free (&cli->config_dir);
+	nm_clear_g_free (&cli->system_config_dir);
+	nm_clear_g_free (&cli->no_auto_default_file);
+	nm_clear_g_free (&cli->intern_config_file);
+	nm_clear_g_free (&cli->state_file);
+	nm_clear_g_free (&cli->plugins);
 	cli->configure_and_quit = NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED;
 	cli->is_debug = FALSE;
-	g_clear_pointer (&cli->connectivity_uri, g_free);
-	g_clear_pointer (&cli->connectivity_response, g_free);
+	nm_clear_g_free (&cli->connectivity_uri);
+	nm_clear_g_free (&cli->connectivity_response);
 	cli->connectivity_interval = -1;
 	cli->first_start = FALSE;
 }

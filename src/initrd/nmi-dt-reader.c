@@ -157,7 +157,7 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 	local_hwaddr = dt_get_hwaddr_property (base, bootpath, "local-mac-address");
 	hwaddr = dt_get_hwaddr_property (base, bootpath, "mac-address");
 	if (g_strcmp0 (local_hwaddr, hwaddr) == 0)
-		g_clear_pointer (&local_hwaddr, g_free);
+		nm_clear_g_free (&local_hwaddr);
 
 	tokens = g_strsplit (path, ",", 0);
 

@@ -307,12 +307,12 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_P_KEY:
 		priv->p_key = g_value_get_int (value);
-		g_clear_pointer (&priv->virtual_iface_name, g_free);
+		nm_clear_g_free (&priv->virtual_iface_name);
 		break;
 	case PROP_PARENT:
 		g_free (priv->parent);
 		priv->parent = g_value_dup_string (value);
-		g_clear_pointer (&priv->virtual_iface_name, g_free);
+		nm_clear_g_free (&priv->virtual_iface_name);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

@@ -1386,7 +1386,7 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	g_string_truncate (priv->output, 0);
 	g_clear_object (&priv->client);
 	g_clear_object (&priv->conn);
-	g_clear_pointer (&priv->db_uuid, g_free);
+	nm_clear_g_free (&priv->db_uuid);
 	nm_clear_g_cancellable (&priv->cancellable);
 }
 
@@ -1549,7 +1549,7 @@ _clear_call (gpointer data)
 		g_clear_object (&call->interface_device);
 		break;
 	case OVSDB_DEL_INTERFACE:
-		g_clear_pointer (&call->ifname, g_free);
+		nm_clear_g_free (&call->ifname);
 		break;
 	}
 }

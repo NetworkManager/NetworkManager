@@ -299,7 +299,7 @@ nmt_device_entry_set_mac_address (NmtDeviceEntry *deventry,
 		priv->mac_address = g_strdup (mac_address);
 		changed = TRUE;
 	} else if (!mac_address && priv->mac_address) {
-		g_clear_pointer (&priv->mac_address, g_free);
+		nm_clear_g_free (&priv->mac_address);
 		changed = TRUE;
 	} else if (   mac_address && priv->mac_address
 	           && !nm_utils_hwaddr_matches (mac_address, -1, priv->mac_address, -1)) {

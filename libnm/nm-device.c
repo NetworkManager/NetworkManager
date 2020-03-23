@@ -1795,7 +1795,7 @@ ensure_description (NMDevice *device)
 		g_object_get (device, "name", &priv->description, NULL);
 		if (priv->description && priv->description[0])
 			return;
-		g_clear_pointer (&priv->description, g_free);
+		nm_clear_g_free (&priv->description);
 	}
 
 	if (!priv->short_vendor) {

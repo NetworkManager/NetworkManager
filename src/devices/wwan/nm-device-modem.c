@@ -842,9 +842,9 @@ dispose (GObject *object)
 		nm_clear_pointer (&priv->modem, nm_modem_unclaim);
 	}
 
-	g_clear_pointer (&priv->device_id, g_free);
-	g_clear_pointer (&priv->operator_code, g_free);
-	g_clear_pointer (&priv->apn, g_free);
+	nm_clear_g_free (&priv->device_id);
+	nm_clear_g_free (&priv->operator_code);
+	nm_clear_g_free (&priv->apn);
 
 	G_OBJECT_CLASS (nm_device_modem_parent_class)->dispose (object);
 }

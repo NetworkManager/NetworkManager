@@ -1747,7 +1747,7 @@ set_property (GObject *object, guint prop_id,
 		priv->ip_types = g_value_get_uint (value);
 		break;
 	case PROP_SIM_OPERATOR_ID:
-		g_clear_pointer (&priv->sim_operator_id, g_free);
+		nm_clear_g_free (&priv->sim_operator_id);
 		s = g_value_get_string (value);
 		if (s && s[0])
 			priv->sim_operator_id = g_strdup (s);

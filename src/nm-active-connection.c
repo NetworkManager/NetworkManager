@@ -281,7 +281,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 		    priv->pending_activation_id)
 		{
 			nm_device_remove_pending_action (priv->device, priv->pending_activation_id, TRUE);
-			g_clear_pointer (&priv->pending_activation_id, g_free);
+			nm_clear_g_free (&priv->pending_activation_id);
 		}
 	}
 
@@ -1234,7 +1234,7 @@ _device_cleanup (NMActiveConnection *self)
 
 	if (priv->pending_activation_id) {
 		nm_device_remove_pending_action (priv->device, priv->pending_activation_id, TRUE);
-		g_clear_pointer (&priv->pending_activation_id, g_free);
+		nm_clear_g_free (&priv->pending_activation_id);
 	}
 
 	g_clear_object (&priv->device);

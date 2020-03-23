@@ -1367,7 +1367,7 @@ clear_domain_lists (NMDnsManager *self)
 
 	head = _ip_config_lst_head (self);
 	c_list_for_each_entry (ip_data, head, ip_config_lst) {
-		g_clear_pointer (&ip_data->domains.search, g_free);
+		nm_clear_g_free (&ip_data->domains.search);
 		g_clear_pointer (&ip_data->domains.reverse, g_strfreev);
 	}
 }

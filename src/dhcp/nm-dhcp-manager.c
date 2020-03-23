@@ -515,7 +515,7 @@ nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager, const char *hostna
 {
 	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
-	g_clear_pointer (&priv->default_hostname, g_free);
+	nm_clear_g_free (&priv->default_hostname);
 
 	/* Never send 'localhost'-type names to the DHCP server */
 	if (!nm_utils_is_specific_hostname (hostname))

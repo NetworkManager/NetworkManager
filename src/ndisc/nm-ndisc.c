@@ -676,7 +676,7 @@ nm_ndisc_add_dns_domain (NMNDisc *ndisc, const NMNDiscDNSDomain *new)
 		_different_message = g_strcmp0 (priv->last_error, error->message) != 0; \
 		_NMLOG (_different_message ? LOGL_WARN : LOGL_DEBUG, __VA_ARGS__); \
 		if (_different_message) { \
-			g_clear_pointer (&priv->last_error, g_free); \
+			nm_clear_g_free (&priv->last_error); \
 			priv->last_error = g_strdup (error->message); \
 		} \
 	} G_STMT_END
@@ -697,7 +697,7 @@ send_rs_timeout (NMNDisc *ndisc)
 	if (klass->send_rs (ndisc, &error)) {
 		_LOGD ("router solicitation sent");
 		priv->solicitations_left--;
-		g_clear_pointer (&priv->last_error, g_free);
+		nm_clear_g_free (&priv->last_error);
 	} else {
 		_MAYBE_WARN ("failure sending router solicitation: %s", error->message);
 		g_clear_error (&error);
@@ -751,7 +751,7 @@ announce_router (NMNDisc *ndisc)
 	priv->last_ra = nm_utils_get_monotonic_timestamp_sec ();
 	if (klass->send_ra (ndisc, &error)) {
 		_LOGD ("router advertisement sent");
-		g_clear_pointer (&priv->last_error, g_free);
+		nm_clear_g_free (&priv->last_error);
 	} else {
 		_MAYBE_WARN ("failure sending router advertisement: %s", error->message);
 		g_clear_error (&error);
@@ -1256,7 +1256,7 @@ nm_ndisc_ra_received (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
-	g_clear_pointer (&priv->last_error, g_free);
+	nm_clear_g_free (&priv->last_error);
 	check_timestamps (ndisc, now, changed);
 }
 
@@ -1265,7 +1265,7 @@ nm_ndisc_rs_received (NMNDisc *ndisc)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 
-	g_clear_pointer (&priv->last_error, g_free);
+	nm_clear_g_free (&priv->last_error);
 	announce_router_solicited (ndisc);
 }
 
@@ -1384,7 +1384,7 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
 	nm_clear_g_source (&priv->send_ra_id);
-	g_clear_pointer (&priv->last_error, g_free);
+	nm_clear_g_free (&priv->last_error);
 
 	nm_clear_g_source (&priv->timeout_id);
 

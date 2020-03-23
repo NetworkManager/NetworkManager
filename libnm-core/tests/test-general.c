@@ -3550,7 +3550,7 @@ test_setting_compare_wired_cloned_mac_address (void)
 	g_assert_cmpstr ("stable", ==, nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) old));
 	g_object_get (old, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, &str1, NULL);
 	g_assert_cmpstr ("stable", ==, str1);
-	g_clear_pointer (&str1, g_free);
+	nm_clear_g_free (&str1);
 
 	new = nm_setting_duplicate (old);
 	g_object_set (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "11:22:33:44:55:66", NULL);
@@ -3558,7 +3558,7 @@ test_setting_compare_wired_cloned_mac_address (void)
 	g_assert_cmpstr ("11:22:33:44:55:66", ==, nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) new));
 	g_object_get (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, &str1, NULL);
 	g_assert_cmpstr ("11:22:33:44:55:66", ==, str1);
-	g_clear_pointer (&str1, g_free);
+	nm_clear_g_free (&str1);
 
 	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (!success);
@@ -3570,7 +3570,7 @@ test_setting_compare_wired_cloned_mac_address (void)
 	g_assert_cmpstr ("stable-bia", ==, nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) new));
 	g_object_get (new, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, &str1, NULL);
 	g_assert_cmpstr ("stable-bia", ==, str1);
-	g_clear_pointer (&str1, g_free);
+	nm_clear_g_free (&str1);
 
 	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (!success);
@@ -3592,7 +3592,7 @@ test_setting_compare_wireless_cloned_mac_address (void)
 	g_assert_cmpstr ("stable", ==, nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) old));
 	g_object_get (old, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, &str1, NULL);
 	g_assert_cmpstr ("stable", ==, str1);
-	g_clear_pointer (&str1, g_free);
+	nm_clear_g_free (&str1);
 
 	new = nm_setting_duplicate (old);
 	g_object_set (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "11:22:33:44:55:66", NULL);
@@ -3600,7 +3600,7 @@ test_setting_compare_wireless_cloned_mac_address (void)
 	g_assert_cmpstr ("11:22:33:44:55:66", ==, nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) new));
 	g_object_get (new, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, &str1, NULL);
 	g_assert_cmpstr ("11:22:33:44:55:66", ==, str1);
-	g_clear_pointer (&str1, g_free);
+	nm_clear_g_free (&str1);
 
 	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (!success);

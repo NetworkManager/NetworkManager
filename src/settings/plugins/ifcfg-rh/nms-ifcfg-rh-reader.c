@@ -4390,7 +4390,7 @@ parse_ethtool_option (const char *value,
 			i++;
 
 			if (nm_utils_hwaddr_valid (opt_val, ETH_ALEN)) {
-				g_clear_pointer (out_password, g_free);
+				nm_clear_g_free (out_password);
 				*out_password = g_strdup (opt_val);
 			} else
 				PARSE_WARNING ("Wake-on-LAN password '%s' is invalid", opt_val);

@@ -138,7 +138,7 @@ nm_dbus_object_unexport (NMDBusObject *self)
 
 	_nm_dbus_manager_obj_unexport (self);
 
-	g_clear_pointer (&self->internal.path, g_free);
+	nm_clear_g_free (&self->internal.path);
 	self->internal.export_version_id = 0;
 
 	self->internal.is_unexporting = FALSE;

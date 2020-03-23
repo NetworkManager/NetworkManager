@@ -185,7 +185,7 @@ nm_main_utils_ensure_not_running_pidfile (const char *pidfile)
 	if (pid <= 0 || pid > 65536 || errno)
 		return;
 
-	g_clear_pointer (&contents, g_free);
+	nm_clear_g_free (&contents);
 	proc_cmdline = g_strdup_printf ("/proc/%ld/cmdline", pid);
 	if (!g_file_get_contents (proc_cmdline, &contents, &len, NULL))
 		return;
