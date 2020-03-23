@@ -945,7 +945,7 @@ static void
 _settings_connection_flags_changed (NMSettingsConnection *settings_connection,
                                     NMActiveConnection *self)
 {
-	GError *error = NULL;
+	NMDevice *device;
 
 	nm_assert (NM_IS_ACTIVE_CONNECTION (self));
 	nm_assert (NM_IS_SETTINGS_CONNECTION (settings_connection));
@@ -957,12 +957,17 @@ _settings_connection_flags_changed (NMSettingsConnection *settings_connection,
 		return;
 
 	_set_activation_type_managed (self);
-	if (!nm_device_reapply (nm_active_connection_get_device (self),
-	                        nm_settings_connection_get_connection ((nm_active_connection_get_settings_connection (self))),
-	                        &error)) {
-		_LOGW ("failed to reapply new device settings on previously externally managed device: %s",
-		       error->message);
-		g_error_free (error);
+
+	device = nm_active_connection_get_device (self);
+	if (device) {
+		gs_free_error GError *error = NULL;
+
+		if (!nm_device_reapply (device,
+		                        nm_settings_connection_get_connection (nm_active_connection_get_settings_connection (self)),
+		                        &error)) {
+			_LOGW ("failed to reapply new device settings on previously externally managed device: %s",
+			       error->message);
+		}
 	}
 }
 
