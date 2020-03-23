@@ -1819,6 +1819,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/nm-sd-utils-shared.c \
 	shared/systemd/nm-sd-utils-shared.h \
 	shared/systemd/sd-adapt-shared/architecture.h \
+	shared/systemd/sd-adapt-shared/arphrd-list.h \
 	shared/systemd/sd-adapt-shared/build.h \
 	shared/systemd/sd-adapt-shared/copy.h \
 	shared/systemd/sd-adapt-shared/def.h \
@@ -1850,6 +1851,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/alloc-util.c \
 	shared/systemd/src/basic/alloc-util.h \
 	shared/systemd/src/basic/async.h \
+	shared/systemd/src/basic/cgroup-util.h \
 	shared/systemd/src/basic/env-file.c \
 	shared/systemd/src/basic/env-file.h \
 	shared/systemd/src/basic/env-util.c \

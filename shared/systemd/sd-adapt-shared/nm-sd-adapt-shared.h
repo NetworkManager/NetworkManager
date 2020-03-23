@@ -84,6 +84,8 @@ G_STMT_START { \
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
 
+#define ENABLE_GSHADOW FALSE
+
 /*****************************************************************************/
 
 /* systemd cannot be compiled with "-Wdeclaration-after-statement". In particular

@@ -17,6 +17,7 @@
 
 #if 0 /* NM_IGNORED */
 bool net_match_config(Set *match_mac,
+                      Set *match_permanent_mac,
                       char * const *match_path,
                       char * const *match_driver,
                       char * const *match_type,
@@ -25,9 +26,12 @@ bool net_match_config(Set *match_mac,
                       char * const *match_wifi_iftype,
                       char * const *match_ssid,
                       Set *match_bssid,
+                      unsigned short iftype,
                       sd_device *device,
                       const struct ether_addr *dev_mac,
+                      const struct ether_addr *dev_permanent_mac,
                       const char *dev_name,
+                      char * const *alternative_names,
                       enum nl80211_iftype wifi_iftype,
                       const char *ssid,
                       const struct ether_addr *bssid);
