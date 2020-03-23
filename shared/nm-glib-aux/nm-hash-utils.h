@@ -266,6 +266,18 @@ guint nm_str_hash (gconstpointer str);
 		nm_hash_complete (&_h); \
 	})
 
+static inline guint
+nm_hash_mem (guint static_seed, const void *ptr, gsize n)
+{
+	NMHashState h;
+
+	if (n == 0)
+		return nm_hash_static (static_seed);
+	nm_hash_init (&h, static_seed);
+	nm_hash_update (&h, ptr, n);
+	return nm_hash_complete (&h);
+}
+
 /*****************************************************************************/
 
 /* nm_pstr_*() are for hashing keys that are pointers to strings,
