@@ -392,7 +392,7 @@ parse_ip (GHashTable *connections, const char *sysfs_dir, char *argument)
 		              NULL);
 		if (nm_setting_ip_config_get_num_addresses (s_ip6) == 0) {
 			g_object_set (s_ip6,
-			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 			              NULL);
 		}
 	} else if (g_strcmp0 (kind, "dhcp6") == 0) {

@@ -991,7 +991,7 @@ test_bootif (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
 }
 
@@ -1027,7 +1027,7 @@ test_bootif_hwtype (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
 
 	connection = g_hash_table_lookup (connections, "bootif_connection");
