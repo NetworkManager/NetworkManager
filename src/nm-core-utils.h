@@ -267,6 +267,8 @@ gboolean nm_utils_machine_id_is_fake (void);
 
 const char *nm_utils_boot_id_str (void);
 const struct _NMUuid *nm_utils_boot_id_bin (void);
+const char *nm_utils_proc_cmdline (void);
+const char *const*nm_utils_proc_cmdline_split (void);
 
 gboolean nm_utils_host_id_get (const guint8 **out_host_id,
                                gsize *out_host_id_len);
