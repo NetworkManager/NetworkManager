@@ -88,7 +88,8 @@ nm_hash_complete (NMHashState *state)
 	/* we don't ever want to return a zero hash.
 	 *
 	 * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
-	return (((guint) (h >> 32)) ^ ((guint) h)) ?: 1396707757u;
+	return    (((guint) (h >> 32)) ^ ((guint) h))
+	       ?: 1396707757u;
 }
 
 static inline void
