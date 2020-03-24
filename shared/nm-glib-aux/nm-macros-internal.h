@@ -1479,7 +1479,12 @@ _NM_BACKPORT_SYMBOL_IMPL(version, return_type, func, _##func##_##version, args_t
 /*****************************************************************************/
 
 /* mirrors g_ascii_isspace() and what we consider spaces in general. */
-#define NM_ASCII_SPACES "\t\n\f\r "
+#define NM_ASCII_SPACES      " \n\t\r\f"
+
+/* Like NM_ASCII_SPACES, but without "\f" (0x0c, Formfeed Page Break).
+ * This is what for example systemd calls WHITESPACE and what it uses to tokenize
+ * the kernel command line. */
+#define NM_ASCII_WHITESPACES " \n\t\r"
 
 #define nm_str_skip_leading_spaces(str) \
 	({ \
