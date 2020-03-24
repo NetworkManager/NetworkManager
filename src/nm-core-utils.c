@@ -2768,17 +2768,25 @@ again:
 const char *const*
 nm_utils_proc_cmdline_split (void)
 {
-	static const char *const* volatile proc_cmdline_cached = NULL;
-	const char *const* proc_cmdline;
+	static const char *const*volatile proc_cmdline_cached = NULL;
+	const char *const*proc_cmdline;
 
 again:
 	proc_cmdline = g_atomic_pointer_get (&proc_cmdline_cached);
 	if (G_UNLIKELY (!proc_cmdline)) {
-		const char *proc_cl_str = nm_utils_proc_cmdline();
-		proc_cmdline = (const char *const*) g_strsplit (proc_cl_str, " ", -1);
+		gs_free const char **split = NULL;
 
+		/* TODO: support quotation, like systemd's proc_cmdline_extract_first().
+		 * For that, add a new NMUtilsStrsplitSetFlags flag. */
+		split = nm_utils_strsplit_set_full (nm_utils_proc_cmdline (),
+		                                    NM_ASCII_WHITESPACES,
+		                                    NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
+		proc_cmdline =    split
+		               ?: NM_PTRARRAY_EMPTY (const char *);
 		if (!g_atomic_pointer_compare_and_exchange (&proc_cmdline_cached, NULL, proc_cmdline))
 			goto again;
+
+		g_steal_pointer (&split);
 	}
 
 	return proc_cmdline;
