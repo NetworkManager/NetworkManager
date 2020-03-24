@@ -2318,12 +2318,13 @@ scan_request_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	if (error) {
 		if (_nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
-			_LOGD ("could not get scan request result: %s", error->message);
+			_LOGD ("request-scan: could not get scan request result: %s", error->message);
 		else {
 			g_dbus_error_strip_remote_error (error);
-			_LOGW ("could not get scan request result: %s", error->message);
+			_LOGW ("request-scan: could not get scan request result: %s", error->message);
 		}
-	}
+	} else
+		_LOGT ("request-scan: request scanning success");
 }
 
 void
@@ -2339,7 +2340,8 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	/* Scan parameters */
+	_LOGT ("request-scan: request scanning (%u ssids)...", ssids_len);
+
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&builder, "{sv}", "Type", g_variant_new_string ("active"));
 	g_variant_builder_add (&builder, "{sv}", "AllowRoam", g_variant_new_boolean (FALSE));
