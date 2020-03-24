@@ -95,8 +95,7 @@ static inline void
 nm_hash_update (NMHashState *state, const void *ptr, gsize n)
 {
 	nm_assert (state);
-	nm_assert (ptr);
-	nm_assert (n > 0);
+	nm_assert (n == 0 || ptr);
 
 	/* Note: the data passed in here might be sensitive data (secrets),
 	 * that we should nm_explicty_zero() afterwards. However, since
