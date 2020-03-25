@@ -70,6 +70,9 @@
 static
 NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
 
+static
+NM_CACHED_QUARK_FCN ("default-wired-connection-blocked", _default_wired_connection_blocked_quark)
+
 /*****************************************************************************/
 
 typedef struct _StorageData {
@@ -3432,8 +3435,12 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	 */
 	if (   !NM_DEVICE_GET_CLASS (device)->new_default_connection
 	    || !nm_device_get_managed (device, FALSE)
-	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ()))
+	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_blocked_quark ()))
 		return;
+
+	/* we only check once whether to create the auto-default connection. If we reach this point,
+	 * we mark the creation of the default-wired-connection as blocked. */
+	g_object_set_qdata (G_OBJECT (device), _default_wired_connection_blocked_quark (), device);
 
 	if (nm_config_get_no_auto_default_for_device (priv->config, device)) {
 		_LOGT ("auto-default: cannot create auto-default connection for device %s: disabled by \"no-auto-default\"",
