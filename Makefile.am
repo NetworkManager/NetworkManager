@@ -4166,6 +4166,9 @@ dispatcher_nm_dispatcher_LDFLAGS = \
 dispatcher_nm_dispatcher_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
 	libnm/libnm.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS)
 
 dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
