@@ -63,9 +63,23 @@ typedef struct {
 	bool stp:1;
 } NMSettingBridgePrivate;
 
+/**
+ * NMSettingBridge:
+ *
+ * Bridging Settings
+ */
+struct _NMSettingBridge {
+	NMSetting parent;
+	NMSettingBridgePrivate _priv;
+};
+
+struct _NMSettingBridgeClass {
+	NMSettingClass parent;
+};
+
 G_DEFINE_TYPE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)
 
-#define NM_SETTING_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE, NMSettingBridgePrivate))
+#define NM_SETTING_BRIDGE_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSettingBridge, NM_IS_SETTING_BRIDGE, NMSetting)
 
 /*****************************************************************************/
 
@@ -1181,8 +1195,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 	GArray *properties_override = _nm_sett_info_property_override_create_array ();
-
-	g_type_class_add_private (klass, sizeof (NMSettingBridgePrivate));
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;

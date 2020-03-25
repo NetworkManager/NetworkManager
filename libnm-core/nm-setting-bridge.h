@@ -39,21 +39,7 @@ G_BEGIN_DECLS
 #define NM_BRIDGE_VLAN_VID_MIN            1
 #define NM_BRIDGE_VLAN_VID_MAX            4094
 
-/**
- * NMSettingBridge:
- *
- * Bridging Settings
- */
-struct _NMSettingBridge {
-	NMSetting parent;
-};
-
-typedef struct {
-	NMSettingClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
-} NMSettingBridgeClass;
+typedef struct _NMSettingBridgeClass NMSettingBridgeClass;
 
 typedef struct _NMBridgeVlan NMBridgeVlan;
 
