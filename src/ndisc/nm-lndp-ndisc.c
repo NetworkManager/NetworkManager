@@ -258,7 +258,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			NMNDiscDNSDomain dns_domain = {
 				.domain = domain,
 				.timestamp = now,
-				.lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
+				.lifetime = ndp_msg_opt_dnssl_lifetime (msg, offset),
 			};
 
 			/* Pad the lifetime somewhat to give a bit of slack in cases
