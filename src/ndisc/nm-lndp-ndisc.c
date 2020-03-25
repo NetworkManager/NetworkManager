@@ -229,7 +229,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 	/* DNS information */
 	ndp_msg_opt_for_each_offset(offset, msg, NDP_MSG_OPT_RDNSS) {
-		static struct in6_addr *addr;
+		struct in6_addr *addr;
 		int addr_index;
 
 		ndp_msg_opt_rdnss_for_each_addr (addr, addr_index, msg, offset) {
