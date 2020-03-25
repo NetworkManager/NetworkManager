@@ -17,6 +17,7 @@ install_data(
 deps = [
   libnm_dep,
   libnm_nm_default_dep,
+  libnm_libnm_aux_dep,
 ]
 
 c_flags = [
