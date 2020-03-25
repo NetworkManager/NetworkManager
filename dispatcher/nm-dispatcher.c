@@ -598,7 +598,7 @@ find_scripts (Request *request)
 	else
 		subdir = NULL;
 
-	scripts = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	scripts = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
 	_find_scripts (request, scripts, NMLIBDIR, subdir);
 	_find_scripts (request, scripts, NMCONFDIR, subdir);
