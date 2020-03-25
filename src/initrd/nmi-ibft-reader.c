@@ -200,8 +200,8 @@ ip_setting_add_from_block (GHashTable *nic,
 		g_return_val_if_reached (FALSE);
 	}
 	g_object_set (s_ip,
-                      NM_SETTING_IP_CONFIG_METHOD, method,
-                      NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
+	              NM_SETTING_IP_CONFIG_METHOD, method,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
 	              NULL);
 
 	if (s_gateway && !nm_utils_ipaddr_is_valid (family, s_gateway)) {
