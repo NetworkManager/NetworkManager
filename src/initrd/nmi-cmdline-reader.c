@@ -198,7 +198,7 @@ static void
 read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 {
 	gs_unref_hashtable GHashTable *ibft = NULL;
-	NMConnection *connection;
+	NMConnection *dt_connection;
 	GHashTableIter iter;
 	const char *mac;
 	GHashTable *nic;
@@ -209,8 +209,9 @@ read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 
 	g_hash_table_iter_init (&iter, ibft);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &mac, (gpointer *) &nic)) {
-		connection = nm_simple_connection_new ();
+		gs_unref_object NMConnection *connection = NULL;
 
+		connection = nm_simple_connection_new ();
 		index = g_hash_table_lookup (nic, "index");
 		if (!index) {
 			_LOGW (LOGD_CORE, "Ignoring an iBFT entry without an index");
@@ -220,18 +221,19 @@ read_all_connections_from_fw (GHashTable *connections, const char *sysfs_dir)
 		if (!nmi_ibft_update_connection_from_nic (connection, nic, &error)) {
 			_LOGW (LOGD_CORE, "Unable to merge iBFT configuration: %s", error->message);
 			g_error_free (error);
+			continue;
 		}
 
 		g_hash_table_insert (connections,
 		                     g_strdup_printf ("ibft%s", index),
-		                     connection);
+		                     g_steal_pointer (&connection));
 	}
 
-	connection = nmi_dt_reader_parse (sysfs_dir);
-	if (connection) {
+	dt_connection = nmi_dt_reader_parse (sysfs_dir);
+	if (dt_connection) {
 		g_hash_table_insert (connections,
 		                     g_strdup ("ofw"),
-		                     connection);
+		                     dt_connection);
 	}
 }
 
