@@ -1529,6 +1529,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "vlan_protocol=%s", s);
 	}
 
+	b = nm_setting_bridge_get_vlan_stats_enabled (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_STATS_ENABLED)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "vlan_stats_enabled=%u", (guint) b);
+	}
+
 	if (opts->len)
 		svSetValueStr (ifcfg, "BRIDGING_OPTS", opts->str);
 	g_string_free (opts, TRUE);

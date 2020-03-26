@@ -254,6 +254,10 @@ static const Option master_options[] = {
 	                                        to_sysfs_vlan_protocol, from_sysfs_vlan_protocol,
 	                                        0, 0, 0,
 	                                        FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_VLAN_STATS_ENABLED, "vlan_stats_enabled",
+	                                        NULL, NULL,
+	                                        0, 1, 0,
+	                                        FALSE, FALSE, FALSE },
 	{ NULL, NULL }
 };
 

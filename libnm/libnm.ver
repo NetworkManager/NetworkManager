@@ -1687,6 +1687,7 @@ global:
 	nm_setting_bond_get_option_normalized;
 	nm_setting_bridge_get_group_address;
 	nm_setting_bridge_get_vlan_protocol;
+	nm_setting_bridge_get_vlan_stats_enabled;
 	nm_setting_vrf_get_table;
 	nm_setting_vrf_get_type;
 	nm_setting_vrf_new;

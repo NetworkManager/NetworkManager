@@ -30,6 +30,7 @@
 #define BRIDGE_PRIORITY_DEFAULT           0x8000
 #define BRIDGE_STP_DEFAULT                TRUE
 #define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT  1
+#define BRIDGE_VLAN_STATS_ENABLED_DEFAULT FALSE
 
 /*****************************************************************************/
 
@@ -47,6 +48,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_VLAN_FILTERING,
 	PROP_VLAN_DEFAULT_PVID,
 	PROP_VLAN_PROTOCOL,
+	PROP_VLAN_STATS_ENABLED,
 	PROP_VLANS,
 );
 
@@ -65,6 +67,7 @@ typedef struct {
 	bool multicast_snooping:1;
 	bool vlan_filtering:1;
 	bool stp:1;
+	bool vlan_stats_enabled:1;
 } NMSettingBridgePrivate;
 
 /**
@@ -935,6 +938,22 @@ nm_setting_bridge_get_vlan_protocol (const NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->vlan_protocol;
 }
 
+/**
+ * nm_setting_bridge_get_vlan_stats_enabled:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:vlan-stats-enabled property of the setting
+ *
+ * Since 1.24
+ **/
+gboolean
+nm_setting_bridge_get_vlan_stats_enabled (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), FALSE);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->vlan_stats_enabled;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1145,6 +1164,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_VLAN_PROTOCOL:
 		g_value_set_string (value, priv->vlan_protocol);
 		break;
+	case PROP_VLAN_STATS_ENABLED:
+		g_value_set_boolean (value, priv->vlan_stats_enabled);
+		break;
 	case PROP_VLANS:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->vlans,
 		                                                 (NMUtilsCopyFunc) nm_bridge_vlan_ref,
@@ -1207,6 +1229,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->vlan_protocol);
 		priv->vlan_protocol = g_value_dup_string (value);
 		break;
+	case PROP_VLAN_STATS_ENABLED:
+		priv->vlan_stats_enabled = g_value_get_boolean (value);
+		break;
 	case PROP_VLANS:
 		g_ptr_array_unref (priv->vlans);
 		priv->vlans = _nm_utils_copy_array (g_value_get_boxed (value),
@@ -1236,6 +1261,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->priority           = BRIDGE_PRIORITY_DEFAULT;
 	priv->stp                = BRIDGE_STP_DEFAULT;
 	priv->vlan_default_pvid  = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
+	priv->vlan_stats_enabled = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
 }
 
 /**
@@ -1617,6 +1643,25 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:vlan-stats-enabled:
+	 *
+	 * Controls whether per-VLAN stats accounting is enabled.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: vlan-stats-enabled
+	 * variable: BRIDGING_OPTS: vlan_stats_enabled=
+	 * default: 0
+	 * example: BRIDGING_OPTS="vlan_stats_enabled=1"
+	 * ---end---
+	 */
+	obj_properties[PROP_VLAN_STATS_ENABLED] =
+	    g_param_spec_boolean (NM_SETTING_BRIDGE_VLAN_STATS_ENABLED, "", "",
+	                          BRIDGE_VLAN_STATS_ENABLED_DEFAULT,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
