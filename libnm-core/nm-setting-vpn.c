@@ -371,6 +371,7 @@ const char *
 nm_setting_vpn_get_secret (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
+	g_return_val_if_fail (key && key[0], NULL);
 
 	return nm_g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
 }
@@ -414,7 +415,7 @@ gboolean
 nm_setting_vpn_remove_secret (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
-	g_return_val_if_fail (key, FALSE);
+	g_return_val_if_fail (key && key[0], FALSE);
 
 	if (nm_g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key)) {
 		_notify (setting, PROP_SECRETS);
@@ -478,7 +479,7 @@ aggregate (NMSetting *setting,
 			}
 		}
 
-		/* Ok, we have no secrets with system-secret flags.
+		/* OK, we have no secrets with system-secret flags.
 		 * But do we have any secret-flags (without secrets) that indicate system secrets? */
 		if (priv->data) {
 			g_hash_table_iter_init (&iter, priv->data);
@@ -576,8 +577,8 @@ update_secret_string (NMSetting *setting,
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
-	g_return_val_if_fail (key != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
-	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
+	g_return_val_if_fail (key && key[0], NM_SETTING_UPDATE_SECRET_ERROR);
+	g_return_val_if_fail (value, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	if (!value[0]) {
 		g_set_error (error, NM_CONNECTION_ERROR,
@@ -1049,8 +1050,15 @@ set_property (GObject *object, guint prop_id,
 			GHashTable *hash = g_value_get_boxed (value);
 
 			if (   hash
-			    && g_hash_table_size (hash) > 0)
+			    && g_hash_table_size (hash) > 0) {
 				priv->secrets = _nm_utils_copy_strdict (hash);
+
+				/* empty keys are not allowed. Usually, we would reject them in verify(), but then
+				 * our nm_setting_vpn_remove_secret() also doesn't allow empty keys. So, if we failed
+				 * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
+				 * silently drop it. */
+				g_hash_table_remove (priv->secrets, "");
+			}
 		}
 		break;
 	case PROP_TIMEOUT:
