@@ -617,6 +617,8 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 #define ARGS_SETTING_INIT_FCN \
 	const NMMetaSettingInfoEditor *setting_info, NMSetting *setting, NMMetaAccessorSettingInitType init_type
 
+static gboolean _set_fcn_optionlist (ARGS_SET_FCN);
+
 static gboolean
 _SET_FCN_DO_RESET_DEFAULT (const NMMetaPropertyInfo *property_info, NMMetaAccessorModifier modifier, const char *value)
 {
@@ -883,6 +885,10 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		GString *str;
 		gsize i;
 
+		nm_assert (   property_info->setting_info == &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_WIRED]
+		           && NM_IN_STRSET (property_info->property_name, NM_SETTING_WIRED_S390_OPTIONS));
+		nm_assert (property_info->property_type->set_fcn == _set_fcn_optionlist);
+
 		strdict = g_value_get_boxed (&val);
 		keys = nm_utils_strdict_get_keys (strdict, TRUE, NULL);
 		if (!keys)
@@ -890,12 +896,16 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 
 		str = g_string_new (NULL);
 		for (i = 0; keys[i]; i++) {
+			const char *key = keys[i];
+			const char *v = g_hash_table_lookup (strdict, key);
+			gs_free char *escaped_key = NULL;
+			gs_free char *escaped_val = NULL;
+
 			if (str->len > 0)
 				g_string_append_c (str, ',');
-			g_string_append_printf (str,
-			                        "%s=%s",
-			                        keys[i],
-			                        (const char *) g_hash_table_lookup (strdict, keys[i]));
+			g_string_append (str, nm_utils_escaped_tokens_options_escape_key (key, &escaped_key));
+			g_string_append_c (str, '=');
+			g_string_append (str, nm_utils_escaped_tokens_options_escape_val (v, &escaped_val));
 		}
 		RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 	}
@@ -1740,17 +1750,6 @@ secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 	return g_string_free (flag_str, FALSE);
 }
 
-static void
-vpn_data_item (const char *key, const char *value, gpointer user_data)
-{
-	GString *ret_str = (GString *) user_data;
-
-	if (ret_str->len != 0)
-		g_string_append (ret_str, ", ");
-
-	g_string_append_printf (ret_str, "%s = %s", key, value);
-}
-
 static const char *
 _multilist_do_validate (const NMMetaPropertyInfo *property_info,
                         NMSetting *setting,
@@ -1898,6 +1897,7 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
 	gs_free const char **strv_val = NULL;
+	gsize strv_len;
 	gsize i, nstrv;
 
 	nm_assert (!error || !*error);
@@ -1906,24 +1906,16 @@ _set_fcn_optionlist (ARGS_SET_FCN)
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	nstrv = 0;
-	strv = nm_utils_strsplit_set (value, ",");
+	strv = nm_utils_escaped_tokens_options_split_list (value);
 	if (strv) {
-		strv_val = g_new (const char *, NM_PTRARRAY_LEN (strv));
+		strv_len = NM_PTRARRAY_LEN (strv);
+
+		strv_val = g_new (const char *, strv_len);
 		for (i = 0; strv[i]; i++) {
 			const char *opt_name;
 			const char *opt_value;
 
-			opt_name = nm_str_skip_leading_spaces (strv[i]);
-
-			/* FIXME: support backslash escaping for the option list. */
-			opt_value = strchr (opt_name, '=');
-			if (opt_value) {
-				((char *) opt_value)[0] = '\0';
-				opt_value++;
-				opt_value = nm_str_skip_leading_spaces (opt_value);
-				g_strchomp ((char *) opt_value);
-			}
-			g_strchomp ((char *) opt_name);
+			nm_utils_escaped_tokens_options_split ((char *) strv[i], &opt_name, &opt_value);
 
 			if (   property_info->property_type->values_fcn
 			    || property_info->property_typ_data->values_static) {
@@ -2294,33 +2286,41 @@ static gconstpointer
 _get_fcn_bond_options (ARGS_GET_FCN)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
-	GString *bond_options_s;
-	int i;
+	GString *str;
+	guint32 i, len;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	bond_options_s = g_string_new (NULL);
-	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
-		const char *key, *value;
-		gs_free char *tmp_value = NULL;
+	str = g_string_new (NULL);
+	len = nm_setting_bond_get_num_options (s_bond);
+	for (i = 0; i < len; i++) {
+		const char *key;
+		const char *val;
+		gs_free char *val_tmp = NULL;
 		char *p;
+		gs_free char *escaped_key = NULL;
+		gs_free char *escaped_val = NULL;
 
-		nm_setting_bond_get_option (s_bond, i, &key, &value);
+		nm_setting_bond_get_option (s_bond, i, &key, &val);
 
-		if (nm_streq0 (key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
-			value = tmp_value = g_strdup (value);
-			for (p = tmp_value; p && *p; p++) {
+		if (nm_streq (key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+			val_tmp = g_strdup (val);
+			for (p = val_tmp; p && *p; p++) {
 				if (*p == ',')
 					*p = ' ';
 			}
+			val = val_tmp;
 		}
 
-		g_string_append_printf (bond_options_s, "%s=%s,", key, value);
+		if (str->len > 0u)
+			g_string_append_c (str, ',');
+		g_string_append (str, nm_utils_escaped_tokens_options_escape_key (key, &escaped_key));
+		g_string_append_c (str, '=');
+		g_string_append (str, nm_utils_escaped_tokens_options_escape_val (val, &escaped_val));
 	}
-	g_string_truncate (bond_options_s, bond_options_s->len-1);  /* chop off trailing ',' */
 
-	NM_SET_OUT (out_is_default, bond_options_s->len == 0);
-	RETURN_STR_TO_FREE (g_string_free (bond_options_s, FALSE));
+	NM_SET_OUT (out_is_default, str->len == 0);
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
 static gboolean
@@ -3794,32 +3794,36 @@ _set_fcn_vlan_xgress_priority_map (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gconstpointer
-_get_fcn_vpn_data (ARGS_GET_FCN)
+static void
+_vpn_options_callback (const char *key, const char *val, gpointer user_data)
 {
-	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
-	GString *data_item_str;
+	GString *str = user_data;
+	gs_free char *escaped_key = NULL;
+	gs_free char *escaped_val = NULL;
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
+	if (str->len > 0u)
+		g_string_append (str, ", ");
 
-	data_item_str = g_string_new (NULL);
-	nm_setting_vpn_foreach_data_item (s_vpn, &vpn_data_item, data_item_str);
-	NM_SET_OUT (out_is_default, data_item_str->len == 0);
-	RETURN_STR_TO_FREE (g_string_free (data_item_str, FALSE));
+	g_string_append (str, nm_utils_escaped_tokens_options_escape_key (key, &escaped_key));
+	g_string_append (str, " = ");
+	g_string_append (str, nm_utils_escaped_tokens_options_escape_val (val, &escaped_val));
 }
 
 static gconstpointer
-_get_fcn_vpn_secrets (ARGS_GET_FCN)
+_get_fcn_vpn_options (ARGS_GET_FCN)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
-	GString *secret_str;
+	GString *str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	secret_str = g_string_new (NULL);
-	nm_setting_vpn_foreach_secret (s_vpn, &vpn_data_item, secret_str);
-	NM_SET_OUT (out_is_default, secret_str->len == 0);
-	RETURN_STR_TO_FREE (g_string_free (secret_str, FALSE));
+	str = g_string_new (NULL);
+	if (nm_streq (property_info->property_name, NM_SETTING_VPN_SECRETS))
+		nm_setting_vpn_foreach_secret (s_vpn, _vpn_options_callback, str);
+	else
+		nm_setting_vpn_foreach_data_item (s_vpn, _vpn_options_callback, str);
+	NM_SET_OUT (out_is_default, str->len == 0);
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
 static gboolean
@@ -6863,7 +6867,7 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_DATA,
 	    .property_type = DEFINE_PROPERTY_TYPE (
-	        .get_fcn =                  _get_fcn_vpn_data,
+	        .get_fcn =                  _get_fcn_vpn_options,
 	        .set_fcn =                  _set_fcn_optionlist,
 	        .set_supports_remove =      TRUE,
 	    ),
@@ -6874,7 +6878,7 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SECRETS,
 	    .is_secret =                    TRUE,
 	    .property_type = DEFINE_PROPERTY_TYPE (
-	        .get_fcn =                  _get_fcn_vpn_secrets,
+	        .get_fcn =                  _get_fcn_vpn_options,
 	        .set_fcn =                  _set_fcn_optionlist,
 	        .set_supports_remove =      TRUE,
 	    ),
