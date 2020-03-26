@@ -611,15 +611,6 @@ update_secret_dict (NMSetting *setting,
 	/* Now add the items to the settings' secrets list */
 	g_variant_iter_init (&iter, secrets);
 	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
-		if (value == NULL) {
-			g_warn_if_fail (value != NULL);
-			continue;
-		}
-		if (!value[0]) {
-			g_warn_if_fail (strlen (value) > 0);
-			continue;
-		}
-
 		if (g_strcmp0 (g_hash_table_lookup (priv->secrets, name), value) == 0)
 			continue;
 
