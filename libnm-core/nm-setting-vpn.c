@@ -1029,35 +1029,41 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PERSISTENT:
 		priv->persistent = g_value_get_boolean (value);
 		break;
-	case PROP_DATA: {
-			_nm_unused gs_unref_hashtable GHashTable *data_free = g_steal_pointer (&priv->data);
-			GHashTable *hash = g_value_get_boxed (value);
-
-			if (   hash
-			    && g_hash_table_size (hash) > 0) {
-				priv->data = _nm_utils_copy_strdict (hash);
-
-				/* empty keys are not allowed. Usually, we would reject them in verify(), but then
-				 * our nm_setting_vpn_remove_data_item() also doesn't allow empty keys. So, if we failed
-				 * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
-				 * silently drop it. */
-				g_hash_table_remove (priv->data, "");
-			}
-		}
-		break;
+	case PROP_DATA:
 	case PROP_SECRETS: {
-			_nm_unused gs_unref_hashtable GHashTable *secrets_free = g_steal_pointer (&priv->secrets);
-			GHashTable *hash = g_value_get_boxed (value);
+			gs_unref_hashtable GHashTable *hash_free = NULL;
+			GHashTable *src_hash = g_value_get_boxed (value);
+			GHashTable **p_hash;
+			const gboolean is_secrets = (prop_id == PROP_SECRETS);
 
-			if (   hash
-			    && g_hash_table_size (hash) > 0) {
-				priv->secrets = _nm_utils_copy_strdict (hash);
+			if (is_secrets)
+				p_hash = &priv->secrets;
+			else
+				p_hash = &priv->data;
 
-				/* empty keys are not allowed. Usually, we would reject them in verify(), but then
-				 * our nm_setting_vpn_remove_secret() also doesn't allow empty keys. So, if we failed
-				 * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
-				 * silently drop it. */
-				g_hash_table_remove (priv->secrets, "");
+			hash_free = g_steal_pointer (p_hash);
+
+			if (   src_hash
+			    && g_hash_table_size (src_hash) > 0) {
+				GHashTableIter iter;
+				const char *key;
+				const char *val;
+
+				g_hash_table_iter_init (&iter, src_hash);
+				while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+					if (   !key
+					    || !key[0]
+					    || !val) {
+						/* NULL keys/values and empty key are not allowed. Usually, we would reject them in verify(), but
+						 * then our nm_setting_vpn_remove_data_item() also doesn't allow empty keys. So, if we failed
+						 * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
+						 * silently ignore them. */
+						continue;
+					}
+					g_hash_table_insert (_ensure_strdict (p_hash, is_secrets),
+					                     g_strdup (key),
+					                     g_strdup (val));
+				}
 			}
 		}
 		break;
