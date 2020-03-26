@@ -934,11 +934,26 @@ vpn_secrets_from_dbus (NMSetting *setting,
                        NMSettingParseFlags parse_flags,
                        GError **error)
 {
-	nm_auto_unset_gvalue GValue object_value = G_VALUE_INIT;
+	NMSettingVpn *self = NM_SETTING_VPN (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (self);
+	gs_unref_hashtable GHashTable *hash_free = NULL;
+	GVariantIter iter;
+	const char *key;
+	const char *val;
 
-	g_value_init (&object_value, G_TYPE_HASH_TABLE);
-	_nm_utils_strdict_from_dbus (value, &object_value);
-	return nm_g_object_set_property (G_OBJECT (setting), property, &object_value, error);
+	hash_free = g_steal_pointer (&priv->secrets);
+
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "{&s&s}", &key, &val)) {
+		if (!key[0])
+			continue;
+		g_hash_table_insert (_ensure_strdict (&priv->secrets, TRUE),
+		                     g_strdup (key),
+		                     g_strdup (val));
+	}
+
+	_notify (self, PROP_SECRETS);
+	return TRUE;
 }
 
 static GVariant *
