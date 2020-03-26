@@ -81,6 +81,16 @@ G_DEFINE_TYPE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
+static GHashTable *
+_ensure_strdict (GHashTable **p_hash)
+{
+	if (!*p_hash)
+		*p_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+	return *p_hash;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_setting_vpn_get_service_type:
  * @setting: the #NMSettingVpn
@@ -139,7 +149,7 @@ nm_setting_vpn_get_num_data_items (NMSettingVpn *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
 
-	return g_hash_table_size (NM_SETTING_VPN_GET_PRIVATE (setting)->data);
+	return nm_g_hash_table_size (NM_SETTING_VPN_GET_PRIVATE (setting)->data);
 }
 
 /**
@@ -161,8 +171,9 @@ nm_setting_vpn_add_data_item (NMSettingVpn *setting,
 	g_return_if_fail (key && key[0]);
 	g_return_if_fail (item && item[0]);
 
-	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
-	                     g_strdup (key), g_strdup (item));
+	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data),
+	                     g_strdup (key),
+	                     g_strdup (item));
 	_notify (setting, PROP_DATA);
 }
 
@@ -181,7 +192,7 @@ nm_setting_vpn_get_data_item (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
-	return (const char *) g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
+	return nm_g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);:
 }
 
 /**
@@ -222,15 +233,14 @@ nm_setting_vpn_get_data_keys (NMSettingVpn *setting,
 gboolean
 nm_setting_vpn_remove_data_item (NMSettingVpn *setting, const char *key)
 {
-	gboolean found;
-
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
 	g_return_val_if_fail (key, FALSE);
 
-	found = g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
-	if (found)
+	if (nm_g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key)) {
 		_notify (setting, PROP_DATA);
-	return found;
+		return TRUE;
+	}
+	return FALSE;
 }
 
 static void
@@ -460,20 +470,22 @@ aggregate (NMSetting *setting,
 
 		/* Ok, we have no secrets with system-secret flags.
 		 * But do we have any secret-flags (without secrets) that indicate system secrets? */
-		g_hash_table_iter_init (&iter, priv->data);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
-			gs_free char *secret_name = NULL;
+		if (priv->data) {
+			g_hash_table_iter_init (&iter, priv->data);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
+				gs_free char *secret_name = NULL;
 
-			if (!NM_STR_HAS_SUFFIX (key_name, "-flags"))
-				continue;
-			secret_name = g_strndup (key_name, strlen (key_name) - NM_STRLEN ("-flags"));
-			if (secret_name[0] == '\0')
-				continue;
-			if (!nm_setting_get_secret_flags (NM_SETTING (setting), secret_name, &secret_flags, NULL))
-				nm_assert_not_reached ();
-			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
-				*((gboolean *) arg) = TRUE;
-				return TRUE;
+				if (!NM_STR_HAS_SUFFIX (key_name, "-flags"))
+					continue;
+				secret_name = g_strndup (key_name, strlen (key_name) - NM_STRLEN ("-flags"));
+				if (secret_name[0] == '\0')
+					continue;
+				if (!nm_setting_get_secret_flags (NM_SETTING (setting), secret_name, &secret_flags, NULL))
+					nm_assert_not_reached ();
+				if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+					*((gboolean *) arg) = TRUE;
+					return TRUE;
+				}
 			}
 		}
 
@@ -725,7 +737,8 @@ get_secret_flags (NMSetting *setting,
 
 	flags_key = nm_construct_name_a ("%s-flags", secret_name, &flags_key_free);
 
-	if (!g_hash_table_lookup_extended (priv->data, flags_key, NULL, (gpointer *) &flags_val)) {
+	if (   !priv->data
+	    || !g_hash_table_lookup_extended (priv->data, flags_key, NULL, (gpointer *) &flags_val)) {
 		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
 
 		/* having no secret flag for the secret is fine, as long as there
@@ -771,7 +784,7 @@ set_secret_flags (NMSetting *setting,
 		return FALSE;
 	}
 
-	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
+	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data),
 	                     g_strdup_printf ("%s-flags", secret_name),
 	                     g_strdup_printf ("%u", flags));
 	_notify (NM_SETTING_VPN (setting), PROP_SECRETS);
@@ -997,9 +1010,14 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PERSISTENT:
 		priv->persistent = g_value_get_boolean (value);
 		break;
-	case PROP_DATA:
-		g_hash_table_unref (priv->data);
-		priv->data = _nm_utils_copy_strdict (g_value_get_boxed (value));
+	case PROP_DATA: {
+			_nm_unused gs_unref_hashtable GHashTable *data_free = g_steal_pointer (&priv->data);
+			GHashTable *hash = g_value_get_boxed (value);
+
+			if (   hash
+			    && g_hash_table_size (hash) > 0)
+				priv->data = _nm_utils_copy_strdict (hash);
+		}
 		break;
 	case PROP_SECRETS:
 		g_hash_table_unref (priv->secrets);
@@ -1021,7 +1039,6 @@ nm_setting_vpn_init (NMSettingVpn *setting)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
-	priv->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	priv->secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 }
 
@@ -1045,7 +1062,8 @@ finalize (GObject *object)
 
 	g_free (priv->service_type);
 	g_free (priv->user_name);
-	g_hash_table_destroy (priv->data);
+	if (priv->data)
+		g_hash_table_unref (priv->data);
 	g_hash_table_destroy (priv->secrets);
 
 	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
