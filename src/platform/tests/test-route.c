@@ -1238,7 +1238,7 @@ again_uid_range:
 	rr->uid_range.end   = nmtst_rand_select (0u, uids.uid, uids.euid);
 	if (rr->uid_range_has) {
 		if (rr->uid_range.end < rr->uid_range.start)
-			NMTST_SWAP (rr->uid_range.start, rr->uid_range.end);
+			NM_SWAP (rr->uid_range.start, rr->uid_range.end);
 		if (   rr->uid_range.start == ((guint32) -1)
 		    || rr->uid_range.end   == ((guint32) -1))
 			goto again_uid_range;
@@ -1258,7 +1258,7 @@ again_uid_range:
 				range->start = nmtst_rand_select (1u, 0xFFFEu, ((p      ) % 0xFFFEu) + 1);
 				range->end   = nmtst_rand_select (1u, 0xFFFEu, ((p >> 16) % 0xFFFEu) + 1, range->start);
 				if (range->end < range->start)
-					NMTST_SWAP (range->start, range->end);
+					NM_SWAP (range->start, range->end);
 			}
 		}
 	}

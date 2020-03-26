@@ -1156,15 +1156,6 @@ nmtst_uuid_generate (void)
 
 #endif
 
-#define NMTST_SWAP(x, y) \
-	G_STMT_START { \
-		char __nmtst_swap_temp[sizeof((x)) == sizeof((y)) ? (signed) sizeof((x)) : -1]; \
-		\
-		memcpy(__nmtst_swap_temp, &(y),              sizeof (__nmtst_swap_temp)); \
-		memcpy(&(y),              &(x),              sizeof (__nmtst_swap_temp)); \
-		memcpy(&(x),              __nmtst_swap_temp, sizeof (__nmtst_swap_temp)); \
-	} G_STMT_END
-
 #define nmtst_assert_str_has_substr(str, substr) \
 	G_STMT_START { \
 		const char *__str = (str); \
@@ -1959,14 +1950,14 @@ nmtst_assert_setting_is_equal (gconstpointer /* const NMSetting * */ a,
 	g_assert (NM_IS_SETTING (b));
 
 	if (NM_FLAGS_HAS (r, 0x4))
-		NMTST_SWAP (a, b);
+		NM_SWAP (a, b);
 
 	g_assert (nm_setting_compare ((NMSetting *) a,
 	                              (NMSetting *) b,
 	                              flags));
 
 	if (NM_FLAGS_HAS (r, 0x8))
-		NMTST_SWAP (a, b);
+		NM_SWAP (a, b);
 
 	g_assert (nm_setting_diff ((NMSetting *) a,
 	                           (NMSetting *) b,

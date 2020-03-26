@@ -296,7 +296,7 @@ _strv_cmp_fuzz_input (const char *const*in,
 	if (nmtst_get_rand_bool ()) {
 		/* randomly swap the original and the clone. That means, out_s1 is either
 		 * the input argument (as-is) or the sementically equal clone. */
-		NMTST_SWAP (*out_s1, *out_s2);
+		NM_SWAP (*out_s1, *out_s2);
 	}
 	if (nmtst_get_rand_bool ()) {
 		/* randomly make s1 and s2 the same. This is for testing that

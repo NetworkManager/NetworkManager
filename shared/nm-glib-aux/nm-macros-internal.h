@@ -744,6 +744,17 @@ NM_G_ERROR_MSG (GError *error)
 
 /*****************************************************************************/
 
+#define NM_SWAP(a, b) \
+	G_STMT_START { \
+		typeof (a) _tmp; \
+		\
+		_tmp = (a); \
+		(a) = (b); \
+		(b) = _tmp; \
+	} G_STMT_END
+
+/*****************************************************************************/
+
 static inline gboolean
 _NM_IN_STRSET_streq (const char *x, const char *s)
 {
