@@ -1309,6 +1309,26 @@ char *nm_utils_g_slist_strlist_join (const GSList *a, const char *separator);
 
 /*****************************************************************************/
 
+static inline guint
+nm_g_hash_table_size (GHashTable *hash)
+{
+	return hash ? g_hash_table_size (hash) : 0u;
+}
+
+static inline gpointer
+nm_g_hash_table_lookup (GHashTable *hash, gconstpointer key)
+{
+	return hash ? g_hash_table_lookup (hash, key) : NULL;
+}
+
+static inline gboolean
+nm_g_hash_table_remove (GHashTable *hash, gconstpointer key)
+{
+	return hash ? g_hash_table_remove (hash, key) : FALSE;
+}
+
+/*****************************************************************************/
+
 gssize nm_utils_ptrarray_find_binary_search (gconstpointer *list,
                                              gsize len,
                                              gconstpointer needle,
