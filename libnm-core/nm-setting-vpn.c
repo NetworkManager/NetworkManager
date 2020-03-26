@@ -345,19 +345,27 @@ nm_setting_vpn_get_num_secrets (NMSettingVpn *setting)
  * nm_setting_vpn_add_secret:
  * @setting: the #NMSettingVpn
  * @key: a name that uniquely identifies the given secret @secret
- * @secret: the secret to be referenced by @key
+ * @secret: (allow-none): the secret to be referenced by @key
  *
  * Establishes a relationship between @key and @secret internally in the
  * setting which may be retrieved later.
+ *
+ * Before 1.24, @secret must not be %NULL and not an empty string. Since 1.24,
+ * @secret can be set to an empty string. It can also be set to %NULL to unset
+ * the key. In that case, the behavior is as if calling nm_setting_vpn_remove_secret().
  **/
 void
 nm_setting_vpn_add_secret (NMSettingVpn *setting,
                            const char *key,
                            const char *secret)
 {
+	if (!secret) {
+		nm_setting_vpn_remove_secret (setting, key);
+		return;
+	}
+
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 	g_return_if_fail (key && key[0]);
-	g_return_if_fail (secret && secret[0]);
 
 	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, TRUE),
 	                     g_strdup (key),
@@ -588,14 +596,6 @@ update_secret_string (NMSetting *setting,
 	g_return_val_if_fail (key && key[0], NM_SETTING_UPDATE_SECRET_ERROR);
 	g_return_val_if_fail (value, NM_SETTING_UPDATE_SECRET_ERROR);
 
-	if (!value[0]) {
-		g_set_error (error, NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("secret was empty"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, key);
-		return NM_SETTING_UPDATE_SECRET_ERROR;
-	}
-
 	if (nm_streq0 (nm_g_hash_table_lookup (priv->secrets, key), value))
 		return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
@@ -625,14 +625,6 @@ update_secret_dict (NMSetting *setting,
 			                     NM_CONNECTION_ERROR_INVALID_SETTING,
 			                     _("setting contained a secret with an empty name"));
 			g_prefix_error (error, "%s: ", NM_SETTING_VPN_SETTING_NAME);
-			return NM_SETTING_UPDATE_SECRET_ERROR;
-		}
-
-		if (!value[0]) {
-			g_set_error (error, NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("secret value was empty"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, name);
 			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 	}
