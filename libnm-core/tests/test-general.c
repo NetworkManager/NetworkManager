@@ -1172,13 +1172,11 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_add_data_item (s_vpn, "", "");
 	g_test_assert_expected_messages ();
 
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item && item[0]));
-	nm_setting_vpn_add_data_item (s_vpn, "foobar1", NULL);
-	g_test_assert_expected_messages ();
-
-	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (item && item[0]));
 	nm_setting_vpn_add_data_item (s_vpn, "foobar1", "");
-	g_test_assert_expected_messages ();
+	g_assert_cmpstr (nm_setting_vpn_get_data_item (s_vpn, "foobar1"), ==, "");
+
+	nm_setting_vpn_add_data_item (s_vpn, "foobar1", NULL);
+	g_assert_cmpstr (nm_setting_vpn_get_data_item (s_vpn, "foobar1"), ==, NULL);
 
 	NMTST_EXPECT_LIBNM_CRITICAL (NMTST_G_RETURN_MSG (key && key[0]));
 	nm_setting_vpn_add_data_item (s_vpn, NULL, "blahblah1");

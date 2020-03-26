@@ -163,20 +163,28 @@ nm_setting_vpn_get_num_data_items (NMSettingVpn *setting)
  * nm_setting_vpn_add_data_item:
  * @setting: the #NMSettingVpn
  * @key: a name that uniquely identifies the given value @item
- * @item: the value to be referenced by @key
+ * @item: (allow-none): the value to be referenced by @key
  *
  * Establishes a relationship between @key and @item internally in the
  * setting which may be retrieved later.  Should not be used to store passwords
  * or other secrets, which is what nm_setting_vpn_add_secret() is for.
+ *
+ * Before 1.24, @item must not be %NULL and not an empty string. Since 1.24,
+ * @item can be set to an empty string. It can also be set to %NULL to unset
+ * the key. In that case, the behavior is as if calling nm_setting_vpn_remove_data_item().
  **/
 void
 nm_setting_vpn_add_data_item (NMSettingVpn *setting,
                               const char *key,
                               const char *item)
 {
+	if (!item) {
+		nm_setting_vpn_remove_data_item (setting, key);
+		return;
+	}
+
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 	g_return_if_fail (key && key[0]);
-	g_return_if_fail (item && item[0]);
 
 	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data, FALSE),
 	                     g_strdup (key),
