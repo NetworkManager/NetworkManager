@@ -1508,6 +1508,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
 	}
 
+	s = nm_setting_bridge_get_multicast_router (s_bridge);
+	if (s) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_router=%s", s);
+	}
+
 	b = nm_setting_bridge_get_vlan_filtering (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_FILTERING)) {
 		if (opts->len)

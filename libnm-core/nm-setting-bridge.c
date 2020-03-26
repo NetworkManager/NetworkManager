@@ -44,6 +44,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_AGEING_TIME,
 	PROP_GROUP_ADDRESS,
 	PROP_GROUP_FORWARD_MASK,
+	PROP_MULTICAST_ROUTER,
 	PROP_MULTICAST_SNOOPING,
 	PROP_VLAN_FILTERING,
 	PROP_VLAN_DEFAULT_PVID,
@@ -55,6 +56,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 typedef struct {
 	GPtrArray *vlans;
 	char *   mac_address;
+	char *   multicast_router;
 	char *   group_address;
 	char *   vlan_protocol;
 	guint32  ageing_time;
@@ -954,6 +956,21 @@ nm_setting_bridge_get_vlan_stats_enabled (const NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->vlan_stats_enabled;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_router:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-router property of the setting
+ *
+ * Since 1.24
+ **/
+const char *
+nm_setting_bridge_get_multicast_router (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), NULL);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_router;
+}
 /*****************************************************************************/
 
 static gboolean
@@ -1066,6 +1083,33 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (priv->multicast_router) {
+		if (!NM_IN_STRSET (priv->multicast_router,
+		                   "auto",
+		                   "enabled",
+		                   "disabled")) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("is not a valid option"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MULTICAST_ROUTER);
+			return FALSE;
+		}
+
+		if (   NM_IN_STRSET (priv->multicast_router,
+		                     "auto",
+		                     "enabled")
+		    && !priv->multicast_snooping) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("'%s' option requires '%s' option to be enabled"),
+			             NM_SETTING_BRIDGE_MULTICAST_ROUTER, NM_SETTING_BRIDGE_MULTICAST_SNOOPING);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MULTICAST_ROUTER);
+			return FALSE;
+		}
+	}
+
 	/* Failures from here on are NORMALIZABLE... */
 
 	if (!_nm_utils_bridge_vlan_verify_list (priv->vlans,
@@ -1155,6 +1199,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_SNOOPING:
 		g_value_set_boolean (value, priv->multicast_snooping);
 		break;
+	case PROP_MULTICAST_ROUTER:
+		g_value_set_string (value, priv->multicast_router);
+		break;
 	case PROP_VLAN_FILTERING:
 		g_value_set_boolean (value, priv->vlan_filtering);
 		break;
@@ -1218,6 +1265,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MULTICAST_SNOOPING:
 		priv->multicast_snooping = g_value_get_boolean (value);
+		break;
+	case PROP_MULTICAST_ROUTER:
+		g_free (priv->multicast_router);
+		priv->multicast_router = g_value_dup_string (value);
 		break;
 	case PROP_VLAN_FILTERING:
 		priv->vlan_filtering = g_value_get_boolean (value);
@@ -1283,6 +1334,7 @@ finalize (GObject *object)
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (object);
 
 	g_free (priv->mac_address);
+	g_free (priv->multicast_router);
 	g_free (priv->group_address);
 	g_free (priv->vlan_protocol);
 	g_ptr_array_unref (priv->vlans);
@@ -1662,6 +1714,30 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                          G_PARAM_READWRITE |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-router:
+	 *
+	 * Sets bridge's multicast router.
+	 * multicast-snooping must be enabled for this option to work.
+	 *
+	 * Supported values are: 'auto', 'disabled', 'enabled'.
+	 * If not specified the default value is 'auto'.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-router
+	 * variable: BRIDGING_OPTS: multicast_router=
+	 * values: auto, enabled, disabled
+	 * default: auto
+	 * example: BRIDGING_OPTS="multicast_router=enabled"
+	 * ---end---
+	 */
+	obj_properties[PROP_MULTICAST_ROUTER] =
+	    g_param_spec_string (NM_SETTING_BRIDGE_MULTICAST_ROUTER, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

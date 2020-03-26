@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_AGEING_TIME           "ageing-time"
 #define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK    "group-forward-mask"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING    "multicast-snooping"
+#define NM_SETTING_BRIDGE_MULTICAST_ROUTER      "multicast-router"
 #define NM_SETTING_BRIDGE_VLAN_FILTERING        "vlan-filtering"
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID     "vlan-default-pvid"
 #define NM_SETTING_BRIDGE_VLANS                 "vlans"
@@ -127,6 +128,9 @@ const char *   nm_setting_bridge_get_vlan_protocol (const NMSettingBridge *setti
 
 NM_AVAILABLE_IN_1_24
 gboolean nm_setting_bridge_get_vlan_stats_enabled (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_24
+const char *   nm_setting_bridge_get_multicast_router (const NMSettingBridge *setting);
 
 G_END_DECLS
 

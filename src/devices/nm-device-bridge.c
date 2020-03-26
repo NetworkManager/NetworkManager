@@ -198,6 +198,38 @@ to_sysfs_vlan_protocol (GValue *value)
 	return "0x8100";
 }
 
+static const char *
+to_sysfs_multicast_router (GValue *value)
+{
+	const char *str = g_value_get_string (value);
+
+	if (nm_streq0 (str, "disabled"))
+		return "0";
+	if (nm_streq0 (str, "auto"))
+		return "1";
+	if (nm_streq0 (str, "enabled"))
+		return "2";
+
+	return "1";
+}
+
+static void
+from_sysfs_multicast_router (const char *value, GValue *out)
+{
+	switch (_nm_utils_ascii_str_to_uint64 (value, 10, 0, G_MAXUINT, -1)) {
+	case 0:
+		g_value_set_string (out, "disabled");
+		break;
+	case 2:
+		g_value_set_string (out, "enabled");
+		break;
+	case 1:
+	default:
+		/* default value */
+		break;
+	}
+}
+
 /*****************************************************************************/
 
 typedef struct {
@@ -245,6 +277,10 @@ static const Option master_options[] = {
 	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping",
 	                                        NULL, NULL,
 	                                        0, 1, 1,
+	                                        FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_ROUTER,   "multicast_router",
+	                                        to_sysfs_multicast_router, from_sysfs_multicast_router,
+	                                        0, 0, 0,
 	                                        FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_GROUP_ADDRESS,      "group_addr",
 	                                        to_sysfs_group_address, from_sysfs_group_address,

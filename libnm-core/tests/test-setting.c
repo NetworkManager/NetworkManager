@@ -1977,6 +1977,27 @@ test_bridge_verify (void)
 	                            "vlan-protocol", "802.1Q");
 	test_verify_options_bridge (TRUE,
 	                            "vlan-protocol", "802.1ad");
+	/* multicast-router */
+	test_verify_options_bridge (FALSE,
+	                            "multicast-router",   "nonsense");
+	test_verify_options_bridge (FALSE,
+	                            "multicast-snooping", "no",
+	                            "multicast-router",   "auto");
+	test_verify_options_bridge (FALSE,
+	                            "multicast-snooping", "no",
+	                            "multicast-router",   "enabled");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "no",
+	                            "multicast-router",   "disabled");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "yes",
+	                            "multicast-router",   "enabled");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "yes",
+	                            "multicast-router",   "auto");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "yes",
+	                            "multicast-router",   "disabled");
 }
 
 /*****************************************************************************/
