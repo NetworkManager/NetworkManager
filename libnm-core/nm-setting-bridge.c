@@ -46,6 +46,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_MULTICAST_SNOOPING,
 	PROP_VLAN_FILTERING,
 	PROP_VLAN_DEFAULT_PVID,
+	PROP_VLAN_PROTOCOL,
 	PROP_VLANS,
 );
 
@@ -53,6 +54,7 @@ typedef struct {
 	GPtrArray *vlans;
 	char *   mac_address;
 	char *   group_address;
+	char *   vlan_protocol;
 	guint32  ageing_time;
 	guint16  priority;
 	guint16  forward_delay;
@@ -917,6 +919,22 @@ nm_setting_bridge_get_group_address (const NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->group_address;
 }
 
+/**
+ * nm_setting_bridge_get_vlan_protocol:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:vlan-protocol property of the setting
+ *
+ * Since 1.24
+ **/
+const char *
+nm_setting_bridge_get_vlan_protocol (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), NULL);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->vlan_protocol;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1017,6 +1035,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (   priv->vlan_protocol
+	    && !NM_IN_STRSET (priv->vlan_protocol,
+	                      "802.1Q",
+	                      "802.1ad")) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("is not a valid VLAN filtering protocol"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_VLAN_PROTOCOL);
+		return FALSE;
+	}
+
 	/* Failures from here on are NORMALIZABLE... */
 
 	if (!_nm_utils_bridge_vlan_verify_list (priv->vlans,
@@ -1112,6 +1142,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_VLAN_DEFAULT_PVID:
 		g_value_set_uint (value, priv->vlan_default_pvid);
 		break;
+	case PROP_VLAN_PROTOCOL:
+		g_value_set_string (value, priv->vlan_protocol);
+		break;
 	case PROP_VLANS:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->vlans,
 		                                                 (NMUtilsCopyFunc) nm_bridge_vlan_ref,
@@ -1170,6 +1203,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_VLAN_DEFAULT_PVID:
 		priv->vlan_default_pvid = g_value_get_uint (value);
 		break;
+	case PROP_VLAN_PROTOCOL:
+		g_free (priv->vlan_protocol);
+		priv->vlan_protocol = g_value_dup_string (value);
+		break;
 	case PROP_VLANS:
 		g_ptr_array_unref (priv->vlans);
 		priv->vlans = _nm_utils_copy_array (g_value_get_boxed (value),
@@ -1221,6 +1258,7 @@ finalize (GObject *object)
 
 	g_free (priv->mac_address);
 	g_free (priv->group_address);
+	g_free (priv->vlan_protocol);
 	g_ptr_array_unref (priv->vlans);
 
 	G_OBJECT_CLASS (nm_setting_bridge_parent_class)->finalize (object);
@@ -1555,6 +1593,30 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	_nm_properties_override_gobj (properties_override, obj_properties[PROP_GROUP_ADDRESS], &nm_sett_info_propert_type_mac_address);
+
+	/**
+	 * NMSettingBridge:vlan-protocol:
+	 *
+	 * If specified, the protocol used for VLAN filtering.
+	 *
+	 * Supported values are: '802.1Q', '802.1ad'.
+	 * If not specified the default value is '802.1Q'.
+	 *
+	 * Since: 1.24
+	 **/
+	/* ---ifcfg-rh---
+	 * property: vlan-protocol
+	 * variable: BRIDGING_OPTS: vlan_protocol=
+	 * description: VLAN filtering protocol.
+	 * example: BRIDGING_OPTS="vlan_protocol=802.1Q"
+	 * ---end---
+	 */
+	obj_properties[PROP_VLAN_PROTOCOL] =
+	    g_param_spec_string (NM_SETTING_BRIDGE_VLAN_PROTOCOL, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

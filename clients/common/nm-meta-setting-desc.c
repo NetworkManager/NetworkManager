@@ -4911,6 +4911,13 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,
 	    .property_type =                &_pt_gobject_int,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_PROTOCOL,
+	    .property_type =                &_pt_gobject_string,
+	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+	        .values_static =            NM_MAKE_STRV ("802.1Q",
+	                                                  "802.1ad"),
+	    ),
+	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLANS,
 	    .property_type =                &_pt_objlist,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (

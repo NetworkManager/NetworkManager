@@ -171,6 +171,33 @@ to_sysfs_group_address (GValue *value)
 	return g_value_get_string (value) ?: "01:80:C2:00:00:00";
 }
 
+static void
+from_sysfs_vlan_protocol (const char *value, GValue *out)
+{
+	switch (_nm_utils_ascii_str_to_uint64 (value, 16, 0, G_MAXUINT, -1)) {
+	case ETH_P_8021Q:
+		/* default value */
+		break;
+	case ETH_P_8021AD:
+		g_value_set_string (out, "802.1ad");
+		break;
+	}
+}
+
+static const char *
+to_sysfs_vlan_protocol (GValue *value)
+{
+	const char *str = g_value_get_string (value);
+
+	if (nm_streq0 (str, "802.1ad")) {
+		G_STATIC_ASSERT_EXPR (ETH_P_8021AD == 0x88A8);
+		return "0x88A8";
+	}
+
+	G_STATIC_ASSERT_EXPR (ETH_P_8021Q == 0x8100);
+	return "0x8100";
+}
+
 /*****************************************************************************/
 
 typedef struct {
@@ -221,6 +248,10 @@ static const Option master_options[] = {
 	                                        FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_GROUP_ADDRESS,      "group_addr",
 	                                        to_sysfs_group_address, from_sysfs_group_address,
+	                                        0, 0, 0,
+	                                        FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_VLAN_PROTOCOL,      "vlan_protocol",
+	                                        to_sysfs_vlan_protocol, from_sysfs_vlan_protocol,
 	                                        0, 0, 0,
 	                                        FALSE, FALSE, FALSE },
 	{ NULL, NULL }

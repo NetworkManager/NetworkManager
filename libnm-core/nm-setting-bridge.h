@@ -36,6 +36,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID  "vlan-default-pvid"
 #define NM_SETTING_BRIDGE_VLANS              "vlans"
 #define NM_SETTING_BRIDGE_GROUP_ADDRESS  "group-address"
+#define NM_SETTING_BRIDGE_VLAN_PROTOCOL  "vlan-protocol"
 
 #define NM_BRIDGE_VLAN_VID_MIN            1
 #define NM_BRIDGE_VLAN_VID_MAX            4094
@@ -119,6 +120,9 @@ NMBridgeVlan * nm_bridge_vlan_from_str (const char *str, GError **error);
 
 NM_AVAILABLE_IN_1_24
 const char *   nm_setting_bridge_get_group_address (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_24
+const char *   nm_setting_bridge_get_vlan_protocol (const NMSettingBridge *setting);
 
 G_END_DECLS
 
