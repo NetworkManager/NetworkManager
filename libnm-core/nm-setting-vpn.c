@@ -198,6 +198,7 @@ const char *
 nm_setting_vpn_get_data_item (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
+	g_return_val_if_fail (key && key[0], NULL);
 
 	return nm_g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 }
@@ -241,7 +242,7 @@ gboolean
 nm_setting_vpn_remove_data_item (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
-	g_return_val_if_fail (key, FALSE);
+	g_return_val_if_fail (key && key[0], FALSE);
 
 	if (nm_g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key)) {
 		_notify (setting, PROP_DATA);
@@ -1032,8 +1033,15 @@ set_property (GObject *object, guint prop_id,
 			GHashTable *hash = g_value_get_boxed (value);
 
 			if (   hash
-			    && g_hash_table_size (hash) > 0)
+			    && g_hash_table_size (hash) > 0) {
 				priv->data = _nm_utils_copy_strdict (hash);
+
+				/* empty keys are not allowed. Usually, we would reject them in verify(), but then
+				 * our nm_setting_vpn_remove_data_item() also doesn't allow empty keys. So, if we failed
+				 * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
+				 * silently drop it. */
+				g_hash_table_remove (priv->data, "");
+			}
 		}
 		break;
 	case PROP_SECRETS: {
