@@ -715,6 +715,14 @@ get_secret_flags (NMSetting *setting,
 	const char *flags_val;
 	gint64 i64;
 
+	nm_assert (secret_name);
+
+	if (!secret_name[0]) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+		             _("secret name cannot be empty"));
+		return FALSE;
+	}
+
 	flags_key = nm_construct_name_a ("%s-flags", secret_name, &flags_key_free);
 
 	if (!g_hash_table_lookup_extended (priv->data, flags_key, NULL, (gpointer *) &flags_val)) {
@@ -755,6 +763,14 @@ set_secret_flags (NMSetting *setting,
                   NMSettingSecretFlags flags,
                   GError **error)
 {
+	nm_assert (secret_name);
+
+	if (!secret_name[0]) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+		             _("secret name cannot be empty"));
+		return FALSE;
+	}
+
 	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
 	                     g_strdup_printf ("%s-flags", secret_name),
 	                     g_strdup_printf ("%u", flags));
