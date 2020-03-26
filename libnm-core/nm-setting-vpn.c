@@ -964,29 +964,30 @@ vpn_secrets_to_dbus (const NMSettInfoSetting *sett_info,
                      NMConnectionSerializationFlags flags,
                      const NMConnectionSerializationOptions *options)
 {
-	gs_unref_hashtable GHashTable *secrets = NULL;
-	const char *property_name = sett_info->property_infos[property_idx].name;
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	GVariantBuilder builder;
-	GHashTableIter iter;
-	const char *key, *value;
-	NMSettingSecretFlags secret_flags;
+	gs_free const char **keys = NULL;
+	guint i, len;
 
 	if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
 		return NULL;
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
-	g_object_get (setting, property_name, &secrets, NULL);
 
-	if (secrets) {
-		g_hash_table_iter_init (&iter, secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)) {
-				if (   !nm_setting_get_secret_flags (setting, key, &secret_flags, NULL)
-				    || !NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-					continue;
-			}
-			g_variant_builder_add (&builder, "{ss}", key, value);
+	keys = nm_utils_strdict_get_keys (priv->secrets, TRUE, &len);
+	for (i = 0; i < len; i++) {
+		const char *key = keys[i];
+		NMSettingSecretFlags secret_flags;
+
+		if (NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)) {
+			if (   !nm_setting_get_secret_flags (setting, key, &secret_flags, NULL)
+			    || !NM_FLAGS_HAS (secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+				continue;
 		}
+		g_variant_builder_add (&builder,
+		                       "{ss}",
+		                       key,
+		                       g_hash_table_lookup (priv->secrets, key));
 	}
 
 	return g_variant_builder_end (&builder);
