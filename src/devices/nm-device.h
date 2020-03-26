@@ -444,6 +444,8 @@ typedef struct _NMDeviceClass {
 
 	gboolean        (* can_update_from_platform_link) (NMDevice *self, const NMPlatformLink *plink);
 
+	gboolean        (* set_platform_mtu) (NMDevice *self, guint32 mtu);
+
 	/* Controls, whether to call act_stage2_config() callback also for assuming
 	 * a device or for external activations. In this case, act_stage2_config() must
 	 * take care not to touch the device's configuration. */
