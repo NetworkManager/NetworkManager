@@ -569,7 +569,7 @@ update_secret_string (NMSetting *setting,
 		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
-	if (g_strcmp0 (g_hash_table_lookup (priv->secrets, key), value) == 0)
+	if (nm_streq0 (g_hash_table_lookup (priv->secrets, key), value))
 		return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
 	g_hash_table_insert (priv->secrets, g_strdup (key), g_strdup (value));
@@ -611,7 +611,7 @@ update_secret_dict (NMSetting *setting,
 	/* Now add the items to the settings' secrets list */
 	g_variant_iter_init (&iter, secrets);
 	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
-		if (g_strcmp0 (g_hash_table_lookup (priv->secrets, name), value) == 0)
+		if (nm_streq0 (g_hash_table_lookup (priv->secrets, name), value))
 			continue;
 
 		g_hash_table_insert (priv->secrets, g_strdup (name), g_strdup (value));
@@ -637,7 +637,7 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 		 */
 		success = update_secret_string (setting, key, g_variant_get_string (value, NULL), error);
 	} else if (g_variant_is_of_type (value, G_VARIANT_TYPE ("a{ss}"))) {
-		if (strcmp (key, NM_SETTING_VPN_SECRETS) != 0) {
+		if (!nm_streq (key, NM_SETTING_VPN_SECRETS)) {
 			g_set_error_literal (error, NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
 			                     _("not a secret property"));
