@@ -235,50 +235,46 @@ nm_setting_vpn_remove_data_item (NMSettingVpn *setting, const char *key)
 
 static void
 foreach_item_helper (NMSettingVpn *self,
-                     gboolean is_secrets,
+                     GHashTable **p_hash,
                      NMVpnIterFunc func,
                      gpointer user_data)
 {
-	NMSettingVpnPrivate *priv;
-	guint len, i;
+	gs_unref_object NMSettingVpn *self_keep_alive = NULL;
 	gs_strfreev char **keys = NULL;
-	GHashTable *hash;
+	guint i, len;
 
 	nm_assert (NM_IS_SETTING_VPN (self));
 	nm_assert (func);
 
-	priv = NM_SETTING_VPN_GET_PRIVATE (self);
-
-	if (is_secrets) {
-		keys = (char **) nm_setting_vpn_get_secret_keys (self, &len);
-		hash = priv->secrets;
-	} else {
-		keys = (char **) nm_setting_vpn_get_data_keys (self, &len);
-		hash = priv->data;
-	}
-
-	if (!len) {
+	keys = nm_utils_strv_make_deep_copied (nm_utils_strdict_get_keys (*p_hash,
+	                                                                  TRUE,
+	                                                                  &len));
+	if (len == 0u) {
 		nm_assert (!keys);
 		return;
 	}
 
-	for (i = 0; i < len; i++) {
-		nm_assert (keys && keys[i]);
-		keys[i] = g_strdup (keys[i]);
-	}
-	nm_assert (!keys[i]);
+	if (len > 1u)
+		self_keep_alive = g_object_ref (self);
 
 	for (i = 0; i < len; i++) {
-		const char *value;
-
-		value = g_hash_table_lookup (hash, keys[i]);
 		/* NOTE: note that we call the function with a clone of @key,
 		 * not with the actual key from the dictionary.
 		 *
-		 * The @value on the other hand, is actually inside our dictionary,
-		 * it's not a clone. However, it might be %NULL, in case the key was
-		 * deleted while iterating. */
-		func (keys[i], value, user_data);
+		 * The @value on the other hand, is not cloned but retrieved before
+		 * invoking @func(). That means, if @func() modifies the setting while
+		 * being called, the values are as they currently are, but the
+		 * keys (and their order) were pre-determined before starting to
+		 * invoke the callbacks.
+		 *
+		 * The idea is to give some sensible, stable behavior in case the user
+		 * modifies the settings. Whether this particular behavior is optimal
+		 * is unclear. It's probably a bad idea to modify the settings while
+		 * iterating the values. But at least, it's a safe thing to do and we
+		 * do something sensible. */
+		func (keys[i],
+		      nm_g_hash_table_lookup (*p_hash, keys[i]),
+		      user_data);
 	}
 }
 
@@ -300,7 +296,7 @@ nm_setting_vpn_foreach_data_item (NMSettingVpn *setting,
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 	g_return_if_fail (func);
 
-	foreach_item_helper (setting, FALSE, func, user_data);
+	foreach_item_helper (setting, &NM_SETTING_VPN_GET_PRIVATE (setting)->data, func, user_data);
 }
 
 /**
@@ -427,7 +423,7 @@ nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 	g_return_if_fail (func);
 
-	foreach_item_helper (setting, TRUE, func, user_data);
+	foreach_item_helper (setting, &NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, func, user_data);
 }
 
 static gboolean
