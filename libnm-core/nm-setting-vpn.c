@@ -517,8 +517,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, NM_SETTING_VPN_SERVICE_TYPE);
 		return FALSE;
 	}
-
-	if (!strlen (priv->service_type)) {
+	if (!priv->service_type[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -528,7 +527,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	/* default username can be NULL, but can't be zero-length */
-	if (priv->user_name && !strlen (priv->user_name)) {
+	if (   priv->user_name
+	    && !priv->user_name[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -561,7 +561,7 @@ update_secret_string (NMSetting *setting,
 	g_return_val_if_fail (key != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
-	if (!value || !strlen (value)) {
+	if (!value[0]) {
 		g_set_error (error, NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("secret was empty"));
@@ -591,7 +591,7 @@ update_secret_dict (NMSetting *setting,
 	/* Make sure the items are valid */
 	g_variant_iter_init (&iter, secrets);
 	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
-		if (!name || !strlen (name)) {
+		if (!name[0]) {
 			g_set_error_literal (error, NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_SETTING,
 			                     _("setting contained a secret with an empty name"));
@@ -599,7 +599,7 @@ update_secret_dict (NMSetting *setting,
 			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 
-		if (!value || !strlen (value)) {
+		if (!value[0]) {
 			g_set_error (error, NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("secret value was empty"));
@@ -615,7 +615,7 @@ update_secret_dict (NMSetting *setting,
 			g_warn_if_fail (value != NULL);
 			continue;
 		}
-		if (strlen (value) == 0) {
+		if (!value[0]) {
 			g_warn_if_fail (strlen (value) > 0);
 			continue;
 		}
