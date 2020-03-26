@@ -190,8 +190,6 @@ _value_strsplit (const char *value,
                  gsize *out_len)
 {
 	gs_free const char **strv = NULL;
-	gsize i;
-	gsize len;
 
 	/* FIXME: some modes should support backslash escaping.
 	 * In particular, to distinguish from _value_str_as_index_list(), which
@@ -200,43 +198,24 @@ _value_strsplit (const char *value,
 	/* note that all modes remove empty tokens (",", "a,,b", ",,"). */
 	switch (split_mode) {
 	case VALUE_STRSPLIT_MODE_OBJLIST:
-		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_DELIMITERS);
+		strv = nm_utils_strsplit_set_full (value,
+		                                   ESCAPED_TOKENS_DELIMITERS,
+		                                   NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 		break;
 	case VALUE_STRSPLIT_MODE_MULTILIST:
-		strv = nm_utils_strsplit_set (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
+		strv = nm_utils_strsplit_set_full (value,
+		                                   ESCAPED_TOKENS_WITH_SPACES_DELIMTERS,
+		                                   NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
 		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_DELIMITERS);
-		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
-		return g_steal_pointer (&strv);
+		break;
 	case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS_WITH_SPACES:
 		strv = nm_utils_escaped_tokens_split (value, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS);
-		NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
-		return g_steal_pointer (&strv);
-	default:
-		nm_assert_not_reached ();
 		break;
 	}
 
-	NM_SET_OUT (out_len, 0);
-
-	if (!strv)
-		return NULL;
-
-	len = 0;
-	for (i = 0; strv[i]; i++) {
-		const char *s = strv[i];
-
-		s = nm_str_skip_leading_spaces (s);
-		if (s[0] == '\0')
-			continue;
-
-		g_strchomp ((char *) s);
-		strv[len++] = s;
-	}
-	strv[len] = NULL;
-
-	NM_SET_OUT (out_len, len);
+	NM_SET_OUT (out_len, NM_PTRARRAY_LEN (strv));
 	return g_steal_pointer (&strv);
 }
 
