@@ -82,12 +82,19 @@ G_DEFINE_TYPE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
 /*****************************************************************************/
 
 static GHashTable *
-_ensure_strdict (GHashTable **p_hash)
+_ensure_strdict (GHashTable **p_hash, gboolean for_secrets)
 {
-	if (!*p_hash)
-		*p_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+	if (!*p_hash) {
+		*p_hash = g_hash_table_new_full (nm_str_hash,
+		                                 g_str_equal,
+		                                 g_free,
+		                                   for_secrets
+		                                 ? (GDestroyNotify) nm_free_secret
+		                                 : g_free);
+	}
 	return *p_hash;
 }
+
 
 /*****************************************************************************/
 
@@ -171,7 +178,7 @@ nm_setting_vpn_add_data_item (NMSettingVpn *setting,
 	g_return_if_fail (key && key[0]);
 	g_return_if_fail (item && item[0]);
 
-	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data),
+	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data, FALSE),
 	                     g_strdup (key),
 	                     g_strdup (item));
 	_notify (setting, PROP_DATA);
@@ -192,7 +199,7 @@ nm_setting_vpn_get_data_item (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
-	return nm_g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);:
+	return nm_g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 }
 
 /**
@@ -322,7 +329,7 @@ nm_setting_vpn_get_num_secrets (NMSettingVpn *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
 
-	return g_hash_table_size (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets);
+	return nm_g_hash_table_size (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets);
 }
 
 /**
@@ -343,8 +350,9 @@ nm_setting_vpn_add_secret (NMSettingVpn *setting,
 	g_return_if_fail (key && key[0]);
 	g_return_if_fail (secret && secret[0]);
 
-	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets,
-	                     g_strdup (key), g_strdup (secret));
+	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, TRUE),
+	                     g_strdup (key),
+	                     g_strdup (secret));
 	_notify (setting, PROP_SECRETS);
 }
 
@@ -363,7 +371,7 @@ nm_setting_vpn_get_secret (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
-	return (const char *) g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
+	return nm_g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
 }
 
 /**
@@ -404,15 +412,14 @@ nm_setting_vpn_get_secret_keys (NMSettingVpn *setting,
 gboolean
 nm_setting_vpn_remove_secret (NMSettingVpn *setting, const char *key)
 {
-	gboolean found;
-
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
 	g_return_val_if_fail (key, FALSE);
 
-	found = g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
-	if (found)
+	if (nm_g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key)) {
 		_notify (setting, PROP_SECRETS);
-	return found;
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /**
@@ -450,7 +457,7 @@ aggregate (NMSetting *setting,
 	switch (type) {
 
 	case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
-		if (g_hash_table_size (priv->secrets) > 0) {
+		if (nm_g_hash_table_size (priv->secrets) > 0u) {
 			*((gboolean *) arg) = TRUE;
 			return TRUE;
 		}
@@ -458,13 +465,15 @@ aggregate (NMSetting *setting,
 
 	case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
 
-		g_hash_table_iter_init (&iter, priv->secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
-			if (!nm_setting_get_secret_flags (NM_SETTING (setting), key_name, &secret_flags, NULL))
-				nm_assert_not_reached ();
-			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
-				*((gboolean *) arg) = TRUE;
-				return TRUE;
+		if (priv->secrets) {
+			g_hash_table_iter_init (&iter, priv->secrets);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
+				if (!nm_setting_get_secret_flags (NM_SETTING (setting), key_name, &secret_flags, NULL))
+					nm_assert_not_reached ();
+				if (secret_flags == NM_SETTING_SECRET_FLAG_NONE) {
+					*((gboolean *) arg) = TRUE;
+					return TRUE;
+				}
 			}
 		}
 
@@ -577,10 +586,12 @@ update_secret_string (NMSetting *setting,
 		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
-	if (nm_streq0 (g_hash_table_lookup (priv->secrets, key), value))
+	if (nm_streq0 (nm_g_hash_table_lookup (priv->secrets, key), value))
 		return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
-	g_hash_table_insert (priv->secrets, g_strdup (key), g_strdup (value));
+	g_hash_table_insert (_ensure_strdict (&priv->secrets, TRUE),
+	                     g_strdup (key),
+	                     g_strdup (value));
 	return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 }
 
@@ -619,10 +630,12 @@ update_secret_dict (NMSetting *setting,
 	/* Now add the items to the settings' secrets list */
 	g_variant_iter_init (&iter, secrets);
 	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
-		if (nm_streq0 (g_hash_table_lookup (priv->secrets, name), value))
+		if (nm_streq0 (nm_g_hash_table_lookup (priv->secrets, name), value))
 			continue;
 
-		g_hash_table_insert (priv->secrets, g_strdup (name), g_strdup (value));
+		g_hash_table_insert (_ensure_strdict (&priv->secrets, TRUE),
+		                     g_strdup (name),
+		                     g_strdup (value));
 		result = NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 	}
 
@@ -743,7 +756,7 @@ get_secret_flags (NMSetting *setting,
 
 		/* having no secret flag for the secret is fine, as long as there
 		 * is the secret itself... */
-		if (!g_hash_table_contains (priv->secrets, secret_name)) {
+		if (!nm_g_hash_table_lookup (priv->secrets, secret_name)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
@@ -784,7 +797,7 @@ set_secret_flags (NMSetting *setting,
 		return FALSE;
 	}
 
-	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data),
+	g_hash_table_insert (_ensure_strdict (&NM_SETTING_VPN_GET_PRIVATE (setting)->data, FALSE),
 	                     g_strdup_printf ("%s-flags", secret_name),
 	                     g_strdup_printf ("%u", flags));
 	_notify (NM_SETTING_VPN (setting), PROP_SECRETS);
@@ -818,8 +831,12 @@ compare_property_secrets (NMSettingVpn *a,
 	for (run = 0; run < 2; run++) {
 		NMSettingVpn *current_a = (run == 0) ? a : b;
 		NMSettingVpn *current_b = (run == 0) ? b : a;
+		NMSettingVpnPrivate *priv_a = NM_SETTING_VPN_GET_PRIVATE (current_a);
 
-		g_hash_table_iter_init (&iter, NM_SETTING_VPN_GET_PRIVATE (current_a)->secrets);
+		if (!priv_a->secrets)
+			continue;
+
+		g_hash_table_iter_init (&iter, priv_a->secrets);
 		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &val)) {
 
 			if (nm_streq0 (val, nm_setting_vpn_get_secret (current_b, key)))
@@ -1019,9 +1036,14 @@ set_property (GObject *object, guint prop_id,
 				priv->data = _nm_utils_copy_strdict (hash);
 		}
 		break;
-	case PROP_SECRETS:
-		g_hash_table_unref (priv->secrets);
-		priv->secrets = _nm_utils_copy_strdict (g_value_get_boxed (value));
+	case PROP_SECRETS: {
+			_nm_unused gs_unref_hashtable GHashTable *secrets_free = g_steal_pointer (&priv->secrets);
+			GHashTable *hash = g_value_get_boxed (value);
+
+			if (   hash
+			    && g_hash_table_size (hash) > 0)
+				priv->secrets = _nm_utils_copy_strdict (hash);
+		}
 		break;
 	case PROP_TIMEOUT:
 		priv->timeout = g_value_get_uint (value);
@@ -1037,9 +1059,6 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_setting_vpn_init (NMSettingVpn *setting)
 {
-	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-
-	priv->secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 }
 
 /**
@@ -1064,7 +1083,8 @@ finalize (GObject *object)
 	g_free (priv->user_name);
 	if (priv->data)
 		g_hash_table_unref (priv->data);
-	g_hash_table_destroy (priv->secrets);
+	if (priv->secrets)
+		g_hash_table_unref (priv->secrets);
 
 	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
 }
