@@ -468,7 +468,7 @@ aggregate (NMSetting *setting,
 		while (g_hash_table_iter_next (&iter, (gpointer *) &key_name, NULL)) {
 			gs_free char *secret_name = NULL;
 
-			if (!g_str_has_suffix (key_name, "-flags"))
+			if (!NM_STR_HAS_SUFFIX (key_name, "-flags"))
 				continue;
 			secret_name = g_strndup (key_name, strlen (key_name) - NM_STRLEN ("-flags"));
 			if (secret_name[0] == '\0')
