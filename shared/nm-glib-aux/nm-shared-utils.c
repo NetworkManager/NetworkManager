@@ -1497,12 +1497,27 @@ comp_l:
 /*****************************************************************************/
 
 static void
+_char_lookup_table_set_one (guint8 lookup[static 256],
+                             char ch)
+{
+	lookup[(guint8) ch] = 1;
+}
+
+static void
+_char_lookup_table_set_all (guint8 lookup[static 256],
+                            const char *candidates)
+{
+	while (candidates[0] != '\0')
+		_char_lookup_table_set_one (lookup, (candidates++)[0]);
+}
+
+static void
 _char_lookup_table_init (guint8 lookup[static 256],
                          const char *candidates)
 {
 	memset (lookup, 0, 256);
-	while (candidates[0] != '\0')
-		lookup[(guint8) ((candidates++)[0])] = 1;
+	if (candidates)
+		_char_lookup_table_set_all (lookup, candidates);
 }
 
 static gboolean
@@ -1717,11 +1732,9 @@ done2:
 
 		/* We no longer need ch_lookup for its original purpose. Modify it, so it
 		 * can detect the delimiters, '\\', and (optionally) whitespaces. */
-		ch_lookup[((guint8) '\\')] = 1;
-		if (f_strstrip) {
-			for (i = 0; NM_ASCII_SPACES[i]; i++)
-				ch_lookup[((guint8) (NM_ASCII_SPACES[i]))] = 1;
-		}
+		_char_lookup_table_set_one (ch_lookup, '\\');
+		if (f_strstrip)
+			_char_lookup_table_set_all (ch_lookup, NM_ASCII_SPACES);
 
 		for (i_token = 0; ptr[i_token]; i_token++) {
 			s = (char *) ptr[i_token];
@@ -1767,7 +1780,7 @@ nm_utils_escaped_tokens_escape (const char *str,
 	_char_lookup_table_init (ch_lookup, delimiters);
 
 	/* also mark '\\' as requiring escaping. */
-	ch_lookup[((guint8) '\\')] = 1;
+	_char_lookup_table_set_one (ch_lookup, '\\');
 
 	n_escapes = 0;
 	for (i = 0; str[i] != '\0'; i++) {
