@@ -440,7 +440,25 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 typedef enum {
 	NM_UTILS_STRSPLIT_SET_FLAGS_NONE           = 0,
+
+	/* by default, strsplit will coalesce consecutive delimiters and remove
+	 * them from the result. If this flag is present, empty values are preserved
+	 * and returned.
+	 *
+	 * When combined with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, if a value gets
+	 * empty after strstrip(), it also gets removed. */
 	NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
+
+	/* %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING means that delimiters prefixed
+	 * by a backslash are not treated as a separator. Such delimiters and their escape
+	 * character are copied to the current word without unescaping them. In general,
+	 * nm_utils_strsplit_set_full() does not remove any backslash escape characters
+	 * and does no unescaping. It only considers them for skipping to split at
+	 * an escaped delimiter.
+	 *
+	 * If this is combined with (or implied by %NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED), then
+	 * the backslash escapes are removed from the result.
+	 */
 	NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
 
 	/* If flag is set, does the same as g_strstrip() on the returned tokens.
@@ -480,6 +498,7 @@ typedef enum {
 	 * need extra care, and then only if they proceed one of the relevant characters.
 	 */
 	NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED        = (1u << 3),
+
 } NMUtilsStrsplitSetFlags;
 
 const char **nm_utils_strsplit_set_full (const char *str,

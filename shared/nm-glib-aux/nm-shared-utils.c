@@ -1525,18 +1525,7 @@ _char_lookup_has (const guint8 lookup[static 256],
  *
  * Note that for @str %NULL and "", this always returns %NULL too. That differs
  * from g_strsplit_set(), which would return an empty strv array for "".
- *
- * Note that g_strsplit_set() returns empty words as well. By default,
- * nm_utils_strsplit_set_full() strips all empty tokens (that is, repeated
- * delimiters. With %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, empty tokens
- * are not removed.
- *
- * If @flags has %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING, delimiters prefixed
- * by a backslash are not treated as a separator. Such delimiters and their escape
- * character are copied to the current word without unescaping them. In general,
- * nm_utils_strsplit_set_full() does not remove any backslash escape characters
- * and does not unescaping. It only considers them for skipping to split at
- * an escaped delimiter.
+ * This never returns an empty array.
  *
  * Returns: %NULL if @str is %NULL or "".
  *   If @str only contains delimiters and %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
@@ -1546,7 +1535,7 @@ _char_lookup_has (const guint8 lookup[static 256],
  *   The strings to which the result strv array points to are allocated
  *   after the returned result itself. Don't free the strings themself,
  *   but free everything with g_free().
- *   It is however safe and allowed to modify the indiviual strings,
+ *   It is however safe and allowed to modify the individual strings in-place,
  *   like "g_strstrip((char *) iter[0])".
  */
 const char **
