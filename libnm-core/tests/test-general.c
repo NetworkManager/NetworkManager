@@ -659,6 +659,333 @@ test_nm_utils_strsplit_set (void)
 
 /*****************************************************************************/
 
+static char *
+_escaped_tokens_create_random_word_full (const char *const*tokens,
+                                         gsize n_tokens,
+                                         gsize len)
+{
+	GString *gstr = g_string_new (NULL);
+	gsize i;
+	char random_token[2] = { 0 };
+
+	for (i = 0; i < len; i++) {
+		const char *token = tokens[nmtst_get_rand_uint32 () % n_tokens];
+
+		if (!token[0]) {
+			do {
+				random_token[0] = nmtst_get_rand_uint32 ();
+			} while (random_token[0] == '\0');
+			token = random_token;
+		}
+		g_string_append (gstr, token);
+	}
+
+	/* reallocate the string, so that we don't have any excess memory from
+	 * the GString buffer. This is so that valgrind may better detect an out
+	 * or range access. */
+	return nm_str_realloc (g_string_free (gstr, FALSE));
+}
+
+/* set to 1 to exclude characters that are annoying to see in the debugger
+ * and printf() output. */
+#define ESCAPED_TOKENS_ONLY_NICE_CHARS 0
+
+static char *
+_escaped_tokens_create_random_whitespace (void)
+{
+	static const char *tokens[] = {
+		" ",
+#if !ESCAPED_TOKENS_ONLY_NICE_CHARS
+		"\n",
+		"\t",
+		"\r",
+		"\f",
+#endif
+	};
+
+	return _escaped_tokens_create_random_word_full (tokens, G_N_ELEMENTS (tokens), nmtst_get_rand_word_length (NULL) / 4u);
+}
+
+static char *
+_escaped_tokens_create_random_word (void)
+{
+	static const char *tokens[] = {
+		"a",
+		"b",
+		"c",
+		" ",
+		",",
+		"=",
+		"\\",
+#if !ESCAPED_TOKENS_ONLY_NICE_CHARS
+		"\n",
+		"\f",
+		":",
+		"",
+#endif
+	};
+
+	return _escaped_tokens_create_random_word_full (tokens, G_N_ELEMENTS (tokens), nmtst_get_rand_word_length (NULL));
+}
+
+static void
+_escaped_tokens_str_append_delimiter (GString *str,
+                                      gboolean strict,
+                                      gboolean needs_delimiter)
+{
+	guint len = nmtst_get_rand_word_length (NULL) / 10u;
+	char *s;
+
+again:
+	if (!strict) {
+		g_string_append (str, (s = _escaped_tokens_create_random_whitespace ()));
+		nm_clear_g_free (&s);
+	}
+
+	if (needs_delimiter)
+		g_string_append_c (str, ',');
+
+	if (!strict) {
+		g_string_append (str, (s = _escaped_tokens_create_random_whitespace ()));
+		nm_clear_g_free (&s);
+		if (len-- > 0) {
+			needs_delimiter = TRUE;
+			goto again;
+		}
+	}
+}
+
+static void
+_escaped_tokens_split (char *str, const char **out_key, const char **out_val)
+{
+	const char *key;
+	const char *val;
+	gsize len = strlen (str);
+
+	g_assert (str);
+
+	nm_utils_escaped_tokens_options_split (str, &key, &val);
+	g_assert (key);
+	g_assert (key == str);
+	if (val) {
+		g_assert (val > str);
+		g_assert (val > key);
+		g_assert (val <= &str[len]);
+	}
+	NM_SET_OUT (out_key, key);
+	NM_SET_OUT (out_val, val);
+}
+
+static void
+_escaped_tokens_combine (GString *combined,
+                         const char *key,
+                         const char *val,
+                         gboolean strict,
+                         gboolean allow_append_delimiter_before,
+                         gboolean needs_delimiter_after)
+{
+	gs_free char *escaped_key = NULL;
+	gs_free char *escaped_val = NULL;
+
+	if (allow_append_delimiter_before)
+		_escaped_tokens_str_append_delimiter (combined, strict, FALSE);
+	g_string_append (combined, nm_utils_escaped_tokens_options_escape_key (key, &escaped_key));
+	if (val) {
+		char *s;
+
+		if (!strict) {
+			g_string_append (combined, (s = _escaped_tokens_create_random_whitespace ()));
+			nm_clear_g_free (&s);
+		}
+		g_string_append_c (combined, '=');
+		if (!strict) {
+			g_string_append (combined, (s = _escaped_tokens_create_random_whitespace ()));
+			nm_clear_g_free (&s);
+		}
+		g_string_append (combined, nm_utils_escaped_tokens_options_escape_val (val, &escaped_val));
+	}
+	_escaped_tokens_str_append_delimiter (combined, strict, needs_delimiter_after);
+}
+
+static void
+_escaped_tokens_check_one_impl (const char *expected_key,
+                                const char *expected_val,
+                                const char *expected_combination,
+                                const char *const*other,
+                                gsize n_other)
+{
+	nm_auto_free_gstring GString *combined = g_string_new (NULL);
+	gsize i;
+
+	g_assert (expected_key);
+	g_assert (expected_combination);
+	g_assert (other);
+
+	_escaped_tokens_combine (combined,
+	                         expected_key,
+	                         expected_val,
+	                         TRUE,
+	                         TRUE,
+	                         FALSE);
+
+	g_assert_cmpstr (combined->str, ==, expected_combination);
+
+	for (i = 0; i < n_other + 2u; i++) {
+		nm_auto_free_gstring GString *str0 = NULL;
+		gs_free const char **strv_split = NULL;
+		gs_free char *strv_split0 = NULL;
+		const char *comb;
+		const char *key;
+		const char *val;
+
+		if (i == 0)
+			comb = expected_combination;
+		else if (i == 1) {
+			_escaped_tokens_combine (nm_gstring_prepare (&str0),
+			                         expected_key,
+			                         expected_val,
+			                         FALSE,
+			                         TRUE,
+			                         FALSE);
+			comb = str0->str;
+		} else
+			comb = other[i - 2];
+
+		strv_split = nm_utils_escaped_tokens_options_split_list (comb);
+		if (!strv_split) {
+			g_assert_cmpstr (expected_key, ==, "");
+			g_assert_cmpstr (expected_val, ==, NULL);
+			continue;
+		}
+		g_assert (expected_val || expected_key[0]);
+
+		g_assert_cmpuint (NM_PTRARRAY_LEN (strv_split), ==, 1u);
+
+		strv_split0 = g_strdup (strv_split[0]);
+
+		_escaped_tokens_split (strv_split0, &key, &val);
+		g_assert_cmpstr (key, ==, expected_key);
+		g_assert_cmpstr (val, ==, expected_val);
+	}
+}
+
+#define _escaped_tokens_check_one(expected_key, expected_val, expected_combination, ...) \
+	_escaped_tokens_check_one_impl (expected_key, expected_val, expected_combination, NM_MAKE_STRV (__VA_ARGS__), NM_NARG (__VA_ARGS__))
+
+static void
+test_nm_utils_escaped_tokens (void)
+{
+	int i_run;
+
+	for (i_run = 0; i_run < 1000; i_run++) {
+		const guint num_options = nmtst_get_rand_word_length (NULL);
+		gs_unref_ptrarray GPtrArray *options = g_ptr_array_new_with_free_func (g_free);
+		nm_auto_free_gstring GString *combined = g_string_new (NULL);
+		gs_free const char **strv_split = NULL;
+		guint i_option;
+		guint i;
+
+		/* Generate a list of random words for option key-value pairs. */
+		for (i_option = 0; i_option < 2u * num_options; i_option++) {
+			char *word = NULL;
+
+			if (   i_option % 2u == 1
+			    && nmtst_get_rand_uint32 () % 5 == 0
+			    && strlen (options->pdata[options->len - 1]) > 0u) {
+				/* For some options, leave the value unset and only generate a key.
+				 *
+				 * If key is "", then we cannot do that, because the test below would try
+				 * to append "" to the combined list, which the parser then would drop.
+				 * Only test omitting the value, if strlen() of the key is positive. */
+			} else
+				word = _escaped_tokens_create_random_word ();
+			g_ptr_array_add (options, word);
+		}
+
+		/* Combine the options in one comma separated list, with proper escaping. */
+		for (i_option = 0; i_option < num_options; i_option++) {
+			_escaped_tokens_combine (combined,
+			                         options->pdata[2u*i_option + 0u],
+			                         options->pdata[2u*i_option + 1u],
+			                         FALSE,
+			                         i_option == 0,
+			                         i_option != num_options - 1);
+		}
+
+		/* ensure that we can split and parse the options without difference. */
+		strv_split = nm_utils_escaped_tokens_options_split_list (combined->str);
+		for (i_option = 0; i_option < num_options; i_option++) {
+			const char *expected_key = options->pdata[2u*i_option + 0u];
+			const char *expected_val = options->pdata[2u*i_option + 1u];
+			gs_free char *s_split = i_option < NM_PTRARRAY_LEN (strv_split) ? g_strdup (strv_split[i_option]) : NULL;
+			const char *key = NULL;
+			const char *val = NULL;
+
+			if (s_split)
+				_escaped_tokens_split (s_split, &key, &val);
+
+			if (   !nm_streq0 (key, expected_key)
+			    || !nm_streq0 (val, expected_val)) {
+				g_print (">>> ASSERTION IS ABOUT TO FAIL for item %5d of %5d\n", i_option, num_options);
+				g_print (">>> combined =  \"%s\"\n", combined->str);
+				g_print (">>> %c   parsed[%5d].key = \"%s\"\n", nm_streq (key, expected_key) ? ' ' : 'X', i_option, key);
+				g_print (">>> %c   parsed[%5d].val = %s%s%s\n", nm_streq0 (val, expected_val) ? ' ' : 'X', i_option, NM_PRINT_FMT_QUOTE_STRING (val));
+				for (i = 0; i < num_options; i++) {
+					g_print (">>> %c original[%5d].key = \"%s\"\n", i == i_option ? '*' : ' ', i, (char *) options->pdata[2u*i + 0u]);
+					g_print (">>> %c original[%5d].val = %s%s%s\n", i == i_option ? '*' : ' ', i, NM_PRINT_FMT_QUOTE_STRING ((char *) options->pdata[2u*i + 1u]));
+				}
+				for (i = 0; i < NM_PTRARRAY_LEN (strv_split); i++)
+					g_print (">>>      split[%5d]     = \"%s\"\n", i, strv_split[i]);
+			}
+
+			g_assert_cmpstr (key, ==, expected_key);
+			g_assert_cmpstr (val, ==, expected_val);
+		}
+		g_assert_cmpint (NM_PTRARRAY_LEN (strv_split), ==, num_options);
+
+		/* Above we show a full round-trip of random option key-value pairs, that they can
+		 * without loss escape, concatenate, split-list, and split. This proofed that every
+		 * option key-value pair can be represented as a combined string and parsed back.
+		 *
+		 * Now, just check that we can also parse arbitrary random words in nm_utils_escaped_tokens_options_split().
+		 * split() is a non-injective surjective function. As we check the round-trip above for random words, where
+		 * options-split() is the last step, we show that every random word can be the output of the function
+		 * (which shows, the surjective part).
+		 *
+		 * But multiple random input arguments, may map to the same output argument (non-injective).
+		 * Just test whether we can handle random input words without crashing. For that, just use the
+		 * above generate list of random words.
+		 */
+		for (i = 0; i < 1u + 2u * i_option; i++) {
+			gs_free char *str = NULL;
+			const char *cstr;
+
+			if (i == 0)
+				cstr = combined->str;
+			else
+				cstr = options->pdata[i - 1u];
+			if (!cstr)
+				continue;
+
+			str = g_strdup (cstr);
+			_escaped_tokens_split (str, NULL, NULL);
+		}
+	}
+
+	_escaped_tokens_check_one ("", NULL, "");
+	_escaped_tokens_check_one ("", "", "=", " =");
+	_escaped_tokens_check_one ("a", "b", "a=b", "a = b");
+	_escaped_tokens_check_one ("a\\=", "b\\=", "a\\\\\\==b\\\\=", "a\\\\\\==b\\\\\\=");
+	_escaped_tokens_check_one ("\\=", "\\=", "\\\\\\==\\\\=", "\\\\\\==\\\\\\=");
+	_escaped_tokens_check_one (" ", "bb=", "\\ =bb=", "\\ =bb\\=");
+	_escaped_tokens_check_one (" ", "bb\\=", "\\ =bb\\\\=", "\\ =bb\\\\\\=");
+	_escaped_tokens_check_one ("a b", "a  b", "a b=a  b");
+	_escaped_tokens_check_one ("a b", "a  b", "a b=a  b");
+	_escaped_tokens_check_one ("a = b", "a = b", "a \\= b=a = b", "a \\= b=a \\= b");
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	int val;
 	CList lst;
@@ -8553,6 +8880,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_dedup_multi", test_dedup_multi);
 	g_test_add_func ("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);
 	g_test_add_func ("/core/general/test_nm_utils_strsplit_set", test_nm_utils_strsplit_set);
+	g_test_add_func ("/core/general/test_nm_utils_escaped_tokens", test_nm_utils_escaped_tokens);
 	g_test_add_func ("/core/general/test_nm_in_set", test_nm_in_set);
 	g_test_add_func ("/core/general/test_nm_in_strset", test_nm_in_strset);
 	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);

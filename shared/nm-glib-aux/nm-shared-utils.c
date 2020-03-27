@@ -1906,6 +1906,91 @@ nm_utils_escaped_tokens_escape_full (const char *str,
 	return ret;
 }
 
+/**
+ * nm_utils_escaped_tokens_options_split:
+ * @str: the src string. This string will be modified in-place.
+ *   The output values will point into @str.
+ * @out_key: (allow-none): the returned output key. This will always be set to @str
+ *   itself. @str will be modified to contain only the unescaped, truncated
+ *   key name.
+ * @out_val: returns the parsed (and unescaped) value or %NULL, if @str contains
+ *   no '=' delimiter.
+ *
+ * Honors backslash escaping to parse @str as "key=value" pairs. Optionally, if no '='
+ * is present, @out_val will be returned as %NULL. Backslash can be used to escape
+ * '=', ',', '\\', and ascii whitespace. Other backslash sequences are taken verbatim.
+ *
+ * For keys, '=' obviously must be escaped. For values, that is optional because an
+ * unescaped '=' is just taken verbatim. For example, in a key, the sequence "\\="
+ * must be escaped as "\\\\\\=". For the value, that works too, but "\\\\=" is also
+ * accepted.
+ *
+ * Unescaped Space around the key and value are also removed. Space in general must
+ * not be escaped, unless they are at the beginning or the end of key/value.
+ */
+void
+nm_utils_escaped_tokens_options_split (char *str,
+                                       const char **out_key,
+                                       const char **out_val)
+{
+	const char *val = NULL;
+	gsize i;
+	gsize j;
+	gsize last_space_idx;
+	gboolean last_space_has;
+
+	nm_assert (str);
+
+	i = 0;
+	while (g_ascii_isspace (str[i]))
+		i++;
+
+	j = 0;
+	last_space_idx = 0;
+	last_space_has = FALSE;
+	while (str[i] != '\0') {
+		if (g_ascii_isspace (str[i])) {
+			if (!last_space_has) {
+				last_space_has = TRUE;
+				last_space_idx = j;
+			}
+		} else {
+			if (str[i] == '\\') {
+				if (   NM_IN_SET (str[i + 1u], '\\', ',', '=')
+				    || g_ascii_isspace (str[i + 1u]))
+					i++;
+			} else if (str[i] == '=') {
+				/* Encounter an unescaped '=' character. When we still parse the key, this
+				 * is the separator we were waiting for. If we are parsing the value,
+				 * we take the character verbatim. */
+				if (!val) {
+					if (last_space_has) {
+						str[last_space_idx] = '\0';
+						j = last_space_idx + 1;
+						last_space_has = FALSE;
+					} else
+						str[j++] = '\0';
+					val = &str[j];
+					i++;
+					while (g_ascii_isspace (str[i]))
+						i++;
+					continue;
+				}
+			}
+			last_space_has = FALSE;
+		}
+		str[j++] = str[i++];
+	}
+
+	if (last_space_has)
+		str[last_space_idx] = '\0';
+	else
+		str[j] = '\0';
+
+	*out_key = str;
+	*out_val = val;
+}
+
 /*****************************************************************************/
 
 /**

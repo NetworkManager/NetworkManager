@@ -652,6 +652,47 @@ nm_utils_escaped_tokens_escape_gstr (const char *str,
 
 /*****************************************************************************/
 
+static inline const char **
+nm_utils_escaped_tokens_options_split_list (const char *str)
+{
+	return nm_utils_strsplit_set_full (str,
+	                                   ",",
+	                                     NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP
+	                                   | NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+}
+
+void nm_utils_escaped_tokens_options_split (char *str,
+                                            const char **out_key,
+                                            const char **out_val);
+
+static inline const char *
+nm_utils_escaped_tokens_options_escape_key (const char *key,
+                                            char **out_to_free)
+{
+	return nm_utils_escaped_tokens_escape_full (key,
+	                                            ",=",
+	                                            NULL,
+	                                              NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE,
+	                                            out_to_free);
+}
+
+static inline const char *
+nm_utils_escaped_tokens_options_escape_val (const char *val,
+                                            char **out_to_free)
+{
+	return nm_utils_escaped_tokens_escape_full (val,
+	                                            ",",
+	                                            "=",
+	                                              NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE,
+	                                            out_to_free);
+}
+
+/*****************************************************************************/
+
 #define NM_UTILS_CHECKSUM_LENGTH_MD5          16
 #define NM_UTILS_CHECKSUM_LENGTH_SHA1         20
 #define NM_UTILS_CHECKSUM_LENGTH_SHA256       32
