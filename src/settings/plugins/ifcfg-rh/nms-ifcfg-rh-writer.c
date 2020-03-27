@@ -1501,6 +1501,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "group_fwd_mask=%u", i);
 	}
 
+	b = nm_setting_bridge_get_multicast_query_use_ifaddr (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_query_use_ifaddr=%u", (guint) b);
+	}
+
 	b = nm_setting_bridge_get_multicast_snooping (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
 		if (opts->len)
