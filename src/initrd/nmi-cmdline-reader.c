@@ -866,6 +866,7 @@ reader_add_nameservers (Reader *reader, GPtrArray *nameservers)
 				break;
 			default:
 				nm_assert_not_reached ();
+				continue;
 			}
 
 			nm_setting_ip_config_add_dns (s_ip, ns);
