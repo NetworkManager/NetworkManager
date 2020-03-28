@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 test_unit = 'test-shared-general'
 
 c_flags = [

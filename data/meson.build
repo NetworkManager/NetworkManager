@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 configure_file(
   input: 'server.conf.in',
   output: '@BASENAME@',

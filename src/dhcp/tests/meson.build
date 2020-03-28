@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 test_units = [
   'test-dhcp-dhclient',
   'test-dhcp-utils',

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 shared_inc = include_directories('.')
 
 nm_default_dep = declare_dependency(include_directories: [top_inc, shared_inc])

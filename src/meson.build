@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 src_inc = include_directories('.')
 
 daemon_nm_default_dep = declare_dependency(

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 libnm_inc = include_directories('.')
 
 libnm_nm_default_dep = declare_dependency(

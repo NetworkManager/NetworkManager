@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 project(
   'NetworkManager', 'c',
 # NOTE: When incrementing version also:

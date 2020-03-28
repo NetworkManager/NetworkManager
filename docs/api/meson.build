@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 if enable_introspection
   settings = 'settings-spec'
   output = settings + '.xml'

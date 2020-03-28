@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 clients_c_flags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT']
 
 name = 'nm-online'

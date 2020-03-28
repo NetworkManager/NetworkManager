@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'nmi-cmdline-reader.c',
   'nmi-dt-reader.c',

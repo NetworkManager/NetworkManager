@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 src_dirs = [
   libnm_core_inc,
   libnm_inc,

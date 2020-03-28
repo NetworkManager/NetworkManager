@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 iwd_sources = files()
 if enable_iwd
   iwd_sources += files(

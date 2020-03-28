@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 test_fake_c_flags = test_c_flags + ['-DSETUP=nm_fake_platform_setup']
 test_linux_c_flags = test_c_flags + ['-DSETUP=nm_linux_platform_setup']
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'nm-atm-manager.c',
   'nm-device-adsl.c',

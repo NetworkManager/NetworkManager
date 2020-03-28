@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 common_c_flags = clients_c_flags + ['-DNETWORKMANAGER_COMPILATION_TEST']
 
 test_name = 'test-clients-common'

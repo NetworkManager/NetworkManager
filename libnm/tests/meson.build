@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 test_units = [
   ['test-libnm', 30],
   ['test-nm-client', 90],

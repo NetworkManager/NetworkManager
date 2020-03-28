@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 common_ent_file = configure_file(
   input: 'common.ent.in',
   output: '@BASENAME@',
