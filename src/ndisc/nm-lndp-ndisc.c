@@ -100,7 +100,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	int offset;
 	int hop_limit;
-	guint32 val;
+	guint32 val, clamp_pltime, clamp_vltime;
 
 	/* Router discovery is subject to the following RFC documents:
 	 *
@@ -165,7 +165,20 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			changed |= NM_NDISC_CONFIG_GATEWAYS;
 	}
 
-	/* Addresses & Routes */
+	/* Addresses & Routes
+	 *
+	 * The Preferred Lifetime and Valid Lifetime of PIOs are capped to Router Lifetime
+	 * and NM_NDISC_VLTIME_MULT * Preferred Lifetime, respectively.
+	 *
+	 * The Lifetime of RIOs is capped to the Router Lifetime (there is no point in
+	 * maintaining a route if it employs a dead router).
+	 *
+	 * See draft-gont-6man-slaac-renum
+	 */
+	#define NM_NDISC_VLTIME_MULT ((guint32) 48)
+	clamp_pltime = ndp_msgra_router_lifetime (msgra);
+	clamp_vltime = (clamp_pltime < G_MAXUINT32 / NM_NDISC_VLTIME_MULT)? clamp_pltime * NM_NDISC_VLTIME_MULT : G_MAXUINT32;
+
 	ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_PREFIX) {
 		guint8 r_plen;
 		struct in6_addr r_network;
@@ -186,7 +199,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 				.network = r_network,
 				.plen = r_plen,
 				.timestamp = now,
-				.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
+				.lifetime = NM_MIN (ndp_msg_opt_prefix_valid_time (msg, offset), clamp_vltime),
 			};
 
 			if (nm_ndisc_add_route (ndisc, &route))
@@ -199,8 +212,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			NMNDiscAddress address = {
 				.address = r_network,
 				.timestamp = now,
-				.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
-				.preferred = ndp_msg_opt_prefix_preferred_time (msg, offset),
+				.lifetime = NM_MIN (ndp_msg_opt_prefix_valid_time (msg, offset), clamp_vltime),
+				.preferred = NM_MIN (ndp_msg_opt_prefix_preferred_time (msg, offset), clamp_pltime),
 			};
 
 			if (address.preferred <= address.lifetime) {
@@ -214,7 +227,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			.gateway = gateway_addr,
 			.plen = ndp_msg_opt_route_prefix_len (msg, offset),
 			.timestamp = now,
-			.lifetime = ndp_msg_opt_route_lifetime (msg, offset),
+			.lifetime = NM_MIN (ndp_msg_opt_route_lifetime (msg, offset), clamp_pltime),
 			.preference = _route_preference_coerce (ndp_msg_opt_route_preference (msg, offset)),
 		};
 
