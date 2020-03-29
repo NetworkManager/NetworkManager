@@ -8,6 +8,10 @@ The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Accept empty values for VPN data items and secrets.
+* nmcli: support backslash escape sequences for vpn.data, vpn.secrets,
+  bond.options, and ethernet.s390-options.
+
 =============================================
 NetworkManager-1.22
 Overview of changes since NetworkManager-1.20
