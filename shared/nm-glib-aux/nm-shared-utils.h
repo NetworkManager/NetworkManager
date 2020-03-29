@@ -542,9 +542,65 @@ nm_utils_escaped_tokens_split (const char *str,
 	                                   | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
 
-const char *nm_utils_escaped_tokens_escape (const char *str,
-                                            const char *delimiters,
-                                            char **out_to_free);
+typedef enum {
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_NONE                       = 0,
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_SPACES              = (1ull << 0),
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE       = (1ull << 1),
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE      = (1ull << 2),
+
+	/* Backslash characters will be escaped as "\\\\" if they precede another
+	 * character that makes it necessary. Such characters are:
+	 *
+	 *  1) before another '\\' backslash.
+	 *  2) before any delimiter in @delimiters.
+	 *  3) before any delimiter in @delimiters_as_needed.
+	 *  4) before a white space, if ESCAPE_LEADING_SPACE or ESCAPE_TRAILING_SPACE is set.
+	 *  5) before the end of the word
+	 *
+	 * Rule 4) is an extension. It's not immediately clear why with ESCAPE_LEADING_SPACE
+	 * and ESCAPE_TRAILING_SPACE we want *all* backslashes before a white space escaped.
+	 * The reason is, that we obviously want to use ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE
+	 * in cases, where we later parse the backslash escaped strings back, but allowing to strip
+	 * unescaped white spaces. That means, we want that " a " gets escaped as "\\ a\\ ".
+	 * On the other hand, we also want that " a\\ b " gets escaped as "\\ a\\\\ b\\ ",
+	 * and not "\\ a\\ b\\ ". Because otherwise, the parser would need to treat "\\ "
+	 * differently depending on whether the sequence is at the beginning, end or middle
+	 * of the word.
+	 *
+	 * Rule 5) is also not immediately obvious. When used with ESCAPE_TRAILING_SPACE,
+	 * we clearly want to allow that an escaped word can have arbitrary
+	 * whitespace suffixes. That's why this mode exists. So we must escape "a\\" as
+	 * "a\\\\", so that appending " " does not change the meaning.
+	 * Also without ESCAPE_TRAILING_SPACE, we want in general that we can concatenate
+	 * two escaped words without changing their meaning. If the words would be "a\\"
+	 * and "," (with ',' being a delimiter), then the result must be "a\\\\" and "\\,"
+	 * so that the concatenated word ("a\\\\\\,") is still the same. If we would escape
+	 * them instead as "a\\" + "\\,", then the concatenated word would be "a\\\\," and
+	 * different.
+	 * */
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED = (1ull << 3),
+
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS    = (1ull << 4),
+} NMUtilsEscapedTokensEscapeFlags;
+
+const char *nm_utils_escaped_tokens_escape_full (const char *str,
+                                                 const char *delimiters,
+                                                 const char *delimiters_as_needed,
+                                                 NMUtilsEscapedTokensEscapeFlags flags,
+                                                 char **out_to_free);
+
+static inline const char *
+nm_utils_escaped_tokens_escape (const char *str,
+                                const char *delimiters,
+                                char **out_to_free)
+{
+	return nm_utils_escaped_tokens_escape_full (str,
+	                                            delimiters,
+	                                            NULL,
+	                                              NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE,
+	                                            out_to_free);
+}
 
 static inline GString *
 nm_utils_escaped_tokens_escape_gstr_assert (const char *str,

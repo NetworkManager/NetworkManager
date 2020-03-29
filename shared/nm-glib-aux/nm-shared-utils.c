@@ -1528,6 +1528,19 @@ _char_lookup_has (const guint8 lookup[static 256],
 	return lookup[(guint8) ch] != 0;
 }
 
+static gboolean
+_char_lookup_has_all (const guint8 lookup[static 256],
+                      const char *candidates)
+{
+	if (candidates) {
+		while (candidates[0] != '\0') {
+			if (!_char_lookup_has (lookup, (candidates++)[0]))
+				return FALSE;
+		}
+	}
+	return TRUE;
+}
+
 /**
  * nm_utils_strsplit_set_full:
  * @str: the string to split.
@@ -1755,65 +1768,131 @@ done2:
 /*****************************************************************************/
 
 const char *
-nm_utils_escaped_tokens_escape (const char *str,
-                                const char *delimiters,
-                                char **out_to_free)
+nm_utils_escaped_tokens_escape_full (const char *str,
+                                     const char *delimiters,
+                                     const char *delimiters_as_needed,
+                                     NMUtilsEscapedTokensEscapeFlags flags,
+                                     char **out_to_free)
 {
 	guint8 ch_lookup[256];
+	guint8 ch_lookup_as_needed[256];
+	gboolean has_ch_lookup_as_needed = FALSE;
 	char *ret;
 	gsize str_len;
 	gsize alloc_len;
 	gsize n_escapes;
 	gsize i, j;
+	gboolean escape_leading_space;
 	gboolean escape_trailing_space;
+	gboolean escape_backslash_as_needed;
 
-	if (!delimiters) {
-		nm_assert (delimiters);
-		delimiters = NM_ASCII_SPACES;
-	}
+	nm_assert (   !delimiters_as_needed
+	           || (   delimiters_as_needed[0]
+	               && NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED)));
 
 	if (!str || str[0] == '\0') {
 		*out_to_free = NULL;
 		return str;
 	}
 
-	_char_lookup_table_init (ch_lookup, delimiters);
+	str_len = strlen (str);
 
-	/* also mark '\\' as requiring escaping. */
-	_char_lookup_table_set_one (ch_lookup, '\\');
+	_char_lookup_table_init (ch_lookup, delimiters);
+	if (   !delimiters
+	    || NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_SPACES)) {
+		flags &= ~(  NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+		           | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE);
+		_char_lookup_table_set_all (ch_lookup, NM_ASCII_SPACES);
+	}
+
+	if (NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS)) {
+		_char_lookup_table_set_one (ch_lookup, '\\');
+		escape_backslash_as_needed = FALSE;
+	} else if (_char_lookup_has (ch_lookup, '\\'))
+		escape_backslash_as_needed = FALSE;
+	else {
+		escape_backslash_as_needed = NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED);
+		if (escape_backslash_as_needed) {
+			if (    NM_FLAGS_ANY (flags,   NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+			                             | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
+			    && !_char_lookup_has_all (ch_lookup, NM_ASCII_SPACES)) {
+				/* ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE implies that we escape backslash
+				 * before whitespaces. */
+				if (!has_ch_lookup_as_needed) {
+					has_ch_lookup_as_needed = TRUE;
+					_char_lookup_table_init (ch_lookup_as_needed, NULL);
+				}
+				_char_lookup_table_set_all (ch_lookup_as_needed, NM_ASCII_SPACES);
+			}
+			if (   delimiters_as_needed
+			    && !_char_lookup_has_all (ch_lookup, delimiters_as_needed)) {
+				if (!has_ch_lookup_as_needed) {
+					has_ch_lookup_as_needed = TRUE;
+					_char_lookup_table_init (ch_lookup_as_needed, NULL);
+				}
+				_char_lookup_table_set_all (ch_lookup_as_needed, delimiters_as_needed);
+			}
+		}
+	}
+
+	escape_leading_space =    NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE)
+	                       && g_ascii_isspace (str[0])
+	                       && !_char_lookup_has (ch_lookup, str[0]);
+	if (str_len == 1)
+		escape_trailing_space = FALSE;
+	else {
+		escape_trailing_space =    NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
+		                        && g_ascii_isspace (str[str_len - 1])
+		                        && !_char_lookup_has (ch_lookup, str[str_len - 1]);
+	}
 
 	n_escapes = 0;
 	for (i = 0; str[i] != '\0'; i++) {
 		if (_char_lookup_has (ch_lookup, str[i]))
 			n_escapes++;
+		else if (   str[i] == '\\'
+		         && escape_backslash_as_needed
+		         && (   _char_lookup_has (ch_lookup, str[i + 1])
+		             || NM_IN_SET (str[i + 1], '\0', '\\')
+		             || (   has_ch_lookup_as_needed
+		                 && _char_lookup_has (ch_lookup_as_needed, str[i + 1]))))
+			n_escapes++;
 	}
+	if (escape_leading_space)
+		n_escapes++;
+	if (escape_trailing_space)
+		n_escapes++;
 
-	str_len = i;
-	nm_assert (str_len > 0 && strlen (str) == str_len);
-
-	escape_trailing_space =    !_char_lookup_has (ch_lookup, str[str_len - 1])
-	                        && g_ascii_isspace (str[str_len - 1]);
-
-	if (   n_escapes == 0
-	    && !escape_trailing_space) {
+	if (n_escapes == 0u) {
 		*out_to_free = NULL;
 		return str;
 	}
 
-	alloc_len = str_len + n_escapes + ((gsize) escape_trailing_space) + 1;
+	alloc_len = str_len + n_escapes + 1u;
 	ret = g_new (char, alloc_len);
 
 	j = 0;
-	for (i = 0; str[i] != '\0'; i++) {
-		if (_char_lookup_has (ch_lookup, str[i])) {
-			nm_assert (j < alloc_len);
+	i = 0;
+
+	if (escape_leading_space) {
+		ret[j++] = '\\';
+		ret[j++] = str[i++];
+	}
+	for (; str[i] != '\0'; i++) {
+		if (_char_lookup_has (ch_lookup, str[i]))
 			ret[j++] = '\\';
-		}
-		nm_assert (j < alloc_len);
+		else if (   str[i] == '\\'
+		         && escape_backslash_as_needed
+		         && (   _char_lookup_has (ch_lookup, str[i + 1])
+		             || NM_IN_SET (str[i + 1], '\0', '\\')
+		             || (   has_ch_lookup_as_needed
+		                 && _char_lookup_has (ch_lookup_as_needed, str[i + 1]))))
+			ret[j++] = '\\';
 		ret[j++] = str[i];
 	}
 	if (escape_trailing_space) {
-		nm_assert (!_char_lookup_has (ch_lookup, ret[j - 1]) && g_ascii_isspace (ret[j - 1]));
+		nm_assert (   !_char_lookup_has (ch_lookup, ret[j - 1])
+		           && g_ascii_isspace (ret[j - 1]));
 		ret[j] = ret[j - 1];
 		ret[j - 1] = '\\';
 		j++;
@@ -1821,6 +1900,7 @@ nm_utils_escaped_tokens_escape (const char *str,
 
 	nm_assert (j == alloc_len - 1);
 	ret[j] = '\0';
+	nm_assert (strlen (ret) == j);
 
 	*out_to_free = ret;
 	return ret;
