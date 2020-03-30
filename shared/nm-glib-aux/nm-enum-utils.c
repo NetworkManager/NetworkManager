@@ -143,7 +143,7 @@ _nm_utils_enum_to_str_full (GType type,
 			return g_strdup (enum_value->value_nick);
 	} else if (G_IS_FLAGS_CLASS (klass)) {
 		GFlagsValue *flags_value;
-		GString *str = g_string_new ("");
+		GString *str = g_string_sized_new (16);
 		unsigned uvalue = (unsigned) value;
 
 		flags_separator = flags_separator ?: " ";
