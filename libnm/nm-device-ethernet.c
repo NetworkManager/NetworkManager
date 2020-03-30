@@ -312,6 +312,9 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth = NML_DBUS_META_IFACE
 	NM_DBUS_INTERFACE_DEVICE_VETH,
 	NULL,
 	NML_DBUS_META_INTERFACE_PRIO_NONE,
+	NML_DBUS_META_IFACE_DBUS_PROPERTIES (
+		NML_DBUS_META_PROPERTY_INIT_TODO ("Peer", "o"),
+	),
 );
 
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired = NML_DBUS_META_IFACE_INIT_PROP (
