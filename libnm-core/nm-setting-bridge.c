@@ -26,6 +26,7 @@
 #define BRIDGE_FORWARD_DELAY_DEFAULT              15
 #define BRIDGE_HELLO_TIME_DEFAULT                 2
 #define BRIDGE_MAX_AGE_DEFAULT                    20
+#define BRIDGE_MULTICAST_QUERIER_DEFAULT          FALSE
 #define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT FALSE
 #define BRIDGE_MULTICAST_SNOOPING_DEFAULT         TRUE
 #define BRIDGE_PRIORITY_DEFAULT                   0x8000
@@ -46,6 +47,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_GROUP_ADDRESS,
 	PROP_GROUP_FORWARD_MASK,
 	PROP_MULTICAST_ROUTER,
+	PROP_MULTICAST_QUERIER,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
 	PROP_MULTICAST_SNOOPING,
 	PROP_VLAN_FILTERING,
@@ -73,6 +75,7 @@ typedef struct {
 	bool stp:1;
 	bool vlan_stats_enabled:1;
 	bool multicast_query_use_ifaddr:1;
+	bool multicast_querier:1;
 } NMSettingBridgePrivate;
 
 /**
@@ -990,6 +993,23 @@ nm_setting_bridge_get_multicast_query_use_ifaddr (const NMSettingBridge *setting
 
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_query_use_ifaddr;
 }
+
+/**
+ * nm_setting_bridge_get_multicast_querier:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-querier property of the setting
+ *
+ * Since 1.24
+ **/
+gboolean
+nm_setting_bridge_get_multicast_querier (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), FALSE);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_querier;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1221,6 +1241,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_ROUTER:
 		g_value_set_string (value, priv->multicast_router);
 		break;
+	case PROP_MULTICAST_QUERIER:
+		g_value_set_boolean (value, priv->multicast_querier);
+		break;
 	case PROP_MULTICAST_QUERY_USE_IFADDR:
 		g_value_set_boolean (value, priv->multicast_query_use_ifaddr);
 		break;
@@ -1292,6 +1315,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->multicast_router);
 		priv->multicast_router = g_value_dup_string (value);
 		break;
+	case PROP_MULTICAST_QUERIER:
+		priv->multicast_querier = g_value_get_boolean (value);
+		break;
 	case PROP_MULTICAST_QUERY_USE_IFADDR:
 		priv->multicast_query_use_ifaddr = g_value_get_boolean (value);
 		break;
@@ -1339,6 +1365,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->vlan_default_pvid          = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
 	priv->vlan_stats_enabled         = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
 	priv->multicast_query_use_ifaddr = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
+	priv->multicast_querier          = BRIDGE_MULTICAST_QUERIER_DEFAULT;
 }
 
 /**
@@ -1782,6 +1809,26 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	obj_properties[PROP_MULTICAST_QUERY_USE_IFADDR] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR, "", "",
 	                          BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT,
+	                          G_PARAM_READWRITE |
+	                          NM_SETTING_PARAM_INFERRABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-querier:
+	 *
+	 * Enable or disable sending of multicast queries by the bridge.
+	 * If not specified the option is disabled.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-querier
+	 * variable: BRIDGING_OPTS: multicast_querier=
+	 * default: 0
+	 * example: BRIDGING_OPTS="multicast_querier=1"
+	 * ---end---
+	 */
+	obj_properties[PROP_MULTICAST_QUERIER] =
+	    g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_QUERIER, "", "",
+	                          BRIDGE_MULTICAST_QUERIER_DEFAULT,
 	                          G_PARAM_READWRITE |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);

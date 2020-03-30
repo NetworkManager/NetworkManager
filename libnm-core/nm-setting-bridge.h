@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK              "group-forward-mask"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING              "multicast-snooping"
 #define NM_SETTING_BRIDGE_MULTICAST_ROUTER                "multicast-router"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERIER               "multicast-querier"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR      "multicast-query-use-ifaddr"
 #define NM_SETTING_BRIDGE_VLAN_FILTERING                  "vlan-filtering"
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID               "vlan-default-pvid"
@@ -135,6 +136,9 @@ const char *   nm_setting_bridge_get_multicast_router (const NMSettingBridge *se
 
 NM_AVAILABLE_IN_1_24
 gboolean nm_setting_bridge_get_multicast_query_use_ifaddr (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_24
+gboolean nm_setting_bridge_get_multicast_querier (const NMSettingBridge *setting);
 
 G_END_DECLS
 
