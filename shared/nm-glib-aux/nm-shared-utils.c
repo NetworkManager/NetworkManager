@@ -748,12 +748,17 @@ _parse_legacy_addr4 (const char *text, in_addr_t *out_addr, GError **error)
 
 		v = _nm_utils_ascii_str_to_int64 (current_token, 0, 0, 0xFF, -1);
 		if (v == -1) {
+			int errsv = errno;
+
 			/* we do accept octal and hex (even with leading "0x"). But something
 			 * about this token is wrong. */
 			g_set_error (error,
 			             NM_UTILS_ERROR,
 			             NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             "invalid token '%s'", current_token);
+			             "invalid token '%s': %s (%d)",
+			             current_token,
+			             nm_strerror_native (errsv),
+			             errsv);
 			return FALSE;
 		}
 
@@ -979,8 +984,24 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	errno = 0;
 	v = g_ascii_strtoll (str, (char **) &s, base);
 
-	if (errno != 0)
+	if (errno != 0) {
+#if NM_MORE_ASSERTS
+		int errsv = errno;
+
+		/* the caller must not pass an invalid @base. Hence, we expect the only failure that
+		 * can happen here is ERANGE, because invalid @str is not signaled via an errno according
+		 * to documentation. */
+		if (   errsv != ERANGE
+		    || !NM_IN_SET (v, G_MININT64, G_MAXINT64)) {
+			g_error ("g_ascii_strtoll() for \"%s\" failed with errno=%d (%s) and v=%"G_GINT64_FORMAT,
+			         str,
+			         errsv,
+			         nm_strerror_native (errsv),
+			         v);
+		}
+#endif
 		return fallback;
+	}
 
 	if (s[0] != '\0') {
 		s = nm_str_skip_leading_spaces (s);
