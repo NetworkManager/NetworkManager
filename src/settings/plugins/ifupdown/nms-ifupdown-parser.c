@@ -580,9 +580,8 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 		const char *nameserver_v;
 		const char *nameservers_v;
 		const char *search_v;
-		int prefix_int = 128;
+		guint prefix_int;
 
-		/* Address */
 		address_v = ifparser_getkey (block, "address");
 		if (!address_v) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -590,12 +589,12 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 			return FALSE;
 		}
 
-		/* Prefix */
 		prefix_v = ifparser_getkey (block, "netmask");
 		if (prefix_v)
-			prefix_int = g_ascii_strtoll (prefix_v, NULL, 10);
+			prefix_int = _nm_utils_ascii_str_to_int64 (prefix_v, 10, 0, 128, G_MAXINT);
+		else
+			prefix_int = 128;
 
-		/* Add the new address to the setting */
 		addr = nm_ip_address_new (AF_INET6, address_v, prefix_int, error);
 		if (!addr)
 			return FALSE;
@@ -608,7 +607,6 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 		}
 		nm_ip_address_unref (addr);
 
-		/* gateway */
 		gateway_v = ifparser_getkey (block, "gateway");
 		if (gateway_v) {
 			if (!nm_utils_ipaddr_valid (AF_INET6, gateway_v)) {
@@ -629,7 +627,6 @@ update_ip6_setting_from_if_block (NMConnection *connection,
 		if (!nm_setting_ip_config_get_num_dns (s_ip6))
 			_LOGI ("No dns-nameserver configured in /etc/network/interfaces");
 
-		/* DNS searches */
 		search_v = ifparser_getkey (block, "dns-search");
 		if (search_v) {
 			gs_free const char **list = NULL;
