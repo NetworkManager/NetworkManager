@@ -584,7 +584,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 
 		state = nm_supplicant_interface_get_state (priv->supplicant.iface);
 		if (state != NM_SUPPLICANT_INTERFACE_STATE_COMPLETED
-		    && NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (state))
+		    && nm_supplicant_interface_state_is_operational (state))
 			priv->supplicant.lnk_timeout_id = g_timeout_add_seconds (SUPPLICANT_LNK_TIMEOUT_SEC, supplicant_lnk_timeout_cb, self);
 	}
 
@@ -636,7 +636,7 @@ supplicant_interface_create_cb (NMSupplicantManager *supplicant_manager,
 	                                                         supplicant_connection_timeout_cb,
 	                                                         self);
 
-	if (NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (iface)))
+	if (nm_supplicant_interface_state_is_operational (nm_supplicant_interface_get_state (iface)))
 		supplicant_iface_start (self);
 }
 

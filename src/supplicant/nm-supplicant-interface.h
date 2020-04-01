@@ -35,7 +35,7 @@ typedef enum {
 } NMSupplicantInterfaceState;
 
 static inline gboolean
-NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (NMSupplicantInterfaceState state)
+nm_supplicant_interface_state_is_operational (NMSupplicantInterfaceState state)
 {
 	return    state > NM_SUPPLICANT_INTERFACE_STATE_STARTING
 	       && state < NM_SUPPLICANT_INTERFACE_STATE_DOWN;

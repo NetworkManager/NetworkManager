@@ -443,7 +443,7 @@ _notify_maybe_scanning (NMSupplicantInterface *self)
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	gboolean scanning;
 
-	scanning =   NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->state)
+	scanning =   nm_supplicant_interface_state_is_operational (priv->state)
 	          && (   priv->scanning_property
 	              || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING);
 
@@ -1115,7 +1115,7 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 
 	nm_assert (new_state > NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 	nm_assert (new_state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-	nm_assert (NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (new_state));
+	nm_assert (nm_supplicant_interface_state_is_operational (new_state));
 
 	nm_assert (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 	nm_assert (priv->state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -1237,7 +1237,7 @@ _starting_check_ready (NMSupplicantInterface *self)
 
 	nm_assert (priv->state == NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 
-	if (!NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->supp_state)) {
+	if (!nm_supplicant_interface_state_is_operational (priv->supp_state)) {
 		_LOGW ("Supplicant state is unknown during initialization. Destroy the interface");
 		set_state_down (self, TRUE, "failure to get valid interface state");
 		return;
