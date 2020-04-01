@@ -40,12 +40,14 @@
         </para>
         <para>
           The <emphasis>keyfile</emphasis> plugin is the generic plugin that supports all
-          the connection types and capabilities that NetworkManager has. It writes files
-          out in a .ini-style format in <filename>/etc/NetworkManager/system-connections/</filename>.
+          the connection types and capabilities that NetworkManager has. The files are
+          in a .ini-style format and located in <filename>/etc/NetworkManager/system-connections/</filename>,
+          <filename>/usr/lib/NetworkManager/system-connections/</filename> and
+          <filename>/run/NetworkManager/system-connections/</filename>.
           This plugin is always enabled and will automatically be used to store
           any connections that are not supported by any other active plugin.
           For security, it will ignore files that are readable or writable by any user
-          or group other than 'root' since private keys and passphrases may be stored
+          other than 'root' since private keys and passphrases may be stored
           in plaintext inside the file.
         </para>
       </refsect1>
