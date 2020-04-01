@@ -100,7 +100,9 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	int offset;
 	int hop_limit;
-	guint32 val, clamp_pltime, clamp_vltime;
+	guint32 val;
+	guint32 clamp_pltime;
+	guint32 clamp_vltime;
 
 	/* Router discovery is subject to the following RFC documents:
 	 *
@@ -177,7 +179,9 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 */
 	#define NM_NDISC_VLTIME_MULT ((guint32) 48)
 	clamp_pltime = ndp_msgra_router_lifetime (msgra);
-	clamp_vltime = (clamp_pltime < G_MAXUINT32 / NM_NDISC_VLTIME_MULT)? clamp_pltime * NM_NDISC_VLTIME_MULT : G_MAXUINT32;
+	clamp_vltime =   (clamp_pltime < G_MAXUINT32 / NM_NDISC_VLTIME_MULT)
+	               ? clamp_pltime * NM_NDISC_VLTIME_MULT
+	               : G_MAXUINT32;
 
 	ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_PREFIX) {
 		guint8 r_plen;
