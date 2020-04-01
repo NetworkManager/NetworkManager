@@ -714,6 +714,72 @@ nm_utils_parse_inaddr_prefix (int addr_family,
 
 /*****************************************************************************/
 
+/**
+ * nm_g_ascii_strtoll()
+ * @nptr: the string to parse
+ * @endptr: the pointer on the first invalid chars
+ * @base: the base.
+ *
+ * This wraps g_ascii_strtoll() and should in almost all cases behave identical
+ * to it.
+ *
+ * However, it seems there are situations where g_ascii_strtoll() might set
+ * errno to some unexpected value EAGAIN. Possibly this is related to creating
+ * the C locale during
+ *
+ *   #ifdef USE_XLOCALE
+ *   return strtoll_l (nptr, endptr, base, get_C_locale ());
+ *
+ * This wrapper tries to workaround that condition.
+ */
+gint64
+nm_g_ascii_strtoll (const char *nptr,
+                    char **endptr,
+                    guint base)
+{
+	int try_count = 2;
+	gint64 v;
+	const int errsv_orig = errno;
+	int errsv;
+
+	nm_assert (nptr);
+	nm_assert (base == 0u || (base >= 2u && base <= 36u));
+
+again:
+	errno = 0;
+	v = g_ascii_strtoll (nptr, endptr, base);
+	errsv = errno;
+
+	if (errsv == 0) {
+		if (errsv_orig != 0)
+			errno = errsv_orig;
+		return v;
+	}
+
+	if (   errsv == ERANGE
+	    && NM_IN_SET (v, G_MININT64, G_MAXINT64))
+		return v;
+
+	if (   errsv == EINVAL
+	    && v == 0
+	    && nptr
+	    && nptr[0] == '\0')
+		return v;
+
+	if (try_count-- > 0)
+		goto again;
+
+#if NM_MORE_ASSERTS
+	g_critical ("g_ascii_strtoll() for \"%s\" failed with errno=%d (%s) and v=%"G_GINT64_FORMAT,
+	            nptr,
+	            errsv,
+	            nm_strerror_native (errsv),
+	            v);
+#endif
+
+	return v;
+}
+
 /* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string
