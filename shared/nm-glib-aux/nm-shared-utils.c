@@ -1062,7 +1062,7 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	}
 
 	errno = 0;
-	v = g_ascii_strtoll (str, (char **) &s, base);
+	v = nm_g_ascii_strtoll (str, (char **) &s, base);
 
 	if (errno != 0)
 		return fallback;
@@ -1098,7 +1098,7 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 	}
 
 	errno = 0;
-	v = g_ascii_strtoull (str, (char **) &s, base);
+	v = nm_g_ascii_strtoull (str, (char **) &s, base);
 
 	if (errno != 0)
 		return fallback;
@@ -1117,8 +1117,8 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 
 	if (   v != 0
 	    && str[0] == '-') {
-		/* I don't know why, but g_ascii_strtoull() accepts minus signs ("-2" gives 18446744073709551614).
-		 * For "-0" that is OK, but otherwise not. */
+		/* As documented, g_ascii_strtoull() accepts negative values, and returns their
+		 * absolute value. We don't. */
 		errno = ERANGE;
 		return fallback;
 	}

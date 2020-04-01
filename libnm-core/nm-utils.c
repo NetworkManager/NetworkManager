@@ -2298,7 +2298,7 @@ _nm_utils_parse_tc_handle (const char *str, GError **error)
 
 	nm_assert (str);
 
-	maj = g_ascii_strtoll (str, (char **) &sep, 0x10);
+	maj = nm_g_ascii_strtoll (str, (char **) &sep, 0x10);
 	if (sep == str)
 		goto fail;
 
@@ -2307,7 +2307,7 @@ _nm_utils_parse_tc_handle (const char *str, GError **error)
 	if (sep[0] == ':') {
 		const char *str2 = &sep[1];
 
-		min = g_ascii_strtoll (str2, (char **) &sep, 0x10);
+		min = nm_g_ascii_strtoll (str2, (char **) &sep, 0x10);
 		sep = nm_str_skip_leading_spaces (sep);
 		if (sep[0] != '\0')
 			goto fail;
