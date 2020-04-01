@@ -779,6 +779,55 @@ again:
 	return v;
 }
 
+/* See nm_g_ascii_strtoll() */
+guint64
+nm_g_ascii_strtoull (const char *nptr,
+                     char **endptr,
+                     guint base)
+{
+	int try_count = 2;
+	guint64 v;
+	const int errsv_orig = errno;
+	int errsv;
+
+	nm_assert (nptr);
+	nm_assert (base == 0u || (base >= 2u && base <= 36u));
+
+again:
+	errno = 0;
+	v = g_ascii_strtoull (nptr, endptr, base);
+	errsv = errno;
+
+	if (errsv == 0) {
+		if (errsv_orig != 0)
+			errno = errsv_orig;
+		return v;
+	}
+
+	if (   errsv == ERANGE
+	    && NM_IN_SET (v, G_MAXUINT64))
+		return v;
+
+	if (   errsv == EINVAL
+	    && v == 0
+	    && nptr
+	    && nptr[0] == '\0')
+		return v;
+
+	if (try_count-- > 0)
+		goto again;
+
+#if NM_MORE_ASSERTS
+	g_critical ("g_ascii_strtoull() for \"%s\" failed with errno=%d (%s) and v=%"G_GUINT64_FORMAT,
+	            nptr,
+	            errsv,
+	            nm_strerror_native (errsv),
+	            v);
+#endif
+
+	return v;
+}
+
 /* see nm_g_ascii_strtoll(). */
 double
 nm_g_ascii_strtod (const char *nptr,

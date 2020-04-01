@@ -566,6 +566,10 @@ gint64 nm_g_ascii_strtoll (const char *nptr,
                            char **endptr,
                            guint base);
 
+guint64 nm_g_ascii_strtoull (const char *nptr,
+                             char **endptr,
+                             guint base);
+
 double nm_g_ascii_strtod (const char *nptr,
                           char **endptr);
 
