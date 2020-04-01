@@ -221,7 +221,7 @@ convert_uuids_to_capabilities (const char *const*strv)
 				continue;
 
 			s_part1 = g_strndup (str, s - str);
-			switch (g_ascii_strtoull (s_part1, NULL, 16)) {
+			switch (_nm_utils_ascii_str_to_int64 (s_part1, 16, 0, G_MAXINT, -1)) {
 			case 0x1103:
 				capabilities |= NM_BT_CAPABILITY_DUN;
 				break;
