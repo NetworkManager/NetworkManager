@@ -560,7 +560,7 @@ make_connection_setting (const char *file,
 			char *endptr;
 			double d;
 
-			d = g_ascii_strtod (v, &endptr);
+			d = nm_g_ascii_strtod (v, &endptr);
 			endptr = nm_str_skip_leading_spaces (endptr);
 			if (   errno == 0
 			    && endptr[0] == '\0'

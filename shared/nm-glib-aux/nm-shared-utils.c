@@ -1134,26 +1134,10 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	}
 
 	errno = 0;
-	v = g_ascii_strtoll (str, (char **) &s, base);
+	v = nm_g_ascii_strtoll (str, (char **) &s, base);
 
-	if (errno != 0) {
-#if NM_MORE_ASSERTS
-		int errsv = errno;
-
-		/* the caller must not pass an invalid @base. Hence, we expect the only failure that
-		 * can happen here is ERANGE, because invalid @str is not signaled via an errno according
-		 * to documentation. */
-		if (   errsv != ERANGE
-		    || !NM_IN_SET (v, G_MININT64, G_MAXINT64)) {
-			g_error ("g_ascii_strtoll() for \"%s\" failed with errno=%d (%s) and v=%"G_GINT64_FORMAT,
-			         str,
-			         errsv,
-			         nm_strerror_native (errsv),
-			         v);
-		}
-#endif
+	if (errno != 0)
 		return fallback;
-	}
 
 	if (s[0] != '\0') {
 		s = nm_str_skip_leading_spaces (s);
@@ -1186,7 +1170,7 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 	}
 
 	errno = 0;
-	v = g_ascii_strtoull (str, (char **) &s, base);
+	v = nm_g_ascii_strtoull (str, (char **) &s, base);
 
 	if (errno != 0)
 		return fallback;
@@ -1205,8 +1189,8 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 
 	if (   v != 0
 	    && str[0] == '-') {
-		/* I don't know why, but g_ascii_strtoull() accepts minus signs ("-2" gives 18446744073709551614).
-		 * For "-0" that is OK, but otherwise not. */
+		/* As documented, g_ascii_strtoull() accepts negative values, and returns their
+		 * absolute value. We don't. */
 		errno = ERANGE;
 		return fallback;
 	}
