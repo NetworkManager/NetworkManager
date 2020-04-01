@@ -657,6 +657,10 @@ gboolean nm_utils_parse_inaddr_prefix (int addr_family,
                                        char **out_addr,
                                        int *out_prefix);
 
+gint64 nm_g_ascii_strtoll (const char *nptr,
+                           char **endptr,
+                           guint base);
+
 gint64  _nm_utils_ascii_str_to_int64  (const char *str, guint base, gint64  min, gint64  max, gint64  fallback);
 guint64 _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64 max, guint64 fallback);
 
