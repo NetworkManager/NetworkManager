@@ -780,6 +780,43 @@ again:
 	return v;
 }
 
+/* see nm_g_ascii_strtoll(). */
+double
+nm_g_ascii_strtod (const char *nptr,
+                   char **endptr)
+{
+	int try_count = 2;
+	double v;
+	int errsv;
+
+	nm_assert (nptr);
+
+again:
+	v = g_ascii_strtod (nptr, endptr);
+	errsv = errno;
+
+	if (errsv == 0)
+		return v;
+
+	if (errsv == ERANGE)
+		return v;
+
+	if (try_count-- > 0)
+		goto again;
+
+#if NM_MORE_ASSERTS
+	g_critical ("g_ascii_strtod() for \"%s\" failed with errno=%d (%s) and v=%f",
+	            nptr,
+	            errsv,
+	            nm_strerror_native (errsv),
+	            v);
+#endif
+
+	/* Not really much else to do. Return the parsed value and leave errno set
+	 * to the unexpected value. */
+	return v;
+}
+
 /* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string
