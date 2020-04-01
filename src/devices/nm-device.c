@@ -15928,7 +15928,7 @@ deactivate_ready (NMDevice *self, NMDeviceStateReason reason)
 }
 
 static void
-sriov_deactivate_cb (GError *error, gpointer user_data)
+sriov_reset_on_deactivate_cb (GError *error, gpointer user_data)
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;
@@ -15939,10 +15939,29 @@ sriov_deactivate_cb (GError *error, gpointer user_data)
 	nm_assert (priv->sriov_reset_pending > 0);
 	priv->sriov_reset_pending--;
 
-	if (nm_utils_error_is_cancelled_or_disposing (error))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
 	deactivate_ready (self, (NMDeviceStateReason) reason);
+}
+
+static void
+sriov_reset_on_failure_cb (GError *error, gpointer user_data)
+{
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (priv->sriov_reset_pending > 0);
+	priv->sriov_reset_pending--;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	if (priv->state == NM_DEVICE_STATE_FAILED) {
+		nm_device_queue_state (self,
+		                       NM_DEVICE_STATE_DISCONNECTED,
+		                       NM_DEVICE_STATE_REASON_NONE);
+	}
 }
 
 static void
@@ -16275,7 +16294,7 @@ _set_state_full (NMDevice *self,
 				sriov_op_queue (self,
 				                0,
 				                NM_TERNARY_TRUE,
-				                sriov_deactivate_cb,
+				                sriov_reset_on_deactivate_cb,
 				                nm_utils_user_data_pack (self, (gpointer) reason));
 			}
 		}
@@ -16327,6 +16346,16 @@ _set_state_full (NMDevice *self,
 		if (sett_conn && !nm_settings_connection_get_timestamp (sett_conn, NULL))
 			nm_settings_connection_update_timestamp (sett_conn, (guint64) 0);
 
+		if (   priv->ifindex > 0
+		    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+			priv->sriov_reset_pending++;
+			sriov_op_queue (self,
+			                0,
+			                NM_TERNARY_TRUE,
+			                sriov_reset_on_failure_cb,
+			                self);
+			break;
+		}
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.
