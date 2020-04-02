@@ -137,6 +137,8 @@ typedef struct _NmCli {
 
 extern NmCli nm_cli;
 
+extern const NmCli *const nm_cli_global_readline;
+
 /* Error quark for GError domain */
 #define NMCLI_ERROR (nmcli_error_quark ())
 GQuark nmcli_error_quark (void);

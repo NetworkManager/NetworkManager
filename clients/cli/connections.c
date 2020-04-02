@@ -5827,7 +5827,7 @@ gen_vpn_uuids (const char *text, int state)
 	const char **uuids;
 	char *ret;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (nm_cli_global_readline->client);
 	if (connections->len < 1)
 		return NULL;
 
@@ -5844,7 +5844,7 @@ gen_vpn_ids (const char *text, int state)
 	const char **ids;
 	char *ret;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (nm_cli_global_readline->client);
 	if (connections->len < 1)
 		return NULL;
 
@@ -9253,7 +9253,7 @@ gen_func_connection_names (const char *text, int state)
 	const char **connection_names;
 	char *ret;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (nm_cli_global_readline->client);
 	if (connections->len == 0)
 		return NULL;
 
@@ -9276,10 +9276,10 @@ gen_func_active_connection_names (const char *text, int state)
 	const char **connections;
 	char *ret;
 
-	if (!nm_cli.client)
+	if (!nm_cli_global_readline->client)
 		return NULL;
 
-	acs = nm_client_get_active_connections (nm_cli.client);
+	acs = nm_client_get_active_connections (nm_cli_global_readline->client);
 	if (!acs || acs->len == 0)
 		return NULL;
 

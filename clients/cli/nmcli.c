@@ -101,6 +101,8 @@ NmCli nm_cli = {
 	.editor_save_confirmation = TRUE,
 };
 
+const NmCli *const nm_cli_global_readline = &nm_cli;
+
 /*****************************************************************************/
 
 typedef struct {
