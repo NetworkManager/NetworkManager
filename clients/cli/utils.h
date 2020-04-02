@@ -51,6 +51,7 @@ GArray *parse_output_fields (const char *fields_str,
 NmcOutputField *nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags);
 void nmc_empty_output_fields (NmcOutputData *output_data);
 void print_required_fields (const NmcConfig *nmc_config,
+                            NmcPagerData *pager_data,
                             NmcOfFlags of_flags,
                             const GArray *indices,
                             const char *header_name,
@@ -58,6 +59,7 @@ void print_required_fields (const NmcConfig *nmc_config,
                             const NmcOutputField *field_values);
 void print_data_prepare_width (GPtrArray *output_data);
 void print_data (const NmcConfig *nmc_config,
+                 NmcPagerData *pager_data,
                  const GArray *indices,
                  const char *header_name,
                  int indent,

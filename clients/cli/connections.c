@@ -1388,9 +1388,13 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
 			row[i].info = (const NMMetaAbstractInfo *) &nm_meta_setting_infos_editor[i];
 
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
-		                       out_indices, header_name,
-		                       0, row);
+		print_required_fields (&nmc->nmc_config,
+		                       &nmc->pager_data,
+		                       NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices,
+		                       header_name,
+		                       0,
+		                       row);
 	}
 
 	/* Loop through the required settings and print them. */
@@ -1473,9 +1477,13 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		for (i = 0; nmc_fields_con_active_details_groups[i]; i++)
 			row[i].info = (const NMMetaAbstractInfo *) nmc_fields_con_active_details_groups[i];
 
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
-		                       out_indices, header_name,
-		                       0, row);
+		print_required_fields (&nmc->nmc_config,
+		                       &nmc->pager_data,
+		                       NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices,
+		                       header_name,
+		                       0,
+		                       row);
 	}
 
 	/* Loop through the groups and print them. */
