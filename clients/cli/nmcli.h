@@ -101,6 +101,10 @@ typedef struct _NmcConfig {
 	const char *palette[_NM_META_COLOR_NUM];          /* Color palette */
 } NmcConfig;
 
+typedef struct {
+	pid_t pid;
+} NmcPagerData;
+
 typedef struct _NmcOutputData {
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
 } NmcOutputData;
@@ -111,7 +115,8 @@ typedef struct _NmCli {
 
 	NMCResultCode return_value;                       /* Return code of nmcli */
 	GString *return_text;                             /* Reason text */
-	pid_t pager_pid;                                  /* PID of a pager, if one was spawned */
+
+	NmcPagerData pager_data;
 
 	int timeout;                                      /* Operation timeout */
 
@@ -150,7 +155,8 @@ void     nmc_clear_sigint (void);
 void     nmc_set_sigquit_internal (void);
 void     nmc_exit (void);
 
-void nm_cli_spawn_pager (NmCli *nmc);
+void nm_cli_spawn_pager (const NmcConfig *nmc_config,
+                         NmcPagerData *pager_data);
 
 void nmc_empty_output_fields (NmcOutputData *output_data);
 

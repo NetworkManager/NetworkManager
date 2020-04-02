@@ -1587,7 +1587,7 @@ print_required_fields (const NmcConfig *nmc_config,
 	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
 	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
 
-	nm_cli_spawn_pager (&nm_cli);
+	nm_cli_spawn_pager (nmc_config, &nm_cli.pager_data);
 
 	/* --- Main header --- */
 	if (   nmc_config->print_output == NMC_PRINT_PRETTY

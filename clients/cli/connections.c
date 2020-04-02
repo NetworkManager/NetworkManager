@@ -2093,7 +2093,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		nm_cli_spawn_pager (nmc);
+		nm_cli_spawn_pager (&nmc->nmc_config, &nmc->pager_data);
 
 		items = con_show_get_items (nmc, active_only, show_active_fields, order);
 		g_ptr_array_add (items, NULL);
