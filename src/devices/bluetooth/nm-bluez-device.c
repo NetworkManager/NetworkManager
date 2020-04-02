@@ -682,7 +682,7 @@ convert_uuids_to_capabilities (const char **strings)
 
 		parts = g_strsplit (*iter, "-", -1);
 		if (parts && parts[0]) {
-			switch (g_ascii_strtoull (parts[0], NULL, 16)) {
+			switch (_nm_utils_ascii_str_to_int64 (parts[0], 16, 0, G_MAXINT, -1)) {
 			case 0x1103:
 				capabilities |= NM_BT_CAPABILITY_DUN;
 				break;

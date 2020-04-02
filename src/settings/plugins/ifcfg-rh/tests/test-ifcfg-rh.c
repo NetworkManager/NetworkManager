@@ -1732,6 +1732,7 @@ static void
 test_read_wired_autoip (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 
@@ -1745,6 +1746,9 @@ test_read_wired_autoip (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
 	g_assert (!nm_setting_ip_config_get_may_fail (s_ip4));
 	g_assert (nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, 2600);
 }
 
 static void
