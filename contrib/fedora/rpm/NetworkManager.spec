@@ -29,10 +29,10 @@
 
 %global _hardened_build 1
 
-%if "x%{?snapshot}" != x
+%if "x%{?snapshot}" != "x"
 %global snapshot_dot .%{snapshot}
 %endif
-%if "x%{?git_sha}" != x
+%if "x%{?git_sha}" != "x"
 %global git_sha_dot .%{git_sha}
 %endif
 
