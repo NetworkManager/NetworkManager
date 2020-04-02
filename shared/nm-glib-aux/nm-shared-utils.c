@@ -955,6 +955,158 @@ nm_utils_ipaddr_is_normalized (int addr_family,
 
 /*****************************************************************************/
 
+/**
+ * nm_g_ascii_strtoll()
+ * @nptr: the string to parse
+ * @endptr: the pointer on the first invalid chars
+ * @base: the base.
+ *
+ * This wraps g_ascii_strtoll() and should in almost all cases behave identical
+ * to it.
+ *
+ * However, it seems there are situations where g_ascii_strtoll() might set
+ * errno to some unexpected value EAGAIN. Possibly this is related to creating
+ * the C locale during
+ *
+ *   #ifdef USE_XLOCALE
+ *   return strtoll_l (nptr, endptr, base, get_C_locale ());
+ *
+ * This wrapper tries to workaround that condition.
+ */
+gint64
+nm_g_ascii_strtoll (const char *nptr,
+                    char **endptr,
+                    guint base)
+{
+	int try_count = 2;
+	gint64 v;
+	const int errsv_orig = errno;
+	int errsv;
+
+	nm_assert (nptr);
+	nm_assert (base == 0u || (base >= 2u && base <= 36u));
+
+again:
+	errno = 0;
+	v = g_ascii_strtoll (nptr, endptr, base);
+	errsv = errno;
+
+	if (errsv == 0) {
+		if (errsv_orig != 0)
+			errno = errsv_orig;
+		return v;
+	}
+
+	if (   errsv == ERANGE
+	    && NM_IN_SET (v, G_MININT64, G_MAXINT64))
+		return v;
+
+	if (   errsv == EINVAL
+	    && v == 0
+	    && nptr
+	    && nptr[0] == '\0')
+		return v;
+
+	if (try_count-- > 0)
+		goto again;
+
+#if NM_MORE_ASSERTS
+	g_critical ("g_ascii_strtoll() for \"%s\" failed with errno=%d (%s) and v=%"G_GINT64_FORMAT,
+	            nptr,
+	            errsv,
+	            nm_strerror_native (errsv),
+	            v);
+#endif
+
+	return v;
+}
+
+/* See nm_g_ascii_strtoll() */
+guint64
+nm_g_ascii_strtoull (const char *nptr,
+                     char **endptr,
+                     guint base)
+{
+	int try_count = 2;
+	guint64 v;
+	const int errsv_orig = errno;
+	int errsv;
+
+	nm_assert (nptr);
+	nm_assert (base == 0u || (base >= 2u && base <= 36u));
+
+again:
+	errno = 0;
+	v = g_ascii_strtoull (nptr, endptr, base);
+	errsv = errno;
+
+	if (errsv == 0) {
+		if (errsv_orig != 0)
+			errno = errsv_orig;
+		return v;
+	}
+
+	if (   errsv == ERANGE
+	    && NM_IN_SET (v, G_MAXUINT64))
+		return v;
+
+	if (   errsv == EINVAL
+	    && v == 0
+	    && nptr
+	    && nptr[0] == '\0')
+		return v;
+
+	if (try_count-- > 0)
+		goto again;
+
+#if NM_MORE_ASSERTS
+	g_critical ("g_ascii_strtoull() for \"%s\" failed with errno=%d (%s) and v=%"G_GUINT64_FORMAT,
+	            nptr,
+	            errsv,
+	            nm_strerror_native (errsv),
+	            v);
+#endif
+
+	return v;
+}
+
+/* see nm_g_ascii_strtoll(). */
+double
+nm_g_ascii_strtod (const char *nptr,
+                   char **endptr)
+{
+	int try_count = 2;
+	double v;
+	int errsv;
+
+	nm_assert (nptr);
+
+again:
+	v = g_ascii_strtod (nptr, endptr);
+	errsv = errno;
+
+	if (errsv == 0)
+		return v;
+
+	if (errsv == ERANGE)
+		return v;
+
+	if (try_count-- > 0)
+		goto again;
+
+#if NM_MORE_ASSERTS
+	g_critical ("g_ascii_strtod() for \"%s\" failed with errno=%d (%s) and v=%f",
+	            nptr,
+	            errsv,
+	            nm_strerror_native (errsv),
+	            v);
+#endif
+
+	/* Not really much else to do. Return the parsed value and leave errno set
+	 * to the unexpected value. */
+	return v;
+}
+
 /* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string
@@ -982,26 +1134,10 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	}
 
 	errno = 0;
-	v = g_ascii_strtoll (str, (char **) &s, base);
+	v = nm_g_ascii_strtoll (str, (char **) &s, base);
 
-	if (errno != 0) {
-#if NM_MORE_ASSERTS
-		int errsv = errno;
-
-		/* the caller must not pass an invalid @base. Hence, we expect the only failure that
-		 * can happen here is ERANGE, because invalid @str is not signaled via an errno according
-		 * to documentation. */
-		if (   errsv != ERANGE
-		    || !NM_IN_SET (v, G_MININT64, G_MAXINT64)) {
-			g_error ("g_ascii_strtoll() for \"%s\" failed with errno=%d (%s) and v=%"G_GINT64_FORMAT,
-			         str,
-			         errsv,
-			         nm_strerror_native (errsv),
-			         v);
-		}
-#endif
+	if (errno != 0)
 		return fallback;
-	}
 
 	if (s[0] != '\0') {
 		s = nm_str_skip_leading_spaces (s);
@@ -1034,7 +1170,7 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 	}
 
 	errno = 0;
-	v = g_ascii_strtoull (str, (char **) &s, base);
+	v = nm_g_ascii_strtoull (str, (char **) &s, base);
 
 	if (errno != 0)
 		return fallback;
@@ -1053,8 +1189,8 @@ _nm_utils_ascii_str_to_uint64 (const char *str, guint base, guint64 min, guint64
 
 	if (   v != 0
 	    && str[0] == '-') {
-		/* I don't know why, but g_ascii_strtoull() accepts minus signs ("-2" gives 18446744073709551614).
-		 * For "-0" that is OK, but otherwise not. */
+		/* As documented, g_ascii_strtoull() accepts negative values, and returns their
+		 * absolute value. We don't. */
 		errno = ERANGE;
 		return fallback;
 	}
