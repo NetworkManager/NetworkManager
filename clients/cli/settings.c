@@ -456,8 +456,6 @@ const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment) {
 	.get_nm_connections = _env_get_nm_connections,
 });
 
-const NmCli *const nmc_meta_environment_arg = &nm_cli;
-
 static char *
 get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType get_type, gboolean show_secrets, GError **error)
 {

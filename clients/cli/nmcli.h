@@ -140,8 +140,6 @@ typedef struct _NmCli {
 	char *palette_buffer;                             /* Buffer with sequences for terminal-colors.d(5)-based coloring. */
 } NmCli;
 
-extern NmCli nm_cli;
-
 extern const NmCli *const nm_cli_global_readline;
 
 /* Error quark for GError domain */

@@ -72,7 +72,7 @@
 	[NM_META_COLOR_ENABLED]                  = "32", \
 	[NM_META_COLOR_DISABLED]                 = "31", \
 
-NmCli nm_cli = {
+static NmCli nm_cli = {
 	.client = NULL,
 
 	.return_value = NMC_RESULT_SUCCESS,
@@ -102,6 +102,7 @@ NmCli nm_cli = {
 };
 
 const NmCli *const nm_cli_global_readline = &nm_cli;
+const NmCli *const nmc_meta_environment_arg = &nm_cli;
 
 /*****************************************************************************/
 
