@@ -35,8 +35,8 @@ stages:
 
 .debian_install: &debian_install
   before_script:
-    - date '+%Y%m%d-%H%M%S'; apt-get update
-    - date '+%Y%m%d-%H%M%S'; NM_INSTALL="apt-get -qq install -y" ./contrib/debian/REQUIRED_PACKAGES
+    - date '+%Y%m%d-%H%M%S'; DEBIAN_FRONTEND=noninteractive apt-get update
+    - date '+%Y%m%d-%H%M%S'; DEBIAN_FRONTEND=noninteractive NM_INSTALL="apt-get -qq install -y" ./contrib/debian/REQUIRED_PACKAGES
     - date '+%Y%m%d-%H%M%S'; dbus-uuidgen --ensure
     - date '+%Y%m%d-%H%M%S'; sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen ; true
     - date '+%Y%m%d-%H%M%S'; locale-gen pl_PL.UTF-8
