@@ -456,7 +456,7 @@ const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment) {
 	.get_nm_connections = _env_get_nm_connections,
 });
 
-NmCli *const nmc_meta_environment_arg = &nm_cli;
+const NmCli *const nmc_meta_environment_arg = &nm_cli;
 
 static char *
 get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType get_type, gboolean show_secrets, GError **error)
@@ -475,7 +475,7 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 
 			value = property_info->property_type->get_fcn (property_info,
 			                                               nmc_meta_environment,
-			                                               nmc_meta_environment_arg,
+			                                               (gpointer) nmc_meta_environment_arg,
 			                                               setting,
 			                                               get_type,
 			                                               show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0,
@@ -568,7 +568,7 @@ nmc_setting_set_property (NMClient *client,
 	g_object_freeze_notify (G_OBJECT (setting));
 	success = property_info->property_type->set_fcn (property_info,
 	                                                 nmc_meta_environment,
-	                                                 nmc_meta_environment_arg,
+	                                                 (gpointer) nmc_meta_environment_arg,
 	                                                 setting,
 	                                                 modifier,
 	                                                 value,

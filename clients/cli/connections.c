@@ -3842,7 +3842,7 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 
 	values = nm_meta_abstract_info_complete (abstract_info,
 	                                         nmc_meta_environment,
-	                                         nmc_meta_environment_arg,
+	                                         (gpointer) nmc_meta_environment_arg,
 	                                         &ctx,
 	                                         text,
 	                                         NULL,
@@ -4642,7 +4642,7 @@ complete_option (NmCli *nmc, const NMMetaAbstractInfo *abstract_info, const char
 
 	values = nm_meta_abstract_info_complete (abstract_info,
 	                                         nmc_meta_environment,
-	                                         nmc_meta_environment_arg,
+	                                         (gpointer) nmc_meta_environment_arg,
 	                                         &ctx,
 	                                         prefix,
 	                                         &complete_filename,

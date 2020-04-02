@@ -66,7 +66,7 @@ void print_data (const NmcConfig *nmc_config,
 /*****************************************************************************/
 
 extern const NMMetaEnvironment *const nmc_meta_environment;
-extern NmCli *const nmc_meta_environment_arg;
+extern const NmCli *const nmc_meta_environment_arg;
 
 typedef enum {
 
