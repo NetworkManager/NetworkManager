@@ -637,7 +637,7 @@ parse_vlan (GHashTable *connections, char *argument)
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_object_set (s_vlan,
 	              NM_SETTING_VLAN_PARENT, phy,
-	              NM_SETTING_VLAN_ID, g_ascii_strtoull (vlanid, NULL, 10),
+	              NM_SETTING_VLAN_ID, (guint) _nm_utils_ascii_str_to_int64 (vlanid, 10, 0, G_MAXUINT, G_MAXUINT),
 	              NULL);
 
 	if (argument && *argument)

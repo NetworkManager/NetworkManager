@@ -530,16 +530,18 @@ make_connection_setting (const char *file,
 	g_object_set (s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (int) vint64, NULL);
 
 	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "DEVTIMEOUT", &value);
+	v = svGetValue (ifcfg, "DEVTIMEOUT", &value);
 	if (v) {
+		v = nm_str_skip_leading_spaces (v);
 		vint64 = _nm_utils_ascii_str_to_int64 (v, 10, 0, ((gint64) G_MAXINT32) / 1000, -1);
 		if (vint64 != -1)
 			vint64 *= 1000;
-		else {
+		else if (v[0] != '\0') {
 			char *endptr;
 			double d;
 
-			d = g_ascii_strtod (v, &endptr);
+			d = nm_g_ascii_strtod (v, &endptr);
+			endptr = nm_str_skip_leading_spaces (endptr);
 			if (   errno == 0
 			    && endptr[0] == '\0'
 			    && d >= 0.0) {
