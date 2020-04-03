@@ -64,6 +64,7 @@ typedef struct {
 	GHashTable *ports;              /* port uuid => OpenvswitchPort */
 	GHashTable *bridges;            /* bridge uuid => OpenvswitchBridge */
 	char *db_uuid;
+	guint num_failures;
 } NMOvsdbPrivate;
 
 struct _NMOvsdb {
@@ -87,7 +88,7 @@ NM_DEFINE_SINGLETON_GETTER (NMOvsdb, nm_ovsdb_get, NM_TYPE_OVSDB);
 /*****************************************************************************/
 
 static void ovsdb_try_connect (NMOvsdb *self);
-static void ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing);
+static void ovsdb_disconnect (NMOvsdb *self, gboolean retry, gboolean is_disposing);
 static void ovsdb_read (NMOvsdb *self);
 static void ovsdb_write (NMOvsdb *self);
 static void ovsdb_next_command (NMOvsdb *self);
@@ -126,6 +127,8 @@ typedef struct {
 		};
 	};
 } OvsdbMethodCall;
+
+#define OVSDB_MAX_FAILURES    3
 
 static void
 _call_trace (const char *comment, OvsdbMethodCall *call, json_t *msg)
@@ -183,7 +186,8 @@ ovsdb_call_method (NMOvsdb *self, OvsdbCommand command,
                    const char *ifname,
                    NMConnection *bridge, NMConnection *port, NMConnection *interface,
                    NMDevice *bridge_device, NMDevice *interface_device,
-                   guint32 mtu, OvsdbMethodCallback callback, gpointer user_data)
+                   guint32 mtu, OvsdbMethodCallback callback, gpointer user_data,
+                   gboolean add_first)
 {
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 	OvsdbMethodCall *call;
@@ -191,8 +195,13 @@ ovsdb_call_method (NMOvsdb *self, OvsdbCommand command,
 	/* Ensure we're not unsynchronized before we queue the method call. */
 	ovsdb_try_connect (self);
 
-	g_array_set_size (priv->calls, priv->calls->len + 1);
-	call = &g_array_index (priv->calls, OvsdbMethodCall, priv->calls->len - 1);
+	if (add_first) {
+		g_array_prepend_val (priv->calls, (OvsdbMethodCall) {});
+		call = &g_array_index (priv->calls, OvsdbMethodCall, 0);
+	} else {
+		g_array_set_size (priv->calls, priv->calls->len + 1);
+		call = &g_array_index (priv->calls, OvsdbMethodCall, priv->calls->len - 1);
+	}
 	call->id = COMMAND_PENDING;
 	call->command = command;
 	call->callback = callback;
@@ -1196,7 +1205,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 	                    "result", &result,
 	                    "error", &error) == -1) {
 		_LOGW ("couldn't grok the message: %s", json_error.text);
-		ovsdb_disconnect (self, FALSE);
+		ovsdb_disconnect (self, FALSE, FALSE);
 		return;
 	}
 
@@ -1207,7 +1216,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		/* It's a method call! */
 		if (!params) {
 			_LOGW ("a method call with no params: '%s'", method);
-			ovsdb_disconnect (self, FALSE);
+			ovsdb_disconnect (self, FALSE, FALSE);
 			return;
 		}
 
@@ -1227,13 +1236,13 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		/* This is a response to a method call. */
 		if (!priv->calls->len) {
 			_LOGE ("there are no queued calls expecting response %" G_GUINT64_FORMAT, id);
-			ovsdb_disconnect (self, FALSE);
+			ovsdb_disconnect (self, FALSE, FALSE);
 			return;
 		}
 		call = &g_array_index (priv->calls, OvsdbMethodCall, 0);
 		if (call->id != id) {
 			_LOGE ("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT, call->id, id);
-			ovsdb_disconnect (self, FALSE);
+			ovsdb_disconnect (self, FALSE, FALSE);
 			return;
 		}
 		/* Cool, we found a corresponding call. Finish it. */
@@ -1251,6 +1260,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		user_data = call->user_data;
 		g_array_remove_index (priv->calls, 0);
 		callback (self, result, local, user_data);
+		priv->num_failures = 0;
 
 		/* Don't progress further commands in case the callback hit an error
 		 * and disconnected us. */
@@ -1309,9 +1319,11 @@ ovsdb_read_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 
 	size = g_input_stream_read_finish (stream, res, &error);
 	if (size == -1) {
+		/* ovsdb-server was possibly restarted */
 		_LOGW ("short read from ovsdb: %s", error->message);
+		priv->num_failures++;
 		g_clear_error (&error);
-		ovsdb_disconnect (self, FALSE);
+		ovsdb_disconnect (self, priv->num_failures <= OVSDB_MAX_FAILURES, FALSE);
 		return;
 	}
 
@@ -1357,9 +1369,11 @@ ovsdb_write_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 
 	size = g_output_stream_write_finish (stream, res, &error);
 	if (size == -1) {
+		/* ovsdb-server was possibly restarted */
 		_LOGW ("short write to ovsdb: %s", error->message);
+		priv->num_failures++;
 		g_clear_error (&error);
-		ovsdb_disconnect (self, FALSE);
+		ovsdb_disconnect (self, priv->num_failures <= OVSDB_MAX_FAILURES, FALSE);
 		return;
 	}
 
@@ -1402,7 +1416,7 @@ ovsdb_write (NMOvsdb *self)
  * puts us back in sync.
  */
 static void
-ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
+ovsdb_disconnect (NMOvsdb *self, gboolean retry, gboolean is_disposing)
 {
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 	OvsdbMethodCall *call;
@@ -1410,18 +1424,26 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	gpointer user_data;
 	gs_free_error GError *error = NULL;
 
+	nm_assert (!retry || !is_disposing);
+
 	if (!priv->client)
 		return;
 
-	_LOGD ("disconnecting from ovsdb");
-	nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
+	_LOGD ("disconnecting from ovsdb, retry %d", retry);
 
-	while (priv->calls->len) {
-		call = &g_array_index (priv->calls, OvsdbMethodCall, priv->calls->len - 1);
-		callback = call->callback;
-		user_data = call->user_data;
-		g_array_remove_index (priv->calls, priv->calls->len - 1);
-		callback (self, NULL, error, user_data);
+	if (retry) {
+		if (priv->calls->len != 0)
+			g_array_index (priv->calls, OvsdbMethodCall, 0).id = COMMAND_PENDING;
+	} else {
+		nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
+
+		while (priv->calls->len) {
+			call = &g_array_index (priv->calls, OvsdbMethodCall, priv->calls->len - 1);
+			callback = call->callback;
+			user_data = call->user_data;
+			g_array_remove_index (priv->calls, priv->calls->len - 1);
+			callback (self, NULL, error, user_data);
+		}
 	}
 
 	priv->bufp = 0;
@@ -1431,6 +1453,9 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	g_clear_object (&priv->conn);
 	nm_clear_g_free (&priv->db_uuid);
 	nm_clear_g_cancellable (&priv->cancellable);
+
+	if (retry)
+		ovsdb_try_connect (self);
 }
 
 static void
@@ -1439,7 +1464,7 @@ _monitor_bridges_cb (NMOvsdb *self, json_t *result, GError *error, gpointer user
 	if (error) {
 		if (!nm_utils_error_is_cancelled_or_disposing (error)) {
 			_LOGI ("%s", error->message);
-			ovsdb_disconnect (self, FALSE);
+			ovsdb_disconnect (self, FALSE, FALSE);
 		}
 		return;
 	}
@@ -1463,7 +1488,7 @@ _client_connect_cb (GObject *source_object, GAsyncResult *res, gpointer user_dat
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			_LOGI ("%s", error->message);
 
-		ovsdb_disconnect (self, FALSE);
+		ovsdb_disconnect (self, FALSE, FALSE);
 		g_clear_error (&error);
 		return;
 	}
@@ -1504,7 +1529,8 @@ ovsdb_try_connect (NMOvsdb *self)
 	/* Queue a monitor call before any other command, ensuring that we have an up
 	 * to date view of existing bridged that we need for add and remove ops. */
 	ovsdb_call_method (self, OVSDB_MONITOR, NULL,
-	                   NULL, NULL, NULL, NULL, NULL, 0, _monitor_bridges_cb, NULL);
+	                   NULL, NULL, NULL, NULL, NULL, 0,
+	                   _monitor_bridges_cb, NULL, TRUE);
 }
 
 /*****************************************************************************/
@@ -1565,7 +1591,8 @@ nm_ovsdb_add_interface (NMOvsdb *self,
 	                   bridge_device, interface_device,
 	                   0,
 	                   _transact_cb,
-	                   ovsdb_call_new (callback, user_data));
+	                   ovsdb_call_new (callback, user_data),
+	                   FALSE);
 }
 
 void
@@ -1575,7 +1602,8 @@ nm_ovsdb_del_interface (NMOvsdb *self, const char *ifname,
 	ovsdb_call_method (self, OVSDB_DEL_INTERFACE, ifname,
 	                   NULL, NULL, NULL, NULL, NULL, 0,
 	                   _transact_cb,
-	                   ovsdb_call_new (callback, user_data));
+	                   ovsdb_call_new (callback, user_data),
+	                   FALSE);
 }
 
 void nm_ovsdb_set_interface_mtu (NMOvsdb *self, const char *ifname, guint32 mtu,
@@ -1584,7 +1612,8 @@ void nm_ovsdb_set_interface_mtu (NMOvsdb *self, const char *ifname, guint32 mtu,
 	ovsdb_call_method (self, OVSDB_SET_INTERFACE_MTU, ifname,
 	                   NULL, NULL, NULL, NULL, NULL, mtu,
 	                   _transact_cb,
-	                   ovsdb_call_new (callback, user_data));
+	                   ovsdb_call_new (callback, user_data),
+	                   FALSE);
 }
 
 /*****************************************************************************/
@@ -1666,7 +1695,7 @@ dispose (GObject *object)
 	NMOvsdb *self = NM_OVSDB (object);
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 
-	ovsdb_disconnect (self, TRUE);
+	ovsdb_disconnect (self, FALSE, TRUE);
 
 	if (priv->input) {
 		g_string_free (priv->input, TRUE);
