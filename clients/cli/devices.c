@@ -2922,7 +2922,6 @@ wifi_list_finish (WifiListData *wifi_list_data,
 	guint i;
 
 	if (   !force_finished
-	    && scan_info->rescan_cutoff_msec != G_MAXINT64
 	    && scan_info->rescan_cutoff_msec > _device_wifi_get_last_scan (wifi_list_data->wifi)) {
 		/* wait longer... */
 		return;
@@ -3115,7 +3114,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	else if (nm_streq (rescan, "no"))
 		rescan_cutoff_msec = G_MININT64;
 	else if (nm_streq (rescan, "yes"))
-		rescan_cutoff_msec = G_MAXINT64;
+		rescan_cutoff_msec = nm_utils_get_timestamp_msec ();
 	else {
 		g_string_printf (nmc->return_text, _("Error: invalid rescan argument: '%s' not among [auto, no, yes]"), rescan);
 		return NMC_RESULT_ERROR_USER_INPUT;

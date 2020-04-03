@@ -24,7 +24,6 @@ static const guint8 *volatile global_seed = NULL;
 static const guint8 *
 _get_hash_key_init (void)
 {
-	static gsize g_lock;
 	/* the returned hash is aligned to guin64, hence, it is safe
 	 * to use it as guint* or guint64* pointer. */
 	static union {
@@ -34,50 +33,49 @@ _get_hash_key_init (void)
 		guint64 _align_as_uint64;
 	} g_arr;
 	const guint8 *g;
-	union {
-		guint8 v8[HASH_KEY_SIZE];
-		guint vuint;
-	} t_arr;
 
 again:
 	g = g_atomic_pointer_get (&global_seed);
-	if (G_LIKELY (g != NULL)) {
-		nm_assert (g == g_arr.v8);
-		return g;
-	}
-
-	{
-		CSipHash siph_state;
+	if (!G_UNLIKELY (g)) {
+		static gsize g_lock;
 		uint64_t h;
-
-		/* initialize a random key in t_arr. */
+		union {
+			guint vuint;
+			guint8 v8[HASH_KEY_SIZE];
+			guint8 _extra_entropy[3 * HASH_KEY_SIZE];
+		} t_arr;
 
 		nm_utils_random_bytes (&t_arr, sizeof (t_arr));
 
-		/* use siphash() of the key-size, to mangle the first guint. Otherwise,
-		 * the first guint has only the entropy that nm_utils_random_bytes()
-		 * generated for the first 4 bytes and relies on a good random generator.
+		/* We only initialize one random hash key. So we can spend some effort
+		 * of getting this right. For one, we collect more random bytes than
+		 * necessary.
 		 *
-		 * The first int is especially interesting for nm_hash_static() below, and we
-		 * want to have it all the entropy of t_arr. */
-		c_siphash_init (&siph_state, t_arr.v8);
-		c_siphash_append (&siph_state, (const guint8 *) &t_arr, sizeof (t_arr));
-		h = c_siphash_finalize (&siph_state);
-		if (sizeof (guint) < sizeof (h))
-			t_arr.vuint = t_arr.vuint ^ ((guint) (h & 0xFFFFFFFFu)) ^ ((guint) (h >> 32));
+		 * Then, the first guint of the seed should have all the entropy that we could
+		 * obtain in sizeof(t_arr). For that, siphash(t_arr) and xor the first guint
+		 * with hash.
+		 * The first guint is especially interesting for nm_hash_static() below that
+		 * doesn't use siphash itself. */
+		h = c_siphash_hash (t_arr.v8,
+		                    (const guint8 *) &t_arr,
+		                    sizeof (t_arr));
+		if (sizeof (h) > sizeof (guint))
+			t_arr.vuint = t_arr.vuint ^ ((guint) (h & G_MAXUINT)) ^ ((guint) (h >> 32));
 		else
-			t_arr.vuint = t_arr.vuint ^ ((guint) (h & 0xFFFFFFFFu));
+			t_arr.vuint = t_arr.vuint ^ ((guint) (h & G_MAXUINT));
+
+		if (!g_once_init_enter (&g_lock)) {
+			/* lost a race. The random key is already initialized. */
+			goto again;
+		}
+
+		memcpy (g_arr.v8, t_arr.v8, HASH_KEY_SIZE);
+		g = g_arr.v8;
+		g_atomic_pointer_set (&global_seed, g);
+		g_once_init_leave (&g_lock, 1);
 	}
 
-	if (!g_once_init_enter (&g_lock)) {
-		/* lost a race. The random key is already initialized. */
-		goto again;
-	}
-
-	memcpy (g_arr.v8, t_arr.v8, HASH_KEY_SIZE);
-	g = g_arr.v8;
-	g_atomic_pointer_set (&global_seed, g);
-	g_once_init_leave (&g_lock, 1);
+	nm_assert (g == g_arr.v8);
 	return g;
 }
 
@@ -94,18 +92,24 @@ again:
 guint
 nm_hash_static (guint static_seed)
 {
-	/* note that we only xor the static_seed with the key.
-	 * We don't use siphash, which would mix the bits better.
-	 * Note that this doesn't matter, because static_seed is not
-	 * supposed to be a value that you are hashing (for that, use
-	 * full siphash).
-	 * Instead, different callers may set a different static_seed
-	 * so that nm_hash_str(NULL) != nm_hash_ptr(NULL).
+	/* Note that we only xor the static_seed with the first guint of the key.
 	 *
-	 * Also, ensure that we don't return zero.
+	 * We don't use siphash, which would mix the bits better with _get_hash_key().
+	 * Note that nm_hash_static() isn't used to hash the static_seed. Instead, it
+	 * is used to get a unique hash value in a static context. That means, every
+	 * caller is responsible to choose a static_seed that is sufficiently
+	 * distinct from all other callers. In other words, static_seed should be a
+	 * unique constant with good entropy.
+	 *
+	 * Note that _get_hash_key_init() already xored the first guint of the
+	 * key with the siphash of the entire static key. That means, even if
+	 * we got bad randomness for the first guint, the first guint is also
+	 * mixed with the randomness of the entire random key.
+	 *
+	 * Also, ensure that we don't return zero (like for nm_hash_complete()).
 	 */
-	return ((*((const guint *) _get_hash_key ())) ^ static_seed)
-	       ?: static_seed ?: 3679500967u;
+	return    ((*((const guint *) _get_hash_key ())) ^ static_seed)
+	       ?: 3679500967u;
 }
 
 void
@@ -256,4 +260,26 @@ nm_ppdirect_equal (gconstpointer a, gconstpointer b)
 		return FALSE;
 
 	return **s1 == **s2;
+}
+
+/*****************************************************************************/
+
+guint
+nm_pgbytes_hash (gconstpointer p)
+{
+	GBytes *const*ptr = p;
+	gconstpointer arr;
+	gsize len;
+
+	arr = g_bytes_get_data (*ptr, &len);
+	return nm_hash_mem (1470631313u, arr, len);
+}
+
+gboolean
+nm_pgbytes_equal (gconstpointer a, gconstpointer b)
+{
+	GBytes *const*ptr_a = a;
+	GBytes *const*ptr_b = b;
+
+	return g_bytes_equal (*ptr_a, *ptr_b);
 }

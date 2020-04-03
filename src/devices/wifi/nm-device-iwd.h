@@ -25,8 +25,6 @@
 #define NM_DEVICE_IWD_SCANNING            NM_DEVICE_WIFI_SCANNING
 #define NM_DEVICE_IWD_LAST_SCAN           NM_DEVICE_WIFI_LAST_SCAN
 
-#define NM_DEVICE_IWD_SCANNING_PROHIBITED  NM_DEVICE_WIFI_SCANNING_PROHIBITED
-
 typedef struct _NMDeviceIwd NMDeviceIwd;
 typedef struct _NMDeviceIwdClass NMDeviceIwdClass;
 

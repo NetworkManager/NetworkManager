@@ -88,15 +88,15 @@ nm_hash_complete (NMHashState *state)
 	/* we don't ever want to return a zero hash.
 	 *
 	 * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
-	return (((guint) (h >> 32)) ^ ((guint) h)) ?: 1396707757u;
+	return    (((guint) (h >> 32)) ^ ((guint) h))
+	       ?: 1396707757u;
 }
 
 static inline void
 nm_hash_update (NMHashState *state, const void *ptr, gsize n)
 {
 	nm_assert (state);
-	nm_assert (ptr);
-	nm_assert (n > 0);
+	nm_assert (n == 0 || ptr);
 
 	/* Note: the data passed in here might be sensitive data (secrets),
 	 * that we should nm_explicty_zero() afterwards. However, since
@@ -267,6 +267,18 @@ guint nm_str_hash (gconstpointer str);
 		nm_hash_complete (&_h); \
 	})
 
+static inline guint
+nm_hash_mem (guint static_seed, const void *ptr, gsize n)
+{
+	NMHashState h;
+
+	if (n == 0)
+		return nm_hash_static (static_seed);
+	nm_hash_init (&h, static_seed);
+	nm_hash_update (&h, ptr, n);
+	return nm_hash_complete (&h);
+}
+
 /*****************************************************************************/
 
 /* nm_pstr_*() are for hashing keys that are pointers to strings,
@@ -300,6 +312,11 @@ gboolean nm_pdirect_equal (gconstpointer a, gconstpointer b);
 guint nm_ppdirect_hash (gconstpointer p);
 
 gboolean nm_ppdirect_equal (gconstpointer a, gconstpointer b);
+
+/*****************************************************************************/
+
+guint nm_pgbytes_hash (gconstpointer p);
+gboolean nm_pgbytes_equal (gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 

@@ -35,10 +35,17 @@ typedef enum {
 } NMSupplicantInterfaceState;
 
 static inline gboolean
-NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (NMSupplicantInterfaceState state)
+nm_supplicant_interface_state_is_operational (NMSupplicantInterfaceState state)
 {
 	return    state > NM_SUPPLICANT_INTERFACE_STATE_STARTING
 	       && state < NM_SUPPLICANT_INTERFACE_STATE_DOWN;
+}
+
+static inline gboolean
+nm_supplicant_interface_state_is_associated (NMSupplicantInterfaceState state)
+{
+	return    state >= NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING
+	       && state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
 }
 
 typedef enum {
@@ -71,7 +78,6 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_STATE                   "state"
 #define NM_SUPPLICANT_INTERFACE_BSS_CHANGED             "bss-changed"
 #define NM_SUPPLICANT_INTERFACE_PEER_CHANGED            "peer-changed"
-#define NM_SUPPLICANT_INTERFACE_SCAN_DONE               "scan-done"
 #define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS         "wps-credentials"
 #define NM_SUPPLICANT_INTERFACE_GROUP_STARTED           "group-started"
 #define NM_SUPPLICANT_INTERFACE_GROUP_FINISHED          "group-finished"

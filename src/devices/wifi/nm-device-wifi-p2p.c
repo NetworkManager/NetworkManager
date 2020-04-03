@@ -228,7 +228,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	supplicant_state = nm_supplicant_interface_get_state (priv->mgmt_iface);
-	return NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (supplicant_state);
+	return nm_supplicant_interface_state_is_operational (supplicant_state);
 }
 
 static gboolean
@@ -712,7 +712,7 @@ check_group_iface_ready (NMDeviceWifiP2P *self)
 	if (!priv->group_iface)
 		return;
 
-	if (!NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (priv->group_iface)))
+	if (!nm_supplicant_interface_state_is_operational (nm_supplicant_interface_get_state (priv->group_iface)))
 		return;
 
 	if (!nm_supplicant_interface_get_p2p_group_joined (priv->group_iface))
@@ -910,7 +910,7 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (   !priv->mgmt_iface
-		    || !NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (priv->mgmt_iface)))
+		    || !nm_supplicant_interface_state_is_operational (nm_supplicant_interface_get_state (priv->mgmt_iface)))
 			_set_is_waiting_for_supplicant (self, TRUE);
 		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
@@ -1080,7 +1080,7 @@ done:
 	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	_set_is_waiting_for_supplicant (self,
 	                                   !priv->mgmt_iface
-	                                || !NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (nm_supplicant_interface_get_state (priv->mgmt_iface)));
+	                                || !nm_supplicant_interface_state_is_operational (nm_supplicant_interface_get_state (priv->mgmt_iface)));
 }
 
 void

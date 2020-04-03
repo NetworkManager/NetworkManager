@@ -59,7 +59,6 @@ enum {
 	STATE,                   /* change in the interface's state */
 	BSS_CHANGED,             /* a new BSS appeared, was updated, or was removed. */
 	PEER_CHANGED,            /* a new Peer appeared, was updated, or was removed */
-	SCAN_DONE,               /* wifi scan is complete */
 	WPS_CREDENTIALS,         /* WPS credentials received */
 	GROUP_STARTED,           /* a new Group (interface) was created */
 	GROUP_FINISHED,          /* a Group (interface) has been finished */
@@ -141,11 +140,16 @@ typedef struct _NMSupplicantInterfacePrivate {
 	NMSupplicantInterfaceState state;
 	NMSupplicantInterfaceState supp_state;
 
-	bool           scanning:1;
+	bool           scanning_property:1;
+	bool           scanning_cached:1;
 
-	bool           p2p_capable:1;
+	bool           p2p_capable_property:1;
+	bool           p2p_capable_cached:1;
 
-	bool           p2p_group_is_owner:1;
+	bool           p2p_group_owner_property:1;
+	bool           p2p_group_owner_cached:1;
+
+	bool           p2p_group_joined_cached:1;
 
 	bool           is_ready_main:1;
 	bool           is_ready_p2p_device:1;
@@ -433,11 +437,79 @@ _remove_network (NMSupplicantInterface *self)
 
 /*****************************************************************************/
 
-static gboolean
-_prop_p2p_available_get (NMSupplicantInterfacePrivate *priv)
+static void
+_notify_maybe_scanning (NMSupplicantInterface *self)
 {
-	return    priv->is_ready_p2p_device
-	       && priv->p2p_capable;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean scanning;
+
+	scanning =   nm_supplicant_interface_state_is_operational (priv->state)
+	          && (   priv->scanning_property
+	              || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING);
+
+	if (priv->scanning_cached == scanning)
+		return;
+
+	if (   !scanning
+	    && !c_list_is_empty (&priv->bss_initializing_lst_head)) {
+		/* we would change state to indicate we no longer scan. However,
+		 * we still have BSS instances to be initialized. Delay the
+		 * state change further. */
+		return;
+	}
+
+	_LOGT ("scanning: %s", scanning ? "yes" : "no");
+
+	if (!scanning)
+		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
+	else {
+		/* while we are scanning, we set the timestamp to -1. */
+		priv->last_scan_msec = -1;
+	}
+	priv->scanning_cached = scanning;
+	_notify (self, PROP_SCANNING);
+}
+
+static void
+_notify_maybe_p2p_available (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean value;
+
+	value =    priv->is_ready_p2p_device
+	        && priv->p2p_capable_property;
+
+	if (priv->p2p_capable_cached == value)
+		return;
+
+	priv->p2p_capable_cached = value;
+	_notify (self, PROP_P2P_AVAILABLE);
+}
+
+static void
+_notify_maybe_p2p_group (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	gboolean value_joined;
+	gboolean value_owner;
+	gboolean joined_changed;
+	gboolean owner_changed;
+
+	value_joined =    priv->p2p_group_path
+	               && !priv->p2p_group_properties_cancellable;
+	value_owner =    value_joined
+	              && priv->p2p_group_owner_property;
+
+	if ((joined_changed = (priv->p2p_group_joined_cached != value_joined)))
+		priv->p2p_group_joined_cached = value_joined;
+
+	if ((owner_changed = (priv->p2p_group_owner_cached != value_owner)))
+		priv->p2p_group_owner_cached = value_owner;
+
+	if (joined_changed)
+		_notify (self, PROP_P2P_GROUP_JOINED);
+	if (owner_changed)
+		_notify (self, PROP_P2P_GROUP_OWNER);
 }
 
 /*****************************************************************************/
@@ -457,6 +529,9 @@ _bss_info_changed_emit (NMSupplicantInterface *self,
                         NMSupplicantBssInfo *bss_info,
                         gboolean is_present)
 {
+	_LOGT ("BSS %s %s",
+	       bss_info->bss_path->str,
+	       is_present ? "updated" : "deleted");
 	g_signal_emit (self,
 	               signals[BSS_CHANGED],
 	               0,
@@ -687,6 +762,8 @@ _bss_info_get_all_cb (GVariant *result,
 	_bss_info_properties_changed (self, bss_info, properties, TRUE);
 
 	_starting_check_ready (self);
+
+	_notify_maybe_scanning (self);
 }
 
 static void
@@ -1026,6 +1103,8 @@ set_state_down (NMSupplicantInterface *self,
 	_remove_network (self);
 
 	nm_clear_pointer (&priv->current_bss, nm_ref_string_unref);
+
+	_notify_maybe_scanning (self);
 }
 
 static void
@@ -1036,7 +1115,7 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 
 	nm_assert (new_state > NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 	nm_assert (new_state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-	nm_assert (NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (new_state));
+	nm_assert (nm_supplicant_interface_state_is_operational (new_state));
 
 	nm_assert (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 	nm_assert (priv->state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -1047,9 +1126,6 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 	_LOGT ("set state \"%s\" (was \"%s\")",
 	       nm_supplicant_interface_state_to_string (new_state),
 	       nm_supplicant_interface_state_to_string (priv->state));
-
-	if (old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
 
 	priv->state = new_state;
 
@@ -1069,35 +1145,20 @@ nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->current_bss;
 }
 
-static inline gboolean
-_prop_scanning_get (NMSupplicantInterfacePrivate *priv)
-{
-	return    (   priv->scanning
-	           || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-	       && NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->state);
-}
-
 gboolean
 nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 
-	return _prop_scanning_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->scanning_cached;
 }
 
 gint64
 nm_supplicant_interface_get_last_scan (NMSupplicantInterface *self)
 {
-	NMSupplicantInterfacePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	/* returns -1 if we are currently scanning. */
-	return   _prop_scanning_get (priv)
-	       ? -1
-	       : priv->last_scan_msec;
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->last_scan_msec;
 }
 
 #define MATCH_PROPERTY(p, n, v, t) (!strcmp (p, n) && g_variant_is_of_type (v, t))
@@ -1129,7 +1190,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 		/* Setting p2p_capable might toggle _prop_p2p_available_get(). However,
 		 * we don't need to check for a property changed notification, because
 		 * the caller did g_object_freeze_notify() and will perform the check. */
-		priv->p2p_capable = g_strv_contains (array, "p2p");
+		priv->p2p_capable_property = g_strv_contains (array, "p2p");
 		g_free (array);
 	}
 
@@ -1176,7 +1237,7 @@ _starting_check_ready (NMSupplicantInterface *self)
 
 	nm_assert (priv->state == NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 
-	if (!NM_SUPPLICANT_INTERFACE_STATE_IS_OPERATIONAL (priv->supp_state)) {
+	if (!nm_supplicant_interface_state_is_operational (priv->supp_state)) {
 		_LOGW ("Supplicant state is unknown during initialization. Destroy the interface");
 		set_state_down (self, TRUE, "failure to get valid interface state");
 		return;
@@ -1264,37 +1325,19 @@ nm_supplicant_interface_get_auth_state (NMSupplicantInterface *self)
 
 /*****************************************************************************/
 
-static gboolean
-_prop_p2p_group_joined_get (NMSupplicantInterfacePrivate *priv)
-{
-	return    priv->p2p_group_path
-	       && !priv->p2p_group_properties_cancellable;
-}
-
-static gboolean
-_prop_p2p_group_is_owner_get (NMSupplicantInterfacePrivate *priv)
-{
-	return    _prop_p2p_group_joined_get (priv)
-	       && priv->p2p_group_is_owner;
-}
-
 static void
 _p2p_group_properties_changed (NMSupplicantInterface *self,
                                GVariant *properties)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	gboolean old_val_p2p_group_is_owner;
 	const char *s;
 
-	old_val_p2p_group_is_owner = _prop_p2p_group_is_owner_get (priv);
-
 	if (!properties)
-		priv->p2p_group_is_owner = FALSE;
+		priv->p2p_group_owner_property = FALSE;
 	else if (g_variant_lookup (properties, "Role", "&s", &s))
-		priv->p2p_group_is_owner = nm_streq (s, "GO");
+		priv->p2p_group_owner_property = nm_streq (s, "GO");
 
-	if (old_val_p2p_group_is_owner != _prop_p2p_group_is_owner_get (priv))
-		_notify (self, PROP_P2P_GROUP_OWNER);
+	_notify_maybe_p2p_group (self);
 }
 
 static void
@@ -1331,8 +1374,6 @@ _p2p_group_properties_get_all_cb (GVariant *result,
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	gboolean old_val_p2p_group_joined;
-	gboolean old_val_p2p_group_is_owner;
 	gs_unref_variant GVariant *properties = NULL;
 
 	if (nm_utils_error_is_cancelled (error))
@@ -1343,9 +1384,6 @@ _p2p_group_properties_get_all_cb (GVariant *result,
 
 	g_object_freeze_notify (G_OBJECT (self));
 
-	old_val_p2p_group_joined = _prop_p2p_group_joined_get (priv);
-	old_val_p2p_group_is_owner = _prop_p2p_group_is_owner_get (priv);
-
 	nm_clear_g_cancellable (&priv->p2p_group_properties_cancellable);
 
 	if (result)
@@ -1355,10 +1393,7 @@ _p2p_group_properties_get_all_cb (GVariant *result,
 
 	_starting_check_ready (self);
 
-	if (old_val_p2p_group_joined != _prop_p2p_group_joined_get (priv))
-		_notify (self, PROP_P2P_GROUP_JOINED);
-	if (old_val_p2p_group_is_owner != _prop_p2p_group_is_owner_get (priv))
-		_notify (self, PROP_P2P_GROUP_OWNER);
+	_notify_maybe_p2p_group (self);
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -1369,16 +1404,11 @@ _p2p_group_set_path (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	nm_auto_ref_string NMRefString *group_path = NULL;
-	gboolean old_val_p2p_group_joined;
-	gboolean old_val_p2p_group_is_owner;
 
 	group_path = nm_ref_string_new (nm_dbus_path_not_empty (path));
 
 	if (priv->p2p_group_path == group_path)
 		return;
-
-	old_val_p2p_group_joined = _prop_p2p_group_joined_get (priv);
-	old_val_p2p_group_is_owner = _prop_p2p_group_is_owner_get (priv);
 
 	nm_clear_g_dbus_connection_signal (priv->dbus_connection,
 	                                   &priv->p2p_group_properties_changed_id);
@@ -1407,10 +1437,7 @@ _p2p_group_set_path (NMSupplicantInterface *self,
 	}
 
 	_notify (self, PROP_P2P_GROUP_PATH);
-	if (old_val_p2p_group_joined != _prop_p2p_group_joined_get (priv))
-		_notify (self, PROP_P2P_GROUP_JOINED);
-	if (old_val_p2p_group_is_owner != _prop_p2p_group_is_owner_get (priv))
-		_notify (self, PROP_P2P_GROUP_OWNER);
+	_notify_maybe_p2p_group (self);
 
 	nm_assert_starting_has_pending_count (priv->starting_pending_count);
 }
@@ -1762,13 +1789,8 @@ _properties_changed_main (NMSupplicantInterface *self,
 		g_variant_unref (v_v);
 	}
 
-	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b)) {
-		if (priv->scanning != (!!v_b)) {
-			if (priv->scanning)
-				priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
-			priv->scanning = v_b;
-		}
-	}
+	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b))
+		priv->scanning_property = v_b;
 
 	if (nm_g_variant_lookup (properties, "Ifname", "&s", &v_s)) {
 		if (nm_utils_strdup_reset (&priv->ifname, v_s))
@@ -1855,6 +1877,8 @@ _properties_changed_main (NMSupplicantInterface *self,
 
 	if (do_set_state)
 		set_state (self, priv->supp_state);
+
+	_notify_maybe_scanning (self);
 }
 
 static void
@@ -2318,12 +2342,13 @@ scan_request_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	if (error) {
 		if (_nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
-			_LOGD ("could not get scan request result: %s", error->message);
+			_LOGD ("request-scan: could not get scan request result: %s", error->message);
 		else {
 			g_dbus_error_strip_remote_error (error);
-			_LOGW ("could not get scan request result: %s", error->message);
+			_LOGW ("request-scan: could not get scan request result: %s", error->message);
 		}
-	}
+	} else
+		_LOGT ("request-scan: request scanning success");
 }
 
 void
@@ -2339,7 +2364,8 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	/* Scan parameters */
+	_LOGT ("request-scan: request scanning (%u ssids)...", ssids_len);
+
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&builder, "{sv}", "Type", g_variant_new_string ("active"));
 	g_variant_builder_add (&builder, "{sv}", "AllowRoam", g_variant_new_boolean (FALSE));
@@ -2518,8 +2544,6 @@ _properties_changed (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	gboolean is_main;
-	gboolean old_val_scanning;
-	gboolean old_val_p2p_available;
 
 	nm_assert (!properties || g_variant_is_of_type (properties, G_VARIANT_TYPE ("a{sv}")));
 
@@ -2540,9 +2564,6 @@ _properties_changed (NMSupplicantInterface *self,
 
 	priv->starting_pending_count++;
 
-	old_val_scanning = _prop_scanning_get (priv);
-	old_val_p2p_available = _prop_p2p_available_get (priv);
-
 	if (is_main) {
 		priv->is_ready_main = TRUE;
 		_properties_changed_main (self, properties);
@@ -2554,10 +2575,8 @@ _properties_changed (NMSupplicantInterface *self,
 	priv->starting_pending_count--;
 	_starting_check_ready (self);
 
-	if (old_val_scanning != _prop_scanning_get (priv))
-		_notify (self, PROP_SCANNING);
-	if (old_val_p2p_available != _prop_p2p_available_get (priv))
-		_notify (self, PROP_P2P_AVAILABLE);
+	_notify_maybe_scanning (self);
+	_notify_maybe_p2p_available (self);
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -2707,16 +2726,6 @@ _signal_handle (NMSupplicantInterface *self,
 		if (!priv->is_ready_main)
 			return;
 
-		if (nm_streq (signal_name, "ScanDone")) {
-			priv->last_scan_msec = nm_utils_get_monotonic_timestamp_msec ();
-			_LOGT ("ScanDone signal received");
-			if (priv->state > NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
-				nm_assert (priv->state < NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-				g_signal_emit (self, signals[SCAN_DONE], 0);
-			}
-			return;
-		}
-
 		if (nm_streq (signal_name, "BSSAdded")) {
 			if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(oa{sv})")))
 				return;
@@ -2864,11 +2873,11 @@ _signal_cb (GDBusConnection *connection,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->starting_pending_count++;
-
 	_signal_handle (self, signal_interface_name, signal_name, parameters);
-
 	priv->starting_pending_count--;
 	_starting_check_ready (self);
+
+	_notify_maybe_scanning (self);
 }
 
 /*****************************************************************************/
@@ -2876,13 +2885,13 @@ _signal_cb (GDBusConnection *connection,
 gboolean
 nm_supplicant_interface_get_p2p_available (NMSupplicantInterface *self)
 {
-	return _prop_p2p_available_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_capable_cached;
 }
 
 gboolean
 nm_supplicant_interface_get_p2p_group_joined (NMSupplicantInterface *self)
 {
-	return _prop_p2p_group_joined_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_group_joined_cached;
 }
 
 const char*
@@ -2894,7 +2903,7 @@ nm_supplicant_interface_get_p2p_group_path (NMSupplicantInterface *self)
 gboolean
 nm_supplicant_interface_get_p2p_group_owner (NMSupplicantInterface *self)
 {
-	return _prop_p2p_group_is_owner_get (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self));
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->p2p_group_owner_cached;
 }
 
 /*****************************************************************************/
@@ -2993,6 +3002,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_STARTING;
 	priv->supp_state = NM_SUPPLICANT_INTERFACE_STATE_INVALID;
+	priv->last_scan_msec = -1;
 
 	c_list_init (&self->supp_lst);
 
@@ -3287,14 +3297,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_BOOLEAN);
-
-	signals[SCAN_DONE] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_SCAN_DONE,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
 
 	signals[WPS_CREDENTIALS] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS,
