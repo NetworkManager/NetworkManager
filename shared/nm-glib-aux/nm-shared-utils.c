@@ -15,6 +15,7 @@
 #include <net/if.h>
 
 #include "nm-errno.h"
+#include "nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -80,6 +81,75 @@ nm_ip_addr_set_from_untrusted (int addr_family,
 	memcpy (dst, src, src_len);
 	NM_SET_OUT (out_addr_family, addr_family);
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+gsize
+nm_utils_get_next_realloc_size (gboolean true_realloc, gsize requested)
+{
+	gsize n, x;
+
+	/* https://doc.qt.io/qt-5/containers.html#growth-strategies */
+
+	if (requested <= 40) {
+		/* small allocations. Increase in small steps of 8 bytes.
+		 *
+		 * We get thus sizes of 8, 16, 32, 40. */
+		if (requested <= 8)
+			return 8;
+		if (requested <= 16)
+			return 16;
+		if (requested <= 32)
+			return 32;
+
+		/* The return values for < 104 are essentially hard-coded, and the choice here is
+		 * made without very strong reasons.
+		 *
+		 * We want to stay 24 bytes below the power-of-two border 64. Hence, return 40 here.
+		 * However, the next step then is already 104 (128 - 24). It's a larger gap than in
+		 * the steps before.
+		 *
+		 * It's not clear whether some of the steps should be adjusted (or how exactly). */
+		return 40;
+	}
+
+	if (   requested <= 0x2000u - 24u
+	    || G_UNLIKELY (!true_realloc)) {
+		/* mid sized allocations. Return next power of two, minus 24 bytes extra space
+		 * at the beginning.
+		 * That means, we double the size as we grow.
+		 *
+		 * With !true_realloc, it means that the caller does not intend to call
+		 * realloc() but instead clone the buffer. This is for example the case, when we
+		 * want to nm_explicit_bzero() the old buffer. In that case we really want to grow
+		 * the buffer exponentially every time and not increment in page sizes of 4K (below).
+		 *
+		 * We get thus sizes of 104, 232, 488, 1000, 2024, 4072, 8168... */
+
+		if (G_UNLIKELY (requested > G_MAXSIZE / 2u - 24u))
+			return G_MAXSIZE;
+
+		x = requested + 24u;
+		n = 128u;
+		while (n < x) {
+			n <<= 1;
+			nm_assert (n > 128u);
+		}
+
+		nm_assert (n > 24u && n - 24u >= requested);
+		return n - 24u;
+	}
+
+	if (G_UNLIKELY (requested > G_MAXSIZE - 0x1000u - 24u))
+		return G_MAXSIZE;
+
+	/* For large allocations (with !true_realloc) we allocate memory in chunks of
+	 * 4K (- 24 bytes extra), assuming that the memory gets mmapped and thus
+	 * realloc() is efficient by just reordering pages. */
+	n = ((requested + (0x0FFFu + 24u)) & ~((gsize) 0x0FFFu)) - 24u;
+	nm_assert (n >= requested);
+	return n;
 }
 
 /*****************************************************************************/
@@ -2134,18 +2204,20 @@ nm_g_type_find_implementing_class_for_property (GType gtype,
 /*****************************************************************************/
 
 static void
-_str_append_escape (GString *s, char ch)
+_str_buf_append_c_escape_octal (NMStrBuf *strbuf,
+                                char ch)
 {
-	g_string_append_c (s, '\\');
-	g_string_append_c (s, '0' + ((((guchar) ch) >> 6) & 07));
-	g_string_append_c (s, '0' + ((((guchar) ch) >> 3) & 07));
-	g_string_append_c (s, '0' + ( ((guchar) ch)       & 07));
+	nm_str_buf_append_c4 (strbuf,
+	                      '\\',
+	                      '0' + ((char) ((((guchar) ch) >> 6) & 07)),
+	                      '0' + ((char) ((((guchar) ch) >> 3) & 07)),
+	                      '0' + ((char) ((((guchar) ch)     ) & 07)));
 }
 
 gconstpointer
 nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_free)
 {
-	GString *gstr;
+	NMStrBuf strbuf;
 	gsize len;
 	const char *s;
 
@@ -2167,9 +2239,9 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 		return str;
 	}
 
-	gstr = g_string_new_len (NULL, len);
+	nm_str_buf_init (&strbuf, len, FALSE);
 
-	g_string_append_len (gstr, str, s - str);
+	nm_str_buf_append_len (&strbuf, str, s - str);
 	str = s;
 
 	for (;;) {
@@ -2192,6 +2264,9 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 				v = v * 8 + (ch - '0');
 				ch = (++str)[0];
 				if (ch >= '0' && ch <= '7') {
+					/* technically, escape sequences larger than \3FF are out of range
+					 * and invalid. We don't check for that, and do the same as
+					 * g_strcompress(): silently clip the value with & 0xFF. */
 					v = v * 8 + (ch - '0');
 					++str;
 				}
@@ -2213,21 +2288,20 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 			str++;
 		}
 
-		g_string_append_c (gstr, ch);
+		nm_str_buf_append_c (&strbuf, ch);
 
 		s = strchr (str, '\\');
 		if (!s) {
-			g_string_append (gstr, str);
+			nm_str_buf_append (&strbuf, str);
 			break;
 		}
 
-		g_string_append_len (gstr, str, s - str);
+		nm_str_buf_append_len (&strbuf, str, s - str);
 		str = s;
 	}
 
-	*out_len = gstr->len;
-	*to_free = gstr->str;
-	return g_string_free (gstr, FALSE);
+	return (*to_free = nm_str_buf_finalize (&strbuf,
+	                                        out_len));
 }
 
 /**
@@ -2268,7 +2342,7 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 	const char *p = NULL;
 	const char *s;
 	gboolean nul_terminated = FALSE;
-	GString *gstr;
+	NMStrBuf strbuf;
 
 	g_return_val_if_fail (to_free, NULL);
 
@@ -2299,7 +2373,9 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 			return str;
 	}
 
-	gstr = g_string_sized_new (buflen + 5);
+	nm_str_buf_init (&strbuf,
+	                 buflen + 5,
+	                 NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET));
 
 	s = str;
 	do {
@@ -2309,21 +2385,22 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 		for (; s < p; s++) {
 			char ch = s[0];
 
+			nm_assert (ch);
 			if (ch == '\\')
-				g_string_append (gstr, "\\\\");
+				nm_str_buf_append_c2 (&strbuf, '\\', '\\');
 			else if (   (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) \
 			             && ch < ' ') \
 			         || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII) \
 			             && ((guchar) ch) >= 127))
-				_str_append_escape (gstr, ch);
+				_str_buf_append_c_escape_octal (&strbuf, ch);
 			else
-				g_string_append_c (gstr, ch);
+				nm_str_buf_append_c (&strbuf, ch);
 		}
 
 		if (buflen <= 0)
 			break;
 
-		_str_append_escape (gstr, p[0]);
+		_str_buf_append_c_escape_octal (&strbuf, p[0]);
 
 		buflen--;
 		if (buflen == 0)
@@ -2333,8 +2410,7 @@ nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8Sa
 		(void) g_utf8_validate (s, buflen, &p);
 	} while (TRUE);
 
-	*to_free = g_string_free (gstr, FALSE);
-	return *to_free;
+	return (*to_free = nm_str_buf_finalize (&strbuf, NULL));
 }
 
 const char *
@@ -2358,13 +2434,11 @@ nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags
 const char *
 nm_utils_str_utf8safe_unescape (const char *str, char **to_free)
 {
+	gsize len;
+
 	g_return_val_if_fail (to_free, NULL);
 
-	if (!str || !strchr (str, '\\')) {
-		*to_free = NULL;
-		return str;
-	}
-	return (*to_free = g_strcompress (str));
+	return nm_utils_buf_utf8safe_unescape (str, &len, (gpointer *) to_free);
 }
 
 /**
@@ -2424,7 +2498,10 @@ nm_utils_str_utf8safe_escape_cp (const char *str, NMUtilsStrUtf8SafeFlags flags)
 char *
 nm_utils_str_utf8safe_unescape_cp (const char *str)
 {
-	return str ? g_strcompress (str) : NULL;
+	char *s;
+
+	str = nm_utils_str_utf8safe_unescape (str, &s);
+	return s ?: g_strdup (str);
 }
 
 char *
@@ -4385,4 +4462,70 @@ nm_utils_ifname_valid (const char* name,
 	}
 
 	g_return_val_if_reached (FALSE);
+}
+
+/*****************************************************************************/
+
+void
+_nm_str_buf_ensure_size (NMStrBuf *strbuf,
+                         gsize new_size,
+                         gboolean reserve_exact)
+{
+	_nm_str_buf_assert (strbuf);
+
+	/* Currently this only supports strictly growing the buffer. */
+	nm_assert (new_size > strbuf->_allocated);
+
+	if (!reserve_exact) {
+		new_size = nm_utils_get_next_realloc_size (!strbuf->_do_bzero_mem,
+		                                           new_size);
+	}
+
+	strbuf->_str = nm_secret_mem_realloc (strbuf->_str,
+	                                      strbuf->_do_bzero_mem,
+	                                      strbuf->_allocated,
+	                                      new_size);
+	strbuf->_allocated = new_size;
+}
+
+void
+nm_str_buf_append_printf (NMStrBuf *strbuf,
+                          const char *format,
+                          ...)
+{
+	va_list args;
+	gsize available;
+	int l;
+
+	_nm_str_buf_assert (strbuf);
+
+	available = strbuf->_allocated - strbuf->_len;
+
+	va_start (args, format);
+	l = g_vsnprintf (&strbuf->_str[strbuf->_len],
+	                 available,
+	                 format,
+	                 args);
+	va_end (args);
+
+	nm_assert (l >= 0);
+	nm_assert (l < G_MAXINT);
+
+	if ((gsize) l > available) {
+		gsize l2 = ((gsize) l) + 1u;
+
+		nm_str_buf_maybe_expand (strbuf, l2, FALSE);
+
+		va_start (args, format);
+		l = g_vsnprintf (&strbuf->_str[strbuf->_len],
+		                 l2,
+		                 format,
+		                 args);
+		va_end (args);
+
+		nm_assert (l >= 0);
+		nm_assert (l == l2 - 1);
+	}
+
+	strbuf->_len += (gsize) l;
 }

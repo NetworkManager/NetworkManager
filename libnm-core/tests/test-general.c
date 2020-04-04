@@ -7545,10 +7545,11 @@ _do_test_utils_str_utf8safe (const char *str, gsize str_len, const char *expecte
 	gs_free char *str_free_7 = NULL;
 	gs_free char *str_free_8 = NULL;
 	gboolean str_has_nul = FALSE;
+#define RND_FLAG ((nmtst_get_rand_bool ()) ? NM_UTILS_STR_UTF8_SAFE_FLAG_NONE : NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET)
 
-	buf_safe = nm_utils_buf_utf8safe_escape (str, str_len, flags, &str_free_1);
+	buf_safe = nm_utils_buf_utf8safe_escape (str, str_len, flags | RND_FLAG, &str_free_1);
 
-	str_safe = nm_utils_str_utf8safe_escape (str, flags, &str_free_2);
+	str_safe = nm_utils_str_utf8safe_escape (str, flags | RND_FLAG, &str_free_2);
 
 	if (str_len == 0) {
 		g_assert (buf_safe == NULL);
@@ -7568,7 +7569,7 @@ _do_test_utils_str_utf8safe (const char *str, gsize str_len, const char *expecte
 	} else
 		str_has_nul = TRUE;
 
-	str_free_3 = nm_utils_str_utf8safe_escape_cp (str, flags);
+	str_free_3 = nm_utils_str_utf8safe_escape_cp (str, flags | RND_FLAG);
 	g_assert_cmpstr (str_free_3, ==, str_safe);
 	g_assert ((!str && !str_free_3) || (str != str_free_3));
 
