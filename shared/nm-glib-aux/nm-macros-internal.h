@@ -1571,6 +1571,17 @@ nm_strstrip_avoid_copy (const char *str, char **str_free)
 		_str_ssac; \
 	})
 
+static inline gboolean
+nm_str_is_stripped (const char *str)
+{
+	if (str && str[0]) {
+		if (   g_ascii_isspace (str[0])
+		    || g_ascii_isspace (str[strlen (str) - 1]))
+			return FALSE;
+	}
+	return TRUE;
+}
+
 /* g_ptr_array_sort()'s compare function takes pointers to the
  * value. Thus, you cannot use strcmp directly. You can use
  * nm_strcmp_p().

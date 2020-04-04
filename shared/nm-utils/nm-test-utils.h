@@ -986,6 +986,69 @@ nmtst_rand_perm_gslist (GRand *rand, GSList *list)
 
 /*****************************************************************************/
 
+/**
+ * nmtst_get_rand_word_length:
+ * @rand: (allow-none): #GRand instance or %NULL to use the singleton.
+ *
+ * Returns: a random integer >= 0, that most frequently is somewhere between
+ * 0 and 16, but (with decreasing) probability, it can be larger. This can
+ * be used when we generate random input for unit tests.
+ */
+static inline guint
+nmtst_get_rand_word_length (GRand *rand)
+{
+	guint n;
+
+	if (!rand)
+		rand = nmtst_get_rand ();
+
+	n = 0;
+	while (TRUE) {
+		guint32 rnd = g_rand_int (rand);
+		guint probability;
+
+		/* The following python code implements a random sample with this
+		 * distribution:
+		 *
+		 *    def random_histogram(n_tries, scale = None):
+		 *        def probability(n_tok):
+		 *            import math
+		 *            return max(2, math.floor(100 / (2*(n_tok+1))))
+		 *        def n_tokens():
+		 *            import random
+		 *            n_tok = 0
+		 *            while True:
+		 *                if random.randint(0, 0xFFFFFFFF) % probability(n_tok) == 0:
+		 *                   return n_tok
+		 *                n_tok += 1
+		 *        hist = []
+		 *        i = 0;
+		 *        while i < n_tries:
+		 *            n_tok = n_tokens()
+		 *            while n_tok >= len(hist):
+		 *                hist.append(0)
+		 *            hist[n_tok] = hist[n_tok] + 1
+		 *            i += 1
+		 *        if scale is not None:
+		 *            hist = list([round(x / n_tries * scale) for x in hist])
+		 *        return hist
+		 *
+		 * For example, random_histogram(n_tries = 1000000, scale = 1000) may give
+		 *
+		 *   IDX:  [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+		 *   SEEN: [20, 39, 59, 73, 80, 91, 92, 90, 91, 73, 73, 54, 55, 36, 24, 16, 16,  8,  4,  2,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0]
+		 *
+		 * which give a sense of the probability with this individual results are returned.
+		 */
+		probability = NM_MAX (2u, (100u / (2u * (n + 1u))));
+		if ((rnd % probability) == 0)
+			return n;
+		n++;
+	}
+}
+
+/*****************************************************************************/
+
 static inline gboolean
 nmtst_g_source_assert_not_called (gpointer user_data)
 {

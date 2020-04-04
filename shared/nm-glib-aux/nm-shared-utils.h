@@ -393,6 +393,8 @@ gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
 
 GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
+GVariant *nm_utils_strdict_to_variant_ass (GHashTable *strdict);
+
 /*****************************************************************************/
 
 GVariant *nm_utils_gvariant_vardict_filter (GVariant *src,
@@ -438,7 +440,25 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 typedef enum {
 	NM_UTILS_STRSPLIT_SET_FLAGS_NONE           = 0,
+
+	/* by default, strsplit will coalesce consecutive delimiters and remove
+	 * them from the result. If this flag is present, empty values are preserved
+	 * and returned.
+	 *
+	 * When combined with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, if a value gets
+	 * empty after strstrip(), it also gets removed. */
 	NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
+
+	/* %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING means that delimiters prefixed
+	 * by a backslash are not treated as a separator. Such delimiters and their escape
+	 * character are copied to the current word without unescaping them. In general,
+	 * nm_utils_strsplit_set_full() does not remove any backslash escape characters
+	 * and does no unescaping. It only considers them for skipping to split at
+	 * an escaped delimiter.
+	 *
+	 * If this is combined with (or implied by %NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED), then
+	 * the backslash escapes are removed from the result.
+	 */
 	NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
 
 	/* If flag is set, does the same as g_strstrip() on the returned tokens.
@@ -478,6 +498,7 @@ typedef enum {
 	 * need extra care, and then only if they proceed one of the relevant characters.
 	 */
 	NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED        = (1u << 3),
+
 } NMUtilsStrsplitSetFlags;
 
 const char **nm_utils_strsplit_set_full (const char *str,
@@ -521,9 +542,65 @@ nm_utils_escaped_tokens_split (const char *str,
 	                                   | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
 
-const char *nm_utils_escaped_tokens_escape (const char *str,
-                                            const char *delimiters,
-                                            char **out_to_free);
+typedef enum {
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_NONE                       = 0,
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_SPACES              = (1ull << 0),
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE       = (1ull << 1),
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE      = (1ull << 2),
+
+	/* Backslash characters will be escaped as "\\\\" if they precede another
+	 * character that makes it necessary. Such characters are:
+	 *
+	 *  1) before another '\\' backslash.
+	 *  2) before any delimiter in @delimiters.
+	 *  3) before any delimiter in @delimiters_as_needed.
+	 *  4) before a white space, if ESCAPE_LEADING_SPACE or ESCAPE_TRAILING_SPACE is set.
+	 *  5) before the end of the word
+	 *
+	 * Rule 4) is an extension. It's not immediately clear why with ESCAPE_LEADING_SPACE
+	 * and ESCAPE_TRAILING_SPACE we want *all* backslashes before a white space escaped.
+	 * The reason is, that we obviously want to use ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE
+	 * in cases, where we later parse the backslash escaped strings back, but allowing to strip
+	 * unescaped white spaces. That means, we want that " a " gets escaped as "\\ a\\ ".
+	 * On the other hand, we also want that " a\\ b " gets escaped as "\\ a\\\\ b\\ ",
+	 * and not "\\ a\\ b\\ ". Because otherwise, the parser would need to treat "\\ "
+	 * differently depending on whether the sequence is at the beginning, end or middle
+	 * of the word.
+	 *
+	 * Rule 5) is also not immediately obvious. When used with ESCAPE_TRAILING_SPACE,
+	 * we clearly want to allow that an escaped word can have arbitrary
+	 * whitespace suffixes. That's why this mode exists. So we must escape "a\\" as
+	 * "a\\\\", so that appending " " does not change the meaning.
+	 * Also without ESCAPE_TRAILING_SPACE, we want in general that we can concatenate
+	 * two escaped words without changing their meaning. If the words would be "a\\"
+	 * and "," (with ',' being a delimiter), then the result must be "a\\\\" and "\\,"
+	 * so that the concatenated word ("a\\\\\\,") is still the same. If we would escape
+	 * them instead as "a\\" + "\\,", then the concatenated word would be "a\\\\," and
+	 * different.
+	 * */
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED = (1ull << 3),
+
+	NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS    = (1ull << 4),
+} NMUtilsEscapedTokensEscapeFlags;
+
+const char *nm_utils_escaped_tokens_escape_full (const char *str,
+                                                 const char *delimiters,
+                                                 const char *delimiters_as_needed,
+                                                 NMUtilsEscapedTokensEscapeFlags flags,
+                                                 char **out_to_free);
+
+static inline const char *
+nm_utils_escaped_tokens_escape (const char *str,
+                                const char *delimiters,
+                                char **out_to_free)
+{
+	return nm_utils_escaped_tokens_escape_full (str,
+	                                            delimiters,
+	                                            NULL,
+	                                              NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE,
+	                                            out_to_free);
+}
 
 static inline GString *
 nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
@@ -571,6 +648,47 @@ nm_utils_escaped_tokens_escape_gstr (const char *str,
 	g_string_append (gstring,
 	                 nm_utils_escaped_tokens_escape (str, delimiters, &str_to_free));
 	return gstring;
+}
+
+/*****************************************************************************/
+
+static inline const char **
+nm_utils_escaped_tokens_options_split_list (const char *str)
+{
+	return nm_utils_strsplit_set_full (str,
+	                                   ",",
+	                                     NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP
+	                                   | NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+}
+
+void nm_utils_escaped_tokens_options_split (char *str,
+                                            const char **out_key,
+                                            const char **out_val);
+
+static inline const char *
+nm_utils_escaped_tokens_options_escape_key (const char *key,
+                                            char **out_to_free)
+{
+	return nm_utils_escaped_tokens_escape_full (key,
+	                                            ",=",
+	                                            NULL,
+	                                              NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE,
+	                                            out_to_free);
+}
+
+static inline const char *
+nm_utils_escaped_tokens_options_escape_val (const char *val,
+                                            char **out_to_free)
+{
+	return nm_utils_escaped_tokens_escape_full (val,
+	                                            ",",
+	                                            "=",
+	                                              NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+	                                            | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE,
+	                                            out_to_free);
 }
 
 /*****************************************************************************/
@@ -1304,6 +1422,26 @@ GSList *nm_utils_g_slist_find_str (const GSList *list,
 int nm_utils_g_slist_strlist_cmp (const GSList *a, const GSList *b);
 
 char *nm_utils_g_slist_strlist_join (const GSList *a, const char *separator);
+
+/*****************************************************************************/
+
+static inline guint
+nm_g_hash_table_size (GHashTable *hash)
+{
+	return hash ? g_hash_table_size (hash) : 0u;
+}
+
+static inline gpointer
+nm_g_hash_table_lookup (GHashTable *hash, gconstpointer key)
+{
+	return hash ? g_hash_table_lookup (hash, key) : NULL;
+}
+
+static inline gboolean
+nm_g_hash_table_remove (GHashTable *hash, gconstpointer key)
+{
+	return hash ? g_hash_table_remove (hash, key) : FALSE;
+}
 
 /*****************************************************************************/
 

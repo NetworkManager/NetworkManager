@@ -444,6 +444,62 @@ nm_utils_gbytes_to_variant_ay (GBytes *bytes)
 
 /*****************************************************************************/
 
+/* Convert a hash table with "char *" keys and values to an "a{ss}" GVariant.
+ * The keys will be sorted asciibetically.
+ * Returns a floating reference.
+ */
+GVariant *
+nm_utils_strdict_to_variant_ass (GHashTable *strdict)
+{
+	GHashTableIter iter;
+	const char *key, *value;
+	GVariantBuilder builder;
+	guint i, len;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
+
+	if (!strdict)
+		goto out;
+	len = g_hash_table_size (strdict);
+	if (!len)
+		goto out;
+
+	g_hash_table_iter_init (&iter, strdict);
+	if (!g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+		nm_assert_not_reached ();
+
+	if (len == 1)
+		g_variant_builder_add (&builder, "{ss}", key, value);
+	else {
+		gs_free NMUtilsNamedValue *idx_free = NULL;
+		NMUtilsNamedValue *idx;
+
+		if (len > 300 / sizeof (NMUtilsNamedValue)) {
+			idx_free = g_new (NMUtilsNamedValue, len);
+			idx = idx_free;
+		} else
+			idx = g_alloca (sizeof (NMUtilsNamedValue) * len);
+
+		i = 0;
+		do {
+			idx[i].name = key;
+			idx[i].value_str = value;
+			i++;
+		} while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value));
+		nm_assert (i == len);
+
+		nm_utils_named_value_list_sort (idx, len, NULL, NULL);
+
+		for (i = 0; i < len; i++)
+			g_variant_builder_add (&builder, "{ss}", idx[i].name, idx[i].value_str);
+	}
+
+out:
+	return g_variant_builder_end (&builder);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_strquote:
  * @buf: the output buffer of where to write the quoted @str argument.
@@ -1441,12 +1497,27 @@ comp_l:
 /*****************************************************************************/
 
 static void
+_char_lookup_table_set_one (guint8 lookup[static 256],
+                             char ch)
+{
+	lookup[(guint8) ch] = 1;
+}
+
+static void
+_char_lookup_table_set_all (guint8 lookup[static 256],
+                            const char *candidates)
+{
+	while (candidates[0] != '\0')
+		_char_lookup_table_set_one (lookup, (candidates++)[0]);
+}
+
+static void
 _char_lookup_table_init (guint8 lookup[static 256],
                          const char *candidates)
 {
 	memset (lookup, 0, 256);
-	while (candidates[0] != '\0')
-		lookup[(guint8) ((candidates++)[0])] = 1;
+	if (candidates)
+		_char_lookup_table_set_all (lookup, candidates);
 }
 
 static gboolean
@@ -1455,6 +1526,19 @@ _char_lookup_has (const guint8 lookup[static 256],
 {
 	nm_assert (lookup[(guint8) '\0'] == 0);
 	return lookup[(guint8) ch] != 0;
+}
+
+static gboolean
+_char_lookup_has_all (const guint8 lookup[static 256],
+                      const char *candidates)
+{
+	if (candidates) {
+		while (candidates[0] != '\0') {
+			if (!_char_lookup_has (lookup, (candidates++)[0]))
+				return FALSE;
+		}
+	}
+	return TRUE;
 }
 
 /**
@@ -1469,18 +1553,7 @@ _char_lookup_has (const guint8 lookup[static 256],
  *
  * Note that for @str %NULL and "", this always returns %NULL too. That differs
  * from g_strsplit_set(), which would return an empty strv array for "".
- *
- * Note that g_strsplit_set() returns empty words as well. By default,
- * nm_utils_strsplit_set_full() strips all empty tokens (that is, repeated
- * delimiters. With %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, empty tokens
- * are not removed.
- *
- * If @flags has %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING, delimiters prefixed
- * by a backslash are not treated as a separator. Such delimiters and their escape
- * character are copied to the current word without unescaping them. In general,
- * nm_utils_strsplit_set_full() does not remove any backslash escape characters
- * and does not unescaping. It only considers them for skipping to split at
- * an escaped delimiter.
+ * This never returns an empty array.
  *
  * Returns: %NULL if @str is %NULL or "".
  *   If @str only contains delimiters and %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
@@ -1490,7 +1563,7 @@ _char_lookup_has (const guint8 lookup[static 256],
  *   The strings to which the result strv array points to are allocated
  *   after the returned result itself. Don't free the strings themself,
  *   but free everything with g_free().
- *   It is however safe and allowed to modify the indiviual strings,
+ *   It is however safe and allowed to modify the individual strings in-place,
  *   like "g_strstrip((char *) iter[0])".
  */
 const char **
@@ -1672,11 +1745,9 @@ done2:
 
 		/* We no longer need ch_lookup for its original purpose. Modify it, so it
 		 * can detect the delimiters, '\\', and (optionally) whitespaces. */
-		ch_lookup[((guint8) '\\')] = 1;
-		if (f_strstrip) {
-			for (i = 0; NM_ASCII_SPACES[i]; i++)
-				ch_lookup[((guint8) (NM_ASCII_SPACES[i]))] = 1;
-		}
+		_char_lookup_table_set_one (ch_lookup, '\\');
+		if (f_strstrip)
+			_char_lookup_table_set_all (ch_lookup, NM_ASCII_SPACES);
 
 		for (i_token = 0; ptr[i_token]; i_token++) {
 			s = (char *) ptr[i_token];
@@ -1697,65 +1768,131 @@ done2:
 /*****************************************************************************/
 
 const char *
-nm_utils_escaped_tokens_escape (const char *str,
-                                const char *delimiters,
-                                char **out_to_free)
+nm_utils_escaped_tokens_escape_full (const char *str,
+                                     const char *delimiters,
+                                     const char *delimiters_as_needed,
+                                     NMUtilsEscapedTokensEscapeFlags flags,
+                                     char **out_to_free)
 {
 	guint8 ch_lookup[256];
+	guint8 ch_lookup_as_needed[256];
+	gboolean has_ch_lookup_as_needed = FALSE;
 	char *ret;
 	gsize str_len;
 	gsize alloc_len;
 	gsize n_escapes;
 	gsize i, j;
+	gboolean escape_leading_space;
 	gboolean escape_trailing_space;
+	gboolean escape_backslash_as_needed;
 
-	if (!delimiters) {
-		nm_assert (delimiters);
-		delimiters = NM_ASCII_SPACES;
-	}
+	nm_assert (   !delimiters_as_needed
+	           || (   delimiters_as_needed[0]
+	               && NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED)));
 
 	if (!str || str[0] == '\0') {
 		*out_to_free = NULL;
 		return str;
 	}
 
-	_char_lookup_table_init (ch_lookup, delimiters);
+	str_len = strlen (str);
 
-	/* also mark '\\' as requiring escaping. */
-	ch_lookup[((guint8) '\\')] = 1;
+	_char_lookup_table_init (ch_lookup, delimiters);
+	if (   !delimiters
+	    || NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_SPACES)) {
+		flags &= ~(  NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+		           | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE);
+		_char_lookup_table_set_all (ch_lookup, NM_ASCII_SPACES);
+	}
+
+	if (NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS)) {
+		_char_lookup_table_set_one (ch_lookup, '\\');
+		escape_backslash_as_needed = FALSE;
+	} else if (_char_lookup_has (ch_lookup, '\\'))
+		escape_backslash_as_needed = FALSE;
+	else {
+		escape_backslash_as_needed = NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED);
+		if (escape_backslash_as_needed) {
+			if (    NM_FLAGS_ANY (flags,   NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
+			                             | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
+			    && !_char_lookup_has_all (ch_lookup, NM_ASCII_SPACES)) {
+				/* ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE implies that we escape backslash
+				 * before whitespaces. */
+				if (!has_ch_lookup_as_needed) {
+					has_ch_lookup_as_needed = TRUE;
+					_char_lookup_table_init (ch_lookup_as_needed, NULL);
+				}
+				_char_lookup_table_set_all (ch_lookup_as_needed, NM_ASCII_SPACES);
+			}
+			if (   delimiters_as_needed
+			    && !_char_lookup_has_all (ch_lookup, delimiters_as_needed)) {
+				if (!has_ch_lookup_as_needed) {
+					has_ch_lookup_as_needed = TRUE;
+					_char_lookup_table_init (ch_lookup_as_needed, NULL);
+				}
+				_char_lookup_table_set_all (ch_lookup_as_needed, delimiters_as_needed);
+			}
+		}
+	}
+
+	escape_leading_space =    NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE)
+	                       && g_ascii_isspace (str[0])
+	                       && !_char_lookup_has (ch_lookup, str[0]);
+	if (str_len == 1)
+		escape_trailing_space = FALSE;
+	else {
+		escape_trailing_space =    NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
+		                        && g_ascii_isspace (str[str_len - 1])
+		                        && !_char_lookup_has (ch_lookup, str[str_len - 1]);
+	}
 
 	n_escapes = 0;
 	for (i = 0; str[i] != '\0'; i++) {
 		if (_char_lookup_has (ch_lookup, str[i]))
 			n_escapes++;
+		else if (   str[i] == '\\'
+		         && escape_backslash_as_needed
+		         && (   _char_lookup_has (ch_lookup, str[i + 1])
+		             || NM_IN_SET (str[i + 1], '\0', '\\')
+		             || (   has_ch_lookup_as_needed
+		                 && _char_lookup_has (ch_lookup_as_needed, str[i + 1]))))
+			n_escapes++;
 	}
+	if (escape_leading_space)
+		n_escapes++;
+	if (escape_trailing_space)
+		n_escapes++;
 
-	str_len = i;
-	nm_assert (str_len > 0 && strlen (str) == str_len);
-
-	escape_trailing_space =    !_char_lookup_has (ch_lookup, str[str_len - 1])
-	                        && g_ascii_isspace (str[str_len - 1]);
-
-	if (   n_escapes == 0
-	    && !escape_trailing_space) {
+	if (n_escapes == 0u) {
 		*out_to_free = NULL;
 		return str;
 	}
 
-	alloc_len = str_len + n_escapes + ((gsize) escape_trailing_space) + 1;
+	alloc_len = str_len + n_escapes + 1u;
 	ret = g_new (char, alloc_len);
 
 	j = 0;
-	for (i = 0; str[i] != '\0'; i++) {
-		if (_char_lookup_has (ch_lookup, str[i])) {
-			nm_assert (j < alloc_len);
+	i = 0;
+
+	if (escape_leading_space) {
+		ret[j++] = '\\';
+		ret[j++] = str[i++];
+	}
+	for (; str[i] != '\0'; i++) {
+		if (_char_lookup_has (ch_lookup, str[i]))
 			ret[j++] = '\\';
-		}
-		nm_assert (j < alloc_len);
+		else if (   str[i] == '\\'
+		         && escape_backslash_as_needed
+		         && (   _char_lookup_has (ch_lookup, str[i + 1])
+		             || NM_IN_SET (str[i + 1], '\0', '\\')
+		             || (   has_ch_lookup_as_needed
+		                 && _char_lookup_has (ch_lookup_as_needed, str[i + 1]))))
+			ret[j++] = '\\';
 		ret[j++] = str[i];
 	}
 	if (escape_trailing_space) {
-		nm_assert (!_char_lookup_has (ch_lookup, ret[j - 1]) && g_ascii_isspace (ret[j - 1]));
+		nm_assert (   !_char_lookup_has (ch_lookup, ret[j - 1])
+		           && g_ascii_isspace (ret[j - 1]));
 		ret[j] = ret[j - 1];
 		ret[j - 1] = '\\';
 		j++;
@@ -1763,9 +1900,95 @@ nm_utils_escaped_tokens_escape (const char *str,
 
 	nm_assert (j == alloc_len - 1);
 	ret[j] = '\0';
+	nm_assert (strlen (ret) == j);
 
 	*out_to_free = ret;
 	return ret;
+}
+
+/**
+ * nm_utils_escaped_tokens_options_split:
+ * @str: the src string. This string will be modified in-place.
+ *   The output values will point into @str.
+ * @out_key: (allow-none): the returned output key. This will always be set to @str
+ *   itself. @str will be modified to contain only the unescaped, truncated
+ *   key name.
+ * @out_val: returns the parsed (and unescaped) value or %NULL, if @str contains
+ *   no '=' delimiter.
+ *
+ * Honors backslash escaping to parse @str as "key=value" pairs. Optionally, if no '='
+ * is present, @out_val will be returned as %NULL. Backslash can be used to escape
+ * '=', ',', '\\', and ascii whitespace. Other backslash sequences are taken verbatim.
+ *
+ * For keys, '=' obviously must be escaped. For values, that is optional because an
+ * unescaped '=' is just taken verbatim. For example, in a key, the sequence "\\="
+ * must be escaped as "\\\\\\=". For the value, that works too, but "\\\\=" is also
+ * accepted.
+ *
+ * Unescaped Space around the key and value are also removed. Space in general must
+ * not be escaped, unless they are at the beginning or the end of key/value.
+ */
+void
+nm_utils_escaped_tokens_options_split (char *str,
+                                       const char **out_key,
+                                       const char **out_val)
+{
+	const char *val = NULL;
+	gsize i;
+	gsize j;
+	gsize last_space_idx;
+	gboolean last_space_has;
+
+	nm_assert (str);
+
+	i = 0;
+	while (g_ascii_isspace (str[i]))
+		i++;
+
+	j = 0;
+	last_space_idx = 0;
+	last_space_has = FALSE;
+	while (str[i] != '\0') {
+		if (g_ascii_isspace (str[i])) {
+			if (!last_space_has) {
+				last_space_has = TRUE;
+				last_space_idx = j;
+			}
+		} else {
+			if (str[i] == '\\') {
+				if (   NM_IN_SET (str[i + 1u], '\\', ',', '=')
+				    || g_ascii_isspace (str[i + 1u]))
+					i++;
+			} else if (str[i] == '=') {
+				/* Encounter an unescaped '=' character. When we still parse the key, this
+				 * is the separator we were waiting for. If we are parsing the value,
+				 * we take the character verbatim. */
+				if (!val) {
+					if (last_space_has) {
+						str[last_space_idx] = '\0';
+						j = last_space_idx + 1;
+						last_space_has = FALSE;
+					} else
+						str[j++] = '\0';
+					val = &str[j];
+					i++;
+					while (g_ascii_isspace (str[i]))
+						i++;
+					continue;
+				}
+			}
+			last_space_has = FALSE;
+		}
+		str[j++] = str[i++];
+	}
+
+	if (last_space_has)
+		str[last_space_idx] = '\0';
+	else
+		str[j] = '\0';
+
+	*out_key = str;
+	*out_val = val;
 }
 
 /*****************************************************************************/
