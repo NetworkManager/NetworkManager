@@ -1067,7 +1067,7 @@ _print_fill (const NmcConfig *nmc_config,
 
 			value = nm_meta_abstract_info_get (info,
 			                                   nmc_meta_environment,
-			                                   nmc_meta_environment_arg,
+			                                   (gpointer) nmc_meta_environment_arg,
 			                                   target,
 			                                   targets_data,
 			                                   text_get_type,
@@ -1112,7 +1112,7 @@ _print_fill (const NmcConfig *nmc_config,
 
 			cell->color = GPOINTER_TO_INT (nm_meta_abstract_info_get (info,
 			                                                          nmc_meta_environment,
-			                                                          nmc_meta_environment_arg,
+			                                                          (gpointer) nmc_meta_environment_arg,
 			                                                          target,
 			                                                          targets_data,
 			                                                          NM_META_ACCESSOR_GET_TYPE_COLOR,
@@ -1571,6 +1571,7 @@ get_value_to_print (const NmcConfig *nmc_config,
  */
 void
 print_required_fields (const NmcConfig *nmc_config,
+                       NmcPagerData *pager_data,
                        NmcOfFlags of_flags,
                        const GArray *indices,
                        const char *header_name,
@@ -1587,7 +1588,7 @@ print_required_fields (const NmcConfig *nmc_config,
 	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
 	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
 
-	nm_cli_spawn_pager (&nm_cli);
+	nm_cli_spawn_pager (nmc_config, pager_data);
 
 	/* --- Main header --- */
 	if (   nmc_config->print_output == NMC_PRINT_PRETTY
@@ -1796,6 +1797,7 @@ print_data_prepare_width (GPtrArray *output_data)
 
 void
 print_data (const NmcConfig *nmc_config,
+            NmcPagerData *pager_data,
             const GArray *indices,
             const char *header_name,
             int indent,
@@ -1806,9 +1808,13 @@ print_data (const NmcConfig *nmc_config,
 	for (i = 0; i < out->output_data->len; i++) {
 		const NmcOutputField *field_values = g_ptr_array_index (out->output_data, i);
 
-		print_required_fields (nmc_config, field_values[0].flags,
-		                       indices, header_name,
-		                       indent, field_values);
+		print_required_fields (nmc_config,
+		                       pager_data,
+		                       field_values[0].flags,
+		                       indices,
+		                       header_name,
+		                       indent,
+		                       field_values);
 	}
 }
 

@@ -1340,7 +1340,7 @@ print_bond_bridge_info (NMDevice *device,
 	g_ptr_array_add (out.output_data, arr);
 
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+	print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
 
 	g_string_free (slaves_str, FALSE);
 
@@ -1410,7 +1410,7 @@ print_team_info (NMDevice *device,
 	g_ptr_array_add (out.output_data, arr);
 
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+	print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
 
 	g_string_free (slaves_str, FALSE);
 
@@ -1465,9 +1465,13 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		for (i = 0; i < G_N_ELEMENTS (metagen_device_detail_general); i++)
 			row[i].info = (const NMMetaAbstractInfo *) &metagen_device_detail_general[i];
 
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
-		                       out_indices, header_name,
-		                       0, row);
+		print_required_fields (&nmc->nmc_config,
+		                       &nmc->pager_data,
+		                       NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices,
+		                       header_name,
+		                       0,
+		                       row);
 	}
 
 	/* Loop through the required sections and print them. */
@@ -1578,7 +1582,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				}
 
 				print_data_prepare_width (out.output_data);
-				print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+				print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
 				was_output = TRUE;
 			}
 		}
@@ -1659,7 +1663,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (out.output_data, arr);
 
 				print_data_prepare_width (out.output_data);
-				print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+				print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
 
 				was_output = TRUE;
 			}
@@ -1681,7 +1685,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (out.output_data, arr);
 
 				print_data_prepare_width (out.output_data);
-				print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+				print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
 				was_output = TRUE;
 			}
 		}
@@ -2870,7 +2874,7 @@ wifi_print_aps (NMDeviceWifi *wifi,
 			fill_output_access_point (ap, info);
 
 			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, out_indices, header_name, 0, &out);
+			print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, header_name, 0, &out);
 			g_free (info);
 
 			*bssid_found = TRUE;
@@ -2878,7 +2882,7 @@ wifi_print_aps (NMDeviceWifi *wifi,
 		}
 	} else {
 		show_access_point_info (wifi, nmc, &out);
-		print_data (&nmc->nmc_config, out_indices, header_name, 0, &out);
+		print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, header_name, 0, &out);
 		empty_line = TRUE;
 	}
 }
@@ -4537,7 +4541,7 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 	}
 
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices, header_name, 0, &out);
+	print_data (&nmc->nmc_config, &nmc->pager_data, out_indices, header_name, 0, &out);
 
 	return neighbors->len;
 }

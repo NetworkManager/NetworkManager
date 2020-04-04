@@ -1388,9 +1388,13 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
 			row[i].info = (const NMMetaAbstractInfo *) &nm_meta_setting_infos_editor[i];
 
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
-		                       out_indices, header_name,
-		                       0, row);
+		print_required_fields (&nmc->nmc_config,
+		                       &nmc->pager_data,
+		                       NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices,
+		                       header_name,
+		                       0,
+		                       row);
 	}
 
 	/* Loop through the required settings and print them. */
@@ -1473,9 +1477,13 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		for (i = 0; nmc_fields_con_active_details_groups[i]; i++)
 			row[i].info = (const NMMetaAbstractInfo *) nmc_fields_con_active_details_groups[i];
 
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
-		                       out_indices, header_name,
-		                       0, row);
+		print_required_fields (&nmc->nmc_config,
+		                       &nmc->pager_data,
+		                       NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices,
+		                       header_name,
+		                       0,
+		                       row);
 	}
 
 	/* Loop through the groups and print them. */
@@ -2093,7 +2101,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		nm_cli_spawn_pager (nmc);
+		nm_cli_spawn_pager (&nmc->nmc_config, &nmc->pager_data);
 
 		items = con_show_get_items (nmc, active_only, show_active_fields, order);
 		g_ptr_array_add (items, NULL);
@@ -3842,7 +3850,7 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 
 	values = nm_meta_abstract_info_complete (abstract_info,
 	                                         nmc_meta_environment,
-	                                         nmc_meta_environment_arg,
+	                                         (gpointer) nmc_meta_environment_arg,
 	                                         &ctx,
 	                                         text,
 	                                         NULL,
@@ -4642,7 +4650,7 @@ complete_option (NmCli *nmc, const NMMetaAbstractInfo *abstract_info, const char
 
 	values = nm_meta_abstract_info_complete (abstract_info,
 	                                         nmc_meta_environment,
-	                                         nmc_meta_environment_arg,
+	                                         (gpointer) nmc_meta_environment_arg,
 	                                         &ctx,
 	                                         prefix,
 	                                         &complete_filename,
@@ -5827,7 +5835,7 @@ gen_vpn_uuids (const char *text, int state)
 	const char **uuids;
 	char *ret;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (nm_cli_global_readline->client);
 	if (connections->len < 1)
 		return NULL;
 
@@ -5844,7 +5852,7 @@ gen_vpn_ids (const char *text, int state)
 	const char **ids;
 	char *ret;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (nm_cli_global_readline->client);
 	if (connections->len < 1)
 		return NULL;
 
@@ -9253,7 +9261,7 @@ gen_func_connection_names (const char *text, int state)
 	const char **connection_names;
 	char *ret;
 
-	connections = nm_client_get_connections (nm_cli.client);
+	connections = nm_client_get_connections (nm_cli_global_readline->client);
 	if (connections->len == 0)
 		return NULL;
 
@@ -9276,10 +9284,10 @@ gen_func_active_connection_names (const char *text, int state)
 	const char **connections;
 	char *ret;
 
-	if (!nm_cli.client)
+	if (!nm_cli_global_readline->client)
 		return NULL;
 
-	acs = nm_client_get_active_connections (nm_cli.client);
+	acs = nm_client_get_active_connections (nm_cli_global_readline->client);
 	if (!acs || acs->len == 0)
 		return NULL;
 

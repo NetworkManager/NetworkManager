@@ -72,7 +72,7 @@
 	[NM_META_COLOR_ENABLED]                  = "32", \
 	[NM_META_COLOR_DISABLED]                 = "31", \
 
-NmCli nm_cli = {
+static NmCli nm_cli = {
 	.client = NULL,
 
 	.return_value = NMC_RESULT_SUCCESS,
@@ -100,6 +100,9 @@ NmCli nm_cli = {
 	.editor_status_line = FALSE,
 	.editor_save_confirmation = TRUE,
 };
+
+const NmCli *const nm_cli_global_readline = &nm_cli;
+const NmCli *const nmc_meta_environment_arg = &nm_cli;
 
 /*****************************************************************************/
 
@@ -909,11 +912,12 @@ signal_handler (gpointer user_data)
 }
 
 void
-nm_cli_spawn_pager (NmCli *nmc)
+nm_cli_spawn_pager (const NmcConfig *nmc_config,
+                    NmcPagerData *pager_data)
 {
-	if (nmc->pager_pid > 0)
+	if (pager_data->pid != 0)
 		return;
-	nmc->pager_pid = nmc_terminal_spawn_pager (&nmc->nmc_config);
+	pager_data->pid = nmc_terminal_spawn_pager (nmc_config);
 }
 
 static void
@@ -935,13 +939,14 @@ nmc_cleanup (NmCli *nmc)
 
 	nm_clear_g_free (&nmc->required_fields);
 
-	if (nmc->pager_pid > 0) {
+	if (nmc->pager_data.pid != 0) {
+		pid_t pid = nm_steal_int (&nmc->pager_data.pid);
+
 		fclose (stdout);
 		fclose (stderr);
 		do {
-			ret = waitpid (nmc->pager_pid, NULL, 0);
+			ret = waitpid (pid, NULL, 0);
 		} while (ret == -1 && errno == EINTR);
-		nmc->pager_pid = 0;
 	}
 
 	nm_clear_g_free (&nmc->palette_buffer);
