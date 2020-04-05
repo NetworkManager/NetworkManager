@@ -1728,7 +1728,7 @@ nmc_device_state_to_color (NMDeviceState state)
 	return NM_META_COLOR_DEVICE_UNKNOWN;
 }
 
-static NMCResultCode
+static void
 do_devices_status (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	GError *error = NULL;
@@ -1738,11 +1738,12 @@ do_devices_status (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	next_arg (nmc, &argc, &argv, NULL);
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (argc) {
 		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
@@ -1762,13 +1763,12 @@ do_devices_status (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	                &error)) {
 		g_string_printf (nmc->return_text, _("Error: 'device status': %s"), error->message);
 		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
-
-	return NMC_RESULT_SUCCESS;
 }
 
-static NMCResultCode
+static void
 do_device_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_free_error GError *error = NULL;
@@ -1783,16 +1783,18 @@ do_device_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*a
 		device = get_device (nmc, &argc, &argv, &error);
 		if (!device) {
 			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			return error->code;
+			nmc->return_value = error->code;
+			return;
 		}
 
 		if (argc) {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		if (nmc->complete)
-			return nmc->return_value;
+			return;
 
 		show_device_info (device, nmc);
 	} else {
@@ -1812,8 +1814,6 @@ do_device_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*a
 
 		g_free (devices);
 	}
-
-	return nmc->return_value;
 }
 
 static gboolean
@@ -2036,7 +2036,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 	g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 }
 
-static NMCResultCode
+static void
 do_device_connect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device = NULL;
@@ -2051,16 +2051,18 @@ do_device_connect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	if (*argv) {
 		g_string_printf (nmc->return_text, _("Error: extra argument not allowed: '%s'."), *argv);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	/*
 	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
@@ -2091,8 +2093,6 @@ do_device_connect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	/* Start progress indication */
 	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, device);
-
-	return nmc->return_value;
 }
 
 typedef struct {
@@ -2206,7 +2206,7 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 }
 
-static NMCResultCode
+static void
 do_device_reapply (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device;
@@ -2221,16 +2221,18 @@ do_device_reapply (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	if (argc) {
 		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
@@ -2241,8 +2243,6 @@ do_device_reapply (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 
 	/* Now reapply the connection to the device */
 	nm_device_reapply_async (device, NULL, 0, 0, NULL, reapply_device_cb, info);
-
-	return nmc->return_value;
 }
 
 typedef struct {
@@ -2323,7 +2323,7 @@ modify_get_applied_cb (GObject *object,
 		nm_device_reapply_async (device, connection, version_id, 0, NULL, modify_reapply_cb, info);
 }
 
-static NMCResultCode
+static void
 do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device = NULL;
@@ -2334,7 +2334,8 @@ do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	if (nmc->timeout == -1)
@@ -2349,8 +2350,6 @@ do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 	info->argv = nm_utils_strv_dup ((char **) argv, argc, TRUE);
 
 	nm_device_get_applied_connection_async (device, 0, NULL, modify_get_applied_cb, info);
-
-	return nmc->return_value;
 }
 
 static void
@@ -2390,7 +2389,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 }
 
-static NMCResultCode
+static void
 do_devices_disconnect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device;
@@ -2404,7 +2403,7 @@ do_devices_disconnect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 	next_arg (nmc, &argc, &argv, NULL);
 	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
-		return nmc->return_value;
+		return;
 	if (nmc->complete)
 		goto out;
 	queue = g_slist_reverse (queue);
@@ -2435,7 +2434,6 @@ do_devices_disconnect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 
 out:
 	g_slist_free (queue);
-	return nmc->return_value;
 }
 
 static void
@@ -2462,7 +2460,7 @@ delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 }
 
-static NMCResultCode
+static void
 do_devices_delete (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device;
@@ -2476,7 +2474,7 @@ do_devices_delete (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 	next_arg (nmc, &argc, &argv, NULL);
 	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
-		return nmc->return_value;
+		return;
 	if (nmc->complete)
 		goto out;
 	queue = g_slist_reverse (queue);
@@ -2500,10 +2498,9 @@ do_devices_delete (const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 
 out:
 	g_slist_free (queue);
-	return nmc->return_value;
 }
 
-static NMCResultCode
+static void
 do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 #define DEV_SET_AUTOCONNECT 0
@@ -2526,12 +2523,14 @@ do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*ar
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	if (!argc) {
 		g_string_printf (nmc->return_text, _("Error: No property specified."));
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	i = 0;
@@ -2546,14 +2545,16 @@ do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*ar
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			if (argc == 1 && nmc->complete)
 				nmc_complete_bool (*argv);
 			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'managed': %s."),
 				                 error->message);
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			values[DEV_SET_MANAGED].idx = ++i;
 			values[DEV_SET_MANAGED].value = flag;
@@ -2563,26 +2564,29 @@ do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*ar
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			if (argc == 1 && nmc->complete)
 				nmc_complete_bool (*argv);
 			if (!nmc_string_to_bool (*argv, &flag, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
 				                 error->message);
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			values[DEV_SET_AUTOCONNECT].idx = ++i;
 			values[DEV_SET_AUTOCONNECT].value = flag;
 		}
 		else {
 			g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 	} while (next_arg (nmc, &argc, &argv, NULL) == 0);
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	/* when multiple properties are specified, set them in the order as they
 	 * are specified on the command line. */
@@ -2596,8 +2600,6 @@ do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*ar
 		nm_device_set_autoconnect (device, values[DEV_SET_AUTOCONNECT].value);
 	if (values[DEV_SET_MANAGED].idx >= 0)
 		nm_device_set_managed (device, values[DEV_SET_MANAGED].value);
-
-	return nmc->return_value;
 }
 
 static void
@@ -2662,11 +2664,11 @@ device_removed (NMClient *client, NMDevice *device, NmCli *nmc)
 	device_unwatch (nmc, device);
 }
 
-static NMCResultCode
+static void
 do_devices_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
@@ -2691,7 +2693,6 @@ do_devices_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 	}
 
 	g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK (device_removed), nmc);
-	return nmc->return_value;
 }
 
 /*
@@ -3033,7 +3034,7 @@ nmc_complete_bssid (NMClient *client, const char *ifname, const char *bssid_pref
 	complete_aps (devices, ifname, bssid_prefix, NULL);
 }
 
-static NMCResultCode
+static void
 do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	GError *error = NULL;
@@ -3061,7 +3062,8 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			ifname = *argv;
 			if (argc == 1 && nmc->complete)
@@ -3073,7 +3075,8 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			bssid_user = *argv;
 			if (argc == 1 && nmc->complete)
@@ -3084,7 +3087,8 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			rescan = *argv;
 			if (argc == 1 && nmc->complete)
@@ -3097,7 +3101,7 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = NMC_FIELDS_DEV_WIFI_LIST_COMMON;
@@ -3111,12 +3115,14 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'device wifi': %s"), error->message);
 		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (argc) {
 		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (NM_IN_STRSET (rescan, NULL, "auto"))
@@ -3127,7 +3133,8 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 		rescan_cutoff_msec = nm_utils_get_timestamp_msec ();
 	else {
 		g_string_printf (nmc->return_text, _("Error: invalid rescan argument: '%s' not among [auto, no, yes]"), rescan);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	ifname_handled = (ifname == NULL);
@@ -3176,7 +3183,8 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 			                 _("Error: Device '%s' is not a Wi-Fi device."),
 			                 ifname);
 		}
-		return NMC_RESULT_ERROR_NOT_FOUND;
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		return;
 	}
 
 	if (!devices[0]) {
@@ -3184,9 +3192,9 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
 			                 bssid_user);
-			return NMC_RESULT_ERROR_NOT_FOUND;
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		}
-		return NMC_RESULT_SUCCESS;
+		return;
 	}
 
 	scan_info = g_slice_new (ScanInfo);
@@ -3235,7 +3243,6 @@ do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	scan_info->devices = g_steal_pointer (&devices);
 
 	nmc->should_wait++;
-	return nmc->return_value;
 }
 
 static void
@@ -3299,7 +3306,7 @@ save_and_activate_connection (NmCli *nmc,
 	}
 }
 
-static NMCResultCode
+static void
 do_device_wifi_connect (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device = NULL;
@@ -3710,8 +3717,6 @@ finish:
 		g_byte_array_free (bssid2_arr, TRUE);
 	g_free (ssid_ask);
 	nm_free_secret (passwd_ask);
-
-	return nmc->return_value;
 }
 
 static GBytes *
@@ -3940,7 +3945,7 @@ create_hotspot_conn (const GPtrArray *connections,
 	return connection;
 }
 
-static NMCResultCode
+static void
 do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	const char *ifname = NULL;
@@ -3978,7 +3983,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			ifname = *argv;
 			if (argc == 1 && nmc->complete)
@@ -3988,7 +3994,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			con_name = *argv;
 		} else if (strcmp (*argv, "ssid") == 0) {
@@ -3996,11 +4003,13 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			if (strlen (*argv) > 32) {
 				g_string_printf (nmc->return_text, _("Error: ssid is too long."));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			ssid_bytes = g_bytes_new (*argv, strlen (*argv));
 		} else if (strcmp (*argv, "band") == 0) {
@@ -4008,7 +4017,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			band = *argv;
 			if (argc == 1 && nmc->complete)
@@ -4016,14 +4026,16 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			if (strcmp (band, "a") && strcmp (band, "bg")) {
 				g_string_printf (nmc->return_text, _("Error: band argument value '%s' is invalid; use 'a' or 'bg'."),
 				                 band);
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 		} else if (strcmp (*argv, "channel") == 0) {
 			argc--;
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			channel = *argv;
 		} else if (strcmp (*argv, "password") == 0) {
@@ -4031,7 +4043,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			password = *argv;
 		/* --show-password is deprecated in favour of global --show-secrets option */
@@ -4040,7 +4053,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			show_password = TRUE;
 		} else {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -4048,7 +4062,7 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 	show_password = nmc->nmc_config.show_secrets || show_password;
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	/* Verify band and channel parameters */
 	if (!channel) {
@@ -4062,13 +4076,15 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 
 		if (!band) {
 			g_string_printf (nmc->return_text, _("Error: channel requires band too."));
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 		if (   !nmc_string_to_uint (channel, TRUE, 1, 5825, &value)
 		    || !nm_utils_wifi_is_channel_valid (value, band)) {
 			g_string_printf (nmc->return_text, _("Error: channel '%s' not valid for band '%s'."),
 			                 channel, band);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		channel_int = value;
@@ -4081,7 +4097,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
-		return NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		return;
 	}
 
 	/* Check device supported mode */
@@ -4093,7 +4110,8 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 	else {
 		g_string_printf (nmc->return_text, _("Error: Device '%s' supports neither AP nor Ad-Hoc mode."),
 		                 nm_device_get_iface (device));
-		return NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		return;
 	}
 
 	connections = nm_client_get_connections (nmc->client);
@@ -4109,13 +4127,14 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 
 	if (password || !NM_IS_REMOTE_CONNECTION (connection)) {
 		s_wsec = nm_connection_get_setting_wireless_security (connection);
-		g_return_val_if_fail (s_wsec, NMC_RESULT_ERROR_UNKNOWN);
+		g_return_if_fail (s_wsec);
 
 		if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, show_password, &error)) {
 			g_object_unref (connection);
 			g_string_printf (nmc->return_text, _("Error: Invalid 'password': %s."), error->message);
 			g_clear_error (&error);
-			return NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			return;
 		}
 	}
 
@@ -4124,8 +4143,6 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 	nmc->should_wait++;
 
 	save_and_activate_connection (nmc, device, connection, TRUE, NULL);
-
-	return nmc->return_value;
 }
 
 static void
@@ -4143,7 +4160,7 @@ request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	quit ();
 }
 
-static NMCResultCode
+static void
 do_device_wifi_rescan (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device;
@@ -4167,14 +4184,14 @@ do_device_wifi_rescan (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 			if (ifname) {
 				g_string_printf (nmc->return_text, _("Error: '%s' cannot repeat."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
+				return;
 			}
 			argc--;
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
+				return;
 			}
 			ifname = *argv;
 			if (argc == 1 && nmc->complete)
@@ -4185,20 +4202,20 @@ do_device_wifi_rescan (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
+				return;
 			}
 			g_ptr_array_add (ssids, (gpointer) *argv);
 		} else if (!nmc->complete) {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
+			return;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
-		goto finish;
+		return;
 
 	/* Find Wi-Fi device to scan on. When no ifname is provided, the first Wi-Fi is used. */
 	device = find_wifi_device_by_iface (devices, ifname, NULL);
@@ -4209,7 +4226,7 @@ do_device_wifi_rescan (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto finish;
+		return;
 	}
 
 	if (ssids->len) {
@@ -4233,8 +4250,6 @@ do_device_wifi_rescan (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 		                                   NULL, request_rescan_cb, nmc);
 
 	nmc->should_wait++;
-finish:
-	return nmc->return_value;
 }
 
 static void
@@ -4373,7 +4388,7 @@ wifi_show_device (const NmcConfig *nmc_config, NMDevice *device, GError **error)
 	return TRUE;
 }
 
-static NMCResultCode
+static void
 do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	const char *ifname = NULL;
@@ -4394,7 +4409,8 @@ do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, const
 				g_string_printf (nmc->return_text,
 				                 _("Error: '%s' cannot repeat."),
 				                 *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			argc--;
 			argv++;
@@ -4402,7 +4418,8 @@ do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, const
 				g_string_printf (nmc->return_text,
 				                 _("Error: %s argument is missing."),
 				                 *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			ifname = *argv;
 			if (argc == 1 && nmc->complete)
@@ -4411,14 +4428,15 @@ do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, const
 			g_string_printf (nmc->return_text,
 			                 _("Error: invalid extra argument '%s'."),
 			                 *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	for (i = 0; devices[i]; i++) {
 		if (ifname && g_strcmp0 (nm_device_get_iface (devices[i]), ifname) != 0)
@@ -4430,7 +4448,8 @@ do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, const
 			if (ifname) {
 				g_string_printf (nmc->return_text,
 				                 _("%s"), error->message);
-				return NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				return;
 			}
 			g_clear_error (&error);
 		}
@@ -4442,10 +4461,9 @@ do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, const
 	if (!found) {
 		g_string_printf (nmc->return_text,
 		                 _("Error: No Wi-Fi device found."));
-		return NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		return;
 	}
-
-	return nmc->return_value;
 }
 
 static NMCCommand device_wifi_cmds[] = {
@@ -4457,13 +4475,11 @@ static NMCCommand device_wifi_cmds[] = {
 	{ NULL,             do_device_wifi_list,           NULL,  TRUE,  TRUE },
 };
 
-static NMCResultCode
+static void
 do_device_wifi (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
-
-	return nmc->return_value;
 }
 
 static int
@@ -4551,7 +4567,7 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 	return neighbors->len;
 }
 
-static NMCResultCode
+static void
 do_device_lldp_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device = NULL;
@@ -4570,17 +4586,20 @@ do_device_lldp_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 
 			device = get_device (nmc, &argc, &argv, &error);
 			if (!device) {
 				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-				return error->code;
+				nmc->return_value = error->code;
+				return;
 			}
 		} else {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
@@ -4596,25 +4615,22 @@ do_device_lldp_list (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'device lldp list': %s"), error->message);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (device) {
 		show_device_lldp_list (device, nmc, fields_str, &counter);
 	} else {
-		NMDevice **devices = nmc_get_devices_sorted (nmc->client);
-		int i;
+		gs_free NMDevice **devices = nmc_get_devices_sorted (nmc->client);
+		guint i;
 
 		for (i = 0; devices[i]; i++)
 			show_device_lldp_list (devices[i], nmc, fields_str, &counter);
-
-		g_free (devices);
 	}
-
-	return nmc->return_value;
 }
 
 static NMCCommand device_lldp_cmds[] = {
@@ -4622,7 +4638,7 @@ static NMCCommand device_lldp_cmds[] = {
 	{ NULL,    do_device_lldp_list,  NULL,             TRUE,   TRUE },
 };
 
-static NMCResultCode
+static void
 do_device_lldp (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	if (!nmc->mode_specified)
@@ -4630,8 +4646,6 @@ do_device_lldp (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*a
 
 	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
-
-	return nmc->return_value;
 }
 
 static gboolean
@@ -4676,7 +4690,7 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
-NMCResultCode
+void
 nmc_command_func_device (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
@@ -4701,7 +4715,6 @@ nmc_command_func_device (const NMCCommand *cmd, NmCli *nmc, int argc, const char
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
 
 	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
-	return nmc->return_value;
 }
 
 void

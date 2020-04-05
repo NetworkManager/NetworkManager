@@ -2027,7 +2027,7 @@ get_connection (NmCli *nmc,
 	return connection;
 }
 
-static NMCResultCode
+static void
 do_connections_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_free_error GError *err = NULL;
@@ -2284,7 +2284,6 @@ finish:
 		g_string_printf (nmc->return_text, _("Error: %s."), err->message);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}
-	return nmc->return_value;
 }
 
 static NMActiveConnection *
@@ -2854,7 +2853,7 @@ nmc_activate_connection (NmCli *nmc,
 	return TRUE;
 }
 
-static NMCResultCode
+static void
 do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMConnection *connection = NULL;
@@ -2896,7 +2895,8 @@ do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 		connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, NULL, NULL, &error);
 		if (!connection) {
 			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			return error->code;
+			nmc->return_value = error->code;
+			return;
 		}
 	}
 
@@ -2909,7 +2909,8 @@ do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 
 			ifname = *argv;
@@ -2921,7 +2922,8 @@ do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 
 			ap = *argv;
@@ -2933,7 +2935,8 @@ do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 
 			if (argc == 1 && nmc->complete)
@@ -2943,14 +2946,15 @@ do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 		}
 		else if (!nmc->complete) {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	/* Use nowait_flag instead of should_wait because exiting has to be postponed till
 	 * active_connection_state_cb() is called. That gives NM time to check our permissions
@@ -2963,14 +2967,13 @@ do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 		g_string_printf (nmc->return_text, _("Error: %s."),
 		                 error->message);
 		nmc->should_wait--;
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	/* Start progress indication */
 	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, _("preparing"));
-
-	return nmc->return_value;
 }
 
 /*****************************************************************************/
@@ -3112,7 +3115,7 @@ connection_op_timeout_cb (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-static NMCResultCode
+static void
 do_connection_down (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMActiveConnection *active;
@@ -3145,7 +3148,8 @@ do_connection_down (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 		}
 		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No connection specified."));
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 	}
 
@@ -3163,7 +3167,8 @@ do_connection_down (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 			arg_ptr++;
 			if (!arg_num) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 		}
 
@@ -3184,12 +3189,13 @@ do_connection_down (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
 	if (!found_active_cons) {
 		g_string_printf (nmc->return_text, _("Error: no active connection provided."));
-		return NMC_RESULT_ERROR_NOT_FOUND;
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		return;
 	}
 	nm_assert (found_active_cons->len > 0);
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (nmc->timeout > 0) {
 		nmc->should_wait++;
@@ -3226,8 +3232,6 @@ do_connection_down (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 			}
 		}
 	}
-
-	return nmc->return_value;
 }
 
 /*****************************************************************************/
@@ -5348,7 +5352,7 @@ again:
 	return TRUE;
 }
 
-static NMCResultCode
+static void
 do_connection_add (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_unref_object NMConnection *connection = NULL;
@@ -5506,7 +5510,6 @@ read_properties:
 
 finish:
 	reset_options ();
-	return nmc->return_value;
 }
 
 /*****************************************************************************/
@@ -8354,7 +8357,7 @@ nmc_complete_connection_type (const char *prefix)
 	}
 }
 
-static NMCResultCode
+static void
 do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	const GPtrArray *connections;
@@ -8390,7 +8393,8 @@ do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 	else {
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, &error)) {
 			g_string_assign (nmc->return_text, error->message);
-			return error->code;
+			nmc->return_value = error->code;
+			return;
 		}
 	}
 
@@ -8420,7 +8424,8 @@ do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 		} else {
 			g_string_printf (nmc->return_text,
 			                 _("Error: only one of 'id', 'filename', uuid, or 'path' can be provided."));
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 	}
 
@@ -8430,11 +8435,12 @@ do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
 		found_con = nmc_find_connection (connections, selector, con, NULL, nmc->complete);
 		if (nmc->complete)
-			return nmc->return_value;
+			return;
 
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
-			return NMC_RESULT_ERROR_NOT_FOUND;
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+			return;
 		}
 
 		/* Duplicate the connection and use that so that we need not
@@ -8469,7 +8475,7 @@ do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 		if (nmc->complete) {
 			if (type && argc == 0)
 				nmc_complete_connection_type (type);
-			return nmc->return_value;
+			return;
 		}
 
 		connection_type = check_valid_name_toplevel (type, &slave_type, &err1);
@@ -8545,7 +8551,7 @@ do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 	nm_clear_g_free (&nmc_tab_completion.con_type);
 	nmc_tab_completion.connection = NULL;
 
-	return nmc->return_value;
+	return;
 }
 
 static void
@@ -8573,7 +8579,7 @@ modify_connection_cb (GObject *connection,
 	quit ();
 }
 
-static NMCResultCode
+static void
 do_connection_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMConnection *connection = NULL;
@@ -8589,7 +8595,8 @@ do_connection_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 	connection = get_connection (nmc, &argc, &argv, NULL, NULL, NULL, &error);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	rc = nm_client_get_connection_by_uuid (nmc->client,
@@ -8597,21 +8604,21 @@ do_connection_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 	if (!rc) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."),
 		                 nm_connection_get_uuid (connection));
-		return NMC_RESULT_ERROR_NOT_FOUND;
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		return;
 	}
 
 	if (!nmc_process_connection_properties (nmc, NM_CONNECTION (rc), &argc, &argv, TRUE, &error)) {
 		g_string_assign (nmc->return_text, error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	update_connection (rc, temporary, modify_connection_cb, nmc);
 	nmc->should_wait++;
-
-	return nmc->return_value;
 }
 
 static void
@@ -8641,7 +8648,7 @@ clone_connection_cb (GObject *client,
 	quit ();
 }
 
-static NMCResultCode
+static void
 do_connection_clone (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMConnection *connection = NULL;
@@ -8680,11 +8687,12 @@ do_connection_clone (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, NULL, NULL, &error);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		return error->code;
+		nmc->return_value = error->code;
+		return;
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (argv[0])
 		new_name = *argv;
@@ -8693,12 +8701,14 @@ do_connection_clone (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 		                                         _("New connection name: "));
 	} else {
 		g_string_printf (nmc->return_text, _("Error: <new name> argument is missing."));
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr, NULL) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	new_connection = nm_simple_connection_new_clone (connection);
@@ -8717,8 +8727,6 @@ do_connection_clone (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 	                clone_connection_cb,
 	                _add_connection_info_new (nmc, connection, new_connection));
 	nmc->should_wait++;
-
-	return nmc->return_value;
 }
 
 static void
@@ -8742,7 +8750,7 @@ delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 	}
 }
 
-static NMCResultCode
+static void
 do_connection_delete (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMConnection *connection;
@@ -8843,7 +8851,6 @@ finish:
 		                 invalid_cons->str);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 	}
-	return nmc->return_value;
 }
 
 static void
@@ -8888,7 +8895,7 @@ connection_removed (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
 	connection_unwatch (nmc, connection);
 }
 
-static NMCResultCode
+static void
 do_connection_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	GError *error = NULL;
@@ -8910,7 +8917,8 @@ do_connection_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 				if (!nmc->complete)
 					g_printerr (_("Error: %s.\n"), error->message);
 				g_string_printf (nmc->return_text, _("Error: not all connections found."));
-				return error->code;
+				nmc->return_value = error->code;
+				return;
 			}
 
 			if (nmc->complete)
@@ -8921,7 +8929,7 @@ do_connection_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	for (i = 0; i < connections->len; i++)
 		connection_watch (nmc, connections->pdata[i]);
@@ -8933,11 +8941,9 @@ do_connection_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 	}
 
 	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED, G_CALLBACK (connection_removed), nmc);
-
-	return NMC_RESULT_SUCCESS;
 }
 
-static NMCResultCode
+static void
 do_connection_reload (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_unref_variant GVariant *result = NULL;
@@ -8945,7 +8951,7 @@ do_connection_reload (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	result = nmc_dbus_call_sync (nmc,
 	                             "/org/freedesktop/NetworkManager/Settings",
@@ -8959,11 +8965,9 @@ do_connection_reload (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 		                 nmc_error_get_simple_message (error));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 	}
-
-	return nmc->return_value;
 }
 
-static NMCResultCode
+static void
 do_connection_load (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	GError *error = NULL;
@@ -8974,11 +8978,14 @@ do_connection_load (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No connection specified."));
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
-	if (nmc->complete)
-		return NMC_RESULT_COMPLETE_FILE;
+	if (nmc->complete) {
+		nmc->return_value = NMC_RESULT_COMPLETE_FILE;
+		return;
+	}
 
 	filenames = (const char **) nm_utils_strv_dup ((char **) argv, argc, FALSE);
 
@@ -8994,13 +9001,11 @@ do_connection_load (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 		for (i = 0; failures[i]; i++)
 			g_printerr (_("Could not load file '%s'\n"), failures[i]);
 	}
-
-	return nmc->return_value;
 }
 
 #define PROMPT_IMPORT_FILE N_("File to import: ")
 
-static NMCResultCode
+static void
 do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_free_error GError *error = NULL;
@@ -9032,7 +9037,8 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 			filename = nm_strstrip (filename_ask);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: No arguments provided."));
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 	}
 
@@ -9048,7 +9054,8 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 
 			if (   argc == 1
@@ -9069,7 +9076,8 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				return NMC_RESULT_ERROR_USER_INPUT;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return;
 			}
 			if (argc == 1 && nmc->complete)
 				nmc->return_value = NMC_RESULT_COMPLETE_FILE;
@@ -9079,22 +9087,25 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 				g_printerr (_("Warning: 'file' already specified, ignoring extra one.\n"));
 		} else {
 			g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
-			return NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return;
 		}
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (!type) {
 		g_string_printf (nmc->return_text, _("Error: 'type' argument is required."));
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 	if (!filename) {
 		g_string_printf (nmc->return_text, _("Error: 'file' argument is required."));
-		return NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
 	}
 
 	if (nm_streq (type, "wireguard"))
@@ -9103,7 +9114,8 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 		service_type = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), type);
 		if (!service_type) {
 			g_string_printf (nmc->return_text, _("Error: failed to find VPN plugin for %s."), type);
-			return NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			return;
 		}
 
 		/* Import VPN configuration */
@@ -9111,7 +9123,8 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 		if (!plugin) {
 			g_string_printf (nmc->return_text, _("Error: failed to load VPN plugin: %s."),
 			                 error->message);
-			return NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			return;
 		}
 
 		connection = nm_vpn_editor_plugin_import (plugin, filename, &error);
@@ -9120,7 +9133,8 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: failed to import '%s': %s."),
 		                 filename, error->message);
-		return NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		return;
 	}
 
 	add_connection (nmc->client,
@@ -9129,11 +9143,9 @@ do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 	                add_connection_cb,
 	                _add_connection_info_new (nmc, NULL, connection));
 	nmc->should_wait++;
-
-	return nmc->return_value;
 }
 
-static NMCResultCode
+static void
 do_connection_export (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMConnection *connection = NULL;
@@ -9174,7 +9186,7 @@ do_connection_export (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 	}
 
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	out_name = *argv;
 
@@ -9244,7 +9256,6 @@ do_connection_export (const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 finish:
 	if (!out_name && path)
 		unlink (path);
-	return nmc->return_value;
 }
 
 static char *
@@ -9336,7 +9347,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
-NMCResultCode
+void
 nmc_command_func_connection (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
@@ -9364,7 +9375,6 @@ nmc_command_func_connection (const NMCCommand *cmd, NmCli *nmc, int argc, const 
 	rl_attempted_completion_function = nmcli_con_tab_completion;
 
 	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
-	return nmc->return_value;
 }
 
 void

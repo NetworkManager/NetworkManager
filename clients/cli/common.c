@@ -1264,7 +1264,7 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *
 			g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_NM_NOT_RUNNING,
 			                         _("Error: NetworkManager is not running."));
 		} else {
-			nmc->return_value = cmd->func (cmd, nmc, argc, argv);
+			cmd->func (cmd, nmc, argc, argv);
 			g_task_return_boolean (task, TRUE);
 		}
 

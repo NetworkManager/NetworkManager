@@ -121,12 +121,12 @@ secrets_requested (NMSecretAgentSimple *agent,
 	                                 success ? secrets : NULL);
 }
 
-static NMCResultCode
+static void
 do_agent_secret (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-agent");
@@ -144,8 +144,6 @@ do_agent_secret (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*
 		g_string_printf (nmc->return_text, _("Error: secret agent initialization failed"));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 	}
-
-	return nmc->return_value;
 }
 
 static void
@@ -163,14 +161,14 @@ polkit_error (gpointer instance,
 	g_main_loop_quit (loop);
 }
 
-static NMCResultCode
+static void
 do_agent_polkit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_free_error GError *error = NULL;
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	if (!nmc_polkit_agent_init (nmc, TRUE, &error)) {
 		g_dbus_error_strip_remote_error (error);
@@ -193,39 +191,37 @@ do_agent_polkit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*
 		/* keep running */
 		nmc->should_wait++;
 	}
-
-	return nmc->return_value;
 }
 
-static NMCResultCode
+static void
 do_agent_all (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
-	NMCResultCode secret_res;
+	NMCResultCode r;
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
-		return nmc->return_value;
+		return;
 
 	/* Run both secret and polkit agent */
-	secret_res = do_agent_secret (cmd, nmc, argc, argv);
-	if (secret_res != NMC_RESULT_SUCCESS) {
+	do_agent_secret (cmd, nmc, argc, argv);
+	r = nmc->return_value;
+	if (r != NMC_RESULT_SUCCESS) {
 		g_printerr ("%s\n", nmc->return_text->str);
 		g_string_truncate (nmc->return_text, 0);
+		nmc->return_value = NMC_RESULT_SUCCESS;
 	}
 
-	nmc->return_value = do_agent_polkit (cmd, nmc, argc, argv);
+	do_agent_polkit (cmd, nmc, argc, argv);
 	if (nmc->return_value != NMC_RESULT_SUCCESS) {
 		g_printerr ("%s\n", nmc->return_text->str);
 		g_string_truncate (nmc->return_text, 0);
 	}
 
-	if (nmc->return_value == NMC_RESULT_SUCCESS && secret_res != NMC_RESULT_SUCCESS)
-		nmc->return_value = secret_res;
-
-	return nmc->return_value;
+	if (r != NMC_RESULT_SUCCESS)
+		nmc->return_value = r;
 }
 
-NMCResultCode
+void
 nmc_command_func_agent (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
@@ -237,5 +233,4 @@ nmc_command_func_agent (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 
 	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
-	return nmc->return_value;
 }
