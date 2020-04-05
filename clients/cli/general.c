@@ -490,7 +490,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 }
 
 static NMCResultCode
-do_general_status (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_general_status (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
@@ -609,7 +609,7 @@ show_nm_permissions (NmCli *nmc)
 }
 
 static NMCResultCode
-do_general_reload (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_general_reload (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_unref_variant GVariant *result = NULL;
 	gs_free_error GError *error = NULL;
@@ -673,7 +673,7 @@ do_general_reload (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_general_permissions (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_general_permissions (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
@@ -747,7 +747,7 @@ _set_logging_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_general_logging (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_general_logging (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
@@ -837,7 +837,7 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_general_hostname (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_general_hostname (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
@@ -867,7 +867,7 @@ do_general_hostname (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 NMCResultCode
-nmc_command_func_general (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+nmc_command_func_general (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "status",      do_general_status,      usage_general_status,      TRUE,  TRUE  },
@@ -950,7 +950,7 @@ _do_networking_on_off_cb (GObject *object, GAsyncResult *result, gpointer user_d
 }
 
 static NMCResultCode
-do_networking_on_off (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_networking_on_off (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gboolean enable = nm_streq (cmd->cmd, "on");
 
@@ -977,7 +977,7 @@ do_networking_on_off (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_networking_connectivity (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_networking_connectivity (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete) {
@@ -1011,7 +1011,7 @@ do_networking_connectivity (const NMCCommand *cmd, NmCli *nmc, int argc, char **
 }
 
 static NMCResultCode
-do_networking_show (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_networking_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
@@ -1023,7 +1023,7 @@ do_networking_show (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 NMCResultCode
-nmc_command_func_networking (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+nmc_command_func_networking (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "on",           do_networking_on_off,       usage_networking_on,           TRUE, TRUE },
@@ -1038,7 +1038,7 @@ nmc_command_func_networking (const NMCCommand *cmd, NmCli *nmc, int argc, char *
 }
 
 static NMCResultCode
-do_radio_all (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_radio_all (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gboolean enable_flag;
 
@@ -1083,7 +1083,7 @@ _do_radio_wifi_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_radio_wifi (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_radio_wifi (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gboolean enable_flag;
 
@@ -1121,7 +1121,7 @@ do_radio_wifi (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_radio_wwan (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_radio_wwan (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gboolean enable_flag;
 
@@ -1148,7 +1148,7 @@ do_radio_wwan (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 NMCResultCode
-nmc_command_func_radio (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+nmc_command_func_radio (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "all",  do_radio_all,  usage_radio_all,  TRUE, TRUE },
@@ -1403,7 +1403,7 @@ ac_overview (NmCli *nmc, NMActiveConnection *ac)
 }
 
 NMCResultCode
-nmc_command_func_overview (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+nmc_command_func_overview (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice **devices;
 	const GPtrArray *p;
@@ -1518,7 +1518,7 @@ nmc_command_func_overview (const NMCCommand *cmd, NmCli *nmc, int argc, char **a
 }
 
 NMCResultCode
-nmc_command_func_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+nmc_command_func_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 

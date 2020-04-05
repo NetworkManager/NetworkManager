@@ -154,7 +154,7 @@ parse_global_arg (NmCli *nmc, const char *arg)
  * -1 otherwise (no more args).
  */
 int
-next_arg (NmCli *nmc, int *argc, char ***argv, ...)
+next_arg (NmCli *nmc, int *argc, const char *const**argv, ...)
 {
 	va_list args;
 	const char *cmd_option;
@@ -248,7 +248,7 @@ nmc_arg_is_option (const char *str, const char *opt_name)
  * Returns: TRUE on success, FALSE on an error and sets 'error'
  */
 gboolean
-nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error)
+nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, const char *const**argv, GError **error)
 {
 	nmc_arg_t *p;
 	gboolean found;

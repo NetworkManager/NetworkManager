@@ -62,7 +62,7 @@ int nmc_rl_set_deftext (void);
 
 char *nmc_parse_lldp_capabilities (guint value);
 
-void nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char **argv);
+void nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, const char *const*argv);
 
 void nmc_complete_strv (const char *prefix, gssize nargs, const char *const*args);
 

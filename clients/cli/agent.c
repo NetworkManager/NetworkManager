@@ -122,7 +122,7 @@ secrets_requested (NMSecretAgentSimple *agent,
 }
 
 static NMCResultCode
-do_agent_secret (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_agent_secret (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
@@ -164,7 +164,7 @@ polkit_error (gpointer instance,
 }
 
 static NMCResultCode
-do_agent_polkit (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_agent_polkit (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	gs_free_error GError *error = NULL;
 
@@ -198,7 +198,7 @@ do_agent_polkit (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_agent_all (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+do_agent_all (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMCResultCode secret_res;
 
@@ -226,7 +226,7 @@ do_agent_all (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 }
 
 NMCResultCode
-nmc_command_func_agent (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
+nmc_command_func_agent (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "secret", do_agent_secret, usage_agent_secret, TRUE, TRUE },

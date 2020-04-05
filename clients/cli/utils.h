@@ -19,10 +19,10 @@ typedef struct {
 } nmc_arg_t;
 
 /* === Functions === */
-int next_arg (NmCli *nmc, int *argc, char ***argv, ...);
+int next_arg (NmCli *nmc, int *argc, const char *const**argv, ...);
 gboolean nmc_arg_is_help (const char *arg);
 gboolean nmc_arg_is_option (const char *arg, const char *opt_name);
-gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);
+gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, const char *const**argv, GError **error);
 char *ssid_to_hex (const char *str, gsize len);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
