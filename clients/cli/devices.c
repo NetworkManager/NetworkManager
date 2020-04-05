@@ -1729,7 +1729,7 @@ nmc_device_state_to_color (NMDeviceState state)
 }
 
 static NMCResultCode
-do_devices_status (NmCli *nmc, int argc, char **argv)
+do_devices_status (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	gs_free NMDevice **devices = NULL;
@@ -1769,7 +1769,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_device_show (NmCli *nmc, int argc, char **argv)
+do_device_show (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	gs_free_error GError *error = NULL;
 
@@ -2037,7 +2037,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_device_connect (NmCli *nmc, int argc, char **argv)
+do_device_connect (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	AddAndActivateInfo *info;
@@ -2207,7 +2207,7 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_device_reapply (NmCli *nmc, int argc, char **argv)
+do_device_reapply (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
@@ -2319,7 +2319,7 @@ modify_get_applied_cb (GObject *object,
 }
 
 static NMCResultCode
-do_device_modify (NmCli *nmc, int argc, char **argv)
+do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	ModifyInfo *info = NULL;
@@ -2386,7 +2386,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_devices_disconnect (NmCli *nmc, int argc, char **argv)
+do_devices_disconnect (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
@@ -2458,7 +2458,7 @@ delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_devices_delete (NmCli *nmc, int argc, char **argv)
+do_devices_delete (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
@@ -2499,7 +2499,7 @@ out:
 }
 
 static NMCResultCode
-do_device_set (NmCli *nmc, int argc, char **argv)
+do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 #define DEV_SET_AUTOCONNECT 0
 #define DEV_SET_MANAGED     1
@@ -2658,7 +2658,7 @@ device_removed (NMClient *client, NMDevice *device, NmCli *nmc)
 }
 
 static NMCResultCode
-do_devices_monitor (NmCli *nmc, int argc, char **argv)
+do_devices_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	if (nmc->complete)
 		return nmc->return_value;
@@ -3028,7 +3028,7 @@ nmc_complete_bssid (NMClient *client, const char *ifname, const char *bssid_pref
 }
 
 static NMCResultCode
-do_device_wifi_list (NmCli *nmc, int argc, char **argv)
+do_device_wifi_list (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	NMDevice *device = NULL;
@@ -3294,7 +3294,7 @@ save_and_activate_connection (NmCli *nmc,
 }
 
 static NMCResultCode
-do_device_wifi_connect (NmCli *nmc, int argc, char **argv)
+do_device_wifi_connect (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
@@ -3935,7 +3935,7 @@ create_hotspot_conn (const GPtrArray *connections,
 }
 
 static NMCResultCode
-do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
+do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	const char *ifname = NULL;
 	const char *con_name = NULL;
@@ -4138,7 +4138,7 @@ request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
+do_device_wifi_rescan (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	const char *ifname = NULL;
@@ -4369,7 +4369,7 @@ wifi_show_device (const NmcConfig *nmc_config, NMDevice *device, GError **error)
 }
 
 static NMCResultCode
-do_device_wifi_show_password (NmCli *nmc, int argc, char **argv)
+do_device_wifi_show_password (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	const char *ifname = NULL;
 	gs_free NMDevice **devices = NULL;
@@ -4453,7 +4453,7 @@ static NMCCommand device_wifi_cmds[] = {
 };
 
 static NMCResultCode
-do_device_wifi (NmCli *nmc, int argc, char **argv)
+do_device_wifi (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
@@ -4547,7 +4547,7 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 }
 
 static NMCResultCode
-do_device_lldp_list (NmCli *nmc, int argc, char **argv)
+do_device_lldp_list (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	gs_free_error GError *error = NULL;
@@ -4618,7 +4618,7 @@ static NMCCommand device_lldp_cmds[] = {
 };
 
 static NMCResultCode
-do_device_lldp (NmCli *nmc, int argc, char **argv)
+do_device_lldp (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	if (!nmc->mode_specified)
 		nmc->nmc_config_mutable.multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
@@ -4672,7 +4672,7 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 }
 
 NMCResultCode
-nmc_command_func_device (NmCli *nmc, int argc, char **argv)
+nmc_command_func_device (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "status",     do_devices_status,     usage_device_status,     TRUE,  TRUE  },
@@ -4702,5 +4702,5 @@ nmc_command_func_device (NmCli *nmc, int argc, char **argv)
 void
 monitor_devices (NmCli *nmc)
 {
-	do_devices_monitor (nmc, 0, NULL);
+	do_devices_monitor (NULL, nmc, 0, NULL);
 }

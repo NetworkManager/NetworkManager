@@ -122,7 +122,7 @@ secrets_requested (NMSecretAgentSimple *agent,
 }
 
 static NMCResultCode
-do_agent_secret (NmCli *nmc, int argc, char **argv)
+do_agent_secret (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
@@ -164,7 +164,7 @@ polkit_error (gpointer instance,
 }
 
 static NMCResultCode
-do_agent_polkit (NmCli *nmc, int argc, char **argv)
+do_agent_polkit (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	gs_free_error GError *error = NULL;
 
@@ -198,7 +198,7 @@ do_agent_polkit (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_agent_all (NmCli *nmc, int argc, char **argv)
+do_agent_all (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMCResultCode secret_res;
 
@@ -207,13 +207,13 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 		return nmc->return_value;
 
 	/* Run both secret and polkit agent */
-	secret_res = do_agent_secret (nmc, argc, argv);
+	secret_res = do_agent_secret (cmd, nmc, argc, argv);
 	if (secret_res != NMC_RESULT_SUCCESS) {
 		g_printerr ("%s\n", nmc->return_text->str);
 		g_string_truncate (nmc->return_text, 0);
 	}
 
-	nmc->return_value = do_agent_polkit (nmc, argc, argv);
+	nmc->return_value = do_agent_polkit (cmd, nmc, argc, argv);
 	if (nmc->return_value != NMC_RESULT_SUCCESS) {
 		g_printerr ("%s\n", nmc->return_text->str);
 		g_string_truncate (nmc->return_text, 0);
@@ -226,7 +226,7 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 }
 
 NMCResultCode
-nmc_command_func_agent (NmCli *nmc, int argc, char **argv)
+nmc_command_func_agent (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "secret", do_agent_secret, usage_agent_secret, TRUE, TRUE },

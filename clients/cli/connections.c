@@ -2028,7 +2028,7 @@ get_connection (NmCli *nmc,
 }
 
 static NMCResultCode
-do_connections_show (NmCli *nmc, int argc, char **argv)
+do_connections_show (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	gs_free_error GError *err = NULL;
 	gs_free char *profile_flds = NULL;
@@ -2855,7 +2855,7 @@ nmc_activate_connection (NmCli *nmc,
 }
 
 static NMCResultCode
-do_connection_up (NmCli *nmc, int argc, char **argv)
+do_connection_up (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	const char *ifname = NULL;
@@ -3113,7 +3113,7 @@ connection_op_timeout_cb (gpointer user_data)
 }
 
 static NMCResultCode
-do_connection_down (NmCli *nmc, int argc, char **argv)
+do_connection_down (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMActiveConnection *active;
 	ConnectionCbInfo *info = NULL;
@@ -5349,7 +5349,7 @@ again:
 }
 
 static NMCResultCode
-do_connection_add (NmCli *nmc, int argc, char **argv)
+do_connection_add (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
@@ -8355,7 +8355,7 @@ nmc_complete_connection_type (const char *prefix)
 }
 
 static NMCResultCode
-do_connection_edit (NmCli *nmc, int argc, char **argv)
+do_connection_edit (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *connections;
 	gs_unref_object NMConnection *connection = NULL;
@@ -8574,9 +8574,7 @@ modify_connection_cb (GObject *connection,
 }
 
 static NMCResultCode
-do_connection_modify (NmCli *nmc,
-                      int argc,
-                      char **argv)
+do_connection_modify (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	NMRemoteConnection *rc = NULL;
@@ -8644,7 +8642,7 @@ clone_connection_cb (GObject *client,
 }
 
 static NMCResultCode
-do_connection_clone (NmCli *nmc, int argc, char **argv)
+do_connection_clone (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	gs_unref_object NMConnection *new_connection = NULL;
@@ -8745,7 +8743,7 @@ delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 }
 
 static NMCResultCode
-do_connection_delete (NmCli *nmc, int argc, char **argv)
+do_connection_delete (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection;
 	ConnectionCbInfo *info = NULL;
@@ -8891,7 +8889,7 @@ connection_removed (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
 }
 
 static NMCResultCode
-do_connection_monitor (NmCli *nmc, int argc, char **argv)
+do_connection_monitor (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	guint i;
@@ -8940,7 +8938,7 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_connection_reload (NmCli *nmc, int argc, char **argv)
+do_connection_reload (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	gs_unref_variant GVariant *result = NULL;
 	gs_free_error GError *error = NULL;
@@ -8966,7 +8964,7 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_connection_load (NmCli *nmc, int argc, char **argv)
+do_connection_load (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	char **filenames, **failures = NULL;
@@ -9007,7 +9005,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 #define PROMPT_IMPORT_FILE N_("File to import: ")
 
 static NMCResultCode
-do_connection_import (NmCli *nmc, int argc, char **argv)
+do_connection_import (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	gs_free_error GError *error = NULL;
 	const char *type = NULL, *filename = NULL;
@@ -9140,7 +9138,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 }
 
 static NMCResultCode
-do_connection_export (NmCli *nmc, int argc, char **argv)
+do_connection_export (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	const char *out_name = NULL;
@@ -9343,7 +9341,7 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 }
 
 NMCResultCode
-nmc_command_func_connection (NmCli *nmc, int argc, char **argv)
+nmc_command_func_connection (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	static const NMCCommand cmds[] = {
 		{ "show",   do_connections_show,   usage_connection_show,    TRUE,  TRUE  },
@@ -9376,5 +9374,5 @@ nmc_command_func_connection (NmCli *nmc, int argc, char **argv)
 void
 monitor_connections (NmCli *nmc)
 {
-	do_connection_monitor (nmc, 0, NULL);
+	do_connection_monitor (NULL, nmc, 0, NULL);
 }
