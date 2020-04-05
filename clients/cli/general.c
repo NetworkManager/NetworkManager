@@ -950,8 +950,12 @@ _do_networking_on_off_cb (GObject *object, GAsyncResult *result, gpointer user_d
 }
 
 static NMCResultCode
-do_networking_on_off (NmCli *nmc, int argc, char **argv, gboolean enable)
+do_networking_on_off (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
+	gboolean enable = nm_streq (cmd->cmd, "on");
+
+	next_arg (nmc, &argc, &argv, NULL);
+
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -970,20 +974,6 @@ do_networking_on_off (NmCli *nmc, int argc, char **argv, gboolean enable)
 	                     nmc);
 
 	return nmc->return_value;
-}
-
-static NMCResultCode
-do_networking_on (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
-{
-	next_arg (nmc, &argc, &argv, NULL);
-	return do_networking_on_off (nmc, argc, argv, TRUE);
-}
-
-static NMCResultCode
-do_networking_off (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
-{
-	next_arg (nmc, &argc, &argv, NULL);
-	return do_networking_on_off (nmc, argc, argv, FALSE);
 }
 
 static NMCResultCode
@@ -1036,8 +1026,8 @@ NMCResultCode
 nmc_command_func_networking (const NMCCommand *cmd, NmCli *nmc, int argc, char **argv)
 {
 	static const NMCCommand cmds[] = {
-		{ "on",           do_networking_on,           usage_networking_on,           TRUE, TRUE },
-		{ "off",          do_networking_off,          usage_networking_off,          TRUE, TRUE },
+		{ "on",           do_networking_on_off,       usage_networking_on,           TRUE, TRUE },
+		{ "off",          do_networking_on_off,       usage_networking_off,          TRUE, TRUE },
 		{ "connectivity", do_networking_connectivity, usage_networking_connectivity, TRUE, TRUE },
 		{ NULL,           do_networking_show,         usage_networking,              TRUE, TRUE },
 	};
