@@ -5,8 +5,6 @@
 
 #include "nm-default.h"
 
-#include "general.h"
-
 #include <stdlib.h>
 
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -868,28 +866,23 @@ do_general_hostname (NmCli *nmc, int argc, char **argv)
 
 }
 
-static const NMCCommand general_cmds[] = {
-	{ "status",       do_general_status,       usage_general_status,       TRUE,   TRUE },
-	{ "hostname",     do_general_hostname,     usage_general_hostname,     TRUE,   TRUE },
-	{ "permissions",  do_general_permissions,  usage_general_permissions,  TRUE,   TRUE },
-	{ "logging",      do_general_logging,      usage_general_logging,      TRUE,   TRUE },
-	{ "reload",       do_general_reload,       usage_general_reload,       FALSE,  FALSE },
-	{ NULL,           do_general_status,       usage_general,              TRUE,   TRUE },
-};
-
-/*
- * Entry point function for general operations 'nmcli general'
- */
 NMCResultCode
-do_general (NmCli *nmc, int argc, char **argv)
+nmc_command_func_general (NmCli *nmc, int argc, char **argv)
 {
+	static const NMCCommand cmds[] = {
+		{ "status",      do_general_status,      usage_general_status,      TRUE,  TRUE  },
+		{ "hostname",    do_general_hostname,    usage_general_hostname,    TRUE,  TRUE  },
+		{ "permissions", do_general_permissions, usage_general_permissions, TRUE,  TRUE  },
+		{ "logging",     do_general_logging,     usage_general_logging,     TRUE,  TRUE  },
+		{ "reload",      do_general_reload,      usage_general_reload,      FALSE, FALSE },
+		{ NULL,          do_general_status,      usage_general,             TRUE,  TRUE  },
+	};
+
 	next_arg (nmc, &argc, &argv, NULL);
 
-	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	nmc_do_cmd (nmc, general_cmds, *argv, argc, argv);
-
+	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
 	return nmc->return_value;
 }
 
@@ -1039,22 +1032,18 @@ do_networking_show (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-static const NMCCommand networking_cmds[] = {
-	{ "on",           do_networking_on,           usage_networking_on,           TRUE,   TRUE },
-	{ "off",          do_networking_off,          usage_networking_off,          TRUE,   TRUE },
-	{ "connectivity", do_networking_connectivity, usage_networking_connectivity, TRUE,   TRUE },
-	{ NULL,           do_networking_show,         usage_networking,              TRUE,   TRUE },
-};
-
-/*
- * Entry point function for networking commands 'nmcli networking'
- */
 NMCResultCode
-do_networking (NmCli *nmc, int argc, char **argv)
+nmc_command_func_networking (NmCli *nmc, int argc, char **argv)
 {
-	next_arg (nmc, &argc, &argv, NULL);
-	nmc_do_cmd (nmc, networking_cmds, *argv, argc, argv);
+	static const NMCCommand cmds[] = {
+		{ "on",           do_networking_on,           usage_networking_on,           TRUE, TRUE },
+		{ "off",          do_networking_off,          usage_networking_off,          TRUE, TRUE },
+		{ "connectivity", do_networking_connectivity, usage_networking_connectivity, TRUE, TRUE },
+		{ NULL,           do_networking_show,         usage_networking,              TRUE, TRUE },
+	};
 
+	next_arg (nmc, &argc, &argv, NULL);
+	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
 	return nmc->return_value;
 }
 
@@ -1168,26 +1157,21 @@ do_radio_wwan (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-static const NMCCommand radio_cmds[] = {
-	{ "all",   do_radio_all,   usage_radio_all,   TRUE,   TRUE },
-	{ "wifi",  do_radio_wifi,  usage_radio_wifi,  TRUE,   TRUE },
-	{ "wwan",  do_radio_wwan,  usage_radio_wwan,  TRUE,   TRUE },
-	{ NULL,    do_radio_all,   usage_radio,       TRUE,   TRUE },
-};
-
-/*
- * Entry point function for radio switch commands 'nmcli radio'
- */
 NMCResultCode
-do_radio (NmCli *nmc, int argc, char **argv)
+nmc_command_func_radio (NmCli *nmc, int argc, char **argv)
 {
+	static const NMCCommand cmds[] = {
+		{ "all",  do_radio_all,  usage_radio_all,  TRUE, TRUE },
+		{ "wifi", do_radio_wifi, usage_radio_wifi, TRUE, TRUE },
+		{ "wwan", do_radio_wwan, usage_radio_wwan, TRUE, TRUE },
+		{ NULL,   do_radio_all,  usage_radio,      TRUE, TRUE },
+	};
+
 	next_arg (nmc, &argc, &argv, NULL);
 
-	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	nmc_do_cmd (nmc, radio_cmds, *argv, argc, argv);
-
+	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
 	return nmc->return_value;
 }
 
@@ -1428,11 +1412,8 @@ ac_overview (NmCli *nmc, NMActiveConnection *ac)
 	g_string_free (outbuf, TRUE);
 }
 
-/*
- * Entry point function for 'nmcli' without arguments.
- */
 NMCResultCode
-do_overview (NmCli *nmc, int argc, char **argv)
+nmc_command_func_overview (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice **devices;
 	const GPtrArray *p;
@@ -1546,11 +1527,8 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	return NMC_RESULT_SUCCESS;
 }
 
-/*
- * Entry point function for 'nmcli monitor'
- */
 NMCResultCode
-do_monitor (NmCli *nmc, int argc, char **argv)
+nmc_command_func_monitor (NmCli *nmc, int argc, char **argv)
 {
 	next_arg (nmc, &argc, &argv, NULL);
 

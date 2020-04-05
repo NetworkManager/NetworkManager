@@ -164,4 +164,25 @@ void nmc_empty_output_fields (NmcOutputData *output_data);
 		.output_data = g_ptr_array_new_full (20, g_free), \
 	}
 
+/*****************************************************************************/
+
+typedef struct {
+	const char *cmd;
+	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
+	void (*usage) (void);
+	bool needs_client;
+	bool needs_nm_running;
+} NMCCommand;
+
+NMCResultCode nmc_command_func_agent      (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_general    (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_networking (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_radio      (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_monitor    (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_overview   (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_connection (NmCli *nmc, int argc, char **argv);
+NMCResultCode nmc_command_func_device     (NmCli *nmc, int argc, char **argv);
+
+/*****************************************************************************/
+
 #endif /* NMC_NMCLI_H */

@@ -5,8 +5,6 @@
 
 #include "nm-default.h"
 
-#include "agent.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <readline/readline.h>
@@ -227,18 +225,17 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-static const NMCCommand agent_cmds[] = {
-	{ "secret",  do_agent_secret,  usage_agent_secret,  TRUE,   TRUE },
-	{ "polkit",  do_agent_polkit,  usage_agent_polkit,  TRUE,   TRUE },
-	{ "all",     do_agent_all,     usage_agent_all,     TRUE,   TRUE },
-	{ NULL,      do_agent_all,     usage,               TRUE,   TRUE },
-};
-
 NMCResultCode
-do_agent (NmCli *nmc, int argc, char **argv)
+nmc_command_func_agent (NmCli *nmc, int argc, char **argv)
 {
-	next_arg (nmc, &argc, &argv, NULL);
-	nmc_do_cmd (nmc, agent_cmds, *argv, argc, argv);
+	static const NMCCommand cmds[] = {
+		{ "secret", do_agent_secret, usage_agent_secret, TRUE, TRUE },
+		{ "polkit", do_agent_polkit, usage_agent_polkit, TRUE, TRUE },
+		{ "all",    do_agent_all,    usage_agent_all,    TRUE, TRUE },
+		{ NULL,     do_agent_all,    usage,              TRUE, TRUE },
+	};
 
+	next_arg (nmc, &argc, &argv, NULL);
+	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
 	return nmc->return_value;
 }

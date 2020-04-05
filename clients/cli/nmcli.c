@@ -25,8 +25,6 @@
 #include "common.h"
 #include "connections.h"
 #include "devices.h"
-#include "general.h"
-#include "agent.h"
 #include "settings.h"
 
 #if defined(NM_DIST_VERSION)
@@ -257,17 +255,6 @@ usage (void)
 	              "  m[onitor]       monitor NetworkManager changes\n"
 	              "\n"));
 }
-
-static const NMCCommand nmcli_cmds[] = {
-	{ "general",     do_general,      NULL,   FALSE,  FALSE },
-	{ "monitor",     do_monitor,      NULL,   TRUE,   FALSE },
-	{ "networking",  do_networking,   NULL,   FALSE,  FALSE },
-	{ "radio",       do_radio,        NULL,   FALSE,  FALSE },
-	{ "connection",  do_connections,  NULL,   FALSE,  FALSE },
-	{ "device",      do_devices,      NULL,   FALSE,  FALSE },
-	{ "agent",       do_agent,        NULL,   FALSE,  FALSE },
-	{ NULL,          do_overview,     usage,  TRUE,   TRUE },
-};
 
 static gboolean
 matches_arg (NmCli *nmc, int *argc, char ***argv, const char *pattern, char **arg)
@@ -702,6 +689,16 @@ set_colors (NmcColorOption color_option,
 static gboolean
 process_command_line (NmCli *nmc, int argc, char **argv)
 {
+	static const NMCCommand nmcli_cmds[] = {
+		{ "general",    nmc_command_func_general,     NULL,  FALSE, FALSE },
+		{ "monitor",    nmc_command_func_monitor,     NULL,  TRUE,  FALSE },
+		{ "networking", nmc_command_func_networking,  NULL,  FALSE, FALSE },
+		{ "radio",      nmc_command_func_radio,       NULL,  FALSE, FALSE },
+		{ "connection", nmc_command_func_connection,  NULL,  FALSE, FALSE },
+		{ "device",     nmc_command_func_device,      NULL,  FALSE, FALSE },
+		{ "agent",      nmc_command_func_agent,       NULL,  FALSE, FALSE },
+		{ NULL,         nmc_command_func_overview,    usage, TRUE,  TRUE },
+	};
 	NmcColorOption colors = NMC_USE_COLOR_AUTO;
 	char *base;
 

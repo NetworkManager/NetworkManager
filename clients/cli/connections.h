@@ -8,8 +8,6 @@
 
 #include "nmcli.h"
 
-NMCResultCode do_connections (NmCli *nmc, int argc, char **argv);
-
 void monitor_connections (NmCli *nmc);
 
 gboolean

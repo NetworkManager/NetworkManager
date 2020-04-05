@@ -4671,33 +4671,31 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
-static const NMCCommand device_cmds[] = {
-	{ "status",      do_devices_status,      usage_device_status,      TRUE,   TRUE },
-	{ "show",        do_device_show,         usage_device_show,        TRUE,   TRUE },
-	{ "connect",     do_device_connect,      usage_device_connect,     TRUE,   TRUE },
-	{ "reapply",     do_device_reapply,      usage_device_reapply,     TRUE,   TRUE },
-	{ "disconnect",  do_devices_disconnect,  usage_device_disconnect,  TRUE,   TRUE },
-	{ "delete",      do_devices_delete,      usage_device_delete,      TRUE,   TRUE },
-	{ "set",         do_device_set,          usage_device_set,         TRUE,   TRUE },
-	{ "monitor",     do_devices_monitor,     usage_device_monitor,     TRUE,   TRUE },
-	{ "wifi",        do_device_wifi,         usage_device_wifi,        FALSE,  FALSE },
-	{ "lldp",        do_device_lldp,         usage_device_lldp,        FALSE,  FALSE },
-	{ "modify",      do_device_modify,       usage_device_modify,      TRUE,   TRUE },
-	{ NULL,          do_devices_status,      usage,                    TRUE,   TRUE },
-};
-
 NMCResultCode
-do_devices (NmCli *nmc, int argc, char **argv)
+nmc_command_func_device (NmCli *nmc, int argc, char **argv)
 {
+	static const NMCCommand cmds[] = {
+		{ "status",     do_devices_status,     usage_device_status,     TRUE,  TRUE  },
+		{ "show",       do_device_show,        usage_device_show,       TRUE,  TRUE  },
+		{ "connect",    do_device_connect,     usage_device_connect,    TRUE,  TRUE  },
+		{ "reapply",    do_device_reapply,     usage_device_reapply,    TRUE,  TRUE  },
+		{ "disconnect", do_devices_disconnect, usage_device_disconnect, TRUE,  TRUE  },
+		{ "delete",     do_devices_delete,     usage_device_delete,     TRUE,  TRUE  },
+		{ "set",        do_device_set,         usage_device_set,        TRUE,  TRUE  },
+		{ "monitor",    do_devices_monitor,    usage_device_monitor,    TRUE,  TRUE  },
+		{ "wifi",       do_device_wifi,        usage_device_wifi,       FALSE, FALSE },
+		{ "lldp",       do_device_lldp,        usage_device_lldp,       FALSE, FALSE },
+		{ "modify",     do_device_modify,      usage_device_modify,     TRUE,  TRUE  },
+		{ NULL,         do_devices_status,     usage,                   TRUE,  TRUE  },
+	};
+
 	next_arg (nmc, &argc, &argv, NULL);
 
-	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
 
-	nmc_do_cmd (nmc, device_cmds, *argv, argc, argv);
-
+	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
 	return nmc->return_value;
 }
 

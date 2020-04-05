@@ -9342,37 +9342,34 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
-static const NMCCommand connection_cmds[] = {
-	{ "show",     do_connections_show,      usage_connection_show,     TRUE,   TRUE },
-	{ "up",       do_connection_up,         usage_connection_up,       TRUE,   TRUE },
-	{ "down",     do_connection_down,       usage_connection_down,     TRUE,   TRUE },
-	{ "add",      do_connection_add,        usage_connection_add,      TRUE,   TRUE },
-	{ "edit",     do_connection_edit,       usage_connection_edit,     TRUE,   TRUE },
-	{ "delete",   do_connection_delete,     usage_connection_delete,   TRUE,   TRUE },
-	{ "reload",   do_connection_reload,     usage_connection_reload,   FALSE,  FALSE },
-	{ "load",     do_connection_load,       usage_connection_load,     TRUE,   TRUE },
-	{ "modify",   do_connection_modify,     usage_connection_modify,   TRUE,   TRUE },
-	{ "clone",    do_connection_clone,      usage_connection_clone,    TRUE,   TRUE },
-	{ "import",   do_connection_import,     usage_connection_import,   TRUE,   TRUE },
-	{ "export",   do_connection_export,     usage_connection_export,   TRUE,   TRUE },
-	{ "monitor",  do_connection_monitor,    usage_connection_monitor,  TRUE,   TRUE },
-	{ NULL,       do_connections_show,      usage,                     TRUE,   TRUE },
-};
-
-/* Entry point function for connections-related commands: 'nmcli connection' */
 NMCResultCode
-do_connections (NmCli *nmc, int argc, char **argv)
+nmc_command_func_connection (NmCli *nmc, int argc, char **argv)
 {
+	static const NMCCommand cmds[] = {
+		{ "show",   do_connections_show,   usage_connection_show,    TRUE,  TRUE  },
+		{ "up",     do_connection_up,      usage_connection_up,      TRUE,  TRUE  },
+		{ "down",   do_connection_down,    usage_connection_down,    TRUE,  TRUE  },
+		{ "add",    do_connection_add,     usage_connection_add,     TRUE,  TRUE  },
+		{ "edit",   do_connection_edit,    usage_connection_edit,    TRUE,  TRUE  },
+		{ "delete", do_connection_delete,  usage_connection_delete,  TRUE,  TRUE  },
+		{ "reload", do_connection_reload,  usage_connection_reload,  FALSE, FALSE },
+		{ "load",   do_connection_load,    usage_connection_load,    TRUE,  TRUE  },
+		{ "modify", do_connection_modify,  usage_connection_modify,  TRUE,  TRUE  },
+		{ "clone",  do_connection_clone,   usage_connection_clone,   TRUE,  TRUE  },
+		{ "import", do_connection_import,  usage_connection_import,  TRUE,  TRUE  },
+		{ "export", do_connection_export,  usage_connection_export,  TRUE,  TRUE  },
+		{ "monitor",do_connection_monitor, usage_connection_monitor, TRUE,  TRUE  },
+		{ NULL,     do_connections_show,   usage,                    TRUE,  TRUE  },
+	};
+
 	next_arg (nmc, &argc, &argv, NULL);
 
-	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
 	/* Set completion function for 'nmcli con' */
 	rl_attempted_completion_function = nmcli_con_tab_completion;
 
-	nmc_do_cmd (nmc, connection_cmds, *argv, argc, argv);
-
+	nmc_do_cmd (nmc, cmds, *argv, argc, argv);
 	return nmc->return_value;
 }
 
