@@ -16,7 +16,10 @@ typedef struct _NMStrBuf {
 		/*const*/ gsize len;
 		gsize _len;
 	};
-	gsize _allocated;
+	union {
+		/*const*/ gsize allocated;
+		gsize _allocated;
+	};
 	bool _do_bzero_mem;
 } NMStrBuf;
 
