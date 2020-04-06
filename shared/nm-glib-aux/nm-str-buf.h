@@ -194,7 +194,7 @@ nm_str_buf_destroy (NMStrBuf *strbuf)
 		return;
 	_nm_str_buf_assert (strbuf);
 	if (strbuf->_do_bzero_mem)
-		nm_explicit_bzero (strbuf->_str, strbuf->_allocated);
+		nm_explicit_bzero (strbuf->_str, strbuf->_len);
 	g_free (strbuf->_str);
 
 	/* the buffer is in invalid state afterwards, however, we clear it
