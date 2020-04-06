@@ -9,6 +9,7 @@
 
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-random-utils.h"
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-glib-aux/nm-ref-string.h"
 
@@ -737,6 +738,39 @@ test_nm_utils_get_next_realloc_size (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_str_buf (void)
+{
+	guint i_run;
+
+	for (i_run = 0; TRUE; i_run++) {
+		nm_auto_str_buf NMStrBuf strbuf = { };
+		nm_auto_free_gstring GString *gstr = NULL;
+		int i, j, k;
+		int c;
+
+		nm_str_buf_init (&strbuf,
+		                 nmtst_get_rand_uint32 () % 200u + 1u,
+		                 nmtst_get_rand_bool ());
+
+		if (i_run < 1000) {
+			c = nmtst_get_rand_word_length (NULL);
+			for (i = 0; i < c; i++)
+				nm_str_buf_append_c (&strbuf, '0' + (i % 10));
+			gstr = g_string_new (nm_str_buf_get_str (&strbuf));
+			j = nmtst_get_rand_uint32 () % (strbuf.len + 1);
+			k = nmtst_get_rand_uint32 () % (strbuf.len - j + 2) - 1;
+
+			nm_str_buf_erase (&strbuf, j, k, nmtst_get_rand_bool ());
+			g_string_erase (gstr, j, k);
+			g_assert_cmpstr (gstr->str, ==, nm_str_buf_get_str (&strbuf));
+		} else
+			return;
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -757,6 +791,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_ref_string", test_nm_ref_string);
 	g_test_add_func ("/general/test_string_table_lookup", test_string_table_lookup);
 	g_test_add_func ("/general/test_nm_utils_get_next_realloc_size", test_nm_utils_get_next_realloc_size);
+	g_test_add_func ("/general/test_nm_str_buf", test_nm_str_buf);
 
 	return g_test_run ();
 }

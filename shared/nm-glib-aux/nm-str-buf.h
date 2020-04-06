@@ -120,6 +120,44 @@ nm_str_buf_set_size (NMStrBuf *strbuf,
 /*****************************************************************************/
 
 static inline void
+nm_str_buf_erase (NMStrBuf *strbuf,
+                  gsize pos,
+                  gssize len,
+                  gboolean honor_do_bzero_mem)
+{
+	gsize new_len;
+
+	_nm_str_buf_assert (strbuf);
+
+	nm_assert (pos <= strbuf->len);
+
+	if (len == 0)
+		return;
+
+	if (len < 0) {
+		/* truncate the string before pos */
+		nm_assert (len == -1);
+		new_len = pos;
+	} else {
+		gsize l = len;
+
+		nm_assert (l <= strbuf->len - pos);
+
+		new_len = strbuf->len - l;
+		if (pos + l < strbuf->len) {
+			memmove (&strbuf->_str[pos],
+			         &strbuf->_str[pos + l],
+			         strbuf->len - (pos + l));
+		}
+	}
+
+	nm_assert (new_len <= strbuf->len);
+	nm_str_buf_set_size (strbuf, new_len, honor_do_bzero_mem, TRUE);
+}
+
+/*****************************************************************************/
+
+static inline void
 nm_str_buf_append_c (NMStrBuf *strbuf,
                      char ch)
 {
