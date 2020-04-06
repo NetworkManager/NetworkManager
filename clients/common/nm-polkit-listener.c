@@ -60,18 +60,21 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 struct _NMPolkitListener {
 	GObject parent;
-
 	GDBusConnection *dbus_connection;
 	char *name_owner;
-	guint pk_auth_agent_reg_id;
-	guint name_owner_changed_id;
 	GCancellable *cancellable;
 	GMainContext *main_context;
-	gboolean session_agent;
 	CList request_lst_head;
+	guint pk_auth_agent_reg_id;
+	guint name_owner_changed_id;
+	bool session_agent:1;
 };
 
-G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, G_TYPE_OBJECT)
+struct _NMPolkitListenerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
