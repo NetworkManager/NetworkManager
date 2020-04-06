@@ -500,8 +500,6 @@ create_bond_connection (NMConnection **con, NMSettingBond **s_bond)
 	                                        NULL,
 	                                        NM_SETTING_BOND_SETTING_NAME,
 	                                        &s_con);
-	g_assert (*con);
-	g_assert (s_con);
 
 	g_object_set (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "bond0", NULL);
 
@@ -512,28 +510,25 @@ create_bond_connection (NMConnection **con, NMSettingBond **s_bond)
 }
 
 #define test_verify_options(exp, ...) \
-	_test_verify_options (NM_MAKE_STRV (__VA_ARGS__), exp)
+	_test_verify_options (exp, NM_MAKE_STRV (__VA_ARGS__))
 
 static void
-_test_verify_options (const char *const *options,
-                      gboolean expected_result)
+_test_verify_options (gboolean expected_result,
+                      const char *const *options)
 {
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingBond *s_bond;
-	GError *error = NULL;
-	gboolean success;
 	const char *const *option;
+
+	g_assert (NM_PTRARRAY_LEN (options) % 2 == 0);
 
 	create_bond_connection (&con, &s_bond);
 
-	for (option = options; option[0] && option[1]; option += 2)
+	for (option = options; option[0]; option += 2)
 		g_assert (nm_setting_bond_add_option (s_bond, option[0], option[1]));
 
 	if (expected_result) {
 		nmtst_assert_connection_verifies_and_normalizable (con);
-		nmtst_connection_normalize (con);
-		success = nm_setting_verify ((NMSetting *) s_bond, con, &error);
-		nmtst_assert_success (success, error);
 	} else {
 		nmtst_assert_connection_unnormalizable (con,
 		                                        NM_CONNECTION_ERROR,
@@ -1872,6 +1867,137 @@ test_bridge_vlans (void)
 
 	nm_bridge_vlan_unref (v1);
 	nm_bridge_vlan_unref (v2);
+}
+
+static void
+create_bridge_connection (NMConnection **con, NMSettingBridge **s_bridge)
+{
+	NMSettingConnection *s_con;
+
+	g_assert (con);
+	g_assert (s_bridge);
+
+	*con = nmtst_create_minimal_connection ("bridge",
+	                                        NULL,
+	                                        NM_SETTING_BOND_SETTING_NAME,
+	                                        &s_con);
+
+	g_object_set (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "bridge0", NULL);
+
+	*s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
+	g_assert (*s_bridge);
+
+	nm_connection_add_setting (*con, NM_SETTING (*s_bridge));
+}
+
+#define test_verify_options_bridge(exp, ...) \
+	_test_verify_options_bridge (exp, NM_MAKE_STRV (__VA_ARGS__))
+
+static void
+_test_verify_options_bridge (gboolean expected_result,
+                             const char *const *options)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingBridge *s_bridge;
+	const char *const *option;
+
+	g_assert (NM_PTRARRAY_LEN (options) % 2 == 0);
+
+	create_bridge_connection (&con, &s_bridge);
+
+	for (option = options; option[0]; option += 2) {
+		const char *option_key = option[0];
+		const char *option_val = option[1];
+		GParamSpec *pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (s_bridge), option_key);
+
+		g_assert (pspec);
+		g_assert (option_val);
+
+		switch (G_PARAM_SPEC_VALUE_TYPE (pspec)) {
+		case G_TYPE_UINT: {
+				guint uvalue;
+
+				uvalue = _nm_utils_ascii_str_to_uint64 (option_val, 10, 0, G_MAXUINT, 0);
+				g_object_set (s_bridge, option_key, uvalue, NULL);
+			}
+			break;
+		case G_TYPE_BOOLEAN: {
+				gboolean bvalue;
+
+				bvalue = _nm_utils_ascii_str_to_bool (option_val, FALSE);
+				g_object_set (s_bridge, option_key, bvalue, NULL);
+			}
+			break;
+		case G_TYPE_STRING:
+			g_object_set (s_bridge, option_key, option_val, NULL);
+			break;
+		default:
+			g_assert_not_reached();
+			break;
+		}
+	}
+
+	if (expected_result)
+		nmtst_assert_connection_verifies_and_normalizable (con);
+	else {
+		nmtst_assert_connection_unnormalizable (con,
+		                                        NM_CONNECTION_ERROR,
+		                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	}
+}
+
+static void
+test_bridge_verify (void)
+{
+	/* group-address */
+	test_verify_options_bridge (FALSE,
+	                            "group-address", "nonsense");
+	test_verify_options_bridge (FALSE,
+	                            "group-address", "FF:FF:FF:FF:FF:FF");
+	test_verify_options_bridge (FALSE,
+	                            "group-address", "01:02:03:04:05:06");
+	test_verify_options_bridge (TRUE,
+	                            "group-address", "01:80:C2:00:00:00");
+	test_verify_options_bridge (FALSE,
+	                            "group-address", "01:80:C2:00:00:02");
+	test_verify_options_bridge (FALSE,
+	                            "group-address", "01:80:C2:00:00:03");
+	test_verify_options_bridge (TRUE,
+	                            "group-address", "01:80:C2:00:00:00");
+	test_verify_options_bridge (TRUE,
+	                            "group-address", "01:80:C2:00:00:0A");
+	/* vlan-protocol */
+	test_verify_options_bridge (FALSE,
+	                            "vlan-protocol", "nonsense124");
+	test_verify_options_bridge (FALSE,
+	                            "vlan-protocol", "802.11");
+	test_verify_options_bridge (FALSE,
+	                            "vlan-protocol", "802.1Q1");
+	test_verify_options_bridge (TRUE,
+	                            "vlan-protocol", "802.1Q");
+	test_verify_options_bridge (TRUE,
+	                            "vlan-protocol", "802.1ad");
+	/* multicast-router */
+	test_verify_options_bridge (FALSE,
+	                            "multicast-router",   "nonsense");
+	test_verify_options_bridge (FALSE,
+	                            "multicast-snooping", "no",
+	                            "multicast-router",   "auto");
+	test_verify_options_bridge (FALSE,
+	                            "multicast-snooping", "no",
+	                            "multicast-router",   "enabled");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "no",
+	                            "multicast-router",   "disabled");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "yes",
+	                            "multicast-router",   "enabled");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "yes",
+	                            "multicast-router",   "auto");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-snooping", "yes",
+	                            "multicast-router",   "disabled");
 }
 
 /*****************************************************************************/
@@ -3653,6 +3779,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/tc_config/dbus", test_tc_config_dbus);
 
 	g_test_add_func ("/libnm/settings/bridge/vlans", test_bridge_vlans);
+	g_test_add_func ("/libnm/settings/bridge/verify", test_bridge_verify);
 
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",
 	                 test_runner_roundrobin_sync_from_config);

@@ -1438,8 +1438,8 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	NMSettingBridge *s_bridge;
 	guint32 i;
 	gboolean b;
+	const char *s;
 	GString *opts;
-	const char *mac;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	if (!s_bridge) {
@@ -1450,8 +1450,8 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 
 	svSetValueBoolean (ifcfg, "STP", FALSE);
 
-	mac = nm_setting_bridge_get_mac_address (s_bridge);
-	svSetValueStr (ifcfg, "BRIDGE_MACADDR", mac);
+	s = nm_setting_bridge_get_mac_address (s_bridge);
+	svSetValueStr (ifcfg, "BRIDGE_MACADDR", s);
 
 	/* Bridge options */
 	opts = g_string_sized_new (32);
@@ -1487,6 +1487,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "ageing_time=%u", i);
 	}
 
+	s = nm_setting_bridge_get_group_address (s_bridge);
+	if (s) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "group_address=%s", s);
+	}
+
 	i = nm_setting_bridge_get_group_forward_mask (s_bridge);
 	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_GROUP_FORWARD_MASK)) {
 		if (opts->len)
@@ -1494,11 +1501,32 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "group_fwd_mask=%u", i);
 	}
 
+	b = nm_setting_bridge_get_multicast_querier (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_querier=%u", (guint) b);
+	}
+
+	b = nm_setting_bridge_get_multicast_query_use_ifaddr (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_query_use_ifaddr=%u", (guint) b);
+	}
+
 	b = nm_setting_bridge_get_multicast_snooping (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
+	}
+
+	s = nm_setting_bridge_get_multicast_router (s_bridge);
+	if (s) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_router=%s", s);
 	}
 
 	b = nm_setting_bridge_get_vlan_filtering (s_bridge);
@@ -1513,6 +1541,20 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "default_pvid=%u", i);
+	}
+
+	s = nm_setting_bridge_get_vlan_protocol (s_bridge);
+	if (s) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "vlan_protocol=%s", s);
+	}
+
+	b = nm_setting_bridge_get_vlan_stats_enabled (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_STATS_ENABLED)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "vlan_stats_enabled=%u", (guint) b);
 	}
 
 	if (opts->len)
