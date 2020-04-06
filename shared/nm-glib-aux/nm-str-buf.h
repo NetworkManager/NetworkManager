@@ -228,6 +228,17 @@ nm_str_buf_ensure_trailing_c (NMStrBuf *strbuf, char ch)
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_str_buf_is_initalized (NMStrBuf *strbuf)
+{
+	nm_assert (strbuf);
+#if NM_MORE_ASSERTS
+	if (strbuf->_str)
+		_nm_str_buf_assert (strbuf);
+#endif
+	return !!strbuf->_str;
+}
+
 /**
  * nm_str_buf_get_str:
  * @strbuf: the #NMStrBuf instance
