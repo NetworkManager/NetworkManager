@@ -152,76 +152,82 @@ remove_request (AuthRequest *request)
 	g_slice_free (AuthRequest, request);
 }
 
-static const char *
-uid_to_name (uid_t uid)
+static gboolean
+uid_to_name (uid_t uid,
+             const char **out_name)
 {
-	const char *name = NULL;
-	struct passwd *passwd;
+	const struct passwd *passwd;
+
+	if (*out_name)
+		return TRUE;
 
 	passwd = getpwuid (uid);
-	if (passwd != NULL)
-		name = passwd->pw_name;
-	return name;
+	if (   !passwd
+	    || !passwd->pw_name)
+		return FALSE;
+
+	*out_name = passwd->pw_name;
+	return TRUE;
 }
 
-static gboolean
-find_identity (uid_t uid, gpointer user_data)
-{
-	return nm_streq0 (user_data, uid_to_name (uid));
-}
-
-static gboolean
-first_identity (uid_t uid, gpointer user_data)
-{
-	return true;
-}
-
-static gint64
-_choose_identity (GVariant *identities,
-                  gboolean (*predicate) (uid_t uid, gpointer user_data),
-                  gpointer user_data)
-{
-	GVariantIter identity_iter;
-	GVariantIter *identity_details_iter;
-	GVariant *unix_id_variant;
-	uid_t unix_id;
-
-	g_return_val_if_fail (predicate != NULL, FALSE);
-
-	g_variant_iter_init (&identity_iter, identities);
-
-	while (g_variant_iter_loop (&identity_iter, "(&sa{sv})", NULL, &identity_details_iter)) {
-		while (g_variant_iter_loop (identity_details_iter, "{sv}", NULL, &unix_id_variant)) {
-			unix_id = g_variant_get_uint32 (unix_id_variant);
-
-			if (predicate (unix_id, user_data)) {
-				g_variant_unref (unix_id_variant);
-				g_variant_iter_free (identity_details_iter);
-				return unix_id;
-			}
-		}
-		g_variant_iter_free (identity_details_iter);
-	}
-	return -1;
-}
-
-static uid_t
+static char *
 choose_identity (GVariant *identities)
 {
+	GVariantIter identity_iter;
+	GVariant *details_tmp;
+	const char *kind;
+	gs_free char *username_first = NULL;
+	gs_free char *username_root = NULL;
 	const char *user;
-	gint64 id;
 
 	/* Choose identity. First try current user, then root, and else
-	 * take the first one */
+	 * take the first one we find. */
+
 	user = getenv ("USER");
 
-	if ((id = _choose_identity (identities, find_identity, (gpointer) user)) >= 0) {
-		return id;
-	} else if ((id = _choose_identity (identities, find_identity, "root")) >= 0) {
-		return id;
+	g_variant_iter_init (&identity_iter, identities);
+	while (g_variant_iter_next (&identity_iter, "(&s@a{sv})", &kind, &details_tmp)) {
+		gs_unref_variant GVariant *details = g_steal_pointer (&details_tmp);
+
+		if (nm_streq (kind, "unix-user")) {
+			gs_unref_variant GVariant *v = NULL;
+
+			v = g_variant_lookup_value (details, "uid", G_VARIANT_TYPE_UINT32);
+			if (v) {
+				guint32 uid = g_variant_get_uint32 (v);
+				const char *u = NULL;
+
+				if (user) {
+					if (!uid_to_name (uid, &u))
+						continue;
+					if (nm_streq (u, user))
+						return g_strdup (user);
+				}
+				if (   !username_root
+				    && uid == 0) {
+					if (!uid_to_name (uid, &u))
+						continue;
+					username_root = g_strdup (u);
+					if (!user)
+						break;
+				}
+				if (   !username_root
+				    && !username_first) {
+					if (!uid_to_name (uid, &u))
+						continue;
+					username_first = g_strdup (u);
+				}
+			}
+		}
 	}
 
-	return _choose_identity (identities, first_identity, NULL);
+	if (username_root)
+		return g_steal_pointer (&username_root);
+
+	if (username_first)
+		return g_steal_pointer (&username_first);
+
+	return NULL;
 }
 
 static void
@@ -540,14 +546,19 @@ static void
 begin_authentication (AuthRequest *request)
 {
 	int fd_flags;
-	char *helper_argv[3];
+	const char *helper_argv[] = {
+		POLKIT_PACKAGE_PREFIX "/lib/polkit-1/polkit-agent-helper-1",
+		request->username,
+		NULL,
+	};
 
-	helper_argv[0] = POLKIT_PACKAGE_PREFIX "/lib/polkit-1/polkit-agent-helper-1";
-	helper_argv[1] = request->username;
-	helper_argv[2] = NULL;
+	if (!request->username) {
+		complete_authentication (request, FALSE);
+		return;
+	}
 
 	if (!g_spawn_async_with_pipes (NULL,
-	                               helper_argv,
+	                               (char **) helper_argv,
 	                               NULL,
 	                               G_SPAWN_DEFAULT,
 	                               NULL,
@@ -609,7 +620,7 @@ create_request (NMPolkitListener *listener,
                 GDBusMethodInvocation *invocation,
                 const char *action_id,
                 const char *message,
-                const char *username,
+                char *username_take,
                 const char *cookie)
 {
 	AuthRequest *request = g_slice_new0(AuthRequest);
@@ -618,7 +629,7 @@ create_request (NMPolkitListener *listener,
 	request->dbus_invocation = invocation;
 	request->action_id = g_strdup (action_id);
 	request->message = g_strdup (message);
-	request->username = g_strdup (username);
+	request->username = g_steal_pointer (&username_take);
 	request->cookie = g_strdup (cookie);
 	request->in_buffer = g_string_new ("");
 
@@ -646,7 +657,6 @@ dbus_method_call_cb (GDBusConnection *connection,
 	const char *cookie;
 	AuthRequest *request;
 	gs_unref_variant GVariant *identities_gvariant;
-	uid_t uid;
 
 	if (nm_streq (method_name, "BeginAuthentication")) {
 		g_variant_get (parameters,
@@ -658,13 +668,11 @@ dbus_method_call_cb (GDBusConnection *connection,
 		               &cookie,
 		               &identities_gvariant);
 
-		uid = choose_identity (identities_gvariant);
-
 		request = create_request (listener,
 		                          invocation,
 		                          action_id,
 		                          message,
-		                          uid_to_name (uid),
+		                          choose_identity (identities_gvariant),
 		                          cookie);
 		begin_authentication (request);
 		return;
