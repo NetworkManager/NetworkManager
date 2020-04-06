@@ -13,7 +13,7 @@
 typedef struct _NMStrBuf {
 	char *_str;
 	union {
-		const gsize len;
+		/*const*/ gsize len;
 		gsize _len;
 	};
 	gsize _allocated;
