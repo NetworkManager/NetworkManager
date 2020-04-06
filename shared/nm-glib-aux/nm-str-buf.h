@@ -129,6 +129,16 @@ void nm_str_buf_append_printf (NMStrBuf *strbuf,
                                const char *format,
                                ...) _nm_printf (2, 3);
 
+static inline void
+nm_str_buf_ensure_trailing_c (NMStrBuf *strbuf, char ch)
+{
+	_nm_str_buf_assert (strbuf);
+
+	if (   strbuf->len == 0
+	    || strbuf->_str[strbuf->len - 1] != ch)
+		nm_str_buf_append_c (strbuf, ch);
+}
+
 /*****************************************************************************/
 
 /**
