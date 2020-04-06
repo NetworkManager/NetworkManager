@@ -434,13 +434,11 @@ nm_utils_fd_read (int fd, GString *out_string)
 	g_string_set_size (out_string, start_len + 1024);
 
 	n_read = read (fd, &out_string->str[start_len], 1024);
-	if (n_read < 0) {
-		if (errno != EAGAIN) {
-			return -NM_ERRNO_NATIVE (errno);
-		}
-		n_read = 0;
-	} else {
-		g_string_set_size (out_string, start_len + n_read);
-	}
+	if (n_read < 0)
+		return -NM_ERRNO_NATIVE (errno);
+
+	if (n_read > 0)
+		g_string_set_size (out_string, start_len + (gsize) n_read);
+
 	return n_read;
 }
