@@ -217,6 +217,13 @@ nm_str_buf_get_str (NMStrBuf *strbuf)
 	return strbuf->_str;
 }
 
+static inline char *
+nm_str_buf_get_str_unsafe (NMStrBuf *strbuf)
+{
+	_nm_str_buf_assert (strbuf);
+	return strbuf->_str;
+}
+
 /**
  * nm_str_buf_finalize:
  * @strbuf: an initilized #NMStrBuf
