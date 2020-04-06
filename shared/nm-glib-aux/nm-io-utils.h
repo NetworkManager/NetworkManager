@@ -47,7 +47,9 @@ gboolean nm_utils_file_set_contents (const char *filename,
                                      int *out_errsv,
                                      GError **error);
 
-ssize_t nm_utils_fd_read (int fd, GString *out_string);
+struct _NMStrBuf;
+
+gssize nm_utils_fd_read (int fd, struct _NMStrBuf *out_string);
 
 struct stat;
 
