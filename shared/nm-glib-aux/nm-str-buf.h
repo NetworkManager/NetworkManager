@@ -10,7 +10,7 @@
 
 /* NMStrBuf is not unlike GString. The main difference is that it can use
  * nm_explicit_bzero() when growing the buffer. */
-typedef struct {
+typedef struct _NMStrBuf {
 	char *_str;
 	union {
 		const gsize len;
