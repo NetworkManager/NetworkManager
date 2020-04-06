@@ -47,6 +47,8 @@
 #define NM_POLKIT_LISTENER_DBUS_CONNECTION  "dbus-connection"
 #define NM_POLKIT_LISTENER_SESSION_AGENT    "session-agent"
 
+#define POLKIT_DBUS_ERROR_FAILED            "org.freedesktop.PolicyKit1.Error.Failed"
+
 /*****************************************************************************/
 
 enum {
@@ -665,16 +667,36 @@ dbus_method_call_cb (GDBusConnection *connection,
 		                          uid_to_name (uid),
 		                          cookie);
 		begin_authentication (request);
-	} else if (nm_streq (method_name, "CancelAuthentication")) {
+		return;
+	}
+
+	if (nm_streq (method_name, "CancelAuthentication")) {
 		g_variant_get (parameters,
 		               "&s",
 		               &cookie);
 		request = get_request (listener, cookie);
 
-		if (request) {
-			complete_authentication (request, FALSE);
+		if (!request) {
+			gs_free char *msg = NULL;
+
+			msg = g_strdup_printf ("No pending authentication request for cookie '%s'",
+			                       cookie);
+			g_dbus_method_invocation_return_dbus_error (invocation,
+			                                            POLKIT_DBUS_ERROR_FAILED,
+			                                            msg);
+			return;
 		}
+
+		/* Complete a cancelled request with success. */
+		complete_authentication (request, TRUE);
+		return;
 	}
+
+	g_dbus_method_invocation_return_error (invocation,
+	                                       G_DBUS_ERROR,
+	                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+	                                       "Unknown method %s",
+	                                       method_name);
 }
 
 static gboolean
