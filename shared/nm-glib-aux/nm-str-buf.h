@@ -70,6 +70,55 @@ nm_str_buf_maybe_expand (NMStrBuf *strbuf,
 		_nm_str_buf_ensure_size (strbuf, strbuf->_len + reserve, reserve_exact);
 }
 
+/*****************************************************************************/
+
+/**
+ * nm_str_buf_set_size:
+ * @strbuf: the initialized #NMStrBuf
+ * @new_len: the new length
+ * @honor_do_bzero_mem: if %TRUE, the shrinked memory will be cleared, if
+ *   do_bzero_mem is set. This should be usually set to %TRUE, unless
+ *   you know that the shrinked memory does not contain data that requires to be
+ *   cleared. When growing the size, this value has no effect.
+ * @reserve_exact: when growing the buffer, reserve the exact amount of bytes.
+ *   If %FALSE, the buffer may allocate more memory than requested to grow
+ *   exponentially.
+ *
+ * This is like g_string_set_size(). If new_len is smaller than the
+ * current length, the string gets truncated (excess memory will be cleared).
+ *
+ * When extending the length, the added bytes are undefined (like with
+ * g_string_set_size(). Likewise, if you first pre-allocate a buffer with
+ * nm_str_buf_maybe_expand(), then write to the bytes, and finally set
+ * the appropriate size, then that works as expected (by not clearing the
+ * pre-existing, grown buffer).
+ */
+static inline void
+nm_str_buf_set_size (NMStrBuf *strbuf,
+                     gsize new_len,
+                     gboolean honor_do_bzero_mem,
+                     gboolean reserve_exact)
+{
+	_nm_str_buf_assert (strbuf);
+
+	if (new_len < strbuf->len) {
+		if (   honor_do_bzero_mem
+		    && strbuf->_do_bzero_mem) {
+			/* we only clear the memory that we wrote to. */
+			nm_explicit_bzero (&strbuf->_str[new_len], strbuf->_len - new_len);
+		}
+	} else if (new_len > strbuf->len) {
+		nm_str_buf_maybe_expand (strbuf,
+		                         new_len - strbuf->len + (reserve_exact ? 0u : 1u),
+		                         reserve_exact);
+	} else
+		return;
+
+	strbuf->_len = new_len;
+}
+
+/*****************************************************************************/
+
 static inline void
 nm_str_buf_append_c (NMStrBuf *strbuf,
                      char ch)
