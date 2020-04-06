@@ -51,7 +51,7 @@
 
 enum {
 	REGISTERED,
-	REQUEST,
+	REQUEST_SYNC,
 	ERROR,
 	LAST_SIGNAL
 };
@@ -498,9 +498,9 @@ io_watch_have_data (int fd,
 	unescaped = g_strcompress (request->in_buffer->str);
 
 	if (NM_STR_HAS_PREFIX (unescaped, "PAM_PROMPT_ECHO")) {
-		/* emit signal and wait for response */
+		/* FIXME(cli-async): emit signal and wait for response (blocking) */
 		g_signal_emit (request->listener,
-		               signals[REQUEST],
+		               signals[REQUEST_SYNC],
 		               0,
 		               request->action_id,
 		               request->message,
@@ -911,8 +911,8 @@ nm_polkit_listener_class_init (NMPolkitListenerClass *klass)
 	                                   _PROPERTY_ENUMS_LAST,
 	                                   obj_properties);
 
-	signals[REQUEST] =
-	    g_signal_new (NM_POLKIT_LISTENER_SIGNAL_REQUEST,
+	signals[REQUEST_SYNC] =
+	    g_signal_new (NM_POLKIT_LISTENER_SIGNAL_REQUEST_SYNC,
 	                  NM_TYPE_POLKIT_LISTENER,
 	                  G_SIGNAL_RUN_LAST,
 	                  0,

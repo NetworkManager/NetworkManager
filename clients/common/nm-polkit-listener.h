@@ -7,7 +7,7 @@
 #define __NM_POLKIT_LISTENER_H__
 
 #define NM_POLKIT_LISTENER_SIGNAL_REGISTERED      "registered"
-#define NM_POLKIT_LISTENER_SIGNAL_REQUEST         "secret-request"
+#define NM_POLKIT_LISTENER_SIGNAL_REQUEST_SYNC    "request-sync"
 #define NM_POLKIT_LISTENER_SIGNAL_AUTH_SUCCESS    "auth-success"
 #define NM_POLKIT_LISTENER_SIGNAL_AUTH_FAILURE    "auth-failure"
 #define NM_POLKIT_LISTENER_SIGNAL_ERROR           "error"
