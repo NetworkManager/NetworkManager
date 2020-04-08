@@ -751,6 +751,10 @@ fail_invalid_secret:
 		if (data_dns) {
 			for (i = 0; i < data_dns->len; i++)
 				nm_setting_ip_config_add_dns (s_ip, data_dns->pdata[i]);
+
+			/* the wg-quick file cannot handle search domains. When configuring a DNS server
+			 * in the wg-quick file, assume that the user want to use it for all searches. */
+			nm_setting_ip_config_add_dns_search (s_ip, "~");
 		}
 
 		if (data_table == _TABLE_AUTO) {

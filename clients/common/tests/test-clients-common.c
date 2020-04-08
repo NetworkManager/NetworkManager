@@ -137,6 +137,8 @@ test_client_import_wireguard_test0 (void)
 {
 	gs_unref_object NMConnection *connection;
 	NMSettingWireGuard *s_wg;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	NMWireGuardPeer *peer;
 	gs_free_error GError *error = NULL;
 
@@ -175,6 +177,17 @@ test_client_import_wireguard_test0 (void)
 	g_assert_cmpstr (nm_wireguard_peer_get_endpoint (peer), ==, "test.wireguard.com:18981");
 	g_assert_cmpint (nm_wireguard_peer_get_allowed_ips_len (peer), ==, 1);
 	g_assert_cmpstr (nm_wireguard_peer_get_allowed_ip (peer, 0, NULL), ==, "10.10.10.230/32");
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 0);
+
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip4), ==, 1);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip6), ==, 0);
+
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip4, 0), ==, "~");
 }
 
 static void
