@@ -63,6 +63,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingConnection,
 	PROP_STABLE_ID,
 	PROP_AUTH_RETRIES,
 	PROP_WAIT_DEVICE_TIMEOUT,
+	PROP_MUD_URL,
 );
 
 typedef struct {
@@ -76,6 +77,7 @@ typedef struct {
 	char *master;
 	char *slave_type;
 	char *zone;
+	char *mud_url;
 	guint64 timestamp;
 	int autoconnect_priority;
 	int autoconnect_retries;
@@ -751,6 +753,23 @@ nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
 }
 
 /**
+ * nm_setting_connection_get_mud_url:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the value contained in the #NMSettingConnection:mud-url
+ * property.
+ **/
+
+const char *
+nm_setting_connection_get_mud_url (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->mud_url;
+}
+
+
+/**
  * nm_setting_connection_add_secondary:
  * @setting: the #NMSettingConnection
  * @sec_uuid: the secondary connection UUID to add
@@ -1222,6 +1241,13 @@ after_interface_name:
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
+	if (priv->mud_url && !*priv->mud_url) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
 	if (normerr_base_type) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -1467,6 +1493,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WAIT_DEVICE_TIMEOUT:
 		g_value_set_int (value, priv->wait_device_timeout);
 		break;
+        case PROP_MUD_URL:
+		g_value_set_string (value, nm_setting_connection_get_mud_url(setting));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1561,6 +1590,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WAIT_DEVICE_TIMEOUT:
 		priv->wait_device_timeout = g_value_get_int (value);
+		break;
+	case PROP_MUD_URL:
+		g_free (priv->mud_url);
+		priv->mud_url = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2285,6 +2318,30 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	                      -1, G_MAXINT32, -1,
 	                      G_PARAM_READWRITE |
 	                      G_PARAM_STATIC_STRINGS);
+
+
+	/**
+	 * NMSettingConnection:mud-url:
+	 *
+	 * If configured, set to a Manufacturer Usage Description (MUD) URL that points
+	 * to manufacturer-recommended network policies for IoT devices. It is transmitted
+	 * as a DHCPv4 or DHCPv6 option.
+	 *
+	 **/
+	/* ---ifcfg-rh---
+	 * property: mud-url
+	 * variable: MUD_URL
+	 * values: a valid URL that points to recommended policy for this device
+	 * description: MUD_URL to be sent by device (See RFC 8520).
+	 * example: https://yourdevice.example.com/model.json
+	 * ---end---
+	 */
+
+	obj_properties[PROP_MUD_URL] =
+	    g_param_spec_string (NM_SETTING_CONNECTION_MUD_URL, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

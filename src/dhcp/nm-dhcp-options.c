@@ -126,6 +126,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP4_TFTP_SERVER_ADDRESS,               "tftp_server_address",             FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_V4_PORTPARAMS,                     "v4_portparams",                   FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_V4_CAPTIVE_PORTAL,                 "v4_captive_portal",               FALSE ),
+	REQ (NM_DHCP_OPTION_DHCP4_MUDURL,                            "mud_url",                   FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_LOADER_CONFIGFILE,                 "loader_configfile",               FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_LOADER_PATHPREFIX,                 "loader_pathprefix",               FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP4_LOADER_REBOOTTIME,                 "loader_reboottime",               FALSE ),
@@ -182,7 +183,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp6_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP6_DNS_SERVERS,                      "dhcp6_name_servers",  TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP6_DOMAIN_LIST,                      "dhcp6_domain_search", TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP6_SNTP_SERVERS,                     "dhcp6_sntp_servers",  TRUE ),
-
+	REQ (NM_DHCP_OPTION_DHCP6_MUDURL,                           "dhcp6_mud_url",  FALSE ),
 	/* Internal values */
 	REQ (NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS,                    "ip6_address",         FALSE ),
 	REQ (NM_DHCP_OPTION_DHCP6_NM_PREFIXLEN,                     "ip6_prefixlen",       FALSE ),

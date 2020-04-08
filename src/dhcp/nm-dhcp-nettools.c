@@ -1285,6 +1285,7 @@ ip4_start (NMDhcpClient *client,
 	gs_free char *lease_file = NULL;
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
+	const char *mudurl;
 	int r, i;
 
 	g_return_val_if_fail (!priv->probe, FALSE);
@@ -1341,6 +1342,15 @@ ip4_start (NMDhcpClient *client,
 		}
 	}
 
+	mudurl = nm_dhcp_client_get_mudurl (client);
+	if (mudurl) {
+		r = n_dhcp4_client_probe_config_append_option (config,
+			NM_DHCP_OPTION_DHCP4_MUDURL, mudurl, strlen (mudurl));
+		if ( r ) {
+	                nm_utils_error_set_errno (error, r,
+	                                          "failed to set MUD URL: %s");
+		}
+	}
 	hostname = nm_dhcp_client_get_hostname (client);
 	if (hostname) {
 		if (nm_dhcp_client_get_use_fqdn (client)) {

@@ -582,6 +582,11 @@ make_connection_setting (const char *file,
 			g_object_set (s_con, NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, (int) vint64, NULL);
 	}
 
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "MUD_URL", &value);
+	if (v)
+		g_object_set (s_con, NM_SETTING_CONNECTION_MUD_URL, v, NULL);
+
 	i_val = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	if (!svGetValueEnum (ifcfg, "MDNS",
 	                     nm_setting_connection_mdns_get_type (),
@@ -2204,6 +2209,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		if (v && !strchr (v, '.'))
 			v = NULL;
 	}
+
 	if (v)
 		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, v, NULL);
 

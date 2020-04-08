@@ -30,6 +30,7 @@
 #define NM_DHCP_CLIENT_INTERFACE        "iface"
 #define NM_DHCP_CLIENT_MULTI_IDX        "multi-idx"
 #define NM_DHCP_CLIENT_HOSTNAME         "hostname"
+#define NM_DHCP_CLIENT_MUDURL           "mudurl"
 #define NM_DHCP_CLIENT_ROUTE_METRIC     "route-metric"
 #define NM_DHCP_CLIENT_ROUTE_TABLE      "route-table"
 #define NM_DHCP_CLIENT_TIMEOUT          "timeout"
@@ -141,6 +142,7 @@ gboolean nm_dhcp_client_get_iaid_explicit (NMDhcpClient *self);
 GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);
+const char *nm_dhcp_client_get_mudurl (NMDhcpClient *self);
 
 NMDhcpHostnameFlags nm_dhcp_client_get_hostname_flags (NMDhcpClient *self);
 
