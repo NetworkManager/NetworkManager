@@ -1321,6 +1321,11 @@ rebuild_domain_lists (NMDnsManager *self)
 		 * If there is no default route, add the wildcard domain to all non-VPN
 		 * connections */
 		if (default_route_found) {
+			/* FIXME: this heuristic of which device has a default route does
+			 * not work with policy routing (as used by default with WireGuard).
+			 * We should have a more stable mechanism where an NMIPConfig indicates
+			 * whether it is suitable for certain operations (like having an automatically
+			 * added "~" domain). */
 			if (nm_ip_config_best_default_route_get (ip_config))
 				domains[num_dom1++] = "~";
 		} else {
