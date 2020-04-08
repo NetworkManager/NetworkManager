@@ -83,6 +83,8 @@ enum {
         SD_DHCP_OPTION_REBINDING_T2_TIME           = 59,
         SD_DHCP_OPTION_VENDOR_CLASS_IDENTIFIER     = 60,
         SD_DHCP_OPTION_CLIENT_IDENTIFIER           = 61,
+        SD_DHCP_OPTION_SMTP_SERVER                 = 69,
+        SD_DHCP_OPTION_POP3_SERVER                 = 70,
         SD_DHCP_OPTION_USER_CLASS                  = 77,
         SD_DHCP_OPTION_FQDN                        = 81,
         SD_DHCP_OPTION_NEW_POSIX_TIMEZONE          = 100,
@@ -90,6 +92,7 @@ enum {
         SD_DHCP_OPTION_DOMAIN_SEARCH_LIST          = 119,
         SD_DHCP_OPTION_SIP_SERVER                  = 120,
         SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE      = 121,
+        SD_DHCP_OPTION_MUD_URL                     = 161,
         SD_DHCP_OPTION_PRIVATE_BASE                = 224,
        /* Windows 10 option to send when Anonymize=true */
         SD_DHCP_OPTION_PRIVATE_CLASSLESS_STATIC_ROUTE = 249,
@@ -169,6 +172,9 @@ int sd_dhcp_client_set_hostname(
 int sd_dhcp_client_set_vendor_class_identifier(
                 sd_dhcp_client *client,
                 const char *vci);
+int sd_dhcp_client_set_mud_url(
+                sd_dhcp_client *client,
+                const char *mudurl);
 int sd_dhcp_client_set_user_class(
                 sd_dhcp_client *client,
                 const char* const *user_class);

@@ -232,6 +232,7 @@ sources = files(
   'systemd/src/basic/utf8.c',
   'systemd/src/basic/util.c',
   'systemd/src/shared/dns-domain.c',
+  'systemd/src/shared/web-util.c',
 )
 
 incs = include_directories(

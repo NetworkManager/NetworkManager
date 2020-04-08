@@ -1937,6 +1937,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/util.h \
 	shared/systemd/src/shared/dns-domain.c \
 	shared/systemd/src/shared/dns-domain.h \
+	shared/systemd/src/shared/web-util.c \
+	shared/systemd/src/shared/web-util.h \
 	$(NULL)
 
 shared_systemd_libnm_systemd_shared_la_LIBADD = \
