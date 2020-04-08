@@ -744,6 +744,14 @@ fail_invalid_secret:
 		              data_addr ? method_manual : method_disabled,
 		              NULL);
 
+		/* For WireGuard profiles, always set dns-priority to a negative value,
+		 * so that DNS servers on other profiles get ignored. This is also what
+		 * wg-quick does, by calling `resolvconf -x`. */
+		g_object_set (s_ip,
+		              NM_SETTING_IP_CONFIG_DNS_PRIORITY,
+		              (int) -10,
+		              NULL);
+
 		if (data_addr) {
 			for (i = 0; i < data_addr->len; i++)
 				nm_setting_ip_config_add_address (s_ip, data_addr->pdata[i]);
