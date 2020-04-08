@@ -1231,26 +1231,34 @@ get_ip_rdns_domains (NMIPConfig *ip_config)
 /* Check if the domain is shadowed by a parent domain with more negative priority */
 static gboolean
 domain_is_shadowed (GHashTable *ht,
-                    const char *domain, int priority,
-                    const char **out_parent, int *out_parent_priority)
+                    const char *domain,
+                    int priority,
+                    const char **out_parent,
+                    int *out_parent_priority)
 {
 	char *parent;
 	int parent_priority;
 
+	if (!ht)
+		return FALSE;
+
 	nm_assert (!g_hash_table_contains (ht, domain));
 
 	parent_priority = GPOINTER_TO_INT (g_hash_table_lookup (ht, ""));
-	if (parent_priority < 0 && parent_priority < priority) {
+	if (   parent_priority < 0
+	    && parent_priority < priority) {
 		*out_parent = "";
 		*out_parent_priority = parent_priority;
 		return TRUE;
 	}
 
 	parent = strchr (domain, '.');
-	while (parent && parent[1]) {
+	while (   parent
+	       && parent[1]) {
 		parent++;
 		parent_priority = GPOINTER_TO_INT (g_hash_table_lookup (ht, parent));
-		if (parent_priority < 0 && parent_priority < priority) {
+		if (   parent_priority < 0
+		    && parent_priority < priority) {
 			*out_parent = parent;
 			*out_parent_priority = parent_priority;
 			return TRUE;
@@ -1269,8 +1277,6 @@ rebuild_domain_lists (NMDnsManager *self)
 	gboolean default_route_found = FALSE;
 	CList *head;
 
-	ht = g_hash_table_new (nm_str_hash, g_str_equal);
-
 	head = _ip_config_lst_head (self);
 	c_list_for_each_entry (ip_data, head, ip_config_lst) {
 		NMIPConfig *ip_config = ip_data->ip_config;
@@ -1285,55 +1291,66 @@ rebuild_domain_lists (NMDnsManager *self)
 
 	c_list_for_each_entry (ip_data, head, ip_config_lst) {
 		NMIPConfig *ip_config = ip_data->ip_config;
-		int priority, old_priority;
-		guint i, n, n_domains = 0;
+		int priority;
 		const char **domains;
+		guint n_searches;
+		guint n_domains;
+		guint num_dom1;
+		guint num_dom2;
+		guint cap_dom;
+		guint i;
 
 		if (!nm_ip_config_get_num_nameservers (ip_config))
 			continue;
 
+		n_domains = nm_ip_config_get_num_searches (ip_config);
+		n_searches = nm_ip_config_get_num_domains (ip_config);
+
 		priority = nm_ip_config_get_dns_priority (ip_config);
 		nm_assert (priority != 0);
+
+		cap_dom = 2u + NM_MAX (n_domains, n_searches);
+
 		g_free (ip_data->domains.search);
-		domains = g_new0 (const char *,
-		                  2 + NM_MAX (nm_ip_config_get_num_searches (ip_config),
-		                              nm_ip_config_get_num_domains (ip_config)));
+		domains = g_new (const char *, cap_dom);
 		ip_data->domains.search = domains;
+
+		num_dom1 = 0;
 
 		/* Add wildcard lookup domain to connections with the default route.
 		 * If there is no default route, add the wildcard domain to all non-VPN
 		 * connections */
 		if (default_route_found) {
 			if (nm_ip_config_best_default_route_get (ip_config))
-				domains[n_domains++] = "~";
+				domains[num_dom1++] = "~";
 		} else {
 			if (ip_data->ip_config_type != NM_DNS_IP_CONFIG_TYPE_VPN)
-				domains[n_domains++] = "~";
+				domains[num_dom1++] = "~";
 		}
 
 		/* searches are preferred over domains */
-		n = nm_ip_config_get_num_searches (ip_config);
-		for (i = 0; i < n; i++)
-			domains[n_domains++] = nm_ip_config_get_search (ip_config, i);
-
-		if (n == 0) {
-			/* If not searches, use any domains */
-			n = nm_ip_config_get_num_domains (ip_config);
-			for (i = 0; i < n; i++)
-				domains[n_domains++] = nm_ip_config_get_domain (ip_config, i);
+		if (n_searches > 0) {
+			for (i = 0; i < n_searches; i++)
+				domains[num_dom1++] = nm_ip_config_get_search (ip_config, i);
+		} else {
+			for (i = 0; i < n_domains; i++)
+				domains[num_dom1++] = nm_ip_config_get_domain (ip_config, i);
 		}
 
-		n = 0;
-		for (i = 0; i < n_domains; i++) {
+		nm_assert (num_dom1 < cap_dom);
+
+		num_dom2 = 0;
+		for (i = 0; i < num_dom1; i++) {
 			const char *domain_clean;
 			const char *parent;
+			int old_priority;
 			int parent_priority;
 
 			domain_clean = nm_utils_parse_dns_domain (domains[i], NULL);
 
 			/* Remove domains with lower priority */
-			old_priority = GPOINTER_TO_INT (g_hash_table_lookup (ht, domain_clean));
-			if (old_priority) {
+			old_priority = GPOINTER_TO_INT (nm_g_hash_table_lookup (ht, domain_clean));
+			if (old_priority != 0) {
 				if (old_priority < priority) {
 					_LOGT ("plugin: drop domain '%s' (i=%d, p=%d) because it already exists with p=%d",
 					       domains[i], ip_data->data->ifindex,
@@ -1349,10 +1366,13 @@ rebuild_domain_lists (NMDnsManager *self)
 			}
 
 			_LOGT ("plugin: add domain '%s' (i=%d, p=%d)", domains[i], ip_data->data->ifindex, priority);
+			if (!ht)
+				ht = g_hash_table_new (nm_str_hash, g_str_equal);
 			g_hash_table_insert (ht, (gpointer) domain_clean, GINT_TO_POINTER (priority));
-			domains[n++] = domains[i];
+			domains[num_dom2++] = domains[i];
 		}
-		domains[n] = NULL;
+		nm_assert (num_dom2 < cap_dom);
+		domains[num_dom2] = NULL;
 
 		g_strfreev (ip_data->domains.reverse);
 		ip_data->domains.reverse = get_ip_rdns_domains (ip_config);
