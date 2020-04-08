@@ -1303,8 +1303,8 @@ rebuild_domain_lists (NMDnsManager *self)
 		if (!nm_ip_config_get_num_nameservers (ip_config))
 			continue;
 
-		n_domains = nm_ip_config_get_num_searches (ip_config);
-		n_searches = nm_ip_config_get_num_domains (ip_config);
+		n_searches = nm_ip_config_get_num_searches (ip_config);
+		n_domains = nm_ip_config_get_num_domains (ip_config);
 
 		priority = nm_ip_config_get_dns_priority (ip_config);
 		nm_assert (priority != 0);
