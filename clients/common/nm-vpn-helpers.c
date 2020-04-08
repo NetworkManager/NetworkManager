@@ -765,9 +765,10 @@ fail_invalid_secret:
 			 *   yourself to "ipv4.routes" and "ipv6.routes".
 			 *
 			 * - With "auto", wg-quick also configures policy routing to handle default-routes (/0) to
-			 *   avoid routing loops. That is not yet solved by NetworkManager, you need to configure
-			 *   that explicitly (for example, by adding a direct route to the gateway on the interface
-			 *   that has the default-route, or by using a script (possibly dispatcher script).
+			 *   avoid routing loops.
+			 *   The imported connection profile will have wireguard.ip4-auto-default-route and
+			 *   wireguard.ip6-auto-default-route set to "default". It will thus configure wg-quick's
+			 *   policy routing if the profile has any AllowedIPs ranges with /0.
 			 */
 		} else if (data_table == _TABLE_OFF) {
 			if (is_v4) {
