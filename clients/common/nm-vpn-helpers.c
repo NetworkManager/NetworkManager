@@ -524,7 +524,6 @@ nm_vpn_wireguard_import (const char *filename,
 				char *value_word;
 
 				while (value_split_word (&value, &value_word)) {
-					char addr_s[NM_CONST_MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 					GPtrArray **p_data_dns;
 					NMIPAddr addr_bin;
 					int addr_family;
@@ -541,8 +540,8 @@ nm_vpn_wireguard_import (const char *filename,
 					if (!*p_data_dns)
 						*p_data_dns = g_ptr_array_new_with_free_func (g_free);
 
-					inet_ntop (addr_family, &addr_bin, addr_s, sizeof (addr_s));
-					g_ptr_array_add (*p_data_dns, g_strdup (addr_s));
+					g_ptr_array_add (*p_data_dns,
+					                 nm_utils_inet_ntop_dup (addr_family, &addr_bin));
 				}
 				continue;
 			}
