@@ -131,8 +131,12 @@ update_connection (NMDevice *device, NMConnection *connection)
 				*p = '\0';
 		}
 
-		if (value && nm_streq (*options, NM_SETTING_BOND_OPTION_MODE))
-			mode = _nm_setting_bond_mode_from_string (value);
+		if (mode == NM_BOND_MODE_UNKNOWN) {
+			if (value && nm_streq (*options, NM_SETTING_BOND_OPTION_MODE))
+				mode = _nm_setting_bond_mode_from_string (value);
+			if (mode == NM_BOND_MODE_UNKNOWN)
+				continue;
+		}
 
 		if (!_nm_setting_bond_option_supported (*options, mode))
 			continue;
