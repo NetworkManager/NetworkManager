@@ -329,59 +329,58 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 	GParamSpec *pspec;
 	const char *value;
 
-	g_assert (setting);
+	nm_assert (NM_IS_SETTING_BRIDGE (setting));
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), option->name);
-	g_assert (pspec);
+	nm_assert (pspec);
 
-	/* Get the property's value */
 	g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
 	g_object_get_property ((GObject *) setting, option->name, &val);
 
 	if (option->to_sysfs) {
-		value = option->to_sysfs(&val);
+		value = option->to_sysfs (&val);
 		goto out;
 	}
 
 	switch (pspec->value_type) {
-		case G_TYPE_BOOLEAN:
-			value = g_value_get_boolean (&val) ? "1" : "0";
-			break;
-		case G_TYPE_UINT: {
-				char value_buf[100];
-				guint uval;
+	case G_TYPE_BOOLEAN:
+		value = g_value_get_boolean (&val) ? "1" : "0";
+		break;
+	case G_TYPE_UINT: {
+			char value_buf[100];
+			guint uval;
 
+			uval = g_value_get_uint (&val);
+
+			/* zero means "unspecified" for some NM properties but isn't in the
+			 * allowed kernel range, so reset the property to the default value.
+			 */
+			if (option->default_if_zero && uval == 0) {
+				g_value_unset (&val);
+				g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
+				g_param_value_set_default (pspec, &val);
 				uval = g_value_get_uint (&val);
-
-				/* zero means "unspecified" for some NM properties but isn't in the
-				 * allowed kernel range, so reset the property to the default value.
-				 */
-				if (option->default_if_zero && uval == 0) {
-					g_value_unset (&val);
-					g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
-					g_param_value_set_default (pspec, &val);
-					uval = g_value_get_uint (&val);
-				}
-
-				/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
-				 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
-				 * is almost always works out to be a multiplier of 100, so we can assume
-				 * centiseconds.  See clock_t_to_jiffies().
-				 */
-				if (option->user_hz_compensate)
-					uval *= 100;
-
-				nm_sprintf_buf (value_buf, "%u", uval);
-				value = value_buf;
 			}
-			break;
-		case G_TYPE_STRING:
-			value = g_value_get_string (&val);
-			break;
-		default:
-			nm_assert_not_reached ();
-			value = NULL;
-			break;
+
+			/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
+			 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
+			 * is almost always works out to be a multiplier of 100, so we can assume
+			 * centiseconds.  See clock_t_to_jiffies().
+			 */
+			if (option->user_hz_compensate)
+				uval *= 100;
+
+			nm_sprintf_buf (value_buf, "%u", uval);
+			value = value_buf;
+		}
+		break;
+	case G_TYPE_STRING:
+		value = g_value_get_string (&val);
+		break;
+	default:
+		nm_assert_not_reached ();
+		value = NULL;
+		break;
 	}
 
 out:
@@ -492,7 +491,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
 
 		if (option->from_sysfs) {
-			option->from_sysfs(str, &value);
+			option->from_sysfs (str, &value);
 			goto out;
 		}
 
@@ -530,7 +529,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 			g_value_set_string (&value, str);
 			break;
 		default:
-			nm_assert_not_reached();
+			nm_assert_not_reached ();
 			break;
 		}
 
