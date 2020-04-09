@@ -380,6 +380,7 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 			break;
 		default:
 			nm_assert_not_reached ();
+			value = NULL;
 			break;
 	}
 
