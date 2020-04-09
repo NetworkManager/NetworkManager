@@ -4747,7 +4747,7 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 		va_end (args);
 
 		nm_assert (l >= 0);
-		nm_assert (l == l2 - 1);
+		nm_assert ((gsize) l == l2 - 1u);
 	}
 
 	strbuf->_priv_len += (gsize) l;
