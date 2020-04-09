@@ -560,7 +560,7 @@ begin_authentication (AuthRequest *request)
 	if (!g_spawn_async_with_pipes (NULL,
 	                               (char **) helper_argv,
 	                               NULL,
-	                               G_SPAWN_DEFAULT,
+	                               G_SPAWN_STDERR_TO_DEV_NULL,
 	                               NULL,
 	                               NULL,
 	                               NULL,
