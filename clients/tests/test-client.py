@@ -26,11 +26,6 @@ from __future__ import print_function
 #    # The important part is that translations work. Test
 #    #  $ LANG=pl_PL.UTF-8 ./clients/cli/nmcli --version
 #    # also ensure that `locale -a` reports the Polish locale.
-#  $ rm -rf  clients/tests/test-client.check-on-disk/*.expected
-#    # (step seldom required)
-#    # Sometimes, if you want to be sure that the test would generate
-#    # exactly the same .expected files, purge the previous version first.
-#    # This is only necessary, when you remove test from this file.
 #  $ NM_TEST_REGENERATE=1 make check-local-clients-tests-test-client
 #    # Set NM_TEST_REGENERATE=1 to regenerate all files.
 #  $ git diff ... ; git add ...
