@@ -329,7 +329,10 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 	GParamSpec *pspec;
 	const char *value;
 
-	nm_assert (NM_IS_SETTING_BRIDGE (setting));
+	if (slave)
+		nm_assert (NM_IS_SETTING_BRIDGE_PORT (setting));
+	else
+		nm_assert (NM_IS_SETTING_BRIDGE (setting));
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), option->name);
 	nm_assert (pspec);
