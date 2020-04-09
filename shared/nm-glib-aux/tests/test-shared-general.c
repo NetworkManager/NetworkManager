@@ -659,7 +659,7 @@ test_nm_utils_get_next_realloc_size (void)
 				break;
 			case 3:
 				/* values around powers of 2. */
-				requested0 = (((gsize) 1) << (nmtst_get_rand_uint32 () % 64)) + 6000u - (nmtst_get_rand_uint32 () % 12000u);
+				requested0 = (((gsize) 1) << (nmtst_get_rand_uint32 () % (sizeof (gsize) * 8u))) + 6000u - (nmtst_get_rand_uint32 () % 12000u);
 				break;
 			case 4:
 				/* values around 4k borders. */
