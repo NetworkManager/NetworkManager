@@ -4697,18 +4697,18 @@ _nm_str_buf_ensure_size (NMStrBuf *strbuf,
 	_nm_str_buf_assert (strbuf);
 
 	/* Currently this only supports strictly growing the buffer. */
-	nm_assert (new_size > strbuf->_allocated);
+	nm_assert (new_size > strbuf->_priv_allocated);
 
 	if (!reserve_exact) {
-		new_size = nm_utils_get_next_realloc_size (!strbuf->_do_bzero_mem,
+		new_size = nm_utils_get_next_realloc_size (!strbuf->_priv_do_bzero_mem,
 		                                           new_size);
 	}
 
-	strbuf->_str = nm_secret_mem_realloc (strbuf->_str,
-	                                      strbuf->_do_bzero_mem,
-	                                      strbuf->_allocated,
-	                                      new_size);
-	strbuf->_allocated = new_size;
+	strbuf->_priv_str = nm_secret_mem_realloc (strbuf->_priv_str,
+	                                           strbuf->_priv_do_bzero_mem,
+	                                           strbuf->_priv_allocated,
+	                                           new_size);
+	strbuf->_priv_allocated = new_size;
 }
 
 void
@@ -4722,10 +4722,10 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 
 	_nm_str_buf_assert (strbuf);
 
-	available = strbuf->_allocated - strbuf->_len;
+	available = strbuf->_priv_allocated - strbuf->_priv_len;
 
 	va_start (args, format);
-	l = g_vsnprintf (&strbuf->_str[strbuf->_len],
+	l = g_vsnprintf (&strbuf->_priv_str[strbuf->_priv_len],
 	                 available,
 	                 format,
 	                 args);
@@ -4740,7 +4740,7 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 		nm_str_buf_maybe_expand (strbuf, l2, FALSE);
 
 		va_start (args, format);
-		l = g_vsnprintf (&strbuf->_str[strbuf->_len],
+		l = g_vsnprintf (&strbuf->_priv_str[strbuf->_priv_len],
 		                 l2,
 		                 format,
 		                 args);
@@ -4750,5 +4750,5 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 		nm_assert (l == l2 - 1);
 	}
 
-	strbuf->_len += (gsize) l;
+	strbuf->_priv_len += (gsize) l;
 }

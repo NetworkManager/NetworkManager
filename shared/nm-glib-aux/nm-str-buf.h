@@ -11,16 +11,22 @@
 /* NMStrBuf is not unlike GString. The main difference is that it can use
  * nm_explicit_bzero() when growing the buffer. */
 typedef struct _NMStrBuf {
-	char *_str;
+
+	char *_priv_str;
+
+	/* The unions only exist because we allow/encourage read-only access
+	 * to the "len" and "allocated" fields, but modifying the fields is
+	 * only allowed to the NMStrBuf implementation itself. */
 	union {
 		/*const*/ gsize len;
-		gsize _len;
+		gsize _priv_len;
 	};
 	union {
 		/*const*/ gsize allocated;
-		gsize _allocated;
+		gsize _priv_allocated;
 	};
-	bool _do_bzero_mem;
+
+	bool _priv_do_bzero_mem;
 } NMStrBuf;
 
 /*****************************************************************************/
@@ -29,9 +35,9 @@ static inline void
 _nm_str_buf_assert (NMStrBuf *strbuf)
 {
 	nm_assert (strbuf);
-	nm_assert (strbuf->_str);
-	nm_assert (strbuf->_allocated > 0);
-	nm_assert (strbuf->_len <= strbuf->_allocated);
+	nm_assert (strbuf->_priv_str);
+	nm_assert (strbuf->_priv_allocated > 0);
+	nm_assert (strbuf->_priv_len <= strbuf->_priv_allocated);
 }
 
 static inline void
@@ -42,10 +48,10 @@ nm_str_buf_init (NMStrBuf *strbuf,
 	nm_assert (strbuf);
 	nm_assert (len > 0);
 
-	strbuf->_do_bzero_mem = do_bzero_mem;
-	strbuf->_allocated    = len;
-	strbuf->_str          = g_malloc (len);
-	strbuf->_len          = 0;
+	strbuf->_priv_str          = g_malloc (len);
+	strbuf->_priv_allocated    = len;
+	strbuf->_priv_len          = 0;
+	strbuf->_priv_do_bzero_mem = do_bzero_mem;
 
 	_nm_str_buf_assert (strbuf);
 }
@@ -63,11 +69,11 @@ nm_str_buf_maybe_expand (NMStrBuf *strbuf,
 
 	/* currently we always require to reserve a non-zero number of bytes. */
 	nm_assert (reserve > 0);
-	nm_assert (strbuf->_len < G_MAXSIZE - reserve);
+	nm_assert (strbuf->_priv_len < G_MAXSIZE - reserve);
 
 	/* @reserve is the extra space that we require. */
-	if (G_UNLIKELY (reserve > strbuf->_allocated - strbuf->_len))
-		_nm_str_buf_ensure_size (strbuf, strbuf->_len + reserve, reserve_exact);
+	if (G_UNLIKELY (reserve > strbuf->_priv_allocated - strbuf->_priv_len))
+		_nm_str_buf_ensure_size (strbuf, strbuf->_priv_len + reserve, reserve_exact);
 }
 
 /*****************************************************************************/
@@ -101,20 +107,20 @@ nm_str_buf_set_size (NMStrBuf *strbuf,
 {
 	_nm_str_buf_assert (strbuf);
 
-	if (new_len < strbuf->len) {
+	if (new_len < strbuf->_priv_len) {
 		if (   honor_do_bzero_mem
-		    && strbuf->_do_bzero_mem) {
+		    && strbuf->_priv_do_bzero_mem) {
 			/* we only clear the memory that we wrote to. */
-			nm_explicit_bzero (&strbuf->_str[new_len], strbuf->_len - new_len);
+			nm_explicit_bzero (&strbuf->_priv_str[new_len], strbuf->_priv_len - new_len);
 		}
-	} else if (new_len > strbuf->len) {
+	} else if (new_len > strbuf->_priv_len) {
 		nm_str_buf_maybe_expand (strbuf,
-		                         new_len - strbuf->len + (reserve_exact ? 0u : 1u),
+		                         new_len - strbuf->_priv_len + (reserve_exact ? 0u : 1u),
 		                         reserve_exact);
 	} else
 		return;
 
-	strbuf->_len = new_len;
+	strbuf->_priv_len = new_len;
 }
 
 /*****************************************************************************/
@@ -129,7 +135,7 @@ nm_str_buf_erase (NMStrBuf *strbuf,
 
 	_nm_str_buf_assert (strbuf);
 
-	nm_assert (pos <= strbuf->len);
+	nm_assert (pos <= strbuf->_priv_len);
 
 	if (len == 0)
 		return;
@@ -141,17 +147,17 @@ nm_str_buf_erase (NMStrBuf *strbuf,
 	} else {
 		gsize l = len;
 
-		nm_assert (l <= strbuf->len - pos);
+		nm_assert (l <= strbuf->_priv_len - pos);
 
-		new_len = strbuf->len - l;
-		if (pos + l < strbuf->len) {
-			memmove (&strbuf->_str[pos],
-			         &strbuf->_str[pos + l],
-			         strbuf->len - (pos + l));
+		new_len = strbuf->_priv_len - l;
+		if (pos + l < strbuf->_priv_len) {
+			memmove (&strbuf->_priv_str[pos],
+			         &strbuf->_priv_str[pos + l],
+			         strbuf->_priv_len - (pos + l));
 		}
 	}
 
-	nm_assert (new_len <= strbuf->len);
+	nm_assert (new_len <= strbuf->_priv_len);
 	nm_str_buf_set_size (strbuf, new_len, honor_do_bzero_mem, TRUE);
 }
 
@@ -162,7 +168,7 @@ nm_str_buf_append_c (NMStrBuf *strbuf,
                      char ch)
 {
 	nm_str_buf_maybe_expand (strbuf, 2, FALSE);
-	strbuf->_str[strbuf->_len++] = ch;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch;
 }
 
 static inline void
@@ -171,8 +177,8 @@ nm_str_buf_append_c2 (NMStrBuf *strbuf,
                       char ch1)
 {
 	nm_str_buf_maybe_expand (strbuf, 3, FALSE);
-	strbuf->_str[strbuf->_len++] = ch0;
-	strbuf->_str[strbuf->_len++] = ch1;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch0;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch1;
 }
 
 static inline void
@@ -183,10 +189,10 @@ nm_str_buf_append_c4 (NMStrBuf *strbuf,
                       char ch3)
 {
 	nm_str_buf_maybe_expand (strbuf, 5, FALSE);
-	strbuf->_str[strbuf->_len++] = ch0;
-	strbuf->_str[strbuf->_len++] = ch1;
-	strbuf->_str[strbuf->_len++] = ch2;
-	strbuf->_str[strbuf->_len++] = ch3;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch0;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch1;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch2;
+	strbuf->_priv_str[strbuf->_priv_len++] = ch3;
 }
 
 static inline void
@@ -198,8 +204,8 @@ nm_str_buf_append_len (NMStrBuf *strbuf,
 
 	if (len > 0) {
 		nm_str_buf_maybe_expand (strbuf, len + 1, FALSE);
-		memcpy (&strbuf->_str[strbuf->_len], str, len);
-		strbuf->_len += len;
+		memcpy (&strbuf->_priv_str[strbuf->_priv_len], str, len);
+		strbuf->_priv_len += len;
 	}
 }
 
@@ -221,8 +227,8 @@ nm_str_buf_ensure_trailing_c (NMStrBuf *strbuf, char ch)
 {
 	_nm_str_buf_assert (strbuf);
 
-	if (   strbuf->len == 0
-	    || strbuf->_str[strbuf->len - 1] != ch)
+	if (   strbuf->_priv_len == 0
+	    || strbuf->_priv_str[strbuf->_priv_len - 1] != ch)
 		nm_str_buf_append_c (strbuf, ch);
 }
 
@@ -233,10 +239,10 @@ nm_str_buf_is_initalized (NMStrBuf *strbuf)
 {
 	nm_assert (strbuf);
 #if NM_MORE_ASSERTS
-	if (strbuf->_str)
+	if (strbuf->_priv_str)
 		_nm_str_buf_assert (strbuf);
 #endif
-	return !!strbuf->_str;
+	return !!strbuf->_priv_str;
 }
 
 /**
@@ -262,15 +268,15 @@ static inline const char *
 nm_str_buf_get_str (NMStrBuf *strbuf)
 {
 	nm_str_buf_maybe_expand (strbuf, 1, FALSE);
-	strbuf->_str[strbuf->_len] = '\0';
-	return strbuf->_str;
+	strbuf->_priv_str[strbuf->_priv_len] = '\0';
+	return strbuf->_priv_str;
 }
 
 static inline char *
 nm_str_buf_get_str_unsafe (NMStrBuf *strbuf)
 {
 	_nm_str_buf_assert (strbuf);
-	return strbuf->_str;
+	return strbuf->_priv_str;
 }
 
 /**
@@ -288,13 +294,13 @@ nm_str_buf_finalize (NMStrBuf *strbuf,
                      gsize *out_len)
 {
 	nm_str_buf_maybe_expand (strbuf, 1, TRUE);
-	strbuf->_str[strbuf->_len] = '\0';
+	strbuf->_priv_str[strbuf->_priv_len] = '\0';
 
-	NM_SET_OUT (out_len, strbuf->_len);
+	NM_SET_OUT (out_len, strbuf->_priv_len);
 
 	/* the buffer is in invalid state afterwards, however, we clear it
 	 * so far, that nm_auto_str_buf and nm_str_buf_destroy() is happy.  */
-	return g_steal_pointer (&strbuf->_str);
+	return g_steal_pointer (&strbuf->_priv_str);
 }
 
 /**
@@ -308,17 +314,17 @@ nm_str_buf_finalize (NMStrBuf *strbuf,
 static inline void
 nm_str_buf_destroy (NMStrBuf *strbuf)
 {
-	if (!strbuf->_str)
+	if (!strbuf->_priv_str)
 		return;
 	_nm_str_buf_assert (strbuf);
-	if (strbuf->_do_bzero_mem)
-		nm_explicit_bzero (strbuf->_str, strbuf->_len);
-	g_free (strbuf->_str);
+	if (strbuf->_priv_do_bzero_mem)
+		nm_explicit_bzero (strbuf->_priv_str, strbuf->_priv_len);
+	g_free (strbuf->_priv_str);
 
 	/* the buffer is in invalid state afterwards, however, we clear it
 	 * so far, that nm_auto_str_buf is happy when calling
 	 * nm_str_buf_destroy() again.  */
-	strbuf->_str = NULL;
+	strbuf->_priv_str = NULL;
 }
 
 #define nm_auto_str_buf    nm_auto (nm_str_buf_destroy)
