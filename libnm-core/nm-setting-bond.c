@@ -238,13 +238,8 @@ static const char*
 _bond_get_option_or_default (NMSettingBond *self,
                              const char *option)
 {
-	const char *value;
-
-	value = _bond_get_option (self, option);
-	if (!value) {
-		value = _bond_get_option_default (self, option);
-	}
-	return value;
+	return    _bond_get_option (self, option)
+	       ?: _bond_get_option_default (self, option);
 }
 
 static const char*
