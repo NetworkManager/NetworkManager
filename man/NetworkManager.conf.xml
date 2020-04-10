@@ -153,7 +153,9 @@ plugins-=remove-me
       </varlistentry>
       <varlistentry>
         <term><varname>monitor-connection-files</varname></term>
-        <listitem><para>This setting is deprecated and has no effect.</para></listitem>
+        <listitem><para>This setting is deprecated and has no effect. Profiles
+        from disk are never automatically reloaded. Use for example <literal>nmcli connection (re)load</literal>
+        for that.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><varname>auth-polkit</varname></term>

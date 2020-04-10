@@ -107,9 +107,8 @@
 
         Loads or reloads the indicated connections from disk. You should call this
         after making changes directly to an on-disk connection file to make sure
-        that NetworkManager sees the changes. (If "monitor-connection-files" in
-        NetworkManager.conf is "true", then this will have no real effect, but is
-        harmless.) As with AddConnection(), this operation does not necessarily
+        that NetworkManager sees the changes.
+        As with AddConnection(), this operation does not necessarily
         start the network connection.
     -->
     <method name="LoadConnections">
@@ -123,10 +122,7 @@
         @status: This always returns %TRUE.
 
         Tells NetworkManager to reload all connection files from disk, including
-        noticing any added or deleted connection files. By default, connections
-        are re-read automatically any time they change, so you only need to use
-        this command if you have set "monitor-connection-files=false" in
-        NetworkManager.conf.
+        noticing any added or deleted connection files.
     -->
     <method name="ReloadConnections">
       <arg name="status" type="b" direction="out"/>

@@ -1147,13 +1147,10 @@
 
         <listitem>
           <para>Reload all connection files from disk.
-          NetworkManager does not monitor changes to connection
-          files by default. So you need to use this command in order to tell
+          NetworkManager does not monitor changes to connection.
+          So you need to use this command in order to tell
           NetworkManager to re-read the connection profiles from
-          disk when a change was made to them. However, the auto-loading feature can be
-          enabled and then NetworkManager will reload connection
-          files any time they change (monitor-connection-files=true in
-          <link linkend='NetworkManager.conf'><link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></link>).
+          disk when a change was made to them.
           </para>
         </listitem>
       </varlistentry>
