@@ -1850,8 +1850,8 @@ nm_utils_strdup_reset (char **dst, const char *src)
  * buffer size only from 100 to 104.
  * If you however start with an initial buffer size of 104, then the next reallocation
  * via nm_utils_get_next_realloc_size() gives you 232, and so on. By using
- * these sizes, it results in fewer reallocations, if you anyway don't now the exact
- * size in advance. */
+ * these sizes, it results in one less allocation, if you anyway don't know the
+ * exact size in advance. */
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_104     ((gsize) 104)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_1000    ((gsize) 1000)
 
