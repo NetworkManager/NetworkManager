@@ -1046,7 +1046,7 @@ nm_str_realloc (char *str)
 	 && ({ \
 	        static volatile int _assert_once = 0; \
 	        \
-	        G_STATIC_ASSERT_EXPR ((more_assert_level) >= 0); \
+	        G_STATIC_ASSERT_EXPR ((more_assert_level) > 0); \
 	        \
 	        G_UNLIKELY (   _assert_once == 0 \
 	                    && g_atomic_int_compare_and_exchange (&_assert_once, 0, 1)); \
