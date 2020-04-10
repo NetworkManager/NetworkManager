@@ -1501,6 +1501,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "group_fwd_mask=%u", i);
 	}
 
+	i = nm_setting_bridge_get_multicast_hash_max (s_bridge);
+	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_HASH_MAX)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_hash_max=%u", i);
+	}
+
 	b = nm_setting_bridge_get_multicast_querier (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
 		if (opts->len)

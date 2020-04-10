@@ -26,6 +26,7 @@
 #define BRIDGE_FORWARD_DELAY_DEFAULT              15
 #define BRIDGE_HELLO_TIME_DEFAULT                 2
 #define BRIDGE_MAX_AGE_DEFAULT                    20
+#define BRIDGE_MULTICAST_HASH_MAX_DEFAULT         4096
 #define BRIDGE_MULTICAST_QUERIER_DEFAULT          FALSE
 #define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT FALSE
 #define BRIDGE_MULTICAST_SNOOPING_DEFAULT         TRUE
@@ -46,6 +47,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_AGEING_TIME,
 	PROP_GROUP_ADDRESS,
 	PROP_GROUP_FORWARD_MASK,
+	PROP_MULTICAST_HASH_MAX,
 	PROP_MULTICAST_ROUTER,
 	PROP_MULTICAST_QUERIER,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
@@ -64,6 +66,7 @@ typedef struct {
 	char *   group_address;
 	char *   vlan_protocol;
 	guint32  ageing_time;
+	guint32  multicast_hash_max;
 	guint16  priority;
 	guint16  forward_delay;
 	guint16  hello_time;
@@ -1010,6 +1013,22 @@ nm_setting_bridge_get_multicast_querier (const NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_querier;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_hash_max:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-hash-max property of the setting
+ *
+ * Since 1.26
+ **/
+guint32
+nm_setting_bridge_get_multicast_hash_max (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_hash_max;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1149,6 +1168,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (!nm_utils_is_power_of_two (priv->multicast_hash_max)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' option must be a power of 2"),
+		             NM_SETTING_BRIDGE_MULTICAST_HASH_MAX);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MULTICAST_HASH_MAX);
+		return FALSE;
+	}
+
 	/* Failures from here on are NORMALIZABLE... */
 
 	if (!_nm_utils_bridge_vlan_verify_list (priv->vlans,
@@ -1235,6 +1264,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_GROUP_FORWARD_MASK:
 		g_value_set_uint (value, priv->group_forward_mask);
 		break;
+	case PROP_MULTICAST_HASH_MAX:
+		g_value_set_uint (value, priv->multicast_hash_max);
+		break;
 	case PROP_MULTICAST_SNOOPING:
 		g_value_set_boolean (value, priv->multicast_snooping);
 		break;
@@ -1308,6 +1340,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_GROUP_FORWARD_MASK:
 		priv->group_forward_mask = (guint16) g_value_get_uint (value);
 		break;
+	case PROP_MULTICAST_HASH_MAX:
+		priv->multicast_hash_max = g_value_get_uint (value);
+		break;
 	case PROP_MULTICAST_SNOOPING:
 		priv->multicast_snooping = g_value_get_boolean (value);
 		break;
@@ -1359,6 +1394,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->forward_delay              = BRIDGE_FORWARD_DELAY_DEFAULT;
 	priv->hello_time                 = BRIDGE_HELLO_TIME_DEFAULT;
 	priv->max_age                    = BRIDGE_MAX_AGE_DEFAULT;
+	priv->multicast_hash_max         = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
 	priv->multicast_snooping         = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
 	priv->priority                   = BRIDGE_PRIORITY_DEFAULT;
 	priv->stp                        = BRIDGE_STP_DEFAULT;
@@ -1842,6 +1878,27 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                          G_PARAM_READWRITE |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-hash-max:
+	 *
+	 * Set maximum size of multicast hash table (value must be a power of 2).
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-hash-max
+	 * variable: BRIDGING_OPTS: multicast_hash_max=
+	 * default: 4096
+	 * example: BRIDGING_OPTS="multicast_hash_max=8192"
+	 * ---end---
+	 *
+	 * Since: 1.26
+	 */
+	obj_properties[PROP_MULTICAST_HASH_MAX] =
+	    g_param_spec_uint (NM_SETTING_BRIDGE_MULTICAST_HASH_MAX, "", "",
+	                       NM_BR_MIN_MULTICAST_HASH_MAX, NM_BR_MAX_MULTICAST_HASH_MAX, BRIDGE_MULTICAST_HASH_MAX_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

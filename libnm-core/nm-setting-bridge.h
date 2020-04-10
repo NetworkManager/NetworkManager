@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_MAX_AGE                         "max-age"
 #define NM_SETTING_BRIDGE_AGEING_TIME                     "ageing-time"
 #define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK              "group-forward-mask"
+#define NM_SETTING_BRIDGE_MULTICAST_HASH_MAX              "multicast-hash-max"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING              "multicast-snooping"
 #define NM_SETTING_BRIDGE_MULTICAST_ROUTER                "multicast-router"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERIER               "multicast-querier"
@@ -139,6 +140,9 @@ gboolean nm_setting_bridge_get_multicast_query_use_ifaddr (const NMSettingBridge
 
 NM_AVAILABLE_IN_1_24
 gboolean nm_setting_bridge_get_multicast_querier (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint32 nm_setting_bridge_get_multicast_hash_max (const NMSettingBridge *setting);
 
 G_END_DECLS
 
