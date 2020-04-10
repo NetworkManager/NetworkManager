@@ -1736,10 +1736,10 @@ fcn_name (const char *name) \
 	\
 	if (G_LIKELY (name)) { \
 		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) > 1); \
-		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) < G_MAXUINT / 2u - 10u); \
-		unsigned imin = 0; \
-		unsigned imax = (G_N_ELEMENTS (LIST) - 1); \
-		unsigned imid = (G_N_ELEMENTS (LIST) - 1) / 2; \
+		G_STATIC_ASSERT (G_N_ELEMENTS (LIST) < G_MAXINT / 2 - 10); \
+		int imin = 0; \
+		int imax = (G_N_ELEMENTS (LIST) - 1); \
+		int imid = (G_N_ELEMENTS (LIST) - 1) / 2; \
 		\
 		for (;;) { \
 			const int cmp = strcmp (LIST[imid].name, name); \
@@ -1748,15 +1748,15 @@ fcn_name (const char *name) \
 				return get_operator (LIST[imid].value); \
 			\
 			if (cmp < 0) \
-				imin = imid + 1u; \
+				imin = imid + 1; \
 			else \
-				imax = imid - 1u; \
+				imax = imid - 1; \
 			\
 			if (G_UNLIKELY (imin > imax)) \
 				break; \
 			\
-			/* integer overflow cannot happen, because LIST is shorter than G_MAXUINT/2. */ \
-			imid = (imin + imax) / 2u;\
+			/* integer overflow cannot happen, because LIST is shorter than G_MAXINT/2. */ \
+			imid = (imin + imax) / 2;\
 		} \
 	} \
 	\
