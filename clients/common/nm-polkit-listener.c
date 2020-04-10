@@ -27,6 +27,7 @@
 #include <fcntl.h>
 
 #include "nm-glib-aux/nm-dbus-aux.h"
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-glib-aux/nm-io-utils.h"
 #include "nm-libnm-core-intern/nm-auth-subject.h"
@@ -47,11 +48,13 @@
 #define NM_POLKIT_LISTENER_DBUS_CONNECTION  "dbus-connection"
 #define NM_POLKIT_LISTENER_SESSION_AGENT    "session-agent"
 
+#define POLKIT_DBUS_ERROR_FAILED            "org.freedesktop.PolicyKit1.Error.Failed"
+
 /*****************************************************************************/
 
 enum {
 	REGISTERED,
-	REQUEST,
+	REQUEST_SYNC,
 	ERROR,
 	LAST_SIGNAL
 };
@@ -60,18 +63,21 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 struct _NMPolkitListener {
 	GObject parent;
-
 	GDBusConnection *dbus_connection;
 	char *name_owner;
-	guint pk_auth_agent_reg_id;
-	guint name_owner_changed_id;
 	GCancellable *cancellable;
 	GMainContext *main_context;
-	gboolean session_agent;
 	CList request_lst_head;
+	guint pk_auth_agent_reg_id;
+	guint name_owner_changed_id;
+	bool session_agent:1;
 };
 
-G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, G_TYPE_OBJECT)
+struct _NMPolkitListenerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
@@ -79,19 +85,22 @@ typedef struct {
 	CList request_lst;
 
 	NMPolkitListener *listener;
+	GSource *child_stdout_watch_source;
+	GSource *child_stdin_watch_source;
+	GDBusMethodInvocation *dbus_invocation;
 	char *action_id;
 	char *message;
 	char *username;
 	char *cookie;
-	GString *in_buffer;
-	GString *out_buffer;
-	size_t out_buffer_offset;
+	NMStrBuf in_buffer;
+	NMStrBuf out_buffer;
+	gsize out_buffer_offset;
 
 	int child_stdout;
 	int child_stdin;
-	GSource *child_stdout_watch_source;
-	GSource *child_stdin_watch_source;
-	GDBusMethodInvocation *dbus_invocation;
+
+	bool request_any_response:1;
+	bool request_is_completed:1;
 } AuthRequest;
 
 static const GDBusInterfaceInfo interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
@@ -118,9 +127,17 @@ static const GDBusInterfaceInfo interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO_
 );
 
 static void
-remove_request (AuthRequest *request)
+auth_request_complete (AuthRequest *request, gboolean success)
 {
 	c_list_unlink (&request->request_lst);
+
+	if (success)
+		g_dbus_method_invocation_return_value (request->dbus_invocation, NULL);
+	else {
+		g_dbus_method_invocation_return_dbus_error (request->dbus_invocation,
+		                                            POLKIT_DBUS_ERROR_FAILED,
+		                                            "");
+	}
 
 	nm_clear_g_free (&request->action_id);
 	nm_clear_g_free (&request->message);
@@ -129,10 +146,8 @@ remove_request (AuthRequest *request)
 	nm_clear_g_source_inst (&request->child_stdout_watch_source);
 	nm_clear_g_source_inst (&request->child_stdin_watch_source);
 
-	nm_explicit_bzero (request->out_buffer->str,
-	                   request->out_buffer->len);
-	g_string_free (request->out_buffer, TRUE);
-	g_string_free (request->in_buffer, TRUE);
+	nm_str_buf_destroy (&request->in_buffer);
+	nm_str_buf_destroy (&request->out_buffer);
 
 	if (request->child_stdout != -1) {
 		nm_close (request->child_stdout);
@@ -144,79 +159,85 @@ remove_request (AuthRequest *request)
 		request->child_stdin = -1;
 	}
 
-	g_slice_free (AuthRequest, request);
+	nm_g_slice_free (request);
 }
 
-static const char *
-uid_to_name (uid_t uid)
+static gboolean
+uid_to_name (uid_t uid,
+             const char **out_name)
 {
-	const char *name = NULL;
-	struct passwd *passwd;
+	const struct passwd *passwd;
+
+	if (*out_name)
+		return TRUE;
 
 	passwd = getpwuid (uid);
-	if (passwd != NULL)
-		name = passwd->pw_name;
-	return name;
+	if (   !passwd
+	    || !passwd->pw_name)
+		return FALSE;
+
+	*out_name = passwd->pw_name;
+	return TRUE;
 }
 
-static gboolean
-find_identity (uid_t uid, gpointer user_data)
-{
-	return nm_streq0 (user_data, uid_to_name (uid));
-}
-
-static gboolean
-first_identity (uid_t uid, gpointer user_data)
-{
-	return true;
-}
-
-static gint64
-_choose_identity (GVariant *identities,
-                  gboolean (*predicate) (uid_t uid, gpointer user_data),
-                  gpointer user_data)
-{
-	GVariantIter identity_iter;
-	GVariantIter *identity_details_iter;
-	GVariant *unix_id_variant;
-	uid_t unix_id;
-
-	g_return_val_if_fail (predicate != NULL, FALSE);
-
-	g_variant_iter_init (&identity_iter, identities);
-
-	while (g_variant_iter_loop (&identity_iter, "(&sa{sv})", NULL, &identity_details_iter)) {
-		while (g_variant_iter_loop (identity_details_iter, "{sv}", NULL, &unix_id_variant)) {
-			unix_id = g_variant_get_uint32 (unix_id_variant);
-
-			if (predicate (unix_id, user_data)) {
-				g_variant_unref (unix_id_variant);
-				g_variant_iter_free (identity_details_iter);
-				return unix_id;
-			}
-		}
-		g_variant_iter_free (identity_details_iter);
-	}
-	return -1;
-}
-
-static uid_t
+static char *
 choose_identity (GVariant *identities)
 {
+	GVariantIter identity_iter;
+	GVariant *details_tmp;
+	const char *kind;
+	gs_free char *username_first = NULL;
+	gs_free char *username_root = NULL;
 	const char *user;
-	gint64 id;
 
 	/* Choose identity. First try current user, then root, and else
-	 * take the first one */
+	 * take the first one we find. */
+
 	user = getenv ("USER");
 
-	if ((id = _choose_identity (identities, find_identity, (gpointer) user)) >= 0) {
-		return id;
-	} else if ((id = _choose_identity (identities, find_identity, "root")) >= 0) {
-		return id;
+	g_variant_iter_init (&identity_iter, identities);
+	while (g_variant_iter_next (&identity_iter, "(&s@a{sv})", &kind, &details_tmp)) {
+		gs_unref_variant GVariant *details = g_steal_pointer (&details_tmp);
+
+		if (nm_streq (kind, "unix-user")) {
+			gs_unref_variant GVariant *v = NULL;
+
+			v = g_variant_lookup_value (details, "uid", G_VARIANT_TYPE_UINT32);
+			if (v) {
+				guint32 uid = g_variant_get_uint32 (v);
+				const char *u = NULL;
+
+				if (user) {
+					if (!uid_to_name (uid, &u))
+						continue;
+					if (nm_streq (u, user))
+						return g_strdup (user);
+				}
+				if (   !username_root
+				    && uid == 0) {
+					if (!uid_to_name (uid, &u))
+						continue;
+					username_root = g_strdup (u);
+					if (!user)
+						break;
+				}
+				if (   !username_root
+				    && !username_first) {
+					if (!uid_to_name (uid, &u))
+						continue;
+					username_first = g_strdup (u);
+				}
+			}
+		}
 	}
 
-	return _choose_identity (identities, first_identity, NULL);
+	if (username_root)
+		return g_steal_pointer (&username_root);
+
+	if (username_first)
+		return g_steal_pointer (&username_first);
+
+	return NULL;
 }
 
 static void
@@ -373,60 +394,42 @@ retrieve_session_id (NMPolkitListener *self)
 	                        self);
 }
 
-static void
-complete_authentication (AuthRequest *request,
-                         gboolean result)
-{
-	if (result) {
-		g_dbus_method_invocation_return_value (request->dbus_invocation, NULL);
-	} else {
-		g_dbus_method_invocation_return_dbus_error (request->dbus_invocation,
-		                                            "org.freedesktop.PolicyKit1.Error.Failed",
-		                                            "");
-	}
-	remove_request (request);
-}
-
 static gboolean
 io_watch_can_write (int fd,
                     GIOCondition condition,
                     gpointer user_data)
 {
 	AuthRequest *request = user_data;
-	ssize_t n_written;
-	gboolean done = FALSE;
+	gssize n_written;
 
-	if (condition & G_IO_HUP ||
-	    condition & G_IO_ERR) {
-		done = TRUE;
+	if (NM_FLAGS_ANY (condition, (G_IO_HUP | G_IO_ERR)))
 		goto done;
-	}
 
 	n_written = write (request->child_stdin,
-	                   &request->out_buffer->str[request->out_buffer_offset],
-	                   request->out_buffer->len - request->out_buffer_offset);
+	                   &((nm_str_buf_get_str_unsafe (&request->out_buffer))[request->out_buffer_offset]),
+	                   request->out_buffer.len - request->out_buffer_offset);
 
-	if (n_written < 0 && errno != EAGAIN) {
-		done = TRUE;
+	if (   n_written < 0
+	    && errno != EAGAIN)
 		goto done;
-	}
 
 	if (n_written > 0) {
-		if ((size_t) n_written == (request->out_buffer->len - request->out_buffer_offset)) {
-			done = TRUE;
+		if ((gsize) n_written >= (request->out_buffer.len - request->out_buffer_offset)) {
+			nm_assert ((gsize) n_written == (request->out_buffer.len - request->out_buffer_offset));
 			goto done;
 		}
-		request->out_buffer_offset += n_written;
+		request->out_buffer_offset += (gsize) n_written;
 	}
 
+	return G_SOURCE_CONTINUE;
+
 done:
-	if (done) {
-		nm_explicit_bzero (request->out_buffer->str,
-		                   request->out_buffer->len);
-		g_string_set_size (request->out_buffer, 0);
-		request->out_buffer_offset = 0;
-		nm_clear_g_source_inst (&request->child_stdin_watch_source);
-	}
+	nm_str_buf_set_size (&request->out_buffer, 0, TRUE, FALSE);
+	request->out_buffer_offset = 0;
+	nm_clear_g_source_inst (&request->child_stdin_watch_source);
+
+	if (request->request_is_completed)
+		auth_request_complete (request, TRUE);
 
 	return G_SOURCE_CONTINUE;
 }
@@ -436,11 +439,11 @@ queue_string_to_helper (AuthRequest *request, const char *response)
 {
 	g_return_if_fail (response);
 
-	g_string_append (request->out_buffer, response);
+	if (!nm_str_buf_is_initalized (&request->out_buffer))
+		nm_str_buf_init (&request->out_buffer, strlen (response) + 2u,  TRUE);
 
-	if (   request->out_buffer->len == 0
-	    || request->out_buffer->str[request->out_buffer->len - 1] != '\n')
-		g_string_append_c (request->out_buffer, '\n');
+	nm_str_buf_append (&request->out_buffer, response);
+	nm_str_buf_ensure_trailing_c (&request->out_buffer, '\n');
 
 	if (!request->child_stdin_watch_source) {
 		request->child_stdin_watch_source = nm_g_unix_fd_source_new (request->child_stdin,
@@ -460,74 +463,87 @@ io_watch_have_data (int fd,
                     gpointer user_data)
 {
 	AuthRequest *request = user_data;
-	gs_free char *unescaped = NULL;
-	char *response = NULL;
-	char* line_terminator = 0;
-	gboolean auth_result = FALSE;
-	gboolean complete_auth = FALSE;
-	ssize_t n_read;
+	gboolean auth_result;
+	gssize n_read;
 
-	if (condition & G_IO_HUP ||
-	    condition & G_IO_ERR) {
-		complete_auth = TRUE;
-		auth_result = FALSE;
+	if (NM_FLAGS_ANY (condition, G_IO_HUP | G_IO_ERR))
+		n_read = -EIO;
+	else
+		n_read = nm_utils_fd_read (fd, &request->in_buffer);
+
+	if (n_read <= 0) {
+		if (n_read == -EAGAIN) {
+			/* wait longer. */
+			return G_SOURCE_CONTINUE;
+		}
+
+		/* Either an error or EOF happened. The data we parsed so far was not relevant.
+		 * Regardless of what we still have unprocessed in the receive buffers, we are done.
+		 *
+		 * We would expect that the other side completed with SUCCESS or FAILURE. Apparently
+		 * it didn't. If we had any good request, we assume success. */
+		auth_result = request->request_any_response;
 		goto out;
 	}
 
-	n_read = nm_utils_fd_read (fd, request->in_buffer);
+	while (TRUE) {
+		char *line_terminator;
+		const char *line;
 
-	if (n_read == -EAGAIN) {
-		return G_SOURCE_CONTINUE;
-	}
+		line = nm_str_buf_get_str (&request->in_buffer);
+		line_terminator = (char *) strchr (line, '\n');
+		if (!line_terminator) {
+			/* We don't have a complete line. Wait longer. */
+			return G_SOURCE_CONTINUE;
+		}
+		line_terminator[0] = '\0';
 
-	if (n_read < 0) {
-		complete_auth = TRUE;
-		auth_result = FALSE;
-		goto out;
-	}
+		if (   NM_STR_HAS_PREFIX (line, "PAM_PROMPT_ECHO_OFF ")
+		    || NM_STR_HAS_PREFIX (line, "PAM_PROMPT_ECHO_ON ")) {
+			nm_auto_free_secret char *response = NULL;
 
-	line_terminator = strchr (request->in_buffer->str, '\n');
-	if (!line_terminator) {
-		return G_SOURCE_CONTINUE;
-	}
-	*line_terminator = '\0';
+			/* FIXME(cli-async): emit signal and wait for response (blocking) */
+			g_signal_emit (request->listener,
+			               signals[REQUEST_SYNC],
+			               0,
+			               request->action_id,
+			               request->message,
+			               request->username,
+			               &response);
 
-	unescaped = g_strcompress (request->in_buffer->str);
-
-	if (NM_STR_HAS_PREFIX (unescaped, "PAM_PROMPT_ECHO")) {
-		/* emit signal and wait for response */
-		g_signal_emit (request->listener,
-		               signals[REQUEST],
-		               0,
-		               request->action_id,
-		               request->message,
-		               request->username,
-		               &response);
-
-		if (response) {
-			queue_string_to_helper (request, response);
-			nm_free_secret (response);
+			if (response) {
+				queue_string_to_helper (request, response);
+				request->request_any_response = TRUE;
+				goto erase_line;
+			}
+			auth_result = FALSE;
+		} else if (nm_streq (line, "SUCCESS"))
+			auth_result = TRUE;
+		else if (nm_streq (line, "FAILURE"))
+			auth_result = FALSE;
+		else if (   NM_STR_HAS_PREFIX (line, "PAM_ERROR_MSG ")
+		         || NM_STR_HAS_PREFIX (line, "PAM_TEXT_INFO ")) {
+			/* ignore. */
+			goto erase_line;
 		} else {
-			complete_auth = TRUE;
+			/* unknown command. Fail. */
 			auth_result = FALSE;
 		}
-	} else if (NM_STR_HAS_PREFIX (unescaped, "SUCCESS")) {
-		complete_auth = TRUE;
-		auth_result = TRUE;
-	} else if (NM_STR_HAS_PREFIX (unescaped, "FAILURE")) {
-		complete_auth = TRUE;
-		auth_result = FALSE;
-	} else {
-		complete_auth = TRUE;
-		auth_result = FALSE;
+
+		break;
+erase_line:
+		nm_str_buf_erase (&request->in_buffer, 0, line_terminator - line + 1u, TRUE);
 	}
 
 out:
-	g_string_set_size (request->in_buffer, 0);
+	request->request_is_completed = TRUE;
+	nm_clear_g_source_inst (&request->child_stdout_watch_source);
+	if (   auth_result
+	    && request->child_stdin_watch_source) {
+		/* we need to wait for the buffer to send the response. */
+	} else
+		auth_request_complete (request, auth_result);
 
-	if (complete_auth) {
-		complete_authentication (request, auth_result);
-	}
 	return G_SOURCE_CONTINUE;
 }
 
@@ -535,16 +551,21 @@ static void
 begin_authentication (AuthRequest *request)
 {
 	int fd_flags;
-	char *helper_argv[3];
+	const char *helper_argv[] = {
+		POLKIT_PACKAGE_PREFIX "/lib/polkit-1/polkit-agent-helper-1",
+		request->username,
+		NULL,
+	};
 
-	helper_argv[0] = POLKIT_PACKAGE_PREFIX "/lib/polkit-1/polkit-agent-helper-1";
-	helper_argv[1] = request->username;
-	helper_argv[2] = NULL;
+	if (!request->username) {
+		auth_request_complete (request, FALSE);
+		return;
+	}
 
 	if (!g_spawn_async_with_pipes (NULL,
-	                               helper_argv,
+	                               (char **) helper_argv,
 	                               NULL,
-	                               G_SPAWN_DEFAULT,
+	                               G_SPAWN_STDERR_TO_DEV_NULL,
 	                               NULL,
 	                               NULL,
 	                               NULL,
@@ -560,7 +581,7 @@ begin_authentication (AuthRequest *request)
 		               0,
 		               "The PolicyKit setuid helper 'polkit-agent-helper-1' has not been found");
 
-		complete_authentication (request, FALSE);
+		auth_request_complete (request, FALSE);
 		return;
 	}
 
@@ -604,22 +625,24 @@ create_request (NMPolkitListener *listener,
                 GDBusMethodInvocation *invocation,
                 const char *action_id,
                 const char *message,
-                const char *username,
+                char *username_take,
                 const char *cookie)
 {
-	AuthRequest *request = g_slice_new0(AuthRequest);
+	AuthRequest *request;
 
-	request->listener = listener;
-	request->dbus_invocation = invocation;
-	request->action_id = g_strdup (action_id);
-	request->message = g_strdup (message);
-	request->username = g_strdup (username);
-	request->cookie = g_strdup (cookie);
-	request->in_buffer = g_string_new ("");
+	request = g_slice_new (AuthRequest);
+	*request = (AuthRequest) {
+		.listener             = listener,
+		.dbus_invocation      = invocation,
+		.action_id            = g_strdup (action_id),
+		.message              = g_strdup (message),
+		.username             = g_steal_pointer (&username_take),
+		.cookie               = g_strdup (cookie),
+		.request_any_response = FALSE,
+		.request_is_completed = FALSE,
+	};
 
-	/* preallocate a large enough buffer so that
-	 * secrets don't get reallocated, thus leaked */
-	request->out_buffer = g_string_sized_new (1024);
+	nm_str_buf_init (&request->in_buffer,  NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
 
 	c_list_link_tail (&listener->request_lst_head, &request->request_lst);
 	return request;
@@ -641,7 +664,6 @@ dbus_method_call_cb (GDBusConnection *connection,
 	const char *cookie;
 	AuthRequest *request;
 	gs_unref_variant GVariant *identities_gvariant;
-	uid_t uid;
 
 	if (nm_streq (method_name, "BeginAuthentication")) {
 		g_variant_get (parameters,
@@ -653,25 +675,43 @@ dbus_method_call_cb (GDBusConnection *connection,
 		               &cookie,
 		               &identities_gvariant);
 
-		uid = choose_identity (identities_gvariant);
-
 		request = create_request (listener,
 		                          invocation,
 		                          action_id,
 		                          message,
-		                          uid_to_name (uid),
+		                          choose_identity (identities_gvariant),
 		                          cookie);
 		begin_authentication (request);
-	} else if (nm_streq (method_name, "CancelAuthentication")) {
+		return;
+	}
+
+	if (nm_streq (method_name, "CancelAuthentication")) {
 		g_variant_get (parameters,
 		               "&s",
 		               &cookie);
 		request = get_request (listener, cookie);
 
-		if (request) {
-			complete_authentication (request, FALSE);
+		if (!request) {
+			gs_free char *msg = NULL;
+
+			msg = g_strdup_printf ("No pending authentication request for cookie '%s'",
+			                       cookie);
+			g_dbus_method_invocation_return_dbus_error (invocation,
+			                                            POLKIT_DBUS_ERROR_FAILED,
+			                                            msg);
+			return;
 		}
+
+		/* Complete a cancelled request with success. */
+		auth_request_complete (request, TRUE);
+		return;
 	}
+
+	g_dbus_method_invocation_return_error (invocation,
+	                                       G_DBUS_ERROR,
+	                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+	                                       "Unknown method %s",
+	                                       method_name);
 }
 
 static gboolean
@@ -862,9 +902,8 @@ dispose (GObject *object)
 
 	nm_clear_g_cancellable (&self->cancellable);
 
-	while ((request = c_list_first_entry (&self->request_lst_head, AuthRequest, request_lst))) {
-		remove_request (request);
-	}
+	while ((request = c_list_first_entry (&self->request_lst_head, AuthRequest, request_lst)))
+		auth_request_complete (request, FALSE);
 
 	if (self->dbus_connection) {
 		nm_clear_g_dbus_connection_signal (self->dbus_connection,
@@ -908,8 +947,8 @@ nm_polkit_listener_class_init (NMPolkitListenerClass *klass)
 	                                   _PROPERTY_ENUMS_LAST,
 	                                   obj_properties);
 
-	signals[REQUEST] =
-	    g_signal_new (NM_POLKIT_LISTENER_SIGNAL_REQUEST,
+	signals[REQUEST_SYNC] =
+	    g_signal_new (NM_POLKIT_LISTENER_SIGNAL_REQUEST_SYNC,
 	                  NM_TYPE_POLKIT_LISTENER,
 	                  G_SIGNAL_RUN_LAST,
 	                  0,

@@ -8,8 +8,6 @@
 
 #include "nmcli.h"
 
-NMCResultCode do_devices (NmCli *nmc, int argc, char **argv);
-
 void nmc_complete_device (NMClient *client, const char *prefix, gboolean wifi_only);
 
 void nmc_complete_bssid (NMClient *client, const char *ifname, const char *bssid_prefix);

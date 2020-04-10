@@ -1219,7 +1219,7 @@ typedef struct {
 } CmdCall;
 
 static void
-call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv);
+call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const*argv);
 
 static void
 got_client (GObject *source_object, GAsyncResult *res, gpointer user_data)
@@ -1245,14 +1245,15 @@ got_client (GObject *source_object, GAsyncResult *res, gpointer user_data)
 		                         error->message);
 	} else {
 		nmc->client = NM_CLIENT (source_object);
-		call_cmd (nmc, g_steal_pointer (&task), call->cmd, call->argc, call->argv);
+		call_cmd (nmc, g_steal_pointer (&task), call->cmd, call->argc, (const char *const*) call->argv);
 	}
 
-	g_slice_free (CmdCall, call);
+	g_strfreev (call->argv);
+	nm_g_slice_free (call);
 }
 
 static void
-call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv)
+call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const*argv)
 {
 	CmdCall *call;
 
@@ -1263,7 +1264,7 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv)
 			g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_NM_NOT_RUNNING,
 			                         _("Error: NetworkManager is not running."));
 		} else {
-			nmc->return_value = cmd->func (nmc, argc, argv);
+			cmd->func (cmd, nmc, argc, argv);
 			g_task_return_boolean (task, TRUE);
 		}
 
@@ -1272,11 +1273,13 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, char **argv)
 		nm_assert (nmc->client == NULL);
 
 		nmc->should_wait++;
-		call = g_slice_new0 (CmdCall);
-		call->cmd = cmd;
-		call->argc = argc;
-		call->argv = argv;
-		call->task = task;
+		call = g_slice_new (CmdCall);
+		*call = (CmdCall) {
+			.cmd  = cmd,
+			.argc = argc,
+			.argv = nm_utils_strv_dup ((char **) argv, argc, TRUE),
+			.task = task,
+		};
 		nmc_client_new_async (NULL,
 		                      got_client,
 		                      call,
@@ -1313,7 +1316,7 @@ nmc_complete_help (const char *prefix)
  * no callback to free the memory in (for simplicity).
  */
 void
-nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char **argv)
+nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, const char *const*argv)
 {
 	const NMCCommand *c;
 	gs_unref_object GTask *task = NULL;
@@ -1349,7 +1352,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 			c->usage ();
 			g_task_return_boolean (task, TRUE);
 		} else {
-			call_cmd (nmc, g_steal_pointer (&task), c, argc, argv);
+			call_cmd (nmc, g_steal_pointer (&task), c, argc, (const char *const*) argv);
 		}
 	} else if (cmd) {
 		/* Not a known command. */
@@ -1362,7 +1365,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 		}
 	} else if (c->func) {
 		/* No command, run the default handler. */
-		call_cmd (nmc, g_steal_pointer (&task), c, argc, argv);
+		call_cmd (nmc, g_steal_pointer (&task), c, argc, (const char *const*) argv);
 	} else {
 		/* No command and no default handler. */
 		g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,

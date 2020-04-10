@@ -8,15 +8,13 @@
 
 #include "nmcli.h"
 
-NMCResultCode do_connections (NmCli *nmc, int argc, char **argv);
-
 void monitor_connections (NmCli *nmc);
 
 gboolean
 nmc_process_connection_properties (NmCli *nmc,
                                    NMConnection *connection,
                                    int *argc,
-                                   char ***argv,
+                                   const char *const**argv,
                                    gboolean allow_remove_setting,
                                    GError **error);
 

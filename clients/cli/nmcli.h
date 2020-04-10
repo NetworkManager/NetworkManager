@@ -164,4 +164,27 @@ void nmc_empty_output_fields (NmcOutputData *output_data);
 		.output_data = g_ptr_array_new_full (20, g_free), \
 	}
 
+/*****************************************************************************/
+
+struct _NMCCommand;
+
+typedef struct _NMCCommand {
+	const char *cmd;
+	void (*func) (const struct _NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+	void (*usage) (void);
+	bool needs_client;
+	bool needs_nm_running;
+} NMCCommand;
+
+void nmc_command_func_agent      (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_general    (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_networking (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_radio      (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_monitor    (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_overview   (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_connection (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+void nmc_command_func_device     (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv);
+
+/*****************************************************************************/
+
 #endif /* NMC_NMCLI_H */

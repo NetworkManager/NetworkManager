@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "nm-str-buf.h"
 #include "nm-shared-utils.h"
 #include "nm-secret-utils.h"
 #include "nm-errno.h"
@@ -418,29 +419,40 @@ nm_utils_file_stat (const char *filename, struct stat *out_st)
  * @fd: the fd to read from.
  * @out_string: (out): output string where read bytes will be stored.
  *
- * Returns:  <0 on failure, which is -(errno)
- *           0 on EOF or if the call would block (if the fd is nonblocking),
- *           >0 on success, which is the number of bytes read  */
-ssize_t
-nm_utils_fd_read (int fd, GString *out_string)
+ * Returns: <0 on failure, which is -(errno).
+ *          0 on EOF.
+ *          >0 on success, which is the number of bytes read.  */
+gssize
+nm_utils_fd_read (int fd, NMStrBuf *out_string)
 {
-	size_t start_len;
-	ssize_t n_read;
+	gsize buf_available;
+	gssize n_read;
+	int errsv;
 
 	g_return_val_if_fail (fd >= 0, -1);
 	g_return_val_if_fail (out_string, -1);
 
-	start_len = out_string->len;
-	g_string_set_size (out_string, start_len + 1024);
+	/* If the buffer size is 0, we allocate NM_UTILS_GET_NEXT_REALLOC_SIZE_1000 (1000 bytes)
+	 * the first time. Afterwards, the buffer grows exponentially.
+	 *
+	 * Note that with @buf_available, we always would read as much buffer as we actually
+	 * have reserved. */
+	nm_str_buf_maybe_expand (out_string, NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
 
-	n_read = read (fd, &out_string->str[start_len], 1024);
+	buf_available = out_string->allocated - out_string->len;
+
+	n_read = read (fd,
+	               &((nm_str_buf_get_str_unsafe (out_string))[out_string->len]),
+	               buf_available);
 	if (n_read < 0) {
-		if (errno != EAGAIN) {
-			return -NM_ERRNO_NATIVE (errno);
-		}
-		n_read = 0;
-	} else {
-		g_string_set_size (out_string, start_len + n_read);
+		errsv = errno;
+		return -NM_ERRNO_NATIVE (errsv);
 	}
+
+	if (n_read > 0) {
+		nm_assert ((gsize) n_read <= buf_available);
+		nm_str_buf_set_size (out_string, out_string->len + (gsize) n_read, TRUE, FALSE);
+	}
+
 	return n_read;
 }

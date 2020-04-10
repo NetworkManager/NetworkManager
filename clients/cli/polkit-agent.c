@@ -66,7 +66,7 @@ nmc_polkit_agent_init (NmCli* nmc, gboolean for_session, GError **error)
 	}
 
 	g_signal_connect (listener,
-	                  NM_POLKIT_LISTENER_SIGNAL_REQUEST,
+	                  NM_POLKIT_LISTENER_SIGNAL_REQUEST_SYNC,
 	                  G_CALLBACK (polkit_read_passwd),
 	                  nmc);
 	g_signal_connect (listener,

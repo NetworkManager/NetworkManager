@@ -25,8 +25,6 @@
 #include "common.h"
 #include "connections.h"
 #include "devices.h"
-#include "general.h"
-#include "agent.h"
 #include "settings.h"
 
 #if defined(NM_DIST_VERSION)
@@ -258,21 +256,21 @@ usage (void)
 	              "\n"));
 }
 
-static const NMCCommand nmcli_cmds[] = {
-	{ "general",     do_general,      NULL,   FALSE,  FALSE },
-	{ "monitor",     do_monitor,      NULL,   TRUE,   FALSE },
-	{ "networking",  do_networking,   NULL,   FALSE,  FALSE },
-	{ "radio",       do_radio,        NULL,   FALSE,  FALSE },
-	{ "connection",  do_connections,  NULL,   FALSE,  FALSE },
-	{ "device",      do_devices,      NULL,   FALSE,  FALSE },
-	{ "agent",       do_agent,        NULL,   FALSE,  FALSE },
-	{ NULL,          do_overview,     usage,  TRUE,   TRUE },
-};
-
 static gboolean
-matches_arg (NmCli *nmc, int *argc, char ***argv, const char *pattern, char **arg)
+matches_arg (NmCli *nmc,
+             int *argc,
+             const char *const**argv,
+             const char *pattern,
+             char **arg)
 {
-	char *opt = *argv[0];
+	gs_free char *opt_free = NULL;
+	const char *opt = (*argv)[0];
+	gs_free char *arg_tmp = NULL;
+	const char *s;
+
+	nm_assert (opt);
+	nm_assert (opt[0] == '-');
+	nm_assert (!arg || !*arg);
 
 	if (nmc->return_value != NMC_RESULT_SUCCESS) {
 		/* Don't process further matches if there has been an error. */
@@ -288,33 +286,31 @@ matches_arg (NmCli *nmc, int *argc, char ***argv, const char *pattern, char **ar
 	if (arg) {
 		/* If there's a "=" separator, replace it with NUL so that matches()
 		 * works and consider the part after it to be the arguemnt's value. */
-		*arg = strchr (opt, '=');
-		if (*arg) {
-			**arg = '\0';
-			(*arg)++;
+		s = strchr (opt, '=');
+		if (s) {
+			opt = nm_strndup_a (300, opt, s - opt, &opt_free);
+			arg_tmp = g_strdup (&s[1]);
 		}
 	}
 
-	if (!matches (opt, pattern)) {
-		if (arg && *arg) {
-			/* Back off the replacement of "=". */
-			(*arg)--;
-			**arg = '=';
-		}
+	if (!matches (opt, pattern))
 		return FALSE;
-	}
 
-	if (arg && !*arg) {
-		/* We need a value, but the option didn't contain a "=<value>" part.
-		 * Proceed to the next argument. */
-		(*argc)--;
-		(*argv)++;
-		if (!*argc) {
-			g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			return FALSE;
+	if (arg) {
+		if (arg_tmp)
+			*arg = g_steal_pointer (&arg_tmp);
+		else {
+			/* We need a value, but the option didn't contain a "=<value>" part.
+			 * Proceed to the next argument. */
+			if (*argc <= 1) {
+				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return FALSE;
+			}
+			(*argc)--;
+			(*argv)++;
+			*arg = g_strdup (*argv[0]);
 		}
-		*arg = *argv[0];
 	}
 
 	return TRUE;
@@ -700,26 +696,43 @@ set_colors (NmcColorOption color_option,
 /*************************************************************************************/
 
 static gboolean
-process_command_line (NmCli *nmc, int argc, char **argv)
+process_command_line (NmCli *nmc, int argc, char **argv_orig)
 {
+	static const NMCCommand nmcli_cmds[] = {
+		{ "general",    nmc_command_func_general,     NULL,  FALSE, FALSE },
+		{ "monitor",    nmc_command_func_monitor,     NULL,  TRUE,  FALSE },
+		{ "networking", nmc_command_func_networking,  NULL,  FALSE, FALSE },
+		{ "radio",      nmc_command_func_radio,       NULL,  FALSE, FALSE },
+		{ "connection", nmc_command_func_connection,  NULL,  FALSE, FALSE },
+		{ "device",     nmc_command_func_device,      NULL,  FALSE, FALSE },
+		{ "agent",      nmc_command_func_agent,       NULL,  FALSE, FALSE },
+		{ NULL,         nmc_command_func_overview,    usage, TRUE,  TRUE },
+	};
 	NmcColorOption colors = NMC_USE_COLOR_AUTO;
-	char *base;
+	const char *base;
+	const char *const*argv;
 
-	base = strrchr (argv[0], '/');
+	base = strrchr (argv_orig[0], '/');
 	if (base == NULL)
-		base = argv[0];
+		base = argv_orig[0];
 	else
 		base++;
-	if (argc > 1 && nm_streq (argv[1], "--complete-args")) {
+
+	if (   argc > 1
+	    && nm_streq (argv_orig[1], "--complete-args")) {
 		nmc->complete = TRUE;
-		argv[1] = argv[0];
-		next_arg (nmc, &argc, &argv, NULL);
+		argv_orig[1] = argv_orig[0];
+		argc--;
+		argv_orig++;
 	}
+
+	argv = (const char *const*) argv_orig;
+
 	next_arg (nmc, &argc, &argv, NULL);
 
 	/* parse options */
 	while (argc) {
-		char *value;
+		gs_free char *value = NULL;
 
 		if (argv[0][0] != '-')
 			break;
