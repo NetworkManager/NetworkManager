@@ -1283,7 +1283,7 @@ msgid "Error: Failed to add '%s' connection: %s"
 msgstr "错误：添加 \"%s\" 连接失败：%s"
 
 #: ../clients/cli/connections.c:4894
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
 "connection by its uuid '%2$s'\n"
@@ -8845,7 +8845,7 @@ msgid "(No custom routes)"
 msgstr "（没有自定义路由）"
 
 #: ../clients/tui/nmt-page-ip4.c:72 ../clients/tui/nmt-page-ip6.c:73
-#, c-format
+#, fuzzy, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
 msgstr[0] "个自定义路由"

@@ -3435,7 +3435,7 @@ msgid "Error: 'general permissions': %s"
 msgstr "Erreur : « general permissions » : %s"
 
 #: ../clients/cli/general.c:664
-#, c-format
+#, fuzzy, c-format
 msgid "Error: invalid reload flag '%s'. Allowed flags are: %s"
 msgstr "Erreur : drapeau de rechargement non valide «%s». Les drapeaux autorisés sont : "
 

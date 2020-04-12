@@ -5774,12 +5774,12 @@ msgid "unrecognized line at %s:%zu"
 msgstr "%s:%zu に未認識の行があります"
 
 #: ../clients/common/nm-vpn-helpers.c:671
-#, c-format
+#, fuzzy, c-format
 msgid "invalid value for '%s' at %s:%zu"
 msgstr "%s:%zu における '%s' の値は無効です"
 
 #: ../clients/common/nm-vpn-helpers.c:676
-#, c-format
+#, fuzzy, c-format
 msgid "invalid secret '%s' at %s:%zu"
 msgstr "%s:%zu のシークレット '%s' は無効です"
 
@@ -11597,7 +11597,7 @@ msgid "unknown attribute '%s'"
 msgstr "不明な属性 '%s'"
 
 #: ../libnm-core/nm-utils.c:5709
-#, c-format
+#, fuzzy, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr "'%s' の後に、キー/値のセパレーター '%c' がありません"
 

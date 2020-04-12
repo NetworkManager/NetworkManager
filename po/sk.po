@@ -7985,7 +7985,7 @@ msgid "(No custom routes)"
 msgstr "(Žiadne vlastné smerovania)"
 
 #: ../clients/tui/nmt-page-ip4.c:85 ../clients/tui/nmt-page-ip6.c:85
-#, c-format
+#, fuzzy, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
 msgstr[0] "Jedno vlastné smerovanie"
