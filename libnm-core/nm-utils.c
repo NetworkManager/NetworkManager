@@ -4033,8 +4033,6 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	return buffer;
 }
 
-
-
 /**
  * nm_utils_bin2hexstr:
  * @src: (type guint8) (array length=len): an array of bytes

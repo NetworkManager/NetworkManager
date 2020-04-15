@@ -934,13 +934,19 @@ ip6_addr_gen_mode_parser (KeyfileReaderInfo *info, NMSetting *setting, const cha
 }
 
 static void
-mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key, gsize enforce_length, gboolean cloned_mac_addr)
+mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key, gsize addr_len, gboolean cloned_mac_addr)
 {
 	const char *setting_name = nm_setting_get_name (setting);
+	char addr_str[NM_UTILS_HWADDR_LEN_MAX * 3];
+	guint8 addr_bin[NM_UTILS_HWADDR_LEN_MAX];
 	gs_free char *tmp_string = NULL;
-	const char *p, *mac_str;
-	gs_free guint8 *buf_arr = NULL;
-	guint buf_len = 0;
+	gs_free int *int_list = NULL;
+	const char *mac_str;
+	gsize int_list_len;
+	gsize i;
+
+	nm_assert (addr_len > 0);
+	nm_assert (addr_len <= NM_UTILS_HWADDR_LEN_MAX);
 
 	tmp_string = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
 
@@ -950,60 +956,31 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 		goto out;
 	}
 
-	if (tmp_string && tmp_string[0]) {
-		/* Look for enough ':' characters to signify a MAC address */
-		guint i = 0;
+	if (   tmp_string
+	    && nm_utils_hwaddr_aton (tmp_string, addr_bin, addr_len))
+		goto good_addr_bin;
 
-		p = tmp_string;
-		while (*p) {
-			if (*p == ':')
-				i++;
-			p++;
+	/* Old format; list of ints */
+	int_list = nm_keyfile_plugin_kf_get_integer_list (info->keyfile, setting_name, key, &int_list_len, NULL);
+	if (int_list_len == addr_len) {
+		for (i = 0; i < addr_len; i++) {
+			const int val = int_list[i];
+
+			if (val < 0 || val > 255)
+				break;
+			addr_bin[i] = (guint8) val;
 		}
-
-		if (enforce_length == 0 || enforce_length == i+1) {
-			/* If we found enough it's probably a string-format MAC address */
-			buf_len = i + 1;
-			buf_arr = g_new (guint8, buf_len);
-			if (!nm_utils_hwaddr_aton (tmp_string, buf_arr, buf_len))
-				nm_clear_g_free (&buf_arr);
-		}
-	}
-	nm_clear_g_free (&tmp_string);
-
-	if (!buf_arr) {
-		gs_free int *tmp_list = NULL;
-		gsize length;
-
-		/* Old format; list of ints */
-		tmp_list = nm_keyfile_plugin_kf_get_integer_list (info->keyfile, setting_name, key, &length, NULL);
-		if (length > 0 && (enforce_length == 0 || enforce_length == length)) {
-			gsize i;
-
-			buf_len = length;
-			buf_arr = g_new (guint8, buf_len);
-			for (i = 0; i < length; i++) {
-				int val = tmp_list[i];
-
-				if (val < 0 || val > 255) {
-					handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-					             _("ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"),
-					             val);
-					return;
-				}
-				buf_arr[i] = (guint8) val;
-			}
-		}
+		if (i == addr_len)
+			goto good_addr_bin;
 	}
 
-	if (!buf_arr) {
-		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-		             _("ignoring invalid MAC address"));
-		return;
-	}
+	handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+	             _("ignoring invalid MAC address"));
+	return;
 
-	tmp_string = nm_utils_hwaddr_ntoa (buf_arr, buf_len);
-	mac_str = tmp_string;
+good_addr_bin:
+	nm_utils_bin2hexstr_full (addr_bin, addr_len, ':', TRUE, addr_str);
+	mac_str = addr_str;
 
 out:
 	g_object_set (setting, key, mac_str, NULL);
