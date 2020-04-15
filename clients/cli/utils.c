@@ -1078,9 +1078,9 @@ _print_fill (const NmcConfig *nmc_config,
 
 			nm_assert (!to_free || value == to_free);
 
-			if (   is_default
-			    && (   nmc_config->overview
-			        || NM_FLAGS_HAS (text_out_flags, NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE))) {
+			if (   (   is_default
+			        && nmc_config->overview)
+			    || NM_FLAGS_HAS (text_out_flags, NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE)) {
 				/* don't mark the entry for display. This is to shorten the output in case
 				 * the property is the default value. But we only do that, if the user
 				 * opts in to this behavior (-overview), or of the property marks itself
