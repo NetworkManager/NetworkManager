@@ -4102,7 +4102,6 @@ _get_fcn_ethtool (ARGS_GET_FCN)
 	else {
 		s = NULL;
 		NM_SET_OUT (out_is_default, TRUE);
-		*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE;
 	}
 
 	if (s && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
@@ -5320,6 +5319,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 #define PROPERTY_INFO_ETHTOOL(xname) \
 	PROPERTY_INFO (NM_ETHTOOL_OPTNAME_##xname, NULL, \
 	    .property_type = &_pt_ethtool, \
+	    .hide_if_default = TRUE, \
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (ethtool, \
 	        .ethtool_id = NM_ETHTOOL_ID_##xname, \
 	    ), \
