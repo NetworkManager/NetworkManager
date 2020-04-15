@@ -182,9 +182,10 @@ read_array_of_uint (GKeyFile *file,
 	gsize length;
 	gsize i;
 	gs_free int *tmp = NULL;
+	gs_free_error GError *error = NULL;
 
-	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
-	if (length > G_MAXUINT)
+	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, &error);
+	if (error)
 		return;
 
 	array = g_array_sized_new (FALSE, FALSE, sizeof (guint), length);
