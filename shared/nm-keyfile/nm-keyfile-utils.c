@@ -124,7 +124,6 @@ nm_keyfile_plugin_kf_get_##stype##_list (GKeyFile *kf, \
 			list = g_key_file_get_##stype##_list (kf, alias, key, &l, &local); \
 		} \
 	} \
-	nm_assert ((!local) != (!list)); \
 	if (local) \
 		g_propagate_error (error, local); \
 	if (!list) \
