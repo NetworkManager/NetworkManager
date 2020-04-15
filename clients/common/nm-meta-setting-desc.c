@@ -8156,6 +8156,8 @@ _meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
                                   gpointer *out_to_free)
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
+	gboolean is_default_local = FALSE;
+	gconstpointer r;
 
 	nm_assert (!out_to_free || !*out_to_free);
 	nm_assert (out_flags && !*out_flags);
@@ -8173,15 +8175,25 @@ _meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 		return _get_text_hidden (get_type);
 	}
 
-	return info->property_type->get_fcn (info,
-	                                     environment,
-	                                     environment_user_data,
-	                                     target,
-	                                     get_type,
-	                                     get_flags,
-	                                     out_flags,
-	                                     out_is_default,
-	                                     out_to_free);
+	if (   info->hide_if_default
+	    && !out_is_default)
+		out_is_default = &is_default_local;
+
+	r = info->property_type->get_fcn (info,
+	                                  environment,
+	                                  environment_user_data,
+	                                  target,
+	                                  get_type,
+	                                  get_flags,
+	                                  out_flags,
+	                                  out_is_default,
+	                                  out_to_free);
+
+	if (   info->hide_if_default
+	    && *out_is_default)
+		*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE;
+
+	return r;
 
 }
 
