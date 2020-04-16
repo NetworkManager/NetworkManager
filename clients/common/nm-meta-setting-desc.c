@@ -4102,7 +4102,6 @@ _get_fcn_ethtool (ARGS_GET_FCN)
 	else {
 		s = NULL;
 		NM_SET_OUT (out_is_default, TRUE);
-		*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE;
 	}
 
 	if (s && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
@@ -4892,6 +4891,7 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_GROUP_ADDRESS,
 	    .property_type =                &_pt_gobject_mac,
+	    .hide_if_default =              TRUE,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
 	    .is_cli_option =                TRUE,
@@ -4901,9 +4901,11 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_MULTICAST_QUERIER,
 	    .property_type =                &_pt_gobject_bool,
+	    .hide_if_default =              TRUE,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,
 	    .property_type =                &_pt_gobject_bool,
+	    .hide_if_default =              TRUE,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
 	    .is_cli_option =                TRUE,
@@ -4913,6 +4915,7 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_MULTICAST_ROUTER,
 	    .property_type =                &_pt_gobject_string,
+	    .hide_if_default =              TRUE,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 	        .values_static =            NM_MAKE_STRV ("auto",
 	                                                  "disabled",
@@ -4927,9 +4930,11 @@ static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,
 	    .property_type =                &_pt_gobject_bool,
+	    .hide_if_default =              TRUE,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_VLAN_PROTOCOL,
 	    .property_type =                &_pt_gobject_string,
+	    .hide_if_default =              TRUE,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 	        .values_static =            NM_MAKE_STRV ("802.1Q",
 	                                                  "802.1ad"),
@@ -5314,6 +5319,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 #define PROPERTY_INFO_ETHTOOL(xname) \
 	PROPERTY_INFO (NM_ETHTOOL_OPTNAME_##xname, NULL, \
 	    .property_type = &_pt_ethtool, \
+	    .hide_if_default = TRUE, \
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (ethtool, \
 	        .ethtool_id = NM_ETHTOOL_ID_##xname, \
 	    ), \
@@ -8156,6 +8162,8 @@ _meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
                                   gpointer *out_to_free)
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
+	gboolean is_default_local = FALSE;
+	gconstpointer r;
 
 	nm_assert (!out_to_free || !*out_to_free);
 	nm_assert (out_flags && !*out_flags);
@@ -8173,15 +8181,25 @@ _meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 		return _get_text_hidden (get_type);
 	}
 
-	return info->property_type->get_fcn (info,
-	                                     environment,
-	                                     environment_user_data,
-	                                     target,
-	                                     get_type,
-	                                     get_flags,
-	                                     out_flags,
-	                                     out_is_default,
-	                                     out_to_free);
+	if (   info->hide_if_default
+	    && !out_is_default)
+		out_is_default = &is_default_local;
+
+	r = info->property_type->get_fcn (info,
+	                                  environment,
+	                                  environment_user_data,
+	                                  target,
+	                                  get_type,
+	                                  get_flags,
+	                                  out_flags,
+	                                  out_is_default,
+	                                  out_to_free);
+
+	if (   info->hide_if_default
+	    && *out_is_default)
+		*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE;
+
+	return r;
 
 }
 
