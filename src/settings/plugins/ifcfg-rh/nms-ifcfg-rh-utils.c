@@ -910,6 +910,7 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("PEERROUTES",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("PHYSDEV",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("PKEY",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("PKEY_ID",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("PMF",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("PORTNAME",                                    NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("POWERSAVE",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
