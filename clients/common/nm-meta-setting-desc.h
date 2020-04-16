@@ -376,6 +376,7 @@ struct _NMMetaPropertyInfo {
 	bool is_secret:1;
 
 	bool is_cli_option:1;
+	bool hide_if_default:1;
 
 	const char *prompt;
 
