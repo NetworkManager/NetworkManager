@@ -4833,7 +4833,7 @@ check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-clie
 	"$(PYTHON)" \
 	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
 	cat "$(builddir)/clients/tests/test-client.log"; \
-	test "$$r" == ok
+	test "$$r" = ok
 
 check_local += check-local-clients-tests-test-client
 
