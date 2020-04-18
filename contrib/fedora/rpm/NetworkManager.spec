@@ -117,9 +117,9 @@
 # bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
 # be related to `ulimit -l`. Anyway, this is not usable at the
 # moment.
-%global ebpf_enabled no
+%global ebpf_enabled "no"
 %else
-%global ebpf_enabled no
+%global ebpf_enabled "no"
 %endif
 
 ###############################################################################
