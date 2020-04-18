@@ -289,7 +289,7 @@ PKG_CHECK_MODULES(QT, [QtCore >= 4 QtDBus QtNetwork], [have_qt=yes],[have_qt=no]
 AC_ARG_ENABLE(qt,
               AS_HELP_STRING([--enable-qt], [enable Qt examples]),
               [enable_qt=${enableval}], [enable_qt=${have_qt}])
-if (test "${enable_qt}" = "yes"); then
+if test "${enable_qt}" = "yes"; then
 	if test x"$have_qt" = x"no"; then
 		AC_MSG_ERROR(Qt development headers are required)
 	fi
@@ -303,11 +303,11 @@ AC_ARG_WITH(udev-dir,
             AS_HELP_STRING([--with-udev-dir=DIR],
                            [Absolute path of the udev base directory. Set to 'no' not to install the udev rules]),
             [], [with_udev_dir="yes"])
-if (test "$with_udev_dir" != 'no'); then
-	if (test "$with_udev_dir" != 'yes' && printf '%s' "$with_udev_dir" | grep -v -q '^/'); then
+if test "$with_udev_dir" != 'no'; then
+	if test "$with_udev_dir" != 'yes' && printf '%s' "$with_udev_dir" | grep -v -q '^/'; then
 		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
 	fi
-	if (test "$with_udev_dir" = 'yes'); then
+	if test "$with_udev_dir" = 'yes'; then
 		with_udev_dir="\$(prefix)/lib/udev"
 	fi
 	UDEV_DIR="$with_udev_dir"
@@ -610,7 +610,7 @@ fi
 AC_ARG_ENABLE(teamdctl,
               AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
               [enable_teamdctl=${enableval}], [enable_teamdctl=${have_team_prereq}])
-if (test "${enable_teamdctl}" = "yes"); then
+if test "${enable_teamdctl}" = "yes"; then
 	if test "$have_teamdctl" = "no"; then
 		AC_MSG_ERROR(Libteamdctl is required for team support)
 	fi
@@ -627,7 +627,7 @@ AC_ARG_ENABLE(json-validation,
               AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]),
               [enable_json_validation=${enableval}],
               [enable_json_validation=${have_jansson}])
-if (test "${enable_json_validation}" == "no"); then
+if test "${enable_json_validation}" = "no"; then
 	AC_DEFINE(WITH_JSON_VALIDATION, 0, [Define if JSON validation in libnm is enabled])
 else
 	if test "$have_jansson" = "no"; then
@@ -644,7 +644,7 @@ AC_ARG_ENABLE(polkit,
               AS_HELP_STRING([--enable-polkit=yes|no|root-only],
                              [set default value for auth-polkit configuration option. This value can be overwritten by NM configuration. 'disabled' is an alias for 'no']),
               [enable_polkit=${enableval}], [enable_polkit=yes])
-if test "${enable_polkit}" == "root-only" ; then
+if test "${enable_polkit}" = "root-only" ; then
 	enable_polkit='root-only'
 elif test "${enable_polkit}" != "no" -a "${enable_polkit}" != "disabled" ; then
 	enable_polkit=true
@@ -723,7 +723,7 @@ AC_SUBST(DBUS_SYS_DIR)
 AC_ARG_ENABLE(ppp,
               AS_HELP_STRING([--enable-ppp], [enable PPP/PPPoE support]),
               [enable_ppp=${enableval}], [enable_ppp=yes])
-if (test "${enable_ppp}" = "yes"); then
+if test "${enable_ppp}" = "yes"; then
 	AC_CHECK_HEADERS(pppd/pppd.h,,
 	                 AC_MSG_ERROR("couldn't find pppd.h. pppd development headers are required."))
 
@@ -757,14 +757,14 @@ AC_ARG_WITH(modem-manager-1,
             AS_HELP_STRING([--with-modem-manager-1],
                            [Enable new ModemManager1 interface support]),
             [], [with_modem_manager_1=auto])
-if (test "${with_modem_manager_1}" != "no"); then
+if test "${with_modem_manager_1}" != "no"; then
 	PKG_CHECK_MODULES(MM_GLIB,
 	                  [mm-glib >= 0.7.991],
 	                  [have_libmm_glib=yes],
 	                  [have_libmm_glib=no])
 
-	if (test "${have_libmm_glib}" = "no"); then
-		if (test "${with_modem_manager_1}" = "yes"); then
+	if test "${have_libmm_glib}" = "no"; then
+		if test "${with_modem_manager_1}" = "yes"; then
 			AC_MSG_ERROR([Couldn't find libmm-glib])
 		else
 			with_modem_manager_1="no"
@@ -790,7 +790,7 @@ PKG_CHECK_MODULES(BLUEZ5, [bluez >= 5], [have_bluez5=yes],[have_bluez5=no])
 AC_ARG_ENABLE(bluez5-dun,
               AS_HELP_STRING([--enable-bluez5-dun], [enable Bluez5 DUN support]),
               [enable_bluez5_dun=${enableval}], [enable_bluez5_dun=${have_bluez5}])
-if (test "${enable_bluez5_dun}" = "yes"); then
+if test "${enable_bluez5_dun}" = "yes"; then
 	if test x"$have_bluez5" = x"no"; then
 		AC_MSG_ERROR(Bluez 5.x development headers are required)
 	fi
@@ -804,7 +804,7 @@ AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
 AC_ARG_WITH(ofono,
             AS_HELP_STRING([--with-ofono], [Enable oFono support (experimental)]),
             [], [with_ofono=no])
-if (test "${with_ofono}" = "yes"); then
+if test "${with_ofono}" = "yes"; then
 	AC_DEFINE(WITH_OFONO, 1, [Define if you have oFono support (experimental)])
 else
 	AC_DEFINE(WITH_OFONO, 0, [Define if you have oFono support (experimental)])
@@ -817,8 +817,8 @@ AC_ARG_WITH([dhcpcanon],
 if test "$with_dhcpcanon" != "no"; then
     with_dhcpcanon_="$with_dhcpcanon"
     AC_PATH_PROGS(with_dhcpcanon, dhcpcanon, no, /sbin:/usr/sbin:/usr/local/sbin:/usr/bin:/usr/local/bin)
-    if test "$with_dhcpcanon" == "no"; then
-        if test "$with_dhcpcanon_" == yes; then
+    if test "$with_dhcpcanon" = "no"; then
+        if test "$with_dhcpcanon_" = yes; then
             AC_MSG_WARN([dhcpcanon not found, assume path /sbin/dhcpcanon])
             with_dhcpcanon=/sbin/dhcpcanon
         fi
@@ -847,8 +847,8 @@ AC_ARG_WITH([dhclient],
 if test "$with_dhclient" != "no"; then
 	with_dhclient_="$with_dhclient"
 	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
-	if test "$with_dhclient" == "no"; then
-		if test "$with_dhclient_" == yes; then
+	if test "$with_dhclient" = "no"; then
+		if test "$with_dhclient_" = yes; then
 			AC_MSG_WARN([dhclient not found, assume path /usr/sbin/dhclient])
 			with_dhclient=/usr/sbin/dhclient
 		fi
@@ -866,8 +866,8 @@ AC_ARG_WITH([dhcpcd],
 if test "$with_dhcpcd" != "no"; then
 	with_dhcpcd_="$with_dhcpcd"
 	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
-	if test "$with_dhcpcd" == "no"; then
-		if test "$with_dhcpcd_" == yes; then
+	if test "$with_dhcpcd" = "no"; then
+		if test "$with_dhcpcd_" = yes; then
 			AC_MSG_WARN([dhcpcd not found, assume path /usr/sbin/dhcpcd])
 			with_dhcpcd=/usr/sbin/dhcpcd
 		fi
@@ -1047,7 +1047,7 @@ if test "$with_nm_cloud_setup" != no; then
 	fi
 	with_nm_cloud_setup=yes
 fi
-AM_CONDITIONAL(BUILD_NM_CLOUD_SETUP, test "$with_nm_cloud_setup" == yes)
+AM_CONDITIONAL(BUILD_NM_CLOUD_SETUP, test "$with_nm_cloud_setup" = yes)
 
 AC_ARG_WITH(nmtui,
             AS_HELP_STRING([--with-nmtui=yes|no], [Build nmtui]))
@@ -1142,7 +1142,7 @@ fi
 AC_ARG_ENABLE(undefined-sanitizer,
               AS_HELP_STRING([--enable-undefined-sanitizer],
                              [Compile with undefined behavior sanitizer [default=no]]))
-if (test "${enable_undefined_sanitizer}" = "yes"); then
+if test "${enable_undefined_sanitizer}" = "yes"; then
 	CC_CHECK_FLAGS_APPEND([ubsan_cflags], [CFLAGS], [-fsanitize=undefined])
 	AS_IF([test -z "$ubsan_cflags"],
 	      [AC_MSG_ERROR([*** -fsanitize=undefined is not supported])])
@@ -1200,17 +1200,17 @@ AS_IF([test -z "$with_valgrind"], with_valgrind="no")
 # Normalize values
 AS_IF([test "$enable_tests" != "yes" -a "$enable_tests" != "root"], enable_tests="no")
 # Search for tools
-AS_IF([test "$with_valgrind" == "yes"],
+AS_IF([test "$with_valgrind" = "yes"],
       [AC_PATH_PROGS(with_valgrind, valgrind, no)])
 # Add conditionals and substitutions
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
-AM_CONDITIONAL(REQUIRE_ROOT_TESTS, test "$enable_tests" == "root")
+AM_CONDITIONAL(REQUIRE_ROOT_TESTS, test "$enable_tests" = "root")
 AC_ARG_WITH(valgrind-suppressions,
             AS_HELP_STRING([--with-valgrind-suppressions=path], [Use specific valgrind suppression file]))
-if test "$with_valgrind" == no; then
+if test "$with_valgrind" = no; then
 	with_valgrind_suppressions=
 else
-	if test  "$with_valgrind_suppressions" == ""; then
+	if test  "$with_valgrind_suppressions" = ""; then
 		with_valgrind_suppressions='$(top_srcdir)/valgrind.suppressions'
 	fi
 fi
@@ -1226,7 +1226,7 @@ GTK_DOC_CHECK(1.0)
 build_docs=no
 if test -n "$INTROSPECTION_MAKEFILE"; then
 	# If g-i is installed we know we have python, but we might not have pygobject
-	if ! "$PYTHON" -c 'from gi.repository import GObject' >& /dev/null; then
+	if ! "$PYTHON" -c 'from gi.repository import GObject' > /dev/null 2>&1; then
 		AC_MSG_ERROR(["--enable-introspection aims to build the settings documentation. This requires GObject introspection for python (pygobject)])
 	fi
 
