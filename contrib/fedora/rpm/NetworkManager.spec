@@ -594,7 +594,7 @@ This tool is still experimental.
 %else
 	-Dlibpsl=false \
 %endif
-%if %{ebpf_enabled} != yes
+%if %{ebpf_enabled} != "yes"
 	-Debpf=false \
 %else
 	-Debpf=true \
