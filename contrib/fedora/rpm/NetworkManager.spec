@@ -113,10 +113,10 @@
 
 %if 0%{?rhel}
 %global config_plugins_default ifcfg-rh,ibft
-%global ibft_enabled yes
+%global ibft_enabled "yes"
 %else
 %global config_plugins_default ifcfg-rh
-%global ibft_enabled no
+%global ibft_enabled "no"
 %endif
 
 %if 0%{?fedora}
@@ -611,10 +611,10 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dtests=yes \
 	-Dvalgrind=no \
 	-Difcfg_rh=true \
-%if %{ibft_enabled} != yes
-	-Dibft=false \
-%else
+%if %{ibft_enabled} == "yes"
 	-Dibft=true \
+%else
+	-Dibft=false \
 %endif
 	-Difupdown=false \
 %if %{with ppp}
