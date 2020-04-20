@@ -2504,7 +2504,7 @@ nm_supplicant_interface_p2p_connect (NMSupplicantInterface *self,
 	                              NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
 	                              "Connect",
 	                              g_variant_new ("(a{sv})", &builder),
-	                              G_VARIANT_TYPE ("()"),
+	                              G_VARIANT_TYPE ("(s)"),
 	                              "p2p-connect");
 }
 
