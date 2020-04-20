@@ -5142,7 +5142,9 @@ _nm_utils_strstrdictkey_create (const char *v1, const char *v2)
 }
 
 static gboolean
-validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
+validate_dns_option (const char *name,
+                     gboolean numeric,
+                     gboolean ipv6,
                      const NMUtilsDNSOptionDesc *option_descs)
 {
 	const NMUtilsDNSOptionDesc *desc;
@@ -5178,58 +5180,54 @@ validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
  * %FALSE otherwise
  */
 gboolean
-_nm_utils_dns_option_validate (const char *option, char **out_name,
-                               long *out_value, gboolean ipv6,
+_nm_utils_dns_option_validate (const char *option,
+                               char **out_name,
+                               long *out_value,
+                               gboolean ipv6,
                                const NMUtilsDNSOptionDesc *option_descs)
 {
-	char **tokens, *ptr;
-	gboolean ret = FALSE;
+	gs_free char *option0_free = NULL;
+	const char *option0;
+	const char *option1;
+	const char *delim;
+	long option1_num;
 
 	g_return_val_if_fail (option != NULL, FALSE);
 
-	if (out_name)
-		*out_name = NULL;
-	if (out_value)
-		*out_value = -1;
+	NM_SET_OUT (out_name, NULL);
+	NM_SET_OUT (out_value, -1);
 
 	if (!option[0])
 		return FALSE;
 
-	tokens = g_strsplit (option, ":", 2);
-
-	if (g_strv_length (tokens) == 1) {
-		ret = validate_dns_option (tokens[0], FALSE, ipv6, option_descs);
-		if (ret && out_name)
-			*out_name = g_strdup (tokens[0]);
-		goto out;
+	delim = strchr (option, ':');
+	if (!delim) {
+		if (!validate_dns_option (option, FALSE, ipv6, option_descs))
+			return FALSE;
+		NM_SET_OUT (out_name, g_strdup (option));
+		return TRUE;
 	}
 
-	if (!tokens[1][0]) {
-		ret = FALSE;
-		goto out;
-	}
+	option1 = &delim[1];
 
-	for (ptr = tokens[1]; *ptr; ptr++) {
-		if (!g_ascii_isdigit (*ptr)) {
-			ret = FALSE;
-			goto out;
-		}
-	}
+	if (!option1[0])
+		return FALSE;
+	if (!NM_STRCHAR_ALL (option1, ch, g_ascii_isdigit (ch)))
+		return FALSE;
 
-	ret = FALSE;
-	if (validate_dns_option (tokens[0], TRUE, ipv6, option_descs)) {
-		int value = _nm_utils_ascii_str_to_int64 (tokens[1], 10, 0, G_MAXINT32, -1);
-		if (value >= 0) {
-			if (out_name)
-				*out_name = g_strdup (tokens[0]);
-			if (out_value)
-				*out_value = value;
-			ret = TRUE;
-		}
-	}
-out:
-	g_strfreev (tokens);
-	return ret;
+	option0 = nm_strndup_a (300, option, delim - option, &option0_free);
+
+	if (!validate_dns_option (option0, TRUE, ipv6, option_descs))
+		return FALSE;
+
+	option1_num = _nm_utils_ascii_str_to_int64 (option1, 10, 0, G_MAXINT32, -1);
+	if (option1_num == -1)
+		return FALSE;
+
+	NM_SET_OUT (out_name,    g_steal_pointer (&option0_free)
+	                      ?: g_strdup (option0));
+	NM_SET_OUT (out_value, option1_num);
+	return TRUE;
 }
 
 /**
