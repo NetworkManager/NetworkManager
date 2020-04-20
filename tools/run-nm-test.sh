@@ -302,7 +302,10 @@ if [ $HAS_ERRORS -eq 0 ]; then
         'test-service-providers' | \
         'test-remote-settings-client' | \
         'test-secret-agent' | \
-        'test-nm-client' )
+        'test-nm-client' | \
+        'libnm-test-remote-settings-client' | \
+        'libnm-test-nm-client' | \
+        'libnm-test-secret-agent' )
             if [ -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
                 HAS_ERRORS=1
             fi
