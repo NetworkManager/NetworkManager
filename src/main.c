@@ -103,7 +103,7 @@ _init_nm_debug (NMConfig *config)
 	debug = nm_config_data_get_value (nm_config_get_data_orig (config),
 	                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
 	                                  NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG,
-	                                  NM_MANAGER_RELOAD_FLAGS_NONE);
+	                                  NM_CONFIG_GET_VALUE_NONE);
 
 	flags  = nm_utils_parse_debug_string (env, keys, G_N_ELEMENTS (keys));
 	flags |= nm_utils_parse_debug_string (debug, keys, G_N_ELEMENTS (keys));
