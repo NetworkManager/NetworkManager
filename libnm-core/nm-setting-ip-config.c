@@ -47,6 +47,8 @@ const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
 	{ NM_SETTING_DNS_OPTION_SINGLE_REQUEST_REOPEN, FALSE,   FALSE },
 	{ NM_SETTING_DNS_OPTION_NO_TLD_QUERY,          FALSE,   FALSE },
 	{ NM_SETTING_DNS_OPTION_USE_VC,                FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_NO_RELOAD,             FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_TRUST_AD,              FALSE,   FALSE },
 	{ NULL,                                        FALSE,   FALSE }
 };
 
