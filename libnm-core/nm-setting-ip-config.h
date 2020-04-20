@@ -368,6 +368,8 @@ char *nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 #define NM_SETTING_DNS_OPTION_SINGLE_REQUEST_REOPEN     "single-request-reopen"
 #define NM_SETTING_DNS_OPTION_NO_TLD_QUERY              "no-tld-query"
 #define NM_SETTING_DNS_OPTION_USE_VC                    "use-vc"
+#define NM_SETTING_DNS_OPTION_NO_RELOAD                 "no-reload"
+#define NM_SETTING_DNS_OPTION_TRUST_AD                  "trust-ad"
 
 /**
  * NMSettingIPConfig:
