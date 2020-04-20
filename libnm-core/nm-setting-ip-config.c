@@ -5609,6 +5609,10 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * "no-ip6-dotint", "no-reload", "no-tld-query", "rotate", "single-request",
 	 * "single-request-reopen", "timeout", "trust-ad", "use-vc".
 	 *
+	 * The "trust-ad" setting is only honored if the profile contributes
+	 * name servers to resolv.conf, and if all contributing profiles have
+	 * "trust-ad" enabled.
+	 *
 	 * Since: 1.2
 	 **/
 	obj_properties[PROP_DNS_OPTIONS] =

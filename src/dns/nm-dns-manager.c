@@ -62,6 +62,7 @@ typedef struct {
 	GPtrArray *options;
 	const char *nis_domain;
 	GPtrArray *nis_servers;
+	NMTernary has_trust_ad;
 } NMResolvConfData;
 
 /*****************************************************************************/
@@ -410,8 +411,11 @@ merge_one_ip_config (NMResolvConfData *rc,
                      const NMIPConfig *ip_config)
 {
 	int addr_family;
-	guint num, i;
 	char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
+	gboolean has_trust_ad;
+	guint num_nameservers;
+	guint num;
+	guint i;
 
 	addr_family = nm_ip_config_get_addr_family (ip_config);
 
@@ -419,8 +423,8 @@ merge_one_ip_config (NMResolvConfData *rc,
 	nm_assert (ifindex > 0);
 	nm_assert (ifindex == nm_ip_config_get_ifindex (ip_config));
 
-	num = nm_ip_config_get_num_nameservers (ip_config);
-	for (i = 0; i < num; i++) {
+	num_nameservers = nm_ip_config_get_num_nameservers (ip_config);
+	for (i = 0; i < num_nameservers; i++) {
 		const NMIPAddr *addr;
 
 		addr = nm_ip_config_get_nameserver (ip_config, i);
@@ -446,11 +450,28 @@ merge_one_ip_config (NMResolvConfData *rc,
 
 	add_dns_domains (rc->searches, ip_config, FALSE, TRUE);
 
+	has_trust_ad = FALSE;
 	num = nm_ip_config_get_num_dns_options (ip_config);
 	for (i = 0; i < num; i++) {
+		const char *option = nm_ip_config_get_dns_option (ip_config, i);
+
+		if (nm_streq (option, NM_SETTING_DNS_OPTION_TRUST_AD)) {
+			has_trust_ad = TRUE;
+			continue;
+		}
 		add_dns_option_item (rc->options,
 		                     nm_ip_config_get_dns_option (ip_config, i));
 	}
+	if (num_nameservers == 0) {
+		/* If the @ip_config contributes no DNS servers, ignore whether trust-ad is set or unset
+		 * for this @ip_config. */
+	} else if (has_trust_ad) {
+		/* We only set has_trust_ad to TRUE, if all IP configs agree (or don't contribute).
+		 * Once set to FALSE, it doesn't get reset. */
+		if (rc->has_trust_ad == NM_TERNARY_DEFAULT)
+			rc->has_trust_ad = NM_TERNARY_TRUE;
+	} else
+		rc->has_trust_ad = NM_TERNARY_FALSE;
 
 	if (addr_family == AF_INET) {
 		const NMIP4Config *ip4_config = (const NMIP4Config *) ip_config;
@@ -1106,11 +1127,12 @@ _collect_resolv_conf_data (NMDnsManager *self,
 {
 	NMDnsManagerPrivate *priv;
 	NMResolvConfData rc = {
-		.nameservers = g_ptr_array_new (),
-		.searches = g_ptr_array_new (),
-		.options = g_ptr_array_new (),
-		.nis_domain = NULL,
-		.nis_servers = g_ptr_array_new (),
+		.nameservers  = g_ptr_array_new (),
+		.searches     = g_ptr_array_new (),
+		.options      = g_ptr_array_new (),
+		.nis_domain   = NULL,
+		.nis_servers  = g_ptr_array_new (),
+		.has_trust_ad = NM_TERNARY_DEFAULT,
 	};
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
@@ -1173,6 +1195,9 @@ _collect_resolv_conf_data (NMDnsManager *self,
 				add_string_item (rc.searches, priv->hostname, TRUE);
 		}
 	}
+
+	if (rc.has_trust_ad == NM_TERNARY_TRUE)
+		g_ptr_array_add (rc.options, NM_SETTING_DNS_OPTION_TRUST_AD);
 
 	*out_searches = _ptrarray_to_strv (rc.searches);
 	*out_options = _ptrarray_to_strv (rc.options);
