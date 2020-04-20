@@ -5604,6 +5604,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * In this case NetworkManager will use default options. This is
 	 * distinct from an empty list of properties.
 	 *
+	 * The currently supported options are "attempts", "debug", "edns0",
+	 * "inet6", "ip6-bytestring", "ip6-dotint", "ndots", "no-check-names",
+	 * "no-ip6-dotint", "no-reload", "no-tld-query", "rotate", "single-request",
+	 * "single-request-reopen", "timeout", "trust-ad", "use-vc".
+	 *
 	 * Since: 1.2
 	 **/
 	obj_properties[PROP_DNS_OPTIONS] =
