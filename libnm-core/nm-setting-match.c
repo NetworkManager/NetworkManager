@@ -247,6 +247,28 @@ nm_setting_match_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_MATCH, NULL);
 }
 
+static gboolean
+verify (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	NMSettingMatch *self = NM_SETTING_MATCH (setting);
+	int k;
+
+	for (k = 0; k < self->interface_name->len; k++) {
+		char *kparam = (char*) g_ptr_array_index (self->interface_name, k);
+		if (nm_streq0 (kparam, "")) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("is empty"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
+			                NM_SETTING_MATCH_INTERFACE_NAME);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 static void
 finalize (GObject *object)
 {
@@ -266,6 +288,8 @@ nm_setting_match_class_init (NMSettingMatchClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->finalize     = finalize;
+
+	setting_class->verify      = verify;
 
 	/**
 	 * NMSettingMatch:interface-name
