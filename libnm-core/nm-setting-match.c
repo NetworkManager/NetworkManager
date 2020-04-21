@@ -20,6 +20,7 @@
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
 	PROP_INTERFACE_NAME,
+	PROP_KERNEL_COMMAND_LINE,
 );
 
 /**
@@ -32,6 +33,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
 struct _NMSettingMatch {
 	NMSetting parent;
 	GPtrArray *interface_name;
+	GPtrArray *kernel_command_line;
 };
 
 struct _NMSettingMatchClass {
@@ -191,6 +193,154 @@ nm_setting_match_get_interface_names (NMSettingMatch *setting, guint *length)
 
 /*****************************************************************************/
 
+/**
+ * nm_setting_match_get_num_kernel_command_lines:
+ * @setting: the #NMSettingMatch
+ *
+ * Returns: the number of configured kernel command line arguments
+ *
+ * Since: 1.26
+ **/
+guint
+nm_setting_match_get_num_kernel_command_lines (NMSettingMatch *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), 0);
+
+	return setting->kernel_command_line->len;
+}
+
+/**
+ * nm_setting_match_get_kernel_command_line:
+ * @setting: the #NMSettingMatch
+ * @idx: index number of the kernel command line argument to return
+ *
+ * Returns: the kernel command line argument at index @idx
+ *
+ * Since: 1.26
+ **/
+const char *
+nm_setting_match_get_kernel_command_line (NMSettingMatch *setting, guint idx)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
+
+	g_return_val_if_fail (idx < setting->kernel_command_line->len, NULL);
+
+	return setting->kernel_command_line->pdata[idx];
+}
+
+/**
+ * nm_setting_match_add_kernel_command_line:
+ * @setting: the #NMSettingMatch
+ * @kernel_command_line: the kernel command line argument to add
+ *
+ * Adds a new kernel command line argument to the setting.
+ *
+ * Since: 1.26
+ **/
+void
+nm_setting_match_add_kernel_command_line (NMSettingMatch *setting,
+                                          const char *kernel_command_line)
+{
+	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
+	g_return_if_fail (kernel_command_line != NULL);
+	g_return_if_fail (kernel_command_line[0] != '\0');
+
+	g_ptr_array_add (setting->kernel_command_line, g_strdup (kernel_command_line));
+	_notify (setting, PROP_KERNEL_COMMAND_LINE);
+}
+
+/**
+ * nm_setting_match_remove_kernel_command_line:
+ * @setting: the #NMSettingMatch
+ * @idx: index number of the kernel command line argument
+ *
+ * Removes the kernel command line argument at index @idx.
+ *
+ * Since: 1.26
+ **/
+void
+nm_setting_match_remove_kernel_command_line (NMSettingMatch *setting, guint idx)
+{
+	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
+
+	g_return_if_fail (idx < setting->kernel_command_line->len);
+
+	g_ptr_array_remove_index (setting->kernel_command_line, idx);
+	_notify (setting, PROP_KERNEL_COMMAND_LINE);
+}
+
+/**
+ * nm_setting_match_remove_kernel_command_line_by_value:
+ * @setting: the #NMSettingMatch
+ * @kernel_command_line: the kernel command line argument name to remove
+ *
+ * Removes @kernel_command_line.
+ *
+ * Returns: %TRUE if the kernel command line argument was found and removed; %FALSE if it was not.
+ *
+ * Since: 1.26
+ **/
+gboolean
+nm_setting_match_remove_kernel_command_line_by_value (NMSettingMatch *setting,
+                                                      const char *kernel_command_line)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), FALSE);
+	g_return_val_if_fail (kernel_command_line != NULL, FALSE);
+	g_return_val_if_fail (kernel_command_line[0] != '\0', FALSE);
+
+	for (i = 0; i < setting->kernel_command_line->len; i++) {
+		if (nm_streq (kernel_command_line, setting->kernel_command_line->pdata[i])) {
+			g_ptr_array_remove_index (setting->kernel_command_line, i);
+			_notify (setting, PROP_KERNEL_COMMAND_LINE);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_match_clear_kernel_command_lines:
+ * @setting: the #NMSettingMatch
+ *
+ * Removes all configured kernel command line arguments.
+ *
+ * Since: 1.26
+ **/
+void
+nm_setting_match_clear_kernel_command_lines (NMSettingMatch *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
+
+	if (setting->kernel_command_line->len != 0) {
+		g_ptr_array_set_size (setting->kernel_command_line, 0);
+		_notify (setting, PROP_KERNEL_COMMAND_LINE);
+	}
+}
+
+/**
+ * nm_setting_match_get_kernel_command_lines:
+ * @setting: the #NMSettingMatch
+ *
+ * Returns all the interface names.
+ *
+ * Returns: (transfer none): the configured interface names.
+ *
+ * Since: 1.26
+ **/
+const char *const *
+nm_setting_match_get_kernel_command_lines (NMSettingMatch *setting, guint *length)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
+	g_return_val_if_fail (length, NULL);
+
+	NM_SET_OUT (length, setting->kernel_command_line->len);
+	return (const char *const *) setting->kernel_command_line->pdata;
+}
+
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -200,6 +350,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
 		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (self->interface_name));
+		break;
+	case PROP_KERNEL_COMMAND_LINE:
+		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (self->kernel_command_line));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -218,6 +371,10 @@ set_property (GObject *object, guint prop_id,
 		g_ptr_array_unref (self->interface_name);
 		self->interface_name = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
 		break;
+	case PROP_KERNEL_COMMAND_LINE:
+		g_ptr_array_unref (self->kernel_command_line);
+		self->kernel_command_line = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -230,6 +387,7 @@ static void
 nm_setting_match_init (NMSettingMatch *setting)
 {
 	setting->interface_name = g_ptr_array_new_with_free_func (g_free);
+	setting->kernel_command_line = g_ptr_array_new_with_free_func (g_free);
 }
 
 /**
@@ -266,6 +424,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	for (k = 0; k < self->kernel_command_line->len; k++) {
+		char *kparam = (char*) g_ptr_array_index (self->kernel_command_line, k);
+		if (nm_streq0 (kparam, "")) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("is empty"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
+			                NM_SETTING_MATCH_KERNEL_COMMAND_LINE);
+			return FALSE;
+		}
+	}
+
 	return TRUE;
 }
 
@@ -275,6 +446,7 @@ finalize (GObject *object)
 	NMSettingMatch *self = NM_SETTING_MATCH (object);
 
 	g_ptr_array_unref (self->interface_name);
+	g_ptr_array_unref (self->kernel_command_line);
 
 	G_OBJECT_CLASS (nm_setting_match_parent_class)->finalize (object);
 }
@@ -307,6 +479,26 @@ nm_setting_match_class_init (NMSettingMatchClass *klass)
 	 **/
 	obj_properties[PROP_INTERFACE_NAME] =
 	    g_param_spec_boxed (NM_SETTING_MATCH_INTERFACE_NAME, "", "",
+	                        G_TYPE_STRV,
+	                        NM_SETTING_PARAM_FUZZY_IGNORE |
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingMatch:kernel-command-line
+	 *
+	 * A list of kernel command line arguments to match. This may be used to check
+	 * whether a specific kernel command line option is set (or if prefixed with
+	 * the exclamation mark unset). The argument must either be a single word, or
+	 * an assignment (i.e. two words, separated "="). In the former case the kernel
+	 * command line is searched for the word appearing as is, or as left hand side
+	 * of an assignment. In the latter case, the exact assignment is looked for
+	 * with right and left hand side matching.
+	 *
+	 * Since: 1.26
+	 **/
+	obj_properties[PROP_KERNEL_COMMAND_LINE] =
+	    g_param_spec_boxed (NM_SETTING_MATCH_KERNEL_COMMAND_LINE, "", "",
 	                        G_TYPE_STRV,
 	                        NM_SETTING_PARAM_FUZZY_IGNORE |
 	                        G_PARAM_READWRITE |
