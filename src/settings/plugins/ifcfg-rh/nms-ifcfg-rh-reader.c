@@ -1537,27 +1537,34 @@ make_user_setting (shvarFile *ifcfg)
 	       : NULL;
 }
 
+
+static void
+make_match_setting_prop (const char *v, NMSettingMatch **s_match,
+                         void (*add_fcn) (NMSettingMatch *s_match, const char *value) ) {
+	gs_free const char **strv = NULL;
+	gsize i;
+
+	if (v) {
+		strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
+		if (strv) {
+			for (i = 0; strv[i]; i++) {
+				if (!(*s_match))
+					*s_match = (NMSettingMatch *) nm_setting_match_new ();
+				add_fcn (*s_match, strv[i]);
+			}
+		}
+	}
+}
+
 static NMSetting *
 make_match_setting (shvarFile *ifcfg)
 {
 	NMSettingMatch *s_match = NULL;
-	gs_free const char **strv = NULL;
-	gs_free char *value = NULL;
+	gs_free char *value_ifn = NULL;
 	const char *v;
-	gsize i;
 
-	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value);
-	if (!v)
-		return NULL;
-
-	strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
-	if (strv) {
-		for (i = 0; strv[i]; i++) {
-			if (!s_match)
-				s_match = (NMSettingMatch *) nm_setting_match_new ();
-			nm_setting_match_add_interface_name (s_match, strv[i]);
-		}
-	}
+	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value_ifn);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_interface_name);
 
 	return (NMSetting *) s_match;
 }
