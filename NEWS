@@ -25,10 +25,6 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
    - bridge.vlan-stats-enabled
    - bridge.vlan-protocol
    - bridge.group-address
-* IPv6 SLAAC: improved the reaction of IPv6 SLAAC to renumbering events:
-  - honor PIO Valid Lifetimes < 2 hours.
-  - cap the Preferred Lifetime of PIOs to the "Router Lifetime" value
-    and the Valid Lifetime of PIOs to 48 * Router Lifetime.
 * IPv6 SLAAC: add support for "ipv6.ra-timeout" setting
 * IPv6 DHCP: add support for "ipv6.dhcp-timeout" setting
 * WWAN: NetworkManager now detects if a PIN-protected SIM card has been
