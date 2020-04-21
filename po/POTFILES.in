@@ -75,6 +75,7 @@ libnm-core/nm-setting-ip4-config.c
 libnm-core/nm-setting-ip6-config.c
 libnm-core/nm-setting-macsec.c
 libnm-core/nm-setting-macvlan.c
+libnm-core/nm-setting-match.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ovs-bridge.c
 libnm-core/nm-setting-ovs-interface.c
