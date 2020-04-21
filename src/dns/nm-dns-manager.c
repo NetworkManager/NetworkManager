@@ -1197,7 +1197,7 @@ _collect_resolv_conf_data (NMDnsManager *self,
 	}
 
 	if (rc.has_trust_ad == NM_TERNARY_TRUE)
-		g_ptr_array_add (rc.options, NM_SETTING_DNS_OPTION_TRUST_AD);
+		g_ptr_array_add (rc.options, g_strdup (NM_SETTING_DNS_OPTION_TRUST_AD));
 
 	*out_searches = _ptrarray_to_strv (rc.searches);
 	*out_options = _ptrarray_to_strv (rc.options);
