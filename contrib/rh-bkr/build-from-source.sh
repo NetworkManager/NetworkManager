@@ -2,23 +2,26 @@
 
 set -exv
 
+#
+# supported environment variables to tweak the build
+#
 BUILD_DIR="${BUILD_DIR:-$HOME/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
 BUILD_REPO="${BUILD_REPO}"
 BUILD_SNAPSHOT="${BUILD_SNAPSHOT:-}"
-ARCH="${ARCH:-`arch`}"
+ARCH="${ARCH:-$(arch)}"
 WITH_DEBUG="$WITH_DEBUG"
 WITH_SANITIZER="$WITH_SANITIZER"
 DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
 DO_TEST_PACKAGE="${DO_TEST_PACKAGE:-yes}"
 DO_INSTALL="${DO_INSTALL:-yes}"
+SUDO="$SUDO"
 
 if [ -z "$SUDO" ]; then
     unset SUDO
 fi
 
 YUM_ARGS=()
-
 if grep -q --quiet Ootpa /etc/redhat-release; then
     YUM_ARGS+=("--enablerepo=rhel-8-buildroot")
 fi
@@ -101,8 +104,10 @@ rm -rf "./NetworkManager"
 mkdir "./NetworkManager/"
 cd "./NetworkManager/"
 git init .
+git config user.email nm-build-script@example.com
+git config user.name "Build Script Bot"
 
-git-setup-remote() {
+_git_setup_remote() {
     local REMOTE="$1"
     local MY_BUILD_REPO="$2"
 
@@ -126,17 +131,17 @@ git-setup-remote() {
     fi
 }
 
-git-setup-remote origin "$BUILD_REPO"
-git-setup-remote github "$BUILD_REPO_GITHUB"
+_git_setup_remote origin "$BUILD_REPO"
+_git_setup_remote github "$BUILD_REPO_GITHUB"
 if [ "$BUILD_REPO" != "$BUILD_REPO_GITLAB" ]; then
-    git-setup-remote gitlab "$BUILD_REPO_GITLAB"
+    _git_setup_remote gitlab "$BUILD_REPO_GITLAB"
 fi
 
 git -c user.email=bogus@nowhere.com -c user.name="Nobody Unperson" commit --allow-empty -m dummy-commit
 git checkout HEAD^{}
 
 git fetch github
-git fetch --all
+git fetch --all --prune
 
 git show-ref
 
