@@ -442,15 +442,8 @@ nm_ndisc_add_address (NMNDisc *ndisc,
 	}
 
 	if (existing) {
-		/* A Valid Lifetime of 0 eliminates the corresponding address(es). This deviates
-		 * from RFC4862 Section 5.5.3, item e), as recommended in IETF draft draft-gont-6man-slaac-renum.
-		 */
-		if (new->lifetime == 0) {
-			g_array_remove_index (rdata->addresses, i);
-			return TRUE;
-		}
-
 		if (from_ra) {
+			const gint32 NM_NDISC_PREFIX_LFT_MIN = 7200; /* seconds, RFC4862 5.5.3.e */
 			gint64 old_expiry_lifetime, old_expiry_preferred;
 
 			old_expiry_lifetime = get_expiry (existing);
@@ -459,16 +452,25 @@ nm_ndisc_add_address (NMNDisc *ndisc,
 			if (new->lifetime == NM_NDISC_INFINITY)
 				existing->lifetime = NM_NDISC_INFINITY;
 			else {
-				gint64 new_lifetime;
+				gint64 new_lifetime, remaining_lifetime;
 
-				/* Honor small valid lifetimes, as discussed in
-				 * draft-gont-6man-slaac-renum, to allow for more timelier
-				 * reaction to renumbering events. This deviates from
-				 * RFC4862 Section 5.5.3, item e).
-				 */
+				/* see RFC4862 5.5.3.e */
+				if (existing->lifetime == NM_NDISC_INFINITY)
+					remaining_lifetime = G_MAXINT64;
+				else
+					remaining_lifetime = ((gint64) existing->timestamp) + ((gint64) existing->lifetime) - ((gint64) now_s);
 				new_lifetime = ((gint64) new->timestamp) + ((gint64) new->lifetime) - ((gint64) now_s);
-				existing->timestamp = now_s;
-				existing->lifetime = CLAMP (new_lifetime, (gint64) 0, (gint64) (G_MAXUINT32 - 1));
+
+				if (   new_lifetime > (gint64) NM_NDISC_PREFIX_LFT_MIN
+				    || new_lifetime > remaining_lifetime) {
+					existing->timestamp = now_s;
+					existing->lifetime = CLAMP (new_lifetime, (gint64) 0, (gint64) (G_MAXUINT32 - 1));
+				} else if (remaining_lifetime <= (gint64) NM_NDISC_PREFIX_LFT_MIN) {
+					/* keep the current lifetime. */
+				} else {
+					existing->timestamp = now_s;
+					existing->lifetime = NM_NDISC_PREFIX_LFT_MIN;
+				}
 			}
 
 			if (new->preferred == NM_NDISC_INFINITY) {
@@ -483,6 +485,11 @@ nm_ndisc_add_address (NMNDisc *ndisc,
 
 			return    old_expiry_lifetime != get_expiry (existing)
 			       || old_expiry_preferred != get_expiry_preferred (existing);
+		}
+
+		if (new->lifetime == 0) {
+			g_array_remove_index (rdata->addresses, i);
+			return TRUE;
 		}
 
 		if (   get_expiry (existing) == get_expiry (new)
