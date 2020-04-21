@@ -18,10 +18,6 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   where the iptables rules would not be sufficient.
 * Add MUD URL property for connection profiles (RFC 8520) and set it
   for DHCP and DHCPv6 requests.
-* IPv6 SLAAC: improved the reaction of IPv6 SLAAC to renumbering events:
-  - honor PIO Valid Lifetimes < 2 hours.
-  - cap the Preferred Lifetime of PIOs to the "Router Lifetime" value
-    and the Valid Lifetime of PIOs to 48 * Router Lifetime.
 * ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
   property silently fails and a profile might accidentally not perform
   any authentication (CVE-2020-10754).
