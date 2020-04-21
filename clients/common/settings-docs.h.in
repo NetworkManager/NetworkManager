@@ -122,6 +122,7 @@
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_HASH_MAX N_("Set maximum size of multicast hash table (value must be a power of 2).")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT N_("Set the number of queries the bridge will send before stopping forwarding a multicast group after a \"leave\" message has been received.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL N_("Set interval (in deciseconds) between queries to find remaining members of a group, after a \"leave\" message is received.")
+#define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL N_("Set delay (in deciseconds) after which the bridge will leave a group, if no membership reports for this group are received.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERIER N_("Enable or disable sending of multicast queries by the bridge. If not specified the option is disabled.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR N_("If enabled the bridge's own IP address is used as the source address for IGMP queries otherwise the default of 0.0.0.0 is used.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_ROUTER N_("Sets bridge's multicast router. multicast-snooping must be enabled for this option to work. Supported values are: 'auto', 'disabled', 'enabled'. If not specified the default value is 'auto'.")

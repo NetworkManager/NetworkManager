@@ -1541,6 +1541,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "multicast_last_member_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
+	u64 = nm_setting_bridge_get_multicast_membership_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_membership_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
 	b = nm_setting_bridge_get_multicast_querier (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
 		if (opts->len)
