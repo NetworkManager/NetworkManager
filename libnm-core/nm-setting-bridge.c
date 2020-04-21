@@ -36,6 +36,7 @@
 #define BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEFAULT   1000
 #define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT          FALSE
 #define BRIDGE_MULTICAST_SNOOPING_DEFAULT                  TRUE
+#define BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT       2
 #define BRIDGE_PRIORITY_DEFAULT                            0x8000
 #define BRIDGE_STP_DEFAULT                                 TRUE
 #define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
@@ -64,6 +65,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_MULTICAST_QUERY_RESPONSE_INTERVAL,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
 	PROP_MULTICAST_SNOOPING,
+	PROP_MULTICAST_STARTUP_QUERY_COUNT,
 	PROP_VLAN_FILTERING,
 	PROP_VLAN_DEFAULT_PVID,
 	PROP_VLAN_PROTOCOL,
@@ -85,6 +87,7 @@ typedef struct {
 	guint32  ageing_time;
 	guint32  multicast_hash_max;
 	guint32  multicast_last_member_count;
+	guint32  multicast_startup_query_count;
 	guint16  priority;
 	guint16  forward_delay;
 	guint16  hello_time;
@@ -1143,6 +1146,22 @@ nm_setting_bridge_get_multicast_query_response_interval (const NMSettingBridge *
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_query_response_interval;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_startup_query_count:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-query-response-interval property of the setting
+ *
+ * Since 1.26
+ **/
+guint32
+nm_setting_bridge_get_multicast_startup_query_count (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_startup_query_count;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1411,6 +1430,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_QUERY_USE_IFADDR:
 		g_value_set_boolean (value, priv->multicast_query_use_ifaddr);
 		break;
+	case PROP_MULTICAST_STARTUP_QUERY_COUNT:
+		g_value_set_uint (value, priv->multicast_startup_query_count);
+		break;
 	case PROP_VLAN_FILTERING:
 		g_value_set_boolean (value, priv->vlan_filtering);
 		break;
@@ -1506,6 +1528,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_QUERY_USE_IFADDR:
 		priv->multicast_query_use_ifaddr = g_value_get_boolean (value);
 		break;
+	case PROP_MULTICAST_STARTUP_QUERY_COUNT:
+		priv->multicast_startup_query_count = g_value_get_uint (value);
+		break;
 	case PROP_VLAN_FILTERING:
 		priv->vlan_filtering = g_value_get_boolean (value);
 		break;
@@ -1558,6 +1583,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->multicast_query_use_ifaddr        = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
 	priv->multicast_querier                 = BRIDGE_MULTICAST_QUERIER_DEFAULT;
 	priv->multicast_querier_interval        = BRIDGE_MULTICAST_QUERIER_INTERVAL_DEFAULT;
+	priv->multicast_startup_query_count     = BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT;
 }
 
 /**
@@ -2189,6 +2215,27 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-startup-query-count:
+	 *
+	 * Set the number of IGMP queries to send during startup phase.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-startup-query-count
+	 * variable: BRIDGING_OPTS: multicast_startup_query_count=
+	 * default: 2
+	 * example: BRIDGING_OPTS="multicast_startup_query_count=4"
+	 * ---end---
+	 *
+	 * Since: 1.26
+	 */
+	obj_properties[PROP_MULTICAST_STARTUP_QUERY_COUNT] =
+	    g_param_spec_uint (NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT, "", "",
+	                       0, G_MAXUINT32, BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

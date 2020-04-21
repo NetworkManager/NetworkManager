@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL          "multicast-query-interval"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL "multicast-query-response-interval"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR        "multicast-query-use-ifaddr"
+#define NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT     "multicast-startup-query-count"
 #define NM_SETTING_BRIDGE_VLAN_FILTERING                    "vlan-filtering"
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID                 "vlan-default-pvid"
 #define NM_SETTING_BRIDGE_VLANS                             "vlans"
@@ -167,6 +168,9 @@ guint64 nm_setting_bridge_get_multicast_query_interval (const NMSettingBridge *s
 
 NM_AVAILABLE_IN_1_26
 guint64 nm_setting_bridge_get_multicast_query_response_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint32 nm_setting_bridge_get_multicast_startup_query_count (const NMSettingBridge *setting);
 
 G_END_DECLS
 

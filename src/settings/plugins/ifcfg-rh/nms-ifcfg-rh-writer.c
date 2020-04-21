@@ -1590,6 +1590,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
 	}
 
+	i = nm_setting_bridge_get_multicast_startup_query_count (s_bridge);
+	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_startup_query_count=%u", i);
+	}
+
 	s = nm_setting_bridge_get_multicast_router (s_bridge);
 	if (s) {
 		if (opts->len)
