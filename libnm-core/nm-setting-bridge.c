@@ -33,6 +33,7 @@
 #define BRIDGE_MULTICAST_HASH_MAX_DEFAULT                  4096
 #define BRIDGE_MULTICAST_QUERIER_DEFAULT                   FALSE
 #define BRIDGE_MULTICAST_QUERY_INTERVAL_DEFAULT            12500
+#define BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEFAULT   1000
 #define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT          FALSE
 #define BRIDGE_MULTICAST_SNOOPING_DEFAULT                  TRUE
 #define BRIDGE_PRIORITY_DEFAULT                            0x8000
@@ -60,6 +61,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_MULTICAST_QUERIER,
 	PROP_MULTICAST_QUERIER_INTERVAL,
 	PROP_MULTICAST_QUERY_INTERVAL,
+	PROP_MULTICAST_QUERY_RESPONSE_INTERVAL,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
 	PROP_MULTICAST_SNOOPING,
 	PROP_VLAN_FILTERING,
@@ -79,6 +81,7 @@ typedef struct {
 	guint64  multicast_membership_interval;
 	guint64  multicast_querier_interval;
 	guint64  multicast_query_interval;
+	guint64  multicast_query_response_interval;
 	guint32  ageing_time;
 	guint32  multicast_hash_max;
 	guint32  multicast_last_member_count;
@@ -1124,6 +1127,22 @@ nm_setting_bridge_get_multicast_query_interval (const NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_query_interval;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_query_response_interval:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-query-response-interval property of the setting
+ *
+ * Since 1.26
+ **/
+guint64
+nm_setting_bridge_get_multicast_query_response_interval (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_query_response_interval;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1386,6 +1405,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_QUERY_INTERVAL:
 		g_value_set_uint64 (value, priv->multicast_query_interval);
 		break;
+	case PROP_MULTICAST_QUERY_RESPONSE_INTERVAL:
+		g_value_set_uint64 (value, priv->multicast_query_response_interval);
+		break;
 	case PROP_MULTICAST_QUERY_USE_IFADDR:
 		g_value_set_boolean (value, priv->multicast_query_use_ifaddr);
 		break;
@@ -1478,6 +1500,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_QUERY_INTERVAL:
 		priv->multicast_query_interval = g_value_get_uint64 (value);
 		break;
+	case PROP_MULTICAST_QUERY_RESPONSE_INTERVAL:
+		priv->multicast_query_response_interval = g_value_get_uint64 (value);
+		break;
 	case PROP_MULTICAST_QUERY_USE_IFADDR:
 		priv->multicast_query_use_ifaddr = g_value_get_boolean (value);
 		break;
@@ -1515,23 +1540,24 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	priv->ageing_time                    = BRIDGE_AGEING_TIME_DEFAULT;
-	priv->forward_delay                  = BRIDGE_FORWARD_DELAY_DEFAULT;
-	priv->hello_time                     = BRIDGE_HELLO_TIME_DEFAULT;
-	priv->max_age                        = BRIDGE_MAX_AGE_DEFAULT;
-	priv->multicast_last_member_count    = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
-	priv->multicast_last_member_interval = BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT;
-	priv->multicast_membership_interval  = BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT;
-	priv->multicast_hash_max             = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
-	priv->multicast_snooping             = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
-	priv->priority                       = BRIDGE_PRIORITY_DEFAULT;
-	priv->stp                            = BRIDGE_STP_DEFAULT;
-	priv->vlan_default_pvid              = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
-	priv->vlan_stats_enabled             = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
-	priv->multicast_query_interval       = BRIDGE_MULTICAST_QUERY_INTERVAL_DEFAULT;
-	priv->multicast_query_use_ifaddr     = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
-	priv->multicast_querier              = BRIDGE_MULTICAST_QUERIER_DEFAULT;
-	priv->multicast_querier_interval     = BRIDGE_MULTICAST_QUERIER_INTERVAL_DEFAULT;
+	priv->ageing_time                       = BRIDGE_AGEING_TIME_DEFAULT;
+	priv->forward_delay                     = BRIDGE_FORWARD_DELAY_DEFAULT;
+	priv->hello_time                        = BRIDGE_HELLO_TIME_DEFAULT;
+	priv->max_age                           = BRIDGE_MAX_AGE_DEFAULT;
+	priv->multicast_last_member_count       = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
+	priv->multicast_last_member_interval    = BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT;
+	priv->multicast_membership_interval     = BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT;
+	priv->multicast_hash_max                = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
+	priv->multicast_snooping                = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
+	priv->priority                          = BRIDGE_PRIORITY_DEFAULT;
+	priv->stp                               = BRIDGE_STP_DEFAULT;
+	priv->vlan_default_pvid                 = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
+	priv->vlan_stats_enabled                = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
+	priv->multicast_query_interval          = BRIDGE_MULTICAST_QUERY_INTERVAL_DEFAULT;
+	priv->multicast_query_response_interval = BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEFAULT;
+	priv->multicast_query_use_ifaddr        = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
+	priv->multicast_querier                 = BRIDGE_MULTICAST_QUERIER_DEFAULT;
+	priv->multicast_querier_interval        = BRIDGE_MULTICAST_QUERIER_INTERVAL_DEFAULT;
 }
 
 /**
@@ -2138,6 +2164,28 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	obj_properties[PROP_MULTICAST_QUERY_INTERVAL] =
 	    g_param_spec_uint64 (NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL, "", "",
 	                         0, G_MAXUINT64, BRIDGE_MULTICAST_QUERY_INTERVAL_DEFAULT,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-query-response-interval:
+	 *
+	 * Set the Max Response Time/Max Response Delay
+	 * (in deciseconds) for IGMP/MLD queries sent by the bridge.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-query-response-interval
+	 * variable: BRIDGING_OPTS: multicast_query_response_interval=
+	 * default: 1000
+	 * example: BRIDGING_OPTS="multicast_query_response_interval=2000"
+	 * ---end---
+	 *
+	 * Since: 1.26
+	 */
+	obj_properties[PROP_MULTICAST_QUERY_RESPONSE_INTERVAL] =
+	    g_param_spec_uint64 (NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL, "", "",
+	                         0, G_MAXUINT64, BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEFAULT,
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
