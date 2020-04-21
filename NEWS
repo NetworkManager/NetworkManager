@@ -1,34 +1,36 @@
 =============================================
-NetworkManager-1.24
-Overview of changes since NetworkManager-1.22
+NetworkManager-1.26
+Overview of changes since NetworkManager-1.24
 =============================================
 
-This is a snapshot of NetworkManager 1.24 development series.
+This is a snapshot of NetworkManager 1.26 development series.
 The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-* Add support for virtual routing and forwarding (VRF) interfaces.
-* Add support for Opportunistic Wireless Encryption mode (OWE) for WiFi networks.
-* Add support for 31-bit prefixes on IPv4 point-to-point links according to
-  RFC 3021.
-* Drop dependencies for libpolkit-agent-1 and libpolkit-gobject-1
-* nmcli:
-  - support setting removal via new command 'nmcli connection modify
-    $con-name remove $setting'.
-  - support backslash escape sequences for vpn.data, vpn.secrets,
-    bond.options, and ethernet.s390-options.
-* bridge: new options available:
-   - bridge.multicast-querier
-   - bridge.multicast-query-use-ifaddr
-   - bridge.multicast-router
-   - bridge.vlan-stats-enabled
-   - bridge.vlan-protocol
-   - bridge.group-address
 * IPv6 SLAAC: improved the reaction of IPv6 SLAAC to renumbering events:
   - honor PIO Valid Lifetimes < 2 hours.
   - cap the Preferred Lifetime of PIOs to the "Router Lifetime" value
     and the Valid Lifetime of PIOs to 48 * Router Lifetime.
+
+=============================================
+NetworkManager-1.24
+Overview of changes since NetworkManager-1.22
+=============================================
+
+* Add support for virtual routing and forwarding (VRF) interfaces.
+* Add support for Opportunistic Wireless Encryption mode (OWE) for Wi-Fi networks.
+* Add support for 31-bit prefixes on IPv4 point-to-point links according to
+  RFC 3021.
+* Drop dependencies for libpolkit-agent-1 and libpolkit-gobject-1.
+* nmcli:
+  - support setting removal via new command
+    `nmcli connection modify $CON_NAME remove $setting`.
+  - support backslash escape sequences for "vpn.data", "vpn.secrets",
+    "bond.options", and "ethernet.s390-options".
+* bridge: support new options "bridge.multicast-querier", "bridge.multicast-query-use-ifaddr",
+  "bridge.multicast-router", "bridge.vlan-stats-enabled", "bridge.vlan-protocol",
+  "bridge.group-address".
 * IPv6 SLAAC: add support for "ipv6.ra-timeout" setting
 * IPv6 DHCP: add support for "ipv6.dhcp-timeout" setting
 * WWAN: NetworkManager now detects if a PIN-protected SIM card has been
@@ -39,9 +41,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   - remove length limitation for OVS Bridge, Patches and Interfaces
     (only Patch types) names.
 * VPN: accept empty values for VPN data items and secrets.
-* All nm-devices now expose the 'hw-address' property via D-Bus.
+* All nm-devices now expose the 'HwAddress' property via D-Bus.
 * Slave devices now do not get created/activated if master is missing.
-* Fixed multiple issues in the internal DHCP client
+* Fixed multiple issues in the internal "nettools" DHCP client.
 * Export NM_CAPABILITY_OVS capability on D-Bus and in libnm to
   indicate that the OVS plugin is loaded.
 * Various bug fixes and improvements.
