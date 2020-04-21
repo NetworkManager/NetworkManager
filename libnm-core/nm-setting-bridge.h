@@ -39,6 +39,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_MULTICAST_ROUTER                "multicast-router"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERIER               "multicast-querier"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL      "multicast-querier-interval"
+#define NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL        "multicast-query-interval"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR      "multicast-query-use-ifaddr"
 #define NM_SETTING_BRIDGE_VLAN_FILTERING                  "vlan-filtering"
 #define NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID               "vlan-default-pvid"
@@ -159,6 +160,9 @@ guint64 nm_setting_bridge_get_multicast_membership_interval (const NMSettingBrid
 
 NM_AVAILABLE_IN_1_26
 guint64 nm_setting_bridge_get_multicast_querier_interval (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_query_interval (const NMSettingBridge *setting);
 
 G_END_DECLS
 
