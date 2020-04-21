@@ -562,6 +562,9 @@ _create_iface_dbus_call_create_interface_cb (GObject *source,
 			       NM_HASH_OBFUSCATE_PTR (handle),
 			       iface_path_str,
 			       handle->name_owner->str);
+			nm_utils_error_set (&error,
+			                    NM_UTILS_ERROR_UNKNOWN,
+			                    "Request already cancelled");
 		} else {
 			_LOGT ("create-iface["NM_HASH_OBFUSCATE_PTR_FMT"]: name owner changed, still remove interface %s in %s",
 			       NM_HASH_OBFUSCATE_PTR (handle),
