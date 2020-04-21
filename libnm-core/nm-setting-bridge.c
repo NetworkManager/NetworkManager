@@ -37,6 +37,7 @@
 #define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT          FALSE
 #define BRIDGE_MULTICAST_SNOOPING_DEFAULT                  TRUE
 #define BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT       2
+#define BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT    3125
 #define BRIDGE_PRIORITY_DEFAULT                            0x8000
 #define BRIDGE_STP_DEFAULT                                 TRUE
 #define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
@@ -66,6 +67,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
 	PROP_MULTICAST_SNOOPING,
 	PROP_MULTICAST_STARTUP_QUERY_COUNT,
+	PROP_MULTICAST_STARTUP_QUERY_INTERVAL,
 	PROP_VLAN_FILTERING,
 	PROP_VLAN_DEFAULT_PVID,
 	PROP_VLAN_PROTOCOL,
@@ -84,6 +86,7 @@ typedef struct {
 	guint64  multicast_querier_interval;
 	guint64  multicast_query_interval;
 	guint64  multicast_query_response_interval;
+	guint64  multicast_startup_query_interval;
 	guint32  ageing_time;
 	guint32  multicast_hash_max;
 	guint32  multicast_last_member_count;
@@ -1162,6 +1165,22 @@ nm_setting_bridge_get_multicast_startup_query_count (const NMSettingBridge *sett
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_startup_query_count;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_startup_query_interval:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-startup-query-interval property of the setting
+ *
+ * Since 1.26
+ **/
+guint64
+nm_setting_bridge_get_multicast_startup_query_interval (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_startup_query_interval;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1433,6 +1452,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_STARTUP_QUERY_COUNT:
 		g_value_set_uint (value, priv->multicast_startup_query_count);
 		break;
+	case PROP_MULTICAST_STARTUP_QUERY_INTERVAL:
+		g_value_set_uint64 (value, priv->multicast_startup_query_interval);
+		break;
 	case PROP_VLAN_FILTERING:
 		g_value_set_boolean (value, priv->vlan_filtering);
 		break;
@@ -1531,6 +1553,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_STARTUP_QUERY_COUNT:
 		priv->multicast_startup_query_count = g_value_get_uint (value);
 		break;
+	case PROP_MULTICAST_STARTUP_QUERY_INTERVAL:
+		priv->multicast_startup_query_interval = g_value_get_uint64 (value);
+		break;
 	case PROP_VLAN_FILTERING:
 		priv->vlan_filtering = g_value_get_boolean (value);
 		break;
@@ -1584,6 +1609,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->multicast_querier                 = BRIDGE_MULTICAST_QUERIER_DEFAULT;
 	priv->multicast_querier_interval        = BRIDGE_MULTICAST_QUERIER_INTERVAL_DEFAULT;
 	priv->multicast_startup_query_count     = BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT;
+	priv->multicast_startup_query_interval  = BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT;
 }
 
 /**
@@ -2236,6 +2262,28 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-startup-query-interval:
+	 *
+	 * Sets the time (in deciseconds) between queries sent out
+	 * at startup to determine membership information.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-startup-query-interval
+	 * variable: BRIDGING_OPTS: multicast_startup_query_interval=
+	 * default: 3125
+	 * example: BRIDGING_OPTS="multicast_startup_query_interval=4000"
+	 * ---end---
+	 *
+	 * Since: 1.26
+	 */
+	obj_properties[PROP_MULTICAST_STARTUP_QUERY_INTERVAL] =
+	    g_param_spec_uint64 (NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL, "", "",
+	                         0, G_MAXUINT64, BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

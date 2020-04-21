@@ -131,6 +131,7 @@
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_ROUTER N_("Sets bridge's multicast router. multicast-snooping must be enabled for this option to work. Supported values are: 'auto', 'disabled', 'enabled'. If not specified the default value is 'auto'.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_SNOOPING N_("Controls whether IGMP snooping is enabled for this bridge. Note that if snooping was automatically disabled due to hash collisions, the system may refuse to enable the feature until the collisions are resolved.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT N_("Set the number of IGMP queries to send during startup phase.")
+#define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL N_("Sets the time (in deciseconds) between queries sent out at startup to determine membership information.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_PRIORITY N_("Sets the Spanning Tree Protocol (STP) priority for this bridge.  Lower values are \"better\"; the lowest priority bridge will be elected the root bridge.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_STP N_("Controls whether Spanning Tree Protocol (STP) is enabled for this bridge.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID N_("The default PVID for the ports of the bridge, that is the VLAN id assigned to incoming untagged frames.")

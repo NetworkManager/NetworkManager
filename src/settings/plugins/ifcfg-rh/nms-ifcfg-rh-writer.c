@@ -1597,6 +1597,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "multicast_startup_query_count=%u", i);
 	}
 
+	u64 = nm_setting_bridge_get_multicast_startup_query_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_startup_query_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
 	s = nm_setting_bridge_get_multicast_router (s_bridge);
 	if (s) {
 		if (opts->len)

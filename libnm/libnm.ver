@@ -1706,5 +1706,6 @@ global:
 	nm_setting_bridge_get_multicast_query_interval;
 	nm_setting_bridge_get_multicast_query_response_interval;
 	nm_setting_bridge_get_multicast_startup_query_count;
+	nm_setting_bridge_get_multicast_startup_query_interval;
 	nm_setting_connection_get_mud_url;
 } libnm_1_24_0;
