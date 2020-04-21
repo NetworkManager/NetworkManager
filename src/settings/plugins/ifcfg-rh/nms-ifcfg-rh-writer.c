@@ -2378,30 +2378,75 @@ static gboolean
 write_match_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingMatch *s_match;
-	nm_auto_free_gstring GString *str = NULL;
 	guint i, num;
 
 	s_match = (NMSettingMatch *) nm_connection_get_setting (connection, NM_TYPE_SETTING_MATCH);
 	if (!s_match)
 		return TRUE;
 
-	num = nm_setting_match_get_num_interface_names (s_match);
-	for (i = 0; i < num; i++) {
-		const char *name;
+	num = nm_setting_match_get_num_drivers (s_match);
+	{
+		nm_auto_free_gstring GString *str = NULL;
+		for (i = 0; i < num; i++) {
+			const char *name;
 
-		name = nm_setting_match_get_interface_name (s_match, i);
-		if (!name || !name[0])
-			continue;
+			name = nm_setting_match_get_driver (s_match, i);
+			if (!name || !name[0])
+				continue;
 
-		if (!str)
-			str = g_string_new ("");
-		else
-			g_string_append_c (str, ' ');
-		nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+			if (!str)
+				str = g_string_new ("");
+			else
+				g_string_append_c (str, ' ');
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
+
+		if (str)
+			svSetValueStr (ifcfg, "MATCH_DRIVER", str->str);
 	}
 
-	if (str)
-		svSetValueStr (ifcfg, "MATCH_INTERFACE_NAME", str->str);
+	num = nm_setting_match_get_num_interface_names (s_match);
+	{
+		nm_auto_free_gstring GString *str = NULL;
+		for (i = 0; i < num; i++) {
+			const char *name;
+
+			name = nm_setting_match_get_interface_name (s_match, i);
+			if (!name || !name[0])
+				continue;
+
+			if (!str)
+				str = g_string_new ("");
+			else
+				g_string_append_c (str, ' ');
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
+
+		if (str)
+			svSetValueStr (ifcfg, "MATCH_INTERFACE_NAME", str->str);
+	}
+
+
+	num = nm_setting_match_get_num_kernel_command_lines (s_match);
+	{
+		nm_auto_free_gstring GString *str = NULL;
+		for (i = 0; i < num; i++) {
+			const char *name;
+
+			name = nm_setting_match_get_kernel_command_line (s_match, i);
+			if (!name || !name[0])
+				continue;
+
+			if (!str)
+				str = g_string_new ("");
+			else
+				g_string_append_c (str, ' ');
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
+
+		if (str)
+			svSetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", str->str);
+	}
 
 	return TRUE;
 }

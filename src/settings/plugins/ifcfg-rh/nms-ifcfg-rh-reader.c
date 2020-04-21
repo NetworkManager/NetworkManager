@@ -1561,10 +1561,16 @@ make_match_setting (shvarFile *ifcfg)
 {
 	NMSettingMatch *s_match = NULL;
 	gs_free char *value_ifn = NULL;
+	gs_free char *value_kcl = NULL;
+	gs_free char *value_d = NULL;
 	const char *v;
 
 	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value_ifn);
 	make_match_setting_prop(v, &s_match, nm_setting_match_add_interface_name);
+	v = svGetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", &value_kcl);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_kernel_command_line);
+	v = svGetValueStr (ifcfg, "MATCH_DRIVER", &value_d);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_driver);
 
 	return (NMSetting *) s_match;
 }
