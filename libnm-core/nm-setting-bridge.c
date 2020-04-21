@@ -1741,6 +1741,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * description: VLAN filtering protocol.
 	 * example: BRIDGING_OPTS="vlan_protocol=802.1Q"
 	 * ---end---
+	 *
+	 * Since: 1.24
 	 */
 	obj_properties[PROP_VLAN_PROTOCOL] =
 	    g_param_spec_string (NM_SETTING_BRIDGE_VLAN_PROTOCOL, "", "",
@@ -1760,6 +1762,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * default: 0
 	 * example: BRIDGING_OPTS="vlan_stats_enabled=1"
 	 * ---end---
+	 *
+	 * Since: 1.24
 	 */
 	obj_properties[PROP_VLAN_STATS_ENABLED] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_VLAN_STATS_ENABLED, "", "",
@@ -1784,6 +1788,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * default: auto
 	 * example: BRIDGING_OPTS="multicast_router=enabled"
 	 * ---end---
+	 *
+	 * Since: 1.24
 	 */
 	obj_properties[PROP_MULTICAST_ROUTER] =
 	    g_param_spec_string (NM_SETTING_BRIDGE_MULTICAST_ROUTER, "", "",
@@ -1805,6 +1811,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * default: 0
 	 * example: BRIDGING_OPTS="multicast_query-use_ifaddr=1"
 	 * ---end---
+	 *
+	 * Since: 1.24
 	 */
 	obj_properties[PROP_MULTICAST_QUERY_USE_IFADDR] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR, "", "",
@@ -1825,6 +1833,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * default: 0
 	 * example: BRIDGING_OPTS="multicast_querier=1"
 	 * ---end---
+	 *
+	 * Since: 1.24
 	 */
 	obj_properties[PROP_MULTICAST_QUERIER] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_QUERIER, "", "",
