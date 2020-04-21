@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK              "group-forward-mask"
 #define NM_SETTING_BRIDGE_MULTICAST_HASH_MAX              "multicast-hash-max"
 #define NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT     "multicast-last-member-count"
+#define NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL  "multicast-last-member-interval"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING              "multicast-snooping"
 #define NM_SETTING_BRIDGE_MULTICAST_ROUTER                "multicast-router"
 #define NM_SETTING_BRIDGE_MULTICAST_QUERIER               "multicast-querier"
@@ -147,6 +148,9 @@ guint32 nm_setting_bridge_get_multicast_hash_max (const NMSettingBridge *setting
 
 NM_AVAILABLE_IN_1_26
 guint32 nm_setting_bridge_get_multicast_last_member_count (const NMSettingBridge *setting);
+
+NM_AVAILABLE_IN_1_26
+guint64 nm_setting_bridge_get_multicast_last_member_interval (const NMSettingBridge *setting);
 
 G_END_DECLS
 

@@ -5157,26 +5157,27 @@ handle_bridge_option (NMSetting *setting,
 		gboolean only_with_stp;
 		gboolean extended_bool;
 	} m/*etadata*/[] = {
-		{ "DELAY",                       NM_SETTING_BRIDGE_FORWARD_DELAY,               BRIDGE_OPT_TYPE_MAIN,        .only_with_stp = TRUE },
-		{ "priority",                    NM_SETTING_BRIDGE_PRIORITY,                    BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
-		{ "hello_time",                  NM_SETTING_BRIDGE_HELLO_TIME,                  BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
-		{ "max_age",                     NM_SETTING_BRIDGE_MAX_AGE,                     BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
-		{ "ageing_time",                 NM_SETTING_BRIDGE_AGEING_TIME,                 BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_last_member_count", NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT, BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_hash_max",          NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,          BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_querier",           NM_SETTING_BRIDGE_MULTICAST_QUERIER,           BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_query_use_ifaddr",  NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,  BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_snooping",          NM_SETTING_BRIDGE_MULTICAST_SNOOPING,          BRIDGE_OPT_TYPE_OPTION },
-		{ "multicast_router",            NM_SETTING_BRIDGE_MULTICAST_ROUTER,            BRIDGE_OPT_TYPE_OPTION },
-		{ "vlan_filtering",              NM_SETTING_BRIDGE_VLAN_FILTERING,              BRIDGE_OPT_TYPE_OPTION },
-		{ "default_pvid",                NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,           BRIDGE_OPT_TYPE_OPTION },
-		{ "group_address",               NM_SETTING_BRIDGE_GROUP_ADDRESS,               BRIDGE_OPT_TYPE_OPTION },
-		{ "group_fwd_mask",              NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,          BRIDGE_OPT_TYPE_OPTION },
-		{ "vlan_protocol",               NM_SETTING_BRIDGE_VLAN_PROTOCOL,               BRIDGE_OPT_TYPE_OPTION },
-		{ "vlan_stats_enabled",          NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,          BRIDGE_OPT_TYPE_OPTION },
-		{ "priority",                    NM_SETTING_BRIDGE_PORT_PRIORITY,               BRIDGE_OPT_TYPE_PORT_OPTION },
-		{ "path_cost",                   NM_SETTING_BRIDGE_PORT_PATH_COST,              BRIDGE_OPT_TYPE_PORT_OPTION },
-		{ "hairpin_mode",                NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,           BRIDGE_OPT_TYPE_PORT_OPTION, .extended_bool = TRUE, },
+		{ "DELAY",                          NM_SETTING_BRIDGE_FORWARD_DELAY,                  BRIDGE_OPT_TYPE_MAIN,        .only_with_stp = TRUE },
+		{ "priority",                       NM_SETTING_BRIDGE_PRIORITY,                       BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
+		{ "hello_time",                     NM_SETTING_BRIDGE_HELLO_TIME,                     BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
+		{ "max_age",                        NM_SETTING_BRIDGE_MAX_AGE,                        BRIDGE_OPT_TYPE_OPTION,      .only_with_stp = TRUE },
+		{ "ageing_time",                    NM_SETTING_BRIDGE_AGEING_TIME,                    BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_last_member_count",    NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,    BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_last_member_interval", NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL, BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_hash_max",             NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,             BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_querier",              NM_SETTING_BRIDGE_MULTICAST_QUERIER,              BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_query_use_ifaddr",     NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,     BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_snooping",             NM_SETTING_BRIDGE_MULTICAST_SNOOPING,             BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_router",               NM_SETTING_BRIDGE_MULTICAST_ROUTER,               BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_filtering",                 NM_SETTING_BRIDGE_VLAN_FILTERING,                 BRIDGE_OPT_TYPE_OPTION },
+		{ "default_pvid",                   NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,              BRIDGE_OPT_TYPE_OPTION },
+		{ "group_address",                  NM_SETTING_BRIDGE_GROUP_ADDRESS,                  BRIDGE_OPT_TYPE_OPTION },
+		{ "group_fwd_mask",                 NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,             BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_protocol",                  NM_SETTING_BRIDGE_VLAN_PROTOCOL,                  BRIDGE_OPT_TYPE_OPTION },
+		{ "vlan_stats_enabled",             NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,             BRIDGE_OPT_TYPE_OPTION },
+		{ "priority",                       NM_SETTING_BRIDGE_PORT_PRIORITY,                  BRIDGE_OPT_TYPE_PORT_OPTION },
+		{ "path_cost",                      NM_SETTING_BRIDGE_PORT_PATH_COST,                 BRIDGE_OPT_TYPE_PORT_OPTION },
+		{ "hairpin_mode",                   NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,              BRIDGE_OPT_TYPE_PORT_OPTION, .extended_bool = TRUE, },
 	};
 	const char *error_message = NULL;
 	int i;
@@ -5227,6 +5228,16 @@ handle_bridge_option (NMSetting *setting,
 			if (!nm_g_object_set_property_uint (G_OBJECT (setting), m[i].property_name, v, NULL)) {
 				error_message = "number is out of range";
 				goto warn;
+			}
+			return;
+		case G_TYPE_UINT64: {
+				guint64 vu64;
+
+				vu64 = _nm_utils_ascii_str_to_uint64 (value, 10, 0, G_MAXUINT64, 0);
+				if (!nm_g_object_set_property_uint64 (G_OBJECT (setting), m[i].property_name, vu64, NULL)) {
+					error_message = "number is out of range";
+					goto warn;
+				}
 			}
 			return;
 		case G_TYPE_STRING:

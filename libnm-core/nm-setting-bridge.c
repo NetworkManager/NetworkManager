@@ -27,6 +27,7 @@
 #define BRIDGE_HELLO_TIME_DEFAULT                          2
 #define BRIDGE_MAX_AGE_DEFAULT                             20
 #define BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT         2
+#define BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT      100
 #define BRIDGE_MULTICAST_HASH_MAX_DEFAULT                  4096
 #define BRIDGE_MULTICAST_QUERIER_DEFAULT                   FALSE
 #define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT          FALSE
@@ -50,6 +51,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_GROUP_FORWARD_MASK,
 	PROP_MULTICAST_HASH_MAX,
 	PROP_MULTICAST_LAST_MEMBER_COUNT,
+	PROP_MULTICAST_LAST_MEMBER_INTERVAL,
 	PROP_MULTICAST_ROUTER,
 	PROP_MULTICAST_QUERIER,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
@@ -67,6 +69,7 @@ typedef struct {
 	char *   multicast_router;
 	char *   group_address;
 	char *   vlan_protocol;
+	guint64  multicast_last_member_interval;
 	guint32  ageing_time;
 	guint32  multicast_hash_max;
 	guint32  multicast_last_member_count;
@@ -1048,6 +1051,22 @@ nm_setting_bridge_get_multicast_last_member_count (const NMSettingBridge *settin
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_last_member_count;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_last_member_interval:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-last-member-interval property of the setting
+ *
+ * Since 1.26
+ **/
+guint64
+nm_setting_bridge_get_multicast_last_member_interval (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_last_member_interval;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1289,6 +1308,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_LAST_MEMBER_COUNT:
 		g_value_set_uint (value, priv->multicast_last_member_count);
 		break;
+	case PROP_MULTICAST_LAST_MEMBER_INTERVAL:
+		g_value_set_uint64 (value, priv->multicast_last_member_interval);
+		break;
 	case PROP_MULTICAST_SNOOPING:
 		g_value_set_boolean (value, priv->multicast_snooping);
 		break;
@@ -1368,6 +1390,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_LAST_MEMBER_COUNT:
 		priv->multicast_last_member_count = g_value_get_uint (value);
 		break;
+	case PROP_MULTICAST_LAST_MEMBER_INTERVAL:
+		priv->multicast_last_member_interval = g_value_get_uint64 (value);
+		break;
 	case PROP_MULTICAST_SNOOPING:
 		priv->multicast_snooping = g_value_get_boolean (value);
 		break;
@@ -1415,19 +1440,20 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	priv->ageing_time                 = BRIDGE_AGEING_TIME_DEFAULT;
-	priv->forward_delay               = BRIDGE_FORWARD_DELAY_DEFAULT;
-	priv->hello_time                  = BRIDGE_HELLO_TIME_DEFAULT;
-	priv->max_age                     = BRIDGE_MAX_AGE_DEFAULT;
-	priv->multicast_last_member_count = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
-	priv->multicast_hash_max          = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
-	priv->multicast_snooping          = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
-	priv->priority                    = BRIDGE_PRIORITY_DEFAULT;
-	priv->stp                         = BRIDGE_STP_DEFAULT;
-	priv->vlan_default_pvid           = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
-	priv->vlan_stats_enabled          = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
-	priv->multicast_query_use_ifaddr  = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
-	priv->multicast_querier           = BRIDGE_MULTICAST_QUERIER_DEFAULT;
+	priv->ageing_time                    = BRIDGE_AGEING_TIME_DEFAULT;
+	priv->forward_delay                  = BRIDGE_FORWARD_DELAY_DEFAULT;
+	priv->hello_time                     = BRIDGE_HELLO_TIME_DEFAULT;
+	priv->max_age                        = BRIDGE_MAX_AGE_DEFAULT;
+	priv->multicast_last_member_count    = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
+	priv->multicast_last_member_interval = BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT;
+	priv->multicast_hash_max             = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
+	priv->multicast_snooping             = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
+	priv->priority                       = BRIDGE_PRIORITY_DEFAULT;
+	priv->stp                            = BRIDGE_STP_DEFAULT;
+	priv->vlan_default_pvid              = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
+	priv->vlan_stats_enabled             = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
+	priv->multicast_query_use_ifaddr     = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
+	priv->multicast_querier              = BRIDGE_MULTICAST_QUERIER_DEFAULT;
 }
 
 /**
@@ -1948,6 +1974,28 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-last-member-interval:
+	 *
+	 * Set interval (in deciseconds) between queries to find remaining
+	 * members of a group, after a "leave" message is received.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-last-member-interval
+	 * variable: BRIDGING_OPTS: multicast_last_member_interval=
+	 * default: 100
+	 * example: BRIDGING_OPTS="multicast_last_member_interval=200"
+	 * ---end---
+	 *
+	 * Since: 1.26
+	 */
+	obj_properties[PROP_MULTICAST_LAST_MEMBER_INTERVAL] =
+	    g_param_spec_uint64 (NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL, "", "",
+	                         0, G_MAXUINT64, BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT,
+	                         G_PARAM_READWRITE |
+	                         NM_SETTING_PARAM_INFERRABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
