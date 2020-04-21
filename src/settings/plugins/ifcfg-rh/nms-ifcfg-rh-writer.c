@@ -1555,6 +1555,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		g_string_append_printf (opts, "multicast_querier=%u", (guint) b);
 	}
 
+	u64 = nm_setting_bridge_get_multicast_querier_interval (s_bridge);
+	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_querier_interval=%"G_GUINT64_FORMAT, u64);
+	}
+
 	b = nm_setting_bridge_get_multicast_query_use_ifaddr (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
 		if (opts->len)
