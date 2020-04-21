@@ -22,18 +22,19 @@
  * necessary for bridging connections.
  **/
 
-#define BRIDGE_AGEING_TIME_DEFAULT                300
-#define BRIDGE_FORWARD_DELAY_DEFAULT              15
-#define BRIDGE_HELLO_TIME_DEFAULT                 2
-#define BRIDGE_MAX_AGE_DEFAULT                    20
-#define BRIDGE_MULTICAST_HASH_MAX_DEFAULT         4096
-#define BRIDGE_MULTICAST_QUERIER_DEFAULT          FALSE
-#define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT FALSE
-#define BRIDGE_MULTICAST_SNOOPING_DEFAULT         TRUE
-#define BRIDGE_PRIORITY_DEFAULT                   0x8000
-#define BRIDGE_STP_DEFAULT                        TRUE
-#define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT          1
-#define BRIDGE_VLAN_STATS_ENABLED_DEFAULT         FALSE
+#define BRIDGE_AGEING_TIME_DEFAULT                         300
+#define BRIDGE_FORWARD_DELAY_DEFAULT                       15
+#define BRIDGE_HELLO_TIME_DEFAULT                          2
+#define BRIDGE_MAX_AGE_DEFAULT                             20
+#define BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT         2
+#define BRIDGE_MULTICAST_HASH_MAX_DEFAULT                  4096
+#define BRIDGE_MULTICAST_QUERIER_DEFAULT                   FALSE
+#define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT          FALSE
+#define BRIDGE_MULTICAST_SNOOPING_DEFAULT                  TRUE
+#define BRIDGE_PRIORITY_DEFAULT                            0x8000
+#define BRIDGE_STP_DEFAULT                                 TRUE
+#define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
+#define BRIDGE_VLAN_STATS_ENABLED_DEFAULT                  FALSE
 
 /*****************************************************************************/
 
@@ -48,6 +49,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingBridge,
 	PROP_GROUP_ADDRESS,
 	PROP_GROUP_FORWARD_MASK,
 	PROP_MULTICAST_HASH_MAX,
+	PROP_MULTICAST_LAST_MEMBER_COUNT,
 	PROP_MULTICAST_ROUTER,
 	PROP_MULTICAST_QUERIER,
 	PROP_MULTICAST_QUERY_USE_IFADDR,
@@ -67,6 +69,7 @@ typedef struct {
 	char *   vlan_protocol;
 	guint32  ageing_time;
 	guint32  multicast_hash_max;
+	guint32  multicast_last_member_count;
 	guint16  priority;
 	guint16  forward_delay;
 	guint16  hello_time;
@@ -1029,6 +1032,22 @@ nm_setting_bridge_get_multicast_hash_max (const NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_hash_max;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_last_member_count:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-last-member-count property of the setting
+ *
+ * Since 1.26
+ **/
+guint32
+nm_setting_bridge_get_multicast_last_member_count (const NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_last_member_count;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1267,6 +1286,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_HASH_MAX:
 		g_value_set_uint (value, priv->multicast_hash_max);
 		break;
+	case PROP_MULTICAST_LAST_MEMBER_COUNT:
+		g_value_set_uint (value, priv->multicast_last_member_count);
+		break;
 	case PROP_MULTICAST_SNOOPING:
 		g_value_set_boolean (value, priv->multicast_snooping);
 		break;
@@ -1343,6 +1365,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MULTICAST_HASH_MAX:
 		priv->multicast_hash_max = g_value_get_uint (value);
 		break;
+	case PROP_MULTICAST_LAST_MEMBER_COUNT:
+		priv->multicast_last_member_count = g_value_get_uint (value);
+		break;
 	case PROP_MULTICAST_SNOOPING:
 		priv->multicast_snooping = g_value_get_boolean (value);
 		break;
@@ -1390,18 +1415,19 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	priv->ageing_time                = BRIDGE_AGEING_TIME_DEFAULT;
-	priv->forward_delay              = BRIDGE_FORWARD_DELAY_DEFAULT;
-	priv->hello_time                 = BRIDGE_HELLO_TIME_DEFAULT;
-	priv->max_age                    = BRIDGE_MAX_AGE_DEFAULT;
-	priv->multicast_hash_max         = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
-	priv->multicast_snooping         = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
-	priv->priority                   = BRIDGE_PRIORITY_DEFAULT;
-	priv->stp                        = BRIDGE_STP_DEFAULT;
-	priv->vlan_default_pvid          = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
-	priv->vlan_stats_enabled         = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
-	priv->multicast_query_use_ifaddr = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
-	priv->multicast_querier          = BRIDGE_MULTICAST_QUERIER_DEFAULT;
+	priv->ageing_time                 = BRIDGE_AGEING_TIME_DEFAULT;
+	priv->forward_delay               = BRIDGE_FORWARD_DELAY_DEFAULT;
+	priv->hello_time                  = BRIDGE_HELLO_TIME_DEFAULT;
+	priv->max_age                     = BRIDGE_MAX_AGE_DEFAULT;
+	priv->multicast_last_member_count = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
+	priv->multicast_hash_max          = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
+	priv->multicast_snooping          = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
+	priv->priority                    = BRIDGE_PRIORITY_DEFAULT;
+	priv->stp                         = BRIDGE_STP_DEFAULT;
+	priv->vlan_default_pvid           = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
+	priv->vlan_stats_enabled          = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
+	priv->multicast_query_use_ifaddr  = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
+	priv->multicast_querier           = BRIDGE_MULTICAST_QUERIER_DEFAULT;
 }
 
 /**
@@ -1896,6 +1922,29 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	obj_properties[PROP_MULTICAST_HASH_MAX] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_MULTICAST_HASH_MAX, "", "",
 	                       NM_BR_MIN_MULTICAST_HASH_MAX, NM_BR_MAX_MULTICAST_HASH_MAX, BRIDGE_MULTICAST_HASH_MAX_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       NM_SETTING_PARAM_INFERRABLE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingBridge:multicast-last-member-count:
+	 *
+	 * Set the number of queries the bridge will send before
+	 * stopping forwarding a multicast group after a "leave"
+	 * message has been received.
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-last-member-count
+	 * variable: BRIDGING_OPTS: multicast_last_member_count=
+	 * default: 2
+	 * example: BRIDGING_OPTS="multicast_last_member_count=4"
+	 * ---end---
+	 *
+	 * Since: 1.26
+	 */
+	obj_properties[PROP_MULTICAST_LAST_MEMBER_COUNT] =
+	    g_param_spec_uint (NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT, "", "",
+	                       0, G_MAXUINT32, BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);
