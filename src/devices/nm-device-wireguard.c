@@ -1631,6 +1631,14 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 			if (prefix < 0)
 				prefix = (addr_family == AF_INET) ? 32 : 128;
 
+			if (prefix == 0) {
+				NMSettingIPConfig *s_ip;
+
+				s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+				if (nm_setting_ip_config_get_never_default (s_ip))
+					continue;
+			}
+
 			if (!ip_config)
 				ip_config = nm_device_ip_config_new (NM_DEVICE (self), addr_family);
 
