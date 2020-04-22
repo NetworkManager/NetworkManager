@@ -15,6 +15,14 @@
 
 /*****************************************************************************/
 
+typedef enum _NMIPConfigFlags {
+	NM_IP_CONFIG_FLAG_NONE                            = 0,
+
+	/* if set, then the merge flag NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES gets
+	 * ignored during merge. */
+	NM_IP_CONFIG_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES = (1ull << 0),
+} NMIPConfigFlags;
+
 typedef struct {
 	NMDedupMultiIdxType parent;
 	NMPObjectType obj_type;
@@ -195,6 +203,9 @@ void                    nm_ip4_config_mdns_set (NMIP4Config *self,
 NMSettingConnectionLlmnr nm_ip4_config_llmnr_get (const NMIP4Config *self);
 void                     nm_ip4_config_llmnr_set (NMIP4Config *self,
                                                   NMSettingConnectionLlmnr llmnr);
+
+void nm_ip4_config_set_config_flags (NMIP4Config *self, NMIPConfigFlags flags, NMIPConfigFlags mask);
+NMIPConfigFlags nm_ip4_config_get_config_flags (const NMIP4Config *self);
 
 const NMDedupMultiHeadEntry *nm_ip4_config_lookup_addresses (const NMIP4Config *self);
 void nm_ip4_config_reset_addresses (NMIP4Config *self);
@@ -511,6 +522,18 @@ static inline const NMPObject *
 nm_ip_config_best_default_route_get (const NMIPConfig *self)
 {
 	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_best_default_route_get, nm_ip6_config_best_default_route_get);
+}
+
+static inline NMIPConfigFlags
+nm_ip_config_get_config_flags (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_config_flags, nm_ip6_config_get_config_flags);
+}
+
+static inline void
+nm_ip_config_set_config_flags (NMIPConfig *self, NMIPConfigFlags flags, NMIPConfigFlags mask)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_set_config_flags, nm_ip6_config_set_config_flags, flags, mask);
 }
 
 #define _NM_IP_CONFIG_DISPATCH_SET_OP(_return, dst, src, v4_func, v6_func, ...) \
