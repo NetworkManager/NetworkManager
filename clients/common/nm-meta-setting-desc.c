@@ -3371,7 +3371,13 @@ _set_fcn_ip_config_gateway (ARGS_SET_FCN)
 		return FALSE;
 	}
 
-	g_object_set (setting, property_info->property_name, value, NULL);
+	/* Since commit c1907a218a6b6bfe8175eb6ed87a523aaabc69ae, having a gateway and never-default=yes
+	 * will be normalized away. That means, when we set a gateway, we also want to unset never-default,
+	 * otherwise the operation gets silently reverted. */
+	g_object_set (setting,
+	              property_info->property_name, value,
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE,
+	              NULL);
 	return TRUE;
 }
 
