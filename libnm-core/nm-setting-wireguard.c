@@ -2493,10 +2493,14 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 * Whether to automatically add routes for the AllowedIPs ranges
 	 * of the peers. If %TRUE (the default), NetworkManager will automatically
 	 * add routes in the routing tables according to ipv4.route-table and
-	 * ipv6.route-table.
+	 * ipv6.route-table. Usually you want this automatism enabled.
 	 * If %FALSE, no such routes are added automatically. In this case, the
 	 * user may want to configure static routes in ipv4.routes and ipv6.routes,
 	 * respectively.
+	 *
+	 * Note that if the peer's AllowedIPs is "0.0.0.0/0" or "::/0" and the profile's
+	 * ipv4.never-default or ipv6.never-default setting is enabled, the peer route for
+	 * this peer won't be added automatically.
 	 *
 	 * Since: 1.16
 	 **/
