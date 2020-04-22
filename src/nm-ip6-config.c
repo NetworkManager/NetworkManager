@@ -63,6 +63,7 @@ typedef struct {
 		NMIPConfigDedupMultiIdxType idx_ip6_routes_;
 		NMDedupMultiIdxType idx_ip6_routes;
 	};
+	NMIPConfigFlags config_flags;
 	bool ipv6_disabled;
 } NMIP6ConfigPrivate;
 
@@ -2292,6 +2293,28 @@ nm_ip6_config_get_dns_option (const NMIP6Config *self, guint i)
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	return g_ptr_array_index (priv->dns_options, i);
+}
+
+/*****************************************************************************/
+
+NMIPConfigFlags
+nm_ip6_config_get_config_flags (const NMIP6Config *self)
+{
+	return NM_IP6_CONFIG_GET_PRIVATE (self)->config_flags;
+}
+
+void
+nm_ip6_config_set_config_flags (NMIP6Config *self, NMIPConfigFlags flags, NMIPConfigFlags mask)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	if (mask == 0) {
+		/* for convenience, accept 0 mask to set any flags. */
+		mask = flags;
+	}
+
+	nm_assert (!NM_FLAGS_ANY (flags, ~mask));
+	priv->config_flags = (flags & mask) | (priv->config_flags & ~mask);
 }
 
 /*****************************************************************************/
