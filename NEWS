@@ -46,6 +46,9 @@ Overview of changes since NetworkManager-1.22
 * Fixed multiple issues in the internal "nettools" DHCP client.
 * Export NM_CAPABILITY_OVS capability on D-Bus and in libnm to
   indicate that the OVS plugin is loaded.
+* Fixes for importing WireGuard profiles in nmcli and better handle
+  configurations that enable ip4-auto-default-route with an explicit
+  gateway.
 * Various bug fixes and improvements.
 
 =============================================

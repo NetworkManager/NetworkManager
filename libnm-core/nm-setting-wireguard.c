@@ -2493,10 +2493,14 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 * Whether to automatically add routes for the AllowedIPs ranges
 	 * of the peers. If %TRUE (the default), NetworkManager will automatically
 	 * add routes in the routing tables according to ipv4.route-table and
-	 * ipv6.route-table.
+	 * ipv6.route-table. Usually you want this automatism enabled.
 	 * If %FALSE, no such routes are added automatically. In this case, the
 	 * user may want to configure static routes in ipv4.routes and ipv6.routes,
 	 * respectively.
+	 *
+	 * Note that if the peer's AllowedIPs is "0.0.0.0/0" or "::/0" and the profile's
+	 * ipv4.never-default or ipv6.never-default setting is enabled, the peer route for
+	 * this peer won't be added automatically.
 	 *
 	 * Since: 1.16
 	 **/
@@ -2530,11 +2534,15 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 * NMSettingWireGuard:ip4-auto-default-route:
 	 *
 	 * Whether to enable special handling of the IPv4 default route.
-	 * If enabled, the IPv4 default route will be placed to a dedicated
-	 * routing-table and two policy routing rules will be added.
-	 * The fwmark number is also used as routing-table for the default-route,
-	 * and if fwmark is zero, a unused fwmark/table is chosen automatically.
-	 * This corresponds to what wg-quick does with Table=auto.
+	 * If enabled, the IPv4 default route from wireguard.peer-routes
+	 * will be placed to a dedicated routing-table and two policy routing rules
+	 * will be added. The fwmark number is also used as routing-table for the default-route,
+	 * and if fwmark is zero, an unused fwmark/table is chosen automatically.
+	 * This corresponds to what wg-quick does with Table=auto and what WireGuard
+	 * calls "Improved Rule-based Routing".
+	 *
+	 * Note that for this automatism to work, you usually don't want to set
+	 * ipv4.gateway, because that will result in a conflicting default route.
 	 *
 	 * Leaving this at the default will enable this option automatically
 	 * if ipv4.never-default is not set and there are any peers that use

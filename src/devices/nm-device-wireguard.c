@@ -1631,8 +1631,20 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 			if (prefix < 0)
 				prefix = (addr_family == AF_INET) ? 32 : 128;
 
-			if (!ip_config)
+			if (prefix == 0) {
+				NMSettingIPConfig *s_ip;
+
+				s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+				if (nm_setting_ip_config_get_never_default (s_ip))
+					continue;
+			}
+
+			if (!ip_config) {
 				ip_config = nm_device_ip_config_new (NM_DEVICE (self), addr_family);
+				nm_ip_config_set_config_flags (ip_config,
+				                               NM_IP_CONFIG_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES,
+				                               0);
+			}
 
 			nm_utils_ipx_address_clear_host_address (addr_family, &addrbin, NULL, prefix);
 

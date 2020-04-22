@@ -128,6 +128,11 @@ gboolean nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboole
 const NMPObject *nm_ip6_config_best_default_route_get (const NMIP6Config *self);
 const NMPObject *_nm_ip6_config_best_default_route_find (const NMIP6Config *self);
 
+enum _NMIPConfigFlags;
+
+void nm_ip6_config_set_config_flags (NMIP6Config *self, enum _NMIPConfigFlags flags, enum _NMIPConfigFlags mask);
+enum _NMIPConfigFlags nm_ip6_config_get_config_flags (const NMIP6Config *self);
+
 const NMDedupMultiHeadEntry *nm_ip6_config_lookup_addresses (const NMIP6Config *self);
 void nm_ip6_config_reset_addresses (NMIP6Config *self);
 void nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *address);
