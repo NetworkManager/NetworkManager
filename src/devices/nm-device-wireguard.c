@@ -1639,8 +1639,12 @@ _get_dev2_ip_config (NMDeviceWireGuard *self,
 					continue;
 			}
 
-			if (!ip_config)
+			if (!ip_config) {
 				ip_config = nm_device_ip_config_new (NM_DEVICE (self), addr_family);
+				nm_ip_config_set_config_flags (ip_config,
+				                               NM_IP_CONFIG_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES,
+				                               0);
+			}
 
 			nm_utils_ipx_address_clear_host_address (addr_family, &addrbin, NULL, prefix);
 
