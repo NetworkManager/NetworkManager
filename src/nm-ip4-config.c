@@ -303,6 +303,7 @@ typedef struct {
 		NMIPConfigDedupMultiIdxType idx_ip4_routes_;
 		NMDedupMultiIdxType idx_ip4_routes;
 	};
+	NMIPConfigFlags config_flags;
 } NMIP4ConfigPrivate;
 
 struct _NMIP4Config {
@@ -2655,6 +2656,28 @@ nm_ip4_config_llmnr_set (NMIP4Config *self,
                          NMSettingConnectionLlmnr llmnr)
 {
 	NM_IP4_CONFIG_GET_PRIVATE (self)->llmnr = llmnr;
+}
+
+/*****************************************************************************/
+
+NMIPConfigFlags
+nm_ip4_config_get_config_flags (const NMIP4Config *self)
+{
+	return NM_IP4_CONFIG_GET_PRIVATE (self)->config_flags;
+}
+
+void
+nm_ip4_config_set_config_flags (NMIP4Config *self, NMIPConfigFlags flags, NMIPConfigFlags mask)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	if (mask == 0) {
+		/* for convenience, accept 0 mask to set any flags. */
+		mask = flags;
+	}
+
+	nm_assert (!NM_FLAGS_ANY (flags, ~mask));
+	priv->config_flags = (flags & mask) | (priv->config_flags & ~mask);
 }
 
 /*****************************************************************************/
