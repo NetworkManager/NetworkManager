@@ -1405,15 +1405,15 @@ nmp_object_id_cmp (const NMPObject *obj1, const NMPObject *obj2)
 		nm_assert (klass2);
 		NM_CMP_DIRECT (klass->obj_type, klass2->obj_type);
 		/* resort to pointer comparison */
-		if (klass < klass2)
-			return -1;
-		return 1;
+		NM_CMP_DIRECT_PTR (klass, klass2);
+		return 0;
 	}
 
 	if (!klass->cmd_plobj_id_cmp) {
 		/* the klass doesn't implement ID cmp(). That means, different objects
 		 * never compare equal, but the cmp() according to their pointer value. */
-		return (obj1 < obj2) ? -1 : 1;
+		NM_CMP_DIRECT_PTR (obj1, obj2);
+		return 0;
 	}
 
 	return klass->cmd_plobj_id_cmp (&obj1->object, &obj2->object);
