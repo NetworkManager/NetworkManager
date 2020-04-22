@@ -2534,11 +2534,15 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 * NMSettingWireGuard:ip4-auto-default-route:
 	 *
 	 * Whether to enable special handling of the IPv4 default route.
-	 * If enabled, the IPv4 default route will be placed to a dedicated
-	 * routing-table and two policy routing rules will be added.
-	 * The fwmark number is also used as routing-table for the default-route,
-	 * and if fwmark is zero, a unused fwmark/table is chosen automatically.
-	 * This corresponds to what wg-quick does with Table=auto.
+	 * If enabled, the IPv4 default route from wireguard.peer-routes
+	 * will be placed to a dedicated routing-table and two policy routing rules
+	 * will be added. The fwmark number is also used as routing-table for the default-route,
+	 * and if fwmark is zero, an unused fwmark/table is chosen automatically.
+	 * This corresponds to what wg-quick does with Table=auto and what WireGuard
+	 * calls "Improved Rule-based Routing".
+	 *
+	 * Note that for this automatism to work, you usually don't want to set
+	 * ipv4.gateway, because that will result in a conflicting default route.
 	 *
 	 * Leaving this at the default will enable this option automatically
 	 * if ipv4.never-default is not set and there are any peers that use

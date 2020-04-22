@@ -876,7 +876,8 @@ nm_ip6_config_merge (NMIP6Config *dst,
 
 		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, src, &r_src) {
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r_src)) {
-				if (NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES))
+				if (   NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES)
+				    && !NM_FLAGS_HAS (src_priv->config_flags, NM_IP_CONFIG_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES))
 					continue;
 				if (default_route_metric_penalty) {
 					NMPlatformIP6Route r = *r_src;
