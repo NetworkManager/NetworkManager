@@ -5598,6 +5598,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * The gateway associated with this configuration. This is only meaningful
 	 * if #NMSettingIPConfig:addresses is also set.
+	 *
+	 * This also requires #NMSettingIPConfig:never-default to be unset. Otherwise,
+	 * the gateway will be cleared during normalization.
 	 **/
 	obj_properties[PROP_GATEWAY] =
 	    g_param_spec_string (NM_SETTING_IP_CONFIG_GATEWAY, "", "",
