@@ -1282,6 +1282,7 @@ dispose (GObject *object)
 
 	if (priv->modem_manager) {
 		g_signal_handlers_disconnect_by_func (priv->modem_manager, G_CALLBACK (mm_name_owner_changed_cb), self);
+		g_signal_handlers_disconnect_by_func (priv->modem_manager, G_CALLBACK (mm_modem_added_cb), self);
 		nm_modem_manager_name_owner_unref (priv->modem_manager);
 		g_clear_object (&priv->modem_manager);
 	}
