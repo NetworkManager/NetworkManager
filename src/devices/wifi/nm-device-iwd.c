@@ -507,7 +507,7 @@ deactivate_async (NMDevice *device,
 	user_data = nm_utils_user_data_pack (g_object_ref (self), callback, callback_user_data);
 
 	if (!priv->dbus_obj) {
-		nm_utils_invoke_on_idle (disconnect_cb_on_idle, user_data, cancellable);
+		nm_utils_invoke_on_idle (cancellable, disconnect_cb_on_idle, user_data);
 		return;
 	}
 
