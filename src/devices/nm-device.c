@@ -10510,6 +10510,8 @@ act_stage3_ip_config_start (NMDevice *self,
 	} else {
 		NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 		const char *ip6_privacy_str = "0";
+		NMPlatform *platform;
+		int ifindex;
 
 		if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
 			nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
@@ -10517,18 +10519,35 @@ act_stage3_ip_config_start (NMDevice *self,
 		}
 
 		if (nm_streq (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-			if (   !priv->master
-			    && !nm_device_sys_iface_state_is_external (self)) {
-				gboolean ipv6ll_handle_old = priv->ipv6ll_handle;
+			if (!nm_device_sys_iface_state_is_external (self)) {
+				if (priv->master) {
+					/* If a device only has an IPv6 link-local address,
+					 * we don't generate an assumed connection. Therefore,
+					 * when a new slave connection (without IP configuration)
+					 * is activated on the device, the link-local address
+					 * remains configured. The IP configuration of an activated
+					 * slave should not depend on the previous state. Flush
+					 * addresses and routes on activation.
+					 */
+					ifindex = nm_device_get_ip_ifindex (self);
+					platform = nm_device_get_platform (self);
 
-				/* When activating an IPv6 'ignore' connection we need to revert back
-				 * to kernel IPv6LL, but the kernel won't actually assign an address
-				 * to the interface until disable_ipv6 is bounced.
-				 */
-				set_nm_ipv6ll (self, FALSE);
-				if (ipv6ll_handle_old)
-					nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
-				restore_ip6_properties (self);
+					if (ifindex > 0) {
+						nm_platform_ip_route_flush (platform, AF_INET6, ifindex);
+						nm_platform_ip_address_flush (platform, AF_INET6, ifindex);
+					}
+				} else {
+					gboolean ipv6ll_handle_old = priv->ipv6ll_handle;
+
+					/* When activating an IPv6 'ignore' connection we need to revert back
+					 * to kernel IPv6LL, but the kernel won't actually assign an address
+					 * to the interface until disable_ipv6 is bounced.
+					 */
+					set_nm_ipv6ll (self, FALSE);
+					if (ipv6ll_handle_old)
+						nm_device_sysctl_ip_conf_set (self, AF_INET6, "disable_ipv6", "1");
+					restore_ip6_properties (self);
+				}
 			}
 			return NM_ACT_STAGE_RETURN_IP_DONE;
 		}
