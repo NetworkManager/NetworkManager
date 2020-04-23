@@ -68,6 +68,13 @@
     and don't order them with respect to <literal>network-online.target</literal>
     at all.
     </para>
+
+    <para>By default NetworkManager waits for IPv4 dynamic addressing to complete
+    but does not wait for the <literal>auto</literal> IPv6 dynamic addressing. To
+    wait for IPv6 addressing to complete, either (1) change the network
+    connection's IPv6 <literal>may-fail</literal> setting to <literal>no</literal>,
+    and/or (2) change the IPv6 addressing method to <literal>manual</literal> or
+    <literal>dhcp</literal>, to indicate that IPv6 connectivity is expected.</para>
   </refsect1>
 
   <refsect1 id='options'><title>Options</title>
