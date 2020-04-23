@@ -1123,7 +1123,7 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 	if (new_state == priv->state)
 		return;
 
-	_LOGT ("set state \"%s\" (was \"%s\")",
+	_LOGT ("state: set state \"%s\" (was \"%s\")",
 	       nm_supplicant_interface_state_to_string (new_state),
 	       nm_supplicant_interface_state_to_string (priv->state));
 
@@ -1789,8 +1789,12 @@ _properties_changed_main (NMSupplicantInterface *self,
 		g_variant_unref (v_v);
 	}
 
-	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b))
-		priv->scanning_property = v_b;
+	if (nm_g_variant_lookup (properties, "Scanning", "b", &v_b)) {
+		if (priv->scanning_property != (!!v_b)) {
+			_LOGT ("scanning: %s (plain property)", v_b ? "yes" : "no");
+			priv->scanning_property = v_b;
+		}
+	}
 
 	if (nm_g_variant_lookup (properties, "Ifname", "&s", &v_s)) {
 		if (nm_utils_strdup_reset (&priv->ifname, v_s))
@@ -1816,8 +1820,13 @@ _properties_changed_main (NMSupplicantInterface *self,
 
 		state = wpas_state_string_to_enum (v_s);
 		if (state == NM_SUPPLICANT_INTERFACE_STATE_INVALID)
-			_LOGT ("ignore unknown supplicant state '%s'", v_s);
+			_LOGT ("state: ignore unknown supplicant state '%s' (is %s, plain property)",
+			       v_s,
+			       nm_supplicant_interface_state_to_string (priv->supp_state));
 		else if (priv->supp_state != state) {
+			_LOGT ("state: %s (was %s, plain property)",
+			       nm_supplicant_interface_state_to_string (state),
+			       nm_supplicant_interface_state_to_string (priv->supp_state));
 			priv->supp_state = state;
 			if (priv->state > NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
 				/* Only transition to actual wpa_supplicant interface states (ie,
