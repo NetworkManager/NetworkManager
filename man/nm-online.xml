@@ -68,6 +68,14 @@
     and don't order them with respect to <literal>network-online.target</literal>
     at all.
     </para>
+
+    <para>By default, connections have the <literal>ipv4.may-fail</literal> and
+    <literal>ipv6.may-fail</literal> properties set to <literal>yes</literal>;
+    this means that NetworkManager waits for one of the two address families to
+    complete configuration before considering the connection activated. If you
+    need a specific address family configured before
+    <literal>network-online.target</literal> is reached, set the corresponding
+    <literal>may-fail</literal> property to <literal>no</literal>.</para>
   </refsect1>
 
   <refsect1 id='options'><title>Options</title>
