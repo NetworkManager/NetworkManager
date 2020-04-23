@@ -5131,9 +5131,9 @@ sysctl_set_async (NMPlatform *platform,
 			                                  callback,
 			                                  data,
 			                                  error);
-			nm_utils_invoke_on_idle (sysctl_set_async_return_idle,
-			                         packed,
-			                         cancellable);
+			nm_utils_invoke_on_idle (cancellable,
+			                         sysctl_set_async_return_idle,
+			                         packed);
 			return;
 		}
 	} else
@@ -7390,7 +7390,7 @@ out_idle:
 		                                  g_steal_pointer (&error),
 		                                  callback,
 		                                  data);
-		nm_utils_invoke_on_idle (sriov_idle_cb, packed, cancellable);
+		nm_utils_invoke_on_idle (cancellable, sriov_idle_cb, packed);
 	}
 }
 

@@ -1254,9 +1254,9 @@ disconnect (NMModem *modem,
 	/* Already cancelled or no simple-iface? We are done. */
 	if (   !ctx->self->_priv.simple_iface
 	    || g_cancellable_is_cancelled (cancellable)) {
-		nm_utils_invoke_on_idle (disconnect_context_complete_on_idle,
-		                         ctx,
-		                         cancellable);
+		nm_utils_invoke_on_idle (cancellable,
+		                         disconnect_context_complete_on_idle,
+		                         ctx);
 		return;
 	}
 

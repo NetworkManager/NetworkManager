@@ -3655,9 +3655,9 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 typedef struct {
 	gpointer callback_user_data;
 	GCancellable *cancellable;
+	GSource *source;
 	NMUtilsInvokeOnIdleCallback callback;
 	gulong cancelled_id;
-	guint idle_id;
 } InvokeOnIdleData;
 
 static gboolean
@@ -3665,12 +3665,13 @@ _nm_utils_invoke_on_idle_cb_idle (gpointer user_data)
 {
 	InvokeOnIdleData *data = user_data;
 
-	data->idle_id = 0;
 	nm_clear_g_signal_handler (data->cancellable, &data->cancelled_id);
 
 	data->callback (data->callback_user_data, data->cancellable);
+
 	nm_g_object_unref (data->cancellable);
-	g_slice_free (InvokeOnIdleData, data);
+	g_source_destroy (data->source);
+	nm_g_slice_free (data);
 	return G_SOURCE_REMOVE;
 }
 
@@ -3680,41 +3681,87 @@ _nm_utils_invoke_on_idle_cb_cancelled (GCancellable *cancellable,
 {
 	/* on cancellation, we invoke the callback synchronously. */
 	nm_clear_g_signal_handler (data->cancellable, &data->cancelled_id);
-	nm_clear_g_source (&data->idle_id);
+	nm_clear_g_source_inst (&data->source);
 	data->callback (data->callback_user_data, data->cancellable);
 	nm_g_object_unref (data->cancellable);
-	g_slice_free (InvokeOnIdleData, data);
+	nm_g_slice_free (data);
 }
 
-void
-nm_utils_invoke_on_idle (NMUtilsInvokeOnIdleCallback callback,
-                         gpointer callback_user_data,
-                         GCancellable *cancellable)
+static void
+_nm_utils_invoke_on_idle_start (gboolean use_timeout,
+                                guint timeout_msec,
+                                GCancellable *cancellable,
+                                NMUtilsInvokeOnIdleCallback callback,
+                                gpointer callback_user_data)
 {
 	InvokeOnIdleData *data;
+	GSource *source;
 
 	g_return_if_fail (callback);
 
 	data = g_slice_new (InvokeOnIdleData);
-	data->callback = callback;
-	data->callback_user_data = callback_user_data;
-	data->cancellable = nm_g_object_ref (cancellable);
-	if (   cancellable
-	    && !g_cancellable_is_cancelled (cancellable)) {
-		/* if we are passed a non-cancelled cancellable, we register to the "cancelled"
-		 * signal an invoke the callback synchronously (from the signal handler).
-		 *
-		 * We don't do that,
-		 *  - if the cancellable is already cancelled (because we don't want to invoke
-		 *    the callback synchronously from the caller).
-		 *  - if we have no cancellable at hand. */
-		data->cancelled_id = g_signal_connect (cancellable,
-		                                       "cancelled",
-		                                       G_CALLBACK (_nm_utils_invoke_on_idle_cb_cancelled),
-		                                       data);
-	} else
-		data->cancelled_id = 0;
-	data->idle_id = g_idle_add (_nm_utils_invoke_on_idle_cb_idle, data);
+	*data = (InvokeOnIdleData) {
+		.callback           = callback,
+		.callback_user_data = callback_user_data,
+		.cancellable        = nm_g_object_ref (cancellable),
+		.cancelled_id       = 0,
+	};
+
+	if (cancellable) {
+		if (g_cancellable_is_cancelled (cancellable)) {
+			/* the cancellable is already cancelled. We ignore the timeout
+			 * and always schedule an idle action. */
+			use_timeout = FALSE;
+		} else {
+			/* if we are passed a non-cancelled cancellable, we register to the "cancelled"
+			 * signal an invoke the callback synchronously (from the signal handler).
+			 *
+			 * We don't do that,
+			 *  - if the cancellable is already cancelled (because we don't want to invoke
+			 *    the callback synchronously from the caller).
+			 *  - if we have no cancellable at hand. */
+			data->cancelled_id = g_signal_connect (cancellable,
+			                                       "cancelled",
+			                                       G_CALLBACK (_nm_utils_invoke_on_idle_cb_cancelled),
+			                                       data);
+		}
+	}
+
+	if (use_timeout) {
+		source = nm_g_timeout_source_new (timeout_msec,
+		                                  G_PRIORITY_DEFAULT,
+		                                  _nm_utils_invoke_on_idle_cb_idle,
+		                                  data,
+		                                  NULL);
+	} else {
+		source = nm_g_idle_source_new (G_PRIORITY_DEFAULT,
+		                               _nm_utils_invoke_on_idle_cb_idle,
+		                               data,
+		                               NULL);
+	}
+
+	/* use the current thread default context. */
+	g_source_attach (source,
+	                 g_main_context_get_thread_default ());
+
+	data->source = source;
+}
+
+void
+nm_utils_invoke_on_idle (GCancellable *cancellable,
+                         NMUtilsInvokeOnIdleCallback callback,
+                         gpointer callback_user_data)
+{
+	_nm_utils_invoke_on_idle_start (FALSE, 0, cancellable, callback, callback_user_data);
+}
+
+void
+nm_utils_invoke_on_timeout (guint timeout_msec,
+                            GCancellable *cancellable,
+                            NMUtilsInvokeOnIdleCallback callback,
+                            gpointer callback_user_data)
+{
+	_nm_utils_invoke_on_idle_start (TRUE, timeout_msec, cancellable, callback, callback_user_data);
 }
 
 /*****************************************************************************/

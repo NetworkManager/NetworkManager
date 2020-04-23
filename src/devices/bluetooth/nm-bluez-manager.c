@@ -1251,9 +1251,9 @@ _network_server_unregister_bridge (NMBluezManager *self,
 
 	if (r_req_data) {
 		nm_clear_g_cancellable (&r_req_data->int_cancellable);
-		nm_utils_invoke_on_idle (_network_server_unregister_bridge_complete_on_idle_cb,
-		                         nm_utils_user_data_pack (r_req_data, g_strdup (reason)),
-		                         r_req_data->ext_cancellable);
+		nm_utils_invoke_on_idle (r_req_data->ext_cancellable,
+		                         _network_server_unregister_bridge_complete_on_idle_cb,
+		                         nm_utils_user_data_pack (r_req_data, g_strdup (reason)));
 	}
 
 	_nm_device_bridge_notify_unregister_bt_nap (device, reason);
