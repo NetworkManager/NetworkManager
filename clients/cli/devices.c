@@ -2978,6 +2978,24 @@ wifi_last_scan_updated (GObject *gobject, GParamSpec *pspec, gpointer user_data)
 	wifi_list_finish (user_data, FALSE);
 }
 
+static void wifi_list_rescan_cb (GObject *source_object, GAsyncResult *res, gpointer user_data);
+
+static void
+wifi_list_rescan_retry_cb (gpointer user_data,
+                           GCancellable *cancellable)
+{
+	WifiListData *wifi_list_data;
+
+	if (g_cancellable_is_cancelled (cancellable))
+		return;
+
+	wifi_list_data = user_data;
+	nm_device_wifi_request_scan_async (wifi_list_data->wifi,
+	                                   wifi_list_data->scan_cancellable,
+	                                   wifi_list_rescan_cb,
+	                                   wifi_list_data);
+}
+
 static void
 wifi_list_rescan_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
@@ -2985,22 +3003,47 @@ wifi_list_rescan_cb (GObject *source_object, GAsyncResult *res, gpointer user_da
 	gs_free_error GError *error = NULL;
 	WifiListData *wifi_list_data;
 	gboolean force_finished;
+	gboolean done;
 
 	nm_device_wifi_request_scan_finish (wifi, res, &error);
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	if (g_error_matches (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ALLOWED)) {
-		/* This likely means that scanning is already in progress. There's
-		 * a good chance we'll get updated results soon; wait for them. */
-		force_finished = FALSE;
-	} else if (error)
-		force_finished = TRUE;
-	else
-		force_finished = FALSE;
-
 	wifi_list_data = user_data;
-	g_clear_object (&wifi_list_data->scan_cancellable);
+
+	if (g_error_matches (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ALLOWED)) {
+		if (nm_device_get_state (NM_DEVICE (wifi)) < NM_DEVICE_STATE_DISCONNECTED) {
+			/* the device is either unmanaged or unavailable.
+			 *
+			 * If it's unmanaged, we don't expect any scan result and are done.
+			 * If it's unavailable, that usually means that we wait for wpa_supplicant
+			 * to start. In that case, also quit (without scan results). */
+			force_finished = TRUE;
+			done = TRUE;
+		} else {
+			/* This likely means that scanning is already in progress. There's
+			 * a good chance we'll get updated results soon; wait for them.
+			 *
+			 * But also, NetworkManager ratelimits (and rejects requests). That
+			 * means, possibly we were just ratelimited, so waiting will not lead
+			 * to a new scan result. Instead, repeatedly ask new scans... */
+			nm_utils_invoke_on_timeout (1000,
+			                            wifi_list_data->scan_cancellable,
+			                            wifi_list_rescan_retry_cb,
+			                            wifi_list_data);
+			force_finished = FALSE;
+			done = FALSE;
+		}
+	} else if (error) {
+		force_finished = TRUE;
+		done = TRUE;
+	} else {
+		force_finished = FALSE;
+		done = TRUE;
+	}
+
+	if (done)
+		g_clear_object (&wifi_list_data->scan_cancellable);
 	wifi_list_finish (wifi_list_data, force_finished);
 }
 

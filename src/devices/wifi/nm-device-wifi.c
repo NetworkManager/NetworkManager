@@ -684,7 +684,7 @@ deactivate_async (NMDevice *device,
 
 	user_data = nm_utils_user_data_pack (g_object_ref (self), callback, callback_user_data);
 	if (!priv->sup_iface) {
-		nm_utils_invoke_on_idle (disconnect_cb_on_idle, user_data, cancellable);
+		nm_utils_invoke_on_idle (cancellable, disconnect_cb_on_idle, user_data);
 		return;
 	}
 
@@ -1509,7 +1509,11 @@ request_wireless_scan (NMDeviceWifi *self,
 
 		nm_supplicant_interface_request_scan (priv->sup_iface,
 		                                      ssids ? (GBytes *const*) ssids->pdata : NULL,
-		                                      ssids ? ssids->len : 0u);
+		                                      ssids ? ssids->len : 0u,
+		                                      NULL,
+		                                      NULL,
+		                                      NULL);
+
 		request_started = TRUE;
 	} else
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested but not allowed at this time");

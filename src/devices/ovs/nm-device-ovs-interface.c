@@ -310,7 +310,7 @@ deactivate_async (NMDevice *device,
 	                                        nm_device_get_iface (device))) {
 		_LOGT (LOGD_CORE, "deactivate: link not present, proceeding");
 		nm_device_update_from_platform_link (NM_DEVICE (self), NULL);
-		nm_utils_invoke_on_idle (deactivate_cb_on_idle, data, cancellable);
+		nm_utils_invoke_on_idle (cancellable, deactivate_cb_on_idle, data);
 		return;
 	}
 

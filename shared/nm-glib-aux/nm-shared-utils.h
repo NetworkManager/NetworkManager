@@ -1629,12 +1629,17 @@ void _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...);
 
 /*****************************************************************************/
 
-typedef void (*NMUtilsInvokeOnIdleCallback) (gpointer callback_user_data,
+typedef void (*NMUtilsInvokeOnIdleCallback) (gpointer user_data,
                                              GCancellable *cancellable);
 
-void nm_utils_invoke_on_idle (NMUtilsInvokeOnIdleCallback callback,
-                              gpointer callback_user_data,
-                              GCancellable *cancellable);
+void nm_utils_invoke_on_idle (GCancellable *cancellable,
+                              NMUtilsInvokeOnIdleCallback callback,
+                              gpointer callback_user_data);
+
+void nm_utils_invoke_on_timeout (guint timeout_msec,
+                                 GCancellable *cancellable,
+                                 NMUtilsInvokeOnIdleCallback callback,
+                                 gpointer callback_user_data);
 
 /*****************************************************************************/
 

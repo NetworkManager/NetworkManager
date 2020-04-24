@@ -128,9 +128,16 @@ nm_supplicant_interface_disconnect_async (NMSupplicantInterface * self,
                                           NMSupplicantInterfaceDisconnectCb callback,
                                           gpointer user_data);
 
+typedef void (*NMSupplicantInterfaceRequestScanCallback) (NMSupplicantInterface *self,
+                                                          GCancellable *cancellable,
+                                                          gpointer user_data);
+
 void nm_supplicant_interface_request_scan (NMSupplicantInterface *self,
                                            GBytes *const*ssids,
-                                           guint ssids_len);
+                                           guint ssids_len,
+                                           GCancellable *cancellable,
+                                           NMSupplicantInterfaceRequestScanCallback callback,
+                                           gpointer user_data);
 
 NMSupplicantInterfaceState nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 
