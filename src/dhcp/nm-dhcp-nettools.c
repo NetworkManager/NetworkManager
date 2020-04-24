@@ -68,6 +68,20 @@ G_DEFINE_TYPE (NMDhcpNettools, nm_dhcp_nettools, NM_TYPE_DHCP_CLIENT)
 
 /*****************************************************************************/
 
+static void
+set_error_nettools (GError **error, int r, const char *message)
+{
+	/* the error code returned from n_dhcp4_* API is either a negative
+	 * errno, or a positive internal error code. Generate different messages
+	 * for these. */
+	if (r < 0)
+		nm_utils_error_set_errno (error, r, "%s: %s", message);
+	else
+		nm_utils_error_set (error, r, "%s (code %d)", message, r);
+}
+
+/*****************************************************************************/
+
 #define DHCP_MAX_FQDN_LENGTH 255
 
 enum {
@@ -681,11 +695,10 @@ lease_parse_metered (NDhcp4ClientLease *lease,
 	int r;
 
 	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_VENDOR_SPECIFIC, &data, &n_data);
-	if (r) {
+	if (r)
 		metered = FALSE;
-	} else {
+	else
 		metered = !!memmem (data, n_data, "ANDROID_METERED", NM_STRLEN ("ANDROID_METERED"));
-	}
 
 	/* TODO: expose the vendor specific option when present */
 	nm_ip4_config_set_metered (ip4_config, metered);
@@ -1023,9 +1036,8 @@ dhcp4_event_handle (NMDhcpNettools *self,
 	case N_DHCP4_CLIENT_EVENT_OFFER:
 		/* always accept the first lease */
 		r = n_dhcp4_client_lease_select (event->offer.lease);
-		if (r) {
+		if (r)
 			_LOGW ("selecting lease failed: %d", r);
-		}
 		break;
 	case N_DHCP4_CLIENT_EVENT_RETRACTED:
 	case N_DHCP4_CLIENT_EVENT_EXPIRED:
@@ -1170,7 +1182,7 @@ nettools_create (NMDhcpNettools *self,
 
 	r = n_dhcp4_client_config_new (&config);
 	if (r) {
-		nm_utils_error_set_errno (error, r, "failed to create client-config: %s");
+		set_error_nettools (error, r, "failed to create client-config");
 		return FALSE;
 	}
 
@@ -1184,13 +1196,13 @@ nettools_create (NMDhcpNettools *self,
 	                                         client_id_arr,
 	                                         NM_MIN (client_id_len, 1 + _NM_SD_MAX_CLIENT_ID_LEN));
 	if (r) {
-		nm_utils_error_set_errno (error, r, "failed to set client-id: %s");
+		set_error_nettools (error, r, "failed to set client-id");
 		return FALSE;
 	}
 
 	r = n_dhcp4_client_new (&client, config);
 	if (r) {
-		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN, "failed to create client: error %d", r);
+		set_error_nettools (error, r, "failed to create client");
 		return FALSE;
 	}
 
@@ -1224,7 +1236,7 @@ _accept (NMDhcpClient *client,
 
 	r = n_dhcp4_client_lease_accept (priv->lease);
 	if (r) {
-		nm_utils_error_set_errno (error, r, "failed to accept lease: %s");
+		set_error_nettools (error, r, "failed to accept lease");
 		return FALSE;
 	}
 
@@ -1248,7 +1260,7 @@ decline (NMDhcpClient *client,
 
 	r = n_dhcp4_client_lease_decline (priv->lease, error_message);
 	if (r) {
-		nm_utils_error_set_errno (error, r, "failed to decline lease: %s");
+		set_error_nettools (error, r, "failed to decline lease");
 		return FALSE;
 	}
 
@@ -1295,7 +1307,7 @@ ip4_start (NMDhcpClient *client,
 
 	r = n_dhcp4_client_probe_config_new (&config);
 	if (r) {
-		nm_utils_error_set_errno (error, r, "failed to create dhcp-client-probe-config: %s");
+		set_error_nettools (error, r, "failed to create dhcp-client-probe-config");
 		return FALSE;
 	}
 
@@ -1349,8 +1361,7 @@ ip4_start (NMDhcpClient *client,
 		                                               mud_url,
 		                                               strlen (mud_url));
 		if (r) {
-			nm_utils_error_set_errno (error, r,
-			                          "failed to set MUD URL: %s");
+			set_error_nettools (error, r, "failed to set MUD URL");
 			return FALSE;
 		}
 	}
@@ -1372,7 +1383,10 @@ ip4_start (NMDhcpClient *client,
 				                                   sizeof (buffer) - 3,
 				                                   FALSE);
 				if (r <= 0) {
-					nm_utils_error_set_errno (error, r, "failed to convert DHCP FQDN: %s");
+					if (r < 0)
+						nm_utils_error_set_errno (error, r, "failed to convert DHCP FQDN: %s");
+					else
+						nm_utils_error_set (error, r, "failed to convert DHCP FQDN");
 					return FALSE;
 				}
 				fqdn_len = r;
@@ -1390,7 +1404,7 @@ ip4_start (NMDhcpClient *client,
 			                                               buffer,
 			                                               3 + fqdn_len);
 			if (r) {
-				nm_utils_error_set_errno (error, r, "failed to set DHCP FQDN: %s");
+				set_error_nettools (error, r, "failed to set DHCP FQDN");
 				return FALSE;
 			}
 		} else {
@@ -1399,7 +1413,7 @@ ip4_start (NMDhcpClient *client,
 			                                               hostname,
 			                                               strlen (hostname));
 			if (r) {
-				nm_utils_error_set_errno (error, r, "failed to set DHCP hostname: %s");
+				set_error_nettools (error, r, "failed to set DHCP hostname");
 				return FALSE;
 			}
 		}
@@ -1410,7 +1424,7 @@ ip4_start (NMDhcpClient *client,
 
 	r = n_dhcp4_client_probe (priv->client, &priv->probe, config);
 	if (r) {
-		nm_utils_error_set_errno (error, r, "failed to start DHCP client: %s");
+		set_error_nettools (error, r, "failed to start DHCP client");
 		return FALSE;
 	}
 
