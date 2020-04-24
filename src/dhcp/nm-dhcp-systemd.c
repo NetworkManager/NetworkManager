@@ -904,6 +904,7 @@ ip6_start (NMDhcpClient *client,
 	nm_auto (sd_dhcp6_client_unrefp) sd_dhcp6_client *sd_client = NULL;
 	GBytes *hwaddr;
 	const char *hostname;
+	const char *mud_url;
 	int r, i;
 	const guint8 *duid_arr;
 	gsize duid_len;
@@ -983,6 +984,15 @@ ip6_start (NMDhcpClient *client,
 		if (_nm_dhcp_option_dhcp6_options[i].include) {
 			r = sd_dhcp6_client_set_request_option (sd_client, _nm_dhcp_option_dhcp6_options[i].option_num);
 			nm_assert (r >= 0 || r == -EEXIST);
+		}
+	}
+
+	mud_url = nm_dhcp_client_get_mud_url (client);
+	if (mud_url) {
+		r = sd_dhcp6_client_set_request_mud_url (sd_client, mud_url);
+		if (r < 0) {
+			nm_utils_error_set_errno (error, r, "failed to set mud-url: %s");
+			return FALSE;
 		}
 	}
 
