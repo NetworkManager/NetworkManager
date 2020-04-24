@@ -980,9 +980,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
-	case PROP_MUD_URL:
-		g_value_set_string (value, priv->mud_url);
-		break;
 	case PROP_ROUTE_METRIC:
 		g_value_set_uint (value, priv->route_metric);
 		break;
@@ -1211,7 +1208,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	obj_properties[PROP_MUD_URL] =
 	    g_param_spec_string (NM_DHCP_CLIENT_MUD_URL, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_ROUTE_TABLE] =
