@@ -33,7 +33,6 @@ typedef struct {
 	NMSIfcfgKeyTypeFlags key_flags;
 } NMSIfcfgKeyTypeInfo;
 
-/* maybe think about getting rid of the fixed number below at some point.*/
 extern const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[233];
 
 const NMSIfcfgKeyTypeInfo *nms_ifcfg_well_known_key_find_info (const char *key, gssize *out_idx);
