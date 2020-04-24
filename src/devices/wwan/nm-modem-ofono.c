@@ -211,9 +211,9 @@ disconnect (NMModem *modem,
 
 	if (   state != NM_MODEM_STATE_CONNECTED
 	    || g_cancellable_is_cancelled (cancellable)) {
-		nm_utils_invoke_on_idle (disconnect_context_complete_on_idle,
-		                         ctx,
-		                         cancellable);
+		nm_utils_invoke_on_idle (cancellable,
+		                         disconnect_context_complete_on_idle,
+		                         ctx);
 		return;
 	}
 
