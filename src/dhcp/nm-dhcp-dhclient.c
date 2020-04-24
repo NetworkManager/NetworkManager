@@ -147,7 +147,7 @@ merge_dhclient_config (NMDhcpDhclient *self,
                        guint32 timeout,
                        gboolean use_fqdn,
                        NMDhcpHostnameFlags hostname_flags,
-                       const char *mudurl,
+                       const char *mud_url,
                        const char *orig_path,
                        GBytes **out_new_client_id,
                        GError **error)
@@ -177,7 +177,7 @@ merge_dhclient_config (NMDhcpDhclient *self,
 	                                      timeout,
 	                                      use_fqdn,
 	                                      hostname_flags,
-	                                      mudurl,
+	                                      mud_url,
 	                                      orig_path,
 	                                      orig,
 	                                      out_new_client_id);
@@ -270,7 +270,7 @@ create_dhclient_config (NMDhcpDhclient *self,
                         guint32 timeout,
                         gboolean use_fqdn,
                         NMDhcpHostnameFlags hostname_flags,
-			const char *mudurl,
+                        const char *mud_url,
                         GBytes **out_new_client_id)
 {
 	gs_free char *orig = NULL;
@@ -299,7 +299,7 @@ create_dhclient_config (NMDhcpDhclient *self,
 	                            timeout,
 	                            use_fqdn,
 	                            hostname_flags,
-	                            mudurl,
+	                            mud_url,
 	                            orig,
 	                            out_new_client_id,
 	                            &error)) {
@@ -500,7 +500,7 @@ ip4_start (NMDhcpClient *client,
 	                                          nm_dhcp_client_get_timeout (client),
 	                                          nm_dhcp_client_get_use_fqdn (client),
 	                                          nm_dhcp_client_get_hostname_flags (client),
-	                                          nm_dhcp_client_get_mudurl (client),
+	                                          nm_dhcp_client_get_mud_url (client),
 	                                          &new_client_id);
 	if (!priv->conf_file) {
 		nm_utils_error_set_literal (error,
@@ -545,7 +545,7 @@ ip6_start (NMDhcpClient *client,
 	                                          nm_dhcp_client_get_timeout (client),
 	                                          TRUE,
 	                                          nm_dhcp_client_get_hostname_flags (client),
-	                                          nm_dhcp_client_get_mudurl (client),
+	                                          nm_dhcp_client_get_mud_url (client),
 	                                          NULL);
 	if (!priv->conf_file) {
 		nm_utils_error_set_literal (error,

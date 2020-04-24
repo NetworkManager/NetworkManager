@@ -768,7 +768,6 @@ nm_setting_connection_get_mud_url (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->mud_url;
 }
 
-
 /**
  * nm_setting_connection_add_secondary:
  * @setting: the #NMSettingConnection

@@ -50,7 +50,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_IAID_EXPLICIT,
 	PROP_HOSTNAME,
 	PROP_HOSTNAME_FLAGS,
-	PROP_MUDURL,
+	PROP_MUD_URL,
 );
 
 typedef struct _NMDhcpClientPrivate {
@@ -61,7 +61,7 @@ typedef struct _NMDhcpClientPrivate {
 	char *       uuid;
 	GBytes *     client_id;
 	char *       hostname;
-	char *       mudurl;
+	char *       mud_url;
 	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
@@ -315,11 +315,11 @@ nm_dhcp_client_get_use_fqdn (NMDhcpClient *self)
 }
 
 const char *
-nm_dhcp_client_get_mudurl (NMDhcpClient *self)
+nm_dhcp_client_get_mud_url (NMDhcpClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
-	return NM_DHCP_CLIENT_GET_PRIVATE (self)->mudurl;
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->mud_url;
 }
 
 /*****************************************************************************/
@@ -980,8 +980,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
-	case PROP_MUDURL:
-		g_value_set_string (value, priv->mudurl);
+	case PROP_MUD_URL:
+		g_value_set_string (value, priv->mud_url);
 		break;
 	case PROP_ROUTE_METRIC:
 		g_value_set_uint (value, priv->route_metric);
@@ -1065,9 +1065,9 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->hostname_flags = g_value_get_uint (value);
 		break;
-	case PROP_MUDURL:
+	case PROP_MUD_URL:
 		/* construct-only */
-		priv->mudurl = g_value_dup_string (value);
+		priv->mud_url = g_value_dup_string (value);
 		break;
 	case PROP_ROUTE_TABLE:
 		priv->route_table = g_value_get_uint (value);
@@ -1208,8 +1208,8 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
 
-	obj_properties[PROP_MUDURL] =
-	    g_param_spec_string (NM_DHCP_CLIENT_MUDURL, "", "",
+	obj_properties[PROP_MUD_URL] =
+	    g_param_spec_string (NM_DHCP_CLIENT_MUD_URL, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);

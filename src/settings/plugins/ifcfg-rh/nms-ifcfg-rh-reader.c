@@ -2209,7 +2209,6 @@ make_ip6_setting (shvarFile *ifcfg,
 		if (v && !strchr (v, '.'))
 			v = NULL;
 	}
-
 	if (v)
 		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, v, NULL);
 

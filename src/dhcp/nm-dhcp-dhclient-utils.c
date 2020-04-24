@@ -190,18 +190,18 @@ add_hostname6 (GString *str,
 	}
 }
 
-static void add_mudurl_config(GString *str, const char *mudurl, int addr_family) {
-	if (mudurl) {
-	        if (addr_family == AF_INET) {
-	                g_string_append (str, MUDURLv4_DEF);
-	                g_string_append_printf (str, MUDURLv4_FMT, mudurl);
+static void add_mud_url_config(GString *str, const char *mud_url, int addr_family)
+{
+	if (mud_url) {
+		if (addr_family == AF_INET) {
+			g_string_append (str, MUDURLv4_DEF);
+			g_string_append_printf (str, MUDURLv4_FMT, mud_url);
 		} else {
-		        g_string_append (str, MUDURLv6_DEF);
-		        g_string_append_printf (str, MUDURLv6_FMT, mudurl);
+			g_string_append (str, MUDURLv6_DEF);
+			g_string_append_printf (str, MUDURLv6_FMT, mud_url);
 		}
 	}
 }
-
 
 static GBytes *
 read_client_id (const char *str)
@@ -306,7 +306,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 guint32 timeout,
                                 gboolean use_fqdn,
                                 NMDhcpHostnameFlags hostname_flags,
-				const char *mudurl,
+                                const char *mud_url,
                                 const char *orig_path,
                                 const char *orig_contents,
                                 GBytes **out_new_client_id)
@@ -472,9 +472,9 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_string_append_printf (new_contents, "timeout %u;\n", timeout);
 	}
 
-	add_mudurl_config(new_contents,mudurl,addr_family);
+	add_mud_url_config (new_contents, mud_url, addr_family);
 	if (addr_family == AF_INET) {
-	  add_ip4_config (new_contents, client_id, hostname, use_fqdn, hostname_flags);
+		add_ip4_config (new_contents, client_id, hostname, use_fqdn, hostname_flags);
 		add_request (reqs, "rfc3442-classless-static-routes");
 		add_request (reqs, "ms-classless-static-routes");
 		add_request (reqs, "static-routes");
@@ -482,7 +482,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_request (reqs, "ntp-servers");
 		add_request (reqs, "root-path");
 	} else {
-	  add_hostname6 (new_contents, hostname, hostname_flags);
+		add_hostname6 (new_contents, hostname, hostname_flags);
 		add_request (reqs, "dhcp6.name-servers");
 		add_request (reqs, "dhcp6.domain-search");
 

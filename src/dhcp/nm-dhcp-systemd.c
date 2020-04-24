@@ -573,7 +573,7 @@ ip4_start (NMDhcpClient *client,
 	size_t client_id_len;
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
-	const char *mudurl;
+	const char *mud_url;
 	int r, i;
 
 	g_return_val_if_fail (!priv->client4, FALSE);
@@ -689,10 +689,9 @@ ip4_start (NMDhcpClient *client,
 		}
 	}
 
-	mudurl = nm_dhcp_client_get_mudurl (client);
-
-	if ( mudurl ) {
-		r = sd_dhcp_client_set_mud_url (sd_client, mudurl);
+	mud_url = nm_dhcp_client_get_mud_url (client);
+	if (mud_url) {
+		r = sd_dhcp_client_set_mud_url (sd_client, mud_url);
 		if (r < 0) {
 			nm_utils_error_set_errno (error, r, "failed to set DHCP MUDURL: %s");
 			return FALSE;

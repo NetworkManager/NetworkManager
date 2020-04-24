@@ -35,7 +35,7 @@ test_config (const char *orig,
              GBytes *expected_new_client_id,
              const char *iface,
              const char *anycast_addr,
-             const char *mudurl)
+             const char *mud_url)
 {
 	gs_free char *new = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
@@ -54,7 +54,7 @@ test_config (const char *orig,
 	                                      timeout,
 	                                      use_fqdn,
 	                                      hostname_flags,
-	                                      mudurl,
+	                                      mud_url,
 	                                      "/path/to/dhclient.conf",
 	                                      orig,
 	                                      &new_client_id);
@@ -109,7 +109,7 @@ test_orig_missing (void)
 /*****************************************************************************/
 
 
-static const char *orig_missing_add_mudurl_expected = \
+static const char *orig_missing_add_mud_url_expected = \
 	"# Created by NetworkManager\n"
 	"\n"
 	"option mudurl code 161 = text;\n"
@@ -127,10 +127,10 @@ static const char *orig_missing_add_mudurl_expected = \
 	"\n";
 
 static void
-test_orig_missing_add_mudurl (void)
+test_orig_missing_add_mud_url (void)
 {
 	test_config (NULL,
-	             orig_missing_add_mudurl_expected,
+	             orig_missing_add_mud_url_expected,
 	             AF_INET, NULL, 0, FALSE,
 	             NM_DHCP_HOSTNAME_FLAG_NONE,
 	             NULL, NULL, "eth0", NULL, TEST_MUDURL);
@@ -1216,7 +1216,7 @@ main (int argc, char **argv)
 	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
-	g_test_add_func ("/dhcp/dhclient/orig_missing_add_mudurl", test_orig_missing_add_mudurl);
+	g_test_add_func ("/dhcp/dhclient/orig_missing_add_mud_url", test_orig_missing_add_mud_url);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
 	g_test_add_func ("/dhcp/dhclient/quote_client_id/1", test_quote_client_id);
 	g_test_add_func ("/dhcp/dhclient/quote_client_id/2", test_quote_client_id_2);
