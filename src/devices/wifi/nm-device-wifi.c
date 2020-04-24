@@ -1509,7 +1509,11 @@ request_wireless_scan (NMDeviceWifi *self,
 
 		nm_supplicant_interface_request_scan (priv->sup_iface,
 		                                      ssids ? (GBytes *const*) ssids->pdata : NULL,
-		                                      ssids ? ssids->len : 0u);
+		                                      ssids ? ssids->len : 0u,
+		                                      NULL,
+		                                      NULL,
+		                                      NULL);
+
 		request_started = TRUE;
 	} else
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested but not allowed at this time");
