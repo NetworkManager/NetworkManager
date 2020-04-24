@@ -758,8 +758,9 @@ nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
  *
  * Returns the value contained in the #NMSettingConnection:mud-url
  * property.
+ *
+ * Since: 1.26
  **/
-
 const char *
 nm_setting_connection_get_mud_url (NMSettingConnection *setting)
 {
@@ -2327,6 +2328,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * to manufacturer-recommended network policies for IoT devices. It is transmitted
 	 * as a DHCPv4 or DHCPv6 option.
 	 *
+	 * Since: 1.26
 	 **/
 	/* ---ifcfg-rh---
 	 * property: mud-url
@@ -2336,7 +2338,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * example: https://yourdevice.example.com/model.json
 	 * ---end---
 	 */
-
 	obj_properties[PROP_MUD_URL] =
 	    g_param_spec_string (NM_SETTING_CONNECTION_MUD_URL, "", "",
 	                         NULL,
