@@ -1351,6 +1351,7 @@ ip4_start (NMDhcpClient *client,
 		if (r) {
 			nm_utils_error_set_errno (error, r,
 			                          "failed to set MUD URL: %s");
+			return FALSE;
 		}
 	}
 	hostname = nm_dhcp_client_get_hostname (client);
