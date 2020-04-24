@@ -1116,6 +1116,7 @@ dispose (GObject *object)
 	nm_clear_g_free (&priv->iface);
 	nm_clear_g_free (&priv->hostname);
 	nm_clear_g_free (&priv->uuid);
+	nm_clear_g_free (&priv->mud_url);
 	nm_clear_pointer (&priv->client_id, g_bytes_unref);
 	nm_clear_pointer (&priv->hwaddr, g_bytes_unref);
 	nm_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);
