@@ -1643,6 +1643,7 @@ finalize (GObject *object)
 	g_free (priv->zone);
 	g_free (priv->master);
 	g_free (priv->slave_type);
+	g_free (priv->mud_url);
 	g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
 	g_slist_free_full (priv->secondaries, g_free);
 
