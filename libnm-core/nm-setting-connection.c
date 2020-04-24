@@ -16,6 +16,7 @@
 #include "nm-setting-bridge.h"
 #include "nm-setting-team.h"
 #include "nm-setting-vlan.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 /**
  * SECTION:nm-setting-connection
@@ -1230,6 +1231,27 @@ after_interface_name:
 		return FALSE;
 	}
 
+	if (priv->mud_url) {
+		if (!priv->mud_url[0]) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
+			return FALSE;
+		}
+		if (strlen (priv->mud_url) > 255) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("DHCP option cannot be longer than 255 characters"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
+			return FALSE;
+		}
+		if (!nm_sd_http_url_is_valid (priv->mud_url)) {
+			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("MUD URL is not a valid URL"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
+			return FALSE;
+		}
+	}
+
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
 	if (!priv->uuid) {
@@ -1238,13 +1260,6 @@ after_interface_name:
 		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-	}
-
-	if (priv->mud_url && !*priv->mud_url) {
-		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty"));
-		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
@@ -1493,8 +1508,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WAIT_DEVICE_TIMEOUT:
 		g_value_set_int (value, priv->wait_device_timeout);
 		break;
-        case PROP_MUD_URL:
-		g_value_set_string (value, nm_setting_connection_get_mud_url(setting));
+	case PROP_MUD_URL:
+		g_value_set_string (value, priv->mud_url);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
