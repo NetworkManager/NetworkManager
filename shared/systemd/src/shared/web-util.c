@@ -24,21 +24,25 @@ bool http_etag_is_valid(const char *etag) {
 }
 #endif /* NM_IGNORED */
 
-bool http_url_is_valid(const char *url) {
-        const char *p;
-
-        if (isempty(url))
-                return false;
-
-        p = STARTSWITH_SET(url, "http://", "https://");
-        if (!p)
-                return false;
-
-        if (isempty(p))
-                return false;
-
-        return ascii_is_valid(p);
-}
+/* NM: we use http_url_is_valid() for our own code, and it must not
+ * change behavior. If a re-import results in a merge-conflict, you must
+ * ensure that it does not change behavior, and possibly do something
+ * about that. */
+/**/   bool http_url_is_valid(const char *url) {
+/**/           const char *p;
+/**/
+/**/           if (isempty(url))
+/**/                   return false;
+/**/
+/**/           p = STARTSWITH_SET(url, "http://", "https://");
+/**/           if (!p)
+/**/                   return false;
+/**/
+/**/           if (isempty(p))
+/**/                   return false;
+/**/
+/**/           return ascii_is_valid(p);
+/**/   }
 
 #if 0 /* NM_IGNORED */
 bool documentation_url_is_valid(const char *url) {

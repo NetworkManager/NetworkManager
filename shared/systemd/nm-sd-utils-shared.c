@@ -13,6 +13,7 @@
 #include "hexdecoct.h"
 #include "hostname-util.h"
 #include "path-util.h"
+#include "web-util.h"
 
 /*****************************************************************************/
 
@@ -93,4 +94,41 @@ int nm_sd_dns_name_is_valid (const char *s)
 gboolean nm_sd_hostname_is_valid (const char *s, bool allow_trailing_dot)
 {
 	return hostname_is_valid (s, allow_trailing_dot);
+}
+
+/*****************************************************************************/
+
+static gboolean
+_http_url_is_valid (const char *url)
+{
+	if (   !url
+	    || !url[0])
+		return FALSE;
+
+	if (NM_STR_HAS_PREFIX (url, "http://"))
+		url += NM_STRLEN ("http://");
+	else if (NM_STR_HAS_PREFIX (url, "https://"))
+		url += NM_STRLEN ("https://");
+	else
+		return FALSE;
+
+	if (!url[0])
+		return FALSE;
+
+	return !NM_STRCHAR_ANY (url, ch, (guchar) ch >= 128u);
+}
+
+gboolean
+nm_sd_http_url_is_valid (const char *url)
+{
+	gboolean v;
+
+	/* http_url_is_valid() is part of our API, as we use it to validate connection
+	 * properties. That means, it's behavior must remain stable (or only change
+	 * with care).
+	 *
+	 * Thus, reimplement it, and make sure that our implementation agrees. */
+	v = _http_url_is_valid (url);
+	nm_assert (v == http_url_is_valid (url));
+	return v;
 }
