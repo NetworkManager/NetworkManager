@@ -1695,3 +1695,8 @@ global:
 	nm_setting_vrf_get_type;
 	nm_setting_vrf_new;
 } libnm_1_22_8;
+
+libnm_1_26_0 {
+global:
+	nm_setting_connection_get_mud_url;
+} libnm_1_24_0;

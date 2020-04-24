@@ -8427,6 +8427,7 @@ dhcp4_start (NMDevice *self)
 	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 	GError *error = NULL;
 	const NMPlatformLink *pllink;
 
@@ -8434,6 +8435,9 @@ dhcp4_start (NMDevice *self)
 	g_return_val_if_fail (connection, FALSE);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	nm_assert (s_con);
 
 	/* Clear old exported DHCP options */
 	nm_dbus_object_clear_and_unexport (&priv->dhcp_data_4.config);
@@ -8461,6 +8465,7 @@ dhcp4_start (NMDevice *self)
 	                                                      nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                      nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                      get_dhcp_hostname_flags (self, AF_INET),
+	                                                      nm_setting_connection_get_mud_url (s_con),
 	                                                      client_id,
 	                                                      get_dhcp_timeout (self, AF_INET),
 	                                                      priv->dhcp_anycast_address,
@@ -9211,12 +9216,15 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	GError *error = NULL;
 	guint32 iaid;
 	gboolean iaid_explicit;
-
+	NMSettingConnection *s_con;
 	const NMPlatformIP6Address *ll_addr = NULL;
 
-	g_assert (connection);
+	g_return_val_if_fail (connection, FALSE);
+
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	g_assert (s_ip6);
+	nm_assert (s_ip6);
+	s_con = nm_connection_get_setting_connection (connection);
+	nm_assert (s_con);
 
 	if (priv->ext_ip6_config_captured) {
 		ll_addr = nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
@@ -9251,6 +9259,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                      nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                      nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                      get_dhcp_hostname_flags (self, AF_INET6),
+	                                                      nm_setting_connection_get_mud_url (s_con),
 	                                                      duid,
 	                                                      enforce_duid,
 	                                                      iaid,

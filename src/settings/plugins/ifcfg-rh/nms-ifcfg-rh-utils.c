@@ -893,6 +893,7 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("METRIC",                                      NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
 	_KEY_TYPE ("MODE",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("MTU",                                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MUD_URL",                                     NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("MULTI_CONNECT",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("MVRP",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("NAME",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
