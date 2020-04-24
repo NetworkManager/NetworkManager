@@ -1244,7 +1244,7 @@ after_interface_name:
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
 			return FALSE;
 		}
-		if (!nm_sd_http_url_is_valid (priv->mud_url)) {
+		if (!nm_sd_http_url_is_valid_https (priv->mud_url)) {
 			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("MUD URL is not a valid URL"));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);

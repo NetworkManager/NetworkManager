@@ -99,13 +99,14 @@ gboolean nm_sd_hostname_is_valid (const char *s, bool allow_trailing_dot)
 /*****************************************************************************/
 
 static gboolean
-_http_url_is_valid (const char *url)
+_http_url_is_valid (const char *url, gboolean only_https)
 {
 	if (   !url
 	    || !url[0])
 		return FALSE;
 
-	if (NM_STR_HAS_PREFIX (url, "http://"))
+	if (   !only_https
+	    && NM_STR_HAS_PREFIX (url, "http://"))
 		url += NM_STRLEN ("http://");
 	else if (NM_STR_HAS_PREFIX (url, "https://"))
 		url += NM_STRLEN ("https://");
@@ -119,16 +120,20 @@ _http_url_is_valid (const char *url)
 }
 
 gboolean
-nm_sd_http_url_is_valid (const char *url)
+nm_sd_http_url_is_valid_https (const char *url)
 {
-	gboolean v;
-
-	/* http_url_is_valid() is part of our API, as we use it to validate connection
-	 * properties. That means, it's behavior must remain stable (or only change
-	 * with care).
+	/* We use this function to verify connection:mud-url property, it must thus
+	 * not change behavior.
 	 *
-	 * Thus, reimplement it, and make sure that our implementation agrees. */
-	v = _http_url_is_valid (url);
-	nm_assert (v == http_url_is_valid (url));
-	return v;
+	 * Note that sd_dhcp_client_set_mud_url() and sd_dhcp6_client_set_request_mud_url()
+	 * assert with http_url_is_valid() that the argument is valid. We thus must make
+	 * sure to only pass URLs that are valid according to http_url_is_valid().
+	 *
+	 * This is given, because our nm_sd_http_url_is_valid_https() is more strict
+	 * than http_url_is_valid().
+	 *
+	 * We only must make sure that this is also correct in the future, when we
+	 * re-import systemd code. */
+	nm_assert (_http_url_is_valid (url, FALSE) == http_url_is_valid (url));
+	return _http_url_is_valid (url, TRUE);
 }
