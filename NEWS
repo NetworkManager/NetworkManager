@@ -1,4 +1,25 @@
 ===============================================
+NetworkManager-1.18.6
+Overview of changes since NetworkManager-1.18.4
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* OVS bridges and OVS interfaces support changing the MAC address
+  through the "ethernet.cloned-mac-address" property.
+* NetworkManager waits for carrier to be up before starting 802.1X
+  authentication on an Ethernet interface.
+* Add support for the '802-1x.system-ca-certs' property to the
+  ifcfg-rh settings plugin.
+* The MTU of MACsec and MAC-VLAN interfaces is kept in sync with the
+  MTU of the parent interface, unless the connection specifies a fixed
+  value.
+* nmcli unsets the "never-default" property of ipv4 and ipv6 settings
+  when the user is setting an explicit gateway.
+* Fix build with GCC 10, and other build improvements.
+* Various other bugfixes.
+
+===============================================
 NetworkManager-1.18.4
 Overview of changes since NetworkManager-1.18.2
 ===============================================
