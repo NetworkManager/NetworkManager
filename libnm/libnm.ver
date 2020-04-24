@@ -473,7 +473,6 @@ global:
 	nm_setting_connection_get_id;
 	nm_setting_connection_get_interface_name;
 	nm_setting_connection_get_master;
-	nm_setting_connection_get_mud_url;
 	nm_setting_connection_get_num_permissions;
 	nm_setting_connection_get_num_secondaries;
 	nm_setting_connection_get_permission;
@@ -1696,3 +1695,8 @@ global:
 	nm_setting_vrf_get_type;
 	nm_setting_vrf_new;
 } libnm_1_22_8;
+
+libnm_1_26_0 {
+global:
+	nm_setting_connection_get_mud_url;
+} libnm_1_24_0;
