@@ -583,7 +583,7 @@ make_connection_setting (const char *file,
 	}
 
 	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "MUD_URL", &value);
+	v = svGetValue (ifcfg, "MUD_URL", &value);
 	if (v)
 		g_object_set (s_con, NM_SETTING_CONNECTION_MUD_URL, v, NULL);
 

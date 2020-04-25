@@ -8,6 +8,7 @@
 
 #include "nm-setting-connection.h"
 
+#include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-core-enum-types.h"
@@ -1238,17 +1239,21 @@ after_interface_name:
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
 			return FALSE;
 		}
-		if (strlen (priv->mud_url) > 255) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("DHCP option cannot be longer than 255 characters"));
-			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
-			return FALSE;
-		}
-		if (!nm_sd_http_url_is_valid_https (priv->mud_url)) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("MUD URL is not a valid URL"));
-			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
-			return FALSE;
+		if (nm_streq (priv->mud_url, NM_CONNECTION_MUD_URL_NONE)) {
+			/* pass */
+		} else {
+			if (strlen (priv->mud_url) > 255) {
+				g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("DHCP option cannot be longer than 255 characters"));
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
+				return FALSE;
+			}
+			if (!nm_sd_http_url_is_valid_https (priv->mud_url)) {
+				g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("MUD URL is not a valid URL"));
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_CONNECTION_MUD_URL);
+				return FALSE;
+			}
 		}
 	}
 
@@ -2341,7 +2346,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 *
 	 * If configured, set to a Manufacturer Usage Description (MUD) URL that points
 	 * to manufacturer-recommended network policies for IoT devices. It is transmitted
-	 * as a DHCPv4 or DHCPv6 option.
+	 * as a DHCPv4 or DHCPv6 option. The value must be a valid URL starting with "https://".
+	 *
+	 * The special value "none" is allowed to indicate that no MUD URL is used.
+	 *
+	 * If the per-profile value is unspecified (the default), a global connection default gets
+	 * consulted. If still unspecified, the ultimate default is "none".
 	 *
 	 * Since: 1.26
 	 **/

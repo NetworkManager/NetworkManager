@@ -1868,7 +1868,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValueStr (ifcfg, "TEAM_MASTER", NULL);
 
 	mud_url = nm_setting_connection_get_mud_url (s_con);
-	svSetValueStr (ifcfg, "MUD_URL", mud_url);
+	svSetValue (ifcfg, "MUD_URL", mud_url);
 
 	master = nm_setting_connection_get_master (s_con);
 	if (master) {
