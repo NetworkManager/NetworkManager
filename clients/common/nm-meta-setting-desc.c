@@ -5263,6 +5263,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_MUD_URL,
 	    .property_type =                &_pt_gobject_string,
+	    .hide_if_default =              TRUE,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
 	    .property_type =                &_pt_gobject_int,
