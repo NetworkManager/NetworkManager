@@ -255,7 +255,7 @@ if enable_introspection
   ld_library_path = meson.current_build_dir() + ld_library_path
 
   generate_setting_docs_env = [
-    'env', '-i',
+    'env',
     'GI_TYPELIB_PATH=' + gi_typelib_path,
     'LD_LIBRARY_PATH=' + ld_library_path,
   ]
