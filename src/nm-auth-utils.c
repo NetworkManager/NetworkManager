@@ -16,11 +16,19 @@
 
 /*****************************************************************************/
 
+typedef struct {
+	const char *tag;
+	gpointer data;
+	GDestroyNotify destroy;
+} ChainData;
+
 struct _NMAuthChain {
 
 	CList parent_lst;
 
-	CList data_lst_head;
+	ChainData *data_arr;
+	guint data_len;
+	guint data_alloc;
 
 	CList auth_call_lst_head;
 
@@ -188,29 +196,16 @@ _find_auth_call (NMAuthChain *self, const char *permission)
 
 /*****************************************************************************/
 
-typedef struct {
-	CList data_lst;
-	const char *tag;
-	gpointer data;
-	GDestroyNotify destroy;
-} ChainData;
-
-static void
-chain_data_free (ChainData *chain_data)
-{
-	c_list_unlink_stale (&chain_data->data_lst);
-	if (chain_data->destroy)
-		chain_data->destroy (chain_data->data);
-	g_slice_free (ChainData, chain_data);
-}
-
 static ChainData *
 _get_data (NMAuthChain *self, const char *tag)
 {
-	ChainData *chain_data;
+	guint i;
 
-	c_list_for_each_entry (chain_data, &self->data_lst_head, data_lst) {
-		if (nm_streq (chain_data->tag, tag))
+	for (i = 0; i < self->data_len; i++) {
+		ChainData *chain_data = &self->data_arr[i];
+
+		if (   chain_data->tag
+		    && nm_streq (chain_data->tag, tag))
 			return chain_data;
 	}
 	return NULL;
@@ -243,7 +238,6 @@ gpointer
 nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *chain_data;
-	gpointer value;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (tag, NULL);
@@ -252,12 +246,13 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 	if (!chain_data)
 		return NULL;
 
-	value = chain_data->data;
-
-	/* Make sure the destroy handler isn't called when freeing */
+	/* Make sure the destroy handler isn't called when freeing.
+	 *
+	 * We don't bother to really remove the element from the array.
+	 * Just mark the entry as unused by clearing the tag. */
 	chain_data->destroy = NULL;
-	chain_data_free (chain_data);
-	return value;
+	chain_data->tag = NULL;
+	return chain_data->data;
 }
 
 /**
@@ -268,7 +263,7 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
  *   and nothing is attached.
  * @data_destroy: (allow-none): the destroy function for the data pointer.
  *
- * @tag string is not cloned and must outlife @self. That is why
+ * @tag string is not cloned and must outlive @self. That is why
  * the function is "unsafe". Use nm_auth_chain_set_data() with a C literal
  * instead.
  *
@@ -285,12 +280,8 @@ nm_auth_chain_set_data_unsafe (NMAuthChain *self,
 	g_return_if_fail (self);
 	g_return_if_fail (tag);
 
-	/* we should not track a large number of elements via a linked list. If this becomes
-	 * necessary, revert the code to use GHashTable again. */
-	nm_assert (c_list_length (&self->data_lst_head) < 25);
-
-	/* The tag must not yet exist. Otherwise we'd have to first search the linked
-	 * list for an existing entry. */
+	/* The tag must not yet exist. Otherwise we'd have to first search the
+	 * list for an existing entry. That usage pattern is not supported. */
 	nm_assert (!_get_data (self, tag));
 
 	if (!data) {
@@ -302,17 +293,20 @@ nm_auth_chain_set_data_unsafe (NMAuthChain *self,
 		return;
 	}
 
-	chain_data = g_slice_new (ChainData);
+	if (self->data_len + 1 > self->data_alloc) {
+		if (self->data_alloc == 0)
+			self->data_alloc = 8;
+		else
+			self->data_alloc *= 2;
+		self->data_arr = g_realloc (self->data_arr, sizeof (self->data_arr[0]) * self->data_alloc);
+	}
+
+	chain_data = &self->data_arr[self->data_len++];
 	*chain_data = (ChainData) {
 		.tag     = tag,
 		.data    = data,
 		.destroy = data_destroy,
 	};
-
-	/* we assert that no duplicate tags are added. But still, add the new
-	 * element to the front, so that it would shadow the duplicate element
-	 * in the list. */
-	c_list_link_front (&self->data_lst_head, &chain_data->data_lst);
 }
 
 /*****************************************************************************/
@@ -494,7 +488,8 @@ nm_auth_chain_add_call_unsafe (NMAuthChain *self,
 	/* we track auth-calls in a linked list. If we end up requesting too many permissions this
 	 * becomes inefficient. If that ever happens, consider a more efficient data structure for
 	 * a large number of requests. */
-	nm_assert (self->num_pending_auth_calls < 25);
+	nm_assert (c_list_length (&self->auth_call_lst_head) < 25);
+	G_STATIC_ASSERT_EXPR (NM_CLIENT_PERMISSION_LAST < 25);
 }
 
 /*****************************************************************************/
@@ -543,7 +538,6 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 		.context            = nm_g_object_ref (context),
 		.subject            = g_object_ref (subject),
 		.parent_lst         = C_LIST_INIT (self->parent_lst),
-		.data_lst_head      = C_LIST_INIT (self->data_lst_head),
 		.auth_call_lst_head = C_LIST_INIT (self->auth_call_lst_head),
 	};
 	return self;
@@ -585,7 +579,6 @@ static void
 _auth_chain_destroy (NMAuthChain *self)
 {
 	AuthCall *call;
-	ChainData *chain_data;
 
 	c_list_unlink (&self->parent_lst);
 
@@ -595,15 +588,20 @@ _auth_chain_destroy (NMAuthChain *self)
 	nm_clear_g_signal_handler (self->cancellable, &self->cancellable_id);
 	nm_clear_g_source_inst (&self->cancellable_idle_source);
 
-	/* we must first destry all AuthCall instances before ChainData. The reason is
+	/* we must first destroy all AuthCall instances before ChainData. The reason is
 	 * that AuthData.permission is not cloned and the lifetime of the string must
 	 * be ensured by the caller. A sensible thing to do for the caller is attach the
 	 * permission string via nm_auth_chain_set_data(). Hence, first free the AuthCall. */
 	while ((call = c_list_first_entry (&self->auth_call_lst_head, AuthCall, auth_call_lst)))
 		auth_call_free (call);
 
-	while ((chain_data = c_list_first_entry (&self->data_lst_head, ChainData, data_lst)))
-		chain_data_free (chain_data);
+	while (self->data_len > 0) {
+		ChainData *chain_data = &self->data_arr[--self->data_len];
+
+		if (chain_data->destroy)
+			chain_data->destroy (chain_data->data);
+	}
+	g_free (self->data_arr);
 
 	nm_g_object_unref (self->cancellable);
 
