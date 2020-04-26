@@ -191,7 +191,6 @@ typedef struct {
 enum {
 	STATE_CHANGED,
 	AUTOCONNECT_ALLOWED,
-	AUTH_REQUEST,
 	IP4_CONFIG_CHANGED,
 	IP6_CONFIG_CHANGED,
 	IP6_PREFIX_DELEGATED,
@@ -6264,6 +6263,27 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 	}
 }
 
+void
+nm_device_auth_request (NMDevice *self,
+                        GDBusMethodInvocation *context,
+                        NMConnection *connection,
+                        const char *permission,
+                        gboolean allow_interaction,
+                        GCancellable *cancellable,
+                        NMManagerDeviceAuthRequestFunc callback,
+                        gpointer user_data)
+{
+	nm_manager_device_auth_request (nm_device_get_manager (self),
+	                                self,
+	                                context,
+	                                connection,
+	                                permission,
+	                                allow_interaction,
+	                                cancellable,
+	                                callback,
+	                                user_data);
+}
+
 /*****************************************************************************/
 
 static void
@@ -12260,13 +12280,14 @@ impl_device_reapply (NMDBusObject *obj,
 	} else
 		reapply_data = NULL;
 
-	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               invocation,
-	               nm_device_get_applied_connection (self),
-	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
-	               TRUE,
-	               reapply_cb,
-	               reapply_data);
+	nm_device_auth_request (self,
+	                        invocation,
+	                        nm_device_get_applied_connection (self),
+	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                        TRUE,
+	                        NULL,
+	                        reapply_cb,
+	                        reapply_data);
 }
 
 /*****************************************************************************/
@@ -12303,13 +12324,14 @@ get_applied_connection_cb (NMDevice *self,
 
 	if (applied_connection != user_data) {
 		/* The applied connection changed due to a race. Reauthenticate. */
-		g_signal_emit (self, signals[AUTH_REQUEST], 0,
-		               context,
-		               applied_connection,
-		               NM_AUTH_PERMISSION_NETWORK_CONTROL,
-		               TRUE,
-		               get_applied_connection_cb,
-		               applied_connection /* no need take a ref. We will not dereference this pointer. */);
+		nm_device_auth_request (self,
+		                        context,
+		                        applied_connection,
+		                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+		                        TRUE,
+		                        NULL,
+		                        get_applied_connection_cb,
+		                        applied_connection /* no need take a ref. We will not dereference this pointer. */);
 		return;
 	}
 
@@ -12356,13 +12378,14 @@ impl_device_get_applied_connection (NMDBusObject *obj,
 		return;
 	}
 
-	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               invocation,
-	               applied_connection,
-	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
-	               TRUE,
-	               get_applied_connection_cb,
-	               applied_connection /* no need take a ref. We will not dereference this pointer. */);
+	nm_device_auth_request (self,
+	                        invocation,
+	                        applied_connection,
+	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                        TRUE,
+	                        NULL,
+	                        get_applied_connection_cb,
+	                        applied_connection /* no need take a ref. We will not dereference this pointer. */);
 }
 
 /*****************************************************************************/
@@ -12530,13 +12553,14 @@ impl_device_disconnect (NMDBusObject *obj,
 	connection = nm_device_get_applied_connection (self);
 	nm_assert (connection);
 
-	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               invocation,
-	               connection,
-	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
-	               TRUE,
-	               disconnect_cb,
-	               NULL);
+	nm_device_auth_request (self,
+	                        invocation,
+	                        connection,
+	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                        TRUE,
+	                        NULL,
+	                        disconnect_cb,
+	                        NULL);
 }
 
 static void
@@ -12582,13 +12606,14 @@ impl_device_delete (NMDBusObject *obj,
 		return;
 	}
 
-	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               invocation,
-	               NULL,
-	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
-	               TRUE,
-	               delete_cb,
-	               NULL);
+	nm_device_auth_request (self,
+	                        invocation,
+	                        NULL,
+	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                        TRUE,
+	                        NULL,
+	                        delete_cb,
+	                        NULL);
 }
 
 static void
@@ -17970,14 +17995,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  0,
 	                  autoconnect_allowed_accumulator, NULL, NULL,
 	                  G_TYPE_BOOLEAN, 0);
-
-	signals[AUTH_REQUEST] =
-	    g_signal_new (NM_DEVICE_AUTH_REQUEST,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL, NULL,
-	                  /* context, connection, permission, allow_interaction, callback, user_data */
-	                  G_TYPE_NONE, 6, G_TYPE_DBUS_METHOD_INVOCATION, NM_TYPE_CONNECTION, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[IP4_CONFIG_CHANGED] =
 	    g_signal_new (NM_DEVICE_IP4_CONFIG_CHANGED,

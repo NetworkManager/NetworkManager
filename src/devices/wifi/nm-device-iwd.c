@@ -1065,14 +1065,14 @@ _nm_device_iwd_request_scan (NMDeviceIwd *self,
 		return;
 	}
 
-	g_signal_emit_by_name (device,
-	                       NM_DEVICE_AUTH_REQUEST,
-	                       invocation,
-	                       NULL,
-	                       NM_AUTH_PERMISSION_WIFI_SCAN,
-	                       TRUE,
-	                       dbus_request_scan_cb,
-	                       options ? g_variant_ref (options) : NULL);
+	nm_device_auth_request (device,
+	                        invocation,
+	                        NULL,
+	                        NM_AUTH_PERMISSION_WIFI_SCAN,
+	                        TRUE,
+	                        NULL,
+	                        dbus_request_scan_cb,
+	                        nm_g_variant_ref (options));
 }
 
 static gboolean

@@ -205,4 +205,15 @@ gboolean nm_device_match_parent_hwaddr (NMDevice *device,
                                         NMConnection *connection,
                                         gboolean fail_if_no_hwaddr);
 
+/*****************************************************************************/
+
+void nm_device_auth_request (NMDevice *self,
+                             GDBusMethodInvocation *context,
+                             NMConnection *connection,
+                             const char *permission,
+                             gboolean allow_interaction,
+                             GCancellable *cancellable,
+                             NMManagerDeviceAuthRequestFunc callback,
+                             gpointer user_data);
+
 #endif /* NM_DEVICE_PRIVATE_H */
