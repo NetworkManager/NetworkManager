@@ -5686,8 +5686,12 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * The gateway associated with this configuration. This is only meaningful
 	 * if #NMSettingIPConfig:addresses is also set.
 	 *
-	 * This also requires #NMSettingIPConfig:never-default to be unset. Otherwise,
-	 * the gateway will be cleared during normalization.
+	 * The gateway's main purpose is to control the next hop of the standard default route on the device.
+	 * Hence, the gateway property conflicts with #NMSettingIPConfig:never-default and will be
+	 * automatically dropped if the IP configuration is set to never-default.
+	 *
+	 * As an alternative to set the gateway, configure a static default route with /0 as prefix
+	 * length.
 	 **/
 	obj_properties[PROP_GATEWAY] =
 	    g_param_spec_string (NM_SETTING_IP_CONFIG_GATEWAY, "", "",
