@@ -27,11 +27,19 @@ struct _NMAuthChain {
 	GDBusMethodInvocation *context;
 	NMAuthSubject *subject;
 
+	GCancellable *cancellable;
+
+	/* if set, it also means that the chain is already started and was cancelled. */
+	GSource *cancellable_idle_source;
+
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
 
+	gulong cancellable_id;
+
 	guint num_pending_auth_calls;
 
+	bool is_started:1;
 	bool is_destroyed:1;
 	bool is_finishing:1;
 };
@@ -78,6 +86,82 @@ _ASSERT_call (AuthCall *call)
 /*****************************************************************************/
 
 static void
+_done_and_destroy (NMAuthChain *self)
+{
+	self->is_finishing = TRUE;
+	self->done_func (self, self->context, self->user_data);
+	nm_assert (self->is_finishing);
+	_auth_chain_destroy (self);
+}
+
+static gboolean
+_cancellable_idle_cb (gpointer user_data)
+{
+	NMAuthChain *self = user_data;
+	AuthCall *call;
+
+	nm_assert (g_cancellable_is_cancelled (self->cancellable));
+	nm_assert (self->cancellable_idle_source);
+
+	c_list_for_each_entry (call, &self->auth_call_lst_head, auth_call_lst) {
+		if (call->call_id) {
+			self->num_pending_auth_calls--;
+			nm_auth_manager_check_authorization_cancel (g_steal_pointer (&call->call_id));
+		}
+	}
+
+	_done_and_destroy (self);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_cancellable_on_idle (NMAuthChain *self)
+{
+	if (self->cancellable_idle_source)
+		return;
+
+	self->cancellable_idle_source = nm_g_idle_source_new (G_PRIORITY_DEFAULT,
+	                                                      _cancellable_idle_cb,
+	                                                      self,
+	                                                      NULL);
+	g_source_attach (self->cancellable_idle_source, NULL);
+}
+
+GCancellable *
+nm_auth_chain_get_cancellable (NMAuthChain *self)
+{
+	return self->cancellable;
+}
+
+static void
+_cancellable_cancelled (GCancellable *cancellable,
+                        NMAuthChain *self)
+{
+	_cancellable_on_idle (self);
+}
+
+void
+nm_auth_chain_set_cancellable (NMAuthChain *self,
+                               GCancellable *cancellable)
+{
+	g_return_if_fail (self);
+	g_return_if_fail (G_IS_CANCELLABLE (cancellable));
+
+	/* after the chain is started, the cancellable can no longer be changed.
+	 * No need to handle the complexity of swapping the cancellable *after*
+	 * requests are already started. */
+	g_return_if_fail (!self->is_started);
+	nm_assert (c_list_is_empty (&self->auth_call_lst_head));
+
+	/* also no need to allow setting different cancellables. */
+	g_return_if_fail (!self->cancellable);
+
+	self->cancellable = g_object_ref (cancellable);
+}
+
+/*****************************************************************************/
+
+static void
 auth_call_free (AuthCall *call)
 {
 	_ASSERT_call (call);
@@ -87,7 +171,7 @@ auth_call_free (AuthCall *call)
 		call->chain->num_pending_auth_calls--;
 		nm_auth_manager_check_authorization_cancel (call->call_id);
 	}
-	g_slice_free (AuthCall, call);
+	nm_g_slice_free (call);
 }
 
 static AuthCall *
@@ -255,6 +339,12 @@ nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 
 	nm_assert (!auth_call->call_id);
 
+	if (self->cancellable_idle_source) {
+		/* already cancelled. We always return unknown (even if we happen to
+		 * have already received the response. */
+		return NM_AUTH_CALL_RESULT_UNKNOWN;
+	}
+
 	return auth_call->result;
 }
 
@@ -314,10 +404,7 @@ pk_call_cb (NMAuthManager *auth_manager,
 	if (call->chain->num_pending_auth_calls == 0) {
 		/* we are on an idle-handler or a clean call-stack (non-reentrant) so it's safe
 		 * to invoke the callback right away. */
-		self->is_finishing = TRUE;
-		self->done_func (self, self->context, self->user_data);
-		nm_assert (self->is_finishing);
-		_auth_chain_destroy (self);
+		_done_and_destroy (self);
 	}
 }
 
@@ -350,23 +437,36 @@ nm_auth_chain_add_call_unsafe (NMAuthChain *self,
 	g_return_if_fail (!self->is_finishing);
 	g_return_if_fail (!self->is_destroyed);
 	g_return_if_fail (permission && *permission);
-	nm_assert (   nm_auth_subject_get_subject_type (self->subject)
-	           == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS
-	           || nm_auth_subject_get_subject_type (self->subject)
-	           == NM_AUTH_SUBJECT_TYPE_INTERNAL);
+	nm_assert (NM_IN_SET (nm_auth_subject_get_subject_type (self->subject), NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                                                                        NM_AUTH_SUBJECT_TYPE_INTERNAL));
 
 	/* duplicate permissions are not supported, also because nm_auth_chain_get_result()
 	 * can only return one-permission. */
 	nm_assert (!_find_auth_call (self, permission));
 
-	call = g_slice_new (AuthCall);
+	if (!self->is_started) {
+		self->is_started = TRUE;
+		nm_assert (!self->cancellable_id);
+		if (self->cancellable) {
+			if (g_cancellable_is_cancelled (self->cancellable)) {
+				/* the operation is already cancelled. Schedule the callback on idle. */
+				_cancellable_on_idle (self);
+			} else {
+				self->cancellable_id = g_signal_connect (self->cancellable,
+				                                         "cancelled",
+				                                         G_CALLBACK (_cancellable_cancelled),
+				                                         self);
+			}
+		}
+	}
 
+	call = g_slice_new (AuthCall);
 	*call = (AuthCall) {
 		.chain      = self,
 		.call_id    = NULL,
 		.result     = NM_AUTH_CALL_RESULT_UNKNOWN,
 
-		/* we don't clone the permission string. It's the callers responsiblity. */
+		/* we don't clone the permission string. It's the callers responsibility. */
 		.permission = permission,
 	};
 
@@ -375,14 +475,19 @@ nm_auth_chain_add_call_unsafe (NMAuthChain *self,
 	 * call. */
 	c_list_link_front (&self->auth_call_lst_head, &call->auth_call_lst);
 
-	call->call_id = nm_auth_manager_check_authorization (nm_auth_manager_get (),
-	                                                     self->subject,
-	                                                     permission,
-	                                                     allow_interaction,
-	                                                     pk_call_cb,
-	                                                     call);
+	if (self->cancellable_idle_source) {
+		/* already cancelled. No need to actually start the request. */
+		nm_assert (call->result == NM_AUTH_CALL_RESULT_UNKNOWN);
+	} else {
+		call->call_id = nm_auth_manager_check_authorization (nm_auth_manager_get (),
+		                                                     self->subject,
+		                                                     permission,
+		                                                     allow_interaction,
+		                                                     pk_call_cb,
+		                                                     call);
 
-	self->num_pending_auth_calls++;
+		self->num_pending_auth_calls++;
+	}
 
 	_ASSERT_call (call);
 
@@ -427,10 +532,8 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	NMAuthChain *self;
 
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	nm_assert (   nm_auth_subject_get_subject_type (subject)
-	           == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS
-	           || nm_auth_subject_get_subject_type (subject)
-	           == NM_AUTH_SUBJECT_TYPE_INTERNAL);
+	nm_assert (NM_IN_SET (nm_auth_subject_get_subject_type (subject), NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                                                                  NM_AUTH_SUBJECT_TYPE_INTERNAL));
 	nm_assert (done_func);
 
 	self = g_slice_new (NMAuthChain);
@@ -489,6 +592,9 @@ _auth_chain_destroy (NMAuthChain *self)
 	nm_clear_g_object (&self->subject);
 	nm_clear_g_object (&self->context);
 
+	nm_clear_g_signal_handler (self->cancellable, &self->cancellable_id);
+	nm_clear_g_source_inst (&self->cancellable_idle_source);
+
 	/* we must first destry all AuthCall instances before ChainData. The reason is
 	 * that AuthData.permission is not cloned and the lifetime of the string must
 	 * be ensured by the caller. A sensible thing to do for the caller is attach the
@@ -499,7 +605,9 @@ _auth_chain_destroy (NMAuthChain *self)
 	while ((chain_data = c_list_first_entry (&self->data_lst_head, ChainData, data_lst)))
 		chain_data_free (chain_data);
 
-	g_slice_free (NMAuthChain, self);
+	nm_g_object_unref (self->cancellable);
+
+	nm_g_slice_free (self);
 }
 
 /******************************************************************************
@@ -517,10 +625,8 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 
 	g_return_val_if_fail (connection, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
-	nm_assert (   nm_auth_subject_get_subject_type (subject)
-	              == NM_AUTH_SUBJECT_TYPE_INTERNAL
-	           || nm_auth_subject_get_subject_type (subject)
-	              == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
+	nm_assert (NM_IN_SET (nm_auth_subject_get_subject_type (subject), NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                                                                  NM_AUTH_SUBJECT_TYPE_INTERNAL));
 
 	if (nm_auth_subject_get_subject_type (subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL)
 		return TRUE;
