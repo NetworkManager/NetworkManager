@@ -577,6 +577,7 @@ typedef struct _NMDevicePrivate {
 	NMMetered       metered;
 
 	NMSettings *settings;
+	NMManager *manager;
 
 	NMNetns *netns;
 
@@ -910,6 +911,12 @@ NMSettings *
 nm_device_get_settings (NMDevice *self)
 {
 	return NM_DEVICE_GET_PRIVATE (self)->settings;
+}
+
+NMManager *
+nm_device_get_manager (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->manager;
 }
 
 NMNetns *
@@ -17409,8 +17416,8 @@ constructed (GObject *object)
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
 
+	priv->manager = g_object_ref (NM_MANAGER_GET);
 	priv->settings = g_object_ref (NM_SETTINGS_GET);
-	g_assert (priv->settings);
 
 	g_signal_connect (priv->settings,
 	                  NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
@@ -17567,6 +17574,7 @@ finalize (GObject *object)
 	/* for testing, NMDeviceTest does not invoke NMDevice::constructed,
 	 * and thus @settings might be unset. */
 	nm_g_object_unref (priv->settings);
+	nm_g_object_unref (priv->manager);
 
 	nm_g_object_unref (priv->concheck_mgr);
 
