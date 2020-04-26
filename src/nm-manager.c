@@ -2375,8 +2375,9 @@ device_auth_done_cb (NMAuthChain *chain,
 	gs_free_error GError *error = NULL;
 	NMAuthCallResult result;
 	NMDevice *device;
+	GCancellable *cancellable;
 	const char *permission;
-	NMDeviceAuthRequestFunc callback;
+	NMManagerDeviceAuthRequestFunc callback;
 	NMAuthSubject *subject;
 
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (context));
@@ -2390,18 +2391,26 @@ device_auth_done_cb (NMAuthChain *chain,
 	device = nm_auth_chain_get_data (chain, "device");
 	nm_assert (NM_IS_DEVICE (device));
 
+	cancellable = nm_auth_chain_get_cancellable (chain);
+	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
 	result = nm_auth_chain_get_result (chain, permission);
 	subject = nm_auth_chain_get_subject (chain);
 
-	if (result != NM_AUTH_CALL_RESULT_YES) {
-		_LOGD (LOGD_CORE, "%s request failed: not authorized", permission);
-		error = g_error_new (NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "%s request failed: not authorized",
-		                     permission);
-	}
+	if (   cancellable
+	    && g_cancellable_set_error_if_cancelled (cancellable, &error)) {
+		/* pass. */
+	} else {
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			_LOGD (LOGD_CORE, "%s request failed: not authorized", permission);
+			error = g_error_new (NM_MANAGER_ERROR,
+			                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+			                     "%s request failed: not authorized",
+			                     permission);
+		}
 
-	nm_assert (error || (result == NM_AUTH_CALL_RESULT_YES));
+		nm_assert (error || (result == NM_AUTH_CALL_RESULT_YES));
+	}
 
 	callback (device,
 	          context,
@@ -2411,28 +2420,53 @@ device_auth_done_cb (NMAuthChain *chain,
 }
 
 static void
-device_auth_request_cb (NMDevice *device,
-                        GDBusMethodInvocation *context,
-                        NMConnection *connection,
-                        const char *permission,
-                        gboolean allow_interaction,
-                        NMDeviceAuthRequestFunc callback,
-                        gpointer user_data,
-                        NMManager *self)
+_device_auth_done_fail_on_idle (gpointer user_data, GCancellable *cancellable)
+{
+	gs_unref_object NMManager *self = NULL;
+	gs_unref_object NMDevice *device = NULL;
+	gs_unref_object GDBusMethodInvocation *context = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
+	gs_free_error GError *error_original = NULL;
+	gs_free_error GError *error_cancelled = NULL;
+	NMManagerDeviceAuthRequestFunc callback;
+	gpointer callback_user_data;
+
+	nm_utils_user_data_unpack (&self, &device, &context, &subject, &error_original, &callback, &callback_user_data);
+
+	g_cancellable_set_error_if_cancelled (cancellable, &error_cancelled);
+
+	callback (device,
+	          context,
+	          subject,
+	          error_cancelled ?: error_original,
+	          callback_user_data);
+}
+
+void
+nm_manager_device_auth_request (NMManager *self,
+                                NMDevice *device,
+                                GDBusMethodInvocation *context,
+                                NMConnection *connection,
+                                const char *permission,
+                                gboolean allow_interaction,
+                                GCancellable *cancellable,
+                                NMManagerDeviceAuthRequestFunc callback,
+                                gpointer user_data)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
-	NMAuthSubject *subject = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
 	char *permission_dup;
 
 	/* Validate the caller */
 	subject = nm_dbus_manager_new_auth_subject_from_context (context);
 	if (!subject) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
-		goto done;
+		g_set_error_literal (&error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
+		goto fail_on_idle;
 	}
 
 	/* Ensure the subject has permissions for this connection */
@@ -2442,16 +2476,20 @@ device_auth_request_cb (NMDevice *device,
 	                                             NM_MANAGER_ERROR,
 	                                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 	                                             &error))
-		goto done;
+		goto fail_on_idle;
 
 	/* Validate the request */
 	chain = nm_auth_chain_new_subject (subject, context, device_auth_done_cb, self);
 	if (!chain) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED);
-		goto done;
+		g_set_error (&error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED);
+		goto fail_on_idle;
 	}
+
+	if (cancellable)
+		nm_auth_chain_set_cancellable (chain, cancellable);
 
 	permission_dup = g_strdup (permission);
 
@@ -2461,13 +2499,18 @@ device_auth_request_cb (NMDevice *device,
 	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
 	nm_auth_chain_set_data (chain, "perm", permission_dup /* transfer ownership */, g_free);
 	nm_auth_chain_add_call_unsafe (chain, permission_dup, allow_interaction);
+	return;
 
-done:
-	if (error)
-		callback (device, context, subject, error, user_data);
-
-	g_clear_object (&subject);
-	g_clear_error (&error);
+fail_on_idle:
+	nm_utils_invoke_on_idle (cancellable,
+	                         _device_auth_done_fail_on_idle,
+	                         nm_utils_user_data_pack (g_object_ref (self),
+	                                                  g_object_ref (device),
+	                                                  g_object_ref (context),
+	                                                  g_steal_pointer (&subject),
+	                                                  g_steal_pointer (&error),
+	                                                  callback,
+	                                                  user_data));
 }
 
 static gboolean
@@ -3128,10 +3171,6 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 
 	g_signal_connect (device, NM_DEVICE_STATE_CHANGED,
 	                  G_CALLBACK (manager_device_state_changed),
-	                  self);
-
-	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
-	                  G_CALLBACK (device_auth_request_cb),
 	                  self);
 
 	g_signal_connect (device, NM_DEVICE_REMOVED,

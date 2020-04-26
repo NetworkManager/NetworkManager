@@ -115,7 +115,6 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
-#define NM_DEVICE_AUTH_REQUEST          "auth-request"
 #define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
 #define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
 #define NM_DEVICE_IP6_PREFIX_DELEGATED  "ip6-prefix-delegated"
@@ -454,12 +453,6 @@ typedef struct _NMDeviceClass {
 	bool act_stage1_prepare_set_hwaddr_ethernet:1;
 
 } NMDeviceClass;
-
-typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
-                                         GDBusMethodInvocation *context,
-                                         NMAuthSubject *subject,
-                                         GError *error,
-                                         gpointer user_data);
 
 GType nm_device_get_type (void);
 
