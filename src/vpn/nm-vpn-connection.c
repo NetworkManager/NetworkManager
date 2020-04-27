@@ -1595,13 +1595,18 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				route.plen = plen;
 				route.network = nm_utils_ip4_address_clear_host_address (route.network, plen);
 
-				/* Ignore host routes to the VPN gateway since NM adds one itself
-				 * below.  Since NM knows more about the routing situation than
-				 * the VPN server, we want to use the NM created route instead of
-				 * whatever the server provides.
-				 */
-				if (!(priv->ip4_external_gw && route.network == priv->ip4_external_gw && route.plen == 32))
-					nm_ip4_config_add_route (config, &route, NULL);
+				if (   priv->ip4_external_gw
+				    && route.network == priv->ip4_external_gw
+				    && route.plen == 32) {
+					/* Ignore host routes to the VPN gateway since NM adds one itself
+					 * below.  Since NM knows more about the routing situation than
+					 * the VPN server, we want to use the NM created route instead of
+					 * whatever the server provides.
+					 */
+					break;
+				}
+
+				nm_ip4_config_add_route (config, &route, NULL);
 				break;
 			default:
 				break;
@@ -1792,13 +1797,18 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 			nm_utils_ip6_address_clear_host_address (&route.network, &route.network, route.plen);
 
-			/* Ignore host routes to the VPN gateway since NM adds one itself.
-			 * Since NM knows more about the routing situation than the VPN
-			 * server, we want to use the NM created route instead of whatever
-			 * the server provides.
-			 */
-			if (!(priv->ip6_external_gw && IN6_ARE_ADDR_EQUAL (&route.network, priv->ip6_external_gw) && route.plen == 128))
-				nm_ip6_config_add_route (config, &route, NULL);
+			if (   priv->ip6_external_gw
+			    && IN6_ARE_ADDR_EQUAL (&route.network, priv->ip6_external_gw)
+			    && route.plen == 128) {
+				/* Ignore host routes to the VPN gateway since NM adds one itself.
+				 * Since NM knows more about the routing situation than the VPN
+				 * server, we want to use the NM created route instead of whatever
+				 * the server provides.
+				 */
+				goto next;
+			}
+
+			nm_ip6_config_add_route (config, &route, NULL);
 
 next:
 			g_variant_unref (dest);
