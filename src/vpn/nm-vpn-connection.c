@@ -1787,6 +1787,8 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			route.metric = route_metric;
 			route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 
+			nm_utils_ip6_address_clear_host_address (&route.network, &route.network, route.plen);
+
 			/* Ignore host routes to the VPN gateway since NM adds one itself.
 			 * Since NM knows more about the routing situation than the VPN
 			 * server, we want to use the NM created route instead of whatever
