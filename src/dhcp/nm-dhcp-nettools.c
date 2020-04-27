@@ -1461,7 +1461,7 @@ dispose (GObject *object)
 {
 	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE (object);
 
-	nm_clear_pointer (&priv->lease_file, g_free);
+	nm_clear_g_free (&priv->lease_file);
 	nm_clear_g_source_inst (&priv->event_source);
 	nm_clear_pointer (&priv->lease, n_dhcp4_client_lease_unref);
 	nm_clear_pointer (&priv->probe, n_dhcp4_client_probe_free);
