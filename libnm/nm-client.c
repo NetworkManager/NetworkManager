@@ -5214,7 +5214,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of %NULL should be used
- *   (ie, no specific object).  For Wi-Fi or WiMAX connections, pass the object
+ *   (i.e., no specific object).  For Wi-Fi or WiMAX connections, pass the object
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.
@@ -5234,7 +5234,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
  * track the activation to its completion.
  *
- * This is identitcal to nm_client_add_and_activate_connection_async() but takes
+ * This is identical to nm_client_add_and_activate_connection_async() but takes
  * a further @options parameter. Currently the following options are supported
  * by the daemon:
  *  * "persist": A string describing how the connection should be stored.
@@ -5243,7 +5243,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  *  * "bind-activation": Bind the connection lifetime to something. The default is "none",
  *            meaning an explicit disconnect is needed. The value "dbus-client"
  *            means the connection will automatically be deactivated when the calling
- *            DBus client disappears from the system bus.
+ *            D-Bus client disappears from the system bus.
  *
  * Since: 1.16
  **/
