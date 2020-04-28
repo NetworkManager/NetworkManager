@@ -1204,13 +1204,18 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 
 	if (g_variant_lookup (capabilities, "MaxScanSSID", "i", &max_scan_ssids)) {
 		/* We need active scan and SSID probe capabilities to care about MaxScanSSIDs */
-		if (max_scan_ssids > 0 && have_active && have_ssid) {
+		if (   max_scan_ssids > 0
+		    && have_active
+		    && have_ssid) {
 			/* wpa_supplicant's NM_WPAS_MAX_SCAN_SSIDS value is 16, but for speed
 			 * and to ensure we don't disclose too many SSIDs from the hidden
 			 * list, we'll limit to 5.
 			 */
-			priv->max_scan_ssids = CLAMP (max_scan_ssids, 0, 5);
-			_LOGD ("supports %d scan SSIDs", priv->max_scan_ssids);
+			max_scan_ssids = CLAMP (max_scan_ssids, 0, 5);
+			if (max_scan_ssids != priv->max_scan_ssids) {
+				priv->max_scan_ssids = max_scan_ssids;
+				_LOGD ("supports %d scan SSIDs", priv->max_scan_ssids);
+			}
 		}
 	}
 }

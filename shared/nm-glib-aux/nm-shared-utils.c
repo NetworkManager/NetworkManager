@@ -397,6 +397,24 @@ truncate:
 
 /*****************************************************************************/
 
+GBytes *
+nm_gbytes_get_empty (void)
+{
+	static GBytes *bytes = NULL;
+	GBytes *b;
+
+again:
+	b = g_atomic_pointer_get (&bytes);
+	if (G_UNLIKELY (!b)) {
+		b = g_bytes_new_static ("", 0);
+		if (!g_atomic_pointer_compare_and_exchange (&bytes, NULL, b)) {
+			g_bytes_unref (b);
+			goto again;
+		}
+	}
+	return b;
+}
+
 /**
  * nm_utils_gbytes_equals:
  * @bytes: (allow-none): a #GBytes array to compare. Note that

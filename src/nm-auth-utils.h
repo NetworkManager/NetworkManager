@@ -27,6 +27,10 @@ NMAuthChain *nm_auth_chain_new_subject (NMAuthSubject *subject,
                                         NMAuthChainResultFunc done_func,
                                         gpointer user_data);
 
+GCancellable *nm_auth_chain_get_cancellable (NMAuthChain *self);
+void nm_auth_chain_set_cancellable (NMAuthChain *self,
+                                    GCancellable *cancellable);
+
 gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
 gpointer nm_auth_chain_steal_data (NMAuthChain *chain, const char *tag);
