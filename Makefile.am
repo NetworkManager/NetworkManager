@@ -4285,9 +4285,12 @@ clients_nm_online_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 clients_nm_online_LDADD = \
-	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
-	$(GLIB_LIBS)
+	shared/nm-libnm-aux/libnm-libnm-aux.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(clients_nm_online_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(clients_nm_online_OBJECTS): $(libnm_lib_h_pub_mkenums)

@@ -233,7 +233,7 @@ main (int argc, char *argv[])
 	OnlineData data = {
 		.retval = EXIT_FAILURE_UNSPECIFIED,
 	};
-	int t_secs = 30;
+	int t_secs;
 	GOptionContext *opt_ctx = NULL;
 	gboolean success;
 	GOptionEntry options[] = {
@@ -250,6 +250,8 @@ main (int argc, char *argv[])
 	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
+
+	t_secs = _nm_utils_ascii_str_to_int64 (g_getenv ("NM_ONLINE_TIMEOUT"), 10, 0, G_MAXINT, 30);
 
 	data.start_timestamp_ms = _now_ms ();
 
