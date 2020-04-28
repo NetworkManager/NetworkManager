@@ -136,21 +136,18 @@ fcn_name (GKeyFile *kf, \
 DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_integer_list, int *,   g_key_file_get_integer_list);
 DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_string_list,  char **, g_key_file_get_string_list);
 
-#define DEFINE_KF_LIST_WRAPPER_SET(fcn_name, set_ctype, key_file_set_fcn) \
-void \
-fcn_name (GKeyFile *kf, \
-          const char *group, \
-          const char *key, \
-          set_ctype list, \
-          gsize length) \
-{ \
-	const char *alias; \
-\
-	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
-	key_file_set_fcn (kf, alias ?: group, key, list, length); \
-}
+void
+nm_keyfile_plugin_kf_set_string_list (GKeyFile *kf,
+                                      const char *group,
+                                      const char *key,
+                                      const char *const*list,
+                                      gsize length)
+{
+	const char *alias;
 
-DEFINE_KF_LIST_WRAPPER_SET (nm_keyfile_plugin_kf_set_string_list,  const char*const*, g_key_file_set_string_list);
+	alias = nm_keyfile_plugin_get_alias_for_setting_name (group);
+	g_key_file_set_string_list (kf, alias ?: group, key, list, length);
+}
 
 void
 nm_keyfile_plugin_kf_set_integer_list_uint (GKeyFile *kf,
