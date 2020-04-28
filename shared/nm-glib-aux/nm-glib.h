@@ -622,4 +622,12 @@ g_hash_table_steal_extended (GHashTable    *hash_table,
 
 /*****************************************************************************/
 
+__attribute__((__deprecated__("Don't use g_cancellable_reset(). Create a new cancellable instead.")))
+void _nm_g_cancellable_reset (GCancellable *cancellable);
+
+#undef g_cancellable_reset
+#define g_cancellable_reset(cancellable) _nm_g_cancellable_reset(cancellable)
+
+/*****************************************************************************/
+
 #endif  /* __NM_GLIB_H__ */

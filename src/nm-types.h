@@ -40,6 +40,12 @@ typedef struct _NMSleepMonitor       NMSleepMonitor;
 typedef struct _NMLldpListener       NMLldpListener;
 typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 
+typedef void (*NMManagerDeviceAuthRequestFunc) (NMDevice *device,
+                                                GDBusMethodInvocation *context,
+                                                NMAuthSubject *subject,
+                                                GError *error,
+                                                gpointer user_data);
+
 struct _NMDedupMultiIndex;
 
 typedef struct _NMRefString NMRefString;
