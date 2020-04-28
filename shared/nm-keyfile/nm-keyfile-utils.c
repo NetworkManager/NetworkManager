@@ -133,8 +133,54 @@ fcn_name (GKeyFile *kf, \
 	return list; \
 }
 
-DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_integer_list, int *,   g_key_file_get_integer_list);
 DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_string_list,  char **, g_key_file_get_string_list);
+
+guint *
+nm_keyfile_plugin_kf_get_integer_list_uint (GKeyFile *key_file,
+                                            const char *group_name,
+                                            const char *key,
+                                            gsize *out_length,
+                                            GError **error)
+{
+	GError *key_file_error = NULL;
+	gs_strfreev char **values = NULL;
+	gs_free guint *int_values = NULL;
+	gsize i, num_ints;
+
+	g_return_val_if_fail (key_file != NULL, NULL);
+	g_return_val_if_fail (group_name != NULL, NULL);
+	g_return_val_if_fail (key != NULL, NULL);
+
+	NM_SET_OUT (out_length, 0);
+
+	values = nm_keyfile_plugin_kf_get_string_list (key_file, group_name, key, &num_ints, &key_file_error);
+
+	if (key_file_error)
+		g_propagate_error (error, key_file_error);
+	if (!values)
+		return NULL;
+
+	int_values = g_new (guint, num_ints);
+
+	for (i = 0; i < num_ints; i++) {
+		gint64 v;
+
+		G_STATIC_ASSERT_EXPR (sizeof (v) > sizeof (guint));
+		v = _nm_utils_ascii_str_to_int64 (values[i], 10, 0, G_MAXUINT, -1);
+		if (v == -1) {
+			g_set_error (error,
+			             G_KEY_FILE_ERROR,
+			             G_KEY_FILE_ERROR_INVALID_VALUE,
+			             _("Value cannot be interpreted as a list of numbers."));
+			return NULL;
+		}
+
+		int_values[i] = v;
+	}
+
+	NM_SET_OUT (out_length, num_ints);
+	return g_steal_pointer (&int_values);
+}
 
 void
 nm_keyfile_plugin_kf_set_string_list (GKeyFile *kf,
