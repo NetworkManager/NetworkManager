@@ -46,6 +46,8 @@ NM_CLONED_MAC_IS_SPECIAL (const char *str)
 #define NM_IAID_IFNAME             "ifname"
 #define NM_IAID_STABLE             "stable"
 
+#define NM_CONNECTION_MUD_URL_NONE "none"
+
 static inline gboolean
 NM_IAID_IS_SPECIAL (const char *str)
 {

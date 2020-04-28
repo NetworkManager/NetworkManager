@@ -783,6 +783,17 @@ _coerce_str_emptyunset (NMMetaAccessorGetType get_type,
 	return cstr;
 }
 
+#define RETURN_STR_EMPTYUNSET(get_type, is_default, cstr) \
+	G_STMT_START { \
+		char *_str = NULL; \
+		const char *_cstr; \
+		\
+		_cstr = _coerce_str_emptyunset ((get_type), (is_default), (cstr), &_str); \
+		if (_str) \
+			RETURN_STR_TO_FREE (_str); \
+		RETURN_STR_TEMPORARY (_cstr); \
+	} G_STMT_END
+
 static gboolean
 _is_default (const NMMetaPropertyInfo *property_info,
              NMSetting *setting)
@@ -836,6 +847,19 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 	           || (   gtype_prop == G_TYPE_STRV
 	               && !glib_handles_str_transform));
 
+	if (gtype_prop == G_TYPE_STRING) {
+		nm_assert (glib_handles_str_transform);
+		nm_assert (!handle_emptyunset);
+		if (   property_info->property_typ_data
+		    && property_info->property_typ_data->subtype.gobject_string.handle_emptyunset) {
+			/* This string property can both be empty and NULL. We need to
+			 * signal them differently. */
+			cstr = g_value_get_string (&val);
+			nm_assert ((!!is_default) == (cstr == NULL));
+			RETURN_STR_EMPTYUNSET (get_type, is_default, NULL);
+		}
+	}
+
 	if (glib_handles_str_transform)
 		RETURN_STR_TEMPORARY (g_value_get_string (&val));
 
@@ -857,15 +881,9 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 		if (strv && strv[0])
 			RETURN_STR_TO_FREE (g_strjoinv (",", (char **) strv));
 
-		/* special hack for handling properties that can be empty and unset
-		 * (see multilist.clear_emptyunset_fcn). */
 		if (handle_emptyunset) {
-			char *str = NULL;
-
-			cstr = _coerce_str_emptyunset (get_type, is_default, NULL, &str);
-			if (str)
-				RETURN_STR_TO_FREE (str);
-			RETURN_STR_TEMPORARY (cstr);
+			/* we need to express empty lists from unset lists differently. */
+			RETURN_STR_EMPTYUNSET (get_type, is_default, NULL);
 		}
 
 		return "";
@@ -1183,6 +1201,22 @@ _set_fcn_gobject_string (ARGS_SET_FCN)
 		return _gobject_property_reset_default (setting, property_info->property_name);
 
 	if (property_info->property_typ_data) {
+		if (property_info->property_typ_data->subtype.gobject_string.handle_emptyunset) {
+			if (   value
+			    && value[0]
+			    && NM_STRCHAR_ALL (value, ch, ch == ' ')) {
+				/* this string property can both be %NULL and empty. To express that, we coerce
+				 * a value of all whitespaces to dropping the first whitespace. That means,
+				 * " " gives "", "  " gives " ", and so on.
+				 *
+				 * This way the user can set the string value to "" (meaning NULL) and to
+				 * " " (meaning ""), and any other string.
+				 *
+				 * This is and non-obvious escaping mechanism. But out of all the possible
+				 * solutions, it seems the most sensible one. */
+				value++;
+			}
+		}
 		if (property_info->property_typ_data->subtype.gobject_string.validate_fcn) {
 			value = property_info->property_typ_data->subtype.gobject_string.validate_fcn (value, &to_free, error);
 			if (!value)
@@ -5229,6 +5263,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_MUD_URL,
 	    .property_type =                &_pt_gobject_string,
+	    .hide_if_default =              TRUE,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
 	    .property_type =                &_pt_gobject_int,

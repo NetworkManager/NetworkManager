@@ -24,6 +24,7 @@
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-glib-aux/nm-random-utils.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-libnm-core-intern/nm-ethtool-utils.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -8288,6 +8289,37 @@ get_dhcp_hostname_flags (NMDevice *self, int addr_family)
 		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
 }
 
+static const char *
+connection_get_mud_url (NMDevice *self,
+                        NMSettingConnection *s_con,
+                        char **out_mud_url)
+{
+	const char *mud_url;
+	gs_free char *s = NULL;
+
+	nm_assert (out_mud_url && !*out_mud_url);
+
+	mud_url = nm_setting_connection_get_mud_url (s_con);
+
+	if (mud_url) {
+		if (nm_streq (mud_url, NM_CONNECTION_MUD_URL_NONE))
+			return NULL;
+		return mud_url;
+	}
+
+	s = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                           NM_CON_DEFAULT ("connection.mud-url"),
+	                                           self);
+	if (s) {
+		if (nm_streq (s, NM_CONNECTION_MUD_URL_NONE))
+			return NULL;
+		if (nm_sd_http_url_is_valid_https (s))
+			return (*out_mud_url = g_steal_pointer (&s));
+	}
+
+	return NULL;
+}
+
 static GBytes *
 dhcp4_get_client_id (NMDevice *self,
                      NMConnection *connection,
@@ -8426,6 +8458,7 @@ dhcp4_start (NMDevice *self)
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
+	gs_free char *mud_url_free = NULL;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	GError *error = NULL;
@@ -8465,7 +8498,7 @@ dhcp4_start (NMDevice *self)
 	                                                      nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                      nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                      get_dhcp_hostname_flags (self, AF_INET),
-	                                                      nm_setting_connection_get_mud_url (s_con),
+	                                                      connection_get_mud_url (self, s_con, &mud_url_free),
 	                                                      client_id,
 	                                                      get_dhcp_timeout (self, AF_INET),
 	                                                      priv->dhcp_anycast_address,
@@ -9213,6 +9246,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	gs_unref_bytes GBytes *duid = NULL;
 	gboolean enforce_duid = FALSE;
 	const NMPlatformLink *pllink;
+	gs_free char *mud_url_free = NULL;
 	GError *error = NULL;
 	guint32 iaid;
 	gboolean iaid_explicit;
@@ -9259,7 +9293,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                      nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                      nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                      get_dhcp_hostname_flags (self, AF_INET6),
-	                                                      nm_setting_connection_get_mud_url (s_con),
+	                                                      connection_get_mud_url (self, s_con, &mud_url_free),
 	                                                      duid,
 	                                                      enforce_duid,
 	                                                      iaid,
