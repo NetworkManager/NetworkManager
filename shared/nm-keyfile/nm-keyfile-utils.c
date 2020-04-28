@@ -172,46 +172,50 @@ nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
 	nm_keyfile_plugin_kf_set_value (kf, group, key, value);
 }
 
-/* Single value helpers */
-#define DEFINE_KF_WRAPPER(stype, get_ctype, set_ctype) \
+#define DEFINE_KF_WRAPPER_GET(fcn_name, get_ctype, key_file_get_fcn) \
 get_ctype \
-nm_keyfile_plugin_kf_get_##stype (GKeyFile *kf, \
-                                  const char *group, \
-                                  const char *key, \
-                                  GError **error) \
+fcn_name (GKeyFile *kf, \
+          const char *group, \
+          const char *key, \
+          GError **error) \
 { \
 	get_ctype val; \
 	const char *alias; \
 	GError *local = NULL; \
- \
-	val = g_key_file_get_##stype (kf, group, key, &local); \
+\
+	val = key_file_get_fcn (kf, group, key, &local); \
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) { \
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
 		if (alias) { \
 			g_clear_error (&local); \
-			val = g_key_file_get_##stype (kf, alias, key, &local); \
+			val = key_file_get_fcn (kf, alias, key, &local); \
 		} \
 	} \
 	if (local) \
 		g_propagate_error (error, local); \
 	return val; \
-} \
- \
-void \
-nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
-                                  const char *group, \
-                                  const char *key, \
-                                  set_ctype value) \
-{ \
-	const char *alias; \
- \
-	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
-	g_key_file_set_##stype (kf, alias ?: group, key, value); \
 }
 
-DEFINE_KF_WRAPPER(string, char*, const char*);
-DEFINE_KF_WRAPPER(boolean, gboolean, gboolean);
-DEFINE_KF_WRAPPER(value, char*, const char*);
+DEFINE_KF_WRAPPER_GET (nm_keyfile_plugin_kf_get_string,  char *,   g_key_file_get_string);
+DEFINE_KF_WRAPPER_GET (nm_keyfile_plugin_kf_get_boolean, gboolean, g_key_file_get_boolean);
+DEFINE_KF_WRAPPER_GET (nm_keyfile_plugin_kf_get_value,   char *,   g_key_file_get_value);
+
+#define DEFINE_KF_WRAPPER_SET(fcn_name, set_ctype, key_file_set_fcn) \
+void \
+fcn_name (GKeyFile *kf, \
+          const char *group, \
+          const char *key, \
+          set_ctype value) \
+{ \
+	const char *alias; \
+\
+	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
+	key_file_set_fcn (kf, alias ?: group, key, value); \
+}
+
+DEFINE_KF_WRAPPER_SET (nm_keyfile_plugin_kf_set_string,  const char *, g_key_file_set_string);
+DEFINE_KF_WRAPPER_SET (nm_keyfile_plugin_kf_set_boolean, gboolean,     g_key_file_set_boolean);
+DEFINE_KF_WRAPPER_SET (nm_keyfile_plugin_kf_set_value,   const char *, g_key_file_set_value);
 
 gint64
 nm_keyfile_plugin_kf_get_int64 (GKeyFile *kf,
