@@ -9,6 +9,8 @@
 
 #include <stdlib.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
+
 #include "nm-keyfile-internal.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
@@ -158,21 +160,18 @@ nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
                                              const guint8 *data,
                                              gsize length)
 {
+	nm_auto_str_buf NMStrBuf strbuf = { };
 	gsize i;
-	gsize l = length * 4 + 2;
-	gs_free char *value = g_malloc (l);
-	char *s = value;
 
 	g_return_if_fail (kf);
 	g_return_if_fail (!length || data);
 	g_return_if_fail (group && group[0]);
 	g_return_if_fail (key && key[0]);
 
-	value[0] = '\0';
+	nm_str_buf_init (&strbuf, length * 4u + 2u, FALSE);
 	for (i = 0; i < length; i++)
-		nm_utils_strbuf_append (&s, &l, "%d;", (int) data[i]);
-	nm_assert (l > 0);
-	nm_keyfile_plugin_kf_set_value (kf, group, key, value);
+		nm_str_buf_append_printf (&strbuf, "%u;", (guint) data[i]);
+	nm_keyfile_plugin_kf_set_value (kf, group, key, nm_str_buf_get_str (&strbuf));
 }
 
 #define DEFINE_KF_WRAPPER_GET(fcn_name, get_ctype, key_file_get_fcn) \

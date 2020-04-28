@@ -19,20 +19,15 @@ const char *nm_keyfile_plugin_get_setting_name_for_alias (const char *alias);
 
 /*****************************************************************************/
 
-void nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
-                                                  const char *group,
-                                                  const char *key,
-                                                  const guint8 *list,
-                                                  gsize length);
-
 int     *nm_keyfile_plugin_kf_get_integer_list (GKeyFile *kf, const char *group, const char *key, gsize *out_length, GError **error);
 char   **nm_keyfile_plugin_kf_get_string_list  (GKeyFile *kf, const char *group, const char *key, gsize *out_length, GError **error);
 char    *nm_keyfile_plugin_kf_get_string       (GKeyFile *kf, const char *group, const char *key, GError **error);
 gboolean nm_keyfile_plugin_kf_get_boolean      (GKeyFile *kf, const char *group, const char *key, GError **error);
 char    *nm_keyfile_plugin_kf_get_value        (GKeyFile *kf, const char *group, const char *key, GError **error);
 
-void nm_keyfile_plugin_kf_set_integer_list (GKeyFile *kf, const char *group, const char *key, int              *list, gsize length);
-void nm_keyfile_plugin_kf_set_string_list  (GKeyFile *kf, const char *group, const char *key, const char *const*list, gsize length);
+void nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf, const char *group, const char *key, const guint8     *list, gsize length);
+void nm_keyfile_plugin_kf_set_integer_list       (GKeyFile *kf, const char *group, const char *key, int              *list, gsize length);
+void nm_keyfile_plugin_kf_set_string_list        (GKeyFile *kf, const char *group, const char *key, const char *const*list, gsize length);
 
 void nm_keyfile_plugin_kf_set_string       (GKeyFile *kf, const char *group, const char *key, const char *value);
 void nm_keyfile_plugin_kf_set_boolean      (GKeyFile *kf, const char *group, const char *key, gboolean    value);
