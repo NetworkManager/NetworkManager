@@ -102,26 +102,25 @@ nm_keyfile_plugin_get_setting_name_for_alias (const char *alias)
 
 /*****************************************************************************/
 
-/* List helpers */
-#define DEFINE_KF_LIST_WRAPPER(stype, get_ctype, set_ctype) \
+#define DEFINE_KF_LIST_WRAPPER_GET(fcn_name, get_ctype, key_file_get_fcn) \
 get_ctype \
-nm_keyfile_plugin_kf_get_##stype##_list (GKeyFile *kf, \
-                                         const char *group, \
-                                         const char *key, \
-                                         gsize *out_length, \
-                                         GError **error) \
+fcn_name (GKeyFile *kf, \
+          const char *group, \
+          const char *key, \
+          gsize *out_length, \
+          GError **error) \
 { \
 	get_ctype list; \
 	const char *alias; \
 	GError *local = NULL; \
 	gsize l; \
- \
-	list = g_key_file_get_##stype##_list (kf, group, key, &l, &local); \
+\
+	list = key_file_get_fcn (kf, group, key, &l, &local); \
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) { \
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
 		if (alias) { \
 			g_clear_error (&local); \
-			list = g_key_file_get_##stype##_list (kf, alias, key, &l, &local); \
+			list = key_file_get_fcn (kf, alias, key, &l, &local); \
 		} \
 	} \
 	if (local) \
@@ -130,23 +129,27 @@ nm_keyfile_plugin_kf_get_##stype##_list (GKeyFile *kf, \
 		l = 0; \
 	NM_SET_OUT (out_length, l); \
 	return list; \
-} \
- \
-void \
-nm_keyfile_plugin_kf_set_##stype##_list (GKeyFile *kf, \
-                                         const char *group, \
-                                         const char *key, \
-                                         set_ctype list[], \
-                                         gsize length) \
-{ \
-	const char *alias; \
- \
-	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
-	g_key_file_set_##stype##_list (kf, alias ?: group, key, list, length); \
 }
 
-DEFINE_KF_LIST_WRAPPER(integer, int*, int);
-DEFINE_KF_LIST_WRAPPER(string, char **, const char* const);
+DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_integer_list, int *,   g_key_file_get_integer_list);
+DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_string_list,  char **, g_key_file_get_string_list);
+
+#define DEFINE_KF_LIST_WRAPPER_SET(fcn_name, set_ctype, key_file_set_fcn) \
+void \
+fcn_name (GKeyFile *kf, \
+          const char *group, \
+          const char *key, \
+          set_ctype list, \
+          gsize length) \
+{ \
+	const char *alias; \
+\
+	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
+	key_file_set_fcn (kf, alias ?: group, key, list, length); \
+}
+
+DEFINE_KF_LIST_WRAPPER_SET (nm_keyfile_plugin_kf_set_integer_list, int *,             g_key_file_set_integer_list);
+DEFINE_KF_LIST_WRAPPER_SET (nm_keyfile_plugin_kf_set_string_list,  const char*const*, g_key_file_set_string_list);
 
 void
 nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
