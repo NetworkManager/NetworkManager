@@ -145,7 +145,8 @@
 
         <listitem>
           <para>Time to wait for a connection, in seconds. If the option is not provided,
-          the default timeout is 30 seconds.</para>
+          the environment variable <literal>NM_ONLINE_TIMEOUT</literal> is honored.
+          The default timeout is 30 seconds.</para>
         </listitem>
       </varlistentry>
 
