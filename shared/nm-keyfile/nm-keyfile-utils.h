@@ -26,7 +26,7 @@ gboolean nm_keyfile_plugin_kf_get_boolean      (GKeyFile *kf, const char *group,
 char    *nm_keyfile_plugin_kf_get_value        (GKeyFile *kf, const char *group, const char *key, GError **error);
 
 void nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf, const char *group, const char *key, const guint8     *list, gsize length);
-void nm_keyfile_plugin_kf_set_integer_list       (GKeyFile *kf, const char *group, const char *key, int              *list, gsize length);
+void nm_keyfile_plugin_kf_set_integer_list_uint  (GKeyFile *kf, const char *group, const char *key, const guint      *list, gsize length);
 void nm_keyfile_plugin_kf_set_string_list        (GKeyFile *kf, const char *group, const char *key, const char *const*list, gsize length);
 
 void nm_keyfile_plugin_kf_set_string       (GKeyFile *kf, const char *group, const char *key, const char *value);

@@ -1851,25 +1851,19 @@ write_array_of_uint (GKeyFile *file,
                      const GValue *value)
 {
 	GArray *array;
-	guint i;
-	gs_free int *tmp_array = NULL;
 
-	array = (GArray *) g_value_get_boxed (value);
+	array = g_value_get_boxed (value);
+
+	nm_assert (!array || g_array_get_element_size (array) == sizeof (guint));
+
 	if (!array || !array->len)
 		return;
 
-	g_return_if_fail (g_array_get_element_size (array) == sizeof (guint));
-
-	tmp_array = g_new (int, array->len);
-	for (i = 0; i < array->len; i++) {
-		guint v = g_array_index (array, guint, i);
-
-		if (v > G_MAXINT)
-			g_return_if_reached ();
-		tmp_array[i] = (int) v;
-	}
-
-	nm_keyfile_plugin_kf_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
+	nm_keyfile_plugin_kf_set_integer_list_uint (file,
+	                                            nm_setting_get_name (setting),
+	                                            key,
+	                                            (const guint *) array->data,
+	                                            array->len);
 }
 
 static void

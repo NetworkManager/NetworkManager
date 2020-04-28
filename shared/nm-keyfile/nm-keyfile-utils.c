@@ -150,8 +150,28 @@ fcn_name (GKeyFile *kf, \
 	key_file_set_fcn (kf, alias ?: group, key, list, length); \
 }
 
-DEFINE_KF_LIST_WRAPPER_SET (nm_keyfile_plugin_kf_set_integer_list, int *,             g_key_file_set_integer_list);
 DEFINE_KF_LIST_WRAPPER_SET (nm_keyfile_plugin_kf_set_string_list,  const char*const*, g_key_file_set_string_list);
+
+void
+nm_keyfile_plugin_kf_set_integer_list_uint (GKeyFile *kf,
+                                            const char *group,
+                                            const char *key,
+                                            const guint *data,
+                                            gsize length)
+{
+	nm_auto_str_buf NMStrBuf strbuf = { };
+	gsize i;
+
+	g_return_if_fail (kf);
+	g_return_if_fail (!length || data);
+	g_return_if_fail (group && group[0]);
+	g_return_if_fail (key && key[0]);
+
+	nm_str_buf_init (&strbuf, length * 4u + 2u, FALSE);
+	for (i = 0; i < length; i++)
+		nm_str_buf_append_printf (&strbuf, "%u;", data[i]);
+	nm_keyfile_plugin_kf_set_value (kf, group, key, nm_str_buf_get_str (&strbuf));
+}
 
 void
 nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
