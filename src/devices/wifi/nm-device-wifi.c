@@ -48,7 +48,7 @@ _LOG_DECLARE_SELF(NMDeviceWifi);
 #define SCAN_INTERVAL_SEC_STEP 20
 #define SCAN_INTERVAL_SEC_MAX 120
 
-#define SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN 5
+#define SCAN_RAND_MAC_ADDRESS_EXPIRE_SEC (5*60)
 
 /*****************************************************************************/
 
@@ -1169,7 +1169,7 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		 * We don't bother with to update the MAC address exactly when
 		 * it expires, instead on the next scan request, we will generate
 		 * a new one.*/
-		priv->hw_addr_scan_expire = now + (SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN * 60);
+		priv->hw_addr_scan_expire = now + SCAN_RAND_MAC_ADDRESS_EXPIRE_SEC;
 
 		generate_mac_address_mask = nm_config_data_get_device_config (NM_CONFIG_GET_DATA,
 		                                                              "wifi.scan-generate-mac-address-mask",
