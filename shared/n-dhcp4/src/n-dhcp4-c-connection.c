@@ -1136,6 +1136,13 @@ int n_dhcp4_c_connection_dispatch_timer(NDhcp4CConnection *connection,
         return 0;
 }
 
+/*
+ * Returns:
+ *  0                     on success
+ *  N_DHCP4_E_MALFORMED   if a malformed packet was received
+ *  N_DHCP4_E_UNEXPECTED  if the packet received contains unexpected data
+ *  N_DHCP4_E_AGAIN       if there was another error (non fatal for the client)
+ */
 int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                      NDhcp4Incoming **messagep) {
         _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = NULL;
@@ -1150,10 +1157,11 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                                  connection->scratch_buffer,
                                                  sizeof(connection->scratch_buffer),
                                                  &message);
-                if (r)
+                if (!r)
+                        break;
+                else if (r == N_DHCP4_E_MALFORMED)
                         return r;
-
-                break;
+                return N_DHCP4_E_AGAIN;
         case N_DHCP4_C_CONNECTION_STATE_DRAINING:
                 r = n_dhcp4_c_socket_packet_recv(connection->fd_packet,
                                                  connection->scratch_buffer,
@@ -1161,8 +1169,10 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                                  &message);
                 if (!r)
                         break;
-                else if (r != N_DHCP4_E_AGAIN)
+                else if (r == N_DHCP4_E_MALFORMED)
                         return r;
+                else if (r != N_DHCP4_E_AGAIN)
+                        return N_DHCP4_E_AGAIN;
 
                 /*
                  * The UDP socket is open and the packet socket has been shut down
@@ -1180,18 +1190,21 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                               connection->scratch_buffer,
                                               sizeof(connection->scratch_buffer),
                                               &message);
-                if (r)
+                if (!r)
+                        break;
+                else if (r == N_DHCP4_E_MALFORMED)
                         return r;
-
-                break;
+                return N_DHCP4_E_AGAIN;
         default:
                 abort();
                 return -ENOTRECOVERABLE;
         }
 
         r = n_dhcp4_c_connection_verify_incoming(connection, message, &type);
-        if (r)
+        if (r == N_DHCP4_E_MALFORMED || r == N_DHCP4_E_UNEXPECTED)
                 return r;
+        else if (r != 0)
+                return N_DHCP4_E_AGAIN;
 
         if (type == N_DHCP4_MESSAGE_OFFER || type == N_DHCP4_MESSAGE_ACK) {
                 n_dhcp4_c_log(connection->client_config, LOG_INFO,
