@@ -1534,7 +1534,7 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
                                   gboolean *out_has_hidden_profiles)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->sup_iface);
+	guint max_scan_ssids = priv->sup_iface ? nm_supplicant_interface_get_max_scan_ssids (priv->sup_iface) : 0u;
 	gs_free NMSettingsConnection **connections = NULL;
 	gs_unref_ptrarray GPtrArray *ssids = NULL;
 	gs_unref_hashtable GHashTable *unique_ssids = NULL;
