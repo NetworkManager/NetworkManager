@@ -364,6 +364,7 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 	GParamSpec *pspec;
 	const char *value;
+	char value_buf[100];
 
 	if (slave)
 		nm_assert (NM_IS_SETTING_BRIDGE_PORT (setting));
@@ -387,7 +388,6 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 		break;
 	case G_TYPE_UINT64:
 	case G_TYPE_UINT: {
-			char value_buf[100];
 			guint64 uval;
 
 			if (pspec->value_type == G_TYPE_UINT64)
