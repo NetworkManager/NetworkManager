@@ -137,28 +137,28 @@ nm_vpn_get_secret_names (const char *service_type)
 	if (!service_type)
 		return NULL;
 
-	if (   !g_str_has_prefix (service_type, NM_DBUS_INTERFACE)
+	if (   !NM_STR_HAS_PREFIX (service_type, NM_DBUS_INTERFACE)
 	    || service_type[NM_STRLEN (NM_DBUS_INTERFACE)] != '.') {
 		/* all our well-known, hard-coded vpn-types start with NM_DBUS_INTERFACE. */
 		return NULL;
 	}
 
 	type = service_type + (NM_STRLEN (NM_DBUS_INTERFACE) + 1);
-	if (   !g_strcmp0 (type, "pptp")
-	    || !g_strcmp0 (type, "iodine")
-	    || !g_strcmp0 (type, "ssh")
-	    || !g_strcmp0 (type, "l2tp")
-	    || !g_strcmp0 (type, "fortisslvpn"))
+	if (NM_IN_STRSET (type, "pptp",
+	                        "iodine",
+	                        "ssh",
+	                        "l2tp",
+	                        "fortisslvpn"))
 		 return generic_vpn_secrets;
-	else if (!g_strcmp0 (type, "openvpn"))
+	if (NM_IN_STRSET (type, "openvpn"))
 		return openvpn_secrets;
-	else if (!g_strcmp0 (type, "vpnc"))
+	if (NM_IN_STRSET (type, "vpnc"))
 		return vpnc_secrets;
-	else if (   !g_strcmp0 (type, "openswan")
-	         || !g_strcmp0 (type, "libreswan")
-	         || !g_strcmp0 (type, "strongswan"))
+	if (NM_IN_STRSET (type, "openswan",
+	                        "libreswan",
+	                        "strongswan"))
 		return swan_secrets;
-	else if (!g_strcmp0 (type, "openconnect"))
+	if (NM_IN_STRSET (type, "openconnect"))
 		return openconnect_secrets;
 	return NULL;
 }
