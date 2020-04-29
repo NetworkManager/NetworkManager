@@ -1533,7 +1533,9 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
 	gs_free NMSettingsConnection **connections = NULL;
 	gs_unref_ptrarray GPtrArray *ssids = NULL;
 	gs_unref_hashtable GHashTable *unique_ssids = NULL;
-	guint i, len;
+	guint connections_len;
+	guint n_hidden;
+	guint i;
 
 	NM_SET_OUT (out_has_hidden_profiles, FALSE);
 
@@ -1558,7 +1560,7 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
 	}
 
 	connections = nm_settings_get_connections_clone (nm_device_get_settings ((NMDevice *) self),
-	                                                 &len,
+	                                                 &connections_len,
 	                                                 hidden_filter_func,
 	                                                 NULL,
 	                                                 NULL,
@@ -1579,17 +1581,24 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
 	}
 
 	g_qsort_with_data (connections,
-	                   len,
+	                   connections_len,
 	                   sizeof (NMSettingsConnection *),
 	                   nm_settings_connection_cmp_timestamp_p_with_data,
 	                   NULL);
 
-	for (i = 0; connections[i]; i++) {
+	n_hidden = 0;
+	for (i = 0; i < connections_len; i++) {
 		NMSettingWireless *s_wifi;
 		GBytes *ssid;
 
 		if (ssids->len >= max_scan_ssids)
 			break;
+
+		if (n_hidden > 4) {
+			/* we allow at most 4 hidden profiles to be actively scanned. The
+			 * reason is speed and to not disclose too many SSIDs. */
+			break;
+		}
 
 		s_wifi = nm_connection_get_setting_wireless (nm_settings_connection_get_connection (connections[i]));
 		ssid = nm_setting_wireless_get_ssid (s_wifi);
@@ -1597,10 +1606,11 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
 		if (!g_hash_table_add (unique_ssids, ssid))
 			continue;
 
-		NM_SET_OUT (out_has_hidden_profiles, TRUE);
 		g_ptr_array_add (ssids, g_bytes_ref (ssid));
+		n_hidden++;
 	}
 
+	NM_SET_OUT (out_has_hidden_profiles, n_hidden > 0);
 	return g_steal_pointer (&ssids);
 }
 
