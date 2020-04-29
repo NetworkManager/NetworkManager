@@ -482,7 +482,7 @@ check_filename (const char *file_name)
 static gboolean
 script_dispatch (ScriptInfo *script)
 {
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	char *argv[4];
 	Request *request = script->request;
 
@@ -502,20 +502,19 @@ script_dispatch (ScriptInfo *script)
 
 	_LOG_S_T (script, "run script%s", script->wait ? "" : " (no-wait)");
 
-	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
-		script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
-		script->timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
-		if (!script->wait)
-			request->num_scripts_nowait++;
-		return TRUE;
-	} else {
+	if (!g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
 		_LOG_S_W (script, "complete: failed to execute script: %s", error->message);
 		script->result = DISPATCH_RESULT_EXEC_FAILED;
 		script->error = g_strdup (error->message);
 		request->num_scripts_done++;
-		g_clear_error (&error);
 		return FALSE;
 	}
+
+	script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
+	script->timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
+	if (!script->wait)
+		request->num_scripts_nowait++;
+	return TRUE;
 }
 
 static gboolean
