@@ -1242,6 +1242,7 @@ int n_dhcp4_client_probe_dispatch_io(NDhcp4ClientProbe *probe, uint32_t events) 
                         return 0;
                 }
 
+                abort();
                 return r;
         }
 
