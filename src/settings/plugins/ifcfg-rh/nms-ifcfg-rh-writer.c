@@ -1362,55 +1362,22 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	return TRUE;
 }
 
-static guint32
-get_setting_default_uint (NMSetting *setting, const char *prop)
+static gboolean
+get_setting_default_boolean (gpointer setting, const char *prop)
 {
-	GParamSpec *pspec;
-	GValue val = G_VALUE_INIT;
-	guint32 ret = 0;
+	return NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop));
+}
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
-	g_assert (pspec);
-	g_value_init (&val, pspec->value_type);
-	g_param_value_set_default (pspec, &val);
-	g_assert (G_VALUE_HOLDS_UINT (&val));
-	ret = g_value_get_uint (&val);
-	g_value_unset (&val);
-	return ret;
+static guint
+get_setting_default_uint (gpointer setting, const char *prop)
+{
+	return NM_G_PARAM_SPEC_GET_DEFAULT_UINT (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop));
 }
 
 static guint64
-get_setting_default_uint64 (NMSetting *setting, const char *prop)
+get_setting_default_uint64 (gpointer setting, const char *prop)
 {
-	GParamSpec *pspec;
-	GValue val = G_VALUE_INIT;
-	guint32 ret = 0;
-
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
-	g_assert (pspec);
-	g_value_init (&val, pspec->value_type);
-	g_param_value_set_default (pspec, &val);
-	g_assert (G_VALUE_HOLDS_UINT64 (&val));
-	ret = g_value_get_uint64 (&val);
-	g_value_unset (&val);
-	return ret;
-}
-
-static gboolean
-get_setting_default_boolean (NMSetting *setting, const char *prop)
-{
-	GParamSpec *pspec;
-	GValue val = G_VALUE_INIT;
-	gboolean ret = 0;
-
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
-	g_assert (pspec);
-	g_value_init (&val, pspec->value_type);
-	g_param_value_set_default (pspec, &val);
-	g_assert (G_VALUE_HOLDS_BOOLEAN (&val));
-	ret = g_value_get_boolean (&val);
-	g_value_unset (&val);
-	return ret;
+	return NM_G_PARAM_SPEC_GET_DEFAULT_UINT64 (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop));
 }
 
 static gboolean
@@ -1478,20 +1445,20 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		svSetValueStr (ifcfg, "STP", "yes");
 
 		i = nm_setting_bridge_get_forward_delay (s_bridge);
-		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY))
+		if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY))
 			svSetValueInt64 (ifcfg, "DELAY", i);
 
 		g_string_append_printf (opts, "priority=%u", nm_setting_bridge_get_priority (s_bridge));
 
 		i = nm_setting_bridge_get_hello_time (s_bridge);
-		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
+		if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "hello_time=%u", i);
 		}
 
 		i = nm_setting_bridge_get_max_age (s_bridge);
-		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
+		if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MAX_AGE)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "max_age=%u", i);
@@ -1499,7 +1466,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	}
 
 	i = nm_setting_bridge_get_ageing_time (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME)) {
+	if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "ageing_time=%u", i);
@@ -1513,7 +1480,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	}
 
 	i = nm_setting_bridge_get_group_forward_mask (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_GROUP_FORWARD_MASK)) {
+	if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_GROUP_FORWARD_MASK)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "group_fwd_mask=%u", i);
@@ -1521,84 +1488,84 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 
 
 	i = nm_setting_bridge_get_multicast_hash_max (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_HASH_MAX)) {
+	if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MULTICAST_HASH_MAX)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_hash_max=%u", i);
 	}
 
 	i = nm_setting_bridge_get_multicast_last_member_count (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT)) {
+	if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_last_member_count=%u", i);
 	}
 
 	u64 = nm_setting_bridge_get_multicast_last_member_interval (s_bridge);
-	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL)) {
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_last_member_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	u64 = nm_setting_bridge_get_multicast_membership_interval (s_bridge);
-	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL)) {
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_membership_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	b = nm_setting_bridge_get_multicast_querier (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERIER)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_querier=%u", (guint) b);
 	}
 
 	u64 = nm_setting_bridge_get_multicast_querier_interval (s_bridge);
-	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL)) {
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_querier_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	u64 = nm_setting_bridge_get_multicast_query_interval (s_bridge);
-	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL)) {
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_query_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	u64 = nm_setting_bridge_get_multicast_query_response_interval (s_bridge);
-	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL)) {
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_query_response_interval=%"G_GUINT64_FORMAT, u64);
 	}
 
 	b = nm_setting_bridge_get_multicast_query_use_ifaddr (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_query_use_ifaddr=%u", (guint) b);
 	}
 
 	b = nm_setting_bridge_get_multicast_snooping (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
 	}
 
 	i = nm_setting_bridge_get_multicast_startup_query_count (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT)) {
+	if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_startup_query_count=%u", i);
 	}
 
 	u64 = nm_setting_bridge_get_multicast_startup_query_interval (s_bridge);
-	if (u64 != get_setting_default_uint64 (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL)) {
+	if (u64 != get_setting_default_uint64 (s_bridge, NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "multicast_startup_query_interval=%"G_GUINT64_FORMAT, u64);
@@ -1612,14 +1579,14 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	}
 
 	b = nm_setting_bridge_get_vlan_filtering (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_FILTERING)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_VLAN_FILTERING)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "vlan_filtering=%u", (guint32) b);
 	}
 
 	i = nm_setting_bridge_get_vlan_default_pvid (s_bridge);
-	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID)) {
+	if (i != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "default_pvid=%u", i);
@@ -1633,7 +1600,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	}
 
 	b = nm_setting_bridge_get_vlan_stats_enabled (s_bridge);
-	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_VLAN_STATS_ENABLED)) {
+	if (b != get_setting_default_boolean (s_bridge, NM_SETTING_BRIDGE_VLAN_STATS_ENABLED)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "vlan_stats_enabled=%u", (guint) b);
