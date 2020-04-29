@@ -154,6 +154,9 @@ typedef struct _NMSupplicantInterfacePrivate {
 	bool           is_ready_main:1;
 	bool           is_ready_p2p_device:1;
 
+	bool           prop_scan_active:1;
+	bool           prop_scan_ssid:1;
+
 } NMSupplicantInterfacePrivate;
 
 struct _NMSupplicantInterfaceClass {
@@ -1167,10 +1170,11 @@ static void
 parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	gboolean have_active = FALSE;
-	gboolean have_ssid = FALSE;
+	const gboolean old_prop_scan_active = priv->prop_scan_active;
+	const gboolean old_prop_scan_ssid = priv->prop_scan_ssid;
+	const guint32 old_max_scan_ssids = priv->max_scan_ssids;
 	gboolean have_ft = FALSE;
-	gint32 max_scan_ssids = -1;
+	gint32 max_scan_ssids;
 	const char **array;
 
 	nm_assert (capabilities && g_variant_is_of_type (capabilities, G_VARIANT_TYPE_VARDICT));
@@ -1195,28 +1199,37 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 	}
 
 	if (g_variant_lookup (capabilities, "Scan", "^a&s", &array)) {
-		if (g_strv_contains (array, "active"))
-			have_active = TRUE;
-		if (g_strv_contains (array, "ssid"))
-			have_ssid = TRUE;
+		const char **a;
+
+		priv->prop_scan_active = FALSE;
+		priv->prop_scan_ssid = FALSE;
+		for (a = array; *a; a++) {
+			if (nm_streq (*a, "active"))
+				priv->prop_scan_active = TRUE;
+			else if (nm_streq (*a, "ssid"))
+				priv->prop_scan_ssid = TRUE;
+		}
 		g_free (array);
 	}
 
 	if (g_variant_lookup (capabilities, "MaxScanSSID", "i", &max_scan_ssids)) {
-		/* We need active scan and SSID probe capabilities to care about MaxScanSSIDs */
-		if (   max_scan_ssids > 0
-		    && have_active
-		    && have_ssid) {
-			/* wpa_supplicant's NM_WPAS_MAX_SCAN_SSIDS value is 16, but for speed
-			 * and to ensure we don't disclose too many SSIDs from the hidden
-			 * list, we'll limit to 5.
-			 */
-			max_scan_ssids = CLAMP (max_scan_ssids, 0, 5);
-			if (max_scan_ssids != priv->max_scan_ssids) {
-				priv->max_scan_ssids = max_scan_ssids;
-				_LOGD ("supports %d scan SSIDs", priv->max_scan_ssids);
-			}
-		}
+		const gint32 WPAS_MAX_SCAN_SSIDS = 16;
+
+		/* Even if supplicant claims that 20 SSIDs are supported, the Scan request
+		 * still only accepts WPAS_MAX_SCAN_SSIDS SSIDs. Otherwise the D-Bus
+		 * request will be rejected with "fi.w1.wpa_supplicant1.InvalidArgs"
+		 * Body: ('Did not receive correct message arguments.', 'Too many ssids specified. Specify at most four')
+		 * */
+		priv->max_scan_ssids = CLAMP (max_scan_ssids, 0, WPAS_MAX_SCAN_SSIDS);
+	}
+
+	if (   old_max_scan_ssids != priv->max_scan_ssids
+	    || old_prop_scan_active != priv->prop_scan_active
+	    || old_prop_scan_ssid != priv->prop_scan_ssid) {
+		_LOGD ("supports %u scan SSIDs (scan: %cactive %cssid)",
+		       (guint32) priv->max_scan_ssids,
+		       priv->prop_scan_active ? '+' : '-',
+		       priv->prop_scan_ssid ? '+' : '-');
 	}
 }
 
@@ -2514,9 +2527,14 @@ nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 guint
 nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 {
+	NMSupplicantInterfacePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), 0);
 
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->max_scan_ssids;
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	return   priv->prop_scan_active && priv->prop_scan_ssid
+	       ? priv->max_scan_ssids
+	       : 0u;
 }
 
 /*****************************************************************************/
