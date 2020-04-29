@@ -17,7 +17,7 @@ NMVpnEditorPlugin *nm_vpn_get_editor_plugin (const char *service_type, GError **
 
 gboolean nm_vpn_supports_ipv6 (NMConnection *connection);
 
-const VpnPasswordName * nm_vpn_get_secret_names (const char *service_type);
+const VpnPasswordName *nm_vpn_get_secret_names (const char *service_type);
 
 gboolean nm_vpn_openconnect_authenticate_helper (const char *host,
                                                  char **cookie,
