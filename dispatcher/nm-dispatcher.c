@@ -491,8 +491,12 @@ script_dispatch (ScriptInfo *script)
 
 	script->dispatched = TRUE;
 
+	/* Only for "hostname" action we coerce the interface name to "none". We don't
+	 * do so for "connectivity-check" action. */
+
 	argv[0] = script->script;
-	argv[1] = request->iface ?: (!strcmp(request->action, NMD_ACTION_HOSTNAME) ? "none" : "");
+	argv[1] =    request->iface
+	          ?: (nm_streq (request->action, NMD_ACTION_HOSTNAME) ? "none" : "");
 	argv[2] = request->action;
 	argv[3] = NULL;
 
