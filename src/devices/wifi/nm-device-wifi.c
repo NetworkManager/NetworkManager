@@ -48,8 +48,6 @@ _LOG_DECLARE_SELF(NMDeviceWifi);
 #define SCAN_INTERVAL_SEC_STEP 20
 #define SCAN_INTERVAL_SEC_MAX 120
 
-#define SCAN_RATE_LIMIT_SEC 8
-
 #define SCAN_EXTRA_DELAY_MSEC 500
 
 #define SCAN_RAND_MAC_ADDRESS_EXPIRE_SEC (5*60)
@@ -103,7 +101,7 @@ typedef struct {
 	gint64            scan_last_complete_msec;
 	gint64            scan_periodic_next_msec;
 
-	gint64            scan_ratelimited_until_msec;
+	gint64            scan_last_request_started_at_msec;
 
 	guint             scan_kickoff_timeout_id;
 
@@ -1356,8 +1354,12 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		/* expire the temporary MAC address used during scanning */
 		priv->hw_addr_scan_expire = 0;
 
-		if (do_reset)
+		if (do_reset) {
+			priv->scan_last_request_started_at_msec = G_MININT64;
+			priv->scan_periodic_next_msec = 0;
+			priv->scan_periodic_interval_sec = 0;
 			nm_device_hw_addr_reset (device, "scanning");
+		}
 		return;
 	}
 
@@ -1379,6 +1381,9 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		                                                              device,
 		                                                              NULL);
 
+		priv->scan_last_request_started_at_msec = G_MININT64;
+		priv->scan_periodic_next_msec = 0;
+		priv->scan_periodic_interval_sec = 0;
 		hw_addr_scan = nm_utils_hw_addr_gen_random_eth (nm_device_get_initial_hw_address (device),
 		                                                generate_mac_address_mask);
 		nm_device_hw_addr_set (device, hw_addr_scan, "scanning", TRUE);
@@ -1678,8 +1683,10 @@ _scan_kickoff (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gs_unref_ptrarray GPtrArray *ssids = NULL;
 	gboolean is_explict = FALSE;
+	NMDeviceState device_state;
 	gboolean has_hidden_profiles;
 	gint64 now_msec;
+	gint64 ratelimit_duration_msec;
 
 	if (priv->scan_request_cancellable) {
 		_LOGT_scan ("kickoff: don't scan (has scan_request_cancellable)");
@@ -1691,17 +1698,25 @@ _scan_kickoff (NMDeviceWifi *self)
 
 	_scan_request_ssids_remove_all (priv, now_msec, SCAN_REQUEST_SSIDS_MAX_NUM);
 
-	if (now_msec < priv->scan_ratelimited_until_msec) {
-		_LOGT_scan ("kickoff: don't scan (rate limited for another %d.%03d msec%s)",
-		            (int) ((priv->scan_ratelimited_until_msec - now_msec) / 1000),
-		            (int) ((priv->scan_ratelimited_until_msec - now_msec) % 1000),
+	device_state = nm_device_get_state (NM_DEVICE (self));
+	if (   device_state > NM_DEVICE_STATE_DISCONNECTED
+	    && device_state <= NM_DEVICE_STATE_ACTIVATED) {
+		/* while we are activated, we rate limit more. */
+		ratelimit_duration_msec = 8000;
+	} else
+		ratelimit_duration_msec = 1500;
+
+	if (priv->scan_last_request_started_at_msec + ratelimit_duration_msec > now_msec) {
+		_LOGT_scan ("kickoff: don't scan (rate limited for another %d.%03d sec%s)",
+		            (int) ((priv->scan_last_request_started_at_msec + ratelimit_duration_msec - now_msec) / 1000),
+		            (int) ((priv->scan_last_request_started_at_msec + ratelimit_duration_msec - now_msec) % 1000),
 		            !priv->scan_kickoff_timeout_id ? ", schedule timeout" : "");
 		if (   !priv->scan_kickoff_timeout_id
 		    && (   priv->scan_explicit_allowed
 		        || priv->scan_periodic_allowed)) {
-			priv->scan_kickoff_timeout_id = g_timeout_add_seconds ((priv->scan_ratelimited_until_msec - now_msec + 999) / 1000,
-			                                                       _scan_kickoff_timeout_cb,
-			                                                       self);
+			priv->scan_kickoff_timeout_id = g_timeout_add (priv->scan_last_request_started_at_msec + ratelimit_duration_msec - now_msec,
+			                                               _scan_kickoff_timeout_cb,
+			                                               self);
 		}
 		return;
 	}
@@ -1726,7 +1741,7 @@ _scan_kickoff (NMDeviceWifi *self)
 		nm_assert (priv->scan_explicit_allowed);
 
 		if (now_msec < priv->scan_periodic_next_msec) {
-			_LOGT_scan ("kickoff: don't scan (periodic scan waiting for another %d.%03d msec%s)",
+			_LOGT_scan ("kickoff: don't scan (periodic scan waiting for another %d.%03d sec%s)",
 			            (int) ((priv->scan_periodic_next_msec - now_msec) / 1000),
 			            (int) ((priv->scan_periodic_next_msec - now_msec) % 1000),
 			            !priv->scan_kickoff_timeout_id ? ", schedule timeout" : "");
@@ -1778,18 +1793,14 @@ _scan_kickoff (NMDeviceWifi *self)
 		       NM_PRINT_FMT_QUOTED (ssids_str, " [", ssids_str, "]", ""));
 	}
 
-	priv->scan_ratelimited_until_msec = now_msec + (1000 * SCAN_RATE_LIMIT_SEC);
+	priv->scan_last_request_started_at_msec = now_msec;
 
 	if (is_explict)
-		_LOGT_scan ("kickoff: explicit scan (ratelimited for %d.%03d msec)",
-		            (int) ((priv->scan_ratelimited_until_msec - now_msec) / 1000),
-		            (int) ((priv->scan_ratelimited_until_msec - now_msec) % 1000));
+		_LOGT_scan ("kickoff: explicit scan starting");
 	else {
-		_LOGT_scan ("kickoff: periodic scan (next scan is scheduled in %d.%03d msec, ratelimited for %d.%03d msec)",
+		_LOGT_scan ("kickoff: periodic scan starting (next scan is scheduled in %d.%03d sec)",
 		            (int) ((priv->scan_periodic_next_msec - now_msec) / 1000),
-		            (int) ((priv->scan_periodic_next_msec - now_msec) % 1000),
-		            (int) ((priv->scan_ratelimited_until_msec - now_msec) / 1000),
-		            (int) ((priv->scan_ratelimited_until_msec - now_msec) % 1000));
+		            (int) ((priv->scan_periodic_next_msec - now_msec) % 1000));
 	}
 
 	_hw_addr_set_scanning (self, FALSE);
@@ -3597,6 +3608,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	c_list_init (&priv->scan_request_ssids_lst_head);
 	priv->aps_idx_by_supplicant_path = g_hash_table_new (nm_direct_hash, NULL);
 
+	priv->scan_last_request_started_at_msec = G_MININT64;
 	priv->hidden_probe_scan_warn = TRUE;
 	priv->mode = NM_802_11_MODE_INFRA;
 	priv->wowlan_restore = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
