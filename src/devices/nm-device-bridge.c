@@ -398,15 +398,12 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 			/* zero means "unspecified" for some NM properties but isn't in the
 			 * allowed kernel range, so reset the property to the default value.
 			 */
-			if (option->default_if_zero && uval == 0) {
-				g_value_unset (&val);
-				g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
-				g_param_value_set_default (pspec, &val);
-
+			if (   option->default_if_zero
+			    && uval == 0) {
 				if (pspec->value_type == G_TYPE_UINT64)
-					uval = g_value_get_uint64 (&val);
+					uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT64 (pspec);
 				else
-					uval = (guint) g_value_get_uint (&val);
+					uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT (pspec);
 			}
 
 			/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
