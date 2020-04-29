@@ -615,13 +615,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 		return FALSE;
 	}
 
-	/* Hidden SSIDs not supported in any mode (client or AP) */
-	if (nm_setting_wireless_get_hidden (s_wireless)) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-		                            "hidden networks not supported by the IWD backend");
-		return FALSE;
-	}
-
 	security = nm_wifi_connection_get_iwd_security (connection, &mapped);
 	if (!mapped) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -630,6 +623,15 @@ check_connection_compatible (NMDevice *device, NMConnection *connection, GError 
 	}
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
+
+	/* Hidden SSIDs only supported in client mode */
+	if (   nm_setting_wireless_get_hidden (s_wireless)
+	    && !NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "non-infrastructure hidden networks not supported by the IWD backend");
+		return FALSE;
+	}
+
 	if (NM_IN_STRSET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
 		/* 8021x networks can only be used if they've been provisioned on the IWD side and
 		 * thus are Known Networks.
@@ -757,6 +759,7 @@ complete_connection (NMDevice *device,
 	NMWifiAP *ap;
 	GBytes *ssid;
 	GBytes *setting_ssid = NULL;
+	gboolean hidden = FALSE;
 	const char *mode;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -789,16 +792,14 @@ complete_connection (NMDevice *device,
 		/* Find a compatible AP in the scan list */
 		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 		if (!ap) {
-			if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
-				g_set_error_literal (error,
-				                     NM_DEVICE_ERROR,
-				                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-				                     "No compatible AP in the scan list and hidden SSIDs not supported.");
-				return FALSE;
-			}
-
+			/* If we still don't have an AP, then the WiFI settings needs to be
+			 * fully specified by the client.  Might not be able to find an AP
+			 * if the network isn't broadcasting the SSID for example.
+			 */
 			if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
 				return FALSE;
+
+			hidden = TRUE;
 		}
 	} else {
 		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
@@ -848,6 +849,9 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           nm_setting_wireless_get_mac_address (s_wifi) ? NULL : nm_device_get_iface (device),
 	                           TRUE);
+
+	if (hidden)
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
 	return TRUE;
 }
@@ -1786,11 +1790,34 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			goto out_fail;
 		}
 
+		if (   !is_connection_known_network (connection)
+		    && nm_setting_wireless_get_hidden (s_wireless)) {
+			gs_free char *ssid_str = NULL;
+
+			/* Use Station.ConnectHiddenNetwork method instead of Network proxy. */
+			ssid_str = _nm_utils_ssid_to_utf8 (nm_setting_wireless_get_ssid (s_wireless));
+			g_dbus_proxy_call (priv->dbus_station_proxy,
+			                   "ConnectHiddenNetwork",
+			                   g_variant_new ("(s)", ssid_str),
+			                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+			                   priv->cancellable,
+			                   network_connect_cb,
+			                   self);
+			return NM_ACT_STAGE_RETURN_POSTPONE;
+		}
+
+		if (!nm_wifi_ap_get_supplicant_path (ap)) {
+			_LOGW (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) network is provisioned but dbus supplicant path for AP unknown");
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+			goto out_fail;
+		}
+
 		network_proxy = nm_iwd_manager_get_dbus_interface (nm_iwd_manager_get (),
 		                                                   nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)),
 		                                                   NM_IWD_NETWORK_INTERFACE);
 		if (!network_proxy) {
-			_LOGE (LOGD_DEVICE | LOGD_WIFI,
+			_LOGW (LOGD_DEVICE | LOGD_WIFI,
 			       "Activation: (wifi) could not get Network interface proxy for %s",
 			       nm_ref_string_get_str (nm_wifi_ap_get_supplicant_path (ap)));
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
