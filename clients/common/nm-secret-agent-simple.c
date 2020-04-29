@@ -422,7 +422,7 @@ add_vpn_secrets (RequestData *request,
                  char **msg)
 {
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
-	const VpnPasswordName *p;
+	const NmcVpnPasswordName *p;
 	const char *vpn_msg = NULL;
 	char **iter;
 

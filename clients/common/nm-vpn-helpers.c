@@ -103,7 +103,7 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 	return NM_FLAGS_HAS (capabilities, NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6);
 }
 
-const VpnPasswordName *
+const NmcVpnPasswordName *
 nm_vpn_get_secret_names (const char *service_type)
 {
 	const char *type;
@@ -121,9 +121,9 @@ nm_vpn_get_secret_names (const char *service_type)
 
 #define _VPN_PASSWORD_LIST(...) \
 	({ \
-		static const VpnPasswordName _arr[] = { \
+		static const NmcVpnPasswordName _arr[] = { \
 			__VA_ARGS__ \
-			{ .name = NULL, .ui_name = NULL }, \
+			{ 0 }, \
 		}; \
 		_arr; \
 	})
