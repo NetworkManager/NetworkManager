@@ -246,7 +246,7 @@ _scan_request_ssids_remove_all (NMDeviceWifiPrivate *priv,
 		cutoff_time_msec = cutoff_with_now_msec - SCAN_REQUEST_SSIDS_MAX_AGE_MSEC;
 		while ((srs_data = c_list_last_entry (&priv->scan_request_ssids_lst_head, ScanRequestSsidData, lst))) {
 			if (srs_data->timestamp_msec > cutoff_time_msec)
-				return;
+				break;
 			_scan_request_ssids_remove (priv, srs_data, NULL);
 		}
 	}
