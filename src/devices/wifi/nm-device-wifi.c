@@ -262,10 +262,10 @@ _scan_request_ssids_remove_all (NMDeviceWifiPrivate *priv,
 			d = c_list_last_entry (&priv->scan_request_ssids_lst_head, ScanRequestSsidData, lst);
 			_scan_request_ssids_remove (priv, d, NULL);
 		}
-		nm_assert (i == nm_g_hash_table_size (priv->scan_request_ssids_hash));
-		nm_assert (i == c_list_length (&priv->scan_request_ssids_lst_head));
-		nm_assert (i <= cutoff_at_len);
 	}
+
+	nm_assert (nm_g_hash_table_size (priv->scan_request_ssids_hash) <= SCAN_REQUEST_SSIDS_MAX_NUM);
+	nm_assert (nm_g_hash_table_size (priv->scan_request_ssids_hash) == c_list_length (&priv->scan_request_ssids_lst_head));
 }
 
 static GPtrArray *
@@ -275,11 +275,9 @@ _scan_request_ssids_fetch (NMDeviceWifiPrivate *priv, gint64 now_msec)
 	GPtrArray *ssids;
 	guint len;
 
-	_scan_request_ssids_remove_all (priv, now_msec, SCAN_REQUEST_SSIDS_MAX_NUM);
+	_scan_request_ssids_remove_all (priv, now_msec, G_MAXUINT);
 
 	len = nm_g_hash_table_size (priv->scan_request_ssids_hash);
-	nm_assert (len == c_list_length (&priv->scan_request_ssids_lst_head));
-
 	if (len == 0)
 		return NULL;
 
@@ -1702,7 +1700,7 @@ _scan_kickoff (NMDeviceWifi *self)
 
 	now_msec = nm_utils_get_monotonic_timestamp_msec ();
 
-	_scan_request_ssids_remove_all (priv, now_msec, SCAN_REQUEST_SSIDS_MAX_NUM);
+	_scan_request_ssids_remove_all (priv, now_msec, G_MAXUINT);
 
 	device_state = nm_device_get_state (NM_DEVICE (self));
 	if (   device_state > NM_DEVICE_STATE_DISCONNECTED
