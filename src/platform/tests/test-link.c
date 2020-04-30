@@ -3050,18 +3050,29 @@ test_sysctl_netns_switch (void)
 	nmtstp_link_delete (PL, FALSE, ifindex, NULL, TRUE);
 }
 
-static void
-sysctl_set_async_cb_assert_success (GError *error, gpointer data)
-{
-	g_assert_no_error (error);
-	g_main_loop_quit (data);
-}
+typedef struct {
+	GMainLoop *loop;
+	const char *path;
+	gboolean expected_success;
+	gint32 expected_value;
+} SetAsyncData;
 
 static void
-sysctl_set_async_cb_assert_failure (GError *error, gpointer data)
+sysctl_set_async_cb (GError *error, gpointer user_data)
 {
-	g_assert (error);
-	g_main_loop_quit (data);
+	SetAsyncData *data = user_data;
+
+	if (data->expected_success) {
+		g_assert_no_error (error);
+		g_assert_cmpint (nm_platform_sysctl_get_int32 (NM_PLATFORM_GET,
+		                                               NMP_SYSCTL_PATHID_ABSOLUTE (data->path),
+		                                               -1),
+		                 ==,
+		                 data->expected_value);
+	} else
+		g_assert (error);
+
+	g_main_loop_quit (data->loop);
 }
 
 static void
@@ -3070,43 +3081,53 @@ test_sysctl_set_async (void)
 	NMPlatform *const PL = NM_PLATFORM_GET;
 	const char *const IFNAME = "nm-dummy-0";
 	const char *const PATH = "/proc/sys/net/ipv4/conf/nm-dummy-0/rp_filter";
-	gs_free GMainLoop *loop = NULL;
+	GMainLoop *loop;
 	gs_unref_object GCancellable *cancellable = NULL;
+	gboolean proc_writable;
+	SetAsyncData data;
 	int ifindex;
 
 	ifindex = nmtstp_link_dummy_add (PL, -1, IFNAME)->ifindex;
 	loop = g_main_loop_new (NULL, FALSE);
 	cancellable = g_cancellable_new ();
+	proc_writable = access (PATH, W_OK) == 0;
+
+	data = (SetAsyncData) {
+		.loop = loop,
+		.path = PATH,
+		.expected_success = proc_writable,
+		.expected_value = 2,
+	};
 
 	nm_platform_sysctl_set_async (PL,
 	                              NMP_SYSCTL_PATHID_ABSOLUTE (PATH),
 	                              (const char *[]) { "2", NULL},
-	                              sysctl_set_async_cb_assert_success,
-	                              loop,
+	                              sysctl_set_async_cb,
+	                              &data,
 	                              cancellable);
 
 	if (!nmtst_main_loop_run (loop, 1000))
 		g_assert_not_reached ();
 
-	g_assert_cmpint (nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_ABSOLUTE (PATH), -1),
-	                 ==,
-	                 2);
+	data = (SetAsyncData) {
+		.loop = loop,
+		.path = PATH,
+		.expected_success = proc_writable,
+		.expected_value = 1,
+	};
 
 	nm_platform_sysctl_set_async (PL,
 	                              NMP_SYSCTL_PATHID_ABSOLUTE (PATH),
 	                              (const char *[]) { "2", "0", "1", "0", "1", NULL},
-	                              sysctl_set_async_cb_assert_success,
-	                              loop,
+	                              sysctl_set_async_cb,
+	                              &data,
 	                              cancellable);
 
 	if (!nmtst_main_loop_run (loop, 2000))
 		g_assert_not_reached ();
 
-	g_assert_cmpint (nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_ABSOLUTE (PATH), -1),
-	                 ==,
-	                 1);
-
 	nmtstp_link_delete (NULL, -1, ifindex, IFNAME, TRUE);
+	g_main_loop_unref (loop);
 }
 
 static void
@@ -3115,25 +3136,33 @@ test_sysctl_set_async_fail (void)
 	NMPlatform *const PL = NM_PLATFORM_GET;
 	const char *const IFNAME = "nm-dummy-0";
 	const char *const PATH = "/proc/sys/net/ipv4/conf/nm-dummy-0/does-not-exist";
-	gs_free GMainLoop *loop = NULL;
+	GMainLoop *loop;
 	gs_unref_object GCancellable *cancellable = NULL;
+	SetAsyncData data;
 	int ifindex;
 
 	ifindex = nmtstp_link_dummy_add (PL, -1, IFNAME)->ifindex;
 	loop = g_main_loop_new (NULL, FALSE);
 	cancellable = g_cancellable_new ();
 
+	data = (SetAsyncData) {
+		.loop = loop,
+		.path = PATH,
+		.expected_success = FALSE,
+	};
+
 	nm_platform_sysctl_set_async (PL,
 	                              NMP_SYSCTL_PATHID_ABSOLUTE (PATH),
 	                              (const char *[]) { "2", NULL},
-	                              sysctl_set_async_cb_assert_failure,
-	                              loop,
+	                              sysctl_set_async_cb,
+	                              &data,
 	                              cancellable);
 
 	if (!nmtst_main_loop_run (loop, 1000))
 		g_assert_not_reached ();
 
 	nmtstp_link_delete (NULL, -1, ifindex, IFNAME, TRUE);
+	g_main_loop_unref (loop);
 }
 
 /*****************************************************************************/
