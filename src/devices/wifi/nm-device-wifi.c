@@ -214,21 +214,22 @@ typedef struct {
 } ScanRequestSsidData;
 
 static void
-_scan_request_ssids_remove (NMDeviceWifiPrivate *priv,
-                            ScanRequestSsidData *srs_data,
-                            GBytes **out_ssid)
+_scan_request_ssids_remove (ScanRequestSsidData *srs_data)
 {
-	nm_assert (priv->scan_request_ssids_hash);
-	nm_assert (g_hash_table_lookup (priv->scan_request_ssids_hash, srs_data) == srs_data);
+	c_list_unlink_stale (&srs_data->lst);
+	g_bytes_unref (srs_data->ssid);
+	nm_g_slice_free (srs_data);
+}
 
+static void
+_scan_request_ssids_remove_with_hash (NMDeviceWifiPrivate *priv,
+                                      ScanRequestSsidData *srs_data)
+{
+	nm_assert (srs_data);
+	nm_assert (nm_g_hash_table_lookup (priv->scan_request_ssids_hash, srs_data) == srs_data);
 	if (!g_hash_table_remove (priv->scan_request_ssids_hash, srs_data))
 		nm_assert_not_reached ();
-	c_list_unlink_stale (&srs_data->lst);
-	if (out_ssid)
-		*out_ssid = srs_data->ssid;
-	else
-		g_bytes_unref (srs_data->ssid);
-	nm_g_slice_free (srs_data);
+	_scan_request_ssids_remove (srs_data);
 }
 
 static void
@@ -237,6 +238,17 @@ _scan_request_ssids_remove_all (NMDeviceWifiPrivate *priv,
                                 guint cutoff_at_len)
 {
 	ScanRequestSsidData *srs_data;
+
+	nm_assert ((!priv->scan_request_ssids_hash) == c_list_is_empty (&priv->scan_request_ssids_lst_head));
+	if (!priv->scan_request_ssids_hash)
+		return;
+
+	if (cutoff_at_len == 0) {
+		nm_clear_pointer (&priv->scan_request_ssids_hash, g_hash_table_destroy);
+		while ((srs_data = c_list_first_entry (&priv->scan_request_ssids_lst_head, ScanRequestSsidData, lst)))
+			_scan_request_ssids_remove (srs_data);
+		return;
+	}
 
 	if (cutoff_with_now_msec != 0) {
 		gint64 cutoff_time_msec;
@@ -247,7 +259,7 @@ _scan_request_ssids_remove_all (NMDeviceWifiPrivate *priv,
 		while ((srs_data = c_list_last_entry (&priv->scan_request_ssids_lst_head, ScanRequestSsidData, lst))) {
 			if (srs_data->timestamp_msec > cutoff_time_msec)
 				break;
-			_scan_request_ssids_remove (priv, srs_data, NULL);
+			_scan_request_ssids_remove_with_hash (priv, srs_data);
 		}
 	}
 
@@ -260,12 +272,14 @@ _scan_request_ssids_remove_all (NMDeviceWifiPrivate *priv,
 			ScanRequestSsidData *d;
 
 			d = c_list_last_entry (&priv->scan_request_ssids_lst_head, ScanRequestSsidData, lst);
-			_scan_request_ssids_remove (priv, d, NULL);
+			_scan_request_ssids_remove_with_hash (priv, d);
 		}
 	}
 
 	nm_assert (nm_g_hash_table_size (priv->scan_request_ssids_hash) <= SCAN_REQUEST_SSIDS_MAX_NUM);
 	nm_assert (nm_g_hash_table_size (priv->scan_request_ssids_hash) == c_list_length (&priv->scan_request_ssids_lst_head));
+	if (c_list_is_empty (&priv->scan_request_ssids_lst_head))
+		nm_clear_pointer (&priv->scan_request_ssids_hash, g_hash_table_destroy);
 }
 
 static GPtrArray *
@@ -282,11 +296,10 @@ _scan_request_ssids_fetch (NMDeviceWifiPrivate *priv, gint64 now_msec)
 		return NULL;
 
 	ssids = g_ptr_array_new_full (len, (GDestroyNotify) g_bytes_unref);
+	nm_clear_pointer (&priv->scan_request_ssids_hash, g_hash_table_destroy);
 	while ((srs_data = c_list_first_entry (&priv->scan_request_ssids_lst_head, ScanRequestSsidData, lst))) {
-		GBytes *ssid;
-
-		_scan_request_ssids_remove (priv, srs_data, &ssid);
-		g_ptr_array_add (ssids, ssid);
+		g_ptr_array_add (ssids, g_steal_pointer (&srs_data->ssid));
+		_scan_request_ssids_remove (srs_data);
 	}
 	return ssids;
 }
