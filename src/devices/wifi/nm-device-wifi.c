@@ -1534,7 +1534,7 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
                                   gboolean *out_has_hidden_profiles)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint max_scan_ssids = priv->sup_iface ? nm_supplicant_interface_get_max_scan_ssids (priv->sup_iface) : 0u;
+	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->sup_iface);
 	gs_free NMSettingsConnection **connections = NULL;
 	gs_unref_ptrarray GPtrArray *ssids = NULL;
 	gs_unref_hashtable GHashTable *unique_ssids = NULL;
@@ -1687,6 +1687,11 @@ _scan_kickoff (NMDeviceWifi *self)
 	gboolean has_hidden_profiles;
 	gint64 now_msec;
 	gint64 ratelimit_duration_msec;
+
+	if (!priv->sup_iface) {
+		_LOGT_scan ("kickoff: don't scan (has no supplicant interface)");
+		return;
+	}
 
 	if (priv->scan_request_cancellable) {
 		_LOGT_scan ("kickoff: don't scan (has scan_request_cancellable)");
