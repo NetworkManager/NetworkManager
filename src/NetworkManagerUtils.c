@@ -1173,6 +1173,13 @@ nm_utils_qdiscs_from_tc_setting (NMPlatform *platform,
 			GET_ATTR ("ce_threshold", qdisc->fq_codel.ce_threshold, UINT32,  uint32,  NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED);
 			GET_ATTR ("memory_limit", qdisc->fq_codel.memory_limit, UINT32,  uint32,  NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET);
 			GET_ATTR ("ecn",          qdisc->fq_codel.ecn,          BOOLEAN, boolean, FALSE);
+		} else if (nm_streq (qdisc->kind, "sfq")) {
+			GET_ATTR ("limit",        qdisc->sfq.limit,             UINT32,  uint32,  0);
+			GET_ATTR ("flows",        qdisc->sfq.flows,             UINT32,  uint32,  0);
+			GET_ATTR ("divisor",      qdisc->sfq.divisor,           UINT32,  uint32,  0);
+			GET_ATTR ("perturb",      qdisc->sfq.perturb_period,    INT32,   int32,   0);
+			GET_ATTR ("quantum",      qdisc->sfq.quantum,           UINT32,  uint32,  0);
+			GET_ATTR ("depth",        qdisc->sfq.depth,             UINT32,  uint32,  0);
 		}
 
 #undef GET_ADDR

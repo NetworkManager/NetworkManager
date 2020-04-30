@@ -2232,6 +2232,7 @@ test_tc_config_qdisc (void)
 	NMTCQdisc *qdisc1, *qdisc2;
 	char *str;
 	GError *error = NULL;
+	GVariant *variant;
 
 	qdisc1 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
 	nmtst_assert_success (qdisc1, error);
@@ -2294,6 +2295,30 @@ test_tc_config_qdisc (void)
 
 	nm_tc_qdisc_unref (qdisc1);
 	nm_tc_qdisc_unref (qdisc2);
+
+#define CHECK_ATTRIBUTE(qdisc, name, vtype, type, value) \
+	variant = nm_tc_qdisc_get_attribute (qdisc, name); \
+	g_assert (variant); \
+	g_assert (g_variant_is_of_type (variant, vtype)); \
+	g_assert_cmpint (g_variant_get_ ## type(variant), ==, value);
+
+	qdisc1 = nm_utils_tc_qdisc_from_str ("handle 1235 root sfq perturb 10 quantum 1480 "
+	                                     "limit 9000 flows 1024 divisor 500 depth 12",
+	                                     &error);
+	nmtst_assert_success (qdisc1, error);
+
+	g_assert_cmpstr (nm_tc_qdisc_get_kind (qdisc1), ==, "sfq");
+	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_MAKE (0x1235u << 16, 0x0000u));
+	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_ROOT);
+	CHECK_ATTRIBUTE (qdisc1, "perturb", G_VARIANT_TYPE_INT32,  int32,  10);
+	CHECK_ATTRIBUTE (qdisc1, "quantum", G_VARIANT_TYPE_UINT32, uint32, 1480);
+	CHECK_ATTRIBUTE (qdisc1, "limit",   G_VARIANT_TYPE_UINT32, uint32, 9000);
+	CHECK_ATTRIBUTE (qdisc1, "flows",   G_VARIANT_TYPE_UINT32, uint32, 1024);
+	CHECK_ATTRIBUTE (qdisc1, "divisor", G_VARIANT_TYPE_UINT32, uint32, 500);
+	CHECK_ATTRIBUTE (qdisc1, "depth",   G_VARIANT_TYPE_UINT32, uint32, 12);
+	nm_tc_qdisc_unref (qdisc1);
+
+#undef CHECK_ATTRIBUTE
 }
 
 static void

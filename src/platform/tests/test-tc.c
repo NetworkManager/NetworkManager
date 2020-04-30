@@ -75,7 +75,7 @@ test_qdisc1 (void)
 }
 
 static void
-test_qdisc2 (void)
+test_qdisc_fq_codel (void)
 {
 	int ifindex;
 	gs_unref_ptrarray GPtrArray *known = NULL;
@@ -113,6 +113,45 @@ test_qdisc2 (void)
 	g_assert_cmpint (qdisc->fq_codel.quantum, ==, 1000);
 }
 
+static void
+test_qdisc_sfq (void)
+{
+	int ifindex;
+	gs_unref_ptrarray GPtrArray *known = NULL;
+	gs_unref_ptrarray GPtrArray *plat = NULL;
+	NMPObject *obj;
+	NMPlatformQdisc *qdisc;
+
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
+	g_assert_cmpint (ifindex, >, 0);
+
+	nmtstp_run_command ("tc qdisc del dev %s root", DEVICE_NAME);
+
+	nmtstp_wait_for_signal (NM_PLATFORM_GET, 0);
+
+	known = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+	obj = qdisc_new (ifindex, "sfq", TC_H_ROOT);
+	obj->qdisc.handle = TC_H_MAKE (0x8143 << 16, 0);
+	obj->qdisc.sfq.perturb_period = 10;
+	obj->qdisc.sfq.quantum = 1540;
+	obj->qdisc.sfq.flows = 256;
+	g_ptr_array_add (known, obj);
+
+	g_assert (nm_platform_qdisc_sync (NM_PLATFORM_GET, ifindex, known));
+	plat = qdiscs_lookup (ifindex);
+	g_assert (plat);
+	g_assert_cmpint (plat->len, ==, 1);
+
+	obj = plat->pdata[0];
+	qdisc = NMP_OBJECT_CAST_QDISC (obj);
+	g_assert_cmpstr (qdisc->kind, ==, "sfq");
+	g_assert_cmpint (qdisc->handle, ==, TC_H_MAKE (0x8143 << 16, 0));
+	g_assert_cmpint (qdisc->parent, ==, TC_H_ROOT);
+	g_assert_cmpint (qdisc->sfq.perturb_period, ==, 10);
+	g_assert_cmpint (qdisc->sfq.quantum, ==, 1540);
+	g_assert_cmpint (qdisc->sfq.flows, ==, 256);
+}
+
 /*****************************************************************************/
 
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
@@ -128,6 +167,7 @@ _nmtstp_setup_tests (void)
 {
 	if (nmtstp_is_root_test ()) {
 		nmtstp_env1_add_test_func ("/link/qdisc/1", test_qdisc1, TRUE);
-		nmtstp_env1_add_test_func ("/link/qdisc/2", test_qdisc2, TRUE);
+		nmtstp_env1_add_test_func ("/link/qdisc/fq_codel", test_qdisc_fq_codel, TRUE);
+		nmtstp_env1_add_test_func ("/link/qdisc/sfq", test_qdisc_sfq, TRUE);
 	}
 }

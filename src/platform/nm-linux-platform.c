@@ -3700,36 +3700,50 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 		struct nlattr *options_attr;
 		int remaining;
 
-		nla_for_each_nested (options_attr, tb[TCA_OPTIONS], remaining) {
-			if (nla_len (options_attr) < sizeof (uint32_t))
-				continue;
+		if (nm_streq0 (obj->qdisc.kind, "sfq")) {
+			struct tc_sfq_qopt_v1 opt = {};
 
-			if (nm_streq0 (obj->qdisc.kind, "fq_codel")) {
-				switch (nla_type (options_attr)) {
-				case TCA_FQ_CODEL_LIMIT:
-					obj->qdisc.fq_codel.limit = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_FLOWS:
-					obj->qdisc.fq_codel.flows = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_TARGET:
-					obj->qdisc.fq_codel.target = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_INTERVAL:
-					obj->qdisc.fq_codel.interval = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_QUANTUM:
-					obj->qdisc.fq_codel.quantum = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_CE_THRESHOLD:
-					obj->qdisc.fq_codel.ce_threshold = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_MEMORY_LIMIT:
-					obj->qdisc.fq_codel.memory_limit = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_ECN:
-					obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
-					break;
+			if (tb[TCA_OPTIONS]->nla_len >= nla_attr_size (sizeof (opt))) {
+				memcpy (&opt, nla_data (tb[TCA_OPTIONS]), sizeof (opt));
+				obj->qdisc.sfq.quantum = opt.v0.quantum;
+				obj->qdisc.sfq.perturb_period = opt.v0.perturb_period;
+				obj->qdisc.sfq.limit = opt.v0.limit;
+				obj->qdisc.sfq.divisor = opt.v0.divisor;
+				obj->qdisc.sfq.flows = opt.v0.flows;
+				obj->qdisc.sfq.depth = opt.depth;
+			}
+		} else {
+			nla_for_each_nested (options_attr, tb[TCA_OPTIONS], remaining) {
+				if (nla_len (options_attr) < sizeof (uint32_t))
+					continue;
+
+				if (nm_streq0 (obj->qdisc.kind, "fq_codel")) {
+					switch (nla_type (options_attr)) {
+					case TCA_FQ_CODEL_LIMIT:
+						obj->qdisc.fq_codel.limit = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_FLOWS:
+						obj->qdisc.fq_codel.flows = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_TARGET:
+						obj->qdisc.fq_codel.target = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_INTERVAL:
+						obj->qdisc.fq_codel.interval = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_QUANTUM:
+						obj->qdisc.fq_codel.quantum = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_CE_THRESHOLD:
+						obj->qdisc.fq_codel.ce_threshold = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_MEMORY_LIMIT:
+						obj->qdisc.fq_codel.memory_limit = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_ECN:
+						obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
+						break;
+					}
 				}
 			}
 		}
@@ -4651,29 +4665,42 @@ _nl_msg_new_qdisc (int nlmsg_type,
 
 	NLA_PUT_STRING (msg, TCA_KIND, qdisc->kind);
 
-	if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
-		goto nla_put_failure;
+	if (nm_streq (qdisc->kind, "sfq")) {
+		struct tc_sfq_qopt_v1 opt = { };
 
-	if (nm_streq (qdisc->kind, "fq_codel")) {
-		if (qdisc->fq_codel.limit)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_LIMIT, qdisc->fq_codel.limit);
-		if (qdisc->fq_codel.flows)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_FLOWS, qdisc->fq_codel.flows);
-		if (qdisc->fq_codel.target)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_TARGET, qdisc->fq_codel.target);
-		if (qdisc->fq_codel.interval)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_INTERVAL, qdisc->fq_codel.interval);
-		if (qdisc->fq_codel.quantum)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
-		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory_limit);
-		if (qdisc->fq_codel.ecn)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
+		opt.v0.quantum = qdisc->sfq.quantum;
+		opt.v0.limit = qdisc->sfq.limit;
+		opt.v0.perturb_period = qdisc->sfq.perturb_period;
+		opt.v0.flows = qdisc->sfq.flows;
+		opt.v0.divisor = qdisc->sfq.divisor;
+		opt.depth = qdisc->sfq.depth;
+
+		NLA_PUT (msg, TCA_OPTIONS, sizeof (opt), &opt);
+	} else {
+		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
+			goto nla_put_failure;
+
+		if (nm_streq (qdisc->kind, "fq_codel")) {
+			if (qdisc->fq_codel.limit)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_LIMIT, qdisc->fq_codel.limit);
+			if (qdisc->fq_codel.flows)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_FLOWS, qdisc->fq_codel.flows);
+			if (qdisc->fq_codel.target)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_TARGET, qdisc->fq_codel.target);
+			if (qdisc->fq_codel.interval)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_INTERVAL, qdisc->fq_codel.interval);
+			if (qdisc->fq_codel.quantum)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
+			if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
+			if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory_limit);
+			if (qdisc->fq_codel.ecn)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
+		}
+
+		nla_nest_end (msg, tc_options);
 	}
-
-	nla_nest_end (msg, tc_options);
 
 	return g_steal_pointer (&msg);
 
