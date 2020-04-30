@@ -269,13 +269,13 @@ _scan_request_ssids_remove_all (NMDeviceWifiPrivate *priv,
 }
 
 static GPtrArray *
-_scan_request_ssids_fetch (NMDeviceWifiPrivate *priv)
+_scan_request_ssids_fetch (NMDeviceWifiPrivate *priv, gint64 now_msec)
 {
 	ScanRequestSsidData *srs_data;
 	GPtrArray *ssids;
 	guint len;
 
-	_scan_request_ssids_remove_all (priv, nm_utils_get_monotonic_timestamp_msec (), SCAN_REQUEST_SSIDS_MAX_NUM);
+	_scan_request_ssids_remove_all (priv, now_msec, SCAN_REQUEST_SSIDS_MAX_NUM);
 
 	len = nm_g_hash_table_size (priv->scan_request_ssids_hash);
 	nm_assert (len == c_list_length (&priv->scan_request_ssids_lst_head));
@@ -1531,6 +1531,7 @@ hidden_filter_func (NMSettings *settings,
 
 static GPtrArray *
 _scan_request_ssids_build_hidden (NMDeviceWifi *self,
+                                  gint64 now_msec,
                                   gboolean *out_has_hidden_profiles)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -1545,7 +1546,7 @@ _scan_request_ssids_build_hidden (NMDeviceWifi *self,
 	NM_SET_OUT (out_has_hidden_profiles, FALSE);
 
 	/* collect all pending explicit SSIDs. */
-	ssids = _scan_request_ssids_fetch (priv);
+	ssids = _scan_request_ssids_fetch (priv, now_msec);
 
 	if (max_scan_ssids == 0) {
 		/* no space. @ssids will be ignored. */
@@ -1764,7 +1765,7 @@ _scan_kickoff (NMDeviceWifi *self)
 		priv->scan_periodic_next_msec = now_msec + 1000 * priv->scan_periodic_interval_sec;
 	}
 
-	ssids = _scan_request_ssids_build_hidden (self, &has_hidden_profiles);
+	ssids = _scan_request_ssids_build_hidden (self, now_msec, &has_hidden_profiles);
 	if (has_hidden_profiles) {
 		if (priv->hidden_probe_scan_warn) {
 			priv->hidden_probe_scan_warn = FALSE;
