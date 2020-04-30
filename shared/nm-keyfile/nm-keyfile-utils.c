@@ -104,36 +104,33 @@ nm_keyfile_plugin_get_setting_name_for_alias (const char *alias)
 
 /*****************************************************************************/
 
-#define DEFINE_KF_LIST_WRAPPER_GET(fcn_name, get_ctype, key_file_get_fcn) \
-get_ctype \
-fcn_name (GKeyFile *kf, \
-          const char *group, \
-          const char *key, \
-          gsize *out_length, \
-          GError **error) \
-{ \
-	get_ctype list; \
-	const char *alias; \
-	GError *local = NULL; \
-	gsize l; \
-\
-	list = key_file_get_fcn (kf, group, key, &l, &local); \
-	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) { \
-		alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
-		if (alias) { \
-			g_clear_error (&local); \
-			list = key_file_get_fcn (kf, alias, key, &l, &local); \
-		} \
-	} \
-	if (local) \
-		g_propagate_error (error, local); \
-	if (!list) \
-		l = 0; \
-	NM_SET_OUT (out_length, l); \
-	return list; \
-}
+char **
+nm_keyfile_plugin_kf_get_string_list (GKeyFile *kf,
+                                      const char *group,
+                                      const char *key,
+                                      gsize *out_length,
+                                      GError **error)
+{
+	char **list;
+	const char *alias;
+	GError *local = NULL;
+	gsize l;
 
-DEFINE_KF_LIST_WRAPPER_GET (nm_keyfile_plugin_kf_get_string_list,  char **, g_key_file_get_string_list);
+	list = g_key_file_get_string_list (kf, group, key, &l, &local);
+	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
+		alias = nm_keyfile_plugin_get_alias_for_setting_name (group);
+		if (alias) {
+			g_clear_error (&local);
+			list = g_key_file_get_string_list (kf, alias, key, &l, &local);
+		}
+	}
+	if (local)
+		g_propagate_error (error, local);
+	if (!list)
+		l = 0;
+	NM_SET_OUT (out_length, l);
+	return list;
+}
 
 guint *
 nm_keyfile_plugin_kf_get_integer_list_uint (GKeyFile *key_file,
