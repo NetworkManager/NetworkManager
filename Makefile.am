@@ -4289,6 +4289,7 @@ clients_nm_online_LDADD = \
 	shared/nm-libnm-aux/libnm-libnm-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
