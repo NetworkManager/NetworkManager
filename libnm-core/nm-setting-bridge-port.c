@@ -236,18 +236,20 @@ nm_setting_bridge_port_remove_vlan_by_vid (NMSettingBridgePort *setting,
                                            guint16 vid_end)
 {
 	NMSettingBridgePortPrivate *priv;
-	guint16 v_start, v_end;
-	NMBridgeVlan *vlan;
 	guint i;
 
 	if (vid_end == 0)
 		vid_end = vid_start;
 
 	g_return_val_if_fail (NM_IS_SETTING_BRIDGE_PORT (setting), FALSE);
+
 	priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (setting);
 
 	for (i = 0; i < priv->vlans->len; i++) {
-		vlan = (NMBridgeVlan *) priv->vlans->pdata[i];
+		NMBridgeVlan *vlan = priv->vlans->pdata[i];
+		guint16 v_start = 0;
+		guint16 v_end = 0;
+
 		nm_bridge_vlan_get_vid_range (vlan, &v_start, &v_end);
 		if (v_start == vid_start && v_end == vid_end) {
 			g_ptr_array_remove_index (priv->vlans, i);
