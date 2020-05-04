@@ -237,71 +237,107 @@ typedef struct {
 	const char *sysname;
 	const char *(*to_sysfs) (GValue *value);
 	void (*from_sysfs) (const char *value, GValue *out);
-	uint nm_min;
-	uint nm_max;
-	uint nm_default;
+	guint64 nm_min;
+	guint64 nm_max;
+	guint64 nm_default;
 	bool default_if_zero;
 	bool user_hz_compensate;
 	bool only_with_stp;
 } Option;
 
 static const Option master_options[] = {
-	{ NM_SETTING_BRIDGE_STP,                          "stp_state", /* this must stay as the first item */
-	                                                  NULL, NULL,
-	                                                  0, 1, 1,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_PRIORITY,                     "priority",
-	                                                  NULL, NULL,
-	                                                  0, G_MAXUINT16, 0x8000,
-	                                                  TRUE, FALSE, TRUE },
-	{ NM_SETTING_BRIDGE_FORWARD_DELAY,                "forward_delay",
-	                                                  NULL, NULL,
-	                                                  0, NM_BR_MAX_FORWARD_DELAY, 15,
-	                                                  TRUE, TRUE, TRUE},
-	{ NM_SETTING_BRIDGE_HELLO_TIME,                   "hello_time",
-	                                                  NULL, NULL,
-	                                                  0, NM_BR_MAX_HELLO_TIME, 2,
-	                                                  TRUE, TRUE, TRUE },
-	{ NM_SETTING_BRIDGE_MAX_AGE,                      "max_age",
-	                                                  NULL, NULL,
-	                                                  0, NM_BR_MAX_MAX_AGE, 20,
-	                                                  TRUE, TRUE, TRUE },
-	{ NM_SETTING_BRIDGE_AGEING_TIME,                  "ageing_time",
-	                                                  NULL, NULL,
-	                                                  NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
-	                                                  TRUE, TRUE, FALSE },
-	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,           "group_fwd_mask",
-	                                                  NULL, NULL,
-	                                                  0, 0xFFFF, 0,
-	                                                  TRUE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_MULTICAST_QUERIER,            "multicast_querier",
-	                                                  NULL, NULL,
-	                                                  0, 1, 0,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,   "multicast_query_use_ifaddr",
-	                                                  NULL, NULL,
-	                                                  0, 1, 0,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING,           "multicast_snooping",
-	                                                  NULL, NULL,
-	                                                  0, 1, 1,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_MULTICAST_ROUTER,             "multicast_router",
-	                                                  to_sysfs_multicast_router, from_sysfs_multicast_router,
-	                                                  0, 0, 0,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_GROUP_ADDRESS,                "group_addr",
-	                                                  to_sysfs_group_address, from_sysfs_group_address,
-	                                                  0, 0, 0,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_VLAN_PROTOCOL,                "vlan_protocol",
-	                                                  to_sysfs_vlan_protocol, from_sysfs_vlan_protocol,
-	                                                  0, 0, 0,
-	                                                  FALSE, FALSE, FALSE },
-	{ NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,           "vlan_stats_enabled",
-	                                                  NULL, NULL,
-	                                                  0, 1, 0,
-	                                                  FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_STP,                                     "stp_state", /* this must stay as the first item */
+	                                                             NULL, NULL,
+	                                                             0, 1, 1,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_PRIORITY,                                "priority",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT16, 0x8000,
+	                                                             TRUE, FALSE, TRUE },
+	{ NM_SETTING_BRIDGE_FORWARD_DELAY,                           "forward_delay",
+	                                                             NULL, NULL,
+	                                                             0, NM_BR_MAX_FORWARD_DELAY, 15,
+	                                                             TRUE, TRUE, TRUE},
+	{ NM_SETTING_BRIDGE_HELLO_TIME,                              "hello_time",
+	                                                             NULL, NULL,
+	                                                             0, NM_BR_MAX_HELLO_TIME, 2,
+	                                                             TRUE, TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_MAX_AGE,                                 "max_age",
+	                                                             NULL, NULL,
+	                                                             0, NM_BR_MAX_MAX_AGE, 20,
+	                                                             TRUE, TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_AGEING_TIME,                             "ageing_time",
+	                                                             NULL, NULL,
+	                                                             NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
+	                                                             TRUE, TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,                      "group_fwd_mask",
+	                                                             NULL, NULL,
+	                                                             0, 0xFFFF, 0,
+	                                                             TRUE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,                      "hash_max",
+	                                                             NULL, NULL,
+	                                                             NM_BR_MIN_MULTICAST_HASH_MAX, NM_BR_MAX_MULTICAST_HASH_MAX, 4096,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,             "multicast_last_member_count",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT32, 2,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL,          "multicast_last_member_interval",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT64, 100,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL,           "multicast_membership_interval",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT64, 26000,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_QUERIER,                       "multicast_querier",
+	                                                             NULL, NULL,
+	                                                             0, 1, 0,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL,              "multicast_querier_interval",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT64, 25500,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL,                "multicast_query_interval",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT64, 12500,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL,       "multicast_query_response_interval",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT64, 1000,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,              "multicast_query_use_ifaddr",
+	                                                             NULL, NULL,
+	                                                             0, 1, 0,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING,                      "multicast_snooping",
+	                                                             NULL, NULL,
+	                                                             0, 1, 1,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_ROUTER,                        "multicast_router",
+	                                                             to_sysfs_multicast_router, from_sysfs_multicast_router,
+	                                                             0, 0, 0,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT,           "multicast_startup_query_count",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT32, 2,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL,        "multicast_startup_query_interval",
+	                                                             NULL, NULL,
+	                                                             0, G_MAXUINT64, 3125,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_GROUP_ADDRESS,                           "group_addr",
+	                                                             to_sysfs_group_address, from_sysfs_group_address,
+	                                                             0, 0, 0,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_VLAN_PROTOCOL,                           "vlan_protocol",
+	                                                             to_sysfs_vlan_protocol, from_sysfs_vlan_protocol,
+	                                                             0, 0, 0,
+	                                                             FALSE, FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,                      "vlan_stats_enabled",
+	                                                             NULL, NULL,
+	                                                             0, 1, 0,
+	                                                             FALSE, FALSE, FALSE },
 	{ NULL, NULL }
 };
 
@@ -349,11 +385,15 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 	case G_TYPE_BOOLEAN:
 		value = g_value_get_boolean (&val) ? "1" : "0";
 		break;
+	case G_TYPE_UINT64:
 	case G_TYPE_UINT: {
 			char value_buf[100];
-			guint uval;
+			guint64 uval;
 
-			uval = g_value_get_uint (&val);
+			if (pspec->value_type == G_TYPE_UINT64)
+				uval = g_value_get_uint64 (&val);
+			else
+				uval = (guint) g_value_get_uint (&val);
 
 			/* zero means "unspecified" for some NM properties but isn't in the
 			 * allowed kernel range, so reset the property to the default value.
@@ -362,7 +402,11 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 				g_value_unset (&val);
 				g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
 				g_param_value_set_default (pspec, &val);
-				uval = g_value_get_uint (&val);
+
+				if (pspec->value_type == G_TYPE_UINT64)
+					uval = g_value_get_uint64 (&val);
+				else
+					uval = (guint) g_value_get_uint (&val);
 			}
 
 			/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
@@ -373,7 +417,11 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 			if (option->user_hz_compensate)
 				uval *= 100;
 
-			nm_sprintf_buf (value_buf, "%u", uval);
+			if (pspec->value_type == G_TYPE_UINT64)
+				nm_sprintf_buf (value_buf, "%"G_GUINT64_FORMAT, uval);
+			else
+				nm_sprintf_buf (value_buf, "%u", (guint) uval);
+
 			value = value_buf;
 		}
 		break;
@@ -499,8 +547,9 @@ update_connection (NMDevice *device, NMConnection *connection)
 		}
 
 		switch (pspec->value_type) {
+		case G_TYPE_UINT64:
 		case G_TYPE_UINT: {
-				guint uvalue;
+				guint64 uvalue;
 
 				/* See comments in set_sysfs_uint() about centiseconds. */
 				if (option->user_hz_compensate) {
@@ -510,12 +559,16 @@ update_connection (NMDevice *device, NMConnection *connection)
 					                                       option->nm_default * 100);
 					uvalue /= 100;
 				} else {
-					uvalue = _nm_utils_ascii_str_to_int64 (str, 10,
-					                                       option->nm_min,
-					                                       option->nm_max,
-					                                       option->nm_default);
+					uvalue = _nm_utils_ascii_str_to_uint64 (str, 10,
+					                                        option->nm_min,
+					                                        option->nm_max,
+					                                        option->nm_default);
 				}
-				g_value_set_uint (&value, uvalue);
+
+				if (pspec->value_type == G_TYPE_UINT64)
+					g_value_set_uint64(&value, uvalue);
+				else
+					g_value_set_uint (&value, (guint) uvalue);
 			}
 			break;
 		case G_TYPE_BOOLEAN: {

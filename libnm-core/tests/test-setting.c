@@ -1998,6 +1998,13 @@ test_bridge_verify (void)
 	test_verify_options_bridge (TRUE,
 	                            "multicast-snooping", "yes",
 	                            "multicast-router",   "disabled");
+	/* multicast-hash-max */
+	test_verify_options_bridge (TRUE,
+	                            "multicast-hash-max",   "1024");
+	test_verify_options_bridge (TRUE,
+	                            "multicast-hash-max",   "8192");
+	test_verify_options_bridge (FALSE,
+	                            "multicast-hash-max",   "3");
 }
 
 /*****************************************************************************/
