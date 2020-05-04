@@ -1407,6 +1407,8 @@ typedef struct {
 	};
 } NMUtilsNamedValue;
 
+#define NM_UTILS_NAMED_VALUE_INIT(n, v)     { .name = (n), .value_ptr = (v) }
+
 NMUtilsNamedValue *nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
                                                                   guint *out_len,
                                                                   GCompareDataFunc compare_func,
