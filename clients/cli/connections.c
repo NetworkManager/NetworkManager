@@ -2699,6 +2699,8 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 /**
  * parse_passwords:
  * @passwd_file: file with passwords to parse
+ * @out_error_line: returns in case of a syntax error in the file, the line
+ *   on which it occurred.
  * @error: location to store error, or %NULL
  *
  * Parse passwords given in @passwd_file and insert them into a hash table.
@@ -2710,15 +2712,18 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
  * Returns: hash table with parsed passwords, or %NULL on an error
  */
 static GHashTable *
-parse_passwords (const char *passwd_file, GError **error)
+parse_passwords (const char *passwd_file,
+                 gssize *out_error_line,
+                 GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 	gs_unref_hashtable GHashTable *pwds_hash = NULL;
-	gs_free_error GError *local = NULL;
 	const char *contents_str;
 	gsize contents_line;
 
 	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
+
+	NM_SET_OUT (out_error_line, -1);
 
 	if (!passwd_file)
 		return g_steal_pointer (&pwds_hash);
@@ -2730,12 +2735,8 @@ parse_passwords (const char *passwd_file, GError **error)
 	                                 &contents.str,
 	                                 &contents.len,
 	                                 NULL,
-	                                 &local)) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("failed to read passwd-file '%s': %s"),
-		             passwd_file, local->message);
+	                                 error))
 		return NULL;
-	}
 
 	contents_str = contents.str;
 	contents_line = 0;
@@ -2779,8 +2780,9 @@ parse_passwords (const char *passwd_file, GError **error)
 		while (!NM_IN_SET (s[0], '\0', ':', '='))
 			s++;
 		if (s[0] == '\0') {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing colon in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("missing colon for \"<setting>.<property>:<secret>\" format"));
 			return NULL;
 		}
 		((char *) s)[0] = '\0';
@@ -2794,12 +2796,14 @@ parse_passwords (const char *passwd_file, GError **error)
 
 		s = strchr (l_setting, '.');
 		if (!s) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing dot in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("missing dot for \"<setting>.<property>:<secret>\" format"));
 			return NULL;
 		} else if (s == l_setting) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing setting name in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("missing setting for \"<setting>.<property>:<secret>\" format"));
 			return NULL;
 		}
 		((char *) s)[0] = '\0';
@@ -2807,8 +2811,9 @@ parse_passwords (const char *passwd_file, GError **error)
 
 		l_prop = s;
 		if (l_prop[0] == '\0') {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing property name in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("missing property for \"<setting>.<property>:<secret>\" format"));
 			return NULL;
 		}
 
@@ -2817,8 +2822,9 @@ parse_passwords (const char *passwd_file, GError **error)
 			l_setting = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
 
 		if (nm_setting_lookup_type (l_setting) == G_TYPE_INVALID) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid setting name in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("invalid setting name"));
 			return NULL;
 		}
 
@@ -2832,8 +2838,9 @@ parse_passwords (const char *passwd_file, GError **error)
 			l_hash_key = g_strdup_printf ("%s.%s", l_setting, l_prop);
 
 		if (!g_utf8_validate (l_hash_key, -1, NULL)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid non UTF-8 setting name in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("property name is not UTF-8"));
 			return NULL;
 		}
 
@@ -2846,14 +2853,16 @@ parse_passwords (const char *passwd_file, GError **error)
 			/* In some cases it might make sense to support binary secrets (like the WPA-PSK which has no
 			 * defined encoding. However, all API that follows can only handle UTF-8, and no mechanism
 			 * to escape the secrets. Reject non-UTF-8 early. */
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid non UTF-8 secret in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("secret is not UTF-8"));
 			return NULL;
 		}
 
 		if (strlen (l_hash_val) != l_hash_val_len) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid non UTF-8 secret with NUL bytes in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			NM_SET_OUT (out_error_line, contents_line);
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    _("secret is not UTF-8"));
 			return NULL;
 		}
 
@@ -2911,9 +2920,27 @@ nmc_activate_connection (NmCli *nmc,
 	}
 
 	/* Parse passwords given in passwords file */
-	pwds_hash = parse_passwords (pwds, error);
-	if (!pwds_hash)
-		return FALSE;
+	{
+		gs_free_error GError *local = NULL;
+		gssize error_line;
+
+		pwds_hash = parse_passwords (pwds, &error_line, &local);
+		if (!pwds_hash) {
+			if (error_line >= 0) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("invalid passwd-file '%s' at line %zd: %s"),
+				             pwds,
+				             error_line,
+				             local->message);
+			} else {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("invalid passwd-file '%s': %s"),
+				             pwds,
+				             local->message);
+			}
+			return FALSE;
+		}
+	}
 
 	if (nmc->pwds_hash)
 		g_hash_table_destroy (nmc->pwds_hash);
