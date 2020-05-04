@@ -1184,8 +1184,18 @@ GType nm_g_type_find_implementing_class_for_property (GType gtype,
 
 typedef enum {
 	NM_UTILS_STR_UTF8_SAFE_FLAG_NONE                = 0,
+
+	/* This flag only has an effect during escaping. */
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL         = 0x0001,
+
+	/* This flag only has an effect during escaping. */
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII    = 0x0002,
+
+	/* This flag only has an effect during escaping to ensure we
+	 * don't leak secrets in memory. Note that during unescape we
+	 * know the maximum result size from the beginning, and no
+	 * reallocation happens. Thus, unescape always avoids leaking
+	 * secrets already. */
 	NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET              = 0x0004,
 } NMUtilsStrUtf8SafeFlags;
 

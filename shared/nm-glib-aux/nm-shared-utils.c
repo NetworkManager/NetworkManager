@@ -2480,7 +2480,7 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 		return str;
 	}
 
-	nm_str_buf_init (&strbuf, len, FALSE);
+	nm_str_buf_init (&strbuf, len + 1u, FALSE);
 
 	nm_str_buf_append_len (&strbuf, str, s - str);
 	str = s;
@@ -2540,6 +2540,11 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 		nm_str_buf_append_len (&strbuf, str, s - str);
 		str = s;
 	}
+
+	/* assert that no reallocation was necessary. For one, unescaping should
+	 * never result in a longer string than the input. Also, when unescaping
+	 * secrets, we want to ensure that we don't leak secrets in memory. */
+	nm_assert (strbuf.allocated == len + 1u);
 
 	return (*to_free = nm_str_buf_finalize (&strbuf,
 	                                        out_len));
@@ -2675,11 +2680,17 @@ nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags
 const char *
 nm_utils_str_utf8safe_unescape (const char *str, char **to_free)
 {
+	const char *res;
 	gsize len;
 
 	g_return_val_if_fail (to_free, NULL);
 
-	return nm_utils_buf_utf8safe_unescape (str, &len, (gpointer *) to_free);
+	res = nm_utils_buf_utf8safe_unescape (str, &len, (gpointer *) to_free);
+
+	nm_assert (   (!res && len == 0)
+	           || (strlen (res) <= len));
+
+	return res;
 }
 
 /**
