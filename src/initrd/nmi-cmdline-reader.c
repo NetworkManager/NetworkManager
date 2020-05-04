@@ -27,6 +27,7 @@ typedef struct {
 
 	/* Parameters to be set for all connections */
 	gboolean ignore_auto_dns;
+	int dhcp_timeout;
 } Reader;
 
 static Reader *
@@ -93,6 +94,7 @@ reader_create_connection (Reader *reader,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, reader->ignore_auto_dns,
+	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, reader->dhcp_timeout,
 	              NULL);
 
 	setting = nm_setting_ip6_config_new ();
@@ -102,6 +104,7 @@ reader_create_connection (Reader *reader,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, reader->ignore_auto_dns,
+	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, reader->dhcp_timeout,
 	              NULL);
 
 	setting = nm_setting_connection_new ();
@@ -898,6 +901,10 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 			net_ifnames = strcmp (argument, "0") != 0;
 		else if (strcmp (tag, "rd.peerdns") == 0)
 			reader->ignore_auto_dns = !_nm_utils_ascii_str_to_bool (argument, TRUE);
+		else if (strcmp (tag, "rd.net.timeout.dhcp") == 0) {
+			reader->dhcp_timeout = _nm_utils_ascii_str_to_int64 (argument,
+			                                                     10, 0, G_MAXINT32, 0);
+		}
 	}
 
 	for (i = 0; argv[i]; i++) {

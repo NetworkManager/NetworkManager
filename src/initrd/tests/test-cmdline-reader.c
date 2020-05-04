@@ -623,7 +623,9 @@ static void
 test_bridge (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	const char *const*ARGV = NM_MAKE_STRV ("bridge=bridge0:eth0,eth1", "rd.route=192.0.2.53::bridge0");
+	const char *const*ARGV = NM_MAKE_STRV ("bridge=bridge0:eth0,eth1",
+	                                       "rd.route=192.0.2.53::bridge0",
+	                                       "rd.net.timeout.dhcp=10");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
@@ -653,6 +655,7 @@ test_bridge (void)
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 0);
 	g_assert (!nm_setting_ip_config_get_gateway (s_ip4));
 	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 1);
+	g_assert_cmpint (nm_setting_ip_config_get_dhcp_timeout(s_ip4), ==, 10);
 	ip_route = nm_setting_ip_config_get_route (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_route_get_dest (ip_route), ==, "192.0.2.53");
 	g_assert_cmpint (nm_ip_route_get_family (ip_route), ==, AF_INET);
@@ -667,6 +670,8 @@ test_bridge (void)
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 0);
 	g_assert (!nm_setting_ip_config_get_gateway (s_ip6));
 	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_dhcp_timeout(s_ip6), ==, 10);
+
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);

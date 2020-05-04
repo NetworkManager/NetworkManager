@@ -132,6 +132,7 @@
             <member><option>nameserver</option></member>
             <member><option>rd.peerdns</option></member>
             <member><option>rd.bootif</option></member>
+            <member><option>rd.net.timeout.dhcp</option></member>
             <member><option>BOOTIF</option></member>
           </simplelist>
 
