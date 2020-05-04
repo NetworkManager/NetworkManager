@@ -7,6 +7,7 @@
 
 #include "nm-core-internal.h"
 #include "nm-initrd-generator.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 
@@ -22,6 +23,7 @@ typedef struct {
 	GPtrArray *array;
 	NMConnection *bootdev_connection;   /* connection for bootdev=$ifname */
 	NMConnection *default_connection;   /* connection not bound to any ifname */
+	char *hostname;
 } Reader;
 
 static Reader *
@@ -45,6 +47,7 @@ reader_destroy (Reader *reader, gboolean free_hash)
 
 	g_ptr_array_unref (reader->array);
 	hash = g_steal_pointer (&reader->hash);
+	nm_clear_g_free (&reader->hostname);
 	nm_g_slice_free (reader);
 	if (!free_hash)
 		return g_steal_pointer (&hash);
@@ -343,6 +346,14 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 			ifname = get_word (&argument, ':');
 		} else {
 			ifname = tmp;
+		}
+
+		if (client_hostname && !nm_sd_hostname_is_valid (client_hostname, FALSE))
+			client_hostname = NULL;
+
+		if (client_hostname) {
+			g_free (reader->hostname);
+			reader->hostname = g_strdup (client_hostname);
 		}
 
 		/* <ifname>:{none|off|dhcp|on|any|dhcp6|auto6|ibft} */
@@ -875,7 +886,7 @@ reader_add_nameservers (Reader *reader, GPtrArray *nameservers)
 }
 
 GHashTable *
-nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
+nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **hostname)
 {
 	Reader *reader;
 	const char *tag;
@@ -1013,5 +1024,8 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv)
 		reader_set_ignore_auto_dns (reader);
 
 	g_hash_table_foreach (reader->hash, _normalize_conn, NULL);
+
+	NM_SET_OUT (hostname, g_steal_pointer (&reader->hostname));
+
 	return reader_destroy (reader, FALSE);
 }

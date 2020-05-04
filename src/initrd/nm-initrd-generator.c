@@ -85,6 +85,7 @@ main (int argc, char *argv[])
 	};
 	GOptionContext *option_context;
 	gs_free_error GError *error = NULL;
+	gs_free char *hostname = NULL;
 	int errsv;
 
 	option_context = g_option_context_new ("-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
@@ -122,7 +123,10 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	connections = nmi_cmdline_reader_parse (sysfs_dir, (const char *const*) remaining);
+	connections = nmi_cmdline_reader_parse (sysfs_dir,
+	                                        (const char *const*) remaining,
+	                                        &hostname);
+
 	g_hash_table_foreach (connections, output_conn, connections_dir);
 	g_hash_table_destroy (connections);
 
@@ -131,5 +135,19 @@ main (int argc, char *argv[])
 		_LOGW (LOGD_CORE, "%s: %s", initrd_dir, nm_strerror_native (errsv));
 		return 1;
 	}
+
+	if (hostname) {
+		gs_free char *hostname_file = NULL;
+		gs_free char *data = NULL;
+
+		hostname_file = g_strdup_printf ("%s/hostname", initrd_dir);
+		data = g_strdup_printf ("%s\n", hostname);
+
+		if (!g_file_set_contents (hostname_file, data, strlen (data), &error)) {
+			_LOGW (LOGD_CORE, "%s: %s", hostname_file, error->message);
+			return 1;
+		}
+	}
+
 	return 0;
 }
