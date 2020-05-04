@@ -64,24 +64,27 @@ err_out:
 }
 
 #define DEFAULT_SYSFS_DIR        "/sys"
+#define DEFAULT_INITRD_DATA_DIR  NMRUNDIR "/initrd"
 
 int
 main (int argc, char *argv[])
 {
 	GHashTable *connections;
 	gs_free char *connections_dir = NULL;
+	gs_free char *initrd_dir = NULL;
 	gs_free char *sysfs_dir = NULL;
 	gboolean dump_to_stdout = FALSE;
 	gs_strfreev char **remaining = NULL;
 	GOptionEntry option_entries[] = {
-		{ "connections-dir", 'c', 0, G_OPTION_ARG_FILENAME, &connections_dir, "Output connection directory", NM_KEYFILE_PATH_NAME_RUN },
-		{ "sysfs-dir", 'd', 0, G_OPTION_ARG_FILENAME, &sysfs_dir, "The sysfs mount point", DEFAULT_SYSFS_DIR },
-		{ "stdout", 's', 0, G_OPTION_ARG_NONE, &dump_to_stdout, "Dump connections to standard output", NULL },
-		{ G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &remaining, NULL, NULL },
+		{ "connections-dir",  'c',  0, G_OPTION_ARG_FILENAME,     &connections_dir, "Output connection directory",         NM_KEYFILE_PATH_NAME_RUN },
+		{ "initrd-data-dir",  'i',  0, G_OPTION_ARG_FILENAME,     &initrd_dir,      "Output initrd data directory",        DEFAULT_INITRD_DATA_DIR },
+		{ "sysfs-dir",        'd',  0, G_OPTION_ARG_FILENAME,     &sysfs_dir,       "The sysfs mount point",               DEFAULT_SYSFS_DIR },
+		{ "stdout",           's',  0, G_OPTION_ARG_NONE,         &dump_to_stdout,  "Dump connections to standard output", NULL },
+		{ G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &remaining,       NULL,                                  NULL },
 		{ NULL }
 	};
 	GOptionContext *option_context;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	int errsv;
 
 	option_context = g_option_context_new ("-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
@@ -108,6 +111,8 @@ main (int argc, char *argv[])
 		connections_dir = g_strdup (NM_KEYFILE_PATH_NAME_RUN);
 	if (!sysfs_dir)
 		sysfs_dir = g_strdup (DEFAULT_SYSFS_DIR);
+	if (!initrd_dir)
+		initrd_dir = g_strdup (DEFAULT_INITRD_DATA_DIR);
 	if (dump_to_stdout)
 		nm_clear_g_free (&connections_dir);
 
@@ -121,5 +126,10 @@ main (int argc, char *argv[])
 	g_hash_table_foreach (connections, output_conn, connections_dir);
 	g_hash_table_destroy (connections);
 
+	if (g_mkdir_with_parents (initrd_dir, 0755) != 0) {
+		errsv = errno;
+		_LOGW (LOGD_CORE, "%s: %s", initrd_dir, nm_strerror_native (errsv));
+		return 1;
+	}
 	return 0;
 }

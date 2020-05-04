@@ -77,6 +77,20 @@
       <varlistentry>
         <term>
           <group choice='plain'>
+            <arg choice='plain'><option>-i</option></arg>
+            <arg choice='plain'><option>--initrd-data-dir</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>path</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Output directory for initrd data (e.g. hostname).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <group choice='plain'>
             <arg choice='plain'><option>-d</option></arg>
             <arg choice='plain'><option>--sysfs-dir</option></arg>
           </group>
