@@ -344,7 +344,7 @@ no_auto_default_from_file (const char *no_auto_default_file)
 
 	if (list) {
 		for (i = 0; list[i]; i++)
-			list[i] = nm_utils_str_utf8safe_unescape_cp (list[i]);
+			list[i] = nm_utils_str_utf8safe_unescape_cp (list[i], NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 	}
 
 	/* The returned buffer here is not at all compact. That means, it has additional
