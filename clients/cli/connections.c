@@ -16,6 +16,8 @@
 #include <readline/history.h>
 #include <fcntl.h>
 
+#include "nm-glib-aux/nm-secret-utils.h"
+#include "nm-glib-aux/nm-io-utils.h"
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"
 #include "nm-meta-setting-access.h"
@@ -2710,70 +2712,152 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 static GHashTable *
 parse_passwords (const char *passwd_file, GError **error)
 {
+	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
 	gs_unref_hashtable GHashTable *pwds_hash = NULL;
-	gs_free char *contents = NULL;
-	gsize len = 0;
-	GError *local_err = NULL;
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-	char *pwd_spec, *pwd, *prop;
-	const char *setting;
+	gs_free_error GError *local = NULL;
+	const char *contents_str;
+	gsize contents_line;
 
-	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 
 	if (!passwd_file)
 		return g_steal_pointer (&pwds_hash);
 
-	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
+	if (!nm_utils_file_get_contents (-1,
+	                                 passwd_file,
+	                                 1024*1024,
+	                                 NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
+	                                 &contents.str,
+	                                 &contents.len,
+	                                 NULL,
+	                                 &local)) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("failed to read passwd-file '%s': %s"),
-		             passwd_file, local_err->message);
-		g_error_free (local_err);
+		             passwd_file, local->message);
 		return NULL;
 	}
 
-	strv = nm_utils_strsplit_set (contents, "\r\n");
-	for (iter = strv; strv && *iter; iter++) {
-		gs_free char *iter_s = g_strdup (*iter);
+	contents_str = contents.str;
+	contents_line = 0;
+	while (contents_str[0]) {
+		nm_auto_free_secret char *l_hash_key = NULL;
+		nm_auto_free_secret char *l_hash_val = NULL;
+		const char *l_content_line;
+		const char *l_setting;
+		const char *l_prop;
+		const char *l_val;
+		const char *s;
+		gsize l_hash_val_len;
 
-		pwd = strchr (iter_s, ':');
-		if (!pwd) {
+		/* consume first line. As line delimiters we accept "\r\n", "\n", and "\r". */
+		l_content_line = contents_str;
+		s = l_content_line;
+		while (!NM_IN_SET (s[0], '\0', '\r', '\n'))
+			s++;
+		if (s[0] != '\0') {
+			if (   s[0] == '\r'
+			    && s[1] == '\n') {
+				((char *) s)[0] = '\0';
+				s += 2;
+			} else {
+				((char *) s)[0] = '\0';
+				s += 1;
+			}
+		}
+		contents_str = s;
+		contents_line++;
+
+		l_content_line = nm_str_skip_leading_spaces (l_content_line);
+		if (NM_IN_SET (l_content_line[0], '\0', '#')) {
+			/* a comment or empty line. Ignore. */
+			continue;
+		}
+
+		l_setting = l_content_line;
+
+		s = l_setting;
+		while (!NM_IN_SET (s[0], '\0', ':', '='))
+			s++;
+		if (s[0] == '\0') {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing colon in 'password' entry '%s'"), *iter);
+			             _("missing colon in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
 			return NULL;
 		}
-		*(pwd++) = '\0';
+		((char *) s)[0] = '\0';
+		s++;
 
-		prop = strchr (iter_s, '.');
-		if (!prop) {
+		l_val = s;
+
+		g_strchomp ((char *) l_setting);
+
+		nm_assert (nm_str_is_stripped (l_setting));
+
+		s = strchr (l_setting, '.');
+		if (!s) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing dot in 'password' entry '%s'"), *iter);
+			             _("missing dot in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
+			return NULL;
+		} else if (s == l_setting) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("missing setting name in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
 			return NULL;
 		}
-		*(prop++) = '\0';
+		((char *) s)[0] = '\0';
+		s++;
 
-		setting = iter_s;
-		while (g_ascii_isspace (*setting))
-			setting++;
+		l_prop = s;
+		if (l_prop[0] == '\0') {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("missing property name in 'password' entry of passwd-file '%s', line %zu"), passwd_file, contents_line);
+			return NULL;
+		}
+
 		/* Accept wifi-sec or wifi instead of cumbersome '802-11-wireless-security' */
-		if (!strcmp (setting, "wifi-sec") || !strcmp (setting, "wifi"))
-			setting = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
-		if (nm_setting_lookup_type (setting) == G_TYPE_INVALID) {
+		if (NM_IN_STRSET (l_setting, "wifi-sec", "wifi"))
+			l_setting = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+
+		if (nm_setting_lookup_type (l_setting) == G_TYPE_INVALID) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid setting name in 'password' entry '%s'"), setting);
+			             _("invalid setting name in 'password' entry '%s', line %zu"), passwd_file, contents_line);
 			return NULL;
 		}
 
-		if (   nm_streq (setting, "vpn")
-		    && g_str_has_prefix (prop, "secret.")) {
+		if (   nm_streq (l_setting, "vpn")
+		    && NM_STR_HAS_PREFIX (l_prop, "secret.")) {
 			/* in 1.12.0, we wrongly required the VPN secrets to be named
 			 * "vpn.secret". It should be "vpn.secrets". Work around it
 			 * (rh#1628833). */
-			pwd_spec = g_strdup_printf ("vpn.secrets.%s", &prop[NM_STRLEN ("secret.")]);
+			l_hash_key = g_strdup_printf ("vpn.secrets.%s", &l_prop[NM_STRLEN ("secret.")]);
 		} else
-			pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
+			l_hash_key = g_strdup_printf ("%s.%s", l_setting, l_prop);
 
-		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
+		if (!g_utf8_validate (l_hash_key, -1, NULL)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid non UTF-8 setting name in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			return NULL;
+		}
+
+		/* Support backslash escaping in the secret value. We strip non-escaped leading/trailing whitespaces. */
+		s = nm_utils_buf_utf8safe_unescape (l_val, NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES, &l_hash_val_len, (gpointer *) &l_hash_val);
+		if (!l_hash_val)
+			l_hash_val = g_strdup (s);
+
+		if (!g_utf8_validate (l_hash_val, -1, NULL)) {
+			/* In some cases it might make sense to support binary secrets (like the WPA-PSK which has no
+			 * defined encoding. However, all API that follows can only handle UTF-8, and no mechanism
+			 * to escape the secrets. Reject non-UTF-8 early. */
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid non UTF-8 secret in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			return NULL;
+		}
+
+		if (strlen (l_hash_val) != l_hash_val_len) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid non UTF-8 secret with NUL bytes in 'password' entry '%s', line %zu"), passwd_file, contents_line);
+			return NULL;
+		}
+
+		g_hash_table_insert (pwds_hash, g_steal_pointer (&l_hash_key), g_steal_pointer (&l_hash_val));
 	}
 
 	return g_steal_pointer (&pwds_hash);
