@@ -16,6 +16,7 @@ DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
 DO_TEST_PACKAGE="${DO_TEST_PACKAGE:-yes}"
 DO_INSTALL="${DO_INSTALL:-yes}"
 SUDO="$SUDO"
+INSTALL_DEPENDENCIES="${INSTALL_DEPENDENCIES:-yes}"
 
 if [ -z "$SUDO" ]; then
     unset SUDO
@@ -26,60 +27,64 @@ if grep -q --quiet Ootpa /etc/redhat-release; then
     YUM_ARGS+=("--enablerepo=rhel-8-buildroot")
 fi
 
-$SUDO yum install \
-    'perl(XML::Parser)' \
-    'perl(YAML)' \
-    /usr/bin/dbus-launch \
-    ModemManager-glib-devel \
-    audit-libs-devel \
-    automake \
-    bluez-libs-devel \
-    dbus-devel \
-    dbus-glib-devel \
-    dbus-python \
-    dhclient \
-    gettext-devel \
-    git \
-    glib2-devel \
-    gnutls-devel \
-    gobject-introspection-devel \
-    gtk-doc \
-    intltool \
-    iptables \
-    jansson-devel \
-    libasan \
-    libcurl-devel \
-    libgudev1-devel \
-    libndp-devel \
-    libnl3-devel \
-    libpsl-devel \
-    libselinux-devel \
-    libsoup-devel \
-    libubsan \
-    libudev-devel \
-    libuuid-devel \
-    mobile-broadband-provider-info-devel \
-    newt-devel \
-    nss-devel \
-    pkgconfig \
-    polkit-devel \
-    ppp-devel \
-    pygobject3-base \
-    python3 \
-    readline-devel \
-    rpm-build \
-    strace \
-    systemd \
-    teamd-devel \
-    vala-tools \
-    valgrind \
-    wireless-tools-devel \
-    "${YUM_ARGS[@]}" \
-    --skip-broken \
-    -y
+if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
+  $SUDO yum install \
+      'perl(XML::Parser)' \
+      'perl(YAML)' \
+      /usr/bin/dbus-launch \
+      ModemManager-glib-devel \
+      audit-libs-devel \
+      automake \
+      bluez-libs-devel \
+      dbus-devel \
+      dbus-glib-devel \
+      dbus-python \
+      dhclient \
+      gettext-devel \
+      git \
+      glib2-devel \
+      gnutls-devel \
+      gobject-introspection-devel \
+      gtk-doc \
+      intltool \
+      iptables \
+      jansson-devel \
+      libasan \
+      libcurl-devel \
+      libgudev1-devel \
+      libndp-devel \
+      libnl3-devel \
+      libpsl-devel \
+      libselinux-devel \
+      libsoup-devel \
+      libubsan \
+      libudev-devel \
+      libuuid-devel \
+      mobile-broadband-provider-info-devel \
+      newt-devel \
+      nss-devel \
+      pkgconfig \
+      polkit-devel \
+      ppp-devel \
+      pygobject3-base \
+      python3 \
+      readline-devel \
+      rpm-build \
+      strace \
+      systemd \
+      teamd-devel \
+      vala-tools \
+      valgrind \
+      wireless-tools-devel \
+      "${YUM_ARGS[@]}" \
+      --skip-broken \
+      -y
+fi
 
-# for the tests, let's pre-load some modules:
-$SUDO modprobe ip_gre
+if [[ "$DO_TEST_BUILD" == yes ]]; then
+    # for the tests, let's pre-load some modules:
+    $SUDO modprobe ip_gre
+fi
 
 if grep -q Maipo /etc/redhat-release; then
     PYTHON=$(which python2)
