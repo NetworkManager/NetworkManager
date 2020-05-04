@@ -611,16 +611,11 @@ nmc_utils_read_passwd_file (const char *passwd_file,
                             GError **error)
 {
 	nm_auto_clear_secret_ptr NMSecretPtr contents = { 0 };
-	gs_unref_hashtable GHashTable *pwds_hash = NULL;
-	const char *contents_str;
-	gsize contents_line;
-
-	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 
 	NM_SET_OUT (out_error_line, -1);
 
 	if (!passwd_file)
-		return g_steal_pointer (&pwds_hash);
+		return g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 
 	if (!nm_utils_file_get_contents (-1,
 	                                 passwd_file,
@@ -632,7 +627,23 @@ nmc_utils_read_passwd_file (const char *passwd_file,
 	                                 error))
 		return NULL;
 
-	contents_str = contents.str;
+	return nmc_utils_parse_passwd_file (contents.str, out_error_line, error);
+}
+
+GHashTable *
+nmc_utils_parse_passwd_file (char *contents /* will be modified */,
+                             gssize *out_error_line,
+                             GError **error)
+{
+	gs_unref_hashtable GHashTable *pwds_hash = NULL;
+	const char *contents_str;
+	gsize contents_line;
+
+	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
+
+	NM_SET_OUT (out_error_line, -1);
+
+	contents_str = contents;
 	contents_line = 0;
 	while (contents_str[0]) {
 		nm_auto_free_secret char *l_hash_key = NULL;

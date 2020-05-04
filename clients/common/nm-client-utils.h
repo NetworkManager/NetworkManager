@@ -43,6 +43,10 @@ const char *nmc_password_subst_char (void);
 
 void nmc_print_qrcode (const char *str);
 
+GHashTable *nmc_utils_parse_passwd_file (char *contents,
+                                         gssize *out_error_line,
+                                         GError **error);
+
 GHashTable *nmc_utils_read_passwd_file (const char *passwd_file,
                                         gssize *out_error_line,
                                         GError **error);
