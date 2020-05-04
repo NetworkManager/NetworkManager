@@ -630,6 +630,14 @@ NM_G_ERROR_MSG (GError *error)
 		NM_CONSTCAST_FULL (type, (obj), _obj, GObject, ##__VA_ARGS__); \
 	})
 
+#define NM_ENSURE_NOT_NULL(ptr) \
+	({ \
+		typeof (ptr) _ptr = (ptr); \
+		\
+		nm_assert (_ptr != NULL); \
+		_ptr; \
+	})
+
 #if _NM_CC_SUPPORT_GENERIC
 /* returns @value, if the type of @value matches @type.
  * This requires support for C11 _Generic(). If no support is
