@@ -143,6 +143,34 @@
     </variablelist>
   </refsect1>
 
+  <refsect1 id='differences_from_network_legacy'><title>Differences from the network-legacy dracut module</title>
+
+    <para><command>nm-initrd-generator</command> generates a set of
+    connections that are then configured by the NetworkManager
+    instance running in the initrd. There are some differences in
+    behavior compared to the network-legacy dracut module:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>When an interface is configured with a static address
+        and a gateway, the network-legacy module waits that the
+        gateway responds to arping requests before proceeding, while
+        NetworkManager doesn't.</para>
+      </listitem>
+
+      <listitem>
+        <para>network-legacy configures interfaces one by one in the
+        order in which they are announced by udev. If multiple
+        interfaces specify a hostname (from command line or from
+        DHCP), the one from the last interface activated wins. With
+        NetworkManager, hostnames from command line have higher
+        precedence over ones from DHCP, and the last that appears in
+        the command line wins.</para>
+      </listitem>
+
+    </itemizedlist>
+  </refsect1>
+
   <refsect1 id='exit_status'><title>Exit Status</title>
     <para><command>nm-initrd-generator</command> exits with status 0. It ignores unrecognized
     options and prints an error message if it encounters a malformed option.</para>
