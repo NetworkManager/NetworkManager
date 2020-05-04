@@ -164,23 +164,16 @@ read_array_of_uint (GKeyFile *file,
                     const char *key)
 {
 	gs_unref_array GArray *array = NULL;
-	gsize length;
-	gsize i;
-	gs_free int *tmp = NULL;
 	gs_free_error GError *error = NULL;
+	gs_free guint *tmp = NULL;
+	gsize length;
 
-	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, &error);
+	tmp = nm_keyfile_plugin_kf_get_integer_list_uint (file, nm_setting_get_name (setting), key, &length, &error);
 	if (error)
 		return;
 
 	array = g_array_sized_new (FALSE, FALSE, sizeof (guint), length);
-
-	for (i = 0; i < length; i++) {
-		if (tmp[i] < 0)
-			return;
-		g_array_append_val (array, tmp[i]);
-	}
-
+	g_array_append_vals (array, tmp, length);
 	g_object_set (setting, key, array, NULL);
 }
 
@@ -941,7 +934,7 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 	char addr_str[NM_UTILS_HWADDR_LEN_MAX * 3];
 	guint8 addr_bin[NM_UTILS_HWADDR_LEN_MAX];
 	gs_free char *tmp_string = NULL;
-	gs_free int *int_list = NULL;
+	gs_free guint *int_list = NULL;
 	const char *mac_str;
 	gsize int_list_len;
 	gsize i;
@@ -962,12 +955,12 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 		goto good_addr_bin;
 
 	/* Old format; list of ints */
-	int_list = nm_keyfile_plugin_kf_get_integer_list (info->keyfile, setting_name, key, &int_list_len, NULL);
+	int_list = nm_keyfile_plugin_kf_get_integer_list_uint (info->keyfile, setting_name, key, &int_list_len, NULL);
 	if (int_list_len == addr_len) {
 		for (i = 0; i < addr_len; i++) {
-			const int val = int_list[i];
+			const guint val = int_list[i];
 
-			if (val < 0 || val > 255)
+			if (val > 255)
 				break;
 			addr_bin[i] = (guint8) val;
 		}
@@ -1851,25 +1844,19 @@ write_array_of_uint (GKeyFile *file,
                      const GValue *value)
 {
 	GArray *array;
-	guint i;
-	gs_free int *tmp_array = NULL;
 
-	array = (GArray *) g_value_get_boxed (value);
+	array = g_value_get_boxed (value);
+
+	nm_assert (!array || g_array_get_element_size (array) == sizeof (guint));
+
 	if (!array || !array->len)
 		return;
 
-	g_return_if_fail (g_array_get_element_size (array) == sizeof (guint));
-
-	tmp_array = g_new (int, array->len);
-	for (i = 0; i < array->len; i++) {
-		guint v = g_array_index (array, guint, i);
-
-		if (v > G_MAXINT)
-			g_return_if_reached ();
-		tmp_array[i] = (int) v;
-	}
-
-	nm_keyfile_plugin_kf_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
+	nm_keyfile_plugin_kf_set_integer_list_uint (file,
+	                                            nm_setting_get_name (setting),
+	                                            key,
+	                                            (const guint *) array->data,
+	                                            array->len);
 }
 
 static void
@@ -3101,24 +3088,24 @@ read_one_setting_value (KeyfileReaderInfo *info,
 				nm_g_object_set_property_int64 (G_OBJECT (setting), key, i64, &err);
 		}
 	} else if (type == G_TYPE_BYTES) {
-		gs_free int *tmp = NULL;
+		gs_free guint *tmp = NULL;
 		GByteArray *array;
 		GBytes *bytes;
 		gsize length;
 		int i;
 		gboolean already_warned = FALSE;
 
-		tmp = nm_keyfile_plugin_kf_get_integer_list (keyfile, setting_info->setting_name, key, &length, NULL);
+		tmp = nm_keyfile_plugin_kf_get_integer_list_uint (keyfile, setting_info->setting_name, key, &length, NULL);
 
 		array = g_byte_array_sized_new (length);
 		for (i = 0; i < length; i++) {
-			const int val = tmp[i];
+			const guint val = tmp[i];
 			unsigned char v = (unsigned char) (val & 0xFF);
 
-			if (val < 0 || val > 255) {
+			if (val > 255u) {
 				if (   !already_warned
 				    && !handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-				                     _("ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"),
+				                     _("ignoring invalid byte element '%u' (not between 0 and 255 inclusive)"),
 				                     val)) {
 					g_byte_array_unref (array);
 					return;
