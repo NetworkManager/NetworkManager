@@ -15,6 +15,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile/nm-keyfile-utils.h"
 
 #define DEFAULT_CONFIG_MAIN_FILE        NMCONFDIR "/NetworkManager.conf"
 #define DEFAULT_CONFIG_DIR              NMCONFDIR "/conf.d"
@@ -977,7 +978,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 			gsize key_len;
 
 			key = keys[k];
-			g_assert (key && *key);
+			nm_assert (key && *key);
 
 			if (   _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)
 			    || _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
@@ -996,6 +997,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 			    && (last_char == '+' || last_char == '-')) {
 				gs_free char *base_key = g_strndup (key, key_len - 1);
 				gboolean is_string_list;
+				gboolean old_val_was_set = FALSE;
 
 				is_string_list = _setting_is_string_list (group, base_key);
 
@@ -1007,13 +1009,19 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 					gs_free char **new_val = NULL;
 
 					if (is_string_list) {
-						old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
+						gs_free_error GError *old_error = NULL;
+
+						old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, &old_error);
 						new_val = g_key_file_get_string_list (kf, group, key, NULL, NULL);
-						if (!old_val && !g_key_file_has_key (keyfile, group, base_key, NULL)) {
-							/* we must fill the unspecified value with the compile-time default. */
-							if (nm_streq (group, NM_CONFIG_KEYFILE_GROUP_MAIN) && nm_streq (base_key, "plugins")) {
+						if (   nm_streq (group, NM_CONFIG_KEYFILE_GROUP_MAIN)
+						    && nm_streq (base_key, "plugins")) {
+							old_val_was_set = !nm_keyfile_error_is_not_found (old_error);
+							if (   !old_val
+							    && !old_val_was_set) {
+								/* we must fill the unspecified value with the compile-time default. */
 								g_key_file_set_value (keyfile, group, base_key, NM_CONFIG_DEFAULT_MAIN_PLUGINS);
 								old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
+								old_val_was_set = TRUE;
 							}
 						}
 					} else {
@@ -1059,7 +1067,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 							g_key_file_set_value (keyfile, group, base_key, specs_joined);
 						}
 					} else {
-						if (is_string_list)
+						if (is_string_list && !old_val_was_set)
 							g_key_file_remove_key (keyfile, group, base_key, NULL);
 						else
 							g_key_file_set_value (keyfile, group, base_key, "");

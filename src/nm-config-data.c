@@ -12,6 +12,7 @@
 #include "devices/nm-device.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile/nm-keyfile-utils.h"
 
 /*****************************************************************************/
 
@@ -215,6 +216,7 @@ nm_config_data_get_value_int64 (const NMConfigData *self, const char *group, con
 char **
 nm_config_data_get_plugins (const NMConfigData *self, gboolean allow_default)
 {
+	gs_free_error GError *error = NULL;
 	const NMConfigDataPrivate *priv;
 	char **list;
 
@@ -222,8 +224,9 @@ nm_config_data_get_plugins (const NMConfigData *self, gboolean allow_default)
 
 	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
 
-	list = g_key_file_get_string_list (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
-	if (!list && allow_default) {
+	list = g_key_file_get_string_list (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, &error);
+	if (   nm_keyfile_error_is_not_found (error)
+	    && allow_default) {
 		gs_unref_keyfile GKeyFile *kf = nm_config_create_keyfile ();
 
 		/* let keyfile split the default string according to its own escaping rules. */
