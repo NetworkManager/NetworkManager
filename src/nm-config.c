@@ -541,7 +541,7 @@ string_to_configure_and_quit (const char *value, GError **error)
 	if (value == NULL)
 		return NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED;
 
-	if (strcmp (value, "initrd") == 0)
+	if (nm_streq (value, "initrd"))
 		return NM_CONFIG_CONFIGURE_AND_QUIT_INITRD;
 
 	ret = nm_config_parse_boolean (value, NM_CONFIG_CONFIGURE_AND_QUIT_INVALID);
@@ -664,8 +664,8 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 	a = *pa;
 	b = *pb;
 
-	a_is_connection = g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
-	b_is_connection = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+	a_is_connection = NM_STR_HAS_PREFIX (a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+	b_is_connection = NM_STR_HAS_PREFIX (b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
 
 	if (a_is_connection != b_is_connection) {
 		/* one is a [connection*] entry, the other not. We sort [connection*] entries
@@ -682,8 +682,8 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 		return pa > pb ? -1 : 1;
 	}
 
-	a_is_device = g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
-	b_is_device = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+	a_is_device = NM_STR_HAS_PREFIX (a, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+	b_is_device = NM_STR_HAS_PREFIX (b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
 
 	if (a_is_device != b_is_device) {
 		/* one is a [device*] entry, the other not. We sort [device*] entries
@@ -719,13 +719,13 @@ _nm_config_sort_groups (char **groups, gsize ngroups)
 static gboolean
 _setting_is_device_spec (const char *group, const char *key)
 {
-#define _IS(group_v, key_v) (strcmp (group, (""group_v)) == 0 && strcmp (key, (""key_v)) == 0)
+#define _IS(group_v, key_v) (nm_streq (group, ""group_v"") && nm_streq (key, ""key_v""))
 	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_ASSUME_IPV6LL_ONLY)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_KEYFILE, NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES)
-	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE))
-	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE    ) && !strcmp (key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE));
+	       || (NM_STR_HAS_PREFIX (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && nm_streq (key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE))
+	       || (NM_STR_HAS_PREFIX (group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE    ) && nm_streq (key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE));
 }
 
 static gboolean
@@ -734,7 +734,7 @@ _setting_is_string_list (const char *group, const char *key)
 	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, NM_CONFIG_KEYFILE_KEY_LOGGING_DOMAINS)
-	       || g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
+	       || NM_STR_HAS_PREFIX (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
 #undef _IS
 }
 
@@ -959,7 +959,7 @@ read_config (GKeyFile *keyfile,
 		const char *group = groups[g];
 		gs_strfreev char **keys = NULL;
 
-		if (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN)) {
+		if (NM_STR_HAS_PREFIX (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN)) {
 			/* internal groups cannot be set by user configuration. */
 			continue;
 		}
@@ -981,7 +981,7 @@ read_config (GKeyFile *keyfile,
 				continue;
 			}
 
-			if (!strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS)) {
+			if (nm_streq (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS)) {
 				/* the "was" key is protected and it cannot be set by user configuration. */
 				continue;
 			}
@@ -1173,7 +1173,7 @@ _get_config_dir_files (const char *config_dir)
 	if (direnum) {
 		while ((info = g_file_enumerator_next_file (direnum, NULL, NULL))) {
 			name = g_file_info_get_name (info);
-			if (g_str_has_suffix (name, ".conf"))
+			if (NM_STR_HAS_SUFFIX (name, ".conf"))
 				g_ptr_array_add (confs, g_strdup (name));
 			g_object_unref (info);
 		}
@@ -1471,14 +1471,14 @@ intern_config_read (const char *filename,
 		const char *group = groups[g];
 		gboolean is_intern, is_atomic;
 
-		if (!strcmp (group, NM_CONFIG_KEYFILE_GROUP_CONFIG))
+		if (nm_streq (group, NM_CONFIG_KEYFILE_GROUP_CONFIG))
 			continue;
 
 		keys = g_key_file_get_keys (keyfile, group, NULL, NULL);
 		if (!keys)
 			continue;
 
-		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+		is_intern = NM_STR_HAS_PREFIX (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
 		is_atomic = !is_intern && _is_atomic_section (atomic_section_prefixes, group);
 
 		if (is_atomic) {
@@ -1488,7 +1488,7 @@ intern_config_read (const char *filename,
 			conf_section_is = _keyfile_serialize_section (keyfile_conf, group);
 			conf_section_was = g_key_file_get_string (keyfile, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, NULL);
 
-			if (g_strcmp0 (conf_section_was, conf_section_is) != 0) {
+			if (!nm_streq0 (conf_section_was, conf_section_is)) {
 				/* the section no longer matches. Skip it entirely. */
 				needs_rewrite = TRUE;
 				continue;
@@ -1509,7 +1509,7 @@ intern_config_read (const char *filename,
 				has_intern = TRUE;
 				g_key_file_set_value (keyfile_intern, group, key, value_set);
 			} else if (is_atomic) {
-				if (strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0)
+				if (nm_streq (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS))
 					continue;
 				g_key_file_set_value (keyfile_intern, group, key, value_set);
 			} else if (NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
@@ -1522,7 +1522,7 @@ intern_config_read (const char *filename,
 					value_conf = g_key_file_get_value (keyfile_conf, group, key_base, NULL);
 				value_was = g_key_file_get_value (keyfile, group, key_was, NULL);
 
-				if (g_strcmp0 (value_conf, value_was) != 0) {
+				if (!nm_streq0 (value_conf, value_was)) {
 					/* if value_was is no longer the same as @value_conf, it means the user
 					 * changed the configuration since the last write. In this case, we
 					 * drop the value. It also means our file is out-of-date, and we should
@@ -1547,7 +1547,7 @@ intern_config_read (const char *filename,
 					value_conf = g_key_file_get_value (keyfile_conf, group, key_base, NULL);
 				value_was = g_key_file_get_value (keyfile, group, key, NULL);
 
-				if (g_strcmp0 (value_conf, value_was) != 0) {
+				if (!nm_streq0 (value_conf, value_was)) {
 					/* if value_was is no longer the same as @value_conf, it means the user
 					 * changed the configuration since the last write. In this case, we
 					 * don't overwrite the user-provided value. It also means our file is
@@ -1576,7 +1576,7 @@ out:
 		if (g_key_file_remove_group (keyfile_intern, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL))
 			needs_rewrite = TRUE;
 		for (g = 0; groups && groups[g]; g++) {
-			if (   g_str_has_prefix (groups[g], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)
+			if (   NM_STR_HAS_PREFIX (groups[g], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)
 			    && groups[g][NM_STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)]) {
 				g_key_file_remove_group (keyfile_intern, groups[g], NULL);
 				needs_rewrite = TRUE;
@@ -1605,8 +1605,8 @@ _intern_config_write_sort_fcn (const char **a, const char **b, const char *const
 	const char *g_b = (b ? *b : NULL);
 	gboolean a_is, b_is;
 
-	a_is = g_str_has_prefix (g_a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
-	b_is = g_str_has_prefix (g_b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+	a_is = NM_STR_HAS_PREFIX (g_a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+	b_is = NM_STR_HAS_PREFIX (g_b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
 
 	if (a_is != b_is) {
 		if (a_is)
@@ -1667,7 +1667,7 @@ intern_config_write (const char *filename,
 		if (!keys)
 			continue;
 
-		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+		is_intern = NM_STR_HAS_PREFIX (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
 		is_atomic = !is_intern && _is_atomic_section (atomic_section_prefixes, group);
 
 		if (is_atomic) {
@@ -1734,7 +1734,7 @@ intern_config_write (const char *filename,
 				} else {
 					if (keyfile_conf) {
 						value_was = g_key_file_get_value (keyfile_conf, group, key, NULL);
-						if (g_strcmp0 (value_set, value_was) == 0) {
+						if (nm_streq0 (value_set, value_was)) {
 							/* there is no point in storing the identical value as we have via
 							 * user configuration. Skip it. */
 							continue;
@@ -1836,7 +1836,7 @@ nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError 
 	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL);
 	groups = g_key_file_get_groups (keyfile, NULL);
 	for (i = 0; groups[i]; i++) {
-		if (g_str_has_prefix (groups[i], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN))
+		if (NM_STR_HAS_PREFIX (groups[i], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN))
 			g_key_file_remove_group (keyfile, groups[i], NULL);
 	}
 	g_strfreev (groups);
