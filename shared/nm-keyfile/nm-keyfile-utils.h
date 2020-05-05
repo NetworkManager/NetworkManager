@@ -10,8 +10,20 @@
 #error Cannot use this header.
 #endif
 
+/*****************************************************************************/
+
+#include "nm-glib-aux/nm-shared-utils.h"
+
+/*****************************************************************************/
+
 #define NM_KEYFILE_GROUP_VPN_SECRETS          "vpn-secrets"
 #define NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER "wireguard-peer."
+
+#define nm_keyfile_error_is_not_found(error) \
+	nm_g_error_matches (error, \
+	                    G_KEY_FILE_ERROR, \
+	                    G_KEY_FILE_ERROR_GROUP_NOT_FOUND, \
+	                    G_KEY_FILE_ERROR_KEY_NOT_FOUND)
 
 const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name);
 
