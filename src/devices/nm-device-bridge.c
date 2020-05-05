@@ -292,7 +292,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_QUERIER,                       "multicast_querier",
 	                                                             NULL, NULL,
-	                                                             0, 1, 0,
+	                                                             FALSE, TRUE, NM_BRIDGE_MULTICAST_QUERIER_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL,              "multicast_querier_interval",
 	                                                             NULL, NULL,
