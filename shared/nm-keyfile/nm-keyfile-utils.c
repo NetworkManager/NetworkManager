@@ -117,7 +117,7 @@ nm_keyfile_plugin_kf_get_string_list (GKeyFile *kf,
 	gsize l;
 
 	list = g_key_file_get_string_list (kf, group, key, &l, &local);
-	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
+	if (nm_g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group);
 		if (alias) {
 			g_clear_error (&local);
@@ -246,7 +246,7 @@ fcn_name (GKeyFile *kf, \
 	GError *local = NULL; \
 \
 	val = key_file_get_fcn (kf, group, key, &local); \
-	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) { \
+	if (nm_g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) { \
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
 		if (alias) { \
 			g_clear_error (&local); \
@@ -323,7 +323,7 @@ nm_keyfile_plugin_kf_get_keys (GKeyFile *kf,
 	gsize l;
 
 	keys = g_key_file_get_keys (kf, group, &l, &local);
-	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
+	if (nm_g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group);
 		if (alias) {
 			g_clear_error (&local);
@@ -351,7 +351,7 @@ nm_keyfile_plugin_kf_has_key (GKeyFile *kf,
 	GError *local = NULL;
 
 	has = g_key_file_has_key (kf, group, key, &local);
-	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
+	if (nm_g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group);
 		if (alias) {
 			g_clear_error (&local);
