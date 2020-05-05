@@ -288,7 +288,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL,           "multicast_membership_interval",
 	                                                             NULL, NULL,
-	                                                             0, G_MAXUINT64, 26000,
+	                                                             NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MIN, NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MAX, NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_QUERIER,                       "multicast_querier",
 	                                                             NULL, NULL,

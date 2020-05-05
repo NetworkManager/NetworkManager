@@ -1575,7 +1575,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->max_age                           = NM_BRIDGE_MAX_AGE_DEF;
 	priv->multicast_last_member_count       = NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF;
 	priv->multicast_last_member_interval    = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF;
-	priv->multicast_membership_interval     = BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT;
+	priv->multicast_membership_interval     = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF;
 	priv->multicast_hash_max                = NM_BRIDGE_MULTICAST_HASH_MAX_DEF;
 	priv->multicast_snooping                = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
 	priv->priority                          = NM_BRIDGE_PRIORITY_DEF;
@@ -2150,7 +2150,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MULTICAST_MEMBERSHIP_INTERVAL] =
 	    g_param_spec_uint64 (NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL, "", "",
-	                         0, G_MAXUINT64, BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT,
+	                         NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MIN, NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MAX, NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF,
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
