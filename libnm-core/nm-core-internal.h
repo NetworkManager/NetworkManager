@@ -151,8 +151,9 @@
 #define NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF ((guint64) 3125)
 #define NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MAX G_MAXUINT64
 
+#define NM_BRIDGE_VLAN_STATS_ENABLED_DEF FALSE
+
 #define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
-#define BRIDGE_VLAN_STATS_ENABLED_DEFAULT                  FALSE
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only

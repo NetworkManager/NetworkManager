@@ -336,7 +336,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,                      "vlan_stats_enabled",
 	                                                             NULL, NULL,
-	                                                             0, 1, 0,
+	                                                             FALSE, TRUE, NM_BRIDGE_VLAN_STATS_ENABLED_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NULL, NULL }
 };

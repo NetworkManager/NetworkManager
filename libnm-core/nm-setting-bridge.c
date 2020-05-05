@@ -1581,7 +1581,6 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->priority                          = NM_BRIDGE_PRIORITY_DEF;
 	priv->stp                               = NM_BRIDGE_STP_DEF;
 	priv->vlan_default_pvid                 = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
-	priv->vlan_stats_enabled                = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
 	priv->multicast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
 	priv->multicast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
 	priv->multicast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
@@ -1590,6 +1589,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 
 	nm_assert (priv->multicast_querier          == NM_BRIDGE_MULTICAST_QUERIER_DEF);
 	nm_assert (priv->multicast_query_use_ifaddr == NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF);
+	nm_assert (priv->vlan_stats_enabled         == NM_BRIDGE_VLAN_STATS_ENABLED_DEF);
 }
 
 /**
@@ -1991,7 +1991,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_VLAN_STATS_ENABLED] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_VLAN_STATS_ENABLED, "", "",
-	                          BRIDGE_VLAN_STATS_ENABLED_DEFAULT,
+	                          NM_BRIDGE_VLAN_STATS_ENABLED_DEF,
 	                          G_PARAM_READWRITE |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);
