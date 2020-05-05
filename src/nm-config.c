@@ -657,12 +657,10 @@ ignore_config_snippet (GKeyFile *keyfile, gboolean is_base_config)
 static int
 _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 {
-	const char *a, *b;
+	const char *a = *pa;
+	const char *b = *pb;
 	gboolean a_is_connection, b_is_connection;
 	gboolean a_is_device, b_is_device;
-
-	a = *pa;
-	b = *pb;
 
 	a_is_connection = NM_STR_HAS_PREFIX (a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
 	b_is_connection = NM_STR_HAS_PREFIX (b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
@@ -1601,8 +1599,8 @@ out:
 static int
 _intern_config_write_sort_fcn (const char **a, const char **b, const char *const*atomic_section_prefixes)
 {
-	const char *g_a = (a ? *a : NULL);
-	const char *g_b = (b ? *b : NULL);
+	const char *g_a = *a;
+	const char *g_b = *b;
 	gboolean a_is, b_is;
 
 	a_is = NM_STR_HAS_PREFIX (g_a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
