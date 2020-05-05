@@ -926,6 +926,21 @@ _nm_g_slice_free_fcn_define (32)
 
 /*****************************************************************************/
 
+/* Like g_error_matches() however:
+ * - as macro it is always inlined.
+ * - the @domain is usually a error quark getter function that cannot
+ *   be inlined. This macro calls the getter only if there is an error (lazy).
+ * - accept a list of allowed codes, instead of only one.
+ */
+#define nm_g_error_matches(error, err_domain, ...) \
+	({ \
+		const GError *const _error = (error); \
+		\
+		   _error \
+		&& _error->domain == (err_domain) \
+		&& NM_IN_SET (_error->code, __VA_ARGS__); \
+	})
+
 static inline void
 nm_g_set_error_take (GError **error, GError *error_take)
 {
