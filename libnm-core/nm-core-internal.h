@@ -100,6 +100,27 @@
 #define NM_BR_MIN_MULTICAST_HASH_MAX 1
 #define NM_BR_MAX_MULTICAST_HASH_MAX G_MAXUINT32
 
+#define BRIDGE_AGEING_TIME_DEFAULT                         300
+#define BRIDGE_FORWARD_DELAY_DEFAULT                       15
+#define BRIDGE_HELLO_TIME_DEFAULT                          2
+#define BRIDGE_MAX_AGE_DEFAULT                             20
+#define BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT         2
+#define BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT      100
+#define BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT       26000
+#define BRIDGE_MULTICAST_QUERIER_INTERVAL_DEFAULT          25500
+#define BRIDGE_MULTICAST_HASH_MAX_DEFAULT                  4096
+#define BRIDGE_MULTICAST_QUERIER_DEFAULT                   FALSE
+#define BRIDGE_MULTICAST_QUERY_INTERVAL_DEFAULT            12500
+#define BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEFAULT   1000
+#define BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT          FALSE
+#define BRIDGE_MULTICAST_SNOOPING_DEFAULT                  TRUE
+#define BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT       2
+#define BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT    3125
+#define BRIDGE_PRIORITY_DEFAULT                            0x8000
+#define BRIDGE_STP_DEFAULT                                 TRUE
+#define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
+#define BRIDGE_VLAN_STATS_ENABLED_DEFAULT                  FALSE
+
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
