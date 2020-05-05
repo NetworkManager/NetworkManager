@@ -320,7 +320,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT,           "multicast_startup_query_count",
 	                                                             NULL, NULL,
-	                                                             0, G_MAXUINT32, 2,
+	                                                             NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_MIN, NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_MAX, NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL,        "multicast_startup_query_interval",
 	                                                             NULL, NULL,
