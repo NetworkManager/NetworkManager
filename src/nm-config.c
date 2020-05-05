@@ -903,15 +903,20 @@ check_config_key (const char *group, const char *key)
 }
 
 static gboolean
-read_config (GKeyFile *keyfile, gboolean is_base_config,
-             const char *dirname, const char *path,
-             GPtrArray *warnings, GError **error)
+read_config (GKeyFile *keyfile,
+             gboolean is_base_config,
+             const char *dirname,
+             const char *path,
+             GPtrArray *warnings,
+             GError **error)
 {
-	GKeyFile *kf;
-	char **groups, **keys;
-	gsize ngroups, nkeys;
-	int g, k;
+	gs_unref_keyfile GKeyFile *kf = NULL;
+	gs_strfreev char **groups = NULL;
 	gs_free char *path_free = NULL;
+	gsize ngroups;
+	gsize nkeys;
+	int g;
+	int k;
 
 	g_return_val_if_fail (keyfile, FALSE);
 	g_return_val_if_fail (path, FALSE);
@@ -932,14 +937,11 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 	kf = nm_config_create_keyfile ();
 	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, error)) {
 		g_prefix_error (error, "%s: ", path);
-		g_key_file_free (kf);
 		return FALSE;
 	}
 
-	if (ignore_config_snippet (kf, is_base_config)) {
-		g_key_file_free (kf);
+	if (ignore_config_snippet (kf, is_base_config))
 		return TRUE;
-	}
 
 	/* the config-group is internal to every configuration snippets. It doesn't make sense
 	 * to merge it into the global configuration, and it doesn't make sense to preserve the
@@ -963,6 +965,7 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 
 	for (g = 0; groups && groups[g]; g++) {
 		const char *group = groups[g];
+		gs_strfreev char **keys = NULL;
 
 		if (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN)) {
 			/* internal groups cannot be set by user configuration. */
@@ -972,8 +975,8 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 		if (!keys)
 			continue;
 		for (k = 0; keys[k]; k++) {
+			gs_free char *new_value = NULL;
 			const char *key;
-			char *new_value;
 			char last_char;
 			gsize key_len;
 
@@ -1087,12 +1090,8 @@ read_config (GKeyFile *keyfile, gboolean is_base_config,
 				                 g_strdup_printf ("unknown key '%s' in section [%s] of file '%s'",
 				                                  key, group, path));
 			}
-			g_free (new_value);
 		}
-		g_strfreev (keys);
 	}
-	g_strfreev (groups);
-	g_key_file_free (kf);
 
 	return TRUE;
 }
