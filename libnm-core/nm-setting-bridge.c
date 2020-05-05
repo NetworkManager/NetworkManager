@@ -1576,7 +1576,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->multicast_last_member_count       = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
 	priv->multicast_last_member_interval    = BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT;
 	priv->multicast_membership_interval     = BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT;
-	priv->multicast_hash_max                = BRIDGE_MULTICAST_HASH_MAX_DEFAULT;
+	priv->multicast_hash_max                = NM_BRIDGE_MULTICAST_HASH_MAX_DEF;
 	priv->multicast_snooping                = BRIDGE_MULTICAST_SNOOPING_DEFAULT;
 	priv->priority                          = BRIDGE_PRIORITY_DEFAULT;
 	priv->stp                               = BRIDGE_STP_DEFAULT;
@@ -2082,7 +2082,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MULTICAST_HASH_MAX] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_MULTICAST_HASH_MAX, "", "",
-	                       NM_BR_MIN_MULTICAST_HASH_MAX, NM_BR_MAX_MULTICAST_HASH_MAX, BRIDGE_MULTICAST_HASH_MAX_DEFAULT,
+	                       NM_BRIDGE_MULTICAST_HASH_MAX_MIN, NM_BRIDGE_MULTICAST_HASH_MAX_MAX, NM_BRIDGE_MULTICAST_HASH_MAX_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);

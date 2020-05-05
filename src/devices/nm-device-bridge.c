@@ -276,7 +276,7 @@ static const Option master_options[] = {
 	                                                             TRUE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,                      "hash_max",
 	                                                             NULL, NULL,
-	                                                             NM_BR_MIN_MULTICAST_HASH_MAX, NM_BR_MAX_MULTICAST_HASH_MAX, 4096,
+	                                                             NM_BRIDGE_MULTICAST_HASH_MAX_MIN, NM_BRIDGE_MULTICAST_HASH_MAX_MAX, NM_BRIDGE_MULTICAST_HASH_MAX_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,             "multicast_last_member_count",
 	                                                             NULL, NULL,
