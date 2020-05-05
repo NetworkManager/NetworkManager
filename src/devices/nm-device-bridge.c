@@ -300,7 +300,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL,                "multicast_query_interval",
 	                                                             NULL, NULL,
-	                                                             0, G_MAXUINT64, 12500,
+	                                                             NM_BRIDGE_MULTICAST_QUERY_INTERVAL_MIN, NM_BRIDGE_MULTICAST_QUERY_INTERVAL_MAX, NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL,       "multicast_query_response_interval",
 	                                                             NULL, NULL,
