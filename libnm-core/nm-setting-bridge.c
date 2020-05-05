@@ -1224,8 +1224,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 
 	if (!check_range (priv->ageing_time,
-	                  NM_BR_MIN_AGEING_TIME,
-	                  NM_BR_MAX_AGEING_TIME,
+	                  NM_BRIDGE_AGEING_TIME_MIN,
+	                  NM_BRIDGE_AGEING_TIME_MAX,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_AGEING_TIME,
 	                  error))
@@ -1569,7 +1569,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	priv->ageing_time                       = BRIDGE_AGEING_TIME_DEFAULT;
+	priv->ageing_time                       = NM_BRIDGE_AGEING_TIME_DEF;
 	priv->forward_delay                     = BRIDGE_FORWARD_DELAY_DEFAULT;
 	priv->hello_time                        = BRIDGE_HELLO_TIME_DEFAULT;
 	priv->max_age                           = BRIDGE_MAX_AGE_DEFAULT;
@@ -1786,7 +1786,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_AGEING_TIME] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_AGEING_TIME, "", "",
-	                       NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, BRIDGE_AGEING_TIME_DEFAULT,
+	                       NM_BRIDGE_AGEING_TIME_MIN, NM_BRIDGE_AGEING_TIME_MAX, NM_BRIDGE_AGEING_TIME_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);

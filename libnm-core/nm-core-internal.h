@@ -88,8 +88,9 @@
 #define NM_BR_MAX_MAX_AGE       40
 
 /* IEEE 802.1D-1998 Table 7.4 */
-#define NM_BR_MIN_AGEING_TIME   0
-#define NM_BR_MAX_AGEING_TIME   1000000
+#define NM_BRIDGE_AGEING_TIME_MIN 0u
+#define NM_BRIDGE_AGEING_TIME_DEF 300u
+#define NM_BRIDGE_AGEING_TIME_MAX 1000000u
 
 #define NM_BR_PORT_MAX_PRIORITY 63
 #define NM_BR_PORT_DEF_PRIORITY 32
@@ -101,7 +102,6 @@
 #define NM_BRIDGE_MULTICAST_HASH_MAX_DEF 4096u
 #define NM_BRIDGE_MULTICAST_HASH_MAX_MAX ((guint) G_MAXUINT32)
 
-#define BRIDGE_AGEING_TIME_DEFAULT                         300
 #define BRIDGE_FORWARD_DELAY_DEFAULT                       15
 #define BRIDGE_HELLO_TIME_DEFAULT                          2
 #define BRIDGE_MAX_AGE_DEFAULT                             20

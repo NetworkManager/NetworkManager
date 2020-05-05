@@ -268,7 +268,7 @@ static const Option master_options[] = {
 	                                                             TRUE, TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_AGEING_TIME,                             "ageing_time",
 	                                                             NULL, NULL,
-	                                                             NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
+	                                                             NM_BRIDGE_AGEING_TIME_MIN, NM_BRIDGE_AGEING_TIME_MAX, NM_BRIDGE_AGEING_TIME_DEF,
 	                                                             TRUE, TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,                      "group_fwd_mask",
 	                                                             NULL, NULL,
