@@ -81,8 +81,9 @@
 #define NM_BR_MIN_HELLO_TIME    1
 #define NM_BR_MAX_HELLO_TIME    10
 
-#define NM_BR_MIN_FORWARD_DELAY 2
-#define NM_BR_MAX_FORWARD_DELAY 30
+#define NM_BRIDGE_FORWARD_DELAY_MIN 2u
+#define NM_BRIDGE_FORWARD_DELAY_DEF 15u
+#define NM_BRIDGE_FORWARD_DELAY_MAX 30u
 
 #define NM_BR_MIN_MAX_AGE       6
 #define NM_BR_MAX_MAX_AGE       40
@@ -102,7 +103,6 @@
 #define NM_BRIDGE_MULTICAST_HASH_MAX_DEF 4096u
 #define NM_BRIDGE_MULTICAST_HASH_MAX_MAX ((guint) G_MAXUINT32)
 
-#define BRIDGE_FORWARD_DELAY_DEFAULT                       15
 #define BRIDGE_HELLO_TIME_DEFAULT                          2
 #define BRIDGE_MAX_AGE_DEFAULT                             20
 #define BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT         2

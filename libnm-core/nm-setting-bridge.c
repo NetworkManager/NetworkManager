@@ -1200,8 +1200,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (!check_range (priv->forward_delay,
-	                  NM_BR_MIN_FORWARD_DELAY,
-	                  NM_BR_MAX_FORWARD_DELAY,
+	                  NM_BRIDGE_FORWARD_DELAY_MIN,
+	                  NM_BRIDGE_FORWARD_DELAY_MAX,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_FORWARD_DELAY,
 	                  error))
@@ -1570,7 +1570,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
 	priv->ageing_time                       = NM_BRIDGE_AGEING_TIME_DEF;
-	priv->forward_delay                     = BRIDGE_FORWARD_DELAY_DEFAULT;
+	priv->forward_delay                     = NM_BRIDGE_FORWARD_DELAY_DEF;
 	priv->hello_time                        = BRIDGE_HELLO_TIME_DEFAULT;
 	priv->max_age                           = BRIDGE_MAX_AGE_DEFAULT;
 	priv->multicast_last_member_count       = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
@@ -1726,7 +1726,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_FORWARD_DELAY] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_FORWARD_DELAY, "", "",
-	                       0, NM_BR_MAX_FORWARD_DELAY, BRIDGE_FORWARD_DELAY_DEFAULT,
+	                       0, NM_BRIDGE_FORWARD_DELAY_MAX, NM_BRIDGE_FORWARD_DELAY_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);

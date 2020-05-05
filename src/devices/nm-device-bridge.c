@@ -256,7 +256,7 @@ static const Option master_options[] = {
 	                                                             TRUE, FALSE, TRUE },
 	{ NM_SETTING_BRIDGE_FORWARD_DELAY,                           "forward_delay",
 	                                                             NULL, NULL,
-	                                                             0, NM_BR_MAX_FORWARD_DELAY, 15,
+	                                                             NM_BRIDGE_FORWARD_DELAY_MIN, NM_BRIDGE_FORWARD_DELAY_MAX, NM_BRIDGE_FORWARD_DELAY_DEF,
 	                                                             TRUE, TRUE, TRUE},
 	{ NM_SETTING_BRIDGE_HELLO_TIME,                              "hello_time",
 	                                                             NULL, NULL,
