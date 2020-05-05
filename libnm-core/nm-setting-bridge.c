@@ -1216,8 +1216,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 
 	if (!check_range (priv->max_age,
-	                  NM_BR_MIN_MAX_AGE,
-	                  NM_BR_MAX_MAX_AGE,
+	                  NM_BRIDGE_MAX_AGE_MIN,
+	                  NM_BRIDGE_MAX_AGE_MAX,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_MAX_AGE,
 	                  error))
@@ -1572,7 +1572,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->ageing_time                       = NM_BRIDGE_AGEING_TIME_DEF;
 	priv->forward_delay                     = NM_BRIDGE_FORWARD_DELAY_DEF;
 	priv->hello_time                        = NM_BRIDGE_HELLO_TIME_DEF;
-	priv->max_age                           = BRIDGE_MAX_AGE_DEFAULT;
+	priv->max_age                           = NM_BRIDGE_MAX_AGE_DEF;
 	priv->multicast_last_member_count       = BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT;
 	priv->multicast_last_member_interval    = BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT;
 	priv->multicast_membership_interval     = BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEFAULT;
@@ -1766,7 +1766,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MAX_AGE] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_MAX_AGE, "", "",
-	                       0, NM_BR_MAX_MAX_AGE, BRIDGE_MAX_AGE_DEFAULT,
+	                       0, NM_BRIDGE_MAX_AGE_MAX, NM_BRIDGE_MAX_AGE_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);

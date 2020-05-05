@@ -264,7 +264,7 @@ static const Option master_options[] = {
 	                                                             TRUE, TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_MAX_AGE,                                 "max_age",
 	                                                             NULL, NULL,
-	                                                             0, NM_BR_MAX_MAX_AGE, 20,
+	                                                             NM_BRIDGE_MAX_AGE_MIN, NM_BRIDGE_MAX_AGE_MAX, NM_BRIDGE_MAX_AGE_DEF,
 	                                                             TRUE, TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_AGEING_TIME,                             "ageing_time",
 	                                                             NULL, NULL,
