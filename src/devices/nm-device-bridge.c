@@ -348,7 +348,7 @@ static const Option slave_options[] = {
 	                                       TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_PATH_COST,    "path_cost",
 	                                       NULL, NULL,
-	                                       0, NM_BR_PORT_MAX_PATH_COST, 100,
+	                                       NM_BRIDGE_PORT_PATH_COST_MIN, NM_BRIDGE_PORT_PATH_COST_MAX, NM_BRIDGE_PORT_PATH_COST_DEF,
 	                                       TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode",
 	                                       NULL, NULL,
