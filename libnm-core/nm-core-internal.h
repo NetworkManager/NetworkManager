@@ -78,8 +78,9 @@
 #include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 /* IEEE 802.1D-1998 timer values */
-#define NM_BR_MIN_HELLO_TIME    1
-#define NM_BR_MAX_HELLO_TIME    10
+#define NM_BRIDGE_HELLO_TIME_MIN 1u
+#define NM_BRIDGE_HELLO_TIME_DEF 2u
+#define NM_BRIDGE_HELLO_TIME_MAX 10u
 
 #define NM_BRIDGE_FORWARD_DELAY_MIN 2u
 #define NM_BRIDGE_FORWARD_DELAY_DEF 15u
@@ -105,7 +106,6 @@
 
 #define NM_BRIDGE_STP_DEF TRUE
 
-#define BRIDGE_HELLO_TIME_DEFAULT                          2
 #define BRIDGE_MAX_AGE_DEFAULT                             20
 #define BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT         2
 #define BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEFAULT      100

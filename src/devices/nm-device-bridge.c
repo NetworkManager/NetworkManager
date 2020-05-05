@@ -260,7 +260,7 @@ static const Option master_options[] = {
 	                                                             TRUE, TRUE, TRUE},
 	{ NM_SETTING_BRIDGE_HELLO_TIME,                              "hello_time",
 	                                                             NULL, NULL,
-	                                                             0, NM_BR_MAX_HELLO_TIME, 2,
+	                                                             NM_BRIDGE_HELLO_TIME_MIN, NM_BRIDGE_HELLO_TIME_MAX, NM_BRIDGE_HELLO_TIME_DEF,
 	                                                             TRUE, TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_MAX_AGE,                                 "max_age",
 	                                                             NULL, NULL,
