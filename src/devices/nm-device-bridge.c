@@ -324,7 +324,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL,        "multicast_startup_query_interval",
 	                                                             NULL, NULL,
-	                                                             0, G_MAXUINT64, 3125,
+	                                                             NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MIN, NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MAX, NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_GROUP_ADDRESS,                           "group_addr",
 	                                                             to_sysfs_group_address, from_sysfs_group_address,

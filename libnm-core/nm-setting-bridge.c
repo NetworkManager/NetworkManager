@@ -1586,7 +1586,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->multicast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
 	priv->multicast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
 	priv->multicast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF;
-	priv->multicast_startup_query_interval  = BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT;
+	priv->multicast_startup_query_interval  = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF;
 
 	nm_assert (priv->multicast_querier          == NM_BRIDGE_MULTICAST_QUERIER_DEF);
 	nm_assert (priv->multicast_query_use_ifaddr == NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF);
@@ -2260,7 +2260,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MULTICAST_STARTUP_QUERY_INTERVAL] =
 	    g_param_spec_uint64 (NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL, "", "",
-	                         0, G_MAXUINT64, BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT,
+	                         NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MIN, NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MAX, NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF,
 	                         G_PARAM_READWRITE |
 	                         NM_SETTING_PARAM_INFERRABLE |
 	                         G_PARAM_STATIC_STRINGS);
