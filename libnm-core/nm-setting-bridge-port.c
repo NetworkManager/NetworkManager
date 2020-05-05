@@ -442,7 +442,7 @@ nm_setting_bridge_port_init (NMSettingBridgePort *setting)
 
 	priv->vlans = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_bridge_vlan_unref);
 
-	priv->priority = NM_BR_PORT_DEF_PRIORITY;
+	priv->priority = NM_BRIDGE_PORT_PRIORITY_DEF;
 	priv->path_cost = NM_BR_PORT_DEF_PATH_COST;
 }
 
@@ -500,7 +500,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	 */
 	obj_properties[PROP_PRIORITY] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
-	                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
+	                       NM_BRIDGE_PORT_PRIORITY_MIN, NM_BRIDGE_PORT_PRIORITY_MAX, NM_BRIDGE_PORT_PRIORITY_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);

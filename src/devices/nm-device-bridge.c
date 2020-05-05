@@ -344,7 +344,7 @@ static const Option master_options[] = {
 static const Option slave_options[] = {
 	{ NM_SETTING_BRIDGE_PORT_PRIORITY,     "priority",
 	                                       NULL, NULL,
-	                                       0, NM_BR_PORT_MAX_PRIORITY, NM_BR_PORT_DEF_PRIORITY,
+	                                       NM_BRIDGE_PORT_PRIORITY_MIN, NM_BRIDGE_PORT_PRIORITY_MAX, NM_BRIDGE_PORT_PRIORITY_DEF,
 	                                       TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_PATH_COST,    "path_cost",
 	                                       NULL, NULL,
