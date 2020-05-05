@@ -252,7 +252,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_PRIORITY,                                "priority",
 	                                                             NULL, NULL,
-	                                                             0, G_MAXUINT16, 0x8000,
+	                                                             NM_BRIDGE_PRIORITY_MIN, NM_BRIDGE_PRIORITY_MAX, NM_BRIDGE_PRIORITY_DEF,
 	                                                             TRUE, FALSE, TRUE },
 	{ NM_SETTING_BRIDGE_FORWARD_DELAY,                           "forward_delay",
 	                                                             NULL, NULL,
