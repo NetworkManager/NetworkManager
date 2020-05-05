@@ -312,7 +312,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING,                      "multicast_snooping",
 	                                                             NULL, NULL,
-	                                                             0, 1, 1,
+	                                                             FALSE, TRUE, NM_BRIDGE_MULTICAST_SNOOPING_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_ROUTER,                        "multicast_router",
 	                                                             to_sysfs_multicast_router, from_sysfs_multicast_router,
