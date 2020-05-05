@@ -280,7 +280,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,             "multicast_last_member_count",
 	                                                             NULL, NULL,
-	                                                             0, G_MAXUINT32, 2,
+	                                                             NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_MIN, NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_MAX, NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL,          "multicast_last_member_interval",
 	                                                             NULL, NULL,
