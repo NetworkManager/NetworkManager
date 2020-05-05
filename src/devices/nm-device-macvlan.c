@@ -462,16 +462,18 @@ nm_device_macvlan_init (NMDeviceMacvlan *self)
 {
 }
 
+#if NM_MORE_ASSERTS
 static void
 dispose (GObject *object)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
-
 	G_OBJECT_CLASS (nm_device_macvlan_parent_class)->dispose (object);
 
-	nm_assert (priv->parent_state_id == 0);
-	nm_assert (priv->parent_mtu_id == 0);
+	nm_assert (NM_DEVICE_MACVLAN_GET_PRIVATE (object)->parent_state_id == 0);
+	nm_assert (NM_DEVICE_MACVLAN_GET_PRIVATE (object)->parent_mtu_id == 0);
 }
+#else
+#define dispose ((void (*) (GObject *object)) NULL)
+#endif
 
 static const NMDBusInterfaceInfoExtended interface_info_device_macvlan = {
 	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (

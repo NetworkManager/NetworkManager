@@ -863,15 +863,14 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceMacsec *self = NM_DEVICE_MACSEC (object);
-	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 
 	macsec_secrets_cancel (self);
 	supplicant_interface_release (self);
 
 	G_OBJECT_CLASS (nm_device_macsec_parent_class)->dispose (object);
 
-	nm_assert (priv->parent_state_id == 0);
-	nm_assert (priv->parent_mtu_id == 0);
+	nm_assert (NM_DEVICE_MACSEC_GET_PRIVATE (self)->parent_state_id == 0);
+	nm_assert (NM_DEVICE_MACSEC_GET_PRIVATE (self)->parent_mtu_id == 0);
 }
 
 static const NMDBusInterfaceInfoExtended interface_info_device_macsec = {
