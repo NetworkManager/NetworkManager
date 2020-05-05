@@ -1580,7 +1580,7 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->multicast_snooping                = NM_BRIDGE_MULTICAST_SNOOPING_DEF;
 	priv->priority                          = NM_BRIDGE_PRIORITY_DEF;
 	priv->stp                               = NM_BRIDGE_STP_DEF;
-	priv->vlan_default_pvid                 = BRIDGE_VLAN_DEFAULT_PVID_DEFAULT;
+	priv->vlan_default_pvid                 = NM_BRIDGE_VLAN_DEFAULT_PVID_DEF;
 	priv->multicast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
 	priv->multicast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
 	priv->multicast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
@@ -1876,7 +1876,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_VLAN_DEFAULT_PVID] =
 	    g_param_spec_uint (NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID, "", "",
-	                       0, NM_BRIDGE_VLAN_VID_MAX, BRIDGE_VLAN_DEFAULT_PVID_DEFAULT,
+	                       0, NM_BRIDGE_VLAN_VID_MAX, NM_BRIDGE_VLAN_DEFAULT_PVID_DEF,
 	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_INFERRABLE |
 	                       G_PARAM_STATIC_STRINGS);

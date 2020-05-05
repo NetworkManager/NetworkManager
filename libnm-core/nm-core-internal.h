@@ -153,7 +153,7 @@
 
 #define NM_BRIDGE_VLAN_STATS_ENABLED_DEF FALSE
 
-#define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
+#define NM_BRIDGE_VLAN_DEFAULT_PVID_DEF 1u
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
