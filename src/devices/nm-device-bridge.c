@@ -248,7 +248,7 @@ typedef struct {
 static const Option master_options[] = {
 	{ NM_SETTING_BRIDGE_STP,                                     "stp_state", /* this must stay as the first item */
 	                                                             NULL, NULL,
-	                                                             0, 1, 1,
+	                                                             FALSE, TRUE, NM_BRIDGE_STP_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_PRIORITY,                                "priority",
 	                                                             NULL, NULL,

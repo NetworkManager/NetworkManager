@@ -103,6 +103,8 @@
 #define NM_BRIDGE_MULTICAST_HASH_MAX_DEF 4096u
 #define NM_BRIDGE_MULTICAST_HASH_MAX_MAX ((guint) G_MAXUINT32)
 
+#define NM_BRIDGE_STP_DEF TRUE
+
 #define BRIDGE_HELLO_TIME_DEFAULT                          2
 #define BRIDGE_MAX_AGE_DEFAULT                             20
 #define BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEFAULT         2
@@ -117,7 +119,6 @@
 #define BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT       2
 #define BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT    3125
 #define BRIDGE_PRIORITY_DEFAULT                            0x8000
-#define BRIDGE_STP_DEFAULT                                 TRUE
 #define BRIDGE_VLAN_DEFAULT_PVID_DEFAULT                   1
 #define BRIDGE_VLAN_STATS_ENABLED_DEFAULT                  FALSE
 
