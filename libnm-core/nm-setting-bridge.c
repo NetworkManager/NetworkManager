@@ -1584,12 +1584,12 @@ nm_setting_bridge_init (NMSettingBridge *setting)
 	priv->vlan_stats_enabled                = BRIDGE_VLAN_STATS_ENABLED_DEFAULT;
 	priv->multicast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
 	priv->multicast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
-	priv->multicast_query_use_ifaddr        = BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT;
 	priv->multicast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
 	priv->multicast_startup_query_count     = BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEFAULT;
 	priv->multicast_startup_query_interval  = BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEFAULT;
 
-	nm_assert (priv->multicast_querier == NM_BRIDGE_MULTICAST_QUERIER_DEF);
+	nm_assert (priv->multicast_querier          == NM_BRIDGE_MULTICAST_QUERIER_DEF);
+	nm_assert (priv->multicast_query_use_ifaddr == NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF);
 }
 
 /**
@@ -2040,7 +2040,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 */
 	obj_properties[PROP_MULTICAST_QUERY_USE_IFADDR] =
 	    g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR, "", "",
-	                          BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEFAULT,
+	                          NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
 	                          G_PARAM_READWRITE |
 	                          NM_SETTING_PARAM_INFERRABLE |
 	                          G_PARAM_STATIC_STRINGS);

@@ -308,7 +308,7 @@ static const Option master_options[] = {
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,              "multicast_query_use_ifaddr",
 	                                                             NULL, NULL,
-	                                                             0, 1, 0,
+	                                                             FALSE, TRUE, NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
 	                                                             FALSE, FALSE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING,                      "multicast_snooping",
 	                                                             NULL, NULL,
