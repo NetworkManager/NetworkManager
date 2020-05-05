@@ -352,7 +352,7 @@ static const Option slave_options[] = {
 	                                       TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode",
 	                                       NULL, NULL,
-	                                       0, 1, 0,
+	                                       FALSE, TRUE, FALSE,
 	                                       FALSE, FALSE },
 	{ NULL, NULL }
 };
