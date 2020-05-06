@@ -569,11 +569,10 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingMatch *self = NM_SETTING_MATCH (setting);
-	int k;
+	guint i;
 
-	for (k = 0; k < self->interface_name->len; k++) {
-		char *kparam = (char*) g_ptr_array_index (self->interface_name, k);
-		if (nm_streq0 (kparam, "")) {
+	for (i = 0; i < self->interface_name->len; i++) {
+		if (!nm_str_not_empty (self->interface_name->pdata[i])) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -584,9 +583,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	for (k = 0; k < self->kernel_command_line->len; k++) {
-		char *kparam = (char*) g_ptr_array_index (self->kernel_command_line, k);
-		if (nm_streq0 (kparam, "")) {
+	for (i = 0; i < self->kernel_command_line->len; i++) {
+		if (!nm_str_not_empty (self->kernel_command_line->pdata[i])) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -597,9 +595,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	for (k = 0; k < self->driver->len; k++) {
-		char *kparam = (char*) g_ptr_array_index (self->driver, k);
-		if (nm_streq0 (kparam, "")) {
+	for (i = 0; i < self->driver->len; i++) {
+		if (!nm_str_not_empty (self->driver->pdata[i])) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
