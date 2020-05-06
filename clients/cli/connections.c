@@ -541,6 +541,8 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 			if (info->info_type == NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP)
 				return (*out_to_free = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp));
 			else {
+				struct tm localtime_result;
+
 				if (!timestamp) {
 					if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 						return _("never");
@@ -548,7 +550,7 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 				}
 				timestamp_real = timestamp;
 				s_mut = g_malloc0 (128);
-				strftime (s_mut, 64, "%c", localtime (&timestamp_real));
+				strftime (s_mut, 127, "%c", localtime_r (&timestamp_real, &localtime_result));
 				return (*out_to_free = s_mut);
 			}
 		}
