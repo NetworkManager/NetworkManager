@@ -4687,6 +4687,9 @@ test_write_wired_match (void)
 	nm_setting_match_add_interface_name (s_match, "ens*");
 	nm_setting_match_add_interface_name (s_match, "eth 1?");
 	nm_setting_match_add_interface_name (s_match, "!veth*");
+	nm_setting_match_add_driver (s_match, "!virtio");
+	nm_setting_match_add_driver (s_match, "e1000e");
+	nm_setting_match_add_kernel_command_line (s_match, "!ip=");
 	nm_connection_add_setting (connection, NM_SETTING (s_match));
 
 	nmtst_assert_connection_verifies (connection);

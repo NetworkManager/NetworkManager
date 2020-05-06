@@ -1436,6 +1436,22 @@ char *nm_utils_g_slist_strlist_join (const GSList *a, const char *separator);
 /*****************************************************************************/
 
 static inline guint
+nm_g_array_len (const GArray *arr)
+{
+	return arr ? arr->len : 0u;
+}
+
+/*****************************************************************************/
+
+static inline guint
+nm_g_ptr_array_len (const GPtrArray *arr)
+{
+	return arr ? arr->len : 0u;
+}
+
+/*****************************************************************************/
+
+static inline guint
 nm_g_hash_table_size (GHashTable *hash)
 {
 	return hash ? g_hash_table_size (hash) : 0u;
@@ -1848,6 +1864,8 @@ nm_utils_strdup_reset (char **dst, const char *src)
 	return TRUE;
 }
 
+void nm_indirect_g_free (gpointer arg);
+
 /*****************************************************************************/
 
 /* nm_utils_get_next_realloc_size() is used to grow buffers exponentially, when
@@ -1886,5 +1904,53 @@ gboolean nm_utils_ifname_valid_kernel (const char *name, GError **error);
 gboolean nm_utils_ifname_valid (const char* name,
                                 NMUtilsIfaceType type,
                                 GError **error);
+
+/*****************************************************************************/
+
+static inline GArray *
+nm_strvarray_ensure (GArray **p)
+{
+	if (!*p) {
+		*p = g_array_new (TRUE, FALSE, sizeof (char *));
+		g_array_set_clear_func (*p, nm_indirect_g_free);
+	}
+	return *p;
+}
+
+static inline void
+nm_strvarray_add (GArray *array, const char *str)
+{
+	char *s;
+
+	s = g_strdup (str);
+	g_array_append_val (array, s);
+}
+
+static inline const char *const*
+nm_strvarray_get_strv (GArray **arr, guint *length)
+{
+	if (!*arr) {
+		NM_SET_OUT (length, 0);
+		return (const char *const*) arr;
+	}
+
+	NM_SET_OUT (length, (*arr)->len);
+	return &g_array_index (*arr, const char *, 0);
+}
+
+static inline void
+nm_strvarray_set_strv (GArray **array, const char *const*strv)
+{
+	gs_unref_array GArray *array_old = NULL;
+
+	array_old = g_steal_pointer (array);
+
+	if (!strv || !strv[0])
+		return;
+
+	nm_strvarray_ensure (array);
+	for (; strv[0]; strv++)
+		nm_strvarray_add (*array, strv[0]);
+}
 
 #endif /* __NM_SHARED_UTILS_H__ */

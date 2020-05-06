@@ -1708,4 +1708,18 @@ global:
 	nm_setting_bridge_get_multicast_startup_query_count;
 	nm_setting_bridge_get_multicast_startup_query_interval;
 	nm_setting_connection_get_mud_url;
+	nm_setting_match_add_driver;
+	nm_setting_match_add_kernel_command_line;
+	nm_setting_match_clear_drivers;
+	nm_setting_match_clear_kernel_command_lines;
+	nm_setting_match_get_driver;
+	nm_setting_match_get_drivers;
+	nm_setting_match_get_kernel_command_line;
+	nm_setting_match_get_kernel_command_lines;
+	nm_setting_match_get_num_drivers;
+	nm_setting_match_get_num_kernel_command_lines;
+	nm_setting_match_remove_driver;
+	nm_setting_match_remove_driver_by_value;
+	nm_setting_match_remove_kernel_command_line;
+	nm_setting_match_remove_kernel_command_line_by_value;
 } libnm_1_24_0;

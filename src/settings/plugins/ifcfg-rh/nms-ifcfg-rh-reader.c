@@ -1537,29 +1537,42 @@ make_user_setting (shvarFile *ifcfg)
 	       : NULL;
 }
 
-static NMSetting *
-make_match_setting (shvarFile *ifcfg)
-{
-	NMSettingMatch *s_match = NULL;
-	gs_free const char **strv = NULL;
-	gs_free char *value = NULL;
-	const char *v;
-	gsize i;
 
-	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value);
-	if (!v)
-		return NULL;
+static void
+make_match_setting_prop (const char *v,
+                         NMSettingMatch **s_match,
+                         void (*add_fcn) (NMSettingMatch *s_match, const char *value))
+{
+	gs_free const char **strv = NULL;
+	gsize i;
 
 	strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
 	if (strv) {
 		for (i = 0; strv[i]; i++) {
-			if (!s_match)
-				s_match = (NMSettingMatch *) nm_setting_match_new ();
-			nm_setting_match_add_interface_name (s_match, strv[i]);
+			if (!(*s_match))
+				*s_match = NM_SETTING_MATCH (nm_setting_match_new ());
+			add_fcn (*s_match, strv[i]);
 		}
 	}
+}
 
-	return (NMSetting *) s_match;
+static NMSetting *
+make_match_setting (shvarFile *ifcfg)
+{
+	NMSettingMatch *s_match = NULL;
+	gs_free char *value_ifn = NULL;
+	gs_free char *value_kcl = NULL;
+	gs_free char *value_d = NULL;
+	const char *v;
+
+	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value_ifn);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_interface_name);
+	v = svGetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", &value_kcl);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_kernel_command_line);
+	v = svGetValueStr (ifcfg, "MATCH_DRIVER", &value_d);
+	make_match_setting_prop(v, &s_match, nm_setting_match_add_driver);
+
+	return NM_SETTING (s_match);
 }
 
 static NMSetting *

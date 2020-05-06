@@ -1703,11 +1703,13 @@ nm_wildcard_match_check (const char *str,
                          const char *const *patterns,
                          guint num_patterns)
 {
-	guint i, neg = 0;
+	gsize i, neg = 0;
 
 	for (i = 0; i < num_patterns; i++) {
 		if (patterns[i][0] == '!') {
 			neg++;
+			if (!str)
+				continue;
 			if (!fnmatch (patterns[i] + 1, str, 0))
 				return FALSE;
 		}
@@ -1716,10 +1718,12 @@ nm_wildcard_match_check (const char *str,
 	if (neg == num_patterns)
 		return TRUE;
 
-	for (i = 0; i < num_patterns; i++) {
-		if (   patterns[i][0] != '!'
-		    && !fnmatch (patterns[i], str, 0))
-			return TRUE;
+	if (str) {
+		for (i = 0; i < num_patterns; i++) {
+			if (   patterns[i][0] != '!'
+			    && !fnmatch (patterns[i], str, 0))
+				return TRUE;
+		}
 	}
 
 	return FALSE;

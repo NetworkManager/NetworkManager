@@ -5999,7 +5999,6 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	gs_free_error GError *local = NULL;
 	gs_free char *conn_iface = NULL;
 	NMDeviceClass *klass;
-	const char *const *patterns;
 	NMSettingMatch *s_match;
 
 	klass = NM_DEVICE_GET_CLASS (self);
@@ -6042,12 +6041,80 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	s_match = (NMSettingMatch *) nm_connection_get_setting (connection,
 	                                                        NM_TYPE_SETTING_MATCH);
 	if (s_match) {
+		const char *const *patterns;
+		const char *device_driver;
 		guint num_patterns = 0;
 
 		patterns = nm_setting_match_get_interface_names (s_match, &num_patterns);
 		if (!nm_wildcard_match_check (device_iface, patterns, num_patterns)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "device does not satisfy match.interface-name property");
+			return FALSE;
+		}
+
+		{
+			const char *const*proc_cmdline;
+			gboolean pos_patterns = FALSE;
+			guint i;
+
+			patterns = nm_setting_match_get_kernel_command_lines (s_match, &num_patterns);
+			proc_cmdline = nm_utils_proc_cmdline_split ();
+
+			for (i = 0; i < num_patterns; i++) {
+				const char *patterns_i = patterns[i];
+				const char *const*proc_cmdline_i;
+				gboolean negative = FALSE;
+				gboolean found = FALSE;
+				const char *equal;
+
+				if (patterns_i[0] == '!') {
+					++patterns_i;
+					negative = TRUE;
+				} else
+					pos_patterns = TRUE;
+
+				equal = strchr (patterns_i, '=');
+
+				proc_cmdline_i = proc_cmdline;
+				while (*proc_cmdline_i) {
+					if (equal) {
+						/* if pattern contains = compare full key=value */
+						found = nm_streq (*proc_cmdline_i, patterns_i);
+					} else {
+						gsize l = strlen (patterns_i);
+
+						/* otherwise consider pattern as key only */
+						if (   strncmp (*proc_cmdline_i, patterns_i, l) == 0
+						    && NM_IN_SET ((*proc_cmdline_i)[l], '\0', '='))
+							found = TRUE;
+					}
+					if (   found
+					    && negative) {
+						/* first negative match */
+						nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+						                    "device does not satisfy match.kernel-command-line property %s",
+						                    patterns[i]);
+						return FALSE;
+					}
+					proc_cmdline_i++;
+				}
+
+				if (   pos_patterns
+				    && !found) {
+					/* positive patterns configured but no match */
+					nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+					                    "device does not satisfy any match.kernel-command-line property %s...",
+					                    patterns[0]);
+					return FALSE;
+				}
+			}
+		}
+
+		device_driver = nm_device_get_driver (self);
+		patterns = nm_setting_match_get_drivers (s_match, &num_patterns);
+		if (!nm_wildcard_match_check (device_driver, patterns, num_patterns)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device does not satisfy match.driver property");
 			return FALSE;
 		}
 	}
