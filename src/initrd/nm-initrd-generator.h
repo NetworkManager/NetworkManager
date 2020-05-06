@@ -28,6 +28,6 @@ gboolean nmi_ibft_update_connection_from_nic (NMConnection *connection, GHashTab
 
 NMConnection *nmi_dt_reader_parse (const char *sysfs_dir);
 
-GHashTable *nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv);
+GHashTable *nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **hostname);
 
 #endif  /* __NM_INITRD_GENERATOR_H__ */
