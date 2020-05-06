@@ -1436,6 +1436,14 @@ char *nm_utils_g_slist_strlist_join (const GSList *a, const char *separator);
 /*****************************************************************************/
 
 static inline guint
+nm_g_ptr_array_len (const GPtrArray *arr)
+{
+	return arr ? arr->len : 0u;
+}
+
+/*****************************************************************************/
+
+static inline guint
 nm_g_hash_table_size (GHashTable *hash)
 {
 	return hash ? g_hash_table_size (hash) : 0u;
