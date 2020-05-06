@@ -134,7 +134,7 @@ def do_adjust_rollback_timeout(client):
         sys.exit("Missing timeout")
     try:
         add_timeout = int(sys.argv[3])
-    except:
+    except Exception:
         sys.exit("Invalid timeout")
 
     path = validate_path(sys.argv[2], client)

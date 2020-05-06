@@ -442,7 +442,7 @@ if __name__ == '__main__':
         secrets = conn.get_secrets(NM.SETTING_WIREGUARD_SETTING_NAME)
         if secrets:
             conn.update_secrets(NM.SETTING_WIREGUARD_SETTING_NAME, secrets)
-    except:
+    except Exception:
         pass
 
     if not argv:
