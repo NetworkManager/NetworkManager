@@ -6045,7 +6045,6 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 		const char *device_driver;
 		guint num_patterns = 0;
 
-		/* interface_names */
 		patterns = nm_setting_match_get_interface_names (s_match, &num_patterns);
 		if (!nm_wildcard_match_check (device_iface, patterns, num_patterns)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -6053,50 +6052,56 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 			return FALSE;
 		}
 
-		{ /* kernel_command_line */
+		{
 			const char *const*proc_cmdline;
-			const char *const*proc_cmdline_i;
-			unsigned i;
 			gboolean pos_patterns = FALSE;
+			guint i;
 
 			patterns = nm_setting_match_get_kernel_command_lines (s_match, &num_patterns);
 			proc_cmdline = nm_utils_proc_cmdline_split ();
-			for(i=0; i<num_patterns; i++) {
-				gboolean found = FALSE;
-				gboolean negative = FALSE;
-				const char *equal;
-				const char *patterns_i = patterns[i];
 
-				if(patterns_i[0] == '!') {
+			for (i = 0; i < num_patterns; i++) {
+				const char *patterns_i = patterns[i];
+				const char *const*proc_cmdline_i;
+				gboolean negative = FALSE;
+				gboolean found = FALSE;
+				const char *equal;
+
+				if (patterns_i[0] == '!') {
 					++patterns_i;
 					negative = TRUE;
-				} else {
+				} else
 					pos_patterns = TRUE;
-				}
-				equal = strchr(patterns_i, '=');
+
+				equal = strchr (patterns_i, '=');
 
 				proc_cmdline_i = proc_cmdline;
 				while (*proc_cmdline_i) {
-					if (equal) {  /* if pattern contains = compare full key=value */
-						found = nm_streq0(*proc_cmdline_i, patterns_i);
-					} else {      /* otherwise consider pattern as key only */
-						size_t l = strlen(patterns_i);
-						if (strncmp(*proc_cmdline_i, patterns_i, l) == 0) {
-							if((*proc_cmdline_i)[l] == 0 || (*proc_cmdline_i)[l] == '=') {
-								found = TRUE;
-							}
-						}
+					if (equal) {
+						/* if pattern contains = compare full key=value */
+						found = nm_streq (*proc_cmdline_i, patterns_i);
+					} else {
+						gsize l = strlen (patterns_i);
+
+						/* otherwise consider pattern as key only */
+						if (   strncmp (*proc_cmdline_i, patterns_i, l) == 0
+						    && NM_IN_SET ((*proc_cmdline_i)[l], '\0', '='))
+							found = TRUE;
 					}
-					if(found && negative) {
+					if (   found
+					    && negative) {
+						/* first negative match */
 						nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 						                    "device does not satisfy match.kernel-command-line property %s",
 						                    patterns[i]);
-						return FALSE;  /* first negative match */
+						return FALSE;
 					}
 					proc_cmdline_i++;
 				}
 
-				if (pos_patterns == TRUE && found == FALSE) {  /* positive patterns configured but no match */
+				if (   pos_patterns
+				    && !found) {
+					/* positive patterns configured but no match */
 					nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 					                    "device does not satisfy any match.kernel-command-line property %s...",
 					                    patterns[0]);
