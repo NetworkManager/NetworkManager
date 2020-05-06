@@ -1864,6 +1864,8 @@ nm_utils_strdup_reset (char **dst, const char *src)
 	return TRUE;
 }
 
+void nm_indirect_g_free (gpointer arg);
+
 /*****************************************************************************/
 
 /* nm_utils_get_next_realloc_size() is used to grow buffers exponentially, when
