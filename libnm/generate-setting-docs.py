@@ -10,7 +10,7 @@ import os
 import gi
 gi.require_version('GIRepository', '2.0')
 from gi.repository import GIRepository
-import argparse, datetime, re, sys
+import argparse, re, sys
 import xml.etree.ElementTree as ET
 
 try:
