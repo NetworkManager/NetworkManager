@@ -34,8 +34,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
 struct _NMSettingMatch {
 	NMSetting parent;
 	GArray *interface_name;
-	GPtrArray *kernel_command_line;
-	GPtrArray *driver;
+	GArray *kernel_command_line;
+	GArray *driver;
 };
 
 struct _NMSettingMatchClass {
@@ -212,7 +212,7 @@ nm_setting_match_get_num_kernel_command_lines (NMSettingMatch *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), 0);
 
-	return setting->kernel_command_line->len;
+	return nm_g_array_len (setting->kernel_command_line);
 }
 
 /**
@@ -229,9 +229,9 @@ nm_setting_match_get_kernel_command_line (NMSettingMatch *setting, guint idx)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
 
-	g_return_val_if_fail (idx < setting->kernel_command_line->len, NULL);
+	g_return_val_if_fail (setting->kernel_command_line && idx < setting->kernel_command_line->len, NULL);
 
-	return setting->kernel_command_line->pdata[idx];
+	return g_array_index (setting->kernel_command_line, const char *, idx);
 }
 
 /**
@@ -251,7 +251,7 @@ nm_setting_match_add_kernel_command_line (NMSettingMatch *setting,
 	g_return_if_fail (kernel_command_line != NULL);
 	g_return_if_fail (kernel_command_line[0] != '\0');
 
-	g_ptr_array_add (setting->kernel_command_line, g_strdup (kernel_command_line));
+	nm_strvarray_add (nm_strvarray_ensure (&setting->kernel_command_line), kernel_command_line);
 	_notify (setting, PROP_KERNEL_COMMAND_LINE);
 }
 
@@ -269,9 +269,9 @@ nm_setting_match_remove_kernel_command_line (NMSettingMatch *setting, guint idx)
 {
 	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
 
-	g_return_if_fail (idx < setting->kernel_command_line->len);
+	g_return_if_fail (setting->kernel_command_line && idx < setting->kernel_command_line->len);
 
-	g_ptr_array_remove_index (setting->kernel_command_line, idx);
+	g_array_remove_index (setting->kernel_command_line, idx);
 	_notify (setting, PROP_KERNEL_COMMAND_LINE);
 }
 
@@ -296,9 +296,12 @@ nm_setting_match_remove_kernel_command_line_by_value (NMSettingMatch *setting,
 	g_return_val_if_fail (kernel_command_line != NULL, FALSE);
 	g_return_val_if_fail (kernel_command_line[0] != '\0', FALSE);
 
+	if (!setting->kernel_command_line)
+		return FALSE;
+
 	for (i = 0; i < setting->kernel_command_line->len; i++) {
-		if (nm_streq (kernel_command_line, setting->kernel_command_line->pdata[i])) {
-			g_ptr_array_remove_index (setting->kernel_command_line, i);
+		if (nm_streq (kernel_command_line, g_array_index (setting->kernel_command_line, const char *, i))) {
+			g_array_remove_index (setting->kernel_command_line, i);
 			_notify (setting, PROP_KERNEL_COMMAND_LINE);
 			return TRUE;
 		}
@@ -319,8 +322,8 @@ nm_setting_match_clear_kernel_command_lines (NMSettingMatch *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
 
-	if (setting->kernel_command_line->len != 0) {
-		g_ptr_array_set_size (setting->kernel_command_line, 0);
+	if (nm_g_array_len (setting->kernel_command_line) != 0) {
+		nm_clear_pointer (&setting->kernel_command_line, g_array_unref);
 		_notify (setting, PROP_KERNEL_COMMAND_LINE);
 	}
 }
@@ -328,7 +331,7 @@ nm_setting_match_clear_kernel_command_lines (NMSettingMatch *setting)
 /**
  * nm_setting_match_get_kernel_command_lines:
  * @setting: the #NMSettingMatch
- * @length: (out): the length of the returned interface names array.
+ * @length: (out) (allow-none): the length of the returned interface names array.
  *
  * Returns all the interface names.
  *
@@ -340,10 +343,8 @@ const char *const *
 nm_setting_match_get_kernel_command_lines (NMSettingMatch *setting, guint *length)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
-	g_return_val_if_fail (length, NULL);
 
-	NM_SET_OUT (length, setting->kernel_command_line->len);
-	return (const char *const *) setting->kernel_command_line->pdata;
+	return nm_strvarray_get_strv (&setting->kernel_command_line, length);
 }
 
 /*****************************************************************************/
@@ -361,7 +362,7 @@ nm_setting_match_get_num_drivers (NMSettingMatch *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), 0);
 
-	return setting->driver->len;
+	return nm_g_array_len (setting->driver);
 }
 
 /**
@@ -378,9 +379,9 @@ nm_setting_match_get_driver (NMSettingMatch *setting, guint idx)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
 
-	g_return_val_if_fail (idx < setting->driver->len, NULL);
+	g_return_val_if_fail (setting->driver && idx < setting->driver->len, NULL);
 
-	return setting->driver->pdata[idx];
+	return g_array_index (setting->driver, const char *, idx);
 }
 
 /**
@@ -400,7 +401,7 @@ nm_setting_match_add_driver (NMSettingMatch *setting,
 	g_return_if_fail (driver != NULL);
 	g_return_if_fail (driver[0] != '\0');
 
-	g_ptr_array_add (setting->driver, g_strdup (driver));
+	nm_strvarray_add (nm_strvarray_ensure (&setting->driver), driver);
 	_notify (setting, PROP_DRIVER);
 }
 
@@ -418,9 +419,9 @@ nm_setting_match_remove_driver (NMSettingMatch *setting, guint idx)
 {
 	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
 
-	g_return_if_fail (idx < setting->driver->len);
+	g_return_if_fail (setting->driver && idx < setting->driver->len);
 
-	g_ptr_array_remove_index (setting->driver, idx);
+	g_array_remove_index (setting->driver, idx);
 	_notify (setting, PROP_DRIVER);
 }
 
@@ -445,9 +446,12 @@ nm_setting_match_remove_driver_by_value (NMSettingMatch *setting,
 	g_return_val_if_fail (driver != NULL, FALSE);
 	g_return_val_if_fail (driver[0] != '\0', FALSE);
 
+	if (!setting->driver)
+		return FALSE;
+
 	for (i = 0; i < setting->driver->len; i++) {
-		if (nm_streq (driver, setting->driver->pdata[i])) {
-			g_ptr_array_remove_index (setting->driver, i);
+		if (nm_streq (driver, g_array_index (setting->driver, const char *, i))) {
+			g_array_remove_index (setting->driver, i);
 			_notify (setting, PROP_DRIVER);
 			return TRUE;
 		}
@@ -468,8 +472,8 @@ nm_setting_match_clear_drivers (NMSettingMatch *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
 
-	if (setting->driver->len != 0) {
-		g_ptr_array_set_size (setting->driver, 0);
+	if (nm_g_array_len (setting->driver) != 0) {
+		nm_clear_pointer (&setting->driver, g_array_unref);
 		_notify (setting, PROP_DRIVER);
 	}
 }
@@ -477,7 +481,7 @@ nm_setting_match_clear_drivers (NMSettingMatch *setting)
 /**
  * nm_setting_match_get_drivers:
  * @setting: the #NMSettingMatch
- * @length: (out): the length of the returned interface names array.
+ * @length: (out) (allow-none): the length of the returned interface names array.
  *
  * Returns all the drivers.
  *
@@ -489,10 +493,8 @@ const char *const *
 nm_setting_match_get_drivers (NMSettingMatch *setting, guint *length)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
-	g_return_val_if_fail (length, NULL);
 
-	NM_SET_OUT (length, setting->driver->len);
-	return (const char *const *) setting->driver->pdata;
+	return nm_strvarray_get_strv (&setting->driver, length);
 }
 
 /*****************************************************************************/
@@ -508,10 +510,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boxed (value, nm_strvarray_get_strv (&self->interface_name, NULL));
 		break;
 	case PROP_KERNEL_COMMAND_LINE:
-		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (self->kernel_command_line));
+		g_value_set_boxed (value, nm_strvarray_get_strv (&self->kernel_command_line, NULL));
 		break;
 	case PROP_DRIVER:
-		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (self->driver));
+		g_value_set_boxed (value, nm_strvarray_get_strv (&self->driver, NULL));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -530,12 +532,10 @@ set_property (GObject *object, guint prop_id,
 		nm_strvarray_set_strv (&self->interface_name, g_value_get_boxed (value));
 		break;
 	case PROP_KERNEL_COMMAND_LINE:
-		g_ptr_array_unref (self->kernel_command_line);
-		self->kernel_command_line = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		nm_strvarray_set_strv (&self->kernel_command_line, g_value_get_boxed (value));
 		break;
 	case PROP_DRIVER:
-		g_ptr_array_unref (self->driver);
-		self->driver = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		nm_strvarray_set_strv (&self->driver, g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -548,8 +548,6 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_setting_match_init (NMSettingMatch *setting)
 {
-	setting->kernel_command_line = g_ptr_array_new_with_free_func (g_free);
-	setting->driver = g_ptr_array_new_with_free_func (g_free);
 }
 
 /**
@@ -587,27 +585,31 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	for (i = 0; i < self->kernel_command_line->len; i++) {
-		if (!nm_str_not_empty (self->kernel_command_line->pdata[i])) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("is empty"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
-			                NM_SETTING_MATCH_KERNEL_COMMAND_LINE);
-			return FALSE;
+	if (self->kernel_command_line) {
+		for (i = 0; i < self->kernel_command_line->len; i++) {
+			if (!nm_str_not_empty (g_array_index (self->kernel_command_line, const char *, i))) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("is empty"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
+				                NM_SETTING_MATCH_KERNEL_COMMAND_LINE);
+				return FALSE;
+			}
 		}
 	}
 
-	for (i = 0; i < self->driver->len; i++) {
-		if (!nm_str_not_empty (self->driver->pdata[i])) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("is empty"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
-			                NM_SETTING_MATCH_DRIVER);
-			return FALSE;
+	if (self->driver) {
+		for (i = 0; i < self->driver->len; i++) {
+			if (!nm_str_not_empty (g_array_index (self->driver, const char *, i))) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("is empty"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
+				                NM_SETTING_MATCH_DRIVER);
+				return FALSE;
+			}
 		}
 	}
 
@@ -620,8 +622,8 @@ finalize (GObject *object)
 	NMSettingMatch *self = NM_SETTING_MATCH (object);
 
 	nm_clear_pointer (&self->interface_name, g_array_unref);
-	g_ptr_array_unref (self->kernel_command_line);
-	g_ptr_array_unref (self->driver);
+	nm_clear_pointer (&self->kernel_command_line, g_array_unref);
+	nm_clear_pointer (&self->driver, g_array_unref);
 
 	G_OBJECT_CLASS (nm_setting_match_parent_class)->finalize (object);
 }
