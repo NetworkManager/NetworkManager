@@ -1539,19 +1539,19 @@ make_user_setting (shvarFile *ifcfg)
 
 
 static void
-make_match_setting_prop (const char *v, NMSettingMatch **s_match,
-                         void (*add_fcn) (NMSettingMatch *s_match, const char *value) ) {
+make_match_setting_prop (const char *v,
+                         NMSettingMatch **s_match,
+                         void (*add_fcn) (NMSettingMatch *s_match, const char *value))
+{
 	gs_free const char **strv = NULL;
 	gsize i;
 
-	if (v) {
-		strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
-		if (strv) {
-			for (i = 0; strv[i]; i++) {
-				if (!(*s_match))
-					*s_match = (NMSettingMatch *) nm_setting_match_new ();
-				add_fcn (*s_match, strv[i]);
-			}
+	strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
+	if (strv) {
+		for (i = 0; strv[i]; i++) {
+			if (!(*s_match))
+				*s_match = NM_SETTING_MATCH (nm_setting_match_new ());
+			add_fcn (*s_match, strv[i]);
 		}
 	}
 }
@@ -1572,7 +1572,7 @@ make_match_setting (shvarFile *ifcfg)
 	v = svGetValueStr (ifcfg, "MATCH_DRIVER", &value_d);
 	make_match_setting_prop(v, &s_match, nm_setting_match_add_driver);
 
-	return (NMSetting *) s_match;
+	return NM_SETTING (s_match);
 }
 
 static NMSetting *
