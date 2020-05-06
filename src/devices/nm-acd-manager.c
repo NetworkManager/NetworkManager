@@ -92,7 +92,20 @@ _acd_event_to_string (unsigned int event)
 	return NULL;
 }
 
-#define acd_event_to_string_a(event) NM_UTILS_LOOKUP_STR_A (_acd_event_to_string, event)
+#define ACD_EVENT_TO_STRING_BUF_SIZE 50
+
+static const char *
+_acd_event_to_string_buf (unsigned event, char buffer[ACD_EVENT_TO_STRING_BUF_SIZE])
+{
+	const char *s;
+
+	s = _acd_event_to_string (event);
+	if (s)
+		return s;
+
+	g_snprintf (buffer, ACD_EVENT_TO_STRING_BUF_SIZE, "(%u)", event);
+	return buffer;
+}
 
 static const char *
 acd_error_to_string (int error)
@@ -181,6 +194,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 
 	while (   !n_acd_pop_event (self->acd, &event)
 	       && event) {
+		char to_string_buffer[ACD_EVENT_TO_STRING_BUF_SIZE];
 		gs_free char *hwaddr_str = NULL;
 		gboolean check_probing_done = FALSE;
 
@@ -224,7 +238,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 			       nm_platform_link_get_name (NM_PLATFORM_GET, self->ifindex));
 			break;
 		default:
-			_LOGD ("unhandled event '%s'", acd_event_to_string_a (event->event));
+			_LOGD ("unhandled event '%s'", _acd_event_to_string_buf (event->event, to_string_buffer));
 			break;
 		}
 
