@@ -324,10 +324,11 @@ nm_setting_match_clear_kernel_command_lines (NMSettingMatch *setting)
 /**
  * nm_setting_match_get_kernel_command_lines:
  * @setting: the #NMSettingMatch
+ * @length: (out): the length of the returned interface names array.
  *
  * Returns all the interface names.
  *
- * Returns: (transfer none): the configured interface names.
+ * Returns: (transfer none) (array length=length): the configured interface names.
  *
  * Since: 1.26
  **/
@@ -472,10 +473,11 @@ nm_setting_match_clear_drivers (NMSettingMatch *setting)
 /**
  * nm_setting_match_get_drivers:
  * @setting: the #NMSettingMatch
+ * @length: (out): the length of the returned interface names array.
  *
  * Returns all the drivers.
  *
- * Returns: (transfer none): the configured drivers.
+ * Returns: (transfer none) (array length=length): the configured drivers.
  *
  * Since: 1.26
  **/
