@@ -58,7 +58,6 @@
 #       nm-wg-set id "$PROFILE" $WG_ARGS
 
 import sys
-import re
 import os
 
 import gi
