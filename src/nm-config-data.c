@@ -117,14 +117,6 @@ G_DEFINE_TYPE (NMConfigData, nm_config_data, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-#define _HAS_PREFIX(str, prefix) \
-	({ \
-		const char *_str = (str); \
-		g_str_has_prefix ( _str, ""prefix"") && _str[NM_STRLEN(prefix)] != '\0'; \
-	})
-
-/*****************************************************************************/
-
 const char *
 nm_config_data_get_config_main_file (const NMConfigData *self)
 {
@@ -553,14 +545,14 @@ _merge_keyfiles (GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
 				continue;
 
 			if (   !is_intern && !is_atomic
-			    && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+			    && NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
 				const char *key_base = &key[NM_STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
 
 				if (!g_key_file_has_key (keyfile_intern, group, key_base, NULL))
 					g_key_file_remove_key (keyfile, group, key_base, NULL);
 				continue;
 			}
-			if (!is_intern && !is_atomic && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET))
+			if (!is_intern && !is_atomic && NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET))
 				continue;
 
 			value = g_key_file_get_value (keyfile_intern, group, key, NULL);

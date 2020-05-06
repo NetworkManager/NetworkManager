@@ -145,14 +145,6 @@ static void _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigCh
 
 /*****************************************************************************/
 
-#define _HAS_PREFIX(str, prefix) \
-	({ \
-		const char *_str = (str); \
-		g_str_has_prefix ( _str, ""prefix"") && _str[NM_STRLEN(prefix)] != '\0'; \
-	})
-
-/*****************************************************************************/
-
 int
 nm_config_parse_boolean (const char *str,
                          int default_value)
@@ -983,8 +975,8 @@ read_config (GKeyFile *keyfile,
 			key = keys[k];
 			nm_assert (key && *key);
 
-			if (   _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)
-			    || _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
+			if (   NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)
+			    || NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
 				/* these keys are protected. We ignore them if the user sets them. */
 				continue;
 			}
@@ -1520,7 +1512,7 @@ intern_config_read (const char *filename,
 				if (strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0)
 					continue;
 				g_key_file_set_value (keyfile_intern, group, key, value_set);
-			} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
+			} else if (NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
 				const char *key_base = &key[NM_STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_SET)];
 				gs_free char *value_was = NULL;
 				gs_free char *value_conf = NULL;
@@ -1540,7 +1532,7 @@ intern_config_read (const char *filename,
 				}
 				has_intern = TRUE;
 				g_key_file_set_value (keyfile_intern, group, key_base, value_set);
-			} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+			} else if (NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
 				const char *key_base = &key[NM_STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
 				gs_free char *key_set = g_strdup_printf (NM_CONFIG_KEYFILE_KEYPREFIX_SET"%s", key_base);
 				gs_free char *value_was = NULL;
@@ -1714,16 +1706,16 @@ intern_config_write (const char *filename,
 			else {
 				gs_free char *value_was = NULL;
 
-				if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
+				if (NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
 					/* Setting a key with .set prefix has no meaning, as these keys
 					 * are protected. Just set the value you want to set instead.
 					 * Why did this happen?? */
 					g_warn_if_reached ();
-				} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+				} else if (NM_STR_HAS_PREFIX_WITH_MORE (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
 					const char *key_base = &key[NM_STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
 
-					if (   _HAS_PREFIX (key_base, NM_CONFIG_KEYFILE_KEYPREFIX_SET)
-					    || _HAS_PREFIX (key_base, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+					if (   NM_STR_HAS_PREFIX_WITH_MORE (key_base, NM_CONFIG_KEYFILE_KEYPREFIX_SET)
+					    || NM_STR_HAS_PREFIX_WITH_MORE (key_base, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
 						g_warn_if_reached ();
 						continue;
 					}
