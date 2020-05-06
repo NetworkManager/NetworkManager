@@ -6042,6 +6042,7 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	                                                        NM_TYPE_SETTING_MATCH);
 	if (s_match) {
 		const char *const *patterns;
+		const char *device_driver;
 		guint num_patterns = 0;
 
 		/* interface_names */
@@ -6104,17 +6105,12 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 			}
 		}
 
-		{ /* driver */
-			const char *device_driver = nm_device_get_driver (self);
-
-			if (device_driver) {
-				patterns = nm_setting_match_get_drivers (s_match, &num_patterns);
-				if (!nm_wildcard_match_check (device_driver, patterns, num_patterns)) {
-					nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-					                            "device does not satisfy match.driver property");
-					return FALSE;
-				}
-			}
+		device_driver = nm_device_get_driver (self);
+		patterns = nm_setting_match_get_drivers (s_match, &num_patterns);
+		if (!nm_wildcard_match_check (device_driver, patterns, num_patterns)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device does not satisfy match.driver property");
+			return FALSE;
 		}
 	}
 
