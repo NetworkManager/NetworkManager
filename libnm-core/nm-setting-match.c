@@ -33,7 +33,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
  */
 struct _NMSettingMatch {
 	NMSetting parent;
-	GPtrArray *interface_name;
+	GArray *interface_name;
 	GPtrArray *kernel_command_line;
 	GPtrArray *driver;
 };
@@ -59,7 +59,7 @@ nm_setting_match_get_num_interface_names (NMSettingMatch *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), 0);
 
-	return setting->interface_name->len;
+	return nm_g_array_len (setting->interface_name);
 }
 
 /**
@@ -76,9 +76,9 @@ nm_setting_match_get_interface_name (NMSettingMatch *setting, int idx)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
 
-	g_return_val_if_fail (idx >= 0 && idx < setting->interface_name->len, NULL);
+	g_return_val_if_fail (setting->interface_name && idx >= 0 && idx < setting->interface_name->len, NULL);
 
-	return setting->interface_name->pdata[idx];
+	return g_array_index (setting->interface_name, const char *, idx);
 }
 
 /**
@@ -98,7 +98,7 @@ nm_setting_match_add_interface_name (NMSettingMatch *setting,
 	g_return_if_fail (interface_name != NULL);
 	g_return_if_fail (interface_name[0] != '\0');
 
-	g_ptr_array_add (setting->interface_name, g_strdup (interface_name));
+	nm_strvarray_add (nm_strvarray_ensure (&setting->interface_name), interface_name);
 	_notify (setting, PROP_INTERFACE_NAME);
 }
 
@@ -116,9 +116,9 @@ nm_setting_match_remove_interface_name (NMSettingMatch *setting, int idx)
 {
 	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
 
-	g_return_if_fail (idx >= 0 && idx < setting->interface_name->len);
+	g_return_if_fail (setting->interface_name && idx >= 0 && idx < setting->interface_name->len);
 
-	g_ptr_array_remove_index (setting->interface_name, idx);
+	g_array_remove_index (setting->interface_name, idx);
 	_notify (setting, PROP_INTERFACE_NAME);
 }
 
@@ -143,9 +143,12 @@ nm_setting_match_remove_interface_name_by_value (NMSettingMatch *setting,
 	g_return_val_if_fail (interface_name != NULL, FALSE);
 	g_return_val_if_fail (interface_name[0] != '\0', FALSE);
 
+	if (!setting->interface_name)
+		return FALSE;
+
 	for (i = 0; i < setting->interface_name->len; i++) {
-		if (nm_streq (interface_name, setting->interface_name->pdata[i])) {
-			g_ptr_array_remove_index (setting->interface_name, i);
+		if (nm_streq (interface_name, g_array_index (setting->interface_name, const char *, i))) {
+			g_array_remove_index (setting->interface_name, i);
 			_notify (setting, PROP_INTERFACE_NAME);
 			return TRUE;
 		}
@@ -166,8 +169,8 @@ nm_setting_match_clear_interface_names (NMSettingMatch *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
 
-	if (setting->interface_name->len != 0) {
-		g_ptr_array_set_size (setting->interface_name, 0);
+	if (nm_g_array_len (setting->interface_name) != 0) {
+		nm_clear_pointer (&setting->interface_name, g_array_unref);
 		_notify (setting, PROP_INTERFACE_NAME);
 	}
 }
@@ -175,11 +178,14 @@ nm_setting_match_clear_interface_names (NMSettingMatch *setting)
 /**
  * nm_setting_match_get_interface_names:
  * @setting: the #NMSettingMatch
- * @length: (out): the length of the returned interface names array.
+ * @length: (out) (allow-none): the length of the returned interface names array.
  *
  * Returns all the interface names.
  *
- * Returns: (transfer none) (array length=length): the configured interface names.
+ * Returns: (transfer none) (array length=length): the NULL terminated list of
+ *   configured interface names.
+ *
+ * Before 1.26, the returned array was not %NULL terminated and you MUST provide a length.
  *
  * Since: 1.14
  **/
@@ -187,10 +193,8 @@ const char *const *
 nm_setting_match_get_interface_names (NMSettingMatch *setting, guint *length)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
-	g_return_val_if_fail (length, NULL);
 
-	NM_SET_OUT (length, setting->interface_name->len);
-	return (const char *const *) setting->interface_name->pdata;
+	return nm_strvarray_get_strv (&setting->interface_name, length);
 }
 
 /*****************************************************************************/
@@ -501,7 +505,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
-		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (self->interface_name));
+		g_value_set_boxed (value, nm_strvarray_get_strv (&self->interface_name, NULL));
 		break;
 	case PROP_KERNEL_COMMAND_LINE:
 		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (self->kernel_command_line));
@@ -523,8 +527,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
-		g_ptr_array_unref (self->interface_name);
-		self->interface_name = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		nm_strvarray_set_strv (&self->interface_name, g_value_get_boxed (value));
 		break;
 	case PROP_KERNEL_COMMAND_LINE:
 		g_ptr_array_unref (self->kernel_command_line);
@@ -545,7 +548,6 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_setting_match_init (NMSettingMatch *setting)
 {
-	setting->interface_name = g_ptr_array_new_with_free_func (g_free);
 	setting->kernel_command_line = g_ptr_array_new_with_free_func (g_free);
 	setting->driver = g_ptr_array_new_with_free_func (g_free);
 }
@@ -571,15 +573,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMSettingMatch *self = NM_SETTING_MATCH (setting);
 	guint i;
 
-	for (i = 0; i < self->interface_name->len; i++) {
-		if (!nm_str_not_empty (self->interface_name->pdata[i])) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("is empty"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
-			                NM_SETTING_MATCH_INTERFACE_NAME);
-			return FALSE;
+	if (self->interface_name) {
+		for (i = 0; i < self->interface_name->len; i++) {
+			if (!nm_str_not_empty (g_array_index (self->interface_name, const char *, i))) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("is empty"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
+				                NM_SETTING_MATCH_INTERFACE_NAME);
+				return FALSE;
+			}
 		}
 	}
 
@@ -615,7 +619,7 @@ finalize (GObject *object)
 {
 	NMSettingMatch *self = NM_SETTING_MATCH (object);
 
-	g_ptr_array_unref (self->interface_name);
+	nm_clear_pointer (&self->interface_name, g_array_unref);
 	g_ptr_array_unref (self->kernel_command_line);
 	g_ptr_array_unref (self->driver);
 
