@@ -951,6 +951,16 @@ nm_streq0 (const char *s1, const char *s2)
 		             NM_STRLEN (suffix)) == 0)); \
 	})
 
+/* whether @str starts with the string literal @prefix and is followed by
+ * some other text. It is like NM_STR_HAS_PREFIX() && !nm_streq() together. */
+#define NM_STR_HAS_PREFIX_WITH_MORE(str, prefix) \
+	({ \
+		const char *const _str_has_prefix_with_more = (str); \
+		\
+		   NM_STR_HAS_PREFIX (_str_has_prefix_with_more, ""prefix"") \
+		&& _str_has_prefix_with_more[NM_STRLEN (prefix)] != '\0'; \
+	})
+
 /*****************************************************************************/
 
 static inline GString *
