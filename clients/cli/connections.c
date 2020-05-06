@@ -6282,7 +6282,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 							rl_completion_append_character = '.';
 						} else
 							generator_func = gen_property_names;
-					} else if (num >= 3) {
+					} else {
 						if (num == 3 && should_complete_files (NULL, line))
 							rl_attempted_completion_over = 0;
 						else if (should_complete_vpn_uuids (NULL, line)) {
