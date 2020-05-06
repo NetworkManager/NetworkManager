@@ -3431,93 +3431,6 @@ _objlist_set_fcn_ip_config_routing_rules (NMSetting *setting,
 }
 
 static gconstpointer
-_get_fcn_match_interface_name (ARGS_GET_FCN)
-{
-	NMSettingMatch *s_match = NM_SETTING_MATCH (setting);
-	GString *str = NULL;
-	guint i, num;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	num = nm_setting_match_get_num_interface_names (s_match);
-	for (i = 0; i < num; i++) {
-		const char *name;
-
-		name = nm_setting_match_get_interface_name (s_match, i);
-		if (!name || !name[0])
-			continue;
-		if (!str)
-			str = g_string_new ("");
-		else
-			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
-		nm_utils_escaped_tokens_escape_gstr (name, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS, str);
-	}
-
-	NM_SET_OUT (out_is_default, num == 0);
-	if (!str)
-		return NULL;
-	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
-}
-
-static gconstpointer
-_get_fcn_match_kernel_command_line (ARGS_GET_FCN)
-{
-	NMSettingMatch *s_match = NM_SETTING_MATCH (setting);
-	GString *str = NULL;
-	guint i, num;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	num = nm_setting_match_get_num_kernel_command_lines (s_match);
-	for (i = 0; i < num; i++) {
-		const char *name;
-
-		name = nm_setting_match_get_kernel_command_line (s_match, i);
-		if (!name || !name[0])
-			continue;
-		if (!str)
-			str = g_string_new ("");
-		else
-			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
-		nm_utils_escaped_tokens_escape_gstr (name, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS, str);
-	}
-
-	NM_SET_OUT (out_is_default, num == 0);
-	if (!str)
-		return NULL;
-	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
-}
-
-static gconstpointer
-_get_fcn_match_driver (ARGS_GET_FCN)
-{
-	NMSettingMatch *s_match = NM_SETTING_MATCH (setting);
-	GString *str = NULL;
-	guint i, num;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	num = nm_setting_match_get_num_drivers (s_match);
-	for (i = 0; i < num; i++) {
-		const char *name;
-
-		name = nm_setting_match_get_driver (s_match, i);
-		if (!name || !name[0])
-			continue;
-		if (!str)
-			str = g_string_new ("");
-		else
-			g_string_append_c (str, ESCAPED_TOKENS_WITH_SPACES_DELIMTER);
-		nm_utils_escaped_tokens_escape_gstr (name, ESCAPED_TOKENS_WITH_SPACES_DELIMTERS, str);
-	}
-
-	NM_SET_OUT (out_is_default, num == 0);
-	if (!str)
-		return NULL;
-	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
-}
-
-static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
@@ -6252,11 +6165,7 @@ static const NMMetaPropertyInfo *const property_infos_MACVLAN[] = {
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_MATCH
 static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_INTERFACE_NAME,
-	    .property_type = DEFINE_PROPERTY_TYPE (
-	        .get_fcn =                  _get_fcn_match_interface_name,
-	        .set_fcn =                  _set_fcn_multilist,
-	        .set_supports_remove =      TRUE,
-	    ),
+	    .property_type =                &_pt_multilist,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 	        PROPERTY_TYP_DATA_SUBTYPE (multilist,
 	            .get_num_fcn_u   =      MULTILIST_GET_NUM_FCN_U       (NMSettingMatch, nm_setting_match_get_num_interface_names),
@@ -6268,11 +6177,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 	    ),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_KERNEL_COMMAND_LINE,
-	    .property_type = DEFINE_PROPERTY_TYPE (
-	        .get_fcn =                  _get_fcn_match_kernel_command_line,
-	        .set_fcn =                  _set_fcn_multilist,
-	        .set_supports_remove =      TRUE,
-	    ),
+	    .property_type =                &_pt_multilist,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 	        PROPERTY_TYP_DATA_SUBTYPE (multilist,
 	            .get_num_fcn_u   =      MULTILIST_GET_NUM_FCN_U       (NMSettingMatch, nm_setting_match_get_num_kernel_command_lines),
@@ -6284,11 +6189,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 	    ),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_DRIVER,
-	    .property_type = DEFINE_PROPERTY_TYPE (
-	        .get_fcn =                  _get_fcn_match_driver,
-	        .set_fcn =                  _set_fcn_multilist,
-	        .set_supports_remove =      TRUE,
-	    ),
+	    .property_type =                &_pt_multilist,
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 	        PROPERTY_TYP_DATA_SUBTYPE (multilist,
 	            .get_num_fcn_u   =      MULTILIST_GET_NUM_FCN_U       (NMSettingMatch, nm_setting_match_get_num_drivers),
