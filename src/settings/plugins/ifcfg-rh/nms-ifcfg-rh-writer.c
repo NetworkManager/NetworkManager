@@ -2374,81 +2374,50 @@ write_tc_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
-static gboolean
-write_match_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+static void
+write_match_setting (NMConnection *connection, shvarFile *ifcfg)
 {
+	nm_auto_free_gstring GString *str = NULL;
 	NMSettingMatch *s_match;
 	guint i, num;
+	const char *name;
 
 	s_match = (NMSettingMatch *) nm_connection_get_setting (connection, NM_TYPE_SETTING_MATCH);
 	if (!s_match)
-		return TRUE;
+		return;
 
 	num = nm_setting_match_get_num_drivers (s_match);
-	{
-		nm_auto_free_gstring GString *str = NULL;
+	if (num > 0) {
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			const char *name;
-
 			name = nm_setting_match_get_driver (s_match, i);
-			if (!name || !name[0])
-				continue;
-
-			if (!str)
-				str = g_string_new ("");
-			else
-				g_string_append_c (str, ' ');
+			nm_gstring_add_space_delimiter (str);
 			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
 		}
-
-		if (str)
-			svSetValueStr (ifcfg, "MATCH_DRIVER", str->str);
+		svSetValueStr (ifcfg, "MATCH_DRIVER", str->str);
 	}
 
 	num = nm_setting_match_get_num_interface_names (s_match);
-	{
-		nm_auto_free_gstring GString *str = NULL;
+	if (num > 0) {
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			const char *name;
-
 			name = nm_setting_match_get_interface_name (s_match, i);
-			if (!name || !name[0])
-				continue;
-
-			if (!str)
-				str = g_string_new ("");
-			else
-				g_string_append_c (str, ' ');
+			nm_gstring_add_space_delimiter (str);
 			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
 		}
-
-		if (str)
-			svSetValueStr (ifcfg, "MATCH_INTERFACE_NAME", str->str);
+		svSetValueStr (ifcfg, "MATCH_INTERFACE_NAME", str->str);
 	}
-
 
 	num = nm_setting_match_get_num_kernel_command_lines (s_match);
-	{
-		nm_auto_free_gstring GString *str = NULL;
+	if (num > 0) {
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			const char *name;
-
 			name = nm_setting_match_get_kernel_command_line (s_match, i);
-			if (!name || !name[0])
-				continue;
-
-			if (!str)
-				str = g_string_new ("");
-			else
-				g_string_append_c (str, ' ');
+			nm_gstring_add_space_delimiter (str);
 			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
 		}
-
-		if (str)
-			svSetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", str->str);
+		svSetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", str->str);
 	}
-
-	return TRUE;
 }
 
 static void
@@ -3208,8 +3177,7 @@ do_write_construct (NMConnection *connection,
 	if (!write_user_setting (connection, ifcfg, error))
 		return FALSE;
 
-	if (!write_match_setting (connection, ifcfg, error))
-		return FALSE;
+	write_match_setting (connection, ifcfg);
 
 	write_sriov_setting (connection, ifcfg);
 
