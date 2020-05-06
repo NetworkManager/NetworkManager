@@ -2210,7 +2210,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	gs_free char *perm_hw_addr_fake = NULL;
 	gsize connection_uuid_len;
 	gsize perm_hw_addr_fake_len;
-	int nm_owned = -1;
+	NMTernary nm_owned;
 	char *p;
 	guint32 route_metric_default_effective;
 	guint32 route_metric_default_aspired;
@@ -2252,7 +2252,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	nm_owned = nm_config_keyfile_get_boolean (kf,
 	                                          DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
 	                                          DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
-	                                          -1);
+	                                          NM_TERNARY_DEFAULT);
 
 	/* metric zero is not a valid metric. While zero valid for IPv4, for IPv6 it is an alias
 	 * for 1024. Since we handle here IPv4 and IPv6 the same, we cannot allow zero. */
@@ -2325,9 +2325,11 @@ nm_config_device_state_load (int ifindex)
 		return NULL;
 
 	device_state = _config_device_state_data_new (ifindex, kf);
-	nm_owned_str = device_state->nm_owned == TRUE ?
-	               ", nm-owned=1" :
-	               (device_state->nm_owned == FALSE ? ", nm-owned=0" : "");
+	nm_owned_str =   device_state->nm_owned == NM_TERNARY_TRUE
+	               ? ", nm-owned=1"
+	               : (  device_state->nm_owned == NM_TERNARY_FALSE
+	                  ? ", nm-owned=0"
+	                  : "");
 
 	_LOGT ("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s, route-metric-default=%"G_GUINT32_FORMAT"-%"G_GUINT32_FORMAT"",
 	       kf ? "read" : "miss",
@@ -2390,7 +2392,7 @@ nm_config_device_state_write (int ifindex,
                               NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
                               const char *connection_uuid,
-                              int nm_owned,
+                              NMTernary nm_owned,
                               guint32 route_metric_default_aspired,
                               guint32 route_metric_default_effective,
                               const char *next_server,
@@ -2429,7 +2431,7 @@ nm_config_device_state_write (int ifindex,
 		                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
 		                       connection_uuid);
 	}
-	if (nm_owned >= 0) {
+	if (nm_owned != NM_TERNARY_DEFAULT) {
 		g_key_file_set_boolean (kf,
 		                        DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
 		                        DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
