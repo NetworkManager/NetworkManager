@@ -179,9 +179,9 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 */
 	#define NM_NDISC_VLTIME_MULT ((guint32) 48)
 	clamp_pltime = ndp_msgra_router_lifetime (msgra);
-	clamp_vltime =   (clamp_pltime < G_MAXUINT32 / NM_NDISC_VLTIME_MULT)
-	               ? clamp_pltime * NM_NDISC_VLTIME_MULT
-	               : G_MAXUINT32;
+
+	/* clamp_pltime has at most 16 bit set, and multiplication cannot overflow. */
+	clamp_vltime = clamp_pltime * NM_NDISC_VLTIME_MULT;
 
 	ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_PREFIX) {
 		guint8 r_plen;
