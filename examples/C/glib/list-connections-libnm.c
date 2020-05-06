@@ -30,10 +30,15 @@ show_connection (NMConnection *connection)
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
+		struct tm localtime_data;
+
 		/* Get various info from NMSettingConnection and show it */
 		timestamp = nm_setting_connection_get_timestamp (s_con);
 		timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
-		strftime (timestamp_real_str, sizeof (timestamp_real_str), "%c", localtime ((time_t *) &timestamp));
+		strftime (timestamp_real_str,
+		          sizeof (timestamp_real_str),
+		          "%c",
+		          localtime_r ((time_t *) &timestamp, &localtime_data));
 
 		val1 = nm_setting_connection_get_id (s_con);
 		val2 = nm_setting_connection_get_uuid (s_con);
