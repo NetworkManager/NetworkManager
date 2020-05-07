@@ -5444,7 +5444,7 @@ attribute_escape (const char *src, char c1, char c2)
 {
 	char *ret, *dest;
 
-	dest = ret = malloc (strlen (src) * 2 + 1);
+	dest = ret = g_malloc (strlen (src) * 2 + 1);
 
 	while (*src) {
 		if (*src == c1 || *src == c2 || *src == '\\')
