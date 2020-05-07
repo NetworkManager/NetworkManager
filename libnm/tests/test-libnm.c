@@ -3103,7 +3103,7 @@ test_nm_auth_permissions (void)
 		g_assert (s == nm_auth_permission_names_by_idx[i - 1]);
 		g_assert_cmpint (nm_auth_permission_from_string (s), ==, i);
 	}
-	return;
+
 	for (i = 0; i < NM_CLIENT_PERMISSION_LAST; i++)
 		g_assert_cmpint (nm_auth_permission_from_string (nm_auth_permission_names_by_idx[i]), ==, i + 1);
 }
