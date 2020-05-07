@@ -56,7 +56,6 @@ def get_active_connection_path(uuid):
     proxy = bus.get_object('org.freedesktop.NetworkManager', '/org/freedesktop/NetworkManager')
     iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.DBus.Properties')
     active_connections = iface.Get('org.freedesktop.NetworkManager', 'ActiveConnections')
-    all_connections = get_connections()
 
     for a in active_connections:
         proxy = bus.get_object('org.freedesktop.NetworkManager', a)

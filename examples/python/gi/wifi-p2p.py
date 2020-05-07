@@ -82,7 +82,7 @@ def scan_timeout_cb(device):
 
 def start_find_cb(device, async_result, user_data):
     try:
-        r = device.start_find_finish(async_result)
+        device.start_find_finish(async_result)
     except Exception as e:
         sys.stderr.write("Error: %s\n" % e)
         main_loop.quit()

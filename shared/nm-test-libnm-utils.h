@@ -3,6 +3,9 @@
  * Copyright (C) 2014 - 2015 Red Hat, Inc.
  */
 
+#ifndef __NM_TEST_LIBNM_UTILS_H__
+#define __NM_TEST_LIBNM_UTILS_H__
+
 #include "NetworkManager.h"
 
 #include "nm-utils/nm-test-utils.h"
@@ -82,3 +85,5 @@ nmtstc_client_new (gboolean allow_iterate_main_context)
 {
 	return nmtstc_context_object_new (NM_TYPE_CLIENT, allow_iterate_main_context, NULL);
 }
+
+#endif /* __NM_TEST_LIBNM_UTILS_H__ */

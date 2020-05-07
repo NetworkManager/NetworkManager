@@ -11,7 +11,7 @@
 # https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
 #
 
-import dbus, sys, time
+import dbus, sys
 
 bus = dbus.SystemBus()
 service_name = "org.freedesktop.NetworkManager"

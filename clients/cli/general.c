@@ -545,7 +545,9 @@ print_permissions (void *user_data)
 	}
 
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0) {
+		/* pass */
 	} else if (g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 
@@ -694,7 +696,9 @@ show_general_logging (NmCli *nmc)
 	};
 
 	if (!nmc->required_fields || g_ascii_strcasecmp (nmc->required_fields, "common") == 0) {
+		/* pass */
 	} else if (g_ascii_strcasecmp (nmc->required_fields, "all") == 0) {
+		/* pass */
 	} else
 		fields_str = nmc->required_fields;
 

@@ -6552,7 +6552,7 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device, int *out_ifind
 	gboolean perm_hw_addr_is_fake;
 	guint32 route_metric_default_aspired;
 	guint32 route_metric_default_effective;
-	int nm_owned;
+	NMTernary nm_owned;
 	NMDhcpConfig *dhcp_config;
 	const char *next_server = NULL;
 	const char *root_path = NULL;
@@ -6588,7 +6588,9 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device, int *out_ifind
 	if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
 		perm_hw_addr_fake = NULL;
 
-	nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
+	nm_owned =   nm_device_is_software (device)
+	           ? nm_device_is_nm_owned (device)
+	           : NM_TERNARY_DEFAULT;
 
 	route_metric_default_effective = _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN,
 	                                                           TRUE, &route_metric_default_aspired);

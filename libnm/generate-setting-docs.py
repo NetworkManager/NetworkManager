@@ -10,7 +10,7 @@ import os
 import gi
 gi.require_version('GIRepository', '2.0')
 from gi.repository import GIRepository
-import argparse, datetime, re, sys
+import argparse, re, sys
 import xml.etree.ElementTree as ET
 
 try:
@@ -47,7 +47,6 @@ dbus_type_name_map = {
     'aay': 'array of byte array',
     'a(ayuay)': 'array of legacy IPv6 address struct',
     'a(ayuayu)': 'array of legacy IPv6 route struct',
-    'aa{sv}': 'array of vardict',
 }
 
 ns_map = {
