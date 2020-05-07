@@ -3214,6 +3214,121 @@ nm_platform_ethtool_set_features (NMPlatform *self,
 	return nmp_utils_ethtool_set_features (ifindex, features, requested, do_set);
 }
 
+NMEthtoolCoalesceStates *
+nm_platform_ethtool_get_link_coalesce (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF_NETNS (self, klass, netns, NULL);
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	return nmp_utils_ethtool_get_coalesce (ifindex);
+}
+
+gboolean
+nm_platform_ethtool_init_coalesce (NMPlatform *self,
+                                   NMEthtoolCoalesceStates *coalesce,
+                                   const char *option_name,
+                                   guint32 value)
+{
+	NMEthtoolID ethtool_id;
+	NMEthtoolCoalesceState *state;
+
+	g_return_val_if_fail (coalesce, FALSE);
+	g_return_val_if_fail (option_name, FALSE);
+
+	state = &coalesce->requested_state;
+	ethtool_id = nm_ethtool_id_get_by_name (option_name);
+
+	if (!nm_ethtool_id_is_coalesce (ethtool_id))
+		return FALSE;
+
+	switch (ethtool_id) {
+		case NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX:
+			state->use_adaptive_rx_coalesce = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX:
+			state->use_adaptive_tx_coalesce = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_PKT_RATE_HIGH:
+			state->pkt_rate_high = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_PKT_RATE_LOW:
+			state->pkt_rate_low = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_FRAMES:
+			state->rx_max_coalesced_frames = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_FRAMES_HIGH:
+			state->rx_max_coalesced_frames_high = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_FRAMES_IRQ:
+			state->rx_max_coalesced_frames_irq = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_FRAMES_LOW:
+			state->rx_max_coalesced_frames_low = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_USECS:
+			state->rx_coalesce_usecs = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_USECS_HIGH:
+			state->rx_coalesce_usecs_high = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_USECS_IRQ:
+			state->rx_coalesce_usecs_irq = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_RX_USECS_LOW:
+			state->rx_coalesce_usecs_low = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_SAMPLE_INTERVAL:
+			state->rate_sample_interval = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_STATS_BLOCK_USECS:
+			state->stats_block_coalesce_usecs = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_FRAMES:
+			state->tx_max_coalesced_frames = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_FRAMES_HIGH:
+			state->tx_max_coalesced_frames_high = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_FRAMES_IRQ:
+			state->tx_max_coalesced_frames_irq = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_FRAMES_LOW:
+			state->tx_max_coalesced_frames_low = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_USECS:
+			state->tx_coalesce_usecs = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_USECS_HIGH:
+			state->tx_coalesce_usecs_high = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_USECS_IRQ:
+			state->tx_coalesce_usecs_irq = value;
+			break;
+		case NM_ETHTOOL_ID_COALESCE_TX_USECS_LOW:
+			state->tx_coalesce_usecs_low = value;
+			break;
+		default:
+			g_return_val_if_reached (FALSE);
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_platform_ethtool_set_coalesce (NMPlatform *self,
+                                  int ifindex,
+                                  const NMEthtoolCoalesceStates *coalesce,
+                                  gboolean do_set)
+{
+	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_set_coalesce (ifindex, coalesce, do_set);
+}
+
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *

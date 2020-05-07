@@ -264,6 +264,7 @@ out:
 
 static
 NM_UTILS_ENUM2STR_DEFINE (_ethtool_cmd_to_string, guint32,
+	NM_UTILS_ENUM2STR (ETHTOOL_GCOALESCE,  "ETHTOOL_GCOALESCE"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GDRVINFO,   "ETHTOOL_GDRVINFO"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GFEATURES,  "ETHTOOL_GFEATURES"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GLINK,      "ETHTOOL_GLINK"),
@@ -273,6 +274,7 @@ NM_UTILS_ENUM2STR_DEFINE (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTATS,     "ETHTOOL_GSTATS"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTRINGS,   "ETHTOOL_GSTRINGS"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GWOL,       "ETHTOOL_GWOL"),
+	NM_UTILS_ENUM2STR (ETHTOOL_SCOALESCE,  "ETHTOOL_SCOALESCE"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SFEATURES,  "ETHTOOL_SFEATURES"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SSET,       "ETHTOOL_SSET"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SWOL,       "ETHTOOL_SWOL"),
@@ -802,6 +804,145 @@ nmp_utils_ethtool_set_features (int ifindex,
 	                ? "successfully setting features"
 	                : "at least some of the features were not successfully set");
 	return success;
+}
+
+static gboolean
+ethtool_get_coalesce (SocketHandle *shandle,
+                      NMEthtoolCoalesceState *out_state)
+{
+	struct ethtool_coalesce eth_data;
+
+	eth_data.cmd = ETHTOOL_GCOALESCE;
+
+	if (_ethtool_call_handle (shandle,
+	                          &eth_data,
+	                          sizeof (struct ethtool_coalesce)) != 0)
+		return FALSE;
+
+	out_state->rx_coalesce_usecs            = eth_data.rx_coalesce_usecs;
+	out_state->rx_max_coalesced_frames      = eth_data.rx_max_coalesced_frames;
+	out_state->rx_coalesce_usecs_irq        = eth_data.rx_coalesce_usecs_irq;
+	out_state->rx_max_coalesced_frames_irq  = eth_data.rx_max_coalesced_frames_irq;
+	out_state->tx_coalesce_usecs            = eth_data.tx_coalesce_usecs;
+	out_state->tx_max_coalesced_frames      = eth_data.tx_max_coalesced_frames;
+	out_state->tx_coalesce_usecs_irq        = eth_data.tx_coalesce_usecs_irq;
+	out_state->tx_max_coalesced_frames_irq  = eth_data.tx_max_coalesced_frames_irq;
+	out_state->stats_block_coalesce_usecs   = eth_data.stats_block_coalesce_usecs;
+	out_state->use_adaptive_rx_coalesce     = eth_data.use_adaptive_rx_coalesce;
+	out_state->use_adaptive_tx_coalesce     = eth_data.use_adaptive_tx_coalesce;
+	out_state->pkt_rate_low                 = eth_data.pkt_rate_low;
+	out_state->rx_coalesce_usecs_low        = eth_data.rx_coalesce_usecs_low;
+	out_state->rx_max_coalesced_frames_low  = eth_data.rx_max_coalesced_frames_low;
+	out_state->tx_coalesce_usecs_low        = eth_data.tx_coalesce_usecs_low;
+	out_state->tx_max_coalesced_frames_low  = eth_data.tx_max_coalesced_frames_low;
+	out_state->pkt_rate_high                = eth_data.pkt_rate_high;
+	out_state->rx_coalesce_usecs_high       = eth_data.rx_coalesce_usecs_high;
+	out_state->rx_max_coalesced_frames_high = eth_data.rx_max_coalesced_frames_high;
+	out_state->tx_coalesce_usecs_high       = eth_data.tx_coalesce_usecs_high;
+	out_state->tx_max_coalesced_frames_high = eth_data.tx_max_coalesced_frames_high;
+	out_state->rate_sample_interval         = eth_data.rate_sample_interval;
+
+	return TRUE;
+}
+
+
+NMEthtoolCoalesceStates *
+nmp_utils_ethtool_get_coalesce (int ifindex)
+{
+	gs_free NMEthtoolCoalesceStates *coalesce = NULL;
+	nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT (ifindex);
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	coalesce = g_new0 (NMEthtoolCoalesceStates, 1);
+
+	if (!ethtool_get_coalesce (&shandle, &coalesce->old_state)) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure getting coalesce settings",
+		              ifindex,
+		              "get-coalesce");
+		return NULL;
+	}
+
+	/* copy into requested as well, so that they're merged when applying */
+	coalesce->requested_state = coalesce->old_state;
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: retrieved kernel coalesce settings",
+	              ifindex,
+	              "get-coalesce");
+	return g_steal_pointer (&coalesce);
+}
+
+static gboolean
+ethtool_set_coalesce (SocketHandle *shandle,
+                      const NMEthtoolCoalesceState *state)
+{
+	gboolean success;
+	struct ethtool_coalesce eth_data;
+
+	g_return_val_if_fail (shandle, FALSE);
+	g_return_val_if_fail (state, FALSE);
+
+	eth_data = (struct ethtool_coalesce) {
+		.cmd = ETHTOOL_SCOALESCE,
+		.rx_coalesce_usecs            = state->rx_coalesce_usecs,
+		.rx_max_coalesced_frames      = state->rx_max_coalesced_frames,
+		.rx_coalesce_usecs_irq        = state->rx_coalesce_usecs_irq,
+		.rx_max_coalesced_frames_irq  = state->rx_max_coalesced_frames_irq,
+		.tx_coalesce_usecs            = state->tx_coalesce_usecs,
+		.tx_max_coalesced_frames      = state->tx_max_coalesced_frames,
+		.tx_coalesce_usecs_irq        = state->tx_coalesce_usecs_irq,
+		.tx_max_coalesced_frames_irq  = state->tx_max_coalesced_frames_irq,
+		.stats_block_coalesce_usecs   = state->stats_block_coalesce_usecs,
+		.use_adaptive_rx_coalesce     = state->use_adaptive_rx_coalesce,
+		.use_adaptive_tx_coalesce     = state->use_adaptive_tx_coalesce,
+		.pkt_rate_low                 = state->pkt_rate_low,
+		.rx_coalesce_usecs_low        = state->rx_coalesce_usecs_low,
+		.rx_max_coalesced_frames_low  = state->rx_max_coalesced_frames_low,
+		.tx_coalesce_usecs_low        = state->tx_coalesce_usecs_low,
+		.tx_max_coalesced_frames_low  = state->tx_max_coalesced_frames_low,
+		.pkt_rate_high                = state->pkt_rate_high,
+		.rx_coalesce_usecs_high       = state->rx_coalesce_usecs_high,
+		.rx_max_coalesced_frames_high = state->rx_max_coalesced_frames_high,
+		.tx_coalesce_usecs_high       = state->tx_coalesce_usecs_high,
+		.tx_max_coalesced_frames_high = state->tx_max_coalesced_frames_high,
+		.rate_sample_interval         = state->rate_sample_interval,
+	};
+
+	success = (_ethtool_call_handle (shandle,
+	                                 &eth_data,
+	                                 sizeof (struct ethtool_coalesce)) == 0);
+	return success;
+}
+
+gboolean
+nmp_utils_ethtool_set_coalesce (int ifindex,
+                                const NMEthtoolCoalesceStates *coalesce,
+                                gboolean do_set)
+{
+	gboolean success;
+	nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT (ifindex);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (coalesce, FALSE);
+
+	if (do_set)
+		success = ethtool_set_coalesce (&shandle, &coalesce->requested_state);
+	else
+		success = ethtool_set_coalesce (&shandle, &coalesce->old_state);
+
+	if (!success) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure %s coalesce settings",
+		              ifindex,
+		              "set-coalesce",
+		              do_set ? "setting" : "resetting");
+		return FALSE;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s kernel coalesce settings",
+	              ifindex,
+	              "set-coalesce",
+	              do_set ? "set" : "reset");
+	return TRUE;
 }
 
 /*****************************************************************************/

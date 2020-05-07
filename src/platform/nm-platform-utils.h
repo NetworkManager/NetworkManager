@@ -92,6 +92,42 @@ gboolean nmp_utils_ethtool_set_features (int ifindex,
                                          const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
                                          gboolean do_set /* or reset */);
 
+typedef struct {
+	guint32 rx_coalesce_usecs;
+	guint32 rx_max_coalesced_frames;
+	guint32 rx_coalesce_usecs_irq;
+	guint32 rx_max_coalesced_frames_irq;
+	guint32 tx_coalesce_usecs;
+	guint32 tx_max_coalesced_frames;
+	guint32 tx_coalesce_usecs_irq;
+	guint32 tx_max_coalesced_frames_irq;
+	guint32 stats_block_coalesce_usecs;
+	guint32 use_adaptive_rx_coalesce;
+	guint32 use_adaptive_tx_coalesce;
+	guint32 pkt_rate_low;
+	guint32 rx_coalesce_usecs_low;
+	guint32 rx_max_coalesced_frames_low;
+	guint32 tx_coalesce_usecs_low;
+	guint32 tx_max_coalesced_frames_low;
+	guint32 pkt_rate_high;
+	guint32 rx_coalesce_usecs_high;
+	guint32 rx_max_coalesced_frames_high;
+	guint32 tx_coalesce_usecs_high;
+	guint32 tx_max_coalesced_frames_high;
+	guint32 rate_sample_interval;
+} NMEthtoolCoalesceState;
+
+struct _NMEthtoolCoalesceStates {
+	NMEthtoolCoalesceState old_state;
+	NMEthtoolCoalesceState requested_state;
+};
+
+NMEthtoolCoalesceStates * nmp_utils_ethtool_get_coalesce (int ifindex);
+
+gboolean nmp_utils_ethtool_set_coalesce (int ifindex,
+                                         const NMEthtoolCoalesceStates *coalesce,
+                                         gboolean do_set);
+
 /*****************************************************************************/
 
 gboolean nmp_utils_mii_supports_carrier_detect (int ifindex);
