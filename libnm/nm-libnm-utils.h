@@ -671,7 +671,8 @@ NML_IS_DBUS_OBJECT (NMLDBusObject *dbobj)
 	nm_assert (   !dbobj
 	           || (   NM_IS_REF_STRING (dbobj->dbus_path)
 	               && dbobj->ref_count > 0));
-	nm_assert (   !dbobj->nmobj
+	nm_assert (   !dbobj
+	           || !dbobj->nmobj
 	           || NM_IS_OBJECT (dbobj->nmobj)
 	           || NM_IS_CLIENT (dbobj->nmobj));
 	return !!dbobj;
