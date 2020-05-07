@@ -339,7 +339,7 @@ retrieve_session_id_cb (GObject *source_object,
 	NMPolkitListener *listener = NM_POLKIT_LISTENER (user_data);
 	char *session_id;
 	guint32 session_uid;
-	nm_auto_free_variant_iter GVariantIter *iter;
+	nm_auto_free_variant_iter GVariantIter *iter = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 	gs_free_error GError *error = NULL;
 	gs_free char *err_str = NULL;
