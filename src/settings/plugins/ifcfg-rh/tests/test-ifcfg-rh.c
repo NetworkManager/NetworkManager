@@ -10368,18 +10368,16 @@ test_ethtool_names (void)
 	NMEthtoolID id;
 	int i;
 
-	for (id = _NM_ETHTOOL_ID_FEATURE_FIRST; id <= _NM_ETHTOOL_ID_FEATURE_LAST; id++) {
+	for (id = _NM_ETHTOOL_ID_FIRST; id <= _NM_ETHTOOL_ID_LAST; id++) {
 		const char *ifcfg_rh_name;
-		int idx;
 
-		idx = id - _NM_ETHTOOL_ID_FEATURE_FIRST;
-		g_assert (idx >= 0);
-		g_assert (idx < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
-		ifcfg_rh_name = _nm_ethtool_ifcfg_names[idx];
+		g_assert (id >= 0);
+		g_assert (id < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
+		ifcfg_rh_name = _nm_ethtool_ifcfg_names[id];
 		g_assert (ifcfg_rh_name && ifcfg_rh_name[0]);
 
 		for (i = 0; i < G_N_ELEMENTS (_nm_ethtool_ifcfg_names); i++) {
-			if (i != idx)
+			if (i != id)
 				g_assert_cmpstr (ifcfg_rh_name, !=, _nm_ethtool_ifcfg_names[i]);
 		}
 

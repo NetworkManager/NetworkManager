@@ -4288,7 +4288,8 @@ parse_ethtool_option (const char *value,
 
 				d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt);
 
-				if (!d) {
+				if (   !d
+				    || !nm_ethtool_id_is_feature (d->id)) {
 					if (onoff != NM_TERNARY_DEFAULT) {
 						/* the next value is just the on/off argument. Skip it too. */
 						i++;
@@ -4308,6 +4309,45 @@ parse_ethtool_option (const char *value,
 				nm_setting_ethtool_set_feature (*out_s_ethtool,
 				                                d->optname,
 				                                onoff);
+			}
+		} else if (NM_IN_STRSET (words[0], "-C", "--coalesce")) {
+			if (!words[1]) {
+				/* first argument must be the interface name. This is invalid. */
+				return;
+			}
+
+			if (!*out_s_ethtool)
+				*out_s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
+
+			for (i = 2; words[i]; ) {
+				const char *opt = words[i];
+				const char *opt_val = words[++i];
+				const NMEthtoolData *d = NULL;
+				gint64 i64;
+
+				i64 = _nm_utils_ascii_str_to_int64 (opt_val, 10, 0, G_MAXUINT32, -1);
+				d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt);
+
+				if (   !d
+				    || !nm_ethtool_id_is_coalesce (d->id)) {
+					if (i64 != -1) {
+						/* the next value is just the argument. Skip it too. */
+						i++;
+					}
+					/* silently ignore unsupported coalesce settings. */
+					continue;
+				}
+
+				i++;
+
+				if (i64 == -1) {
+					PARSE_WARNING ("Expects integer argument for setting '%s'", opt);
+					continue;
+				}
+
+				nm_setting_ethtool_set_coalesce (*out_s_ethtool,
+				                                 d->optname,
+				                                 (guint32) i64);
 			}
 		}
 		return;

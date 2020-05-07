@@ -1195,6 +1195,23 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
 			g_string_append (str, val == NM_TERNARY_TRUE ? " on" : " off");
 		}
+
+		g_string_append (str, " ; -C ");
+		g_string_append (str, iface ?: "net0");
+
+		for (ethtool_id = _NM_ETHTOOL_ID_COALESCE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_COALESCE_LAST; ethtool_id++) {
+			const NMEthtoolData *ed = nm_ethtool_data[ethtool_id];
+			guint32 val;
+
+			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
+
+			if (!nm_setting_ethtool_get_coalesce (s_ethtool, ed->optname, &val))
+				continue;
+
+			g_string_append_c (str, ' ');
+			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
+			g_string_append_printf (str, " %"G_GUINT32_FORMAT, val);
+		}
 	}
 
 	if (str) {

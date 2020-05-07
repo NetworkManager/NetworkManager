@@ -141,16 +141,16 @@ const NMSIfcfgKeyTypeInfo *nms_ifcfg_rh_utils_is_well_known_key (const char *key
 
 /*****************************************************************************/
 
-extern const char *const _nm_ethtool_ifcfg_names[_NM_ETHTOOL_ID_FEATURE_NUM];
+extern const char *const _nm_ethtool_ifcfg_names[_NM_ETHTOOL_ID_NUM];
 
 static inline const char *
 nms_ifcfg_rh_utils_get_ethtool_name (NMEthtoolID ethtool_id)
 {
-	nm_assert (ethtool_id >= _NM_ETHTOOL_ID_FEATURE_FIRST && ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST);
-	nm_assert ((ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST) < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
-	nm_assert (_nm_ethtool_ifcfg_names[ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]);
+	nm_assert (ethtool_id >= _NM_ETHTOOL_ID_FIRST && ethtool_id <= _NM_ETHTOOL_ID_LAST);
+	nm_assert (ethtool_id < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
+	nm_assert (_nm_ethtool_ifcfg_names[ethtool_id]);
 
-	return _nm_ethtool_ifcfg_names[ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST];
+	return _nm_ethtool_ifcfg_names[ethtool_id];
 }
 
 const NMEthtoolData *nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name);
