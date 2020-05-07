@@ -1492,6 +1492,13 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 			return FALSE;
 		}
 		f = fdopen (tmpfd, "w");
+		if (!f) {
+			errsv = errno;
+			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
+			             "Internal error writing file '%s': %s",
+			             s->fileName, nm_strerror_native (errsv));
+			return FALSE;
+		}
 		fseek (f, 0, SEEK_SET);
 		c_list_for_each (current, &s->lst_head) {
 			const shvarLine *line = c_list_entry (current, shvarLine, lst);
