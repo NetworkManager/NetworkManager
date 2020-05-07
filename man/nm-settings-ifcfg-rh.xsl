@@ -241,7 +241,7 @@ DEVICETYPE=TeamPort
                   <listitem>
                     <para><literal>ONBOOT</literal> -
                     initscripts use ONBOOT=yes to mark the devices that are to be activated
-                    during boot. NetworkManager extents this to also mean that this profile
+                    during boot. NetworkManager extends this to also mean that this profile
                     can be used for auto-connecting at any time.</para>
                   </listitem>
                   <listitem>
