@@ -663,7 +663,7 @@ dbus_method_call_cb (GDBusConnection *connection,
 	const char *message;
 	const char *cookie;
 	AuthRequest *request;
-	gs_unref_variant GVariant *identities_gvariant;
+	gs_unref_variant GVariant *identities_gvariant = NULL;
 
 	if (nm_streq (method_name, "BeginAuthentication")) {
 		g_variant_get (parameters,
