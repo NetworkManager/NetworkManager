@@ -1622,9 +1622,7 @@ parity_good:
 out_err:
 	if (!err)
 		return;
-	if (   err->domain == G_KEY_FILE_ERROR
-	    && NM_IN_SET (err->code, G_KEY_FILE_ERROR_GROUP_NOT_FOUND,
-	                             G_KEY_FILE_ERROR_KEY_NOT_FOUND)) {
+	if (nm_keyfile_error_is_not_found (err)) {
 		/* ignore such errors. The key is not present. */
 		return;
 	}
@@ -3154,9 +3152,7 @@ read_one_setting_value (KeyfileReaderInfo *info,
 		g_return_if_reached ();
 
 	if (err) {
-		if (   err->domain == G_KEY_FILE_ERROR
-		    && NM_IN_SET (err->code, G_KEY_FILE_ERROR_GROUP_NOT_FOUND,
-		                             G_KEY_FILE_ERROR_KEY_NOT_FOUND)) {
+		if (nm_keyfile_error_is_not_found (err)) {
 			/* ignore such errors. The key is not present. */
 		} else {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,

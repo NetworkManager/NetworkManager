@@ -929,21 +929,36 @@ nm_streq0 (const char *s1, const char *s2)
 
 #define NM_STR_HAS_PREFIX(str, prefix) \
 	({ \
-		const char *const _str = (str); \
+		const char *const _str_has_prefix = (str); \
 		\
-		_str && (strncmp ((str), ""prefix"", NM_STRLEN (prefix)) == 0); \
+		nm_assert (strlen (prefix) == NM_STRLEN (prefix)); \
+		\
+		   _str_has_prefix \
+		&& (strncmp (_str_has_prefix, ""prefix"", NM_STRLEN (prefix)) == 0); \
 	})
 
 #define NM_STR_HAS_SUFFIX(str, suffix) \
 	({ \
-		const char *_str; \
+		const char *const _str_has_suffix = (str); \
 		gsize _l; \
 		\
-		(   (_str = (str)) \
-		 && ((_l = strlen (_str)) >= NM_STRLEN (suffix)) \
-		 && (memcmp (&_str[_l - NM_STRLEN (suffix)], \
+		nm_assert (strlen (suffix) == NM_STRLEN (suffix)); \
+		\
+		(   _str_has_suffix \
+		 && ((_l = strlen (_str_has_suffix)) >= NM_STRLEN (suffix)) \
+		 && (memcmp (&_str_has_suffix[_l - NM_STRLEN (suffix)], \
 		             ""suffix"", \
 		             NM_STRLEN (suffix)) == 0)); \
+	})
+
+/* whether @str starts with the string literal @prefix and is followed by
+ * some other text. It is like NM_STR_HAS_PREFIX() && !nm_streq() together. */
+#define NM_STR_HAS_PREFIX_WITH_MORE(str, prefix) \
+	({ \
+		const char *const _str_has_prefix_with_more = (str); \
+		\
+		   NM_STR_HAS_PREFIX (_str_has_prefix_with_more, ""prefix"") \
+		&& _str_has_prefix_with_more[NM_STRLEN (prefix)] != '\0'; \
 	})
 
 /*****************************************************************************/
