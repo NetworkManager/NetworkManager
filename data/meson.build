@@ -67,3 +67,10 @@ if enable_polkit
     install_dir: polkit_gobject_policydir,
   )
 endif
+
+if enable_firewalld_zone
+  install_data(
+    'nm-shared.xml',
+    install_dir: join_paths(nm_prefix, 'lib', 'firewalld', 'zones')
+  )
+endif
