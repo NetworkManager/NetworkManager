@@ -550,6 +550,9 @@ endif
 dbus_interfaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
 dbus_system_bus_services_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
 
+enable_firewalld_zone = get_option('firewalld_zone')
+config_h.set10('WITH_FIREWALLD_ZONE', enable_firewalld_zone)
+
 # pppd
 enable_ppp = get_option('ppp')
 if enable_ppp
@@ -1028,6 +1031,7 @@ output += '\n'
 output += '\nMiscellaneous:\n'
 output += '  have introspection: ' + enable_introspection.to_string() + '\n'
 output += '  build documentation and manpages: ' + enable_docs.to_string() + '\n'
+output += '  firewalld zone for shared mode: ' + enable_firewalld_zone.to_string() + '\n'
 # FIXME
 #output += '  install pregenerated documentation and manpages: no
 output += '  tests: ' + tests + '\n'
