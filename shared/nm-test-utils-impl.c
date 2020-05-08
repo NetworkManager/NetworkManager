@@ -454,7 +454,7 @@ _context_object_new_do_cb (GObject *source_object,
 static GObject *
 _context_object_new_do (GType gtype,
                         gboolean sync,
-                        const gchar *first_property_name,
+                        const char *first_property_name,
                         va_list var_args)
 {
 	gs_free_error GError *error = NULL;
