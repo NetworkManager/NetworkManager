@@ -573,7 +573,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	if (self->interface_name) {
 		for (i = 0; i < self->interface_name->len; i++) {
-			if (!nm_str_not_empty (g_array_index (self->interface_name, const char *, i))) {
+			if (nm_str_is_empty (g_array_index (self->interface_name, const char *, i))) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -587,7 +587,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	if (self->kernel_command_line) {
 		for (i = 0; i < self->kernel_command_line->len; i++) {
-			if (!nm_str_not_empty (g_array_index (self->kernel_command_line, const char *, i))) {
+			if (nm_str_is_empty (g_array_index (self->kernel_command_line, const char *, i))) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -601,7 +601,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	if (self->driver) {
 		for (i = 0; i < self->driver->len; i++) {
-			if (!nm_str_not_empty (g_array_index (self->driver, const char *, i))) {
+			if (nm_str_is_empty (g_array_index (self->driver, const char *, i))) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
