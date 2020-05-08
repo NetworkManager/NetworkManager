@@ -85,7 +85,7 @@ _acd_event_to_string (unsigned int event)
 #define ACD_EVENT_TO_STRING_BUF_SIZE 50
 
 static const char *
-_acd_event_to_string_buf (unsigned event, char buffer[ACD_EVENT_TO_STRING_BUF_SIZE])
+_acd_event_to_string_buf (unsigned event, char buffer[static ACD_EVENT_TO_STRING_BUF_SIZE])
 {
 	const char *s;
 
