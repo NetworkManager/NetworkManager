@@ -226,3 +226,10 @@ else
     LOG
 fi
 
+if [[ "$DO_RELEASE" == 1 ]]; then
+    LOG "RELEASE \"$SOURCE\" :"
+    for c in md5 sha1 sha256 sha512; do
+        LOG "$(printf '%8s: %s' "$c" $("${c}sum" "$SOURCE" | sed 's/ .*//'))"
+    done
+    LOG
+fi

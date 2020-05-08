@@ -44,6 +44,7 @@ NO_DIST=0
 WITH_LIST=()
 SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
+DO_RELEASE=0
 
 ADD_WITH_TEST=1
 
@@ -64,6 +65,7 @@ while [[ $# -gt 0 ]]; do
             [[ $NARGS -eq 1 ]] || die "--release option must be alone"
             export NMTST_CHECK_GTK_DOC=1
             BUILDTYPE=SRPM
+            DO_RELEASE=1
             ;;
         -c|--clean)
             GIT_CLEAN=1
@@ -173,6 +175,7 @@ export SOURCE_FROM_GIT
 export BUILDTYPE
 export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 export SNAPSHOT
+export DO_RELEASE
 
 "$SCRIPTDIR"/build.sh
 
