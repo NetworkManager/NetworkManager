@@ -954,6 +954,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	guint i;
 	guint32 ip4_route_table, ip4_route_metric;
 	NMPlatformIP4Route *r;
+	guint32 mtu_n;
 
 	g_return_val_if_fail (self->_priv.ipv4_config, FALSE);
 	g_return_val_if_fail (self->_priv.bearer, FALSE);
@@ -1024,6 +1025,14 @@ static_stage3_ip4_done (NMModemBroadband *self)
 			_LOGI ("  DNS %s", dns[i]);
 		}
 	}
+
+#if MM_CHECK_VERSION(1, 4, 0)
+	mtu_n = mm_bearer_ip_config_get_mtu (self->_priv.ipv4_config);
+	if (mtu_n) {
+		nm_ip4_config_set_mtu (config, mtu_n, NM_IP_CONFIG_SOURCE_WWAN);
+		_LOGI ("  MTU %u", mtu_n);
+	}
+#endif
 
 out:
 	g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, config, error);
