@@ -989,16 +989,23 @@ nm_gstring_add_space_delimiter (GString *str)
 	return str;
 }
 
+static inline gboolean
+nm_str_is_empty (const char *str)
+{
+	/* %NULL is also accepted, and also "empty". */
+	return !str || !str[0];
+}
+
 static inline const char *
 nm_str_not_empty (const char *str)
 {
-	return str && str[0] ? str : NULL;
+	return !nm_str_is_empty (str) ? str : NULL;
 }
 
 static inline char *
 nm_strdup_not_empty (const char *str)
 {
-	return str && str[0] ? g_strdup (str) : NULL;
+	return !nm_str_is_empty (str) ? g_strdup (str) : NULL;
 }
 
 static inline char *
