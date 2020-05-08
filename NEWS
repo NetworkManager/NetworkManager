@@ -8,6 +8,14 @@ The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Add a new build option 'firewalld-zone'; when enabled,
+  NetworkManager installs a firewalld zone for connection sharing and
+  puts interfaces using IPv4 or IPv6 shared mode in this zone during
+  activation. The option is enabled by default.
+  Note that NetworkManager still calls to iptables to enable
+  masquerading and open needed ports for DHCP and DNS. The new option
+  is useful on systems using firewalld with the nftables backend,
+  where the iptables rules would not be sufficient.
 * Add MUD URL property for connection profiles (RFC 8520) and set it
   for DHCP and DHCPv6 requests.
 * IPv6 SLAAC: improved the reaction of IPv6 SLAAC to renumbering events:
