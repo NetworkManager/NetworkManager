@@ -81,6 +81,11 @@
 %else
 %bcond_without iwd
 %endif
+%if 0%{?fedora} > 31 || 0%{?rhel} > 7
+%bcond_without firewalld_zone
+%else
+%bcond_with firewalld_zone
+%endif
 
 ###############################################################################
 
@@ -241,6 +246,9 @@ BuildRequires: libasan
 %if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: libubsan
 %endif
+%endif
+%if %{with firewalld_zone}
+BuildRequires: firewalld-filesystem
 %endif
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
@@ -609,6 +617,11 @@ This tool is still experimental.
 	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
 	-Dppp=true \
 %endif
+%if %{with firewalld_zone}
+	-Dfirewalld_zone=true \
+%else
+	-Dfirewalld_zone=false \
+%endif        
 	-Ddist_version=%{version}-%{release} \
 	-Dconfig_plugins_default=%{config_plugins_default} \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
@@ -742,6 +755,11 @@ intltoolize --automake --copy --force
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--enable-ppp=yes \
 %endif
+%if %{with firewalld_zone}
+	--enable-firewalld-zone \
+%else
+	--disable-firewalld-zone \
+%endif        
 	--with-dist-version=%{version}-%{release} \
 	--with-config-plugins-default=%{config_plugins_default} \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
@@ -824,6 +842,9 @@ fi
 %post
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
+%if %{with firewalld_zone}
+%firewalld_reload
+%endif
 
 %systemd_post %{systemd_units}
 
@@ -865,6 +886,9 @@ fi
 %postun
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
+%if %{with firewalld_zone}
+%firewalld_reload
+%endif
 
 %systemd_postun %{systemd_units}
 
@@ -930,6 +954,9 @@ fi
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/polkit-1/actions/*.policy
 %{_prefix}/lib/udev/rules.d/*.rules
+%if %{with firewalld_zone}
+%{_prefix}/lib/firewalld/zones/nm-shared.xml
+%endif
 # systemd stuff
 %{systemd_dir}/NetworkManager.service
 %{systemd_dir}/NetworkManager-wait-online.service
