@@ -4787,6 +4787,11 @@ data/server.conf: $(srcdir)/data/server.conf.in
 	@$(MKDIR_P) data/
 	$(AM_V_GEN) $(data_edit) $< >$@
 
+if WITH_FIREWALLD_ZONE
+firewalldzonedir = $(prefix)/lib/firewalld/zones
+firewalldzone_DATA = data/nm-shared.xml
+endif
+
 EXTRA_DIST += \
 	data/84-nm-drivers.rules \
 	data/85-nm-unmanaged.rules \
@@ -4796,6 +4801,7 @@ EXTRA_DIST += \
 	data/NetworkManager-wait-online.service.in \
 	data/NetworkManager.service.in \
 	data/meson.build \
+	data/nm-shared.xml \
 	data/server.conf.in \
 	$(NULL)
 

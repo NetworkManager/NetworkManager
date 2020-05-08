@@ -233,6 +233,9 @@
 /* Define if you have iwd support */
 #mesondefine WITH_IWD
 
+/* Define if NetworkManager uses a custom zone for shared mode */
+#mesondefine WITH_FIREWALLD_ZONE
+
 /* Define to 1 if on MINIX. */
 #mesondefine _MINIX
 
