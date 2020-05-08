@@ -856,7 +856,7 @@ nm_setting_sriov_get_autoprobe_drivers (NMSettingSriov *setting)
 	return setting->autoprobe_drivers;
 }
 
-static gint
+static int
 vf_index_compare (gconstpointer a, gconstpointer b)
 {
 	NMSriovVF *vf_a = *(NMSriovVF **) a;
