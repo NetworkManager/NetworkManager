@@ -2318,6 +2318,19 @@ test_tc_config_qdisc (void)
 	CHECK_ATTRIBUTE (qdisc1, "depth",   G_VARIANT_TYPE_UINT32, uint32, 12);
 	nm_tc_qdisc_unref (qdisc1);
 
+	qdisc1 = nm_utils_tc_qdisc_from_str ("handle 1235 root tbf rate 1000000 burst 5000 limit 10000",
+	                                     &error);
+	nmtst_assert_success (qdisc1, error);
+
+	g_assert_cmpstr (nm_tc_qdisc_get_kind (qdisc1), ==, "tbf");
+	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_MAKE (0x1235u << 16, 0x0000u));
+	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_ROOT);
+	CHECK_ATTRIBUTE (qdisc1, "rate",  G_VARIANT_TYPE_UINT64, uint64, 1000000);
+	CHECK_ATTRIBUTE (qdisc1, "burst", G_VARIANT_TYPE_UINT32, uint32, 5000);
+	CHECK_ATTRIBUTE (qdisc1, "limit", G_VARIANT_TYPE_UINT32, uint32, 10000);
+	nm_tc_qdisc_unref (qdisc1);
+
+
 #undef CHECK_ATTRIBUTE
 }
 

@@ -2318,6 +2318,14 @@ static const NMVariantAttributeSpec *const tc_qdisc_sfq_spec[] = {
 	NULL,
 };
 
+static const NMVariantAttributeSpec *const tc_qdisc_tbf_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("rate",        G_VARIANT_TYPE_UINT64,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("burst",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("limit",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("latency",     G_VARIANT_TYPE_UINT32,                    ),
+	NULL,
+};
+
 static const NMVariantAttributeSpec *const tc_qdisc_fq_codel_spec[] = {
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("limit",        G_VARIANT_TYPE_UINT32,                    ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("flows",        G_VARIANT_TYPE_UINT32,                    ),
@@ -2346,6 +2354,7 @@ typedef struct {
 static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
 	&(const NMQdiscAttributeSpec) { "fq_codel", tc_qdisc_fq_codel_spec },
 	&(const NMQdiscAttributeSpec) { "sfq",      tc_qdisc_sfq_spec },
+	&(const NMQdiscAttributeSpec) { "tbf",      tc_qdisc_tbf_spec },
 	NULL,
 };
 

@@ -1180,8 +1180,12 @@ nm_utils_qdiscs_from_tc_setting (NMPlatform *platform,
 			GET_ATTR ("perturb",      qdisc->sfq.perturb_period,    INT32,   int32,   0);
 			GET_ATTR ("quantum",      qdisc->sfq.quantum,           UINT32,  uint32,  0);
 			GET_ATTR ("depth",        qdisc->sfq.depth,             UINT32,  uint32,  0);
+		} else if (nm_streq (qdisc->kind, "tbf")) {
+			GET_ATTR ("rate",         qdisc->tbf.rate,              UINT64,  uint64,  0);
+			GET_ATTR ("burst",        qdisc->tbf.burst,             UINT32,  uint32,  0);
+			GET_ATTR ("limit",        qdisc->tbf.limit,             UINT32,  uint32,  0);
+			GET_ATTR ("latency",      qdisc->tbf.latency,           UINT32,  uint32,  0);
 		}
-
 #undef GET_ADDR
 
 		g_ptr_array_add (qdiscs, q);

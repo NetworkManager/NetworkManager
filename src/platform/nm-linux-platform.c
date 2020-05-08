@@ -279,6 +279,10 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
+#define PSCHED_TIME_UNITS_PER_SEC 1000000
+
+/*****************************************************************************/
+
 typedef enum {
 	INFINIBAND_ACTION_CREATE_CHILD,
 	INFINIBAND_ACTION_DELETE_CHILD,
@@ -3660,8 +3664,39 @@ _new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
 	return g_steal_pointer (&obj);
 }
 
+static guint32
+psched_tick_to_time (NMPlatform *platform, guint32 tick)
+{
+	static gboolean initialized;
+	static double tick_in_usec = 1;
+
+	if (!initialized) {
+		gs_free char *params = NULL;
+		double clock_factor = 1;
+		guint32 clock_res;
+		guint32 t2us;
+		guint32 us2t;
+
+		initialized = TRUE;
+		params = nm_platform_sysctl_get (platform, NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/net/psched"));
+		if (   !params
+		    || sscanf (params, "%08x%08x%08x", &t2us, &us2t, &clock_res) != 3) {
+			_LOGW ("packet scheduler parameters not available");
+		} else {
+			/* See tc_core_init() in iproute2 */
+			if (clock_res == 1000000000)
+				t2us = us2t;
+
+			clock_factor  = (double) clock_res / PSCHED_TIME_UNITS_PER_SEC;
+			tick_in_usec = (double) t2us / us2t * clock_factor;
+		}
+	}
+
+	return tick / tick_in_usec;
+}
+
 static NMPObject *
-_new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_qdisc (NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
 {
 	static const struct nla_policy policy[] = {
 		[TCA_KIND] = { .type = NLA_STRING },
@@ -3669,7 +3704,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 	};
 	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	const struct tcmsg *tcm;
-	NMPObject *obj;
+	nm_auto_nmpobj NMPObject *obj = NULL;
 
 	if (nlmsg_parse_arr (nlh,
 	                     sizeof (*tcm),
@@ -3701,7 +3736,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 		int remaining;
 
 		if (nm_streq0 (obj->qdisc.kind, "sfq")) {
-			struct tc_sfq_qopt_v1 opt = {};
+			struct tc_sfq_qopt_v1 opt;
 
 			if (tb[TCA_OPTIONS]->nla_len >= nla_attr_size (sizeof (opt))) {
 				memcpy (&opt, nla_data (tb[TCA_OPTIONS]), sizeof (opt));
@@ -3712,6 +3747,27 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 				obj->qdisc.sfq.flows = opt.v0.flows;
 				obj->qdisc.sfq.depth = opt.depth;
 			}
+		} else if (nm_streq0 (obj->qdisc.kind, "tbf")) {
+			static const struct nla_policy tbf_policy[] = {
+				[TCA_TBF_PARMS]     = { .minlen = sizeof (struct tc_tbf_qopt) },
+				[TCA_TBF_RATE64]    = { .type = NLA_U64 },
+			};
+			struct nlattr *tbf_tb[G_N_ELEMENTS (tbf_policy)];
+			struct tc_tbf_qopt opt;
+
+			if (nla_parse_nested_arr (tbf_tb, tb[TCA_OPTIONS], tbf_policy) < 0)
+				return NULL;
+			if (!tbf_tb[TCA_TBF_PARMS])
+				return NULL;
+
+			nla_memcpy_checked_size (&opt, tbf_tb[TCA_TBF_PARMS], sizeof (opt));
+			obj->qdisc.tbf.rate = opt.rate.rate;
+			if (tbf_tb[TCA_TBF_RATE64])
+				obj->qdisc.tbf.rate = nla_get_u64 (tbf_tb[TCA_TBF_RATE64]);
+			obj->qdisc.tbf.burst = ((double) obj->qdisc.tbf.rate *
+			                       psched_tick_to_time (platform, opt.buffer)) /
+			                       PSCHED_TIME_UNITS_PER_SEC;
+			obj->qdisc.tbf.limit = opt.limit;
 		} else {
 			nla_for_each_nested (options_attr, tb[TCA_OPTIONS], remaining) {
 				if (nla_len (options_attr) < sizeof (uint32_t))
@@ -3749,7 +3805,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 		}
 	}
 
-	return obj;
+	return g_steal_pointer (&obj);
 }
 
 static NMPObject *
@@ -3825,7 +3881,7 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 	case RTM_NEWQDISC:
 	case RTM_DELQDISC:
 	case RTM_GETQDISC:
-		return _new_from_nl_qdisc (msghdr, id_only);
+		return _new_from_nl_qdisc (platform, msghdr, id_only);
 	case RTM_NEWTFILTER:
 	case RTM_DELTFILTER:
 	case RTM_GETTFILTER:
@@ -4676,6 +4732,29 @@ _nl_msg_new_qdisc (int nlmsg_type,
 		opt.depth = qdisc->sfq.depth;
 
 		NLA_PUT (msg, TCA_OPTIONS, sizeof (opt), &opt);
+	} else if (nm_streq (qdisc->kind, "tbf")) {
+		struct tc_tbf_qopt opt = { };
+
+		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
+			goto nla_put_failure;
+
+		opt.rate.rate =   (qdisc->tbf.rate >= (1ULL << 32))
+		                ? ~0U
+		                : (guint32) qdisc->tbf.rate;
+		if (qdisc->tbf.limit)
+			opt.limit = qdisc->tbf.limit;
+		else if (qdisc->tbf.latency) {
+			opt.limit = qdisc->tbf.rate * (double) qdisc->tbf.latency
+			            / PSCHED_TIME_UNITS_PER_SEC
+			            + qdisc->tbf.burst;
+		}
+
+		NLA_PUT (msg, TCA_TBF_PARMS, sizeof (opt), &opt);
+		if (qdisc->tbf.rate >= (1ULL << 32))
+			NLA_PUT_U64 (msg, TCA_TBF_RATE64, qdisc->tbf.rate);
+		NLA_PUT_U32 (msg, TCA_TBF_BURST, qdisc->tbf.burst);
+
+		nla_nest_end (msg, tc_options);
 	} else {
 		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
 			goto nla_put_failure;
@@ -4816,7 +4895,8 @@ _genl_sock (NMLinuxPlatform *platform)
 			nm_assert (!_pathid); \
 			nm_assert (_path[0] == '/'); \
 			nm_assert (   g_str_has_prefix (_path, "/proc/sys/") \
-			           || g_str_has_prefix (_path, "/sys/")); \
+			           || g_str_has_prefix (_path, "/sys/") \
+			           || g_str_has_prefix (_path, "/proc/net")); \
 		} else { \
 			nm_assert (_pathid && _pathid[0] && _pathid[0] != '/'); \
 			nm_assert (_path[0] != '/'); \

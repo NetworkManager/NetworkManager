@@ -6499,6 +6499,13 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 			nm_utils_strbuf_append (&buf, &len, " flows %u", qdisc->sfq.flows);
 		if (qdisc->sfq.depth)
 			nm_utils_strbuf_append (&buf, &len, " depth %u", qdisc->sfq.depth);
+	} else if (nm_streq0 (qdisc->kind, "tbf")) {
+		nm_utils_strbuf_append (&buf, &len, " rate %"G_GUINT64_FORMAT, qdisc->tbf.rate);
+		nm_utils_strbuf_append (&buf, &len, " burst %u", qdisc->tbf.burst);
+		if (qdisc->tbf.limit)
+			nm_utils_strbuf_append (&buf, &len, " limit %u", qdisc->tbf.limit);
+		if (qdisc->tbf.latency)
+			nm_utils_strbuf_append (&buf, &len, " latency %uns", qdisc->tbf.latency);
 	}
 
 	return buf0;
@@ -6533,6 +6540,12 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 		                     obj->sfq.divisor,
 		                     obj->sfq.flows,
 		                     obj->sfq.depth);
+	} else if (nm_streq0 (obj->kind, "tbf")) {
+		nm_hash_update_vals (h,
+		                     obj->tbf.rate,
+		                     obj->tbf.burst,
+		                     obj->tbf.limit,
+		                     obj->tbf.latency);
 	}
 }
 
@@ -6566,6 +6579,11 @@ nm_platform_qdisc_cmp_full (const NMPlatformQdisc *a,
 		NM_CMP_FIELD (a, b, sfq.flows);
 		NM_CMP_FIELD (a, b, sfq.divisor);
 		NM_CMP_FIELD (a, b, sfq.depth);
+	} else if (nm_streq0 (a->kind, "tbf")) {
+		NM_CMP_FIELD (a, b, tbf.rate);
+		NM_CMP_FIELD (a, b, tbf.burst);
+		NM_CMP_FIELD (a, b, tbf.limit);
+		NM_CMP_FIELD (a, b, tbf.latency);
 	}
 
 	return 0;
