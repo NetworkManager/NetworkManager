@@ -760,7 +760,8 @@ nm_wifi_utils_complete_connection (GBytes *ap_ssid,
 		              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",
 		              NULL);
 	} else if (   (key_mgmt && !strcmp (key_mgmt, "owe"))
-	           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)) {
+	           || NM_FLAGS_ANY (ap_rsn_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE |
+	                                          NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
 		g_object_set (s_wsec,
 		              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "owe",
 		              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",

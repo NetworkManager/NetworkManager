@@ -913,7 +913,8 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 	| NM_802_11_AP_SEC_KEY_MGMT_PSK \
 	| NM_802_11_AP_SEC_KEY_MGMT_802_1X \
 	| NM_802_11_AP_SEC_KEY_MGMT_SAE \
-	| NM_802_11_AP_SEC_KEY_MGMT_OWE )
+	| NM_802_11_AP_SEC_KEY_MGMT_OWE \
+	| NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)
 
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (ap_class);

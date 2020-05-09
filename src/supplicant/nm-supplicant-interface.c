@@ -715,9 +715,9 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 		g_variant_unref (v_v);
 
 		if (p_owe_transition_mode)
-			bss_info->rsn_flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+			bss_info->rsn_flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
 		else
-			bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE;
+			bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
 
 		bss_info->metered = p_metered;
 	}
