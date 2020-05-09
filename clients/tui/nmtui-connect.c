@@ -222,6 +222,17 @@ add_and_activate_callback (GObject      *client,
 }
 
 static void
+deactivate_connection (NMActiveConnection *ac)
+{
+	GError *error = NULL;
+
+	if (!nm_client_deactivate_connection (nm_client, ac, NULL, &error)) {
+		nmt_newt_message_dialog (_("Could not deactivate connection: %s"), error->message);
+		g_clear_error (&error);
+	}
+}
+
+static void
 activate_connection (NMConnection *connection,
                      NMDevice     *device,
                      NMObject     *specific_object)
@@ -349,7 +360,7 @@ listbox_activated (NmtNewtListbox *listbox,
 		return;
 
 	if (ac)
-		nm_client_deactivate_connection (nm_client, ac, NULL, NULL);
+		deactivate_connection (ac);
 	else
 		activate_connection (connection, device, specific_object);
 }
