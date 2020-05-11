@@ -874,6 +874,17 @@ init_from_dbus (NMSetting *setting,
 		}
 
 		_nm_setting_gendata_notify (setting, TRUE);
+
+		/* Currently, only NMSettingEthtool supports gendata based options, and
+		 * that one has no other properties (except "name"). That means, we
+		 * consumed all options above.
+		 *
+		 * In the future it may be interesting to have settings that are both
+		 * based on gendata and regular properties. In that case, we would need
+		 * to handle this case differently. */
+		nm_assert (nm_streq (G_OBJECT_TYPE_NAME (setting), "NMSettingEthtool"));
+		nm_assert (sett_info->property_infos_len == 1);
+
 		return TRUE;
 	}
 
