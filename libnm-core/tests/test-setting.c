@@ -2389,7 +2389,7 @@ test_tc_config_action (void)
 }
 
 static void
-test_tc_config_tfilter (void)
+test_tc_config_tfilter_matchall_sdata (void)
 {
 	NMTCAction *action1;
 	NMTCTfilter *tfilter1, *tfilter2;
@@ -2441,6 +2441,50 @@ test_tc_config_tfilter (void)
 
 	nm_tc_tfilter_unref (tfilter1);
 	nm_tc_tfilter_unref (tfilter2);
+}
+
+static void
+test_tc_config_tfilter_matchall_mirred (void)
+{
+	NMTCAction *action;
+	NMTCTfilter *tfilter1;
+	GError *error = NULL;
+	gs_strfreev char **attr_names = NULL;
+	gs_free char *str;
+	GVariant *variant;
+
+	tfilter1 = nm_utils_tc_tfilter_from_str ("parent ffff: matchall action mirred ingress mirror dev eth0", &error);
+	nmtst_assert_success (tfilter1, error);
+	g_assert_cmpint (nm_tc_tfilter_get_parent (tfilter1), ==, TC_H_MAKE (0xffff << 16, 0));
+	g_assert_cmpstr (nm_tc_tfilter_get_kind (tfilter1), ==, "matchall");
+
+	action = nm_tc_tfilter_get_action (tfilter1);
+	nm_assert (action);
+	g_assert_cmpstr (nm_tc_action_get_kind (action), ==, "mirred");
+	attr_names = nm_tc_action_get_attribute_names (action);
+	g_assert (attr_names);
+	g_assert_cmpint (g_strv_length (attr_names), ==, 3);
+
+	variant = nm_tc_action_get_attribute (action, "ingress");
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN));
+	g_assert (g_variant_get_boolean (variant));
+
+	variant = nm_tc_action_get_attribute (action, "mirror");
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN));
+	g_assert (g_variant_get_boolean (variant));
+
+	variant = nm_tc_action_get_attribute (action, "dev");
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "eth0");
+
+	str = nm_utils_tc_tfilter_to_str (tfilter1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "parent ffff: matchall action mirred dev eth0 ingress mirror");
+
+	nm_tc_tfilter_unref (tfilter1);
 }
 
 static void
@@ -4040,7 +4084,10 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/libnm/settings/tc_config/qdisc", test_tc_config_qdisc);
 	g_test_add_func ("/libnm/settings/tc_config/action", test_tc_config_action);
-	g_test_add_func ("/libnm/settings/tc_config/tfilter", test_tc_config_tfilter);
+	g_test_add_func ("/libnm/settings/tc_config/tfilter/matchall_sdata",
+	                 test_tc_config_tfilter_matchall_sdata);
+	g_test_add_func ("/libnm/settings/tc_config/tfilter/matchall_mirred",
+	                 test_tc_config_tfilter_matchall_mirred);
 	g_test_add_func ("/libnm/settings/tc_config/setting/valid", test_tc_config_setting_valid);
 	g_test_add_func ("/libnm/settings/tc_config/setting/duplicates", test_tc_config_setting_duplicates);
 	g_test_add_func ("/libnm/settings/tc_config/dbus", test_tc_config_dbus);
