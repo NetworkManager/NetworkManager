@@ -196,7 +196,8 @@ nm_ethtool_data_get_by_optname (const char *optname)
 {
 	gssize idx;
 
-	nm_assert (optname);
+	if (!optname)
+		return NULL;
 
 	_ASSERT_data ();
 
