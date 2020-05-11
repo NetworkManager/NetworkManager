@@ -135,8 +135,10 @@ static const guint8 _by_name[_NM_ETHTOOL_ID_NUM] = {
 static void
 _ASSERT_data (void)
 {
-#if NM_MORE_ASSERTS > 10
 	int i;
+
+	if (!NM_MORE_ASSERT_ONCE (10))
+		return;
 
 	G_STATIC_ASSERT_EXPR (_NM_ETHTOOL_ID_FIRST == 0);
 	G_STATIC_ASSERT_EXPR (_NM_ETHTOOL_ID_LAST == _NM_ETHTOOL_ID_NUM - 1);
@@ -173,7 +175,6 @@ _ASSERT_data (void)
 			}
 		}
 	}
-#endif
 }
 
 static int
