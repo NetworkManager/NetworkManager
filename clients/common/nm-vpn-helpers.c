@@ -349,6 +349,7 @@ nm_vpn_wireguard_import (const char *filename,
 	gsize line_nr;
 	gsize current_peer_start_line_nr = 0;
 	nm_auto_unref_wgpeer NMWireGuardPeer *current_peer = NULL;
+	gs_unref_ptrarray GPtrArray *data_dns_search = NULL;
 	gs_unref_ptrarray GPtrArray *data_dns_v4 = NULL;
 	gs_unref_ptrarray GPtrArray *data_dns_v6 = NULL;
 	gs_unref_ptrarray GPtrArray *data_addr_v4 = NULL;
@@ -538,20 +539,24 @@ nm_vpn_wireguard_import (const char *filename,
 					NMIPAddr addr_bin;
 					int addr_family;
 
-					if (!nm_utils_parse_inaddr_bin (AF_UNSPEC,
-					                                value_word,
-					                                &addr_family,
-					                                &addr_bin))
-						goto fail_invalid_value;
+					if (nm_utils_parse_inaddr_bin (AF_UNSPEC,
+					                               value_word,
+					                               &addr_family,
+					                               &addr_bin)) {
+						p_data_dns =   (addr_family == AF_INET)
+						             ? &data_dns_v4
+						             : &data_dns_v6;
+						if (!*p_data_dns)
+							*p_data_dns = g_ptr_array_new_with_free_func (g_free);
 
-					p_data_dns =   (addr_family == AF_INET)
-					             ? &data_dns_v4
-					             : &data_dns_v6;
-					if (!*p_data_dns)
-						*p_data_dns = g_ptr_array_new_with_free_func (g_free);
+						g_ptr_array_add (*p_data_dns,
+						                 nm_utils_inet_ntop_dup (addr_family, &addr_bin));
+						continue;
+					}
 
-					g_ptr_array_add (*p_data_dns,
-					                 nm_utils_inet_ntop_dup (addr_family, &addr_bin));
+					if (!data_dns_search)
+						data_dns_search = g_ptr_array_new_with_free_func (g_free);
+					g_ptr_array_add (data_dns_search, g_strdup (value_word));
 				}
 				continue;
 			}
@@ -739,6 +744,7 @@ fail_invalid_secret:
 		NMSettingIPConfig *s_ip     = is_v4 ? s_ip4                                 : s_ip6;
 		GPtrArray *data_dns         = is_v4 ? data_dns_v4                           : data_dns_v6;
 		GPtrArray *data_addr        = is_v4 ? data_addr_v4                          : data_addr_v6;
+		GPtrArray *data_dns_search2 = data_dns_search;
 
 		if (data_dns && !data_addr) {
 			/* When specifying "DNS", we also require an "Address" for the same address
@@ -747,6 +753,7 @@ fail_invalid_secret:
 			 *
 			 * We don't have addresses. Silently ignore the DNS setting. */
 			data_dns = NULL;
+			data_dns_search2 = NULL;
 		}
 
 		g_object_set (s_ip,
@@ -770,9 +777,14 @@ fail_invalid_secret:
 			for (i = 0; i < data_dns->len; i++)
 				nm_setting_ip_config_add_dns (s_ip, data_dns->pdata[i]);
 
-			/* the wg-quick file cannot handle search domains. When configuring a DNS server
-			 * in the wg-quick file, assume that the user want to use it for all searches. */
-			nm_setting_ip_config_add_dns_search (s_ip, "~");
+			/* Of the wg-quick doesn't specify a search domain, assume the user
+			 * wants to use the domain server for all searches. */
+			if (!data_dns_search2)
+				nm_setting_ip_config_add_dns_search (s_ip, "~");
+		}
+		if (data_dns_search2) {
+			for (i = 0; i < data_dns_search2->len; i++)
+				nm_setting_ip_config_add_dns_search (s_ip, data_dns_search2->pdata[i]);
 		}
 
 		if (data_table == _TABLE_AUTO) {
