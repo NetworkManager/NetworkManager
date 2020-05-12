@@ -5783,7 +5783,7 @@ nm_utils_base64secret_decode (const char *base64_key,
                               gsize required_key_len,
                               guint8 *out_key)
 {
-	gs_free guint8 *bin_arr = NULL;
+	nm_auto_free guint8 *bin_arr = NULL;
 	gsize base64_key_len;
 	gsize bin_len;
 	int r;
