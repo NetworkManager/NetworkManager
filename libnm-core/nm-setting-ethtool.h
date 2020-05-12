@@ -92,11 +92,19 @@ G_BEGIN_DECLS
 #define NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS_IRQ                "coalesce-tx-usecs-irq"
 #define NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS_LOW                "coalesce-tx-usecs-low"
 
+#define NM_ETHTOOL_OPTNAME_RING_RX                              "ring-rx"
+#define NM_ETHTOOL_OPTNAME_RING_RX_JUMBO                        "ring-rx-jumbo"
+#define NM_ETHTOOL_OPTNAME_RING_RX_MINI                         "ring-rx-mini"
+#define NM_ETHTOOL_OPTNAME_RING_TX                              "ring-tx"
+
 NM_AVAILABLE_IN_1_20
 gboolean nm_ethtool_optname_is_feature (const char *optname);
 
 NM_AVAILABLE_IN_1_26
 gboolean nm_ethtool_optname_is_coalesce (const char *optname);
+
+NM_AVAILABLE_IN_1_26
+gboolean nm_ethtool_optname_is_ring (const char *optname);
 
 /*****************************************************************************/
 
@@ -151,6 +159,23 @@ void              nm_setting_ethtool_clear_coalesce (NMSettingEthtool *setting,
 
 NM_AVAILABLE_IN_1_26
 void              nm_setting_ethtool_clear_coalesce_all (NMSettingEthtool *setting);
+
+NM_AVAILABLE_IN_1_26
+gboolean          nm_setting_ethtool_get_ring (NMSettingEthtool *setting,
+                                               const char *optname,
+                                               guint32 *out_value);
+
+NM_AVAILABLE_IN_1_26
+void              nm_setting_ethtool_set_ring (NMSettingEthtool *setting,
+                                               const char *optname,
+                                               guint32 value);
+
+NM_AVAILABLE_IN_1_26
+void              nm_setting_ethtool_clear_ring (NMSettingEthtool *setting,
+                                                 const char *optname);
+
+NM_AVAILABLE_IN_1_26
+void              nm_setting_ethtool_clear_ring_all (NMSettingEthtool *setting);
 
 G_END_DECLS
 
