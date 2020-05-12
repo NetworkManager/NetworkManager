@@ -2780,7 +2780,7 @@ again:
 	if (G_UNLIKELY (!proc_cmdline)) {
 		gs_free const char **split = NULL;
 
-		/* TODO: support quotation, like systemd's proc_cmdline_extract_first().
+		/* FIXME(release-blocker): support quotation, like systemd's proc_cmdline_extract_first().
 		 * For that, add a new NMUtilsStrsplitSetFlags flag. */
 		split = nm_utils_strsplit_set_full (nm_utils_proc_cmdline (),
 		                                    NM_ASCII_WHITESPACES,

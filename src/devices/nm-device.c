@@ -6099,6 +6099,28 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 					proc_cmdline_i++;
 				}
 
+				/* FIXME(release-blocker): match.interface-name and match.driver have the meaning,
+				 * that any of the matches may yield success. For match.kernel-command-line, we
+				 * do here that all must match. This inconsistency is undesired.
+				 *
+				 * 1) improve gtk-doc documentation explaining how these options match.
+				 *
+				 * 2) possibly unify the behavior so that kernel-command-line behaves like other
+				 *    matches (and ANY may match). Note that this would be contrary to systemd's
+				 *    Conditions, which by default requires that ALL conditions match (AND). We
+				 *    should be consistent within our match options, and not with systemd here.
+				 *
+				 * 2b) Note that systemd supports special token like "=|", to indicate that
+				 *    ANY behavior. If we want, we could also introduce two special prefixes
+				 *    "&..." and "|...", to support either. It's slightly complicated how
+				 *    these work in combinations with "!".
+				 *    Unless we fully decide what we do about this, NMSettingMatch.verify() should
+				 *    reject matches that start with '&' or '|', because these will be reserved for
+				 *    future use.
+				 *
+				 * 3) while fixing this, this code should move to a separate function so we
+				 *    can unit test the match of kernel command lines.
+				 */
 				if (   pos_patterns
 				    && !found) {
 					/* positive patterns configured but no match */
