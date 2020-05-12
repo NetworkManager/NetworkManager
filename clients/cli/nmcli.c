@@ -1001,8 +1001,8 @@ main (int argc, char *argv[])
 		g_printerr ("%s\n", nm_cli.return_text->str);
 	}
 
-	g_main_loop_unref (loop);
 	nmc_cleanup (&nm_cli);
+	g_main_loop_unref (loop);
 
 	return nm_cli.return_value;
 }
