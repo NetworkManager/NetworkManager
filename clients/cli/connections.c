@@ -3444,10 +3444,10 @@ static const char *
 check_valid_name_toplevel (const char *val, const char **slave_type, GError **error)
 {
 	gs_unref_ptrarray GPtrArray *tmp_arr = NULL;
-	const char *str;
-	GError *tmp_err = NULL;
-	int i;
 	const NMMetaSettingInfoEditor *setting_info;
+	gs_free_error GError *tmp_err = NULL;
+	const char *str;
+	int i;
 
 	NM_SET_OUT (slave_type, NULL);
 
@@ -3468,14 +3468,13 @@ check_valid_name_toplevel (const char *val, const char **slave_type, GError **er
 	str = nmc_string_is_valid (val, (const char **) tmp_arr->pdata, &tmp_err);
 	if (!str) {
 		if (tmp_err->code == 1)
-			g_propagate_error (error, tmp_err);
+			g_propagate_error (error, g_steal_pointer (&tmp_err));
 		else {
 			/* We want to handle aliases, so construct own error message */
-			char *err_str = get_valid_options_string_toplevel ();
+			gs_free char *err_str = NULL;
 
+			err_str = get_valid_options_string_toplevel ();
 			g_set_error (error, 1, 0, _("'%s' not among [%s]"), val, err_str);
-			g_free (err_str);
-			g_clear_error (&tmp_err);
 		}
 		return NULL;
 	}
@@ -3669,15 +3668,12 @@ is_setting_valid (NMConnection *connection, const NMMetaSettingValidPartItem *co
 static char *
 is_property_valid (NMSetting *setting, const char *property, GError **error)
 {
-	char **valid_props = NULL;
+	gs_strfreev char **valid_props = NULL;
 	const char *prop_name;
-	char *ret;
 
 	valid_props = nmc_setting_get_valid_properties (setting);
 	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
-	ret = g_strdup (prop_name);
-	g_strfreev (valid_props);
-	return ret;
+	return g_strdup (prop_name);
 }
 
 static char *
@@ -5972,19 +5968,23 @@ extract_setting_and_property (const char *prompt, const char *line,
 }
 
 static void
-get_setting_and_property (const char *prompt, const char *line,
-                          NMSetting **setting_out, char**property_out)
+get_setting_and_property (const char *prompt,
+                          const char *line,
+                          NMSetting **setting_out,
+                          char **property_out)
 {
 	const NMMetaSettingValidPartItem *const*valid_settings_main;
 	const NMMetaSettingValidPartItem *const*valid_settings_slave;
-	const char *setting_name;
-	NMSetting *setting = NULL;
-	char *property = NULL;
-	char *sett = NULL, *prop = NULL;
+	gs_unref_object NMSetting *setting = NULL;
+	gs_free char *property = NULL;
 	NMSettingConnection *s_con;
+	gs_free char *sett = NULL;
+	gs_free char *prop = NULL;
 	const char *s_type = NULL;
+	const char *setting_name;
 
 	extract_setting_and_property (prompt, line, &sett, &prop);
+
 	if (sett) {
 		/* Is this too much (and useless?) effort for an unlikely case? */
 		s_con = nm_connection_get_setting_connection (nmc_tab_completion.connection);
@@ -5994,23 +5994,22 @@ get_setting_and_property (const char *prompt, const char *line,
 		valid_settings_main = get_valid_settings_array (nmc_tab_completion.con_type);
 		valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type (s_type, NULL);
 
-		setting_name = check_valid_name (sett, valid_settings_main,
-		                                 valid_settings_slave,  NULL);
+		setting_name = check_valid_name (sett,
+		                                 valid_settings_main,
+		                                 valid_settings_slave,
+		                                 NULL);
 		setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
 		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
 	} else
-		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
+		setting = nm_g_object_ref (nmc_tab_completion.setting);
 
 	if (setting && prop)
 		property = is_property_valid (setting, prop, NULL);
 	else
 		property = g_strdup (nmc_tab_completion.property);
 
-	*setting_out = setting;
-	*property_out = property;
-
-	g_free (sett);
-	g_free (prop);
+	*setting_out = g_steal_pointer (&setting);
+	*property_out = g_steal_pointer (&property);
 }
 
 static gboolean
@@ -6020,7 +6019,7 @@ _get_and_check_property (const char *prompt,
                          const char **array_multi,
                          gboolean *multi)
 {
-	char *prop;
+	gs_free char *prop = NULL;
 	gboolean found = FALSE;
 
 	extract_setting_and_property (prompt, line, NULL, &prop);
@@ -6029,7 +6028,6 @@ _get_and_check_property (const char *prompt,
 			found = !!nmc_string_is_valid (prop, array, NULL);
 		if (array_multi && multi)
 			*multi = !!nmc_string_is_valid (prop, array_multi, NULL);
-		g_free (prop);
 	}
 	return found;
 }
@@ -6107,33 +6105,26 @@ should_complete_property_values (const char *prompt, const char *line, gboolean 
 static gboolean
 _setting_property_is_boolean (NMSetting *setting, const char *property_name)
 {
-	GParamSpec *pspec;
+	const GParamSpec *pspec;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (property_name, FALSE);
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (property_name);
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property_name);
-	if (pspec && pspec->value_type == G_TYPE_BOOLEAN)
-		return TRUE;
-	return FALSE;
+	return    pspec
+	       && pspec->value_type == G_TYPE_BOOLEAN;
 }
 
 static gboolean
 should_complete_boolean (const char *prompt, const char *line)
 {
-	NMSetting *setting;
-	char *property;
-	gboolean is_boolean = FALSE;
+	gs_unref_object NMSetting *setting = NULL;
+	gs_free char *property = NULL;
 
 	get_setting_and_property (prompt, line, &setting, &property);
-	if (setting && property)
-		is_boolean = _setting_property_is_boolean (setting, property);
-
-	if (setting)
-		g_object_unref (setting);
-	g_free (property);
-
-	return is_boolean;
+	return    setting
+	       && property
+	       && _setting_property_is_boolean (setting, property);
 }
 
 static char *
@@ -6160,11 +6151,11 @@ extern int rl_complete_with_tilde_expansion;
 static char **
 nmcli_editor_tab_completion (const char *text, int start, int end)
 {
-	char **match_array = NULL;
-	const char *line = rl_line_buffer;
 	rl_compentry_func_t *generator_func = NULL;
-	char *prompt_tmp;
-	char *word = NULL;
+	const char *line = rl_line_buffer;
+	gs_free char *prompt_tmp = NULL;
+	gs_free char *word = NULL;
+	char **match_array = NULL;
 	size_t n1;
 	int num;
 
@@ -6288,8 +6279,6 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
 
-	g_free (prompt_tmp);
-	g_free (word);
 	return match_array;
 }
 
@@ -7114,9 +7103,10 @@ property_edit_submenu (NmCli *nmc,
 				else
 					g_print (_("Unknown command argument: '%s'\n"), cmd_property_arg);
 			} else {
-				char *prop_val =  nmc_setting_get_property (curr_setting, prop_name, NULL);
+				gs_free char *prop_val = NULL;
+
+				prop_val = nmc_setting_get_property (curr_setting, prop_name, NULL);
 				g_print ("%s: %s\n", prop_name, prop_val);
-				g_free (prop_val);
 			}
 			break;
 
@@ -7198,7 +7188,7 @@ ask_check_setting (const NmcConfig *nmc_config,
                    const NMMetaSettingValidPartItem *const*valid_settings_slave,
                    const char *valid_settings_str)
 {
-	char *setting_name_user;
+	gs_free char *setting_name_user = NULL;
 	const char *setting_name;
 	GError *err = NULL;
 
@@ -7218,7 +7208,6 @@ ask_check_setting (const NmcConfig *nmc_config,
 		g_print (_("Error: invalid setting name; %s\n"), err->message);
 		g_clear_error (&err);
 	}
-	g_free (setting_name_user);
 	return setting_name;
 }
 
@@ -7228,9 +7217,9 @@ ask_check_property (const NmcConfig *nmc_config,
                     const char **valid_props,
                     const char *valid_props_str)
 {
-	char *prop_name_user;
+	gs_free_error GError *tmp_err = NULL;
+	gs_free char *prop_name_user = NULL;
 	const char *prop_name;
-	GError *tmp_err = NULL;
 
 	if (!arg) {
 		g_print (_("Available properties: %s\n"), valid_props_str);
@@ -7240,11 +7229,10 @@ ask_check_property (const NmcConfig *nmc_config,
 	} else
 		prop_name_user = g_strdup (arg);
 
-	if (!(prop_name = nmc_string_is_valid (prop_name_user, valid_props, &tmp_err))) {
+	prop_name = nmc_string_is_valid (prop_name_user, valid_props, &tmp_err);
+	if (!prop_name)
 		g_print (_("Error: property %s\n"), tmp_err->message);
-		g_clear_error (&tmp_err);
-	}
-	g_free (prop_name_user);
+
 	return prop_name;
 }
 
@@ -7258,6 +7246,7 @@ update_connection_timestamp (NMConnection *src, NMConnection *dst)
 	s_con_dst = nm_connection_get_setting_connection (dst);
 	if (s_con_src && s_con_dst) {
 		guint64 timestamp = nm_setting_connection_get_timestamp (s_con_src);
+
 		g_object_set (s_con_dst, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
 	}
 }
