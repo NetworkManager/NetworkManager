@@ -2391,7 +2391,8 @@ src_NetworkManager_LDADD = \
 src_NetworkManager_LDFLAGS = \
 	-rdynamic \
 	-Wl,--version-script="src/NetworkManager.ver" \
-	$(SANITIZER_EXEC_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 $(src_NetworkManager_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3592,6 +3593,11 @@ check_programs_norun += \
 src_devices_bluetooth_tests_nm_bt_test_CPPFLAGS = \
 	$(src_cppflags_test) \
 	$(NULL)
+
+src_devices_bluetooth_tests_nm_bt_test_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
 src_devices_bluetooth_tests_nm_bt_test_LDADD = \
 	src/devices/bluetooth/libnm-bluetooth-utils.la \
 	src/libNetworkManager.la \
@@ -4164,7 +4170,9 @@ dispatcher_nm_dispatcher_SOURCES = \
 dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
 
 dispatcher_nm_dispatcher_LDFLAGS = \
-	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 dispatcher_nm_dispatcher_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
@@ -4282,7 +4290,9 @@ clients_nm_online_CPPFLAGS = \
 	$(NULL)
 
 clients_nm_online_LDFLAGS = \
-	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 clients_nm_online_LDADD = \
 	libnm/libnm.la \
