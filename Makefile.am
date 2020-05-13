@@ -5097,6 +5097,7 @@ EXTRA_DIST += \
 	src/ppp/nm-ppp-plugin.ver \
 	Makefile.glib \
 	autogen.sh \
+	lsan.suppressions \
 	valgrind.suppressions \
 	meson.build \
 	meson_options.txt \
