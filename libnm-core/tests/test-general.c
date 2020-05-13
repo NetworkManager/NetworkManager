@@ -4278,7 +4278,7 @@ test_hwaddr_equal (void)
 	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), null_binary, sizeof (null_binary)));
 	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), NULL, ETH_ALEN));
 
-	g_assert (nm_utils_hwaddr_matches (NULL, -1, NULL, -1));
+	g_assert (!nm_utils_hwaddr_matches (NULL, -1, NULL, -1));
 	g_assert (!nm_utils_hwaddr_matches (NULL, -1, string, -1));
 	g_assert (!nm_utils_hwaddr_matches (string, -1, NULL, -1));
 	g_assert (!nm_utils_hwaddr_matches (NULL, -1, null_string, -1));
