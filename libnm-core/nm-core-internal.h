@@ -802,4 +802,8 @@ void _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
                                       GString *string,
                                       gboolean leading_space);
 
+/*****************************************************************************/
+
+gboolean _nm_ip_tunnel_mode_is_layer2 (NMIPTunnelMode mode);
+
 #endif
