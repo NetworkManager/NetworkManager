@@ -970,13 +970,16 @@ set_property (GObject *object, guint prop_id,
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
+	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 	NMActStageReturn ret;
 
 	ret = NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
+	if (   _nm_ip_tunnel_mode_is_layer2 (priv->mode)
+	    && !nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
