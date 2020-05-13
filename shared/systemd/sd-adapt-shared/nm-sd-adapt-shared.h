@@ -70,7 +70,9 @@ G_STMT_START { \
 
 /*****************************************************************************/
 
+#ifndef VALGRIND
 #define VALGRIND 0
+#endif
 
 #define ENABLE_DEBUG_HASHMAP 0
 
