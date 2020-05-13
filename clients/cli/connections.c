@@ -6329,49 +6329,44 @@ load_history_cmds (const char *uuid)
 static void
 save_history_cmds (const char *uuid)
 {
-	HIST_ENTRY **hist = NULL;
-	GKeyFile *kf;
-	char *filename;
-	size_t i;
-	char *key;
-	char *data;
-	gsize len = 0;
-	GError *err = NULL;
+	gs_unref_keyfile GKeyFile *kf = NULL;
+	gs_free_error GError *error = NULL;
+	gs_free char *filename = NULL;
+	gs_free char *data = NULL;
+	HIST_ENTRY **hist;
+	gsize len;
+	gsize i;
 
 	hist = history_list ();
-	if (hist) {
-		filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
-		kf = g_key_file_new ();
-		if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
-			if (   !g_error_matches (err, G_FILE_ERROR, G_FILE_ERROR_NOENT)
-			    && !g_error_matches (err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-				g_print ("Warning: %s parse error: %s\n", filename, err->message);
-				g_key_file_free (kf);
-				g_free (filename);
-				g_clear_error (&err);
-				return;
-			}
-			g_clear_error (&err);
-		}
+	if (!hist)
+		return;
 
-		/* Remove previous history group and save new history entries */
-		g_key_file_remove_group (kf, uuid, NULL);
-		for (i = 0; hist[i]; i++)
-		{
-			key = g_strdup_printf ("%zd", i);
-			g_key_file_set_string (kf, uuid, key, hist[i]->line);
-			g_free (key);
-		}
+	filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 
-		/* Write history to file */
-		data = g_key_file_to_data (kf, &len, NULL);
-		if (data) {
-			g_file_set_contents (filename, data, len, NULL);
-			g_free (data);
+	kf = g_key_file_new ();
+
+	if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &error)) {
+		if (   !g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
+		    && !g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
+			g_print ("Warning: %s parse error: %s\n", filename, error->message);
+			return;
 		}
-		g_key_file_free (kf);
-		g_free (filename);
+		g_clear_error (&error);
 	}
+
+	/* Remove previous history group and save new history entries */
+	g_key_file_remove_group (kf, uuid, NULL);
+	for (i = 0; hist[i]; i++) {
+		char key[100];
+
+		nm_sprintf_buf (key, "%zd", i);
+		g_key_file_set_string (kf, uuid, key, hist[i]->line);
+	}
+
+	/* Write history to file */
+	data = g_key_file_to_data (kf, &len, NULL);
+	if (data)
+		g_file_set_contents (filename, data, len, NULL);
 }
 
 /*****************************************************************************/
