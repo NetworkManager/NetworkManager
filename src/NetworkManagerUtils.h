@@ -134,4 +134,11 @@ nm_utils_file_is_in_path (const char *abs_filename,
 
 /*****************************************************************************/
 
+GPtrArray *nm_utils_qdiscs_from_tc_setting (NMPlatform *platform,
+                                            NMSettingTCConfig *s_tc,
+                                            int ip_ifindex);
+GPtrArray *nm_utils_tfilters_from_tc_setting (NMPlatform *platform,
+                                              NMSettingTCConfig *s_tc,
+                                              int ip_ifindex);
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */
