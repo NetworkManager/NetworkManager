@@ -963,7 +963,8 @@ nmc_get_devices_sorted (NMClient *client)
 	devs = nm_client_get_devices (client);
 
 	sorted = g_new (NMDevice *, devs->len + 1);
-	memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
+	if (devs->len > 0)
+		memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
 	sorted[devs->len] = NULL;
 
 	qsort (sorted, devs->len, sizeof (NMDevice *), compare_devices);
