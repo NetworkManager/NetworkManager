@@ -69,8 +69,34 @@ G_BEGIN_DECLS
 #define NM_ETHTOOL_OPTNAME_FEATURE_TX_UDP_TNL_SEGMENTATION      "feature-tx-udp_tnl-segmentation"
 #define NM_ETHTOOL_OPTNAME_FEATURE_TX_VLAN_STAG_HW_INSERT       "feature-tx-vlan-stag-hw-insert"
 
+#define NM_ETHTOOL_OPTNAME_COALESCE_ADAPTIVE_RX                 "coalesce-adaptive-rx"
+#define NM_ETHTOOL_OPTNAME_COALESCE_ADAPTIVE_TX                 "coalesce-adaptive-tx"
+#define NM_ETHTOOL_OPTNAME_COALESCE_PKT_RATE_HIGH               "coalesce-pkt-rate-high"
+#define NM_ETHTOOL_OPTNAME_COALESCE_PKT_RATE_LOW                "coalesce-pkt-rate-low"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES                   "coalesce-rx-frames"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES_HIGH              "coalesce-rx-frames-high"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES_IRQ               "coalesce-rx-frames-irq"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES_LOW               "coalesce-rx-frames-low"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_USECS                    "coalesce-rx-usecs"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_USECS_HIGH               "coalesce-rx-usecs-high"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_USECS_IRQ                "coalesce-rx-usecs-irq"
+#define NM_ETHTOOL_OPTNAME_COALESCE_RX_USECS_LOW                "coalesce-rx-usecs-low"
+#define NM_ETHTOOL_OPTNAME_COALESCE_SAMPLE_INTERVAL             "coalesce-sample-interval"
+#define NM_ETHTOOL_OPTNAME_COALESCE_STATS_BLOCK_USECS           "coalesce-stats-block-usecs"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES                   "coalesce-tx-frames"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES_HIGH              "coalesce-tx-frames-high"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES_IRQ               "coalesce-tx-frames-irq"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES_LOW               "coalesce-tx-frames-low"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS                    "coalesce-tx-usecs"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS_HIGH               "coalesce-tx-usecs-high"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS_IRQ                "coalesce-tx-usecs-irq"
+#define NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS_LOW                "coalesce-tx-usecs-low"
+
 NM_AVAILABLE_IN_1_20
 gboolean nm_ethtool_optname_is_feature (const char *optname);
+
+NM_AVAILABLE_IN_1_26
+gboolean nm_ethtool_optname_is_coalesce (const char *optname);
 
 /*****************************************************************************/
 
@@ -108,6 +134,23 @@ void              nm_setting_ethtool_clear_features (NMSettingEthtool *setting);
 NM_AVAILABLE_IN_1_20
 const char **     nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
                                                    guint *out_length);
+
+NM_AVAILABLE_IN_1_26
+gboolean          nm_setting_ethtool_get_coalesce (NMSettingEthtool *setting,
+                                                   const char *optname,
+                                                   guint32 *out_value);
+
+NM_AVAILABLE_IN_1_26
+void              nm_setting_ethtool_set_coalesce (NMSettingEthtool *setting,
+                                                   const char *optname,
+                                                   guint32 value);
+
+NM_AVAILABLE_IN_1_26
+void              nm_setting_ethtool_clear_coalesce (NMSettingEthtool *setting,
+                                                     const char *optname);
+
+NM_AVAILABLE_IN_1_26
+void              nm_setting_ethtool_clear_coalesce_all (NMSettingEthtool *setting);
 
 G_END_DECLS
 

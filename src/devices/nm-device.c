@@ -185,6 +185,7 @@ typedef struct {
 	int ifindex;
 	NMEthtoolFeatureStates *features;
 	NMTernary requested[_NM_ETHTOOL_ID_FEATURE_NUM];
+	NMEthtoolCoalesceStates *coalesce;
 } EthtoolState;
 
 /*****************************************************************************/
@@ -812,64 +813,47 @@ NM_UTILS_LOOKUP_STR_DEFINE (mtu_source_to_str, NMDeviceMtuSource,
 /*****************************************************************************/
 
 static void
-_ethtool_state_reset (NMDevice *self)
+_ethtool_features_reset (NMDevice *self,
+                         NMPlatform *platform,
+                         EthtoolState *ethtool_state)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free NMEthtoolFeatureStates *features;
 
-	if (priv->ethtool_state) {
-		gs_free NMEthtoolFeatureStates *features = priv->ethtool_state->features;
-		gs_free EthtoolState *ethtool_state = g_steal_pointer (&priv->ethtool_state);
+	features = g_steal_pointer (&ethtool_state->features);
 
-		if (!nm_platform_ethtool_set_features (nm_device_get_platform (self),
-		                                       ethtool_state->ifindex,
-		                                       features,
-		                                       ethtool_state->requested,
-		                                       FALSE))
-			_LOGW (LOGD_DEVICE, "ethtool: failure resetting one or more offload features");
-		else
-			_LOGD (LOGD_DEVICE, "ethtool: offload features successfully reset");
-	}
+	if (!nm_platform_ethtool_set_features (platform,
+	                                       ethtool_state->ifindex,
+	                                       features,
+	                                       ethtool_state->requested,
+	                                       FALSE))
+		_LOGW (LOGD_DEVICE, "ethtool: failure resetting one or more offload features");
+	else
+		_LOGD (LOGD_DEVICE, "ethtool: offload features successfully reset");
 }
 
 static void
-_ethtool_state_set (NMDevice *self)
+_ethtool_features_set (NMDevice *self,
+                       NMPlatform *platform,
+                       EthtoolState *ethtool_state,
+                       NMSettingEthtool *s_ethtool)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int ifindex;
-	NMConnection *connection;
-	NMSettingEthtool *s_ethtool;
-	NMPlatform *platform;
-	gs_free EthtoolState *ethtool_state = NULL;
 	gs_free NMEthtoolFeatureStates *features = NULL;
 
-	_ethtool_state_reset (self);
+	if (ethtool_state->features)
+		_ethtool_features_reset (self, platform, ethtool_state);
 
-	connection = nm_device_get_applied_connection (self);
-	if (!connection)
-		return;
-
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex <= 0)
-		return;
-
-	s_ethtool = NM_SETTING_ETHTOOL (nm_connection_get_setting (connection, NM_TYPE_SETTING_ETHTOOL));
-	if (!s_ethtool)
-		return;
-
-	ethtool_state = g_new (EthtoolState, 1);
 	if (nm_setting_ethtool_init_features (s_ethtool, ethtool_state->requested) == 0)
 		return;
 
-	platform = nm_device_get_platform (self);
-
-	features = nm_platform_ethtool_get_link_features (platform, ifindex);
+	features = nm_platform_ethtool_get_link_features (platform,
+	                                                  ethtool_state->ifindex);
 	if (!features) {
 		_LOGW (LOGD_DEVICE, "ethtool: failure setting offload features (cannot read features)");
 		return;
 	}
 
 	if (!nm_platform_ethtool_set_features (platform,
-	                                       ifindex,
+	                                       ethtool_state->ifindex,
 	                                       features,
 	                                       ethtool_state->requested,
 	                                       TRUE))
@@ -877,9 +861,170 @@ _ethtool_state_set (NMDevice *self)
 	else
 		_LOGD (LOGD_DEVICE, "ethtool: offload features successfully set");
 
-	ethtool_state->ifindex = ifindex;
 	ethtool_state->features = g_steal_pointer (&features);
-	priv->ethtool_state = g_steal_pointer (&ethtool_state);
+}
+
+static gboolean
+_ethtool_init_coalesce (NMDevice *self,
+                        NMPlatform *platform,
+                        NMSettingEthtool *s_ethtool,
+                        NMEthtoolCoalesceStates *coalesce)
+{
+	GHashTable *hash;
+	GHashTableIter iter;
+	const char *name;
+	GVariant *variant;
+	gsize n_coalesce_set = 0;
+
+	nm_assert (self);
+	nm_assert (platform);
+	nm_assert (coalesce);
+	nm_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
+
+	hash = _nm_setting_gendata_hash (NM_SETTING (s_ethtool), FALSE);
+	if (!hash)
+		return FALSE;
+
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant)) {
+		if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
+			continue;
+
+		if (!nm_platform_ethtool_init_coalesce (platform,
+		                                        coalesce,
+		                                        name,
+		                                        g_variant_get_uint32(variant))) {
+		    _LOGW (LOGD_DEVICE, "ethtool: invalid coalesce setting %s", name);
+		    return FALSE;
+		}
+		++n_coalesce_set;
+
+	}
+
+	return (!!n_coalesce_set);
+}
+
+
+
+static void
+_ethtool_coalesce_reset (NMDevice *self,
+                         NMPlatform *platform,
+                         EthtoolState *ethtool_state)
+{
+	gs_free NMEthtoolCoalesceStates *coalesce = NULL;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (NM_IS_PLATFORM (platform));
+	nm_assert (ethtool_state);
+
+	coalesce = g_steal_pointer (&ethtool_state->coalesce);
+
+	if (!nm_platform_ethtool_set_coalesce (platform,
+	                                       ethtool_state->ifindex,
+	                                       coalesce,
+	                                       FALSE))
+		_LOGW (LOGD_DEVICE, "ethtool: failure resetting one or more coalesce settings");
+	else
+		_LOGD (LOGD_DEVICE, "ethtool: coalesce settings successfully reset");
+}
+
+static void
+_ethtool_coalesce_set (NMDevice *self,
+                       NMPlatform *platform,
+                       EthtoolState *ethtool_state,
+                       NMSettingEthtool *s_ethtool)
+{
+	gs_free NMEthtoolCoalesceStates *coalesce = NULL;
+
+	nm_assert (ethtool_state);
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (NM_IS_PLATFORM (platform));
+	nm_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
+
+	coalesce = nm_platform_ethtool_get_link_coalesce (platform,
+	                                                  ethtool_state->ifindex);
+
+	if (!coalesce) {
+		_LOGW (LOGD_DEVICE, "ethtool: failure getting coalesce settings (cannot read)");
+		return;
+	}
+
+	if (!_ethtool_init_coalesce (self,
+	                             platform,
+	                             s_ethtool,
+	                             coalesce))
+		return;
+
+	if (!nm_platform_ethtool_set_coalesce (platform,
+	                                       ethtool_state->ifindex,
+	                                       coalesce,
+	                                       TRUE)) {
+		_LOGW (LOGD_DEVICE, "ethtool: failure setting coalesce settings");
+		return;
+	}
+	_LOGD (LOGD_DEVICE, "ethtool: coalesce settings successfully set");
+
+	ethtool_state->coalesce = g_steal_pointer (&coalesce);
+}
+
+static void
+_ethtool_state_reset (NMDevice *self)
+{
+	NMPlatform *platform = nm_device_get_platform (self);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free EthtoolState *ethtool_state = g_steal_pointer (&priv->ethtool_state);
+
+	if (!ethtool_state)
+		return;
+
+	if (ethtool_state->features)
+		_ethtool_features_reset (self, platform, ethtool_state);
+	if (ethtool_state->coalesce)
+		_ethtool_coalesce_reset (self, platform, ethtool_state);
+}
+
+
+
+static void
+_ethtool_state_set (NMDevice *self)
+{
+	int ifindex;
+	NMPlatform *platform;
+	NMConnection *connection;
+	NMSettingEthtool *s_ethtool;
+	gs_free EthtoolState *ethtool_state = NULL;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex <= 0)
+		return;
+
+	platform = nm_device_get_platform (self);
+	nm_assert (platform);
+
+	connection = nm_device_get_applied_connection (self);
+	if (!connection)
+		return;
+
+	s_ethtool = NM_SETTING_ETHTOOL (nm_connection_get_setting (connection, NM_TYPE_SETTING_ETHTOOL));
+	if (!s_ethtool)
+		return;
+
+	ethtool_state = g_new0 (EthtoolState, 1);
+	ethtool_state->ifindex = ifindex;
+
+	_ethtool_features_set (self,
+	                       platform,
+	                       ethtool_state,
+	                       s_ethtool);
+	_ethtool_coalesce_set (self,
+	                       platform,
+	                       ethtool_state,
+	                       s_ethtool);
+
+	if (   ethtool_state->features
+	    || ethtool_state->coalesce)
+		priv->ethtool_state = g_steal_pointer (&ethtool_state);
 }
 
 /*****************************************************************************/

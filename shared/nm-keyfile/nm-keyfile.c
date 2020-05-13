@@ -3243,6 +3243,22 @@ _read_setting (KeyfileReaderInfo *info)
 						continue;
 					}
 					variant = g_variant_new_boolean (v);
+				} else if (g_variant_type_equal (variant_type, G_VARIANT_TYPE_UINT32)) {
+					guint64 v;
+
+					v = g_key_file_get_uint64 (info->keyfile,
+					                           info->group,
+					                           key,
+					                           &local);
+
+					if (local) {
+						if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+						                  _("key '%s.%s' is not a uint32"),
+						                  info->group, key))
+							break;
+						continue;
+					}
+					variant = g_variant_new_uint32 ((guint32) v);
 				} else {
 					nm_assert_not_reached ();
 					continue;
@@ -3851,6 +3867,11 @@ nm_keyfile_write (NMConnection *connection,
 						                        setting_name,
 						                        key,
 						                        g_variant_get_boolean (v));
+					} else if (g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
+						g_key_file_set_uint64 (info.keyfile,
+						                       setting_name,
+						                       key,
+						                       (guint64) g_variant_get_uint32 (v));
 					} else {
 						/* BUG: The variant type is not implemented. Since the connection
 						 * verifies, this can only mean we either wrongly didn't reject

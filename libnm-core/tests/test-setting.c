@@ -1571,6 +1571,90 @@ test_ethtool_1 (void)
 	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
 }
 
+static void
+test_ethtool_coalesce (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	gs_unref_object NMConnection *con2 = NULL;
+	gs_unref_object NMConnection *con3 = NULL;
+	gs_unref_variant GVariant *variant = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	NMSettingConnection *s_con;
+	NMSettingEthtool *s_ethtool;
+	NMSettingEthtool *s_ethtool2;
+	NMSettingEthtool *s_ethtool3;
+	guint32 out_value;
+
+	con = nmtst_create_minimal_connection ("ethtool-coalesce",
+	                                        NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME,
+	                                        &s_con);
+	s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
+	nm_connection_add_setting (con, NM_SETTING (s_ethtool));
+
+	nm_setting_ethtool_set_coalesce (s_ethtool,
+	                                 NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES,
+	                                 4);
+
+	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &out_value));
+	g_assert_cmpuint (out_value, ==, 4);
+
+	nmtst_connection_normalize (con);
+
+	variant = nm_connection_to_dbus (con, NM_CONNECTION_SERIALIZE_ALL);
+
+	con2 = nm_simple_connection_new_from_dbus (variant, &error);
+	nmtst_assert_success (con2, error);
+
+	s_ethtool2 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con2, NM_TYPE_SETTING_ETHTOOL));
+
+	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool2, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &out_value));
+	g_assert_cmpuint (out_value, ==, 4);
+
+	nmtst_assert_connection_verifies_without_normalization (con2);
+
+	nmtst_assert_connection_equals (con, FALSE, con2, FALSE);
+
+	keyfile = nm_keyfile_write (con, NULL, NULL, &error);
+	nmtst_assert_success (keyfile, error);
+
+	con3 = nm_keyfile_read (keyfile,
+	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NULL,
+	                        NULL,
+	                        &error);
+	nmtst_assert_success (con3, error);
+
+	nm_keyfile_read_ensure_id (con3, "unused-because-already-has-id");
+	nm_keyfile_read_ensure_uuid (con3, "unused-because-already-has-uuid");
+
+	nmtst_connection_normalize (con3);
+
+	nmtst_assert_connection_equals (con, FALSE, con3, FALSE);
+
+	s_ethtool3 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con3, NM_TYPE_SETTING_ETHTOOL));
+
+	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool3, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &out_value));
+	g_assert_cmpuint (out_value, ==, 4);
+
+
+	nm_setting_ethtool_clear_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES);
+	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL));
+
+	nm_setting_ethtool_set_coalesce (s_ethtool,
+	                                 NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES,
+	                                 8);
+
+	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES, &out_value));
+	g_assert_cmpuint (out_value, ==, 8);
+
+	nm_setting_ethtool_clear_coalesce_all (s_ethtool);
+	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL));
+	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES, NULL));
+	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS, NULL));
+}
+
 /*****************************************************************************/
 
 static void
@@ -3771,6 +3855,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/dcb/bandwidth-sums", test_dcb_bandwidth_sums);
 
 	g_test_add_func ("/libnm/settings/ethtool/1", test_ethtool_1);
+	g_test_add_func ("/libnm/settings/ethtool/coalesce", test_ethtool_coalesce);
 
 	g_test_add_func ("/libnm/settings/sriov/vf", test_sriov_vf);
 	g_test_add_func ("/libnm/settings/sriov/vf-dup", test_sriov_vf_dup);
