@@ -2051,8 +2051,8 @@ test_tc_config_qdisc (void)
 	nmtst_assert_success (qdisc1, error);
 
 	g_assert_cmpstr (nm_tc_qdisc_get_kind (qdisc1), ==, "pfifo_fast");
-	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_MAKE (0x1234 << 16, 0x0000));
-	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_MAKE (0xfff1 << 16, 0x0001));
+	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_MAKE (0x1234u << 16, 0x0000u));
+	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_MAKE (0xfff1u << 16, 0x0001u));
 
 	str = nm_utils_tc_qdisc_to_str (qdisc1, &error);
 	nmtst_assert_success (str, error);
@@ -2133,12 +2133,12 @@ test_tc_config_tfilter (void)
 	GError *error = NULL;
 
 	tfilter1 = nm_tc_tfilter_new ("matchall",
-	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              TC_H_MAKE (0x1234u << 16, 0x0000u),
 	                              &error);
 	nmtst_assert_success (tfilter1, error);
 
 	tfilter2 = nm_tc_tfilter_new ("matchall",
-	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              TC_H_MAKE (0x1234u << 16, 0x0000u),
 	                              &error);
 	nmtst_assert_success (tfilter2, error);
 
@@ -2192,10 +2192,10 @@ test_tc_config_setting_valid (void)
 	nmtst_assert_success (qdisc1, error);
 
 	qdisc2 = nm_tc_qdisc_new ("pfifo_fast",
-	                          TC_H_MAKE (0xfff1 << 16, 0x0001),
+	                          TC_H_MAKE (0xfff1u << 16, 0x0001u),
 	                          &error);
 	nmtst_assert_success (qdisc2, error);
-	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (0x1234 << 16, 0x0000));
+	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (0x1234u << 16, 0x0000u));
 
 	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 0);
 	g_assert (nm_setting_tc_config_add_qdisc (s_tc, qdisc1) == TRUE);
@@ -2298,16 +2298,16 @@ test_tc_config_dbus (void)
 
 	qdisc1 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
 	nmtst_assert_success (qdisc1, error);
-	nm_tc_qdisc_set_handle (qdisc1, TC_H_MAKE (0x1234 << 16, 0x0000));
+	nm_tc_qdisc_set_handle (qdisc1, TC_H_MAKE (0x1234u << 16, 0x0000u));
 	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc1);
 
 	qdisc2 = nm_tc_qdisc_new ("ingress", TC_H_INGRESS, &error);
 	nmtst_assert_success (qdisc2, error);
-	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (TC_H_INGRESS, 0));
+	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (TC_H_INGRESS, 0u));
 	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc2);
 
 	tfilter1 = nm_tc_tfilter_new ("matchall",
-	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              TC_H_MAKE (0x1234u << 16, 0x0000u),
 	                              &error);
 	nmtst_assert_success (tfilter1, error);
 	action = nm_tc_action_new ("drop", &error);
@@ -2318,7 +2318,7 @@ test_tc_config_dbus (void)
 	nm_tc_tfilter_unref (tfilter1);
 
 	tfilter2 = nm_tc_tfilter_new ("matchall",
-	                              TC_H_MAKE (TC_H_INGRESS, 0),
+	                              TC_H_MAKE (TC_H_INGRESS, 0u),
 	                              &error);
 	nmtst_assert_success (tfilter2, error);
 	action = nm_tc_action_new ("simple", &error);
