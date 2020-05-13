@@ -875,4 +875,8 @@ gboolean nm_utils_connection_is_adhoc_wpa (NMConnection *connection);
 
 const char *nm_utils_wifi_freq_to_band (guint32 freq);
 
+/*****************************************************************************/
+
+gboolean _nm_ip_tunnel_mode_is_layer2 (NMIPTunnelMode mode);
+
 #endif
