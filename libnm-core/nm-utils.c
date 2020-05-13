@@ -2300,11 +2300,11 @@ fail:
 }
 
 static const NMVariantAttributeSpec *const tc_object_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("root",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                                         ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("parent", G_VARIANT_TYPE_STRING,                                           .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("handle", G_VARIANT_TYPE_STRING,                                           .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",   G_VARIANT_TYPE_STRING,  .no_value = TRUE,                        .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("root",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("parent", G_VARIANT_TYPE_STRING,                                           ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("handle", G_VARIANT_TYPE_STRING,                                           ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",   G_VARIANT_TYPE_STRING,  .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, ),
 	NULL,
 };
 
@@ -2550,17 +2550,17 @@ static const NMVariantAttributeSpec *const tc_action_simple_attribute_spec[] = {
 };
 
 static const NMVariantAttributeSpec *const tc_action_mirred_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("egress",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ingress",  G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("mirror",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("redirect", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("dev",      G_VARIANT_TYPE_STRING,  .no_value = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("egress",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ingress",  G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("mirror",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("redirect", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("dev",      G_VARIANT_TYPE_STRING,  .no_value = TRUE, ),
 	NULL,
 };
 
 static const NMVariantAttributeSpec *const tc_action_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",    G_VARIANT_TYPE_STRING, .no_value = TRUE,                        .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",        G_VARIANT_TYPE_STRING, .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",    G_VARIANT_TYPE_STRING, .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",        G_VARIANT_TYPE_STRING, .no_value = TRUE, .consumes_rest = TRUE, ),
 	NULL,
 };
 
@@ -2758,8 +2758,8 @@ nm_utils_tc_tfilter_to_str (NMTCTfilter *tfilter, GError **error)
 }
 
 static const NMVariantAttributeSpec *const tc_tfilter_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("action", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                                         ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("action", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, ),
 	NULL,
 };
 
