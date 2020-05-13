@@ -7815,7 +7815,7 @@ _do_test_utils_str_utf8safe_unescape (const char *str, const char *expected, gsi
 	gs_free gpointer buf_free_1 = NULL;
 	gs_free char *str_free_1 = NULL;
 
-	s = nm_utils_buf_utf8safe_unescape (str, &l, &buf_free_1);
+	s = nm_utils_buf_utf8safe_unescape (str, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &l, &buf_free_1);
 	g_assert_cmpint (expected_len, ==, l);
 	g_assert_cmpstr (s, ==, expected);
 
@@ -7839,7 +7839,7 @@ _do_test_utils_str_utf8safe_unescape (const char *str, const char *expected, gsi
 	if (   expected
 	    && l == strlen (expected)) {
 		/* there are no embeeded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
-		s = nm_utils_str_utf8safe_unescape (str, &str_free_1);
+		s = nm_utils_str_utf8safe_unescape (str, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &str_free_1);
 		g_assert_cmpstr (s, ==, expected);
 		if (strchr (str, '\\')) {
 			g_assert (str_free_1 != str);
@@ -7908,10 +7908,10 @@ _do_test_utils_str_utf8safe (const char *str, gsize str_len, const char *expecte
 			g_assert (g_utf8_validate (str, -1, NULL));
 		}
 
-		g_assert (str == nm_utils_str_utf8safe_unescape (str_safe, &str_free_4));
+		g_assert (str == nm_utils_str_utf8safe_unescape (str_safe, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &str_free_4));
 		g_assert (!str_free_4);
 
-		str_free_5 = nm_utils_str_utf8safe_unescape_cp (str_safe);
+		str_free_5 = nm_utils_str_utf8safe_unescape_cp (str_safe, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 		if (str) {
 			g_assert (str_free_5 != str);
 			g_assert_cmpstr (str_free_5, ==, str);
@@ -7935,11 +7935,11 @@ _do_test_utils_str_utf8safe (const char *str, gsize str_len, const char *expecte
 		str_free_6 = g_strcompress (str_safe);
 		g_assert_cmpstr (str, ==, str_free_6);
 
-		str_free_7 = nm_utils_str_utf8safe_unescape_cp (str_safe);
+		str_free_7 = nm_utils_str_utf8safe_unescape_cp (str_safe, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 		g_assert (str_free_7 != str);
 		g_assert_cmpstr (str_free_7, ==, str);
 
-		s = nm_utils_str_utf8safe_unescape (str_safe, &str_free_8);
+		s = nm_utils_str_utf8safe_unescape (str_safe, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &str_free_8);
 		g_assert (str_free_8 != str);
 		g_assert (s == str_free_8);
 		g_assert_cmpstr (str_free_8, ==, str);

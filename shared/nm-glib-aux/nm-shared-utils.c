@@ -17,6 +17,9 @@
 #include "nm-errno.h"
 #include "nm-str-buf.h"
 
+G_STATIC_ASSERT (sizeof (NMUtilsNamedEntry) == sizeof (const char *));
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, value_ptr) == sizeof (const char *));
+
 /*****************************************************************************/
 
 const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
@@ -2456,11 +2459,12 @@ _str_buf_append_c_escape_octal (NMStrBuf *strbuf,
 }
 
 gconstpointer
-nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_free)
+nm_utils_buf_utf8safe_unescape (const char *str, NMUtilsStrUtf8SafeFlags flags, gsize *out_len, gpointer *to_free)
 {
+	gboolean strip_spaces = NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES);
 	NMStrBuf strbuf;
-	gsize len;
 	const char *s;
+	gsize len;
 
 	g_return_val_if_fail (to_free, NULL);
 	g_return_val_if_fail (out_len, NULL);
@@ -2471,16 +2475,29 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 		return NULL;
 	}
 
+	if (strip_spaces)
+		str = nm_str_skip_leading_spaces (str);
+
 	len = strlen (str);
 
 	s = memchr (str, '\\', len);
 	if (!s) {
+		if (   strip_spaces
+		    && len > 0
+		    && g_ascii_isspace (str[len - 1])) {
+			len--;
+			while (   len > 0
+			       && g_ascii_isspace (str[len - 1]))
+				len--;
+			*out_len = len;
+			return (*to_free = g_strndup (str, len));
+		}
 		*out_len = len;
 		*to_free = NULL;
 		return str;
 	}
 
-	nm_str_buf_init (&strbuf, len, FALSE);
+	nm_str_buf_init (&strbuf, len + 1u, FALSE);
 
 	nm_str_buf_append_len (&strbuf, str, s - str);
 	str = s;
@@ -2494,7 +2511,7 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 		ch = (++str)[0];
 
 		if (ch == '\0') {
-			// error. Trailing '\\'
+			/* error. Trailing '\\' */
 			break;
 		}
 
@@ -2533,13 +2550,25 @@ nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_fr
 
 		s = strchr (str, '\\');
 		if (!s) {
-			nm_str_buf_append (&strbuf, str);
+			gsize l = strlen (str);
+
+			if (strip_spaces) {
+				while (   l > 0
+				       && g_ascii_isspace (str[l - 1]))
+					l--;
+			}
+			nm_str_buf_append_len (&strbuf, str, l);
 			break;
 		}
 
 		nm_str_buf_append_len (&strbuf, str, s - str);
 		str = s;
 	}
+
+	/* assert that no reallocation was necessary. For one, unescaping should
+	 * never result in a longer string than the input. Also, when unescaping
+	 * secrets, we want to ensure that we don't leak secrets in memory. */
+	nm_assert (strbuf.allocated == len + 1u);
 
 	return (*to_free = nm_str_buf_finalize (&strbuf,
 	                                        out_len));
@@ -2673,13 +2702,19 @@ nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags
 /*****************************************************************************/
 
 const char *
-nm_utils_str_utf8safe_unescape (const char *str, char **to_free)
+nm_utils_str_utf8safe_unescape (const char *str, NMUtilsStrUtf8SafeFlags flags, char **to_free)
 {
+	const char *res;
 	gsize len;
 
 	g_return_val_if_fail (to_free, NULL);
 
-	return nm_utils_buf_utf8safe_unescape (str, &len, (gpointer *) to_free);
+	res = nm_utils_buf_utf8safe_unescape (str, flags, &len, (gpointer *) to_free);
+
+	nm_assert (   (!res && len == 0)
+	           || (strlen (res) <= len));
+
+	return res;
 }
 
 /**
@@ -2737,11 +2772,11 @@ nm_utils_str_utf8safe_escape_cp (const char *str, NMUtilsStrUtf8SafeFlags flags)
 }
 
 char *
-nm_utils_str_utf8safe_unescape_cp (const char *str)
+nm_utils_str_utf8safe_unescape_cp (const char *str, NMUtilsStrUtf8SafeFlags flags)
 {
 	char *s;
 
-	str = nm_utils_str_utf8safe_unescape (str, &s);
+	str = nm_utils_str_utf8safe_unescape (str, flags, &s);
 	return s ?: g_strdup (str);
 }
 

@@ -2186,7 +2186,7 @@ nm_ip_routing_rule_get_xifname_bin (const NMIPRoutingRule *self,
 	if (!xifname)
 		return FALSE;
 
-	bin = nm_utils_buf_utf8safe_unescape (xifname, &len, &bin_to_free);
+	bin = nm_utils_buf_utf8safe_unescape (xifname, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &len, &bin_to_free);
 
 	strncpy (out_xifname, bin, 16 /* IFNAMSIZ */);
 	out_xifname[15] = '\0';

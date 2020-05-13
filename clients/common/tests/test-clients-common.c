@@ -7,6 +7,7 @@
 
 #include "nm-meta-setting-access.h"
 #include "nm-vpn-helpers.h"
+#include "nm-client-utils.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -235,6 +236,77 @@ test_client_import_wireguard_missing (void)
 
 /*****************************************************************************/
 
+#define _do_test_parse_passwd_file(contents, success, exp_error_line, ...) \
+	G_STMT_START { \
+		static const NMUtilsNamedValue _values[] = { \
+			__VA_ARGS__ \
+		}; \
+		gs_free char *_contents = g_strndup (contents, NM_STRLEN (contents)); \
+		gs_unref_hashtable GHashTable *_secrets = NULL; \
+		gs_free_error GError *_local = NULL; \
+		gssize _error_line; \
+		GError **_p_local = nmtst_get_rand_bool () ? &_local : NULL; \
+		gssize *_p_error_line = nmtst_get_rand_bool () ? &_error_line : NULL; \
+		gboolean _success = !!(success); \
+		gssize _exp_error_line = (exp_error_line); \
+		int _i; \
+		\
+		g_assert (_success || (G_N_ELEMENTS (_values) == 0)); \
+		\
+		_secrets = nmc_utils_parse_passwd_file (_contents, _p_error_line, _p_local); \
+		\
+		g_assert (_success == (!!_secrets)); \
+		if (!_success) { \
+			if (_p_error_line) \
+				g_assert_cmpint (_exp_error_line, ==, *_p_error_line); \
+			if (_p_local) \
+				g_assert (_local); \
+		} else { \
+			if (_p_error_line) \
+				g_assert_cmpint (-1, ==, *_p_error_line); \
+			g_assert (!_local); \
+			\
+			for (_i = 0; _i < G_N_ELEMENTS (_values); _i++) { \
+				const NMUtilsNamedValue *_n = &_values[_i]; \
+				const char *_v; \
+				\
+				_v = g_hash_table_lookup (_secrets, _n->name); \
+				if (!_v) \
+					g_error ("cannot find key \"%s\"", _n->name); \
+				g_assert_cmpstr (_v, ==, _n->value_str); \
+			} \
+			\
+			g_assert_cmpint (g_hash_table_size (_secrets), ==, G_N_ELEMENTS (_values)); \
+		} \
+	} G_STMT_END
+
+#define _do_test_parse_passwd_file_bad( contents, exp_error_line) _do_test_parse_passwd_file (contents, FALSE, exp_error_line)
+#define _do_test_parse_passwd_file_good(contents, ...)            _do_test_parse_passwd_file (contents, TRUE,  -1, __VA_ARGS__)
+
+static void
+test_nmc_utils_parse_passwd_file (void)
+{
+	_do_test_parse_passwd_file_good ("");
+	_do_test_parse_passwd_file_bad ("x", 1);
+	_do_test_parse_passwd_file_bad ("\r\rx", 3);
+	_do_test_parse_passwd_file_good ("wifi.psk=abc",
+	                                 NM_UTILS_NAMED_VALUE_INIT ("802-11-wireless-security.psk", "abc") );
+	_do_test_parse_passwd_file_good ("wifi.psk:ABC\r"
+	                                 "wifi-sec.psk = abc ",
+	                                 NM_UTILS_NAMED_VALUE_INIT ("802-11-wireless-security.psk", "abc") );
+	_do_test_parse_passwd_file_good ("wifi.psk:  abc\r"
+	                                 "wifi-sec.psk2 = d\\145f\r\n"
+	                                 "  wifi.psk3 = e\\  \n"
+	                                 "  #wifi-sec.psk2 = \r\n"
+	                                 "  wifi-sec.psk4:",
+	                                 NM_UTILS_NAMED_VALUE_INIT ("802-11-wireless-security.psk",  "abc"),
+	                                 NM_UTILS_NAMED_VALUE_INIT ("802-11-wireless-security.psk2", "def"),
+	                                 NM_UTILS_NAMED_VALUE_INIT ("802-11-wireless-security.psk3", "e "),
+	                                 NM_UTILS_NAMED_VALUE_INIT ("802-11-wireless-security.psk4", "") );
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -248,6 +320,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/client/import/wireguard/test2", test_client_import_wireguard_test2);
 	g_test_add_func ("/client/import/wireguard/test3", test_client_import_wireguard_test3);
 	g_test_add_func ("/client/import/wireguard/missing", test_client_import_wireguard_missing);
+	g_test_add_func ("/client/test_nmc_utils_parse_passwd_file", test_nmc_utils_parse_passwd_file);
 
 	return g_test_run ();
 }

@@ -1184,20 +1184,38 @@ GType nm_g_type_find_implementing_class_for_property (GType gtype,
 
 typedef enum {
 	NM_UTILS_STR_UTF8_SAFE_FLAG_NONE                = 0,
+
+	/* This flag only has an effect during escaping. */
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL         = 0x0001,
+
+	/* This flag only has an effect during escaping. */
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII    = 0x0002,
+
+	/* This flag only has an effect during escaping to ensure we
+	 * don't leak secrets in memory. Note that during unescape we
+	 * know the maximum result size from the beginning, and no
+	 * reallocation happens. Thus, unescape always avoids leaking
+	 * secrets already. */
 	NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET              = 0x0004,
+
+	/* This flag only has an effect during unescaping. It means
+	 * that non-escaped whitespaces (g_ascii_isspace()) will be
+	 * stripped from the front and end of the string. Note that
+	 * this flag is only useful for gracefully accepting user input
+	 * with spaces. With this flag, escape and unescape may no longer
+	 * yield the original input. */
+	NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES    = 0x0008,
 } NMUtilsStrUtf8SafeFlags;
 
 const char *nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags, char **to_free);
 const char *nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags, char **to_free);
-gconstpointer nm_utils_buf_utf8safe_unescape (const char *str, gsize *out_len, gpointer *to_free);
+gconstpointer nm_utils_buf_utf8safe_unescape (const char *str, NMUtilsStrUtf8SafeFlags flags, gsize *out_len, gpointer *to_free);
 
 const char *nm_utils_str_utf8safe_escape   (const char *str, NMUtilsStrUtf8SafeFlags flags, char **to_free);
-const char *nm_utils_str_utf8safe_unescape (const char *str, char **to_free);
+const char *nm_utils_str_utf8safe_unescape (const char *str, NMUtilsStrUtf8SafeFlags flags, char **to_free);
 
 char *nm_utils_str_utf8safe_escape_cp   (const char *str, NMUtilsStrUtf8SafeFlags flags);
-char *nm_utils_str_utf8safe_unescape_cp (const char *str);
+char *nm_utils_str_utf8safe_unescape_cp (const char *str, NMUtilsStrUtf8SafeFlags flags);
 
 char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags);
 
@@ -1388,6 +1406,8 @@ typedef struct {
 		gconstpointer value_ptr;
 	};
 } NMUtilsNamedValue;
+
+#define NM_UTILS_NAMED_VALUE_INIT(n, v)     { .name = (n), .value_ptr = (v) }
 
 NMUtilsNamedValue *nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
                                                                   guint *out_len,

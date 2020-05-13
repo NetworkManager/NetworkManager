@@ -139,7 +139,7 @@ _fixup_string (const char *desc,
 		return NULL;
 
 	/* restore original non-UTF-8-safe text. */
-	desc_full = nm_utils_str_utf8safe_unescape_cp (desc);
+	desc_full = nm_utils_str_utf8safe_unescape_cp (desc, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
 
 	/* replace all invalid UTF-8 bytes with space. */
 	p = desc_full;

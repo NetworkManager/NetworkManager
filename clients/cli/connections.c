@@ -2694,91 +2694,6 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 	}
 }
 
-/**
- * parse_passwords:
- * @passwd_file: file with passwords to parse
- * @error: location to store error, or %NULL
- *
- * Parse passwords given in @passwd_file and insert them into a hash table.
- * Example of @passwd_file contents:
- *   wifi.psk:tajne heslo
- *   802-1x.password:krakonos
- *   802-11-wireless-security:leap-password:my leap password
- *
- * Returns: hash table with parsed passwords, or %NULL on an error
- */
-static GHashTable *
-parse_passwords (const char *passwd_file, GError **error)
-{
-	gs_unref_hashtable GHashTable *pwds_hash = NULL;
-	gs_free char *contents = NULL;
-	gsize len = 0;
-	GError *local_err = NULL;
-	gs_free const char **strv = NULL;
-	const char *const*iter;
-	char *pwd_spec, *pwd, *prop;
-	const char *setting;
-
-	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
-
-	if (!passwd_file)
-		return g_steal_pointer (&pwds_hash);
-
-	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("failed to read passwd-file '%s': %s"),
-		             passwd_file, local_err->message);
-		g_error_free (local_err);
-		return NULL;
-	}
-
-	strv = nm_utils_strsplit_set (contents, "\r\n");
-	for (iter = strv; strv && *iter; iter++) {
-		gs_free char *iter_s = g_strdup (*iter);
-
-		pwd = strchr (iter_s, ':');
-		if (!pwd) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing colon in 'password' entry '%s'"), *iter);
-			return NULL;
-		}
-		*(pwd++) = '\0';
-
-		prop = strchr (iter_s, '.');
-		if (!prop) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("missing dot in 'password' entry '%s'"), *iter);
-			return NULL;
-		}
-		*(prop++) = '\0';
-
-		setting = iter_s;
-		while (g_ascii_isspace (*setting))
-			setting++;
-		/* Accept wifi-sec or wifi instead of cumbersome '802-11-wireless-security' */
-		if (!strcmp (setting, "wifi-sec") || !strcmp (setting, "wifi"))
-			setting = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
-		if (nm_setting_lookup_type (setting) == G_TYPE_INVALID) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid setting name in 'password' entry '%s'"), setting);
-			return NULL;
-		}
-
-		if (   nm_streq (setting, "vpn")
-		    && g_str_has_prefix (prop, "secret.")) {
-			/* in 1.12.0, we wrongly required the VPN secrets to be named
-			 * "vpn.secret". It should be "vpn.secrets". Work around it
-			 * (rh#1628833). */
-			pwd_spec = g_strdup_printf ("vpn.secrets.%s", &prop[NM_STRLEN ("secret.")]);
-		} else
-			pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
-
-		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
-	}
-
-	return g_steal_pointer (&pwds_hash);
-}
-
 static gboolean
 nmc_activate_connection (NmCli *nmc,
                          NMConnection *connection,
@@ -2827,9 +2742,27 @@ nmc_activate_connection (NmCli *nmc,
 	}
 
 	/* Parse passwords given in passwords file */
-	pwds_hash = parse_passwords (pwds, error);
-	if (!pwds_hash)
-		return FALSE;
+	{
+		gs_free_error GError *local = NULL;
+		gssize error_line;
+
+		pwds_hash = nmc_utils_read_passwd_file (pwds, &error_line, &local);
+		if (!pwds_hash) {
+			if (error_line >= 0) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("invalid passwd-file '%s' at line %zd: %s"),
+				             pwds,
+				             error_line,
+				             local->message);
+			} else {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("invalid passwd-file '%s': %s"),
+				             pwds,
+				             local->message);
+			}
+			return FALSE;
+		}
+	}
 
 	if (nmc->pwds_hash)
 		g_hash_table_destroy (nmc->pwds_hash);

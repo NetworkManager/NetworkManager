@@ -4673,7 +4673,7 @@ nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name)
 
 	g_return_val_if_fail (utf8safe_name, FALSE);
 
-	bin = nm_utils_buf_utf8safe_unescape (utf8safe_name, &len, &bin_to_free);
+	bin = nm_utils_buf_utf8safe_unescape (utf8safe_name, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &len, &bin_to_free);
 
 	if (bin_to_free) {
 		/* some unescaping happened... */
