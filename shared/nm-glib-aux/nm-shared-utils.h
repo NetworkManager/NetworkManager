@@ -2007,4 +2007,16 @@ nm_strvarray_set_strv (GArray **array, const char *const*strv)
 		nm_strvarray_add (*array, strv[0]);
 }
 
+/*****************************************************************************/
+
+void _nm_utils_format_variant_attributes_full (GString *str,
+                                               const NMUtilsNamedValue *values,
+                                               guint num_values,
+                                               char attr_separator,
+                                               char key_value_separator);
+
+char *_nm_utils_format_variant_attributes (GHashTable *attributes,
+                                           char attr_separator,
+                                           char key_value_separator);
+
 #endif /* __NM_SHARED_UTILS_H__ */

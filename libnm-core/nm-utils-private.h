@@ -67,11 +67,6 @@ char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize lengt
 
 gboolean    _nm_utils_hwaddr_link_local_valid (const char *mac);
 
-void        _nm_utils_format_variant_attributes_full (GString *str,
-                                                      const NMUtilsNamedValue *values,
-                                                      guint num_values,
-                                                      char attr_separator,
-                                                      char key_value_separator);
 gboolean    _nm_sriov_vf_parse_vlans (NMSriovVF *vf, const char *str, GError **error);
 
 gboolean    _nm_utils_bridge_vlan_verify_list (GPtrArray *vlans,

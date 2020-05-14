@@ -5449,23 +5449,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 }
 
 static char *
-attribute_escape (const char *src, char c1, char c2)
-{
-	char *ret, *dest;
-
-	dest = ret = g_malloc (strlen (src) * 2 + 1);
-
-	while (*src) {
-		if (*src == c1 || *src == c2 || *src == '\\')
-			*dest++ = '\\';
-		*dest++ = *src++;
-	}
-	*dest++ = '\0';
-
-	return ret;
-}
-
-static char *
 attribute_unescape (const char *start, const char *end)
 {
 	char *ret, *dest;
@@ -5699,55 +5682,6 @@ next:
 	return g_steal_pointer (&ht);
 }
 
-void
-_nm_utils_format_variant_attributes_full (GString *str,
-                                          const NMUtilsNamedValue *values,
-                                          guint num_values,
-                                          char attr_separator,
-                                          char key_value_separator)
-{
-	const char *name, *value;
-	GVariant *variant;
-	char *escaped;
-	char buf[64];
-	char sep = 0;
-	guint i;
-
-	for (i = 0; i < num_values; i++) {
-		name = values[i].name;
-		variant = (GVariant *) values[i].value_ptr;
-		value = NULL;
-
-		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
-			value = nm_sprintf_buf (buf, "%u", g_variant_get_uint32 (variant));
-		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTE))
-			value = nm_sprintf_buf (buf, "%hhu", g_variant_get_byte (variant));
-		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN))
-			value = g_variant_get_boolean (variant) ? "true" : "false";
-		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING))
-			value = g_variant_get_string (variant, NULL);
-		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTESTRING))
-			value = g_variant_get_bytestring (variant);
-		else
-			continue;
-
-		if (sep)
-			g_string_append_c (str, sep);
-
-		escaped = attribute_escape (name, attr_separator, key_value_separator);
-		g_string_append (str, escaped);
-		g_free (escaped);
-
-		g_string_append_c (str, key_value_separator);
-
-		escaped = attribute_escape (value, attr_separator, key_value_separator);
-		g_string_append (str, escaped);
-		g_free (escaped);
-
-		sep = attr_separator;
-	}
-}
-
 /*
  * nm_utils_format_variant_attributes:
  * @attributes: (element-type utf8 GVariant): a #GHashTable mapping attribute names to #GVariant values
@@ -5766,25 +5700,9 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
                                     char attr_separator,
                                     char key_value_separator)
 {
-	GString *str = NULL;
-	gs_free NMUtilsNamedValue *values = NULL;
-	guint len;
-
-	g_return_val_if_fail (attr_separator, NULL);
-	g_return_val_if_fail (key_value_separator, NULL);
-
-	if (!attributes || !g_hash_table_size (attributes))
-		return NULL;
-
-	values = nm_utils_named_values_from_str_dict (attributes, &len);
-
-	str = g_string_new ("");
-	_nm_utils_format_variant_attributes_full (str,
-	                                          values,
-	                                          len,
-	                                          attr_separator,
-	                                          key_value_separator);
-	return g_string_free (str, FALSE);
+	return _nm_utils_format_variant_attributes (attributes,
+	                                            attr_separator,
+	                                            key_value_separator);
 }
 
 /*****************************************************************************/
