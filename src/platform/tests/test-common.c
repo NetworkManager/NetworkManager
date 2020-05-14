@@ -1380,7 +1380,7 @@ nmtstp_link_ip6gre_add (NMPlatform *platform,
 			                                      100);
 		}
 	} else
-		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_ip6gre_add (platform, name, lnk, &pllink));
+		success = NMTST_NM_ERR_SUCCESS (nm_platform_link_ip6gre_add (platform, name, NULL, 0, lnk, &pllink));
 
 	_assert_pllink (platform, success, pllink, name, lnk->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE);
 
