@@ -322,12 +322,6 @@ guint _nm_setting_gendata_get_all (NMSetting *setting,
                                    const char *const**out_names,
                                    GVariant *const**out_values);
 
-gboolean _nm_setting_gendata_reset_from_hash (NMSetting *setting,
-                                              GHashTable *new);
-
-void _nm_setting_gendata_to_gvalue (NMSetting *setting,
-                                    GValue *value);
-
 GVariant *nm_setting_gendata_get (NMSetting *setting,
                                   const char *name);
 
