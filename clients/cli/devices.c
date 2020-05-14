@@ -4597,10 +4597,10 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 			set_val_strc (arr, 13, str);
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_CHASSIS_ID_TYPE, &value))
-			set_val_strc (arr, 14, g_strdup_printf ("%u", value));
+			set_val_str (arr, 14, g_strdup_printf ("%u", value));
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_PORT_ID_TYPE, &value))
-			set_val_strc (arr, 15, g_strdup_printf ("%u", value));
+			set_val_str (arr, 15, g_strdup_printf ("%u", value));
 
 		g_ptr_array_add (out.output_data, arr);
 	}
