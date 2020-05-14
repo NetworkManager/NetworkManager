@@ -22,6 +22,21 @@
 
 /*****************************************************************************/
 
+static const GVariantType *
+get_variant_type_from_ethtool_id (NMEthtoolID ethtool_id)
+{
+	if (nm_ethtool_id_is_feature (ethtool_id))
+		return G_VARIANT_TYPE_BOOLEAN;
+
+	if (   nm_ethtool_id_is_coalesce (ethtool_id)
+	    || nm_ethtool_id_is_ring (ethtool_id))
+		return G_VARIANT_TYPE_UINT32;
+
+	return NULL;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_ethtool_optname_is_feature:
  * @optname: (allow-none): the option name to check
@@ -497,32 +512,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	GVariant *variant;
 
 	hash = _nm_setting_gendata_hash (setting, FALSE);
-
 	if (!hash)
-		goto out;
+		return TRUE;
 
 	g_hash_table_iter_init (&iter, hash);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &optname, (gpointer *) &variant)) {
-		if (nm_ethtool_optname_is_feature (optname)) {
-			if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN)) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("offload feature has invalid variant type"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
-				return FALSE;
-			}
-		} else if (   nm_ethtool_optname_is_coalesce (optname)
-		           || nm_ethtool_optname_is_ring (optname)) {
-			if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32)) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("setting has invalid variant type"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
-				return FALSE;
-			}
-		} else {
+		const GVariantType *variant_type;
+		NMEthtoolID ethtool_id;
+
+		ethtool_id = nm_ethtool_id_get_by_name (optname);
+		variant_type = get_variant_type_from_ethtool_id (ethtool_id);
+
+		if (!variant_type) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -530,9 +531,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
 			return FALSE;
 		}
+
+		if (!g_variant_is_of_type (variant, variant_type)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("setting has invalid variant type"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
+			return FALSE;
+		}
 	}
 
-out:
 	return TRUE;
 }
 
@@ -543,21 +552,20 @@ get_variant_type (const NMSettInfoSetting *sett_info,
                   const char *name,
                   GError **error)
 {
-	NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name (name);
+	const GVariantType *variant_type;
 
-	if (nm_ethtool_id_is_feature (ethtool_id))
-		return G_VARIANT_TYPE_BOOLEAN;
+	variant_type = get_variant_type_from_ethtool_id (nm_ethtool_id_get_by_name (name));
 
-	if (   nm_ethtool_id_is_coalesce (ethtool_id)
-	    || nm_ethtool_id_is_ring (ethtool_id))
-		return G_VARIANT_TYPE_UINT32;
+	if (!variant_type) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("unknown ethtool option '%s'"),
+		             name);
+		return NULL;
+	}
 
-	g_set_error (error,
-	             NM_CONNECTION_ERROR,
-	             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-	             _("unknown ethtool option '%s'"),
-	             name);
-	return NULL;
+	return variant_type;
 }
 
 /*****************************************************************************/
