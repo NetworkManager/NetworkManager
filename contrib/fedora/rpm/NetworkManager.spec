@@ -389,19 +389,18 @@ This package contains NetworkManager support for PPP.
 
 
 %package libnm
-Summary: Libraries for adding NetworkManager support to applications (new API).
+Summary: Libraries for adding NetworkManager support to applications.
 Group: Development/Libraries
 Conflicts: NetworkManager-glib < %{epoch}:%{version}-%{release}
 License: LGPLv2+
 
 %description libnm
 This package contains the libraries that make it easier to use some
-NetworkManager functionality from applications.  This is the new
-NetworkManager API.  See also NetworkManager-glib.
+NetworkManager functionality from applications.
 
 
 %package libnm-devel
-Summary: Header files for adding NetworkManager support to applications (new API).
+Summary: Header files for adding NetworkManager support to applications.
 Group: Development/Libraries
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
@@ -410,8 +409,7 @@ License: LGPLv2+
 
 %description libnm-devel
 This package contains the header and pkg-config files for development
-applications using NetworkManager functionality from applications.  This
-is the new NetworkManager API. See also NetworkManager-glib-devel.
+applications using NetworkManager functionality from applications.
 
 
 %if %{with connectivity_fedora}
