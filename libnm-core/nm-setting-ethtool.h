@@ -147,40 +147,6 @@ NM_AVAILABLE_IN_1_14
 NM_DEPRECATED_IN_1_26
 void              nm_setting_ethtool_clear_features (NMSettingEthtool *setting);
 
-NM_AVAILABLE_IN_1_26
-gboolean          nm_setting_ethtool_get_coalesce (NMSettingEthtool *setting,
-                                                   const char *optname,
-                                                   guint32 *out_value);
-
-NM_AVAILABLE_IN_1_26
-void              nm_setting_ethtool_set_coalesce (NMSettingEthtool *setting,
-                                                   const char *optname,
-                                                   guint32 value);
-
-NM_AVAILABLE_IN_1_26
-void              nm_setting_ethtool_clear_coalesce (NMSettingEthtool *setting,
-                                                     const char *optname);
-
-NM_AVAILABLE_IN_1_26
-void              nm_setting_ethtool_clear_coalesce_all (NMSettingEthtool *setting);
-
-NM_AVAILABLE_IN_1_26
-gboolean          nm_setting_ethtool_get_ring (NMSettingEthtool *setting,
-                                               const char *optname,
-                                               guint32 *out_value);
-
-NM_AVAILABLE_IN_1_26
-void              nm_setting_ethtool_set_ring (NMSettingEthtool *setting,
-                                               const char *optname,
-                                               guint32 value);
-
-NM_AVAILABLE_IN_1_26
-void              nm_setting_ethtool_clear_ring (NMSettingEthtool *setting,
-                                                 const char *optname);
-
-NM_AVAILABLE_IN_1_26
-void              nm_setting_ethtool_clear_ring_all (NMSettingEthtool *setting);
-
 G_END_DECLS
 
 #endif /* __NM_SETTING_ETHTOOL_H__ */

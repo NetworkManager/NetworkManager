@@ -1710,14 +1710,6 @@ global:
 	nm_setting_bridge_get_multicast_startup_query_count;
 	nm_setting_bridge_get_multicast_startup_query_interval;
 	nm_setting_connection_get_mud_url;
-	nm_setting_ethtool_clear_coalesce;
-	nm_setting_ethtool_clear_coalesce_all;
-	nm_setting_ethtool_clear_ring;
-	nm_setting_ethtool_clear_ring_all;
-	nm_setting_ethtool_get_coalesce;
-	nm_setting_ethtool_get_ring;
-	nm_setting_ethtool_set_coalesce;
-	nm_setting_ethtool_set_ring;
 	nm_setting_match_add_driver;
 	nm_setting_match_add_kernel_command_line;
 	nm_setting_match_clear_drivers;
