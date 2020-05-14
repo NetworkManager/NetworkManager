@@ -337,6 +337,20 @@ NM_AVAILABLE_IN_1_26
 GVariant *nm_setting_option_get (NMSetting *setting,
                                  const char *opt_name);
 
+NM_AVAILABLE_IN_1_26
+gboolean nm_setting_option_get_boolean (NMSetting *setting,
+                                        const char *opt_name,
+                                        gboolean *out_value);
+
+NM_AVAILABLE_IN_1_26
+void nm_setting_option_set (NMSetting *setting,
+                            const char *opt_name,
+                            GVariant *variant);
+
+NM_AVAILABLE_IN_1_26
+void nm_setting_option_set_boolean (NMSetting *setting,
+                                    const char *opt_name,
+                                    gboolean value);
 
 /*****************************************************************************/
 

@@ -1733,4 +1733,7 @@ global:
 	nm_setting_match_remove_kernel_command_line;
 	nm_setting_match_remove_kernel_command_line_by_value;
 	nm_setting_option_get;
+	nm_setting_option_get_boolean;
+	nm_setting_option_set;
+	nm_setting_option_set_boolean;
 } libnm_1_24_0;

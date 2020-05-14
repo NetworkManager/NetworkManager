@@ -2611,6 +2611,146 @@ nm_setting_option_get (NMSetting *setting,
 	return gendata ? g_hash_table_lookup (gendata->hash, opt_name) : NULL;
 }
 
+/**
+ * nm_setting_option_get_boolean:
+ * @setting: the #NMSetting
+ * @opt_name: the option to get
+ * @out_value: (allow-none) (out): the optional output value.
+ *   If the option is unset, %FALSE will be returned.
+ *
+ * Returns: %TRUE if @opt_name is set to a boolean variant.
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_setting_option_get_boolean (NMSetting *setting,
+                               const char *opt_name,
+                               gboolean *out_value)
+{
+	GVariant *v;
+
+	v = nm_setting_option_get (NM_SETTING (setting), opt_name);
+	if (   v
+	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
+		NM_SET_OUT (out_value, g_variant_get_boolean (v));
+		return TRUE;
+	}
+	NM_SET_OUT (out_value, FALSE);
+	return FALSE;
+}
+
+/**
+ * nm_setting_option_set:
+ * @setting: the #NMSetting
+ * @opt_name: the option name to set
+ * @variant: (allow-none): the variant to set.
+ *
+ * If @variant is %NULL, this clears the option if it is set.
+ * Otherwise, @variant is set as the option. If @variant is
+ * a floating reference, it will be consumed.
+ *
+ * Note that not all setting types support options. It is a bug
+ * setting a variant to a setting that doesn't support it.
+ * Currently only #NMSettingEthtool supports it.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_set (NMSetting *setting,
+                       const char *opt_name,
+                       GVariant *variant)
+{
+	GVariant *old_variant;
+	gboolean changed_name;
+	gboolean changed_value;
+	GHashTable *hash;
+
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (opt_name);
+
+	hash = _nm_setting_option_hash (setting, variant != NULL);
+
+	if (!variant) {
+		if (hash) {
+			if (g_hash_table_remove (hash, opt_name))
+				_nm_setting_option_notify (setting, TRUE);
+		}
+		return;
+	}
+
+	/* Currently, it is a bug setting any option, unless the setting type supports it.
+	 * And currently, only NMSettingEthtool supports it.
+	 *
+	 * In the future, more setting types may support it. Or we may relax this so
+	 * that options can be attached to all setting types (to indicate "unsupported"
+	 * settings for forward compatibility).
+	 *
+	 * As it is today, internal code will only add gendata options to NMSettingEthtool,
+	 * and there exists not public API to add such options. Still, it is permissible
+	 * to call get(), clear() and set(variant=NULL) also on settings that don't support
+	 * it, as these operations don't add options.
+	 */
+	g_return_if_fail (_nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting))->detail.gendata_info);
+
+	old_variant = g_hash_table_lookup (hash, opt_name);
+
+	changed_name = (old_variant == NULL);
+	changed_value =    changed_name
+	                || !g_variant_equal (old_variant, variant);
+
+	/* We always want to replace the variant, even if it has
+	 * the same value according to g_variant_equal(). The reason
+	 * is that we want to take a reference on @variant, because
+	 * that is what the user might expect. */
+	g_hash_table_insert (hash,
+	                     g_strdup (opt_name),
+	                     g_variant_ref_sink (variant));
+
+	if (changed_value)
+		_nm_setting_option_notify (setting, !changed_name);
+}
+
+/**
+ * nm_setting_option_set_boolean:
+ * @setting: the #NMSetting
+ * @value: the value to set.
+ *
+ * Like nm_setting_option_set() to set a boolean GVariant.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_set_boolean (NMSetting *setting,
+                               const char *opt_name,
+                               gboolean value)
+{
+	GVariant *old_variant;
+	gboolean changed_name;
+	gboolean changed_value;
+	GHashTable *hash;
+
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (opt_name);
+
+	value = (!!value);
+
+	hash = _nm_setting_option_hash (setting, TRUE);
+
+	old_variant = g_hash_table_lookup (hash, opt_name);
+
+	changed_name = (old_variant == NULL);
+	changed_value =    changed_name
+	                || (   !g_variant_is_of_type (old_variant, G_VARIANT_TYPE_BOOLEAN)
+	                    || g_variant_get_boolean (old_variant) != value);
+
+	g_hash_table_insert (hash,
+	                     g_strdup (opt_name),
+	                     g_variant_ref_sink (g_variant_new_boolean (value)));
+
+	if (changed_value)
+		_nm_setting_option_notify (setting, !changed_name);
+}
+
 /*****************************************************************************/
 
 static void
