@@ -362,6 +362,10 @@ void nm_setting_option_set_boolean (NMSetting *setting,
                                     const char *opt_name,
                                     gboolean value);
 
+NM_AVAILABLE_IN_1_26
+const char *const*nm_setting_option_get_all_names (NMSetting *setting,
+                                                   guint *out_len);
+
 /*****************************************************************************/
 
 const GVariantType *nm_setting_get_dbus_property_type (NMSetting *setting,
