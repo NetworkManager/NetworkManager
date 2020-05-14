@@ -32,6 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "platform/nmp-object.h"
 #include "platform/nmp-rules-manager.h"
 #include "ndisc/nm-ndisc.h"
@@ -185,7 +186,7 @@ typedef struct {
 	int ifindex;
 	NMEthtoolFeatureStates *features;
 	NMTernary requested[_NM_ETHTOOL_ID_FEATURE_NUM];
-	NMEthtoolCoalesceStates *coalesce;
+	NMEthtoolCoalesceState *coalesce;
 } EthtoolState;
 
 /*****************************************************************************/
@@ -868,7 +869,7 @@ static gboolean
 _ethtool_init_coalesce (NMDevice *self,
                         NMPlatform *platform,
                         NMSettingEthtool *s_ethtool,
-                        NMEthtoolCoalesceStates *coalesce)
+                        NMEthtoolCoalesceState *coalesce)
 {
 	GHashTable *hash;
 	GHashTableIter iter;
@@ -904,14 +905,12 @@ _ethtool_init_coalesce (NMDevice *self,
 	return (!!n_coalesce_set);
 }
 
-
-
 static void
 _ethtool_coalesce_reset (NMDevice *self,
                          NMPlatform *platform,
                          EthtoolState *ethtool_state)
 {
-	gs_free NMEthtoolCoalesceStates *coalesce = NULL;
+	gs_free NMEthtoolCoalesceState *coalesce = NULL;
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (NM_IS_PLATFORM (platform));
@@ -919,13 +918,17 @@ _ethtool_coalesce_reset (NMDevice *self,
 
 	coalesce = g_steal_pointer (&ethtool_state->coalesce);
 
+	if (!coalesce)
+		return;
+
 	if (!nm_platform_ethtool_set_coalesce (platform,
 	                                       ethtool_state->ifindex,
-	                                       coalesce,
-	                                       FALSE))
+	                                       coalesce)) {
 		_LOGW (LOGD_DEVICE, "ethtool: failure resetting one or more coalesce settings");
-	else
-		_LOGD (LOGD_DEVICE, "ethtool: coalesce settings successfully reset");
+		return;
+	}
+
+	_LOGD (LOGD_DEVICE, "ethtool: coalesce settings successfully reset");
 }
 
 static void
@@ -934,37 +937,39 @@ _ethtool_coalesce_set (NMDevice *self,
                        EthtoolState *ethtool_state,
                        NMSettingEthtool *s_ethtool)
 {
-	gs_free NMEthtoolCoalesceStates *coalesce = NULL;
+	NMEthtoolCoalesceState coalesce_old;
+	NMEthtoolCoalesceState coalesce_new;
 
 	nm_assert (ethtool_state);
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (NM_IS_PLATFORM (platform));
 	nm_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
 
-	coalesce = nm_platform_ethtool_get_link_coalesce (platform,
-	                                                  ethtool_state->ifindex);
-
-	if (!coalesce) {
+	if (!nm_platform_ethtool_get_link_coalesce (platform,
+	                                            ethtool_state->ifindex,
+	                                            &coalesce_old)) {
 		_LOGW (LOGD_DEVICE, "ethtool: failure getting coalesce settings (cannot read)");
 		return;
 	}
 
+	coalesce_new = coalesce_old;
+
 	if (!_ethtool_init_coalesce (self,
 	                             platform,
 	                             s_ethtool,
-	                             coalesce))
+	                             &coalesce_new))
 		return;
+
+	ethtool_state->coalesce = nm_memdup (&coalesce_old, sizeof (coalesce_old));
 
 	if (!nm_platform_ethtool_set_coalesce (platform,
 	                                       ethtool_state->ifindex,
-	                                       coalesce,
-	                                       TRUE)) {
+	                                       &coalesce_new)) {
 		_LOGW (LOGD_DEVICE, "ethtool: failure setting coalesce settings");
 		return;
 	}
-	_LOGD (LOGD_DEVICE, "ethtool: coalesce settings successfully set");
 
-	ethtool_state->coalesce = g_steal_pointer (&coalesce);
+	_LOGD (LOGD_DEVICE, "ethtool: coalesce settings successfully set");
 }
 
 static void

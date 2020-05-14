@@ -845,31 +845,26 @@ ethtool_get_coalesce (SocketHandle *shandle,
 	return TRUE;
 }
 
-
-NMEthtoolCoalesceStates *
-nmp_utils_ethtool_get_coalesce (int ifindex)
+gboolean
+nmp_utils_ethtool_get_coalesce (int ifindex,
+                                NMEthtoolCoalesceState *coalesce)
 {
-	gs_free NMEthtoolCoalesceStates *coalesce = NULL;
 	nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT (ifindex);
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (coalesce, FALSE);
 
-	coalesce = g_new0 (NMEthtoolCoalesceStates, 1);
-
-	if (!ethtool_get_coalesce (&shandle, &coalesce->old_state)) {
+	if (!ethtool_get_coalesce (&shandle, coalesce)) {
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure getting coalesce settings",
 		              ifindex,
 		              "get-coalesce");
-		return NULL;
+		return FALSE;
 	}
-
-	/* copy into requested as well, so that they're merged when applying */
-	coalesce->requested_state = coalesce->old_state;
 
 	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: retrieved kernel coalesce settings",
 	              ifindex,
 	              "get-coalesce");
-	return g_steal_pointer (&coalesce);
+	return TRUE;
 }
 
 static gboolean
@@ -916,32 +911,23 @@ ethtool_set_coalesce (SocketHandle *shandle,
 
 gboolean
 nmp_utils_ethtool_set_coalesce (int ifindex,
-                                const NMEthtoolCoalesceStates *coalesce,
-                                gboolean do_set)
+                                const NMEthtoolCoalesceState *coalesce)
 {
-	gboolean success;
 	nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT (ifindex);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (coalesce, FALSE);
 
-	if (do_set)
-		success = ethtool_set_coalesce (&shandle, &coalesce->requested_state);
-	else
-		success = ethtool_set_coalesce (&shandle, &coalesce->old_state);
-
-	if (!success) {
-		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure %s coalesce settings",
+	if (!ethtool_set_coalesce (&shandle, coalesce)) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure setting coalesce settings",
 		              ifindex,
-		              "set-coalesce",
-		              do_set ? "setting" : "resetting");
+		              "set-coalesce");
 		return FALSE;
 	}
 
-	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s kernel coalesce settings",
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: set kernel coalesce settings",
 	              ifindex,
-	              "set-coalesce",
-	              do_set ? "set" : "reset");
+	              "set-coalesce");
 	return TRUE;
 }
 
