@@ -4406,42 +4406,34 @@ parse_ethtool_option (const char *value,
 		/* skip ethtool type && interface name */
 		w_iter = &words[2];
 
-		if (ethtool_type == NM_ETHTOOL_TYPE_FEATURE) {
-			while (w_iter && *w_iter) {
+		while (w_iter && *w_iter) {
+			if (ethtool_type == NM_ETHTOOL_TYPE_FEATURE) {
 				w_iter = _next_ethtool_options_nmternary (w_iter,
 				                                          ethtool_type,
 				                                          &ifcfg_option);
 
-				if (ifcfg_option.has_value)
-					nm_setting_ethtool_set_feature (*out_s_ethtool,
-					                                ifcfg_option.optname,
-					                                ifcfg_option.v.nmternary);
+				if (ifcfg_option.has_value) {
+					nm_setting_option_set_boolean (NM_SETTING (*out_s_ethtool),
+					                               ifcfg_option.optname,
+					                               ifcfg_option.v.nmternary != NM_TERNARY_FALSE);
+				}
 			}
-			return;
-		}
-		if (NM_IN_SET (ethtool_type,
-		               NM_ETHTOOL_TYPE_COALESCE,
-		               NM_ETHTOOL_TYPE_RING)) {
-			while (w_iter && *w_iter) {
+			if (NM_IN_SET (ethtool_type,
+			               NM_ETHTOOL_TYPE_COALESCE,
+			               NM_ETHTOOL_TYPE_RING)) {
 				w_iter = _next_ethtool_options_uint32 (w_iter,
 				                                       ethtool_type,
 				                                       &ifcfg_option);
 
 				if (ifcfg_option.has_value) {
-					if (ethtool_type == NM_ETHTOOL_TYPE_COALESCE)
-						nm_setting_ethtool_set_coalesce (*out_s_ethtool,
-						                                 ifcfg_option.optname,
-						                                 ifcfg_option.v.u32);
-					else
-						nm_setting_ethtool_set_ring (*out_s_ethtool,
-						                             ifcfg_option.optname,
-						                             ifcfg_option.v.u32);
+					nm_setting_option_set_uint32 (NM_SETTING (*out_s_ethtool),
+					                              ifcfg_option.optname,
+					                              ifcfg_option.v.u32);
 				}
 			}
-			return;
 		}
-		/* unsupported ethtool type */
-		nm_assert_not_reached();
+
+		return;
 	}
 
 	/* /sbin/ethtool -s ${REALDEVICE} $opts */

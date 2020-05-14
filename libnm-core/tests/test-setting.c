@@ -1499,6 +1499,52 @@ test_team_setting (void)
 /*****************************************************************************/
 
 static void
+_setting_ethtool_set_feature (NMSettingEthtool *s_ethtool,
+                              const char *opt_name,
+                              NMTernary value)
+{
+	g_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
+
+	if (nmtst_get_rand_bool ()) {
+		nm_setting_ethtool_set_feature (s_ethtool, opt_name, value);
+		return;
+	}
+
+	if (value == NM_TERNARY_DEFAULT) {
+		nm_setting_option_set (NM_SETTING (s_ethtool), opt_name, NULL);
+		return;
+	}
+
+	if (nmtst_get_rand_bool ())
+		nm_setting_option_set_boolean (NM_SETTING (s_ethtool), opt_name, value);
+	else
+		nm_setting_option_set (NM_SETTING (s_ethtool), opt_name, g_variant_new_boolean (value));
+}
+
+static NMTernary
+_setting_ethtool_get_feature (NMSettingEthtool *s_ethtool,
+                              const char *opt_name)
+{
+	GVariant *v;
+	gboolean b;
+
+	switch (nmtst_get_rand_uint32 () % 3) {
+	case 0:
+		return nm_setting_ethtool_get_feature (s_ethtool, opt_name);
+	case 1:
+		if (!nm_setting_option_get_boolean (NM_SETTING (s_ethtool), opt_name, &b))
+			return NM_TERNARY_DEFAULT;
+		return b;
+	default:
+		v = nm_setting_option_get (NM_SETTING (s_ethtool), opt_name);
+		if (   !v
+		    || !g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN))
+			return NM_TERNARY_DEFAULT;
+		return g_variant_get_boolean (v);
+	}
+}
+
+static void
 test_ethtool_features (void)
 {
 	gs_unref_object NMConnection *con = NULL;
@@ -1519,16 +1565,16 @@ test_ethtool_features (void)
 	s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
 	nm_connection_add_setting (con, NM_SETTING (s_ethtool));
 
-	nm_setting_ethtool_set_feature (s_ethtool,
-	                                NM_ETHTOOL_OPTNAME_FEATURE_RX,
-	                                NM_TERNARY_TRUE);
-	nm_setting_ethtool_set_feature (s_ethtool,
-	                                NM_ETHTOOL_OPTNAME_FEATURE_LRO,
-	                                NM_TERNARY_FALSE);
+	_setting_ethtool_set_feature (s_ethtool,
+	                              NM_ETHTOOL_OPTNAME_FEATURE_RX,
+	                              NM_TERNARY_TRUE);
+	_setting_ethtool_set_feature (s_ethtool,
+	                              NM_ETHTOOL_OPTNAME_FEATURE_LRO,
+	                              NM_TERNARY_FALSE);
 
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX), ==, NM_TERNARY_TRUE);
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX), ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
 
 	nmtst_connection_normalize (con);
 
@@ -1539,9 +1585,9 @@ test_ethtool_features (void)
 
 	s_ethtool2 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con2, NM_TYPE_SETTING_ETHTOOL));
 
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_RX),  ==, NM_TERNARY_TRUE);
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_RX),  ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
 
 	nmtst_assert_connection_verifies_without_normalization (con2);
 
@@ -1566,9 +1612,9 @@ test_ethtool_features (void)
 
 	s_ethtool3 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con3, NM_TYPE_SETTING_ETHTOOL));
 
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_RX),  ==, NM_TERNARY_TRUE);
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
-	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_RX),  ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
 }
 
 static void
@@ -1584,7 +1630,7 @@ test_ethtool_coalesce (void)
 	NMSettingEthtool *s_ethtool;
 	NMSettingEthtool *s_ethtool2;
 	NMSettingEthtool *s_ethtool3;
-	guint32 out_value;
+	guint32 u32;
 
 	con = nmtst_create_minimal_connection ("ethtool-coalesce",
 	                                        NULL,
@@ -1593,12 +1639,12 @@ test_ethtool_coalesce (void)
 	s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
 	nm_connection_add_setting (con, NM_SETTING (s_ethtool));
 
-	nm_setting_ethtool_set_coalesce (s_ethtool,
-	                                 NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES,
-	                                 4);
+	nm_setting_option_set_uint32 (NM_SETTING (s_ethtool),
+	                              NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES,
+	                              4);
 
-	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &out_value));
-	g_assert_cmpuint (out_value, ==, 4);
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &u32));
+	g_assert_cmpuint (u32, ==, 4);
 
 	nmtst_connection_normalize (con);
 
@@ -1609,8 +1655,8 @@ test_ethtool_coalesce (void)
 
 	s_ethtool2 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con2, NM_TYPE_SETTING_ETHTOOL));
 
-	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool2, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &out_value));
-	g_assert_cmpuint (out_value, ==, 4);
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool2), NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &u32));
+	g_assert_cmpuint (u32, ==, 4);
 
 	nmtst_assert_connection_verifies_without_normalization (con2);
 
@@ -1635,24 +1681,24 @@ test_ethtool_coalesce (void)
 
 	s_ethtool3 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con3, NM_TYPE_SETTING_ETHTOOL));
 
-	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool3, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &out_value));
-	g_assert_cmpuint (out_value, ==, 4);
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool3), NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, &u32));
+	g_assert_cmpuint (u32, ==, 4);
 
 
-	nm_setting_ethtool_clear_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES);
-	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL));
+	nm_setting_option_set (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL);
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL));
 
-	nm_setting_ethtool_set_coalesce (s_ethtool,
-	                                 NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES,
-	                                 8);
+	nm_setting_option_set_uint32 (NM_SETTING (s_ethtool),
+	                              NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES,
+	                              8);
 
-	g_assert_true (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES, &out_value));
-	g_assert_cmpuint (out_value, ==, 8);
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES, &u32));
+	g_assert_cmpuint (u32, ==, 8);
 
-	nm_setting_ethtool_clear_coalesce_all (s_ethtool);
-	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL));
-	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES, NULL));
-	g_assert_false (nm_setting_ethtool_get_coalesce (s_ethtool, NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS, NULL));
+	nm_setting_option_clear_by_name (NM_SETTING (s_ethtool), nm_ethtool_optname_is_coalesce);
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_RX_FRAMES, NULL));
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_TX_FRAMES, NULL));
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_COALESCE_TX_USECS, NULL));
 }
 
 static void
@@ -1677,11 +1723,11 @@ test_ethtool_ring (void)
 	s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
 	nm_connection_add_setting (con, NM_SETTING (s_ethtool));
 
-	nm_setting_ethtool_set_ring (s_ethtool,
-	                             NM_ETHTOOL_OPTNAME_RING_RX_JUMBO,
-	                             4);
+	nm_setting_option_set_uint32 (NM_SETTING (s_ethtool),
+	                              NM_ETHTOOL_OPTNAME_RING_RX_JUMBO,
+	                              4);
 
-	g_assert_true (nm_setting_ethtool_get_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
 	g_assert_cmpuint (out_value, ==, 4);
 
 	nmtst_connection_normalize (con);
@@ -1693,7 +1739,7 @@ test_ethtool_ring (void)
 
 	s_ethtool2 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con2, NM_TYPE_SETTING_ETHTOOL));
 
-	g_assert_true (nm_setting_ethtool_get_ring (s_ethtool2, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool2), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
 	g_assert_cmpuint (out_value, ==, 4);
 
 	nmtst_assert_connection_verifies_without_normalization (con2);
@@ -1719,24 +1765,24 @@ test_ethtool_ring (void)
 
 	s_ethtool3 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con3, NM_TYPE_SETTING_ETHTOOL));
 
-	g_assert_true (nm_setting_ethtool_get_ring (s_ethtool3, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool3), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
 	g_assert_cmpuint (out_value, ==, 4);
 
 
-	nm_setting_ethtool_clear_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO);
-	g_assert_false (nm_setting_ethtool_get_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, NULL));
+	nm_setting_option_set (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, NULL);
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, NULL));
 
-	nm_setting_ethtool_set_ring (s_ethtool,
-	                             NM_ETHTOOL_OPTNAME_RING_RX_JUMBO,
-	                             8);
+	nm_setting_option_set_uint32 (NM_SETTING (s_ethtool),
+	                              NM_ETHTOOL_OPTNAME_RING_RX_JUMBO,
+	                              8);
 
-	g_assert_true (nm_setting_ethtool_get_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
+	g_assert_true (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, &out_value));
 	g_assert_cmpuint (out_value, ==, 8);
 
-	nm_setting_ethtool_clear_ring_all (s_ethtool);
-	g_assert_false (nm_setting_ethtool_get_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, NULL));
-	g_assert_false (nm_setting_ethtool_get_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX, NULL));
-	g_assert_false (nm_setting_ethtool_get_ring (s_ethtool, NM_ETHTOOL_OPTNAME_RING_TX, NULL));
+	nm_setting_option_clear_by_name (NM_SETTING (s_ethtool), nm_ethtool_optname_is_ring);
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_RX_JUMBO, NULL));
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_RX, NULL));
+	g_assert_false (nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), NM_ETHTOOL_OPTNAME_RING_TX, NULL));
 }
 
 /*****************************************************************************/

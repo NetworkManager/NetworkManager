@@ -1184,7 +1184,7 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 		const char *iface;
 		gboolean is_first;
 		guint32 u32;
-		NMTernary t;
+		gboolean b;
 
 		s_con = nm_connection_get_setting_connection (connection);
 		if (s_con) {
@@ -1204,20 +1204,19 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 		is_first = TRUE;
 		for (ethtool_id = _NM_ETHTOOL_ID_FEATURE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST; ethtool_id++) {
 			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			t = nm_setting_ethtool_get_feature (s_ethtool, nm_ethtool_data[ethtool_id]->optname);
-			if (t == NM_TERNARY_DEFAULT)
+			if (!nm_setting_option_get_boolean (NM_SETTING (s_ethtool), nm_ethtool_data[ethtool_id]->optname, &b))
 				continue;
 
 			_ethtool_gstring_prepare (&str, &is_first, 'K', iface);
 			g_string_append_c (str, ' ');
 			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			g_string_append (str, t != NM_TERNARY_FALSE ? " on" : " off");
+			g_string_append (str, b ? " on" : " off");
 		}
 
 		is_first = TRUE;
 		for (ethtool_id = _NM_ETHTOOL_ID_COALESCE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_COALESCE_LAST; ethtool_id++) {
 			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			if (!nm_setting_ethtool_get_coalesce (s_ethtool, nm_ethtool_data[ethtool_id]->optname, &u32))
+			if (!nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), nm_ethtool_data[ethtool_id]->optname, &u32))
 				continue;
 
 			_ethtool_gstring_prepare (&str, &is_first, 'C', iface);
@@ -1229,7 +1228,7 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 		is_first = TRUE;
 		for (ethtool_id = _NM_ETHTOOL_ID_RING_FIRST; ethtool_id <= _NM_ETHTOOL_ID_RING_LAST; ethtool_id++) {
 			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			if (!nm_setting_ethtool_get_ring (s_ethtool, nm_ethtool_data[ethtool_id]->optname, &u32))
+			if (!nm_setting_option_get_uint32 (NM_SETTING (s_ethtool), nm_ethtool_data[ethtool_id]->optname, &u32))
 				continue;
 
 			_ethtool_gstring_prepare (&str, &is_first, 'G', iface);
