@@ -3227,20 +3227,13 @@ nm_platform_ethtool_get_link_coalesce (NMPlatform *self,
 	return nmp_utils_ethtool_get_coalesce (ifindex, coalesce);
 }
 
-gboolean
+void
 nm_platform_ethtool_init_coalesce (NMPlatform *self,
                                    NMEthtoolCoalesceState *coalesce,
-                                   const char *option_name,
+                                   int ethtool_id,
                                    guint32 value)
 {
-	NMEthtoolID ethtool_id;
-
-	g_return_val_if_fail (coalesce, FALSE);
-	g_return_val_if_fail (option_name, FALSE);
-
-	ethtool_id = nm_ethtool_id_get_by_name (option_name);
-
-	g_return_val_if_fail (nm_ethtool_id_is_coalesce (ethtool_id), FALSE);
+	nm_assert (coalesce);
 
 	switch (ethtool_id) {
 		case NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX:
@@ -3310,10 +3303,8 @@ nm_platform_ethtool_init_coalesce (NMPlatform *self,
 			coalesce->tx_coalesce_usecs_low = value;
 			break;
 		default:
-			g_return_val_if_reached (FALSE);
+			g_return_if_reached ();
 	}
-
-	return TRUE;
 }
 
 gboolean
