@@ -115,7 +115,7 @@ G_DEFINE_TYPE (NMSettingEthtool, nm_setting_ethtool, NM_TYPE_SETTING)
 static void
 _notify_attributes (NMSettingEthtool *self)
 {
-	_nm_setting_gendata_notify (NM_SETTING (self), TRUE);
+	_nm_setting_option_notify (NM_SETTING (self), TRUE);
 }
 
 /*****************************************************************************/
@@ -145,7 +145,7 @@ nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), NM_TERNARY_DEFAULT);
 	g_return_val_if_fail (optname && nm_ethtool_optname_is_feature (optname), NM_TERNARY_DEFAULT);
 
-	v = nm_setting_gendata_get (NM_SETTING (setting), optname);
+	v = _nm_setting_option_get (NM_SETTING (setting), optname);
 	if (   v
 	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
 		return g_variant_get_boolean (v)
@@ -183,8 +183,8 @@ nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
 	                                    NM_TERNARY_FALSE,
 	                                    NM_TERNARY_TRUE));
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting),
-	                                 value != NM_TERNARY_DEFAULT);
+	hash = _nm_setting_option_hash (NM_SETTING (setting),
+	                                value != NM_TERNARY_DEFAULT);
 
 	if (value == NM_TERNARY_DEFAULT) {
 		if (hash) {
@@ -226,7 +226,7 @@ nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	if (_nm_setting_option_clear_all (NM_SETTING (setting),
 	                                  &nm_ethtool_optname_is_feature))
 		_notify_attributes (setting);
 }
@@ -248,7 +248,7 @@ nm_setting_ethtool_init_features (NMSettingEthtool *setting,
 	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
 		requested[i] = NM_TERNARY_DEFAULT;
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
+	hash = _nm_setting_option_hash (NM_SETTING (setting), FALSE);
 	if (!hash)
 		return 0;
 
@@ -294,7 +294,7 @@ nm_setting_ethtool_get_coalesce (NMSettingEthtool *setting,
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), FALSE);
 	g_return_val_if_fail (nm_ethtool_optname_is_coalesce (optname), FALSE);
 
-	return nm_setting_gendata_get_uint32 (NM_SETTING (setting),
+	return _nm_setting_option_get_uint32 (NM_SETTING (setting),
 	                                      optname,
 	                                      out_value);
 }
@@ -330,7 +330,7 @@ nm_setting_ethtool_set_coalesce (NMSettingEthtool *setting,
 	               NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX))
 		value = !!value;
 
-	nm_setting_gendata_set_uint32 (NM_SETTING (setting),
+	_nm_setting_option_set_uint32 (NM_SETTING (setting),
 	                               optname,
 	                               value);
 	_notify_attributes (setting);
@@ -352,7 +352,7 @@ nm_setting_ethtool_clear_coalesce (NMSettingEthtool *setting,
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 	g_return_if_fail (nm_str_not_empty (optname));
 
-	if (nm_setting_gendata_clear (NM_SETTING (setting), optname))
+	if (_nm_setting_option_clear (NM_SETTING (setting), optname))
 		_notify_attributes (setting);
 }
 
@@ -369,7 +369,7 @@ nm_setting_ethtool_clear_coalesce_all (NMSettingEthtool *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	if (_nm_setting_option_clear_all (NM_SETTING (setting),
 	                                  &nm_ethtool_optname_is_coalesce))
 		_notify_attributes (setting);
 }
@@ -398,7 +398,7 @@ nm_setting_ethtool_get_ring (NMSettingEthtool *setting,
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), FALSE);
 	g_return_val_if_fail (nm_ethtool_optname_is_ring (optname), FALSE);
 
-	return nm_setting_gendata_get_uint32 (NM_SETTING (setting),
+	return _nm_setting_option_get_uint32 (NM_SETTING (setting),
 	                                      optname,
 	                                      out_value);
 }
@@ -429,7 +429,7 @@ nm_setting_ethtool_set_ring (NMSettingEthtool *setting,
 
 	g_return_if_fail (nm_ethtool_id_is_ring (ethtool_id));
 
-	nm_setting_gendata_set_uint32 (NM_SETTING (setting),
+	_nm_setting_option_set_uint32 (NM_SETTING (setting),
 	                               optname,
 	                               value);
 	_notify_attributes (setting);
@@ -451,7 +451,7 @@ nm_setting_ethtool_clear_ring (NMSettingEthtool *setting,
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 	g_return_if_fail (nm_str_not_empty (optname));
 
-	if (nm_setting_gendata_clear (NM_SETTING (setting), optname))
+	if (_nm_setting_option_clear (NM_SETTING (setting), optname))
 		_notify_attributes (setting);
 }
 
@@ -468,7 +468,7 @@ nm_setting_ethtool_clear_ring_all (NMSettingEthtool *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	if (_nm_setting_option_clear_all (NM_SETTING (setting),
 	                                  &nm_ethtool_optname_is_ring))
 		_notify_attributes (setting);
 }
@@ -496,7 +496,7 @@ nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
 {
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), NULL);
 
-	return nm_utils_strdict_get_keys (_nm_setting_gendata_hash (NM_SETTING (setting), FALSE),
+	return nm_utils_strdict_get_keys (_nm_setting_option_hash (NM_SETTING (setting), FALSE),
 	                                  TRUE,
 	                                  out_length);
 }
@@ -511,7 +511,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	const char *optname;
 	GVariant *variant;
 
-	hash = _nm_setting_gendata_hash (setting, FALSE);
+	hash = _nm_setting_option_hash (setting, FALSE);
 	if (!hash)
 		return TRUE;
 

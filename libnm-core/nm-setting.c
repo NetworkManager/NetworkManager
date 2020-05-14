@@ -715,7 +715,7 @@ _nm_setting_to_dbus (NMSetting *setting,
 
 	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
 
-	n_properties = _nm_setting_gendata_get_all (setting, &gendata_keys, NULL);
+	n_properties = _nm_setting_option_get_all (setting, &gendata_keys, NULL);
 	for (i = 0; i < n_properties; i++) {
 		g_variant_builder_add (&builder,
 		                       "{sv}",
@@ -873,7 +873,7 @@ init_from_dbus (NMSetting *setting,
 				g_hash_table_remove (keys, key);
 		}
 
-		_nm_setting_gendata_notify (setting, TRUE);
+		_nm_setting_option_notify (setting, TRUE);
 
 		/* Currently, only NMSettingEthtool supports gendata based options, and
 		 * that one has no other properties (except "name"). That means, we
@@ -1792,7 +1792,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 		/* the properties of this setting are not real GObject properties.
 		 * Hence, this API makes little sense (or does it?). Still, call
 		 * @func with each value. */
-		n_properties = _nm_setting_gendata_get_all (setting, &names, NULL);
+		n_properties = _nm_setting_option_get_all (setting, &names, NULL);
 		if (n_properties > 0) {
 			gs_strfreev char **keys = g_strdupv ((char **) names);
 			GHashTable *h = _gendata_hash (setting, FALSE)->hash;
@@ -2389,7 +2389,7 @@ _gendata_hash (NMSetting *setting, gboolean create_if_necessary)
 }
 
 GHashTable *
-_nm_setting_gendata_hash (NMSetting *setting, gboolean create_if_necessary)
+_nm_setting_option_hash (NMSetting *setting, gboolean create_if_necessary)
 {
 	GenData *gendata;
 
@@ -2398,8 +2398,8 @@ _nm_setting_gendata_hash (NMSetting *setting, gboolean create_if_necessary)
 }
 
 void
-_nm_setting_gendata_notify (NMSetting *setting,
-                            gboolean names_changed)
+_nm_setting_option_notify (NMSetting *setting,
+                           gboolean names_changed)
 {
 	GenData *gendata;
 
@@ -2434,7 +2434,7 @@ out:
 }
 
 GVariant *
-nm_setting_gendata_get (NMSetting *setting,
+_nm_setting_option_get (NMSetting *setting,
                         const char *name)
 {
 	GenData *gendata;
@@ -2447,9 +2447,9 @@ nm_setting_gendata_get (NMSetting *setting,
 }
 
 guint
-_nm_setting_gendata_get_all (NMSetting *setting,
-                             const char *const**out_names,
-                             GVariant *const**out_values)
+_nm_setting_option_get_all (NMSetting *setting,
+                            const char *const**out_names,
+                            GVariant *const**out_values)
 {
 	GenData *gendata;
 	GHashTable *hash;
@@ -2495,7 +2495,7 @@ out_zero:
 }
 
 /**
- * nm_setting_gendata_get_all_names:
+ * _nm_setting_option_get_all_names:
  * @setting: the #NMSetting
  * @out_len: (allow-none) (out):
  *
@@ -2511,7 +2511,7 @@ out_zero:
  * Since: 1.14
  **/
 const char *const*
-nm_setting_gendata_get_all_names (NMSetting *setting,
+_nm_setting_option_get_all_names (NMSetting *setting,
                                   guint *out_len)
 {
 	const char *const*names;
@@ -2519,13 +2519,13 @@ nm_setting_gendata_get_all_names (NMSetting *setting,
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
-	len = _nm_setting_gendata_get_all (setting, &names, NULL);
+	len = _nm_setting_option_get_all (setting, &names, NULL);
 	NM_SET_OUT (out_len, len);
 	return names;
 }
 
 gboolean
-nm_setting_gendata_get_uint32 (NMSetting *setting,
+_nm_setting_option_get_uint32 (NMSetting *setting,
                                const char *optname,
                                guint32 *out_value)
 {
@@ -2534,7 +2534,7 @@ nm_setting_gendata_get_uint32 (NMSetting *setting,
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (nm_str_not_empty (optname));
 
-	v = nm_setting_gendata_get (setting, optname);
+	v = _nm_setting_option_get (setting, optname);
 	if (   v
 	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
 		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
@@ -2545,20 +2545,20 @@ nm_setting_gendata_get_uint32 (NMSetting *setting,
 }
 
 void
-nm_setting_gendata_set_uint32 (NMSetting *setting,
+_nm_setting_option_set_uint32 (NMSetting *setting,
                                const char *optname,
                                guint32 value)
 {
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (nm_str_not_empty (optname));
 
-	g_hash_table_insert (_nm_setting_gendata_hash (setting, TRUE),
+	g_hash_table_insert (_nm_setting_option_hash (setting, TRUE),
 	                     g_strdup (optname),
 	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
 }
 
 gboolean
-nm_setting_gendata_clear (NMSetting *setting,
+_nm_setting_option_clear (NMSetting *setting,
                           const char *optname)
 {
 	GHashTable *ht;
@@ -2566,7 +2566,7 @@ nm_setting_gendata_clear (NMSetting *setting,
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (nm_str_not_empty (optname));
 
-	ht = _nm_setting_gendata_hash (setting, FALSE);
+	ht = _nm_setting_option_hash (setting, FALSE);
 	if (!ht)
 		return FALSE;
 
@@ -2574,8 +2574,8 @@ nm_setting_gendata_clear (NMSetting *setting,
 }
 
 gboolean
-nm_setting_gendata_clear_all (NMSetting *setting,
-                              nm_setting_gendata_filter_fcn filter)
+_nm_setting_option_clear_all (NMSetting *setting,
+                              NMSettingOptionFilterFcn filter)
 {
 	GHashTable *ht;
 	const char *name;
@@ -2584,7 +2584,7 @@ nm_setting_gendata_clear_all (NMSetting *setting,
 
 	nm_assert (NM_IS_SETTING (setting));
 
-	ht = _nm_setting_gendata_hash (setting, FALSE);
+	ht = _nm_setting_option_hash (setting, FALSE);
 	if (!ht)
 		return FALSE;
 
