@@ -310,8 +310,6 @@ gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue 
 
 /*****************************************************************************/
 
-typedef gboolean (*NMSettingOptionFilterFcn)(const char *name);
-
 GHashTable *_nm_setting_option_hash (NMSetting *setting,
                                      gboolean create_if_necessary);
 
@@ -324,9 +322,6 @@ guint _nm_setting_option_get_all (NMSetting *setting,
 
 gboolean _nm_setting_option_clear (NMSetting *setting,
                                    const char *optname);
-
-gboolean _nm_setting_option_clear_all (NMSetting *setting,
-                                       NMSettingOptionFilterFcn filter);
 
 /*****************************************************************************/
 

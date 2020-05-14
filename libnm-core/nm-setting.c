@@ -2525,30 +2525,47 @@ _nm_setting_option_clear (NMSetting *setting,
 	return g_hash_table_remove (ht, optname);
 }
 
-gboolean
-_nm_setting_option_clear_all (NMSetting *setting,
-                              NMSettingOptionFilterFcn filter)
+/**
+ * nm_setting_option_clear_by_name:
+ * @setting: the #NMSetting
+ * @predicate: (allow-none) (scope call): the predicate for which names
+ *   should be clear.
+ *   If the predicate returns %TRUE for an option name, the option
+ *   gets removed. If %NULL, all options will be removed.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_clear_by_name (NMSetting *setting,
+                                 NMUtilsPredicateStr predicate)
 {
-	GHashTable *ht;
-	const char *name;
+	GHashTable *hash;
 	GHashTableIter iter;
+	const char *name;
 	gboolean changed = FALSE;
 
-	nm_assert (NM_IS_SETTING (setting));
+	g_return_if_fail (NM_IS_SETTING (setting));
 
-	ht = _nm_setting_option_hash (setting, FALSE);
-	if (!ht)
-		return FALSE;
+	hash = _nm_setting_option_hash (NM_SETTING (setting), FALSE);
+	if (!hash)
+		return;
 
-	g_hash_table_iter_init (&iter, ht);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
-		if (!filter || filter (name)) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
+	if (!predicate) {
+		changed = (g_hash_table_size (hash) > 0);
+		if (changed)
+			g_hash_table_remove_all (hash);
+	} else {
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
+			if (predicate (name)) {
+				g_hash_table_iter_remove (&iter);
+				changed = TRUE;
+			}
 		}
 	}
 
-	return changed;
+	if (changed)
+		_nm_setting_option_notify (setting, TRUE);
 }
 
 /*****************************************************************************/

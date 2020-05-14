@@ -366,6 +366,11 @@ NM_AVAILABLE_IN_1_26
 const char *const*nm_setting_option_get_all_names (NMSetting *setting,
                                                    guint *out_len);
 
+
+NM_AVAILABLE_IN_1_26
+void nm_setting_option_clear_by_name (NMSetting *setting,
+                                      NMUtilsPredicateStr predicate);
+
 /*****************************************************************************/
 
 const GVariantType *nm_setting_get_dbus_property_type (NMSetting *setting,

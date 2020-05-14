@@ -226,9 +226,8 @@ nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	if (_nm_setting_option_clear_all (NM_SETTING (setting),
-	                                  &nm_ethtool_optname_is_feature))
-		_notify_attributes (setting);
+	nm_setting_option_clear_by_name (NM_SETTING (setting),
+	                                 nm_ethtool_optname_is_feature);
 }
 
 guint
@@ -369,9 +368,8 @@ nm_setting_ethtool_clear_coalesce_all (NMSettingEthtool *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	if (_nm_setting_option_clear_all (NM_SETTING (setting),
-	                                  &nm_ethtool_optname_is_coalesce))
-		_notify_attributes (setting);
+	nm_setting_option_clear_by_name (NM_SETTING (setting),
+	                                 nm_ethtool_optname_is_coalesce);
 }
 
 /**
@@ -468,9 +466,8 @@ nm_setting_ethtool_clear_ring_all (NMSettingEthtool *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	if (_nm_setting_option_clear_all (NM_SETTING (setting),
-	                                  &nm_ethtool_optname_is_ring))
-		_notify_attributes (setting);
+	nm_setting_option_clear_by_name (NM_SETTING (setting),
+	                                 nm_ethtool_optname_is_ring);
 }
 
 /*****************************************************************************/

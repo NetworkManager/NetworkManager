@@ -1732,6 +1732,7 @@ global:
 	nm_setting_match_remove_driver_by_value;
 	nm_setting_match_remove_kernel_command_line;
 	nm_setting_match_remove_kernel_command_line_by_value;
+	nm_setting_option_clear_by_name;
 	nm_setting_option_get;
 	nm_setting_option_get_all_names;
 	nm_setting_option_get_boolean;
