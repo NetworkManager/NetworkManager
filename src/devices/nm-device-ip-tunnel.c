@@ -843,7 +843,10 @@ create_and_realize (NMDevice *device,
 			lnk_ip6tnl.is_tap = (mode == NM_IP_TUNNEL_MODE_IP6GRETAP);
 
 			r = nm_platform_link_ip6gre_add (nm_device_get_platform (device),
-			                                 iface, &lnk_ip6tnl, out_plink);
+			                                 iface,
+			                                 mac_address_valid ? mac_address : NULL,
+			                                 mac_address_valid ? ETH_ALEN : 0,
+			                                 &lnk_ip6tnl, out_plink);
 		} else {
 			lnk_ip6tnl.proto = nm_setting_ip_tunnel_get_mode (s_ip_tunnel) == NM_IP_TUNNEL_MODE_IPIP6
 			                       ? IPPROTO_IPIP
