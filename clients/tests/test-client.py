@@ -414,11 +414,12 @@ class Configuration:
             v = os.environ.get(name, None)
             if v is None:
                 if name == ENV_NM_TEST_ASAN_OPTIONS:
-                    v = 'detect_leaks=0'
+                    v = 'detect_leaks=1'
+                    #v += ' fast_unwind_on_malloc=false'
                 elif name == ENV_NM_TEST_LSAN_OPTIONS:
                     v = ''
                 elif name == ENV_NM_TEST_UBSAN_OPTIONS:
-                    v = ''
+                    v = 'print_stacktrace=1:halt_on_error=1'
                 else:
                     assert(False)
         else:
