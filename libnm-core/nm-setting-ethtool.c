@@ -140,19 +140,16 @@ NMTernary
 nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
                                 const char *optname)
 {
-	GVariant *v;
+	gboolean v;
 
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), NM_TERNARY_DEFAULT);
 	g_return_val_if_fail (optname && nm_ethtool_optname_is_feature (optname), NM_TERNARY_DEFAULT);
 
-	v = nm_setting_option_get (NM_SETTING (setting), optname);
-	if (   v
-	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
-		return g_variant_get_boolean (v)
-		       ? NM_TERNARY_TRUE
-		       : NM_TERNARY_FALSE;
-	}
-	return NM_TERNARY_DEFAULT;
+	if (!nm_setting_option_get_boolean (NM_SETTING (setting), optname, &v))
+		return NM_TERNARY_DEFAULT;
+	return   v
+	       ? NM_TERNARY_TRUE
+	       : NM_TERNARY_FALSE;
 }
 
 /**
@@ -174,43 +171,16 @@ nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
                                 const char *optname,
                                 NMTernary value)
 {
-	GHashTable *hash;
-	GVariant *v;
-
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 	g_return_if_fail (optname && nm_ethtool_optname_is_feature (optname));
 	g_return_if_fail (NM_IN_SET (value, NM_TERNARY_DEFAULT,
 	                                    NM_TERNARY_FALSE,
 	                                    NM_TERNARY_TRUE));
 
-	hash = _nm_setting_option_hash (NM_SETTING (setting),
-	                                value != NM_TERNARY_DEFAULT);
-
-	if (value == NM_TERNARY_DEFAULT) {
-		if (hash) {
-			if (g_hash_table_remove (hash, optname))
-				_notify_attributes (setting);
-		}
-		return;
-	}
-
-	v = g_hash_table_lookup (hash, optname);
-	if (   v
-	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
-		if (g_variant_get_boolean (v)) {
-			if (value == NM_TERNARY_TRUE)
-				return;
-		} else {
-			if (value == NM_TERNARY_FALSE)
-				return;
-		}
-	}
-
-	v = g_variant_ref_sink (g_variant_new_boolean (value != NM_TERNARY_FALSE));
-	g_hash_table_insert (hash,
-	                     g_strdup (optname),
-	                     v);
-	_notify_attributes (setting);
+	if (value == NM_TERNARY_DEFAULT)
+		nm_setting_option_set (NM_SETTING (setting), optname, NULL);
+	else
+		nm_setting_option_set_boolean (NM_SETTING (setting), optname, (value != NM_TERNARY_FALSE));
 }
 
 /**
@@ -491,11 +461,16 @@ const char **
 nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
                                  guint *out_length)
 {
+	const char *const*names;
+	guint len;
+
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), NULL);
 
-	return nm_utils_strdict_get_keys (_nm_setting_option_hash (NM_SETTING (setting), FALSE),
-	                                  TRUE,
-	                                  out_length);
+	names = nm_setting_option_get_all_names (NM_SETTING (setting), &len);
+	NM_SET_OUT (out_length, len);
+	return   len > 0
+	       ? nm_memdup (names, sizeof (names[0]) * (((gsize) len) + 1u))
+	       : NULL;
 }
 
 /*****************************************************************************/
