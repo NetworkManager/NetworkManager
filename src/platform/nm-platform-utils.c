@@ -810,7 +810,7 @@ nmp_utils_ethtool_set_features (int ifindex,
 
 static gboolean
 ethtool_get_coalesce (SocketHandle *shandle,
-                      NMEthtoolCoalesceState *out_state)
+                      NMEthtoolCoalesceState *coalesce)
 {
 	struct ethtool_coalesce eth_data;
 
@@ -821,28 +821,28 @@ ethtool_get_coalesce (SocketHandle *shandle,
 	                          sizeof (struct ethtool_coalesce)) != 0)
 		return FALSE;
 
-	out_state->rx_coalesce_usecs            = eth_data.rx_coalesce_usecs;
-	out_state->rx_max_coalesced_frames      = eth_data.rx_max_coalesced_frames;
-	out_state->rx_coalesce_usecs_irq        = eth_data.rx_coalesce_usecs_irq;
-	out_state->rx_max_coalesced_frames_irq  = eth_data.rx_max_coalesced_frames_irq;
-	out_state->tx_coalesce_usecs            = eth_data.tx_coalesce_usecs;
-	out_state->tx_max_coalesced_frames      = eth_data.tx_max_coalesced_frames;
-	out_state->tx_coalesce_usecs_irq        = eth_data.tx_coalesce_usecs_irq;
-	out_state->tx_max_coalesced_frames_irq  = eth_data.tx_max_coalesced_frames_irq;
-	out_state->stats_block_coalesce_usecs   = eth_data.stats_block_coalesce_usecs;
-	out_state->use_adaptive_rx_coalesce     = eth_data.use_adaptive_rx_coalesce;
-	out_state->use_adaptive_tx_coalesce     = eth_data.use_adaptive_tx_coalesce;
-	out_state->pkt_rate_low                 = eth_data.pkt_rate_low;
-	out_state->rx_coalesce_usecs_low        = eth_data.rx_coalesce_usecs_low;
-	out_state->rx_max_coalesced_frames_low  = eth_data.rx_max_coalesced_frames_low;
-	out_state->tx_coalesce_usecs_low        = eth_data.tx_coalesce_usecs_low;
-	out_state->tx_max_coalesced_frames_low  = eth_data.tx_max_coalesced_frames_low;
-	out_state->pkt_rate_high                = eth_data.pkt_rate_high;
-	out_state->rx_coalesce_usecs_high       = eth_data.rx_coalesce_usecs_high;
-	out_state->rx_max_coalesced_frames_high = eth_data.rx_max_coalesced_frames_high;
-	out_state->tx_coalesce_usecs_high       = eth_data.tx_coalesce_usecs_high;
-	out_state->tx_max_coalesced_frames_high = eth_data.tx_max_coalesced_frames_high;
-	out_state->rate_sample_interval         = eth_data.rate_sample_interval;
+	coalesce->rx_coalesce_usecs            = eth_data.rx_coalesce_usecs;
+	coalesce->rx_max_coalesced_frames      = eth_data.rx_max_coalesced_frames;
+	coalesce->rx_coalesce_usecs_irq        = eth_data.rx_coalesce_usecs_irq;
+	coalesce->rx_max_coalesced_frames_irq  = eth_data.rx_max_coalesced_frames_irq;
+	coalesce->tx_coalesce_usecs            = eth_data.tx_coalesce_usecs;
+	coalesce->tx_max_coalesced_frames      = eth_data.tx_max_coalesced_frames;
+	coalesce->tx_coalesce_usecs_irq        = eth_data.tx_coalesce_usecs_irq;
+	coalesce->tx_max_coalesced_frames_irq  = eth_data.tx_max_coalesced_frames_irq;
+	coalesce->stats_block_coalesce_usecs   = eth_data.stats_block_coalesce_usecs;
+	coalesce->use_adaptive_rx_coalesce     = eth_data.use_adaptive_rx_coalesce;
+	coalesce->use_adaptive_tx_coalesce     = eth_data.use_adaptive_tx_coalesce;
+	coalesce->pkt_rate_low                 = eth_data.pkt_rate_low;
+	coalesce->rx_coalesce_usecs_low        = eth_data.rx_coalesce_usecs_low;
+	coalesce->rx_max_coalesced_frames_low  = eth_data.rx_max_coalesced_frames_low;
+	coalesce->tx_coalesce_usecs_low        = eth_data.tx_coalesce_usecs_low;
+	coalesce->tx_max_coalesced_frames_low  = eth_data.tx_max_coalesced_frames_low;
+	coalesce->pkt_rate_high                = eth_data.pkt_rate_high;
+	coalesce->rx_coalesce_usecs_high       = eth_data.rx_coalesce_usecs_high;
+	coalesce->rx_max_coalesced_frames_high = eth_data.rx_max_coalesced_frames_high;
+	coalesce->tx_coalesce_usecs_high       = eth_data.tx_coalesce_usecs_high;
+	coalesce->tx_max_coalesced_frames_high = eth_data.tx_max_coalesced_frames_high;
+	coalesce->rate_sample_interval         = eth_data.rate_sample_interval;
 
 	return TRUE;
 }
@@ -871,38 +871,38 @@ nmp_utils_ethtool_get_coalesce (int ifindex,
 
 static gboolean
 ethtool_set_coalesce (SocketHandle *shandle,
-                      const NMEthtoolCoalesceState *state)
+                      const NMEthtoolCoalesceState *coalesce)
 {
 	gboolean success;
 	struct ethtool_coalesce eth_data;
 
 	g_return_val_if_fail (shandle, FALSE);
-	g_return_val_if_fail (state, FALSE);
+	g_return_val_if_fail (coalesce, FALSE);
 
 	eth_data = (struct ethtool_coalesce) {
 		.cmd = ETHTOOL_SCOALESCE,
-		.rx_coalesce_usecs            = state->rx_coalesce_usecs,
-		.rx_max_coalesced_frames      = state->rx_max_coalesced_frames,
-		.rx_coalesce_usecs_irq        = state->rx_coalesce_usecs_irq,
-		.rx_max_coalesced_frames_irq  = state->rx_max_coalesced_frames_irq,
-		.tx_coalesce_usecs            = state->tx_coalesce_usecs,
-		.tx_max_coalesced_frames      = state->tx_max_coalesced_frames,
-		.tx_coalesce_usecs_irq        = state->tx_coalesce_usecs_irq,
-		.tx_max_coalesced_frames_irq  = state->tx_max_coalesced_frames_irq,
-		.stats_block_coalesce_usecs   = state->stats_block_coalesce_usecs,
-		.use_adaptive_rx_coalesce     = state->use_adaptive_rx_coalesce,
-		.use_adaptive_tx_coalesce     = state->use_adaptive_tx_coalesce,
-		.pkt_rate_low                 = state->pkt_rate_low,
-		.rx_coalesce_usecs_low        = state->rx_coalesce_usecs_low,
-		.rx_max_coalesced_frames_low  = state->rx_max_coalesced_frames_low,
-		.tx_coalesce_usecs_low        = state->tx_coalesce_usecs_low,
-		.tx_max_coalesced_frames_low  = state->tx_max_coalesced_frames_low,
-		.pkt_rate_high                = state->pkt_rate_high,
-		.rx_coalesce_usecs_high       = state->rx_coalesce_usecs_high,
-		.rx_max_coalesced_frames_high = state->rx_max_coalesced_frames_high,
-		.tx_coalesce_usecs_high       = state->tx_coalesce_usecs_high,
-		.tx_max_coalesced_frames_high = state->tx_max_coalesced_frames_high,
-		.rate_sample_interval         = state->rate_sample_interval,
+		.rx_coalesce_usecs            = coalesce->rx_coalesce_usecs,
+		.rx_max_coalesced_frames      = coalesce->rx_max_coalesced_frames,
+		.rx_coalesce_usecs_irq        = coalesce->rx_coalesce_usecs_irq,
+		.rx_max_coalesced_frames_irq  = coalesce->rx_max_coalesced_frames_irq,
+		.tx_coalesce_usecs            = coalesce->tx_coalesce_usecs,
+		.tx_max_coalesced_frames      = coalesce->tx_max_coalesced_frames,
+		.tx_coalesce_usecs_irq        = coalesce->tx_coalesce_usecs_irq,
+		.tx_max_coalesced_frames_irq  = coalesce->tx_max_coalesced_frames_irq,
+		.stats_block_coalesce_usecs   = coalesce->stats_block_coalesce_usecs,
+		.use_adaptive_rx_coalesce     = coalesce->use_adaptive_rx_coalesce,
+		.use_adaptive_tx_coalesce     = coalesce->use_adaptive_tx_coalesce,
+		.pkt_rate_low                 = coalesce->pkt_rate_low,
+		.rx_coalesce_usecs_low        = coalesce->rx_coalesce_usecs_low,
+		.rx_max_coalesced_frames_low  = coalesce->rx_max_coalesced_frames_low,
+		.tx_coalesce_usecs_low        = coalesce->tx_coalesce_usecs_low,
+		.tx_max_coalesced_frames_low  = coalesce->tx_max_coalesced_frames_low,
+		.pkt_rate_high                = coalesce->pkt_rate_high,
+		.rx_coalesce_usecs_high       = coalesce->rx_coalesce_usecs_high,
+		.rx_max_coalesced_frames_high = coalesce->rx_max_coalesced_frames_high,
+		.tx_coalesce_usecs_high       = coalesce->tx_coalesce_usecs_high,
+		.tx_max_coalesced_frames_high = coalesce->tx_max_coalesced_frames_high,
+		.rate_sample_interval         = coalesce->rate_sample_interval,
 	};
 
 	success = (_ethtool_call_handle (shandle,
