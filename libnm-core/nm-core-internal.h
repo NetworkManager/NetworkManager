@@ -334,8 +334,6 @@ GVariant *nm_setting_gendata_get (NMSetting *setting,
 const char *const*nm_setting_gendata_get_all_names (NMSetting *setting,
                                                     guint *out_len);
 
-GVariant *const*nm_setting_gendata_get_all_values (NMSetting *setting);
-
 gboolean nm_setting_gendata_clear (NMSetting *setting,
                                    const char *optname);
 

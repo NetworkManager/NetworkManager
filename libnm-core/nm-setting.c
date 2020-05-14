@@ -2524,33 +2524,6 @@ nm_setting_gendata_get_all_names (NMSetting *setting,
 	return names;
 }
 
-/**
- * nm_setting_gendata_get_all_values:
- * @setting: the #NMSetting
- *
- * Gives the number of generic data elements and optionally returns all their
- * key names and values. This API is low level access and unless you know what you
- * are doing, it might not be what you want.
- *
- * Returns: (array zero-terminated=1) (transfer none):
- *   A %NULL terminated array of #GVariant. If no data is present, this returns
- *   %NULL. The returned array and the variants are owned by %NMSetting and might be invalidated
- *   soon. The sort order of nm_setting_gendata_get_all_names() and nm_setting_gendata_get_all_values()
- *   is consistent. That means, the nth value has the nth name returned by nm_setting_gendata_get_all_names().
- *
- * Since: 1.14
- **/
-GVariant *const*
-nm_setting_gendata_get_all_values (NMSetting *setting)
-{
-	GVariant *const*values;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-
-	_nm_setting_gendata_get_all (setting, NULL, &values);
-	return values;
-}
-
 void
 _nm_setting_gendata_to_gvalue (NMSetting *setting,
                                GValue *value)
