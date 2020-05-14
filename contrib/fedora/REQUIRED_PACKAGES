@@ -85,7 +85,9 @@ install \
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
     dbus-python \
+    libasan \
     libpsl-devel \
+    libubsan \
     pygobject3-base \
     python-gobject-base \
     qt-devel \
