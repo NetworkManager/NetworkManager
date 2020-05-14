@@ -238,7 +238,7 @@ BuildRequires: polkit-devel
 BuildRequires: jansson-devel
 %if %{with sanitizer}
 BuildRequires: libasan
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: libubsan
 %endif
 %endif
@@ -641,8 +641,10 @@ intltoolize --automake --copy --force
 %endif
 %if %{with sanitizer}
 	--with-address-sanitizer=exec \
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} >= 8
 	--enable-undefined-sanitizer \
+%else
+	--disable-undefined-sanitizer \
 %endif
 %else
 	--with-address-sanitizer=no \
