@@ -4578,8 +4578,11 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, &str))
 			set_val_strc (arr, 6, str);
 
-		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, &value))
-			set_val_str (arr, 7, g_strdup_printf ("%u (%s)", value, nmc_parse_lldp_capabilities (value)));
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, &value)) {
+			gs_free char *tmp = NULL;
+
+			set_val_str (arr, 7, g_strdup_printf ("%u (%s)", value, (tmp = nmc_parse_lldp_capabilities (value))));
+		}
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PVID, &value))
 			set_val_str (arr, 8, g_strdup_printf ("%u", value));
