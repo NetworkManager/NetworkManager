@@ -540,6 +540,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
 			return FALSE;
 		}
+
+		if (NM_IN_SET (ethtool_id,
+		               NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX,
+		               NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX)) {
+			if (!NM_IN_SET (g_variant_get_uint32 (variant), 0, 1)) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("coalesce option must be either 0 or 1"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
+				return FALSE;
+			}
+		}
 	}
 
 	return TRUE;
