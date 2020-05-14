@@ -598,11 +598,45 @@ const char *const _nm_ethtool_ifcfg_names[] = {
 	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION, "tx-udp_tnl-csum-segmentation"),
 	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION,      "tx-udp_tnl-segmentation"),
 	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,       "tx-vlan-stag-hw-insert"),
+	ETHT_NAME (NM_ETHTOOL_ID_RING_RX,                              "rx"),
+	ETHT_NAME (NM_ETHTOOL_ID_RING_RX_JUMBO,                        "rx-jumbo"),
+	ETHT_NAME (NM_ETHTOOL_ID_RING_RX_MINI,                         "rx-mini"),
+	ETHT_NAME (NM_ETHTOOL_ID_RING_TX,                              "tx"),
 };
 
 static
 NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
-	_get_ethtoolid_by_name,
+	_get_ethtoolid_coalesce_by_name,
+	NMEthtoolID,
+	{ nm_assert (name); },
+	{ return NM_ETHTOOL_ID_UNKNOWN; },
+	{ "adaptive-rx",                  NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX                 },
+	{ "adaptive-tx",                  NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX                 },
+	{ "pkt-rate-high",                NM_ETHTOOL_ID_COALESCE_PKT_RATE_HIGH               },
+	{ "pkt-rate-low",                 NM_ETHTOOL_ID_COALESCE_PKT_RATE_LOW                },
+	{ "rx-frames",                    NM_ETHTOOL_ID_COALESCE_RX_FRAMES                   },
+	{ "rx-frames-high",               NM_ETHTOOL_ID_COALESCE_RX_FRAMES_HIGH              },
+	{ "rx-frames-irq",                NM_ETHTOOL_ID_COALESCE_RX_FRAMES_IRQ               },
+	{ "rx-frames-low",                NM_ETHTOOL_ID_COALESCE_RX_FRAMES_LOW               },
+	{ "rx-usecs",                     NM_ETHTOOL_ID_COALESCE_RX_USECS                    },
+	{ "rx-usecs-high",                NM_ETHTOOL_ID_COALESCE_RX_USECS_HIGH               },
+	{ "rx-usecs-irq",                 NM_ETHTOOL_ID_COALESCE_RX_USECS_IRQ                },
+	{ "rx-usecs-low",                 NM_ETHTOOL_ID_COALESCE_RX_USECS_LOW                },
+	{ "sample-interval",              NM_ETHTOOL_ID_COALESCE_SAMPLE_INTERVAL             },
+	{ "stats-block-usecs",            NM_ETHTOOL_ID_COALESCE_STATS_BLOCK_USECS           },
+	{ "tx-frames",                    NM_ETHTOOL_ID_COALESCE_TX_FRAMES                   },
+	{ "tx-frames-high",               NM_ETHTOOL_ID_COALESCE_TX_FRAMES_HIGH              },
+	{ "tx-frames-irq",                NM_ETHTOOL_ID_COALESCE_TX_FRAMES_IRQ               },
+	{ "tx-frames-low",                NM_ETHTOOL_ID_COALESCE_TX_FRAMES_LOW               },
+	{ "tx-usecs",                     NM_ETHTOOL_ID_COALESCE_TX_USECS                    },
+	{ "tx-usecs-high",                NM_ETHTOOL_ID_COALESCE_TX_USECS_HIGH               },
+	{ "tx-usecs-irq",                 NM_ETHTOOL_ID_COALESCE_TX_USECS_IRQ                },
+	{ "tx-usecs-low",                 NM_ETHTOOL_ID_COALESCE_TX_USECS_LOW                },
+);
+
+static
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_get_ethtoolid_feature_by_name,
 	NMEthtoolID,
 	{ nm_assert (name); },
 	{ return NM_ETHTOOL_ID_UNKNOWN; },
@@ -619,8 +653,6 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 	 * the case and if yes, map them to the corresponding NetworkManager's features.
 	 *
 	 * That is why there are duplicate IDs in this list. */
-	{ "adaptive-rx",                  NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX                 },
-	{ "adaptive-tx",                  NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX                 },
 	{ "esp-hw-offload",               NM_ETHTOOL_ID_FEATURE_ESP_HW_OFFLOAD               },
 	{ "esp-tx-csum-hw-offload",       NM_ETHTOOL_ID_FEATURE_ESP_TX_CSUM_HW_OFFLOAD       },
 	{ "fcoe-mtu",                     NM_ETHTOOL_ID_FEATURE_FCOE_MTU                     },
@@ -632,35 +664,23 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 	{ "loopback",                     NM_ETHTOOL_ID_FEATURE_LOOPBACK                     },
 	{ "lro",                          NM_ETHTOOL_ID_FEATURE_LRO                          },
 	{ "ntuple",                       NM_ETHTOOL_ID_FEATURE_NTUPLE                       },
-	{ "pkt-rate-high",                NM_ETHTOOL_ID_COALESCE_PKT_RATE_HIGH               },
-	{ "pkt-rate-low",                 NM_ETHTOOL_ID_COALESCE_PKT_RATE_LOW                },
 	{ "rx",                           NM_ETHTOOL_ID_FEATURE_RX                           },
 	{ "rx-all",                       NM_ETHTOOL_ID_FEATURE_RX_ALL                       },
 	{ "rx-checksum",                  NM_ETHTOOL_ID_FEATURE_RX                           }, // kernel-only name
 	{ "rx-fcs",                       NM_ETHTOOL_ID_FEATURE_RX_FCS                       },
-	{ "rx-frames",                    NM_ETHTOOL_ID_COALESCE_RX_FRAMES                   },
-	{ "rx-frames-high",               NM_ETHTOOL_ID_COALESCE_RX_FRAMES_HIGH              },
-	{ "rx-frames-irq",                NM_ETHTOOL_ID_COALESCE_RX_FRAMES_IRQ               },
-	{ "rx-frames-low",                NM_ETHTOOL_ID_COALESCE_RX_FRAMES_LOW               },
 	{ "rx-gro",                       NM_ETHTOOL_ID_FEATURE_GRO                          }, // kernel-only name
 	{ "rx-gro-hw",                    NM_ETHTOOL_ID_FEATURE_RX_GRO_HW                    },
 	{ "rx-hashing",                   NM_ETHTOOL_ID_FEATURE_RXHASH                       }, // kernel-only name
 	{ "rx-lro",                       NM_ETHTOOL_ID_FEATURE_LRO                          }, // kernel-only name
 	{ "rx-ntuple-filter",             NM_ETHTOOL_ID_FEATURE_NTUPLE                       }, // kernel-only name
 	{ "rx-udp_tunnel-port-offload",   NM_ETHTOOL_ID_FEATURE_RX_UDP_TUNNEL_PORT_OFFLOAD   },
-	{ "rx-usecs",                     NM_ETHTOOL_ID_COALESCE_RX_USECS                    },
-	{ "rx-usecs-high",                NM_ETHTOOL_ID_COALESCE_RX_USECS_HIGH               },
-	{ "rx-usecs-irq",                 NM_ETHTOOL_ID_COALESCE_RX_USECS_IRQ                },
-	{ "rx-usecs-low",                 NM_ETHTOOL_ID_COALESCE_RX_USECS_LOW                },
 	{ "rx-vlan-filter",               NM_ETHTOOL_ID_FEATURE_RX_VLAN_FILTER               },
 	{ "rx-vlan-hw-parse",             NM_ETHTOOL_ID_FEATURE_RXVLAN                       }, // kernel-only name
 	{ "rx-vlan-stag-filter",          NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_FILTER          },
 	{ "rx-vlan-stag-hw-parse",        NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_HW_PARSE        },
 	{ "rxhash",                       NM_ETHTOOL_ID_FEATURE_RXHASH                       },
 	{ "rxvlan",                       NM_ETHTOOL_ID_FEATURE_RXVLAN                       },
-	{ "sample-interval",              NM_ETHTOOL_ID_COALESCE_SAMPLE_INTERVAL             },
 	{ "sg",                           NM_ETHTOOL_ID_FEATURE_SG                           },
-	{ "stats-block-usecs",            NM_ETHTOOL_ID_COALESCE_STATS_BLOCK_USECS           },
 	{ "tls-hw-record",                NM_ETHTOOL_ID_FEATURE_TLS_HW_RECORD                },
 	{ "tls-hw-tx-offload",            NM_ETHTOOL_ID_FEATURE_TLS_HW_TX_OFFLOAD            },
 	{ "tso",                          NM_ETHTOOL_ID_FEATURE_TSO                          },
@@ -672,10 +692,6 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 	{ "tx-checksum-sctp",             NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_SCTP             },
 	{ "tx-esp-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_ESP_SEGMENTATION          },
 	{ "tx-fcoe-segmentation",         NM_ETHTOOL_ID_FEATURE_TX_FCOE_SEGMENTATION         },
-	{ "tx-frames",                    NM_ETHTOOL_ID_COALESCE_TX_FRAMES                   },
-	{ "tx-frames-high",               NM_ETHTOOL_ID_COALESCE_TX_FRAMES_HIGH              },
-	{ "tx-frames-irq",                NM_ETHTOOL_ID_COALESCE_TX_FRAMES_IRQ               },
-	{ "tx-frames-low",                NM_ETHTOOL_ID_COALESCE_TX_FRAMES_LOW               },
 	{ "tx-generic-segmentation",      NM_ETHTOOL_ID_FEATURE_GSO                          }, // kernel-only name
 	{ "tx-gre-csum-segmentation",     NM_ETHTOOL_ID_FEATURE_TX_GRE_CSUM_SEGMENTATION     },
 	{ "tx-gre-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_GRE_SEGMENTATION          },
@@ -694,21 +710,44 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
 	{ "tx-udp-segmentation",          NM_ETHTOOL_ID_FEATURE_TX_UDP_SEGMENTATION          },
 	{ "tx-udp_tnl-csum-segmentation", NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION },
 	{ "tx-udp_tnl-segmentation",      NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION      },
-	{ "tx-usecs",                     NM_ETHTOOL_ID_COALESCE_TX_USECS                    },
-	{ "tx-usecs-high",                NM_ETHTOOL_ID_COALESCE_TX_USECS_HIGH               },
-	{ "tx-usecs-irq",                 NM_ETHTOOL_ID_COALESCE_TX_USECS_IRQ                },
-	{ "tx-usecs-low",                 NM_ETHTOOL_ID_COALESCE_TX_USECS_LOW                },
 	{ "tx-vlan-hw-insert",            NM_ETHTOOL_ID_FEATURE_TXVLAN                       }, // kernel-only name
 	{ "tx-vlan-stag-hw-insert",       NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT       },
 	{ "txvlan",                       NM_ETHTOOL_ID_FEATURE_TXVLAN                       },
 );
 
+static
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_get_ethtoolid_ring_by_name,
+	NMEthtoolID,
+	{ nm_assert (name); },
+	{ return NM_ETHTOOL_ID_UNKNOWN; },
+	{ "rx",                           NM_ETHTOOL_ID_RING_RX                              },
+	{ "rx-jumbo",                     NM_ETHTOOL_ID_RING_RX_JUMBO                        },
+	{ "rx-mini",                      NM_ETHTOOL_ID_RING_RX_MINI                         },
+	{ "tx",                           NM_ETHTOOL_ID_RING_TX                              },
+);
+
 const NMEthtoolData *
-nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
+nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name,
+                                        NMEthtoolType ethtool_type)
 {
 	NMEthtoolID id;
 
-	id = _get_ethtoolid_by_name (name);
+	switch (ethtool_type) {
+	case NM_ETHTOOL_TYPE_COALESCE:
+		id = _get_ethtoolid_coalesce_by_name (name);
+		break;
+	case NM_ETHTOOL_TYPE_FEATURE:
+		id = _get_ethtoolid_feature_by_name (name);
+		break;
+	case NM_ETHTOOL_TYPE_RING:
+		id = _get_ethtoolid_ring_by_name (name);
+		break;
+	default:
+		nm_assert_not_reached();
+		return NULL;
+	}
+
 	if (id == NM_ETHTOOL_ID_UNKNOWN)
 		return NULL;
 

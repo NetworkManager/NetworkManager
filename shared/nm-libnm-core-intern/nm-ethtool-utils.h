@@ -108,6 +108,13 @@ typedef enum {
 	_NM_ETHTOOL_ID_NUM = (_NM_ETHTOOL_ID_LAST - _NM_ETHTOOL_ID_FIRST + 1),
 } NMEthtoolID;
 
+typedef enum {
+	NM_ETHTOOL_TYPE_UNKNOWN,
+	NM_ETHTOOL_TYPE_COALESCE,
+	NM_ETHTOOL_TYPE_FEATURE,
+	NM_ETHTOOL_TYPE_RING,
+} NMEthtoolType;
+
 typedef struct {
 	const char *optname;
 	NMEthtoolID id;
@@ -116,6 +123,8 @@ typedef struct {
 extern const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1];
 
 const NMEthtoolData *nm_ethtool_data_get_by_optname (const char *optname);
+
+NMEthtoolType nm_ethtool_id_to_type (NMEthtoolID id);
 
 /****************************************************************************/
 
@@ -145,6 +154,7 @@ nm_ethtool_id_is_ring (NMEthtoolID id)
 {
 	return id >= _NM_ETHTOOL_ID_RING_FIRST && id <= _NM_ETHTOOL_ID_RING_LAST;
 }
+
 /****************************************************************************/
 
 #endif /* __NM_ETHTOOL_UTILS_H__ */

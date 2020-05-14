@@ -261,3 +261,16 @@ nm_ethtool_data_get_by_optname (const char *optname)
 	                                         NULL);
 	return (idx < 0) ? NULL : nm_ethtool_data[_by_name[idx]];
 }
+
+NMEthtoolType
+nm_ethtool_id_to_type (NMEthtoolID id)
+{
+	if (nm_ethtool_id_is_coalesce (id))
+		return NM_ETHTOOL_TYPE_COALESCE;
+	if (nm_ethtool_id_is_feature (id))
+		return NM_ETHTOOL_TYPE_FEATURE;
+	if (nm_ethtool_id_is_ring (id))
+		return NM_ETHTOOL_TYPE_RING;
+
+	return NM_ETHTOOL_TYPE_UNKNOWN;
+}

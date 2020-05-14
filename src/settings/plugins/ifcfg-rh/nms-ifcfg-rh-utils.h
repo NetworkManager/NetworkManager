@@ -153,6 +153,7 @@ nms_ifcfg_rh_utils_get_ethtool_name (NMEthtoolID ethtool_id)
 	return _nm_ethtool_ifcfg_names[ethtool_id];
 }
 
-const NMEthtoolData *nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name);
+const NMEthtoolData *nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name,
+                                                             NMEthtoolType ethtool_type);
 
 #endif  /* _UTILS_H_ */
