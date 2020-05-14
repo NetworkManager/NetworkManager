@@ -4144,6 +4144,13 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
 
 	if (nm_ethtool_id_is_coalesce (ethtool_id)) {
+
+		if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value)) {
+			nm_setting_ethtool_clear_coalesce (NM_SETTING_ETHTOOL (setting),
+			                                   nm_ethtool_data[ethtool_id]->optname);
+			return TRUE;
+		}
+
 		i64 = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
 
 		if (i64 == -1) {
