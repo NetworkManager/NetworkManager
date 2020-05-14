@@ -93,28 +93,7 @@ gboolean nmp_utils_ethtool_set_features (int ifindex,
                                          gboolean do_set /* or reset */);
 
 struct _NMEthtoolCoalesceState {
-	guint32 rx_coalesce_usecs;
-	guint32 rx_max_coalesced_frames;
-	guint32 rx_coalesce_usecs_irq;
-	guint32 rx_max_coalesced_frames_irq;
-	guint32 tx_coalesce_usecs;
-	guint32 tx_max_coalesced_frames;
-	guint32 tx_coalesce_usecs_irq;
-	guint32 tx_max_coalesced_frames_irq;
-	guint32 stats_block_coalesce_usecs;
-	guint32 use_adaptive_rx_coalesce;
-	guint32 use_adaptive_tx_coalesce;
-	guint32 pkt_rate_low;
-	guint32 rx_coalesce_usecs_low;
-	guint32 rx_max_coalesced_frames_low;
-	guint32 tx_coalesce_usecs_low;
-	guint32 tx_max_coalesced_frames_low;
-	guint32 pkt_rate_high;
-	guint32 rx_coalesce_usecs_high;
-	guint32 rx_max_coalesced_frames_high;
-	guint32 tx_coalesce_usecs_high;
-	guint32 tx_max_coalesced_frames_high;
-	guint32 rate_sample_interval;
+	guint32 s[_NM_ETHTOOL_ID_COALESCE_NUM /* indexed by (NMEthtoolID - _NM_ETHTOOL_ID_COALESCE_FIRST) */];
 };
 
 gboolean nmp_utils_ethtool_get_coalesce (int ifindex,

@@ -1960,11 +1960,6 @@ gboolean nm_platform_ethtool_get_link_coalesce (NMPlatform *self,
                                                 int ifindex,
                                                 NMEthtoolCoalesceState *coalesce);
 
-void nm_platform_ethtool_init_coalesce (NMPlatform *self,
-                                        NMEthtoolCoalesceState *coalesce,
-                                        int ethtool_id,
-                                        guint32 value);
-
 gboolean nm_platform_ethtool_set_coalesce (NMPlatform *self,
                                            int ifindex,
                                            const NMEthtoolCoalesceState *coalesce);

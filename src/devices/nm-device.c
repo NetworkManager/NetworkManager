@@ -932,11 +932,7 @@ _ethtool_coalesce_set (NMDevice *self,
 		}
 
 		nm_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32));
-
-		nm_platform_ethtool_init_coalesce (platform,
-		                                   &coalesce_new,
-		                                   ethtool_id,
-		                                   g_variant_get_uint32 (variant));
+		coalesce_new.s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (ethtool_id)] = g_variant_get_uint32 (variant);
 	}
 
 	if (!has_old)
