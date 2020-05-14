@@ -269,6 +269,7 @@ NM_UTILS_ENUM2STR_DEFINE (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GFEATURES,  "ETHTOOL_GFEATURES"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GLINK,      "ETHTOOL_GLINK"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GPERMADDR,  "ETHTOOL_GPERMADDR"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GRINGPARAM, "ETHTOOL_GRINGPARAM"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GSET,       "ETHTOOL_GSET"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GSSET_INFO, "ETHTOOL_GSSET_INFO"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTATS,     "ETHTOOL_GSTATS"),
@@ -276,6 +277,7 @@ NM_UTILS_ENUM2STR_DEFINE (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GWOL,       "ETHTOOL_GWOL"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SCOALESCE,  "ETHTOOL_SCOALESCE"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SFEATURES,  "ETHTOOL_SFEATURES"),
+	NM_UTILS_ENUM2STR (ETHTOOL_SRINGPARAM, "ETHTOOL_SRINGPARAM"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SSET,       "ETHTOOL_SSET"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SWOL,       "ETHTOOL_SWOL"),
 );
@@ -928,6 +930,95 @@ nmp_utils_ethtool_set_coalesce (int ifindex,
 	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: set kernel coalesce settings",
 	              ifindex,
 	              "set-coalesce");
+	return TRUE;
+}
+
+static gboolean
+ethtool_get_ring (SocketHandle *shandle,
+                  NMEthtoolRingState *ring)
+{
+	struct ethtool_ringparam eth_data;
+
+	eth_data.cmd = ETHTOOL_GRINGPARAM;
+
+	if (_ethtool_call_handle (shandle,
+	                          &eth_data,
+	                          sizeof (struct ethtool_ringparam)) != 0)
+		return FALSE;
+
+	ring->rx_pending       = eth_data.rx_pending;
+	ring->rx_jumbo_pending = eth_data.rx_jumbo_pending;
+	ring->rx_mini_pending  = eth_data.rx_mini_pending;
+	ring->tx_pending       = eth_data.tx_pending;
+
+	return TRUE;
+}
+
+gboolean
+nmp_utils_ethtool_get_ring (int ifindex,
+                            NMEthtoolRingState *ring)
+{
+	nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT (ifindex);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (ring, FALSE);
+
+	if (!ethtool_get_ring (&shandle, ring)) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure getting ring settings",
+		              ifindex,
+		              "get-ring");
+		return FALSE;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: retrieved kernel ring settings",
+	              ifindex,
+	              "get-ring");
+	return TRUE;
+}
+
+static gboolean
+ethtool_set_ring (SocketHandle *shandle,
+                  const NMEthtoolRingState *ring)
+{
+	gboolean success;
+	struct ethtool_ringparam eth_data;
+
+	g_return_val_if_fail (shandle, FALSE);
+	g_return_val_if_fail (ring, FALSE);
+
+	eth_data = (struct ethtool_ringparam) {
+		.cmd = ETHTOOL_SRINGPARAM,
+		.rx_pending       = ring->rx_pending,
+		.rx_jumbo_pending = ring->rx_jumbo_pending,
+		.rx_mini_pending  = ring->rx_mini_pending,
+		.tx_pending       = ring->tx_pending,
+	};
+
+	success = (_ethtool_call_handle (shandle,
+	                                 &eth_data,
+	                                 sizeof (struct ethtool_ringparam)) == 0);
+	return success;
+}
+
+gboolean
+nmp_utils_ethtool_set_ring (int ifindex,
+                            const NMEthtoolRingState *ring)
+{
+	nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT (ifindex);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (ring, FALSE);
+
+	if (!ethtool_set_ring (&shandle, ring)) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure setting ring settings",
+		              ifindex,
+		              "set-ring");
+		return FALSE;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: set kernel ring settings",
+	              ifindex,
+	              "set-ring");
 	return TRUE;
 }
 
