@@ -520,8 +520,8 @@ _ASSERT_ethtool_feature_infos (void)
 		for (k = 0; k < i; k++)
 			g_assert (inf->ethtool_id != _ethtool_feature_infos[k].ethtool_id);
 
-		g_assert (!found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]);
-		found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = TRUE;
+		g_assert (!found[_NM_ETHTOOL_ID_FEATURE_AS_IDX (inf->ethtool_id)]);
+		found[_NM_ETHTOOL_ID_FEATURE_AS_IDX (inf->ethtool_id)] = TRUE;
 
 		kstate.idx_kernel_name = inf->n_kernel_names - 1;
 		g_assert ((guint) kstate.idx_kernel_name == (guint) (inf->n_kernel_names - 1));
@@ -611,13 +611,13 @@ ethtool_get_features (SocketHandle *shandle)
 
 				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
 
-				if (!states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST])
-					states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = &states_plist0[states_plist_n];
+				if (!states->states_indexed[_NM_ETHTOOL_ID_FEATURE_AS_IDX (info->ethtool_id)])
+					states->states_indexed[_NM_ETHTOOL_ID_FEATURE_AS_IDX (info->ethtool_id)] = &states_plist0[states_plist_n];
 				((const NMEthtoolFeatureState **) states_plist0)[states_plist_n] = kstate;
 				states_plist_n++;
 			}
 
-			if (states && states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]) {
+			if (states && states->states_indexed[_NM_ETHTOOL_ID_FEATURE_AS_IDX (info->ethtool_id)]) {
 				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
 				nm_assert (!states_plist0[states_plist_n]);
 				states_plist_n++;

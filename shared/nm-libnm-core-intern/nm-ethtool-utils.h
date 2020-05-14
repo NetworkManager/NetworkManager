@@ -108,6 +108,7 @@ typedef enum {
 	_NM_ETHTOOL_ID_NUM = (_NM_ETHTOOL_ID_LAST - _NM_ETHTOOL_ID_FIRST + 1),
 } NMEthtoolID;
 
+#define _NM_ETHTOOL_ID_FEATURE_AS_IDX(ethtool_id)  ((ethtool_id) - _NM_ETHTOOL_ID_FEATURE_FIRST)
 #define _NM_ETHTOOL_ID_COALESCE_AS_IDX(ethtool_id) ((ethtool_id) - _NM_ETHTOOL_ID_COALESCE_FIRST)
 
 typedef enum {

@@ -246,9 +246,9 @@ nm_setting_ethtool_init_features (NMSettingEthtool *setting,
 		if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN))
 			continue;
 
-		requested[ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = g_variant_get_boolean (variant)
-		                                                       ? NM_TERNARY_TRUE
-		                                                       : NM_TERNARY_FALSE;
+		requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX (ethtool_id)] =   g_variant_get_boolean (variant)
+		                                                        ? NM_TERNARY_TRUE
+		                                                        : NM_TERNARY_FALSE;
 		n_req++;
 	}
 
