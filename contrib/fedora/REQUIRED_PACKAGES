@@ -59,7 +59,6 @@ install \
     jansson-devel \
     libcurl-devel \
     libndp-devel \
-    libpsl-devel \
     libselinux-devel \
     libtool \
     libuuid-devel \
@@ -73,7 +72,6 @@ install \
     ppp-devel \
     python3-dbus \
     python3-gobject \
-    qt-devel \
     readline-devel \
     rpm-build \
     systemd-devel \
@@ -86,7 +84,9 @@ install \
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
-    python-gobject-base \
     dbus-python \
+    libpsl-devel \
     pygobject3-base \
+    python-gobject-base \
+    qt-devel \
     #end
