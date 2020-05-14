@@ -63,6 +63,10 @@ ENV_NM_TEST_REGENERATE        = 'NM_TEST_REGENERATE'
 # numbers enabled.
 ENV_NM_TEST_WITH_LINENO       = 'NM_TEST_WITH_LINENO'
 
+ENV_NM_TEST_ASAN_OPTIONS      = 'NM_TEST_ASAN_OPTIONS'
+ENV_NM_TEST_LSAN_OPTIONS      = 'NM_TEST_LSAN_OPTIONS'
+ENV_NM_TEST_UBSAN_OPTIONS     = 'NM_TEST_UBSAN_OPTIONS'
+
 #
 ###############################################################################
 
@@ -406,6 +410,18 @@ class Configuration:
             v = (os.environ.get(ENV_NM_TEST_REGENERATE, '0') == '1')
         elif name == ENV_NM_TEST_WITH_LINENO:
             v = (os.environ.get(ENV_NM_TEST_WITH_LINENO, '0') == '1')
+        elif name in [ ENV_NM_TEST_ASAN_OPTIONS, ENV_NM_TEST_LSAN_OPTIONS, ENV_NM_TEST_UBSAN_OPTIONS ]:
+            v = os.environ.get(name, None)
+            if v is None:
+                if name == ENV_NM_TEST_ASAN_OPTIONS:
+                    v = 'detect_leaks=1'
+                    #v += ' fast_unwind_on_malloc=false'
+                elif name == ENV_NM_TEST_LSAN_OPTIONS:
+                    v = ''
+                elif name == ENV_NM_TEST_UBSAN_OPTIONS:
+                    v = 'print_stacktrace=1:halt_on_error=1'
+                else:
+                    assert(False)
         else:
             raise Exception()
         self._values[name] = v
@@ -763,7 +779,9 @@ class TestNmcli(NmTestBase):
         env['LIBNM_USE_SESSION_BUS'] = '1'
         env['LIBNM_USE_NO_UDEV'] = '1'
         env['TERM'] = 'linux'
-        env['ASAN_OPTIONS'] = 'detect_leaks=0'
+        env['ASAN_OPTIONS'] = conf.get(ENV_NM_TEST_ASAN_OPTIONS)
+        env['LSAN_OPTIONS'] = conf.get(ENV_NM_TEST_LSAN_OPTIONS)
+        env['LBSAN_OPTIONS'] = conf.get(ENV_NM_TEST_UBSAN_OPTIONS)
         env['XDG_CONFIG_HOME'] = PathConfiguration.srcdir()
         env['NM_TEST_CALLING_NUM'] = str(calling_num)
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
