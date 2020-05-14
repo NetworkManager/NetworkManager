@@ -129,19 +129,23 @@ NMSetting        *nm_setting_ethtool_new (void);
 
 /*****************************************************************************/
 
+NM_AVAILABLE_IN_1_20
+NM_DEPRECATED_IN_1_26
+const char **     nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
+                                                   guint *out_length);
+
 NM_AVAILABLE_IN_1_14
+NM_DEPRECATED_IN_1_26
 NMTernary         nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
                                                   const char *optname);
 NM_AVAILABLE_IN_1_14
+NM_DEPRECATED_IN_1_26
 void              nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
                                                   const char *optname,
                                                   NMTernary value);
 NM_AVAILABLE_IN_1_14
+NM_DEPRECATED_IN_1_26
 void              nm_setting_ethtool_clear_features (NMSettingEthtool *setting);
-
-NM_AVAILABLE_IN_1_20
-const char **     nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
-                                                   guint *out_length);
 
 NM_AVAILABLE_IN_1_26
 gboolean          nm_setting_ethtool_get_coalesce (NMSettingEthtool *setting,

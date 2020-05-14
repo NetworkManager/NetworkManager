@@ -135,6 +135,8 @@ _notify_attributes (NMSettingEthtool *self)
  *   is enabled, disabled, or left untouched.
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.26: use nm_setting_option_get_boolean() instead.
  */
 NMTernary
 nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
@@ -165,6 +167,8 @@ nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
  * nm_ethtool_optname_is_feature().
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.26: use nm_setting_option_set() or nm_setting_option_set_boolean() instead.
  */
 void
 nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
@@ -190,6 +194,8 @@ nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
  * Clears all offload features settings
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.26: use nm_setting_option_clear_by_name() with nm_ethtool_optname_is_feature() predicate instead.
  */
 void
 nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
@@ -456,6 +462,8 @@ nm_setting_ethtool_clear_ring_all (NMSettingEthtool *setting)
  *   @setting and may get invalidated when @setting gets modified.
  *
  * Since: 1.20
+ *
+ * Deprecated: 1.26: use nm_setting_option_get_all_names() instead.
  */
 const char **
 nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
