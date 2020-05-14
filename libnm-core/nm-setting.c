@@ -2433,19 +2433,6 @@ out:
 	_nm_setting_emit_property_changed (setting);
 }
 
-GVariant *
-_nm_setting_option_get (NMSetting *setting,
-                        const char *name)
-{
-	GenData *gendata;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-	g_return_val_if_fail (name, NULL);
-
-	gendata = _gendata_hash (setting, FALSE);
-	return gendata ? g_hash_table_lookup (gendata->hash, name) : NULL;
-}
-
 guint
 _nm_setting_option_get_all (NMSetting *setting,
                             const char *const**out_names,
@@ -2534,7 +2521,7 @@ _nm_setting_option_get_uint32 (NMSetting *setting,
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (nm_str_not_empty (optname));
 
-	v = _nm_setting_option_get (setting, optname);
+	v = nm_setting_option_get (setting, optname);
 	if (   v
 	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
 		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
@@ -2597,6 +2584,31 @@ _nm_setting_option_clear_all (NMSetting *setting,
 	}
 
 	return changed;
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_setting_option_get:
+ * @setting: the #NMSetting
+ * @opt_name: the option name to request.
+ *
+ * Returns: (transfer none): the #GVariant or %NULL if the option
+ *   is not set.
+ *
+ * Since: 1.26.
+ */
+GVariant *
+nm_setting_option_get (NMSetting *setting,
+                      const char *opt_name)
+{
+	GenData *gendata;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (opt_name, FALSE);
+
+	gendata = _gendata_hash (setting, FALSE);
+	return gendata ? g_hash_table_lookup (gendata->hash, opt_name) : NULL;
 }
 
 /*****************************************************************************/

@@ -322,9 +322,6 @@ guint _nm_setting_option_get_all (NMSetting *setting,
                                   const char *const**out_names,
                                   GVariant *const**out_values);
 
-GVariant *_nm_setting_option_get (NMSetting *setting,
-                                  const char *name);
-
 const char *const*_nm_setting_option_get_all_names (NMSetting *setting,
                                                     guint *out_len);
 

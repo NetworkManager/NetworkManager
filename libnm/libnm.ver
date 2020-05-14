@@ -1732,4 +1732,5 @@ global:
 	nm_setting_match_remove_driver_by_value;
 	nm_setting_match_remove_kernel_command_line;
 	nm_setting_match_remove_kernel_command_line_by_value;
+	nm_setting_option_get;
 } libnm_1_24_0;

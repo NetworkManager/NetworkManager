@@ -333,6 +333,13 @@ gboolean    nm_setting_set_secret_flags (NMSetting *setting,
 
 /*****************************************************************************/
 
+NM_AVAILABLE_IN_1_26
+GVariant *nm_setting_option_get (NMSetting *setting,
+                                 const char *opt_name);
+
+
+/*****************************************************************************/
+
 const GVariantType *nm_setting_get_dbus_property_type (NMSetting *setting,
                                                        const char *property_name);
 
