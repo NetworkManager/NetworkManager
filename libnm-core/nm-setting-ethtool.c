@@ -198,6 +198,8 @@ nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
 	                                 nm_ethtool_optname_is_feature);
 }
 
+/*****************************************************************************/
+
 guint
 nm_setting_ethtool_init_features (NMSettingEthtool *setting,
                                   NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */)
@@ -277,17 +279,16 @@ nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *optname;
-	GVariant *variant;
+	const char *const*optnames;
+	GVariant *const*variants;
+	guint len;
+	guint i;
 
-	hash = _nm_setting_option_hash (setting, FALSE);
-	if (!hash)
-		return TRUE;
+	len = _nm_setting_option_get_all (setting, &optnames, &variants);
 
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &optname, (gpointer *) &variant)) {
+	for (i = 0; i < len; i++) {
+		const char *optname = optnames[i];
+		GVariant *variant = variants[i];
 		const GVariantType *variant_type;
 		NMEthtoolID ethtool_id;
 
