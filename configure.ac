@@ -1137,6 +1137,10 @@ if test "$with_address_sanitizer" = yes -o "$with_address_sanitizer" = "exec"; t
 	else
 		sanitizers="${sanitizers}address(executables-only) "
 	fi
+elif test "$with_address_sanitizer" = "" -o "$with_address_sanitizer" = no; then
+	with_address_sanitizer=no
+else
+	AC_MSG_ERROR(["Invalid asan option --with-address-sanitizer=$with_address_sanitizer"])
 fi
 
 AC_ARG_ENABLE(undefined-sanitizer,
@@ -1152,6 +1156,10 @@ if test "${enable_undefined_sanitizer}" = "yes"; then
 	sanitizer_exec_ldflags="$sanitizer_exec_ldflags -Wc,-fsanitize=undefined"
 	sanitizer_lib_ldflags="$sanitizer_lib_ldflags -Wc,-fsanitize=undefined"
 	sanitizers="${sanitizers}undefined-behavior "
+elif test "$enable_undefined_sanitizer" = "" -o "$enable_undefined_sanitizer" = no; then
+	enable_undefined_sanitizer=no
+else
+	AC_MSG_ERROR(["Invalid asan option --enable-undefined-sanitizer=$enable_undefined_sanitizer"])
 fi
 
 if test -n "$sanitizers"; then

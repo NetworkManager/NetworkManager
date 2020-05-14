@@ -4269,7 +4269,8 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 			hwaddr1 = buf1;
 			hwaddr1_len = l;
 		} else {
-			g_return_val_if_fail ((hwaddr2_len == -1 && hwaddr2) || (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX), FALSE);
+			g_return_val_if_fail (   hwaddr2_len == -1
+			                      || (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX), FALSE);
 			return FALSE;
 		}
 	} else {
@@ -4301,9 +4302,17 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 		}
 	}
 
+	if (G_UNLIKELY (   hwaddr1_len <= 0
+	                || hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)) {
+		/* Only valid addresses can compare equal. In particular,
+		 * addresses that are too long or of zero bytes, never
+		 * compare equal. */
+		return FALSE;
+	}
+
 	if (hwaddr1_len == INFINIBAND_ALEN) {
-		hwaddr1 = (guint8 *)hwaddr1 + INFINIBAND_ALEN - 8;
-		hwaddr2 = (guint8 *)hwaddr2 + INFINIBAND_ALEN - 8;
+		hwaddr1 = &((guint8 *) hwaddr1)[INFINIBAND_ALEN - 8];
+		hwaddr2 = &((guint8 *) hwaddr2)[INFINIBAND_ALEN - 8];
 		hwaddr1_len = 8;
 	}
 

@@ -963,7 +963,8 @@ nmc_get_devices_sorted (NMClient *client)
 	devs = nm_client_get_devices (client);
 
 	sorted = g_new (NMDevice *, devs->len + 1);
-	memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
+	if (devs->len > 0)
+		memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
 	sorted[devs->len] = NULL;
 
 	qsort (sorted, devs->len, sizeof (NMDevice *), compare_devices);
@@ -1191,7 +1192,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	channel_str = g_strdup_printf ("%u", nm_utils_wifi_freq_to_channel (freq));
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u Mbit/s"), bitrate/1000);
-	strength_str = g_strdup_printf ("%u", strength);
+	strength_str = nm_strdup_int (strength);
 	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
 	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
 	sig_bars = nmc_wifi_strength_bars (strength);
@@ -4577,20 +4578,23 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, &str))
 			set_val_strc (arr, 6, str);
 
-		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, &value))
-			set_val_str (arr, 7, g_strdup_printf ("%u (%s)", value, nmc_parse_lldp_capabilities (value)));
+		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, &value)) {
+			gs_free char *tmp = NULL;
+
+			set_val_str (arr, 7, g_strdup_printf ("%u (%s)", value, (tmp = nmc_parse_lldp_capabilities (value))));
+		}
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PVID, &value))
-			set_val_str (arr, 8, g_strdup_printf ("%u", value));
+			set_val_str (arr, 8, nm_strdup_int (value));
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID, &value))
-			set_val_str (arr, 9, g_strdup_printf ("%u", value));
+			set_val_str (arr, 9, nm_strdup_int (value));
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_PPVID_FLAGS, &value))
-			set_val_str (arr, 10, g_strdup_printf ("%u", value));
+			set_val_str (arr, 10, nm_strdup_int (value));
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_VID, &value))
-			set_val_str (arr, 11, g_strdup_printf ("%u", value));
+			set_val_str (arr, 11, nm_strdup_int (value));
 
 		if (nm_lldp_neighbor_get_attr_string_value (neighbor, NM_LLDP_ATTR_IEEE_802_1_VLAN_NAME, &str))
 			set_val_strc (arr, 12, str);
@@ -4599,10 +4603,10 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, const char *fields_str, int
 			set_val_strc (arr, 13, str);
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_CHASSIS_ID_TYPE, &value))
-			set_val_strc (arr, 14, g_strdup_printf ("%u", value));
+			set_val_str (arr, 14, nm_strdup_int (value));
 
 		if (nm_lldp_neighbor_get_attr_uint_value (neighbor, NM_LLDP_ATTR_PORT_ID_TYPE, &value))
-			set_val_strc (arr, 15, g_strdup_printf ("%u", value));
+			set_val_str (arr, 15, nm_strdup_int (value));
 
 		g_ptr_array_add (out.output_data, arr);
 	}
