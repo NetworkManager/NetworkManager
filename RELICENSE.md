@@ -89,6 +89,7 @@ Consent/Disapproval List
 - [Y] Javier Arteaga <jarteaga@jbeta.is>
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
+- [Y] Mario Sanchez Prada <mario@endlessm.com> (Endless Mobile, Inc.)
 - [Y] Michael Biebl <biebl@debian.org>
 - [Y] Pavel Šimerda <pavlix@pavlix.net> (Red Hat, Inc.)
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
@@ -105,6 +106,7 @@ The contributors above may have contributed the code on behalf of a company
 that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
+- [?] Endless Mobile, Inc.
 - [?] Novell, Inc.
 
 - [Y] Red Hat, Inc.
