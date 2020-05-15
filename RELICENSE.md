@@ -76,6 +76,7 @@ Consent/Disapproval List
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
 - [Y] Benjamin Berg <bberg@redhat.com> (Red Hat, Inc.)
 - [Y] Christian Kellner <christian@kellner.me> (Red Hat, Inc.)
+- [Y] Colin Walters <walters@verbum.org> (Red Hat, Inc.)
 - [Y] Corentin Noël <corentin@elementary.io>
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <danw@redhat.com> (Red Hat, Inc.)
