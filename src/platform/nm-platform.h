@@ -1511,13 +1511,15 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
 static inline int
 nm_platform_link_ip6gre_add (NMPlatform *self,
                              const char *name,
+                             const void *address,
+                             size_t address_len,
                              const NMPlatformLnkIp6Tnl *props,
                              const NMPlatformLink **out_link)
 {
 	g_return_val_if_fail (props, -NME_BUG);
 	g_return_val_if_fail (props->is_gre, -NME_BUG);
 
-	return nm_platform_link_add (self, props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE, name, 0, NULL, 0, props, out_link);
+	return nm_platform_link_add (self, props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE, name, 0, address, address_len, props, out_link);
 }
 
 static inline int

@@ -927,4 +927,9 @@ gboolean _nmtst_variant_attribute_spec_assert_sorted (const NMVariantAttributeSp
 const NMVariantAttributeSpec *_nm_variant_attribute_spec_find_binary_search (const NMVariantAttributeSpec *const*array,
                                                                              gsize len,
                                                                              const char *name);
+
+/*****************************************************************************/
+
+gboolean _nm_ip_tunnel_mode_is_layer2 (NMIPTunnelMode mode);
+
 #endif

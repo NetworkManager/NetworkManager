@@ -667,7 +667,8 @@ create_and_realize (NMDevice *device,
 
 	mode = nm_setting_ip_tunnel_get_mode (s_ip_tunnel);
 
-	if (   nm_device_hw_addr_get_cloned (device,
+	if (   _nm_ip_tunnel_mode_is_layer2 (mode)
+	    && nm_device_hw_addr_get_cloned (device,
 	                                     connection,
 	                                     FALSE,
 	                                     &hwaddr,
@@ -684,13 +685,6 @@ create_and_realize (NMDevice *device,
 			             "Invalid hardware address '%s'",
 			             hwaddr);
 			g_return_val_if_reached (FALSE);
-		}
-
-		if (NM_IN_SET (mode, NM_IP_TUNNEL_MODE_GRE)) {
-			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-			             "Invalid hardware address '%s' for tunnel type",
-			             hwaddr);
-			return FALSE;
 		}
 
 		mac_address_valid = TRUE;
@@ -849,7 +843,10 @@ create_and_realize (NMDevice *device,
 			lnk_ip6tnl.is_tap = (mode == NM_IP_TUNNEL_MODE_IP6GRETAP);
 
 			r = nm_platform_link_ip6gre_add (nm_device_get_platform (device),
-			                                 iface, &lnk_ip6tnl, out_plink);
+			                                 iface,
+			                                 mac_address_valid ? mac_address : NULL,
+			                                 mac_address_valid ? ETH_ALEN : 0,
+			                                 &lnk_ip6tnl, out_plink);
 		} else {
 			lnk_ip6tnl.proto = nm_setting_ip_tunnel_get_mode (s_ip_tunnel) == NM_IP_TUNNEL_MODE_IPIP6
 			                       ? IPPROTO_IPIP
@@ -927,6 +924,23 @@ can_reapply_change (NMDevice *device,
 	                                         s_new,
 	                                         diffs,
 	                                         error);
+}
+
+static NMActStageReturn
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
+{
+	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
+
+	if (   _nm_ip_tunnel_mode_is_layer2 (priv->mode)
+	    && !nm_device_hw_addr_set_cloned (device,
+	                                      nm_device_get_applied_connection (device),
+	                                      FALSE)) {
+		*out_failure_reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -1078,7 +1092,8 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	                                                        NM_LINK_TYPE_IPIP,
 	                                                        NM_LINK_TYPE_SIT);
 
-	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
+
+	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->link_changed = link_changed;
 	device_class->can_reapply_change = can_reapply_change;
 	device_class->complete_connection = complete_connection;
