@@ -2649,6 +2649,48 @@ nm_setting_gendata_set_uint32 (NMSetting *setting,
 	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
 }
 
+gboolean
+nm_setting_gendata_clear (NMSetting *setting,
+                          const char *optname)
+{
+	GHashTable *ht;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (nm_str_not_empty (optname));
+
+	ht = _nm_setting_gendata_hash (setting, FALSE);
+	if (!ht)
+		return FALSE;
+
+	return g_hash_table_remove (ht, optname);
+}
+
+gboolean
+nm_setting_gendata_clear_all (NMSetting *setting,
+                              nm_setting_gendata_filter_fcn filter)
+{
+	GHashTable *ht;
+	const char *name;
+	GHashTableIter iter;
+	gboolean changed = FALSE;
+
+	nm_assert (NM_IS_SETTING (setting));
+
+	ht = _nm_setting_gendata_hash (setting, FALSE);
+	if (!ht)
+		return FALSE;
+
+	g_hash_table_iter_init (&iter, ht);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
+		if (!filter || filter (name)) {
+			g_hash_table_iter_remove (&iter);
+			changed = TRUE;
+		}
+	}
+
+	return changed;
+}
+
 /*****************************************************************************/
 
 static void
