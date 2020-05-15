@@ -105,6 +105,7 @@ Consent/Disapproval List
 - [Y] Taegil Bae <esrevinu@gmail.com>
 - [Y] Tambet Ingo <tambet@gmail.com> (Novell, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
+- [Y] Timothy Redaelli <tredaelli@redhat.com> (Red Hat, Inc.)
 - [Y] luz.paz <luzpaz@users.noreply.github.com>
 
 Copyright Held by Other Legal Entities
