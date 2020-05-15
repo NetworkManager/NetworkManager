@@ -193,26 +193,10 @@ nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
 void
 nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *name;
-	gboolean changed = FALSE;
-
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
-	if (!hash)
-		return;
-
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
-		if (nm_ethtool_optname_is_feature (name)) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
-		}
-	}
-
-	if (changed)
+	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	                                  &nm_ethtool_optname_is_feature))
 		_notify_attributes (setting);
 }
 
