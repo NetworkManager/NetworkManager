@@ -1492,6 +1492,12 @@ update_auth_cb (NMSettingsConnection *self,
 			 * they're in the main connection.
 			 */
 			update_agent_secrets_cache (self, info->new_settings);
+
+			/* New secrets, allow autoconnection again */
+			if (   nm_settings_connection_autoconnect_blocked_reason_set (self, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, FALSE)
+			    && !nm_settings_connection_autoconnect_blocked_reason_get (self, 0)) {
+				nm_settings_connection_autoconnect_retries_reset (self);
+			}
 		}
 	}
 
