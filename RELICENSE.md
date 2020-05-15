@@ -82,6 +82,7 @@ Consent/Disapproval List
 - [Y] Dan Winship <danw@redhat.com> (Red Hat, Inc.)
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Frédéric Danis <frederic.danis.oss@gmail.com> (Collabora Ltd, Sigfox)
+- [Y] Giovanni Campagna <gcampagna@src.gnome.org>
 - [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
 - [Y] Jan Tojnar <jtojnar@gmail.com>
