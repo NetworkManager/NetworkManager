@@ -80,6 +80,7 @@ Consent/Disapproval List
 - [Y] Corentin Noël <corentin@elementary.io>
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <danw@redhat.com> (Red Hat, Inc.)
+- [Y] Evan Broder <evan@ebroder.net>
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Frédéric Danis <frederic.danis.oss@gmail.com> (Collabora Ltd, Sigfox)
 - [Y] Giovanni Campagna <gcampagna@src.gnome.org>
