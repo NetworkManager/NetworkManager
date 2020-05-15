@@ -334,6 +334,14 @@ const char *const*nm_setting_gendata_get_all_names (NMSetting *setting,
 
 GVariant *const*nm_setting_gendata_get_all_values (NMSetting *setting);
 
+gboolean nm_setting_gendata_get_uint32 (NMSetting *setting,
+                                        const char *optname,
+                                        guint32 *out_value);
+
+void nm_setting_gendata_set_uint32 (NMSetting *setting,
+                                    const char *optname,
+                                    guint32 value);
+
 /*****************************************************************************/
 
 guint nm_setting_ethtool_init_features (NMSettingEthtool *setting,
