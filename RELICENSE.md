@@ -91,6 +91,7 @@ Consent/Disapproval List
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Mario Sanchez Prada <mario@endlessm.com> (Endless Mobile, Inc.)
 - [Y] Michael Biebl <biebl@debian.org>
+- [Y] Pantelis Koukousoulas <pktoss@gmail.com>
 - [Y] Pavel Šimerda <pavlix@pavlix.net> (Red Hat, Inc.)
 - [Y] Ray Strode <rstrode@redhat.com> (Red Hat, Inc.)
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
