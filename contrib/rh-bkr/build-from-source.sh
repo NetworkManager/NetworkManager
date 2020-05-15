@@ -40,6 +40,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       dbus-glib-devel \
       dbus-python \
       dhclient \
+      firewalld-filesystem \
       gettext-devel \
       git \
       glib2-devel \
