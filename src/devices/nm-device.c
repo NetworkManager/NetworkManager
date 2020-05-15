@@ -11156,6 +11156,7 @@ fw_change_zone (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *applied_connection;
 	NMSettingConnection *s_con;
+	const char *zone;
 
 	nm_assert (priv->fw_state >= FIREWALL_STATE_INITIALIZED);
 
@@ -11173,9 +11174,19 @@ fw_change_zone (NMDevice *self)
 	if (G_UNLIKELY (!priv->fw_mgr))
 		priv->fw_mgr = g_object_ref (nm_firewall_manager_get ());
 
+	zone = nm_setting_connection_get_zone (s_con);
+#if WITH_FIREWALLD_ZONE
+	if (!zone || zone[0] == '\0') {
+		if (   nm_streq0 (nm_device_get_effective_ip_config_method (self, AF_INET),
+		                  NM_SETTING_IP4_CONFIG_METHOD_SHARED)
+		    || nm_streq0 (nm_device_get_effective_ip_config_method (self, AF_INET6),
+		                  NM_SETTING_IP6_CONFIG_METHOD_SHARED))
+			zone = "nm-shared";
+	}
+#endif
 	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_mgr,
 	                                                        nm_device_get_ip_iface (self),
-	                                                        nm_setting_connection_get_zone (s_con),
+	                                                        zone,
 	                                                        FALSE, /* change zone */
 	                                                        fw_change_zone_cb,
 	                                                        self);
