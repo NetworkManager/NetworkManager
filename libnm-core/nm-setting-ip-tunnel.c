@@ -305,6 +305,14 @@ nm_setting_ip_tunnel_get_flags (NMSettingIPTunnel *setting)
 
 /*****************************************************************************/
 
+gboolean
+_nm_ip_tunnel_mode_is_layer2 (NMIPTunnelMode mode)
+{
+	return NM_IN_SET (mode,
+	                  NM_IP_TUNNEL_MODE_GRETAP,
+	                  NM_IP_TUNNEL_MODE_IP6GRETAP);
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -458,9 +466,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (   nm_connection_get_setting_wired (connection)
-	    && !NM_IN_SET (priv->mode,
-	                   NM_IP_TUNNEL_MODE_GRETAP,
-	                   NM_IP_TUNNEL_MODE_IP6GRETAP)) {
+	    && !_nm_ip_tunnel_mode_is_layer2 (priv->mode)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
