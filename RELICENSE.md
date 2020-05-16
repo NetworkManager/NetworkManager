@@ -71,6 +71,7 @@ of this file will give details when/how an entry was added.
 Consent/Disapproval List
 ========================
 
+- [Y] Aleksander Morgado <aleksander@aleksander.es>
 - [Y] Antoine Faure <antoine.faure@sigfox.com> (Sigfox)
 - [Y] Atul Anand <atulhjp@gmail.com>
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
