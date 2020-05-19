@@ -1,3 +1,19 @@
+===============================================
+NetworkManager-1.24.2
+Overview of changes since NetworkManager-1.24.0
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Add a new build option 'firewalld-zone'; when enabled,
+  NetworkManager installs a firewalld zone for connection sharing and
+  puts interfaces using IPv4 or IPv6 shared mode in this zone during
+  activation. The option is enabled by default.
+  Note that NetworkManager still calls to iptables to enable
+  masquerading and open needed ports for DHCP and DNS. The new option
+  is useful on systems using firewalld with the nftables backend,
+  where the iptables rules would not be sufficient.
+
 =============================================
 NetworkManager-1.24
 Overview of changes since NetworkManager-1.22

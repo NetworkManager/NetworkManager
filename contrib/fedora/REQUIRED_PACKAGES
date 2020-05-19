@@ -47,6 +47,7 @@ install \
     dbus-devel \
     dbus-x11 \
     dhclient \
+    firewalld-filesystem \
     gcc-c++ \
     gettext-devel \
     git \
