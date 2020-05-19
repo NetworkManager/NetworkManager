@@ -95,6 +95,7 @@ Consent/Disapproval List
 - [Y] Michael Biebl <biebl@debian.org>
 - [Y] Pantelis Koukousoulas <pktoss@gmail.com>
 - [Y] Pavel Šimerda <pavlix@pavlix.net> (Red Hat, Inc.)
+- [Y] Przemysław Grzegorczyk <pgrzegorczyk@gmail.com>
 - [Y] Ray Strode <rstrode@redhat.com> (Red Hat, Inc.)
 - [Y] Robert Love <rml@novell.com> (Novell, Inc.)
 - [Y] Sebastien Fabre <sebastien.fabre@sigfox.com> (Sigfox)
