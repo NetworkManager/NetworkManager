@@ -651,6 +651,14 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMSettingTeam *s_team;
 	const char *cfg;
 
+	if (nm_device_sys_iface_state_is_external (device))
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+
+	if (nm_device_sys_iface_state_is_external_or_assume (device)) {
+		if (ensure_teamd_connection (device))
+			return NM_ACT_STAGE_RETURN_SUCCESS;
+	}
+
 	s_team = nm_device_get_applied_setting (device, NM_TYPE_SETTING_TEAM);
 	if (!s_team)
 		g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
@@ -977,6 +985,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->master_update_slave_connection = master_update_slave_connection;
 
+	device_class->act_stage1_prepare_also_for_external_or_assume = TRUE;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 	device_class->deactivate = deactivate;
