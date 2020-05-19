@@ -992,7 +992,9 @@ parent_state_cb (NMActiveConnection *parent_ac,
 		return;
 
 	unwatch_parent (self, TRUE);
-	g_signal_emit (self, signals[PARENT_ACTIVE], 0, parent_ac);
+
+	if (parent_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		g_signal_emit (self, signals[PARENT_ACTIVE], 0, parent_ac);
 }
 
 static void
