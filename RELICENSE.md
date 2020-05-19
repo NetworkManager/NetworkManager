@@ -73,6 +73,7 @@ Consent/Disapproval List
 
 - [Y] Aleksander Morgado <aleksander@aleksander.es>
 - [Y] Antoine Faure <antoine.faure@sigfox.com> (Sigfox)
+- [Y] Antony Mee <antony@onlymee.co.uk>
 - [Y] Atul Anand <atulhjp@gmail.com>
 - [Y] Beniamino Galvani <bgalvani@redhat.com> (Red Hat, Inc.)
 - [Y] Benjamin Berg <bberg@redhat.com> (Red Hat, Inc.)
