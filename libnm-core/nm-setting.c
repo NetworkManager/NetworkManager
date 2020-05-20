@@ -2616,6 +2616,81 @@ _nm_setting_gendata_reset_from_hash (NMSetting *setting,
 	return TRUE;
 }
 
+gboolean
+nm_setting_gendata_get_uint32 (NMSetting *setting,
+                               const char *optname,
+                               guint32 *out_value)
+{
+	GVariant *v;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (nm_str_not_empty (optname));
+
+	v = nm_setting_gendata_get (setting, optname);
+	if (   v
+	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
+		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
+		return TRUE;
+	}
+	NM_SET_OUT (out_value, 0);
+	return FALSE;
+}
+
+void
+nm_setting_gendata_set_uint32 (NMSetting *setting,
+                               const char *optname,
+                               guint32 value)
+{
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (nm_str_not_empty (optname));
+
+	g_hash_table_insert (_nm_setting_gendata_hash (setting, TRUE),
+	                     g_strdup (optname),
+	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
+}
+
+gboolean
+nm_setting_gendata_clear (NMSetting *setting,
+                          const char *optname)
+{
+	GHashTable *ht;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (nm_str_not_empty (optname));
+
+	ht = _nm_setting_gendata_hash (setting, FALSE);
+	if (!ht)
+		return FALSE;
+
+	return g_hash_table_remove (ht, optname);
+}
+
+gboolean
+nm_setting_gendata_clear_all (NMSetting *setting,
+                              nm_setting_gendata_filter_fcn filter)
+{
+	GHashTable *ht;
+	const char *name;
+	GHashTableIter iter;
+	gboolean changed = FALSE;
+
+	nm_assert (NM_IS_SETTING (setting));
+
+	ht = _nm_setting_gendata_hash (setting, FALSE);
+	if (!ht)
+		return FALSE;
+
+	g_hash_table_iter_init (&iter, ht);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
+		if (!filter || filter (name)) {
+			g_hash_table_iter_remove (&iter);
+			changed = TRUE;
+		}
+	}
+
+	return changed;
+}
+
 /*****************************************************************************/
 
 static void

@@ -1954,20 +1954,35 @@ gboolean nm_platform_ethtool_set_features (NMPlatform *self,
                                            const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
                                            gboolean do_set /* or reset */);
 
-typedef struct _NMEthtoolCoalesceStates NMEthtoolCoalesceStates;
+typedef struct _NMEthtoolCoalesceState NMEthtoolCoalesceState;
 
-NMEthtoolCoalesceStates *nm_platform_ethtool_get_link_coalesce (NMPlatform *self,
-                                                                int ifindex);
+gboolean nm_platform_ethtool_get_link_coalesce (NMPlatform *self,
+                                                int ifindex,
+                                                NMEthtoolCoalesceState *coalesce);
 
 gboolean nm_platform_ethtool_init_coalesce (NMPlatform *self,
-                                            NMEthtoolCoalesceStates *coalesce,
+                                            NMEthtoolCoalesceState *coalesce,
                                             const char *option_name,
                                             guint32 value);
 
 gboolean nm_platform_ethtool_set_coalesce (NMPlatform *self,
                                            int ifindex,
-                                           const NMEthtoolCoalesceStates *coalesce,
-                                           gboolean do_set);
+                                           const NMEthtoolCoalesceState *coalesce);
+
+typedef struct _NMEthtoolRingState NMEthtoolRingState;
+
+gboolean nm_platform_ethtool_get_link_ring (NMPlatform *self,
+                                            int ifindex,
+                                            NMEthtoolRingState *ring);
+
+gboolean nm_platform_ethtool_init_ring (NMPlatform *self,
+                                        NMEthtoolRingState *ring,
+                                        const char *option_name,
+                                        guint32 value);
+
+gboolean nm_platform_ethtool_set_ring (NMPlatform *self,
+                                       int ifindex,
+                                       const NMEthtoolRingState *ring);
 
 const char * nm_platform_link_duplex_type_to_string (NMPlatformLinkDuplexType duplex);
 

@@ -92,7 +92,7 @@ gboolean nmp_utils_ethtool_set_features (int ifindex,
                                          const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
                                          gboolean do_set /* or reset */);
 
-typedef struct {
+struct _NMEthtoolCoalesceState {
 	guint32 rx_coalesce_usecs;
 	guint32 rx_max_coalesced_frames;
 	guint32 rx_coalesce_usecs_irq;
@@ -115,18 +115,26 @@ typedef struct {
 	guint32 tx_coalesce_usecs_high;
 	guint32 tx_max_coalesced_frames_high;
 	guint32 rate_sample_interval;
-} NMEthtoolCoalesceState;
-
-struct _NMEthtoolCoalesceStates {
-	NMEthtoolCoalesceState old_state;
-	NMEthtoolCoalesceState requested_state;
 };
 
-NMEthtoolCoalesceStates * nmp_utils_ethtool_get_coalesce (int ifindex);
+gboolean nmp_utils_ethtool_get_coalesce (int ifindex,
+                                         NMEthtoolCoalesceState *coalesce);
 
 gboolean nmp_utils_ethtool_set_coalesce (int ifindex,
-                                         const NMEthtoolCoalesceStates *coalesce,
-                                         gboolean do_set);
+                                         const NMEthtoolCoalesceState *coalesce);
+
+struct _NMEthtoolRingState {
+	guint32 rx_pending;
+	guint32 rx_mini_pending;
+	guint32 rx_jumbo_pending;
+	guint32 tx_pending;
+};
+
+gboolean nmp_utils_ethtool_get_ring (int ifindex,
+                                     NMEthtoolRingState *ring);
+
+gboolean nmp_utils_ethtool_set_ring (int ifindex,
+                                     const NMEthtoolRingState *ring);
 
 /*****************************************************************************/
 

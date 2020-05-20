@@ -58,6 +58,22 @@ nm_ethtool_optname_is_coalesce (const char *optname)
 	return optname && nm_ethtool_id_is_coalesce (nm_ethtool_id_get_by_name (optname));
 }
 
+/**
+ * nm_ethtool_optname_is_ring:
+ * @optname: (allow-none): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a ring setting.
+ *
+ * %Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_ethtool_optname_is_ring (const char *optname)
+{
+	return optname && nm_ethtool_id_is_ring (nm_ethtool_id_get_by_name (optname));
+}
+
 /*****************************************************************************/
 
 /**
@@ -193,26 +209,10 @@ nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
 void
 nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *name;
-	gboolean changed = FALSE;
-
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
-	if (!hash)
-		return;
-
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
-		if (nm_ethtool_optname_is_feature (name)) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
-		}
-	}
-
-	if (changed)
+	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	                                  &nm_ethtool_optname_is_feature))
 		_notify_attributes (setting);
 }
 
@@ -276,19 +276,12 @@ nm_setting_ethtool_get_coalesce (NMSettingEthtool *setting,
                                  const char *optname,
                                  guint32 *out_value)
 {
-	GVariant *v;
-
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), FALSE);
 	g_return_val_if_fail (nm_ethtool_optname_is_coalesce (optname), FALSE);
 
-	v = nm_setting_gendata_get (NM_SETTING (setting), optname);
-	if (   v
-	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
-		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
-		return TRUE;
-	}
-	NM_SET_OUT (out_value, 0);
-	return FALSE;
+	return nm_setting_gendata_get_uint32 (NM_SETTING (setting),
+	                                      optname,
+	                                      out_value);
 }
 
 /**
@@ -309,7 +302,6 @@ nm_setting_ethtool_set_coalesce (NMSettingEthtool *setting,
                                  const char *optname,
                                  guint32 value)
 {
-	GHashTable *ht;
 	NMEthtoolID ethtool_id;
 
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
@@ -318,17 +310,14 @@ nm_setting_ethtool_set_coalesce (NMSettingEthtool *setting,
 
 	g_return_if_fail (nm_ethtool_id_is_coalesce (ethtool_id));
 
-	ht = _nm_setting_gendata_hash (NM_SETTING (setting),
-	                               TRUE);
-
 	if (NM_IN_SET (ethtool_id,
 	               NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX,
 	               NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX))
 		value = !!value;
 
-	g_hash_table_insert (ht,
-	                     g_strdup (optname),
-	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
+	nm_setting_gendata_set_uint32 (NM_SETTING (setting),
+	                               optname,
+	                               value);
 	_notify_attributes (setting);
 }
 
@@ -345,16 +334,10 @@ void
 nm_setting_ethtool_clear_coalesce (NMSettingEthtool *setting,
                                    const char *optname)
 {
-	GHashTable *hash;
-
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 	g_return_if_fail (nm_str_not_empty (optname));
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
-	if (!hash)
-		return;
-
-	if (g_hash_table_remove (hash, optname))
+	if (nm_setting_gendata_clear (NM_SETTING (setting), optname))
 		_notify_attributes (setting);
 }
 
@@ -369,26 +352,109 @@ nm_setting_ethtool_clear_coalesce (NMSettingEthtool *setting,
 void
 nm_setting_ethtool_clear_coalesce_all (NMSettingEthtool *setting)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *name;
-	gboolean changed = FALSE;
+	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
+
+	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	                                  &nm_ethtool_optname_is_coalesce))
+		_notify_attributes (setting);
+}
+
+/**
+ * nm_setting_ethtool_get_ring:
+ * @setting: the #NMSettingEthtool
+ * @optname: option name of the ring setting to get
+ * @out_value (out) (allow-none): value of the ring setting
+ *
+ * Gets the value of ring setting.
+ *
+ * Note that @optname must be a valid name for a setting, according to
+ * nm_ethtool_optname_is_ring().
+ *
+ *
+ * Returns: %TRUE and places the ring setting value in @out_value or %FALSE if unset.
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_setting_ethtool_get_ring (NMSettingEthtool *setting,
+                             const char *optname,
+                             guint32 *out_value)
+{
+	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), FALSE);
+	g_return_val_if_fail (nm_ethtool_optname_is_ring (optname), FALSE);
+
+	return nm_setting_gendata_get_uint32 (NM_SETTING (setting),
+	                                      optname,
+	                                      out_value);
+}
+
+/**
+ * nm_setting_ethtool_set_ring:
+ * @setting: the #NMSettingEthtool
+ * @optname: option name of the ring setting
+ * @value: the new value to set.
+ *
+ * Sets a ring setting.
+ *
+ * Note that @optname must be a valid name for a ring setting, according to
+ * nm_ethtool_optname_is_ring().
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_ethtool_set_ring (NMSettingEthtool *setting,
+                             const char *optname,
+                             guint32 value)
+{
+	NMEthtoolID ethtool_id;
 
 	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
-	if (!hash)
-		return;
+	ethtool_id = nm_ethtool_id_get_by_name (optname);
 
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
-		if (nm_ethtool_optname_is_coalesce (name)) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
-		}
-	}
+	g_return_if_fail (nm_ethtool_id_is_ring (ethtool_id));
 
-	if (changed)
+	nm_setting_gendata_set_uint32 (NM_SETTING (setting),
+	                               optname,
+	                               value);
+	_notify_attributes (setting);
+}
+
+/**
+ * nm_setting_ethtool_clear_ring:
+ * @setting: the #NMSettingEthtool
+ * @optname: option name of the ring setting
+ *
+ * Clear a ring setting
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_ethtool_clear_ring (NMSettingEthtool *setting,
+                               const char *optname)
+{
+	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
+	g_return_if_fail (nm_str_not_empty (optname));
+
+	if (nm_setting_gendata_clear (NM_SETTING (setting), optname))
+		_notify_attributes (setting);
+}
+
+/**
+ * nm_setting_ethtool_clear_ring_all:
+ * @setting: the #NMSettingEthtool
+ *
+ * Clears all ring settings
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_ethtool_clear_ring_all (NMSettingEthtool *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
+
+	if (nm_setting_gendata_clear_all (NM_SETTING (setting),
+	                                  &nm_ethtool_optname_is_ring))
 		_notify_attributes (setting);
 }
 
@@ -446,12 +512,13 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
 				return FALSE;
 			}
-		} else if (nm_ethtool_optname_is_coalesce (optname)) {
+		} else if (   nm_ethtool_optname_is_coalesce (optname)
+		           || nm_ethtool_optname_is_ring (optname)) {
 			if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32)) {
 				g_set_error_literal (error,
 				                     NM_CONNECTION_ERROR,
 				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("coalesce setting has invalid variant type"));
+				                     _("setting has invalid variant type"));
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
 				return FALSE;
 			}
@@ -476,10 +543,13 @@ get_variant_type (const NMSettInfoSetting *sett_info,
                   const char *name,
                   GError **error)
 {
-	if (nm_ethtool_optname_is_feature (name))
+	NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name (name);
+
+	if (nm_ethtool_id_is_feature (ethtool_id))
 		return G_VARIANT_TYPE_BOOLEAN;
 
-	if (nm_ethtool_optname_is_coalesce (name))
+	if (   nm_ethtool_id_is_coalesce (ethtool_id)
+	    || nm_ethtool_id_is_ring (ethtool_id))
 		return G_VARIANT_TYPE_UINT32;
 
 	g_set_error (error,

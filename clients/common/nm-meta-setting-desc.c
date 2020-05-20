@@ -4132,6 +4132,16 @@ _get_fcn_ethtool (ARGS_GET_FCN)
 		if (s && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			s = gettext (s);
 		return s;
+	} else if (nm_ethtool_id_is_ring (ethtool_id)) {
+		if (!nm_setting_ethtool_get_ring (NM_SETTING_ETHTOOL (setting),
+		                                  nm_ethtool_data[ethtool_id]->optname,
+		                                  &u32)) {
+			NM_SET_OUT (out_is_default, TRUE);
+			return NULL;
+		}
+
+		return_str = g_strdup_printf ("%"G_GUINT32_FORMAT, u32);
+		RETURN_STR_TO_FREE (return_str);
 	}
 	nm_assert_not_reached();
 	return NULL;
@@ -4142,12 +4152,18 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 {
 	gint64 i64;
 	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
+	NMEthtoolType ethtool_type = nm_ethtool_id_to_type (ethtool_id);
 
-	if (nm_ethtool_id_is_coalesce (ethtool_id)) {
-
+	if (NM_IN_SET (ethtool_type,
+	               NM_ETHTOOL_TYPE_COALESCE,
+	               NM_ETHTOOL_TYPE_RING)) {
 		if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value)) {
-			nm_setting_ethtool_clear_coalesce (NM_SETTING_ETHTOOL (setting),
-			                                   nm_ethtool_data[ethtool_id]->optname);
+			if (ethtool_type == NM_ETHTOOL_TYPE_COALESCE)
+				nm_setting_ethtool_clear_coalesce (NM_SETTING_ETHTOOL (setting),
+				                                   nm_ethtool_data[ethtool_id]->optname);
+			else
+				nm_setting_ethtool_clear_ring (NM_SETTING_ETHTOOL (setting),
+				                               nm_ethtool_data[ethtool_id]->optname);
 			return TRUE;
 		}
 
@@ -4160,13 +4176,18 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 			return FALSE;
 		}
 
-		nm_setting_ethtool_set_coalesce (NM_SETTING_ETHTOOL (setting),
-		                                 nm_ethtool_data[ethtool_id]->optname,
-		                                 (guint32) i64);
+		if (ethtool_type == NM_ETHTOOL_TYPE_COALESCE)
+			nm_setting_ethtool_set_coalesce (NM_SETTING_ETHTOOL (setting),
+			                                 nm_ethtool_data[ethtool_id]->optname,
+			                                 (guint32) i64);
+		else
+			nm_setting_ethtool_set_ring (NM_SETTING_ETHTOOL (setting),
+			                             nm_ethtool_data[ethtool_id]->optname,
+			                             (guint32) i64);
 		return TRUE;
 	}
 
-	if (nm_ethtool_id_is_feature (ethtool_id)) {
+	if (ethtool_type == NM_ETHTOOL_TYPE_FEATURE) {
 		gs_free char *value_to_free = NULL;
 		NMTernary val;
 
@@ -5507,6 +5528,10 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
 	PROPERTY_INFO_ETHTOOL (COALESCE_TX_USECS_IRQ),
 	PROPERTY_INFO_ETHTOOL (COALESCE_TX_USECS_HIGH),
 	PROPERTY_INFO_ETHTOOL (COALESCE_TX_USECS_LOW),
+	PROPERTY_INFO_ETHTOOL (RING_RX),
+	PROPERTY_INFO_ETHTOOL (RING_RX_JUMBO),
+	PROPERTY_INFO_ETHTOOL (RING_RX_MINI),
+	PROPERTY_INFO_ETHTOOL (RING_TX),
 	NULL,
 };
 

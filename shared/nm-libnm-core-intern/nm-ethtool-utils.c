@@ -93,6 +93,10 @@ const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1] = {
 	ETHT_DATA (FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION),
 	ETHT_DATA (FEATURE_TX_UDP_TNL_SEGMENTATION),
 	ETHT_DATA (FEATURE_TX_VLAN_STAG_HW_INSERT),
+	ETHT_DATA (RING_RX),
+	ETHT_DATA (RING_RX_JUMBO),
+	ETHT_DATA (RING_RX_MINI),
+	ETHT_DATA (RING_TX),
 	[_NM_ETHTOOL_ID_NUM] = NULL,
 };
 
@@ -172,6 +176,10 @@ static const guint8 _by_name[_NM_ETHTOOL_ID_NUM] = {
 	NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION,
 	NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,
 	NM_ETHTOOL_ID_FEATURE_TXVLAN,
+	NM_ETHTOOL_ID_RING_RX,
+	NM_ETHTOOL_ID_RING_RX_JUMBO,
+	NM_ETHTOOL_ID_RING_RX_MINI,
+	NM_ETHTOOL_ID_RING_TX,
 };
 
 /*****************************************************************************/
@@ -252,4 +260,17 @@ nm_ethtool_data_get_by_optname (const char *optname)
 	                                         _by_name_cmp,
 	                                         NULL);
 	return (idx < 0) ? NULL : nm_ethtool_data[_by_name[idx]];
+}
+
+NMEthtoolType
+nm_ethtool_id_to_type (NMEthtoolID id)
+{
+	if (nm_ethtool_id_is_coalesce (id))
+		return NM_ETHTOOL_TYPE_COALESCE;
+	if (nm_ethtool_id_is_feature (id))
+		return NM_ETHTOOL_TYPE_FEATURE;
+	if (nm_ethtool_id_is_ring (id))
+		return NM_ETHTOOL_TYPE_RING;
+
+	return NM_ETHTOOL_TYPE_UNKNOWN;
 }

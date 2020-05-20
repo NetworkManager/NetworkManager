@@ -93,12 +93,27 @@ typedef enum {
 	NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,
 	_NM_ETHTOOL_ID_FEATURE_LAST = NM_ETHTOOL_ID_FEATURE_TX_VLAN_STAG_HW_INSERT,
 
-	_NM_ETHTOOL_ID_LAST = _NM_ETHTOOL_ID_FEATURE_LAST,
+	_NM_ETHTOOL_ID_RING_FIRST = _NM_ETHTOOL_ID_FEATURE_LAST + 1,
+	NM_ETHTOOL_ID_RING_RX = _NM_ETHTOOL_ID_RING_FIRST,
+	NM_ETHTOOL_ID_RING_RX_JUMBO,
+	NM_ETHTOOL_ID_RING_RX_MINI,
+	NM_ETHTOOL_ID_RING_TX,
+	_NM_ETHTOOL_ID_RING_LAST = NM_ETHTOOL_ID_RING_TX,
+
+	_NM_ETHTOOL_ID_LAST = _NM_ETHTOOL_ID_RING_LAST,
 
 	_NM_ETHTOOL_ID_COALESCE_NUM = (_NM_ETHTOOL_ID_COALESCE_LAST - _NM_ETHTOOL_ID_COALESCE_FIRST + 1),
 	_NM_ETHTOOL_ID_FEATURE_NUM = (_NM_ETHTOOL_ID_FEATURE_LAST - _NM_ETHTOOL_ID_FEATURE_FIRST + 1),
+	_NM_ETHTOOL_ID_RING_NUM = (_NM_ETHTOOL_ID_RING_LAST - _NM_ETHTOOL_ID_RING_FIRST + 1),
 	_NM_ETHTOOL_ID_NUM = (_NM_ETHTOOL_ID_LAST - _NM_ETHTOOL_ID_FIRST + 1),
 } NMEthtoolID;
+
+typedef enum {
+	NM_ETHTOOL_TYPE_UNKNOWN,
+	NM_ETHTOOL_TYPE_COALESCE,
+	NM_ETHTOOL_TYPE_FEATURE,
+	NM_ETHTOOL_TYPE_RING,
+} NMEthtoolType;
 
 typedef struct {
 	const char *optname;
@@ -108,6 +123,8 @@ typedef struct {
 extern const NMEthtoolData *const nm_ethtool_data[_NM_ETHTOOL_ID_NUM + 1];
 
 const NMEthtoolData *nm_ethtool_data_get_by_optname (const char *optname);
+
+NMEthtoolType nm_ethtool_id_to_type (NMEthtoolID id);
 
 /****************************************************************************/
 
@@ -130,6 +147,12 @@ static inline gboolean
 nm_ethtool_id_is_coalesce (NMEthtoolID id)
 {
 	return id >= _NM_ETHTOOL_ID_COALESCE_FIRST && id <= _NM_ETHTOOL_ID_COALESCE_LAST;
+}
+
+static inline gboolean
+nm_ethtool_id_is_ring (NMEthtoolID id)
+{
+	return id >= _NM_ETHTOOL_ID_RING_FIRST && id <= _NM_ETHTOOL_ID_RING_LAST;
 }
 
 /****************************************************************************/

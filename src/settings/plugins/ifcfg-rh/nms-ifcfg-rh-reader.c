@@ -4248,6 +4248,130 @@ wireless_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+typedef struct {
+	const char *optname;
+	union {
+		guint32 u32;
+		NMTernary nmternary;
+	} v;
+	gboolean has_value;
+} NMEthtoolIfcfgOption;
+
+/* returns an 'iterator' to words
+ * pointing to the next unprocessed option or NULL
+ * in case of failure */
+static const char **
+_next_ethtool_options_nmternary (const char **words,
+                                 NMEthtoolType ethtool_type,
+                                 NMEthtoolIfcfgOption *out_value)
+{
+	const char *opt;
+	const char *opt_val;
+	const NMEthtoolData *d = NULL;
+	NMTernary onoff = NM_TERNARY_DEFAULT;
+
+	nm_assert (out_value);
+
+	out_value->has_value = FALSE;
+	out_value->optname = NULL;
+
+	if (   !words
+	    || !words[0]
+	    || !words[1])
+		return NULL;
+
+	opt = *words;
+	opt_val = *(++words);
+
+	if (nm_streq0 (opt_val, "on"))
+		onoff = NM_TERNARY_TRUE;
+	else if (nm_streq0 (opt_val, "off"))
+		onoff = NM_TERNARY_FALSE;
+
+	d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt, ethtool_type);
+	if (!d) {
+		if (onoff != NM_TERNARY_DEFAULT) {
+			/* the next value is just the on/off argument. Skip it too. */
+			++words;
+		}
+
+		/* silently ignore unsupported offloading features. */
+		return words;
+	}
+
+	if (onoff == NM_TERNARY_DEFAULT) {
+		PARSE_WARNING ("Expects on/off argument for feature '%s'", opt);
+		return words;
+	}
+
+	out_value->has_value = TRUE;
+	out_value->optname = d->optname;
+	out_value->v.nmternary = onoff;
+
+	return ++words;
+}
+
+/* returns an 'iterator' to words
+ * pointing to the next unprocessed option or NULL
+ * in case of failure */
+static const char **
+_next_ethtool_options_uint32 (const char **words,
+                              NMEthtoolType ethtool_type,
+                              NMEthtoolIfcfgOption *out_value)
+{
+	gint64 i64;
+	const char *opt;
+	const char *opt_val;
+	const NMEthtoolData *d = NULL;
+
+	nm_assert (out_value);
+
+	out_value->has_value = FALSE;
+	out_value->optname = NULL;
+
+	if (   !words
+	    || !words[0]
+	    || !words[1])
+		return NULL;
+
+	opt = *words;
+	opt_val = *(++words);
+
+	i64 = _nm_utils_ascii_str_to_int64 (opt_val, 10, 0, G_MAXUINT32, -1);
+
+	d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt, ethtool_type);
+	if (!d) {
+		if (i64 != -1) {
+			/* the next value is just the on/off argument. Skip it too. */
+			++words;
+		}
+
+		/* silently ignore unsupported offloading features. */
+		return words;
+	}
+
+	out_value->has_value = TRUE;
+	out_value->optname = d->optname;
+	out_value->v.u32 = (guint32) i64;
+
+	return ++words;
+}
+
+static
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_get_ethtool_type_by_name,
+	NMEthtoolType,
+	{ nm_assert (name); },
+	{ return NM_ETHTOOL_TYPE_UNKNOWN; },
+	{ "--coalesce", NM_ETHTOOL_TYPE_COALESCE    },
+	{ "--features", NM_ETHTOOL_TYPE_FEATURE     },
+	{ "--offload",  NM_ETHTOOL_TYPE_FEATURE     },
+	{ "--set-ring", NM_ETHTOOL_TYPE_RING        },
+	{ "-C",         NM_ETHTOOL_TYPE_COALESCE    },
+	{ "-G",         NM_ETHTOOL_TYPE_RING        },
+	{ "-K",         NM_ETHTOOL_TYPE_FEATURE     },
+);
+
 static void
 parse_ethtool_option (const char *value,
                       NMSettingWiredWakeOnLan *out_flags,
@@ -4257,100 +4381,67 @@ parse_ethtool_option (const char *value,
                       const char **out_duplex,
                       NMSettingEthtool **out_s_ethtool)
 {
-	gs_free const char **words = NULL;
 	guint i;
+	const char **w_iter;
+	NMEthtoolIfcfgOption ifcfg_option;
+	gs_free const char **words = NULL;
+	NMEthtoolType ethtool_type = NM_ETHTOOL_TYPE_UNKNOWN;
 
 	words = nm_utils_strsplit_set (value, " \t\n");
 	if (!words)
 		return;
 
-	if (words[0] && words[0][0] == '-') {
-		/* /sbin/ethtool $opts */
-		if (NM_IN_STRSET (words[0], "-K", "--features", "--offload")) {
-			if (!words[1]) {
-				/* first argument must be the interface name. This is invalid. */
-				return;
-			}
+	if (words[0])
+		ethtool_type = _get_ethtool_type_by_name (words[0]);
 
-			if (!*out_s_ethtool)
-				*out_s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
-
-			for (i = 2; words[i]; ) {
-				const char *opt = words[i];
-				const char *opt_val = words[++i];
-				const NMEthtoolData *d = NULL;
-				NMTernary onoff = NM_TERNARY_DEFAULT;
-
-				if (nm_streq0 (opt_val, "on"))
-					onoff = NM_TERNARY_TRUE;
-				else if (nm_streq0 (opt_val, "off"))
-					onoff = NM_TERNARY_FALSE;
-
-				d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt);
-
-				if (   !d
-				    || !nm_ethtool_id_is_feature (d->id)) {
-					if (onoff != NM_TERNARY_DEFAULT) {
-						/* the next value is just the on/off argument. Skip it too. */
-						i++;
-					}
-
-					/* silently ignore unsupported offloading features. */
-					continue;
-				}
-
-				i++;
-
-				if (onoff == NM_TERNARY_DEFAULT) {
-					PARSE_WARNING ("Expects on/off argument for feature '%s'", opt);
-					continue;
-				}
-
-				nm_setting_ethtool_set_feature (*out_s_ethtool,
-				                                d->optname,
-				                                onoff);
-			}
-		} else if (NM_IN_STRSET (words[0], "-C", "--coalesce")) {
-			if (!words[1]) {
-				/* first argument must be the interface name. This is invalid. */
-				return;
-			}
-
-			if (!*out_s_ethtool)
-				*out_s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
-
-			for (i = 2; words[i]; ) {
-				const char *opt = words[i];
-				const char *opt_val = words[++i];
-				const NMEthtoolData *d = NULL;
-				gint64 i64;
-
-				i64 = _nm_utils_ascii_str_to_int64 (opt_val, 10, 0, G_MAXUINT32, -1);
-				d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt);
-
-				if (   !d
-				    || !nm_ethtool_id_is_coalesce (d->id)) {
-					if (i64 != -1) {
-						/* the next value is just the argument. Skip it too. */
-						i++;
-					}
-					/* silently ignore unsupported coalesce settings. */
-					continue;
-				}
-
-				i++;
-
-				if (i64 == -1) {
-					PARSE_WARNING ("Expects integer argument for setting '%s'", opt);
-					continue;
-				}
-
-				nm_setting_ethtool_set_coalesce (*out_s_ethtool,
-				                                 d->optname,
-				                                 (guint32) i64);
-			}
+	if (ethtool_type != NM_ETHTOOL_TYPE_UNKNOWN) {
+		if (!words[1]) {
+			/* first argument must be the interface name. This is invalid. */
+			return;
 		}
-		return;
+
+		if (!*out_s_ethtool)
+			*out_s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
+
+		/* skip ethtool type && interface name */
+		w_iter = &words[2];
+
+		if (ethtool_type == NM_ETHTOOL_TYPE_FEATURE) {
+			while (w_iter && *w_iter) {
+				w_iter = _next_ethtool_options_nmternary (w_iter,
+				                                          ethtool_type,
+				                                          &ifcfg_option);
+
+				if (ifcfg_option.has_value)
+					nm_setting_ethtool_set_feature (*out_s_ethtool,
+					                                ifcfg_option.optname,
+					                                ifcfg_option.v.nmternary);
+			}
+			return;
+		}
+		if (NM_IN_SET (ethtool_type,
+		               NM_ETHTOOL_TYPE_COALESCE,
+		               NM_ETHTOOL_TYPE_RING)) {
+			while (w_iter && *w_iter) {
+				w_iter = _next_ethtool_options_uint32 (w_iter,
+				                                       ethtool_type,
+				                                       &ifcfg_option);
+
+				if (ifcfg_option.has_value) {
+					if (ethtool_type == NM_ETHTOOL_TYPE_COALESCE)
+						nm_setting_ethtool_set_coalesce (*out_s_ethtool,
+						                                 ifcfg_option.optname,
+						                                 ifcfg_option.v.u32);
+					else
+						nm_setting_ethtool_set_ring (*out_s_ethtool,
+						                             ifcfg_option.optname,
+						                             ifcfg_option.v.u32);
+				}
+			}
+			return;
+		}
+		/* unsupported ethtool type */
+		nm_assert_not_reached();
 	}
 
 	/* /sbin/ethtool -s ${REALDEVICE} $opts */

@@ -10364,35 +10364,48 @@ test_ethtool_names (void)
 		{ NM_ETHTOOL_ID_FEATURE_RXVLAN, "rx-vlan-hw-parse" },
 		{ NM_ETHTOOL_ID_FEATURE_TXVLAN, "tx-vlan-hw-insert" },
 	};
+	const struct {
+		guint nm_ethtool_id_first;
+		guint nm_ethtool_id_last;
+	} s_idxs[] = {
+		{ _NM_ETHTOOL_ID_FEATURE_FIRST,  _NM_ETHTOOL_ID_FEATURE_LAST },
+		{ _NM_ETHTOOL_ID_COALESCE_FIRST, _NM_ETHTOOL_ID_COALESCE_LAST },
+		{ _NM_ETHTOOL_ID_RING_FIRST,     _NM_ETHTOOL_ID_RING_LAST },
+	};
 	const NMEthtoolData *data;
 	NMEthtoolID id;
-	int i;
+	guint i, k;
 
-	for (id = _NM_ETHTOOL_ID_FIRST; id <= _NM_ETHTOOL_ID_LAST; id++) {
-		const char *ifcfg_rh_name;
+	for (k = 0; k < sizeof(s_idxs) / sizeof(*s_idxs); ++k) {
+		for (id = s_idxs[k].nm_ethtool_id_first; id <= s_idxs[k].nm_ethtool_id_last; id++) {
+			const char *ifcfg_rh_name;
 
-		g_assert (id >= 0);
-		g_assert (id < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
-		ifcfg_rh_name = _nm_ethtool_ifcfg_names[id];
-		g_assert (ifcfg_rh_name && ifcfg_rh_name[0]);
+			g_assert (id >= 0);
+			g_assert (id < G_N_ELEMENTS (_nm_ethtool_ifcfg_names));
+			ifcfg_rh_name = _nm_ethtool_ifcfg_names[id];
+			g_assert (ifcfg_rh_name && ifcfg_rh_name[0]);
 
-		for (i = 0; i < G_N_ELEMENTS (_nm_ethtool_ifcfg_names); i++) {
-			if (i != id)
-				g_assert_cmpstr (ifcfg_rh_name, !=, _nm_ethtool_ifcfg_names[i]);
+			for (i = s_idxs[k].nm_ethtool_id_first; i < s_idxs[k].nm_ethtool_id_last; i++) {
+				if (i != id)
+					g_assert_cmpstr (ifcfg_rh_name, !=, _nm_ethtool_ifcfg_names[i]);
+			}
+
+			g_assert_cmpstr (nms_ifcfg_rh_utils_get_ethtool_name (id), ==, ifcfg_rh_name);
+
+			data = nms_ifcfg_rh_utils_get_ethtool_by_name (ifcfg_rh_name, nm_ethtool_id_to_type (id));
+
+			g_assert (data);
+			g_assert (data->id == id);
 		}
-
-		g_assert_cmpstr (nms_ifcfg_rh_utils_get_ethtool_name (id), ==, ifcfg_rh_name);
-
-		data = nms_ifcfg_rh_utils_get_ethtool_by_name (ifcfg_rh_name);
-		g_assert (data);
-		g_assert (data->id == id);
 	}
 
 	for (i = 0; i < G_N_ELEMENTS (kernel_names); i++) {
 		const char *name = kernel_names[i].kernel_name;
 
 		id = kernel_names[i].ethtool_id;
-		data = nms_ifcfg_rh_utils_get_ethtool_by_name (name);
+
+		data = nms_ifcfg_rh_utils_get_ethtool_by_name (name, nm_ethtool_id_to_type (id));
+
 		g_assert (data);
 		g_assert (data->id == id);
 		g_assert_cmpstr (nms_ifcfg_rh_utils_get_ethtool_name (id), !=, name);

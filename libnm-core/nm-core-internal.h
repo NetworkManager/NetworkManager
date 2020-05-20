@@ -310,6 +310,8 @@ gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue 
 
 /*****************************************************************************/
 
+typedef gboolean (*nm_setting_gendata_filter_fcn)(const char *name);
+
 GHashTable *_nm_setting_gendata_hash (NMSetting *setting,
                                       gboolean create_if_necessary);
 
@@ -333,6 +335,20 @@ const char *const*nm_setting_gendata_get_all_names (NMSetting *setting,
                                                     guint *out_len);
 
 GVariant *const*nm_setting_gendata_get_all_values (NMSetting *setting);
+
+gboolean nm_setting_gendata_clear (NMSetting *setting,
+                                   const char *optname);
+
+gboolean nm_setting_gendata_clear_all (NMSetting *setting,
+                                       nm_setting_gendata_filter_fcn filter);
+
+gboolean nm_setting_gendata_get_uint32 (NMSetting *setting,
+                                        const char *optname,
+                                        guint32 *out_value);
+
+void nm_setting_gendata_set_uint32 (NMSetting *setting,
+                                    const char *optname,
+                                    guint32 value);
 
 /*****************************************************************************/
 
