@@ -48,6 +48,20 @@
 
 /*****************************************************************************/
 
+/**
+ * NMUtilsPredicateStr:
+ * @str: the name to check.
+ *
+ * This function takes a string argument and returns either %TRUE or %FALSE.
+ * It is a general purpose predicate, for example used by nm_setting_option_clear_by_name().
+ *
+ * Returns: %TRUE if the predicate function matches.
+ *
+ * Since: 1.26
+ */
+
+/*****************************************************************************/
+
 struct _NMSockAddrEndpoint {
 	const char *host;
 	guint16 port;
