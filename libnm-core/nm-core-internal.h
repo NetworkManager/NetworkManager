@@ -331,14 +331,6 @@ gboolean _nm_setting_option_clear (NMSetting *setting,
 gboolean _nm_setting_option_clear_all (NMSetting *setting,
                                        NMSettingOptionFilterFcn filter);
 
-gboolean _nm_setting_option_get_uint32 (NMSetting *setting,
-                                        const char *optname,
-                                        guint32 *out_value);
-
-void _nm_setting_option_set_uint32 (NMSetting *setting,
-                                    const char *optname,
-                                    guint32 value);
-
 /*****************************************************************************/
 
 guint nm_setting_ethtool_init_features (NMSettingEthtool *setting,

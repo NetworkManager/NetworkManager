@@ -343,9 +343,19 @@ gboolean nm_setting_option_get_boolean (NMSetting *setting,
                                         gboolean *out_value);
 
 NM_AVAILABLE_IN_1_26
+gboolean nm_setting_option_get_uint32 (NMSetting *setting,
+                                       const char *opt_name,
+                                       guint32 *out_value);
+
+NM_AVAILABLE_IN_1_26
 void nm_setting_option_set (NMSetting *setting,
                             const char *opt_name,
                             GVariant *variant);
+
+NM_AVAILABLE_IN_1_26
+void nm_setting_option_set_uint32 (NMSetting *setting,
+                                   const char *opt_name,
+                                   guint32 value);
 
 NM_AVAILABLE_IN_1_26
 void nm_setting_option_set_boolean (NMSetting *setting,

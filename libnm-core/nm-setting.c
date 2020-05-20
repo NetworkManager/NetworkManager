@@ -2512,39 +2512,6 @@ _nm_setting_option_get_all_names (NMSetting *setting,
 }
 
 gboolean
-_nm_setting_option_get_uint32 (NMSetting *setting,
-                               const char *optname,
-                               guint32 *out_value)
-{
-	GVariant *v;
-
-	nm_assert (NM_IS_SETTING (setting));
-	nm_assert (nm_str_not_empty (optname));
-
-	v = nm_setting_option_get (setting, optname);
-	if (   v
-	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
-		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
-		return TRUE;
-	}
-	NM_SET_OUT (out_value, 0);
-	return FALSE;
-}
-
-void
-_nm_setting_option_set_uint32 (NMSetting *setting,
-                               const char *optname,
-                               guint32 value)
-{
-	nm_assert (NM_IS_SETTING (setting));
-	nm_assert (nm_str_not_empty (optname));
-
-	g_hash_table_insert (_nm_setting_option_hash (setting, TRUE),
-	                     g_strdup (optname),
-	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
-}
-
-gboolean
 _nm_setting_option_clear (NMSetting *setting,
                           const char *optname)
 {
@@ -2636,6 +2603,34 @@ nm_setting_option_get_boolean (NMSetting *setting,
 		return TRUE;
 	}
 	NM_SET_OUT (out_value, FALSE);
+	return FALSE;
+}
+
+/**
+ * nm_setting_option_get_uint32:
+ * @setting: the #NMSetting
+ * @opt_name: the option to get
+ * @out_value: (allow-none) (out): the optional output value.
+ *   If the option is unset, 0 will be returned.
+ *
+ * Returns: %TRUE if @opt_name is set to a uint32 variant.
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_setting_option_get_uint32 (NMSetting *setting,
+                              const char *opt_name,
+                              guint32 *out_value)
+{
+	GVariant *v;
+
+	v = nm_setting_option_get (NM_SETTING (setting), opt_name);
+	if (   v
+	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
+		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
+		return TRUE;
+	}
+	NM_SET_OUT (out_value, 0);
 	return FALSE;
 }
 
@@ -2746,6 +2741,45 @@ nm_setting_option_set_boolean (NMSetting *setting,
 	g_hash_table_insert (hash,
 	                     g_strdup (opt_name),
 	                     g_variant_ref_sink (g_variant_new_boolean (value)));
+
+	if (changed_value)
+		_nm_setting_option_notify (setting, !changed_name);
+}
+
+/**
+ * nm_setting_option_set_uint32:
+ * @setting: the #NMSetting
+ * @value: the value to set.
+ *
+ * Like nm_setting_option_set() to set a uint32 GVariant.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_set_uint32 (NMSetting *setting,
+                              const char *opt_name,
+                              guint32 value)
+{
+	GVariant *old_variant;
+	gboolean changed_name;
+	gboolean changed_value;
+	GHashTable *hash;
+
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (opt_name);
+
+	hash = _nm_setting_option_hash (setting, TRUE);
+
+	old_variant = g_hash_table_lookup (hash, opt_name);
+
+	changed_name = (old_variant == NULL);
+	changed_value =    changed_name
+	                || (   !g_variant_is_of_type (old_variant, G_VARIANT_TYPE_UINT32)
+	                    || g_variant_get_uint32 (old_variant) != value);
+
+	g_hash_table_insert (hash,
+	                     g_strdup (opt_name),
+	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
 
 	if (changed_value)
 		_nm_setting_option_notify (setting, !changed_name);

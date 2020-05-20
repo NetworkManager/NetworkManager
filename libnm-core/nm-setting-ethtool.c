@@ -294,9 +294,9 @@ nm_setting_ethtool_get_coalesce (NMSettingEthtool *setting,
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), FALSE);
 	g_return_val_if_fail (nm_ethtool_optname_is_coalesce (optname), FALSE);
 
-	return _nm_setting_option_get_uint32 (NM_SETTING (setting),
-	                                      optname,
-	                                      out_value);
+	return nm_setting_option_get_uint32 (NM_SETTING (setting),
+	                                     optname,
+	                                     out_value);
 }
 
 /**
@@ -330,9 +330,9 @@ nm_setting_ethtool_set_coalesce (NMSettingEthtool *setting,
 	               NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX))
 		value = !!value;
 
-	_nm_setting_option_set_uint32 (NM_SETTING (setting),
-	                               optname,
-	                               value);
+	nm_setting_option_set_uint32 (NM_SETTING (setting),
+	                              optname,
+	                              value);
 	_notify_attributes (setting);
 }
 
@@ -398,9 +398,9 @@ nm_setting_ethtool_get_ring (NMSettingEthtool *setting,
 	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), FALSE);
 	g_return_val_if_fail (nm_ethtool_optname_is_ring (optname), FALSE);
 
-	return _nm_setting_option_get_uint32 (NM_SETTING (setting),
-	                                      optname,
-	                                      out_value);
+	return nm_setting_option_get_uint32 (NM_SETTING (setting),
+	                                     optname,
+	                                     out_value);
 }
 
 /**
@@ -429,9 +429,9 @@ nm_setting_ethtool_set_ring (NMSettingEthtool *setting,
 
 	g_return_if_fail (nm_ethtool_id_is_ring (ethtool_id));
 
-	_nm_setting_option_set_uint32 (NM_SETTING (setting),
-	                               optname,
-	                               value);
+	nm_setting_option_set_uint32 (NM_SETTING (setting),
+	                              optname,
+	                              value);
 	_notify_attributes (setting);
 }
 
