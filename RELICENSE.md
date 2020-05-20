@@ -89,6 +89,7 @@ Consent/Disapproval List
 - [Y] Giovanni Campagna <gcampagna@src.gnome.org>
 - [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
+- [Y] Jan Luebbe <jlu@pengutronix.de> (Pengutronix)
 - [Y] Jan Tojnar <jtojnar@gmail.com>
 - [Y] Javier Arteaga <jarteaga@jbeta.is>
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
@@ -124,5 +125,6 @@ list above indicates whether a contributor provided code for a legal entity here
 
 - [Y] Endless Mobile, Inc.
 - [Y] Endless OS LLC
+- [Y] Pengutronix
 - [Y] Red Hat, Inc.
 - [Y] Sigfox
