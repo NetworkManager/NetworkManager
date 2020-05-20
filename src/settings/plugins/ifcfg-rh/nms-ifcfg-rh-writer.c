@@ -1079,6 +1079,27 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
+static void
+_ethtool_gstring_prepare (GString **str,
+                          gboolean *is_first,
+                          char cmdline_flag,
+                          const char *iface)
+{
+	if (!*is_first) {
+		nm_assert (*str && (*str)->len > 0);
+		return;
+	}
+
+	if (!*str)
+		*str = g_string_sized_new (30);
+	else {
+		nm_assert ((*str)->len > 0);
+		g_string_append (*str, " ; ");
+	}
+	g_string_append_printf (*str, "-%c %s", cmdline_flag, iface);
+	*is_first = FALSE;
+}
+
 static gboolean
 write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
@@ -1160,7 +1181,10 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 	if (s_ethtool) {
 		NMEthtoolID ethtool_id;
 		NMSettingConnection *s_con;
-		const char *iface = NULL;
+		const char *iface;
+		gboolean is_first;
+		guint32 u32;
+		NMTernary t;
 
 		s_con = nm_connection_get_setting_connection (connection);
 		if (s_con) {
@@ -1172,62 +1196,46 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 			                                       || (ch >= '0' && ch <= '9')
 			                                       || NM_IN_SET (ch, '_'))))
 				iface = NULL;
-		}
+		} else
+			iface = NULL;
+		if (!iface)
+			iface = "net0";
 
-		if (!str)
-			str = g_string_sized_new (30);
-		else
-			g_string_append (str, " ; ");
-		g_string_append (str, "-K ");
-		g_string_append (str, iface ?: "net0");
-
+		is_first = TRUE;
 		for (ethtool_id = _NM_ETHTOOL_ID_FEATURE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST; ethtool_id++) {
-			const NMEthtoolData *ed = nm_ethtool_data[ethtool_id];
-			NMTernary val;
-
 			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-
-			val = nm_setting_ethtool_get_feature (s_ethtool, ed->optname);
-			if (val == NM_TERNARY_DEFAULT)
+			t = nm_setting_ethtool_get_feature (s_ethtool, nm_ethtool_data[ethtool_id]->optname);
+			if (t == NM_TERNARY_DEFAULT)
 				continue;
 
+			_ethtool_gstring_prepare (&str, &is_first, 'K', iface);
 			g_string_append_c (str, ' ');
 			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			g_string_append (str, val == NM_TERNARY_TRUE ? " on" : " off");
+			g_string_append (str, t != NM_TERNARY_FALSE ? " on" : " off");
 		}
 
-		g_string_append (str, " ; -C ");
-		g_string_append (str, iface ?: "net0");
-
+		is_first = TRUE;
 		for (ethtool_id = _NM_ETHTOOL_ID_COALESCE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_COALESCE_LAST; ethtool_id++) {
-			const NMEthtoolData *ed = nm_ethtool_data[ethtool_id];
-			guint32 val;
-
 			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-
-			if (!nm_setting_ethtool_get_coalesce (s_ethtool, ed->optname, &val))
+			if (!nm_setting_ethtool_get_coalesce (s_ethtool, nm_ethtool_data[ethtool_id]->optname, &u32))
 				continue;
 
+			_ethtool_gstring_prepare (&str, &is_first, 'C', iface);
 			g_string_append_c (str, ' ');
 			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			g_string_append_printf (str, " %"G_GUINT32_FORMAT, val);
+			g_string_append_printf (str, " %"G_GUINT32_FORMAT, u32);
 		}
 
-		g_string_append (str, " ; -G ");
-		g_string_append (str, iface ?: "net0");
-
+		is_first = TRUE;
 		for (ethtool_id = _NM_ETHTOOL_ID_RING_FIRST; ethtool_id <= _NM_ETHTOOL_ID_RING_LAST; ethtool_id++) {
-			const NMEthtoolData *ed = nm_ethtool_data[ethtool_id];
-			guint32 val;
-
 			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-
-			if (!nm_setting_ethtool_get_ring (s_ethtool, ed->optname, &val))
+			if (!nm_setting_ethtool_get_ring (s_ethtool, nm_ethtool_data[ethtool_id]->optname, &u32))
 				continue;
 
+			_ethtool_gstring_prepare (&str, &is_first, 'G', iface);
 			g_string_append_c (str, ' ');
 			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
-			g_string_append_printf (str, " %"G_GUINT32_FORMAT, val);
+			g_string_append_printf (str, " %"G_GUINT32_FORMAT, u32);
 		}
 	}
 
