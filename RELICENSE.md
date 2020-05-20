@@ -82,6 +82,7 @@ Consent/Disapproval List
 - [Y] Corentin Noël <corentin@elementary.io>
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <danw@redhat.com> (Red Hat, Inc.)
+- [Y] Daniel Drake <dsd@laptop.org> (One Laptop per Child)
 - [Y] Evan Broder <evan@ebroder.net>
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Frédéric Danis <frederic.danis.oss@gmail.com> (Collabora Ltd, Sigfox)
@@ -117,7 +118,10 @@ list above indicates whether a contributor provided code for a legal entity here
 - [?] Endless Mobile, Inc.
 - [?] Intel Corporation
 - [?] Novell, Inc.
+- [?] One Laptop per Child
 - [?] SUSE
 
+- [Y] Endless Mobile, Inc.
+- [Y] Endless OS LLC
 - [Y] Red Hat, Inc.
 - [Y] Sigfox
