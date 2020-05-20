@@ -18,6 +18,7 @@ libnm_core_headers = files(
   'nm-core-types.h',
   'nm-dbus-interface.h',
   'nm-errors.h',
+  'nm-keyfile.h',
   'nm-setting-6lowpan.h',
   'nm-setting-8021x.h',
   'nm-setting-adsl.h',

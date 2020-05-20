@@ -13,6 +13,8 @@
 
 #include <sys/types.h>
 
+#include "nm-keyfile.h"
+
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
 

@@ -20,10 +20,12 @@
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
-#include "nm-core-internal.h"
-#include "nm-keyfile-utils.h"
 
+#include "nm-core-internal.h"
+#include "nm-keyfile.h"
 #include "nm-setting-user.h"
+
+#include "nm-keyfile-utils.h"
 
 /*****************************************************************************/
 

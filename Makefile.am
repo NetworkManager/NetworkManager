@@ -925,6 +925,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
 	libnm-core/nm-errors.h \
+	libnm-core/nm-keyfile.h \
 	libnm-core/nm-setting-6lowpan.h \
 	libnm-core/nm-setting-8021x.h \
 	libnm-core/nm-setting-adsl.h \

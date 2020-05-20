@@ -138,6 +138,7 @@ deps = [
   libnmdbus_dep,
   libnm_libnm_core_intern_dep,
   libnm_nm_default_dep,
+  libnm_keyfile_dep,
   libnm_udev_aux_dep,
   libudev_dep,
 ]
