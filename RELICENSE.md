@@ -72,6 +72,7 @@ Consent/Disapproval List
 ========================
 
 - [Y] Aleksander Morgado <aleksander@aleksander.es>
+- [Y] Alfonso Sánchez-Beato <alfonso.sanchez-beato@canonical.com> (Canonical, Ltd.)
 - [Y] Antoine Faure <antoine.faure@sigfox.com> (Sigfox)
 - [Y] Antony Mee <antony@onlymee.co.uk>
 - [Y] Atul Anand <atulhjp@gmail.com>
