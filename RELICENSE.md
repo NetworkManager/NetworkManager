@@ -118,7 +118,6 @@ that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
 - [?] Canonical, Ltd.
-- [?] Endless Mobile, Inc.
 - [?] Intel Corporation
 - [?] Novell, Inc.
 - [?] One Laptop per Child
