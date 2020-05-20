@@ -109,6 +109,7 @@ Consent/Disapproval List
 - [Y] Tambet Ingo <tambet@gmail.com> (Novell, Inc.)
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 - [Y] Timothy Redaelli <tredaelli@redhat.com> (Red Hat, Inc.)
+- [Y] Yuri Chornoivan <yurchor@ukr.net>
 - [Y] luz.paz <luzpaz@users.noreply.github.com>
 
 Copyright Held by Other Legal Entities
