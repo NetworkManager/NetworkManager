@@ -5,6 +5,7 @@ Overview of changes since NetworkManager-1.22.10
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
+* Fix a bug preventing lease renewal in the internal DHCP client.
 * Add a new build option 'firewalld-zone'; when enabled,
   NetworkManager installs a firewalld zone for connection sharing and
   puts interfaces using IPv4 or IPv6 shared mode in this zone during
@@ -13,6 +14,10 @@ This is a new stable release of NetworkManager.  Notable changes include:
   masquerading and open needed ports for DHCP and DNS. The new option
   is useful on systems using firewalld with the nftables backend,
   where the iptables rules would not be sufficient.
+* Support changing the MTU of OVS interfaces.
+* Better handle a restart of ovsdb process.
+* Support the 'no-reload' and 'trust-ad' resolv.conf options.
+* Various minor bug fixes and improvements.
 
 ===============================================
 NetworkManager-1.22.10
