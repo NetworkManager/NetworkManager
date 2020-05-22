@@ -89,6 +89,7 @@ Consent/Disapproval List
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Frédéric Danis <frederic.danis.oss@gmail.com> (Collabora Ltd, Sigfox)
 - [Y] Giovanni Campagna <gcampagna@src.gnome.org>
+- [Y] Ikey Doherty <michael.i.doherty@intel.com> (Intel Corporation)
 - [Y] Iñigo Martínez <inigomartinez@gmail.com>
 - [Y] Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
 - [Y] Jan Luebbe <jlu@pengutronix.de> (Pengutronix)
