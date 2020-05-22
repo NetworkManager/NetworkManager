@@ -6738,9 +6738,9 @@ nm_client_dbus_call_finish (NMClient *client,
  * nm_client_dbus_set_property:
  * @client: the #NMClient
  * @object_path: path of remote object
- * @interface_name: D-Bus interface to invoke method on
+ * @interface_name: D-Bus interface for the property to set.
  * @property_name: the name of the property to set
- * @value: a #GVariant tuple with the value to set
+ * @value: a #GVariant with the value to set.
  * @timeout_msec: the timeout in milliseconds, -1 to use the default
  *     timeout or %G_MAXINT for no timeout
  * @cancellable: (nullable): a #GCancellable or %NULL
