@@ -1909,6 +1909,9 @@ nm_platform_routing_rule_cmp_full (const NMPlatformRoutingRule *a, const NMPlatf
 }
 
 int nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b);
+int nm_platform_qdisc_cmp_full (const NMPlatformQdisc *a,
+                                const NMPlatformQdisc *b,
+                                gboolean compare_handle);
 int nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b);
 
 void nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h);
