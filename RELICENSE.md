@@ -86,6 +86,7 @@ Consent/Disapproval List
 - [Y] Daniel Drake <dsd@laptop.org> (One Laptop per Child)
 - [Y] David Cantrell <dcantrell@redhat.com> (Red Hat, Inc.)
 - [Y] Evan Broder <evan@ebroder.net>
+- [Y] Florian Echtler <floe@butterbrot.org>
 - [Y] Francesco Giudici <fgiudici@redhat.com> (Red Hat, Inc.)
 - [Y] Frédéric Danis <frederic.danis.oss@gmail.com> (Collabora Ltd, Sigfox)
 - [Y] Giovanni Campagna <gcampagna@src.gnome.org>
