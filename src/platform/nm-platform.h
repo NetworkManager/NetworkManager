@@ -69,6 +69,8 @@ typedef gboolean (*NMPObjectPredicateFunc) (const NMPObject *obj,
 #define NM_GRE_KEY      0x2000
 
 typedef enum {
+	NMP_NLM_FLAG_F_ECHO         = 0x08, /* NLM_F_ECHO, Echo this request */
+
 	/* use our own platform enum for the nlmsg-flags. Otherwise, we'd have
 	 * to include <linux/netlink.h> */
 	NMP_NLM_FLAG_F_REPLACE      = 0x100, /* NLM_F_REPLACE, Override existing */

@@ -4644,7 +4644,7 @@ _nl_msg_new_qdisc (int nlmsg_type,
 		.tcm_info = qdisc->info,
 	};
 
-	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
+	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
 
 	if (nlmsg_append_struct (msg, &tcm) < 0)
 		goto nla_put_failure;
@@ -4697,7 +4697,7 @@ _nl_msg_new_tfilter (int nlmsg_type,
 		.tcm_info = tfilter->info,
 	};
 
-	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
+	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
 
 	if (nlmsg_append_struct (msg, &tcm) < 0)
 		goto nla_put_failure;
