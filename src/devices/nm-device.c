@@ -866,48 +866,6 @@ _ethtool_features_set (NMDevice *self,
 	ethtool_state->features = g_steal_pointer (&features);
 }
 
-static gboolean
-_ethtool_init_coalesce (NMDevice *self,
-                        NMPlatform *platform,
-                        NMSettingEthtool *s_ethtool,
-                        NMEthtoolCoalesceState *coalesce)
-{
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *name;
-	GVariant *variant;
-	gsize n_coalesce_set = 0;
-
-	nm_assert (self);
-	nm_assert (platform);
-	nm_assert (coalesce);
-	nm_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
-
-	hash = _nm_setting_gendata_hash (NM_SETTING (s_ethtool), FALSE);
-	if (!hash)
-		return FALSE;
-
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant)) {
-		if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
-			continue;
-		if (!nm_ethtool_optname_is_coalesce (name))
-			continue;
-
-		if (!nm_platform_ethtool_init_coalesce (platform,
-		                                        coalesce,
-		                                        name,
-		                                        g_variant_get_uint32(variant))) {
-		    _LOGW (LOGD_DEVICE, "ethtool: invalid coalesce setting %s", name);
-		    return FALSE;
-		}
-		++n_coalesce_set;
-
-	}
-
-	return !!n_coalesce_set;
-}
-
 static void
 _ethtool_coalesce_reset (NMDevice *self,
                          NMPlatform *platform,
@@ -939,25 +897,45 @@ _ethtool_coalesce_set (NMDevice *self,
 {
 	NMEthtoolCoalesceState coalesce_old;
 	NMEthtoolCoalesceState coalesce_new;
+	gboolean has_old = FALSE;
+	GHashTable *hash;
+	GHashTableIter iter;
+	const char *name;
+	GVariant *variant;
 
-	nm_assert (ethtool_state);
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (NM_IS_PLATFORM (platform));
 	nm_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
+	nm_assert (ethtool_state);
+	nm_assert (!ethtool_state->coalesce);
 
-	if (!nm_platform_ethtool_get_link_coalesce (platform,
-	                                            ethtool_state->ifindex,
-	                                            &coalesce_old)) {
-		_LOGW (LOGD_DEVICE, "ethtool: failure getting coalesce settings (cannot read)");
+	hash = _nm_setting_option_hash (NM_SETTING (s_ethtool), FALSE);
+	if (!hash)
 		return;
+
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant)) {
+		NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name (name);
+
+		if (!nm_ethtool_id_is_coalesce (ethtool_id))
+			continue;
+
+		if (!has_old) {
+			if (!nm_platform_ethtool_get_link_coalesce (platform,
+			                                            ethtool_state->ifindex,
+			                                            &coalesce_old)) {
+				_LOGW (LOGD_DEVICE, "ethtool: failure getting coalesce settings (cannot read)");
+				return;
+			}
+			has_old = TRUE;
+			coalesce_new = coalesce_old;
+		}
+
+		nm_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32));
+		coalesce_new.s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (ethtool_id)] = g_variant_get_uint32 (variant);
 	}
 
-	coalesce_new = coalesce_old;
-
-	if (!_ethtool_init_coalesce (self,
-	                             platform,
-	                             s_ethtool,
-	                             &coalesce_new))
+	if (!has_old)
 		return;
 
 	ethtool_state->coalesce = nm_memdup (&coalesce_old, sizeof (coalesce_old));
@@ -989,7 +967,7 @@ _ethtool_init_ring (NMDevice *self,
 	nm_assert (ring);
 	nm_assert (NM_IS_SETTING_ETHTOOL (s_ethtool));
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (s_ethtool), FALSE);
+	hash = _nm_setting_option_hash (NM_SETTING (s_ethtool), FALSE);
 	if (!hash)
 		return FALSE;
 

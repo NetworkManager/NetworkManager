@@ -520,8 +520,8 @@ _ASSERT_ethtool_feature_infos (void)
 		for (k = 0; k < i; k++)
 			g_assert (inf->ethtool_id != _ethtool_feature_infos[k].ethtool_id);
 
-		g_assert (!found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]);
-		found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = TRUE;
+		g_assert (!found[_NM_ETHTOOL_ID_FEATURE_AS_IDX (inf->ethtool_id)]);
+		found[_NM_ETHTOOL_ID_FEATURE_AS_IDX (inf->ethtool_id)] = TRUE;
 
 		kstate.idx_kernel_name = inf->n_kernel_names - 1;
 		g_assert ((guint) kstate.idx_kernel_name == (guint) (inf->n_kernel_names - 1));
@@ -611,13 +611,13 @@ ethtool_get_features (SocketHandle *shandle)
 
 				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
 
-				if (!states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST])
-					states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = &states_plist0[states_plist_n];
+				if (!states->states_indexed[_NM_ETHTOOL_ID_FEATURE_AS_IDX (info->ethtool_id)])
+					states->states_indexed[_NM_ETHTOOL_ID_FEATURE_AS_IDX (info->ethtool_id)] = &states_plist0[states_plist_n];
 				((const NMEthtoolFeatureState **) states_plist0)[states_plist_n] = kstate;
 				states_plist_n++;
 			}
 
-			if (states && states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]) {
+			if (states && states->states_indexed[_NM_ETHTOOL_ID_FEATURE_AS_IDX (info->ethtool_id)]) {
 				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
 				nm_assert (!states_plist0[states_plist_n]);
 				states_plist_n++;
@@ -810,7 +810,7 @@ nmp_utils_ethtool_set_features (int ifindex,
 
 static gboolean
 ethtool_get_coalesce (SocketHandle *shandle,
-                      NMEthtoolCoalesceState *out_state)
+                      NMEthtoolCoalesceState *coalesce)
 {
 	struct ethtool_coalesce eth_data;
 
@@ -821,31 +821,35 @@ ethtool_get_coalesce (SocketHandle *shandle,
 	                          sizeof (struct ethtool_coalesce)) != 0)
 		return FALSE;
 
-	out_state->rx_coalesce_usecs            = eth_data.rx_coalesce_usecs;
-	out_state->rx_max_coalesced_frames      = eth_data.rx_max_coalesced_frames;
-	out_state->rx_coalesce_usecs_irq        = eth_data.rx_coalesce_usecs_irq;
-	out_state->rx_max_coalesced_frames_irq  = eth_data.rx_max_coalesced_frames_irq;
-	out_state->tx_coalesce_usecs            = eth_data.tx_coalesce_usecs;
-	out_state->tx_max_coalesced_frames      = eth_data.tx_max_coalesced_frames;
-	out_state->tx_coalesce_usecs_irq        = eth_data.tx_coalesce_usecs_irq;
-	out_state->tx_max_coalesced_frames_irq  = eth_data.tx_max_coalesced_frames_irq;
-	out_state->stats_block_coalesce_usecs   = eth_data.stats_block_coalesce_usecs;
-	out_state->use_adaptive_rx_coalesce     = eth_data.use_adaptive_rx_coalesce;
-	out_state->use_adaptive_tx_coalesce     = eth_data.use_adaptive_tx_coalesce;
-	out_state->pkt_rate_low                 = eth_data.pkt_rate_low;
-	out_state->rx_coalesce_usecs_low        = eth_data.rx_coalesce_usecs_low;
-	out_state->rx_max_coalesced_frames_low  = eth_data.rx_max_coalesced_frames_low;
-	out_state->tx_coalesce_usecs_low        = eth_data.tx_coalesce_usecs_low;
-	out_state->tx_max_coalesced_frames_low  = eth_data.tx_max_coalesced_frames_low;
-	out_state->pkt_rate_high                = eth_data.pkt_rate_high;
-	out_state->rx_coalesce_usecs_high       = eth_data.rx_coalesce_usecs_high;
-	out_state->rx_max_coalesced_frames_high = eth_data.rx_max_coalesced_frames_high;
-	out_state->tx_coalesce_usecs_high       = eth_data.tx_coalesce_usecs_high;
-	out_state->tx_max_coalesced_frames_high = eth_data.tx_max_coalesced_frames_high;
-	out_state->rate_sample_interval         = eth_data.rate_sample_interval;
-
+	*coalesce = (NMEthtoolCoalesceState) {
+	    .s = {
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS)]          = eth_data.rx_coalesce_usecs,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES)]         = eth_data.rx_max_coalesced_frames,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS_IRQ)]      = eth_data.rx_coalesce_usecs_irq,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES_IRQ)]     = eth_data.rx_max_coalesced_frames_irq,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS)]          = eth_data.tx_coalesce_usecs,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES)]         = eth_data.tx_max_coalesced_frames,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS_IRQ)]      = eth_data.tx_coalesce_usecs_irq,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES_IRQ)]     = eth_data.tx_max_coalesced_frames_irq,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_STATS_BLOCK_USECS)] = eth_data.stats_block_coalesce_usecs,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX)]       = eth_data.use_adaptive_rx_coalesce,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX)]       = eth_data.use_adaptive_tx_coalesce,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_PKT_RATE_LOW)]      = eth_data.pkt_rate_low,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS_LOW)]      = eth_data.rx_coalesce_usecs_low,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES_LOW)]     = eth_data.rx_max_coalesced_frames_low,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS_LOW)]      = eth_data.tx_coalesce_usecs_low,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES_LOW)]     = eth_data.tx_max_coalesced_frames_low,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_PKT_RATE_HIGH)]     = eth_data.pkt_rate_high,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS_HIGH)]     = eth_data.rx_coalesce_usecs_high,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES_HIGH)]    = eth_data.rx_max_coalesced_frames_high,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS_HIGH)]     = eth_data.tx_coalesce_usecs_high,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES_HIGH)]    = eth_data.tx_max_coalesced_frames_high,
+	        [_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_SAMPLE_INTERVAL)]   = eth_data.rate_sample_interval,
+	    }
+	};
 	return TRUE;
 }
+
 
 gboolean
 nmp_utils_ethtool_get_coalesce (int ifindex,
@@ -871,38 +875,38 @@ nmp_utils_ethtool_get_coalesce (int ifindex,
 
 static gboolean
 ethtool_set_coalesce (SocketHandle *shandle,
-                      const NMEthtoolCoalesceState *state)
+                      const NMEthtoolCoalesceState *coalesce)
 {
-	gboolean success;
 	struct ethtool_coalesce eth_data;
+	gboolean success;
 
-	g_return_val_if_fail (shandle, FALSE);
-	g_return_val_if_fail (state, FALSE);
+	nm_assert (shandle);
+	nm_assert (coalesce);
 
 	eth_data = (struct ethtool_coalesce) {
 		.cmd = ETHTOOL_SCOALESCE,
-		.rx_coalesce_usecs            = state->rx_coalesce_usecs,
-		.rx_max_coalesced_frames      = state->rx_max_coalesced_frames,
-		.rx_coalesce_usecs_irq        = state->rx_coalesce_usecs_irq,
-		.rx_max_coalesced_frames_irq  = state->rx_max_coalesced_frames_irq,
-		.tx_coalesce_usecs            = state->tx_coalesce_usecs,
-		.tx_max_coalesced_frames      = state->tx_max_coalesced_frames,
-		.tx_coalesce_usecs_irq        = state->tx_coalesce_usecs_irq,
-		.tx_max_coalesced_frames_irq  = state->tx_max_coalesced_frames_irq,
-		.stats_block_coalesce_usecs   = state->stats_block_coalesce_usecs,
-		.use_adaptive_rx_coalesce     = state->use_adaptive_rx_coalesce,
-		.use_adaptive_tx_coalesce     = state->use_adaptive_tx_coalesce,
-		.pkt_rate_low                 = state->pkt_rate_low,
-		.rx_coalesce_usecs_low        = state->rx_coalesce_usecs_low,
-		.rx_max_coalesced_frames_low  = state->rx_max_coalesced_frames_low,
-		.tx_coalesce_usecs_low        = state->tx_coalesce_usecs_low,
-		.tx_max_coalesced_frames_low  = state->tx_max_coalesced_frames_low,
-		.pkt_rate_high                = state->pkt_rate_high,
-		.rx_coalesce_usecs_high       = state->rx_coalesce_usecs_high,
-		.rx_max_coalesced_frames_high = state->rx_max_coalesced_frames_high,
-		.tx_coalesce_usecs_high       = state->tx_coalesce_usecs_high,
-		.tx_max_coalesced_frames_high = state->tx_max_coalesced_frames_high,
-		.rate_sample_interval         = state->rate_sample_interval,
+		.rx_coalesce_usecs            = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS)],
+		.rx_max_coalesced_frames      = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES)],
+		.rx_coalesce_usecs_irq        = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS_IRQ)],
+		.rx_max_coalesced_frames_irq  = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES_IRQ)],
+		.tx_coalesce_usecs            = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS)],
+		.tx_max_coalesced_frames      = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES)],
+		.tx_coalesce_usecs_irq        = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS_IRQ)],
+		.tx_max_coalesced_frames_irq  = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES_IRQ)],
+		.stats_block_coalesce_usecs   = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_STATS_BLOCK_USECS)],
+		.use_adaptive_rx_coalesce     = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX)],
+		.use_adaptive_tx_coalesce     = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX)],
+		.pkt_rate_low                 = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_PKT_RATE_LOW)],
+		.rx_coalesce_usecs_low        = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS_LOW)],
+		.rx_max_coalesced_frames_low  = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES_LOW)],
+		.tx_coalesce_usecs_low        = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS_LOW)],
+		.tx_max_coalesced_frames_low  = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES_LOW)],
+		.pkt_rate_high                = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_PKT_RATE_HIGH)],
+		.rx_coalesce_usecs_high       = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_USECS_HIGH)],
+		.rx_max_coalesced_frames_high = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_RX_FRAMES_HIGH)],
+		.tx_coalesce_usecs_high       = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_USECS_HIGH)],
+		.tx_max_coalesced_frames_high = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_TX_FRAMES_HIGH)],
+		.rate_sample_interval         = coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX (NM_ETHTOOL_ID_COALESCE_SAMPLE_INTERVAL)],
 	};
 
 	success = (_ethtool_call_handle (shandle,

@@ -715,7 +715,7 @@ _nm_setting_to_dbus (NMSetting *setting,
 
 	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
 
-	n_properties = _nm_setting_gendata_get_all (setting, &gendata_keys, NULL);
+	n_properties = _nm_setting_option_get_all (setting, &gendata_keys, NULL);
 	for (i = 0; i < n_properties; i++) {
 		g_variant_builder_add (&builder,
 		                       "{sv}",
@@ -873,7 +873,7 @@ init_from_dbus (NMSetting *setting,
 				g_hash_table_remove (keys, key);
 		}
 
-		_nm_setting_gendata_notify (setting, TRUE);
+		_nm_setting_option_notify (setting, TRUE);
 
 		/* Currently, only NMSettingEthtool supports gendata based options, and
 		 * that one has no other properties (except "name"). That means, we
@@ -1792,7 +1792,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 		/* the properties of this setting are not real GObject properties.
 		 * Hence, this API makes little sense (or does it?). Still, call
 		 * @func with each value. */
-		n_properties = _nm_setting_gendata_get_all (setting, &names, NULL);
+		n_properties = _nm_setting_option_get_all (setting, &names, NULL);
 		if (n_properties > 0) {
 			gs_strfreev char **keys = g_strdupv ((char **) names);
 			GHashTable *h = _gendata_hash (setting, FALSE)->hash;
@@ -2389,7 +2389,7 @@ _gendata_hash (NMSetting *setting, gboolean create_if_necessary)
 }
 
 GHashTable *
-_nm_setting_gendata_hash (NMSetting *setting, gboolean create_if_necessary)
+_nm_setting_option_hash (NMSetting *setting, gboolean create_if_necessary)
 {
 	GenData *gendata;
 
@@ -2398,8 +2398,8 @@ _nm_setting_gendata_hash (NMSetting *setting, gboolean create_if_necessary)
 }
 
 void
-_nm_setting_gendata_notify (NMSetting *setting,
-                            gboolean names_changed)
+_nm_setting_option_notify (NMSetting *setting,
+                           gboolean names_changed)
 {
 	GenData *gendata;
 
@@ -2433,23 +2433,10 @@ out:
 	_nm_setting_emit_property_changed (setting);
 }
 
-GVariant *
-nm_setting_gendata_get (NMSetting *setting,
-                        const char *name)
-{
-	GenData *gendata;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-	g_return_val_if_fail (name, NULL);
-
-	gendata = _gendata_hash (setting, FALSE);
-	return gendata ? g_hash_table_lookup (gendata->hash, name) : NULL;
-}
-
 guint
-_nm_setting_gendata_get_all (NMSetting *setting,
-                             const char *const**out_names,
-                             GVariant *const**out_values)
+_nm_setting_option_get_all (NMSetting *setting,
+                            const char *const**out_names,
+                            GVariant *const**out_values)
 {
 	GenData *gendata;
 	GHashTable *hash;
@@ -2495,138 +2482,164 @@ out_zero:
 }
 
 /**
- * nm_setting_gendata_get_all_names:
+ * nm_setting_option_get_all_names:
  * @setting: the #NMSetting
  * @out_len: (allow-none) (out):
  *
- * Gives the number of generic data elements and optionally returns all their
- * key names and values. This API is low level access and unless you know what you
- * are doing, it might not be what you want.
+ * Gives the name of all set options.
  *
  * Returns: (array length=out_len zero-terminated=1) (transfer none):
  *   A %NULL terminated array of key names. If no names are present, this returns
  *   %NULL. The returned array and the names are owned by %NMSetting and might be invalidated
- *   soon.
+ *   by the next operation.
  *
- * Since: 1.14
+ * Since: 1.26
  **/
 const char *const*
-nm_setting_gendata_get_all_names (NMSetting *setting,
-                                  guint *out_len)
+nm_setting_option_get_all_names (NMSetting *setting,
+                                 guint *out_len)
 {
 	const char *const*names;
 	guint len;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
-	len = _nm_setting_gendata_get_all (setting, &names, NULL);
+	len = _nm_setting_option_get_all (setting, &names, NULL);
 	NM_SET_OUT (out_len, len);
 	return names;
 }
 
-/**
- * nm_setting_gendata_get_all_values:
- * @setting: the #NMSetting
- *
- * Gives the number of generic data elements and optionally returns all their
- * key names and values. This API is low level access and unless you know what you
- * are doing, it might not be what you want.
- *
- * Returns: (array zero-terminated=1) (transfer none):
- *   A %NULL terminated array of #GVariant. If no data is present, this returns
- *   %NULL. The returned array and the variants are owned by %NMSetting and might be invalidated
- *   soon. The sort order of nm_setting_gendata_get_all_names() and nm_setting_gendata_get_all_values()
- *   is consistent. That means, the nth value has the nth name returned by nm_setting_gendata_get_all_names().
- *
- * Since: 1.14
- **/
-GVariant *const*
-nm_setting_gendata_get_all_values (NMSetting *setting)
-{
-	GVariant *const*values;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-
-	_nm_setting_gendata_get_all (setting, NULL, &values);
-	return values;
-}
-
-void
-_nm_setting_gendata_to_gvalue (NMSetting *setting,
-                               GValue *value)
-{
-	GenData *gendata;
-	GHashTable *new;
-	const char *key;
-	GVariant *val;
-	GHashTableIter iter;
-
-	nm_assert (NM_IS_SETTING (setting));
-	nm_assert (value);
-	nm_assert (G_TYPE_CHECK_VALUE_TYPE ((value), G_TYPE_HASH_TABLE));
-
-	new = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
-
-	gendata = _gendata_hash (setting, FALSE);
-	if (gendata) {
-		g_hash_table_iter_init (&iter, gendata->hash);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
-			g_hash_table_insert (new, g_strdup (key), g_variant_ref (val));
-	}
-
-	g_value_take_boxed (value, new);
-}
-
 gboolean
-_nm_setting_gendata_reset_from_hash (NMSetting *setting,
-                                     GHashTable *new)
+_nm_setting_option_clear (NMSetting *setting,
+                          const char *optname)
 {
-	GenData *gendata;
-	GHashTableIter iter;
-	const char *key;
-	GVariant *val;
-	guint num;
-
-	nm_assert (NM_IS_SETTING (setting));
-	nm_assert (new);
-
-	num = new ? g_hash_table_size (new) : 0;
-
-	gendata = _gendata_hash (setting, num > 0);
-
-	if (num == 0) {
-		if (   !gendata
-		    || g_hash_table_size (gendata->hash) == 0)
-			return FALSE;
-
-		g_hash_table_remove_all (gendata->hash);
-		_nm_setting_gendata_notify (setting, TRUE);
-		return TRUE;
-	}
-
-	/* let's not bother to find out whether the new hash has any different
-	 * content the current gendata. Just replace it. */
-	g_hash_table_remove_all (gendata->hash);
-	if (num > 0) {
-		g_hash_table_iter_init (&iter, new);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
-			g_hash_table_insert (gendata->hash, g_strdup (key), g_variant_ref (val));
-	}
-	_nm_setting_gendata_notify (setting, TRUE);
-	return TRUE;
-}
-
-gboolean
-nm_setting_gendata_get_uint32 (NMSetting *setting,
-                               const char *optname,
-                               guint32 *out_value)
-{
-	GVariant *v;
+	GHashTable *ht;
 
 	nm_assert (NM_IS_SETTING (setting));
 	nm_assert (nm_str_not_empty (optname));
 
-	v = nm_setting_gendata_get (setting, optname);
+	ht = _nm_setting_option_hash (setting, FALSE);
+	if (!ht)
+		return FALSE;
+
+	return g_hash_table_remove (ht, optname);
+}
+
+/**
+ * nm_setting_option_clear_by_name:
+ * @setting: the #NMSetting
+ * @predicate: (allow-none) (scope call): the predicate for which names
+ *   should be clear.
+ *   If the predicate returns %TRUE for an option name, the option
+ *   gets removed. If %NULL, all options will be removed.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_clear_by_name (NMSetting *setting,
+                                 NMUtilsPredicateStr predicate)
+{
+	GHashTable *hash;
+	GHashTableIter iter;
+	const char *name;
+	gboolean changed = FALSE;
+
+	g_return_if_fail (NM_IS_SETTING (setting));
+
+	hash = _nm_setting_option_hash (NM_SETTING (setting), FALSE);
+	if (!hash)
+		return;
+
+	if (!predicate) {
+		changed = (g_hash_table_size (hash) > 0);
+		if (changed)
+			g_hash_table_remove_all (hash);
+	} else {
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
+			if (predicate (name)) {
+				g_hash_table_iter_remove (&iter);
+				changed = TRUE;
+			}
+		}
+	}
+
+	if (changed)
+		_nm_setting_option_notify (setting, TRUE);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_setting_option_get:
+ * @setting: the #NMSetting
+ * @opt_name: the option name to request.
+ *
+ * Returns: (transfer none): the #GVariant or %NULL if the option
+ *   is not set.
+ *
+ * Since: 1.26.
+ */
+GVariant *
+nm_setting_option_get (NMSetting *setting,
+                      const char *opt_name)
+{
+	GenData *gendata;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (opt_name, FALSE);
+
+	gendata = _gendata_hash (setting, FALSE);
+	return gendata ? g_hash_table_lookup (gendata->hash, opt_name) : NULL;
+}
+
+/**
+ * nm_setting_option_get_boolean:
+ * @setting: the #NMSetting
+ * @opt_name: the option to get
+ * @out_value: (allow-none) (out): the optional output value.
+ *   If the option is unset, %FALSE will be returned.
+ *
+ * Returns: %TRUE if @opt_name is set to a boolean variant.
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_setting_option_get_boolean (NMSetting *setting,
+                               const char *opt_name,
+                               gboolean *out_value)
+{
+	GVariant *v;
+
+	v = nm_setting_option_get (NM_SETTING (setting), opt_name);
+	if (   v
+	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
+		NM_SET_OUT (out_value, g_variant_get_boolean (v));
+		return TRUE;
+	}
+	NM_SET_OUT (out_value, FALSE);
+	return FALSE;
+}
+
+/**
+ * nm_setting_option_get_uint32:
+ * @setting: the #NMSetting
+ * @opt_name: the option to get
+ * @out_value: (allow-none) (out): the optional output value.
+ *   If the option is unset, 0 will be returned.
+ *
+ * Returns: %TRUE if @opt_name is set to a uint32 variant.
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_setting_option_get_uint32 (NMSetting *setting,
+                              const char *opt_name,
+                              guint32 *out_value)
+{
+	GVariant *v;
+
+	v = nm_setting_option_get (NM_SETTING (setting), opt_name);
 	if (   v
 	    && g_variant_is_of_type (v, G_VARIANT_TYPE_UINT32)) {
 		NM_SET_OUT (out_value, g_variant_get_uint32 (v));
@@ -2636,59 +2649,155 @@ nm_setting_gendata_get_uint32 (NMSetting *setting,
 	return FALSE;
 }
 
+/**
+ * nm_setting_option_set:
+ * @setting: the #NMSetting
+ * @opt_name: the option name to set
+ * @variant: (allow-none): the variant to set.
+ *
+ * If @variant is %NULL, this clears the option if it is set.
+ * Otherwise, @variant is set as the option. If @variant is
+ * a floating reference, it will be consumed.
+ *
+ * Note that not all setting types support options. It is a bug
+ * setting a variant to a setting that doesn't support it.
+ * Currently only #NMSettingEthtool supports it.
+ *
+ * Since: 1.26
+ */
 void
-nm_setting_gendata_set_uint32 (NMSetting *setting,
-                               const char *optname,
-                               guint32 value)
+nm_setting_option_set (NMSetting *setting,
+                       const char *opt_name,
+                       GVariant *variant)
 {
-	nm_assert (NM_IS_SETTING (setting));
-	nm_assert (nm_str_not_empty (optname));
+	GVariant *old_variant;
+	gboolean changed_name;
+	gboolean changed_value;
+	GHashTable *hash;
 
-	g_hash_table_insert (_nm_setting_gendata_hash (setting, TRUE),
-	                     g_strdup (optname),
-	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
-}
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (opt_name);
 
-gboolean
-nm_setting_gendata_clear (NMSetting *setting,
-                          const char *optname)
-{
-	GHashTable *ht;
+	hash = _nm_setting_option_hash (setting, variant != NULL);
 
-	nm_assert (NM_IS_SETTING (setting));
-	nm_assert (nm_str_not_empty (optname));
-
-	ht = _nm_setting_gendata_hash (setting, FALSE);
-	if (!ht)
-		return FALSE;
-
-	return g_hash_table_remove (ht, optname);
-}
-
-gboolean
-nm_setting_gendata_clear_all (NMSetting *setting,
-                              nm_setting_gendata_filter_fcn filter)
-{
-	GHashTable *ht;
-	const char *name;
-	GHashTableIter iter;
-	gboolean changed = FALSE;
-
-	nm_assert (NM_IS_SETTING (setting));
-
-	ht = _nm_setting_gendata_hash (setting, FALSE);
-	if (!ht)
-		return FALSE;
-
-	g_hash_table_iter_init (&iter, ht);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
-		if (!filter || filter (name)) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
+	if (!variant) {
+		if (hash) {
+			if (g_hash_table_remove (hash, opt_name))
+				_nm_setting_option_notify (setting, TRUE);
 		}
+		return;
 	}
 
-	return changed;
+	/* Currently, it is a bug setting any option, unless the setting type supports it.
+	 * And currently, only NMSettingEthtool supports it.
+	 *
+	 * In the future, more setting types may support it. Or we may relax this so
+	 * that options can be attached to all setting types (to indicate "unsupported"
+	 * settings for forward compatibility).
+	 *
+	 * As it is today, internal code will only add gendata options to NMSettingEthtool,
+	 * and there exists not public API to add such options. Still, it is permissible
+	 * to call get(), clear() and set(variant=NULL) also on settings that don't support
+	 * it, as these operations don't add options.
+	 */
+	g_return_if_fail (_nm_setting_class_get_sett_info (NM_SETTING_GET_CLASS (setting))->detail.gendata_info);
+
+	old_variant = g_hash_table_lookup (hash, opt_name);
+
+	changed_name = (old_variant == NULL);
+	changed_value =    changed_name
+	                || !g_variant_equal (old_variant, variant);
+
+	/* We always want to replace the variant, even if it has
+	 * the same value according to g_variant_equal(). The reason
+	 * is that we want to take a reference on @variant, because
+	 * that is what the user might expect. */
+	g_hash_table_insert (hash,
+	                     g_strdup (opt_name),
+	                     g_variant_ref_sink (variant));
+
+	if (changed_value)
+		_nm_setting_option_notify (setting, !changed_name);
+}
+
+/**
+ * nm_setting_option_set_boolean:
+ * @setting: the #NMSetting
+ * @value: the value to set.
+ *
+ * Like nm_setting_option_set() to set a boolean GVariant.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_set_boolean (NMSetting *setting,
+                               const char *opt_name,
+                               gboolean value)
+{
+	GVariant *old_variant;
+	gboolean changed_name;
+	gboolean changed_value;
+	GHashTable *hash;
+
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (opt_name);
+
+	value = (!!value);
+
+	hash = _nm_setting_option_hash (setting, TRUE);
+
+	old_variant = g_hash_table_lookup (hash, opt_name);
+
+	changed_name = (old_variant == NULL);
+	changed_value =    changed_name
+	                || (   !g_variant_is_of_type (old_variant, G_VARIANT_TYPE_BOOLEAN)
+	                    || g_variant_get_boolean (old_variant) != value);
+
+	g_hash_table_insert (hash,
+	                     g_strdup (opt_name),
+	                     g_variant_ref_sink (g_variant_new_boolean (value)));
+
+	if (changed_value)
+		_nm_setting_option_notify (setting, !changed_name);
+}
+
+/**
+ * nm_setting_option_set_uint32:
+ * @setting: the #NMSetting
+ * @value: the value to set.
+ *
+ * Like nm_setting_option_set() to set a uint32 GVariant.
+ *
+ * Since: 1.26
+ */
+void
+nm_setting_option_set_uint32 (NMSetting *setting,
+                              const char *opt_name,
+                              guint32 value)
+{
+	GVariant *old_variant;
+	gboolean changed_name;
+	gboolean changed_value;
+	GHashTable *hash;
+
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (opt_name);
+
+	hash = _nm_setting_option_hash (setting, TRUE);
+
+	old_variant = g_hash_table_lookup (hash, opt_name);
+
+	changed_name = (old_variant == NULL);
+	changed_value =    changed_name
+	                || (   !g_variant_is_of_type (old_variant, G_VARIANT_TYPE_UINT32)
+	                    || g_variant_get_uint32 (old_variant) != value);
+
+	g_hash_table_insert (hash,
+	                     g_strdup (opt_name),
+	                     g_variant_ref_sink (g_variant_new_uint32 (value)));
+
+	if (changed_value)
+		_nm_setting_option_notify (setting, !changed_name);
 }
 
 /*****************************************************************************/

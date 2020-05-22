@@ -3195,7 +3195,7 @@ _read_setting (KeyfileReaderInfo *info)
 		if (!keys)
 			n_keys = 0;
 		if (n_keys > 0) {
-			GHashTable *h = _nm_setting_gendata_hash (setting, TRUE);
+			GHashTable *h = _nm_setting_option_hash (setting, TRUE);
 
 			nm_utils_strv_sort (keys, n_keys);
 			for (k = 0; k < n_keys; k++) {
@@ -3851,10 +3851,10 @@ nm_keyfile_write (NMConnection *connection,
 
 			nm_assert (!nm_keyfile_plugin_get_alias_for_setting_name (sett_info->setting_class->setting_info->setting_name));
 
-			n_keys = _nm_setting_gendata_get_all (setting, &keys, NULL);
+			n_keys = _nm_setting_option_get_all (setting, &keys, NULL);
 
 			if (n_keys > 0) {
-				GHashTable *h = _nm_setting_gendata_hash (setting, FALSE);
+				GHashTable *h = _nm_setting_option_hash (setting, FALSE);
 
 				for (k = 0; k < n_keys; k++) {
 					const char *key = keys[k];

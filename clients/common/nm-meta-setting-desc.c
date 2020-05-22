@@ -4097,78 +4097,57 @@ _gobject_enum_pre_set_notify_fcn_wireless_security_wep_key_type (const NMMetaPro
 static gconstpointer
 _get_fcn_ethtool (ARGS_GET_FCN)
 {
-	char *return_str;
-	guint32 u32;
 	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
+	const char *s;
+	guint32 u32;
+	gboolean b;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
-	if (nm_ethtool_id_is_coalesce (ethtool_id)) {
-		if (!nm_setting_ethtool_get_coalesce (NM_SETTING_ETHTOOL (setting),
-		                                      nm_ethtool_data[ethtool_id]->optname,
-		                                      &u32)) {
+	if (   nm_ethtool_id_is_coalesce (ethtool_id)
+	    || nm_ethtool_id_is_ring (ethtool_id)) {
+		if (!nm_setting_option_get_uint32 (setting,
+		                                   nm_ethtool_data[ethtool_id]->optname,
+		                                   &u32)) {
 			NM_SET_OUT (out_is_default, TRUE);
 			return NULL;
 		}
 
-		return_str = g_strdup_printf ("%"G_GUINT32_FORMAT, u32);
-		RETURN_STR_TO_FREE (return_str);
-	} else if (nm_ethtool_id_is_feature (ethtool_id)) {
-		const char *s;
-		NMTernary val;
-
-		val = nm_setting_ethtool_get_feature (NM_SETTING_ETHTOOL (setting),
-		                                      nm_ethtool_data[ethtool_id]->optname);
-
-		if (val == NM_TERNARY_TRUE)
-			s = N_("on");
-		else if (val == NM_TERNARY_FALSE)
-			s = N_("off");
-		else {
-			s = NULL;
-			NM_SET_OUT (out_is_default, TRUE);
-		}
-
-		if (s && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			s = gettext (s);
-		return s;
-	} else if (nm_ethtool_id_is_ring (ethtool_id)) {
-		if (!nm_setting_ethtool_get_ring (NM_SETTING_ETHTOOL (setting),
-		                                  nm_ethtool_data[ethtool_id]->optname,
-		                                  &u32)) {
-			NM_SET_OUT (out_is_default, TRUE);
-			return NULL;
-		}
-
-		return_str = g_strdup_printf ("%"G_GUINT32_FORMAT, u32);
-		RETURN_STR_TO_FREE (return_str);
+		RETURN_STR_TO_FREE (nm_strdup_int (u32));
 	}
-	nm_assert_not_reached();
-	return NULL;
+
+	nm_assert (nm_ethtool_id_is_feature (ethtool_id));
+
+	if (!nm_setting_option_get_boolean (setting,
+	                                    nm_ethtool_data[ethtool_id]->optname,
+	                                    &b)) {
+		NM_SET_OUT (out_is_default, TRUE);
+		return NULL;
+	}
+
+	s =   b
+	    ? N_("on")
+	    : N_("off");
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		s = gettext (s);
+	return s;
 }
 
 static gboolean
 _set_fcn_ethtool (ARGS_SET_FCN)
 {
-	gint64 i64;
 	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
-	NMEthtoolType ethtool_type = nm_ethtool_id_to_type (ethtool_id);
+	gs_free char *value_to_free = NULL;
+	gint64 i64;
+	gboolean b;
 
-	if (NM_IN_SET (ethtool_type,
-	               NM_ETHTOOL_TYPE_COALESCE,
-	               NM_ETHTOOL_TYPE_RING)) {
-		if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value)) {
-			if (ethtool_type == NM_ETHTOOL_TYPE_COALESCE)
-				nm_setting_ethtool_clear_coalesce (NM_SETTING_ETHTOOL (setting),
-				                                   nm_ethtool_data[ethtool_id]->optname);
-			else
-				nm_setting_ethtool_clear_ring (NM_SETTING_ETHTOOL (setting),
-				                               nm_ethtool_data[ethtool_id]->optname);
-			return TRUE;
-		}
+	if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value))
+		goto do_unset;
+
+	if (   nm_ethtool_id_is_coalesce (ethtool_id)
+	    || nm_ethtool_id_is_ring (ethtool_id)) {
 
 		i64 = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
-
 		if (i64 == -1) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 			             _("'%s' is out of range [%"G_GUINT32_FORMAT", %"G_GUINT32_FORMAT"]"),
@@ -4176,53 +4155,38 @@ _set_fcn_ethtool (ARGS_SET_FCN)
 			return FALSE;
 		}
 
-		if (ethtool_type == NM_ETHTOOL_TYPE_COALESCE)
-			nm_setting_ethtool_set_coalesce (NM_SETTING_ETHTOOL (setting),
-			                                 nm_ethtool_data[ethtool_id]->optname,
-			                                 (guint32) i64);
-		else
-			nm_setting_ethtool_set_ring (NM_SETTING_ETHTOOL (setting),
-			                             nm_ethtool_data[ethtool_id]->optname,
-			                             (guint32) i64);
+		nm_setting_option_set_uint32 (setting,
+		                              nm_ethtool_data[ethtool_id]->optname,
+		                              i64);
 		return TRUE;
 	}
 
-	if (ethtool_type == NM_ETHTOOL_TYPE_FEATURE) {
-		gs_free char *value_to_free = NULL;
-		NMTernary val;
+	nm_assert (nm_ethtool_id_is_feature (ethtool_id));
 
-		if (_SET_FCN_DO_RESET_DEFAULT (property_info, modifier, value)) {
-			val = NM_TERNARY_DEFAULT;
-			goto set;
-		}
-
-		value = nm_strstrip_avoid_copy_a (300, value, &value_to_free);
-
-		if (NM_IN_STRSET (value, "1", "yes", "true", "on"))
-			val = NM_TERNARY_TRUE;
-		else if (NM_IN_STRSET (value, "0", "no", "false", "off"))
-			val = NM_TERNARY_FALSE;
-		else if (NM_IN_STRSET (value, "", "ignore", "default"))
-			val = NM_TERNARY_DEFAULT;
-		else {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
-			             value);
-			return FALSE;
-		}
-
-set:
-		nm_setting_ethtool_set_feature (NM_SETTING_ETHTOOL (setting),
-	                                nm_ethtool_data[ethtool_id]->optname,
-	                                val);
-		return TRUE;
+	value = nm_strstrip_avoid_copy_a (300, value, &value_to_free);
+	if (NM_IN_STRSET (value, "1", "yes", "true", "on"))
+		b = TRUE;
+	else if (NM_IN_STRSET (value, "0", "no", "false", "off"))
+		b = FALSE;
+	else if (NM_IN_STRSET (value, "", "ignore", "default"))
+		goto do_unset;
+	else {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
+		             value);
+		return FALSE;
 	}
 
-	nm_assert_not_reached();
+	nm_setting_option_set_boolean (setting,
+	                               nm_ethtool_data[ethtool_id]->optname,
+	                               b);
+	return TRUE;
 
-	g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_SETTING_MISSING,
-	             _("ethtool property not supported"));
-	return FALSE;
+do_unset:
+	nm_setting_option_set (setting,
+	                       nm_ethtool_data[ethtool_id]->optname,
+	                       NULL);
+	return TRUE;
 }
 
 static const char *const*

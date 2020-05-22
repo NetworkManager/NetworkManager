@@ -310,45 +310,18 @@ gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue 
 
 /*****************************************************************************/
 
-typedef gboolean (*nm_setting_gendata_filter_fcn)(const char *name);
+GHashTable *_nm_setting_option_hash (NMSetting *setting,
+                                     gboolean create_if_necessary);
 
-GHashTable *_nm_setting_gendata_hash (NMSetting *setting,
-                                      gboolean create_if_necessary);
+void _nm_setting_option_notify (NMSetting *setting,
+                                gboolean keys_changed);
 
-void _nm_setting_gendata_notify (NMSetting *setting,
-                                 gboolean keys_changed);
+guint _nm_setting_option_get_all (NMSetting *setting,
+                                  const char *const**out_names,
+                                  GVariant *const**out_values);
 
-guint _nm_setting_gendata_get_all (NMSetting *setting,
-                                   const char *const**out_names,
-                                   GVariant *const**out_values);
-
-gboolean _nm_setting_gendata_reset_from_hash (NMSetting *setting,
-                                              GHashTable *new);
-
-void _nm_setting_gendata_to_gvalue (NMSetting *setting,
-                                    GValue *value);
-
-GVariant *nm_setting_gendata_get (NMSetting *setting,
-                                  const char *name);
-
-const char *const*nm_setting_gendata_get_all_names (NMSetting *setting,
-                                                    guint *out_len);
-
-GVariant *const*nm_setting_gendata_get_all_values (NMSetting *setting);
-
-gboolean nm_setting_gendata_clear (NMSetting *setting,
+gboolean _nm_setting_option_clear (NMSetting *setting,
                                    const char *optname);
-
-gboolean nm_setting_gendata_clear_all (NMSetting *setting,
-                                       nm_setting_gendata_filter_fcn filter);
-
-gboolean nm_setting_gendata_get_uint32 (NMSetting *setting,
-                                        const char *optname,
-                                        guint32 *out_value);
-
-void nm_setting_gendata_set_uint32 (NMSetting *setting,
-                                    const char *optname,
-                                    guint32 value);
 
 /*****************************************************************************/
 
