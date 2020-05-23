@@ -32,8 +32,9 @@ char *nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
                                                  gboolean *out_exists);
 
 typedef enum {
-	NM_KEYFILE_READ_TYPE_WARN               = 1,
-} NMKeyfileReadType;
+	NM_KEYFILE_HANDLER_TYPE_WARN  = 1,
+	NM_KEYFILE_HANDLER_TYPE_WRITE_CERT = 2,
+} NMKeyfileHandlerType;
 
 /**
  * NMKeyfileReadHandler:
@@ -43,11 +44,11 @@ typedef enum {
  *
  * Returns: should return TRUE, if the reading was handled. Otherwise,
  * a default action will be performed that depends on the @type.
- * For %NM_KEYFILE_READ_TYPE_WARN type, the default action is doing nothing.
+ * For %NM_KEYFILE_HANDLER_TYPE_WARN type, the default action is doing nothing.
  */
 typedef gboolean (*NMKeyfileReadHandler) (GKeyFile *keyfile,
                                           NMConnection *connection,
-                                          NMKeyfileReadType type,
+                                          NMKeyfileHandlerType type,
                                           void *type_data,
                                           void *user_data,
                                           GError **error);
@@ -63,7 +64,7 @@ typedef enum {
  * NMKeyfileReadTypeDataWarn:
  *
  * this struct is passed as @type_data for the @NMKeyfileReadHandler of
- * type %NM_KEYFILE_READ_TYPE_WARN.
+ * type %NM_KEYFILE_HANDLER_TYPE_WARN.
  */
 typedef struct {
 	/* might be %NULL, if the warning is not about a group. */
@@ -93,10 +94,6 @@ gboolean nm_keyfile_read_ensure_uuid (NMConnection *connection,
 
 /*****************************************************************************/
 
-typedef enum {
-	NM_KEYFILE_WRITE_TYPE_CERT              = 1,
-} NMKeyfileWriteType;
-
 /**
  * NMKeyfileWriteHandler:
  *
@@ -106,7 +103,7 @@ typedef enum {
  * within the keyfile or that might be serialized differently. The @type and
  * @type_data arguments tell which kind of argument we have at hand.
  *
- * Currently only the type %NM_KEYFILE_WRITE_TYPE_CERT is supported, which provides
+ * Currently only the type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT is supported, which provides
  * @type_data as %NMKeyfileWriteTypeDataCert. However, this handler should be generic enough
  * to support other types as well.
  *
@@ -122,7 +119,7 @@ typedef enum {
  */
 typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
                                            GKeyFile *keyfile,
-                                           NMKeyfileWriteType type,
+                                           NMKeyfileHandlerType type,
                                            void *type_data,
                                            void *user_data,
                                            GError **error);
@@ -131,7 +128,7 @@ typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
  * NMKeyfileWriteTypeDataCert:
  *
  * this struct is passed as @type_data for the @NMKeyfileWriteHandler of
- * type %NM_KEYFILE_WRITE_TYPE_CERT.
+ * type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT.
  */
 typedef struct {
 	const NMSetting8021xSchemeVtable *vtable;

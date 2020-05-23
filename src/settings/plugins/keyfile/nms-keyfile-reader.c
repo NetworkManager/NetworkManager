@@ -48,14 +48,14 @@ typedef struct {
 static gboolean
 _handler_read (GKeyFile *keyfile,
                NMConnection *connection,
-               NMKeyfileReadType type,
+               NMKeyfileHandlerType type,
                void *type_data,
                void *user_data,
                GError **error)
 {
 	const HandlerReadData *handler_data = user_data;
 
-	if (type == NM_KEYFILE_READ_TYPE_WARN) {
+	if (type == NM_KEYFILE_HANDLER_TYPE_WARN) {
 		NMKeyfileReadTypeDataWarn *warn_data = type_data;
 		NMLogLevel level;
 		char *message_free = NULL;

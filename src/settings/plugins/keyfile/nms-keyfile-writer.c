@@ -146,12 +146,12 @@ cert_writer (NMConnection *connection,
 static gboolean
 _handler_write (NMConnection *connection,
                 GKeyFile *keyfile,
-                NMKeyfileWriteType type,
+                NMKeyfileHandlerType type,
                 void *type_data,
                 void *user_data,
                 GError **error)
 {
-	if (type == NM_KEYFILE_WRITE_TYPE_CERT) {
+	if (type == NM_KEYFILE_HANDLER_TYPE_WRITE_CERT) {
 		cert_writer (connection, keyfile,
 		             (NMKeyfileWriteTypeDataCert *) type_data,
 		             (WriteInfo *) user_data, error);

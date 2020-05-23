@@ -65,7 +65,7 @@ _handle_warn (KeyfileReaderInfo *info,
 
 	info->handler (info->keyfile,
 	               info->connection,
-	               NM_KEYFILE_READ_TYPE_WARN,
+	               NM_KEYFILE_HANDLER_TYPE_WARN,
 	               &type_data,
 	               info->user_data,
 	               &info->error);
@@ -2434,7 +2434,7 @@ cert_writer (KeyfileWriterInfo *info,
 	if (info->handler) {
 		if (info->handler (info->connection,
 		                   info->keyfile,
-		                   NM_KEYFILE_WRITE_TYPE_CERT,
+		                   NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
 		                   &type_data,
 		                   info->user_data,
 		                   &info->error))
