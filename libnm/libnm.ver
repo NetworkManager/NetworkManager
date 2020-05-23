@@ -1755,3 +1755,15 @@ global:
 	nm_setting_ip_config_remove_dhcp_reject_server;
 	nm_setting_wireless_get_ap_isolation;
 } libnm_1_26_4;
+
+libnm_1_30_0 {
+global:
+	nm_keyfile_handler_data_fail_with_error;
+	nm_keyfile_handler_data_get_context;
+	nm_keyfile_handler_data_warn_get;
+	nm_keyfile_handler_flags_get_type;
+	nm_keyfile_handler_type_get_type;
+	nm_keyfile_read;
+	nm_keyfile_warn_severity_get_type;
+	nm_keyfile_write;
+} libnm_1_28_0;
