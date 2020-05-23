@@ -36,6 +36,8 @@ typedef enum {
 	NM_KEYFILE_HANDLER_TYPE_WRITE_CERT = 2,
 } NMKeyfileHandlerType;
 
+typedef struct _NMKeyfileHandlerData NMKeyfileHandlerData;
+
 /**
  * NMKeyfileReadHandler:
  *
@@ -43,13 +45,13 @@ typedef enum {
  * @error.
  *
  * Returns: should return TRUE, if the reading was handled. Otherwise,
- * a default action will be performed that depends on the @type.
- * For %NM_KEYFILE_HANDLER_TYPE_WARN type, the default action is doing nothing.
+ * a default action will be performed that depends on the @handler_type.
+ * For %NM_KEYFILE_HANDLER_TYPE_WARN handler_type, the default action is doing nothing.
  */
 typedef gboolean (*NMKeyfileReadHandler) (GKeyFile *keyfile,
                                           NMConnection *connection,
-                                          NMKeyfileHandlerType type,
-                                          void *type_data,
+                                          NMKeyfileHandlerType handler_type,
+                                          NMKeyfileHandlerData *handler_data,
                                           void *user_data,
                                           GError **error);
 
@@ -59,26 +61,6 @@ typedef enum {
 	NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE      = 2901,
 	NM_KEYFILE_WARN_SEVERITY_WARN                   = 3000,
 } NMKeyfileWarnSeverity;
-
-/**
- * NMKeyfileReadTypeDataWarn:
- *
- * this struct is passed as @type_data for the @NMKeyfileReadHandler of
- * type %NM_KEYFILE_HANDLER_TYPE_WARN.
- */
-typedef struct {
-	/* might be %NULL, if the warning is not about a group. */
-	const char *group;
-
-	/* might be %NULL, if the warning is not about a setting. */
-	NMSetting *setting;
-
-	/* might be %NULL, if the warning is not about a property. */
-	const char *property_name;
-
-	NMKeyfileWarnSeverity severity;
-	const char *message;
-} NMKeyfileReadTypeDataWarn;
 
 NMConnection *nm_keyfile_read (GKeyFile *keyfile,
                                const char *base_dir,
@@ -100,11 +82,11 @@ gboolean nm_keyfile_read_ensure_uuid (NMConnection *connection,
  * This is a hook to tweak the serialization.
  *
  * Handler for certain properties or events that are not entirely contained
- * within the keyfile or that might be serialized differently. The @type and
- * @type_data arguments tell which kind of argument we have at hand.
+ * within the keyfile or that might be serialized differently. The @handler_type and
+ * @handler_data arguments tell which kind of argument we have at hand.
  *
- * Currently only the type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT is supported, which provides
- * @type_data as %NMKeyfileWriteTypeDataCert. However, this handler should be generic enough
+ * Currently only the handler_type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT is supported, which provides
+ * @handler_data as %NMKeyfileHandlerDataWriteCert. However, this handler should be generic enough
  * to support other types as well.
  *
  * This don't have to be only "properties". For example, nm_keyfile_read() uses
@@ -119,26 +101,56 @@ gboolean nm_keyfile_read_ensure_uuid (NMConnection *connection,
  */
 typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
                                            GKeyFile *keyfile,
-                                           NMKeyfileHandlerType type,
-                                           void *type_data,
+                                           NMKeyfileHandlerType handler_type,
+                                           NMKeyfileHandlerData *handler_data,
                                            void *user_data,
                                            GError **error);
-
-/**
- * NMKeyfileWriteTypeDataCert:
- *
- * this struct is passed as @type_data for the @NMKeyfileWriteHandler of
- * type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT.
- */
-typedef struct {
-	const NMSetting8021xSchemeVtable *vtable;
-	NMSetting8021x *setting;
-} NMKeyfileWriteTypeDataCert;
 
 GKeyFile *nm_keyfile_write (NMConnection *connection,
                             NMKeyfileWriteHandler handler,
                             void *user_data,
                             GError **error);
+
+/*****************************************************************************/
+
+/**
+ * NMKeyfileHandlerDataWarn:
+ *
+ * this struct is passed as @handler_data for the @NMKeyfileReadHandler of
+ * handler_type %NM_KEYFILE_HANDLER_TYPE_WARN.
+ */
+typedef struct {
+	/* might be %NULL, if the warning is not about a group. */
+	const char *group;
+
+	/* might be %NULL, if the warning is not about a setting. */
+	NMSetting *setting;
+
+	/* might be %NULL, if the warning is not about a property. */
+	const char *property_name;
+
+	NMKeyfileWarnSeverity severity;
+	const char *message;
+} NMKeyfileHandlerDataWarn;
+
+/**
+ * NMKeyfileHandlerDataWriteCert:
+ *
+ * this struct is passed as @handler_data for the @NMKeyfileWriteHandler of
+ * handler_type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT.
+ */
+typedef struct {
+	const NMSetting8021xSchemeVtable *vtable;
+	NMSetting8021x *setting;
+} NMKeyfileHandlerDataWriteCert;
+
+struct _NMKeyfileHandlerData {
+	NMKeyfileHandlerType type;
+	union {
+		NMKeyfileHandlerDataWarn      warn;
+		NMKeyfileHandlerDataWriteCert write_cert;
+	};
+};
 
 /*****************************************************************************/
 

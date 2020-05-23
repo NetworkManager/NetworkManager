@@ -55,7 +55,10 @@ _handle_warn (KeyfileReaderInfo *info,
               NMKeyfileWarnSeverity severity,
               char *message)
 {
-	NMKeyfileReadTypeDataWarn type_data = {
+	NMKeyfileHandlerData type_data;
+
+	type_data.type = NM_KEYFILE_HANDLER_TYPE_WARN;
+	type_data.warn = (NMKeyfileHandlerDataWarn) {
 		.group = info->group,
 		.setting = info->setting,
 		.property_name = property_name,
@@ -2340,19 +2343,20 @@ password_raw_writer (KeyfileWriterInfo *info,
 static void
 cert_writer_default (NMConnection *connection,
                      GKeyFile *file,
-                     NMKeyfileWriteTypeDataCert *cert_data)
+                     NMSetting8021x *setting,
+                     const NMSetting8021xSchemeVtable *vtable)
 {
-	const char *setting_name = nm_setting_get_name (NM_SETTING (cert_data->setting));
+	const char *setting_name = nm_setting_get_name (NM_SETTING (setting));
 	NMSetting8021xCKScheme scheme;
 
-	scheme = cert_data->vtable->scheme_func (cert_data->setting);
+	scheme = vtable->scheme_func (setting);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		gs_free char *path_free = NULL;
 		gs_free char *base_dir = NULL;
 		gs_free char *tmp = NULL;
 		const char *path;
 
-		path = cert_data->vtable->path_func (cert_data->setting);
+		path = vtable->path_func (setting);
 		g_assert (path);
 
 		/* If the path is relative, make it an absolute path.
@@ -2379,7 +2383,7 @@ cert_writer_default (NMConnection *connection,
 		/* Path contains at least a '/', hence it cannot be recognized as the old
 		 * binary format consisting of a list of integers. */
 
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key, path);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, vtable->setting_key, path);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		GBytes *blob;
 		const guint8 *blob_data;
@@ -2387,17 +2391,17 @@ cert_writer_default (NMConnection *connection,
 		gs_free char *blob_base64 = NULL;
 		gs_free char *val = NULL;
 
-		blob = cert_data->vtable->blob_func (cert_data->setting);
+		blob = vtable->blob_func (setting);
 		g_assert (blob);
 		blob_data = g_bytes_get_data (blob, &blob_len);
 
 		blob_base64 = g_base64_encode (blob_data, blob_len);
 		val = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB, blob_base64, NULL);
 
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key, val);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, vtable->setting_key, val);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key,
-		                                 cert_data->vtable->uri_func (cert_data->setting));
+		nm_keyfile_plugin_kf_set_string (file, setting_name, vtable->setting_key,
+		                                 vtable->uri_func (setting));
 	} else {
 		/* scheme_func() returns UNKNOWN in all other cases. The only valid case
 		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
@@ -2415,21 +2419,24 @@ cert_writer (KeyfileWriterInfo *info,
              const char *key,
              const GValue *value)
 {
-	const NMSetting8021xSchemeVtable *objtype = NULL;
+	const NMSetting8021xSchemeVtable *vtable = NULL;
+	NMKeyfileHandlerData type_data;
 	guint i;
-	NMKeyfileWriteTypeDataCert type_data = { 0 };
 
 	for (i = 0; nm_setting_8021x_scheme_vtable[i].setting_key; i++) {
 		if (nm_streq0 (nm_setting_8021x_scheme_vtable[i].setting_key, key)) {
-			objtype = &nm_setting_8021x_scheme_vtable[i];
+			vtable = &nm_setting_8021x_scheme_vtable[i];
 			break;
 		}
 	}
-	if (!objtype)
+	if (!vtable)
 		g_return_if_reached ();
 
-	type_data.setting = NM_SETTING_802_1X (setting);
-	type_data.vtable = objtype;
+	type_data.type = NM_KEYFILE_HANDLER_TYPE_WRITE_CERT;
+	type_data.write_cert = (NMKeyfileHandlerDataWriteCert) {
+		.setting = NM_SETTING_802_1X (setting),
+		.vtable  = vtable,
+	};
 
 	if (info->handler) {
 		if (info->handler (info->connection,
@@ -2443,7 +2450,10 @@ cert_writer (KeyfileWriterInfo *info,
 			return;
 	}
 
-	cert_writer_default (info->connection, info->keyfile, &type_data);
+	cert_writer_default (info->connection,
+	                     info->keyfile,
+	                     NM_SETTING_802_1X (setting),
+	                     vtable);
 }
 
 /*****************************************************************************/

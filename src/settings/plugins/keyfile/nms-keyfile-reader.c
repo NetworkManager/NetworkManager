@@ -49,14 +49,14 @@ static gboolean
 _handler_read (GKeyFile *keyfile,
                NMConnection *connection,
                NMKeyfileHandlerType type,
-               void *type_data,
+               NMKeyfileHandlerData *type_data,
                void *user_data,
                GError **error)
 {
 	const HandlerReadData *handler_data = user_data;
 
 	if (type == NM_KEYFILE_HANDLER_TYPE_WARN) {
-		NMKeyfileReadTypeDataWarn *warn_data = type_data;
+		const NMKeyfileHandlerDataWarn *warn_data = &type_data->warn;
 		NMLogLevel level;
 		char *message_free = NULL;
 
@@ -81,6 +81,7 @@ _handler_read (GKeyFile *keyfile,
 		g_free (message_free);
 		return TRUE;
 	}
+
 	return FALSE;
 }
 

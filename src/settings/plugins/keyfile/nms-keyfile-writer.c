@@ -28,7 +28,7 @@ typedef struct {
 static void
 cert_writer (NMConnection *connection,
              GKeyFile *file,
-             NMKeyfileWriteTypeDataCert *cert_data,
+             NMKeyfileHandlerDataWriteCert *cert_data,
              WriteInfo *info,
              GError **error)
 {
@@ -147,14 +147,15 @@ static gboolean
 _handler_write (NMConnection *connection,
                 GKeyFile *keyfile,
                 NMKeyfileHandlerType type,
-                void *type_data,
+                NMKeyfileHandlerData *type_data,
                 void *user_data,
                 GError **error)
 {
 	if (type == NM_KEYFILE_HANDLER_TYPE_WRITE_CERT) {
 		cert_writer (connection, keyfile,
-		             (NMKeyfileWriteTypeDataCert *) type_data,
-		             (WriteInfo *) user_data, error);
+		             &type_data->write_cert,
+		             user_data,
+		             error);
 		return TRUE;
 	}
 	return FALSE;
