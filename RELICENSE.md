@@ -110,6 +110,7 @@ Consent/Disapproval List
 - [Y] Soapux <2375-Soapux@users.noreply.gitlab.freedesktop.org>
 - [Y] Taegil Bae <esrevinu@gmail.com>
 - [Y] Tambet Ingo <tambet@gmail.com> (Novell, Inc.)
+- [Y] Thomas Bechtold <thomasbechtold@jpberlin.de>
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 - [Y] Timothy Redaelli <tredaelli@redhat.com> (Red Hat, Inc.)
 - [Y] Yuri Chornoivan <yurchor@ukr.net>
