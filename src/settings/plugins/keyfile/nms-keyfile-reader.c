@@ -50,8 +50,7 @@ _handler_read (GKeyFile *keyfile,
                NMConnection *connection,
                NMKeyfileHandlerType type,
                NMKeyfileHandlerData *type_data,
-               void *user_data,
-               GError **error)
+               void *user_data)
 {
 	const HandlerReadData *handler_data = user_data;
 

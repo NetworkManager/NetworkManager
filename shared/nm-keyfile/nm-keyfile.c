@@ -50,15 +50,29 @@ typedef struct {
 /*****************************************************************************/
 
 static void
+_key_file_handler_data_init (NMKeyfileHandlerData *handler_data,
+                             NMKeyfileHandlerType handler_type,
+                             GError **p_error)
+{
+	nm_assert (handler_data);
+	nm_assert (p_error && !*p_error);
+
+	handler_data->type = handler_type;
+	handler_data->p_error = p_error;
+}
+
+static void
 _handle_warn (KeyfileReaderInfo *info,
               const char *property_name,
               NMKeyfileWarnSeverity severity,
               char *message)
 {
-	NMKeyfileHandlerData type_data;
+	NMKeyfileHandlerData handler_data;
 
-	type_data.type = NM_KEYFILE_HANDLER_TYPE_WARN;
-	type_data.warn = (NMKeyfileHandlerDataWarn) {
+	_key_file_handler_data_init (&handler_data,
+	                             NM_KEYFILE_HANDLER_TYPE_WARN,
+	                             &info->error);
+	handler_data.warn = (NMKeyfileHandlerDataWarn) {
 		.group = info->group,
 		.setting = info->setting,
 		.property_name = property_name,
@@ -69,9 +83,8 @@ _handle_warn (KeyfileReaderInfo *info,
 	info->read_handler (info->keyfile,
 	                    info->connection,
 	                    NM_KEYFILE_HANDLER_TYPE_WARN,
-	                    &type_data,
-	                    info->user_data,
-	                    &info->error);
+	                    &handler_data,
+	                    info->user_data);
 	g_free (message);
 }
 #define handle_warn(arg_info, arg_property_name, arg_severity, ...) \
@@ -2420,7 +2433,7 @@ cert_writer (KeyfileWriterInfo *info,
              const GValue *value)
 {
 	const NMSetting8021xSchemeVtable *vtable = NULL;
-	NMKeyfileHandlerData type_data;
+	NMKeyfileHandlerData handler_data;
 	guint i;
 
 	for (i = 0; nm_setting_8021x_scheme_vtable[i].setting_key; i++) {
@@ -2432,19 +2445,20 @@ cert_writer (KeyfileWriterInfo *info,
 	if (!vtable)
 		g_return_if_reached ();
 
-	type_data.type = NM_KEYFILE_HANDLER_TYPE_WRITE_CERT;
-	type_data.write_cert = (NMKeyfileHandlerDataWriteCert) {
-		.setting = NM_SETTING_802_1X (setting),
-		.vtable  = vtable,
-	};
-
 	if (info->write_handler) {
+		_key_file_handler_data_init (&handler_data,
+		                             NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
+		                             &info->error);
+		handler_data.write_cert = (NMKeyfileHandlerDataWriteCert) {
+			.setting = NM_SETTING_802_1X (setting),
+			.vtable  = vtable,
+		};
+
 		if (info->write_handler (info->connection,
 		                         info->keyfile,
 		                         NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
-		                         &type_data,
-		                         info->user_data,
-		                         &info->error))
+		                         &handler_data,
+		                         info->user_data))
 			return;
 		if (info->error)
 			return;

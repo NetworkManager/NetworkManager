@@ -52,8 +52,7 @@ typedef gboolean (*NMKeyfileReadHandler) (GKeyFile *keyfile,
                                           NMConnection *connection,
                                           NMKeyfileHandlerType handler_type,
                                           NMKeyfileHandlerData *handler_data,
-                                          void *user_data,
-                                          GError **error);
+                                          void *user_data);
 
 typedef enum {
 	NM_KEYFILE_WARN_SEVERITY_DEBUG                  = 1000,
@@ -103,8 +102,7 @@ typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
                                            GKeyFile *keyfile,
                                            NMKeyfileHandlerType handler_type,
                                            NMKeyfileHandlerData *handler_data,
-                                           void *user_data,
-                                           GError **error);
+                                           void *user_data);
 
 GKeyFile *nm_keyfile_write (NMConnection *connection,
                             NMKeyfileWriteHandler handler,
@@ -146,6 +144,7 @@ typedef struct {
 
 struct _NMKeyfileHandlerData {
 	NMKeyfileHandlerType type;
+	GError **p_error;
 	union {
 		NMKeyfileHandlerDataWarn      warn;
 		NMKeyfileHandlerDataWriteCert write_cert;

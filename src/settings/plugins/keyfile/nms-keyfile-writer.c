@@ -148,14 +148,13 @@ _handler_write (NMConnection *connection,
                 GKeyFile *keyfile,
                 NMKeyfileHandlerType type,
                 NMKeyfileHandlerData *type_data,
-                void *user_data,
-                GError **error)
+                void *user_data)
 {
 	if (type == NM_KEYFILE_HANDLER_TYPE_WRITE_CERT) {
 		cert_writer (connection, keyfile,
 		             &type_data->write_cert,
 		             user_data,
-		             error);
+		             type_data->p_error);
 		return TRUE;
 	}
 	return FALSE;
