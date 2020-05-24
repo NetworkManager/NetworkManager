@@ -737,14 +737,14 @@ _link_type_from_rtnl_type (const char *name) \
 				return LIST[imid];
 
 			if (cmp < 0)
-				imin = imid + 1u;
+				imin = imid + 1;
 			else
-				imax = imid - 1u;
+				imax = imid - 1;
 
 			if (G_UNLIKELY (imin > imax))
 				return NM_LINK_TYPE_NONE;
 
-			imid = (imin + imax) / 2u;
+			imid = (imin + imax) / 2;
 		}
 	}
 }
@@ -798,14 +798,14 @@ _link_type_from_devtype (const char *name) \
 				return LIST[imid];
 
 			if (cmp < 0)
-				imin = imid + 1u;
+				imin = imid + 1;
 			else
-				imax = imid - 1u;
+				imax = imid - 1;
 
 			if (G_UNLIKELY (imin > imax))
 				return NM_LINK_TYPE_NONE;
 
-			imid = (imin + imax) / 2u;
+			imid = (imin + imax) / 2;
 		}
 	}
 }
