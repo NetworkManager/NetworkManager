@@ -32,7 +32,7 @@ typedef struct {
 	NMConnection *connection;
 	GKeyFile *keyfile;
 	const char *base_dir;
-	NMKeyfileReadHandler handler;
+	NMKeyfileReadHandler read_handler;
 	void *user_data;
 	GError *error;
 	const char *group;
@@ -43,7 +43,7 @@ typedef struct {
 	NMConnection *connection;
 	GKeyFile *keyfile;
 	GError *error;
-	NMKeyfileWriteHandler handler;
+	NMKeyfileWriteHandler write_handler;
 	void *user_data;
 } KeyfileWriterInfo;
 
@@ -66,19 +66,19 @@ _handle_warn (KeyfileReaderInfo *info,
 		.message = message,
 	};
 
-	info->handler (info->keyfile,
-	               info->connection,
-	               NM_KEYFILE_HANDLER_TYPE_WARN,
-	               &type_data,
-	               info->user_data,
-	               &info->error);
+	info->read_handler (info->keyfile,
+	                    info->connection,
+	                    NM_KEYFILE_HANDLER_TYPE_WARN,
+	                    &type_data,
+	                    info->user_data,
+	                    &info->error);
 	g_free (message);
 }
 #define handle_warn(arg_info, arg_property_name, arg_severity, ...) \
 	({ \
 		KeyfileReaderInfo *_info = (arg_info); \
 		\
-		if (_info->handler) { \
+		if (_info->read_handler) { \
 			_handle_warn (_info, (arg_property_name), (arg_severity), \
 			              g_strdup_printf (__VA_ARGS__)); \
 		} \
@@ -2438,13 +2438,13 @@ cert_writer (KeyfileWriterInfo *info,
 		.vtable  = vtable,
 	};
 
-	if (info->handler) {
-		if (info->handler (info->connection,
-		                   info->keyfile,
-		                   NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
-		                   &type_data,
-		                   info->user_data,
-		                   &info->error))
+	if (info->write_handler) {
+		if (info->write_handler (info->connection,
+		                         info->keyfile,
+		                         NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
+		                         &type_data,
+		                         info->user_data,
+		                         &info->error))
 			return;
 		if (info->error)
 			return;
@@ -3524,11 +3524,11 @@ nm_keyfile_read (GKeyFile *keyfile,
 	connection = nm_simple_connection_new ();
 
 	info = (KeyfileReaderInfo) {
-		.connection = connection,
-		.keyfile    = keyfile,
-		.base_dir   = base_dir,
-		.handler    = handler,
-		.user_data  = user_data,
+		.connection   = connection,
+		.keyfile      = keyfile,
+		.base_dir     = base_dir,
+		.read_handler = handler,
+		.user_data    = user_data,
 	};
 
 	groups = g_key_file_get_groups (keyfile, &n_groups);
@@ -3838,11 +3838,11 @@ nm_keyfile_write (NMConnection *connection,
 	keyfile = g_key_file_new ();
 
 	info = (KeyfileWriterInfo) {
-		.connection = connection,
-		.keyfile    = keyfile,
-		.error      = NULL,
-		.handler    = handler,
-		.user_data  = user_data,
+		.connection    = connection,
+		.keyfile       = keyfile,
+		.error         = NULL,
+		.write_handler = handler,
+		.user_data     = user_data,
 	};
 
 	settings = nm_connection_get_settings (connection, &n_settings);
