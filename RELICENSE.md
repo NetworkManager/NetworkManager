@@ -99,6 +99,7 @@ Consent/Disapproval List
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Mario Sanchez Prada <mario@endlessm.com> (Endless Mobile, Inc.)
+- [Y] Martin Pitt <martinpitt@gnome.org> (Canonical, Ltd.)
 - [Y] Michael Biebl <biebl@debian.org>
 - [Y] Pantelis Koukousoulas <pktoss@gmail.com>
 - [Y] Pavel Šimerda <pavlix@pavlix.net> (Red Hat, Inc.)
