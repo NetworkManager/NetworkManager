@@ -1286,36 +1286,32 @@ static void
 ssid_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GBytes *bytes;
+	gs_unref_bytes GBytes *bytes = NULL;
 
 	bytes = get_bytes (info, setting_name, key, FALSE, TRUE);
-	if (bytes) {
-		g_object_set (setting, key, bytes, NULL);
-		g_bytes_unref (bytes);
-	} else {
+	if (!bytes) {
 		handle_warn (info,
 		             key,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid SSID"));
+		return;
 	}
+	g_object_set (setting, key, bytes, NULL);
 }
 
 static void
 password_raw_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GBytes *bytes;
+	gs_unref_bytes GBytes *bytes = NULL;
 
 	bytes = get_bytes (info, setting_name, key, FALSE, TRUE);
-	if (bytes) {
-		g_object_set (setting, key, bytes, NULL);
-		g_bytes_unref (bytes);
-	} else {
-		handle_warn (info,
-		             key,
-		             NM_KEYFILE_WARN_SEVERITY_WARN,
+	if (!bytes) {
+		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid raw password"));
+		return;
 	}
+	g_object_set (setting, key, bytes, NULL);
 }
 
 static char *
@@ -3198,9 +3194,9 @@ read_one_setting_value (KeyfileReaderInfo *info,
 				nm_g_object_set_property_int64 (G_OBJECT (setting), key, i64, &err);
 		}
 	} else if (type == G_TYPE_BYTES) {
+		nm_auto_unref_bytearray GByteArray *array = NULL;
+		gs_unref_bytes GBytes *bytes= NULL;
 		gs_free guint *tmp = NULL;
-		GByteArray *array;
-		GBytes *bytes;
 		gsize length;
 		int i;
 		gboolean already_warned = FALSE;
@@ -3218,18 +3214,15 @@ read_one_setting_value (KeyfileReaderInfo *info,
 				                     key,
 				                     NM_KEYFILE_WARN_SEVERITY_WARN,
 				                     _("ignoring invalid byte element '%u' (not between 0 and 255 inclusive)"),
-				                     val)) {
-					g_byte_array_unref (array);
+				                     val))
 					return;
-				}
 				already_warned = TRUE;
 			} else
 				g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
 		}
 
-		bytes = g_byte_array_free_to_bytes (array);
+		bytes = g_byte_array_free_to_bytes (g_steal_pointer (&array));
 		g_object_set (setting, key, bytes, NULL);
-		g_bytes_unref (bytes);
 	} else if (type == G_TYPE_STRV) {
 		gs_strfreev char **sa = NULL;
 		gsize length;
@@ -3532,7 +3525,6 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 				return;
 		}
 	}
-	nm_clear_pointer (&sa, g_strfreev);
 
 	if (info->error)
 		return;
