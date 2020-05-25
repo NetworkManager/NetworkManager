@@ -4913,6 +4913,10 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
 			value = nm_sprintf_buf (buf, "%u", g_variant_get_uint32 (variant));
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_INT32))
+			value = nm_sprintf_buf (buf, "%d", (int) g_variant_get_int32 (variant));
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT64))
+			value = nm_sprintf_buf (buf, "%"G_GUINT64_FORMAT, g_variant_get_uint64 (variant));
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTE))
 			value = nm_sprintf_buf (buf, "%hhu", g_variant_get_byte (variant));
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN))

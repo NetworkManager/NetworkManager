@@ -5654,6 +5654,24 @@ nm_utils_parse_variant_attributes (const char *string,
 					return NULL;
 				}
 				variant = g_variant_new_uint32 (num);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_INT32)) {
+					gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT32, G_MAXINT32, G_MAXINT64);
+
+					if (num == G_MAXINT64) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+						             _("invalid int32 value '%s' for attribute '%s'"), value, (*s)->name);
+						return NULL;
+					}
+					variant = g_variant_new_int32 (num);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_UINT64)) {
+					guint64 num = _nm_utils_ascii_str_to_uint64 (value, 10, 0, G_MAXUINT64, G_MAXUINT64);
+
+					if (num == G_MAXUINT64 && errno != 0) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+						             _("invalid uint64 value '%s' for attribute '%s'"), value, (*s)->name);
+						return NULL;
+					}
+					variant = g_variant_new_uint64 (num);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BYTE)) {
 				gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT8, -1);
 
