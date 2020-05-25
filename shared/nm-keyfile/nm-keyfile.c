@@ -4337,3 +4337,59 @@ nm_keyfile_utils_create_filename (const char *name,
 
 	return g_string_free (str, FALSE);;
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_keyfile_handler_data_fail_with_error:
+ * @handler_data: the #NMKeyfileHandlerData
+ * @src: (transfer full): error to move into the return location
+ *
+ * Set the error for the handler. This lets the operation fail
+ * with the provided error. You may only set the error once.
+ *
+ * @src must be non-%NULL.
+ *
+ * Note that @src is no longer valid after this call. If you want
+ * to keep using the same GError*, you need to set it to %NULL
+ * after calling this function on it.
+ */
+void
+nm_keyfile_handler_data_fail_with_error (NMKeyfileHandlerData *handler_data,
+                                         GError *src)
+{
+	g_return_if_fail (handler_data);
+	g_return_if_fail (handler_data->p_error && !*handler_data->p_error);
+	g_return_if_fail (src);
+
+	*handler_data->p_error = src;
+}
+
+/**
+ * nm_keyfile_handler_data_get_context:
+ * @handler_data: the #NMKeyfileHandlerData for any event.
+ * @out_kf_group_name: (out) (allow-none) (transfer none): if the event is in the
+ *   context of a keyfile group, the group name.
+ * @out_kf_key_name: (out) (allow-none) (transfer none): if the event is in the
+ *   context of a keyfile value, the key name.
+ * @out_cur_setting: (out) (allow-none) (transfer none): if the event happens while
+ *   handling a particular #NMSetting instance.
+ * @out_cur_property_name: (out) (allow-none) (transfer none): the property name if applicable.
+ *
+ * Get context information of the current event. This function can be called
+ * on all events, but the context information may be unset.
+ */
+void
+nm_keyfile_handler_data_get_context (const NMKeyfileHandlerData *handler_data,
+                                     const char **out_kf_group_name,
+                                     const char **out_kf_key_name,
+                                     NMSetting **out_cur_setting,
+                                     const char **out_cur_property_name)
+{
+	g_return_if_fail (handler_data);
+
+	NM_SET_OUT (out_kf_group_name, handler_data->kf_group_name);
+	NM_SET_OUT (out_kf_key_name, handler_data->kf_key);
+	NM_SET_OUT (out_cur_setting, handler_data->cur_setting);
+	NM_SET_OUT (out_cur_property_name, handler_data->cur_property);
+}

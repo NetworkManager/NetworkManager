@@ -151,6 +151,17 @@ struct _NMKeyfileHandlerData {
 
 /*****************************************************************************/
 
+void nm_keyfile_handler_data_fail_with_error (NMKeyfileHandlerData *handler_data,
+                                              GError *src);
+
+void nm_keyfile_handler_data_get_context (const NMKeyfileHandlerData *handler_data,
+                                          const char **out_kf_group_name,
+                                          const char **out_kf_key_name,
+                                          NMSetting **out_cur_setting,
+                                          const char **out_cur_property_name);
+
+/*****************************************************************************/
+
 char *nm_keyfile_plugin_kf_get_string (GKeyFile *kf, const char *group, const char *key, GError **error);
 void nm_keyfile_plugin_kf_set_string (GKeyFile *kf, const char *group, const char *key, const char *value);
 
