@@ -239,6 +239,8 @@ test-*.trs
 /src/platform/tests/test-platform-general
 /src/platform/tests/test-route-fake
 /src/platform/tests/test-route-linux
+/src/platform/tests/test-tc-fake
+/src/platform/tests/test-tc-linux
 /src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.[ch]
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifupdown/tests/test-ifupdown

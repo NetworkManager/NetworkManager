@@ -250,6 +250,10 @@ BuildRequires: libubsan
 %if %{with firewalld_zone}
 BuildRequires: firewalld-filesystem
 %endif
+BuildRequires: iproute
+%if 0%{?fedora} || 0%{?rhel} > 7
+BuildRequires: iproute-tc
+%endif
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
