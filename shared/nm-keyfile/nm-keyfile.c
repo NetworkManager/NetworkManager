@@ -103,12 +103,14 @@ _key_file_handler_data_init_write (NMKeyfileHandlerData *handler_data,
 	                             &info->error);
 }
 
+_nm_printf (5, 6)
 static void
 _handle_warn (KeyfileReaderInfo *info,
               const char *kf_key,
               const char *cur_property,
               NMKeyfileWarnSeverity severity,
-              char *message)
+              const char *fmt,
+              ...)
 {
 	NMKeyfileHandlerData handler_data;
 
@@ -119,15 +121,21 @@ _handle_warn (KeyfileReaderInfo *info,
 	                                  cur_property);
 	handler_data.warn = (NMKeyfileHandlerDataWarn) {
 		.severity = severity,
-		.message = message,
+		.message  = NULL,
+		.fmt      = fmt,
 	};
+
+	va_start (handler_data.warn.ap, fmt);
 
 	info->read_handler (info->keyfile,
 	                    info->connection,
 	                    NM_KEYFILE_HANDLER_TYPE_WARN,
 	                    &handler_data,
 	                    info->user_data);
-	g_free (message);
+
+	va_end (handler_data.warn.ap);
+
+	g_free (handler_data.warn.message);
 }
 
 #define handle_warn(arg_info, arg_kf_key, arg_property_name, arg_severity, ...) \
@@ -141,7 +149,7 @@ _handle_warn (KeyfileReaderInfo *info,
 			              (arg_kf_key), \
 			              (arg_property_name), \
 			              (arg_severity), \
-			              g_strdup_printf (__VA_ARGS__)); \
+			              __VA_ARGS__); \
 		} \
 		_info->error == NULL; \
 	})
@@ -4392,4 +4400,41 @@ nm_keyfile_handler_data_get_context (const NMKeyfileHandlerData *handler_data,
 	NM_SET_OUT (out_kf_key_name, handler_data->kf_key);
 	NM_SET_OUT (out_cur_setting, handler_data->cur_setting);
 	NM_SET_OUT (out_cur_property_name, handler_data->cur_property);
+}
+
+const char *
+_nm_keyfile_handler_data_warn_get_message (const NMKeyfileHandlerData *handler_data)
+{
+	nm_assert (handler_data);
+	nm_assert (handler_data->type == NM_KEYFILE_HANDLER_TYPE_WARN);
+
+	if (!handler_data->warn.message) {
+		/* we cast the const away. @handler_data is const w.r.t. visible mutations
+		 * from POV of the user. Internally, we construct the message in
+		 * a lazy manner. It's like a mutable field in C++. */
+		NM_PRAGMA_WARNING_DISABLE ("-Wformat-nonliteral")
+		((NMKeyfileHandlerData *) handler_data)->warn.message = g_strdup_vprintf (handler_data->warn.fmt,
+		                                                                          ((NMKeyfileHandlerData *) handler_data)->warn.ap);
+		NM_PRAGMA_WARNING_REENABLE
+	}
+	return handler_data->warn.message;
+}
+
+/**
+ * nm_keyfile_handler_data_warn_get:
+ * @handler_data: the #NMKeyfileHandlerData for a %NM_KEYFILE_HANDLER_TYPE_WARN
+ *  event.
+ * @out_message: (out) (allow-none) (transfer none): the warning message.
+ * @out_severity: (out) (allow-none): the #NMKeyfileWarnSeverity warning severity.
+ */
+void
+nm_keyfile_handler_data_warn_get (const NMKeyfileHandlerData *handler_data,
+                                  const char **out_message,
+                                  NMKeyfileWarnSeverity *out_severity)
+{
+	g_return_if_fail (handler_data);
+	g_return_if_fail (handler_data->type == NM_KEYFILE_HANDLER_TYPE_WARN);
+
+	NM_SET_OUT (out_message, _nm_keyfile_handler_data_warn_get_message (handler_data));
+	NM_SET_OUT (out_severity, handler_data->warn.severity);
 }

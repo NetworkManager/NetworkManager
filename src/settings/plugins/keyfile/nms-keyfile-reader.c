@@ -17,11 +17,15 @@
 /*****************************************************************************/
 
 static const char *
-_fmt_warn (const char *group, NMSetting *setting, const char *property_name, const char *message, char **out_message)
+_fmt_warn (const NMKeyfileHandlerData *handler_data, char **out_message)
 {
-	const char *setting_name = setting ? nm_setting_get_name (setting) : NULL;
+	const char *group = handler_data->kf_group_name;
+	const char *message = _nm_keyfile_handler_data_warn_get_message (handler_data);
 
 	if (group) {
+		NMSetting *setting = handler_data->cur_setting;
+		const char *property_name = handler_data->cur_property;
+		const char *setting_name = setting ? nm_setting_get_name (setting) : NULL;
 		char *res;
 
 		if (setting_name) {
@@ -37,8 +41,9 @@ _fmt_warn (const char *group, NMSetting *setting, const char *property_name, con
 			res = g_strdup_printf ("%s: %s", group, message);
 		*out_message = res;
 		return res;
-	} else
-		return message;
+	}
+
+	return message;
 }
 
 typedef struct {
@@ -76,10 +81,7 @@ _handler_read (GKeyFile *keyfile,
 		        NULL,
 		        nm_connection_get_uuid (connection),
 		        "keyfile: %s",
-		        _fmt_warn (handler_data->kf_group_name,
-		                   handler_data->cur_setting,
-		                   handler_data->cur_property,
-		                   warn_data->message,
+		        _fmt_warn (handler_data,
 		                   &message_free));
 		g_free (message_free);
 		return TRUE;

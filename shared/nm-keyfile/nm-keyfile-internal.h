@@ -119,7 +119,9 @@ GKeyFile *nm_keyfile_write (NMConnection *connection,
  */
 typedef struct {
 	NMKeyfileWarnSeverity severity;
-	const char *message;
+	char *message;
+	const char *fmt;
+	va_list ap;
 } NMKeyfileHandlerDataWarn;
 
 /**
@@ -159,6 +161,12 @@ void nm_keyfile_handler_data_get_context (const NMKeyfileHandlerData *handler_da
                                           const char **out_kf_key_name,
                                           NMSetting **out_cur_setting,
                                           const char **out_cur_property_name);
+
+void nm_keyfile_handler_data_warn_get (const NMKeyfileHandlerData *handler_data,
+                                       const char **out_message,
+                                       NMKeyfileWarnSeverity *out_severity);
+
+const char *_nm_keyfile_handler_data_warn_get_message (const NMKeyfileHandlerData *handler_data);
 
 /*****************************************************************************/
 
