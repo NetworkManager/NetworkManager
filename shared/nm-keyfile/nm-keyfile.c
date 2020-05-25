@@ -91,6 +91,8 @@ _handle_warn (KeyfileReaderInfo *info,
 	({ \
 		KeyfileReaderInfo *_info = (arg_info); \
 		\
+		nm_assert (!_info->error); \
+		\
 		if (_info->read_handler) { \
 			_handle_warn (_info, (arg_property_name), (arg_severity), \
 			              g_strdup_printf (__VA_ARGS__)); \
@@ -281,14 +283,12 @@ build_route (KeyfileReaderInfo *info,
 				metric = u32;
 				gateway_str = NULL;
 			} else {
-				if (!info->error) {
-					handle_warn (info,
-					             property_name,
-					             NM_KEYFILE_WARN_SEVERITY_WARN,
-					             _("ignoring invalid gateway '%s' for %s route"),
-					             gateway_str,
-					             family == AF_INET ? "IPv4" : "IPv6");
-				}
+				handle_warn (info,
+				             property_name,
+				             NM_KEYFILE_WARN_SEVERITY_WARN,
+				             _("ignoring invalid gateway '%s' for %s route"),
+				             gateway_str,
+				             family == AF_INET ? "IPv4" : "IPv6");
 				return NULL;
 			}
 		}
@@ -1292,7 +1292,7 @@ ssid_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	if (bytes) {
 		g_object_set (setting, key, bytes, NULL);
 		g_bytes_unref (bytes);
-	} else if (!info->error) {
+	} else {
 		handle_warn (info,
 		             key,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
@@ -1310,7 +1310,7 @@ password_raw_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *ke
 	if (bytes) {
 		g_object_set (setting, key, bytes, NULL);
 		g_bytes_unref (bytes);
-	} else if (!info->error) {
+	} else {
 		handle_warn (info,
 		             key,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
