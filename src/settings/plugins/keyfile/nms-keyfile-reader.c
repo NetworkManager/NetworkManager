@@ -43,23 +43,23 @@ _fmt_warn (const char *group, NMSetting *setting, const char *property_name, con
 
 typedef struct {
 	bool verbose;
-} HandlerReadData;
+} ReadInfo;
 
 static gboolean
 _handler_read (GKeyFile *keyfile,
                NMConnection *connection,
-               NMKeyfileHandlerType type,
-               NMKeyfileHandlerData *type_data,
+               NMKeyfileHandlerType handler_type,
+               NMKeyfileHandlerData *handler_data,
                void *user_data)
 {
-	const HandlerReadData *handler_data = user_data;
+	const ReadInfo *read_info = user_data;
 
-	if (type == NM_KEYFILE_HANDLER_TYPE_WARN) {
-		const NMKeyfileHandlerDataWarn *warn_data = &type_data->warn;
+	if (handler_type == NM_KEYFILE_HANDLER_TYPE_WARN) {
+		const NMKeyfileHandlerDataWarn *warn_data = &handler_data->warn;
 		NMLogLevel level;
 		char *message_free = NULL;
 
-		if (!handler_data->verbose)
+		if (!read_info->verbose)
 			return TRUE;
 
 		if (warn_data->severity > NM_KEYFILE_WARN_SEVERITY_WARN)
@@ -71,11 +71,15 @@ _handler_read (GKeyFile *keyfile,
 		else
 			level = LOGL_INFO;
 
-		nm_log (level, LOGD_SETTINGS, NULL,
+		nm_log (level,
+		        LOGD_SETTINGS,
+		        NULL,
 		        nm_connection_get_uuid (connection),
 		        "keyfile: %s",
-		        _fmt_warn (warn_data->group, warn_data->setting,
-		                   warn_data->property_name, warn_data->message,
+		        _fmt_warn (handler_data->kf_group_name,
+		                   handler_data->cur_setting,
+		                   handler_data->cur_property,
+		                   warn_data->message,
 		                   &message_free));
 		g_free (message_free);
 		return TRUE;
@@ -93,7 +97,7 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
                                  GError **error)
 {
 	NMConnection *connection;
-	HandlerReadData data = {
+	ReadInfo read_info = {
 		.verbose = verbose,
 	};
 	gs_free char *base_dir_free = NULL;
@@ -122,7 +126,7 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
 		filename = &s[1];
 	}
 
-	connection = nm_keyfile_read (key_file, base_dir, _handler_read, &data, error);
+	connection = nm_keyfile_read (key_file, base_dir, _handler_read, &read_info, error);
 	if (!connection)
 		return NULL;
 

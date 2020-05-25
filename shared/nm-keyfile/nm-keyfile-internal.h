@@ -118,15 +118,6 @@ GKeyFile *nm_keyfile_write (NMConnection *connection,
  * handler_type %NM_KEYFILE_HANDLER_TYPE_WARN.
  */
 typedef struct {
-	/* might be %NULL, if the warning is not about a group. */
-	const char *group;
-
-	/* might be %NULL, if the warning is not about a setting. */
-	NMSetting *setting;
-
-	/* might be %NULL, if the warning is not about a property. */
-	const char *property_name;
-
 	NMKeyfileWarnSeverity severity;
 	const char *message;
 } NMKeyfileHandlerDataWarn;
@@ -139,12 +130,19 @@ typedef struct {
  */
 typedef struct {
 	const NMSetting8021xSchemeVtable *vtable;
-	NMSetting8021x *setting;
 } NMKeyfileHandlerDataWriteCert;
 
 struct _NMKeyfileHandlerData {
 	NMKeyfileHandlerType type;
+
 	GError **p_error;
+
+	const char *kf_group_name;
+	const char *kf_key;
+
+	NMSetting *cur_setting;
+	const char *cur_property;
+
 	union {
 		NMKeyfileHandlerDataWarn      warn;
 		NMKeyfileHandlerDataWriteCert write_cert;

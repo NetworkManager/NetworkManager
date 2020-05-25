@@ -52,6 +52,10 @@ typedef struct {
 static void
 _key_file_handler_data_init (NMKeyfileHandlerData *handler_data,
                              NMKeyfileHandlerType handler_type,
+                             const char *kf_group_name,
+                             const char *kf_key,
+                             NMSetting *cur_setting,
+                             const char *cur_property,
                              GError **p_error)
 {
 	nm_assert (handler_data);
@@ -59,23 +63,61 @@ _key_file_handler_data_init (NMKeyfileHandlerData *handler_data,
 
 	handler_data->type = handler_type;
 	handler_data->p_error = p_error;
+	handler_data->kf_group_name = kf_group_name;
+	handler_data->kf_key = kf_key;
+	handler_data->cur_setting = cur_setting;
+	handler_data->cur_property = cur_property;
+}
+
+static void
+_key_file_handler_data_init_read (NMKeyfileHandlerData *handler_data,
+                                  NMKeyfileHandlerType handler_type,
+                                  KeyfileReaderInfo *info,
+                                  const char *kf_key,
+                                  const char *cur_property)
+{
+	_key_file_handler_data_init (handler_data,
+	                             handler_type,
+	                             info->group,
+	                             kf_key,
+	                             info->setting,
+	                             cur_property,
+	                             &info->error);
+}
+
+static void
+_key_file_handler_data_init_write (NMKeyfileHandlerData *handler_data,
+                                   NMKeyfileHandlerType handler_type,
+                                   KeyfileWriterInfo *info,
+                                   const char *kf_group,
+                                   const char *kf_key,
+                                   NMSetting *cur_setting,
+                                   const char *cur_property)
+{
+	_key_file_handler_data_init (handler_data,
+	                             handler_type,
+	                             kf_group,
+	                             kf_key,
+	                             cur_setting,
+	                             cur_property,
+	                             &info->error);
 }
 
 static void
 _handle_warn (KeyfileReaderInfo *info,
-              const char *property_name,
+              const char *kf_key,
+              const char *cur_property,
               NMKeyfileWarnSeverity severity,
               char *message)
 {
 	NMKeyfileHandlerData handler_data;
 
-	_key_file_handler_data_init (&handler_data,
-	                             NM_KEYFILE_HANDLER_TYPE_WARN,
-	                             &info->error);
+	_key_file_handler_data_init_read (&handler_data,
+	                                  NM_KEYFILE_HANDLER_TYPE_WARN,
+	                                  info,
+	                                  kf_key,
+	                                  cur_property);
 	handler_data.warn = (NMKeyfileHandlerDataWarn) {
-		.group = info->group,
-		.setting = info->setting,
-		.property_name = property_name,
 		.severity = severity,
 		.message = message,
 	};
@@ -87,14 +129,18 @@ _handle_warn (KeyfileReaderInfo *info,
 	                    info->user_data);
 	g_free (message);
 }
-#define handle_warn(arg_info, arg_property_name, arg_severity, ...) \
+
+#define handle_warn(arg_info, arg_kf_key, arg_property_name, arg_severity, ...) \
 	({ \
 		KeyfileReaderInfo *_info = (arg_info); \
 		\
 		nm_assert (!_info->error); \
 		\
 		if (_info->read_handler) { \
-			_handle_warn (_info, (arg_property_name), (arg_severity), \
+			_handle_warn (_info, \
+			              (arg_kf_key), \
+			              (arg_property_name), \
+			              (arg_severity), \
 			              g_strdup_printf (__VA_ARGS__)); \
 		} \
 		_info->error == NULL; \
@@ -196,15 +242,22 @@ read_array_of_uint (GKeyFile *file,
 }
 
 static gboolean
-get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str, guint32 max_val, guint32 *out)
+get_one_int (KeyfileReaderInfo *info,
+             const char *kf_key,
+             const char *property_name,
+             const char *str,
+             guint32 max_val,
+             guint32 *out)
 {
 	gint64 tmp;
 
 	nm_assert ((!info) == (!property_name));
+	nm_assert ((!info) == (!kf_key));
 
 	if (!str || !str[0]) {
-		if (property_name) {
+		if (info) {
 			handle_warn (info,
+			             kf_key,
 			             property_name,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("ignoring missing number"));
@@ -214,8 +267,9 @@ get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str
 
 	tmp = _nm_utils_ascii_str_to_int64 (str, 10, 0, max_val, -1);
 	if (tmp == -1) {
-		if (property_name) {
+		if (info) {
 			handle_warn (info,
+			             kf_key,
 			             property_name,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("ignoring invalid number '%s'"),
@@ -229,7 +283,12 @@ get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str
 }
 
 static gpointer
-build_address (KeyfileReaderInfo *info, int family, const char *address_str, guint32 plen, const char *property_name)
+build_address (KeyfileReaderInfo *info,
+               const char *kf_key,
+               const char *property_name,
+               int family,
+               const char *address_str,
+               guint32 plen)
 {
 	NMIPAddress *addr;
 	GError *error = NULL;
@@ -239,6 +298,7 @@ build_address (KeyfileReaderInfo *info, int family, const char *address_str, gui
 	addr = nm_ip_address_new (family, address_str, plen, &error);
 	if (!addr) {
 		handle_warn (info,
+		             kf_key,
 		             property_name,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid %s address: %s"),
@@ -252,6 +312,7 @@ build_address (KeyfileReaderInfo *info, int family, const char *address_str, gui
 
 static gpointer
 build_route (KeyfileReaderInfo *info,
+             const char *kf_key,
              const char *property_name,
              int family,
              const char *dest_str,
@@ -279,11 +340,12 @@ build_route (KeyfileReaderInfo *info,
 			 **/
 			if (   family == AF_INET6
 			    && !metric_str
-			    && get_one_int (NULL, NULL, gateway_str, G_MAXUINT32, &u32)) {
+			    && get_one_int (NULL, NULL, NULL, gateway_str, G_MAXUINT32, &u32)) {
 				metric = u32;
 				gateway_str = NULL;
 			} else {
 				handle_warn (info,
+				             kf_key,
 				             property_name,
 				             NM_KEYFILE_WARN_SEVERITY_WARN,
 				             _("ignoring invalid gateway '%s' for %s route"),
@@ -297,7 +359,12 @@ build_route (KeyfileReaderInfo *info,
 
 	/* parse metric, default to -1 */
 	if (metric_str) {
-		if (!get_one_int (info, property_name, metric_str, G_MAXUINT32, &u32))
+		if (!get_one_int (info,
+		                  kf_key,
+		                  property_name,
+		                  metric_str,
+		                  G_MAXUINT32,
+		                  &u32))
 			return NULL;
 		metric = u32;
 	}
@@ -310,6 +377,7 @@ build_route (KeyfileReaderInfo *info,
 	                         &error);
 	if (!route) {
 		handle_warn (info,
+		             kf_key,
 		             property_name,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid %s route: %s"),
@@ -455,7 +523,7 @@ static gpointer
 read_one_ip_address_or_route (KeyfileReaderInfo *info,
                               const char *property_name,
                               const char *setting_name,
-                              const char *key_name,
+                              const char *kf_key,
                               gboolean ipv6,
                               gboolean route,
                               char **out_gateway,
@@ -472,9 +540,9 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 	gs_free char *value = NULL;
 	gs_free char *value_orig = NULL;
 
-#define VALUE_ORIG()   (value_orig ?: (value_orig = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL)))
+#define VALUE_ORIG()   (value_orig ?: (value_orig = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, kf_key, NULL)))
 
-	value = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL);
+	value = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, kf_key, NULL);
 	if (!value)
 		return NULL;
 
@@ -484,11 +552,12 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 	address_str = read_field (&current, &err_str, IP_ADDRESS_CHARS, DELIMITERS);
 	if (err_str) {
 		handle_warn (info,
+		             kf_key,
 		             property_name,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("unexpected character '%c' for address %s: '%s' (position %td)"),
 		             *err_str,
-		             key_name,
+		             kf_key,
 		             VALUE_ORIG (),
 		             err_str - current);
 		return NULL;
@@ -499,11 +568,12 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 	gateway_str = read_field (&current, &err_str, IP_ADDRESS_CHARS, DELIMITERS);
 	if (err_str) {
 		handle_warn (info,
+		             kf_key,
 		             property_name,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("unexpected character '%c' for %s: '%s' (position %td)"),
 		             *err_str,
-		             key_name,
+		             kf_key,
 		             VALUE_ORIG (),
 		             err_str - current);
 		return NULL;
@@ -513,11 +583,12 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 		metric_str = read_field (&current, &err_str, DIGITS, DELIMITERS);
 		if (err_str) {
 			handle_warn (info,
+			             kf_key,
 			             property_name,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("unexpected character '%c' in prefix length for %s: '%s' (position %td)"),
 			             *err_str,
-			             key_name,
+			             kf_key,
 			             VALUE_ORIG (),
 			             err_str - current);
 			return NULL;
@@ -529,19 +600,21 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 		if (*current) {
 			/* another field follows */
 			handle_warn (info,
+			             kf_key,
 			             property_name,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("garbage at the end of value %s: '%s'"),
-			             key_name,
+			             kf_key,
 			             VALUE_ORIG ());
 			return NULL;
 		} else {
 			/* semicolon at the end of input */
 			if (!handle_warn (info,
+			                  kf_key,
 			                  property_name,
 			                  NM_KEYFILE_WARN_SEVERITY_INFO,
 			                  _("deprecated semicolon at the end of value %s: '%s'"),
-			                  key_name,
+			                  kf_key,
 			                  VALUE_ORIG ()))
 				return NULL;
 		}
@@ -551,14 +624,20 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 
 	/* parse plen, fallback to defaults */
 	if (plen_str) {
-		if (!get_one_int (info, property_name, plen_str, ipv6 ? 128 : 32, &plen)) {
+		if (!get_one_int (info,
+		                  kf_key,
+		                  property_name,
+		                  plen_str,
+		                  ipv6 ? 128 : 32,
+		                  &plen)) {
 			plen = DEFAULT_PREFIX (route, ipv6);
 			if (   info->error
 			    || !handle_warn (info,
+			                     kf_key,
 			                     property_name,
 			                     NM_KEYFILE_WARN_SEVERITY_WARN,
 			                     _("invalid prefix length for %s '%s', defaulting to %d"),
-			                     key_name,
+			                     kf_key,
 			                     VALUE_ORIG (),
 			                     plen))
 				return NULL;
@@ -566,10 +645,11 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 	} else {
 		plen = DEFAULT_PREFIX (route, ipv6);
 		if (!handle_warn (info,
+		                  kf_key,
 		                  property_name,
 		                  NM_KEYFILE_WARN_SEVERITY_WARN,
 		                  _("missing prefix length for %s '%s', defaulting to %d"),
-		                  key_name,
+		                  kf_key,
 		                  VALUE_ORIG (),
 		                  plen))
 			return NULL;
@@ -578,6 +658,7 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 	/* build the appropriate data structure for NetworkManager settings */
 	if (route) {
 		result = build_route (info,
+		                      kf_key,
 		                      property_name,
 		                      ipv6 ? AF_INET6 : AF_INET,
 		                      address_str,
@@ -586,10 +667,11 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 		                      metric_str);
 	} else {
 		result = build_address (info,
+		                        kf_key,
+		                        property_name,
 		                        ipv6 ? AF_INET6 : AF_INET,
 		                        address_str,
-		                        plen,
-		                        property_name);
+		                        plen);
 		if (!result)
 			return NULL;
 		if (gateway_str)
@@ -905,6 +987,7 @@ ip_routing_rule_parser_full (KeyfileReaderInfo *info,
 		                                       &local);
 		if (!rule) {
 			if (!handle_warn (info,
+			                  build_list[i_build_list].s_key,
 			                  property_info->name,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("invalid value for \"%s\": %s"),
@@ -945,6 +1028,7 @@ ip_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (inet_pton (addr_family, list[i], &addr) <= 0) {
 			if (!handle_warn (info,
 			                  key,
+			                  key,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("ignoring invalid DNS server IPv%c address '%s'"),
 			                  nm_utils_addr_family_to_char (addr_family),
@@ -978,6 +1062,7 @@ ip6_addr_gen_mode_parser (KeyfileReaderInfo *info, NMSetting *setting, const cha
 		if (!nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), s,
 		                             (int *) &addr_gen_mode, NULL)) {
 			handle_warn (info,
+			             key,
 			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid option '%s', use one of [%s]"),
@@ -1033,6 +1118,7 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 	}
 
 	handle_warn (info,
+	             key,
 	             key,
 	             NM_KEYFILE_WARN_SEVERITY_WARN,
 	             _("ignoring invalid MAC address"));
@@ -1292,6 +1378,7 @@ ssid_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	if (!bytes) {
 		handle_warn (info,
 		             key,
+		             key,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid SSID"));
 		return;
@@ -1307,7 +1394,10 @@ password_raw_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *ke
 
 	bytes = get_bytes (info, setting_name, key, FALSE, TRUE);
 	if (!bytes) {
-		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+		handle_warn (info,
+		             key,
+		             key,
+		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid raw password"));
 		return;
 	}
@@ -1451,6 +1541,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (!info->error) {
 			handle_warn (info,
 			             key,
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value"));
 		}
@@ -1463,6 +1554,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PATH) {
 			handle_warn (info,
+			             key,
 			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value path \"%s\""),
@@ -1487,6 +1579,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (!g_file_test (path2, G_FILE_TEST_EXISTS)) {
 			handle_warn (info,
 			             key,
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
 			             _("certificate or key file '%s' does not exist"),
 			             path2);
@@ -1497,6 +1590,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	if (HAS_SCHEME_PREFIX (bin, bin_len, NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)) {
 		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
 			handle_warn (info,
+			             key,
 			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid PKCS#11 URI \"%s\""),
@@ -1545,6 +1639,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (bin_decoded_len == 0) {
 			handle_warn (info,
 			             key,
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value data:;base64, is not base64"));
 			return;
@@ -1555,6 +1650,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 			 * In fact this is a limitation of NMSetting8021x which does not support setting blobs that start
 			 * with file://. Just warn and return TRUE to signal that we ~handled~ the setting. */
 			handle_warn (info,
+			             key,
 			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value data:;base64,file://"));
@@ -1579,6 +1675,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (!path_exists) {
 			handle_warn (info,
 			             key,
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
 			             _("certificate or key file '%s' does not exist"),
 			             path);
@@ -1592,6 +1689,7 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		 * In fact, NMSetting8021x does not support setting such binary data, so just warn and
 		 * continue. */
 		handle_warn (info,
+		             key,
 		             key,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid key/cert value is not a valid blob"));
@@ -1697,6 +1795,7 @@ parity_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	handle_warn (info,
 	             key,
+	             key,
 	             NM_KEYFILE_WARN_SEVERITY_WARN,
 	             _("invalid parity value '%s'"),
 	             tmp_str ?: "");
@@ -1713,6 +1812,7 @@ out_err:
 		return;
 	}
 	handle_warn (info,
+	             key,
 	             key,
 	             NM_KEYFILE_WARN_SEVERITY_WARN,
 	             _("invalid setting: %s"),
@@ -1733,6 +1833,7 @@ team_config_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 	if (   conf
 	    && !nm_setting_verify (setting, NULL, &error)) {
 		handle_warn (info,
+		             key,
 		             key,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("ignoring invalid team configuration: %s"),
@@ -1766,6 +1867,7 @@ bridge_vlan_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 			vlan = nm_bridge_vlan_from_str (*iter, &local);
 			if (!vlan) {
 				handle_warn (info,
+				             key,
 				             key,
 				             NM_KEYFILE_WARN_SEVERITY_WARN,
 				             "invalid bridge VLAN: %s",
@@ -1817,6 +1919,7 @@ qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (!qdisc) {
 			handle_warn (info,
 			             keys[i],
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid qdisc: %s"),
 			             err->message);
@@ -1865,6 +1968,7 @@ tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 		if (!tfilter) {
 			handle_warn (info,
 			             keys[i],
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid tfilter: %s"),
 			             err->message);
@@ -2439,9 +2543,9 @@ static void
 cert_writer_default (NMConnection *connection,
                      GKeyFile *file,
                      NMSetting8021x *setting,
+                     const char *setting_name,
                      const NMSetting8021xSchemeVtable *vtable)
 {
-	const char *setting_name = nm_setting_get_name (NM_SETTING (setting));
 	NMSetting8021xCKScheme scheme;
 
 	scheme = vtable->scheme_func (setting);
@@ -2515,7 +2619,7 @@ cert_writer (KeyfileWriterInfo *info,
              const GValue *value)
 {
 	const NMSetting8021xSchemeVtable *vtable = NULL;
-	NMKeyfileHandlerData handler_data;
+	const char *setting_name;
 	guint i;
 
 	for (i = 0; nm_setting_8021x_scheme_vtable[i].setting_key; i++) {
@@ -2527,12 +2631,19 @@ cert_writer (KeyfileWriterInfo *info,
 	if (!vtable)
 		g_return_if_reached ();
 
+	setting_name = nm_setting_get_name (NM_SETTING (setting));
+
 	if (info->write_handler) {
-		_key_file_handler_data_init (&handler_data,
-		                             NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
-		                             &info->error);
+		NMKeyfileHandlerData handler_data;
+
+		_key_file_handler_data_init_write (&handler_data,
+		                                   NM_KEYFILE_HANDLER_TYPE_WRITE_CERT,
+		                                   info,
+		                                   setting_name,
+		                                   vtable->setting_key,
+		                                   setting,
+		                                   key);
 		handler_data.write_cert = (NMKeyfileHandlerDataWriteCert) {
-			.setting = NM_SETTING_802_1X (setting),
 			.vtable  = vtable,
 		};
 
@@ -2549,6 +2660,7 @@ cert_writer (KeyfileWriterInfo *info,
 	cert_writer_default (info->connection,
 	                     info->keyfile,
 	                     NM_SETTING_802_1X (setting),
+	                     setting_name,
 	                     vtable);
 }
 
@@ -3109,6 +3221,7 @@ read_one_setting_value (KeyfileReaderInfo *info,
 		if (err) {
 			if (!handle_warn (info,
 			                  key,
+			                  key,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("error loading setting value: %s"),
 			                  err->message))
@@ -3212,6 +3325,7 @@ read_one_setting_value (KeyfileReaderInfo *info,
 				if (   !already_warned
 				    && !handle_warn (info,
 				                     key,
+				                     key,
 				                     NM_KEYFILE_WARN_SEVERITY_WARN,
 				                     _("ignoring invalid byte element '%u' (not between 0 and 255 inclusive)"),
 				                     val))
@@ -3264,6 +3378,7 @@ read_one_setting_value (KeyfileReaderInfo *info,
 		} else {
 			handle_warn (info,
 			             key,
+			             key,
 			             NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid setting: %s"),
 			             err->message);
@@ -3287,6 +3402,7 @@ _read_setting (KeyfileReaderInfo *info)
 	type = nm_setting_lookup_type (alias);
 	if (!type) {
 		handle_warn (info,
+		             NULL,
 		             NULL,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid setting name '%s'"),
@@ -3336,6 +3452,7 @@ _read_setting (KeyfileReaderInfo *info)
 				if (!variant_type) {
 					if (!handle_warn (info,
 					                  key,
+					                  NULL,
 					                  NM_KEYFILE_WARN_SEVERITY_WARN,
 					                  _("invalid key '%s.%s'"),
 					                  info->group,
@@ -3353,6 +3470,7 @@ _read_setting (KeyfileReaderInfo *info)
 					                            &local);
 					if (local) {
 						if (!handle_warn (info,
+						                  key,
 						                  key,
 						                  NM_KEYFILE_WARN_SEVERITY_WARN,
 						                  _("key '%s.%s' is not boolean"),
@@ -3372,6 +3490,7 @@ _read_setting (KeyfileReaderInfo *info)
 
 					if (local) {
 						if (!handle_warn (info,
+						                  key,
 						                  key,
 						                  NM_KEYFILE_WARN_SEVERITY_WARN,
 						                  _("key '%s.%s' is not a uint32"),
@@ -3433,6 +3552,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		 * is uniquely identified. */
 		handle_warn (info,
 		             NULL,
+		             NM_SETTING_WIREGUARD_PEERS,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid peer public key in section '%s'"),
 		             info->group);
@@ -3447,6 +3567,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		if (!nm_wireguard_peer_set_preshared_key (peer, str, FALSE)) {
 			if (!handle_warn (info,
 			                  key,
+			                  NM_SETTING_WIREGUARD_PEERS,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not a valid 256 bit key in base64 encoding"),
 			                  info->group,
@@ -3463,6 +3584,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		    || !_nm_setting_secret_flags_valid (i64)) {
 			if (!handle_warn (info,
 			                  key,
+			                  NM_SETTING_WIREGUARD_PEERS,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not a valid secret flag"),
 			                  info->group,
@@ -3478,6 +3600,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		if (i64 == -1) {
 			if (!handle_warn (info,
 			                  key,
+			                  NM_SETTING_WIREGUARD_PEERS,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not a integer in range 0 to 2^32"),
 			                  info->group,
@@ -3493,6 +3616,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		if (!nm_wireguard_peer_set_endpoint (peer, str, FALSE)) {
 			if (!handle_warn (info,
 			                  key,
+			                  NM_SETTING_WIREGUARD_PEERS,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' is not a valid endpoint"),
 			                  info->group,
@@ -3518,6 +3642,7 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 		if (has_error) {
 			if (!handle_warn (info,
 			                  key,
+			                  NM_SETTING_WIREGUARD_PEERS,
 			                  NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("key '%s.%s' has invalid allowed-ips"),
 			                  info->group,
@@ -3531,7 +3656,8 @@ _read_setting_wireguard_peer (KeyfileReaderInfo *info)
 
 	if (!nm_wireguard_peer_is_valid (peer, TRUE, TRUE, &error)) {
 		handle_warn (info,
-		             key,
+		             NULL,
+		             NM_SETTING_WIREGUARD_PEERS,
 		             NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("peer '%s' is invalid: %s"),
 		             info->group,
