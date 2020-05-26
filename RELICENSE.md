@@ -127,12 +127,12 @@ list above indicates whether a contributor provided code for a legal entity here
 
 - [?] Intel Corporation
 - [?] Novell, Inc.
-- [?] One Laptop per Child
 - [?] SUSE
 
 - [Y] Canonical, Ltd.
 - [Y] Endless Mobile, Inc.
 - [Y] Endless OS LLC
+- [Y] One Laptop per Child
 - [Y] Pengutronix
 - [Y] Red Hat, Inc.
 - [Y] Sigfox
