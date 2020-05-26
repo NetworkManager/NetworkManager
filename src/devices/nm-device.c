@@ -999,8 +999,12 @@ _ethtool_ring_set (NMDevice *self,
 
 	g_hash_table_iter_init (&iter, hash);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant)) {
-		if (!nm_ethtool_optname_is_ring (name))
+		NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name (name);
+		guint32 u32;
+
+		if (!nm_ethtool_id_is_ring (ethtool_id))
 			continue;
+
 		nm_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32));
 
 		if (!has_old) {
@@ -1014,12 +1018,23 @@ _ethtool_ring_set (NMDevice *self,
 			ring_new = ring_old;
 		}
 
-		if (!nm_platform_ethtool_init_ring (platform,
-		                                    &ring_new,
-		                                    name,
-		                                    g_variant_get_uint32 (variant))) {
-			_LOGW (LOGD_DEVICE, "ethtool: invalid ring setting %s", name);
-			return;
+		u32 = g_variant_get_uint32 (variant);
+
+		switch (ethtool_id) {
+		case NM_ETHTOOL_ID_RING_RX:
+			ring_new.rx_pending = u32;
+			break;
+		case NM_ETHTOOL_ID_RING_RX_JUMBO:
+			ring_new.rx_jumbo_pending = u32;
+			break;
+		case NM_ETHTOOL_ID_RING_RX_MINI:
+			ring_new.rx_mini_pending = u32;
+			break;
+		case NM_ETHTOOL_ID_RING_TX:
+			ring_new.tx_pending = u32;
+			break;
+		default:
+			nm_assert_not_reached ();
 		}
 	}
 
@@ -1055,8 +1070,6 @@ _ethtool_state_reset (NMDevice *self)
 	if (ethtool_state->ring)
 		_ethtool_ring_reset (self, platform, ethtool_state);
 }
-
-
 
 static void
 _ethtool_state_set (NMDevice *self)
