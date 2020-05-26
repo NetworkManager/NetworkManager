@@ -3572,6 +3572,14 @@ next:
 	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", 10, 0, G_MAXINT32, 0);
 	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (int) timeout, NULL);
 
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "IEEE_8021X_CA_PATH", &value);
+	g_object_set (s_8021x, NM_SETTING_802_1X_CA_PATH, v, NULL);
+
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "IEEE_8021X_PHASE2_CA_PATH", &value);
+	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_CA_PATH, v, NULL);
+
 	return g_steal_pointer (&s_8021x);
 }
 
