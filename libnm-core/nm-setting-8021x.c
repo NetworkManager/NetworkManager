@@ -3504,14 +3504,17 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 * Contains the CA certificate if used by the EAP method specified in the
 	 * #NMSetting8021x:eap property.
 	 *
-	 * Certificate data is specified using a "scheme"; two are currently
-	 * supported: blob and path. When using the blob scheme (which is backwards
-	 * compatible with NM 0.7.x) this property should be set to the
-	 * certificate's DER encoded data. When using the path scheme, this property
-	 * should be set to the full UTF-8 encoded path of the certificate, prefixed
-	 * with the string "file://" and ending with a terminating NUL byte. This
-	 * property can be unset even if the EAP method supports CA certificates,
+	 * Certificate data is specified using a "scheme"; three are currently
+	 * supported: blob, path and pkcs#11 URL. When using the blob scheme this property
+	 * should be set to the certificate's DER encoded data. When using the path
+	 * scheme, this property should be set to the full UTF-8 encoded path of the
+	 * certificate, prefixed with the string "file://" and ending with a terminating
+	 * NUL byte.
+	 * This property can be unset even if the EAP method supports CA certificates,
 	 * but this allows man-in-the-middle attacks and is NOT recommended.
+	 *
+	 * Note that enabling NMSetting8021x:system-ca-certs will override this
+	 * setting to use the built-in path, if the built-in path is not a directory.
 	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_ca_cert() function instead.
@@ -3571,11 +3574,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 * UTF-8 encoded path to a directory containing PEM or DER formatted
 	 * certificates to be added to the verification chain in addition to the
 	 * certificate specified in the #NMSetting8021x:ca-cert property.
+	 *
+	 * If NMSetting8021x:system-ca-certs is enabled and the built-in CA
+	 * path is an existing directory, then this setting is ignored.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: ca-path
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_CA_PATH(+)
+	 * description: The search path for the certificate.
 	 * ---end---
 	 */
 	obj_properties[PROP_CA_PATH] =
@@ -3867,14 +3873,17 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 * in the #NMSetting8021x:phase2-auth or #NMSetting8021x:phase2-autheap
 	 * properties.
 	 *
-	 * Certificate data is specified using a "scheme"; two are currently
-	 * supported: blob and path. When using the blob scheme (which is backwards
-	 * compatible with NM 0.7.x) this property should be set to the
-	 * certificate's DER encoded data. When using the path scheme, this property
-	 * should be set to the full UTF-8 encoded path of the certificate, prefixed
-	 * with the string "file://" and ending with a terminating NUL byte. This
-	 * property can be unset even if the EAP method supports CA certificates,
+	 * Certificate data is specified using a "scheme"; three are currently
+	 * supported: blob, path and pkcs#11 URL. When using the blob scheme this property
+	 * should be set to the certificate's DER encoded data. When using the path
+	 * scheme, this property should be set to the full UTF-8 encoded path of the
+	 * certificate, prefixed with the string "file://" and ending with a terminating
+	 * NUL byte.
+	 * This property can be unset even if the EAP method supports CA certificates,
 	 * but this allows man-in-the-middle attacks and is NOT recommended.
+	 *
+	 * Note that enabling NMSetting8021x:system-ca-certs will override this
+	 * setting to use the built-in path, if the built-in path is not a directory.
 	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_ca_cert() function instead.
@@ -3927,7 +3936,16 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 * UTF-8 encoded path to a directory containing PEM or DER formatted
 	 * certificates to be added to the verification chain in addition to the
 	 * certificate specified in the #NMSetting8021x:phase2-ca-cert property.
+	 *
+	 * If NMSetting8021x:system-ca-certs is enabled and the built-in CA
+	 * path is an existing directory, then this setting is ignored.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-ca-path
+	 * variable: IEEE_8021X_PHASE2_CA_PATH(+)
+	 * description: The search path for the certificate.
+	 * ---end---
+	 */
 	obj_properties[PROP_PHASE2_CA_PATH] =
 	    g_param_spec_string (NM_SETTING_802_1X_PHASE2_CA_PATH, "", "",
 	                         NULL,
