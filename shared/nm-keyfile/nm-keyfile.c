@@ -3758,6 +3758,7 @@ nm_keyfile_read_ensure_uuid (NMConnection *connection,
  * @base_dir: when reading certificates from files with relative name,
  *   the relative path is made absolute using @base_dir. This must
  *   be an absolute path.
+ * @handler_flags: the #NMKeyfileHandlerFlags.
  * @handler: read handler
  * @user_data: user data for read handler
  * @error: error
@@ -3770,6 +3771,7 @@ nm_keyfile_read_ensure_uuid (NMConnection *connection,
 NMConnection *
 nm_keyfile_read (GKeyFile *keyfile,
                  const char *base_dir,
+                 NMKeyfileHandlerFlags handler_flags,
                  NMKeyfileReadHandler handler,
                  void *user_data,
                  GError **error)
@@ -3785,6 +3787,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 	g_return_val_if_fail (keyfile, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (base_dir && base_dir[0] == '/', NULL);
+	g_return_val_if_fail (handler_flags == NM_KEYFILE_HANDLER_FLAGS_NONE, NULL);
 
 	connection = nm_simple_connection_new ();
 
@@ -4085,6 +4088,7 @@ _write_setting_wireguard (NMSetting *setting, KeyfileWriterInfo *info)
 
 GKeyFile *
 nm_keyfile_write (NMConnection *connection,
+                  NMKeyfileHandlerFlags handler_flags,
                   NMKeyfileWriteHandler handler,
                   void *user_data,
                   GError **error)
@@ -4096,6 +4100,7 @@ nm_keyfile_write (NMConnection *connection,
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (handler_flags == NM_KEYFILE_HANDLER_FLAGS_NONE, NULL);
 
 	if (!nm_connection_verify (connection, error))
 		return NULL;

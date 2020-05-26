@@ -214,7 +214,7 @@ _internal_write_connection (NMConnection *connection,
 
 	info.keyfile_dir = keyfile_dir;
 
-	kf_file = nm_keyfile_write (connection, _handler_write, &info, error);
+	kf_file = nm_keyfile_write (connection, NM_KEYFILE_HANDLER_FLAGS_NONE, _handler_write, &info, error);
 	if (!kf_file)
 		return FALSE;
 

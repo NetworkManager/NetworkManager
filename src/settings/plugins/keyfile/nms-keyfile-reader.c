@@ -128,7 +128,7 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
 		filename = &s[1];
 	}
 
-	connection = nm_keyfile_read (key_file, base_dir, _handler_read, &read_info, error);
+	connection = nm_keyfile_read (key_file, base_dir, NM_KEYFILE_HANDLER_FLAGS_NONE, _handler_read, &read_info, error);
 	if (!connection)
 		return NULL;
 

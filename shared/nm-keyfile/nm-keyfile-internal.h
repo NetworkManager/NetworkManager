@@ -31,6 +31,10 @@ char *nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
                                                  gboolean consider_exists,
                                                  gboolean *out_exists);
 
+typedef enum { /*< flags >*/
+	NM_KEYFILE_HANDLER_FLAGS_NONE = 0,
+} NMKeyfileHandlerFlags;
+
 typedef enum {
 	NM_KEYFILE_HANDLER_TYPE_WARN  = 1,
 	NM_KEYFILE_HANDLER_TYPE_WRITE_CERT = 2,
@@ -63,6 +67,7 @@ typedef enum {
 
 NMConnection *nm_keyfile_read (GKeyFile *keyfile,
                                const char *base_dir,
+                               NMKeyfileHandlerFlags handler_flags,
                                NMKeyfileReadHandler handler,
                                void *user_data,
                                GError **error);
@@ -105,6 +110,7 @@ typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
                                            void *user_data);
 
 GKeyFile *nm_keyfile_write (NMConnection *connection,
+                            NMKeyfileHandlerFlags handler_flags,
                             NMKeyfileWriteHandler handler,
                             void *user_data,
                             GError **error);

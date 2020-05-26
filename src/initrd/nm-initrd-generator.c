@@ -33,7 +33,7 @@ output_conn (gpointer key, gpointer value, gpointer user_data)
 	if (!nm_connection_normalize (connection, NULL, NULL, &error))
 		goto err_out;
 
-	file = nm_keyfile_write (connection, NULL, NULL, &error);
+	file = nm_keyfile_write (connection, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 	if (file == NULL)
 		goto err_out;
 

@@ -1593,11 +1593,12 @@ test_ethtool_features (void)
 
 	nmtst_assert_connection_equals (con, FALSE, con2, FALSE);
 
-	keyfile = nm_keyfile_write (con, NULL, NULL, &error);
+	keyfile = nm_keyfile_write (con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 	nmtst_assert_success (keyfile, error);
 
 	con3 = nm_keyfile_read (keyfile,
 	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NM_KEYFILE_HANDLER_FLAGS_NONE,
 	                        NULL,
 	                        NULL,
 	                        &error);
@@ -1662,11 +1663,12 @@ test_ethtool_coalesce (void)
 
 	nmtst_assert_connection_equals (con, FALSE, con2, FALSE);
 
-	keyfile = nm_keyfile_write (con, NULL, NULL, &error);
+	keyfile = nm_keyfile_write (con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 	nmtst_assert_success (keyfile, error);
 
 	con3 = nm_keyfile_read (keyfile,
 	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NM_KEYFILE_HANDLER_FLAGS_NONE,
 	                        NULL,
 	                        NULL,
 	                        &error);
@@ -1746,11 +1748,12 @@ test_ethtool_ring (void)
 
 	nmtst_assert_connection_equals (con, FALSE, con2, FALSE);
 
-	keyfile = nm_keyfile_write (con, NULL, NULL, &error);
+	keyfile = nm_keyfile_write (con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 	nmtst_assert_success (keyfile, error);
 
 	con3 = nm_keyfile_read (keyfile,
 	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NM_KEYFILE_HANDLER_FLAGS_NONE,
 	                        NULL,
 	                        NULL,
 	                        &error);
@@ -3266,7 +3269,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 	{
 		gs_unref_keyfile GKeyFile *kf = NULL;
 
-		kf = nm_keyfile_write (con, NULL, NULL, &error);
+		kf = nm_keyfile_write (con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 		nmtst_assert_success (kf, error);
 
 		/* the first kf_data_arr entry is special: it must be what the writer would
@@ -3361,7 +3364,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 			{
 				gs_unref_keyfile GKeyFile *kf = NULL;
 
-				kf = nm_keyfile_write (con2, NULL, NULL, &error);
+				kf = nm_keyfile_write (con2, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 				nmtst_assert_success (kf, error);
 				nmtst_keyfile_assert_data (kf, kf_data_arr->pdata[0], -1);
 			}
@@ -3665,7 +3668,7 @@ test_empty_setting (void)
 
 	nmtst_assert_connection_verifies_without_normalization (con);
 
-	kf = nm_keyfile_write (con, NULL, NULL, &error);
+	kf = nm_keyfile_write (con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 	nmtst_assert_success (kf, error);
 
 	g_assert (g_key_file_has_group (kf, "gsm"));
@@ -3673,6 +3676,7 @@ test_empty_setting (void)
 
 	con2 = nm_keyfile_read (kf,
 	                        "/ignored/current/working/directory/for/loading/relative/paths",
+	                        NM_KEYFILE_HANDLER_FLAGS_NONE,
 	                        NULL,
 	                        NULL,
 	                        &error);
