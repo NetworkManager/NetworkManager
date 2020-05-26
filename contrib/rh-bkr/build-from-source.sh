@@ -48,6 +48,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       gobject-introspection-devel \
       gtk-doc \
       intltool \
+      iproute-tc \
       iptables \
       jansson-devel \
       libasan \
