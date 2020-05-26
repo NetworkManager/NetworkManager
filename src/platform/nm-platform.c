@@ -1572,7 +1572,6 @@ nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6Iface
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (iid.id, FALSE);
 
 	if (klass->link_set_token)
 		return klass->link_set_token (self, ifindex, iid);

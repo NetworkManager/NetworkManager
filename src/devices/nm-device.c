@@ -15730,11 +15730,13 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		/* Take out any entries in the routing table and any IP address the device had. */
 		if (ifindex > 0) {
 			NMPlatform *platform = nm_device_get_platform (self);
+			NMUtilsIPv6IfaceId iid = { };
 
 			nm_platform_ip_route_flush (platform, AF_UNSPEC, ifindex);
 			nm_platform_ip_address_flush (platform, AF_UNSPEC, ifindex);
 			nm_platform_tfilter_sync (platform, ifindex, NULL);
 			nm_platform_qdisc_sync (platform, ifindex, NULL);
+			set_ipv6_token (self, iid, "::");
 		}
 	}
 
