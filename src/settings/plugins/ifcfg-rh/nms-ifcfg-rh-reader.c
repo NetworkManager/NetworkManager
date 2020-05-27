@@ -3695,6 +3695,12 @@ next:
 	              svGetValueBoolean (ifcfg, "IEEE_8021X_OPTIONAL", FALSE),
 	              NULL);
 
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        "IEEE_8021X_PIN",
+	                        NM_SETTING_802_1X_PIN);
+
 	return g_steal_pointer (&s_8021x);
 }
 
