@@ -3580,6 +3580,12 @@ next:
 	v = svGetValueStr (ifcfg, "IEEE_8021X_PHASE2_CA_PATH", &value);
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_CA_PATH, v, NULL);
 
+	_secret_set_from_ifcfg (s_8021x,
+	                        ifcfg,
+	                        keys_ifcfg,
+	                        "IEEE_8021X_PIN",
+	                        NM_SETTING_802_1X_PIN);
+
 	return g_steal_pointer (&s_8021x);
 }
 

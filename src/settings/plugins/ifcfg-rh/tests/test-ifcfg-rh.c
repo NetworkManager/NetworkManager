@@ -2024,6 +2024,9 @@ test_read_write_802_1x_password_raw (void)
 	                 ==,
 	                 NM_SETTING_SECRET_FLAG_NONE);
 
+	g_assert_cmpstr (nm_setting_802_1x_get_pin (s_8021x), ==, "hallo2");
+	g_assert_cmpint (nm_setting_802_1x_get_pin_flags (s_8021x), ==, NM_SETTING_SECRET_FLAG_NONE);
+
 	_writer_new_connection (connection,
 	                        TEST_SCRATCH_DIR,
 	                        &testfile);
