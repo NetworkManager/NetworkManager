@@ -2136,11 +2136,17 @@ void
 nm_settings_connection_update_timestamp (NMSettingsConnection *self,
                                          guint64 timestamp)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionPrivate *priv;
 	const char *connection_uuid;
 	char sbuf[60];
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (   priv->timestamp == timestamp
+	    && priv->timestamp_set)
+		return;
 
 	priv->timestamp = timestamp;
 	priv->timestamp_set = TRUE;
