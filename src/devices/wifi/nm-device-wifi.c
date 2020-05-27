@@ -1287,7 +1287,6 @@ can_auto_connect (NMDevice *device,
 	NMWifiAP *ap;
 	const char *method6, *mode;
 	gboolean auto4, auto6;
-	guint64 timestamp = 0;
 
 	nm_assert (!specific_object || !*specific_object);
 
@@ -1314,15 +1313,6 @@ can_auto_connect (NMDevice *device,
 		return TRUE;
 	else if (!auto4 && !auto6 && nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_MESH))
 		return TRUE;
-
-	/* Don't autoconnect to networks that have been tried at least once
-	 * but haven't been successful, since these are often accidental choices
-	 * from the menu and the user may not know the password.
-	 */
-	if (nm_settings_connection_get_timestamp (sett_conn, &timestamp)) {
-		if (timestamp == 0)
-			return FALSE;
-	}
 
 	ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 	if (ap) {
