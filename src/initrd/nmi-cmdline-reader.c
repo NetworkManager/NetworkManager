@@ -796,7 +796,9 @@ reader_parse_rd_znet (Reader *reader, char *argument, gboolean net_ifnames)
 		ifname = g_strdup_printf ("%s%d", prefix, index);
 	}
 
-	connection = reader_get_connection (reader, ifname, NM_SETTING_WIRED_SETTING_NAME, TRUE);
+	connection = reader_get_connection (reader, ifname, NM_SETTING_WIRED_SETTING_NAME, FALSE);
+	if (!connection)
+		return;
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_NETTYPE, nettype,
@@ -884,6 +886,7 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 	gboolean net_ifnames = TRUE;
 	gs_unref_ptrarray GPtrArray *nameservers = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *znets = NULL;
 	int i;
 
 	reader = reader_new ();
@@ -948,9 +951,11 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 			ignore_bootif = !_nm_utils_ascii_str_to_bool (argument, TRUE);
 		else if (strcmp (tag, "rd.neednet") == 0)
 			neednet = _nm_utils_ascii_str_to_bool (argument, TRUE);
-		else if (strcmp (tag, "rd.znet") == 0)
-			reader_parse_rd_znet (reader, argument, net_ifnames);
-		else if (g_ascii_strcasecmp (tag, "BOOTIF") == 0) {
+		else if (strcmp (tag, "rd.znet") == 0) {
+			if (!znets)
+				znets = g_ptr_array_new_with_free_func (g_free);
+			g_ptr_array_add (znets, g_strdup (argument));
+		} else if (g_ascii_strcasecmp (tag, "BOOTIF") == 0) {
 			nm_clear_g_free (&bootif_val);
 			bootif_val = g_strdup (argument);
 		}
@@ -1015,6 +1020,11 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 
 	if (nameservers)
 		reader_add_nameservers (reader, nameservers);
+
+	if (znets) {
+		for (i = 0; i < znets->len; i++)
+			reader_parse_rd_znet (reader, znets->pdata[i], net_ifnames);
+	}
 
 	g_hash_table_foreach (reader->hash, _normalize_conn, NULL);
 

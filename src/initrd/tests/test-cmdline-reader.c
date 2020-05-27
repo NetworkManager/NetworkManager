@@ -917,6 +917,7 @@ test_rd_znet (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
 	const char *const*const ARGV = NM_MAKE_STRV ("ip=10.11.12.13::10.11.12.1:24:foo.example.com:enc800:none",
+	                                             "ip=slc600:dhcp",
 	                                             "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1",
 	                                             "rd.znet=ctc,0.0.0600,0.0.0601,layer2=0,portno=0");
 	NMConnection *connection;
@@ -1004,6 +1005,7 @@ test_rd_znet_legacy (void)
 	const char *const*const ARGV = NM_MAKE_STRV ("ip=10.11.12.13::10.11.12.1:24:foo.example.com:eth0:none",
 	                                             "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1",
 	                                             "rd.znet=ctc,0.0.0600,0.0.0601,layer2=0,portno=0",
+	                                             "ip=ctc0:dhcp",
 	                                             "net.ifnames=0");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -1035,6 +1037,19 @@ test_rd_znet_legacy (void)
 	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "ctc0");
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
+}
+
+static void
+test_rd_znet_no_ip (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*const ARGV = NM_MAKE_STRV ("rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1");
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 0);
+	g_assert_cmpstr (hostname, ==, NULL);
 }
 
 static void
@@ -1228,6 +1243,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/ignore_extra", test_ignore_extra);
 	g_test_add_func ("/initrd/cmdline/rd_znet", test_rd_znet);
 	g_test_add_func ("/initrd/cmdline/rd_znet/legacy", test_rd_znet_legacy);
+	g_test_add_func ("/initrd/cmdline/rd_znet/no_ip", test_rd_znet_no_ip);
 	g_test_add_func ("/initrd/cmdline/bootif", test_bootif);
 	g_test_add_func ("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);
 	g_test_add_func ("/initrd/cmdline/bootif/off", test_bootif_off);
