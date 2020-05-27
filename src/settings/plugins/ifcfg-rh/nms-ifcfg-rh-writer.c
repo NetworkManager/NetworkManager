@@ -530,6 +530,11 @@ write_8021x_setting (NMConnection *connection,
 	                             "IEEE_8021X_OPTIONAL",
 	                             nm_setting_802_1x_get_optional (s_8021x));
 
+	svSetValue (ifcfg, "IEEE_8021X_CA_PATH",
+	            nm_setting_802_1x_get_ca_path (s_8021x));
+	svSetValue (ifcfg, "IEEE_8021X_PHASE2_CA_PATH",
+	            nm_setting_802_1x_get_phase2_ca_path (s_8021x));
+
 	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
 
