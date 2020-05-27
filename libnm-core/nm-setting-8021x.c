@@ -4411,8 +4411,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: system-ca-certs
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_SYSTEM_CA_CERTS(+)
+	 * description: a boolean value.
 	 * ---end---
 	 */
 	obj_properties[PROP_SYSTEM_CA_CERTS] =
