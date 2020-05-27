@@ -4469,8 +4469,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: pin
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PIN(+)
+	 * description: The pin secret used for EAP authentication methods.
 	 * ---end---
 	 */
 	obj_properties[PROP_PIN] =
@@ -4487,8 +4487,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: pin-flags
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PIN_FLAGS(+)
+	 * description: The secret flags for the pin property.
 	 * ---end---
 	 */
 	obj_properties[PROP_PIN_FLAGS] =
