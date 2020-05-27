@@ -4192,8 +4192,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: password-raw-flags
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PASSWORD_RAW_FLAGS(+)
+	 * description: The secret flags for password-raw.
 	 * ---end---
 	 */
 	obj_properties[PROP_PASSWORD_RAW_FLAGS] =
