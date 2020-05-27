@@ -1309,6 +1309,7 @@ echo "  nmlibdir: $nmlibdir"
 echo "  nmdatadir: $nmdatadir"
 echo "  nmstatedir: $nmstatedir"
 echo "  nmrundir: $nmrundir"
+echo "  system-ca-path: $with_system_ca_path"
 echo
 
 echo "Platform:"
