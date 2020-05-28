@@ -1553,10 +1553,10 @@ libnm/libnm.typelib: libnm/libnm.gir
 INTROSPECTION_GIRS += libnm/NM-1.0.gir
 
 libnm_noinst_data = \
-	libnm/nm-property-docs.xml \
 	libnm/nm-property-infos-dbus.xml \
 	libnm/nm-property-infos-ifcfg-rh.xml \
 	libnm/nm-property-infos-keyfile.xml \
+	libnm/nm-settings-docs-gir.xml \
 	libnm/nm-settings-docs.xml \
 	$(NULL)
 
@@ -1567,30 +1567,28 @@ libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 libnm/nm-property-infos-%.xml: libnm/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
 	$(AM_V_GEN) $(srcdir)/libnm/generate-docs-nm-property-infos.pl $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
 
-# When the python scripts loads libnm and the address sanitizers is
-# enabled, we must LD_PRELOAD libasan otherwise it will complain that
-# it was not loaded as initial library.
-libnm/nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
+libnm/nm-settings-docs-gir.xml: libnm/generate-docs-nm-settings-docs-gir.py libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la $(libnm_docs_sources)
 	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
 	"$(PYTHON)" \
-	$(srcdir)/libnm/generate-setting-docs.py \
+	$(srcdir)/libnm/generate-docs-nm-settings-docs-gir.py \
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-libnm/nm-settings-docs.xml: libnm/nm-property-infos-dbus.xml libnm/nm-property-docs.xml libnm/generate-docs-nm-settings-docs-merge.py
+libnm/nm-settings-docs.xml: libnm/nm-property-infos-dbus.xml libnm/nm-settings-docs-gir.xml libnm/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/libnm/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
+DISTCLEANFILES += $(libnm_noinst_data)
 
 endif
 
 EXTRA_DIST += \
 	libnm/generate-docs-nm-property-infos.pl \
 	libnm/generate-docs-nm-settings-docs-merge.py \
-	libnm/generate-setting-docs.py \
+	libnm/generate-docs-nm-settings-docs-gir.py \
 	libnm/meson.build \
 	libnm/nm-enum-types.c.template \
 	libnm/nm-enum-types.h.template \
@@ -4366,7 +4364,7 @@ $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_h = clients/common/settings-docs.h
 if HAVE_INTROSPECTION
-$(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-property-docs.xml clients/common/.dirstamp
+$(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-settings-docs-gir.xml clients/common/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
 DISTCLEANFILES += $(clients_common_settings_doc_h)
 check-local-settings-docs: $(clients_common_settings_doc_h)

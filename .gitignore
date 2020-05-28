@@ -147,10 +147,10 @@ test-*.trs
 /libnm-core/nm-dbus-types.xml
 /libnm-core/nm-vpn-dbus-types.xml
 
-/libnm/nm-property-docs.xml
 /libnm/nm-property-infos-dbus.xml
 /libnm/nm-property-infos-ifcfg-rh.xml
 /libnm/nm-property-infos-keyfile.xml
+/libnm/nm-settings-docs-gir.xml
 /libnm/nm-settings-docs.xml
 /libnm/tests/test-libnm
 /libnm/tests/test-nm-client
@@ -325,6 +325,7 @@ test-*.trs
 /libnm/fake-typelib/typelibs.c
 /libnm/nm-ifcfg-rh-docs.xml
 /libnm/nm-keyfile-docs.xml
+/libnm/nm-property-docs.xml
 /libnm/nm-setting-docs-overrides.xml
 /libnm/nm-setting-docs.xml
 /libnm/nm-settings-docs-overrides.xml
