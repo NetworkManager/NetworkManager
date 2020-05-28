@@ -4178,8 +4178,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: password-raw-flags
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PASSWORD_RAW_FLAGS(+)
+	 * description: The secret flags for password-raw.
 	 * ---end---
 	 */
 	obj_properties[PROP_PASSWORD_RAW_FLAGS] =
@@ -4367,8 +4367,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: pin
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PIN(+)
+	 * description: The pin secret used for EAP authentication methods.
 	 * ---end---
 	 */
 	obj_properties[PROP_PIN] =
@@ -4385,8 +4385,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: pin-flags
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PIN_FLAGS(+)
+	 * description: The secret flags for the pin property.
 	 * ---end---
 	 */
 	obj_properties[PROP_PIN_FLAGS] =
@@ -4411,8 +4411,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: system-ca-certs
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_SYSTEM_CA_CERTS(+)
+	 * description: a boolean value.
 	 * ---end---
 	 */
 	obj_properties[PROP_SYSTEM_CA_CERTS] =
