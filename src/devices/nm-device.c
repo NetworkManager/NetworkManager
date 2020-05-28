@@ -1509,6 +1509,50 @@ nm_device_sysctl_ip_conf_get_int_checked (NMDevice *self,
 	                                                   fallback);
 }
 
+static void
+set_ipv6_token (NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
+{
+	NMPlatform *platform;
+	int ifindex;
+	const NMPlatformLink *link;
+	char buf[32];
+	gint64 val;
+
+	/* Setting the kernel token is not strictly necessary as the
+	 * IPv6 address is generated in userspace. However it is
+	 * convenient so that users can see the token with iproute
+	 * ('ip token'). */
+	platform = nm_device_get_platform (self);
+	ifindex = nm_device_get_ip_ifindex (self);
+	link = nm_platform_link_get (platform, ifindex);
+
+	if (link && link->inet6_token.id == iid.id) {
+		_LOGT (LOGD_DEVICE | LOGD_IP6, "token %s already set", token_str);
+		return;
+	}
+
+	/* The kernel allows setting a token only when 'accept_ra'
+	 * is 1: temporarily flip it if necessary; unfortunately
+	 * this will also generate an additional Router Solicitation
+	 * from kernel. */
+	val = nm_device_sysctl_ip_conf_get_int_checked (self,
+	                                                AF_INET6,
+	                                                "accept_ra",
+	                                                10,
+	                                                G_MININT32,
+	                                                G_MAXINT32,
+	                                                1);
+	if (val != 1)
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", "1");
+
+	nm_platform_link_set_ipv6_token (platform, ifindex, iid);
+
+	if (val != 1) {
+		nm_sprintf_buf (buf, "%d", (int) val);
+		nm_device_sysctl_ip_conf_set (self, AF_INET6, "accept_ra", buf);
+	}
+}
+
 gboolean
 nm_device_sysctl_ip_conf_set (NMDevice *self,
                               int addr_family,
@@ -8178,23 +8222,13 @@ ip_config_merge_and_apply (NMDevice *self,
 	}
 
 	if (!IS_IPv4) {
-		const NMPlatformLink *link;
 		NMUtilsIPv6IfaceId iid;
-		NMPlatform *platform;
-		int ifindex;
 
 		if (   commit
 		    && priv->ndisc_started
 		    && ip6_addr_gen_token
 		    && nm_utils_ipv6_interface_identifier_get_from_token (&iid, ip6_addr_gen_token)) {
-			platform = nm_device_get_platform (self);
-			ifindex = nm_device_get_ip_ifindex (self);
-			link = nm_platform_link_get (platform, ifindex);
-
-			if (link && link->inet6_token.id == iid.id)
-				_LOGT (LOGD_DEVICE | LOGD_IP6, "token %s already set", ip6_addr_gen_token);
-			else
-				nm_platform_link_set_ipv6_token (platform, ifindex, iid);
+			set_ipv6_token (self, iid, ip6_addr_gen_token);
 		}
 	}
 
@@ -15696,11 +15730,13 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		/* Take out any entries in the routing table and any IP address the device had. */
 		if (ifindex > 0) {
 			NMPlatform *platform = nm_device_get_platform (self);
+			NMUtilsIPv6IfaceId iid = { };
 
 			nm_platform_ip_route_flush (platform, AF_UNSPEC, ifindex);
 			nm_platform_ip_address_flush (platform, AF_UNSPEC, ifindex);
 			nm_platform_tfilter_sync (platform, ifindex, NULL);
 			nm_platform_qdisc_sync (platform, ifindex, NULL);
+			set_ipv6_token (self, iid, "::");
 		}
 	}
 
