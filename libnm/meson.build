@@ -212,32 +212,47 @@ if enable_introspection
     install: true,
   )
 
-  generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
-
-  name = 'nm-settings-keyfile-docs.xml'
-  nm_settings_keyfile_docs = custom_target(
-    name,
-    input: libnm_core_settings_sources,
-    output: name,
-    command: [perl, generate_plugin_docs, 'keyfile', '@OUTPUT@', '@INPUT@'],
-  )
-
-  name = 'nm-settings-docs-overrides.xml'
-  nm_settings_docs_overrides = custom_target(
-    name,
-    input: libnm_core_settings_sources,
-    output: name,
-    command: [perl, generate_plugin_docs, 'dbus', '@OUTPUT@', '@INPUT@'],
-  )
-
+  infos = [ 'dbus', 'keyfile' ]
   if enable_ifcfg_rh
-    name = 'nm-settings-ifcfg-rh-docs.xml'
-    nm_settings_ifcfg_rh_docs = custom_target(
-      name,
+    infos += [ 'ifcfg-rh' ]
+  endif
+  foreach info: infos
+    t = custom_target(
+      'nm-propery-infos-' + info + '.xml',
       input: libnm_core_settings_sources,
-      output: name,
-      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@OUTPUT@', '@INPUT@'],
+      output: 'nm-propery-infos-' + info + '.xml',
+      command: [
+        perl,
+        join_paths(meson.current_source_dir(), 'generate-docs-nm-property-infos.pl'),
+        info,
+        '@OUTPUT@',
+        '@INPUT@'
+      ],
     )
+
+    # meson 0.47 doesn't support non-static keys for dicts
+    # nor extending dicts incrementally. Workaround.
+    if info == 'dbus'
+      nm_property_infos_xml_dbus = t
+    elif info == 'keyfile'
+      nm_property_infos_xml_keyfile = t
+    elif info == 'ifcfg-rh'
+      nm_property_infos_xml_ifcfg_rh = t
+    else
+      assert(false)
+    endif
+  endforeach
+  if enable_ifcfg_rh
+    nm_property_infos_xml = {
+      'dbus': nm_property_infos_xml_dbus,
+      'keyfile': nm_property_infos_xml_keyfile,
+      'ifcfg-rh': nm_property_infos_xml_ifcfg_rh,
+    }
+  else
+    nm_property_infos_xml = {
+      'dbus': nm_property_infos_xml_dbus,
+      'keyfile': nm_property_infos_xml_keyfile,
+    }
   endif
 
   gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH').stdout()
@@ -277,13 +292,13 @@ if enable_introspection
   name = 'nm-settings-docs.xml'
   nm_settings_docs = custom_target(
     name,
-    input: [nm_property_docs, nm_settings_docs_overrides],
+    input: [nm_property_docs, nm_property_infos_xml['dbus']],
     output: name,
     command: [
       python.path(),
       join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
-      nm_settings_docs_overrides,
+      nm_property_infos_xml['dbus'],
       nm_property_docs,
     ],
     depends: libnm_gir,

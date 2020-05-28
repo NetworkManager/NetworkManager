@@ -1554,17 +1554,18 @@ INTROSPECTION_GIRS += libnm/NM-1.0.gir
 
 libnm_noinst_data = \
 	libnm/nm-property-docs.xml \
-	libnm/nm-settings-docs-overrides.xml \
+	libnm/nm-property-infos-dbus.xml \
+	libnm/nm-property-infos-ifcfg-rh.xml \
+	libnm/nm-property-infos-keyfile.xml \
 	libnm/nm-settings-docs.xml \
-	libnm/nm-settings-keyfile-docs.xml \
-	libnm/nm-settings-ifcfg-rh-docs.xml
+	$(NULL)
 
 noinst_DATA += $(libnm_noinst_data)
 
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
-libnm/nm-settings-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus $@ $(filter-out $<,$^)
+libnm/nm-property-infos-%.xml: libnm/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
+	$(AM_V_GEN) $(srcdir)/libnm/generate-docs-nm-property-infos.pl $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
 
 # When the python scripts loads libnm and the address sanitizers is
 # enabled, we must LD_PRELOAD libasan otherwise it will complain that
@@ -1579,25 +1580,21 @@ libnm/nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources)
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-libnm/nm-settings-docs.xml: libnm/nm-settings-docs-overrides.xml libnm/nm-property-docs.xml libnm/generate-docs-nm-settings-docs-merge.py
+libnm/nm-settings-docs.xml: libnm/nm-property-infos-dbus.xml libnm/nm-property-docs.xml libnm/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/libnm/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
-
-libnm/nm-settings-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile $@ $(filter-out $<,$^)
-libnm/nm-settings-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh $@ $(filter-out $<,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
 
 endif
 
 EXTRA_DIST += \
-	libnm/generate-plugin-docs.pl \
+	libnm/generate-docs-nm-property-infos.pl \
 	libnm/generate-docs-nm-settings-docs-merge.py \
 	libnm/generate-setting-docs.py \
+	libnm/meson.build \
 	libnm/nm-enum-types.c.template \
 	libnm/nm-enum-types.h.template \
-	libnm/meson.build
+	$(NULL)
 
 ###############################################################################
 
@@ -4966,11 +4963,15 @@ endif
 man_nm_settings_xml = \
 	man/nm-settings.xml \
 	man/nm-settings-keyfile.xml \
-	man/nm-settings-ifcfg-rh.xml
+	man/nm-settings-ifcfg-rh.xml \
+	$(NULL)
 
 if HAVE_INTROSPECTION
 
-man/nm-setting%.xml: man/nm-setting%.xsl libnm/nm-setting%-docs.xml man/common.ent
+man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs.xml man/common.ent
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
+
+man/nm-settings-%.xml: man/nm-settings-%.xsl libnm/nm-property-infos-%.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
 
 CLEANFILES += $(man_nm_settings_xml)

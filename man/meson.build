@@ -57,12 +57,12 @@ endforeach
 
 if enable_introspection
   mans = [
-    ['nm-settings-keyfile', '5', nm_settings_keyfile_docs],
+    ['nm-settings-keyfile', '5', nm_property_infos_xml['keyfile']],
     ['nm-settings', '5', nm_settings_docs],
   ]
 
   if enable_ifcfg_rh
-    mans += [['nm-settings-ifcfg-rh', '5', nm_settings_ifcfg_rh_docs]]
+    mans += [['nm-settings-ifcfg-rh', '5', nm_property_infos_xml['ifcfg-rh']]]
   endif
 
   foreach man: mans

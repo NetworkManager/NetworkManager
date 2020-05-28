@@ -147,11 +147,11 @@ test-*.trs
 /libnm-core/nm-dbus-types.xml
 /libnm-core/nm-vpn-dbus-types.xml
 
-/libnm/nm-settings-ifcfg-rh-docs.xml
 /libnm/nm-property-docs.xml
+/libnm/nm-property-infos-dbus.xml
+/libnm/nm-property-infos-ifcfg-rh.xml
+/libnm/nm-property-infos-keyfile.xml
 /libnm/nm-settings-docs.xml
-/libnm/nm-settings-docs-overrides.xml
-/libnm/nm-settings-keyfile-docs.xml
 /libnm/tests/test-libnm
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
@@ -327,6 +327,9 @@ test-*.trs
 /libnm/nm-keyfile-docs.xml
 /libnm/nm-setting-docs-overrides.xml
 /libnm/nm-setting-docs.xml
+/libnm/nm-settings-docs-overrides.xml
+/libnm/nm-settings-ifcfg-rh-docs.xml
+/libnm/nm-settings-keyfile-docs.xml
 /libnm/tests/test-general
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
