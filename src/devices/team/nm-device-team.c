@@ -21,6 +21,7 @@
 #include "platform/nm-platform.h"
 #include "nm-config.h"
 #include "nm-core-internal.h"
+#include "nm-dbus-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 
@@ -42,6 +43,7 @@ typedef struct {
 	guint teamd_read_timeout;
 	guint teamd_dbus_watch;
 	bool kill_in_progress:1;
+	GFileMonitor *usock_monitor;
 	NMDeviceStageState stage1_state:3;
 } NMDeviceTeamPrivate;
 
@@ -341,6 +343,63 @@ teamd_timeout_cb (gpointer user_data)
 }
 
 static void
+teamd_ready (NMDeviceTeam *self)
+{
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	gboolean success;
+
+	if (priv->kill_in_progress) {
+		/* If we are currently killing teamd, we are not
+		 * interested in knowing when it becomes ready. */
+		return;
+	}
+
+	nm_device_queue_recheck_assume (device);
+
+	/* Grab a teamd control handle even if we aren't going to use it
+	 * immediately.  But if we are, and grabbing it failed, fail the
+	 * device activation.
+	 */
+	success = ensure_teamd_connection (device);
+
+	if (   nm_device_get_state (device) != NM_DEVICE_STATE_PREPARE
+	    || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
+		return;
+
+	if (success)
+		success = teamd_read_config (self);
+
+	if (!success) {
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+		return;
+	}
+
+	priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
+}
+
+static void
+teamd_gone (NMDeviceTeam *self)
+{
+	NMDevice *device = NM_DEVICE (self);
+	NMDeviceState state;
+
+	teamd_cleanup (self, TRUE);
+	state = nm_device_get_state (device);
+
+	/* Attempt to respawn teamd */
+	if (   state >= NM_DEVICE_STATE_PREPARE
+	    && state <= NM_DEVICE_STATE_ACTIVATED) {
+		if (!teamd_start (self)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+		}
+	}
+}
+
+static void
 teamd_dbus_appeared (GDBusConnection *connection,
                      const char *name,
                      const char *name_owner,
@@ -348,19 +407,10 @@ teamd_dbus_appeared (GDBusConnection *connection,
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-	NMDevice *device = NM_DEVICE (self);
-	gboolean success;
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
 	_LOGI (LOGD_TEAM, "teamd appeared on D-Bus");
-	nm_device_queue_recheck_assume (device);
-
-	if (priv->kill_in_progress) {
-		/* If we are currently killing teamd, we are not
-		 * interested in knowing when it becomes ready. */
-		return;
-	}
 
 	/* If another teamd grabbed the bus name while our teamd was starting,
 	 * just ignore the death of our teamd and run with the existing one.
@@ -397,26 +447,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 		}
 	}
 
-	/* Grab a teamd control handle even if we aren't going to use it
-	 * immediately.  But if we are, and grabbing it failed, fail the
-	 * device activation.
-	 */
-	success = ensure_teamd_connection (device);
-
-	if (   nm_device_get_state (device) != NM_DEVICE_STATE_PREPARE
-	    || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
-		return;
-
-	if (success)
-		success = teamd_read_config (self);
-
-	if (!success) {
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-		return;
-	}
-
-	priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-	nm_device_activate_schedule_stage1_device_prepare (device, FALSE);
+	teamd_ready (self);
 }
 
 static void
@@ -426,8 +457,6 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-	NMDevice *device = NM_DEVICE (self);
-	NMDeviceState state = nm_device_get_state (device);
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
@@ -441,16 +470,31 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 	}
 
 	_LOGI (LOGD_TEAM, "teamd vanished from D-Bus");
-	teamd_cleanup (self, TRUE);
 
-	/* Attempt to respawn teamd */
-	if (   state >= NM_DEVICE_STATE_PREPARE
-	    && state <= NM_DEVICE_STATE_ACTIVATED) {
-		if (!teamd_start (self)) {
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-		}
+	teamd_gone (self);
+}
+
+
+static void
+monitor_changed_cb (GFileMonitor *monitor,
+                    GFile *file,
+                    GFile *other_file,
+                    GFileMonitorEvent event_type,
+                    gpointer user_data)
+{
+	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
+
+	switch (event_type) {
+	case G_FILE_MONITOR_EVENT_CREATED:
+		_LOGI (LOGD_TEAM, "file %s was created", g_file_get_path (file));
+		teamd_ready (self);
+		break;
+	case G_FILE_MONITOR_EVENT_DELETED:
+		_LOGI (LOGD_TEAM, "file %s was deleted", g_file_get_path (file));
+		teamd_gone (self);
+		break;
+	default:
+		;
 	}
 }
 
@@ -572,7 +616,8 @@ teamd_start (NMDeviceTeam *self)
 	g_ptr_array_add (argv, (gpointer) "-o");
 	g_ptr_array_add (argv, (gpointer) "-n");
 	g_ptr_array_add (argv, (gpointer) "-U");
-	g_ptr_array_add (argv, (gpointer) "-D");
+	if (priv->teamd_dbus_watch)
+		g_ptr_array_add (argv, (gpointer) "-D");
 	g_ptr_array_add (argv, (gpointer) "-N");
 	g_ptr_array_add (argv, (gpointer) "-t");
 	g_ptr_array_add (argv, (gpointer) iface);
@@ -650,6 +695,14 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	gs_free_error GError *error = NULL;
 	NMSettingTeam *s_team;
 	const char *cfg;
+
+	if (nm_device_sys_iface_state_is_external (device))
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+
+	if (nm_device_sys_iface_state_is_external_or_assume (device)) {
+		if (ensure_teamd_connection (device))
+			return NM_ACT_STAGE_RETURN_SUCCESS;
+	}
 
 	s_team = nm_device_get_applied_setting (device, NM_TYPE_SETTING_TEAM);
 	if (!s_team)
@@ -892,20 +945,38 @@ constructed (GObject *object)
 {
 	NMDevice *device = NM_DEVICE (object);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
-	char *tmp_str = NULL;
+	gs_free char *tmp_str = NULL;
+	gs_unref_object GFile *file = NULL;
+	GError *error;
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->constructed (object);
 
-	/* Register D-Bus name watcher */
-	tmp_str = g_strdup_printf ("org.libteam.teamd.%s", nm_device_get_ip_iface (device));
-	priv->teamd_dbus_watch = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
-	                                           tmp_str,
-	                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
-	                                           teamd_dbus_appeared,
-	                                           teamd_dbus_vanished,
-	                                           NM_DEVICE (device),
-	                                           NULL);
-	g_free (tmp_str);
+	if (nm_dbus_manager_get_dbus_connection (nm_dbus_manager_get ())) {
+		/* Register D-Bus name watcher */
+		tmp_str = g_strdup_printf ("org.libteam.teamd.%s", nm_device_get_ip_iface (device));
+		priv->teamd_dbus_watch = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+		                                           tmp_str,
+		                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
+		                                           teamd_dbus_appeared,
+		                                           teamd_dbus_vanished,
+		                                           NM_DEVICE (device),
+		                                           NULL);
+		return;
+	}
+
+	/* No D-Bus, watch unix socket */
+	tmp_str = g_strdup_printf ("/run/teamd/%s.sock",
+	                           nm_device_get_ip_iface (device));
+	file = g_file_new_for_path (tmp_str);
+	priv->usock_monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, &error);
+	if (!priv->usock_monitor) {
+		nm_log_warn (LOGD_TEAM, "error monitoring %s: %s", tmp_str, error->message);
+	} else {
+		g_signal_connect (priv->usock_monitor,
+		                  "changed",
+		                  G_CALLBACK (monitor_changed_cb),
+		                  object);
+	}
 }
 
 NMDevice *
@@ -929,6 +1000,11 @@ dispose (GObject *object)
 	if (priv->teamd_dbus_watch) {
 		g_bus_unwatch_name (priv->teamd_dbus_watch);
 		priv->teamd_dbus_watch = 0;
+	}
+
+	if (priv->usock_monitor) {
+		g_signal_handlers_disconnect_by_data (priv->usock_monitor, object);
+		g_clear_object (&priv->usock_monitor);
 	}
 
 	teamd_cleanup (self, TRUE);
@@ -977,6 +1053,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->master_update_slave_connection = master_update_slave_connection;
 
+	device_class->act_stage1_prepare_also_for_external_or_assume = TRUE;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 	device_class->deactivate = deactivate;
