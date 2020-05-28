@@ -548,6 +548,13 @@ write_8021x_setting (NMConnection *connection,
 	svSetValue (ifcfg, "IEEE_8021X_PHASE2_CA_PATH",
 	            nm_setting_802_1x_get_phase2_ca_path (s_8021x));
 
+	set_secret (ifcfg,
+	            secrets,
+	            "IEEE_8021X_PIN",
+	            nm_setting_802_1x_get_pin (s_8021x),
+	            "IEEE_8021X_PIN_FLAGS",
+	            nm_setting_802_1x_get_pin_flags (s_8021x));
+
 	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
 
