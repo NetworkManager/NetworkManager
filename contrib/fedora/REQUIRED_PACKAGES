@@ -86,6 +86,7 @@ install \
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
     dbus-python \
+    iproute-tc \
     libasan \
     libpsl-devel \
     libubsan \

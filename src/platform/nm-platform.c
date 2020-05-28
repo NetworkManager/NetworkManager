@@ -310,6 +310,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_APPEND),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_FMASK),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_ECHO),
 );
 
 #define _nmp_nlm_flag_to_string(flags) \
@@ -5063,12 +5064,15 @@ nm_platform_qdisc_sync (NMPlatform *self,
 
 	known_qdiscs_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
 	                                     (GEqualFunc) nmp_object_id_equal);
-
 	if (known_qdiscs) {
 		for (i = 0; i < known_qdiscs->len; i++) {
 			const NMPObject *q = g_ptr_array_index (known_qdiscs, i);
 
-			g_hash_table_insert (known_qdiscs_idx, (gpointer) q, (gpointer) q);
+			if (!g_hash_table_insert (known_qdiscs_idx, (gpointer) q, (gpointer) q)) {
+				_LOGW ("duplicate qdisc %s", nm_platform_qdisc_to_string (&q->qdisc, NULL, 0));
+				return FALSE;
+			}
+
 		}
 	}
 
@@ -5077,13 +5081,34 @@ nm_platform_qdisc_sync (NMPlatform *self,
 	                                                                NMP_OBJECT_TYPE_QDISC,
 	                                                                ifindex),
 	                                        NULL, NULL);
-
 	if (plat_qdiscs) {
 		for (i = 0; i < plat_qdiscs->len; i++) {
-			const NMPObject *q = g_ptr_array_index (plat_qdiscs, i);
+			const NMPObject *p = g_ptr_array_index (plat_qdiscs, i);
+			const NMPObject *k;
 
-			if (!g_hash_table_lookup (known_qdiscs_idx, q))
-				success &= nm_platform_object_delete (self, q);
+			/* look up known qdisc with same parent */
+			k = g_hash_table_lookup (known_qdiscs_idx, p);
+
+			if (k) {
+				const NMPlatformQdisc *qdisc_k = NMP_OBJECT_CAST_QDISC (k);
+				const NMPlatformQdisc *qdisc_p = NMP_OBJECT_CAST_QDISC (p);
+
+				/* check other fields */
+				if (   nm_platform_qdisc_cmp_full (qdisc_k, qdisc_p, FALSE) != 0
+				    || (   qdisc_k->handle != qdisc_p->handle
+				        && qdisc_k != 0)) {
+					k = NULL;
+				}
+			}
+
+			if (k) {
+				g_hash_table_remove (known_qdiscs_idx, k);
+			} else {
+				/* can't delete qdisc with zero handle */
+				if (TC_H_MAJ (p->qdisc.handle) != 0) {
+					success &= nm_platform_object_delete (self, p);
+				}
+			}
 		}
 	}
 
@@ -5091,8 +5116,10 @@ nm_platform_qdisc_sync (NMPlatform *self,
 		for (i = 0; i < known_qdiscs->len; i++) {
 			const NMPObject *q = g_ptr_array_index (known_qdiscs, i);
 
-			success &= (nm_platform_qdisc_add (self, NMP_NLM_FLAG_ADD,
-			                                   NMP_OBJECT_CAST_QDISC (q)) >= 0);
+			if (g_hash_table_contains (known_qdiscs_idx, q)) {
+				success &= (nm_platform_qdisc_add (self, NMP_NLM_FLAG_ADD,
+				                                   NMP_OBJECT_CAST_QDISC (q)) >= 0);
+			}
 		}
 	}
 
@@ -6517,14 +6544,17 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 }
 
 int
-nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
+nm_platform_qdisc_cmp_full (const NMPlatformQdisc *a,
+                            const NMPlatformQdisc *b,
+                            gboolean compare_handle)
 {
 	NM_CMP_SELF (a, b);
 	NM_CMP_FIELD (a, b, ifindex);
 	NM_CMP_FIELD (a, b, parent);
 	NM_CMP_FIELD_STR_INTERNED (a, b, kind);
 	NM_CMP_FIELD (a, b, addr_family);
-	NM_CMP_FIELD (a, b, handle);
+	if (compare_handle)
+		NM_CMP_FIELD (a, b, handle);
 	NM_CMP_FIELD (a, b, info);
 
 	if (nm_streq0 (a->kind, "fq_codel")) {
@@ -6539,6 +6569,12 @@ nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 	}
 
 	return 0;
+}
+
+int
+nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
+{
+	return nm_platform_qdisc_cmp_full (a, b, TRUE);
 }
 
 const char *

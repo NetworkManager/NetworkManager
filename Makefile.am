@@ -3848,6 +3848,8 @@ check_programs += \
 	src/platform/tests/test-platform-general \
 	src/platform/tests/test-route-fake \
 	src/platform/tests/test-route-linux \
+	src/platform/tests/test-tc-fake \
+	src/platform/tests/test-tc-linux \
 	$(NULL)
 
 src_platform_tests_monitor_CPPFLAGS = $(src_cppflags_test)
@@ -3902,6 +3904,17 @@ src_platform_tests_test_route_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_route_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_route_linux_LDADD = $(src_platform_tests_libadd)
 
+src_platform_tests_test_tc_fake_SOURCES = src/platform/tests/test-tc.c
+src_platform_tests_test_tc_fake_CPPFLAGS = $(src_tests_cppflags_fake)
+src_platform_tests_test_tc_fake_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_tc_fake_LDADD = $(src_platform_tests_libadd)
+
+src_platform_tests_test_tc_linux_SOURCES = src/platform/tests/test-tc.c
+src_platform_tests_test_tc_linux_CPPFLAGS = $(src_tests_cppflags_linux)
+src_platform_tests_test_tc_linux_LDFLAGS = $(src_platform_tests_ldflags)
+src_platform_tests_test_tc_linux_LDADD = $(src_platform_tests_libadd)
+
+
 $(src_platform_tests_monitor_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
 $(src_platform_tests_test_address_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
 $(src_platform_tests_test_address_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
@@ -3913,6 +3926,8 @@ $(src_platform_tests_test_nmp_object_OBJECTS):       $(libnm_core_lib_h_pub_mken
 $(src_platform_tests_test_platform_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_platform_tests_test_route_fake_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
 $(src_platform_tests_test_route_linux_OBJECTS):      $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_tc_fake_OBJECTS):          $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_tc_linux_OBJECTS):         $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/platform/tests/meson.build \

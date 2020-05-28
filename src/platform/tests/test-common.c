@@ -557,6 +557,7 @@ nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_msec)
 {
 	WaitForSignalData data = { 0 };
 	gulong id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
+	gulong id_qdisc, id_tfilter;
 
 	_init_platform (&platform, FALSE);
 
@@ -567,6 +568,8 @@ nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_msec)
 	id_ip6_address = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 	id_ip4_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 	id_ip6_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_qdisc       = g_signal_connect (platform, NM_PLATFORM_SIGNAL_QDISC_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
+	id_tfilter     = g_signal_connect (platform, NM_PLATFORM_SIGNAL_TFILTER_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 
 	/* if timeout_msec is negative, it means the wait-time already expired.
 	 * Maybe, we should do nothing and return right away, without even
@@ -589,6 +592,8 @@ nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_msec)
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_address));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip4_route));
 	g_assert (nm_clear_g_signal_handler (platform, &id_ip6_route));
+	g_assert (nm_clear_g_signal_handler (platform, &id_tfilter));
+	g_assert (nm_clear_g_signal_handler (platform, &id_qdisc));
 
 	nm_clear_pointer (&data.loop, g_main_loop_unref);
 

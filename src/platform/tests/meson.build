@@ -14,6 +14,8 @@ test_units = [
   ['test-platform-general', 'test-platform-general.c', test_c_flags, default_test_timeout],
   ['test-route-fake', 'test-route.c', test_fake_c_flags, default_test_timeout],
   ['test-route-linux', 'test-route.c', test_linux_c_flags, default_test_timeout],
+  ['test-tc-fake', 'test-tc.c', test_fake_c_flags, default_test_timeout],
+  ['test-tc-linux', 'test-tc.c', test_linux_c_flags, default_test_timeout],
 ]
 
 foreach test_unit: test_units
