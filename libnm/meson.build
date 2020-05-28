@@ -240,8 +240,6 @@ if enable_introspection
     )
   endif
 
-  generate_setting_docs = join_paths(meson.current_source_dir(), 'generate-setting-docs.py')
-
   gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH').stdout()
   if gi_typelib_path != ''
     gi_typelib_path = ':' + gi_typelib_path
@@ -265,16 +263,29 @@ if enable_introspection
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
+    command: [
+      generate_setting_docs_env,
+      python.path(),
+      join_paths(meson.current_source_dir(), 'generate-setting-docs.py'),
+      '--lib-path', meson.current_build_dir(),
+      '--gir', '@INPUT@',
+      '--output', '@OUTPUT@'
+    ],
     depends: libnm_gir,
   )
 
   name = 'nm-settings-docs.xml'
   nm_settings_docs = custom_target(
     name,
-    input: [libnm_gir[0], nm_settings_docs_overrides],
+    input: [nm_property_docs, nm_settings_docs_overrides],
     output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT0@', '--overrides', '@INPUT1@', '--output', '@OUTPUT@'],
+    command: [
+      python.path(),
+      join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-merge.py'),
+      '@OUTPUT@',
+      nm_settings_docs_overrides,
+      nm_property_docs,
+    ],
     depends: libnm_gir,
   )
 endif
