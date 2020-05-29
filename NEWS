@@ -28,6 +28,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * ifcfg-rh: handle 802-1x.pin properties.
 * ethernet: reset original autonegotiation/speed/duplex settings when
   deactivating device.
+* Support ethtool coalesce and ring options.
+* Allow team connections to work without D-Bus (e.g. in the initrd).
 
 =============================================
 NetworkManager-1.24
