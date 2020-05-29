@@ -1556,8 +1556,8 @@ libnm_noinst_data = \
 	libnm/nm-property-infos-dbus.xml \
 	libnm/nm-property-infos-ifcfg-rh.xml \
 	libnm/nm-property-infos-keyfile.xml \
+	libnm/nm-settings-docs-dbus.xml \
 	libnm/nm-settings-docs-gir.xml \
-	libnm/nm-settings-docs.xml \
 	$(NULL)
 
 noinst_DATA += $(libnm_noinst_data)
@@ -1577,7 +1577,7 @@ libnm/nm-settings-docs-gir.xml: libnm/generate-docs-nm-settings-docs-gir.py libn
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-libnm/nm-settings-docs.xml: libnm/nm-property-infos-dbus.xml libnm/nm-settings-docs-gir.xml libnm/generate-docs-nm-settings-docs-merge.py
+libnm/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml libnm/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/libnm/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
@@ -4966,7 +4966,7 @@ man_nm_settings_xml = \
 
 if HAVE_INTROSPECTION
 
-man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs.xml man/common.ent
+man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs-dbus.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
 
 man/nm-settings-%.xml: man/nm-settings-%.xsl libnm/nm-property-infos-%.xml man/common.ent

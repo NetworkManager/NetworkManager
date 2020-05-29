@@ -58,7 +58,7 @@ endforeach
 if enable_introspection
   mans = [
     ['nm-settings-keyfile', '5', nm_property_infos_xml['keyfile']],
-    ['nm-settings', '5', nm_settings_docs],
+    ['nm-settings',         '5', nm_settings_docs_xml['dbus']],
   ]
 
   if enable_ifcfg_rh

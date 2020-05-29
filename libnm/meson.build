@@ -288,24 +288,26 @@ if enable_introspection
     depends: libnm_gir,
   )
 
-  nm_settings_docs_xml = {
-    'gir': nm_settings_docs_xml_gir,
-  }
-
-  name = 'nm-settings-docs.xml'
-  nm_settings_docs = custom_target(
-    name,
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml['dbus']],
-    output: name,
+  name = 'dbus'
+  nm_settings_docs_xml_dbus = custom_target(
+    'nm-settings-docs-' + name + '.xml',
+    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
       join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
-      nm_property_infos_xml['dbus'],
+      nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,
     ],
     depends: libnm_gir,
   )
+
+  nm_settings_docs_xml = {
+    'gir':  nm_settings_docs_xml_gir,
+    'dbus': nm_settings_docs_xml_dbus,
+  }
+
 endif
 
 if enable_tests
