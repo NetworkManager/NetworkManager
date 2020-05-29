@@ -624,7 +624,7 @@ This tool is still experimental.
 	-Dfirewalld_zone=true \
 %else
 	-Dfirewalld_zone=false \
-%endif        
+%endif
 	-Ddist_version=%{version}-%{release} \
 	-Dconfig_plugins_default=%{config_plugins_default} \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
@@ -762,7 +762,7 @@ intltoolize --automake --copy --force
 	--enable-firewalld-zone \
 %else
 	--disable-firewalld-zone \
-%endif        
+%endif
 	--with-dist-version=%{version}-%{release} \
 	--with-config-plugins-default=%{config_plugins_default} \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
