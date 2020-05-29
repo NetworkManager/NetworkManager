@@ -2020,6 +2020,11 @@ test_setting_ip_route_attributes (void)
 	TEST_ATTR ("src", string, "1.2.3.0/24", AF_INET,  FALSE, TRUE);
 	TEST_ATTR ("src", string, "fd01::12",   AF_INET6, TRUE,  TRUE);
 
+	TEST_ATTR ("type", string, "local", AF_INET, TRUE, TRUE);
+	TEST_ATTR ("type", string, "local", AF_INET6, TRUE, TRUE);
+	TEST_ATTR ("type", string, "unicast", AF_INET, TRUE, TRUE);
+	TEST_ATTR ("type", string, "unicast", AF_INET6, TRUE, TRUE);
+
 #undef TEST_ATTR
 }
 

@@ -468,6 +468,13 @@ typedef union {
 	 * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */ \
 	guint32 table_coerced; \
 	\
+	/* rtm_type.
+	 *
+	 * This is not the original type, if type_coerced is 0 then
+	 * it means RTN_UNSPEC otherwise the type value is preserved.
+	 * */ \
+	guint8 type_coerced; \
+	\
 	/*end*/
 
 typedef struct {
@@ -1283,6 +1290,39 @@ static inline guint8
 _nm_platform_uint8_inv (guint8 scope)
 {
 	return (guint8) ~scope;
+}
+
+/**
+ * nm_platform_route_type_coerce:
+ * @table: the route type, in its original value.
+ *
+ * Returns: returns the coerced type, that can be stored in
+ *   NMPlatformIPRoute.type_coerced.
+ */
+static inline guint8
+nm_platform_route_type_coerce (guint8 type)
+{
+	switch (type) {
+	case 0 /* RTN_UNSPEC */:
+		return 1;
+	case 1 /* RTN_UNICAST */:
+		return 0;
+	default:
+		return type;
+	}
+}
+
+/**
+ * nm_platform_route_type_uncoerce:
+ * @table: the type table, in its coerced value
+ *
+ * Returns: reverts the coerced type in NMPlatformIPRoute.type_coerced
+ *   to the original value as kernel understands it.
+ */
+static inline guint8
+nm_platform_route_type_uncoerce (guint8 type_coerced)
+{
+	return nm_platform_route_type_coerce (type_coerced);
 }
 
 gboolean nm_platform_get_use_udev (NMPlatform *self);

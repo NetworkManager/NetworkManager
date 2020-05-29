@@ -13,3 +13,7 @@ NETMASK2=255.255.255.255
 GATEWAY2=192.168.1.8
 METRIC2=3
 OPTIONS2="mtu lock 9000 cwnd 12 src 1.1.1.1 tos 0x28 onlink window 30000 initcwnd lock 13 initrwnd 14 scope link"
+
+ADDRESS3=1.2.3.4
+NETMASK3=255.255.255.255
+OPTIONS3="local scope host"

@@ -3257,14 +3257,16 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	rtm = nlmsg_data (nlh);
 
 	/*****************************************************************
-	 * only handle ~normal~ routes.
+	 * only handle ~supported~ routes.
 	 *****************************************************************/
 
 	if (!NM_IN_SET (rtm->rtm_family, AF_INET, AF_INET6))
 		return NULL;
 
-	if (rtm->rtm_type != RTN_UNICAST)
-		return NULL;
+	if (!NM_IN_SET (rtm->rtm_type,
+	                RTN_UNICAST,
+	                RTN_LOCAL))
+	    return NULL;
 
 	if (nlmsg_parse_arr (nlh,
 	                     sizeof (struct rtmsg),
@@ -4491,7 +4493,7 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_scope = is_v4
 		             ? nm_platform_route_scope_inv (obj->ip4_route.scope_inv)
 		             : RT_SCOPE_NOWHERE,
-		.rtm_type = RTN_UNICAST,
+		.rtm_type = nm_platform_route_type_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->type_coerced),
 		.rtm_flags = obj->ip_route.r_rtm_flags & ((unsigned) (RTNH_F_ONLINK)),
 		.rtm_dst_len = obj->ip_route.plen,
 		.rtm_src_len = is_v4
