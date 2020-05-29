@@ -328,13 +328,13 @@ test_ip6_route (void)
 
 	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, pref_src, 128, in6addr_any,
 	                                       NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0));
-	accept_signals (route_added, 0, 1);
+	accept_signals (route_added, 0, 2);
 
 	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 200, ifindex, 1, &pref_src);
 
 	/* Add route to gateway */
 	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, in6addr_any, metric, mss);
-	accept_signal (route_added);
+	accept_signals (route_added, 0, 3);
 
 	/* Add route */
 	g_assert (!nmtstp_ip6_route_get (NM_PLATFORM_GET, ifindex, &network, plen, metric, NULL, 0));
