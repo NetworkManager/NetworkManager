@@ -13,6 +13,14 @@ This is a new stable release of NetworkManager.  Notable changes include:
   masquerading and open needed ports for DHCP and DNS. The new option
   is useful on systems using firewalld with the nftables backend,
   where the iptables rules would not be sufficient.
+* ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
+  property silently fails and a profile might accidentally not perform
+  any authentication (CVE-2020-10754).
+* ifcfg-rh: handle 802-1x.pin properties.
+* platform: fix crash detecting device type from netlink.
+* ip-tunnel: only set cloned-mac-address for layer 2 tunnels.
+* Fixes for sanitizer build and valgrind.
+* Various other bugfixes.
 
 =============================================
 NetworkManager-1.24
