@@ -22,6 +22,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   - honor PIO Valid Lifetimes < 2 hours.
   - cap the Preferred Lifetime of PIOs to the "Router Lifetime" value
     and the Valid Lifetime of PIOs to 48 * Router Lifetime.
+* ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
+  property silently fails and a profile might accidentally not perform
+  any authentication (CVE-2020-10754).
+* ifcfg-rh: handle 802-1x.pin properties.
+* ethernet: reset original autonegotiation/speed/duplex settings when
+  deactivating device.
 
 =============================================
 NetworkManager-1.24
