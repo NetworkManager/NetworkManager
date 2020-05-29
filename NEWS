@@ -30,6 +30,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   deactivating device.
 * Support ethtool coalesce and ring options.
 * Allow team connections to work without D-Bus (e.g. in the initrd).
+* Wi-Fi profiles now also autoconnect if all previous activation attempts
+  failed. This means, an initial failure to autoconnect to the network will
+  no longer block the automatism. A side effect is that existing Wi-Fi profiles
+  which previously were blocked may now start to autoconnect.
 
 =============================================
 NetworkManager-1.24
