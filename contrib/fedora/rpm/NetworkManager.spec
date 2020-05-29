@@ -250,6 +250,7 @@ BuildRequires: libubsan
 %if %{with firewalld_zone}
 BuildRequires: firewalld-filesystem
 %endif
+BuildRequires: iproute
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 
