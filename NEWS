@@ -1,3 +1,22 @@
+================================================
+NetworkManager-1.20.12
+Overview of changes since NetworkManager-1.20.10
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* ip-tunnel: only set cloned-mac-address for layer 2 tunnels.
+* ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
+  property silently fails and a profile might accidentally not perform
+  any authentication (CVE-2020-10754).
+* ifcfg-rh: handle 802-1x.pin properties.
+* NetworkManager waits for carrier to be up before starting 802.1X
+  authentication on an Ethernet interface.
+* nmcli unsets the "never-default" property of ipv4 and ipv6 settings
+  when the user is setting an explicit gateway.
+* Fix build with GCC 10, and other build improvements.
+* Various other bugfixes.
+
 ===============================================
 NetworkManager-1.20.10
 Overview of changes since NetworkManager-1.20.8
@@ -18,11 +37,13 @@ Overview of changes since NetworkManager-1.20.6
 
 This is a new stable release of NetworkManager.  Notable changes include:
 
-* Fix handling of system CA certificates in the ifcfg parser.
+* ifcfg-rh: add support for the '802-1x.system-ca-certs' property.
 * Handle ReachableTime and RetransTimer from IPv6 Router Advertisements.
 * Fixed setting of MTU according to its parent device for some device
   types.
-* Various fixes for the initramfs configuration genertor.
+* Various fixes for the initramfs configuration generator.
+* OVS bridges and OVS interfaces support changing the MAC address
+  through the "ethernet.cloned-mac-address" property.
 
 ===============================================
 NetworkManager-1.20.6
