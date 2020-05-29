@@ -1,4 +1,17 @@
 ===============================================
+NetworkManager-1.18.8
+Overview of changes since NetworkManager-1.18.6
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* ip-tunnel: only set cloned-mac-address for layer 2 tunnels.
+* ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
+  property silently fails and a profile might accidentally not perform
+  any authentication (CVE-2020-10754).
+* ifcfg-rh: handle 802-1x.pin properties.
+
+===============================================
 NetworkManager-1.18.6
 Overview of changes since NetworkManager-1.18.4
 ===============================================
