@@ -1,4 +1,16 @@
 ================================================
+NetworkManager-1.22.14
+Overview of changes since NetworkManager-1.22.12
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
+  property silently fails and a profile might accidentally not perform
+  any authentication (CVE-2020-10754).
+* ifcfg-rh: handle 802-1x.pin properties.
+
+================================================
 NetworkManager-1.22.12
 Overview of changes since NetworkManager-1.22.10
 ================================================
