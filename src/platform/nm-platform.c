@@ -3253,41 +3253,6 @@ nm_platform_ethtool_get_link_ring (NMPlatform *self,
 }
 
 gboolean
-nm_platform_ethtool_init_ring (NMPlatform *self,
-                               NMEthtoolRingState *ring,
-                               const char *option_name,
-                               guint32 value)
-{
-	NMEthtoolID ethtool_id;
-
-	g_return_val_if_fail (ring, FALSE);
-	g_return_val_if_fail (option_name, FALSE);
-
-	ethtool_id = nm_ethtool_id_get_by_name (option_name);
-
-	g_return_val_if_fail (nm_ethtool_id_is_ring (ethtool_id), FALSE);
-
-	switch (ethtool_id) {
-		case NM_ETHTOOL_ID_RING_RX:
-			ring->rx_pending = value;
-			break;
-		case NM_ETHTOOL_ID_RING_RX_JUMBO:
-			ring->rx_jumbo_pending = value;
-			break;
-		case NM_ETHTOOL_ID_RING_RX_MINI:
-			ring->rx_mini_pending = value;
-			break;
-		case NM_ETHTOOL_ID_RING_TX:
-			ring->tx_pending = value;
-			break;
-		default:
-			g_return_val_if_reached (FALSE);
-	}
-
-	return TRUE;
-}
-
-gboolean
 nm_platform_ethtool_set_ring (NMPlatform *self,
                               int ifindex,
                               const NMEthtoolRingState *ring)

@@ -1975,11 +1975,6 @@ gboolean nm_platform_ethtool_get_link_ring (NMPlatform *self,
                                             int ifindex,
                                             NMEthtoolRingState *ring);
 
-gboolean nm_platform_ethtool_init_ring (NMPlatform *self,
-                                        NMEthtoolRingState *ring,
-                                        const char *option_name,
-                                        guint32 value);
-
 gboolean nm_platform_ethtool_set_ring (NMPlatform *self,
                                        int ifindex,
                                        const NMEthtoolRingState *ring);

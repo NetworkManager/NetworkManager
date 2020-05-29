@@ -100,7 +100,15 @@ typedef struct _NMDeviceEthernetPrivate {
 	DcbWait       dcb_wait;
 	guint         dcb_timeout_id;
 
+	guint32       ethtool_prev_speed;
+
+	NMPlatformLinkDuplexType ethtool_prev_duplex:3;
+
 	bool          dcb_handle_carrier_changes:1;
+
+	bool          ethtool_prev_set:1;
+	bool          ethtool_prev_autoneg:1;
+
 } NMDeviceEthernetPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceEthernet,
@@ -882,6 +890,7 @@ static void
 link_negotiation_set (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
 	gboolean autoneg = TRUE;
 	gboolean link_autoneg;
@@ -925,7 +934,7 @@ link_negotiation_set (NMDevice *device)
 	    && !duplex)
 		_LOGD (LOGD_DEVICE, "set-link: configure auto-negotiation");
 	else {
-		_LOGD (LOGD_DEVICE, "set-link: configure %snegotiation (%u Mbit%s - %s duplex%s)",
+		_LOGD (LOGD_DEVICE, "set-link: configure %snegotiation (%u Mbit%s, %s duplex%s)",
 		       autoneg ? "auto-" : "static ",
 		       speed ?: link_speed,
 		       speed ? "" : "*",
@@ -933,6 +942,14 @@ link_negotiation_set (NMDevice *device)
 		       ? nm_platform_link_duplex_type_to_string (duplex)
 		       : nm_platform_link_duplex_type_to_string (link_duplex),
 		       duplex ? "" : "*");
+	}
+
+	if (!priv->ethtool_prev_set) {
+		/* remember the values we had before setting it. */
+		priv->ethtool_prev_autoneg = link_autoneg;
+		priv->ethtool_prev_speed = link_speed;
+		priv->ethtool_prev_duplex = link_duplex;
+		priv->ethtool_prev_set = TRUE;
 	}
 
 	if (!nm_platform_ethtool_set_link_settings (nm_device_get_platform (device),
@@ -963,6 +980,28 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	if (nm_device_sys_iface_state_is_external_or_assume (device)) {
+		if (   !priv->ethtool_prev_set
+		    && !nm_device_sys_iface_state_is_external (device)) {
+			NMSettingWired *s_wired;
+
+			/* During restart of NetworkManager service we forget the original auto
+			 * negotiation settings. When taking over a device, remember to reset
+			 * the "default" during deactivate. */
+			s_wired = nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
+			if (   s_wired
+			    && (   nm_setting_wired_get_auto_negotiate (s_wired)
+			        || nm_setting_wired_get_speed (s_wired)
+			        || nm_setting_wired_get_duplex (s_wired))) {
+				priv->ethtool_prev_set = TRUE;
+				priv->ethtool_prev_autoneg = TRUE;
+				priv->ethtool_prev_speed = 0;
+				priv->ethtool_prev_duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+			}
+		}
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+	}
 
 	link_negotiation_set (device);
 
@@ -1525,6 +1564,23 @@ deactivate (NMDevice *device)
 	/* Set last PPPoE connection time */
 	if (nm_device_get_applied_setting (device, NM_TYPE_SETTING_PPPOE))
 		priv->last_pppoe_time = nm_utils_get_monotonic_timestamp_sec ();
+
+	if (priv->ethtool_prev_set) {
+		priv->ethtool_prev_set = FALSE;
+
+		_LOGD (LOGD_DEVICE, "set-link: reset %snegotiation (%u Mbit, %s duplex)",
+		       priv->ethtool_prev_autoneg ? "auto-" : "static ",
+		       priv->ethtool_prev_speed,
+		       nm_platform_link_duplex_type_to_string (priv->ethtool_prev_duplex));
+		if (!nm_platform_ethtool_set_link_settings (nm_device_get_platform (device),
+		                                            nm_device_get_ifindex (device),
+		                                            priv->ethtool_prev_autoneg,
+		                                            priv->ethtool_prev_speed,
+		                                            priv->ethtool_prev_duplex)) {
+			_LOGW (LOGD_DEVICE, "set-link: failure to reset link negotiation");
+			return;
+		}
+	}
 }
 
 static gboolean
@@ -1914,6 +1970,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	device_class->complete_connection = complete_connection;
 	device_class->new_default_connection = new_default_connection;
 
+	device_class->act_stage1_prepare_also_for_external_or_assume = TRUE;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
 	device_class->act_stage2_config = act_stage2_config;
