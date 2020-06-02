@@ -1556,8 +1556,10 @@ libnm_noinst_data = \
 	libnm/nm-property-infos-dbus.xml \
 	libnm/nm-property-infos-ifcfg-rh.xml \
 	libnm/nm-property-infos-keyfile.xml \
+	libnm/nm-property-infos-nmcli.xml \
 	libnm/nm-settings-docs-dbus.xml \
 	libnm/nm-settings-docs-gir.xml \
+	libnm/nm-settings-docs-nmcli.xml \
 	$(NULL)
 
 noinst_DATA += $(libnm_noinst_data)
@@ -4959,17 +4961,20 @@ man/%.1 man/%.5 man/%.7 man/%.8: man/%.xml man/common.ent
 endif
 
 man_nm_settings_xml = \
-	man/nm-settings.xml \
-	man/nm-settings-keyfile.xml \
+	man/nm-settings-dbus.xml \
 	man/nm-settings-ifcfg-rh.xml \
+	man/nm-settings-keyfile.xml \
+	man/nm-settings-nmcli.xml \
 	$(NULL)
 
 if HAVE_INTROSPECTION
 
-man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs-dbus.xml man/common.ent
+man/nm-settings-%.xml: man/nm-settings-%.xsl libnm/nm-settings-docs-%.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
 
-man/nm-settings-%.xml: man/nm-settings-%.xsl libnm/nm-property-infos-%.xml man/common.ent
+man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-property-infos-keyfile.xml man/common.ent
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
+man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-property-infos-ifcfg-rh.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
 
 CLEANFILES += $(man_nm_settings_xml)
@@ -4986,21 +4991,23 @@ man_pages += \
 	man/nmtui.1
 
 man_pages_autogen += \
+	man/nm-settings-dbus.5 \
 	man/nm-settings-keyfile.5 \
-	man/nm-settings.5
-
-if WITH_OPENVSWITCH
-man_pages += man/nm-openvswitch.7
-else
-EXTRA_DIST += man/nm-openvswitch.7
-dist_dependencies += man/nm-openvswitch.7
-endif
+	man/nm-settings-nmcli.5 \
+	$(NULL)
 
 if CONFIG_PLUGIN_IFCFG_RH
 man_pages_autogen += man/nm-settings-ifcfg-rh.5
 else
 EXTRA_DIST += man/nm-settings-ifcfg-rh.5
 dist_dependencies += man/nm-settings-ifcfg-rh.5
+endif
+
+if WITH_OPENVSWITCH
+man_pages += man/nm-openvswitch.7
+else
+EXTRA_DIST += man/nm-openvswitch.7
+dist_dependencies += man/nm-openvswitch.7
 endif
 
 CLEANFILES += \
@@ -5012,7 +5019,8 @@ EXTRA_DIST += \
 	$(addsuffix .xsl,$(basename $(man_nm_settings_xml))) \
 	$(man_pages) \
 	$(addsuffix .xml,$(basename $(man_pages))) \
-	$(man_pages_autogen)
+	$(man_pages_autogen) \
+	$(NULL)
 
 
 if HAVE_DOCS
@@ -5021,7 +5029,8 @@ install-data-hook-man:
 	for link in $(nmtui_links); do \
 		ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
 	done; \
-	ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5;
+	ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5; \
+	ln -f $(DESTDIR)$(mandir)/man5/nm-settings-nmcli.5 $(DESTDIR)$(mandir)/man5/nm-settings.5;
 
 install_data_hook += install-data-hook-man
 
@@ -5029,7 +5038,8 @@ uninstall-hook-man:
 	for link in $(nmtui_links); do \
 		rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
 	done; \
-	rm -f $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5;
+	rm -f $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5; \
+	rm -f $(DESTDIR)$(mandir)/man5/nm-settings.5;
 
 uninstall_hook += uninstall-hook-man
 

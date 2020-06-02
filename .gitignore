@@ -150,8 +150,10 @@ test-*.trs
 /libnm/nm-property-infos-dbus.xml
 /libnm/nm-property-infos-ifcfg-rh.xml
 /libnm/nm-property-infos-keyfile.xml
+/libnm/nm-property-infos-nmcli.xml
 /libnm/nm-settings-docs-dbus.xml
 /libnm/nm-settings-docs-gir.xml
+/libnm/nm-settings-docs-nmcli.xml
 /libnm/tests/test-libnm
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
@@ -192,9 +194,10 @@ test-*.trs
 /m4/xsize.m4
 
 /man/*.[1785]
-/man/nm-settings.xml
+/man/nm-settings-dbus.xml
 /man/nm-settings-ifcfg-rh.xml
 /man/nm-settings-keyfile.xml
+/man/nm-settings-nmcli.xml
 /man/common.ent
 
 /po/*.gmo
@@ -298,6 +301,7 @@ test-*.trs
 /docs/libnm-util/tmpl/
 /docs/libnm-util/version.xml
 /docs/libnm-util/xml/
+/man/nm-settings.xml
 /include/
 /initscript/*/[Nn]etwork[Mm]anager
 /initscript/Slackware/rc.networkmanager

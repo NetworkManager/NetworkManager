@@ -212,7 +212,7 @@ if enable_introspection
     install: true,
   )
 
-  infos = [ 'dbus', 'keyfile' ]
+  infos = [ 'dbus', 'nmcli', 'keyfile' ]
   if enable_ifcfg_rh
     infos += [ 'ifcfg-rh' ]
   endif
@@ -238,20 +238,24 @@ if enable_introspection
       nm_property_infos_xml_keyfile = t
     elif info == 'ifcfg-rh'
       nm_property_infos_xml_ifcfg_rh = t
+    elif info == 'nmcli'
+      nm_property_infos_xml_nmcli = t
     else
       assert(false)
     endif
   endforeach
   if enable_ifcfg_rh
     nm_property_infos_xml = {
-      'dbus': nm_property_infos_xml_dbus,
-      'keyfile': nm_property_infos_xml_keyfile,
+      'dbus':     nm_property_infos_xml_dbus,
+      'keyfile':  nm_property_infos_xml_keyfile,
+      'nmcli':    nm_property_infos_xml_nmcli,
       'ifcfg-rh': nm_property_infos_xml_ifcfg_rh,
     }
   else
     nm_property_infos_xml = {
-      'dbus': nm_property_infos_xml_dbus,
+      'dbus':    nm_property_infos_xml_dbus,
       'keyfile': nm_property_infos_xml_keyfile,
+      'nmcli':   nm_property_infos_xml_nmcli,
     }
   endif
 
@@ -288,24 +292,33 @@ if enable_introspection
     depends: libnm_gir,
   )
 
-  name = 'dbus'
-  nm_settings_docs_xml_dbus = custom_target(
-    'nm-settings-docs-' + name + '.xml',
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
-    output: 'nm-settings-docs-' + name + '.xml',
-    command: [
-      python.path(),
-      join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-merge.py'),
-      '@OUTPUT@',
-      nm_property_infos_xml[name],
-      nm_settings_docs_xml_gir,
-    ],
-    depends: libnm_gir,
-  )
+  foreach name: ['dbus', 'nmcli']
+    t = custom_target(
+      'nm-settings-docs-' + name + '.xml',
+      input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+      output: 'nm-settings-docs-' + name + '.xml',
+      command: [
+        python.path(),
+        join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-merge.py'),
+        '@OUTPUT@',
+        nm_property_infos_xml[name],
+        nm_settings_docs_xml_gir,
+      ],
+      depends: libnm_gir,
+    )
+    if name == 'dbus'
+      nm_settings_docs_xml_dbus = t
+    elif name == 'nmcli'
+      nm_settings_docs_xml_nmcli = t
+    else
+      assert(false)
+    endif
+  endforeach
 
   nm_settings_docs_xml = {
-    'gir':  nm_settings_docs_xml_gir,
-    'dbus': nm_settings_docs_xml_dbus,
+    'gir':   nm_settings_docs_xml_gir,
+    'dbus':  nm_settings_docs_xml_dbus,
+    'nmcli': nm_settings_docs_xml_nmcli,
   }
 
 endif

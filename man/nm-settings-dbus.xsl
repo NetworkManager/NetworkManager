@@ -13,20 +13,20 @@
       />
 
   <xsl:template match="nm-setting-docs">
-    <refentry id="nm-settings">
+    <refentry id="nm-settings-dbus">
       <refentryinfo>
-        <title>nm-settings</title>
+        <title>nm-settings-dbus</title>
         <author>NetworkManager developers</author>
       </refentryinfo>
       <refmeta>
-        <refentrytitle>nm-settings</refentrytitle>
+        <refentrytitle>nm-settings-dbus</refentrytitle>
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
         <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
-        <refname>nm-settings</refname>
+        <refname>nm-settings-dbus</refname>
         <refpurpose>Description of settings and properties of NetworkManager connection profiles</refpurpose>
       </refnamediv>
 
@@ -155,7 +155,7 @@
   <xsl:template match="property">
     <xsl:variable name="setting_name" select="../@name"/>
     <row>
-      <entry align="left"><xsl:attribute name="id">nm-settings.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
+      <entry align="left"><xsl:attribute name="id">nm-settings-dbus.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
       <entry align="left"><xsl:value-of select="@type"/></entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
       <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags (uint32)'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>

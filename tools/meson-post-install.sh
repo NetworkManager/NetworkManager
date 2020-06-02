@@ -52,6 +52,7 @@ if [ "$enable_docs" = 1 ]; then
     done
 
     ln -f "${DESTDIR}${nm_mandir}/man5/NetworkManager.conf.5" "${DESTDIR}${nm_mandir}/man5/nm-system-settings.conf.5"
+    ln -f "${DESTDIR}${nm_mandir}/man5/nm-settings-nmcli.5" "${DESTDIR}${nm_mandir}/man5/nm-settings.5"
 fi
 
 if [ "$enable_ifcfg_rh" = 1 ]; then
