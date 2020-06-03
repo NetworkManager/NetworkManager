@@ -8,6 +8,7 @@
 
 #include "nm-crypto-impl.h"
 
+NM_PRAGMA_WARNING_DISABLE ("-Wstrict-prototypes")
 #include <prinit.h>
 #include <nss.h>
 #include <pk11pub.h>
@@ -17,6 +18,7 @@
 #include <p12.h>
 #include <ciferfam.h>
 #include <p12plcy.h>
+NM_PRAGMA_WARNING_REENABLE
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-errors.h"
