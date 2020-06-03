@@ -1,20 +1,6 @@
 So you're interested in hacking on NetworkManager?  Here's some cool
 stuff you could do...
 
-* Implement NM_DEVICE_STATE_DISCONNECTING
-
-To allow for "pre-down" scenarios, this state should be implemented before a
-device is taken down while it still has connectivity.  If the device is
-taken down because its ethernet carrier was dropped, or because the WiFi
-connection was terminated by the supplicant, this state is pointless and should
-be skipped.  But if the user requested a manual "disconnect", or NM is dropping
-connections on exit, etc, then this state should be entered.  In the future
-this state should hook into a new dispatcher action in src/NetworkManagerUtils.c
-to exectue dispatcher scripts during the disconnection, and to wait a limited
-amount of time for each script to complete before allowing the device to
-proceed to the NM_DEVICE_STATE_DISCONNECTED state, fully implementing pre-down.
-
-
 * Ethernet Network Auto-detection
 
 There are various methods we can use to autodetect which wired network connection
