@@ -93,7 +93,7 @@ static void verify_failure(struct ether_arp *packet, int out_fd, int in_fd) {
 }
 
 static void test_filter(void) {
-        uint8_t buf[sizeof(struct ether_arp) + 1];
+        uint8_t buf[sizeof(struct ether_arp) + 1] = {};
         struct ether_addr mac1 = { { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 } };
         struct ether_addr mac2 = { { 0x01, 0x02, 0x03, 0x04, 0x05, 0x07 } };
         struct in_addr ip0 = { 0 };
