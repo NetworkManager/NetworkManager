@@ -1,39 +1,6 @@
 So you're interested in hacking on NetworkManager?  Here's some cool
 stuff you could do...
 
-* Internet Connectivity Detection Enhancements
-
-Current connectivity checking is global, while what we really want is to check
-connectivity per-interface and update the global state based on the composite
-of each device's state.  Unfortunately that requires two things:
-
-1) latest libsoup and glib for using libsoup connection state signals, which
-   allow us to set socket options before the actual connection is made; here
-   we'd bind the socket to the specific IP address of the interface we're
-   using, and possibly set SO_BINDTODEVICE as well
-2) setting /proc/sys/net/ipv4/conf/<iface>/rp_filter to "2" which tells the
-   kernel to route the incoming and outgoing packet properly even though the
-   interface may not have the necessary routes
-
-The first is the largest obstacle, but ideally we implement this and enable it
-when we have the required glib and libsoup versions available.  One other
-complication is that this checking should be done during the
-NM_DEVICE_STATE_IP_CHECK phase (along with other operations like Wi-Fi hotspot
-auto-login) while the current checks are done globally in nm-manager.c, so
-keeping both code paths might be complex.
-
-But ideally, once the device has successfully gotten an IPv4 or IPv6 address, it
-should enter the state NM_DEVICE_STATE_IP_CHECK, where a connectivity check is
-started.  After the check returns, the device would set a property in
-NMDevicePrivate to indicate whether Internet access was successful or not, and
-advance to the NM_DEVICE_STATE_ACTIVATED state.
-
-The NMManager object, when determining the overall NM_STATE_* state in the
-nm_manager_update_state() function, would query this property and set
-NM_STATE_CONNECTED_LOCAL, NM_STATE_CONNECTED_SITE, or NM_STATE_CONNECTED_GLOBAL
-based on it and the device's state.
-
-
 * Implement NM_DEVICE_STATE_DISCONNECTING
 
 To allow for "pre-down" scenarios, this state should be implemented before a
