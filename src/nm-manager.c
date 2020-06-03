@@ -7344,12 +7344,19 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMActiveConnection *ac;
+	gboolean has_time = FALSE;
+	guint64 t;
 
 	c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
-		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-			nm_settings_connection_update_timestamp (nm_active_connection_get_settings_connection (ac),
-			                                         (guint64) time (NULL));
+		if (nm_active_connection_get_state (ac) != NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+			continue;
+
+		if (!has_time) {
+			t = time (NULL);
+			has_time = TRUE;
 		}
+		nm_settings_connection_update_timestamp (nm_active_connection_get_settings_connection (ac),
+		                                         t);
 	}
 	return G_SOURCE_CONTINUE;
 }

@@ -2136,14 +2136,23 @@ void
 nm_settings_connection_update_timestamp (NMSettingsConnection *self,
                                          guint64 timestamp)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionPrivate *priv;
 	const char *connection_uuid;
 	char sbuf[60];
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (   priv->timestamp == timestamp
+	    && priv->timestamp_set)
+		return;
+
 	priv->timestamp = timestamp;
 	priv->timestamp_set = TRUE;
+
+	_LOGT ("timestamp: set timestamp %"G_GUINT64_FORMAT,
+	       timestamp);
 
 	if (!priv->kf_db_timestamps)
 		return;
@@ -2185,10 +2194,10 @@ _nm_settings_connection_register_kf_dbs (NMSettingsConnection *self,
 		if (timestamp != G_MAXUINT64) {
 			priv->timestamp = timestamp;
 			priv->timestamp_set = TRUE;
-			_LOGT ("read timestamp %"G_GUINT64_FORMAT" from keyfile database \"%s\"",
+			_LOGT ("timestamp: read timestamp %"G_GUINT64_FORMAT" from keyfile database \"%s\"",
 			       timestamp, nm_key_file_db_get_filename (priv->kf_db_timestamps));
 		} else
-			_LOGT ("no timestamp from keyfile database \"%s\"",
+			_LOGT ("timestamp: no timestamp from keyfile database \"%s\"",
 			       nm_key_file_db_get_filename (priv->kf_db_timestamps));
 	}
 
