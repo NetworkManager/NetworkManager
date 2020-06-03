@@ -125,15 +125,15 @@ static void test_swap(void) {
 
         assert(c_list_first(&list1) == &list);
         assert(c_list_last(&list1) == &list);
-        assert(list.next = &list1);
-        assert(list.prev = &list1);
+        assert(list.next == &list1);
+        assert(list.prev == &list1);
 
         c_list_swap(&list1, &list2);
 
         assert(c_list_first(&list2) == &list);
         assert(c_list_last(&list2) == &list);
-        assert(list.next = &list2);
-        assert(list.prev = &list2);
+        assert(list.next == &list2);
+        assert(list.prev == &list2);
 
         assert(list1.prev == list1.next && list1.prev == &list1);
 }
