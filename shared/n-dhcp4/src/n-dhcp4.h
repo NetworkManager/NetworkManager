@@ -29,8 +29,6 @@ typedef struct NDhcp4ServerEvent NDhcp4ServerEvent;
 typedef struct NDhcp4ServerIp NDhcp4ServerIp;
 typedef struct NDhcp4ServerLease NDhcp4ServerLease;
 
-typedef void (*NDhcp4LogFunc)(int level, void *data, const char *fmt, ...);
-
 #define N_DHCP4_CLIENT_START_DELAY_RFC2131 (UINT64_C(9000))
 
 enum {
@@ -63,6 +61,7 @@ enum {
         N_DHCP4_CLIENT_EVENT_EXTENDED,
         N_DHCP4_CLIENT_EVENT_EXPIRED,
         N_DHCP4_CLIENT_EVENT_CANCELLED,
+        N_DHCP4_CLIENT_EVENT_LOG,
         _N_DHCP4_CLIENT_EVENT_N,
 };
 
@@ -88,6 +87,14 @@ struct NDhcp4ClientEvent {
                 struct {
                         NDhcp4ClientProbe *probe;
                 } retracted, expired, cancelled;
+                struct {
+                        /* If allow_steal_message is true, then the user may steal the message when handling
+                         * the event. In that case, set the message field to %NULL and free it yourself
+                         * with free(). */
+                        const char *message;
+                        int level;
+                        bool allow_steal_message;
+                } log;
         };
 };
 
@@ -113,8 +120,6 @@ void n_dhcp4_client_config_set_request_broadcast(NDhcp4ClientConfig *config, boo
 void n_dhcp4_client_config_set_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac);
 void n_dhcp4_client_config_set_broadcast_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac);
 int n_dhcp4_client_config_set_client_id(NDhcp4ClientConfig *config, const uint8_t *id, size_t n_id);
-void n_dhcp4_client_config_set_log_level(NDhcp4ClientConfig *config, int level);
-void n_dhcp4_client_config_set_log_func(NDhcp4ClientConfig *config, NDhcp4LogFunc func, void *data);
 
 /* client-probe configs */
 
@@ -140,6 +145,8 @@ NDhcp4Client *n_dhcp4_client_unref(NDhcp4Client *client);
 void n_dhcp4_client_get_fd(NDhcp4Client *client, int *fdp);
 int n_dhcp4_client_dispatch(NDhcp4Client *client);
 int n_dhcp4_client_pop_event(NDhcp4Client *client, NDhcp4ClientEvent **eventp);
+
+void n_dhcp4_client_set_log_level(NDhcp4Client *client, int level);
 
 int n_dhcp4_client_update_mtu(NDhcp4Client *client, uint16_t mtu);
 

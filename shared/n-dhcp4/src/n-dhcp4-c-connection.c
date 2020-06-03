@@ -23,6 +23,7 @@
  * @connection:                 connection to operate on
  * @client_config:              client configuration to use
  * @probe_config:               client probe configuration to use
+ * @log_queue:                  the log queue for logging events
  * @fd_epoll:                   epoll context to attach to, or -1
  *
  * This initializes a new client connection using the configuration given in
@@ -47,11 +48,13 @@
 int n_dhcp4_c_connection_init(NDhcp4CConnection *connection,
                               NDhcp4ClientConfig *client_config,
                               NDhcp4ClientProbeConfig *probe_config,
+                              NDhcp4LogQueue *log_queue,
                               int fd_epoll) {
         *connection = (NDhcp4CConnection)N_DHCP4_C_CONNECTION_NULL(*connection);
         connection->client_config = client_config;
         connection->probe_config = probe_config;
         connection->fd_epoll = fd_epoll;
+        connection->log_queue = log_queue;
 
         /*
          * We explicitly allow initializing connections with an invalid
@@ -1066,25 +1069,27 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
         }
 
         if (request->userdata.client_addr == INADDR_ANY) {
-                n_dhcp4_c_log(connection->client_config, LOG_INFO,
-                              "send %s to %s%s",
-                              message_type_to_str(request->userdata.message_type),
-                              broadcast ?
-                              "255.255.255.255" :
-                              inet_ntop(AF_INET, &connection->server_ip,
-                                        server_addr, sizeof(server_addr)),
-                              error_msg);
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "send %s to %s%s",
+                            message_type_to_str(request->userdata.message_type),
+                            broadcast ?
+                            "255.255.255.255" :
+                            inet_ntop(AF_INET, &connection->server_ip,
+                                      server_addr, sizeof(server_addr)),
+                            error_msg);
         } else {
-                n_dhcp4_c_log(connection->client_config, LOG_INFO,
-                              "send %s of %s to %s%s",
-                              message_type_to_str(request->userdata.message_type),
-                              inet_ntop(AF_INET, &request->userdata.client_addr,
-                                        client_addr, sizeof(client_addr)),
-                              broadcast ?
-                              "255.255.255.255" :
-                              inet_ntop(AF_INET, &connection->server_ip,
-                                        server_addr, sizeof(server_addr)),
-                              error_msg);
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "send %s of %s to %s%s",
+                            message_type_to_str(request->userdata.message_type),
+                            inet_ntop(AF_INET, &request->userdata.client_addr,
+                                      client_addr, sizeof(client_addr)),
+                            broadcast ?
+                            "255.255.255.255" :
+                            inet_ntop(AF_INET, &connection->server_ip,
+                                      server_addr, sizeof(server_addr)),
+                            error_msg);
         }
 
         ++request->userdata.n_send;
@@ -1207,19 +1212,21 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                 return N_DHCP4_E_AGAIN;
 
         if (type == N_DHCP4_MESSAGE_OFFER || type == N_DHCP4_MESSAGE_ACK) {
-                n_dhcp4_c_log(connection->client_config, LOG_INFO,
-                              "received %s of %s from %s",
-                              message_type_to_str(type),
-                              inet_ntop(AF_INET, &message->message.header.yiaddr,
-                                        client_addr, sizeof(client_addr)),
-                              inet_ntop(AF_INET, &message->message.header.siaddr,
-                                        serv_addr, sizeof(serv_addr)));
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "received %s of %s from %s",
+                            message_type_to_str(type),
+                            inet_ntop(AF_INET, &message->message.header.yiaddr,
+                                      client_addr, sizeof(client_addr)),
+                            inet_ntop(AF_INET, &message->message.header.siaddr,
+                                      serv_addr, sizeof(serv_addr)));
         } else {
-                n_dhcp4_c_log(connection->client_config, LOG_INFO,
-                              "received %s from %s",
-                              message_type_to_str(type),
-                              inet_ntop(AF_INET, &message->message.header.siaddr,
-                                        serv_addr, sizeof(serv_addr)));
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "received %s from %s",
+                            message_type_to_str(type),
+                            inet_ntop(AF_INET, &message->message.header.siaddr,
+                                      serv_addr, sizeof(serv_addr)));
         }
 
         switch (type) {

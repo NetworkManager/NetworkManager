@@ -1056,6 +1056,18 @@ dhcp4_event_handle (NMDhcpNettools *self,
 	case N_DHCP4_CLIENT_EVENT_DOWN:
 		/* ignore down events, they are purely informational */
 		break;
+	case N_DHCP4_CLIENT_EVENT_LOG: {
+			NMLogLevel nm_level;
+
+			nm_level = nm_log_level_from_syslog (event->log.level);
+			if (nm_logging_enabled (nm_level, LOGD_DHCP4)) {
+				nm_log (nm_level, LOGD_DHCP4, NULL , NULL,
+				        "dhcp4 (%s): %s",
+				        nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self)),
+				        event->log.message);
+			}
+		}
+		break;
 	default:
 		_LOGW ("unhandled DHCP event %d", event->event);
 		break;
@@ -1094,27 +1106,6 @@ dhcp4_event_cb (int fd,
 	}
 
 	return G_SOURCE_CONTINUE;
-}
-
-G_GNUC_PRINTF (3, 4)
-static void
-nettools_log (int level, void *data, const char *fmt, ...)
-{
-	NMDhcpNettools *self = data;
-	NMLogLevel nm_level;
-	gs_free char *msg = NULL;
-	va_list ap;
-
-	nm_level = nm_log_level_from_syslog (level);
-	if (nm_logging_enabled (nm_level, LOGD_DHCP4)) {
-		va_start (ap, fmt);
-		msg = g_strdup_vprintf (fmt, ap);
-		va_end (ap);
-		nm_log (nm_level, LOGD_DHCP4, NULL , NULL,
-		        "dhcp4 (%s): %s",
-		        nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self)),
-		        msg);
-	}
 }
 
 static gboolean
@@ -1186,8 +1177,6 @@ nettools_create (NMDhcpNettools *self,
 		return FALSE;
 	}
 
-	n_dhcp4_client_config_set_log_level (config, nm_log_level_to_syslog (nm_logging_get_level (LOGD_DHCP4)));
-	n_dhcp4_client_config_set_log_func (config, nettools_log, self);
 	n_dhcp4_client_config_set_ifindex (config, nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)));
 	n_dhcp4_client_config_set_transport (config, transport);
 	n_dhcp4_client_config_set_mac (config, hwaddr_arr, hwaddr_len);
@@ -1208,6 +1197,8 @@ nettools_create (NMDhcpNettools *self,
 
 	priv->client = client;
 	client = NULL;
+
+	n_dhcp4_client_set_log_level (priv->client, nm_log_level_to_syslog (nm_logging_get_level (LOGD_DHCP4)));
 
 	n_dhcp4_client_get_fd (priv->client, &fd);
 

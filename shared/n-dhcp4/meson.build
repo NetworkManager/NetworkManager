@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: LGPL-2.1+
-
 project(
         'n-dhcp4',
         'c',

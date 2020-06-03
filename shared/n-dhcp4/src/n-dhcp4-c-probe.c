@@ -429,9 +429,13 @@ int n_dhcp4_client_probe_new(NDhcp4ClientProbe **probep,
          */
         n_dhcp4_client_probe_config_initialize_random_seed(probe->config);
 
+        /* The new probe keeps a reference on @client. So we are sure that &client->log_queue
+         * stays alive as long as we need it. */
+
         r = n_dhcp4_c_connection_init(&probe->connection,
                                       client->config,
                                       probe->config,
+                                      &client->log_queue,
                                       active ? client->fd_epoll : -1);
         if (r)
                 return r;
