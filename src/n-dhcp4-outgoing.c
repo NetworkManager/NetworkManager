@@ -54,8 +54,6 @@
 int n_dhcp4_outgoing_new(NDhcp4Outgoing **outgoingp, size_t max_size, uint8_t overload) {
         _c_cleanup_(n_dhcp4_outgoing_freep) NDhcp4Outgoing *outgoing = NULL;
 
-        c_assert(!(overload & ~(N_DHCP4_OVERLOAD_FILE | N_DHCP4_OVERLOAD_SNAME)));
-
         /*
          * Make sure the minimum limit is bigger than the maximum protocol
          * header plus the DHCP-message-header plus a single OPTION_END byte.
@@ -63,6 +61,8 @@ int n_dhcp4_outgoing_new(NDhcp4Outgoing **outgoingp, size_t max_size, uint8_t ov
         static_assert(N_DHCP4_NETWORK_IP_MINIMUM_MAX_SIZE >= N_DHCP4_OUTGOING_MAX_PHDR +
                                                              sizeof(NDhcp4Message) + 1,
                       "Invalid minimum IP packet limit");
+
+        c_assert(!(overload & ~(N_DHCP4_OVERLOAD_FILE | N_DHCP4_OVERLOAD_SNAME)));
 
         outgoing = calloc(1, sizeof(*outgoing));
         if (!outgoing)
@@ -220,8 +220,9 @@ int n_dhcp4_outgoing_append(NDhcp4Outgoing *outgoing,
                 /* try fitting into allowed OPTIONs space */
                 if (outgoing->max_size - outgoing->i_message >= n_data + 2U + 3U + 1U) {
                         /* try over-allocation to reduce allocation pressure */
-                        n = c_min(outgoing->max_size,
-                                  outgoing->n_message + n_data + 128);
+                        n = outgoing->n_message + n_data + 128;
+                        if (n > outgoing->max_size)
+                                n = outgoing->max_size;
                         m = realloc(outgoing->message, n);
                         if (!m)
                                 return -ENOMEM;
@@ -276,6 +277,7 @@ int n_dhcp4_outgoing_append(NDhcp4Outgoing *outgoing,
                         return 0;
                 }
 
+                overload = outgoing->overload;
                 if (overload & N_DHCP4_OVERLOAD_SNAME)
                         outgoing->i_message = offsetof(NDhcp4Message, sname);
                 else
@@ -340,7 +342,7 @@ int n_dhcp4_outgoing_append_requested_ip(NDhcp4Outgoing *message, struct in_addr
         return n_dhcp4_outgoing_append_in_addr(message, N_DHCP4_OPTION_REQUESTED_IP_ADDRESS, addr);
 }
 
-void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint32_t secs) {
+void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint16_t secs) {
         NDhcp4Header *header = n_dhcp4_outgoing_get_header(message);
 
         /*
@@ -349,7 +351,7 @@ void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint32_t secs) {
          */
         c_assert(secs);
 
-        header->secs = htonl(secs);
+        header->secs = htons(secs);
 }
 
 void n_dhcp4_outgoing_set_xid(NDhcp4Outgoing *message, uint32_t xid) {

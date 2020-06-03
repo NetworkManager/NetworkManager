@@ -8,6 +8,8 @@
 #include <c-stdaux.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/socket.h> /* needed by linux/netdevice.h */
+#include <linux/netdevice.h>
 #include <net/if_arp.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -21,6 +23,7 @@
  * @connection:                 connection to operate on
  * @client_config:              client configuration to use
  * @probe_config:               client probe configuration to use
+ * @log_queue:                  the log queue for logging events
  * @fd_epoll:                   epoll context to attach to, or -1
  *
  * This initializes a new client connection using the configuration given in
@@ -45,11 +48,13 @@
 int n_dhcp4_c_connection_init(NDhcp4CConnection *connection,
                               NDhcp4ClientConfig *client_config,
                               NDhcp4ClientProbeConfig *probe_config,
+                              NDhcp4LogQueue *log_queue,
                               int fd_epoll) {
         *connection = (NDhcp4CConnection)N_DHCP4_C_CONNECTION_NULL(*connection);
         connection->client_config = client_config;
         connection->probe_config = probe_config;
         connection->fd_epoll = fd_epoll;
+        connection->log_queue = log_queue;
 
         /*
          * We explicitly allow initializing connections with an invalid
@@ -82,11 +87,12 @@ int n_dhcp4_c_connection_init(NDhcp4CConnection *connection,
  */
 void n_dhcp4_c_connection_deinit(NDhcp4CConnection *connection) {
         n_dhcp4_c_connection_close(connection);
+        n_dhcp4_outgoing_free(connection->request);
         *connection = (NDhcp4CConnection)N_DHCP4_C_CONNECTION_NULL(*connection);
 }
 
 static void n_dhcp4_c_connection_outgoing_set_secs(NDhcp4Outgoing *message) {
-        uint32_t secs;
+        uint64_t secs;
 
         /*
          * This function sets the `secs` field for outgoing messages. It
@@ -122,12 +128,12 @@ static void n_dhcp4_c_connection_outgoing_set_secs(NDhcp4Outgoing *message) {
          *
          * Note: Some DHCP relays reject a `secs` value of 0 (which might look
          *       like it is uninitialized). Hence, we always clamp the value to
-         *       the range `[1, INF[`.
+         *       the range `[1, 65535]`.
          */
 
         secs = message->userdata.base_time - message->userdata.start_time;
         secs /= 1000ULL * 1000ULL * 1000ULL; /* nsecs to secs */
-        secs = secs ?: 1; /* clamp to `[1, INF[` */
+        secs = C_CLAMP(secs, 1, UINT16_MAX);
 
         n_dhcp4_outgoing_set_secs(message, secs);
 }
@@ -136,7 +142,22 @@ int n_dhcp4_c_connection_listen(NDhcp4CConnection *connection) {
         _c_cleanup_(c_closep) int fd_packet = -1;
         int r;
 
-        c_assert(connection->state == N_DHCP4_C_CONNECTION_STATE_INIT);
+        if (connection->state == N_DHCP4_C_CONNECTION_STATE_PACKET)
+                return 0;
+
+        c_assert(connection->state == N_DHCP4_C_CONNECTION_STATE_INIT ||
+                 connection->state == N_DHCP4_C_CONNECTION_STATE_DRAINING ||
+                 connection->state == N_DHCP4_C_CONNECTION_STATE_UDP);
+
+        if (connection->fd_packet >= 0) {
+                epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, connection->fd_packet, NULL);
+                connection->fd_packet = c_close(connection->fd_packet);
+        }
+
+        if (connection->fd_udp >= 0) {
+                epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, connection->fd_udp, NULL);
+                connection->fd_udp = c_close(connection->fd_udp);
+        }
 
         r = n_dhcp4_c_socket_packet_new(&fd_packet, connection->client_config->ifindex);
         if (r)
@@ -316,7 +337,6 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
         switch (connection->request->userdata.type) {
         case N_DHCP4_C_MESSAGE_DISCOVER:
         case N_DHCP4_C_MESSAGE_SELECT:
-        case N_DHCP4_C_MESSAGE_REBOOT:
         case N_DHCP4_C_MESSAGE_INFORM:
                 /*
                  * Resend with an exponential backoff and a one second random
@@ -335,6 +355,7 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
                 break;
         case N_DHCP4_C_MESSAGE_REBIND:
         case N_DHCP4_C_MESSAGE_RENEW:
+        case N_DHCP4_C_MESSAGE_REBOOT:
                 /*
                  * Resend every sixty seconds with a one second random slack.
                  *
@@ -510,6 +531,7 @@ static int n_dhcp4_c_connection_new_message(NDhcp4CConnection *connection,
         n_dhcp4_c_connection_init_header(connection, header);
 
         message->userdata.type = type;
+        message->userdata.message_type = message_type;
 
         /*
          * Note that some implementations expect the MESSAGE_TYPE option to be
@@ -687,6 +709,7 @@ int n_dhcp4_c_connection_select_new(NDhcp4CConnection *connection,
          */
         message->userdata.start_time = offer->userdata.start_time;
         message->userdata.base_time = offer->userdata.base_time;
+        message->userdata.client_addr = client.s_addr;
         n_dhcp4_incoming_get_xid(offer, &xid);
         n_dhcp4_outgoing_set_xid(message, xid);
 
@@ -760,6 +783,7 @@ int n_dhcp4_c_connection_renew_new(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
+        message->userdata.client_addr = connection->client_ip;
         *requestp = message;
         message = NULL;
         return 0;
@@ -793,6 +817,7 @@ int n_dhcp4_c_connection_rebind_new(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
+        message->userdata.client_addr = connection->client_ip;
         *requestp = message;
         message = NULL;
         return 0;
@@ -844,6 +869,7 @@ int n_dhcp4_c_connection_decline_new(NDhcp4CConnection *connection,
                         return r;
         }
 
+        message->userdata.client_addr = client.s_addr;
         *requestp = message;
         message = NULL;
         return 0;
@@ -886,6 +912,7 @@ int n_dhcp4_c_connection_inform_new(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
+        message->userdata.client_addr = connection->client_ip;
         *requestp = message;
         message = NULL;
         return 0;
@@ -952,10 +979,39 @@ int n_dhcp4_c_connection_release_new(NDhcp4CConnection *connection,
         return 0;
 }
 
+static const char *message_type_to_str(uint8_t type) {
+        switch (type) {
+        case N_DHCP4_MESSAGE_DISCOVER:
+                return "DISCOVER";
+        case N_DHCP4_MESSAGE_OFFER:
+                return "OFFER";
+        case N_DHCP4_MESSAGE_REQUEST:
+                return "REQUEST";
+        case N_DHCP4_MESSAGE_DECLINE:
+                return "DECLINE";
+        case N_DHCP4_MESSAGE_ACK:
+                return "ACK";
+        case N_DHCP4_MESSAGE_NAK:
+                return "NACK";
+        case N_DHCP4_MESSAGE_RELEASE:
+                return "RELEASE";
+        case N_DHCP4_MESSAGE_INFORM:
+                return "INFORM";
+        case N_DHCP4_MESSAGE_FORCERENEW:
+                return "FORCERENEW";
+        default:
+                return "UNKNOWN";
+        }
+}
+
 static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
                                              NDhcp4Outgoing *request,
                                              uint64_t timestamp) {
+        char server_addr[INET_ADDRSTRLEN];
+        char client_addr[INET_ADDRSTRLEN];
+        char error_msg[128];
         int r;
+        bool broadcast = false;
 
         /*
          * Increment the base time and reset the xid field,
@@ -990,26 +1046,50 @@ static int n_dhcp4_c_connection_send_request(NDhcp4CConnection *connection,
         case N_DHCP4_C_MESSAGE_SELECT:
         case N_DHCP4_C_MESSAGE_REBOOT:
         case N_DHCP4_C_MESSAGE_DECLINE:
+        case N_DHCP4_C_MESSAGE_REBIND:
+                broadcast = true;
                 r = n_dhcp4_c_connection_packet_broadcast(connection, request);
-                if (r)
-                        return r;
                 break;
         case N_DHCP4_C_MESSAGE_INFORM:
-        case N_DHCP4_C_MESSAGE_REBIND:
+                broadcast = true;
                 r = n_dhcp4_c_connection_udp_broadcast(connection, request);
-                if (r)
-                        return r;
-
                 break;
         case N_DHCP4_C_MESSAGE_RENEW:
         case N_DHCP4_C_MESSAGE_RELEASE:
                 r = n_dhcp4_c_connection_udp_send(connection, request);
-                if (r)
-                        return r;
-
                 break;
         default:
                 c_assert(0);
+        }
+
+        if (r) {
+                snprintf(error_msg, sizeof(error_msg), ": error %d", r);
+        } else {
+                error_msg[0] = '\0';
+        }
+
+        if (request->userdata.client_addr == INADDR_ANY) {
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "send %s to %s%s",
+                            message_type_to_str(request->userdata.message_type),
+                            broadcast ?
+                            "255.255.255.255" :
+                            inet_ntop(AF_INET, &connection->server_ip,
+                                      server_addr, sizeof(server_addr)),
+                            error_msg);
+        } else {
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "send %s of %s to %s%s",
+                            message_type_to_str(request->userdata.message_type),
+                            inet_ntop(AF_INET, &request->userdata.client_addr,
+                                      client_addr, sizeof(client_addr)),
+                            broadcast ?
+                            "255.255.255.255" :
+                            inet_ntop(AF_INET, &connection->server_ip,
+                                      server_addr, sizeof(server_addr)),
+                            error_msg);
         }
 
         ++request->userdata.n_send;
@@ -1030,12 +1110,13 @@ int n_dhcp4_c_connection_start_request(NDhcp4CConnection *connection,
         if (request->userdata.start_time == 0)
                 request->userdata.start_time = timestamp;
 
-        n_dhcp4_outgoing_free(connection->request);
-        connection->request = request;
+        connection->request = n_dhcp4_outgoing_free(connection->request);
 
         r = n_dhcp4_c_connection_send_request(connection, request, timestamp);
         if (r)
                 return r;
+
+        connection->request = request;
 
         return 0;
 }
@@ -1060,9 +1141,18 @@ int n_dhcp4_c_connection_dispatch_timer(NDhcp4CConnection *connection,
         return 0;
 }
 
+/*
+ * Returns:
+ *  0                     on success
+ *  N_DHCP4_E_MALFORMED   if a malformed packet was received
+ *  N_DHCP4_E_UNEXPECTED  if the packet received contains unexpected data
+ *  N_DHCP4_E_AGAIN       if there was another error (non fatal for the client)
+ */
 int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                      NDhcp4Incoming **messagep) {
         _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = NULL;
+        char serv_addr[INET_ADDRSTRLEN];
+        char client_addr[INET_ADDRSTRLEN];
         uint8_t type;
         int r;
 
@@ -1072,10 +1162,11 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                                  connection->scratch_buffer,
                                                  sizeof(connection->scratch_buffer),
                                                  &message);
-                if (r)
+                if (!r)
+                        break;
+                else if (r == N_DHCP4_E_MALFORMED)
                         return r;
-
-                break;
+                return N_DHCP4_E_AGAIN;
         case N_DHCP4_C_CONNECTION_STATE_DRAINING:
                 r = n_dhcp4_c_socket_packet_recv(connection->fd_packet,
                                                  connection->scratch_buffer,
@@ -1083,8 +1174,10 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                                  &message);
                 if (!r)
                         break;
-                else if (r != N_DHCP4_E_AGAIN)
+                else if (r == N_DHCP4_E_MALFORMED)
                         return r;
+                else if (r != N_DHCP4_E_AGAIN)
+                        return N_DHCP4_E_AGAIN;
 
                 /*
                  * The UDP socket is open and the packet socket has been shut down
@@ -1102,18 +1195,39 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                               connection->scratch_buffer,
                                               sizeof(connection->scratch_buffer),
                                               &message);
-                if (r)
+                if (!r)
+                        break;
+                else if (r == N_DHCP4_E_MALFORMED)
                         return r;
-
-                break;
+                return N_DHCP4_E_AGAIN;
         default:
                 abort();
                 return -ENOTRECOVERABLE;
         }
 
         r = n_dhcp4_c_connection_verify_incoming(connection, message, &type);
-        if (r)
+        if (r == N_DHCP4_E_MALFORMED || r == N_DHCP4_E_UNEXPECTED)
                 return r;
+        else if (r != 0)
+                return N_DHCP4_E_AGAIN;
+
+        if (type == N_DHCP4_MESSAGE_OFFER || type == N_DHCP4_MESSAGE_ACK) {
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "received %s of %s from %s",
+                            message_type_to_str(type),
+                            inet_ntop(AF_INET, &message->message.header.yiaddr,
+                                      client_addr, sizeof(client_addr)),
+                            inet_ntop(AF_INET, &message->message.header.siaddr,
+                                      serv_addr, sizeof(serv_addr)));
+        } else {
+                n_dhcp4_log(connection->log_queue,
+                            LOG_INFO,
+                            "received %s from %s",
+                            message_type_to_str(type),
+                            inet_ntop(AF_INET, &message->message.header.siaddr,
+                                      serv_addr, sizeof(serv_addr)));
+        }
 
         switch (type) {
         case N_DHCP4_MESSAGE_OFFER:

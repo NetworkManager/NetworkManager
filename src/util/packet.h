@@ -7,7 +7,6 @@
 #include <c-stdaux.h>
 #include <inttypes.h>
 #include <linux/if_packet.h>
-#include <linux/netdevice.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,7 +24,7 @@ struct packet_sockaddr_ll {
         unsigned short  sll_hatype;
         unsigned char   sll_pkttype;
         unsigned char   sll_halen;
-        unsigned char   sll_addr[MAX_ADDR_LEN];
+        unsigned char   sll_addr[32]; /* MAX_ADDR_LEN */
 };
 
 uint16_t packet_internet_checksum(const uint8_t *data, size_t len);

@@ -183,7 +183,11 @@ _c_public_ void n_dhcp4_client_config_set_request_broadcast(NDhcp4ClientConfig *
  */
 _c_public_ void n_dhcp4_client_config_set_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac) {
         config->n_mac = n_mac;
-        memcpy(config->mac, mac, c_min(n_mac, sizeof(config->mac)));
+
+        if (n_mac > sizeof(config->mac))
+                n_mac = sizeof(config->mac);
+
+        memcpy(config->mac, mac, n_mac);
 }
 
 /**
@@ -209,35 +213,75 @@ _c_public_ void n_dhcp4_client_config_set_mac(NDhcp4ClientConfig *config, const 
  */
 _c_public_ void n_dhcp4_client_config_set_broadcast_mac(NDhcp4ClientConfig *config, const uint8_t *mac, size_t n_mac) {
         config->n_broadcast_mac = n_mac;
-        memcpy(config->broadcast_mac, mac, c_min(n_mac, sizeof(config->broadcast_mac)));
+
+        if (n_mac > sizeof(config->mac))
+                n_mac = sizeof(config->mac);
+
+        memcpy(config->broadcast_mac, mac, n_mac);
 }
 
 /**
  * n_dhcp4_client_config_set_client_id() - set client-id property
  * @config:                     client configuration to operate on
  * @id:                         client id
- * @n_id:                       length of the client id in bytes
+ * @n_id:                       length of the client id in bytes. The length
+ *                              must be from 2 up to 255 bytes. Set it to 0
+ *                              to unset the client-id.
  *
  * This sets the client-id property of @config. It copies the entire client-id
  * buffer into the configuration.
+ * See RFC 2132 (section 9.14) for the format of the Client Identifier.
  *
  * Return: 0 on success, negative error code on failure.
  */
 _c_public_ int n_dhcp4_client_config_set_client_id(NDhcp4ClientConfig *config, const uint8_t *id, size_t n_id) {
         uint8_t *t;
 
+        if (n_id == 0) {
+                config->client_id = c_free(config->client_id);
+                config->n_client_id = 0;
+                return 0;
+        }
+
+        if (n_id < 2 || n_id > 255)
+                return -EINVAL;
+
         t = malloc(n_id + 1);
         if (!t)
                 return -ENOMEM;
 
+        memcpy(t, id, n_id);
+        t[n_id] = 0; /* safety 0 for debugging */
+
         free(config->client_id);
         config->client_id = t;
         config->n_client_id = n_id;
-
-        memcpy(config->client_id, id, n_id);
-        config->client_id[n_id] = 0; /* safety 0 for debugging */
-
         return 0;
+}
+
+/**
+ * n_dhcp4_client_set_log_level() - set the logging level of the client
+ * @client:                         the client to operate on
+ * @level:                          the minimum syslog logging level that is
+ *                                  still logged. For example, set to LOG_NOTICE
+ *                                  to receive logging events with level LOG_NOTICE
+ *                                  and higher. Set to -1 to disable generating
+ *                                  logging events (which is also the default).
+ *
+ * By enabling logging, you can get N_DHCP4_CLIENT_EVENT_LOG events.
+ *
+ * From the logging event you may steal the message if (and only if) "allow_steal_message"
+ * is true. In that case, clear the message field and free the message yourself.
+ *
+ * If a logging event cannot be logged due to out of memory, one message
+ * gets logged that messages are missing. Until the event with that message
+ * gets dropped, no further logging events will be queued.
+ *
+ * You may change the logging level at any time, but it does not affect
+ * logging events that are already queued.
+  */
+_c_public_ void n_dhcp4_client_set_log_level(NDhcp4Client *client, int level) {
+        client->log_queue.log_level = level;
 }
 
 /**
@@ -292,6 +336,16 @@ NDhcp4CEventNode *n_dhcp4_c_event_node_free(NDhcp4CEventNode *node) {
                 break;
         case N_DHCP4_CLIENT_EVENT_EXTENDED:
                 node->event.extended.lease = n_dhcp4_client_lease_unref(node->event.extended.lease);
+                break;
+        case N_DHCP4_CLIENT_EVENT_LOG:
+                if (_c_unlikely_(!node->event.log.allow_steal_message)) {
+                        /* @node is the static node "nomem_node". It must not be
+                         * freed. */
+                        c_list_unlink(&node->client_link);
+                        node->is_public = false;
+                        return NULL;
+                }
+                node->event.log.message = c_free((char *)node->event.log.message);
                 break;
         default:
                 break;
@@ -368,13 +422,18 @@ _c_public_ int n_dhcp4_client_new(NDhcp4Client **clientp, NDhcp4ClientConfig *co
                 return -errno;
 
         client->fd_timer = timerfd_create(CLOCK_BOOTTIME, TFD_CLOEXEC | TFD_NONBLOCK);
+        if (client->fd_timer < 0 && errno == EINVAL)
+                client->fd_timer = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
         if (client->fd_timer < 0)
                 return -errno;
 
         ev.data.u32 = N_DHCP4_CLIENT_EPOLL_TIMER;
         r = epoll_ctl(client->fd_epoll, EPOLL_CTL_ADD, client->fd_timer, &ev);
-        if (r < 0)
+        if (r < 0) {
+                close(client->fd_timer);
+                client->fd_timer = -1;
                 return -errno;
+        }
 
         *clientp = client;
         client = NULL;
@@ -465,6 +524,78 @@ int n_dhcp4_client_raise(NDhcp4Client *client, NDhcp4CEventNode **nodep, unsigne
 }
 
 /**
+ * n_dhcp4_log_queue_fmt() - add a logging event.
+ * @client:                  the NDhcp4LogQueue to operate on
+ * @level:                   the syslog logging level
+ * @fmt:                     the format string for the message
+ * @...                      printf arguments for logging
+ *
+ * Appends a logging event to the event queue if logging is
+ * enabled and the logging level sufficiently high.
+ *
+ * Queuing a logging event might fail with out of memory.
+ * In that case, a static event will be queued that informs
+ * about lost messages.
+ */
+void n_dhcp4_log_queue_fmt(NDhcp4LogQueue *log_queue,
+                           int level,
+                           const char *fmt,
+                           ...) {
+        NDhcp4CEventNode *node;
+        char *message;
+        va_list ap;
+        int r;
+
+        if (level > log_queue->log_level)
+                return;
+
+        /* Currently the logging queue is only implemented for
+         * the client. Nobody would enable logging except a
+         * client instance. */
+        c_assert(log_queue->is_client);
+
+        if (!c_list_is_empty (&log_queue->nomem_node.client_link)) {
+                /* we have the nomem_node queued after a recent out
+                 * of memory. This disables all logging messages until
+                 * the event gets popped.
+                 *
+                 * The reason is that we can only queue the nomem_node once,
+                 * so if we now try to append another event and succeed, the
+                 * user wouldn't know which messages got dropped. Instead,
+                 * just drop them all!! */
+                return;
+        }
+
+        r = n_dhcp4_c_event_node_new(&node);
+        if (r < 0)
+                goto handle_nomem;
+
+        va_start(ap, fmt);
+        r = vasprintf(&message, fmt, ap);
+        va_end(ap);
+
+        if (r < 0) {
+                n_dhcp4_c_event_node_free(node);
+                goto handle_nomem;
+        }
+
+        node->event = (NDhcp4ClientEvent) {
+                .event = N_DHCP4_CLIENT_EVENT_LOG,
+                .log = {
+                        .level = level,
+                        .message = message,
+                        .allow_steal_message = true,
+                },
+        };
+
+        c_list_link_tail(log_queue->event_list, &node->client_link);
+        return;
+
+handle_nomem:
+        c_list_link_tail(log_queue->event_list, &log_queue->nomem_node.client_link);
+}
+
+/**
  * n_dhcp4_client_arm_timer() - update timer
  * @client:                     client to operate on
  *
@@ -472,19 +603,39 @@ int n_dhcp4_client_raise(NDhcp4Client *client, NDhcp4CEventNode **nodep, unsigne
  * must be called whenever a timeout on @client might have changed.
  */
 void n_dhcp4_client_arm_timer(NDhcp4Client *client) {
-        uint64_t timeout = 0;
+        uint64_t now, offset, timeout = 0;
         int r;
 
         if (client->current_probe)
                 n_dhcp4_client_probe_get_timeout(client->current_probe, &timeout);
 
         if (timeout != client->scheduled_timeout) {
+                /*
+                 * Across our codebase, timeouts are specified as absolute
+                 * timestamps on CLOCK_BOOTTIME. Unfortunately, there are
+                 * systems with CLOCK_BOOTTIME support, but timerfd lacks it
+                 * (in particular RHEL). Therefore, our timerfd might be on
+                 * CLOCK_MONOTONIC.
+                 * To account for this, we always schedule a relative timeout.
+                 * We fetch the current time and then calculate the offset
+                 * which we then schedule as relative timeout on the timerfd.
+                 * This works regardless which clock the timerfd runs on.
+                 * Once we no longer support CLOCK_MONOTONIC as fallback, we
+                 * can simply switch to TFD_TIMER_ABSTIME here and specify
+                 * `timeout` directly as value.
+                 */
+                now = n_dhcp4_gettime(CLOCK_BOOTTIME);
+                if (now >= timeout)
+                        offset = 1; /* 0 would disarm the timerfd */
+                else
+                        offset = timeout - now;
+
                 r = timerfd_settime(client->fd_timer,
-                                    TFD_TIMER_ABSTIME,
+                                    0,
                                     &(struct itimerspec){
                                         .it_value = {
-                                                .tv_sec = timeout / UINT64_C(1000000000),
-                                                .tv_nsec = timeout % UINT64_C(1000000000),
+                                                .tv_sec = offset / UINT64_C(1000000000),
+                                                .tv_nsec = offset % UINT64_C(1000000000),
                                         },
                                     },
                                     NULL);
@@ -639,7 +790,13 @@ _c_public_ int n_dhcp4_client_dispatch(NDhcp4Client *client) {
 
                                 /* continue normally */
                         } else if (r) {
-                                c_assert(r < _N_DHCP4_E_INTERNAL);
+                                if (r >= _N_DHCP4_E_INTERNAL) {
+                                        n_dhcp4_log(&client->log_queue,
+                                                    LOG_ERR,
+                                                    "invalid internal error code %d after dispatch",
+                                                    r);
+                                        return N_DHCP4_E_INTERNAL;
+                                }
                                 return r;
                         }
                 }
@@ -706,6 +863,8 @@ _c_public_ int n_dhcp4_client_dispatch(NDhcp4Client *client) {
  *                                   the client attempted several incompatible
  *                                   probes in parallel, then the most recent
  *                                   ones will be cancelled asynchronously.
+ * * N_DHCP4_CLIENT_EVENT_LOG:       A logging event if n_dhcp4_client_set_log_level()
+ *                                   is enabled.
  *
  * Return: 0 on success, negative error code on failure.
  */

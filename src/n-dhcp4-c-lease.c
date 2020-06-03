@@ -44,10 +44,7 @@ static int n_dhcp4_incoming_get_timeouts(NDhcp4Incoming *message, uint64_t *t1p,
         } else if (u32 == UINT32_MAX) {
                 lifetime = UINT64_MAX;
         } else {
-                if (u32 == UINT32_MAX)
-                        lifetime = UINT64_MAX;
-                else
-                        lifetime = u32 * (1000000000ULL);
+                lifetime = u32 * (1000000000ULL);
         }
 
         r = n_dhcp4_incoming_query_t2(message, &u32);
@@ -204,6 +201,32 @@ _c_public_ void n_dhcp4_client_lease_get_yiaddr(NDhcp4ClientLease *lease, struct
         NDhcp4Header *header = n_dhcp4_incoming_get_header(lease->message);
 
         yiaddr->s_addr = header->yiaddr;
+}
+
+/**
+ * n_dhcp4_client_lease_get_siaddr() - get the server IP address
+ * @lease:                      the lease to operate on
+ * @siaddr:                     return argument for the IP address
+ *
+ * Gets the server IP address cotained in the lease. Or INADDR_ANY if the
+ * lease does not contain an IP address.
+ */
+_c_public_ void n_dhcp4_client_lease_get_siaddr(NDhcp4ClientLease *lease, struct in_addr *siaddr) {
+        NDhcp4Header *header = n_dhcp4_incoming_get_header(lease->message);
+
+        siaddr->s_addr = header->siaddr;
+}
+
+/**
+ * n_dhcp4_client_lease_get_basetime() - get the timestamp when the lease was received.
+ * @lease:                      the lease to operate on
+ * @ns_basetimep:               return argument for the base time in nano seconds
+ *
+ * Gets the timestamp when the lease was received in CLOCK_BOOTTIME. This
+ * is also the base timestamp for the expiration of the lifetime and t1/t2.
+ */
+_c_public_ void n_dhcp4_client_lease_get_basetime(NDhcp4ClientLease *lease, uint64_t *ns_basetimep) {
+        *ns_basetimep = lease->message->userdata.base_time;
 }
 
 /**

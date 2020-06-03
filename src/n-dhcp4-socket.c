@@ -5,16 +5,17 @@
 #include <c-stdaux.h>
 #include <errno.h>
 #include <linux/filter.h>
+#include <sys/socket.h> /* needed by linux/if.h */
+#include <linux/if.h>
 #include <linux/if_packet.h>
+#include <linux/netdevice.h>
 #include <linux/udp.h>
-#include <net/if.h>
 #include <netinet/ip.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include "n-dhcp4-private.h"
 #include "util/packet.h"
 #include "util/socket.h"
@@ -192,6 +193,10 @@ int n_dhcp4_c_socket_udp_new(int *sockfdp,
 
         sockfd = socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
         if (sockfd < 0)
+                return -errno;
+
+        r = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        if (r < 0)
                 return -errno;
 
         r = setsockopt(sockfd, SOL_SOCKET, SO_ATTACH_FILTER, &fprog, sizeof(fprog));
