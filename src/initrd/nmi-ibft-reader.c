@@ -185,12 +185,12 @@ ip_setting_add_from_block (GHashTable *nic,
 		return FALSE;
 	}
 
-	if (   (g_strcmp0 (s_origin, "3") == 0 && family == AF_INET)
-	    || (g_strcmp0 (s_origin, "4") == 0 && family == AF_INET)) {
+	if (   (nm_streq0 (s_origin, "3") && family == AF_INET)
+	    || (nm_streq0 (s_origin, "4") && family == AF_INET)) {
 		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
-	} else if (g_strcmp0 (s_origin, "3") == 0 && family == AF_INET6) {
+	} else if (nm_streq0 (s_origin, "3") && family == AF_INET6) {
 		method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
-	} else if (g_strcmp0 (s_origin, "4") == 0 && family == AF_INET6) {
+	} else if (nm_streq0 (s_origin, "4") && family == AF_INET6) {
 		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 	} else if (family == AF_INET) {
 		method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;

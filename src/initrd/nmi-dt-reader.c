@@ -156,7 +156,7 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 
 	local_hwaddr = dt_get_hwaddr_property (base, bootpath, "local-mac-address");
 	hwaddr = dt_get_hwaddr_property (base, bootpath, "mac-address");
-	if (g_strcmp0 (local_hwaddr, hwaddr) == 0)
+	if (nm_streq0 (local_hwaddr, hwaddr))
 		nm_clear_g_free (&local_hwaddr);
 
 	tokens = g_strsplit (path, ",", 0);
@@ -169,10 +169,10 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 
 	for (i = 0; tokens[i]; i++) {
 		/* Skip these. They have magical meaning for OpenFirmware. */
-		if (   strcmp (tokens[i], "nfs") == 0
-		    || strcmp (tokens[i], "last") == 0)
+		if (NM_IN_STRSET (tokens[i], "nfs",
+		                             "last"))
 			continue;
-		if (strcmp (tokens[i], "promiscuous") == 0) {
+		if (nm_streq (tokens[i], "promiscuous")) {
 			/* Ignore. */
 			continue;
 		}
@@ -201,9 +201,9 @@ nmi_dt_reader_parse (const char *sysfs_dir)
 	 */
 
 	for (; tokens[i]; i++) {
-		if (   strcmp (tokens[i], "bootp") == 0
-		    || strcmp (tokens[i], "dhcp") == 0
-		    || strcmp (tokens[i], "rarp") == 0) {
+		if (NM_IN_STRSET (tokens[i], "bootp",
+		                             "dhcp",
+		                             "rarp")) {
 			bootp = TRUE;
 			continue;
 		}
