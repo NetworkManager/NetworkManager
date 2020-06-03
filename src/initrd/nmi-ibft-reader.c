@@ -17,7 +17,6 @@
 #include <unistd.h>
 
 #include "nm-core-internal.h"
-#include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
 /*****************************************************************************/
