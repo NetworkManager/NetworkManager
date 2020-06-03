@@ -1,6 +1,44 @@
 So you're interested in hacking on NetworkManager?  Here's some cool
 stuff you could do...
 
+* Use netlink API instead of ioctl based ethtool.
+
+NetworkManager uses ethtool API to set/obtain certain settings of network
+devices. This is an ioctl based API and implmented in "src/platform/nm-platform-utils.c".
+Recently, kernel got a netlink API for the same functionality
+(https://www.kernel.org/doc/html/latest/networking/ethtool-netlink.html).
+NetworkManager should use this API if present, and fallback to the old API
+when running on older kernels. The benefit if this is that netlink provides
+notifications when settings change. The ethtool command line tool
+also implements this API, however it is under an incompatible license,
+so better don't look and make sure not to use the code.
+
+
+* Add 802-1x capability to nmtui.
+
+Add dialogs to nmtui for 802-1x. This will be useful for ethernet (with 802-1x
+port authentication), enterprise Wi-Fi and MACSec. From the GUI and dialog design,
+possibly get inspired by nm-connection-editor.
+
+
+* Add Azure support to nm-cloud-setup.
+
+nm-cloud-setup currently only works for EC2 (and only for IPv4). Add support for Azure
+cloud. See for example SUSE's cloud-netconfig which supports Azure
+(https://github.com/SUSE-Enceladus/cloud-netconfig,
+https://www.suse.com/c/multi-nic-cloud-netconfig-ec2-azure/). Note that cloud-netconfig
+is under an incompatible license, so be careful not to reuse any code. But that would
+anyway be almost impossible, because one is written in bash and the other in C.
+
+
+* Improve our gitlab-ci integration.
+
+Currently our .gitlab-ci starts various base containers and first installs
+the necessary dependencies. That takes time and consumes bandwidth, we should
+instead use more suitable containers. We should instead use ci-templates from
+https://gitlab.freedesktop.org/freedesktop/ci-templates.
+
+
 * Ethernet Network Auto-detection
 
 There are various methods we can use to autodetect which wired network connection
