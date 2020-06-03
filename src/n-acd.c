@@ -127,8 +127,10 @@ static int n_acd_socket_new(int *fdp, int fd_bpf_prog, NAcdConfig *config) {
 
         if (fd_bpf_prog >= 0) {
                 r = setsockopt(s, SOL_SOCKET, SO_ATTACH_BPF, &fd_bpf_prog, sizeof(fd_bpf_prog));
-                if (r < 0)
-                        return -c_errno();
+                if (r < 0) {
+                        r = -c_errno();
+                        goto error;
+                }
         }
 
         r = bind(s, (struct sockaddr *)&address, sizeof(address));
@@ -326,6 +328,7 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
 _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         _c_cleanup_(n_acd_unrefp) NAcd *acd = NULL;
         _c_cleanup_(c_closep) int fd_bpf_prog = -1;
+        struct epoll_event eevent;
         int r;
 
         if (config->ifindex <= 0 ||
@@ -368,19 +371,19 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         if (r)
                 return r;
 
-        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->timer.fd,
-                      &(struct epoll_event){
-                              .events = EPOLLIN,
-                              .data.u32 = N_ACD_EPOLL_TIMER,
-                      });
+        eevent = (struct epoll_event){
+                .events = EPOLLIN,
+                .data.u32 = N_ACD_EPOLL_TIMER,
+        };
+        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->timer.fd, &eevent);
         if (r < 0)
                 return -c_errno();
 
-        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket,
-                      &(struct epoll_event){
-                              .events = EPOLLIN,
-                              .data.u32 = N_ACD_EPOLL_SOCKET,
-                      });
+        eevent = (struct epoll_event){
+                .events = EPOLLIN,
+                .data.u32 = N_ACD_EPOLL_SOCKET,
+        };
+        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket, &eevent);
         if (r < 0)
                 return -c_errno();
 
