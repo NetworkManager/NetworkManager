@@ -7345,7 +7345,7 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMActiveConnection *ac;
 	gboolean has_time = FALSE;
-	guint64 t;
+	guint64 t = 0;
 
 	c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 		if (nm_active_connection_get_state (ac) != NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
