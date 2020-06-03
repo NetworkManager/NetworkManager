@@ -1409,6 +1409,54 @@ update_complete (NMSettingsConnection *self,
 	g_slice_free (UpdateInfo, info);
 }
 
+static int
+_autoconnect_retries_initial (NMSettingsConnection *self)
+{
+	NMSettingConnection *s_con;
+	int retries = -1;
+
+	s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (self));
+	if (s_con)
+		retries = nm_setting_connection_get_autoconnect_retries (s_con);
+
+	/* -1 means 'default' */
+	if (retries == -1)
+		retries = nm_config_data_get_autoconnect_retries_default (NM_CONFIG_GET_DATA);
+
+	/* 0 means 'forever', which is translated to a retry count of -1 */
+	if (retries == 0)
+		retries = AUTOCONNECT_RETRIES_FOREVER;
+
+	nm_assert (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
+	return retries;
+}
+
+static void
+_autoconnect_retries_set (NMSettingsConnection *self,
+                          int retries,
+                          gboolean is_reset)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	g_return_if_fail (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
+
+	if (priv->autoconnect_retries != retries) {
+		_LOGT ("autoconnect: retries set %d%s", retries,
+		       is_reset ? " (reset)" : "");
+		priv->autoconnect_retries = retries;
+	}
+
+	if (retries)
+		priv->autoconnect_retries_blocked_until = 0;
+	else {
+		/* NOTE: the blocked time must be identical for all connections, otherwise
+		 * the tracking of resetting the retry count in NMPolicy needs adjustment
+		 * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
+		 * the next-timeout every time a connection gets blocked). */
+		priv->autoconnect_retries_blocked_until = nm_utils_get_monotonic_timestamp_sec () + AUTOCONNECT_RESET_RETRIES_TIMER;
+	}
+}
+
 static void
 update_auth_cb (NMSettingsConnection *self,
                 GDBusMethodInvocation *context,
@@ -1444,6 +1492,12 @@ update_auth_cb (NMSettingsConnection *self,
 			 * they're in the main connection.
 			 */
 			update_agent_secrets_cache (self, info->new_settings);
+
+			/* New secrets, allow autoconnection again */
+			if (   nm_settings_connection_autoconnect_blocked_reason_set (self, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, FALSE)
+			    && !nm_settings_connection_autoconnect_blocked_reason_get (self, 0)) {
+				nm_settings_connection_autoconnect_retries_reset (self);
+			}
 		}
 	}
 
@@ -2327,54 +2381,6 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
 }
 
 /*****************************************************************************/
-
-static int
-_autoconnect_retries_initial (NMSettingsConnection *self)
-{
-	NMSettingConnection *s_con;
-	int retries = -1;
-
-	s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (self));
-	if (s_con)
-		retries = nm_setting_connection_get_autoconnect_retries (s_con);
-
-	/* -1 means 'default' */
-	if (retries == -1)
-		retries = nm_config_data_get_autoconnect_retries_default (NM_CONFIG_GET_DATA);
-
-	/* 0 means 'forever', which is translated to a retry count of -1 */
-	if (retries == 0)
-		retries = AUTOCONNECT_RETRIES_FOREVER;
-
-	nm_assert (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
-	return retries;
-}
-
-static void
-_autoconnect_retries_set (NMSettingsConnection *self,
-                          int retries,
-                          gboolean is_reset)
-{
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	g_return_if_fail (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
-
-	if (priv->autoconnect_retries != retries) {
-		_LOGT ("autoconnect: retries set %d%s", retries,
-		       is_reset ? " (reset)" : "");
-		priv->autoconnect_retries = retries;
-	}
-
-	if (retries)
-		priv->autoconnect_retries_blocked_until = 0;
-	else {
-		/* NOTE: the blocked time must be identical for all connections, otherwise
-		 * the tracking of resetting the retry count in NMPolicy needs adjustment
-		 * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
-		 * the next-timeout every time a connection gets blocked). */
-		priv->autoconnect_retries_blocked_until = nm_utils_get_monotonic_timestamp_sec () + AUTOCONNECT_RESET_RETRIES_TIMER;
-	}
-}
 
 /**
  * nm_settings_connection_autoconnect_retries_get:
