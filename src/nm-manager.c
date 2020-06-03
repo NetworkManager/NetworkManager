@@ -4717,8 +4717,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			}
 
 			if (   nm_active_connection_get_activation_reason (active) == NM_ACTIVATION_REASON_AUTOCONNECT
-			    && nm_settings_connection_autoconnect_blocked_reason_get (parent_con,
-			                                                              NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST)) {
+			    && NM_FLAGS_HAS (nm_settings_connection_autoconnect_blocked_reason_get (parent_con),
+			                                                                            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST)) {
 				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 				             "the parent connection of %s cannot autoactivate because it is blocked due to user request",
 				             nm_device_get_iface (device));

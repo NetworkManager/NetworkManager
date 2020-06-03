@@ -1495,9 +1495,8 @@ update_auth_cb (NMSettingsConnection *self,
 
 			/* New secrets, allow autoconnection again */
 			if (   nm_settings_connection_autoconnect_blocked_reason_set (self, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, FALSE)
-			    && !nm_settings_connection_autoconnect_blocked_reason_get (self, 0)) {
+			    && !nm_settings_connection_autoconnect_blocked_reason_get (self))
 				nm_settings_connection_autoconnect_retries_reset (self);
-			}
 		}
 	}
 
@@ -2438,9 +2437,9 @@ NM_UTILS_FLAGS2STR_DEFINE (_autoconnect_blocked_reason_to_string, NMSettingsAuto
 );
 
 NMSettingsAutoconnectBlockedReason
-nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self, NMSettingsAutoconnectBlockedReason mask)
+nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason & (mask ?: NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL);
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason;
 }
 
 gboolean
