@@ -10,12 +10,27 @@ die() {
     exit 1
 }
 
+echo_color() {
+    echo -e -n '\033[0;36m'
+    echo "$@"
+    echo -e -n '\033[0m'
+}
+
 die_usage() {
     echo "FAIL: $@"
     echo
     echo "Usage:"
     echo "  $0 [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup]"
     exit 1
+}
+
+do_command() {
+    echo -n "COMMAND: "
+    echo_color -n "$@"
+    echo
+    if [ "$DRY_RUN" = 0 ]; then
+        "$@"
+    fi
 }
 
 parse_version() {
@@ -265,30 +280,25 @@ if [ -n "$BUILD_TAG" ]; then
 
     RELEASE_FILE="NetworkManager-${BUILD_TAG%-dev}.tar.xz"
 
-    test -f "./$RELEASE_FILE" || die "release file \"./$RELEASE_FILE\" not found"
+    test -f "./$RELEASE_FILE" \
+    && test -f "./$RELEASE_FILE.sig" \
+    || die "release file \"./$RELEASE_FILE\" not found"
+
+    cp "./$RELEASE_FILE" "./$RELEASE_FILE.sig" /tmp || die "failed to copy release tarball to /tmp"
+
+    git clean -fdx
 fi
 
 if [ -n "$RELEASE_FILE" ]; then
-    if [ $DRY_RUN = 1 ]; then
-        echo "COMMAND: rsync -va --append-verify -P \"./$RELEASE_FILE\" master.gnome.org:"
-        echo "COMMAND: ssh master.gnome.org ftpadmin install \"$RELEASE_FILE\""
-    else
-        rsync -va --append-verify -P "./$RELEASE_FILE" master.gnome.org: &&
-        rsync -va --append-verify -P "./$RELEASE_FILE" master.gnome.org: || die "failed to rsync \"$RELEASE_FILE\""
-        ssh master.gnome.org ftpadmin install "$RELEASE_FILE"
-    fi
+    do_command rsync -va --append-verify -P "/tmp/$RELEASE_FILE" master.gnome.org: || die "failed to rsync \"/tmp/$RELEASE_FILE\""
+    do_command ssh master.gnome.org ftpadmin install "$RELEASE_FILE" || die "ftpadmin install failed"
 fi
 
-git checkout "$CUR_BRANCH" || die "cannot checkout $CUR_BRANCH"
-git merge --ff-only "$TMP_BRANCH" || die "cannot git merge --ff-only $TMP_BRANCH"
+git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 
-if [ $DRY_RUN = 1 ]; then
-    echo "COMMAND: git push \"$ORIGIN\" \"${TAGS[@]}\" \"$CUR_BRANCH\""
-else
-    git push "$ORIGIN" "${TAGS[@]}" "$CUR_BRANCH"
-fi
+do_command git push "$ORIGIN" "${TAGS[@]}" "$CUR_BRANCH"
 
-if [ $DRY_RUN != 1 ]; then
+if [ "$DRY_RUN" = 0 ]; then
     CLEANUP_REFS=()
     CLEANUP_CHECKOUT_BRANCH=
 fi
