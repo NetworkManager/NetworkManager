@@ -27,7 +27,7 @@
       </refmeta>
       <refnamediv>
         <refname>nm-settings-dbus</refname>
-        <refpurpose>Description of settings and properties of NetworkManager connection profiles</refpurpose>
+        <refpurpose>Description of settings and properties of NetworkManager connection profiles on the D-Bus API</refpurpose>
       </refnamediv>
 
       <refsect1 id='description'><title>Description</title>
@@ -122,10 +122,14 @@
       </refsect1>
 
       <refsect1 id='see_also'><title>See Also</title>
-        <para><link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+        <para>
+        <link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
         <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
         <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
-        <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></para>
+        <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+        </para>
       </refsect1>
     </refentry>
   </xsl:template>
