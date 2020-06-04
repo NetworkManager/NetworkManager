@@ -69,7 +69,6 @@ if enable_introspection
       nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,
     ],
-    depends: libnm_gir,
   )
 
   name = 'nmcli'
@@ -81,10 +80,10 @@ if enable_introspection
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
+      generate_docs_nm_settings_nmcli_xml,
       nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,
     ],
-    depends: libnm_gir,
   )
 
   nm_settings_docs_xml = {

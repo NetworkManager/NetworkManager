@@ -157,6 +157,9 @@ test-*.trs
 /libnm/tests/test-remote-settings-client
 /libnm/tests/test-secret-agent
 
+/clients/cli/generate-docs-nm-settings-nmcli
+/clients/cli/generate-docs-nm-settings-nmcli.xml
+
 /m4/codeset.m4
 /m4/gettext.m4
 /m4/glibc2.m4

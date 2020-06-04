@@ -1559,6 +1559,7 @@ libnm/libnm.typelib: libnm/libnm.gir
 INTROSPECTION_GIRS += libnm/NM-1.0.gir
 
 libnm_noinst_data = \
+	clients/cli/generate-docs-nm-settings-nmcli.xml \
 	libnm/nm-property-infos-dbus.xml \
 	libnm/nm-property-infos-ifcfg-rh.xml \
 	libnm/nm-property-infos-keyfile.xml \
@@ -1569,6 +1570,9 @@ libnm_noinst_data = \
 	$(NULL)
 
 noinst_DATA += $(libnm_noinst_data)
+
+clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli
+	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > $@
 
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
@@ -1584,6 +1588,9 @@ libnm/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py libn
 	$(srcdir)/tools/generate-docs-nm-settings-docs-gir.py \
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
+
+man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml libnm/nm-property-infos-nmcli.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,3,$^)
 
 man/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
@@ -4558,6 +4565,43 @@ uninstall-hook-nmcli:
 uninstall_hook += uninstall-hook-nmcli
 
 endif
+
+###############################################################################
+
+noinst_PROGRAMS += clients/cli/generate-docs-nm-settings-nmcli
+
+clients_cli_generate_docs_nm_settings_nmcli_SOURCES = \
+	clients/cli/generate-docs-nm-settings-nmcli.c \
+	$(NULL)
+
+clients_cli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
+	-I$(srcdir)/clients/common \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""nmcli"\" \
+	$(NULL)
+
+clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
+	clients/common/libnmc.la \
+	clients/common/libnmc-base.la \
+	libnm/nm-libnm-aux/libnm-libnm-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
+	libnm/libnm.la \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+clients_cli_generate_docs_nm_settings_nmcli_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(libnm_lib_h_pub_mkenums)
+
+###############################################################################
 
 EXTRA_DIST += \
 	clients/cli/nmcli-completion \
