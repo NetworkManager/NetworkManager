@@ -12,7 +12,7 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:template match="nm-keyfile-docs">
+  <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings-keyfile">
       <refentryinfo>
         <title>nm-settings-keyfile</title>

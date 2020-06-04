@@ -107,7 +107,7 @@ output_xml_file = sys.argv[1]
 
 xml_roots = list([ET.parse(f).getroot() for f in sys.argv[2:]])
 
-assert(all([root.tag.startswith('nm-') for root in xml_roots]))
+assert(all([root.tag == 'nm-setting-docs' for root in xml_roots]))
 
 settings_roots = list([node_to_dict(root, 'setting', 'name') for root in xml_roots])
 

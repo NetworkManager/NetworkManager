@@ -8,7 +8,7 @@
 
   <!-- We need to strip whitespaces so that position() function counts correctly.
        http://www.oxygenxml.com/archives/xsl-list/200305/msg00430.html -->
-  <xsl:strip-space elements="nm-ifcfg-rh-docs setting" />
+  <xsl:strip-space elements="nm-setting-docs setting" />
 
   <xsl:output
       method="xml"
@@ -16,7 +16,7 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:template match="nm-ifcfg-rh-docs">
+  <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings-ifcfg-rh">
       <refentryinfo>
         <title>nm-settings-ifcfg-rh</title>
