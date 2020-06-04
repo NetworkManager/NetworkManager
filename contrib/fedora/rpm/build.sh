@@ -21,6 +21,8 @@
 #   SOURCE_CONFIG_CONNECTIVITY_FEDORA=
 #   SOURCE_CONFIG_CONNECTIVITY_REDHAT=
 #   SOURCE_SYSCTL_RP_FILTER_REDHAT=
+#   SIGN_SOURCE=
+#   DO_RELEASE=
 
 die() {
     echo "$*" >&2
@@ -107,6 +109,8 @@ USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")" || die "invalid \$SPECFILE argument"
 SOURCE_FROM_GIT="$(coerce_bool "$SOURCE_FROM_GIT" "")"
 SOURCE="$(abs_path "$SOURCE")" || die "invalid \$SOURCE argument"
+DO_RELEASE="$(coerce_bool "$DO_RELEASE" "0")"
+SIGN_SOURCE="$(coerce_bool "$SIGN_SOURCE" "$DO_RELEASE")"
 if [ -n "$SOURCE" ]; then
     [[ "$SOURCE_FROM_GIT" == 1 ]] && die "Cannot set both \$SOURCE and \$SOURCE_FROM_GIT=1"
     SOURCE_FROM_GIT=0
@@ -143,6 +147,8 @@ LOG "COMMIT=$COMMIT"
 LOG "USERNAME=$USERNAME"
 LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
+LOG "SIGN_SOURCE=$SIGN_SOURCE"
+LOG "DO_RELEASE=$DO_RELEASE"
 LOG "SOURCE_FROM_GIT=$SOURCE_FROM_GIT"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_CONFIG_SERVER=$SOURCE_CONFIG_SERVER"
@@ -198,6 +204,13 @@ esac
 
 rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARGS || die "ERROR: rpmbuild FAILED"
 
+LS_EXTRA=()
+
+if [ "$SIGN_SOURCE" = 1 ]; then
+    gpg --output "$SOURCE.sig" --armor --detach-sig "$SOURCE" || die "ERROR: failure to sign $SOURCE"
+    LS_EXTRA+=("$SOURCE.sig")
+fi
+
 ln -snf "$TEMPBASE" ./latest
 TEMP_LATEST="$(readlink -f .)"/latest
 
@@ -211,6 +224,7 @@ LOG "Result:"
 ls -dla \
     "$TEMP_LATEST" \
     "$SOURCE" \
+    "${LS_EXTRA[@]}" \
     "$(dirname "$TEMP_LATEST")/$TEMPBASE/" \
     "$TEMP_LATEST"/RPMS/*/ \
     "$TEMP_LATEST"/RPMS/*/*.rpm \
