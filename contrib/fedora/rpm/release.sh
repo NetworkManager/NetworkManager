@@ -11,7 +11,9 @@ die() {
 }
 
 echo_color() {
-    echo -e -n '\033[0;36m'
+    local color="$1"
+    shift
+    echo -e -n "\033[0;${color}m"
     echo "$@"
     echo -e -n '\033[0m'
 }
@@ -25,8 +27,12 @@ die_usage() {
 }
 
 do_command() {
+    local color=36
+    if [ "$DRY_RUN" = 0 ]; then
+        color=31
+    fi
     echo -n "COMMAND: "
-    echo_color -n "$@"
+    echo_color $color -n "$@"
     echo
     if [ "$DRY_RUN" = 0 ]; then
         "$@"
@@ -83,9 +89,10 @@ CLEANUP_CHECKOUT_BRANCH=
 CLEANUP_REFS=()
 cleanup() {
     if [ $DO_CLEANUP = 1 ]; then
+        [ -n "$CLEANUP_CHECKOUT_BRANCH" ] && git checkout -f "$CLEANUP_CHECKOUT_BRANCH"
         for c in "${CLEANUP_REFS[@]}"; do
+            echo "delete reference. Restore with $(echo_color 36 -n git update-ref \"$c\" $(git rev-parse "$c"))"
             git update-ref -d "$c"
-            [ -n "$CLEANUP_CHECKOUT_BRANCH" ] && git checkout -f "$CLEANUP_CHECKOUT_BRANCH"
         done
     fi
 }
