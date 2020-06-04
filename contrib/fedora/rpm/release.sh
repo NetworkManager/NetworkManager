@@ -14,7 +14,7 @@ die_usage() {
     echo "FAIL: $@"
     echo
     echo "Usage:"
-    echo "  $0 [minor|devel|rc] [--no-test] [--no-find-backports] [--no-cleanup]"
+    echo "  $0 [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup]"
     exit 1
 }
 
@@ -103,7 +103,7 @@ while [ "$#" -ge 1 ]; do
     shift
     if [ -z "$RELEASE_MODE" ]; then
         case "$A" in
-            minor|devel|rc)
+            devel|rc1|rc|major|minor)
                 RELEASE_MODE="$A"
                 ;;
             *)
@@ -147,15 +147,21 @@ else
     fi
 fi
 
+RC_VERSION=
 case "$RELEASE_MODE" in
     minor)
         number_is_even "${VERSION_ARR[1]}" &&
         number_is_odd  "${VERSION_ARR[2]}" || die "cannot do minor release on top of version $VERSION_STR"
         [ "$CUR_BRANCH" != master ] || die "cannot do a minor release on master"
         ;;
-    devel)
+    devel|rc)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do devel release on top of version $VERSION_STR"
-        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        if [ "$RELEASE_MODE" = devel ]; then
+            [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        else
+            [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
+            RC_VERSION="$((${VERSION_ARR[2]} - 90))"
+        fi
         [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
         ;;
     *)
@@ -231,6 +237,19 @@ case "$RELEASE_MODE" in
         TAGS+=("$b-dev")
         CLEANUP_REFS+=("refs/tags/$b-dev")
         BUILD_TAG="$b-dev"
+        ;;
+    rc)
+        git checkout -B "$TMP_BRANCH"
+        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
+        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
+        t="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc$RC_VERSION"
+        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
+        git commit -m "release: bump version to $b ($t) (development)" -a || die "failed to commit rc version bump"
+
+        git tag -s -a -m "Tag $b ($t) (development)" "$t" HEAD || die "failed to tag release"
+        TAGS+=("$t")
+        CLEANUP_REFS+=("refs/tags/$t")
+        BUILD_TAG="$t"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
