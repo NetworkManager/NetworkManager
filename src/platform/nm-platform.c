@@ -41,6 +41,14 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
 
+G_STATIC_ASSERT (_nm_alignof (NMPlatformIPRoute) == _nm_alignof (NMPlatformIP4Route));
+G_STATIC_ASSERT (_nm_alignof (NMPlatformIPRoute) == _nm_alignof (NMPlatformIP6Route));
+G_STATIC_ASSERT (_nm_alignof (NMPlatformIPRoute) == _nm_alignof (NMPlatformIPXRoute));
+
+G_STATIC_ASSERT (_nm_alignof (NMPlatformIPAddress) == _nm_alignof (NMPlatformIP4Address));
+G_STATIC_ASSERT (_nm_alignof (NMPlatformIPAddress) == _nm_alignof (NMPlatformIP6Address));
+G_STATIC_ASSERT (_nm_alignof (NMPlatformIPAddress) == _nm_alignof (NMPlatformIPXAddress));
+
 /*****************************************************************************/
 
 G_STATIC_ASSERT (sizeof ( ((NMPLinkAddress *) NULL)->data ) == NM_UTILS_HWADDR_LEN_MAX);
