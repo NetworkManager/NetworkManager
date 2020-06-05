@@ -97,18 +97,18 @@ G_DEFINE_TYPE (NMLldpListener, nm_lldp_listener, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 typedef struct {
-	guint8 chassis_id_type;
-	guint8 port_id_type;
+	GVariant *variant;
 	char *chassis_id;
 	char *port_id;
 
-	struct ether_addr destination_address;
-
-	bool valid:1;
-
 	LldpAttrData attrs[_LLDP_ATTR_ID_COUNT];
 
-	GVariant *variant;
+	struct ether_addr destination_address;
+
+	guint8 chassis_id_type;
+	guint8 port_id_type;
+
+	bool valid:1;
 } LldpNeighbor;
 
 /*****************************************************************************/
@@ -328,30 +328,31 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 	LldpAttrId attr_id;
 	LldpAttrType attr_type;
 
-	if (neighbor) {
-		g_free (neighbor->chassis_id);
-		g_free (neighbor->port_id);
-		for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
-			attr_type = neighbor->attrs[attr_id].attr_type;
+	if (!neighbor)
+		return;
 
-			switch (attr_type) {
-			case LLDP_ATTR_TYPE_STRING:
-				g_free (neighbor->attrs[attr_id].v_string);
-				break;
-			case LLDP_ATTR_TYPE_VARDICT:
-				g_variant_unref (neighbor->attrs[attr_id].v_variant);
-				break;
-			case LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS:
-				nm_c_list_elem_free_all (&neighbor->attrs[attr_id].v_variant_list,
-				                         (GDestroyNotify) g_variant_unref);
-				break;
-			default:
-				;
-			}
+	g_free (neighbor->chassis_id);
+	g_free (neighbor->port_id);
+	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
+		attr_type = neighbor->attrs[attr_id].attr_type;
+
+		switch (attr_type) {
+		case LLDP_ATTR_TYPE_STRING:
+			g_free (neighbor->attrs[attr_id].v_string);
+			break;
+		case LLDP_ATTR_TYPE_VARDICT:
+			g_variant_unref (neighbor->attrs[attr_id].v_variant);
+			break;
+		case LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS:
+			nm_c_list_elem_free_all (&neighbor->attrs[attr_id].v_variant_list,
+			                         (GDestroyNotify) g_variant_unref);
+			break;
+		default:
+			;
 		}
-		nm_clear_pointer (&neighbor->variant, g_variant_unref);
-		g_slice_free (LldpNeighbor, neighbor);
 	}
+	nm_g_variant_unref (neighbor->variant);
+	nm_g_slice_free (neighbor);
 }
 
 static void
@@ -503,9 +504,11 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		return NULL;
 	}
 
-	neigh = g_slice_new0 (LldpNeighbor);
-	neigh->chassis_id_type = chassis_id_type;
-	neigh->port_id_type = port_id_type;
+	neigh = g_slice_new (LldpNeighbor);
+	*neigh = (LldpNeighbor) {
+		.chassis_id_type = chassis_id_type,
+		.port_id_type    = port_id_type,
+	};
 
 	r = sd_lldp_neighbor_get_destination_address (neighbor_sd, &neigh->destination_address);
 	if (r < 0) {
@@ -842,12 +845,15 @@ data_changed_schedule (NMLldpListener *self)
 	gint64 now;
 
 	now = nm_utils_get_monotonic_timestamp_nsec ();
-	if (now >= priv->ratelimit_next) {
-		nm_clear_g_source (&priv->ratelimit_id);
-		priv->ratelimit_next = now + MIN_UPDATE_INTERVAL_NS;
-		data_changed_notify (self, priv);
-	} else if (!priv->ratelimit_id)
-		priv->ratelimit_id = g_timeout_add (NM_UTILS_NSEC_TO_MSEC_CEIL (priv->ratelimit_next - now), data_changed_timeout, self);
+	if (now < priv->ratelimit_next) {
+		if (!priv->ratelimit_id)
+			priv->ratelimit_id = g_timeout_add (NM_UTILS_NSEC_TO_MSEC_CEIL (priv->ratelimit_next - now), data_changed_timeout, self);
+		return;
+	}
+
+	nm_clear_g_source (&priv->ratelimit_id);
+	priv->ratelimit_next = now + MIN_UPDATE_INTERVAL_NS;
+	data_changed_notify (self, priv);
 }
 
 static void
@@ -858,7 +864,6 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 	LldpNeighbor *neigh_old;
 	gs_free_error GError *parse_error = NULL;
 	GError **p_parse_error;
-	gboolean changed = FALSE;
 
 	g_return_if_fail (NM_IS_LLDP_LISTENER (self));
 
@@ -886,9 +891,9 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 			       NM_PRINT_FMT_QUOTED (parse_error, " (failed to parse: ", parse_error->message, ")", ""));
 
 			g_hash_table_remove (priv->lldp_neighbors, neigh_old);
-			changed = TRUE;
-			goto done;
-		} else if (lldp_neighbor_equal (neigh_old, neigh))
+			goto handle_changed;
+		}
+		if (lldp_neighbor_equal (neigh_old, neigh))
 			return;
 	} else if (!neighbor_valid) {
 		if (parse_error)
@@ -907,12 +912,10 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 	        neigh_old ? "update" : "new",
 	        LOG_NEIGH_ARG (neigh));
 
-	changed = TRUE;
 	g_hash_table_add (priv->lldp_neighbors, g_steal_pointer (&neigh));
 
-done:
-	if (changed)
-		data_changed_schedule (self);
+handle_changed:
+	data_changed_schedule (self);
 }
 
 static void
