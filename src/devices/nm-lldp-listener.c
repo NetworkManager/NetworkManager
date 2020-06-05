@@ -388,6 +388,10 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 			if (!nm_streq (a->attrs[attr_id].v_string, b->attrs[attr_id].v_string))
 				return FALSE;
 			break;
+		case LLDP_ATTR_TYPE_VARDICT:
+			if (!g_variant_equal (a->attrs[attr_id].v_variant, b->attrs[attr_id].v_variant))
+				return FALSE;
+			break;
 		case LLDP_ATTR_TYPE_ARRAY_OF_VARDICTS: {
 			NMCListElem *itr_a, *itr_b;
 
