@@ -860,6 +860,7 @@ typedef enum /*< flags >*/ {
 #undef NM_AVAILABLE_IN_1_8
 #endif
 
+#define NM_LLDP_ATTR_RAW                     "raw"
 #define NM_LLDP_ATTR_DESTINATION             "destination"
 #define NM_LLDP_ATTR_CHASSIS_ID_TYPE         "chassis-id-type"
 #define NM_LLDP_ATTR_CHASSIS_ID              "chassis-id"

@@ -108,6 +108,8 @@ typedef struct {
 	char *chassis_id;
 	char *port_id;
 
+	sd_lldp_neighbor *neighbor_sd;
+
 	LldpAttrData attrs[_LLDP_ATTR_ID_COUNT];
 
 	struct ether_addr destination_address;
@@ -326,6 +328,27 @@ _lldp_attr_add_variant (LldpAttrData *pdata, LldpAttrId attr_id, GVariant *varia
 
 /*****************************************************************************/
 
+static void
+lldp_neighbor_get_raw (LldpNeighbor *neigh,
+                       const guint8 **out_raw_data,
+                       gsize *out_raw_len)
+{
+	gconstpointer raw_data;
+	gsize raw_len;
+	int r;
+
+	nm_assert (neigh);
+
+	r = sd_lldp_neighbor_get_raw (neigh->neighbor_sd, &raw_data, &raw_len);
+
+	nm_assert (r >= 0);
+	nm_assert (raw_data);
+	nm_assert (raw_len > 0);
+
+	*out_raw_data = raw_data;
+	*out_raw_len = raw_len;
+}
+
 static guint
 lldp_neighbor_id_hash (gconstpointer ptr)
 {
@@ -400,6 +423,7 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 		}
 	}
 	nm_g_variant_unref (neighbor->variant);
+	sd_lldp_neighbor_unref (neighbor->neighbor_sd);
 	nm_g_slice_free (neighbor);
 }
 
@@ -412,56 +436,30 @@ lldp_neighbor_freep (LldpNeighbor **ptr)
 static gboolean
 lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 {
-	LldpAttrId attr_id;
-	guint i;
+	const guint8 *raw_data_a;
+	const guint8 *raw_data_b;
+	gsize raw_len_a;
+	gsize raw_len_b;
+	gboolean equal;
 
-	nm_assert (a);
-	nm_assert (b);
+	if (a->neighbor_sd == b->neighbor_sd)
+		return TRUE;
 
-	if (   a->chassis_id_type != b->chassis_id_type
-	    || a->port_id_type != b->port_id_type
-	    || ether_addr_equal (&a->destination_address, &b->destination_address)
-	    || !nm_streq0 (a->chassis_id, b->chassis_id)
-	    || !nm_streq0 (a->port_id, b->port_id))
+	lldp_neighbor_get_raw (a, &raw_data_a, &raw_len_a);
+	lldp_neighbor_get_raw (b, &raw_data_b, &raw_len_b);
+
+	if (raw_len_a != raw_len_b)
 		return FALSE;
 
-	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
-		if (a->attrs[attr_id].attr_type != b->attrs[attr_id].attr_type)
-			return FALSE;
-		switch (a->attrs[attr_id].attr_type) {
-		case LLDP_ATTR_TYPE_UINT32:
-			if (a->attrs[attr_id].v_uint32 != b->attrs[attr_id].v_uint32)
-				return FALSE;
-			break;
-		case LLDP_ATTR_TYPE_STRING:
-			if (!nm_streq (a->attrs[attr_id].v_string, b->attrs[attr_id].v_string))
-				return FALSE;
-			break;
-		case LLDP_ATTR_TYPE_VARIANT:
-			if (!g_variant_equal (a->attrs[attr_id].v_variant, b->attrs[attr_id].v_variant))
-				return FALSE;
-			break;
-		case LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS:
-			if (a->attrs[attr_id].v_variant_list.len != b->attrs[attr_id].v_variant_list.len)
-				return FALSE;
-			if (a->attrs[attr_id].v_variant_list.alloc == 1) {
-				nm_assert (b->attrs[attr_id].v_variant_list.alloc == 1);
-				if (!g_variant_equal (a->attrs[attr_id].v_variant_list.arr1, b->attrs[attr_id].v_variant_list.arr1))
-					return FALSE;
-			} else {
-				for (i = 0; i < a->attrs[attr_id].v_variant_list.len; i++) {
-					if (!g_variant_equal (a->attrs[attr_id].v_variant_list.arr[i], b->attrs[attr_id].v_variant_list.arr[i]))
-						return FALSE;
-				}
-			}
-			break;
-		default:
-			nm_assert (a->attrs[attr_id].attr_type == LLDP_ATTR_TYPE_NONE);
-			break;
-		}
-	}
+	equal = (memcmp (raw_data_a, raw_data_b, raw_len_a) == 0);
 
-	return TRUE;
+	nm_assert (  !equal
+	           || (   a->chassis_id_type == b->chassis_id_type
+	               && a->port_id_type == b->port_id_type
+	               && ether_addr_equal (&a->destination_address, &b->destination_address)
+	               && nm_streq0 (a->chassis_id, b->chassis_id)
+	               && nm_streq0 (a->port_id, b->port_id)));
+	return equal;
 }
 
 static GVariant *
@@ -575,6 +573,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	*neigh = (LldpNeighbor) {
 		.chassis_id_type = chassis_id_type,
 		.port_id_type    = port_id_type,
+		.neighbor_sd     = sd_lldp_neighbor_ref (neighbor_sd),
 	};
 
 	r = sd_lldp_neighbor_get_destination_address (neighbor_sd, &neigh->destination_address);
@@ -807,12 +806,20 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	GVariantBuilder builder;
 	const char *dest_str;
 	LldpAttrId attr_id;
+	const guint8 *raw_data;
+	gsize raw_len;
 
 	if (neigh->variant)
 		return neigh->variant;
 
+	lldp_neighbor_get_raw (neigh, &raw_data, &raw_len);
+
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 
+	nm_g_variant_builder_add_sv_bytearray (&builder,
+	                                       NM_LLDP_ATTR_RAW,
+	                                       raw_data,
+	                                       raw_len);
 	g_variant_builder_add (&builder, "{sv}",
 	                       NM_LLDP_ATTR_CHASSIS_ID_TYPE,
 	                       g_variant_new_uint32 (neigh->chassis_id_type));
