@@ -2326,6 +2326,43 @@ _nmtst_variant_new_vardict (int dummy, ...)
 		g_assert_cmpint (_l, ==, strlen (_str)); \
 	} G_STMT_END
 
+#ifdef __NM_SHARED_UTILS_H__
+#define _nmtst_assert_variant_bytestring_cmp_str(_ptr, _ptr2, _len) \
+	G_STMT_START { \
+		if (memcmp (_ptr2, _ptr, _len) != 0) { \
+			gs_free char *_x1 = NULL; \
+			gs_free char *_x2 = NULL; \
+			const char *_xx1; \
+			const char *_xx2; \
+			\
+			_xx1 = nm_utils_buf_utf8safe_escape (_ptr, _len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &_x1); \
+			_xx2 = nm_utils_buf_utf8safe_escape (_ptr2, _len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &_x2); \
+			g_assert_cmpstr (_xx1, ==, _xx2); \
+			g_assert_not_reached (); \
+		} \
+	} G_STMT_END
+#else
+#define _nmtst_assert_variant_bytestring_cmp_str(_ptr, _ptr2, _len) G_STMT_START { } G_STMT_END
+#endif
+
+#define nmtst_assert_variant_bytestring(variant, ptr, len) \
+	G_STMT_START { \
+		GVariant *_variant = (variant); \
+		gconstpointer _ptr = (ptr); \
+		gconstpointer _ptr2; \
+		gsize _len = (len); \
+		gsize _len2; \
+		\
+		nmtst_assert_variant_is_of_type (_variant, G_VARIANT_TYPE_BYTESTRING); \
+		_ptr2 = g_variant_get_fixed_array (_variant, &_len2, 1); \
+		g_assert_cmpint (_len2, ==, _len); \
+		if (   _len != 0 \
+		    && _ptr) { \
+			_nmtst_assert_variant_bytestring_cmp_str(_ptr, _ptr2, _len); \
+			g_assert_cmpmem (_ptr2, _len2, _ptr, _len); \
+		} \
+	} G_STMT_END
+
 typedef enum {
 	NMTST_VARIANT_EDITOR_CONNECTION,
 	NMTST_VARIANT_EDITOR_SETTING,
