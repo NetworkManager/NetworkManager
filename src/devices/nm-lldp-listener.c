@@ -58,7 +58,14 @@ typedef struct {
 		guint32 v_uint32;
 		char *v_string;
 		GVariant *v_variant;
-		CList v_variant_list;
+		struct {
+			union {
+				GVariant **arr;
+				GVariant *arr1;
+			};
+			guint len;
+			guint alloc;
+		} v_variant_list;
 	};
 } LldpAttrData;
 
@@ -288,15 +295,33 @@ _lldp_attr_add_variant (LldpAttrData *pdata, LldpAttrId attr_id, GVariant *varia
 	nm_assert (_lldp_attr_id_to_type (attr_id) == LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS);
 
 	g_variant_ref_sink (variant);
+
 	pdata = &pdata[attr_id];
 
 	if (pdata->attr_type == LLDP_ATTR_TYPE_NONE) {
-		c_list_init (&pdata->v_variant_list);
 		pdata->attr_type = LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS;
-	} else
-		nm_assert (pdata->attr_type == LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS);
+		pdata->v_variant_list.arr1 = variant;
+		pdata->v_variant_list.len = 1;
+		pdata->v_variant_list.alloc = 1;
+		return;
+	}
 
-	c_list_link_tail (&pdata->v_variant_list, &nm_c_list_elem_new_stale (variant)->lst);
+	nm_assert (pdata->attr_type == LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS);
+
+	if (pdata->v_variant_list.len == pdata->v_variant_list.alloc) {
+		if (pdata->v_variant_list.alloc == 1) {
+			GVariant *arr1 = pdata->v_variant_list.arr1;
+
+			pdata->v_variant_list.alloc = 4;
+			pdata->v_variant_list.arr = g_new (GVariant *, 4);
+			pdata->v_variant_list.arr[0] = arr1;
+		} else {
+			pdata->v_variant_list.alloc *= 2u;
+			pdata->v_variant_list.arr = g_realloc (pdata->v_variant_list.arr,
+			                                       pdata->v_variant_list.alloc);
+		}
+	}
+	pdata->v_variant_list.arr[pdata->v_variant_list.len++] = g_variant_ref_sink (variant);
 }
 
 /*****************************************************************************/
@@ -344,7 +369,7 @@ static void
 lldp_neighbor_free (LldpNeighbor *neighbor)
 {
 	LldpAttrId attr_id;
-	LldpAttrType attr_type;
+	guint i;
 
 	if (!neighbor)
 		return;
@@ -352,18 +377,23 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 	g_free (neighbor->chassis_id);
 	g_free (neighbor->port_id);
 	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
-		attr_type = neighbor->attrs[attr_id].attr_type;
+		LldpAttrData *pdata = &neighbor->attrs[attr_id];
 
-		switch (attr_type) {
+		switch (pdata->attr_type) {
 		case LLDP_ATTR_TYPE_STRING:
-			g_free (neighbor->attrs[attr_id].v_string);
+			g_free (pdata->v_string);
 			break;
 		case LLDP_ATTR_TYPE_VARIANT:
-			g_variant_unref (neighbor->attrs[attr_id].v_variant);
+			g_variant_unref (pdata->v_variant);
 			break;
 		case LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS:
-			nm_c_list_elem_free_all (&neighbor->attrs[attr_id].v_variant_list,
-			                         (GDestroyNotify) g_variant_unref);
+			if (pdata->v_variant_list.alloc == 1)
+				g_variant_unref (pdata->v_variant_list.arr1);
+			else {
+				for (i = 0; i < pdata->v_variant_list.len; i++)
+					g_variant_unref (pdata->v_variant_list.arr[i]);
+				g_free (pdata->v_variant_list.arr);
+			}
 			break;
 		default:
 			;
@@ -383,6 +413,7 @@ static gboolean
 lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 {
 	LldpAttrId attr_id;
+	guint i;
 
 	nm_assert (a);
 	nm_assert (b);
@@ -410,19 +441,20 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 			if (!g_variant_equal (a->attrs[attr_id].v_variant, b->attrs[attr_id].v_variant))
 				return FALSE;
 			break;
-		case LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS: {
-			NMCListElem *itr_a, *itr_b;
-
-			if (c_list_length (&a->attrs[attr_id].v_variant_list) != c_list_length (&b->attrs[attr_id].v_variant_list))
+		case LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS:
+			if (a->attrs[attr_id].v_variant_list.len != b->attrs[attr_id].v_variant_list.len)
 				return FALSE;
-			itr_b = c_list_first_entry (&b->attrs[attr_id].v_variant_list, NMCListElem, lst);
-			c_list_for_each_entry (itr_a, &a->attrs[attr_id].v_variant_list, lst) {
-				if (!g_variant_equal (itr_a->data, itr_b->data))
+			if (a->attrs[attr_id].v_variant_list.alloc == 1) {
+				nm_assert (b->attrs[attr_id].v_variant_list.alloc == 1);
+				if (!g_variant_equal (a->attrs[attr_id].v_variant_list.arr1, b->attrs[attr_id].v_variant_list.arr1))
 					return FALSE;
-				itr_b = c_list_entry (&itr_b->lst, NMCListElem, lst);
+			} else {
+				for (i = 0; i < a->attrs[attr_id].v_variant_list.len; i++) {
+					if (!g_variant_equal (a->attrs[attr_id].v_variant_list.arr[i], b->attrs[attr_id].v_variant_list.arr[i]))
+						return FALSE;
+				}
 			}
 			break;
-		}
 		default:
 			nm_assert (a->attrs[attr_id].attr_type == LLDP_ATTR_TYPE_NONE);
 			break;
@@ -809,37 +841,37 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	}
 
 	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
-		const LldpAttrData *data = &neigh->attrs[attr_id];
+		const LldpAttrData *pdata = &neigh->attrs[attr_id];
 
-		nm_assert (NM_IN_SET (data->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
-		switch (data->attr_type) {
+		nm_assert (NM_IN_SET (pdata->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
+		switch (pdata->attr_type) {
 		case LLDP_ATTR_TYPE_UINT32:
 			g_variant_builder_add (&builder, "{sv}",
 			                       _lldp_attr_id_to_name (attr_id),
-			                       g_variant_new_uint32 (data->v_uint32));
+			                       g_variant_new_uint32 (pdata->v_uint32));
 			break;
 		case LLDP_ATTR_TYPE_STRING:
 			g_variant_builder_add (&builder, "{sv}",
 			                       _lldp_attr_id_to_name (attr_id),
-			                       g_variant_new_string (data->v_string));
+			                       g_variant_new_string (pdata->v_string));
 			break;
 		case LLDP_ATTR_TYPE_VARIANT:
 			g_variant_builder_add (&builder, "{sv}",
 			                       _lldp_attr_id_to_name (attr_id),
-			                       data->v_variant);
+			                       pdata->v_variant);
 			break;
 		case LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS: {
-			NMCListElem *elem;
-			GVariantBuilder builder2;
+			GVariant *const*variants;
 
-			g_variant_builder_init (&builder2, G_VARIANT_TYPE ("aa{sv}"));
-
-			c_list_for_each_entry (elem, &data->v_variant_list, lst)
-				g_variant_builder_add_value (&builder2, elem->data);
-
+			if (pdata->v_variant_list.alloc == 1)
+				variants = &pdata->v_variant_list.arr1;
+			else
+				variants = pdata->v_variant_list.arr;
 			g_variant_builder_add (&builder, "{sv}",
 			                       _lldp_attr_id_to_name (attr_id),
-			                       g_variant_builder_end (&builder2));
+			                       g_variant_new_array (G_VARIANT_TYPE ("a{sv}"),
+			                                            variants,
+			                                            pdata->v_variant_list.len));
 			break;
 		}
 		case LLDP_ATTR_TYPE_NONE:
