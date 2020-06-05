@@ -28,21 +28,22 @@ typedef struct {
 static void
 cert_writer (NMConnection *connection,
              GKeyFile *file,
-             NMKeyfileWriteTypeDataCert *cert_data,
+             NMSetting8021x *setting,
+             const NMSetting8021xSchemeVtable *vtable,
              WriteInfo *info,
              GError **error)
 {
-	const char *setting_name = nm_setting_get_name (NM_SETTING (cert_data->setting));
+	const char *setting_name = nm_setting_get_name (NM_SETTING (setting));
 	NMSetting8021xCKScheme scheme;
 	NMSetting8021xCKFormat format;
 	const char *path = NULL, *ext = "pem";
 
-	scheme = cert_data->vtable->scheme_func (cert_data->setting);
+	scheme = vtable->scheme_func (setting);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		char *tmp = NULL;
 		const char *accepted_path = NULL;
 
-		path = cert_data->vtable->path_func (cert_data->setting);
+		path = vtable->path_func (setting);
 		g_assert (path);
 
 		if (g_str_has_prefix (path, info->keyfile_dir)) {
@@ -78,11 +79,11 @@ cert_writer (NMConnection *connection,
 
 		if (!accepted_path)
 			accepted_path = tmp = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, path, NULL);
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key, accepted_path);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, vtable->setting_key, accepted_path);
 		g_free (tmp);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key,
-		                                 cert_data->vtable->uri_func (cert_data->setting));
+		nm_keyfile_plugin_kf_set_string (file, setting_name, vtable->setting_key,
+		                                 vtable->uri_func (setting));
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		GBytes *blob;
 		const guint8 *blob_data;
@@ -91,13 +92,13 @@ cert_writer (NMConnection *connection,
 		GError *local = NULL;
 		char *new_path;
 
-		blob = cert_data->vtable->blob_func (cert_data->setting);
+		blob = vtable->blob_func (setting);
 		g_assert (blob);
 		blob_data = g_bytes_get_data (blob, &blob_len);
 
-		if (cert_data->vtable->format_func) {
+		if (vtable->format_func) {
 			/* Get the extension for a private key */
-			format = cert_data->vtable->format_func (cert_data->setting);
+			format = vtable->format_func (setting);
 			if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
 				ext = "p12";
 		} else {
@@ -110,7 +111,7 @@ cert_writer (NMConnection *connection,
 		 * from now on instead of pushing around the certificate data.
 		 */
 		new_path = g_strdup_printf ("%s/%s-%s.%s", info->keyfile_dir, nm_connection_get_uuid (connection),
-		                            cert_data->vtable->file_suffix, ext);
+		                            vtable->file_suffix, ext);
 
 		/* FIXME(keyfile-parse-in-memory): writer must not access/write to the file system before
 		 * being sure that the entire profile can be written and all circumstances are good to
@@ -125,10 +126,10 @@ cert_writer (NMConnection *connection,
 		if (success) {
 			/* Write the path value to the keyfile.
 			 * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
-			nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key, strrchr (new_path, '/') + 1);
+			nm_keyfile_plugin_kf_set_string (file, setting_name, vtable->setting_key, strrchr (new_path, '/') + 1);
 		} else {
 			nm_log_warn (LOGD_SETTINGS, "keyfile: %s.%s: failed to write certificate to file %s: %s",
-			             setting_name, cert_data->vtable->setting_key, new_path, local->message);
+			             setting_name, vtable->setting_key, new_path, local->message);
 			g_error_free (local);
 		}
 		g_free (new_path);
@@ -146,15 +147,17 @@ cert_writer (NMConnection *connection,
 static gboolean
 _handler_write (NMConnection *connection,
                 GKeyFile *keyfile,
-                NMKeyfileWriteType type,
-                void *type_data,
-                void *user_data,
-                GError **error)
+                NMKeyfileHandlerType type,
+                NMKeyfileHandlerData *type_data,
+                void *user_data)
 {
-	if (type == NM_KEYFILE_WRITE_TYPE_CERT) {
-		cert_writer (connection, keyfile,
-		             (NMKeyfileWriteTypeDataCert *) type_data,
-		             (WriteInfo *) user_data, error);
+	if (type == NM_KEYFILE_HANDLER_TYPE_WRITE_CERT) {
+		cert_writer (connection,
+		             keyfile,
+		             NM_SETTING_802_1X (type_data->cur_setting),
+		             type_data->write_cert.vtable,
+		             user_data,
+		             type_data->p_error);
 		return TRUE;
 	}
 	return FALSE;
@@ -211,7 +214,7 @@ _internal_write_connection (NMConnection *connection,
 
 	info.keyfile_dir = keyfile_dir;
 
-	kf_file = nm_keyfile_write (connection, _handler_write, &info, error);
+	kf_file = nm_keyfile_write (connection, NM_KEYFILE_HANDLER_FLAGS_NONE, _handler_write, &info, error);
 	if (!kf_file)
 		return FALSE;
 
