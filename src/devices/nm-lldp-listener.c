@@ -16,7 +16,7 @@
 
 #include "systemd/nm-sd.h"
 
-#define MAX_NEIGHBORS         4096
+#define MAX_NEIGHBORS         128
 #define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NSEC_PER_SEC)
 
 #define LLDP_MAC_NEAREST_BRIDGE          ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }))
@@ -901,13 +901,6 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 		return;
 	}
 
-	/* ensure that we have at most MAX_NEIGHBORS entries */
-	if (   !neigh_old /* only matters in the "add" case. */
-	    && (g_hash_table_size (priv->lldp_neighbors) + 1 > MAX_NEIGHBORS)) {
-		_LOGT ("process: ignore neighbor due to overall limit of %d", MAX_NEIGHBORS);
-		return;
-	}
-
 	_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
 	        neigh_old ? "update" : "new",
 	        LOG_NEIGH_ARG (neigh));
@@ -921,7 +914,11 @@ handle_changed:
 static void
 lldp_event_handler (sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, void *userdata)
 {
-	process_lldp_neighbor (userdata, n, event != SD_LLDP_EVENT_REMOVED);
+	process_lldp_neighbor (userdata,
+	                       n,
+	                       NM_IN_SET (event, SD_LLDP_EVENT_ADDED,
+	                                         SD_LLDP_EVENT_UPDATED,
+	                                         SD_LLDP_EVENT_REFRESHED));
 }
 
 gboolean
@@ -962,6 +959,9 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 		                     "set callback failed");
 		goto err;
 	}
+
+	ret = sd_lldp_set_neighbors_max (priv->lldp_handle, MAX_NEIGHBORS);
+	nm_assert (ret == 0);
 
 	priv->ifindex = ifindex;
 
