@@ -422,6 +422,7 @@ gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
 GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
 GVariant *nm_utils_strdict_to_variant_ass (GHashTable *strdict);
+GVariant *nm_utils_strdict_to_variant_asv (GHashTable *strdict);
 
 /*****************************************************************************/
 

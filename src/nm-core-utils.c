@@ -4108,33 +4108,6 @@ nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
 
 /*****************************************************************************/
 
-GVariant *
-nm_utils_strdict_to_variant (GHashTable *options)
-{
-	gs_free NMUtilsNamedValue *values_free = NULL;
-	NMUtilsNamedValue values_prepared[20];
-	const NMUtilsNamedValue *values;
-	GVariantBuilder builder;
-	guint i;
-	guint n;
-
-	values = nm_utils_named_values_from_strdict (options,
-	                                             &n,
-	                                             values_prepared,
-	                                             &values_free);
-
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	for (i = 0; i < n; i++) {
-		g_variant_builder_add (&builder,
-		                       "{sv}",
-		                       values[i].name,
-		                       g_variant_new_string (values[i].value_str));
-	}
-	return g_variant_builder_end (&builder);
-}
-
-/*****************************************************************************/
-
 static guint32
 get_max_rate_ht_20 (int mcs)
 {
