@@ -114,8 +114,6 @@ typedef struct {
 
 	sd_lldp_neighbor *neighbor_sd;
 
-	LldpAttrs attrs;
-
 	struct ether_addr destination_address;
 
 	guint8 chassis_id_type;
@@ -226,6 +224,8 @@ _lldp_attr_id_to_type (LldpAttrId attr_id)
 	nm_assert (attr_id < G_N_ELEMENTS (types));
 	return types[attr_id];
 }
+
+/*****************************************************************************/
 
 static void
 _lldp_attrs_set_str (LldpAttrs *attrs, LldpAttrId attr_id, const char *v_string)
@@ -442,7 +442,6 @@ lldp_neighbor_free (LldpNeighbor *neighbor)
 
 	g_free (neighbor->chassis_id);
 	g_free (neighbor->port_id);
-	_lldp_attrs_clear (&neighbor->attrs);
 	nm_g_variant_unref (neighbor->variant);
 	sd_lldp_neighbor_unref (neighbor->neighbor_sd);
 	nm_g_slice_free (neighbor);
@@ -824,8 +823,6 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		goto out;
 	}
 
-	_lldp_attrs_parse (&neigh->attrs, neighbor_sd);
-
 	neigh->valid = TRUE;
 
 out:
@@ -840,6 +837,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	LldpAttrId attr_id;
 	const guint8 *raw_data;
 	gsize raw_len;
+	LldpAttrs attrs;
 
 	if (neigh->variant)
 		return neigh->variant;
@@ -879,8 +877,12 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		                       g_variant_new_string (dest_str));
 	}
 
+	attrs = (LldpAttrs) { };
+
+	_lldp_attrs_parse (&attrs, neigh->neighbor_sd);
+
 	for (attr_id = 0; attr_id < _LLDP_ATTR_ID_COUNT; attr_id++) {
-		const LldpAttrData *pdata = &neigh->attrs.a[attr_id];
+		const LldpAttrData *pdata = &attrs.a[attr_id];
 
 		nm_assert (NM_IN_SET (pdata->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
 		switch (pdata->attr_type) {
@@ -917,6 +919,8 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 			break;
 		}
 	}
+
+	_lldp_attrs_clear (&attrs);
 
 	return (neigh->variant = g_variant_ref_sink (g_variant_builder_end (&builder)));
 }
@@ -1272,4 +1276,3 @@ nm_lldp_listener_class_init (NMLldpListenerClass *klass)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
-
