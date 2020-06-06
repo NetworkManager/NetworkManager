@@ -585,6 +585,8 @@ nm_tc_action_get_kind (NMTCAction *action)
  * Gets an array of attribute names defined on @action.
  *
  * Returns: (transfer full): a %NULL-terminated array of attribute names,
+ *
+ * Since: 1.12
  **/
 char **
 nm_tc_action_get_attribute_names (NMTCAction *action)
@@ -614,6 +616,8 @@ _nm_tc_action_get_attributes (NMTCAction *action)
  *
  * Returns: (transfer none): the value of the attribute with name @name on
  *   @action, or %NULL if @action has no such attribute.
+ *
+ * Since: 1.12
  **/
 GVariant *
 nm_tc_action_get_attribute (NMTCAction *action, const char *name)
@@ -634,6 +638,8 @@ nm_tc_action_get_attribute (NMTCAction *action, const char *name)
  * @value: (transfer none) (allow-none): the value
  *
  * Sets or clears the named attribute on @action to the given value.
+ *
+ * Since: 1.12
  **/
 void
 nm_tc_action_set_attribute (NMTCAction *action, const char *name, GVariant *value)
