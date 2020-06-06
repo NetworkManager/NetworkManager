@@ -174,13 +174,14 @@ nm_tc_qdisc_equal (NMTCQdisc *qdisc, NMTCQdisc *other)
 static guint
 _nm_tc_qdisc_hash (NMTCQdisc *qdisc)
 {
-	gs_free const char **names = NULL;
-	GVariant *variant;
+	NMUtilsNamedValue attrs_static[30];
+	gs_free NMUtilsNamedValue *attrs_free = NULL;
+	const NMUtilsNamedValue *attrs;
 	NMHashState h;
 	guint length;
 	guint i;
 
-	names = nm_utils_strdict_get_keys (qdisc->attributes, TRUE, &length);
+	attrs = nm_utils_named_values_from_strdict (qdisc->attributes, &length, attrs_static, &attrs_free);
 
 	nm_hash_init (&h, 43869703);
 	nm_hash_update_vals (&h,
@@ -189,13 +190,13 @@ _nm_tc_qdisc_hash (NMTCQdisc *qdisc)
 	                     length);
 	nm_hash_update_str0 (&h, qdisc->kind);
 	for (i = 0; i < length; i++) {
+		const char *key = attrs[i].name;
+		GVariant *variant = attrs[i].value_ptr;
 		const GVariantType *vtype;
-
-		variant = g_hash_table_lookup (qdisc->attributes, names[i]);
 
 		vtype = g_variant_get_type (variant);
 
-		nm_hash_update_str (&h, names[i]);
+		nm_hash_update_str (&h, key);
 		nm_hash_update_str (&h, (const char *) vtype);
 		if (g_variant_type_is_basic (vtype))
 			nm_hash_update_val (&h, g_variant_hash (variant));
@@ -798,24 +799,31 @@ nm_tc_tfilter_equal (NMTCTfilter *tfilter, NMTCTfilter *other)
 static guint
 _nm_tc_tfilter_hash (NMTCTfilter *tfilter)
 {
-	gs_free const char **names = NULL;
-	guint i, attr_hash;
-	GVariant *variant;
 	NMHashState h;
-	guint length;
 
 	nm_hash_init (&h, 63624437);
 	nm_hash_update_vals (&h,
 	                     tfilter->handle,
 	                     tfilter->parent);
 	nm_hash_update_str0 (&h, tfilter->kind);
+
 	if (tfilter->action) {
+		gs_free NMUtilsNamedValue *attrs_free = NULL;
+		NMUtilsNamedValue attrs_static[30];
+		const NMUtilsNamedValue *attrs;
+		guint length;
+		guint i;
+
 		nm_hash_update_str0 (&h, tfilter->action->kind);
-		names = nm_utils_strdict_get_keys (tfilter->action->attributes, TRUE, &length);
+
+		attrs = nm_utils_named_values_from_strdict (tfilter->action->attributes, &length, attrs_static, &attrs_free);
 		for (i = 0; i < length; i++) {
-			nm_hash_update_str (&h, names[i]);
-			variant = g_hash_table_lookup (tfilter->action->attributes, names[i]);
+			GVariant *variant = attrs[i].value_ptr;
+
+			nm_hash_update_str (&h, attrs[i].name);
 			if (g_variant_type_is_basic (g_variant_get_type (variant))) {
+				guint attr_hash;
+
 				/* g_variant_hash() works only for basic types, thus
 				 * we ignore any non-basic attribute. Actions differing
 				 * only for non-basic attributes will collide. */
@@ -824,6 +832,7 @@ _nm_tc_tfilter_hash (NMTCTfilter *tfilter)
 			}
 		}
 	}
+
 	return nm_hash_complete (&h);
 }
 
@@ -1380,9 +1389,11 @@ _qdiscs_to_variant (GPtrArray *qdiscs)
 
 	if (qdiscs) {
 		for (i = 0; i < qdiscs->len; i++) {
+			NMUtilsNamedValue attrs_static[30];
+			gs_free NMUtilsNamedValue *attrs_free = NULL;
+			const NMUtilsNamedValue *attrs;
 			NMTCQdisc *qdisc = qdiscs->pdata[i];
 			guint length;
-			gs_free const char **attrs = nm_utils_strdict_get_keys (qdisc->attributes, TRUE, &length);
 			GVariantBuilder qdisc_builder;
 			guint y;
 
@@ -1397,9 +1408,12 @@ _qdiscs_to_variant (GPtrArray *qdiscs)
 			g_variant_builder_add (&qdisc_builder, "{sv}", "parent",
 			                       g_variant_new_uint32 (nm_tc_qdisc_get_parent (qdisc)));
 
+			attrs = nm_utils_named_values_from_strdict (qdisc->attributes, &length, attrs_static, &attrs_free);
 			for (y = 0; y < length; y++) {
-				g_variant_builder_add (&qdisc_builder, "{sv}", attrs[y],
-				                       g_hash_table_lookup (qdisc->attributes, attrs[y]));
+				g_variant_builder_add (&qdisc_builder,
+				                       "{sv}",
+				                       attrs[y].name,
+				                       attrs[y].value_ptr);
 			}
 
 			g_variant_builder_add (&builder, "a{sv}", &qdisc_builder);
