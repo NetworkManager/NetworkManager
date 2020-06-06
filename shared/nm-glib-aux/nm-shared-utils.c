@@ -2909,15 +2909,23 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
+
 NMUtilsNamedValue *
-nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
-                                               guint *out_len,
-                                               GCompareDataFunc compare_func,
-                                               gpointer user_data)
+nm_utils_named_values_from_strdict_full (GHashTable *hash,
+                                         guint *out_len,
+                                         GCompareDataFunc compare_func,
+                                         gpointer user_data,
+                                         NMUtilsNamedValue *provided_buffer,
+                                         guint provided_buffer_len,
+                                         NMUtilsNamedValue **out_allocated_buffer)
 {
 	GHashTableIter iter;
 	NMUtilsNamedValue *values;
 	guint i, len;
+
+	nm_assert (provided_buffer_len == 0 || provided_buffer);
+	nm_assert (!out_allocated_buffer || !*out_allocated_buffer);
 
 	if (   !hash
 	    || !(len = g_hash_table_size (hash))) {
@@ -2925,12 +2933,20 @@ nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
 		return NULL;
 	}
 
+	if (provided_buffer_len >= len + 1) {
+		/* the buffer provided by the caller is large enough. Use it. */
+		values = provided_buffer;
+	} else {
+		/* allocate a new buffer. */
+		values = g_new (NMUtilsNamedValue, len + 1);
+		NM_SET_OUT (out_allocated_buffer, values);
+	}
+
 	i = 0;
-	values = g_new (NMUtilsNamedValue, len + 1);
 	g_hash_table_iter_init (&iter, hash);
 	while (g_hash_table_iter_next (&iter,
 	                               (gpointer *) &values[i].name,
-	                               (gpointer *) &values[i].value_ptr))
+	                               &values[i].value_ptr))
 		i++;
 	nm_assert (i == len);
 	values[i].name = NULL;
@@ -4925,7 +4941,7 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 	for (i = 0; i < num_values; i++) {
 		name = values[i].name;
-		variant = (GVariant *) values[i].value_ptr;
+		variant = values[i].value_ptr;
 		value = NULL;
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
@@ -4969,17 +4985,24 @@ _nm_utils_format_variant_attributes (GHashTable *attributes,
                                      char attr_separator,
                                      char key_value_separator)
 {
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
 	GString *str = NULL;
-	gs_free NMUtilsNamedValue *values = NULL;
 	guint len;
 
 	g_return_val_if_fail (attr_separator, NULL);
 	g_return_val_if_fail (key_value_separator, NULL);
 
-	if (!attributes || !g_hash_table_size (attributes))
+	if (!attributes)
 		return NULL;
 
-	values = nm_utils_named_values_from_str_dict (attributes, &len);
+	values = nm_utils_named_values_from_strdict (attributes,
+	                                             &len,
+	                                             values_prepared,
+	                                             &values_free);
+	if (len == 0)
+		return NULL;
 
 	str = g_string_new ("");
 	_nm_utils_format_variant_attributes_full (str,
