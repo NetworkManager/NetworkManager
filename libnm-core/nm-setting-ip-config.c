@@ -1363,9 +1363,12 @@ nm_ip_route_attribute_validate  (const char *name,
 gboolean
 _nm_ip_route_attribute_validate_all (const NMIPRoute *route, GError **error)
 {
-	GHashTableIter iter;
-	const char *key;
+	NMUtilsNamedValue attrs_static[G_N_ELEMENTS (ip_route_attribute_spec)];
+	gs_free NMUtilsNamedValue *attrs_free = NULL;
+	const NMUtilsNamedValue *attrs;
+	guint attrs_len;
 	GVariant *val;
+	guint i;
 	guint8 u8;
 
 	g_return_val_if_fail (route, FALSE);
@@ -1374,9 +1377,15 @@ _nm_ip_route_attribute_validate_all (const NMIPRoute *route, GError **error)
 	if (!route->attributes)
 		return TRUE;
 
-	g_hash_table_iter_init (&iter, route->attributes);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
-		if (!nm_ip_route_attribute_validate (key, val, route->family, NULL, error))
+	attrs = nm_utils_named_values_from_strdict (route->attributes,
+	                                            &attrs_len,
+	                                            attrs_static,
+	                                            &attrs_free);
+	for (i = 0; i < attrs_len; i++) {
+		const char *key = attrs[i].name;
+		GVariant *val2 = attrs[i].value_ptr;
+
+		if (!nm_ip_route_attribute_validate (key, val2, route->family, NULL, NULL))
 			return FALSE;
 	}
 
