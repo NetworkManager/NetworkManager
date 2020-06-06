@@ -478,50 +478,25 @@ nm_utils_gbytes_to_variant_ay (GBytes *bytes)
 GVariant *
 nm_utils_strdict_to_variant_ass (GHashTable *strdict)
 {
-	GHashTableIter iter;
-	const char *key, *value;
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
 	GVariantBuilder builder;
-	guint i, len;
+	guint i;
+	guint n;
+
+	values = nm_utils_named_values_from_strdict (strdict,
+	                                             &n,
+	                                             values_prepared,
+	                                             &values_free);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
-
-	if (!strdict)
-		goto out;
-	len = g_hash_table_size (strdict);
-	if (!len)
-		goto out;
-
-	g_hash_table_iter_init (&iter, strdict);
-	if (!g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
-		nm_assert_not_reached ();
-
-	if (len == 1)
-		g_variant_builder_add (&builder, "{ss}", key, value);
-	else {
-		gs_free NMUtilsNamedValue *idx_free = NULL;
-		NMUtilsNamedValue *idx;
-
-		if (len > 300 / sizeof (NMUtilsNamedValue)) {
-			idx_free = g_new (NMUtilsNamedValue, len);
-			idx = idx_free;
-		} else
-			idx = g_alloca (sizeof (NMUtilsNamedValue) * len);
-
-		i = 0;
-		do {
-			idx[i].name = key;
-			idx[i].value_str = value;
-			i++;
-		} while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value));
-		nm_assert (i == len);
-
-		nm_utils_named_value_list_sort (idx, len, NULL, NULL);
-
-		for (i = 0; i < len; i++)
-			g_variant_builder_add (&builder, "{ss}", idx[i].name, idx[i].value_str);
+	for (i = 0; i < n; i++) {
+		g_variant_builder_add (&builder,
+		                       "{ss}",
+		                       values[i].name,
+		                       values[i].value_str);
 	}
-
-out:
 	return g_variant_builder_end (&builder);
 }
 
