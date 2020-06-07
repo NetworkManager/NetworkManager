@@ -833,7 +833,7 @@ static GVariant *
 lldp_neighbor_to_variant (LldpNeighbor *neigh)
 {
 	GVariantBuilder builder;
-	const char *dest_str;
+	const char *str;
 	LldpAttrId attr_id;
 	const guint8 *raw_data;
 	gsize raw_len;
@@ -850,32 +850,21 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	                                       NM_LLDP_ATTR_RAW,
 	                                       raw_data,
 	                                       raw_len);
-	g_variant_builder_add (&builder, "{sv}",
-	                       NM_LLDP_ATTR_CHASSIS_ID_TYPE,
-	                       g_variant_new_uint32 (neigh->chassis_id_type));
-	g_variant_builder_add (&builder, "{sv}",
-	                       NM_LLDP_ATTR_CHASSIS_ID,
-	                       g_variant_new_string (neigh->chassis_id));
-	g_variant_builder_add (&builder, "{sv}",
-	                       NM_LLDP_ATTR_PORT_ID_TYPE,
-	                       g_variant_new_uint32 (neigh->port_id_type));
-	g_variant_builder_add (&builder, "{sv}",
-	                       NM_LLDP_ATTR_PORT_ID,
-	                       g_variant_new_string (neigh->port_id));
+	nm_g_variant_builder_add_sv_uint32 (&builder, NM_LLDP_ATTR_CHASSIS_ID_TYPE, neigh->chassis_id_type);
+	nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_CHASSIS_ID, neigh->chassis_id);
+	nm_g_variant_builder_add_sv_uint32 (&builder, NM_LLDP_ATTR_PORT_ID_TYPE, neigh->port_id_type);
+	nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_PORT_ID, neigh->port_id);
 
 	if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_BRIDGE))
-		dest_str = NM_LLDP_DEST_NEAREST_BRIDGE;
+		str = NM_LLDP_DEST_NEAREST_BRIDGE;
 	else if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
-		dest_str = NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE;
+		str = NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE;
 	else if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
-		dest_str = NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE;
+		str = NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE;
 	else
-		dest_str = NULL;
-	if (dest_str) {
-		g_variant_builder_add (&builder, "{sv}",
-		                       NM_LLDP_ATTR_DESTINATION,
-		                       g_variant_new_string (dest_str));
-	}
+		str = NULL;
+	if (str)
+		nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_DESTINATION, str);
 
 	attrs = (LldpAttrs) { };
 
@@ -887,19 +876,19 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		nm_assert (NM_IN_SET (pdata->attr_type, _lldp_attr_id_to_type (attr_id), LLDP_ATTR_TYPE_NONE));
 		switch (pdata->attr_type) {
 		case LLDP_ATTR_TYPE_UINT32:
-			g_variant_builder_add (&builder, "{sv}",
-			                       _lldp_attr_id_to_name (attr_id),
-			                       g_variant_new_uint32 (pdata->v_uint32));
+			nm_g_variant_builder_add_sv_uint32 (&builder,
+			                                    _lldp_attr_id_to_name (attr_id),
+			                                    pdata->v_uint32);
 			break;
 		case LLDP_ATTR_TYPE_STRING:
-			g_variant_builder_add (&builder, "{sv}",
-			                       _lldp_attr_id_to_name (attr_id),
-			                       g_variant_new_string (pdata->v_string));
+			nm_g_variant_builder_add_sv_str (&builder,
+			                                 _lldp_attr_id_to_name (attr_id),
+			                                 pdata->v_string);
 			break;
 		case LLDP_ATTR_TYPE_VARIANT:
-			g_variant_builder_add (&builder, "{sv}",
-			                       _lldp_attr_id_to_name (attr_id),
-			                       pdata->v_variant);
+			nm_g_variant_builder_add_sv (&builder,
+			                             _lldp_attr_id_to_name (attr_id),
+			                             pdata->v_variant);
 			break;
 		case LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS: {
 			GVariant *const*variants;
@@ -908,11 +897,11 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 				variants = &pdata->v_variant_list.arr1;
 			else
 				variants = pdata->v_variant_list.arr;
-			g_variant_builder_add (&builder, "{sv}",
-			                       _lldp_attr_id_to_name (attr_id),
-			                       g_variant_new_array (G_VARIANT_TYPE ("a{sv}"),
-			                                            variants,
-			                                            pdata->v_variant_list.len));
+			nm_g_variant_builder_add_sv (&builder,
+			                             _lldp_attr_id_to_name (attr_id),
+			                             g_variant_new_array (G_VARIANT_TYPE ("a{sv}"),
+			                                                  variants,
+			                                                  pdata->v_variant_list.len));
 			break;
 		}
 		case LLDP_ATTR_TYPE_NONE:
