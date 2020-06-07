@@ -1446,7 +1446,7 @@ typedef struct {
 	};
 	union {
 		const char *value_str;
-		gconstpointer value_ptr;
+		gpointer value_ptr;
 	};
 } NMUtilsNamedValue;
 
