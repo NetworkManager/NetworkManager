@@ -1263,6 +1263,30 @@ nm_g_variant_is_of_type (GVariant *value,
 }
 
 static inline void
+nm_g_variant_builder_add_sv (GVariantBuilder *builder, const char *key, GVariant *val)
+{
+	g_variant_builder_add (builder, "{sv}", key, val);
+}
+
+static inline void
+nm_g_variant_builder_add_sv_bytearray (GVariantBuilder *builder, const char *key, const guint8 *arr, gsize len)
+{
+	g_variant_builder_add (builder, "{sv}", key, g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, arr, len, 1));
+}
+
+static inline void
+nm_g_variant_builder_add_sv_uint32 (GVariantBuilder *builder, const char *key, guint32 val)
+{
+	nm_g_variant_builder_add_sv (builder, key, g_variant_new_uint32 (val));
+}
+
+static inline void
+nm_g_variant_builder_add_sv_str (GVariantBuilder *builder, const char *key, const char *str)
+{
+	nm_g_variant_builder_add_sv (builder, key, g_variant_new_string (str));
+}
+
+static inline void
 nm_g_source_destroy_and_unref (GSource *source)
 {
 	g_source_destroy (source);
