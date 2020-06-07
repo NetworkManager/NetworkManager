@@ -34,10 +34,6 @@ typedef enum {
 typedef enum {
 	/* the order of the enum values determines the order of the fields in
 	 * the variant. */
-	LLDP_ATTR_ID_PORT_DESCRIPTION,
-	LLDP_ATTR_ID_SYSTEM_NAME,
-	LLDP_ATTR_ID_SYSTEM_DESCRIPTION,
-	LLDP_ATTR_ID_SYSTEM_CAPABILITIES,
 	LLDP_ATTR_ID_MANAGEMENT_ADDRESSES,
 	LLDP_ATTR_ID_IEEE_802_1_PVID,
 	LLDP_ATTR_ID_IEEE_802_1_PPVID,
@@ -169,10 +165,6 @@ static const char *
 _lldp_attr_id_to_name (LldpAttrId attr_id)
 {
 	static const char *const names[_LLDP_ATTR_ID_COUNT] = {
-		[LLDP_ATTR_ID_PORT_DESCRIPTION]          = NM_LLDP_ATTR_PORT_DESCRIPTION,
-		[LLDP_ATTR_ID_SYSTEM_NAME]               = NM_LLDP_ATTR_SYSTEM_NAME,
-		[LLDP_ATTR_ID_SYSTEM_DESCRIPTION]        = NM_LLDP_ATTR_SYSTEM_DESCRIPTION,
-		[LLDP_ATTR_ID_SYSTEM_CAPABILITIES]       = NM_LLDP_ATTR_SYSTEM_CAPABILITIES,
 		[LLDP_ATTR_ID_MANAGEMENT_ADDRESSES]      = NM_LLDP_ATTR_MANAGEMENT_ADDRESSES,
 		[LLDP_ATTR_ID_IEEE_802_1_PVID]           = NM_LLDP_ATTR_IEEE_802_1_PVID,
 		[LLDP_ATTR_ID_IEEE_802_1_PPVID]          = NM_LLDP_ATTR_IEEE_802_1_PPVID,
@@ -197,10 +189,6 @@ static LldpAttrType
 _lldp_attr_id_to_type (LldpAttrId attr_id)
 {
 	static const LldpAttrType types[_LLDP_ATTR_ID_COUNT] = {
-		[LLDP_ATTR_ID_PORT_DESCRIPTION]          = LLDP_ATTR_TYPE_STRING,
-		[LLDP_ATTR_ID_SYSTEM_NAME]               = LLDP_ATTR_TYPE_STRING,
-		[LLDP_ATTR_ID_SYSTEM_DESCRIPTION]        = LLDP_ATTR_TYPE_STRING,
-		[LLDP_ATTR_ID_SYSTEM_CAPABILITIES]       = LLDP_ATTR_TYPE_UINT32,
 		[LLDP_ATTR_ID_MANAGEMENT_ADDRESSES]      = LLDP_ATTR_TYPE_ARRAY_OF_VARIANTS,
 		[LLDP_ATTR_ID_IEEE_802_1_PVID]           = LLDP_ATTR_TYPE_UINT32,
 		[LLDP_ATTR_ID_IEEE_802_1_PPVID]          = LLDP_ATTR_TYPE_UINT32,
@@ -555,23 +543,9 @@ static void
 _lldp_attrs_parse (LldpAttrs *attrs,
                    sd_lldp_neighbor *neighbor_sd)
 {
-	const char *str;
-	uint16_t data16;
 	uint8_t *data8;
 	gsize len;
 	int r;
-
-	if (sd_lldp_neighbor_get_port_description (neighbor_sd, &str) == 0)
-		_lldp_attrs_set_str (attrs, LLDP_ATTR_ID_PORT_DESCRIPTION, str);
-
-	if (sd_lldp_neighbor_get_system_name (neighbor_sd, &str) == 0)
-		_lldp_attrs_set_str (attrs, LLDP_ATTR_ID_SYSTEM_NAME, str);
-
-	if (sd_lldp_neighbor_get_system_description (neighbor_sd, &str) == 0)
-		_lldp_attrs_set_str (attrs, LLDP_ATTR_ID_SYSTEM_DESCRIPTION, str);
-
-	if (sd_lldp_neighbor_get_system_capabilities (neighbor_sd, &data16) == 0)
-		_lldp_attrs_set_uint32 (attrs, LLDP_ATTR_ID_SYSTEM_CAPABILITIES, data16);
 
 	r = sd_lldp_neighbor_tlv_rewind (neighbor_sd);
 	if (r < 0) {
@@ -838,6 +812,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	const guint8 *raw_data;
 	gsize raw_len;
 	LldpAttrs attrs;
+	uint16_t u16;
 
 	if (neigh->variant)
 		return neigh->variant;
@@ -865,6 +840,18 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		str = NULL;
 	if (str)
 		nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_DESTINATION, str);
+
+	if (sd_lldp_neighbor_get_port_description (neigh->neighbor_sd, &str) == 0)
+		nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_PORT_DESCRIPTION, str);
+
+	if (sd_lldp_neighbor_get_system_name (neigh->neighbor_sd, &str) == 0)
+		nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_SYSTEM_NAME, str);
+
+	if (sd_lldp_neighbor_get_system_description (neigh->neighbor_sd, &str) == 0)
+		nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, str);
+
+	if (sd_lldp_neighbor_get_system_capabilities (neigh->neighbor_sd, &u16) == 0)
+		nm_g_variant_builder_add_sv_uint32 (&builder, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, u16);
 
 	attrs = (LldpAttrs) { };
 
