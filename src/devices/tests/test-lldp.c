@@ -263,11 +263,11 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
 	child = g_variant_get_child_value (attr, 0);
 	g_assert (child);
-	g_variant_lookup (child, "interface-number", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "interface-number", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 1001);
-	g_variant_lookup (child, "interface-number-subtype", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "interface-number-subtype", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 2);
-	g_variant_lookup (child, "address-subtype", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "address-subtype", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 6);
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
@@ -275,22 +275,22 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	/* IEEE 802.3 - Power Via MDI */
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI, G_VARIANT_TYPE_VARDICT);
 	g_assert (attr);
-	g_variant_lookup (attr, "mdi-power-support", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "mdi-power-support", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 7);
-	g_variant_lookup (attr, "pse-power-pair", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "pse-power-pair", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 1);
-	g_variant_lookup (attr, "power-class", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "power-class", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 0);
 	nm_clear_g_variant (&attr);
 
 	/* IEEE 802.3 - MAC/PHY Configuration/Status */
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_MAC_PHY_CONF, G_VARIANT_TYPE_VARDICT);
 	g_assert (attr);
-	g_variant_lookup (attr, "autoneg", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "autoneg", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 3);
-	g_variant_lookup (attr, "pmd-autoneg-cap", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "pmd-autoneg-cap", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 0x6c00);
-	g_variant_lookup (attr, "operational-mau-type", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "operational-mau-type", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 16);
 	nm_clear_g_variant (&attr);
 
@@ -319,9 +319,9 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
 	child = g_variant_get_child_value (attr, 0);
 	g_assert (child);
-	g_variant_lookup (child, "ppvid", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "ppvid", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 0);
-	g_variant_lookup (child, "flags", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "flags", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 1);
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
@@ -339,9 +339,9 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
 	child = g_variant_get_child_value (attr, 0);
 	g_assert (child);
-	g_variant_lookup (child, "vid", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "vid", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 488);
-	g_variant_lookup (child, "name", "&s", &v_str);
+	g_assert (g_variant_lookup (child, "name", "&s", &v_str));
 	g_assert_cmpstr (v_str, ==, "v2-0488-03-0505");
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
