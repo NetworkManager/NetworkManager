@@ -815,6 +815,34 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 
 /*****************************************************************************/
 
+GVariant *
+nmtst_lldp_parse_from_raw (const guint8 *raw_data,
+                           gsize raw_len)
+{
+	nm_auto (sd_lldp_neighbor_unrefp) sd_lldp_neighbor *neighbor_sd = NULL;
+	nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
+	gs_free_error GError *error = NULL;
+	GVariant *variant;
+	int r;
+
+	g_assert (raw_data);
+	g_assert (raw_len > 0);
+
+	r = sd_lldp_neighbor_from_raw (&neighbor_sd, raw_data, raw_len);
+	g_assert (r >= 0);
+
+	neigh = lldp_neighbor_new (neighbor_sd, &error);
+	g_assert (neigh);
+	g_assert (!error);
+
+	variant = lldp_neighbor_to_variant (neigh);
+	g_assert (variant);
+
+	return g_variant_ref (variant);
+}
+
+/*****************************************************************************/
+
 static void
 data_changed_notify (NMLldpListener *self, NMLldpListenerPrivate *priv)
 {

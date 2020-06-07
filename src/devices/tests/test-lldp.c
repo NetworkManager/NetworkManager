@@ -119,7 +119,7 @@ TEST_RECV_FRAME_DEFINE (_test_recv_data0_frame0,
 );
 
 static void
-_test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
+_test_recv_data0_check_do (GMainLoop *loop, NMLldpListener *listener, const TestRecvFrame *frame)
 {
 	GVariant *neighbors, *attr;
 	gs_unref_variant GVariant *neighbor = NULL;
@@ -149,6 +149,12 @@ _test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, G_VARIANT_TYPE_STRING);
 	nmtst_assert_variant_string (attr, "foo");
 	nm_clear_g_variant (&attr);
+}
+
+static void
+_test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
+{
+	_test_recv_data0_check_do (loop, listener, &_test_recv_data0_frame0);
 }
 
 TEST_RECV_DATA_DEFINE (_test_recv_data0,       1, _test_recv_data0_check,  &_test_recv_data0_frame0);
@@ -374,7 +380,7 @@ _test_recv_data2_ttl1_check (GMainLoop *loop, NMLldpListener *listener)
 	gulong notify_id;
 	GVariant *neighbors;
 
-	_test_recv_data0_check (loop, listener);
+	_test_recv_data0_check_do (loop, listener, &_test_recv_data2_frame0_ttl1);
 
 	/* wait for signal. */
 	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
@@ -513,6 +519,19 @@ _test_recv_fixture_teardown (TestRecvFixture *fixture, gconstpointer user_data)
 
 /*****************************************************************************/
 
+static void
+test_parse_frames (gconstpointer test_data)
+{
+	const TestRecvFrame *frame = test_data;
+	gs_unref_variant GVariant *v_neighbor = NULL;
+	gs_unref_variant GVariant *attr = NULL;
+
+	v_neighbor = nmtst_lldp_parse_from_raw (frame->frame, frame->frame_len);
+	g_assert (v_neighbor);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
 
 void
@@ -530,4 +549,8 @@ _nmtstp_setup_tests (void)
 	_TEST_ADD_RECV ("/lldp/recv/0_twice", &_test_recv_data0_twice);
 	_TEST_ADD_RECV ("/lldp/recv/1",       &_test_recv_data1);
 	_TEST_ADD_RECV ("/lldp/recv/2_ttl1",  &_test_recv_data2_ttl1);
+
+	g_test_add_data_func ("/lldp/parse-frames/0", &_test_recv_data0_frame0, test_parse_frames);
+	g_test_add_data_func ("/lldp/parse-frames/1", &_test_recv_data1_frame0, test_parse_frames);
+	g_test_add_data_func ("/lldp/parse-frames/2", &_test_recv_data2_frame0_ttl1, test_parse_frames);
 }
