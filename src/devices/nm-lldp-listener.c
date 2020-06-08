@@ -91,8 +91,8 @@ typedef struct {
         } \
     } G_STMT_END \
 
-#define LOG_NEIGH_FMT        "CHASSIS=%s%s%s PORT=%s%s%s"
-#define LOG_NEIGH_ARG(neigh) NM_PRINT_FMT_QUOTE_STRING ((neigh)->chassis_id), NM_PRINT_FMT_QUOTE_STRING ((neigh)->port_id)
+#define LOG_NEIGH_FMT        "CHASSIS=%u/%s PORT=%u/%s"
+#define LOG_NEIGH_ARG(neigh) (neigh)->chassis_id_type, (neigh)->chassis_id, (neigh)->port_id_type, (neigh)->port_id
 
 /*****************************************************************************/
 
@@ -333,8 +333,28 @@ parse_management_address_tlv (const uint8_t *data, gsize len)
 	return g_variant_builder_end (&builder);
 }
 
+static char *
+format_network_address (const guint8 *data, gsize sz)
+{
+	NMIPAddr a;
+	int family;
+
+	if (   sz == 5
+	    && data[0] == 1 /* LLDP_MGMT_ADDR_IP4 */) {
+		memcpy (&a, &data[1], sizeof (a.addr4));
+		family = AF_INET;
+	} else if (   sz == 17
+	           && data[0] == 2 /* LLDP_MGMT_ADDR_IP6 */) {
+		memcpy (&a, &data[1], sizeof (a.addr6));
+		family = AF_INET6;
+	} else
+		return NULL;
+
+	return nm_utils_inet_ntop_dup (family, &a);
+}
+
 static LldpNeighbor *
-lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
+lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd)
 {
 	LldpNeighbor *neigh;
 	guint8 chassis_id_type;
@@ -352,44 +372,50 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	                           &chassis_id_len,
 	                           &port_id_type,
 	                           &port_id,
-	                           &port_id_len)) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "invalid LLDP neighbor");
+	                           &port_id_len))
 		return NULL;
-	}
 
 	switch (chassis_id_type) {
+	case SD_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
+	case SD_LLDP_CHASSIS_SUBTYPE_PORT_COMPONENT:
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
-	case SD_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
-		s_chassis_id =    nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-		                ?: g_new0 (char, 1);
+		s_chassis_id = nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
 		break;
 	case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 		s_chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
 		break;
-	default:
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "unsupported chassis-id type %d", chassis_id_type);
-		return NULL;
+	case SD_LLDP_CHASSIS_SUBTYPE_NETWORK_ADDRESS:
+		s_chassis_id = format_network_address (chassis_id, chassis_id_len);
+		break;
+	}
+	if (!s_chassis_id) {
+		/* Invalid/unsupported chassis_id? Expose as hex string. This format is not stable, and
+		 * in the future we may add a better string representation for these case (thus
+		 * changing the API). */
+		s_chassis_id = nm_utils_bin2hexstr_full (chassis_id, chassis_id_len, '\0', FALSE, NULL);
 	}
 
 	switch (port_id_type) {
 	case SD_LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
+	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
 	case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
-	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
-		s_port_id =    nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-		            ?: g_new0 (char, 1);
+		s_port_id = nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
 		break;
 	case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
 		s_port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
 		break;
-	default:
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "unsupported port-id type %d", port_id_type);
-		return NULL;
+	case SD_LLDP_PORT_SUBTYPE_NETWORK_ADDRESS:
+		s_port_id = format_network_address (port_id, port_id_len);
+		break;
+	}
+	if (!s_port_id) {
+		/* Invalid/unsupported port_id? Expose as hex string. This format is not stable, and
+		 * in the future we may add a better string representation for these case (thus
+		 * changing the API). */
+		s_port_id = nm_utils_bin2hexstr_full (port_id, port_id_len, '\0', FALSE, NULL);
 	}
 
 	neigh = g_slice_new (LldpNeighbor);
@@ -659,7 +685,6 @@ nmtst_lldp_parse_from_raw (const guint8 *raw_data,
 {
 	nm_auto (sd_lldp_neighbor_unrefp) sd_lldp_neighbor *neighbor_sd = NULL;
 	nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
-	gs_free_error GError *error = NULL;
 	GVariant *variant;
 	int r;
 
@@ -669,9 +694,8 @@ nmtst_lldp_parse_from_raw (const guint8 *raw_data,
 	r = sd_lldp_neighbor_from_raw (&neighbor_sd, raw_data, raw_len);
 	g_assert (r >= 0);
 
-	neigh = lldp_neighbor_new (neighbor_sd, &error);
+	neigh = lldp_neighbor_new (neighbor_sd);
 	g_assert (neigh);
-	g_assert (!error);
 
 	variant = lldp_neighbor_to_variant (neigh);
 	g_assert (variant);
@@ -730,13 +754,11 @@ data_changed_schedule (NMLldpListener *self)
 }
 
 static void
-process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboolean neighbor_valid)
+process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboolean remove)
 {
 	NMLldpListenerPrivate *priv;
 	nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
 	LldpNeighbor *neigh_old;
-	gs_free_error GError *parse_error = NULL;
-	GError **p_parse_error;
 
 	g_return_if_fail (NM_IS_LLDP_LISTENER (self));
 
@@ -747,31 +769,28 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 
 	nm_assert (priv->lldp_neighbors);
 
-	p_parse_error = _LOGT_ENABLED () ? &parse_error : NULL;
-
-	neigh = lldp_neighbor_new (neighbor_sd, p_parse_error);
+	neigh = lldp_neighbor_new (neighbor_sd);
 	if (!neigh) {
-		_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
+		_LOGT ("process: failed to parse neighbor");
 		return;
 	}
 
 	neigh_old = g_hash_table_lookup (priv->lldp_neighbors, neigh);
-	if (neigh_old) {
-		if (!neighbor_valid) {
-			_LOGT ("process: %s neigh: "LOG_NEIGH_FMT"%s%s%s",
-			       "remove", LOG_NEIGH_ARG (neigh),
-			       NM_PRINT_FMT_QUOTED (parse_error, " (failed to parse: ", parse_error->message, ")", ""));
+
+	if (remove) {
+		if (neigh_old) {
+			_LOGT ("process: %s neigh: "LOG_NEIGH_FMT,
+			       "remove", LOG_NEIGH_ARG (neigh));
 
 			g_hash_table_remove (priv->lldp_neighbors, neigh_old);
 			goto handle_changed;
 		}
-		if (lldp_neighbor_equal (neigh_old, neigh))
-			return;
-	} else if (!neighbor_valid) {
-		if (parse_error)
-			_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
 		return;
 	}
+
+	if (   neigh_old
+	    && lldp_neighbor_equal (neigh_old, neigh))
+		return;
 
 	_LOGD ("process: %s neigh: "LOG_NEIGH_FMT,
 	        neigh_old ? "update" : "new",
@@ -788,9 +807,9 @@ lldp_event_handler (sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, voi
 {
 	process_lldp_neighbor (userdata,
 	                       n,
-	                       NM_IN_SET (event, SD_LLDP_EVENT_ADDED,
-	                                         SD_LLDP_EVENT_UPDATED,
-	                                         SD_LLDP_EVENT_REFRESHED));
+	                       !NM_IN_SET (event, SD_LLDP_EVENT_ADDED,
+	                                          SD_LLDP_EVENT_UPDATED,
+	                                          SD_LLDP_EVENT_REFRESHED));
 }
 
 gboolean
