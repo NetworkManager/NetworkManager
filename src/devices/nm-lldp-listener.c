@@ -16,8 +16,8 @@
 
 #include "systemd/nm-sd.h"
 
-#define MAX_NEIGHBORS         128
-#define MIN_UPDATE_INTERVAL_NS (2 * NM_UTILS_NSEC_PER_SEC)
+#define MAX_NEIGHBORS            128
+#define MIN_UPDATE_INTERVAL_NSEC (2 * NM_UTILS_NSEC_PER_SEC)
 
 #define LLDP_MAC_NEAREST_BRIDGE          ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }))
 #define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 }))
@@ -36,7 +36,7 @@ typedef struct {
 	GHashTable   *lldp_neighbors;
 
 	/* the timestamp in nsec until which we delay updates. */
-	gint64        ratelimit_next;
+	gint64        ratelimit_next_nsec;
 	guint         ratelimit_id;
 
 	GVariant     *variant;
@@ -678,7 +678,7 @@ data_changed_timeout (gpointer user_data)
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	priv->ratelimit_id = 0;
-	priv->ratelimit_next = nm_utils_get_monotonic_timestamp_nsec() + MIN_UPDATE_INTERVAL_NS;
+	priv->ratelimit_next_nsec = nm_utils_get_monotonic_timestamp_nsec() + MIN_UPDATE_INTERVAL_NSEC;
 	data_changed_notify (self, priv);
 	return G_SOURCE_REMOVE;
 }
@@ -687,18 +687,25 @@ static void
 data_changed_schedule (NMLldpListener *self)
 {
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-	gint64 now;
+	gint64 now_nsec;
 
-	now = nm_utils_get_monotonic_timestamp_nsec ();
-	if (now < priv->ratelimit_next) {
-		if (!priv->ratelimit_id)
-			priv->ratelimit_id = g_timeout_add (NM_UTILS_NSEC_TO_MSEC_CEIL (priv->ratelimit_next - now), data_changed_timeout, self);
+	if (priv->ratelimit_id != 0)
+		return;
+
+	now_nsec = nm_utils_get_monotonic_timestamp_nsec ();
+	if (now_nsec < priv->ratelimit_next_nsec) {
+		priv->ratelimit_id = g_timeout_add_full (G_PRIORITY_LOW,
+		                                         NM_UTILS_NSEC_TO_MSEC_CEIL (priv->ratelimit_next_nsec - now_nsec),
+		                                         data_changed_timeout,
+		                                         self,
+		                                         NULL);
 		return;
 	}
 
-	nm_clear_g_source (&priv->ratelimit_id);
-	priv->ratelimit_next = now + MIN_UPDATE_INTERVAL_NS;
-	data_changed_notify (self, priv);
+	priv->ratelimit_id = g_idle_add_full (G_PRIORITY_LOW,
+	                                      data_changed_timeout,
+	                                      self,
+	                                      NULL);
 }
 
 static void
@@ -856,12 +863,13 @@ nm_lldp_listener_stop (NMLldpListener *self)
 
 		size = g_hash_table_size (priv->lldp_neighbors);
 		g_hash_table_remove_all (priv->lldp_neighbors);
-		if (size || priv->ratelimit_id)
+		if (   size > 0
+		    || priv->ratelimit_id != 0)
 			changed = TRUE;
 	}
 
 	nm_clear_g_source (&priv->ratelimit_id);
-	priv->ratelimit_next = 0;
+	priv->ratelimit_next_nsec = 0;
 	priv->ifindex = 0;
 
 	if (changed)
