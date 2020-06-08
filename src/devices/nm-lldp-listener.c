@@ -63,8 +63,6 @@ typedef struct {
 
 	sd_lldp_neighbor *neighbor_sd;
 
-	struct ether_addr destination_address;
-
 	guint8 chassis_id_type;
 	guint8 port_id_type;
 
@@ -204,7 +202,6 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 	nm_assert (  !equal
 	           || (   a->chassis_id_type == b->chassis_id_type
 	               && a->port_id_type == b->port_id_type
-	               && nm_utils_ether_addr_equal (&a->destination_address, &b->destination_address)
 	               && nm_streq0 (a->chassis_id, b->chassis_id)
 	               && nm_streq0 (a->port_id, b->port_id)));
 	return equal;
@@ -326,13 +323,6 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 		.neighbor_sd     = sd_lldp_neighbor_ref (neighbor_sd),
 	};
 
-	r = sd_lldp_neighbor_get_destination_address (neighbor_sd, &neigh->destination_address);
-	if (r < 0) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed getting destination address: %s", nm_strerror_native (-r));
-		goto out;
-	}
-
 	switch (chassis_id_type) {
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
@@ -376,6 +366,7 @@ out:
 static GVariant *
 lldp_neighbor_to_variant (LldpNeighbor *neigh)
 {
+	struct ether_addr destination_address;
 	GVariantBuilder builder;
 	const char *str;
 	const guint8 *raw_data;
@@ -401,11 +392,14 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	nm_g_variant_builder_add_sv_uint32 (&builder, NM_LLDP_ATTR_PORT_ID_TYPE, neigh->port_id_type);
 	nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_PORT_ID, neigh->port_id);
 
-	if (nm_utils_ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_BRIDGE))
+	r = sd_lldp_neighbor_get_destination_address (neigh->neighbor_sd, &destination_address);
+	if (r < 0)
+		str = NULL;
+	else if (nm_utils_ether_addr_equal (&destination_address, LLDP_MAC_NEAREST_BRIDGE))
 		str = NM_LLDP_DEST_NEAREST_BRIDGE;
-	else if (nm_utils_ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
+	else if (nm_utils_ether_addr_equal (&destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
 		str = NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE;
-	else if (nm_utils_ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
+	else if (nm_utils_ether_addr_equal (&destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
 		str = NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE;
 	else
 		str = NULL;
