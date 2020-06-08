@@ -1408,15 +1408,12 @@ nmc_command_func_overview (const NMCCommand *cmd, NmCli *nmc, int argc, const ch
 	/* The VPN connections don't have devices (yet?). */
 	p = nm_client_get_active_connections (nmc->client);
 	for (i = 0; i < p->len; i++) {
-		NMActiveConnectionState state;
-
 		ac = p->pdata[i];
 
 		if (!nm_active_connection_get_vpn (ac))
 			continue;
 
-		state = nm_active_connection_get_state (ac);
-		color = nmc_active_connection_state_to_color (state);
+		color = nmc_active_connection_state_to_color (ac);
 		tmp = nmc_colorize (&nmc->nmc_config, color, _("%s VPN connection"),
 		                    nm_active_connection_get_id (ac));
 		g_print ("%s\n", tmp);
@@ -1428,33 +1425,34 @@ nmc_command_func_overview (const NMCCommand *cmd, NmCli *nmc, int argc, const ch
 
 	devices = nmc_get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
+		NMDevice *device = devices[i];
 		NMDeviceState state;
 
-		ac = nm_device_get_active_connection (devices[i]);
+		ac = nm_device_get_active_connection (device);
 
-		state = nm_device_get_state (devices[i]);
-		color = nmc_device_state_to_color (state);
+		state = nm_device_get_state (device);
+		color = nmc_device_state_to_color (device);
 		if (ac) {
 			/* TRANSLATORS: prints header line for activated device in plain `nmcli` overview output as
 			 * "<interface-name>: <device-state> to <connection-id>" */
 			tmp = nmc_colorize (&nmc->nmc_config, color, C_("nmcli-overview", "%s: %s to %s"),
-			                    nm_device_get_iface (devices[i]),
+			                    nm_device_get_iface (device),
 			                    gettext (nmc_device_state_to_string (state)),
 			                    nm_active_connection_get_id (ac));
 		} else {
 			/* TRANSLATORS: prints header line for not active device in plain `nmcli` overview output as
 			 * "<interface-name>: <device-state>" */
 			tmp = nmc_colorize (&nmc->nmc_config, color, C_("nmcli-overview", "%s: %s"),
-			                    nm_device_get_iface (devices[i]),
+			                    nm_device_get_iface (device),
 			                    gettext (nmc_device_state_to_string (state)));
 		}
 		g_print ("%s\n", tmp);
 		g_free (tmp);
 
-		if (nm_device_get_description (devices[i]) && strcmp (nm_device_get_description (devices[i]), ""))
-			g_print ("\t\"%s\"\n", nm_device_get_description (devices[i]));
+		if (nm_device_get_description (device) && strcmp (nm_device_get_description (device), ""))
+			g_print ("\t\"%s\"\n", nm_device_get_description (device));
 
-		device_overview (nmc, devices[i]);
+		device_overview (nmc, device);
 		if (ac)
 			ac_overview (nmc, ac);
 		g_print ("\n");

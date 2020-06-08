@@ -92,7 +92,7 @@ _metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	NMDevice *d = target;
 	NMActiveConnection *ac;
 
-	NMC_HANDLE_COLOR (nmc_device_state_to_color (nm_device_get_state (d)));
+	NMC_HANDLE_COLOR (nmc_device_state_to_color (d));
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DEVICE:
@@ -1716,8 +1716,20 @@ show_device_info (NMDevice *device, NmCli *nmc)
 }
 
 NMMetaColor
-nmc_device_state_to_color (NMDeviceState state)
+nmc_device_state_to_color (NMDevice *device)
 {
+	NMDeviceState state;
+	NMActiveConnection *ac;
+
+	if (!device)
+		return NM_META_COLOR_DEVICE_UNKNOWN;
+
+	ac = nm_device_get_active_connection (device);
+	if (   ac
+	    && NM_FLAGS_HAS (nm_active_connection_get_state_flags (ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL))
+		return NM_META_COLOR_CONNECTION_EXTERNAL;
+
+	state = nm_device_get_state (device);
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
 		return NM_META_COLOR_DEVICE_UNAVAILABLE;
 	else if (state == NM_DEVICE_STATE_DISCONNECTED)
@@ -2612,7 +2624,7 @@ device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 	NMMetaColor color;
 	char *str;
 
-	color = nmc_device_state_to_color (state);
+	color = nmc_device_state_to_color (device);
 	str = nmc_colorize (&nmc->nmc_config, color, "%s: %s\n",
 	                    nm_device_get_iface (device),
 	                    gettext (nmc_device_state_to_string (state)));

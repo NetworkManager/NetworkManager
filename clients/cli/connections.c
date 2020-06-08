@@ -490,9 +490,7 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	const char *s;
 	char *s_mut;
 
-	NMC_HANDLE_COLOR (  ac
-	                  ? nmc_active_connection_state_to_color (nm_active_connection_get_state (ac))
-	                  : NM_META_COLOR_CONNECTION_UNKNOWN);
+	NMC_HANDLE_COLOR (nmc_active_connection_state_to_color (ac));
 
 	if (c)
 		s_con = nm_connection_get_setting_connection (c);
@@ -1427,8 +1425,18 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 }
 
 NMMetaColor
-nmc_active_connection_state_to_color (NMActiveConnectionState state)
+nmc_active_connection_state_to_color (NMActiveConnection *ac)
 {
+	NMActiveConnectionState state;
+
+	if (!ac)
+		return NM_META_COLOR_CONNECTION_UNKNOWN;
+
+	if (NM_FLAGS_HAS (nm_active_connection_get_state_flags (ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL))
+		return NM_META_COLOR_CONNECTION_EXTERNAL;
+
+	state = nm_active_connection_get_state (ac);
+
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
 		return NM_META_COLOR_CONNECTION_ACTIVATING;
 	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
