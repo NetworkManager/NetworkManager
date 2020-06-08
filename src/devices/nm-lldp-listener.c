@@ -30,16 +30,15 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMLldpListener,
 );
 
 typedef struct {
-	char         *iface;
-	int           ifindex;
 	sd_lldp      *lldp_handle;
 	GHashTable   *lldp_neighbors;
+	GVariant     *variant;
 
 	/* the timestamp in nsec until which we delay updates. */
 	gint64        ratelimit_next_nsec;
 	guint         ratelimit_id;
 
-	GVariant     *variant;
+	int           ifindex;
 } NMLldpListenerPrivate;
 
 struct _NMLldpListener {
@@ -724,6 +723,8 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 	g_return_if_fail (priv->lldp_handle);
 	g_return_if_fail (neighbor_sd);
 
+	nm_assert (priv->lldp_neighbors);
+
 	p_parse_error = _LOGT_ENABLED () ? &parse_error : NULL;
 
 	neigh = lldp_neighbor_new (neighbor_sd, p_parse_error);
@@ -831,6 +832,10 @@ nm_lldp_listener_start (NMLldpListener *self, int ifindex, GError **error)
 		goto err;
 	}
 
+	priv->lldp_neighbors = g_hash_table_new_full (lldp_neighbor_id_hash,
+	                                              lldp_neighbor_id_equal,
+	                                              (GDestroyNotify) lldp_neighbor_free, NULL);
+
 	_LOGD ("start");
 
 	return TRUE;
@@ -863,6 +868,7 @@ nm_lldp_listener_stop (NMLldpListener *self)
 
 		size = g_hash_table_size (priv->lldp_neighbors);
 		g_hash_table_remove_all (priv->lldp_neighbors);
+		nm_clear_pointer (&priv->lldp_neighbors, g_hash_table_unref);
 		if (   size > 0
 		    || priv->ratelimit_id != 0)
 			changed = TRUE;
@@ -897,8 +903,8 @@ nm_lldp_listener_get_neighbors (NMLldpListener *self)
 	priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	if (G_UNLIKELY (!priv->variant)) {
-		GVariantBuilder array_builder;
 		gs_free LldpNeighbor **neighbors = NULL;
+		GVariantBuilder array_builder;
 		guint i, n;
 
 		g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
@@ -932,12 +938,6 @@ get_property (GObject *object, guint prop_id,
 static void
 nm_lldp_listener_init (NMLldpListener *self)
 {
-	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
-
-	priv->lldp_neighbors = g_hash_table_new_full (lldp_neighbor_id_hash,
-	                                              lldp_neighbor_id_equal,
-	                                              (GDestroyNotify) lldp_neighbor_free, NULL);
-
 	_LOGT ("lldp listener created");
 }
 
@@ -962,7 +962,6 @@ finalize (GObject *object)
 	NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE (self);
 
 	nm_lldp_listener_stop (self);
-	g_hash_table_unref (priv->lldp_neighbors);
 
 	nm_clear_g_variant (&priv->variant);
 
