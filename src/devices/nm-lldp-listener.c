@@ -58,15 +58,11 @@ G_DEFINE_TYPE (NMLldpListener, nm_lldp_listener, G_TYPE_OBJECT)
 
 typedef struct {
 	GVariant *variant;
+	sd_lldp_neighbor *neighbor_sd;
 	char *chassis_id;
 	char *port_id;
-
-	sd_lldp_neighbor *neighbor_sd;
-
 	guint8 chassis_id_type;
 	guint8 port_id_type;
-
-	bool valid:1;
 } LldpNeighbor;
 
 /*****************************************************************************/
@@ -121,29 +117,96 @@ lldp_neighbor_get_raw (LldpNeighbor *neigh,
 	*out_raw_len = raw_len;
 }
 
+static gboolean
+lldp_neighbor_id_get (struct sd_lldp_neighbor *neighbor_sd,
+                      guint8 *out_chassis_id_type,
+                      const guint8 **out_chassis_id,
+                      gsize *out_chassis_id_len,
+                      guint8 *out_port_id_type,
+                      const guint8 **out_port_id,
+                      gsize *out_port_id_len)
+{
+	int r;
+
+	r = sd_lldp_neighbor_get_chassis_id (neighbor_sd,
+	                                     out_chassis_id_type,
+	                                     (gconstpointer *) out_chassis_id,
+	                                     out_chassis_id_len);
+	if (r < 0)
+		return FALSE;
+
+	r = sd_lldp_neighbor_get_port_id (neighbor_sd,
+	                                  out_port_id_type,
+	                                  (gconstpointer *) out_port_id,
+	                                  out_port_id_len);
+	if (r < 0)
+		return FALSE;
+
+	return TRUE;
+}
+
 static guint
 lldp_neighbor_id_hash (gconstpointer ptr)
 {
 	const LldpNeighbor *neigh = ptr;
+	guint8 chassis_id_type;
+	guint8 port_id_type;
+	const guint8 *chassis_id;
+	const guint8 *port_id;
+	gsize chassis_id_len;
+	gsize port_id_len;
 	NMHashState h;
 
+	if (!lldp_neighbor_id_get (neigh->neighbor_sd, &chassis_id_type, &chassis_id, &chassis_id_len, &port_id_type, &port_id, &port_id_len)) {
+		nm_assert_not_reached ();
+		return 0;
+	}
+
 	nm_hash_init (&h, 23423423u);
-	nm_hash_update_str0 (&h, neigh->chassis_id);
-	nm_hash_update_str0 (&h, neigh->port_id);
 	nm_hash_update_vals (&h,
-	                     neigh->chassis_id_type,
-	                     neigh->port_id_type);
+	                     chassis_id_len,
+	                     port_id_len,
+	                     chassis_id_type,
+	                     port_id_type);
+	nm_hash_update (&h, chassis_id, chassis_id_len);
+	nm_hash_update (&h, port_id, port_id_len);
 	return nm_hash_complete (&h);
 }
 
 static int
-lldp_neighbor_id_cmp (const LldpNeighbor *x, const LldpNeighbor *y)
+lldp_neighbor_id_cmp (const LldpNeighbor *a, const LldpNeighbor *b)
 {
-	NM_CMP_SELF (x, y);
-	NM_CMP_FIELD (x, y, chassis_id_type);
-	NM_CMP_FIELD (x, y, port_id_type);
-	NM_CMP_FIELD_STR0 (x, y, chassis_id);
-	NM_CMP_FIELD_STR0 (x, y, port_id);
+	guint8 a_chassis_id_type;
+	guint8 b_chassis_id_type;
+	guint8 a_port_id_type;
+	guint8 b_port_id_type;
+	const guint8 *a_chassis_id;
+	const guint8 *b_chassis_id;
+	const guint8 *a_port_id;
+	const guint8 *b_port_id;
+	gsize a_chassis_id_len;
+	gsize b_chassis_id_len;
+	gsize a_port_id_len;
+	gsize b_port_id_len;
+
+	NM_CMP_SELF (a, b);
+
+	if (!lldp_neighbor_id_get (a->neighbor_sd, &a_chassis_id_type, &a_chassis_id, &a_chassis_id_len, &a_port_id_type, &a_port_id, &a_port_id_len)) {
+		nm_assert_not_reached ();
+		return FALSE;
+	}
+
+	if (!lldp_neighbor_id_get (b->neighbor_sd, &b_chassis_id_type, &b_chassis_id, &b_chassis_id_len, &b_port_id_type, &b_port_id, &b_port_id_len)) {
+		nm_assert_not_reached ();
+		return FALSE;
+	}
+
+	NM_CMP_DIRECT (a_chassis_id_type, b_chassis_id_type);
+	NM_CMP_DIRECT (a_port_id_type, b_port_id_type);
+	NM_CMP_DIRECT (a_chassis_id_len, b_chassis_id_len);
+	NM_CMP_DIRECT (a_port_id_len, b_port_id_len);
+	NM_CMP_DIRECT_MEMCMP (a_chassis_id, b_chassis_id, a_chassis_id_len);
+	NM_CMP_DIRECT_MEMCMP (a_port_id, b_port_id, a_port_id_len);
 	return 0;
 }
 
@@ -186,25 +249,14 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 	const guint8 *raw_data_b;
 	gsize raw_len_a;
 	gsize raw_len_b;
-	gboolean equal;
 
 	if (a->neighbor_sd == b->neighbor_sd)
 		return TRUE;
 
 	lldp_neighbor_get_raw (a, &raw_data_a, &raw_len_a);
 	lldp_neighbor_get_raw (b, &raw_data_b, &raw_len_b);
-
-	if (raw_len_a != raw_len_b)
-		return FALSE;
-
-	equal = (memcmp (raw_data_a, raw_data_b, raw_len_a) == 0);
-
-	nm_assert (  !equal
-	           || (   a->chassis_id_type == b->chassis_id_type
-	               && a->port_id_type == b->port_id_type
-	               && nm_streq0 (a->chassis_id, b->chassis_id)
-	               && nm_streq0 (a->port_id, b->port_id)));
-	return equal;
+	return    raw_len_a == raw_len_b
+	       && (memcmp (raw_data_a, raw_data_b, raw_len_a) == 0);
 }
 
 static GVariant *
@@ -284,60 +336,43 @@ parse_management_address_tlv (const uint8_t *data, gsize len)
 static LldpNeighbor *
 lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 {
-	nm_auto (lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
-	uint8_t chassis_id_type, port_id_type;
-	const void *chassis_id, *port_id;
-	gsize chassis_id_len, port_id_len;
-	int r;
+	LldpNeighbor *neigh;
+	guint8 chassis_id_type;
+	guint8 port_id_type;
+	const guint8 *chassis_id;
+	const guint8 *port_id;
+	gsize chassis_id_len;
+	gsize port_id_len;
+	gs_free char *s_chassis_id = NULL;
+	gs_free char *s_port_id = NULL;
 
-	r = sd_lldp_neighbor_get_chassis_id (neighbor_sd, &chassis_id_type,
-	                                     &chassis_id, &chassis_id_len);
-	if (r < 0) {
+	if (!lldp_neighbor_id_get (neighbor_sd,
+	                           &chassis_id_type,
+	                           &chassis_id,
+	                           &chassis_id_len,
+	                           &port_id_type,
+	                           &port_id,
+	                           &port_id_len)) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed reading chassis-id: %s", nm_strerror_native (-r));
+		             "invalid LLDP neighbor");
 		return NULL;
 	}
-	if (chassis_id_len < 1) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "empty chassis-id");
-		return NULL;
-	}
-
-	r = sd_lldp_neighbor_get_port_id (neighbor_sd, &port_id_type,
-	                                  &port_id, &port_id_len);
-	if (r < 0) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "failed reading port-id: %s", nm_strerror_native (-r));
-		return NULL;
-	}
-	if (port_id_len < 1) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		             "empty port-id");
-		return NULL;
-	}
-
-	neigh = g_slice_new (LldpNeighbor);
-	*neigh = (LldpNeighbor) {
-		.chassis_id_type = chassis_id_type,
-		.port_id_type    = port_id_type,
-		.neighbor_sd     = sd_lldp_neighbor_ref (neighbor_sd),
-	};
 
 	switch (chassis_id_type) {
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
 	case SD_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
-		neigh->chassis_id =    nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-		                    ?: g_new0 (char, 1);
+		s_chassis_id =    nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+		                ?: g_new0 (char, 1);
 		break;
 	case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
-		neigh->chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
+		s_chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
 		break;
 	default:
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "unsupported chassis-id type %d", chassis_id_type);
-		goto out;
+		return NULL;
 	}
 
 	switch (port_id_type) {
@@ -345,22 +380,27 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
 	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
-		neigh->port_id =    nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-		                 ?: g_new0 (char, 1);
+		s_port_id =    nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+		            ?: g_new0 (char, 1);
 		break;
 	case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
-		neigh->port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
+		s_port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
 		break;
 	default:
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "unsupported port-id type %d", port_id_type);
-		goto out;
+		return NULL;
 	}
 
-	neigh->valid = TRUE;
-
-out:
-	return g_steal_pointer (&neigh);
+	neigh = g_slice_new (LldpNeighbor);
+	*neigh = (LldpNeighbor) {
+		.neighbor_sd     = sd_lldp_neighbor_ref (neighbor_sd),
+		.chassis_id_type = chassis_id_type,
+		.chassis_id      = g_steal_pointer (&s_chassis_id),
+		.port_id_type    = port_id_type,
+		.port_id         = g_steal_pointer (&s_port_id),
+	};
+	return neigh;
 }
 
 static GVariant *
@@ -714,9 +754,6 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 		_LOGT ("process: failed to parse neighbor: %s", parse_error->message);
 		return;
 	}
-
-	if (!neigh->valid)
-		neighbor_valid = FALSE;
 
 	neigh_old = g_hash_table_lookup (priv->lldp_neighbors, neigh);
 	if (neigh_old) {
