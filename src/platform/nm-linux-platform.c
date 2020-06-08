@@ -279,6 +279,10 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
+#define PSCHED_TIME_UNITS_PER_SEC 1000000
+
+/*****************************************************************************/
+
 typedef enum {
 	INFINIBAND_ACTION_CREATE_CHILD,
 	INFINIBAND_ACTION_DELETE_CHILD,
@@ -3660,8 +3664,39 @@ _new_from_nl_routing_rule (struct nlmsghdr *nlh, gboolean id_only)
 	return g_steal_pointer (&obj);
 }
 
+static guint32
+psched_tick_to_time (NMPlatform *platform, guint32 tick)
+{
+	static gboolean initialized;
+	static double tick_in_usec = 1;
+
+	if (!initialized) {
+		gs_free char *params = NULL;
+		double clock_factor = 1;
+		guint32 clock_res;
+		guint32 t2us;
+		guint32 us2t;
+
+		initialized = TRUE;
+		params = nm_platform_sysctl_get (platform, NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/net/psched"));
+		if (   !params
+		    || sscanf (params, "%08x%08x%08x", &t2us, &us2t, &clock_res) != 3) {
+			_LOGW ("packet scheduler parameters not available");
+		} else {
+			/* See tc_core_init() in iproute2 */
+			if (clock_res == 1000000000)
+				t2us = us2t;
+
+			clock_factor  = (double) clock_res / PSCHED_TIME_UNITS_PER_SEC;
+			tick_in_usec = (double) t2us / us2t * clock_factor;
+		}
+	}
+
+	return tick / tick_in_usec;
+}
+
 static NMPObject *
-_new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_qdisc (NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
 {
 	static const struct nla_policy policy[] = {
 		[TCA_KIND] = { .type = NLA_STRING },
@@ -3669,7 +3704,7 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 	};
 	struct nlattr *tb[G_N_ELEMENTS (policy)];
 	const struct tcmsg *tcm;
-	NMPObject *obj;
+	nm_auto_nmpobj NMPObject *obj = NULL;
 
 	if (nlmsg_parse_arr (nlh,
 	                     sizeof (*tcm),
@@ -3700,42 +3735,77 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 		struct nlattr *options_attr;
 		int remaining;
 
-		nla_for_each_nested (options_attr, tb[TCA_OPTIONS], remaining) {
-			if (nla_len (options_attr) < sizeof (uint32_t))
-				continue;
+		if (nm_streq0 (obj->qdisc.kind, "sfq")) {
+			struct tc_sfq_qopt_v1 opt;
 
-			if (nm_streq0 (obj->qdisc.kind, "fq_codel")) {
-				switch (nla_type (options_attr)) {
-				case TCA_FQ_CODEL_LIMIT:
-					obj->qdisc.fq_codel.limit = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_FLOWS:
-					obj->qdisc.fq_codel.flows = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_TARGET:
-					obj->qdisc.fq_codel.target = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_INTERVAL:
-					obj->qdisc.fq_codel.interval = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_QUANTUM:
-					obj->qdisc.fq_codel.quantum = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_CE_THRESHOLD:
-					obj->qdisc.fq_codel.ce_threshold = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_MEMORY_LIMIT:
-					obj->qdisc.fq_codel.memory_limit = nla_get_u32 (options_attr);
-					break;
-				case TCA_FQ_CODEL_ECN:
-					obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
-					break;
+			if (tb[TCA_OPTIONS]->nla_len >= nla_attr_size (sizeof (opt))) {
+				memcpy (&opt, nla_data (tb[TCA_OPTIONS]), sizeof (opt));
+				obj->qdisc.sfq.quantum = opt.v0.quantum;
+				obj->qdisc.sfq.perturb_period = opt.v0.perturb_period;
+				obj->qdisc.sfq.limit = opt.v0.limit;
+				obj->qdisc.sfq.divisor = opt.v0.divisor;
+				obj->qdisc.sfq.flows = opt.v0.flows;
+				obj->qdisc.sfq.depth = opt.depth;
+			}
+		} else if (nm_streq0 (obj->qdisc.kind, "tbf")) {
+			static const struct nla_policy tbf_policy[] = {
+				[TCA_TBF_PARMS]     = { .minlen = sizeof (struct tc_tbf_qopt) },
+				[TCA_TBF_RATE64]    = { .type = NLA_U64 },
+			};
+			struct nlattr *tbf_tb[G_N_ELEMENTS (tbf_policy)];
+			struct tc_tbf_qopt opt;
+
+			if (nla_parse_nested_arr (tbf_tb, tb[TCA_OPTIONS], tbf_policy) < 0)
+				return NULL;
+			if (!tbf_tb[TCA_TBF_PARMS])
+				return NULL;
+
+			nla_memcpy_checked_size (&opt, tbf_tb[TCA_TBF_PARMS], sizeof (opt));
+			obj->qdisc.tbf.rate = opt.rate.rate;
+			if (tbf_tb[TCA_TBF_RATE64])
+				obj->qdisc.tbf.rate = nla_get_u64 (tbf_tb[TCA_TBF_RATE64]);
+			obj->qdisc.tbf.burst = ((double) obj->qdisc.tbf.rate *
+			                       psched_tick_to_time (platform, opt.buffer)) /
+			                       PSCHED_TIME_UNITS_PER_SEC;
+			obj->qdisc.tbf.limit = opt.limit;
+		} else {
+			nla_for_each_nested (options_attr, tb[TCA_OPTIONS], remaining) {
+				if (nla_len (options_attr) < sizeof (uint32_t))
+					continue;
+
+				if (nm_streq0 (obj->qdisc.kind, "fq_codel")) {
+					switch (nla_type (options_attr)) {
+					case TCA_FQ_CODEL_LIMIT:
+						obj->qdisc.fq_codel.limit = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_FLOWS:
+						obj->qdisc.fq_codel.flows = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_TARGET:
+						obj->qdisc.fq_codel.target = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_INTERVAL:
+						obj->qdisc.fq_codel.interval = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_QUANTUM:
+						obj->qdisc.fq_codel.quantum = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_CE_THRESHOLD:
+						obj->qdisc.fq_codel.ce_threshold = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_MEMORY_LIMIT:
+						obj->qdisc.fq_codel.memory_limit = nla_get_u32 (options_attr);
+						break;
+					case TCA_FQ_CODEL_ECN:
+						obj->qdisc.fq_codel.ecn = !!nla_get_u32 (options_attr);
+						break;
+					}
 				}
 			}
 		}
 	}
 
-	return obj;
+	return g_steal_pointer (&obj);
 }
 
 static NMPObject *
@@ -3811,7 +3881,7 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 	case RTM_NEWQDISC:
 	case RTM_DELQDISC:
 	case RTM_GETQDISC:
-		return _new_from_nl_qdisc (msghdr, id_only);
+		return _new_from_nl_qdisc (platform, msghdr, id_only);
 	case RTM_NEWTFILTER:
 	case RTM_DELTFILTER:
 	case RTM_GETTFILTER:
@@ -4651,29 +4721,65 @@ _nl_msg_new_qdisc (int nlmsg_type,
 
 	NLA_PUT_STRING (msg, TCA_KIND, qdisc->kind);
 
-	if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
-		goto nla_put_failure;
+	if (nm_streq (qdisc->kind, "sfq")) {
+		struct tc_sfq_qopt_v1 opt = { };
 
-	if (nm_streq (qdisc->kind, "fq_codel")) {
-		if (qdisc->fq_codel.limit)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_LIMIT, qdisc->fq_codel.limit);
-		if (qdisc->fq_codel.flows)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_FLOWS, qdisc->fq_codel.flows);
-		if (qdisc->fq_codel.target)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_TARGET, qdisc->fq_codel.target);
-		if (qdisc->fq_codel.interval)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_INTERVAL, qdisc->fq_codel.interval);
-		if (qdisc->fq_codel.quantum)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
-		if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
-		if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory_limit);
-		if (qdisc->fq_codel.ecn)
-			NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
+		opt.v0.quantum = qdisc->sfq.quantum;
+		opt.v0.limit = qdisc->sfq.limit;
+		opt.v0.perturb_period = qdisc->sfq.perturb_period;
+		opt.v0.flows = qdisc->sfq.flows;
+		opt.v0.divisor = qdisc->sfq.divisor;
+		opt.depth = qdisc->sfq.depth;
+
+		NLA_PUT (msg, TCA_OPTIONS, sizeof (opt), &opt);
+	} else if (nm_streq (qdisc->kind, "tbf")) {
+		struct tc_tbf_qopt opt = { };
+
+		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
+			goto nla_put_failure;
+
+		opt.rate.rate =   (qdisc->tbf.rate >= (1ULL << 32))
+		                ? ~0U
+		                : (guint32) qdisc->tbf.rate;
+		if (qdisc->tbf.limit)
+			opt.limit = qdisc->tbf.limit;
+		else if (qdisc->tbf.latency) {
+			opt.limit = qdisc->tbf.rate * (double) qdisc->tbf.latency
+			            / PSCHED_TIME_UNITS_PER_SEC
+			            + qdisc->tbf.burst;
+		}
+
+		NLA_PUT (msg, TCA_TBF_PARMS, sizeof (opt), &opt);
+		if (qdisc->tbf.rate >= (1ULL << 32))
+			NLA_PUT_U64 (msg, TCA_TBF_RATE64, qdisc->tbf.rate);
+		NLA_PUT_U32 (msg, TCA_TBF_BURST, qdisc->tbf.burst);
+
+		nla_nest_end (msg, tc_options);
+	} else {
+		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
+			goto nla_put_failure;
+
+		if (nm_streq (qdisc->kind, "fq_codel")) {
+			if (qdisc->fq_codel.limit)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_LIMIT, qdisc->fq_codel.limit);
+			if (qdisc->fq_codel.flows)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_FLOWS, qdisc->fq_codel.flows);
+			if (qdisc->fq_codel.target)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_TARGET, qdisc->fq_codel.target);
+			if (qdisc->fq_codel.interval)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_INTERVAL, qdisc->fq_codel.interval);
+			if (qdisc->fq_codel.quantum)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_QUANTUM, qdisc->fq_codel.quantum);
+			if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_CE_THRESHOLD, qdisc->fq_codel.ce_threshold);
+			if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_MEMORY_LIMIT, qdisc->fq_codel.memory_limit);
+			if (qdisc->fq_codel.ecn)
+				NLA_PUT_U32 (msg, TCA_FQ_CODEL_ECN, qdisc->fq_codel.ecn);
+		}
+
+		nla_nest_end (msg, tc_options);
 	}
-
-	nla_nest_end (msg, tc_options);
 
 	return g_steal_pointer (&msg);
 
@@ -4789,7 +4895,8 @@ _genl_sock (NMLinuxPlatform *platform)
 			nm_assert (!_pathid); \
 			nm_assert (_path[0] == '/'); \
 			nm_assert (   g_str_has_prefix (_path, "/proc/sys/") \
-			           || g_str_has_prefix (_path, "/sys/")); \
+			           || g_str_has_prefix (_path, "/sys/") \
+			           || g_str_has_prefix (_path, "/proc/net")); \
 		} else { \
 			nm_assert (_pathid && _pathid[0] && _pathid[0] != '/'); \
 			nm_assert (_path[0] != '/'); \

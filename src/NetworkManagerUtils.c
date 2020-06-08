@@ -9,6 +9,7 @@
 #include "NetworkManagerUtils.h"
 
 #include <linux/fib_rules.h>
+#include <linux/pkt_sched.h>
 
 #include "nm-glib-aux/nm-c-list.h"
 
@@ -18,6 +19,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-core-internal.h"
+#include "platform/nmp-object.h"
 
 #include "platform/nm-platform.h"
 #include "nm-auth-utils.h"
@@ -1124,4 +1126,140 @@ nm_utils_file_is_in_path (const char *abs_filename,
 	return path[0] && !strchr (path, '/')
 	       ? path
 	       : NULL;
+}
+
+/* The returned qdisc array is valid as long as s_tc is not modified */
+GPtrArray *
+nm_utils_qdiscs_from_tc_setting (NMPlatform *platform,
+                                 NMSettingTCConfig *s_tc,
+                                 int ip_ifindex)
+{
+	GPtrArray *qdiscs;
+	guint nqdiscs;
+	guint i;
+
+	nqdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
+	qdiscs = g_ptr_array_new_full (nqdiscs, (GDestroyNotify) nmp_object_unref);
+
+	for (i = 0; i < nqdiscs; i++) {
+		NMTCQdisc *s_qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
+		NMPObject *q = nmp_object_new (NMP_OBJECT_TYPE_QDISC, NULL);
+		NMPlatformQdisc *qdisc = NMP_OBJECT_CAST_QDISC (q);
+
+		qdisc->ifindex = ip_ifindex;
+		qdisc->kind = nm_tc_qdisc_get_kind (s_qdisc);
+
+		qdisc->addr_family = AF_UNSPEC;
+		qdisc->handle = nm_tc_qdisc_get_handle (s_qdisc);
+		qdisc->parent = nm_tc_qdisc_get_parent (s_qdisc);
+		qdisc->info = 0;
+
+#define GET_ATTR(name, dst, variant_type, type, dflt) G_STMT_START { \
+	GVariant *_variant = nm_tc_qdisc_get_attribute (s_qdisc, ""name""); \
+	\
+	if (   _variant \
+	    && g_variant_is_of_type (_variant, G_VARIANT_TYPE_ ## variant_type)) \
+		(dst) = g_variant_get_ ## type (_variant); \
+	else \
+		(dst) = (dflt); \
+} G_STMT_END
+
+		if (strcmp (qdisc->kind, "fq_codel") == 0) {
+			GET_ATTR ("limit",        qdisc->fq_codel.limit,        UINT32,  uint32,  0);
+			GET_ATTR ("flows",        qdisc->fq_codel.flows,        UINT32,  uint32,  0);
+			GET_ATTR ("target",       qdisc->fq_codel.target,       UINT32,  uint32,  0);
+			GET_ATTR ("interval",     qdisc->fq_codel.interval,     UINT32,  uint32,  0);
+			GET_ATTR ("quantum",      qdisc->fq_codel.quantum,      UINT32,  uint32,  0);
+			GET_ATTR ("ce_threshold", qdisc->fq_codel.ce_threshold, UINT32,  uint32,  NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED);
+			GET_ATTR ("memory_limit", qdisc->fq_codel.memory_limit, UINT32,  uint32,  NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET);
+			GET_ATTR ("ecn",          qdisc->fq_codel.ecn,          BOOLEAN, boolean, FALSE);
+		} else if (nm_streq (qdisc->kind, "sfq")) {
+			GET_ATTR ("limit",        qdisc->sfq.limit,             UINT32,  uint32,  0);
+			GET_ATTR ("flows",        qdisc->sfq.flows,             UINT32,  uint32,  0);
+			GET_ATTR ("divisor",      qdisc->sfq.divisor,           UINT32,  uint32,  0);
+			GET_ATTR ("perturb",      qdisc->sfq.perturb_period,    INT32,   int32,   0);
+			GET_ATTR ("quantum",      qdisc->sfq.quantum,           UINT32,  uint32,  0);
+			GET_ATTR ("depth",        qdisc->sfq.depth,             UINT32,  uint32,  0);
+		} else if (nm_streq (qdisc->kind, "tbf")) {
+			GET_ATTR ("rate",         qdisc->tbf.rate,              UINT64,  uint64,  0);
+			GET_ATTR ("burst",        qdisc->tbf.burst,             UINT32,  uint32,  0);
+			GET_ATTR ("limit",        qdisc->tbf.limit,             UINT32,  uint32,  0);
+			GET_ATTR ("latency",      qdisc->tbf.latency,           UINT32,  uint32,  0);
+		}
+#undef GET_ADDR
+
+		g_ptr_array_add (qdiscs, q);
+	}
+
+	return qdiscs;
+}
+
+/* The returned tfilter array is valid as long as s_tc is not modified */
+GPtrArray *
+nm_utils_tfilters_from_tc_setting (NMPlatform *platform,
+                                   NMSettingTCConfig *s_tc,
+                                   int ip_ifindex)
+{
+	GPtrArray *tfilters;
+	guint ntfilters;
+	guint i;
+
+	ntfilters = nm_setting_tc_config_get_num_tfilters (s_tc);
+	tfilters = g_ptr_array_new_full (ntfilters, (GDestroyNotify) nmp_object_unref);
+
+	for (i = 0; i < ntfilters; i++) {
+		NMTCTfilter *s_tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
+		NMTCAction *action;
+		NMPObject *t = nmp_object_new (NMP_OBJECT_TYPE_TFILTER, NULL);
+		NMPlatformTfilter *tfilter = NMP_OBJECT_CAST_TFILTER (t);
+
+		tfilter->ifindex = ip_ifindex;
+		tfilter->kind = nm_tc_tfilter_get_kind (s_tfilter);
+		tfilter->addr_family = AF_UNSPEC;
+		tfilter->handle = nm_tc_tfilter_get_handle (s_tfilter);
+		tfilter->parent = nm_tc_tfilter_get_parent (s_tfilter);
+		tfilter->info = TC_H_MAKE (0, htons (ETH_P_ALL));
+
+		action = nm_tc_tfilter_get_action (s_tfilter);
+		if (action) {
+			GVariant *var;
+
+			tfilter->action.kind = nm_tc_action_get_kind (action);
+
+			if (strcmp (tfilter->action.kind, "simple") == 0) {
+				var = nm_tc_action_get_attribute (action, "sdata");
+				if (var && g_variant_is_of_type (var, G_VARIANT_TYPE_BYTESTRING)) {
+					g_strlcpy (tfilter->action.simple.sdata,
+					           g_variant_get_bytestring (var),
+					           sizeof (tfilter->action.simple.sdata));
+				}
+			} else if (strcmp (tfilter->action.kind, "mirred") == 0) {
+				if (nm_tc_action_get_attribute (action, "egress"))
+					tfilter->action.mirred.egress = TRUE;
+
+				if (nm_tc_action_get_attribute (action, "ingress"))
+					tfilter->action.mirred.ingress = TRUE;
+
+				if (nm_tc_action_get_attribute (action, "mirror"))
+					tfilter->action.mirred.mirror = TRUE;
+
+				if (nm_tc_action_get_attribute (action, "redirect"))
+					tfilter->action.mirred.redirect = TRUE;
+
+				var = nm_tc_action_get_attribute (action, "dev");
+				if (var && g_variant_is_of_type (var, G_VARIANT_TYPE_STRING)) {
+					int ifindex;
+
+					ifindex = nm_platform_link_get_ifindex (platform,
+					                                        g_variant_get_string (var, NULL));
+					if (ifindex > 0)
+						tfilter->action.mirred.ifindex = ifindex;
+				}
+			}
+		}
+
+		g_ptr_array_add (tfilters, t);
+	}
+
+	return tfilters;
 }

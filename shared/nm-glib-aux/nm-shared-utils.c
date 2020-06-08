@@ -4913,15 +4913,21 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
 			value = nm_sprintf_buf (buf, "%u", g_variant_get_uint32 (variant));
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_INT32))
+			value = nm_sprintf_buf (buf, "%d", (int) g_variant_get_int32 (variant));
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT64))
+			value = nm_sprintf_buf (buf, "%"G_GUINT64_FORMAT, g_variant_get_uint64 (variant));
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTE))
 			value = nm_sprintf_buf (buf, "%hhu", g_variant_get_byte (variant));
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN))
 			value = g_variant_get_boolean (variant) ? "true" : "false";
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING))
 			value = g_variant_get_string (variant, NULL);
-		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTESTRING))
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTESTRING)) {
+			/* FIXME: there is no guarantee that the byte array
+			 * is valid UTF-8.*/
 			value = g_variant_get_bytestring (variant);
-		else
+		} else
 			continue;
 
 		if (sep)

@@ -630,6 +630,22 @@ typedef struct {
 } NMPlatformQdiscFqCodel;
 
 typedef struct {
+	unsigned quantum;
+	int perturb_period;
+	guint32 limit;
+	unsigned divisor;
+	unsigned flows;
+	unsigned depth;
+} NMPlatformQdiscSfq;
+
+typedef struct {
+	guint64 rate;
+	guint32 burst;
+	guint32 limit;
+	guint32 latency;
+} NMPlatformQdiscTbf;
+
+typedef struct {
 	__NMPlatformObjWithIfindex_COMMON;
 
 	/* beware, kind is embedded in an NMPObject, hence you must
@@ -642,6 +658,8 @@ typedef struct {
 	guint32 info;
 	union {
 		NMPlatformQdiscFqCodel fq_codel;
+		NMPlatformQdiscSfq sfq;
+		NMPlatformQdiscTbf tbf;
 	};
 } NMPlatformQdisc;
 

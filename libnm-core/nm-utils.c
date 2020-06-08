@@ -2300,11 +2300,29 @@ fail:
 }
 
 static const NMVariantAttributeSpec *const tc_object_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("root",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                                         ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("parent", G_VARIANT_TYPE_STRING,                                           .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("handle", G_VARIANT_TYPE_STRING,                                           .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",   G_VARIANT_TYPE_STRING,  .no_value = TRUE,                        .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("root",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("parent", G_VARIANT_TYPE_STRING,                                           ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("handle", G_VARIANT_TYPE_STRING,                                           ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",   G_VARIANT_TYPE_STRING,  .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, ),
+	NULL,
+};
+
+static const NMVariantAttributeSpec *const tc_qdisc_sfq_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("quantum",     G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("perturb",     G_VARIANT_TYPE_INT32,                     ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("limit",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("divisor",     G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("flows",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("depth",       G_VARIANT_TYPE_UINT32,                    ),
+	NULL,
+};
+
+static const NMVariantAttributeSpec *const tc_qdisc_tbf_spec[] = {
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("rate",        G_VARIANT_TYPE_UINT64,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("burst",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("limit",       G_VARIANT_TYPE_UINT32,                    ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("latency",     G_VARIANT_TYPE_UINT32,                    ),
 	NULL,
 };
 
@@ -2335,6 +2353,8 @@ typedef struct {
 
 static const NMQdiscAttributeSpec *const tc_qdisc_attribute_spec[] = {
 	&(const NMQdiscAttributeSpec) { "fq_codel", tc_qdisc_fq_codel_spec },
+	&(const NMQdiscAttributeSpec) { "sfq",      tc_qdisc_sfq_spec },
+	&(const NMQdiscAttributeSpec) { "tbf",      tc_qdisc_tbf_spec },
 	NULL,
 };
 
@@ -2550,17 +2570,17 @@ static const NMVariantAttributeSpec *const tc_action_simple_attribute_spec[] = {
 };
 
 static const NMVariantAttributeSpec *const tc_action_mirred_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("egress",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ingress",  G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("mirror",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("redirect", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                  ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("dev",      G_VARIANT_TYPE_STRING,  .no_value = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("egress",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("ingress",  G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("mirror",   G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("redirect", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("dev",      G_VARIANT_TYPE_STRING,                    ),
 	NULL,
 };
 
 static const NMVariantAttributeSpec *const tc_action_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",    G_VARIANT_TYPE_STRING, .no_value = TRUE,                        .str_type = 'a', ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",        G_VARIANT_TYPE_STRING, .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("kind",    G_VARIANT_TYPE_STRING, .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",        G_VARIANT_TYPE_STRING, .no_value = TRUE, .consumes_rest = TRUE, ),
 	NULL,
 };
 
@@ -2758,8 +2778,8 @@ nm_utils_tc_tfilter_to_str (NMTCTfilter *tfilter, GError **error)
 }
 
 static const NMVariantAttributeSpec *const tc_tfilter_attribute_spec[] = {
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("action", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                                         ),
-	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, .str_type = 'a', ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("action", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE,                        ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE ("",       G_VARIANT_TYPE_STRING,  .no_value = TRUE, .consumes_rest = TRUE, ),
 	NULL,
 };
 
@@ -5654,6 +5674,24 @@ nm_utils_parse_variant_attributes (const char *string,
 					return NULL;
 				}
 				variant = g_variant_new_uint32 (num);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_INT32)) {
+					gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT32, G_MAXINT32, G_MAXINT64);
+
+					if (num == G_MAXINT64) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+						             _("invalid int32 value '%s' for attribute '%s'"), value, (*s)->name);
+						return NULL;
+					}
+					variant = g_variant_new_int32 (num);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_UINT64)) {
+					guint64 num = _nm_utils_ascii_str_to_uint64 (value, 10, 0, G_MAXUINT64, G_MAXUINT64);
+
+					if (num == G_MAXUINT64 && errno != 0) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+						             _("invalid uint64 value '%s' for attribute '%s'"), value, (*s)->name);
+						return NULL;
+					}
+					variant = g_variant_new_uint64 (num);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BYTE)) {
 				gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT8, -1);
 

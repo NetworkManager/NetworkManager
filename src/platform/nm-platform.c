@@ -6486,6 +6486,26 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 			nm_utils_strbuf_append (&buf, &len, " memory_limit %u", qdisc->fq_codel.memory_limit);
 		if (qdisc->fq_codel.ecn)
 			nm_utils_strbuf_append (&buf, &len, " ecn");
+	} else if (nm_streq0 (qdisc->kind, "sfq")) {
+		if (qdisc->sfq.quantum)
+			nm_utils_strbuf_append (&buf, &len, " quantum %u", qdisc->sfq.quantum);
+		if (qdisc->sfq.perturb_period)
+			nm_utils_strbuf_append (&buf, &len, " perturb %d", qdisc->sfq.perturb_period);
+		if (qdisc->sfq.limit)
+			nm_utils_strbuf_append (&buf, &len, " limit %u", (guint) qdisc->sfq.limit);
+		if (qdisc->sfq.divisor)
+			nm_utils_strbuf_append (&buf, &len, " divisor %u", qdisc->sfq.divisor);
+		if (qdisc->sfq.flows)
+			nm_utils_strbuf_append (&buf, &len, " flows %u", qdisc->sfq.flows);
+		if (qdisc->sfq.depth)
+			nm_utils_strbuf_append (&buf, &len, " depth %u", qdisc->sfq.depth);
+	} else if (nm_streq0 (qdisc->kind, "tbf")) {
+		nm_utils_strbuf_append (&buf, &len, " rate %"G_GUINT64_FORMAT, qdisc->tbf.rate);
+		nm_utils_strbuf_append (&buf, &len, " burst %u", qdisc->tbf.burst);
+		if (qdisc->tbf.limit)
+			nm_utils_strbuf_append (&buf, &len, " limit %u", qdisc->tbf.limit);
+		if (qdisc->tbf.latency)
+			nm_utils_strbuf_append (&buf, &len, " latency %uns", qdisc->tbf.latency);
 	}
 
 	return buf0;
@@ -6512,6 +6532,20 @@ nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 		                     obj->fq_codel.memory_limit,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
 		                                            obj->fq_codel.ecn));
+	} else if (nm_streq0 (obj->kind, "sfq")) {
+		nm_hash_update_vals (h,
+		                     obj->sfq.quantum,
+		                     obj->sfq.perturb_period,
+		                     obj->sfq.limit,
+		                     obj->sfq.divisor,
+		                     obj->sfq.flows,
+		                     obj->sfq.depth);
+	} else if (nm_streq0 (obj->kind, "tbf")) {
+		nm_hash_update_vals (h,
+		                     obj->tbf.rate,
+		                     obj->tbf.burst,
+		                     obj->tbf.limit,
+		                     obj->tbf.latency);
 	}
 }
 
@@ -6538,6 +6572,18 @@ nm_platform_qdisc_cmp_full (const NMPlatformQdisc *a,
 		NM_CMP_FIELD (a, b, fq_codel.ce_threshold);
 		NM_CMP_FIELD (a, b, fq_codel.memory_limit);
 		NM_CMP_FIELD_UNSAFE (a, b, fq_codel.ecn);
+	} else if (nm_streq0 (a->kind, "sfq")) {
+		NM_CMP_FIELD (a, b, sfq.quantum);
+		NM_CMP_FIELD (a, b, sfq.perturb_period);
+		NM_CMP_FIELD (a, b, sfq.limit);
+		NM_CMP_FIELD (a, b, sfq.flows);
+		NM_CMP_FIELD (a, b, sfq.divisor);
+		NM_CMP_FIELD (a, b, sfq.depth);
+	} else if (nm_streq0 (a->kind, "tbf")) {
+		NM_CMP_FIELD (a, b, tbf.rate);
+		NM_CMP_FIELD (a, b, tbf.burst);
+		NM_CMP_FIELD (a, b, tbf.limit);
+		NM_CMP_FIELD (a, b, tbf.latency);
 	}
 
 	return 0;
