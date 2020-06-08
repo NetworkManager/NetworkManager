@@ -522,7 +522,8 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
 	case SD_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
-		neigh->chassis_id = g_strndup ((const char *) chassis_id, chassis_id_len);
+		neigh->chassis_id =    nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+		                    ?: g_new0 (char, 1);
 		break;
 	case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 		neigh->chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
@@ -538,7 +539,8 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd, GError **error)
 	case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
 	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
-		neigh->port_id = strndup ((char *) port_id, port_id_len);
+		neigh->port_id =    nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+		                 ?: g_new0 (char, 1);
 		break;
 	case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
 		neigh->port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
