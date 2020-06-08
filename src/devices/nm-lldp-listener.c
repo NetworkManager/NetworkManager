@@ -290,10 +290,10 @@ parse_management_address_tlv (const uint8_t *data, gsize len)
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 	nm_g_variant_builder_add_sv_uint32 (&builder, "address-subtype", v_address_subtype);
-	nm_g_variant_builder_add_sv_bytearray (&builder, "object-id", v_object_id_arr, v_object_id_len);
-	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number", v_interface_number);
 	nm_g_variant_builder_add_sv_bytearray (&builder, "address", v_address_arr, v_address_len);
 	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number-subtype", v_interface_number_subtype);
+	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number", v_interface_number);
+	nm_g_variant_builder_add_sv_bytearray (&builder, "object-id", v_object_id_arr, v_object_id_len);
 	return g_variant_builder_end (&builder);
 }
 
@@ -533,8 +533,8 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 						g_variant_builder_init (&v_ieee_802_1_ppvids, G_VARIANT_TYPE ("aa{sv}"));
 					}
 					g_variant_builder_init (&tmp_builder, G_VARIANT_TYPE ("a{sv}"));
-					nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "flags", data8[0]);
 					nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "ppvid", unaligned_read_be16 (&data8[1]));
+					nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "flags", data8[0]);
 					g_variant_builder_add_value (&v_ieee_802_1_ppvids, g_variant_builder_end (&tmp_builder));
 					break;
 				case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME: {
@@ -577,9 +577,9 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 
 					if (!v_ieee_802_3_mac_phy_conf) {
 						g_variant_builder_init (&tmp_builder, G_VARIANT_TYPE ("a{sv}"));
-						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "operational-mau-type", unaligned_read_be16 (&data8[3]));
 						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "autoneg", data8[0]);
 						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "pmd-autoneg-cap", unaligned_read_be16 (&data8[1]));
+						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "operational-mau-type", unaligned_read_be16 (&data8[3]));
 						v_ieee_802_3_mac_phy_conf = g_variant_builder_end (&tmp_builder);
 					}
 					break;
@@ -589,8 +589,8 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 
 					if (!v_ieee_802_3_power_via_mdi) {
 						g_variant_builder_init (&tmp_builder, G_VARIANT_TYPE ("a{sv}"));
-						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "pse-power-pair", data8[1]);
 						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "mdi-power-support", data8[0]);
+						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "pse-power-pair", data8[1]);
 						nm_g_variant_builder_add_sv_uint32 (&tmp_builder, "power-class", data8[2]);
 						v_ieee_802_3_power_via_mdi = g_variant_builder_end (&tmp_builder);
 					}
