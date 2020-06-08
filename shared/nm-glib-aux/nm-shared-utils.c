@@ -2705,6 +2705,17 @@ nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags
 	return nm_utils_buf_utf8safe_escape (p, l, flags, to_free);
 }
 
+char *
+nm_utils_buf_utf8safe_escape_cp (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags)
+{
+	const char *s_const;
+	char *s;
+
+	s_const = nm_utils_buf_utf8safe_escape (buf, buflen, flags, &s);
+	nm_assert (!s || s == s_const);
+	return s ?: g_strdup (s_const);
+}
+
 /*****************************************************************************/
 
 const char *
