@@ -77,10 +77,12 @@ typedef struct {
 typedef struct {
 	gsize frame_len;
 	const uint8_t *frame;
+	const char *as_variant;
 } TestRecvFrame;
-#define TEST_RECV_FRAME_DEFINE(name, ...) \
+#define TEST_RECV_FRAME_DEFINE(name, _as_variant, ...) \
 	static const guint8 _##name##_v[] = { __VA_ARGS__ }; \
 	static const TestRecvFrame name = { \
+		.as_variant = _as_variant, \
 		.frame_len = sizeof (_##name##_v), \
 		.frame = _##name##_v, \
 	}
@@ -102,6 +104,7 @@ typedef struct {
 #define TEST_IFNAME "nm-tap-test0"
 
 TEST_RECV_FRAME_DEFINE (_test_recv_data0_frame0,
+	"{'chassis-id-type': <uint32 4>, 'chassis-id': <'00:01:02:03:04:05'>, 'port-id-type': <uint32 5>, 'port-id': <'1/3'>, 'destination': <'nearest-non-tpmr-bridge'>, 'port-description': <'Port'>, 'system-name': <'SYS'>, 'system-description': <'foo'>}",
 	/* Ethernet header */
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
@@ -163,7 +166,7 @@ TEST_RECV_DATA_DEFINE (_test_recv_data0_twice, 1, _test_recv_data0_check,  &_tes
 TEST_RECV_FRAME_DEFINE (_test_recv_data1_frame0,
 	/* lldp.detailed.pcap from
 	 * https://wiki.wireshark.org/SampleCaptures#Link_Layer_Discovery_Protocol_.28LLDP.29 */
-
+	"{'chassis-id-type': <uint32 4>, 'chassis-id': <'00:01:30:F9:AD:A0'>, 'port-id-type': <uint32 5>, 'port-id': <'1/1'>, 'destination': <'nearest-bridge'>, 'port-description': <'Summit300-48-Port 1001'>, 'system-name': <'Summit300-48'>, 'system-description': <'Summit300-48 - Version 7.4e.1 (Build 5) by Release_Master 05/27/05 04:53:11'>, 'system-capabilities': <uint32 20>, 'management-addresses': <[{'address-subtype': <uint32 6>, 'object-id': <@ay []>, 'interface-number': <uint32 1001>, 'address': <[byte 0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0]>, 'interface-number-subtype': <uint32 2>}]>, 'ieee-802-1-pvid': <uint32 488>, 'ieee-802-1-ppvid': <uint32 0>, 'ieee-802-1-ppvid-flags': <uint32 1>, 'ieee-802-1-ppvids': <[{'flags': <uint32 1>, 'ppvid': <uint32 0>}]>, 'ieee-802-1-vid': <uint32 488>, 'ieee-802-1-vlan-name': <'v2-0488-03-0505'>, 'ieee-802-1-vlans': <[{'vid': <uint32 488>, 'name': <'v2-0488-03-0505'>}]>, 'ieee-802-3-mac-phy-conf': <{'operational-mau-type': <uint32 16>, 'autoneg': <uint32 3>, 'pmd-autoneg-cap': <uint32 27648>}>, 'ieee-802-3-power-via-mdi': <{'pse-power-pair': <uint32 1>, 'mdi-power-support': <uint32 7>, 'power-class': <uint32 0>}>, 'ieee-802-3-max-frame-size': <uint32 1522>}",
 	/* ethernet header */
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e, /* destination mac */
 	0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0, /* source mac */
@@ -358,6 +361,7 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 TEST_RECV_DATA_DEFINE (_test_recv_data1,       1, _test_recv_data1_check,  &_test_recv_data1_frame0);
 
 TEST_RECV_FRAME_DEFINE (_test_recv_data2_frame0_ttl1,
+	"{'chassis-id-type': <uint32 4>, 'chassis-id': <'00:01:02:03:04:05'>, 'port-id-type': <uint32 5>, 'port-id': <'1/3'>, 'destination': <'nearest-non-tpmr-bridge'>, 'port-description': <'Port'>, 'system-name': <'SYS'>, 'system-description': <'foo'>}",
 	/* Ethernet header */
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
@@ -525,9 +529,14 @@ test_parse_frames (gconstpointer test_data)
 	const TestRecvFrame *frame = test_data;
 	gs_unref_variant GVariant *v_neighbor = NULL;
 	gs_unref_variant GVariant *attr = NULL;
+	gs_free char *as_variant = NULL;
 
 	v_neighbor = nmtst_lldp_parse_from_raw (frame->frame, frame->frame_len);
 	g_assert (v_neighbor);
+
+	as_variant = g_variant_print (v_neighbor, TRUE);
+	g_assert (as_variant);
+	g_assert_cmpstr (frame->as_variant, ==, as_variant);
 }
 
 /*****************************************************************************/
