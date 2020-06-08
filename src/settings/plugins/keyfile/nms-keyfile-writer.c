@@ -167,6 +167,7 @@ static gboolean
 _internal_write_connection (NMConnection *connection,
                             gboolean is_nm_generated,
                             gboolean is_volatile,
+                            gboolean is_external,
                             const char *shadowed_storage,
                             gboolean shadowed_owned,
                             const char *keyfile_dir,
@@ -229,6 +230,13 @@ _internal_write_connection (NMConnection *connection,
 		g_key_file_set_boolean (kf_file,
 		                        NM_KEYFILE_GROUP_NMMETA,
 		                        NM_KEYFILE_KEY_NMMETA_VOLATILE,
+		                        TRUE);
+	}
+
+	if (is_external) {
+		g_key_file_set_boolean (kf_file,
+		                        NM_KEYFILE_GROUP_NMMETA,
+		                        NM_KEYFILE_KEY_NMMETA_EXTERNAL,
 		                        TRUE);
 	}
 
@@ -378,6 +386,7 @@ gboolean
 nms_keyfile_writer_connection (NMConnection *connection,
                                gboolean is_nm_generated,
                                gboolean is_volatile,
+                               gboolean is_external,
                                const char *shadowed_storage,
                                gboolean shadowed_owned,
                                const char *keyfile_dir,
@@ -395,6 +404,7 @@ nms_keyfile_writer_connection (NMConnection *connection,
 	return _internal_write_connection (connection,
 	                                   is_nm_generated,
 	                                   is_volatile,
+	                                   is_external,
 	                                   shadowed_storage,
 	                                   shadowed_owned,
 	                                   keyfile_dir,
@@ -424,6 +434,7 @@ nms_keyfile_writer_test_connection (NMConnection *connection,
                                     GError **error)
 {
 	return _internal_write_connection (connection,
+	                                   FALSE,
 	                                   FALSE,
 	                                   FALSE,
 	                                   NULL,

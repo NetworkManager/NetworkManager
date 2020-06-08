@@ -65,6 +65,7 @@ typedef struct {
 			 * That is, it must be tied to the actual keyfile, and not to the UUID. */
 			bool is_nm_generated:1;
 			bool is_volatile:1;
+			bool is_external:1;
 
 			/* if shadowed_storage is set, then this flag indicates whether the file
 			 * is owned. The difference comes into play when deleting the in-memory,
@@ -112,6 +113,7 @@ NMSKeyfileStorage *nms_keyfile_storage_new_connection (struct _NMSKeyfilePlugin 
                                                        NMSKeyfileStorageType storage_type,
                                                        NMTernary is_nm_generated_opt,
                                                        NMTernary is_volatile_opt,
+                                                       NMTernary is_external_opt,
                                                        const char *shadowed_storage,
                                                        NMTernary shadowed_owned_opt,
                                                        const struct timespec *stat_mtime);

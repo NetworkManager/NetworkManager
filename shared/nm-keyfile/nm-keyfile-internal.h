@@ -191,6 +191,7 @@ gboolean _nm_keyfile_has_values (GKeyFile *keyfile);
 #define NM_KEYFILE_GROUP_NMMETA                 ".nmmeta"
 #define NM_KEYFILE_KEY_NMMETA_NM_GENERATED      "nm-generated"
 #define NM_KEYFILE_KEY_NMMETA_VOLATILE          "volatile"
+#define NM_KEYFILE_KEY_NMMETA_EXTERNAL          "external"
 #define NM_KEYFILE_KEY_NMMETA_SHADOWED_STORAGE  "shadowed-storage"
 #define NM_KEYFILE_KEY_NMMETA_SHADOWED_OWNED    "shadowed-owned"
 

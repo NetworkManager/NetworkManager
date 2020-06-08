@@ -156,6 +156,7 @@ nms_keyfile_reader_from_file (const char *full_filename,
                               struct stat *out_stat,
                               NMTernary *out_is_nm_generated,
                               NMTernary *out_is_volatile,
+                              NMTernary *out_is_external,
                               char **out_shadowed_storage,
                               NMTernary *out_shadowed_owned,
                               GError **error)
@@ -169,6 +170,7 @@ nms_keyfile_reader_from_file (const char *full_filename,
 
 	NM_SET_OUT (out_is_nm_generated, NM_TERNARY_DEFAULT);
 	NM_SET_OUT (out_is_volatile, NM_TERNARY_DEFAULT);
+	NM_SET_OUT (out_is_external, NM_TERNARY_DEFAULT);
 
 	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_KEYFILE,
 	                                               full_filename,
@@ -202,6 +204,11 @@ nms_keyfile_reader_from_file (const char *full_filename,
 	NM_SET_OUT (out_is_volatile, nm_key_file_get_boolean (key_file,
 	                                                      NM_KEYFILE_GROUP_NMMETA,
 	                                                      NM_KEYFILE_KEY_NMMETA_VOLATILE,
+	                                                      NM_TERNARY_DEFAULT));
+
+	NM_SET_OUT (out_is_external, nm_key_file_get_boolean (key_file,
+	                                                      NM_KEYFILE_GROUP_NMMETA,
+	                                                      NM_KEYFILE_KEY_NMMETA_EXTERNAL,
 	                                                      NM_TERNARY_DEFAULT));
 
 	NM_SET_OUT (out_shadowed_storage, g_key_file_get_string (key_file,

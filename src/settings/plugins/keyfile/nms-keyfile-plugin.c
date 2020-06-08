@@ -89,22 +89,33 @@ G_DEFINE_TYPE (NMSKeyfilePlugin, nms_keyfile_plugin, NM_TYPE_SETTINGS_PLUGIN)
 /*****************************************************************************/
 
 static const char *
-_extra_flags_to_string (char *str, gsize str_len, gboolean is_nm_generated, gboolean is_volatile)
+_extra_flags_to_string (char *str, gsize str_len, gboolean is_nm_generated, gboolean is_volatile, gboolean is_external)
 {
 	const char *str0 = str;
 
 	if (   !is_nm_generated
-	    && !is_volatile)
+	    && !is_volatile
+	    && !is_external)
 		nm_utils_strbuf_append_str (&str, &str_len, "");
 	else {
-		nm_utils_strbuf_append_str (&str, &str_len, " (");
+		char ch = '(';
+
+		nm_utils_strbuf_append_c (&str, &str_len, ' ');
 		if (is_nm_generated) {
+			nm_utils_strbuf_append_c (&str, &str_len, ch);
 			nm_utils_strbuf_append_str (&str, &str_len, "nm-generated");
-			if (is_volatile)
-				nm_utils_strbuf_append_c (&str, &str_len, ',');
+			ch = ',';
 		}
-		if (is_volatile)
+		if (is_volatile) {
+			nm_utils_strbuf_append_c (&str, &str_len, ch);
 			nm_utils_strbuf_append_str (&str, &str_len, "volatile");
+			ch = ',';
+		}
+		if (is_external) {
+			nm_utils_strbuf_append_c (&str, &str_len, ch);
+			nm_utils_strbuf_append_str (&str, &str_len, "external");
+			ch = ',';
+		}
 		nm_utils_strbuf_append_c (&str, &str_len, ')');
 	}
 
@@ -202,6 +213,7 @@ _read_from_file (const char *full_filename,
                  struct stat *out_stat,
                  NMTernary *out_is_nm_generated,
                  NMTernary *out_is_volatile,
+                 NMTernary *out_is_external,
                  char **out_shadowed_storage,
                  NMTernary *out_shadowed_owned,
                  GError **error)
@@ -215,6 +227,7 @@ _read_from_file (const char *full_filename,
 	                                           out_stat,
 	                                           out_is_nm_generated,
 	                                           out_is_volatile,
+	                                           out_is_external,
 	                                           out_shadowed_storage,
 	                                           out_shadowed_owned,
 	                                           error);
@@ -284,8 +297,9 @@ _load_file (NMSKeyfilePlugin *self,
 {
 	NMSKeyfilePluginPrivate *priv;
 	gs_unref_object NMConnection *connection = NULL;
-	NMTernary is_volatile_opt;
 	NMTernary is_nm_generated_opt;
+	NMTernary is_volatile_opt;
+	NMTernary is_external_opt;
 	NMTernary shadowed_owned_opt;
 	gs_free char *shadowed_storage = NULL;
 	gs_free_error GError *local = NULL;
@@ -350,6 +364,7 @@ _load_file (NMSKeyfilePlugin *self,
 	                              &st,
 	                              &is_nm_generated_opt,
 	                              &is_volatile_opt,
+	                              &is_external_opt,
 	                              &shadowed_storage,
 	                              &shadowed_owned_opt,
 	                              &local);
@@ -367,6 +382,7 @@ _load_file (NMSKeyfilePlugin *self,
 	                                           storage_type,
 	                                           is_nm_generated_opt,
 	                                           is_volatile_opt,
+	                                           is_external_opt,
 	                                           shadowed_storage,
 	                                           shadowed_owned_opt,
 	                                           &st.st_mtim);
@@ -732,6 +748,7 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
                                    gboolean in_memory,
                                    gboolean is_nm_generated,
                                    gboolean is_volatile,
+                                   gboolean is_external,
                                    const char *shadowed_storage,
                                    gboolean shadowed_owned,
                                    NMSettingsStorage **out_storage,
@@ -756,6 +773,7 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	nm_assert (   in_memory
 	           || (   !is_nm_generated
 	               && !is_volatile
+	               && !is_external
 	               && !shadowed_storage
 	               && !shadowed_owned));
 
@@ -770,6 +788,7 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	if (!nms_keyfile_writer_connection (connection,
 	                                    is_nm_generated,
 	                                    is_volatile,
+	                                    is_external,
 	                                    shadowed_storage,
 	                                    shadowed_owned,
 	                                      storage_type == NMS_KEYFILE_STORAGE_TYPE_ETC
@@ -807,7 +826,7 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	       uuid,
 	       nm_connection_get_id (connection),
 	       full_filename,
-	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile),
+	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile, is_external),
 	       NM_PRINT_FMT_QUOTED (shadowed_storage, " (shadows \"", shadowed_storage, shadowed_owned ? "\", owned)" : "\")", ""));
 
 	storage = nms_keyfile_storage_new_connection (self,
@@ -816,6 +835,7 @@ nms_keyfile_plugin_add_connection (NMSKeyfilePlugin *self,
 	                                              storage_type,
 	                                              is_nm_generated ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
 	                                              is_volatile ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
+	                                              is_external ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
 	                                              shadowed_storage,
 	                                              shadowed_owned ? NM_TERNARY_TRUE : NM_TERNARY_FALSE,
 	                                              nm_sett_util_stat_mtime (full_filename, FALSE, &mtime));
@@ -840,6 +860,7 @@ add_connection (NMSettingsPlugin *plugin,
 	                                          FALSE,
 	                                          FALSE,
 	                                          FALSE,
+	                                          FALSE,
 	                                          NULL,
 	                                          FALSE,
 	                                          out_storage,
@@ -853,6 +874,7 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
                                       NMConnection *connection,
                                       gboolean is_nm_generated,
                                       gboolean is_volatile,
+                                      gboolean is_external,
                                       const char *shadowed_storage,
                                       gboolean shadowed_owned,
                                       gboolean force_rename,
@@ -883,6 +905,7 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	nm_assert (   storage->storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN
 	           || (   !is_nm_generated
 	               && !is_volatile
+	               && !is_external
 	               && !shadowed_storage
 	               && !shadowed_owned));
 	nm_assert (!shadowed_owned || shadowed_storage);
@@ -895,6 +918,7 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	if (!nms_keyfile_writer_connection (connection,
 	                                    is_nm_generated,
 	                                    is_volatile,
+	                                    is_external,
 	                                    shadowed_storage,
 	                                    shadowed_owned,
 	                                      storage->storage_type == NMS_KEYFILE_STORAGE_TYPE_ETC
@@ -933,11 +957,12 @@ nms_keyfile_plugin_update_connection (NMSKeyfilePlugin *self,
 	       full_filename,
 	       uuid,
 	       nm_connection_get_id (connection),
-	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile),
+	       _extra_flags_to_string (strbuf, sizeof (strbuf), is_nm_generated, is_volatile, is_external),
 	       NM_PRINT_FMT_QUOTED (shadowed_storage, shadowed_owned ? " (owns \"" : " (shadows \"", shadowed_storage, "\")", ""));
 
 	storage->u.conn_data.is_nm_generated = is_nm_generated;
 	storage->u.conn_data.is_volatile     = is_volatile;
+	storage->u.conn_data.is_external     = is_external;
 	storage->u.conn_data.stat_mtime      = *nm_sett_util_stat_mtime (full_filename, FALSE, &mtime);
 	storage->u.conn_data.shadowed_owned  = shadowed_owned;
 
@@ -957,6 +982,7 @@ update_connection (NMSettingsPlugin *plugin,
 	return nms_keyfile_plugin_update_connection (NMS_KEYFILE_PLUGIN (plugin),
 	                                             storage,
 	                                             connection,
+	                                             FALSE,
 	                                             FALSE,
 	                                             FALSE,
 	                                             NULL,

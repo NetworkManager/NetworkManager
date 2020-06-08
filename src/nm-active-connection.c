@@ -953,7 +953,7 @@ _settings_connection_flags_changed (NMSettingsConnection *settings_connection,
 	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj == settings_connection);
 
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
-	                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
+	                  NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL))
 		return;
 
 	_set_activation_type_managed (self);

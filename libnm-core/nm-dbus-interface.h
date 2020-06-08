@@ -995,6 +995,8 @@ typedef enum { /*< skip >*/
  *  currently active but deleted on disconnect. Volatile connections are
  *  always unsaved, but they are also no backing file on disk and are entirely
  *  in-memory only.
+ * @NM_SETTINGS_CONNECTION_FLAG_EXTERNAL: the profile was generated to represent
+ *  an external configuration of a networking device. Since: 1.26
  *
  * Flags describing the current activation state.
  *
@@ -1005,6 +1007,7 @@ typedef enum { /*< flags >*/
 	NM_SETTINGS_CONNECTION_FLAG_UNSAVED                    = 0x01,
 	NM_SETTINGS_CONNECTION_FLAG_NM_GENERATED               = 0x02,
 	NM_SETTINGS_CONNECTION_FLAG_VOLATILE                   = 0x04,
+	NM_SETTINGS_CONNECTION_FLAG_EXTERNAL                   = 0x08,
 } NMSettingsConnectionFlags;
 
 /**
