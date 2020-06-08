@@ -19,9 +19,9 @@
 #define MAX_NEIGHBORS            128
 #define MIN_UPDATE_INTERVAL_NSEC (2 * NM_UTILS_NSEC_PER_SEC)
 
-#define LLDP_MAC_NEAREST_BRIDGE          ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }))
-#define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 }))
-#define LLDP_MAC_NEAREST_CUSTOMER_BRIDGE ((const struct ether_addr *) ((uint8_t[ETH_ALEN]) { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 }))
+#define LLDP_MAC_NEAREST_BRIDGE          (&((struct ether_addr) { .ether_addr_octet = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } }))
+#define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE (&((struct ether_addr) { .ether_addr_octet = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 } }))
+#define LLDP_MAC_NEAREST_CUSTOMER_BRIDGE (&((struct ether_addr) { .ether_addr_octet = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 } }))
 
 /*****************************************************************************/
 
@@ -99,18 +99,6 @@ typedef struct {
 
 #define LOG_NEIGH_FMT        "CHASSIS=%s%s%s PORT=%s%s%s"
 #define LOG_NEIGH_ARG(neigh) NM_PRINT_FMT_QUOTE_STRING ((neigh)->chassis_id), NM_PRINT_FMT_QUOTE_STRING ((neigh)->port_id)
-
-/*****************************************************************************/
-
-static gboolean
-ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
-{
-	nm_assert (a1);
-	nm_assert (a2);
-
-	G_STATIC_ASSERT_EXPR (sizeof (*a1) == ETH_ALEN);
-	return memcmp (a1, a2, ETH_ALEN) == 0;
-}
 
 /*****************************************************************************/
 
@@ -216,7 +204,7 @@ lldp_neighbor_equal (LldpNeighbor *a, LldpNeighbor *b)
 	nm_assert (  !equal
 	           || (   a->chassis_id_type == b->chassis_id_type
 	               && a->port_id_type == b->port_id_type
-	               && ether_addr_equal (&a->destination_address, &b->destination_address)
+	               && nm_utils_ether_addr_equal (&a->destination_address, &b->destination_address)
 	               && nm_streq0 (a->chassis_id, b->chassis_id)
 	               && nm_streq0 (a->port_id, b->port_id)));
 	return equal;
@@ -413,11 +401,11 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 	nm_g_variant_builder_add_sv_uint32 (&builder, NM_LLDP_ATTR_PORT_ID_TYPE, neigh->port_id_type);
 	nm_g_variant_builder_add_sv_str (&builder, NM_LLDP_ATTR_PORT_ID, neigh->port_id);
 
-	if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_BRIDGE))
+	if (nm_utils_ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_BRIDGE))
 		str = NM_LLDP_DEST_NEAREST_BRIDGE;
-	else if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
+	else if (nm_utils_ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
 		str = NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE;
-	else if (ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
+	else if (nm_utils_ether_addr_equal (&neigh->destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
 		str = NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE;
 	else
 		str = NULL;
