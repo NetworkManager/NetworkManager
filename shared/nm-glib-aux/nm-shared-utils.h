@@ -178,6 +178,24 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
 
 /*****************************************************************************/
 
+struct ether_addr;
+
+static inline int
+nm_utils_ether_addr_cmp (const struct ether_addr *a1, const struct ether_addr *a2)
+{
+	nm_assert (a1);
+	nm_assert (a2);
+	return memcmp (a1, a2, 6 /*ETH_ALEN*/);
+}
+
+static inline gboolean
+nm_utils_ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
+{
+	return nm_utils_ether_addr_cmp (a1, a2) == 0;
+}
+
+/*****************************************************************************/
+
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
 static inline const char *

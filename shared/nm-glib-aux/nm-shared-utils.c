@@ -13,6 +13,7 @@
 #include <sys/syscall.h>
 #include <glib-unix.h>
 #include <net/if.h>
+#include <net/ethernet.h>
 
 #include "nm-errno.h"
 #include "nm-str-buf.h"
@@ -85,6 +86,11 @@ nm_ip_addr_set_from_untrusted (int addr_family,
 	NM_SET_OUT (out_addr_family, addr_family);
 	return TRUE;
 }
+
+/*****************************************************************************/
+
+G_STATIC_ASSERT (ETH_ALEN == sizeof (struct ether_addr));
+G_STATIC_ASSERT (ETH_ALEN == 6);
 
 /*****************************************************************************/
 
