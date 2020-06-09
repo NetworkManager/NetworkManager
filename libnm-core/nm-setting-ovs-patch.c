@@ -95,13 +95,23 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   !nm_utils_ipaddr_valid (AF_INET, self->peer)
-	    && !nm_utils_ipaddr_valid (AF_INET6, self->peer)) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid IP address"),
-		             self->peer);
+	if (!nm_utils_is_valid_iface_name (self->peer, error)) {
+		g_prefix_error (error, "%s.%s: ",
+		                NM_SETTING_OVS_PATCH_SETTING_NAME,
+		                NM_SETTING_OVS_PATCH_PEER);
+		return FALSE;
+	}
+
+	/* on nm-1-22, we use here nm_utils_ifname_valid(). This change was not backported to
+	 * nm-1-20, hence reimplement the check here. We don't want to accept values, that
+	 * would be rejected on newer versions of NetworkManager. */
+	if (!NM_STRCHAR_ALL (self->peer,
+	                     ch,
+	                        !NM_IN_SET (ch, '\\', '/')
+	                     && g_ascii_isgraph (ch))) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("interface name must be alphanumerical with "
+		                     "no forward or backward slashes"));
 		g_prefix_error (error, "%s.%s: ",
 		                NM_SETTING_OVS_PATCH_SETTING_NAME,
 		                NM_SETTING_OVS_PATCH_PEER);
@@ -193,8 +203,8 @@ nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *klass)
 	/**
 	 * NMSettingOvsPatch:peer:
 	 *
-	 * Specifies the unicast destination IP address of a remote Open vSwitch
-	 * bridge port to connect to.
+	 * Specifies the name of the interface for the other side of the patch.
+	 * The patch on the other side must also set this interface as peer.
 	 *
 	 * Since: 1.10
 	 **/
