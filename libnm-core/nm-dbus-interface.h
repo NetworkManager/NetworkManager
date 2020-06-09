@@ -1024,6 +1024,8 @@ typedef enum { /*< flags >*/
  *   of the activation is bound to the visilibity of the connection profile,
  *   which in turn depends on "connection.permissions" and whether a session
  *   for the user exists. Since: 1.16
+ * @NM_ACTIVATION_STATE_FLAG_EXTERNAL: the active connection was generated to
+ *  represent an external configuration of a networking device. Since: 1.26
  *
  * Flags describing the current activation state.
  *
@@ -1039,6 +1041,7 @@ typedef enum { /*< flags >*/
 	NM_ACTIVATION_STATE_FLAG_IP6_READY                            = 0x10,
 	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES                    = 0x20,
 	NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY = 0x40,
+	NM_ACTIVATION_STATE_FLAG_EXTERNAL                             = 0x80,
 } NMActivationStateFlags;
 
 /**
