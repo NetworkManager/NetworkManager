@@ -1272,6 +1272,10 @@ else
 	have_introspection=no
 fi
 
+# check for python black. And check if all files are formatted with python black
+AC_PATH_PROG(BLACK, black)
+AM_CONDITIONAL(WITH_PYTHON_BLACK, test "${BLACK}" != "")
+
 # check for pregenerated manpages and documentation to be installed
 use_pregen_docs=no
 if test "$build_docs" != "yes" -a \

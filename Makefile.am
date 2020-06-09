@@ -5235,6 +5235,11 @@ CLEANFILES += \
 ###############################################################################
 
 include Makefile.examples
+if WITH_PYTHON_BLACK
+check-python-black:
+	$(BLACK) --check $(top_srcdir)
+check_local += check-python-black
+endif
 
 ###############################################################################
 
