@@ -5059,6 +5059,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	/* Validate routes */
 	for (i = 0; i < priv->routes->len; i++) {
+		gs_free_error GError *local = NULL;
 		NMIPRoute *route = (NMIPRoute *) priv->routes->pdata[i];
 
 		if (nm_ip_route_get_family (route) != NM_SETTING_IP_CONFIG_GET_FAMILY (setting)) {
@@ -5068,6 +5069,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			             _("%d. route is invalid"),
 			             (int) (i + 1));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
+			return FALSE;
+		}
+
+		if (!_nm_ip_route_attribute_validate_all (route, &local)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("invalid attribute: %s"),
+			             local->message);
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                nm_setting_get_name (setting),
+			                NM_SETTING_IP_CONFIG_ROUTES);
 			return FALSE;
 		}
 	}
