@@ -223,7 +223,7 @@ if enable_introspection
       output: 'nm-propery-infos-' + info + '.xml',
       command: [
         perl,
-        join_paths(meson.current_source_dir(), 'generate-docs-nm-property-infos.pl'),
+        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.pl'),
         info,
         '@OUTPUT@',
         '@INPUT@'
@@ -284,7 +284,7 @@ if enable_introspection
     command: [
       generate_setting_docs_env,
       python.path(),
-      join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-gir.py'),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py'),
       '--lib-path', meson.current_build_dir(),
       '--gir', '@INPUT@',
       '--output', '@OUTPUT@'

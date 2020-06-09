@@ -1572,21 +1572,21 @@ noinst_DATA += $(libnm_noinst_data)
 
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
-libnm/nm-property-infos-%.xml: libnm/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-docs-nm-property-infos.pl $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
+libnm/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
+	$(AM_V_GEN) $(srcdir)/tools/generate-docs-nm-property-infos.pl $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
 
-libnm/nm-settings-docs-gir.xml: libnm/generate-docs-nm-settings-docs-gir.py libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la $(libnm_docs_sources)
+libnm/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la $(libnm_docs_sources)
 	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
 	"$(PYTHON)" \
-	$(srcdir)/libnm/generate-docs-nm-settings-docs-gir.py \
+	$(srcdir)/tools/generate-docs-nm-settings-docs-gir.py \
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-man/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml libnm/generate-docs-nm-settings-docs-merge.py
-	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/libnm/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
+man/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
 DISTCLEANFILES += $(libnm_noinst_data)
@@ -1594,9 +1594,9 @@ DISTCLEANFILES += $(libnm_noinst_data)
 endif
 
 EXTRA_DIST += \
-	libnm/generate-docs-nm-property-infos.pl \
-	libnm/generate-docs-nm-settings-docs-merge.py \
-	libnm/generate-docs-nm-settings-docs-gir.py \
+	tools/generate-docs-nm-property-infos.pl \
+	tools/generate-docs-nm-settings-docs-merge.py \
+	tools/generate-docs-nm-settings-docs-gir.py \
 	libnm/meson.build \
 	libnm/nm-enum-types.c.template \
 	libnm/nm-enum-types.h.template \

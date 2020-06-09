@@ -64,7 +64,7 @@ if enable_introspection
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
-      join_paths(meson.source_root(), 'libnm', 'generate-docs-nm-settings-docs-merge.py'),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
       nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,
@@ -79,7 +79,7 @@ if enable_introspection
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
-      join_paths(meson.source_root(), 'libnm', 'generate-docs-nm-settings-docs-merge.py'),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
       nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,
