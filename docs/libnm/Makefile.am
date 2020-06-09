@@ -58,6 +58,11 @@ IGNORE_HFILES= \
 	nm-keyfile-internal.h \
 	nm-keyfile-utils.h \
 	\
+	nm-auth-subject.h \
+	nm-common-macros.h \
+	nm-ethtool-utils.h \
+	nm-libnm-core-utils.h \
+	\
 	$(NULL)
 
 # Images to copy into HTML directory.

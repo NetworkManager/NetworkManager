@@ -88,7 +88,11 @@ libnm_core_enum_sources = gnome.mkenums_simple(
 
 libnm_libnm_core_intern = static_library(
   'nm-libnm-core-intern',
-  sources: nm_ethtool_utils_source + nm_libnm_core_utils_source + nm_auth_subject_source + [libnm_core_enum_sources[1]],
+  sources: files(
+    'nm-libnm-core-intern/nm-auth-subject.c',
+    'nm-libnm-core-intern/nm-ethtool-utils.c',
+    'nm-libnm-core-intern/nm-libnm-core-utils.c',
+  ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_core_nm_default_dep,
   c_args: common_c_flags,
 )

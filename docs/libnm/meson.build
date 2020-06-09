@@ -30,6 +30,11 @@ private_headers = [
 
   'nm-keyfile-internal.h',
   'nm-keyfile-utils.h',
+
+  'nm-auth-subject.h',
+  'nm-common-macros.h',
+  'nm-ethtool-utils.h',
+  'nm-libnm-core-utils.h',
 ]
 
 scan_args = [
