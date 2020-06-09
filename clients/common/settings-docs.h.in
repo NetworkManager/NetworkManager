@@ -290,7 +290,7 @@
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_STP_ENABLE N_("Enable or disable STP.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_DEVARGS N_("Open vSwitch DPDK device arguments.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_INTERFACE_TYPE N_("The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or empty.")
-#define DESCRIBE_DOC_NM_SETTING_OVS_PATCH_PEER N_("Specifies the unicast destination IP address of a remote Open vSwitch bridge port to connect to.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_PATCH_PEER N_("Specifies the name of the interface for the other side of the patch. The patch on the other side must also set this interface as peer.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_DOWNDELAY N_("The time port must be inactive in order to be considered down.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_MODE N_("Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\".")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_UPDELAY N_("The time port must be active before it starts forwarding traffic.")
