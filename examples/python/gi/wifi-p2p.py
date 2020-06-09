@@ -9,11 +9,13 @@
 import sys
 import uuid
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 
 main_loop = None
 client = None
+
 
 def create_profile(name, peer_mac):
     profile = NM.SimpleConnection.new()
@@ -32,8 +34,10 @@ def create_profile(name, peer_mac):
 
     s_wifi_p2p = NM.SettingWifiP2P.new()
     s_wifi_p2p.set_property(NM.SETTING_WIFI_P2P_PEER, peer_mac)
-    s_wifi_p2p.set_property(NM.SETTING_WIFI_P2P_WFD_IES,
-                            GLib.Bytes.new(b'\x00\x00\x06\x00\x90\x1c\x44\x00\xc8'))
+    s_wifi_p2p.set_property(
+        NM.SETTING_WIFI_P2P_WFD_IES,
+        GLib.Bytes.new(b"\x00\x00\x06\x00\x90\x1c\x44\x00\xc8"),
+    )
 
     profile.add_setting(s_con)
     profile.add_setting(s_ip4)
@@ -41,6 +45,7 @@ def create_profile(name, peer_mac):
     profile.add_setting(s_wifi_p2p)
 
     return profile
+
 
 def activated_cb(client, result, data):
     try:
@@ -50,35 +55,37 @@ def activated_cb(client, result, data):
         sys.stderr.write("Error: %s\n" % e)
     main_loop.quit()
 
+
 def scan_timeout_cb(device):
     peers = device.get_peers()
     if len(peers) == 0:
         main_loop.quit()
         sys.exit("No peer found")
 
-    print("\n   {:20} {:30} {:3} {:30}".format("MAC", "Name", "Sig", "Wfd-IEs"));
+    print("\n   {:20} {:30} {:3} {:30}".format("MAC", "Name", "Sig", "Wfd-IEs"))
     for p in peers:
         if p.get_wfd_ies() is not None:
             ies = p.get_wfd_ies().get_data().hex()
         else:
             ies = ""
-        print("   {:20} {:30} {:3} {:30}".format(p.get_hw_address(),
-                                                 p.get_name(),
-                                                 p.get_strength(),
-                                                 ies))
+        print(
+            "   {:20} {:30} {:3} {:30}".format(
+                p.get_hw_address(), p.get_name(), p.get_strength(), ies
+            )
+        )
     print("")
 
     # Connect to first peer
-    profile = create_profile('P2P-connection', peers[0].get_hw_address())
-    client.add_and_activate_connection2(profile,
-                                        device,
-                                        "/",
-                                        GLib.Variant('a{sv}', {}),
-                                        None,
-                                        activated_cb,
-                                        None)
-    print(" * Connecting to peer {} using profile '{}'".format(peers[0].get_hw_address(),
-                                                               profile.get_id()))
+    profile = create_profile("P2P-connection", peers[0].get_hw_address())
+    client.add_and_activate_connection2(
+        profile, device, "/", GLib.Variant("a{sv}", {}), None, activated_cb, None
+    )
+    print(
+        " * Connecting to peer {} using profile '{}'".format(
+            peers[0].get_hw_address(), profile.get_id()
+        )
+    )
+
 
 def start_find_cb(device, async_result, user_data):
     try:
@@ -87,8 +94,9 @@ def start_find_cb(device, async_result, user_data):
         sys.stderr.write("Error: %s\n" % e)
         main_loop.quit()
 
-    print(" * Scanning on device {}...".format(device.get_iface()));
+    print(" * Scanning on device {}...".format(device.get_iface()))
     GLib.timeout_add(10000, scan_timeout_cb, device)
+
 
 if __name__ == "__main__":
     client = NM.Client.new(None)
@@ -103,7 +111,7 @@ if __name__ == "__main__":
     if device is None:
         sys.exit("No Wi-Fi P2P device found")
 
-    device.start_find(GLib.Variant('a{sv}', {}), None, start_find_cb, None)
+    device.start_find(GLib.Variant("a{sv}", {}), None, start_find_cb, None)
 
     main_loop = GLib.MainLoop()
     main_loop.run()

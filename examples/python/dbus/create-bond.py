@@ -17,50 +17,58 @@ from gi.repository import GObject
 
 DBusGMainLoop(set_as_default=True)
 
+
 def add_connection(con):
     bus = dbus.SystemBus()
-    proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")
+    proxy = bus.get_object(
+        "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings"
+    )
     settings = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Settings")
     return settings.AddConnection(con)
 
-def create_bond(bond_name):
-    bond_opts = dbus.Dictionary({'mode': '4'})
-    s_bond = dbus.Dictionary({'options': bond_opts})
-    s_con = dbus.Dictionary({
-        'type': 'bond',
-        'uuid': str(uuid.uuid4()),
-        'id': bond_name,
-        'interface-name': bond_name,
-        'autoconnect': False,
-        'autoconnect-slaves': 1})
-    s_ip4 = dbus.Dictionary({'method': 'auto'})
-    s_ip6 = dbus.Dictionary({'method': 'ignore'})
 
-    con = dbus.Dictionary({
-        'bond': s_bond,
-        'connection': s_con,
-        'ipv4': s_ip4,
-        'ipv6': s_ip6})
+def create_bond(bond_name):
+    bond_opts = dbus.Dictionary({"mode": "4"})
+    s_bond = dbus.Dictionary({"options": bond_opts})
+    s_con = dbus.Dictionary(
+        {
+            "type": "bond",
+            "uuid": str(uuid.uuid4()),
+            "id": bond_name,
+            "interface-name": bond_name,
+            "autoconnect": False,
+            "autoconnect-slaves": 1,
+        }
+    )
+    s_ip4 = dbus.Dictionary({"method": "auto"})
+    s_ip6 = dbus.Dictionary({"method": "ignore"})
+
+    con = dbus.Dictionary(
+        {"bond": s_bond, "connection": s_con, "ipv4": s_ip4, "ipv6": s_ip6}
+    )
     print("Creating bond connection: %s" % bond_name)
     return add_connection(con)
 
-def create_slave(device, master):
-    slave_name = 'bond-' + master + '-slave-' + device
-    s_wired = dbus.Dictionary({'duplex': 'full'})
-    s_con = dbus.Dictionary({
-        'type': '802-3-ethernet',
-        'uuid': str(uuid.uuid4()),
-        'id': slave_name,
-        'interface-name': device,
-        'autoconnect': False,
-        'master': master,
-        'slave-type': 'bond'})
 
-    con = dbus.Dictionary({
-        '802-3-ethernet': s_wired,
-        'connection': s_con})
+def create_slave(device, master):
+    slave_name = "bond-" + master + "-slave-" + device
+    s_wired = dbus.Dictionary({"duplex": "full"})
+    s_con = dbus.Dictionary(
+        {
+            "type": "802-3-ethernet",
+            "uuid": str(uuid.uuid4()),
+            "id": slave_name,
+            "interface-name": device,
+            "autoconnect": False,
+            "master": master,
+            "slave-type": "bond",
+        }
+    )
+
+    con = dbus.Dictionary({"802-3-ethernet": s_wired, "connection": s_con})
     print("Creating slave connection: %s" % slave_name)
     add_connection(con)
+
 
 def usage():
     print("Usage: %s <bond_name> <ifname1> ..." % sys.argv[0])
@@ -78,21 +86,26 @@ for ifname in sys.argv[2:]:
 
 # Activate the bond
 bus = dbus.SystemBus()
-proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
+proxy = bus.get_object(
+    "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
+)
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 ac = manager.ActivateConnection(bond_path, "/", "/")
 print("Activating bond: %s (%s)" % (bond_name, ac))
 
 # Monitor the active bond connection
 loop = GObject.MainLoop()
+
+
 def properties_changed(props):
-    if 'State' in props:
-        if props['State'] == 2:
+    if "State" in props:
+        if props["State"] == 2:
             print("Successfully connected")
             loop.quit()
-        if props['State'] == 3 or props['State'] == 4:
+        if props["State"] == 3 or props["State"] == 4:
             print("Bond activation failed")
             loop.quit()
+
 
 obj = bus.get_object("org.freedesktop.NetworkManager", ac)
 iface = dbus.Interface(obj, "org.freedesktop.NetworkManager.Connection.Active")

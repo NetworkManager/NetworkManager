@@ -9,7 +9,8 @@
 # VPN plugin.
 
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 
 import sys
@@ -35,16 +36,20 @@ for vpn_info in NM.VpnPluginInfo.list_load():
     break
 
 if connection is None:
-    print("None of the VPN plugins was able to import \"%s\"" % (filename))
+    print('None of the VPN plugins was able to import "%s"' % (filename))
     sys.exit(1)
 
 connection.normalize()
 
-print("connection imported from \"%s\" using plugin \"%s\" (\"%s\", %s)" % (filename, vpn_info.get_filename(), connection.get_id(), connection.get_uuid()))
+print(
+    'connection imported from "%s" using plugin "%s" ("%s", %s)'
+    % (filename, vpn_info.get_filename(), connection.get_id(), connection.get_uuid())
+)
 
 client = NM.Client.new(None)
 
 main_loop = GLib.MainLoop()
+
 
 def added_cb(client, result, data):
     try:
@@ -53,6 +58,7 @@ def added_cb(client, result, data):
     except Exception, e:
         print("ERROR: failed to add connection: %s\n" % e)
     main_loop.quit()
+
 
 client.add_connection_async(connection, True, None, added_cb, None)
 

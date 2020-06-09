@@ -7,38 +7,46 @@
 import dbus
 
 # Device states from include/NetworkManager.h
-device_states = { 0: "Unknown",
-                 10: "Unmanaged",
-                 20: "Unavailable",
-                 30: "Disconnected",
-                 40: "Prepare",
-                 50: "Config",
-                 60: "Need Auth",
-                 70: "IP Config",
-                 80: "IP Check",
-                 90: "Secondaries",
-                 100: "Activated",
-                 110: "Deactivating",
-                 120: "Failed" }
+device_states = {
+    0: "Unknown",
+    10: "Unmanaged",
+    20: "Unavailable",
+    30: "Disconnected",
+    40: "Prepare",
+    50: "Config",
+    60: "Need Auth",
+    70: "IP Config",
+    80: "IP Check",
+    90: "Secondaries",
+    100: "Activated",
+    110: "Deactivating",
+    120: "Failed",
+}
 
-connectivity_states = { 0: "Unknown",
-                        1: "Activating",
-                        2: "Activated",
-                        3: "Deactivating",
-                        4: "Deactivated" }
+connectivity_states = {
+    0: "Unknown",
+    1: "Activating",
+    2: "Activated",
+    3: "Deactivating",
+    4: "Deactivated",
+}
 
-nm_state = { 0: "Unknown",
-            10: "Asleep",
-            20: "Disconnected",
-            30: "Disconnecting",
-            40: "Connecting",
-            50: "Connected-Local",
-            60: "Connected-Site",
-            70: "Connected-Global" }
+nm_state = {
+    0: "Unknown",
+    10: "Asleep",
+    20: "Disconnected",
+    30: "Disconnecting",
+    40: "Connecting",
+    50: "Connected-Local",
+    60: "Connected-Site",
+    70: "Connected-Global",
+}
 
 bus = dbus.SystemBus()
 
-proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
+proxy = bus.get_object(
+    "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
+)
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
 # Get overall NM connection state
@@ -55,7 +63,7 @@ for d in devices:
     name = prop_iface.Get("org.freedesktop.NetworkManager.Device", "Interface")
 
     # and print them out
-    if state == 100 :   # activated
+    if state == 100:  # activated
         print("Device %s is activated" % name)
     else:
         print("Device %s is not activated (state=%s)" % (name, device_states[state]))
@@ -72,10 +80,14 @@ for a in active:
     # Connections in NM are a collection of settings that describe everything
     # needed to connect to a specific network.  Lets get those details so we
     # can find the user-readable name of the connection.
-    con_path = prop_iface.Get("org.freedesktop.NetworkManager.Connection.Active", "Connection")
+    con_path = prop_iface.Get(
+        "org.freedesktop.NetworkManager.Connection.Active", "Connection"
+    )
     service_proxy = bus.get_object("org.freedesktop.NetworkManager", con_path)
-    con_iface = dbus.Interface(service_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
+    con_iface = dbus.Interface(
+        service_proxy, "org.freedesktop.NetworkManager.Settings.Connection"
+    )
     con_details = con_iface.GetSettings()
-    con_name = con_details['connection']['id']
+    con_name = con_details["connection"]["id"]
 
     print("Connection '%s' is %s" % (con_name, connectivity_states[state].lower()))

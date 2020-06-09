@@ -12,13 +12,17 @@ import dbus, sys
 
 # Get a proxy for the base NetworkManager object
 bus = dbus.SystemBus()
-proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
+proxy = bus.get_object(
+    "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
+)
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 allDevs = manager.GetDevices()
+
 
 def Usage():
     print "Usage: %s <ROLLBACK-INTERVAL> [INTERFACE]..." % sys.argv[0]
     sys.exit(1)
+
 
 def GetDevicePath(ifname):
     for dev in allDevs:
@@ -28,6 +32,7 @@ def GetDevicePath(ifname):
         if interface == ifname:
             return dev
     return
+
 
 if len(sys.argv) < 2:
     Usage()
@@ -46,12 +51,11 @@ for arg in sys.argv[2:]:
     else:
         devList.append(path)
 
-checkpoint = manager.CheckpointCreate(devList,
-                                      interval,
-                                      1); # DESTROY_ALL
+checkpoint = manager.CheckpointCreate(devList, interval, 1)
+# DESTROY_ALL
 
-choice = raw_input('Do you want to rollback [y/n]? ').lower()
-if choice == 'y':
+choice = raw_input("Do you want to rollback [y/n]? ").lower()
+if choice == "y":
     print "Rollback checkpoint"
     results = manager.CheckpointRollback(checkpoint)
     for d in results:

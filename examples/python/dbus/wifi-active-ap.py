@@ -31,7 +31,9 @@ devpath = nm.GetDeviceByIpIface(iface)
 # Get a proxy to the wifi device and get the active access point's object path
 proxy = bus.get_object(service_name, devpath)
 props = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
-active_ap_path = props.Get("org.freedesktop.NetworkManager.Device.Wireless", "ActiveAccessPoint")
+active_ap_path = props.Get(
+    "org.freedesktop.NetworkManager.Device.Wireless", "ActiveAccessPoint"
+)
 if active_ap_path == "/":
     print("%s is not currently associated" % sys.argv[1])
     sys.exit(0)
@@ -50,4 +52,3 @@ for c in raw_ssid:
 print("%s is associated to '%s' (%s)" % (sys.argv[1], ssid, bssid))
 
 sys.exit(0)
-

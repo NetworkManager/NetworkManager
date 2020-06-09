@@ -5,7 +5,8 @@
 #
 
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import NM
 
 if __name__ == "__main__":
@@ -13,7 +14,10 @@ if __name__ == "__main__":
     devices = client.get_devices()
 
     for d in devices:
-        print("{:<16} {:<16} {}".format(d.get_iface(),
-                                        "(" + d.get_type_description() + ")",
-                                        NM.utils_enum_to_str(NM.DeviceInterfaceFlags,
-                                                             d.get_interface_flags())))
+        print(
+            "{:<16} {:<16} {}".format(
+                d.get_iface(),
+                "(" + d.get_type_description() + ")",
+                NM.utils_enum_to_str(NM.DeviceInterfaceFlags, d.get_interface_flags()),
+            )
+        )

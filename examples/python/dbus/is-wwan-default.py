@@ -30,14 +30,16 @@ proxy = bus.get_object(NM_SERVICE_NAME, "/org/freedesktop/NetworkManager")
 manager = dbus.Interface(proxy, NM_MANAGER_IFACE)
 props = dbus.Interface(proxy, DBUS_PROPS_IFACE)
 
+
 def found_connection_type(ctype):
-    if ctype == '':
+    if ctype == "":
         print("No active connection")
     elif ctype in ["gsm", "cdma", "bluetooth"]:
         print("WWAN is default")
     else:
         print("WWAN is not default")
         sys.exit(0)
+
 
 # Shortcut #1, for NM 1.0
 try:
@@ -50,7 +52,7 @@ except KeyError:
 try:
     primary = props.Get(NM_MANAGER_IFACE, "PrimaryConnection")
     if not primary:
-        found_connection_type('')
+        found_connection_type("")
     primary_proxy = bus.get_object(NM_SERVICE_NAME, primary)
     primary_props = dbus.Interface(primary_proxy, DBUS_PROPS_IFACE)
     ctype = primary_props.Get(NM_ACTIVE_CONNECTION_INTERFACE, "Type")
@@ -83,4 +85,3 @@ if default_is_wwan:
     print("WWAN is default")
 else:
     print("WWAN is not default")
-
