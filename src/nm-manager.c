@@ -2699,11 +2699,19 @@ get_existing_connection (NMManager *self,
 	}
 
 	if (matched) {
-		_LOG2I (LOGD_DEVICE, device, "assume: will attempt to assume matching connection '%s' (%s)%s",
-		        nm_settings_connection_get_id (matched),
-		        nm_settings_connection_get_uuid (matched),
-		        assume_state_connection_uuid && nm_streq (assume_state_connection_uuid, nm_settings_connection_get_uuid (matched))
-		            ? " (indicated)" : " (guessed)");
+
+		if (NM_FLAGS_HAS (nm_settings_connection_get_flags (matched), NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL)) {
+			_LOG2D (LOGD_DEVICE, device, "assume: take over previous connection '%s' (%s)",
+			        nm_settings_connection_get_id (matched),
+			        nm_settings_connection_get_uuid (matched));
+			NM_SET_OUT (out_generated, TRUE);
+		} else {
+			_LOG2I (LOGD_DEVICE, device, "assume: will attempt to assume matching connection '%s' (%s)%s",
+			        nm_settings_connection_get_id (matched),
+			        nm_settings_connection_get_uuid (matched),
+			        assume_state_connection_uuid && nm_streq (assume_state_connection_uuid, nm_settings_connection_get_uuid (matched))
+			            ? " (indicated)" : " (guessed)");
+		}
 		nm_device_assume_state_reset (device);
 		return matched;
 	}
