@@ -329,7 +329,9 @@ endif
 
 libnm_libnm_aux = static_library(
   'nm-libnm-aux',
-  sources: nm_libnm_aux_source,
+  sources: files(
+    'nm-libnm-aux/nm-libnm-aux.c',
+  ),
   c_args: [
     '-DG_LOG_DOMAIN="@0@"'.format('libnmc'),
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',

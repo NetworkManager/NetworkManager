@@ -66,6 +66,8 @@ IGNORE_HFILES= \
 	nm-dispatcher-api.h \
 	nm-libnm-core-aux.h \
 	\
+	nm-libnm-aux.h \
+	\
 	$(NULL)
 
 # Images to copy into HTML directory.

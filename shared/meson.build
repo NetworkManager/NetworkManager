@@ -107,8 +107,6 @@ nm_version_macro_header = configure_file(
   configuration: data_conf,
 )
 
-nm_libnm_aux_source = files('nm-libnm-aux/nm-libnm-aux.c')
-
 nm_meta_setting_source = files('nm-meta-setting.c')
 
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')

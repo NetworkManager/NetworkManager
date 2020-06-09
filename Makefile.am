@@ -567,9 +567,9 @@ $(libnm_core_nm_keyfile_libnm_keyfile_la_OBJECTS): $(libnm_core_lib_h_pub_mkenum
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-libnm-aux/libnm-libnm-aux.la
+noinst_LTLIBRARIES += libnm/nm-libnm-aux/libnm-libnm-aux.la
 
-shared_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
+libnm_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
@@ -584,23 +584,25 @@ shared_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(NULL)
 
-shared_nm_libnm_aux_libnm_libnm_aux_la_SOURCES = \
-	shared/nm-libnm-aux/nm-libnm-aux.c \
-	shared/nm-libnm-aux/nm-libnm-aux.h \
+libnm_nm_libnm_aux_libnm_libnm_aux_la_SOURCES = \
+	libnm/nm-libnm-aux/nm-libnm-aux.c \
+	libnm/nm-libnm-aux/nm-libnm-aux.h \
 	$(NULL)
 
-shared_nm_libnm_aux_libnm_libnm_aux_la_LDFLAGS = \
+libnm_nm_libnm_aux_libnm_libnm_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_libnm_aux_libnm_libnm_aux_la_LIBADD = \
+libnm_nm_libnm_aux_libnm_libnm_aux_la_LIBADD = \
 	$(GLIB_LIBS) \
 	libnm/libnm.la \
 	$(NULL)
 
-$(shared_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(shared_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(libnm_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
+
+EXTRA_DIST += libnm/nm-libnm-aux/README.md
 
 ###############################################################################
 
@@ -4306,7 +4308,7 @@ clients_nm_online_LDFLAGS = \
 
 clients_nm_online_LDADD = \
 	libnm/libnm.la \
-	shared/nm-libnm-aux/libnm-libnm-aux.la \
+	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -4532,7 +4534,7 @@ clients_cli_nmcli_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
-	shared/nm-libnm-aux/libnm-libnm-aux.la \
+	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
@@ -4727,7 +4729,7 @@ clients_tui_nmtui_LDADD = \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
-	shared/nm-libnm-aux/libnm-libnm-aux.la \
+	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
@@ -4794,7 +4796,7 @@ clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
 	$(NULL)
 
 clients_cloud_setup_nm_cloud_setup_LDADD = \
-	shared/nm-libnm-aux/libnm-libnm-aux.la \
+	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
