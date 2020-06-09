@@ -56,6 +56,43 @@ foreach man: mans
 endforeach
 
 if enable_introspection
+
+  name = 'dbus'
+  nm_settings_docs_xml_dbus = custom_target(
+    'nm-settings-docs-' + name + '.xml',
+    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    output: 'nm-settings-docs-' + name + '.xml',
+    command: [
+      python.path(),
+      join_paths(meson.source_root(), 'libnm', 'generate-docs-nm-settings-docs-merge.py'),
+      '@OUTPUT@',
+      nm_property_infos_xml[name],
+      nm_settings_docs_xml_gir,
+    ],
+    depends: libnm_gir,
+  )
+
+  name = 'nmcli'
+  nm_settings_docs_xml_nmcli = custom_target(
+    'nm-settings-docs-' + name + '.xml',
+    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    output: 'nm-settings-docs-' + name + '.xml',
+    command: [
+      python.path(),
+      join_paths(meson.source_root(), 'libnm', 'generate-docs-nm-settings-docs-merge.py'),
+      '@OUTPUT@',
+      nm_property_infos_xml[name],
+      nm_settings_docs_xml_gir,
+    ],
+    depends: libnm_gir,
+  )
+
+  nm_settings_docs_xml = {
+    'gir':   nm_settings_docs_xml_gir,
+    'dbus':  nm_settings_docs_xml_dbus,
+    'nmcli':  nm_settings_docs_xml_nmcli,
+  }
+
   mans = [
     ['nm-settings-keyfile', '5', nm_property_infos_xml['keyfile']],
     ['nm-settings-dbus',    '5', nm_settings_docs_xml['dbus']],

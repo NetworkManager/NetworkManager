@@ -292,35 +292,6 @@ if enable_introspection
     depends: libnm_gir,
   )
 
-  foreach name: ['dbus', 'nmcli']
-    t = custom_target(
-      'nm-settings-docs-' + name + '.xml',
-      input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
-      output: 'nm-settings-docs-' + name + '.xml',
-      command: [
-        python.path(),
-        join_paths(meson.current_source_dir(), 'generate-docs-nm-settings-docs-merge.py'),
-        '@OUTPUT@',
-        nm_property_infos_xml[name],
-        nm_settings_docs_xml_gir,
-      ],
-      depends: libnm_gir,
-    )
-    if name == 'dbus'
-      nm_settings_docs_xml_dbus = t
-    elif name == 'nmcli'
-      nm_settings_docs_xml_nmcli = t
-    else
-      assert(false)
-    endif
-  endforeach
-
-  nm_settings_docs_xml = {
-    'gir':   nm_settings_docs_xml_gir,
-    'dbus':  nm_settings_docs_xml_dbus,
-    'nmcli': nm_settings_docs_xml_nmcli,
-  }
-
 endif
 
 if enable_tests

@@ -151,9 +151,7 @@ test-*.trs
 /libnm/nm-property-infos-ifcfg-rh.xml
 /libnm/nm-property-infos-keyfile.xml
 /libnm/nm-property-infos-nmcli.xml
-/libnm/nm-settings-docs-dbus.xml
 /libnm/nm-settings-docs-gir.xml
-/libnm/nm-settings-docs-nmcli.xml
 /libnm/tests/test-libnm
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
@@ -195,6 +193,8 @@ test-*.trs
 
 /man/*.[1785]
 /man/nm-settings-dbus.xml
+/man/nm-settings-docs-dbus.xml
+/man/nm-settings-docs-nmcli.xml
 /man/nm-settings-ifcfg-rh.xml
 /man/nm-settings-keyfile.xml
 /man/nm-settings-nmcli.xml
