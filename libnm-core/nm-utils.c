@@ -1266,7 +1266,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			return FALSE;
 		if (!have_ap)
 			return TRUE;
-		if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_OWE))
+		if (!NM_FLAGS_ANY (ap_rsn, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
 			return FALSE;
 		return TRUE;
 	case NMU_SEC_INVALID:

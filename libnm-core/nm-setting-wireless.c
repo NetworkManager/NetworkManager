@@ -222,8 +222,8 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_SAE))
 				return FALSE;
 		} else if (!strcmp (key_mgmt, "owe")) {
-			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_OWE)
-			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_OWE))
+			if (   !NM_FLAGS_ANY (ap_wpa, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)
+			    && !NM_FLAGS_ANY (ap_rsn, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
 				return FALSE;
 		}
 

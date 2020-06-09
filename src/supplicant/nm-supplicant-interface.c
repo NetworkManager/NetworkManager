@@ -702,6 +702,19 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 		p_max_rate_has = TRUE;
 		g_variant_unref (v_v);
 	}
+
+	v_v = nm_g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
+	if (v_v) {
+		bss_info->wpa_flags = security_from_vardict (v_v);
+		g_variant_unref (v_v);
+	}
+
+	v_v = nm_g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
+	if (v_v) {
+		bss_info->rsn_flags = security_from_vardict (v_v);
+		g_variant_unref (v_v);
+	}
+
 	v_v = nm_g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
 	if (v_v) {
 		gboolean p_owe_transition_mode;
@@ -715,26 +728,15 @@ _bss_info_properties_changed (NMSupplicantInterface *self,
 		g_variant_unref (v_v);
 
 		if (p_owe_transition_mode)
-			bss_info->rsn_flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+			bss_info->rsn_flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
 		else
-			bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE;
+			bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
 
 		bss_info->metered = p_metered;
 	}
+
 	if (p_max_rate_has)
 		bss_info->max_rate = p_max_rate / 1000u;
-
-	v_v = nm_g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
-	if (v_v) {
-		bss_info->wpa_flags = security_from_vardict (v_v);
-		g_variant_unref (v_v);
-	}
-
-	v_v = nm_g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
-	if (v_v) {
-		bss_info->rsn_flags = security_from_vardict (v_v);
-		g_variant_unref (v_v);
-	}
 
 	_bss_info_changed_emit (self, bss_info, TRUE);
 }

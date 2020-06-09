@@ -53,7 +53,7 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags, NMMetaAccessorGetType 
 		flags_str[i++] = "802.1X";
 	if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
 		flags_str[i++] = "sae";
-	if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
+	if (NM_FLAGS_ANY (flags, NM_802_11_AP_SEC_KEY_MGMT_OWE |NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
 		flags_str[i++] = "owe";
 
 	/* Make sure you grow flags_str when adding items here. */
@@ -1214,7 +1214,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
 		g_string_append (security_str, "WPA3 ");
 	}
-	if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE) {
+	if (NM_FLAGS_ANY (rsn_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
 		g_string_append (security_str, "OWE ");
 	}
 	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
@@ -3690,8 +3690,12 @@ do_device_wifi_connect (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 
 	/* Set password for WEP or WPA-PSK. */
 	if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
-	    || (ap_wpa_flags != NM_802_11_AP_SEC_NONE && !(ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE))
-	    || (ap_rsn_flags != NM_802_11_AP_SEC_NONE && !(ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE))) {
+	    || (   ap_wpa_flags != NM_802_11_AP_SEC_NONE
+	        && !NM_FLAGS_ANY (ap_wpa_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE |
+	                                        NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
+	    || (   ap_rsn_flags != NM_802_11_AP_SEC_NONE
+	        && !NM_FLAGS_ANY (ap_rsn_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE |
+	                                        NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))) {
 		const char *con_password = NULL;
 		NMSettingWirelessSecurity *s_wsec = NULL;
 
