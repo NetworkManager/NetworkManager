@@ -236,7 +236,10 @@ libnm_libnm_core_aux_dep = declare_dependency(
 
 libnm_keyfile = static_library(
   'nm-keyfile',
-  sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
+  sources: files(
+    'nm-keyfile/nm-keyfile-utils.c',
+    'nm-keyfile/nm-keyfile.c',
+  ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_utils_base_dep,
   c_args: [
     '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
