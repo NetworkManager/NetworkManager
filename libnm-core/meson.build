@@ -225,7 +225,9 @@ c_flags = [
 
 libnm_libnm_core_aux = static_library(
   'nm-libnm-core-aux',
-  sources: nm_libnm_core_aux_source + [libnm_core_enum_sources[1]],
+  sources: files(
+    'nm-libnm-core-aux/nm-libnm-core-aux.c',
+  ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_utils_base_dep,
   c_args: c_flags,
   link_with: libnm_libnm_core_intern,

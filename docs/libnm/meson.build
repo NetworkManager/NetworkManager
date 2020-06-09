@@ -35,6 +35,9 @@ private_headers = [
   'nm-common-macros.h',
   'nm-ethtool-utils.h',
   'nm-libnm-core-utils.h',
+
+  'nm-dispatcher-api.h',
+  'nm-libnm-core-aux.h',
 ]
 
 scan_args = [

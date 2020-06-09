@@ -63,6 +63,9 @@ IGNORE_HFILES= \
 	nm-ethtool-utils.h \
 	nm-libnm-core-utils.h \
 	\
+	nm-dispatcher-api.h \
+	nm-libnm-core-aux.h \
+	\
 	$(NULL)
 
 # Images to copy into HTML directory.

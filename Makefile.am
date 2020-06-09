@@ -496,9 +496,9 @@ EXTRA_DIST += libnm-core/nm-libnm-core-intern/README.md
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-libnm-core-aux/libnm-libnm-core-aux.la
+noinst_LTLIBRARIES += libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la
 
-shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_CPPFLAGS = \
+libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
@@ -511,22 +511,24 @@ shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
 	$(NULL)
 
-shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_SOURCES = \
-	shared/nm-libnm-core-aux/nm-dispatcher-api.h \
-	shared/nm-libnm-core-aux/nm-libnm-core-aux.c \
-	shared/nm-libnm-core-aux/nm-libnm-core-aux.h \
+libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_SOURCES = \
+	libnm-core/nm-libnm-core-aux/nm-dispatcher-api.h \
+	libnm-core/nm-libnm-core-aux/nm-libnm-core-aux.c \
+	libnm-core/nm-libnm-core-aux/nm-libnm-core-aux.h \
 	$(NULL)
 
-shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_LDFLAGS = \
+libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_LIBADD = \
+libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(shared_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += libnm-core/nm-libnm-core-aux/README.md
 
 ###############################################################################
 
@@ -1222,7 +1224,7 @@ nodist_libnm_core_tests_test_general_SOURCES = \
 	$(NULL)
 
 libnm_core_tests_ldadd = \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
@@ -1451,7 +1453,7 @@ nodist_libnm_liblibnm_la_SOURCES = \
 	$(NULL)
 
 libnm_liblibnm_la_LIBADD = \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
@@ -2306,7 +2308,7 @@ src_libNetworkManager_la_SOURCES = \
 
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
@@ -2397,7 +2399,7 @@ src_nm_iface_helper_SOURCES = \
 
 src_nm_iface_helper_LDADD = \
 	src/libNetworkManagerBase.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
@@ -2446,7 +2448,7 @@ src_initrd_nm_initrd_generator_SOURCES = \
 src_initrd_nm_initrd_generator_LDADD = \
 	src/initrd/libnmi-core.la \
 	src/libNetworkManagerBase.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
@@ -4434,7 +4436,7 @@ clients_common_tests_test_clients_common_LDFLAGS = \
 clients_common_tests_test_clients_common_LDADD = \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -4478,7 +4480,7 @@ clients_common_tests_test_libnm_core_aux_LDFLAGS = \
 	$(NULL)
 
 clients_common_tests_test_libnm_core_aux_LDADD = \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -4525,7 +4527,7 @@ clients_cli_nmcli_CPPFLAGS = \
 clients_cli_nmcli_LDADD = \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -4726,7 +4728,7 @@ clients_tui_nmtui_LDADD = \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
 	shared/nm-libnm-aux/libnm-libnm-aux.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -4793,7 +4795,7 @@ clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
 
 clients_cloud_setup_nm_cloud_setup_LDADD = \
 	shared/nm-libnm-aux/libnm-libnm-aux.la \
-	shared/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
