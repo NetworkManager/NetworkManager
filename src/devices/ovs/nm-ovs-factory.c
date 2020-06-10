@@ -142,15 +142,40 @@ ovsdb_interface_failed (NMOvsdb *ovsdb,
 {
 	NMDevice *device = NULL;
 	NMSettingsConnection *connection = NULL;
-
-	_LOGI (name, connection_uuid, "ovs interface \"%s\" (%s) failed: %s", name, connection_uuid, error);
+	NMConnection *c;
+	const char *type;
+	NMSettingOvsInterface *s_ovs_int;
+	gboolean is_patch = FALSE;
+	gboolean ignore;
 
 	device = nm_manager_get_device (NM_MANAGER_GET, name, NM_DEVICE_TYPE_OVS_INTERFACE);
-	if (!device)
-		return;
+	if (device && connection_uuid) {
+		connection = nm_settings_get_connection_by_uuid (nm_device_get_settings (device),
+		                                                 connection_uuid);
+	}
 
-	if (connection_uuid)
-		connection = nm_settings_get_connection_by_uuid (nm_device_get_settings (device), connection_uuid);
+	/* The patch interface which gets created first is expected to
+	 * fail because the second patch doesn't exist yet. Ignore all
+	 * failures of patch interfaces. */
+	if (   connection
+	    && (c = nm_settings_connection_get_connection (connection))
+	    && (type = nm_connection_get_connection_type (c))
+	    && nm_streq0 (type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)
+	    && (s_ovs_int = nm_connection_get_setting_ovs_interface (c))
+	    && nm_streq0 (nm_setting_ovs_interface_get_interface_type (s_ovs_int), "patch"))
+		is_patch = TRUE;
+
+	ignore = !device || is_patch;
+
+	_NMLOG (ignore ? LOGL_DEBUG : LOGL_INFO,
+	        name, connection_uuid,
+	        "ovs interface \"%s\" (%s) failed%s: %s",
+	        name, connection_uuid,
+	        ignore ? " (ignored)" : "",
+	        error);
+
+	if (ignore)
+		return;
 
 	if (connection) {
 		nm_settings_connection_autoconnect_blocked_reason_set (connection,
