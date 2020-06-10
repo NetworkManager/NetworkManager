@@ -12,7 +12,8 @@ typedef enum {
 	NM_SUPPL_OPT_TYPE_BYTES,
 	NM_SUPPL_OPT_TYPE_UTF8,
 	NM_SUPPL_OPT_TYPE_KEYWORD,
-	NM_SUPPL_OPT_TYPE_STRING
+	NM_SUPPL_OPT_TYPE_STRING,
+	_NM_SUPPL_OPT_TYPE_NUM,
 } NMSupplOptType;
 
 NMSupplOptType nm_supplicant_settings_verify_setting (const char *key,
