@@ -977,6 +977,7 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("MATCH_DRIVER",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("MATCH_INTERFACE_NAME",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("MATCH_KERNEL_COMMAND_LINE",                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("MATCH_PATH",                                  NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("MDNS",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("METRIC",                                      NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
 	_KEY_TYPE ("MODE",                                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
