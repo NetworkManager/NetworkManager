@@ -6295,6 +6295,7 @@ nm_device_match_parent_hwaddr (NMDevice *device,
 static gboolean
 check_connection_compatible (NMDevice *self, NMConnection *connection, GError **error)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *device_iface = nm_device_get_iface (self);
 	gs_free_error GError *local = NULL;
 	gs_free char *conn_iface = NULL;
@@ -6437,6 +6438,13 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 		if (!nm_wildcard_match_check (device_driver, patterns, num_patterns)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "device does not satisfy match.driver property");
+			return FALSE;
+		}
+
+		patterns = nm_setting_match_get_paths (s_match, &num_patterns);
+		if (!nm_wildcard_match_check (priv->path, patterns, num_patterns)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+			                            "device does not satisfy match.path property");
 			return FALSE;
 		}
 	}
