@@ -11,11 +11,11 @@
 #include <stdlib.h>
 
 struct Opt {
-	const char *     key;
-	const OptType    type;
-	const gint32     int_low;  /* Inclusive */
-	const gint32     int_high; /* Inclusive; max length for strings */
-	const gboolean   str_allowed_multiple;
+	const char *key;
+	const NMSupplOptType type;
+	const gint32 int_low;  /* Inclusive */
+	const gint32 int_high; /* Inclusive; max length for strings */
+	const gboolean str_allowed_multiple;
 	const char *const*str_allowed;
 };
 
@@ -38,152 +38,152 @@ static gboolean validate_type_keyword (const struct Opt * opt,
 typedef gboolean (*validate_func)(const struct Opt *, const char *, const guint32);
 
 struct validate_entry {
-	const OptType  type;
+	const NMSupplOptType  type;
 	const validate_func func;
 };
 
 static const struct validate_entry validate_table[] = {
-	{ TYPE_INT,     validate_type_int     },
-	{ TYPE_BYTES,   validate_type_bytes   },
-	{ TYPE_UTF8,    validate_type_utf8    },
-	{ TYPE_KEYWORD, validate_type_keyword },
+	{ NM_SUPPL_OPT_TYPE_INT,     validate_type_int     },
+	{ NM_SUPPL_OPT_TYPE_BYTES,   validate_type_bytes   },
+	{ NM_SUPPL_OPT_TYPE_UTF8,    validate_type_utf8    },
+	{ NM_SUPPL_OPT_TYPE_KEYWORD, validate_type_keyword },
 };
 
 static const struct Opt opt_table[] = {
-	{ "ssid",                  TYPE_BYTES,   0,    32,    FALSE, NULL },
-	{ "bssid",                 TYPE_KEYWORD, 0,    0,     FALSE, NULL },
-	{ "scan_ssid",             TYPE_INT,     0,    1,     FALSE, NULL },
-	{ "frequency",             TYPE_INT,     2412, 5825,  FALSE, NULL },
-	{ "auth_alg",              TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
-	                                                                "OPEN",
-	                                                                "SHARED",
-	                                                                "LEAP",
-	                                                             ) },
-	{ "psk",                   TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "pairwise",              TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
-	                                                                "CCMP",
-	                                                                "TKIP",
-	                                                                "NONE",
-	                                                             ) },
-	{ "group",                 TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
-	                                                                "CCMP",
-	                                                                "TKIP",
-	                                                                "WEP104",
-	                                                                "WEP40",
-	                                                             ) },
-	{ "proto",                 TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
-	                                                                "WPA",
-	                                                                "RSN",
-	                                                             ) },
-	{ "key_mgmt",              TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
-	                                                                "WPA-PSK",
-	                                                                "WPA-PSK-SHA256",
-	                                                                "FT-PSK",
-	                                                                "WPA-EAP",
-	                                                                "WPA-EAP-SHA256",
-	                                                                "FT-EAP",
-	                                                                "FT-EAP-SHA384",
-	                                                                "FILS-SHA256",
-	                                                                "FILS-SHA384",
-	                                                                "FT-FILS-SHA256",
-	                                                                "FT-FILS-SHA384",
-	                                                                "IEEE8021X",
-	                                                                "SAE",
-	                                                                "FT-SAE",
-	                                                                "OWE",
-	                                                                "NONE",
-	                                                             ) },
-	{ "wep_key0",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "wep_key1",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "wep_key2",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "wep_key3",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "wep_tx_keyidx",         TYPE_INT,     0,    3,     FALSE, NULL },
-	{ "eapol_flags",           TYPE_INT,     0,    3,     FALSE, NULL },
-	{ "eap",                   TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
-	                                                                "LEAP",
-	                                                                "MD5",
-	                                                                "TLS",
-	                                                                "PEAP",
-	                                                                "TTLS",
-	                                                                "SIM",
-	                                                                "PSK",
-	                                                                "FAST",
-	                                                                "PWD",
-	                                                             ) },
-	{ "identity",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "password",              TYPE_UTF8,    0,    0,     FALSE, NULL },
-	{ "ca_path",               TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "subject_match",         TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "altsubject_match",      TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "domain_suffix_match",   TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "domain_match",          TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "ca_cert",               TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "client_cert",           TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "private_key",           TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "private_key_passwd",    TYPE_BYTES,   0,    1024,  FALSE, NULL },
-	{ "phase1",                TYPE_KEYWORD, 0,    0,     TRUE,  NM_MAKE_STRV (
-	                                                                "peapver=0",
-	                                                                "peapver=1",
-	                                                                "peaplabel=1",
-	                                                                "peap_outer_success=0",
-	                                                                "include_tls_length=1",
-	                                                                "sim_min_num_chal=3",
-	                                                                "fast_provisioning=0",
-	                                                                "fast_provisioning=1",
-	                                                                "fast_provisioning=2",
-	                                                                "fast_provisioning=3",
-	                                                                "tls_disable_tlsv1_0=0",
-	                                                                "tls_disable_tlsv1_0=1",
-	                                                                "tls_disable_tlsv1_1=0",
-	                                                                "tls_disable_tlsv1_1=1",
-	                                                                "tls_disable_tlsv1_2=0",
-	                                                                "tls_disable_tlsv1_2=1",
-	                                                             ) },
-	{ "phase2",                TYPE_KEYWORD, 0,    0,     TRUE,  NM_MAKE_STRV (
-	                                                                "auth=PAP",
-	                                                                "auth=CHAP",
-	                                                                "auth=MSCHAP",
-	                                                                "auth=MSCHAPV2",
-	                                                                "auth=GTC",
-	                                                                "auth=OTP",
-	                                                                "auth=MD5",
-	                                                                "auth=TLS",
-	                                                                "autheap=MD5",
-	                                                                "autheap=MSCHAPV2",
-	                                                                "autheap=OTP",
-	                                                                "autheap=GTC",
-	                                                                "autheap=TLS",
-	                                                             ) },
-	{ "anonymous_identity",    TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "ca_path2",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "subject_match2",        TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "altsubject_match2",     TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "domain_suffix_match2",  TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "domain_match2",         TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "ca_cert2",              TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "client_cert2",          TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "private_key2",          TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "private_key2_passwd",   TYPE_BYTES,   0,    1024,  FALSE, NULL },
-	{ "pin",                   TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "pcsc",                  TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "nai",                   TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "eappsk",                TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "pac_file",              TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "engine",                TYPE_INT,     0,    1,     FALSE, NULL },
-	{ "engine_id",             TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "key_id",                TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "fragment_size",         TYPE_INT,     1,    2000,  FALSE, NULL },
-	{ "proactive_key_caching", TYPE_INT,     0,    1,     FALSE, NULL },
-	{ "bgscan",                TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "pac_file",              TYPE_BYTES,   0,    1024,  FALSE, NULL },
-	{ "freq_list",             TYPE_KEYWORD, 0,    0,     FALSE, NULL },
-	{ "macsec_policy",         TYPE_INT,     0,    1,     FALSE, NULL },
-	{ "macsec_integ_only",     TYPE_INT,     0,    1,     FALSE, NULL },
-	{ "mka_cak",               TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "mka_ckn",               TYPE_BYTES,   0,    65536, FALSE, NULL },
-	{ "macsec_port",           TYPE_INT,     1,    65534, FALSE, NULL },
-	{ "ieee80211w",            TYPE_INT,     0,    2,     FALSE, NULL },
-	{ "ignore_broadcast_ssid", TYPE_INT,     0,    2,     FALSE, NULL },
+	{ "ssid",                  NM_SUPPL_OPT_TYPE_BYTES,   0,    32,    FALSE, NULL },
+	{ "bssid",                 NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NULL },
+	{ "scan_ssid",             NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
+	{ "frequency",             NM_SUPPL_OPT_TYPE_INT,     2412, 5825,  FALSE, NULL },
+	{ "auth_alg",              NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
+	                                                                            "OPEN",
+	                                                                            "SHARED",
+	                                                                            "LEAP",
+	                                                                          ) },
+	{ "psk",                   NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "pairwise",              NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
+	                                                                            "CCMP",
+	                                                                            "TKIP",
+	                                                                            "NONE",
+	                                                                          ) },
+	{ "group",                 NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
+	                                                                            "CCMP",
+	                                                                            "TKIP",
+	                                                                            "WEP104",
+	                                                                            "WEP40",
+	                                                                          ) },
+	{ "proto",                 NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
+	                                                                            "WPA",
+	                                                                            "RSN",
+	                                                                          ) },
+	{ "key_mgmt",              NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
+	                                                                            "WPA-PSK",
+	                                                                            "WPA-PSK-SHA256",
+	                                                                            "FT-PSK",
+	                                                                            "WPA-EAP",
+	                                                                            "WPA-EAP-SHA256",
+	                                                                            "FT-EAP",
+	                                                                            "FT-EAP-SHA384",
+	                                                                            "FILS-SHA256",
+	                                                                            "FILS-SHA384",
+	                                                                            "FT-FILS-SHA256",
+	                                                                            "FT-FILS-SHA384",
+	                                                                            "IEEE8021X",
+	                                                                            "SAE",
+	                                                                            "FT-SAE",
+	                                                                            "OWE",
+	                                                                            "NONE",
+	                                                                          ) },
+	{ "wep_key0",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "wep_key1",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "wep_key2",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "wep_key3",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "wep_tx_keyidx",         NM_SUPPL_OPT_TYPE_INT,     0,    3,     FALSE, NULL },
+	{ "eapol_flags",           NM_SUPPL_OPT_TYPE_INT,     0,    3,     FALSE, NULL },
+	{ "eap",                   NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NM_MAKE_STRV (
+	                                                                            "LEAP",
+	                                                                            "MD5",
+	                                                                            "TLS",
+	                                                                            "PEAP",
+	                                                                            "TTLS",
+	                                                                            "SIM",
+	                                                                            "PSK",
+	                                                                            "FAST",
+	                                                                            "PWD",
+	                                                                          ) },
+	{ "identity",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "password",              NM_SUPPL_OPT_TYPE_UTF8,    0,    0,     FALSE, NULL },
+	{ "ca_path",               NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "subject_match",         NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "altsubject_match",      NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "domain_suffix_match",   NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "domain_match",          NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "ca_cert",               NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "client_cert",           NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "private_key",           NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "private_key_passwd",    NM_SUPPL_OPT_TYPE_BYTES,   0,    1024,  FALSE, NULL },
+	{ "phase1",                NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     TRUE,  NM_MAKE_STRV (
+	                                                                            "peapver=0",
+	                                                                            "peapver=1",
+	                                                                            "peaplabel=1",
+	                                                                            "peap_outer_success=0",
+	                                                                            "include_tls_length=1",
+	                                                                            "sim_min_num_chal=3",
+	                                                                            "fast_provisioning=0",
+	                                                                            "fast_provisioning=1",
+	                                                                            "fast_provisioning=2",
+	                                                                            "fast_provisioning=3",
+	                                                                            "tls_disable_tlsv1_0=0",
+	                                                                            "tls_disable_tlsv1_0=1",
+	                                                                            "tls_disable_tlsv1_1=0",
+	                                                                            "tls_disable_tlsv1_1=1",
+	                                                                            "tls_disable_tlsv1_2=0",
+	                                                                            "tls_disable_tlsv1_2=1",
+	                                                                          ) },
+	{ "phase2",                NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     TRUE,  NM_MAKE_STRV (
+	                                                                            "auth=PAP",
+	                                                                            "auth=CHAP",
+	                                                                            "auth=MSCHAP",
+	                                                                            "auth=MSCHAPV2",
+	                                                                            "auth=GTC",
+	                                                                            "auth=OTP",
+	                                                                            "auth=MD5",
+	                                                                            "auth=TLS",
+	                                                                            "autheap=MD5",
+	                                                                            "autheap=MSCHAPV2",
+	                                                                            "autheap=OTP",
+	                                                                            "autheap=GTC",
+	                                                                            "autheap=TLS",
+	                                                                          ) },
+	{ "anonymous_identity",    NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "ca_path2",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "subject_match2",        NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "altsubject_match2",     NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "domain_suffix_match2",  NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "domain_match2",         NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "ca_cert2",              NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "client_cert2",          NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "private_key2",          NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "private_key2_passwd",   NM_SUPPL_OPT_TYPE_BYTES,   0,    1024,  FALSE, NULL },
+	{ "pin",                   NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "pcsc",                  NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "nai",                   NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "eappsk",                NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "pac_file",              NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "engine",                NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
+	{ "engine_id",             NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "key_id",                NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "fragment_size",         NM_SUPPL_OPT_TYPE_INT,     1,    2000,  FALSE, NULL },
+	{ "proactive_key_caching", NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
+	{ "bgscan",                NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
+	{ "pac_file",              NM_SUPPL_OPT_TYPE_BYTES,   0,    1024,  FALSE, NULL },
+	{ "freq_list",             NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NULL },
+	{ "macsec_policy",         NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
+	{ "macsec_integ_only",     NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
+	{ "mka_cak",               NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "mka_ckn",               NM_SUPPL_OPT_TYPE_BYTES,   0,    65536, FALSE, NULL },
+	{ "macsec_port",           NM_SUPPL_OPT_TYPE_INT,     1,    65534, FALSE, NULL },
+	{ "ieee80211w",            NM_SUPPL_OPT_TYPE_INT,     0,    2,     FALSE, NULL },
+	{ "ignore_broadcast_ssid", NM_SUPPL_OPT_TYPE_INT,     0,    2,     FALSE, NULL },
 };
 
 static gboolean
@@ -280,12 +280,12 @@ validate_type_keyword (const struct Opt * opt,
 	}
 }
 
-OptType
+NMSupplOptType
 nm_supplicant_settings_verify_setting (const char * key,
                                        const char * value,
                                        const guint32 len)
 {
-	OptType type = TYPE_INVALID;
+	NMSupplOptType type = NM_SUPPL_OPT_TYPE_INVALID;
 	int opt_count = sizeof (opt_table) / sizeof (opt_table[0]);
 	int val_count = sizeof (validate_table) / sizeof (validate_table[0]);
 	int i, j;
@@ -295,10 +295,10 @@ nm_supplicant_settings_verify_setting (const char * key,
 
 	if (strcmp (key, "mode") == 0) {
 		if (len != 1)
-			return TYPE_INVALID;
+			return NM_SUPPL_OPT_TYPE_INVALID;
 		if (!NM_IN_SET (value[0], '1', '2', '5'))
-			return TYPE_INVALID;
-		return TYPE_INT;
+			return NM_SUPPL_OPT_TYPE_INVALID;
+		return NM_SUPPL_OPT_TYPE_INT;
 	}
 
 	for (i = 0; i < opt_count; i++) {

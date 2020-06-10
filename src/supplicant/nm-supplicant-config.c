@@ -22,7 +22,7 @@
 typedef struct {
 	char *value;
 	guint32 len;
-	OptType type;
+	NMSupplOptType type;
 } ConfigOption;
 
 /*****************************************************************************/
@@ -97,14 +97,14 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
                                            const char *key,
                                            const char *value,
                                            gint32 len,
-                                           OptType opt_type,
+                                           NMSupplOptType opt_type,
                                            const char *hidden,
                                            GError **error)
 {
 	NMSupplicantConfigPrivate *priv;
 	ConfigOption *old_opt;
 	ConfigOption *opt;
-	OptType type;
+	NMSupplOptType type;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
@@ -116,11 +116,11 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 	if (len < 0)
 		len = strlen (value);
 
-	if (opt_type != TYPE_INVALID)
+	if (opt_type != NM_SUPPL_OPT_TYPE_INVALID)
 		type = opt_type;
 	else {
 		type = nm_supplicant_settings_verify_setting (key, value, len);
-		if (type == TYPE_INVALID) {
+		if (type == NM_SUPPL_OPT_TYPE_INVALID) {
 			gs_free char *str_free = NULL;
 			const char *str;
 
@@ -171,7 +171,7 @@ nm_supplicant_config_add_option (NMSupplicantConfig *self,
                                  const char *hidden,
                                  GError **error)
 {
-	return nm_supplicant_config_add_option_with_type (self, key, value, len, TYPE_INVALID, hidden, error);
+	return nm_supplicant_config_add_option_with_type (self, key, value, len, NM_SUPPL_OPT_TYPE_INVALID, hidden, error);
 }
 
 static gboolean
@@ -184,7 +184,7 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	NMSupplicantConfigPrivate *priv;
 	ConfigOption *old_opt;
 	ConfigOption *opt;
-	OptType type;
+	NMSupplOptType type;
 	const guint8 *data;
 	gsize data_len;
 
@@ -199,7 +199,7 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
 	type = nm_supplicant_settings_verify_setting (key, (const char *) data, data_len);
-	if (type == TYPE_INVALID) {
+	if (type == NM_SUPPL_OPT_TYPE_INVALID) {
 		g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 		             "key '%s' and/or its contained value is invalid", key);
 		return FALSE;
@@ -307,18 +307,18 @@ nm_supplicant_config_to_variant (NMSupplicantConfig *self)
 	g_hash_table_iter_init (&iter, priv->config);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &option)) {
 		switch (option->type) {
-		case TYPE_INT:
+		case NM_SUPPL_OPT_TYPE_INT:
 			g_variant_builder_add (&builder, "{sv}", key, g_variant_new_int32 (atoi (option->value)));
 			break;
-		case TYPE_BYTES:
-		case TYPE_UTF8:
+		case NM_SUPPL_OPT_TYPE_BYTES:
+		case NM_SUPPL_OPT_TYPE_UTF8:
 			g_variant_builder_add (&builder, "{sv}",
 			                       key,
 			                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 			                                                  option->value, option->len, 1));
 			break;
-		case TYPE_KEYWORD:
-		case TYPE_STRING:
+		case NM_SUPPL_OPT_TYPE_KEYWORD:
+		case NM_SUPPL_OPT_TYPE_STRING:
 			g_variant_builder_add (&builder, "{sv}", key, g_variant_new_string (option->value));
 			break;
 		default:
@@ -831,18 +831,18 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 
 
 		if (psk_len >= 8 && psk_len <= 63) {
-			/* Use TYPE_STRING here so that it gets pushed to the
+			/* Use NM_SUPPL_OPT_TYPE_STRING here so that it gets pushed to the
 			 * supplicant as a string, and therefore gets quoted,
 			 * and therefore the supplicant will interpret it as a
 			 * passphrase and not a hex key.
 			 */
-			if (!nm_supplicant_config_add_option_with_type (self, "psk", psk, -1, TYPE_STRING, "<hidden>", error))
+			if (!nm_supplicant_config_add_option_with_type (self, "psk", psk, -1, NM_SUPPL_OPT_TYPE_STRING, "<hidden>", error))
 				return FALSE;
 		} else if (nm_streq (key_mgmt, "sae")) {
 			/* If the SAE password doesn't comply with WPA-PSK limitation,
 			 * we need to call it "sae_password" instead of "psk".
 			 */
-			if (!nm_supplicant_config_add_option_with_type (self, "sae_password", psk, -1, TYPE_STRING, "<hidden>", error))
+			if (!nm_supplicant_config_add_option_with_type (self, "sae_password", psk, -1, NM_SUPPL_OPT_TYPE_STRING, "<hidden>", error))
 				return FALSE;
 		} else if (psk_len == 64) {
 			guint8 buffer[32];
