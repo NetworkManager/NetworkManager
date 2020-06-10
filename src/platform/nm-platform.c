@@ -1589,13 +1589,10 @@ nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6Iface
 const char *
 nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	struct udev_device *device;
 
-	g_return_val_if_fail (ifindex >= 0, NULL);
-
-	if (klass->link_get_udi)
-		return klass->link_get_udi (self, ifindex);
-	return NULL;
+	device = nm_platform_link_get_udev_device (self, ifindex);
+	return device ? udev_device_get_syspath (device) : NULL;
 }
 
 struct udev_device *
