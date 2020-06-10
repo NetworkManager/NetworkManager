@@ -121,7 +121,7 @@
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MAX_AGE N_("The Spanning Tree Protocol (STP) maximum message age, in seconds.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERIER N_("Enable or disable sending of multicast queries by the bridge. If not specified the option is disabled.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR N_("If enabled the bridge's own IP address is used as the source address for IGMP queries otherwise the default of 0.0.0.0 is used.")
-#define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_ROUTER N_("Sets bridge's multicast router. multicast-snooping must be enabled for this option to work. Supported values are: 'auto', 'disabled', 'enabled'. If not specified the default value is 'auto'.")
+#define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_ROUTER N_("Sets bridge's multicast router. Multicast-snooping must be enabled for this option to work. Supported values are: 'auto', 'disabled', 'enabled'. If not specified the default value is 'auto'.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_SNOOPING N_("Controls whether IGMP snooping is enabled for this bridge. Note that if snooping was automatically disabled due to hash collisions, the system may refuse to enable the feature until the collisions are resolved.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_PRIORITY N_("Sets the Spanning Tree Protocol (STP) priority for this bridge.  Lower values are \"better\"; the lowest priority bridge will be elected the root bridge.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_STP N_("Controls whether Spanning Tree Protocol (STP) is enabled for this bridge.")
