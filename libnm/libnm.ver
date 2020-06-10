@@ -1698,6 +1698,7 @@ global:
 
 libnm_1_26_0 {
 global:
+	nm_device_get_path;
 	nm_ethtool_optname_is_coalesce;
 	nm_ethtool_optname_is_ring;
 	nm_setting_bridge_get_multicast_hash_max;

@@ -32,6 +32,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_INTERFACE,
 	PROP_UDI,
+	PROP_PATH,
 	PROP_DRIVER,
 	PROP_DRIVER_VERSION,
 	PROP_FIRMWARE_VERSION,
@@ -92,6 +93,7 @@ typedef struct _NMDevicePrivate {
 	char *firmware_version;
 	char *physical_port_id;
 	char *udi;
+	char *path;
 	guint32 capabilities;
 	guint32 device_type;
 	guint32 ip4_connectivity;
@@ -334,6 +336,7 @@ finalize (GObject *object)
 	g_free (priv->interface);
 	g_free (priv->ip_interface);
 	g_free (priv->udi);
+	g_free (priv->path);
 	g_free (priv->driver);
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
@@ -365,6 +368,9 @@ get_property (GObject *object,
 		break;
 	case PROP_UDI:
 		g_value_set_string (value, nm_device_get_udi (device));
+		break;
+	case PROP_PATH:
+		g_value_set_string (value, nm_device_get_path (device));
 		break;
 	case PROP_INTERFACE:
 		g_value_set_string (value, nm_device_get_iface (device));
@@ -523,6 +529,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
 		NML_DBUS_META_PROPERTY_INIT_U       ("Metered",              PROP_METERED,               NMDevicePrivate, metered                                                                                              ),
 		NML_DBUS_META_PROPERTY_INIT_U       ("Mtu",                  PROP_MTU,                   NMDevicePrivate, mtu                                                                                                  ),
 		NML_DBUS_META_PROPERTY_INIT_B       ("NmPluginMissing",      PROP_NM_PLUGIN_MISSING,     NMDevicePrivate, nm_plugin_missing                                                                                    ),
+		NML_DBUS_META_PROPERTY_INIT_S       ("Path",                 PROP_PATH,                  NMDevicePrivate, path                                                                                                 ),
 		NML_DBUS_META_PROPERTY_INIT_S       ("PhysicalPortId",       PROP_PHYSICAL_PORT_ID,      NMDevicePrivate, physical_port_id                                                                                     ),
 		NML_DBUS_META_PROPERTY_INIT_B       ("Real",                 PROP_REAL,                  NMDevicePrivate, real                                                                                                 ),
 		NML_DBUS_META_PROPERTY_INIT_IGNORE  ("State",                "u"                                                                                                                                               ),
@@ -599,6 +606,23 @@ nm_device_class_init (NMDeviceClass *klass)
 	 **/
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMDevice:path:
+	 *
+	 * The device path as exposed by the udev property ID_PATH.
+	 *
+	 * The string is backslash escaped (C escaping) for invalid
+	 * characters. The escaping can be reverted with g_strcompress(),
+	 * however the result may not be valid UTF-8.
+	 *
+	 * Since: 1.26
+	 **/
+	obj_properties[PROP_PATH] =
+	    g_param_spec_string (NM_DEVICE_PATH, "", "",
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
@@ -1012,6 +1036,27 @@ nm_device_get_udi (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	return _nml_coerce_property_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->udi);
+}
+
+/**
+ * nm_device_get_path:
+ * @device: a #NMDevice
+ *
+ * Gets the path of the #NMDevice as exposed by the udev property ID_PATH.
+ *
+ * Returns: the path of the device.
+ *
+ * The string is backslash escaped (C escaping) for invalid characters. The escaping
+ * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
+ *
+ * Since: 1.26
+ **/
+const char *
+nm_device_get_path (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	return _nml_coerce_property_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->path);
 }
 
 /**

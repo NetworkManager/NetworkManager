@@ -28,6 +28,16 @@
     <property name="Udi" type="s" access="read"/>
 
     <!--
+        Path:
+
+        The path of the device as exposed by the udev property ID_PATH.
+
+        Note that non-UTF-8 characters are backslash escaped. Use g_strcompress()
+        to obtain the true (non-UTF-8) string.
+    -->
+    <property name="Path" type="s" access="read"/>
+
+    <!--
         Interface:
 
         The name of the device's control (and often data) interface.
