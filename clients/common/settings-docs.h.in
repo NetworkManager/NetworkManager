@@ -128,7 +128,7 @@
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL N_("Interval (in deciseconds) between queries sent by the bridge after the end of the startup phase.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL N_("Set the Max Response Time/Max Response Delay (in deciseconds) for IGMP/MLD queries sent by the bridge.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR N_("If enabled the bridge's own IP address is used as the source address for IGMP queries otherwise the default of 0.0.0.0 is used.")
-#define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_ROUTER N_("Sets bridge's multicast router. multicast-snooping must be enabled for this option to work. Supported values are: 'auto', 'disabled', 'enabled'. If not specified the default value is 'auto'.")
+#define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_ROUTER N_("Sets bridge's multicast router. Multicast-snooping must be enabled for this option to work. Supported values are: 'auto', 'disabled', 'enabled'. If not specified the default value is 'auto'.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_SNOOPING N_("Controls whether IGMP snooping is enabled for this bridge. Note that if snooping was automatically disabled due to hash collisions, the system may refuse to enable the feature until the collisions are resolved.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT N_("Set the number of IGMP queries to send during startup phase.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL N_("Sets the time (in deciseconds) between queries sent out at startup to determine membership information.")

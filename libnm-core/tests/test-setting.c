@@ -2197,10 +2197,10 @@ test_bridge_verify (void)
 	/* multicast-router */
 	test_verify_options_bridge (FALSE,
 	                            "multicast-router",   "nonsense");
-	test_verify_options_bridge (FALSE,
+	test_verify_options_bridge (TRUE,
 	                            "multicast-snooping", "no",
 	                            "multicast-router",   "auto");
-	test_verify_options_bridge (FALSE,
+	test_verify_options_bridge (TRUE,
 	                            "multicast-snooping", "no",
 	                            "multicast-router",   "enabled");
 	test_verify_options_bridge (TRUE,

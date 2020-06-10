@@ -1272,31 +1272,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->multicast_router) {
-		if (!NM_IN_STRSET (priv->multicast_router,
-		                   "auto",
-		                   "enabled",
-		                   "disabled")) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("is not a valid option"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MULTICAST_ROUTER);
-			return FALSE;
-		}
-
-		if (   NM_IN_STRSET (priv->multicast_router,
-		                     "auto",
-		                     "enabled")
-		    && !priv->multicast_snooping) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' option requires '%s' option to be enabled"),
-			             NM_SETTING_BRIDGE_MULTICAST_ROUTER, NM_SETTING_BRIDGE_MULTICAST_SNOOPING);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MULTICAST_ROUTER);
-			return FALSE;
-		}
+	if (!NM_IN_STRSET (priv->multicast_router,
+	                   NULL,
+	                   "auto",
+	                   "enabled",
+	                   "disabled")) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("is not a valid option"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MULTICAST_ROUTER);
+		return FALSE;
 	}
 
 	if (!nm_utils_is_power_of_two (priv->multicast_hash_max)) {
@@ -1999,8 +1985,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	/**
 	 * NMSettingBridge:multicast-router:
 	 *
-	 * Sets bridge's multicast router.
-	 * multicast-snooping must be enabled for this option to work.
+	 * Sets bridge's multicast router. Multicast-snooping must be enabled
+	 * for this option to work.
 	 *
 	 * Supported values are: 'auto', 'disabled', 'enabled'.
 	 * If not specified the default value is 'auto'.
