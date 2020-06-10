@@ -2134,14 +2134,16 @@ _test_verify_options_bridge (gboolean expected_result,
 		case G_TYPE_UINT: {
 				guint uvalue;
 
-				uvalue = _nm_utils_ascii_str_to_uint64 (option_val, 10, 0, G_MAXUINT, 0);
+				uvalue = _nm_utils_ascii_str_to_uint64 (option_val, 10, 0, G_MAXUINT, -1);
+				g_assert (errno == 0);
 				g_object_set (s_bridge, option_key, uvalue, NULL);
 			}
 			break;
 		case G_TYPE_BOOLEAN: {
-				gboolean bvalue;
+				int bvalue;
 
-				bvalue = _nm_utils_ascii_str_to_bool (option_val, FALSE);
+				bvalue = _nm_utils_ascii_str_to_bool (option_val, -1);
+				g_assert (bvalue != -1);
 				g_object_set (s_bridge, option_key, bvalue, NULL);
 			}
 			break;
