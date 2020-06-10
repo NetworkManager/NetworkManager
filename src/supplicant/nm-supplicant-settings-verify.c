@@ -175,7 +175,6 @@ static const struct Opt opt_table[] = {
 	{ "fragment_size",         NM_SUPPL_OPT_TYPE_INT,     1,    2000,  FALSE, NULL },
 	{ "proactive_key_caching", NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
 	{ "bgscan",                NM_SUPPL_OPT_TYPE_BYTES,   0,    0,     FALSE, NULL },
-	{ "pac_file",              NM_SUPPL_OPT_TYPE_BYTES,   0,    1024,  FALSE, NULL },
 	{ "freq_list",             NM_SUPPL_OPT_TYPE_KEYWORD, 0,    0,     FALSE, NULL },
 	{ "macsec_policy",         NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
 	{ "macsec_integ_only",     NM_SUPPL_OPT_TYPE_INT,     0,    1,     FALSE, NULL },
