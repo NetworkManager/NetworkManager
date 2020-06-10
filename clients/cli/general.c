@@ -1426,25 +1426,23 @@ nmc_command_func_overview (const NMCCommand *cmd, NmCli *nmc, int argc, const ch
 	devices = nmc_get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
 		NMDevice *device = devices[i];
-		NMDeviceState state;
 
 		ac = nm_device_get_active_connection (device);
 
-		state = nm_device_get_state (device);
 		color = nmc_device_state_to_color (device);
 		if (ac) {
 			/* TRANSLATORS: prints header line for activated device in plain `nmcli` overview output as
 			 * "<interface-name>: <device-state> to <connection-id>" */
 			tmp = nmc_colorize (&nmc->nmc_config, color, C_("nmcli-overview", "%s: %s to %s"),
 			                    nm_device_get_iface (device),
-			                    gettext (nmc_device_state_to_string (state)),
+			                    gettext (nmc_device_state_to_string_with_external (device)),
 			                    nm_active_connection_get_id (ac));
 		} else {
 			/* TRANSLATORS: prints header line for not active device in plain `nmcli` overview output as
 			 * "<interface-name>: <device-state>" */
 			tmp = nmc_colorize (&nmc->nmc_config, color, C_("nmcli-overview", "%s: %s"),
 			                    nm_device_get_iface (device),
-			                    gettext (nmc_device_state_to_string (state)));
+			                    gettext (nmc_device_state_to_string_with_external (device)));
 		}
 		g_print ("%s\n", tmp);
 		g_free (tmp);
