@@ -92,7 +92,7 @@ _metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	NMDevice *d = target;
 	NMActiveConnection *ac;
 
-	NMC_HANDLE_COLOR (nmc_device_state_to_color (nm_device_get_state (d)));
+	NMC_HANDLE_COLOR (nmc_device_state_to_color (d));
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DEVICE:
@@ -100,7 +100,7 @@ _metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_TYPE:
 		return nm_device_get_type_description (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_STATE:
-		return nmc_meta_generic_get_str_i18n (nmc_device_state_to_string (nm_device_get_state (d)),
+		return nmc_meta_generic_get_str_i18n (nmc_device_state_to_string_with_external (d),
 		                                      get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_IP4_CONNECTIVITY:
 		return nmc_meta_generic_get_str_i18n (nm_connectivity_to_string (nm_device_get_connectivity (d, AF_INET)),
@@ -147,7 +147,6 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NMDevice *d = target;
 	NMActiveConnection *ac;
-	NMDeviceState state;
 	NMDeviceStateReason state_reason;
 	NMConnectivityState connectivity;
 	const char *s;
@@ -180,10 +179,9 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_MTU:
 		return (*out_to_free = g_strdup_printf ("%u", (guint) nm_device_get_mtu (d)));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_STATE:
-		state = nm_device_get_state (d);
 		return (*out_to_free = nmc_meta_generic_get_enum_with_detail (NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES,
-		                                                              state,
-		                                                              nmc_device_state_to_string (state),
+		                                                              nm_device_get_state (d),
+		                                                              nmc_device_state_to_string_with_external (d),
 		                                                              get_type));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_REASON:
 		state_reason = nm_device_get_state_reason (d);
@@ -1716,8 +1714,20 @@ show_device_info (NMDevice *device, NmCli *nmc)
 }
 
 NMMetaColor
-nmc_device_state_to_color (NMDeviceState state)
+nmc_device_state_to_color (NMDevice *device)
 {
+	NMDeviceState state;
+	NMActiveConnection *ac;
+
+	if (!device)
+		return NM_META_COLOR_DEVICE_UNKNOWN;
+
+	ac = nm_device_get_active_connection (device);
+	if (   ac
+	    && NM_FLAGS_HAS (nm_active_connection_get_state_flags (ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL))
+		return NM_META_COLOR_CONNECTION_EXTERNAL;
+
+	state = nm_device_get_state (device);
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
 		return NM_META_COLOR_DEVICE_UNAVAILABLE;
 	else if (state == NM_DEVICE_STATE_DISCONNECTED)
@@ -1837,7 +1847,7 @@ progress_cb (gpointer user_data)
 {
 	NMDevice *device = (NMDevice *) user_data;
 
-	nmc_terminal_show_progress (device ? gettext (nmc_device_state_to_string (nm_device_get_state (device))) : "");
+	nmc_terminal_show_progress (device ? gettext (nmc_device_state_to_string_with_external (device)) : "");
 
 	return TRUE;
 }
@@ -2608,17 +2618,15 @@ do_device_set (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*ar
 static void
 device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 {
-	NMDeviceState state = nm_device_get_state (device);
+	gs_free char *str = NULL;
 	NMMetaColor color;
-	char *str;
 
-	color = nmc_device_state_to_color (state);
+	color = nmc_device_state_to_color (device);
 	str = nmc_colorize (&nmc->nmc_config, color, "%s: %s\n",
 	                    nm_device_get_iface (device),
-	                    gettext (nmc_device_state_to_string (state)));
+	                    gettext (nmc_device_state_to_string_with_external (device)));
 
 	g_print ("%s", str);
-	g_free (str);
 }
 
 static void

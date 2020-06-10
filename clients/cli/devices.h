@@ -16,7 +16,7 @@ void monitor_devices (NmCli *nmc);
 
 NMDevice ** nmc_get_devices_sorted (NMClient *client);
 
-NMMetaColor nmc_device_state_to_color (NMDeviceState state);
+NMMetaColor nmc_device_state_to_color (NMDevice *device);
 
 extern const NmcMetaGenericInfo *const metagen_device_status[];
 extern const NmcMetaGenericInfo *const metagen_device_detail_general[];

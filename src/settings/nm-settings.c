@@ -1091,12 +1091,14 @@ _connection_changed_update (NMSettings *self,
 	else {
 		nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED));
 
-		/* Profiles that don't reside in /run, are never nm-generated
-		 * and never volatile. */
+		/* Profiles that don't reside in /run, are never nm-generated,
+		 * volatile, and external. */
 		sett_mask |= (  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-		              | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE);
+		              | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		              | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL);
 		sett_flags &= ~(  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-		                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE);
+		                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		                | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL);
 	}
 
 	nm_settings_connection_set_flags_full (sett_conn,
@@ -1200,7 +1202,8 @@ _connection_changed_delete (NMSettings *self,
 
 	nm_settings_connection_set_flags (sett_conn,
 	                                    NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE
-	                                  | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
+	                                  | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                                  | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,
 	                                  FALSE);
 
 	_emit_connection_removed (self, sett_conn);
@@ -1491,6 +1494,7 @@ _add_connection_to_first_plugin (NMSettings *self,
 			                                             in_memory,
 			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
 			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+			                                             NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL),
 			                                             shadowed_storage,
 			                                             shadowed_owned,
 			                                             &storage,
@@ -1501,6 +1505,7 @@ _add_connection_to_first_plugin (NMSettings *self,
 				continue;
 			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED));
 			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE));
+			nm_assert (!NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL));
 			success = nm_settings_plugin_add_connection (plugin,
 			                                             new_connection,
 			                                             &storage,
@@ -1578,6 +1583,7 @@ _update_connection_to_plugin (NMSettings *self,
 		                                                connection,
 		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED),
 		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE),
+		                                                NM_FLAGS_HAS (sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL),
 		                                                shadowed_storage,
 		                                                shadowed_owned,
 		                                                force_rename,
@@ -1693,8 +1699,9 @@ nm_settings_add_connection (NMSettings *self,
 
 	nm_assert (!NM_FLAGS_ANY (sett_flags, ~_NM_SETTINGS_CONNECTION_INT_FLAGS_PERSISTENT_MASK));
 
-	if (NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
-	                              | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)) {
+	if (NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
+	                              | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                              | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL)) {
 		nm_assert (new_in_memory);
 		new_in_memory = TRUE;
 	}
@@ -1992,7 +1999,8 @@ nm_settings_update_connection (NMSettings *self,
 			nm_assert (cur_in_memory);
 			nm_assert (!NM_FLAGS_ANY (nm_settings_connection_get_flags (sett_conn),
 			                            NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-			                          | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE));
+			                          | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+			                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL));
 
 			default_wired_clear_tag (self, device, sett_conn, FALSE);
 
@@ -2011,11 +2019,13 @@ nm_settings_update_connection (NMSettings *self,
 
 	if (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST
 	    && NM_FLAGS_ANY (sett_mask,   NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-	                                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE)
+	                                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                                | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL)
 	    && NM_FLAGS_ANY ((sett_flags ^ nm_settings_connection_get_flags (sett_conn)) & sett_mask,
 	                       NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-	                     | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE)) {
-		/* we update the nm-generated/volatile setting of a profile (which is inherrently
+	                     | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                     | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL)) {
+		/* we update the nm-generated/volatile setting of a profile (which is inherently
 		 * in-memory. The caller did not request to persist this to disk, however we need
 		 * to store the flags in run. */
 		nm_assert (cur_in_memory);
@@ -2043,11 +2053,14 @@ nm_settings_update_connection (NMSettings *self,
 		 * the nm-generated flag after restart/reload, and that cannot be right. If a profile
 		 * ends up on disk, the information who created it gets lost. */
 		nm_assert (!NM_FLAGS_ANY (sett_flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-		                                      | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE));
+		                                      | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		                                      | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL));
 		sett_mask |=   NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-		             | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE;
+		             | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		             | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL;
 		sett_flags &= ~(  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-		                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE);
+		                | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		                | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL);
 	}
 
 	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST) {
@@ -3374,7 +3387,8 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 			continue;
 
 		if (NM_FLAGS_ANY (nm_settings_connection_get_flags (sett_conn),
-		                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
+		                    NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+		                  | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL))
 			continue;
 
 		return TRUE;

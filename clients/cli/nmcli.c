@@ -38,6 +38,7 @@
 	[NM_META_COLOR_CONNECTION_ACTIVATING]    = "33", \
 	[NM_META_COLOR_CONNECTION_DISCONNECTING] = "31", \
 	[NM_META_COLOR_CONNECTION_INVISIBLE]     =  "2", \
+	[NM_META_COLOR_CONNECTION_EXTERNAL]      = "32;2", \
 	[NM_META_COLOR_CONNECTIVITY_FULL]        = "32", \
 	[NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33", \
 	[NM_META_COLOR_CONNECTIVITY_NONE]        = "31", \
@@ -49,6 +50,7 @@
 	[NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31", \
 	[NM_META_COLOR_DEVICE_UNAVAILABLE]       =  "2", \
 	[NM_META_COLOR_DEVICE_DISABLED]          = "31", \
+	[NM_META_COLOR_DEVICE_EXTERNAL]          = "32;2", \
 	[NM_META_COLOR_MANAGER_RUNNING]          = "32", \
 	[NM_META_COLOR_MANAGER_STARTING]         = "33", \
 	[NM_META_COLOR_MANAGER_STOPPED]          = "31", \
@@ -550,6 +552,7 @@ parse_color_scheme (char *palette_buffer,
 		[NM_META_COLOR_CONNECTION_ACTIVATING]    = "connection-activating",
 		[NM_META_COLOR_CONNECTION_DISCONNECTING] = "connection-disconnecting",
 		[NM_META_COLOR_CONNECTION_INVISIBLE]     = "connection-invisible",
+		[NM_META_COLOR_CONNECTION_EXTERNAL]      = "connection-external",
 		[NM_META_COLOR_CONNECTION_UNKNOWN]       = "connection-unknown",
 		[NM_META_COLOR_CONNECTIVITY_FULL]        = "connectivity-full",
 		[NM_META_COLOR_CONNECTIVITY_LIMITED]     = "connectivity-limited",
@@ -563,6 +566,7 @@ parse_color_scheme (char *palette_buffer,
 		[NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "device-plugin-missing",
 		[NM_META_COLOR_DEVICE_UNAVAILABLE]       = "device-unavailable",
 		[NM_META_COLOR_DEVICE_DISABLED]          = "device-disabled",
+		[NM_META_COLOR_DEVICE_EXTERNAL]          = "device-external",
 		[NM_META_COLOR_DEVICE_UNKNOWN]           = "device-unknown",
 		[NM_META_COLOR_MANAGER_RUNNING]          = "manager-running",
 		[NM_META_COLOR_MANAGER_STARTING]         = "manager-starting",

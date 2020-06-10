@@ -28,6 +28,8 @@ gboolean matches (const char *cmd, const char *pattern);
 /* FIXME: don't expose this function on its own, at least not from this file. */
 const char *nmc_bond_validate_mode (const char *mode, GError **error);
 
+const char *nmc_device_state_to_string_with_external (NMDevice *device);
+
 const char *nm_active_connection_state_reason_to_string (NMActiveConnectionStateReason reason);
 const char *nmc_device_state_to_string (NMDeviceState state);
 const char *nmc_device_reason_to_string (NMDeviceStateReason reason);

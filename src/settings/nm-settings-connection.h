@@ -147,6 +147,8 @@ typedef enum {
  *  when it disconnects. That is for in-memory connections (unsaved), which are
  *  currently active but cleanup on disconnect.
  *  See also #NM_SETTINGS_CONNECTION_FLAG_VOLATILE.
+ * @NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL: the profile was generated to
+ *  represent the external activation of a device. See also #NM_SETTINGS_CONNECTION_FLAG_EXTERNAL.
  * @NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE: The connection is visible
  * @_NM_SETTINGS_CONNECTION_INT_FLAGS_EXPORTED_MASK: the entire enum is
  *   internal, however, parts of it is public API as #NMSettingsConnectionFlags.
@@ -161,8 +163,9 @@ typedef enum _NMSettingsConnectionIntFlags {
 	NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED                = NM_SETTINGS_CONNECTION_FLAG_UNSAVED,
 	NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED           = NM_SETTINGS_CONNECTION_FLAG_NM_GENERATED,
 	NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE               = NM_SETTINGS_CONNECTION_FLAG_VOLATILE,
+	NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL               = NM_SETTINGS_CONNECTION_FLAG_EXTERNAL,
 
-	NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE                = 0x08,
+	NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE                = 0x10,
 
 	_NM_SETTINGS_CONNECTION_INT_FLAGS_LAST,
 
@@ -170,11 +173,13 @@ typedef enum _NMSettingsConnectionIntFlags {
 	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED
 	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
 	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL
 	                                                          | 0,
 
 	_NM_SETTINGS_CONNECTION_INT_FLAGS_PERSISTENT_MASK       = 0
 	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
 	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL
 	                                                          | 0,
 
 	_NM_SETTINGS_CONNECTION_INT_FLAGS_ALL = ((_NM_SETTINGS_CONNECTION_INT_FLAGS_LAST - 1) << 1) - 1,

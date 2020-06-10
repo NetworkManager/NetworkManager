@@ -18,7 +18,7 @@ nmc_process_connection_properties (NmCli *nmc,
                                    gboolean allow_remove_setting,
                                    GError **error);
 
-NMMetaColor nmc_active_connection_state_to_color (NMActiveConnectionState state);
+NMMetaColor nmc_active_connection_state_to_color (NMActiveConnection *ac);
 
 int nmc_active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b);
 

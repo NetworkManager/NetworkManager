@@ -155,6 +155,7 @@ nms_keyfile_storage_new_connection (NMSKeyfilePlugin *plugin,
                                     NMSKeyfileStorageType storage_type,
                                     NMTernary is_nm_generated_opt,
                                     NMTernary is_volatile_opt,
+                                    NMTernary is_external_opt,
                                     const char *shadowed_storage,
                                     NMTernary shadowed_owned_opt,
                                     const struct timespec *stat_mtime)
@@ -181,6 +182,7 @@ nms_keyfile_storage_new_connection (NMSKeyfilePlugin *plugin,
 	if (storage_type == NMS_KEYFILE_STORAGE_TYPE_RUN) {
 		self->u.conn_data.is_nm_generated = (is_nm_generated_opt == NM_TERNARY_TRUE);
 		self->u.conn_data.is_volatile     = (is_volatile_opt == NM_TERNARY_TRUE);
+		self->u.conn_data.is_external     = (is_external_opt == NM_TERNARY_TRUE);
 		self->u.conn_data.shadowed_owned  =    shadowed_storage
 		                                    && (shadowed_owned_opt == NM_TERNARY_TRUE);
 	}
@@ -243,7 +245,8 @@ nm_settings_storage_load_sett_flags (NMSettingsStorage *self,
 
 	*sett_flags = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
 	*sett_mask =   NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-	             | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE;
+	             | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	             | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL;
 
 	if (!NMS_IS_KEYFILE_STORAGE (self))
 		return;
@@ -260,4 +263,7 @@ nm_settings_storage_load_sett_flags (NMSettingsStorage *self,
 
 	if (s->u.conn_data.is_volatile)
 		*sett_flags |= NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE;
+
+	if (s->u.conn_data.is_external)
+		*sett_flags |= NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL;
 }

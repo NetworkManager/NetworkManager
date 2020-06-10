@@ -1535,7 +1535,8 @@ update_auth_cb (NMSettingsConnection *self,
 	                                ? NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
 	                                : NM_SETTINGS_CONNECTION_INT_FLAGS_NONE),
 	                                 NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-	                               | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
+	                               | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                               | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,
 	                                 NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME
 	                               | (  NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)
 	                                  ? NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE
@@ -2028,6 +2029,7 @@ NM_UTILS_FLAGS2STR_DEFINE (_settings_connection_flags_to_string, NMSettingsConne
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,  "nm-generated"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,      "volatile"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE,       "visible"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,       "external"),
 );
 
 NMSettingsConnectionIntFlags
@@ -2481,7 +2483,8 @@ nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
 		return TRUE;
 
 	flags = priv->flags;
-	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
+	if (NM_FLAGS_ANY (flags,   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+	                         | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL))
 		return TRUE;
 	if (!NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
 		return TRUE;

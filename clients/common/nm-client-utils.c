@@ -265,6 +265,38 @@ NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_state_to_string, NMDeviceState,
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_UNKNOWN,      N_("unknown")),
 )
 
+static
+NM_UTILS_LOOKUP_STR_DEFINE (_device_state_to_string, NMDeviceState,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_PREPARE,      N_("connecting (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_CONFIG,       N_("connecting (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_NEED_AUTH,    N_("connecting (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_IP_CONFIG,    N_("connecting (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_IP_CHECK,     N_("connecting (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_SECONDARIES,  N_("connecting (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_ACTIVATED,    N_("connected (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_DEACTIVATING, N_("deactivating (externally)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_FAILED,       N_("deactivating (externally)")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
+)
+
+const char *
+nmc_device_state_to_string_with_external (NMDevice *device)
+{
+	NMActiveConnection *ac;
+	NMDeviceState state;
+	const char *s;
+
+	state = nm_device_get_state (device);
+
+	if (   (ac = nm_device_get_active_connection (device))
+	    && NM_FLAGS_HAS (nm_active_connection_get_state_flags (ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL)
+	    && (s = _device_state_to_string (state)))
+		return s;
+
+	return nmc_device_state_to_string (state);
+}
+
 NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_metered_to_string, NMMetered,
 	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
 	NM_UTILS_LOOKUP_ITEM (NM_METERED_YES,       N_("yes")),

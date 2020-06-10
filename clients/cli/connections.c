@@ -490,9 +490,7 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	const char *s;
 	char *s_mut;
 
-	NMC_HANDLE_COLOR (  ac
-	                  ? nmc_active_connection_state_to_color (nm_active_connection_get_state (ac))
-	                  : NM_META_COLOR_CONNECTION_UNKNOWN);
+	NMC_HANDLE_COLOR (nmc_active_connection_state_to_color (ac));
 
 	if (c)
 		s_con = nm_connection_get_setting_connection (c);
@@ -1427,8 +1425,18 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 }
 
 NMMetaColor
-nmc_active_connection_state_to_color (NMActiveConnectionState state)
+nmc_active_connection_state_to_color (NMActiveConnection *ac)
 {
+	NMActiveConnectionState state;
+
+	if (!ac)
+		return NM_META_COLOR_CONNECTION_UNKNOWN;
+
+	if (NM_FLAGS_HAS (nm_active_connection_get_state_flags (ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL))
+		return NM_META_COLOR_CONNECTION_EXTERNAL;
+
+	state = nm_active_connection_get_state (ac);
+
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
 		return NM_META_COLOR_CONNECTION_ACTIVATING;
 	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
@@ -2605,7 +2613,7 @@ progress_active_connection_cb (gpointer user_data)
 	}
 
 	str =   device
-	      ? gettext (nmc_device_state_to_string (nm_device_get_state (device)))
+	      ? gettext (nmc_device_state_to_string_with_external (device))
 	      : active_connection_state_to_string (ac_state);
 
 	nmc_terminal_show_progress (str);
@@ -6812,7 +6820,7 @@ progress_activation_editor_cb (gpointer user_data)
 	ac_state = nm_active_connection_get_state (ac);
 	dev_state = nm_device_get_state (device);
 
-	nmc_terminal_show_progress (gettext (nmc_device_state_to_string (dev_state)));
+	nmc_terminal_show_progress (gettext (nmc_device_state_to_string_with_external (device)));
 
 	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || dev_state == NM_DEVICE_STATE_ACTIVATED) {
