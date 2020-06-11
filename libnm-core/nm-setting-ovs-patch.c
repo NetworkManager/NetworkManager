@@ -81,13 +81,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   !nm_utils_ipaddr_valid (AF_INET, self->peer)
-	    && !nm_utils_ipaddr_valid (AF_INET6, self->peer)) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid IP address"),
-		             self->peer);
+	if (!nm_utils_ifname_valid (self->peer, NMU_IFACE_OVS, error)) {
 		g_prefix_error (error, "%s.%s: ",
 		                NM_SETTING_OVS_PATCH_SETTING_NAME,
 		                NM_SETTING_OVS_PATCH_PEER);
@@ -179,8 +173,8 @@ nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *klass)
 	/**
 	 * NMSettingOvsPatch:peer:
 	 *
-	 * Specifies the unicast destination IP address of a remote Open vSwitch
-	 * bridge port to connect to.
+	 * Specifies the name of the interface for the other side of the patch.
+	 * The patch on the other side must also set this interface as peer.
 	 *
 	 * Since: 1.10
 	 **/
