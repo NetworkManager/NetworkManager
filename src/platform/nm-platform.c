@@ -1604,6 +1604,16 @@ nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 	return device ? udev_device_get_syspath (device) : NULL;
 }
 
+const char *
+nm_platform_link_get_path (NMPlatform *self, int ifindex)
+{
+	const char *value = NULL;
+
+	link_get_udev_property (self, ifindex, "ID_PATH", &value);
+
+	return value;
+}
+
 struct udev_device *
 nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
 {

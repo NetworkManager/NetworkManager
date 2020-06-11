@@ -1630,6 +1630,7 @@ gboolean nm_platform_link_set_arp (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_noarp (NMPlatform *self, int ifindex);
 
 const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
+const char *nm_platform_link_get_path (NMPlatform *self, int ifindex);
 
 struct udev_device *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
