@@ -276,7 +276,6 @@ _nmc_skip_connection (NMConnection *connection)
 static gboolean
 _nmc_mangle_connection (NMDevice *device,
                         NMConnection *connection,
-                        gboolean is_single_nic,
                         const NMCSProviderGetConfigIfaceData *config_data,
                         gboolean *out_changed)
 {
@@ -438,7 +437,6 @@ try_again:
 
 	if (!_nmc_mangle_connection (device,
 	                             applied_connection,
-	                             is_single_nic,
 	                             config_data,
 	                             &changed)) {
 		_LOGD ("config device %s: device has no suitable applied connection. Skip", hwaddr);
