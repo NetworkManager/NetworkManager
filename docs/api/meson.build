@@ -6,7 +6,7 @@ if enable_introspection
 
   inputs = [
     settings + '.xsl',
-    nm_settings_docs,
+    nm_settings_docs_xml['dbus'],
   ]
 
   content_files += custom_target(

@@ -13,21 +13,21 @@
       />
 
   <xsl:template match="nm-setting-docs">
-    <refentry id="nm-settings">
+    <refentry id="nm-settings-nmcli">
       <refentryinfo>
-        <title>nm-settings</title>
+        <title>nm-settings-nmcli</title>
         <author>NetworkManager developers</author>
       </refentryinfo>
       <refmeta>
-        <refentrytitle>nm-settings</refentrytitle>
+        <refentrytitle>nm-settings-nmcli</refentrytitle>
         <manvolnum>5</manvolnum>
         <refmiscinfo class="source">NetworkManager</refmiscinfo>
         <refmiscinfo class="manual">Configuration</refmiscinfo>
         <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
       </refmeta>
       <refnamediv>
-        <refname>nm-settings</refname>
-        <refpurpose>Description of settings and properties of NetworkManager connection profiles</refpurpose>
+        <refname>nm-settings-nmcli</refname>
+        <refpurpose>Description of settings and properties of NetworkManager connection profiles for nmcli</refpurpose>
       </refnamediv>
 
       <refsect1 id='description'><title>Description</title>
@@ -37,51 +37,28 @@
           NetworkManager activates a connection profile on a network device the configuration will
           be applied and an active network connection will be established. Users are free to create
           as many connection profiles as they see fit. Thus they are flexible in having various network
-          configurations for different networking needs. The connection profiles are handled by
-          NetworkManager via <emphasis>settings service</emphasis> and are exported on D-Bus
-          (<emphasis>/org/freedesktop/NetworkManager/Settings/&lt;num&gt;</emphasis> objects).
-          The conceptual objects can be described as follows:
-          <variablelist>
-            <varlistentry>
-              <term>Connection (profile)</term>
-              <listitem>
-                <para>
-                  A specific, encapsulated, independent group of settings describing
-                  all the configuration required to connect to a specific network.
-                  It is referred to by a unique identifier called the UUID. A connection
-                  is tied to a one specific device type, but not necessarily a specific
-                  hardware device. It is composed of one or more <emphasis>Settings</emphasis>
-                  objects.
-                </para>
-              </listitem>
-            </varlistentry>
-          </variablelist>
-          <variablelist>
-            <varlistentry>
-              <term>Setting</term>
-              <listitem>
-                <para>
-                  A group of related key/value pairs describing a specific piece of a
-                  <emphasis>Connection (profile)</emphasis>. Settings keys and allowed values are
-                  described in the tables below. Keys are also referred to as properties.
-                  Developers can find the setting objects and their properties in the libnm-core
-                  sources. Look for the <function>*_class_init</function> functions near the bottom
-                  of each setting source file.
-                </para>
-              </listitem>
-            </varlistentry>
-          </variablelist>
-          <variablelist>
-            <para>
-              The settings and properties shown in tables below list all available connection
-              configuration options. However, note that not all settings are applicable to all
-              connection types. NetworkManager provides a command-line tool <emphasis>nmcli</emphasis>
-              that allows direct configuration of the settings and properties according to a connection
-              profile type. <emphasis>nmcli</emphasis> connection editor has also a built-in
-              <emphasis>describe</emphasis> command that can display description of particular settings
-              and properties of this page.
-            </para>
-          </variablelist>
+          configurations for different networking needs.
+        </para>
+        <para>
+          NetworkManager provides an API for configuring connection profiles, for activating them
+          to configure the network, and inspecting the current network configuration. The command
+          line tool <emphasis>nmcli</emphasis> is a client application to NetworkManager that uses
+          this API. See <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>
+          for details.
+        </para>
+        <para>
+          With commands like <literal>nmcli connection add</literal>, <literal>nmcli connection modify</literal>
+          and <literal>nmcli connection show</literal>, connection profiles can be created, modified
+          and inspected. A profile consists of properties. On D-Bus this follows the format
+          as described by <link linkend='nm-settings-dbus'><citerefentry><refentrytitle>nm-settings-dbus</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+          while this manual page describes the settings format how they are expected by <emphasis>nmcli</emphasis>.
+        </para>
+        <para>
+          The settings and properties shown in tables below list all available connection
+          configuration options. However, note that not all settings are applicable to all
+          connection types. <emphasis>nmcli</emphasis> connection editor has also a built-in
+          <emphasis>describe</emphasis> command that can display description of particular settings
+          and properties of this page.
         </para>
         <xsl:apply-templates/>
         <refsect2 id="secrets-flags">
@@ -122,7 +99,10 @@
       </refsect1>
 
       <refsect1 id='see_also'><title>See Also</title>
-        <para><link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+        <para>
+        <link linkend='nm-settings-dbus'><citerefentry><refentrytitle>nm-settings-dbus</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
         <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
         <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
         <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></para>
@@ -155,7 +135,7 @@
   <xsl:template match="property">
     <xsl:variable name="setting_name" select="../@name"/>
     <row>
-      <entry align="left"><xsl:attribute name="id">nm-settings.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
+      <entry align="left"><xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
       <entry align="left"><xsl:value-of select="@type"/></entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
       <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags (uint32)'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>

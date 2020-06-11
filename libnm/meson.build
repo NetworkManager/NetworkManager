@@ -212,35 +212,52 @@ if enable_introspection
     install: true,
   )
 
-  generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
-
-  name = 'nm-settings-keyfile-docs.xml'
-  nm_settings_keyfile_docs = custom_target(
-    name,
-    input: libnm_core_settings_sources,
-    output: name,
-    command: [perl, generate_plugin_docs, 'keyfile', '@OUTPUT@', '@INPUT@'],
-  )
-
-  name = 'nm-settings-docs-overrides.xml'
-  nm_settings_docs_overrides = custom_target(
-    name,
-    input: libnm_core_settings_sources,
-    output: name,
-    command: [perl, generate_plugin_docs, 'dbus', '@OUTPUT@', '@INPUT@'],
-  )
-
+  infos = [ 'dbus', 'nmcli', 'keyfile' ]
   if enable_ifcfg_rh
-    name = 'nm-settings-ifcfg-rh-docs.xml'
-    nm_settings_ifcfg_rh_docs = custom_target(
-      name,
-      input: libnm_core_settings_sources,
-      output: name,
-      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@OUTPUT@', '@INPUT@'],
-    )
+    infos += [ 'ifcfg-rh' ]
   endif
+  foreach info: infos
+    t = custom_target(
+      'nm-propery-infos-' + info + '.xml',
+      input: libnm_core_settings_sources,
+      output: 'nm-propery-infos-' + info + '.xml',
+      command: [
+        perl,
+        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.pl'),
+        info,
+        '@OUTPUT@',
+        '@INPUT@'
+      ],
+    )
 
-  generate_setting_docs = join_paths(meson.current_source_dir(), 'generate-setting-docs.py')
+    # meson 0.47 doesn't support non-static keys for dicts
+    # nor extending dicts incrementally. Workaround.
+    if info == 'dbus'
+      nm_property_infos_xml_dbus = t
+    elif info == 'keyfile'
+      nm_property_infos_xml_keyfile = t
+    elif info == 'ifcfg-rh'
+      nm_property_infos_xml_ifcfg_rh = t
+    elif info == 'nmcli'
+      nm_property_infos_xml_nmcli = t
+    else
+      assert(false)
+    endif
+  endforeach
+  if enable_ifcfg_rh
+    nm_property_infos_xml = {
+      'dbus':     nm_property_infos_xml_dbus,
+      'keyfile':  nm_property_infos_xml_keyfile,
+      'nmcli':    nm_property_infos_xml_nmcli,
+      'ifcfg-rh': nm_property_infos_xml_ifcfg_rh,
+    }
+  else
+    nm_property_infos_xml = {
+      'dbus':    nm_property_infos_xml_dbus,
+      'keyfile': nm_property_infos_xml_keyfile,
+      'nmcli':   nm_property_infos_xml_nmcli,
+    }
+  endif
 
   gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH').stdout()
   if gi_typelib_path != ''
@@ -260,23 +277,21 @@ if enable_introspection
     'LD_LIBRARY_PATH=' + ld_library_path,
   ]
 
-  name = 'nm-property-docs.xml'
-  nm_property_docs = custom_target(
-    name,
+  nm_settings_docs_xml_gir = custom_target(
+    'nm-settings-docs-gir.xml',
     input: libnm_gir[0],
-    output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
+    output: 'nm-settings-docs-gir.xml',
+    command: [
+      generate_setting_docs_env,
+      python.path(),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py'),
+      '--lib-path', meson.current_build_dir(),
+      '--gir', '@INPUT@',
+      '--output', '@OUTPUT@'
+    ],
     depends: libnm_gir,
   )
 
-  name = 'nm-settings-docs.xml'
-  nm_settings_docs = custom_target(
-    name,
-    input: [libnm_gir[0], nm_settings_docs_overrides],
-    output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT0@', '--overrides', '@INPUT1@', '--output', '@OUTPUT@'],
-    depends: libnm_gir,
-  )
 endif
 
 if enable_tests
@@ -285,7 +300,9 @@ endif
 
 libnm_libnm_aux = static_library(
   'nm-libnm-aux',
-  sources: nm_libnm_aux_source,
+  sources: files(
+    'nm-libnm-aux/nm-libnm-aux.c',
+  ),
   c_args: [
     '-DG_LOG_DOMAIN="@0@"'.format('libnmc'),
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',

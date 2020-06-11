@@ -7,8 +7,8 @@ GENERATED_FILES =
 
 if BUILD_DOCS
 
-settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm/nm-settings-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $^
+settings-spec.xml: settings-spec.xsl $(top_builddir)/man/nm-settings-docs-dbus.xml
+	$(AM_V_GEN) (! test -f $@ || chmod u+w $@) && xsltproc --output $@ $^
 
 # Top-level SGML file includes (depends on) settings-spec.xml
 $(DOC_MAIN_SGML_FILE): settings-spec.xml
@@ -88,8 +88,9 @@ content_files = \
 	$(top_builddir)/man/NetworkManager.xml \
 	$(top_builddir)/man/NetworkManager.conf.xml \
 	$(top_builddir)/man/nmcli-examples.xml \
-	$(top_builddir)/man/nm-settings.xml \
+	$(top_builddir)/man/nm-settings-dbus.xml \
 	$(top_builddir)/man/nm-settings-keyfile.xml \
+	$(top_builddir)/man/nm-settings-nmcli.xml \
 	version.xml \
 	$(NULL)
 
@@ -103,6 +104,25 @@ content_files += $(top_builddir)/man/nm-settings-ifcfg-rh.xml
 endif
 
 include $(top_srcdir)/gtk-doc.make
+
+# workaround setup-build.stamp from gtk-doc.make, which copies
+# the file as read-only. That breaks later build steps, as the
+# file can no longer be written. Instead, copy the file with `cp -f`
+# only.
+setup-build.stamp:
+	-$(GTK_DOC_V_SETUP)if test "$(abs_srcdir)" != "$(abs_builddir)" ; then \
+	  files=`echo $(SETUP_FILES) $(DOC_MODULE).types`; \
+	  if test "x$$files" != "x" ; then \
+	    for file in $$files ; do \
+	      destdir=`dirname $(abs_builddir)/$$file`; \
+	      test -d "$$destdir" || mkdir -p "$$destdir"; \
+	      test -f $(abs_srcdir)/$$file && \
+	        ( cp -pf $(abs_srcdir)/$$file $(abs_builddir)/$$file ; \
+	        chmod u+w $(abs_builddir)/$$file ) || true; \
+	    done; \
+	  fi; \
+	fi
+	$(AM_V_at)touch setup-build.stamp
 
 ####################################
 

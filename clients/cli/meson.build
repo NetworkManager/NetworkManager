@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 
-name = 'nmcli'
+if enable_nmcli
 
 # FIXME: nmcli-completion should be renamed to nmcli
 install_data(
@@ -8,15 +8,8 @@ install_data(
   install_dir: join_paths(nm_datadir, 'bash-completion', 'completions'),
 )
 
-deps = [
-  libnmc_base_dep,
-  libnmc_dep,
-  readline_dep,
-  libnm_libnm_aux_dep,
-]
-
 executable(
-  name,
+  'nmcli',
   files(
     'agent.c',
     'common.c',
@@ -28,9 +21,38 @@ executable(
     'settings.c',
     'utils.c',
   ),
-  dependencies: deps,
-  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format(name)],
+  dependencies: [
+    libnmc_base_dep,
+    libnmc_dep,
+    readline_dep,
+    libnm_libnm_aux_dep,
+  ],
+  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format('nmcli')],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
+)
+
+endif
+
+generate_docs_nm_settings_nmcli = executable(
+  'generate-docs-nm-settings-nmcli',
+  files(
+    'generate-docs-nm-settings-nmcli.c',
+  ),
+  dependencies: [
+    libnmc_base_dep,
+    libnmc_dep,
+    libnm_libnm_aux_dep,
+  ],
+  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format('nmcli')],
+  link_args: ldflags_linker_script_binary,
+  link_depends: linker_script_binary,
+)
+
+generate_docs_nm_settings_nmcli_xml = custom_target(
+  'generate-docs-nm-settings-nmcli.xml',
+  output: 'generate-docs-nm-settings-nmcli.xml',
+  command: [ generate_docs_nm_settings_nmcli ],
+  capture: true,
 )

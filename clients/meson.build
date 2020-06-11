@@ -19,10 +19,7 @@ executable(
 )
 
 subdir('common')
-
-if enable_nmcli
-  subdir('cli')
-endif
+subdir('cli')
 
 if enable_nmtui
   subdir('tui')

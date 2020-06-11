@@ -131,17 +131,13 @@ sub process_data {
 # - XML handling -
 sub write_header {
   (my $header =
-    qq{<?xml version=\"1.0\"?>
-       <!DOCTYPE nm-$plugin-docs [
-       ]>
-
-       <nm-$plugin-docs>
+    qq{<nm-setting-docs>
   }) =~ s/^ {7}//mg;
   print {$fo} $header;
 }
 
 sub write_footer {
-  my $footer = "</nm-$plugin-docs>";
+  my $footer = "</nm-setting-docs>";
   print {$fo} $footer;
 }
 

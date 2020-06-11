@@ -56,6 +56,9 @@ libnm-core/nm-crypto-gnutls.c
 libnm-core/nm-crypto-nss.c
 libnm-core/nm-connection.c
 libnm-core/nm-dbus-utils.c
+libnm-core/nm-keyfile/nm-keyfile-utils.c
+libnm-core/nm-keyfile/nm-keyfile.c
+libnm-core/nm-libnm-core-aux/nm-libnm-core-aux.c
 libnm-core/nm-setting-6lowpan.c
 libnm-core/nm-setting-8021x.c
 libnm-core/nm-setting-adsl.c
@@ -140,9 +143,6 @@ libnm/nm-vpn-plugin-old.c
 libnm/nm-vpn-service-plugin.c
 data/org.freedesktop.NetworkManager.policy.in.in
 shared/nm-glib-aux/nm-shared-utils.c
-shared/nm-keyfile/nm-keyfile-utils.c
-shared/nm-keyfile/nm-keyfile.c
-shared/nm-libnm-core-aux/nm-libnm-core-aux.c
 src/NetworkManagerUtils.c
 src/main.c
 src/main-utils.c

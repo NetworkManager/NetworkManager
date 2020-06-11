@@ -34,7 +34,7 @@ settings_docs = 'settings-docs.h'
 if enable_introspection
   settings_docs_source = custom_target(
     settings_docs,
-    input: nm_property_docs,
+    input: nm_settings_docs_xml_gir,
     output: settings_docs,
     command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), 'settings-docs.xsl'), '@INPUT@'],
   )

@@ -88,7 +88,11 @@ libnm_core_enum_sources = gnome.mkenums_simple(
 
 libnm_libnm_core_intern = static_library(
   'nm-libnm-core-intern',
-  sources: nm_ethtool_utils_source + nm_libnm_core_utils_source + nm_auth_subject_source + [libnm_core_enum_sources[1]],
+  sources: files(
+    'nm-libnm-core-intern/nm-auth-subject.c',
+    'nm-libnm-core-intern/nm-ethtool-utils.c',
+    'nm-libnm-core-intern/nm-libnm-core-utils.c',
+  ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_core_nm_default_dep,
   c_args: common_c_flags,
 )
@@ -221,7 +225,9 @@ c_flags = [
 
 libnm_libnm_core_aux = static_library(
   'nm-libnm-core-aux',
-  sources: nm_libnm_core_aux_source + [libnm_core_enum_sources[1]],
+  sources: files(
+    'nm-libnm-core-aux/nm-libnm-core-aux.c',
+  ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_utils_base_dep,
   c_args: c_flags,
   link_with: libnm_libnm_core_intern,
@@ -236,7 +242,10 @@ libnm_libnm_core_aux_dep = declare_dependency(
 
 libnm_keyfile = static_library(
   'nm-keyfile',
-  sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
+  sources: files(
+    'nm-keyfile/nm-keyfile-utils.c',
+    'nm-keyfile/nm-keyfile.c',
+  ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_utils_base_dep,
   c_args: [
     '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
