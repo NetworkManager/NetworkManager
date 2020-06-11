@@ -3845,7 +3845,8 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 		/* FIXME: todo */
 	}
 
-	if (priv->lldp_listener && nm_lldp_listener_is_running (priv->lldp_listener)) {
+	if (   priv->lldp_listener
+	    && nm_lldp_listener_is_running (priv->lldp_listener)) {
 		nm_lldp_listener_stop (priv->lldp_listener);
 		if (!nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error)) {
 			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be restarted: %s",
@@ -7157,7 +7158,8 @@ lldp_init (NMDevice *self, gboolean restart)
 		gs_free_error GError *error = NULL;
 
 		if (priv->lldp_listener) {
-			if (restart && nm_lldp_listener_is_running (priv->lldp_listener))
+			if (   restart
+			    && nm_lldp_listener_is_running (priv->lldp_listener))
 				nm_lldp_listener_stop (priv->lldp_listener);
 		} else {
 			priv->lldp_listener = nm_lldp_listener_new ();

@@ -178,6 +178,24 @@ nm_ip4_addr_is_localhost (in_addr_t addr4)
 
 /*****************************************************************************/
 
+struct ether_addr;
+
+static inline int
+nm_utils_ether_addr_cmp (const struct ether_addr *a1, const struct ether_addr *a2)
+{
+	nm_assert (a1);
+	nm_assert (a2);
+	return memcmp (a1, a2, 6 /*ETH_ALEN*/);
+}
+
+static inline gboolean
+nm_utils_ether_addr_equal (const struct ether_addr *a1, const struct ether_addr *a2)
+{
+	return nm_utils_ether_addr_cmp (a1, a2) == 0;
+}
+
+/*****************************************************************************/
+
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
 static inline const char *
@@ -1208,6 +1226,7 @@ typedef enum {
 } NMUtilsStrUtf8SafeFlags;
 
 const char *nm_utils_buf_utf8safe_escape (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags, char **to_free);
+char *nm_utils_buf_utf8safe_escape_cp (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags);
 const char *nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags, char **to_free);
 gconstpointer nm_utils_buf_utf8safe_unescape (const char *str, NMUtilsStrUtf8SafeFlags flags, gsize *out_len, gpointer *to_free);
 
@@ -1260,6 +1279,30 @@ nm_g_variant_is_of_type (GVariant *value,
 {
 	return    value
 	       && g_variant_is_of_type (value, type);
+}
+
+static inline void
+nm_g_variant_builder_add_sv (GVariantBuilder *builder, const char *key, GVariant *val)
+{
+	g_variant_builder_add (builder, "{sv}", key, val);
+}
+
+static inline void
+nm_g_variant_builder_add_sv_bytearray (GVariantBuilder *builder, const char *key, const guint8 *arr, gsize len)
+{
+	g_variant_builder_add (builder, "{sv}", key, g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, arr, len, 1));
+}
+
+static inline void
+nm_g_variant_builder_add_sv_uint32 (GVariantBuilder *builder, const char *key, guint32 val)
+{
+	nm_g_variant_builder_add_sv (builder, key, g_variant_new_uint32 (val));
+}
+
+static inline void
+nm_g_variant_builder_add_sv_str (GVariantBuilder *builder, const char *key, const char *str)
+{
+	nm_g_variant_builder_add_sv (builder, key, g_variant_new_string (str));
 }
 
 static inline void

@@ -13,6 +13,7 @@
 #include <sys/syscall.h>
 #include <glib-unix.h>
 #include <net/if.h>
+#include <net/ethernet.h>
 
 #include "nm-errno.h"
 #include "nm-str-buf.h"
@@ -85,6 +86,11 @@ nm_ip_addr_set_from_untrusted (int addr_family,
 	NM_SET_OUT (out_addr_family, addr_family);
 	return TRUE;
 }
+
+/*****************************************************************************/
+
+G_STATIC_ASSERT (ETH_ALEN == sizeof (struct ether_addr));
+G_STATIC_ASSERT (ETH_ALEN == 6);
 
 /*****************************************************************************/
 
@@ -2697,6 +2703,17 @@ nm_utils_buf_utf8safe_escape_bytes (GBytes *bytes, NMUtilsStrUtf8SafeFlags flags
 	}
 
 	return nm_utils_buf_utf8safe_escape (p, l, flags, to_free);
+}
+
+char *
+nm_utils_buf_utf8safe_escape_cp (gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags)
+{
+	const char *s_const;
+	char *s;
+
+	s_const = nm_utils_buf_utf8safe_escape (buf, buflen, flags, &s);
+	nm_assert (!s || s == s_const);
+	return s ?: g_strdup (s_const);
 }
 
 /*****************************************************************************/

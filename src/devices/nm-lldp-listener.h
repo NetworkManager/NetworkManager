@@ -25,4 +25,7 @@ gboolean nm_lldp_listener_is_running (NMLldpListener *self);
 
 GVariant *nm_lldp_listener_get_neighbors (NMLldpListener *self);
 
+GVariant *nmtst_lldp_parse_from_raw (const guint8 *raw_data,
+                                     gsize raw_len);
+
 #endif /* __NM_LLDP_LISTENER__ */

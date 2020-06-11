@@ -77,10 +77,12 @@ typedef struct {
 typedef struct {
 	gsize frame_len;
 	const uint8_t *frame;
+	const char *as_variant;
 } TestRecvFrame;
-#define TEST_RECV_FRAME_DEFINE(name, ...) \
+#define TEST_RECV_FRAME_DEFINE(name, _as_variant, ...) \
 	static const guint8 _##name##_v[] = { __VA_ARGS__ }; \
 	static const TestRecvFrame name = { \
+		.as_variant = _as_variant, \
 		.frame_len = sizeof (_##name##_v), \
 		.frame = _##name##_v, \
 	}
@@ -102,6 +104,7 @@ typedef struct {
 #define TEST_IFNAME "nm-tap-test0"
 
 TEST_RECV_FRAME_DEFINE (_test_recv_data0_frame0,
+	"{'raw': <[byte 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x88, 0xcc, 0x02, 0x07, 0x04, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x04, 0x04, 0x05, 0x31, 0x2f, 0x33, 0x06, 0x02, 0x00, 0x78, 0x08, 0x04, 0x50, 0x6f, 0x72, 0x74, 0x0a, 0x03, 0x53, 0x59, 0x53, 0x0c, 0x04, 0x66, 0x6f, 0x6f, 0x00, 0x00, 0x00]>, 'chassis-id-type': <uint32 4>, 'chassis-id': <'00:01:02:03:04:05'>, 'port-id-type': <uint32 5>, 'port-id': <'1/3'>, 'destination': <'nearest-non-tpmr-bridge'>, 'port-description': <'Port'>, 'system-name': <'SYS'>, 'system-description': <'foo'>}",
 	/* Ethernet header */
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
@@ -119,7 +122,7 @@ TEST_RECV_FRAME_DEFINE (_test_recv_data0_frame0,
 );
 
 static void
-_test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
+_test_recv_data0_check_do (GMainLoop *loop, NMLldpListener *listener, const TestRecvFrame *frame)
 {
 	GVariant *neighbors, *attr;
 	gs_unref_variant GVariant *neighbor = NULL;
@@ -132,7 +135,11 @@ _test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
 	                              SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:02:03:04:05",
 	                              SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/3");
 	g_assert (neighbor);
-	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 4);
+	g_assert_cmpint (g_variant_n_children (neighbor), ==, 1 + 4 + 4);
+
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_RAW, G_VARIANT_TYPE_BYTESTRING);
+	nmtst_assert_variant_bytestring (attr, frame->frame, frame->frame_len);
+	nm_clear_g_variant (&attr);
 
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_PORT_DESCRIPTION, G_VARIANT_TYPE_STRING);
 	nmtst_assert_variant_string (attr, "Port");
@@ -151,13 +158,19 @@ _test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
 	nm_clear_g_variant (&attr);
 }
 
+static void
+_test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
+{
+	_test_recv_data0_check_do (loop, listener, &_test_recv_data0_frame0);
+}
+
 TEST_RECV_DATA_DEFINE (_test_recv_data0,       1, _test_recv_data0_check,  &_test_recv_data0_frame0);
 TEST_RECV_DATA_DEFINE (_test_recv_data0_twice, 1, _test_recv_data0_check,  &_test_recv_data0_frame0, &_test_recv_data0_frame0);
 
 TEST_RECV_FRAME_DEFINE (_test_recv_data1_frame0,
 	/* lldp.detailed.pcap from
 	 * https://wiki.wireshark.org/SampleCaptures#Link_Layer_Discovery_Protocol_.28LLDP.29 */
-
+	"{'raw': <[byte 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e, 0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0, 0x88, 0xcc, 0x02, 0x07, 0x04, 0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0, 0x04, 0x04, 0x05, 0x31, 0x2f, 0x31, 0x06, 0x02, 0x00, 0x78, 0x08, 0x17, 0x53, 0x75, 0x6d, 0x6d, 0x69, 0x74, 0x33, 0x30, 0x30, 0x2d, 0x34, 0x38, 0x2d, 0x50, 0x6f, 0x72, 0x74, 0x20, 0x31, 0x30, 0x30, 0x31, 0x00, 0x0a, 0x0d, 0x53, 0x75, 0x6d, 0x6d, 0x69, 0x74, 0x33, 0x30, 0x30, 0x2d, 0x34, 0x38, 0x00, 0x0c, 0x4c, 0x53, 0x75, 0x6d, 0x6d, 0x69, 0x74, 0x33, 0x30, 0x30, 0x2d, 0x34, 0x38, 0x20, 0x2d, 0x20, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x20, 0x37, 0x2e, 0x34, 0x65, 0x2e, 0x31, 0x20, 0x28, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x20, 0x35, 0x29, 0x20, 0x62, 0x79, 0x20, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x5f, 0x4d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x20, 0x30, 0x35, 0x2f, 0x32, 0x37, 0x2f, 0x30, 0x35, 0x20, 0x30, 0x34, 0x3a, 0x35, 0x33, 0x3a, 0x31, 0x31, 0x00, 0x0e, 0x04, 0x00, 0x14, 0x00, 0x14, 0x10, 0x0e, 0x07, 0x06, 0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0, 0x02, 0x00, 0x00, 0x03, 0xe9, 0x00, 0xfe, 0x07, 0x00, 0x12, 0x0f, 0x02, 0x07, 0x01, 0x00, 0xfe, 0x09, 0x00, 0x12, 0x0f, 0x01, 0x03, 0x6c, 0x00, 0x00, 0x10, 0xfe, 0x09, 0x00, 0x12, 0x0f, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x06, 0x00, 0x12, 0x0f, 0x04, 0x05, 0xf2, 0xfe, 0x06, 0x00, 0x80, 0xc2, 0x01, 0x01, 0xe8, 0xfe, 0x07, 0x00, 0x80, 0xc2, 0x02, 0x01, 0x00, 0x00, 0xfe, 0x16, 0x00, 0x80, 0xc2, 0x03, 0x01, 0xe8, 0x0f, 0x76, 0x32, 0x2d, 0x30, 0x34, 0x38, 0x38, 0x2d, 0x30, 0x33, 0x2d, 0x30, 0x35, 0x30, 0x35, 0xfe, 0x05, 0x00, 0x80, 0xc2, 0x04, 0x00, 0x00, 0x00]>, 'chassis-id-type': <uint32 4>, 'chassis-id': <'00:01:30:F9:AD:A0'>, 'port-id-type': <uint32 5>, 'port-id': <'1/1'>, 'destination': <'nearest-bridge'>, 'port-description': <'Summit300-48-Port 1001'>, 'system-name': <'Summit300-48'>, 'system-description': <'Summit300-48 - Version 7.4e.1 (Build 5) by Release_Master 05/27/05 04:53:11'>, 'system-capabilities': <uint32 20>, 'management-addresses': <[{'address-subtype': <uint32 6>, 'address': <[byte 0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0]>, 'interface-number-subtype': <uint32 2>, 'interface-number': <uint32 1001>, 'object-id': <@ay []>}]>, 'ieee-802-1-pvid': <uint32 488>, 'ieee-802-1-ppvid': <uint32 0>, 'ieee-802-1-ppvid-flags': <uint32 1>, 'ieee-802-1-ppvids': <[{'ppvid': <uint32 0>, 'flags': <uint32 1>}]>, 'ieee-802-1-vid': <uint32 488>, 'ieee-802-1-vlan-name': <'v2-0488-03-0505'>, 'ieee-802-1-vlans': <[{'vid': <uint32 488>, 'name': <'v2-0488-03-0505'>}]>, 'ieee-802-3-mac-phy-conf': <{'autoneg': <uint32 3>, 'pmd-autoneg-cap': <uint32 27648>, 'operational-mau-type': <uint32 16>}>, 'ieee-802-3-power-via-mdi': <{'mdi-power-support': <uint32 7>, 'pse-power-pair': <uint32 1>, 'power-class': <uint32 0>}>, 'ieee-802-3-max-frame-size': <uint32 1522>}",
 	/* ethernet header */
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e, /* destination mac */
 	0x00, 0x01, 0x30, 0xf9, 0xad, 0xa0, /* source mac */
@@ -229,7 +242,11 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	                              SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS, "00:01:30:F9:AD:A0",
 	                              SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME, "1/1");
 	g_assert (neighbor);
-	g_assert_cmpint (g_variant_n_children (neighbor), ==, 4 + 16);
+	g_assert_cmpint (g_variant_n_children (neighbor), ==, 1 + 4 + 16);
+
+	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_RAW, G_VARIANT_TYPE_BYTESTRING);
+	nmtst_assert_variant_bytestring (attr, _test_recv_data1_frame0.frame, _test_recv_data1_frame0.frame_len);
+	nm_clear_g_variant (&attr);
 
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_DESTINATION, G_VARIANT_TYPE_STRING);
 	nmtst_assert_variant_string (attr, NM_LLDP_DEST_NEAREST_BRIDGE);
@@ -263,11 +280,11 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
 	child = g_variant_get_child_value (attr, 0);
 	g_assert (child);
-	g_variant_lookup (child, "interface-number", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "interface-number", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 1001);
-	g_variant_lookup (child, "interface-number-subtype", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "interface-number-subtype", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 2);
-	g_variant_lookup (child, "address-subtype", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "address-subtype", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 6);
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
@@ -275,22 +292,22 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	/* IEEE 802.3 - Power Via MDI */
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI, G_VARIANT_TYPE_VARDICT);
 	g_assert (attr);
-	g_variant_lookup (attr, "mdi-power-support", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "mdi-power-support", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 7);
-	g_variant_lookup (attr, "pse-power-pair", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "pse-power-pair", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 1);
-	g_variant_lookup (attr, "power-class", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "power-class", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 0);
 	nm_clear_g_variant (&attr);
 
 	/* IEEE 802.3 - MAC/PHY Configuration/Status */
 	attr = g_variant_lookup_value (neighbor, NM_LLDP_ATTR_IEEE_802_3_MAC_PHY_CONF, G_VARIANT_TYPE_VARDICT);
 	g_assert (attr);
-	g_variant_lookup (attr, "autoneg", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "autoneg", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 3);
-	g_variant_lookup (attr, "pmd-autoneg-cap", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "pmd-autoneg-cap", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 0x6c00);
-	g_variant_lookup (attr, "operational-mau-type", "u", &v_uint);
+	g_assert (g_variant_lookup (attr, "operational-mau-type", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 16);
 	nm_clear_g_variant (&attr);
 
@@ -319,9 +336,9 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
 	child = g_variant_get_child_value (attr, 0);
 	g_assert (child);
-	g_variant_lookup (child, "ppvid", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "ppvid", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 0);
-	g_variant_lookup (child, "flags", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "flags", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 1);
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
@@ -339,9 +356,9 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 	g_assert_cmpuint (g_variant_n_children (attr), ==, 1);
 	child = g_variant_get_child_value (attr, 0);
 	g_assert (child);
-	g_variant_lookup (child, "vid", "u", &v_uint);
+	g_assert (g_variant_lookup (child, "vid", "u", &v_uint));
 	g_assert_cmpint (v_uint, ==, 488);
-	g_variant_lookup (child, "name", "&s", &v_str);
+	g_assert (g_variant_lookup (child, "name", "&s", &v_str));
 	g_assert_cmpstr (v_str, ==, "v2-0488-03-0505");
 	nm_clear_g_variant (&child);
 	nm_clear_g_variant (&attr);
@@ -352,6 +369,7 @@ _test_recv_data1_check (GMainLoop *loop, NMLldpListener *listener)
 TEST_RECV_DATA_DEFINE (_test_recv_data1,       1, _test_recv_data1_check,  &_test_recv_data1_frame0);
 
 TEST_RECV_FRAME_DEFINE (_test_recv_data2_frame0_ttl1,
+	"{'raw': <[byte 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x88, 0xcc, 0x02, 0x07, 0x04, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x04, 0x04, 0x05, 0x31, 0x2f, 0x33, 0x06, 0x02, 0x00, 0x01, 0x08, 0x04, 0x50, 0x6f, 0x72, 0x74, 0x0a, 0x03, 0x53, 0x59, 0x53, 0x0c, 0x04, 0x66, 0x6f, 0x6f, 0x00, 0x00, 0x00]>, 'chassis-id-type': <uint32 4>, 'chassis-id': <'00:01:02:03:04:05'>, 'port-id-type': <uint32 5>, 'port-id': <'1/3'>, 'destination': <'nearest-non-tpmr-bridge'>, 'port-description': <'Port'>, 'system-name': <'SYS'>, 'system-description': <'foo'>}",
 	/* Ethernet header */
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x03,     /* Destination MAC */
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06,     /* Source MAC */
@@ -374,7 +392,7 @@ _test_recv_data2_ttl1_check (GMainLoop *loop, NMLldpListener *listener)
 	gulong notify_id;
 	GVariant *neighbors;
 
-	_test_recv_data0_check (loop, listener);
+	_test_recv_data0_check_do (loop, listener, &_test_recv_data2_frame0_ttl1);
 
 	/* wait for signal. */
 	notify_id = g_signal_connect (listener, "notify::" NM_LLDP_LISTENER_NEIGHBORS,
@@ -513,6 +531,28 @@ _test_recv_fixture_teardown (TestRecvFixture *fixture, gconstpointer user_data)
 
 /*****************************************************************************/
 
+static void
+test_parse_frames (gconstpointer test_data)
+{
+	const TestRecvFrame *frame = test_data;
+	gs_unref_variant GVariant *v_neighbor = NULL;
+	gs_unref_variant GVariant *attr = NULL;
+	gs_free char *as_variant = NULL;
+
+	v_neighbor = nmtst_lldp_parse_from_raw (frame->frame, frame->frame_len);
+	g_assert (v_neighbor);
+
+	attr = g_variant_lookup_value (v_neighbor, NM_LLDP_ATTR_RAW, G_VARIANT_TYPE_BYTESTRING);
+	nmtst_assert_variant_bytestring (attr, frame->frame, frame->frame_len);
+	nm_clear_g_variant (&attr);
+
+	as_variant = g_variant_print (v_neighbor, TRUE);
+	g_assert (as_variant);
+	g_assert_cmpstr (frame->as_variant, ==, as_variant);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
 
 void
@@ -530,4 +570,8 @@ _nmtstp_setup_tests (void)
 	_TEST_ADD_RECV ("/lldp/recv/0_twice", &_test_recv_data0_twice);
 	_TEST_ADD_RECV ("/lldp/recv/1",       &_test_recv_data1);
 	_TEST_ADD_RECV ("/lldp/recv/2_ttl1",  &_test_recv_data2_ttl1);
+
+	g_test_add_data_func ("/lldp/parse-frames/0", &_test_recv_data0_frame0, test_parse_frames);
+	g_test_add_data_func ("/lldp/parse-frames/1", &_test_recv_data1_frame0, test_parse_frames);
+	g_test_add_data_func ("/lldp/parse-frames/2", &_test_recv_data2_frame0_ttl1, test_parse_frames);
 }
