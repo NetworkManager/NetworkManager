@@ -80,6 +80,7 @@ if enable_introspection
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
+      '--only-from-first',
       generate_docs_nm_settings_nmcli_xml,
       nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,

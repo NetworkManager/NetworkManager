@@ -99,13 +99,25 @@ def node_set_attr(dst_node, name, nodes):
 
 ###############################################################################
 
-if len(sys.argv) < 3:
-    print("%s [OUT_FILE] [SETTING_XML [...]]" % (sys.argv[0]))
+gl_only_from_first = False
+
+argv = list(sys.argv[1:])
+while True:
+    if argv[0] == '--only-from-first':
+        gl_only_from_first = True
+        del argv[0]
+        continue
+    break
+if len(argv) < 2:
+    print("%s [--only-from-first] [OUT_FILE] [SETTING_XML [...]]" % (sys.argv[0]))
     exit(1)
 
-output_xml_file = sys.argv[1]
+gl_output_xml_file = argv[0]
+gl_input_files = list(argv[1:])
 
-xml_roots = list([ET.parse(f).getroot() for f in sys.argv[2:]])
+###############################################################################
+
+xml_roots = list([ET.parse(f).getroot() for f in gl_input_files])
 
 assert(all([root.tag == 'nm-setting-docs' for root in xml_roots]))
 
@@ -117,6 +129,16 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
     settings = list([d.get(setting_name) for d in settings_roots])
 
+    if     gl_only_from_first \
+       and settings[0] is None:
+        continue
+
+    properties = list([node_to_dict(s, 'property', 'name') for s in settings])
+
+    if     gl_only_from_first \
+       and not properties[0]:
+        continue
+
     setting_node = ET.SubElement(root_node, 'setting')
 
     setting_node.set('name', setting_name)
@@ -124,11 +146,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
     node_set_attr(setting_node, 'description', settings)
     node_set_attr(setting_node, 'name_upper', settings)
 
-    properties = list([node_to_dict(s, 'property', 'name') for s in settings])
-
     for property_name in iter_keys_of_dicts(properties):
 
         properties_attrs = list([p.get(property_name) for p in properties])
+
+        if     gl_only_from_first \
+           and properties_attrs[0] is None:
+            continue
 
         property_node = ET.SubElement(setting_node, 'property')
         property_node.set('name', property_name)
@@ -143,4 +167,4 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
         node_set_attr(property_node, 'default', properties_attrs)
         node_set_attr(property_node, 'description', properties_attrs)
 
-ET.ElementTree(root_node).write(output_xml_file)
+ET.ElementTree(root_node).write(gl_output_xml_file)
